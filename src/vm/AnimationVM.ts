@@ -1,0 +1,724 @@
+import { Sprite } from '../stage/Sprite';
+import { hardwareAdapter } from '../hardware/HardwareAdapter';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ANIMATION VM - Executes animation scripts
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface VMContext {
+    sprite: Sprite;
+    isRunning: boolean;
+    keysPressed: Set<string>;
+    mouseX: number;
+    mouseY: number;
+    stopAll: () => void;
+}
+
+export interface CompiledScript {
+    trigger: 'flag' | 'sprite_click' | 'key';
+    triggerKey?: string;
+    spriteId: string;
+    steps: ScriptStep[];
+}
+
+export type ScriptStep =
+    // Motion
+    | { type: 'move_steps'; steps: number }
+    | { type: 'turn_right'; degrees: number }
+    | { type: 'turn_left'; degrees: number }
+    | { type: 'go_to_xy'; x: number; y: number }
+    | { type: 'glide_to_xy'; secs: number; x: number; y: number }
+    | { type: 'point_direction'; direction: number }
+    | { type: 'change_x'; dx: number }
+    | { type: 'change_y'; dy: number }
+    | { type: 'set_x'; x: number }
+    | { type: 'set_x'; x: number }
+    | { type: 'set_y'; y: number }
+    // PictoBlox Motion
+    | { type: 'go_to'; target: 'random' | 'mouse' }
+    | { type: 'glide_to'; secs: number; target: 'random' | 'mouse' }
+    | { type: 'point_towards'; towards: 'mouse' | 'random' }
+    | { type: 'if_on_edge_bounce' }
+    | { type: 'set_rotation_style'; style: 'left-right' | 'all around' | 'none' }
+    // Looks
+    | { type: 'say'; message: string }
+    | { type: 'say_for_secs'; message: string; secs: number }
+    | { type: 'think'; message: string }
+    | { type: 'think_for_secs'; message: string; secs: number }
+    | { type: 'show' }
+    | { type: 'hide' }
+    | { type: 'next_costume' }
+    | { type: 'switch_costume'; costume: string }
+    | { type: 'switch_backdrop'; backdrop: string }
+    | { type: 'next_backdrop' }
+    | { type: 'set_size'; size: number }
+    | { type: 'change_size'; change: number }
+    | { type: 'set_effect'; effect: 'ghost' | 'brightness'; value: number }
+    | { type: 'clear_effects' }
+    | { type: 'go_to_layer'; layer: 'front' | 'back' }
+    | { type: 'go_forward_layers'; direction: 'forward' | 'backward'; layers: number }
+    // Control
+    | { type: 'wait'; secs: number }
+    | { type: 'repeat'; times: number; body: ScriptStep[] }
+    | { type: 'forever'; body: ScriptStep[] }
+    | { type: 'if'; condition: () => boolean; body: ScriptStep[] }
+    | { type: 'if_else'; condition: () => boolean; body: ScriptStep[]; elseBody: ScriptStep[] }
+    | { type: 'wait_until'; condition: () => boolean }
+    | { type: 'repeat_until'; condition: () => boolean; body: ScriptStep[] }
+    | { type: 'stop_all' }
+    | { type: 'stop_this_script' }
+    | { type: 'create_clone'; target: string }
+    | { type: 'delete_clone' }
+    // Events
+    | { type: 'broadcast'; message: string }
+    | { type: 'broadcast_wait'; message: string }
+    // Sound
+    | { type: 'play_sound'; sound: string }
+    | { type: 'play_sound_until_done'; sound: string }
+    | { type: 'stop_all_sounds' }
+    | { type: 'set_volume'; volume: number }
+    | { type: 'change_volume'; change: number }
+    // Sensing
+    | { type: 'ask'; question: string }
+    | { type: 'reset_timer' }
+    // Hardware blocks for Stage mode
+    | { type: 'hw_set_digital'; pin: number; value: boolean }
+    | { type: 'hw_set_led'; on: boolean }
+    | { type: 'hw_set_pwm'; pin: number; value: number }
+    | { type: 'hw_set_servo'; pin: number; angle: number }
+    | { type: 'hw_set_motor'; motor: number; speed: number }
+    | { type: 'hw_stop_motors' }
+    | { type: 'hw_play_tone'; pin: number; freq: number; duration: number }
+    | { type: 'hw_stop_tone'; pin: number };
+
+// Logging utility for AnimationVM
+const vmLog = {
+    info: (msg: string, data?: any) => console.log(`[AnimationVM] ${msg}`, data ?? ''),
+    step: (type: string, details?: any) => console.log(`[AnimationVM.Step] ${type}`, details ?? ''),
+    trigger: (event: string, data?: any) => console.log(`[AnimationVM.Trigger] ${event}`, data ?? ''),
+    error: (msg: string, err?: any) => console.error(`[AnimationVM.Error] ${msg}`, err ?? ''),
+};
+
+export class AnimationVM {
+    private runningScripts: Map<string, AbortController> = new Map();
+    private sprites: Map<string, Sprite> = new Map();
+    private keysPressed: Set<string> = new Set();
+    private mouseX: number = 0;
+    private mouseY: number = 0;
+    private isRunning: boolean = false;
+
+    // Timer
+    private timerStart: number = Date.now();
+
+    // Sensing
+    private currentAnswer: string = '';
+
+    // Sound
+    private volume: number = 100;
+
+    // Broadcast system
+    private broadcastListeners: Map<string, CompiledScript[]> = new Map();
+
+    // Audio manager (simplified)
+    public audioManager = {
+        playSound: (name: string) => {
+            vmLog.step('play_sound', { sound: name });
+            console.log(`[Audio] Playing: ${name}`);
+        },
+        playSoundUntilDone: async (name: string) => {
+            vmLog.step('play_sound_until_done', { sound: name });
+            console.log(`[Audio] Playing until done: ${name}`);
+        },
+        stopAllSounds: () => {
+            vmLog.step('stop_all_sounds');
+            console.log('[Audio] Stopping all sounds');
+        },
+        setVolume: (vol: number) => {
+            vmLog.step('set_volume', { volume: vol });
+            this.volume = Math.max(0, Math.min(100, vol));
+        },
+        changeVolume: (delta: number) => {
+            vmLog.step('change_volume', { delta, newVolume: this.volume + delta });
+            this.volume = Math.max(0, Math.min(100, this.volume + delta));
+        },
+        getVolume: () => this.volume,
+    };
+
+
+
+    constructor() {
+        // Set up key listeners
+        if (typeof window !== 'undefined') {
+            window.addEventListener('keydown', (e) => {
+                this.keysPressed.add(e.key);
+            });
+            window.addEventListener('keyup', (e) => {
+                this.keysPressed.delete(e.key);
+            });
+            window.addEventListener('mousemove', (e) => {
+                // Convert to stage coordinates - will be updated when stage is available
+            });
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SPRITE MANAGEMENT
+    // ═══════════════════════════════════════════════════════════════════════
+    registerSprite(sprite: Sprite): void {
+        this.sprites.set(sprite.id, sprite);
+    }
+
+    unregisterSprite(id: string): void {
+        this.sprites.delete(id);
+    }
+
+    getSprite(id: string): Sprite | undefined {
+        return this.sprites.get(id);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SCRIPT EXECUTION
+    // ═══════════════════════════════════════════════════════════════════════
+    triggerFlag(scripts: CompiledScript[]): void {
+        console.log('[AnimationVM] ══════════════════════════════════════════');
+        console.log('[AnimationVM] triggerFlag called with', scripts.length, 'scripts');
+        console.log('[AnimationVM] Registered sprites:', Array.from(this.sprites.keys()));
+
+        this.isRunning = true;
+        let flagScripts = 0;
+        for (const script of scripts) {
+            console.log('[AnimationVM]   Script:', script.trigger, 'for sprite:', script.spriteId, 'steps:', script.steps.length);
+            if (script.trigger === 'flag') {
+                flagScripts++;
+                console.log('[AnimationVM]   → Running flag script');
+                this.runScript(script);
+            }
+        }
+        console.log('[AnimationVM] Started', flagScripts, 'flag scripts');
+        console.log('[AnimationVM] ══════════════════════════════════════════');
+    }
+
+    triggerSpriteClick(spriteId: string, scripts: CompiledScript[]): void {
+        for (const script of scripts) {
+            if (script.trigger === 'sprite_click' && script.spriteId === spriteId) {
+                this.runScript(script);
+            }
+        }
+    }
+
+    triggerKey(key: string, scripts: CompiledScript[]): void {
+        for (const script of scripts) {
+            if (script.trigger === 'key' && script.triggerKey === key) {
+                this.runScript(script);
+            }
+        }
+    }
+
+    stopAll(): void {
+        vmLog.info('stopAll() called');
+        this.isRunning = false;
+        for (const [id, controller] of this.runningScripts) {
+            vmLog.info(`Aborting script: ${id}`);
+            controller.abort();
+        }
+        this.runningScripts.clear();
+        vmLog.info('All scripts stopped');
+    }
+
+    private async runScript(script: CompiledScript): Promise<void> {
+        const sprite = this.sprites.get(script.spriteId);
+        vmLog.info(`runScript started`, {
+            spriteId: script.spriteId,
+            found: !!sprite,
+            trigger: script.trigger,
+            stepCount: script.steps.length
+        });
+
+        if (!sprite) {
+            vmLog.error(`Sprite not found: ${script.spriteId}`);
+            return;
+        }
+
+        const id = `${script.spriteId}-${Date.now()}-${Math.random()}`;
+        const controller = new AbortController();
+        this.runningScripts.set(id, controller);
+        vmLog.info(`Script registered: ${id}`);
+
+        const context: VMContext = {
+            sprite,
+            isRunning: true,
+            keysPressed: this.keysPressed,
+            mouseX: this.mouseX,
+            mouseY: this.mouseY,
+            stopAll: () => this.stopAll(),
+        };
+
+        try {
+            vmLog.info(`Executing ${script.steps.length} steps for sprite: ${sprite.name}`);
+            await this.executeSteps(script.steps, context, controller.signal);
+            vmLog.info('Script completed successfully');
+        } catch (e) {
+            if ((e as Error).name !== 'AbortError') {
+                vmLog.error('Script execution error', e);
+            } else {
+                vmLog.info('Script aborted');
+            }
+        } finally {
+            this.runningScripts.delete(id);
+            vmLog.info(`Script removed: ${id}`);
+        }
+    }
+
+    private async executeSteps(steps: ScriptStep[], ctx: VMContext, signal: AbortSignal): Promise<void> {
+        vmLog.info(`executeSteps: ${steps.length} steps`);
+        for (let i = 0; i < steps.length; i++) {
+            if (signal.aborted || !this.isRunning) {
+                vmLog.info(`Execution interrupted at step ${i}`);
+                throw new DOMException('Aborted', 'AbortError');
+            }
+            vmLog.step(`[${i + 1}/${steps.length}] ${steps[i].type}`);
+            await this.executeStep(steps[i], ctx, signal);
+        }
+        vmLog.info('All steps completed');
+    }
+
+    private async executeStep(step: ScriptStep, ctx: VMContext, signal: AbortSignal): Promise<void> {
+        const { sprite } = ctx;
+        console.log('[AnimationVM] Executing step:', step.type, step);
+
+        switch (step.type) {
+            case 'move_steps':
+                console.log('[AnimationVM]   → move', step.steps, 'steps, sprite at', sprite.x, sprite.y);
+                sprite.move(step.steps);
+                console.log('[AnimationVM]   → sprite now at', sprite.x, sprite.y);
+                break;
+
+            case 'turn_right':
+                sprite.turnRight(step.degrees);
+                break;
+
+            case 'turn_left':
+                sprite.turnLeft(step.degrees);
+                break;
+
+            case 'go_to_xy':
+                sprite.goTo(step.x, step.y);
+                break;
+
+            case 'glide_to_xy':
+                sprite.startGlide(step.x, step.y, step.secs);
+                await this.waitForGlide(sprite, signal);
+                break;
+
+            case 'point_direction':
+                sprite.pointInDirection(step.direction);
+                break;
+
+            case 'change_x':
+                sprite.changeX(step.dx);
+                break;
+
+            case 'change_y':
+                sprite.changeY(step.dy);
+                break;
+
+            case 'set_x':
+                sprite.setX(step.x);
+                break;
+
+            case 'set_y':
+                sprite.setY(step.y);
+                break;
+
+            case 'say':
+                sprite.say(step.message);
+                break;
+
+            case 'say_for_secs':
+                sprite.say(step.message, step.secs);
+                await this.sleep(step.secs * 1000, signal);
+                break;
+
+            case 'show':
+                sprite.show();
+                break;
+
+            case 'hide':
+                sprite.hide();
+                break;
+
+            case 'next_costume':
+                sprite.nextCostume();
+                break;
+
+            case 'set_size':
+                sprite.setSize(step.size);
+                break;
+
+            case 'change_size':
+                sprite.changeSize(step.change);
+                break;
+
+            case 'set_effect':
+                sprite.setEffect(step.effect, step.value);
+                break;
+
+            case 'clear_effects':
+                sprite.clearEffects();
+                break;
+
+            // New Looks blocks
+            case 'think':
+                sprite.think(step.message);
+                break;
+
+            case 'think_for_secs':
+                sprite.think(step.message, step.secs);
+                await this.sleep(step.secs * 1000, signal);
+                break;
+
+            case 'switch_costume':
+                sprite.switchCostume(step.costume);
+                break;
+
+            case 'switch_backdrop':
+                // TODO: Implement backdrop switching on stage
+                console.log('[AnimationVM] switch_backdrop not yet implemented');
+                break;
+
+            case 'next_backdrop':
+                // TODO: Implement next backdrop on stage
+                console.log('[AnimationVM] next_backdrop not yet implemented');
+                break;
+
+            case 'go_to_layer':
+                sprite.goToLayer(step.layer);
+                break;
+
+            case 'go_forward_layers':
+                sprite.goForwardLayers(step.direction, step.layers);
+                break;
+
+            // Control blocks
+            case 'wait':
+                await this.sleep(step.secs * 1000, signal);
+                break;
+
+            case 'repeat':
+                for (let i = 0; i < step.times; i++) {
+                    if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+                    await this.executeSteps(step.body, ctx, signal);
+                }
+                break;
+
+            case 'forever':
+                while (!signal.aborted && this.isRunning) {
+                    await this.executeSteps(step.body, ctx, signal);
+                    await this.sleep(16, signal); // ~60fps yield
+                }
+                break;
+
+            case 'if':
+                if (step.condition()) {
+                    await this.executeSteps(step.body, ctx, signal);
+                }
+                break;
+
+            case 'if_else':
+                if (step.condition()) {
+                    await this.executeSteps(step.body, ctx, signal);
+                } else {
+                    await this.executeSteps(step.elseBody, ctx, signal);
+                }
+                break;
+
+            case 'wait_until':
+                while (!step.condition() && !signal.aborted && this.isRunning) {
+                    await this.sleep(16, signal);
+                }
+                break;
+
+            case 'repeat_until':
+                while (!step.condition() && !signal.aborted && this.isRunning) {
+                    await this.executeSteps(step.body, ctx, signal);
+                    await this.sleep(16, signal);
+                }
+                break;
+
+            case 'stop_all':
+                this.stopAll();
+                break;
+
+            case 'stop_this_script':
+                throw new DOMException('Aborted', 'AbortError');
+
+            case 'create_clone':
+                // TODO: Implement cloning
+                console.log('[AnimationVM] create_clone not yet implemented');
+                break;
+
+            case 'delete_clone':
+                // TODO: Implement clone deletion
+                console.log('[AnimationVM] delete_clone not yet implemented');
+                break;
+
+            // Event blocks
+            case 'broadcast':
+                this.triggerBroadcast(step.message);
+                break;
+
+            case 'broadcast_wait':
+                await this.triggerBroadcastAndWait(step.message);
+                break;
+
+            // Sound blocks
+            case 'play_sound':
+                this.audioManager.playSound(step.sound);
+                break;
+
+            case 'play_sound_until_done':
+                await this.audioManager.playSoundUntilDone(step.sound);
+                break;
+
+            case 'stop_all_sounds':
+                this.audioManager.stopAllSounds();
+                break;
+
+            case 'set_volume':
+                this.audioManager.setVolume(step.volume);
+                break;
+
+            case 'change_volume':
+                this.audioManager.changeVolume(step.change);
+                break;
+
+            // Sensing blocks
+            case 'ask':
+                await this.askQuestion(step.question, sprite);
+                break;
+
+            case 'reset_timer':
+                this.resetTimer();
+                break;
+
+            // Hardware blocks
+            case 'hw_set_digital':
+                await hardwareAdapter.setDigitalPin(step.pin, step.value);
+                break;
+
+            case 'hw_set_led':
+                await hardwareAdapter.setBuiltinLED(step.on);
+                break;
+
+            case 'hw_set_pwm':
+                await hardwareAdapter.setPWM(step.pin, step.value);
+                break;
+
+            case 'hw_set_servo':
+                await hardwareAdapter.setServo(step.pin, step.angle);
+                break;
+
+            case 'hw_set_motor':
+                await hardwareAdapter.setMotor(step.motor, step.speed);
+                break;
+
+            case 'hw_stop_motors':
+                await hardwareAdapter.stopMotors();
+                break;
+
+            case 'hw_play_tone':
+                await hardwareAdapter.playTone(step.pin, step.freq, step.duration);
+                break;
+
+            case 'hw_stop_tone':
+                await hardwareAdapter.stopTone(step.pin);
+                break;
+        }
+    }
+
+    private sleep(ms: number, signal: AbortSignal): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(resolve, ms);
+            signal.addEventListener('abort', () => {
+                clearTimeout(timeout);
+                reject(new DOMException('Aborted', 'AbortError'));
+            });
+        });
+    }
+
+    private async waitForGlide(sprite: Sprite, signal: AbortSignal): Promise<void> {
+        while (sprite.isGliding && !signal.aborted) {
+            await this.sleep(16, signal);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SENSING
+    // ═══════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════════
+    // SENSING
+    // ═══════════════════════════════════════════════════════════════════════
+    isKeyPressed(key: string): boolean {
+        if (key === 'space') return this.keysPressed.has(' ');
+        if (key === 'any') return this.keysPressed.size > 0;
+        return this.keysPressed.has(key);
+    }
+
+    isMouseDown(): boolean {
+        // TODO: Implement actual mouse down state tracking
+        return false;
+    }
+
+    getMouseX(): number {
+        return this.mouseX;
+    }
+
+    getMouseY(): number {
+        return this.mouseY;
+    }
+
+    updateMousePosition(x: number, y: number): void {
+        this.mouseX = x;
+        this.mouseY = y;
+    }
+
+    getDistanceTo(target: string, fromSpriteId: string): number {
+        const fromSprite = this.sprites.get(fromSpriteId);
+        if (!fromSprite) return 0;
+
+        let targetX = 0;
+        let targetY = 0;
+
+        if (target === '_mouse_') {
+            targetX = this.mouseX;
+            targetY = this.mouseY;
+        } else {
+            const targetSprite = this.sprites.get(target);
+            if (!targetSprite) return 0;
+            targetX = targetSprite.x;
+            targetY = targetSprite.y;
+        }
+
+        const dx = targetX - fromSprite.x;
+        const dy = targetY - fromSprite.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    isTouching(target: string, fromSpriteId: string): boolean {
+        const fromSprite = this.sprites.get(fromSpriteId);
+        if (!fromSprite) return false;
+
+        if (target === '_mouse_') {
+            // Simple point-in-rect check for mouse
+            // Assuming default size 40x40 roughly for now, should use bounding box
+            const halfSize = (fromSprite.size / 100) * 20;
+            return Math.abs(this.mouseX - fromSprite.x) < halfSize &&
+                Math.abs(this.mouseY - fromSprite.y) < halfSize;
+        } else if (target === '_edge_') {
+            const w = 320 / 2; // stage half width
+            const h = 240 / 2; // stage half height
+            return Math.abs(fromSprite.x) >= w || Math.abs(fromSprite.y) >= h;
+        }
+
+        // TODO: Implement sprite-to-sprite collision
+        return false;
+    }
+
+    isTouchingColor(color: string, fromSpriteId: string): boolean {
+        // TODO: Implement color collision
+        return false;
+    }
+
+    isColorTouchingColor(color1: string, color2: string, fromSpriteId: string): boolean {
+        // TODO: Implement color-color collision
+        return false;
+    }
+
+    getLoudness(): number {
+        // TODO: Implement microphone access
+        return -1;
+    }
+
+    getUsername(): string {
+        return 'User';
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // TIME & DATE
+    // ═══════════════════════════════════════════════════════════════════════
+    getDaysSince2000(): number {
+        const now = new Date();
+        const start = new Date(2000, 0, 1);
+        const diff = now.getTime() - start.getTime();
+        return diff / (1000 * 60 * 60 * 24);
+    }
+
+    getCurrentTime(unit: 'year' | 'month' | 'date' | 'dayofweek' | 'hour' | 'minute' | 'second'): number {
+        const now = new Date();
+        switch (unit) {
+            case 'year': return now.getFullYear();
+            case 'month': return now.getMonth() + 1;
+            case 'date': return now.getDate();
+            case 'dayofweek': return now.getDay() + 1;
+            case 'hour': return now.getHours();
+            case 'minute': return now.getMinutes();
+            case 'second': return now.getSeconds();
+            default: return 0;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // TIMER
+    // ═══════════════════════════════════════════════════════════════════════
+    resetTimer(): void {
+        this.timerStart = Date.now();
+    }
+
+    getTimer(): number {
+        return (Date.now() - this.timerStart) / 1000;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // BROADCAST
+    // ═══════════════════════════════════════════════════════════════════════
+    triggerBroadcast(message: string): void {
+        console.log(`[AnimationVM] Broadcasting: ${message}`);
+        // TODO: Trigger scripts with "when I receive" for this message
+    }
+
+    async triggerBroadcastAndWait(message: string): Promise<void> {
+        console.log(`[AnimationVM] Broadcasting and waiting: ${message}`);
+        // TODO: Wait for all triggered scripts to complete
+        await new Promise(resolve => setTimeout(resolve, 10));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ASK/ANSWER
+    // ═══════════════════════════════════════════════════════════════════════
+    async askQuestion(question: string, sprite: Sprite): Promise<void> {
+        // Show the question in a speech bubble
+        sprite.say(question);
+
+        // In a full implementation, this would show an input field on the stage
+        // For now, use a browser prompt as a placeholder
+        // Use a small delay to ensure UI updates before alert/prompt blocks main thread
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        try {
+            const answer = window.prompt(question) || '';
+            this.currentAnswer = answer;
+        } catch (e) {
+            console.error('Prompt failed', e);
+        }
+
+        sprite.clearSay();
+    }
+
+    getAnswer(): string {
+        return this.currentAnswer;
+    }
+}
+
+// Singleton instance
+export const animationVM = new AnimationVM();
+

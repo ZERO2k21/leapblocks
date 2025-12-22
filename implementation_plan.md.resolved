@@ -1,0 +1,317 @@
+# LeetBlocks - Complete PictoBlox Clone
+
+A comprehensive implementation plan for creating a full-featured PictoBlox clone.
+
+---
+
+## 📊 PictoBlox Feature Analysis
+
+Based on the home screen, PictoBlox offers **6 major modes**:
+
+![PictoBlox Home Screen](uploaded_image_1766135642252.png)
+
+### Main Modes (From Screenshot)
+
+| Mode | Age | Description | Status in LeetBlocks |
+|------|-----|-------------|---------------------|
+| **Junior Blocks** | 4+ | Simplified drag-drop blocks | ❌ Not Started |
+| **Blocks** | 7+ | Full Scratch-like blocks | 🟡 Partial |
+| **Py Editor** | 12+ | Python text editor | ❌ Not Started |
+| **Py Notebook** | 12+ | Jupyter-style notebook | ❌ Not Started |
+| **Machine Learning** | 12+ | Train ML models | ❌ Not Started |
+| **3D and XR Studio** | 12+ | AR/VR/3D environment | ❌ Not Started |
+
+---
+
+## 🔧 Implementation Roadmap
+
+### Phase 1: Core IDE (Current State = ~40%)
+
+**What LeetBlocks Already Has:**
+- [x] Electron + React + Blockly foundation
+- [x] Stage Mode with sprite/stage canvas
+- [x] Upload Mode with Arduino code generation
+- [x] Basic block categories (Events, Motion, Looks, Sound, Control, Sensing, Operators, Variables, My Blocks)
+- [x] Hardware connection UI (port select, connect)
+- [x] Serial monitor
+
+**What Needs to Be Added:**
+
+#### 1.1 Home/Welcome Screen
+```
+┌─────────────────────────────────────────────────┐
+│            What would you like to do?            │
+├────────────────────┬────────────────────────────┤
+│   Block Coding     │      Python Coding         │
+│  ┌────┐  ┌────┐   │   ┌────┐    ┌────┐        │
+│  │ JR │  │BLKS│   │   │ PY │    │ NB │        │
+│  └────┘  └────┘   │   └────┘    └────┘        │
+│  Junior   Blocks   │  Py Editor  Py Notebook   │
+├────────────────────┴────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────────┐  │
+│  │   ML Studio     │  │   3D/XR Studio      │  │
+│  └─────────────────┘  └─────────────────────┘  │
+└─────────────────────────────────────────────────┘
+```
+
+#### 1.2 Project Management
+- [ ] New/Open/Save projects (.sb3 compatible format)
+- [ ] Recent projects list
+- [ ] Project templates
+- [ ] Export as executable
+
+---
+
+### Phase 2: Block Coding Mode (Current = ~60%)
+
+#### 2.1 Block Categories (Complete List)
+
+| Category | Color | Blocks Needed | Status |
+|----------|-------|---------------|--------|
+| **Motion** | #4C97FF | 18 blocks | ✅ Done |
+| **Looks** | #9966FF | 20 blocks | 🟡 ~50% |
+| **Sound** | #CF63CF | 12 blocks | 🟡 Defined |
+| **Events** | #FFBF00 | 8 blocks | 🟡 ~40% |
+| **Control** | #FFAB19 | 11 blocks | 🟡 ~50% |
+| **Sensing** | #5CB1D6 | 18 blocks | 🟡 ~30% |
+| **Operators** | #59C059 | 17 blocks | ✅ Defined |
+| **Variables** | #FF8C1A | 10 blocks | 🟡 Partial |
+| **My Blocks** | #FF6680 | Custom | 🟡 Basic |
+
+#### 2.2 Missing Blocks to Add
+
+**Events (Missing):**
+- `when backdrop switches to [__]`
+- `when [loudness/timer] > [10]`
+- `broadcast [message]`
+- `broadcast [message] and wait`
+- `when I receive [message]`
+
+**Looks (Missing):**
+- `think [message] for [2] seconds`
+- `think [message]`
+- `switch costume to [__]`
+- `switch backdrop to [__]`
+- `switch backdrop to [__] and wait`
+- `next backdrop`
+- `go to [front/back] layer`
+- `go [forward/backward] [1] layers`
+
+**Control (Missing):**
+- `if <> then / else`
+- `wait until <>`
+- `repeat until <>`
+- `create clone of [myself]`
+- `when I start as a clone`
+- `delete this clone`
+
+**Sensing (Missing):**
+- `touching color [color]?`
+- `color [color] is touching [color]?`
+- `distance to [sprite/mouse]`
+- `ask [question] and wait`
+- `answer` (reporter)
+- `loudness` (reporter)
+- `days since 2000`
+- `username`
+
+#### 2.3 Stage & Sprites (Complete Implementation)
+
+**Sprite Features:**
+- [ ] Sprite library (100+ built-in sprites)
+- [ ] Paint editor for custom sprites
+- [ ] Upload sprite from file
+- [ ] Camera capture for sprite
+- [ ] Sprite info panel (x, y, direction, size)
+- [ ] Drag-and-drop sprites on stage
+- [ ] Layer ordering (front/back)
+- [ ] Clone support
+
+**Stage Features:**
+- [ ] Backdrop library (50+ backdrops)
+- [ ] Paint editor for backdrops
+- [ ] Upload backdrop
+- [ ] Stage coordinate system (-240 to 240, -180 to 180)
+- [ ] Full-screen presentation mode
+
+#### 2.4 Costume & Sound Editor
+
+**Paint Editor:**
+- [ ] Bitmap mode
+- [ ] Vector mode
+- [ ] Drawing tools (brush, line, circle, rectangle, fill, text)
+- [ ] Color picker
+- [ ] Layers
+- [ ] Undo/Redo
+
+**Sound Editor:**
+- [ ] Record from microphone
+- [ ] Upload sound file
+- [ ] Sound library
+- [ ] Waveform display
+- [ ] Effects (faster, slower, reverse, echo)
+- [ ] Trim/cut
+
+---
+
+### Phase 3: Hardware Integration (Current = ~50%)
+
+#### 3.1 Supported Boards
+
+| Board | Stage Mode | Upload Mode | Priority |
+|-------|------------|-------------|----------|
+| Arduino Uno | ✅ | ✅ | High |
+| Arduino Nano | ❌ | ❌ | High |
+| Arduino Mega | ❌ | ❌ | Medium |
+| ESP32 | ❌ | ❌ | High |
+| ESP8266 | ❌ | ❌ | Medium |
+
+#### 3.2 Hardware Blocks (Upload Mode)
+
+| Category | Blocks |
+|----------|--------|
+| **Digital** | pinMode, digitalWrite, digitalRead |
+| **Analog** | analogRead, analogWrite (PWM) |
+| **Timing** | delay, millis, micros |
+| **Serial** | Serial.begin, print, println, read |
+| **Servo** | attach, write, read |
+| **Motor** | DC motor control, stepper |
+| **Display** | LCD, LED matrix, 7-segment |
+| **Sensors** | Ultrasonic, IR, Temperature, Light |
+
+#### 3.3 Stage Mode Protocol
+- [ ] Real-time command protocol (already started)
+- [ ] Sensor value streaming
+- [ ] Motor/servo control
+- [ ] LED/display control
+
+---
+
+### Phase 4: Machine Learning Environment
+
+This is a major feature requiring a dedicated studio.
+
+#### 4.1 ML Model Types
+
+| Model Type | Description | Complexity |
+|------------|-------------|------------|
+| **Image Classifier** | Categorize images | Medium |
+| **Object Detection** | Detect objects in image | High |
+| **Pose Classifier** | Classify body poses (17 points) | High |
+| **Hand Pose Classifier** | Hand gestures (21 points) | High |
+| **Audio Classifier** | Classify sounds | Medium |
+| **Text Classifier** | Sentiment/topic analysis | Medium |
+| **Number Classifier** | Numeric data classification | Low |
+
+#### 4.2 ML Workflow
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  Collect    │ -> │   Train     │ -> │   Test      │ -> │   Export    │
+│   Data      │    │   Model     │    │   Model     │    │  & Use      │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
+
+#### 4.3 Implementation Approach
+- Use TensorFlow.js for browser-based training
+- Pre-trained models (MobileNet, PoseNet, MediaPipe)
+- Transfer learning for custom classifiers
+- Export models for use in block coding
+
+---
+
+### Phase 5: Python Editor
+
+#### 5.1 Features
+- [ ] Syntax highlighting
+- [ ] Auto-complete
+- [ ] Error highlighting
+- [ ] Line numbers
+- [ ] Code folding
+- [ ] Multiple tabs
+- [ ] Console output panel
+- [ ] Run/Stop buttons
+
+#### 5.2 Python Libraries Support
+- `pictoBlox` - Hardware control
+- `time`, `random`, `math`
+- `numpy`, `pandas` (for ML)
+- `cv2` (OpenCV for vision)
+
+#### 5.3 Implementation
+- Use Monaco Editor (VS Code's editor)
+- Python execution via Pyodide (WASM) or backend server
+
+---
+
+### Phase 6: 3D/XR Studio (Advanced)
+
+#### 6.1 Features
+- [ ] 3D model creation/import
+- [ ] Scene editor
+- [ ] Lighting and cameras
+- [ ] Animation timeline
+- [ ] AR markers
+- [ ] VR preview
+- [ ] Physics engine
+
+#### 6.2 Implementation
+- Three.js for 3D rendering
+- AR.js for augmented reality
+- A-Frame for VR
+
+---
+
+## 📋 Priority Implementation Order
+
+### Priority 1 (Next Steps)
+1. **Home Screen** - Mode selection interface
+2. **Complete Block Categories** - All missing blocks
+3. **Sprite/Backdrop Library** - Built-in assets
+4. **Paint Editor** - Basic drawing tools
+5. **Sound System** - Audio playback
+
+### Priority 2 (Hardware)
+6. **Multi-board Support** - ESP32, Nano, Mega
+7. **Enhanced Stage Mode** - Real-time sensor display
+8. **Firmware Manager** - One-click firmware upload
+
+### Priority 3 (Python)
+9. **Python Editor** - Monaco-based editor
+10. **Python Execution** - Run Python code
+11. **Block-to-Python** - Convert blocks to Python
+
+### Priority 4 (ML)
+12. **ML Environment** - Training interface
+13. **Image Classifier** - First ML model
+14. **Camera Integration** - Webcam access
+
+### Priority 5 (Advanced)
+15. **3D Studio** - Three.js environment
+16. **AR Features** - Marker tracking
+17. **VR Preview** - WebXR support
+
+---
+
+## 🧪 Verification Plan
+
+### Automated Tests (To Be Created)
+- Block registration tests
+- Code generation tests
+- Compilation tests for Arduino
+
+### Manual Testing
+1. **Block Coding**: Create a simple animation project
+2. **Hardware**: Connect Arduino, run Stage mode
+3. **Python**: Run a simple Python script
+4. **ML**: Train and test image classifier
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> This is a very large scope project. Please review the priorities and let me know:
+> 1. Which features are most important to you?
+> 2. Should I focus on completing Block Coding first, or start on Python/ML?
+> 3. Any specific hardware boards to prioritize?
+> 4. Do you want the Junior Blocks (simplified) mode?
