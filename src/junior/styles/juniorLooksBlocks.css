@@ -1,0 +1,38 @@
+/* Shared puzzle shape refinement for looks */
+.blocklyBlock[data-category="looks"] .blocklyPath {
+    stroke: #7B44C7;
+    stroke-width: 1px;
+}
+
+/* Purple look blocks */
+.blocklyBlock[data-category="looks"] .blocklyBlockBackground {
+    fill: #9B5DE5 !important;
+    stroke: #7B44C7 !important;
+    filter: drop-shadow(0 4px 0 #7B44C7);
+}
+
+/* Text */
+.blocklyBlock[data-category="looks"] text.blocklyText {
+    fill: #ffffff !important;
+    font-weight: 700;
+    font-family: "Segoe UI", sans-serif;
+}
+
+/* White form fields (Text Input, Number, Dropdown) */
+.blocklyBlock[data-category="looks"] .blocklyEditableText>rect {
+    fill: white !important;
+    rx: 14;
+    ry: 14;
+    stroke: none;
+}
+
+/* Text inside fields should be purple */
+.blocklyBlock[data-category="looks"] .blocklyEditableText>text.blocklyText {
+    fill: #5A2D82 !important;
+    font-weight: 700;
+}
+
+/* Dropdown arrow */
+.blocklyBlock[data-category="looks"] .blocklyDropdownText {
+    fill: #5A2D82 !important;
+}

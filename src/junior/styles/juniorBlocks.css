@@ -1,0 +1,140 @@
+/* Rounded blue block body */
+.blocklySvg .blocklyBlockBackground {
+    rx: 18 !important;
+    ry: 18 !important;
+    fill: #5FA8F5 !important;
+    filter: drop-shadow(0 4px 0 #3F7DC1);
+}
+
+/* Block text */
+.blocklyText {
+    font-size: 14px;
+    font-weight: 700;
+    fill: #ffffff !important;
+}
+
+/* Icon spacing */
+.blocklySvg image,
+.blocklySvg .blocklyText:first-child {
+    margin-right: 6px;
+}
+
+/* White number pill (Targeting standard Blockly editable fields) */
+.blocklyEditableText>rect {
+    fill: #FFFFFF !important;
+    stroke: none !important;
+    rx: 14px !important;
+    ry: 14px !important;
+    fill-opacity: 1 !important;
+    stroke-width: 0 !important;
+}
+
+.blocklyEditableText:hover>rect {
+    stroke: #ddd !important;
+    stroke-width: 2px !important;
+}
+
+/* FORCE BLACK TEXT for Number Fields */
+.blocklyEditableText>text,
+.blocklyEditableText>text.blocklyText,
+.blocklyNonEditableText>text,
+.blocklyNonEditableText>text.blocklyText,
+g[class*="blocklyEditableText"]>text,
+g[class*="blocklyNonEditableText"]>text {
+    fill: #000000 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    font-family: 'Segoe UI', sans-serif !important;
+    transform: translateY(2px);
+}
+
+/* Ensure background rect is white for both editable and non-editable (flyout) */
+.blocklyEditableText>rect,
+.blocklyNonEditableText>rect {
+    fill: #FFFFFF !important;
+    stroke: none !important;
+    rx: 14px !important;
+    ry: 14px !important;
+    fill-opacity: 1 !important;
+    stroke-width: 0 !important;
+}
+
+/* Remove sharp outlines */
+.blocklyPath {
+    stroke-width: 0 !important;
+}
+
+/* Vertical spacing between blocks */
+.blocklyBlock {
+    margin-bottom: 10px;
+}
+
+/* ============================================
+   UNICODE ICON STYLES (PictoBlox-style)
+   ============================================ */
+
+/* Large block icon (40x40 equivalent) - Target SVG text */
+text.blocklyText.junior-block-icon,
+.blocklySvg text.junior-block-icon,
+.blocklyFlyout text.junior-block-icon {
+    font-size: 32px !important;
+    fill: white !important;
+    font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif !important;
+    dominant-baseline: middle !important;
+}
+
+/* Large lookup icon */
+text.blocklyText.junior-icon-large,
+.blocklySvg text.junior-icon-large,
+.blocklyFlyout text.junior-icon-large {
+    font-size: 28px !important;
+    fill: white !important;
+    font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif !important;
+}
+
+/* Small icon (20x20 equivalent) */
+text.blocklyText.junior-icon,
+.blocklySvg text.junior-icon,
+.blocklyFlyout text.junior-icon {
+    font-size: 22px !important;
+    fill: white !important;
+    font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif !important;
+}
+
+/* Make all arrow/icon text in blocks larger and visible */
+.blocklySvg .blocklyText:first-child {
+    font-size: 28px !important;
+    fill: white !important;
+}
+
+/* ============================================
+   GRID STAGE STYLES (PictoBlox-style)
+   ============================================ */
+
+.grid-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: #f5f5f5;
+    background-image:
+        radial-gradient(circle, #ddd 1px, transparent 1px);
+    background-size: 20px 20px;
+    overflow: hidden;
+}
+
+.grid-axis {
+    position: absolute;
+    color: #999;
+    font-size: 10px;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.grid-axis-y {
+    left: -15px;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+}
+
+.grid-axis-x {
+    bottom: -15px;
+}

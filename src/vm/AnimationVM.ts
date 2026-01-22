@@ -41,10 +41,10 @@ export type ScriptStep =
     | { type: 'if_on_edge_bounce' }
     | { type: 'set_rotation_style'; style: 'left-right' | 'all around' | 'none' }
     // Looks
-    | { type: 'say'; message: string }
-    | { type: 'say_for_secs'; message: string; secs: number }
-    | { type: 'think'; message: string }
-    | { type: 'think_for_secs'; message: string; secs: number }
+    | { type: 'say'; message: string | (() => string) }
+    | { type: 'say_for_secs'; message: string | (() => string); secs: number }
+    | { type: 'think'; message: string | (() => string) }
+    | { type: 'think_for_secs'; message: string | (() => string); secs: number }
     | { type: 'show' }
     | { type: 'hide' }
     | { type: 'next_costume' }
@@ -77,7 +77,11 @@ export type ScriptStep =
     | { type: 'play_sound_until_done'; sound: string }
     | { type: 'stop_all_sounds' }
     | { type: 'set_volume'; volume: number }
+    | { type: 'set_volume'; volume: number }
     | { type: 'change_volume'; change: number }
+    | { type: 'set_sound_effect'; effect: 'pitch' | 'pan'; value: number }
+    | { type: 'change_sound_effect'; effect: 'pitch' | 'pan'; value: number }
+    | { type: 'clear_sound_effects' }
     // Sensing
     | { type: 'ask'; question: string }
     | { type: 'reset_timer' }
@@ -89,7 +93,20 @@ export type ScriptStep =
     | { type: 'hw_set_motor'; motor: number; speed: number }
     | { type: 'hw_stop_motors' }
     | { type: 'hw_play_tone'; pin: number; freq: number; duration: number }
-    | { type: 'hw_stop_tone'; pin: number };
+    | { type: 'hw_stop_tone'; pin: number }
+    // Variable
+    | { type: 'data_setvariableto'; variable: string; value: () => number | string }
+    | { type: 'data_changevariableby'; variable: string; value: () => number }
+    | { type: 'data_showvariable'; variable: string }
+    | { type: 'data_hidevariable'; variable: string }
+    // List
+    | { type: 'list_add'; list: string; item: () => string }
+    | { type: 'list_delete'; list: string; index: () => number }
+    | { type: 'list_delete_all'; list: string }
+    | { type: 'list_insert'; list: string; index: () => number; item: () => string }
+    | { type: 'list_replace'; list: string; index: () => number; item: () => string }
+    | { type: 'list_show'; list: string }
+    | { type: 'list_hide'; list: string };
 
 // Logging utility for AnimationVM
 const vmLog = {
@@ -142,7 +159,89 @@ export class AnimationVM {
             this.volume = Math.max(0, Math.min(100, this.volume + delta));
         },
         getVolume: () => this.volume,
+        setEffect: (effect: 'pitch' | 'pan', value: number) => {
+            vmLog.step('set_sound_effect', { effect, value });
+            // TODO: Implement actual WebAudio effects
+        },
+        changeEffect: (effect: 'pitch' | 'pan', delta: number) => {
+            vmLog.step('change_sound_effect', { effect, delta });
+            // TODO: Implement actual WebAudio effects
+        },
+        clearEffects: () => {
+            vmLog.step('clear_sound_effects');
+            // TODO: Clear WebAudio effects
+        },
     };
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // VARIABLES
+    // ═══════════════════════════════════════════════════════════════════════
+    private variables: Map<string, number | string> = new Map();
+
+    getVariable(name: string): number | string {
+        return this.variables.get(name) ?? 0;
+    }
+
+    setVariable(name: string, value: number | string): void {
+        this.variables.set(name, value);
+        vmLog.step('set_variable', { name, value });
+    }
+
+    changeVariable(name: string, delta: number): void {
+        const current = this.getVariable(name);
+        const currentNum = Number(current);
+        if (!isNaN(currentNum)) {
+            this.variables.set(name, currentNum + delta);
+            vmLog.step('change_variable', { name, delta, newValue: currentNum + delta });
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // LISTS
+    // ═══════════════════════════════════════════════════════════════════════
+    private lists: Map<string, Array<string | number>> = new Map();
+
+    getList(name: string): Array<string | number> {
+        if (!this.lists.has(name)) {
+            this.lists.set(name, []);
+        }
+        return this.lists.get(name)!;
+    }
+
+    getListLength(name: string): number {
+        return this.getList(name).length;
+    }
+
+    getListItem(name: string, index: number): string {
+        const list = this.getList(name);
+        // Scratch uses 1-based indexing. 'last' is also supported but I'll stick to numeric for now.
+        // TODO: Handle 'last', 'random' string inputs if block allows them.
+        // My block definition uses 'math_number' for index, so usually 1-based integer.
+        if (index < 1 || index > list.length) return '';
+        return String(list[index - 1]);
+    }
+
+    getListItemNum(name: string, item: string): number {
+        const list = this.getList(name);
+        // Returns 0 if not found (Scratch behavior?) - Scratch returns 0.
+        // Note: list items can be numbers. loose comparison? Scratch is loose.
+        const idx = list.findIndex(i => String(i) === item);
+        return idx + 1; // 0 if not found (-1 + 1)
+    }
+
+    listContains(name: string, item: string): boolean {
+        const list = this.getList(name);
+        return list.some(i => String(i) === item);
+    }
+
+    getListContents(name: string): string {
+        const list = this.getList(name);
+        // Scratch returns space-separated (if single chars) or nothing?
+        // Actually for debug reporters it usually shows the list content.
+        // For 'list' block reporter, it returns the stringified list.
+        // Scratch standard: Join with spaces.
+        return list.join(' ');
+    }
 
 
 
@@ -331,11 +430,11 @@ export class AnimationVM {
                 break;
 
             case 'say':
-                sprite.say(step.message);
+                sprite.say(typeof step.message === 'function' ? step.message() : step.message);
                 break;
 
             case 'say_for_secs':
-                sprite.say(step.message, step.secs);
+                sprite.say(typeof step.message === 'function' ? step.message() : step.message, step.secs);
                 await this.sleep(step.secs * 1000, signal);
                 break;
 
@@ -369,11 +468,11 @@ export class AnimationVM {
 
             // New Looks blocks
             case 'think':
-                sprite.think(step.message);
+                sprite.think(typeof step.message === 'function' ? step.message() : step.message);
                 break;
 
             case 'think_for_secs':
-                sprite.think(step.message, step.secs);
+                sprite.think(typeof step.message === 'function' ? step.message() : step.message, step.secs);
                 await this.sleep(step.secs * 1000, signal);
                 break;
 
@@ -492,6 +591,18 @@ export class AnimationVM {
                 this.audioManager.changeVolume(step.change);
                 break;
 
+            case 'set_sound_effect':
+                this.audioManager.setEffect(step.effect, step.value);
+                break;
+
+            case 'change_sound_effect':
+                this.audioManager.changeEffect(step.effect, step.value);
+                break;
+
+            case 'clear_sound_effects':
+                this.audioManager.clearEffects();
+                break;
+
             // Sensing blocks
             case 'ask':
                 await this.askQuestion(step.question, sprite);
@@ -532,6 +643,75 @@ export class AnimationVM {
 
             case 'hw_stop_tone':
                 await hardwareAdapter.stopTone(step.pin);
+                break;
+
+            // Variable blocks
+            case 'data_setvariableto':
+                this.setVariable(step.variable, step.value());
+                break;
+
+            case 'data_changevariableby':
+                this.changeVariable(step.variable, step.value());
+                break;
+
+            case 'data_showvariable':
+                // TODO: Show variable monitor on stage
+                console.log(`[AnimationVM] Show variable: ${step.variable} = ${this.getVariable(step.variable)}`);
+                break;
+
+            case 'data_hidevariable':
+                // TODO: Hide variable monitor on stage
+                console.log(`[AnimationVM] Hide variable: ${step.variable}`);
+                break;
+
+            // List blocks
+            case 'list_add': {
+                const list = this.getList(step.list);
+                list.push(step.item());
+                vmLog.step('list_add', { list: step.list, item: step.item() });
+                break;
+            }
+            case 'list_delete': {
+                const list = this.getList(step.list);
+                const idx = step.index();
+                if (idx >= 1 && idx <= list.length) {
+                    list.splice(idx - 1, 1);
+                    vmLog.step('list_delete', { list: step.list, index: idx });
+                }
+                break;
+            }
+            case 'list_delete_all': {
+                this.lists.set(step.list, []);
+                vmLog.step('list_delete_all', { list: step.list });
+                break;
+            }
+            case 'list_insert': {
+                const list = this.getList(step.list);
+                const idx = step.index();
+                const item = step.item();
+                if (idx >= 1 && idx <= list.length + 1) {
+                    list.splice(idx - 1, 0, item);
+                    vmLog.step('list_insert', { list: step.list, index: idx, item });
+                }
+                break;
+            }
+            case 'list_replace': {
+                const list = this.getList(step.list);
+                const idx = step.index();
+                const item = step.item();
+                if (idx >= 1 && idx <= list.length) {
+                    list[idx - 1] = item;
+                    vmLog.step('list_replace', { list: step.list, index: idx, item });
+                }
+                break;
+            }
+            case 'list_show':
+                // TODO: Monitor UI
+                console.log(`[AnimationVM] Show list: ${step.list}`);
+                break;
+            case 'list_hide':
+                // TODO: Monitor UI
+                console.log(`[AnimationVM] Hide list: ${step.list}`);
                 break;
         }
     }

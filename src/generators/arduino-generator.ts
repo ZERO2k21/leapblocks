@@ -19,18 +19,46 @@ const ORDER_LOGICAL_AND = 7;
 const ORDER_LOGICAL_OR = 8;
 const ORDER_NONE = 99;
 
+// Block scrubbing (concatenation)
+arduinoGenerator.scrub_ = function (block: Blockly.Block, code: string, thisOnly?: boolean) {
+    const nextBlock = block.nextConnection && block.nextConnection.targetBlock();
+    if (nextBlock && !thisOnly) {
+        return code + this.blockToCode(nextBlock);
+    }
+    return code;
+};
+
+// Final code adjustments
+arduinoGenerator.finish = function (code: string) {
+    // If the code ends with a statement (like from open setup), close it.
+    // We check if the last significant char is '}'.
+    const trimmed = code.trim();
+    if (trimmed && trimmed.slice(-1) !== '}') {
+        return code + '\n}\n';
+    }
+    return code;
+};
+
 // ═══════════════════════════════════════════════════════════════════════════
 // EVENTS
 // ═══════════════════════════════════════════════════════════════════════════
 arduinoGenerator.forBlock['arduino_setup'] = function (block, generator) {
     log('arduino_setup', 'Generating');
-    return `void setup() {\n}\n\n`;
+    // Start setup function, leave it open for next statements
+    return `void setup() {\n`;
 };
 
 arduinoGenerator.forBlock['arduino_loop'] = function (block, generator) {
     const doCode = generator.statementToCode(block, 'DO') || '';
     log('arduino_loop', 'Generating', { innerLength: doCode.length });
-    return `void loop() {\n${doCode}}\n`;
+
+    let prefix = '';
+    // If attached to a previous block (likely setup chain), close the setup function first
+    if (block.previousConnection && block.previousConnection.isConnected()) {
+        prefix = '}\n\n';
+    }
+
+    return `${prefix}void loop() {\n${doCode}}\n`;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

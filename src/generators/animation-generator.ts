@@ -55,11 +55,93 @@ export class AnimationCompiler {
                 const value = Number(conditionBlock.getFieldValue('VALUE'));
                 if (sensor === 'loudness') return () => animationVM.getLoudness() > value;
                 if (sensor === 'timer') return () => animationVM.getTimer() > value;
+                if (sensor === 'timer') return () => animationVM.getTimer() > value;
                 return () => false;
+            }
+            case 'operator_contains': {
+                const str1 = String(conditionBlock.getFieldValue('STRING1'));
+                const str2 = String(conditionBlock.getFieldValue('STRING2'));
+                return () => str1.includes(str2);
+            }
+            case 'data_listcontainsitem': {
+                const list = this.getVariableName(conditionBlock);
+                const item = this.compileStringValue(conditionBlock, 'ITEM');
+                // Note: compileStringValue returns a closure, so we need to call it inside the returned closure
+                // Wait, compileStringValue returns () => string.
+                // compileCondition returns () => boolean.
+                // I need to bind compilation time `item` closure to runtime.
+                // Actually `item` here calls `this.compileStringValue` which traverses the tree.
+                // So `item` is `() => string`.
+                return () => animationVM.listContains(list, item());
             }
             default:
                 console.warn('[AnimationCompiler] Unknown condition block:', conditionBlock.type);
                 return () => false;
+        }
+    }
+
+    private getVariableId(block: Blockly.Block): string {
+        return block.getFieldValue('VARIABLE');
+    }
+
+    private getVariableName(block: Blockly.Block): string {
+        const id = this.getVariableId(block);
+        const ws = block.workspace;
+        const variable = ws.getVariableById(id);
+        return variable ? (variable as any).name : id;
+    }
+
+    // Compile a value input block into a runtime string/number function
+    private compileStringValue(block: Blockly.Block, inputName: string): () => string {
+        const input = block.getInput(inputName);
+        // If no input connection or target, try to get field value (for backward compat or direct fields)
+        if (!input || !input.connection || !input.connection.targetBlock()) {
+            return () => String(block.getFieldValue(inputName) || '');
+        }
+
+        const valueBlock = input.connection.targetBlock();
+        if (!valueBlock) return () => '';
+
+        switch (valueBlock.type) {
+            case 'text':
+                return () => String(valueBlock.getFieldValue('TEXT'));
+            case 'math_number':
+                return () => String(valueBlock.getFieldValue('NUM'));
+            case 'variables_get': {
+                const id = valueBlock.getFieldValue('VAR');
+                const ws = valueBlock.workspace;
+                const variable = ws.getVariableById(id);
+                const name = variable ? (variable as any).name : id;
+                return () => String(animationVM.getVariable(name));
+            }
+            case 'operator_join': {
+                const val1 = this.compileStringValue(valueBlock, 'STRING1');
+                const val2 = this.compileStringValue(valueBlock, 'STRING2');
+                return () => String(val1()) + String(val2());
+            }
+            case 'data_listcontents': {
+                const list = this.getVariableName(valueBlock);
+                return () => animationVM.getListContents(list);
+            }
+            case 'data_itemoflist': {
+                const list = this.getVariableName(valueBlock);
+                const idxFunc = this.compileNumberValue(valueBlock, 'INDEX');
+                return () => animationVM.getListItem(list, idxFunc());
+            }
+            case 'operator_letter_of': {
+                const letterFunc = () => Number(valueBlock.getFieldValue('LETTER'));
+                const stringFunc = () => String(valueBlock.getFieldValue('STRING'));
+                return () => {
+                    const idx = Math.floor(letterFunc());
+                    const str = stringFunc();
+                    return idx > 0 && idx <= str.length ? str[idx - 1] : '';
+                };
+            }
+            default: {
+                // Try compileNumberValue as fallback, convert to string
+                const numFunc = this.compileNumberValue(block, inputName);
+                return () => String(numFunc());
+            }
         }
     }
 
@@ -72,6 +154,8 @@ export class AnimationCompiler {
         if (!valueBlock) return () => 0;
 
         switch (valueBlock.type) {
+            case 'math_number':
+                return () => Number(valueBlock.getFieldValue('NUM'));
             case 'sensing_mouse_x':
                 return () => animationVM.getMouseX();
             case 'sensing_mouse_y':
@@ -115,6 +199,27 @@ export class AnimationCompiler {
             case 'sensing_current': {
                 const unit = valueBlock.getFieldValue('CURRENTMENU');
                 return () => animationVM.getCurrentTime(unit);
+            }
+            case 'variables_get': {
+                // Important: We need to get variable name by ID since that's how Blockly stores it
+                const id = valueBlock.getFieldValue('VAR');
+                const ws = valueBlock.workspace;
+                const variable = ws.getVariableById(id);
+                const name = variable ? (variable as any).name : id;
+                return () => Number(animationVM.getVariable(name)); // compileNumberValue forces return number
+            }
+            case 'operator_length': {
+                const stringFunc = () => String(valueBlock.getFieldValue('STRING'));
+                return () => stringFunc().length;
+            }
+            case 'data_lengthoflist': {
+                const list = this.getVariableName(valueBlock);
+                return () => animationVM.getListLength(list);
+            }
+            case 'data_itemnumoflist': {
+                const list = this.getVariableName(valueBlock);
+                const itemFunc = this.compileStringValue(valueBlock, 'ITEM');
+                return () => animationVM.getListItemNum(list, itemFunc());
             }
             default:
                 compilerLog.warn(`Unknown value block: ${valueBlock.type}`);
@@ -231,9 +336,9 @@ export class AnimationCompiler {
 
             // Looks
             case 'looks_say':
-                return { type: 'say', message: String(block.getFieldValue('MESSAGE')) };
+                return { type: 'say', message: this.compileStringValue(block, 'MESSAGE') };
             case 'looks_say_for_secs':
-                return { type: 'say_for_secs', message: String(block.getFieldValue('MESSAGE')), secs: Number(block.getFieldValue('SECS')) };
+                return { type: 'say_for_secs', message: this.compileStringValue(block, 'MESSAGE'), secs: Number(block.getFieldValue('SECS')) };
             case 'looks_show':
                 return { type: 'show' };
             case 'looks_hide':
@@ -250,9 +355,9 @@ export class AnimationCompiler {
                 return { type: 'clear_effects' };
             // New Looks blocks
             case 'looks_think':
-                return { type: 'think', message: String(block.getFieldValue('MESSAGE')) };
+                return { type: 'think', message: this.compileStringValue(block, 'MESSAGE') };
             case 'looks_think_for_secs':
-                return { type: 'think_for_secs', message: String(block.getFieldValue('MESSAGE')), secs: Number(block.getFieldValue('SECS')) };
+                return { type: 'think_for_secs', message: this.compileStringValue(block, 'MESSAGE'), secs: Number(block.getFieldValue('SECS')) };
             case 'looks_switch_costume':
                 return { type: 'switch_costume', costume: block.getFieldValue('COSTUME') };
             case 'looks_switch_backdrop':
@@ -307,7 +412,21 @@ export class AnimationCompiler {
             case 'sound_set_volume':
                 return { type: 'set_volume', volume: Number(block.getFieldValue('VOLUME')) };
             case 'sound_change_volume':
-                return { type: 'change_volume', change: Number(block.getFieldValue('CHANGE')) };
+                return { type: 'change_volume', change: Number(block.getFieldValue('VOLUME')) };
+            case 'sound_set_effect':
+                return {
+                    type: 'set_sound_effect',
+                    effect: block.getFieldValue('EFFECT') as 'pitch' | 'pan',
+                    value: Number(block.getFieldValue('VALUE'))
+                };
+            case 'sound_change_effect':
+                return {
+                    type: 'change_sound_effect',
+                    effect: block.getFieldValue('EFFECT') as 'pitch' | 'pan',
+                    value: Number(block.getFieldValue('VALUE'))
+                };
+            case 'sound_clear_effects':
+                return { type: 'clear_sound_effects' };
 
             // Sensing
             case 'sensing_ask':
@@ -332,6 +451,58 @@ export class AnimationCompiler {
                 return { type: 'hw_play_tone', pin: Number(block.getFieldValue('PIN')), freq: Number(block.getFieldValue('FREQ')), duration: Number(block.getFieldValue('DURATION')) };
             case 'hw_stop_tone':
                 return { type: 'hw_stop_tone', pin: Number(block.getFieldValue('PIN')) };
+
+            // Variable blocks
+            case 'data_setvariableto':
+                return {
+                    type: 'data_setvariableto',
+                    variable: this.getVariableName(block),
+                    value: this.compileStringValue(block, 'VALUE') // Assume string for now to support both numbers and strings
+                };
+            case 'data_changevariableby':
+                return {
+                    type: 'data_changevariableby',
+                    variable: this.getVariableName(block),
+                    value: this.compileNumberValue(block, 'VALUE')
+                };
+            case 'data_showvariable':
+                return { type: 'data_showvariable', variable: this.getVariableName(block) };
+            case 'data_hidevariable':
+                return { type: 'data_hidevariable', variable: this.getVariableName(block) };
+
+            // List blocks
+            case 'data_addtolist':
+                return {
+                    type: 'list_add',
+                    list: this.getVariableName(block),
+                    item: this.compileStringValue(block, 'ITEM')
+                };
+            case 'data_deleteoflist':
+                return {
+                    type: 'list_delete',
+                    list: this.getVariableName(block),
+                    index: this.compileNumberValue(block, 'INDEX')
+                };
+            case 'data_deletealloflist':
+                return { type: 'list_delete_all', list: this.getVariableName(block) };
+            case 'data_insertatlist':
+                return {
+                    type: 'list_insert',
+                    list: this.getVariableName(block),
+                    index: this.compileNumberValue(block, 'INDEX'),
+                    item: this.compileStringValue(block, 'ITEM')
+                };
+            case 'data_replaceitemoflist':
+                return {
+                    type: 'list_replace',
+                    list: this.getVariableName(block),
+                    index: this.compileNumberValue(block, 'INDEX'),
+                    item: this.compileStringValue(block, 'ITEM')
+                };
+            case 'data_showlist':
+                return { type: 'list_show', list: this.getVariableName(block) };
+            case 'data_hidelist':
+                return { type: 'list_hide', list: this.getVariableName(block) };
 
             default:
                 console.warn('[AnimationCompiler] Unknown block type:', block.type);

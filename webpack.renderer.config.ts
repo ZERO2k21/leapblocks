@@ -5,7 +5,11 @@ import { plugins } from './webpack.plugins';
 
 rules.push({
   test: /\.css$/,
-  use: [{ loader: 'style-loader' }, { loader: 'css-loader' }],
+  use: [
+    { loader: 'style-loader' },
+    { loader: 'css-loader' },
+    { loader: 'postcss-loader' },
+  ],
 });
 
 export const rendererConfig: Configuration = {
@@ -15,5 +19,10 @@ export const rendererConfig: Configuration = {
   plugins,
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css'],
+  },
+  devServer: {
+    static: {
+      directory: require('path').join(__dirname, 'public'),
+    },
   },
 };

@@ -14,6 +14,7 @@ const COLORS = {
     operators: '#59C059',    // Green - Operators
     data: '#FF8C1A',         // Orange - Variables (standard scratch name)
     variables: '#FF8C1A',    // Alias
+    list: '#FF661A',         // Red/Orange - Lists
     myblocks: '#FF6680',     // Pink/Red - My Blocks
 };
 
@@ -258,25 +259,25 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     // ═══════════════════════════════════════════════════════════════════════════
     {
         type: 'looks_say_for_secs',
-        message0: '💬 say %1 for %2 seconds',
+        message0: '🗣️ say %1 for %2 seconds',
         args0: [
-            { type: 'field_input', name: 'MESSAGE', text: 'Hello!' },
+            { type: 'input_value', name: 'MESSAGE' },
             { type: 'field_number', name: 'SECS', value: 2, min: 0.1 },
         ],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
-        tooltip: 'Show speech bubble',
+        tooltip: 'Say message for seconds',
         helpUrl: '',
     },
     {
         type: 'looks_say',
-        message0: '💬 say %1',
-        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hello!' }],
+        message0: '🗣️ say %1',
+        args0: [{ type: 'input_value', name: 'MESSAGE' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
-        tooltip: 'Show speech bubble',
+        tooltip: 'Say message',
         helpUrl: '',
     },
     {
@@ -352,7 +353,7 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         type: 'looks_think_for_secs',
         message0: '💭 think %1 for %2 seconds',
         args0: [
-            { type: 'field_input', name: 'MESSAGE', text: 'Hmm...' },
+            { type: 'input_value', name: 'MESSAGE' },
             { type: 'field_number', name: 'SECS', value: 2, min: 0.1 },
         ],
         previousStatement: null,
@@ -364,7 +365,7 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     {
         type: 'looks_think',
         message0: '💭 think %1',
-        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hmm...' }],
+        args0: [{ type: 'input_value', name: 'MESSAGE' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -854,6 +855,41 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         helpUrl: '',
     },
     {
+        type: 'sound_set_effect',
+        message0: '🔊 set %1 effect to %2',
+        args0: [
+            { type: 'field_dropdown', name: 'EFFECT', options: [['pitch', 'pitch'], ['pan', 'pan']] },
+            { type: 'field_number', name: 'VALUE', value: 100 },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.sound,
+        tooltip: 'Set sound effect',
+        helpUrl: '',
+    },
+    {
+        type: 'sound_change_effect',
+        message0: '🔊 change %1 effect by %2',
+        args0: [
+            { type: 'field_dropdown', name: 'EFFECT', options: [['pitch', 'pitch'], ['pan', 'pan']] },
+            { type: 'field_number', name: 'VALUE', value: 10 },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.sound,
+        tooltip: 'Change sound effect',
+        helpUrl: '',
+    },
+    {
+        type: 'sound_clear_effects',
+        message0: '🔊 clear sound effects',
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.sound,
+        tooltip: 'Clear all sound effects',
+        helpUrl: '',
+    },
+    {
         type: 'sound_volume',
         message0: 'volume',
         output: 'Number',
@@ -1046,6 +1082,39 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         tooltip: 'Join two strings',
         helpUrl: '',
     },
+    {
+        type: 'operator_letter_of',
+        message0: 'letter %1 of %2',
+        args0: [
+            { type: 'field_number', name: 'LETTER', value: 1, min: 1 },
+            { type: 'field_input', name: 'STRING', text: 'apple' },
+        ],
+        output: 'String',
+        colour: COLORS.operators,
+        tooltip: 'Letter at position',
+        helpUrl: '',
+    },
+    {
+        type: 'operator_length',
+        message0: 'length of %1',
+        args0: [{ type: 'field_input', name: 'STRING', text: 'apple' }],
+        output: 'Number',
+        colour: COLORS.operators,
+        tooltip: 'Length of string',
+        helpUrl: '',
+    },
+    {
+        type: 'operator_contains',
+        message0: '%1 contains %2 ?',
+        args0: [
+            { type: 'field_input', name: 'STRING1', text: 'apple' },
+            { type: 'field_input', name: 'STRING2', text: 'a' },
+        ],
+        output: 'Boolean',
+        colour: COLORS.operators,
+        tooltip: 'Check if string contains substring',
+        helpUrl: '',
+    },
 
     // ═══════════════════════════════════════════════════════════════════════════
     // VARIABLES
@@ -1094,6 +1163,148 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         nextStatement: null,
         colour: COLORS.variables,
         tooltip: 'Hide variable from stage',
+        helpUrl: '',
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // LISTS
+    // ═══════════════════════════════════════════════════════════════════════════
+    {
+        type: 'data_listcontents',
+        message0: 'list %1',
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        output: 'String', // Returns string representation
+        colour: COLORS.list,
+        tooltip: 'List contents',
+        helpUrl: '',
+    },
+    {
+        type: 'data_addtolist',
+        message0: 'add %1 to %2',
+        args0: [
+            { type: 'input_value', name: 'ITEM' },
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Add item to list',
+        helpUrl: '',
+    },
+    {
+        type: 'data_deleteoflist',
+        message0: 'delete %1 of %2',
+        args0: [
+            { type: 'input_value', name: 'INDEX' },
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Delete item at index',
+        helpUrl: '',
+    },
+    {
+        type: 'data_deletealloflist',
+        message0: 'delete all of %1',
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Delete all items',
+        helpUrl: '',
+    },
+    {
+        type: 'data_insertatlist',
+        message0: 'insert %1 at %2 of %3',
+        args0: [
+            { type: 'input_value', name: 'ITEM' },
+            { type: 'input_value', name: 'INDEX' },
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Insert item at index',
+        helpUrl: '',
+    },
+    {
+        type: 'data_replaceitemoflist',
+        message0: 'replace item %1 of %2 with %3',
+        args0: [
+            { type: 'input_value', name: 'INDEX' },
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+            { type: 'input_value', name: 'ITEM' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Replace item at index',
+        helpUrl: '',
+    },
+    {
+        type: 'data_itemoflist',
+        message0: 'item %1 of %2',
+        args0: [
+            { type: 'input_value', name: 'INDEX' },
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+        ],
+        output: null,
+        colour: COLORS.list,
+        tooltip: 'Get item at index',
+        helpUrl: '',
+    },
+    {
+        type: 'data_itemnumoflist',
+        message0: 'item # of %1 in %2',
+        args0: [
+            { type: 'input_value', name: 'ITEM' },
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+        ],
+        output: 'Number',
+        colour: COLORS.list,
+        tooltip: 'Get index of item',
+        helpUrl: '',
+    },
+    {
+        type: 'data_lengthoflist',
+        message0: 'length of %1',
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        output: 'Number',
+        colour: COLORS.list,
+        tooltip: 'Length of list',
+        helpUrl: '',
+    },
+    {
+        type: 'data_listcontainsitem',
+        message0: '%1 contains %2 ?',
+        args0: [
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+            { type: 'input_value', name: 'ITEM' },
+        ],
+        output: 'Boolean',
+        colour: COLORS.list,
+        tooltip: 'Check if list contains item',
+        helpUrl: '',
+    },
+    {
+        type: 'data_showlist',
+        message0: 'show list %1',
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Show list monitor',
+        helpUrl: '',
+    },
+    {
+        type: 'data_hidelist',
+        message0: 'hide list %1',
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Hide list monitor',
         helpUrl: '',
     },
 
@@ -1209,6 +1420,10 @@ export const animationToolbox = {
                 { kind: 'block', type: 'sound_set_volume' },
                 { kind: 'block', type: 'sound_change_volume' },
                 { kind: 'block', type: 'sound_volume' },
+                { kind: 'label', text: '── Effects ──' },
+                { kind: 'block', type: 'sound_set_effect' },
+                { kind: 'block', type: 'sound_change_effect' },
+                { kind: 'block', type: 'sound_clear_effects' },
             ],
         },
         {
@@ -1286,13 +1501,16 @@ export const animationToolbox = {
                 { kind: 'block', type: 'operator_mathop' },
                 { kind: 'label', text: '── Strings ──' },
                 { kind: 'block', type: 'operator_join' },
+                { kind: 'block', type: 'operator_letter_of' },
+                { kind: 'block', type: 'operator_length' },
+                { kind: 'block', type: 'operator_contains' },
             ],
         },
         {
             kind: 'pictobloxCategory',
             name: 'Variables',
             colour: COLORS.data,
-            custom: 'LEET_VARIABLES',
+            custom: 'LEAP_VARIABLES',
             contents: [], // Ignored, handled by callback
         },
         {

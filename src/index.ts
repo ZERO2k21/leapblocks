@@ -290,8 +290,8 @@ ipcMain.handle('upload-code', async (event, code: string, selectedPort?: string)
         sendProgress(100, 'arduino-cli not found');
 
         const tempDir = os.tmpdir();
-        const sketchDir = path.join(tempDir, 'leetblocks_sketch');
-        const sketchFile = path.join(sketchDir, 'leetblocks_sketch.ino');
+        const sketchDir = path.join(tempDir, 'leapblocks_sketch');
+        const sketchFile = path.join(sketchDir, 'leapblocks_sketch.ino');
 
         if (!fs.existsSync(sketchDir)) {
           fs.mkdirSync(sketchDir, { recursive: true });
@@ -309,8 +309,8 @@ ipcMain.handle('upload-code', async (event, code: string, selectedPort?: string)
     // Step 2: Save sketch to temp file
     sendProgress(15, 'Saving sketch...');
     const tempDir = os.tmpdir();
-    const sketchDir = path.join(tempDir, 'leetblocks_sketch');
-    const sketchFile = path.join(sketchDir, 'leetblocks_sketch.ino');
+    const sketchDir = path.join(tempDir, 'leapblocks_sketch');
+    const sketchFile = path.join(sketchDir, 'leapblocks_sketch.ino');
 
     if (!fs.existsSync(sketchDir)) {
       fs.mkdirSync(sketchDir, { recursive: true });
