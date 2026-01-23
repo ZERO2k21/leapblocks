@@ -11,9 +11,9 @@ export class LeapConstantProvider extends BaseConstantProvider {
         super();
 
         // Toy-like overrides (Junior Style)
-        this.CORNER_RADIUS = 24; // Very round
-        this.notchOffsetLeft_ = 15;
-        this.MIN_BLOCK_HEIGHT = 56; // Chunky blocks
+        this.CORNER_RADIUS = 8; // Match PictoBlox/ScratchJr (less round than 24)
+        this.notchOffsetLeft_ = 12; // Standard
+        this.MIN_BLOCK_HEIGHT = 48; // Chunky but not huge (Horizontal layout handles width)
         this.TOP_ROW_MIN_HEIGHT = 10;
         this.BOTTOM_ROW_MIN_HEIGHT = 10;
 

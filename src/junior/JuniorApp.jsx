@@ -4,10 +4,12 @@ import { javascriptGenerator } from "blockly/javascript";
 import defineLeapBlocks from "./blocks/blocks";
 import Teddy from "./sprites/Teddy";
 import RightPanel from "./components/RightPanel";
+import JuniorMenuBar from "./components/JuniorMenuBar";
 import {
     Footprints, Eye, Flag, Hand, Volume2, PenTool,
     Settings, MessageCircle, Trophy, Play, Square,
-    RotateCcw, ZoomIn, ZoomOut, Maximize, Zap
+    RotateCcw, ZoomIn, ZoomOut, Maximize, Zap,
+    Radar, Calculator, Database
 } from "lucide-react";
 
 // Import Custom Renderer
@@ -29,10 +31,13 @@ import defineLooksBlocks from "./blocks/looksBlocks";
 const CATEGORIES = [
     { id: "motion", name: "Motion", color: "#4C97FF", icon: <Footprints fill="currentColor" stroke="none" /> },
     { id: "looks", name: "Looks", color: "#9966FF", icon: <Eye fill="currentColor" stroke="none" /> },
-    { id: "events", name: "Events", color: "#FFD500", icon: <Flag fill="currentColor" stroke="none" /> },
-    { id: "control", name: "Control", color: "#FFAB19", icon: <Hand fill="currentColor" stroke="none" /> },
     { id: "sound", name: "Sound", color: "#CF63CF", icon: <Volume2 fill="currentColor" stroke="none" /> },
-    { id: "pen", name: "Pen", color: "#00bfa5", icon: <PenTool fill="currentColor" stroke="none" /> },
+    { id: "events", name: "Events", color: "#FFBF00", icon: <Flag fill="currentColor" stroke="none" /> },
+    { id: "control", name: "Control", color: "#FFAB19", icon: <Hand fill="currentColor" stroke="none" /> },
+    { id: "sensing", name: "Sensing", color: "#5CB1D6", icon: <Radar fill="currentColor" stroke="none" /> },
+    { id: "operators", name: "Operators", color: "#59C059", icon: <Calculator fill="currentColor" stroke="none" /> },
+    { id: "variables", name: "Variables", color: "#FF8C1A", icon: <Database fill="currentColor" stroke="none" /> },
+    { id: "pen", name: "Pen", color: "#0FBD8C", icon: <PenTool fill="currentColor" stroke="none" /> },
 ];
 
 // JSON Definition of Blocks for each category
@@ -86,6 +91,23 @@ const categoryContents = {
         { kind: "block", type: "pen_set_size" },
         { kind: "block", type: "pen_stamp" },
         { kind: "block", type: "pen_eraser" }
+    ],
+    sensing: [
+        // Sensing blocks will be implemented
+        // { kind: "block", type: "sensing_touching" },
+        // { kind: "block", type: "sensing_mouse_x" },
+        // { kind: "block", type: "sensing_mouse_y" },
+    ],
+    operators: [
+        // Operator blocks will be implemented
+        // { kind: "block", type: "operator_add" },
+        // { kind: "block", type: "operator_subtract" },
+        // { kind: "block", type: "operator_random" },
+    ],
+    variables: [
+        // Variable blocks will be implemented
+        // { kind: "block", type: "variable_set" },
+        // { kind: "block", type: "variable_change" },
     ]
 };
 
@@ -112,7 +134,12 @@ export default function JuniorApp({ onBack }) {
     const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState("disconnected"); // disconnected, connected
     const [connectedDevice, setConnectedDevice] = useState(null);
-    const [selectedBoard, setSelectedBoard] = useState("quarky");
+    const [selectedBoard, setSelectedBoard] = useState(null);
+    const [selectedBoardName, setSelectedBoardName] = useState(null);
+
+    // UI Mode State (Stage vs Upload)
+    const [appMode, setAppMode] = useState("stage"); // "stage" | "upload"
+    const [isBoardModalOpen, setIsBoardModalOpen] = useState(false);
 
     // UI State for Pickers
     const [showPicker, setShowPicker] = useState(false);
@@ -892,22 +919,16 @@ export default function JuniorApp({ onBack }) {
         <div style={{ display: "flex", flexDirection: "column", height: "100vh", fontFamily: "'Segoe UI', sans-serif" }}>
             <input type="file" ref={fileInputRef} style={{ display: "none" }} accept=".json" onChange={handleFileLoad} />
 
-            {/* TOP BAR */}
-            <TopBar
-                onBack={onBack}
+            {/* JUNIOR MENU BAR - Simplified (no hardware features) */}
+            <JuniorMenuBar
                 projectName={projectName}
-                setProjectName={setProjectName}
-                onFileMenu={handleFileMenu}
-                onEditMenu={handleEditMenu}
-                onConnect={() => setIsConnectModalOpen(true)}
-                connectionStatus={connectionStatus}
-                connectedDevice={connectedDevice}
-                selectedBoard={selectedBoard}
-                onSelectBoard={setSelectedBoard}
-                hintMessage={hint}
+                onProjectNameChange={setProjectName}
+                onFileAction={handleFileMenu}
+                onEditAction={handleEditMenu}
+                onBack={onBack}
             />
 
-            {/* CONNECT MODAL */}
+            {/* CONNECT MODAL - Keep for now but rarely used in Junior */}
             {isConnectModalOpen && (
                 <ConnectModal
                     onClose={() => setIsConnectModalOpen(false)}
@@ -922,7 +943,7 @@ export default function JuniorApp({ onBack }) {
             <div style={{ flex: 1, display: "flex", overflow: 'hidden' }}>
                 <div id="wrapper" style={{ width: "60%", height: "100%", position: "relative" }}>
                     <div id="blocklyDiv" ref={blocklyDiv} className="workspace" style={{ width: "100%", height: "100%" }}></div>
-                    <div style={{ position: "absolute", left: "10px", bottom: "125px", display: "flex", flexDirection: "row", gap: "10px", zIndex: 90, background: "rgba(255,255,255,0.8)", padding: "5px", borderRadius: "30px", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }}>
+                    <div style={{ position: "absolute", left: "10px", bottom: "135px", display: "flex", flexDirection: "row", gap: "8px", zIndex: 90, background: "rgba(255,255,255,0.9)", padding: "8px 12px", borderRadius: "30px", boxShadow: "0 2px 10px rgba(0,0,0,0.15)" }}>
                         {CATEGORIES.map(cat => (
                             <CategoryButton key={cat.id} category={cat} isActive={activeCategory === cat.id} onClick={() => handleCategoryClick(cat.id)} />
                         ))}

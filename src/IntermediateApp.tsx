@@ -397,26 +397,36 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             addLog('Blockly workspace initialized');
         }
 
-        // Set up serial data listener
-        window.electronAPI.onSerialData((data) => {
-            setSerialMessages(prev => [...prev.slice(-100), data]);
-        });
+        // Set up serial data listener (only if electronAPI is available)
+        if (window.electronAPI?.onSerialData) {
+            window.electronAPI.onSerialData((data) => {
+                setSerialMessages(prev => [...prev.slice(-100), data]);
+            });
+        }
 
-        window.electronAPI.onConnectionChange((connected) => {
-            setIsConnected(connected);
-        });
+        if (window.electronAPI?.onConnectionChange) {
+            window.electronAPI.onConnectionChange((connected) => {
+                setIsConnected(connected);
+            });
+        }
 
-        window.electronAPI.onUploadProgress((progress, message) => {
-            setUploadProgress(`${progress}%: ${message}`);
-        });
+        if (window.electronAPI?.onUploadProgress) {
+            window.electronAPI.onUploadProgress((progress, message) => {
+                setUploadProgress(`${progress}%: ${message}`);
+            });
+        }
 
         // Initial port scan
-        window.electronAPI.getPorts().then(portList => {
-            setPorts(portList);
-        });
+        if (window.electronAPI?.getPorts) {
+            window.electronAPI.getPorts().then(portList => {
+                setPorts(portList);
+            });
+        }
 
         return () => {
-            window.electronAPI.removeAllListeners();
+            if (window.electronAPI?.removeAllListeners) {
+                window.electronAPI.removeAllListeners();
+            }
             if (workspaceRef.current) {
                 workspaceRef.current.dispose();
                 workspaceRef.current = null;

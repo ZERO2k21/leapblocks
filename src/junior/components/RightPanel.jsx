@@ -1,7 +1,7 @@
 import React from 'react';
 import SpriteCard from './SpriteCard';
 import SceneCard from './SceneCard';
-import { Flag, RotateCw, Camera, Grid3X3, Maximize, Minimize } from 'lucide-react';
+import { Flag, RotateCw, Camera, Grid3X3, Maximize, Minimize, Octagon, Square } from 'lucide-react';
 
 export default function RightPanel({
     children,
@@ -25,11 +25,128 @@ export default function RightPanel({
     onScreenshot,
     onToggleGrid,
     onFullscreen,
-    showGrid = true
+    showGrid = true,
+    spriteX = 0,
+    spriteY = 0
 }) {
 
     return (
         <div style={{ width: "40%", height: "100%", display: "flex", flexDirection: "column", borderLeft: "1px solid #ddd", overflow: "hidden", position: "relative" }}>
+
+            {/* SCRATCH-STYLE STAGE HEADER */}
+            <div style={{
+                height: "42px",
+                background: "#f0f0f0",
+                borderBottom: "1px solid #ddd",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "0 12px",
+            }}>
+                {/* Left: Run Controls */}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    {/* Green Flag Button */}
+                    <button
+                        onClick={onGreenFlag}
+                        style={{
+                            width: "38px",
+                            height: "38px",
+                            border: "none",
+                            borderRadius: "50%",
+                            background: "linear-gradient(180deg, #4ade80 0%, #22c55e 100%)",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                            transition: "all 0.15s",
+                        }}
+                        title="Run (Green Flag)"
+                        onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                    >
+                        <Flag size={18} fill="#fff" stroke="#fff" />
+                    </button>
+
+                    {/* Red Stop Button */}
+                    <button
+                        onClick={onStop}
+                        style={{
+                            width: "38px",
+                            height: "38px",
+                            border: "none",
+                            borderRadius: "50%",
+                            background: "linear-gradient(180deg, #f87171 0%, #ef4444 100%)",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                            transition: "all 0.15s",
+                        }}
+                        title="Stop All"
+                        onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                    >
+                        <Octagon size={18} fill="#fff" stroke="#fff" />
+                    </button>
+                </div>
+
+                {/* Center: Sprite Coordinates */}
+                <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    background: "#fff",
+                    padding: "4px 12px",
+                    borderRadius: "4px",
+                    border: "1px solid #e5e5e5",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    color: "#555",
+                }}>
+                    <span style={{ color: "#4C97FF" }}>x: <strong>{spriteX}</strong></span>
+                    <span style={{ color: "#9966FF" }}>y: <strong>{spriteY}</strong></span>
+                </div>
+
+                {/* Right: View Controls */}
+                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <button
+                        onClick={onToggleGrid}
+                        style={{
+                            width: "28px",
+                            height: "28px",
+                            border: showGrid ? "2px solid #7B4FC4" : "1px solid #ccc",
+                            borderRadius: "4px",
+                            background: showGrid ? "rgba(123,79,196,0.1)" : "#fff",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                        title={showGrid ? "Hide Grid" : "Show Grid"}
+                    >
+                        <Grid3X3 size={16} color={showGrid ? "#7B4FC4" : "#999"} />
+                    </button>
+                    <button
+                        onClick={onFullscreen}
+                        style={{
+                            width: "28px",
+                            height: "28px",
+                            border: "1px solid #ccc",
+                            borderRadius: "4px",
+                            background: "#fff",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                        title="Fullscreen"
+                    >
+                        <Maximize size={16} color="#666" />
+                    </button>
+                </div>
+            </div>
 
             {/* STAGE AREA - PictoBlox Grid Style */}
             <div style={{ flex: 1, position: "relative", display: "flex", overflow: "hidden", background: "#f5f5f5" }}>
@@ -155,89 +272,6 @@ export default function RightPanel({
                         onDelete={() => onDeleteScene && onDeleteScene(scene.id)}
                     />
                 ))}
-            </div>
-
-            {/* CONTROL BAR - PictoBlox Style */}
-            <div style={{
-                height: "50px",
-                background: "white",
-                borderTop: "2px solid #ddd",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                padding: "0 15px",
-                gap: "12px"
-            }}>
-                {/* Green Flag */}
-                <button
-                    onClick={onGreenFlag}
-                    style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "5px"
-                    }}
-                    title="Run"
-                >
-                    <Flag size={28} fill="#2ECC71" stroke="#27AE60" strokeWidth={1} />
-                </button>
-
-                {/* Rotate/Reset */}
-                <button
-                    onClick={onZoomReset}
-                    style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "5px"
-                    }}
-                    title="Reset"
-                >
-                    <RotateCw size={24} color="#7B4FC4" strokeWidth={2.5} />
-                </button>
-
-                {/* Camera/Screenshot */}
-                <button
-                    onClick={onScreenshot}
-                    style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "5px"
-                    }}
-                    title="Take Screenshot"
-                >
-                    <Camera size={24} color="#7B4FC4" strokeWidth={2} />
-                </button>
-
-                {/* Grid Toggle */}
-                <button
-                    onClick={onToggleGrid}
-                    style={{
-                        background: showGrid ? "rgba(123, 79, 196, 0.1)" : "none",
-                        border: showGrid ? "2px solid #7B4FC4" : "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        padding: "5px"
-                    }}
-                    title={showGrid ? "Hide Grid" : "Show Grid"}
-                >
-                    <Grid3X3 size={24} color="#7B4FC4" strokeWidth={2} />
-                </button>
-
-                {/* Fullscreen */}
-                <button
-                    onClick={onFullscreen}
-                    style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "5px"
-                    }}
-                    title="Fullscreen"
-                >
-                    <Maximize size={24} color="#7B4FC4" strokeWidth={2} />
-                </button>
             </div>
 
         </div>
