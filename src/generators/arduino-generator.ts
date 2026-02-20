@@ -30,13 +30,50 @@ arduinoGenerator.scrub_ = function (block: Blockly.Block, code: string, thisOnly
 
 // Final code adjustments
 arduinoGenerator.finish = function (code: string) {
-    // If the code ends with a statement (like from open setup), close it.
-    // We check if the last significant char is '}'.
-    const trimmed = code.trim();
-    if (trimmed && trimmed.slice(-1) !== '}') {
-        return code + '\n}\n';
+    const defs = Object.values(this.definitions_ || {}).join('\n');
+    const setups = Object.values(this.setups_ || {}).join('\n');
+
+    let finalCode = '';
+    if (defs) finalCode += defs + '\n\n';
+
+    // Ensure code has balanced braces for functions
+    let processedCode = code;
+    const openBraces = (processedCode.match(/{/g) || []).length;
+    const closeBraces = (processedCode.match(/}/g) || []).length;
+    if (openBraces > closeBraces) {
+        processedCode += '\n}\n'.repeat(openBraces - closeBraces);
     }
-    return code;
+
+    // Check if user provided their own setup() or loop()
+    const hasSetup = processedCode.includes('void setup()');
+    const hasLoop = processedCode.includes('void loop()');
+
+    if (!hasSetup) {
+        finalCode += `void setup() {\n${setups}\n}\n\n`;
+    } else {
+        finalCode += processedCode.replace('void setup() {', `void setup() {\n${setups}`);
+        processedCode = ''; // prevent double printing
+    }
+
+    if (!hasLoop && processedCode.trim()) {
+        finalCode += `void loop() {\n${processedCode}\n}\n`;
+    } else {
+        finalCode += processedCode;
+    }
+
+    return finalCode;
+};
+
+// Helper to add setup code
+(arduinoGenerator as any).addSetup = function (name: string, code: string) {
+    if (!this.setups_) this.setups_ = {};
+    this.setups_[name] = code;
+};
+
+// Helper to add definitions/includes
+(arduinoGenerator as any).addDefinition = function (name: string, code: string) {
+    if (!this.definitions_) this.definitions_ = {};
+    this.definitions_[name] = code;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -44,7 +81,8 @@ arduinoGenerator.finish = function (code: string) {
 // ═══════════════════════════════════════════════════════════════════════════
 arduinoGenerator.forBlock['arduino_setup'] = function (block, generator) {
     log('arduino_setup', 'Generating');
-    // Start setup function, leave it open for next statements
+    // We don't return the full code here, just the opening. 
+    // The finish() method will handle wrapping and closing if needed.
     return `void setup() {\n`;
 };
 
@@ -52,13 +90,7 @@ arduinoGenerator.forBlock['arduino_loop'] = function (block, generator) {
     const doCode = generator.statementToCode(block, 'DO') || '';
     log('arduino_loop', 'Generating', { innerLength: doCode.length });
 
-    let prefix = '';
-    // If attached to a previous block (likely setup chain), close the setup function first
-    if (block.previousConnection && block.previousConnection.isConnected()) {
-        prefix = '}\n\n';
-    }
-
-    return `${prefix}void loop() {\n${doCode}}\n`;
+    return `}\n\nvoid loop() {\n${doCode}}\n`;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -117,12 +149,14 @@ arduinoGenerator.forBlock['arduino_stop'] = function (block) {
 arduinoGenerator.forBlock['arduino_digital_write'] = function (block) {
     const pin = block.getFieldValue('PIN');
     const value = block.getFieldValue('VALUE');
+    (arduinoGenerator as any).addSetup(`pinMode_${pin}`, `  pinMode(${pin}, OUTPUT);`);
     log('arduino_digital_write', 'Generating', { pin, value });
     return `  digitalWrite(${pin}, ${value});\n`;
 };
 
 arduinoGenerator.forBlock['arduino_digital_read'] = function (block) {
     const pin = block.getFieldValue('PIN');
+    (arduinoGenerator as any).addSetup(`pinMode_${pin}`, `  pinMode(${pin}, INPUT);`);
     log('arduino_digital_read', 'Generating', { pin });
     return [`digitalRead(${pin})`, ORDER_ATOMIC];
 };
@@ -130,12 +164,14 @@ arduinoGenerator.forBlock['arduino_digital_read'] = function (block) {
 arduinoGenerator.forBlock['arduino_analog_write'] = function (block) {
     const pin = block.getFieldValue('PIN');
     const value = block.getFieldValue('VALUE');
+    (arduinoGenerator as any).addSetup(`pinMode_${pin}`, `  pinMode(${pin}, OUTPUT);`);
     log('arduino_analog_write', 'Generating', { pin, value });
     return `  analogWrite(${pin}, ${value});\n`;
 };
 
 arduinoGenerator.forBlock['arduino_analog_read'] = function (block) {
     const pin = block.getFieldValue('PIN');
+    (arduinoGenerator as any).addSetup(`pinMode_${pin}`, `  pinMode(${pin}, INPUT);`);
     log('arduino_analog_read', 'Generating', { pin });
     return [`analogRead(${pin})`, ORDER_ATOMIC];
 };
@@ -143,12 +179,14 @@ arduinoGenerator.forBlock['arduino_analog_read'] = function (block) {
 arduinoGenerator.forBlock['arduino_tone'] = function (block) {
     const pin = block.getFieldValue('PIN');
     const freq = block.getFieldValue('FREQ');
+    (arduinoGenerator as any).addSetup(`pinMode_${pin}`, `  pinMode(${pin}, OUTPUT);`);
     log('arduino_tone', 'Generating', { pin, freq });
     return `  tone(${pin}, ${freq});\n`;
 };
 
 arduinoGenerator.forBlock['arduino_notone'] = function (block) {
     const pin = block.getFieldValue('PIN');
+    (arduinoGenerator as any).addSetup(`pinMode_${pin}`, `  pinMode(${pin}, OUTPUT);`);
     log('arduino_notone', 'Generating', { pin });
     return `  noTone(${pin});\n`;
 };
@@ -323,6 +361,9 @@ arduinoGenerator.forBlock['arduino_abs'] = function (block, generator) {
 arduinoGenerator.forBlock['arduino_servo'] = function (block) {
     const pin = block.getFieldValue('PIN');
     const angle = block.getFieldValue('ANGLE');
+    (arduinoGenerator as any).addDefinition('servo_include', '#include <Servo.h>');
+    (arduinoGenerator as any).addDefinition(`servo_def_${pin}`, `Servo servo_${pin};`);
+    (arduinoGenerator as any).addSetup(`servo_attach_${pin}`, `  servo_${pin}.attach(${pin});`);
     log('arduino_servo', 'Generating', { pin, angle });
     return `  servo_${pin}.write(${angle});\n`;
 };
@@ -331,6 +372,20 @@ arduinoGenerator.forBlock['arduino_motor'] = function (block) {
     const motor = block.getFieldValue('MOTOR');
     const dir = block.getFieldValue('DIR');
     const speed = block.getFieldValue('SPEED');
+
+    // Define a simple motor control if not already defined
+    // This is a placeholder for actual shield logic
+    const motorDef = `
+class Motor {
+public:
+  void forward(int s) { /* implement for your shield */ }
+  void backward(int s) { /* implement for your shield */ }
+  void stop() { /* implement for your shield */ }
+};
+Motor motorA, motorB;
+`;
+    (arduinoGenerator as any).addDefinition('motor_class', motorDef);
+
     log('arduino_motor', 'Generating', { motor, dir, speed });
     if (dir === 'stop') {
         return `  motor${motor}.stop();\n`;
@@ -341,6 +396,7 @@ arduinoGenerator.forBlock['arduino_motor'] = function (block) {
 arduinoGenerator.forBlock['arduino_led'] = function (block) {
     const pin = block.getFieldValue('PIN');
     const brightness = block.getFieldValue('BRIGHTNESS');
+    (arduinoGenerator as any).addSetup(`pinMode_${pin}`, `  pinMode(${pin}, OUTPUT);`);
     log('arduino_led', 'Generating', { pin, brightness });
     return `  analogWrite(${pin}, ${brightness});\n`;
 };
@@ -348,6 +404,7 @@ arduinoGenerator.forBlock['arduino_led'] = function (block) {
 arduinoGenerator.forBlock['arduino_relay'] = function (block) {
     const pin = block.getFieldValue('PIN');
     const state = block.getFieldValue('STATE');
+    (arduinoGenerator as any).addSetup(`pinMode_${pin}`, `  pinMode(${pin}, OUTPUT);`);
     log('arduino_relay', 'Generating', { pin, state });
     return `  digitalWrite(${pin}, ${state});\n`;
 };
@@ -358,13 +415,34 @@ arduinoGenerator.forBlock['arduino_relay'] = function (block) {
 arduinoGenerator.forBlock['arduino_ultrasonic'] = function (block) {
     const trig = block.getFieldValue('TRIG');
     const echo = block.getFieldValue('ECHO');
+    (arduinoGenerator as any).addSetup(`pinMode_trig_${trig}`, `  pinMode(${trig}, OUTPUT);`);
+    (arduinoGenerator as any).addSetup(`pinMode_echo_${echo}`, `  pinMode(${echo}, INPUT);`);
+
+    const funcName = 'getDistance';
+    const funcCode = `
+long ${funcName}(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  long duration = pulseIn(echoPin, HIGH);
+  return duration * 0.034 / 2;
+}
+`;
+    (arduinoGenerator as any).addDefinition(funcName, funcCode);
+
     log('arduino_ultrasonic', 'Generating', { trig, echo });
-    return [`getDistance(${trig}, ${echo})`, ORDER_ATOMIC];
+    return [`${funcName}(${trig}, ${echo})`, ORDER_ATOMIC];
 };
 
 arduinoGenerator.forBlock['arduino_dht_temp'] = function (block) {
     const type = block.getFieldValue('TYPE');
     const pin = block.getFieldValue('PIN');
+    (arduinoGenerator as any).addDefinition('dht_include', '#include "DHT.h"');
+    (arduinoGenerator as any).addDefinition(`dht_def_${pin}`, `DHT dht_${pin}(${pin}, DHT11);`);
+    (arduinoGenerator as any).addSetup(`dht_begin_${pin}`, `  dht_${pin}.begin();`);
+
     log('arduino_dht_temp', 'Generating', { type, pin });
     return [`dht_${pin}.read${type === 'temperature' ? 'Temperature' : 'Humidity'}()`, ORDER_ATOMIC];
 };

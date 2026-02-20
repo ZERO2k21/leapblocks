@@ -65,9 +65,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     /**
      * Upload code to connected board
      */
-    uploadCode: (code: string, port?: string): Promise<UploadResult> => {
-        console.log('[PRELOAD] uploadCode called', { codeLength: code.length, port });
-        return ipcRenderer.invoke('upload-code', code, port);
+    uploadCode: (code: string, port?: string, fqbn?: string): Promise<UploadResult> => {
+        console.log('[PRELOAD] uploadCode called', { codeLength: code.length, port, fqbn });
+        return ipcRenderer.invoke('upload-code', code, port, fqbn);
     },
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -127,7 +127,7 @@ declare global {
             connectPort: (path: string, baudRate: number) => Promise<ConnectResult>;
             disconnectPort: () => Promise<ConnectResult>;
             sendSerial: (data: string) => Promise<void>;
-            uploadCode: (code: string, port?: string) => Promise<UploadResult>;
+            uploadCode: (code: string, port?: string, fqbn?: string) => Promise<UploadResult>;
             onSerialData: (callback: (data: string) => void) => void;
             onConnectionChange: (callback: (connected: boolean) => void) => void;
             onUploadProgress: (callback: (progress: number, message: string) => void) => void;

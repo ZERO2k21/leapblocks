@@ -263,8 +263,9 @@ export class AnimationCompiler {
 
         switch (block.type) {
             case 'event_flag_clicked':
+            case 'arduino_setup':
                 trigger = 'flag';
-                compilerLog.info(`  Trigger: flag (green flag clicked)`);
+                compilerLog.info(`  Trigger: flag (green flag or arduino setup)`);
                 break;
             case 'event_sprite_clicked':
                 trigger = 'sprite_click';
@@ -369,24 +370,32 @@ export class AnimationCompiler {
             case 'looks_go_forward_layers':
                 return { type: 'go_forward_layers', direction: block.getFieldValue('DIRECTION') as 'forward' | 'backward', layers: Number(block.getFieldValue('LAYERS')) };
 
-            // Control
+            // Control & Arduino Control
             case 'control_wait':
+            case 'arduino_delay':
                 return { type: 'wait', secs: Number(block.getFieldValue('SECS')) };
             case 'control_repeat':
+            case 'arduino_repeat':
                 return { type: 'repeat', times: Number(block.getFieldValue('TIMES')), body: this.compileStatementInput(block, 'DO') };
             case 'control_forever':
+            case 'arduino_loop':
                 return { type: 'forever', body: this.compileStatementInput(block, 'DO') };
             case 'control_if':
+            case 'arduino_if':
                 return { type: 'if', condition: this.compileCondition(block, 'CONDITION'), body: this.compileStatementInput(block, 'DO') };
             case 'control_if_else':
+            case 'arduino_if_else':
                 return { type: 'if_else', condition: this.compileCondition(block, 'CONDITION'), body: this.compileStatementInput(block, 'DO'), elseBody: this.compileStatementInput(block, 'ELSE') };
             case 'control_wait_until':
+            case 'arduino_wait_until':
                 return { type: 'wait_until', condition: this.compileCondition(block, 'CONDITION') };
             case 'control_repeat_until':
+            case 'arduino_repeat_until':
                 return { type: 'repeat_until', condition: this.compileCondition(block, 'CONDITION'), body: this.compileStatementInput(block, 'DO') };
-            case 'control_stop': {
-                const stopOption = block.getFieldValue('STOP_OPTION');
-                if (stopOption === 'this script') {
+            case 'control_stop':
+            case 'arduino_stop': {
+                const stopOption = block.getFieldValue('STOP_OPTION') || block.getFieldValue('MODE');
+                if (stopOption === 'this script' || stopOption === 'this') {
                     return { type: 'stop_this_script' };
                 }
                 return { type: 'stop_all' };
@@ -429,28 +438,55 @@ export class AnimationCompiler {
                 return { type: 'clear_sound_effects' };
 
             // Sensing
-            case 'sensing_ask':
+            case 'ask':
                 return { type: 'ask', question: block.getFieldValue('QUESTION') };
             case 'sensing_reset_timer':
                 return { type: 'reset_timer' };
 
-            // Hardware blocks
+            // Hardware blocks & Arduino Blocks
             case 'hw_set_digital':
-                return { type: 'hw_set_digital', pin: Number(block.getFieldValue('PIN')), value: block.getFieldValue('VALUE') === '1' };
+            case 'arduino_digital_write':
+            case 'arduino_relay':
+                return {
+                    type: 'hw_set_digital',
+                    pin: block.getFieldValue('PIN'),
+                    value: (block.getFieldValue('VALUE') === '1' || block.getFieldValue('VALUE') === 'HIGH' || block.getFieldValue('STATE') === 'HIGH')
+                };
             case 'hw_set_led':
                 return { type: 'hw_set_led', on: block.getFieldValue('STATE') === '1' };
+            case 'arduino_led':
+                return { type: 'hw_set_pwm', pin: block.getFieldValue('PIN'), value: Number(block.getFieldValue('BRIGHTNESS')) };
             case 'hw_set_pwm':
-                return { type: 'hw_set_pwm', pin: Number(block.getFieldValue('PIN')), value: Number(block.getFieldValue('VALUE')) };
+            case 'arduino_analog_write':
+                return { type: 'hw_set_pwm', pin: block.getFieldValue('PIN'), value: Number(block.getFieldValue('VALUE')) };
             case 'hw_set_servo':
-                return { type: 'hw_set_servo', pin: Number(block.getFieldValue('PIN')), angle: Number(block.getFieldValue('ANGLE')) };
+            case 'arduino_servo':
+                return { type: 'hw_set_servo', pin: block.getFieldValue('PIN'), angle: Number(block.getFieldValue('ANGLE')) };
             case 'hw_set_motor':
-                return { type: 'hw_set_motor', motor: Number(block.getFieldValue('MOTOR')), speed: Number(block.getFieldValue('SPEED')) };
+            case 'arduino_motor': {
+                const motor = block.getFieldValue('MOTOR');
+                const motorId = motor === 'A' ? 1 : (motor === 'B' ? 2 : Number(motor));
+                const dir = block.getFieldValue('DIR') || 'forward';
+                const speedVal = Number(block.getFieldValue('SPEED') || block.getFieldValue('VALUE') || 255);
+                let speed = speedVal;
+                if (dir === 'backward') speed = -speedVal;
+                else if (dir === 'stop') speed = 0;
+                return { type: 'hw_set_motor', motor: motorId, speed };
+            }
             case 'hw_stop_motors':
                 return { type: 'hw_stop_motors' };
             case 'hw_play_tone':
-                return { type: 'hw_play_tone', pin: Number(block.getFieldValue('PIN')), freq: Number(block.getFieldValue('FREQ')), duration: Number(block.getFieldValue('DURATION')) };
+            case 'arduino_tone':
+                return {
+                    type: 'hw_play_tone',
+                    pin: block.getFieldValue('PIN'),
+                    freq: Number(block.getFieldValue('FREQ')),
+                    duration: Number(block.getFieldValue('DURATION') || 0) || 500 // Default 500ms if not specified
+                };
             case 'hw_stop_tone':
-                return { type: 'hw_stop_tone', pin: Number(block.getFieldValue('PIN')) };
+            case 'arduino_notone':
+                return { type: 'hw_stop_tone', pin: block.getFieldValue('PIN') };
+
 
             // Variable blocks
             case 'data_setvariableto':

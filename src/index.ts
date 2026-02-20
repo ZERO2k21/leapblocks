@@ -249,8 +249,8 @@ ipcMain.handle('send-serial', async (event, data: string) => {
  * Upload code to connected board
  * Uses arduino-cli for compilation and upload if available
  */
-ipcMain.handle('upload-code', async (event, code: string, selectedPort?: string) => {
-  log('IPC', 'upload-code requested', { codeLength: code.length, selectedPort });
+ipcMain.handle('upload-code', async (event, code: string, selectedPort?: string, fqbnOverride?: string) => {
+  log('IPC', 'upload-code requested', { codeLength: code.length, selectedPort, fqbnOverride });
 
   const sendProgress = (progress: number, message: string) => {
     log('IPC', `Upload progress: ${progress}% - ${message}`);
@@ -320,22 +320,26 @@ ipcMain.handle('upload-code', async (event, code: string, selectedPort?: string)
 
     // Step 3: Detect connected board
     sendProgress(25, 'Detecting board...');
-    let fqbn = 'arduino:avr:uno'; // Default to Uno
+    let fqbn = fqbnOverride || 'arduino:avr:uno'; // Use override or default to Uno
 
-    try {
-      const { stdout } = await execAsync(`"${arduinoCliPath}" board list --format json`);
-      const boards = JSON.parse(stdout);
-      if (boards.detected_ports && boards.detected_ports.length > 0) {
-        const port = boards.detected_ports.find((p: any) =>
-          p.port?.address === selectedPort || p.port?.address === activePort?.path
-        );
-        if (port?.matching_boards?.[0]?.fqbn) {
-          fqbn = port.matching_boards[0].fqbn;
-          log('IPC', 'Detected board FQBN', fqbn);
+    if (!fqbnOverride) {
+      try {
+        const { stdout } = await execAsync(`"${arduinoCliPath}" board list --format json`);
+        const boards = JSON.parse(stdout);
+        if (boards.detected_ports && boards.detected_ports.length > 0) {
+          const port = boards.detected_ports.find((p: any) =>
+            p.port?.address === selectedPort || p.port?.address === activePort?.path
+          );
+          if (port?.matching_boards?.[0]?.fqbn) {
+            fqbn = port.matching_boards[0].fqbn;
+            log('IPC', 'Detected board FQBN', fqbn);
+          }
         }
+      } catch (e) {
+        log('IPC', 'Board detection failed, using default Uno', e);
       }
-    } catch (e) {
-      log('IPC', 'Board detection failed, using default Uno', e);
+    } else {
+      log('IPC', 'Using provided FQBN', fqbn);
     }
 
     // Determine upload port

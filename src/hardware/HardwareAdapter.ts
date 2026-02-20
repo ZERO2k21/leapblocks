@@ -112,7 +112,7 @@ export class HardwareAdapter {
     /**
      * Set a digital pin HIGH or LOW
      */
-    async setDigitalPin(pin: number, value: boolean): Promise<boolean> {
+    async setDigitalPin(pin: number | string, value: boolean): Promise<boolean> {
         const response = await this.sendCommand(
             buildCommand(COMMANDS.SET_DIGITAL, pin, value ? 1 : 0)
         );
@@ -122,7 +122,7 @@ export class HardwareAdapter {
     /**
      * Read a digital pin
      */
-    async readDigitalPin(pin: number): Promise<boolean | null> {
+    async readDigitalPin(pin: number | string): Promise<boolean | null> {
         const response = await this.sendCommand(
             buildCommand(COMMANDS.READ_DIGITAL, pin)
         );
@@ -135,7 +135,7 @@ export class HardwareAdapter {
     /**
      * Read an analog pin (0-1023)
      */
-    async readAnalogPin(pin: number): Promise<number | null> {
+    async readAnalogPin(pin: number | string): Promise<number | null> {
         const response = await this.sendCommand(
             buildCommand(COMMANDS.READ_ANALOG, pin)
         );
@@ -148,7 +148,7 @@ export class HardwareAdapter {
     /**
      * Set PWM value on a pin (0-255)
      */
-    async setPWM(pin: number, value: number): Promise<boolean> {
+    async setPWM(pin: number | string, value: number): Promise<boolean> {
         const clamped = Math.max(0, Math.min(255, Math.round(value)));
         const response = await this.sendCommand(
             buildCommand(COMMANDS.SET_PWM, pin, clamped)
@@ -159,7 +159,7 @@ export class HardwareAdapter {
     /**
      * Set servo angle (0-180 degrees)
      */
-    async setServo(pin: number, angle: number): Promise<boolean> {
+    async setServo(pin: number | string, angle: number): Promise<boolean> {
         const clamped = Math.max(0, Math.min(180, Math.round(angle)));
         const response = await this.sendCommand(
             buildCommand(COMMANDS.SET_SERVO, pin, clamped)
@@ -189,7 +189,7 @@ export class HardwareAdapter {
     /**
      * Play a tone on a buzzer
      */
-    async playTone(pin: number, frequency: number, durationMs: number): Promise<boolean> {
+    async playTone(pin: number | string, frequency: number, durationMs: number): Promise<boolean> {
         const response = await this.sendCommand(
             buildCommand(COMMANDS.TONE, pin, `${frequency},${durationMs}`)
         );
@@ -199,7 +199,7 @@ export class HardwareAdapter {
     /**
      * Stop tone on a pin
      */
-    async stopTone(pin: number): Promise<boolean> {
+    async stopTone(pin: number | string): Promise<boolean> {
         const response = await this.sendCommand(
             buildCommand(COMMANDS.NOTONE, pin)
         );

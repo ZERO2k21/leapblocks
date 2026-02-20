@@ -86,14 +86,16 @@ export type ScriptStep =
     | { type: 'ask'; question: string }
     | { type: 'reset_timer' }
     // Hardware blocks for Stage mode
-    | { type: 'hw_set_digital'; pin: number; value: boolean }
+    | { type: 'hw_set_digital'; pin: number | string; value: boolean }
     | { type: 'hw_set_led'; on: boolean }
-    | { type: 'hw_set_pwm'; pin: number; value: number }
-    | { type: 'hw_set_servo'; pin: number; angle: number }
+    | { type: 'hw_set_pwm'; pin: number | string; value: number }
+    | { type: 'hw_set_servo'; pin: number | string; angle: number }
     | { type: 'hw_set_motor'; motor: number; speed: number }
     | { type: 'hw_stop_motors' }
-    | { type: 'hw_play_tone'; pin: number; freq: number; duration: number }
-    | { type: 'hw_stop_tone'; pin: number }
+    | { type: 'hw_play_tone'; pin: number | string; freq: number; duration: number }
+    | { type: 'hw_stop_tone'; pin: number | string }
+    | { type: 'hw_analog_read'; pin: number | string }
+    | { type: 'hw_digital_read'; pin: number | string }
     // Variable
     | { type: 'data_setvariableto'; variable: string; value: () => number | string }
     | { type: 'data_changevariableby'; variable: string; value: () => number }
@@ -644,6 +646,18 @@ export class AnimationVM {
             case 'hw_stop_tone':
                 await hardwareAdapter.stopTone(step.pin);
                 break;
+
+            case 'hw_analog_read': {
+                const val = await hardwareAdapter.readAnalogPin(step.pin);
+                console.log(`[AnimationVM] Analog read ${step.pin}: ${val}`);
+                break;
+            }
+
+            case 'hw_digital_read': {
+                const val = await hardwareAdapter.readDigitalPin(step.pin);
+                console.log(`[AnimationVM] Digital read ${step.pin}: ${val}`);
+                break;
+            }
 
             // Variable blocks
             case 'data_setvariableto':

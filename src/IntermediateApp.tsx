@@ -9,6 +9,8 @@ import { animationVM, CompiledScript } from './vm/AnimationVM';
 import { Sprite, SpriteType } from './stage/Sprite';
 import Stage from './stage/Stage';
 import SpritePanel from './stage/SpritePanel';
+import BoardSelectionModal, { BOARDS } from './junior/components/BoardSelectionModal';
+import { hardwareAdapter } from './hardware/HardwareAdapter';
 import './custom-toolbox';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -76,6 +78,9 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // Hardware
     const [ports, setPorts] = useState<{ path: string; manufacturer?: string }[]>([]);
     const [selectedPort, setSelectedPort] = useState<string>('');
+    const [selectedBoard, setSelectedBoard] = useState<string>('arduino_uno');
+    const [selectedBoardName, setSelectedBoardName] = useState<string>('Arduino Uno');
+    const [isBoardModalOpen, setIsBoardModalOpen] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [serialMessages, setSerialMessages] = useState<string[]>([]);
     const [serialInput, setSerialInput] = useState<string>('');
@@ -208,6 +213,111 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
     }, [editorMode, appMode, sprites, selectedSpriteId]);
 
+    /**
+     * Handle real-time hardware interaction when a block is clicked or changed
+     */
+    const handleBlockInteraction = useCallback(async (event: Blockly.Events.Abstract) => {
+        if (!workspaceRef.current || editorMode !== 'stage' || !isConnected) return;
+
+        // We only care about clicks or UI changes that represent immediate intent
+        if (event.type !== Blockly.Events.CLICK && event.type !== Blockly.Events.BLOCK_CHANGE) return;
+
+        const blockId = (event as any).blockId;
+        const block = workspaceRef.current.getBlockById(blockId);
+        if (!block || !block.type.startsWith('arduino_')) return;
+
+        // If clicking a setup or loop block, trigger the flag scripts (which include arduino_setup)
+        if (event.type === Blockly.Events.CLICK && (block.type === 'arduino_setup' || block.type === 'arduino_loop')) {
+            console.log('[APP] Starting Arduino scripts from block click');
+            setIsRunning(true);
+            animationVM.triggerFlag(compiledScripts);
+            addLog('Started Arduino script');
+            return;
+        }
+
+        log.app('Real-time interaction', { type: block.type, event: event.type });
+
+
+        try {
+            switch (block.type) {
+                case 'arduino_digital_write': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const val = block.getFieldValue('VALUE') === 'HIGH';
+                    await hardwareAdapter.setDigitalPin(pin, val);
+                    break;
+                }
+                case 'arduino_analog_write': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const val = parseInt(block.getFieldValue('VALUE'), 10);
+                    await hardwareAdapter.setPWM(pin, val);
+                    break;
+                }
+                case 'arduino_led': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const val = parseInt(block.getFieldValue('BRIGHTNESS'), 10);
+                    await hardwareAdapter.setPWM(pin, val);
+                    break;
+                }
+                case 'arduino_servo': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const angle = parseInt(block.getFieldValue('ANGLE'), 10);
+                    await hardwareAdapter.setServo(pin, angle);
+                    break;
+                }
+                case 'arduino_tone': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const freq = parseInt(block.getFieldValue('FREQ'), 10);
+                    await hardwareAdapter.playTone(pin, freq, 500); // 500ms default for preview
+                    break;
+                }
+                case 'arduino_notone': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    await hardwareAdapter.stopTone(pin);
+                    break;
+                }
+                case 'arduino_relay': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const state = block.getFieldValue('STATE') === 'HIGH';
+                    await hardwareAdapter.setDigitalPin(pin, state);
+                    break;
+                }
+                case 'arduino_motor': {
+                    const motor = block.getFieldValue('MOTOR'); // 'A' or 'B'
+                    const motorId = motor === 'A' ? 1 : 2;
+                    const dir = block.getFieldValue('DIR');
+                    const speedVal = parseInt(block.getFieldValue('SPEED'), 10);
+
+                    let speed = 0;
+                    if (dir === 'forward') speed = speedVal;
+                    else if (dir === 'backward') speed = -speedVal;
+
+                    await hardwareAdapter.setMotor(motorId, speed);
+                    break;
+                }
+                case 'arduino_analog_read': {
+                    const pin = block.getFieldValue('PIN');
+                    const val = await hardwareAdapter.readAnalogPin(pin);
+                    addLog(`[Hardware] Read Analog ${pin}: ${val}`);
+                    break;
+                }
+                case 'arduino_digital_read': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const val = await hardwareAdapter.readDigitalPin(pin);
+                    addLog(`[Hardware] Read Digital ${pin}: ${val ? 'HIGH' : 'LOW'}`);
+                    break;
+                }
+                case 'arduino_button': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const val = await hardwareAdapter.readDigitalPin(pin);
+                    addLog(`[Hardware] Button on ${pin}: ${val ? 'Pressed' : 'Released'}`);
+                    break;
+                }
+            }
+        } catch (err) {
+            log.app('Interaction error', err);
+        }
+    }, [editorMode, isConnected]);
+
     // ═══════════════════════════════════════════════════════════════════════
     // MODE SWITCHING
     // ═══════════════════════════════════════════════════════════════════════
@@ -332,8 +442,18 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         setIsUploading(true);
         setUploadProgress('Uploading...');
         addLog('Starting upload...');
+
+        // Map board ID to FQBN
+        const fqbnMap: Record<string, string> = {
+            'arduino_uno': 'arduino:avr:uno',
+            'arduino_mega': 'arduino:avr:mega',
+            'arduino_nano': 'arduino:avr:nano',
+            'esp32': 'esp32:esp32:esp32da', // Default ESP32
+        };
+        const fqbn = fqbnMap[selectedBoard] || 'arduino:avr:uno';
+
         try {
-            const result = await window.electronAPI.uploadCode(generatedCode, selectedPort || undefined);
+            const result = await window.electronAPI.uploadCode(generatedCode, selectedPort || undefined, fqbn);
             if (result.success) {
                 addLog('Upload complete!');
                 setUploadProgress('Upload complete!');
@@ -346,7 +466,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             setUploadProgress('Upload error');
         }
         setIsUploading(false);
-    }, [generatedCode, isUploading, addLog, selectedPort]);
+    }, [generatedCode, isUploading, addLog, selectedPort, selectedBoard]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // INITIALIZATION
@@ -443,13 +563,16 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             workspaceRef.current.removeChangeListener(handleWorkspaceChange);
             workspaceRef.current.addChangeListener(handleWorkspaceChange);
 
+            workspaceRef.current.removeChangeListener(handleBlockInteraction);
+            workspaceRef.current.addChangeListener(handleBlockInteraction);
+
             // Trigger an initial recompile with the current workspace state
             if (sprites.length > 0 && selectedSpriteId) {
                 console.log('[APP] Sprites/selection changed, triggering recompile...');
                 handleWorkspaceChange({ isUiEvent: false } as Blockly.Events.Abstract);
             }
         }
-    }, [sprites, selectedSpriteId, handleWorkspaceChange]);
+    }, [sprites, selectedSpriteId, handleWorkspaceChange, handleBlockInteraction]);
 
     // Reinitialize workspace when appMode changes (e.g., from home to blocks/junior)
     // This ensures the correct toolbox is shown
@@ -724,7 +847,12 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         <span style={styles.navItem}>File</span>
                         <span style={styles.navItem}>Edit</span>
                         <span style={styles.navItem}>Tutorials</span>
-                        {editorMode === 'upload' && <span style={styles.navItem}>Board</span>}
+                        <span
+                            style={{ ...styles.navItem, fontWeight: 'bold', color: '#FFD700' }}
+                            onClick={() => setIsBoardModalOpen(true)}
+                        >
+                            🔌 Board: {selectedBoardName || 'Select Board'}
+                        </span>
                     </nav>
                     <div style={styles.projectName}>
                         <span>📁</span>
@@ -1079,6 +1207,18 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     </div>
                 </div>
             )}
+
+            {/* Board Selection Modal */}
+            <BoardSelectionModal
+                isOpen={isBoardModalOpen}
+                onClose={() => setIsBoardModalOpen(false)}
+                onSelect={(id, name) => {
+                    setSelectedBoard(id);
+                    setSelectedBoardName(name);
+                    addLog(`Selected board: ${name}`);
+                }}
+                currentBoard={selectedBoard}
+            />
         </div>
     );
 };
