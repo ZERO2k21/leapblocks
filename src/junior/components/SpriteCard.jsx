@@ -74,8 +74,8 @@ export default function SpriteCard({ sprite, active, onClick, onDelete }) {
                 background: "white",
                 padding: "5px"
             }}>
-                {spriteImage ? (
-                    <img src={spriteImage} alt={label} style={{ maxWidth: "45px", maxHeight: "45px", objectFit: "contain" }} />
+                {spriteImage || (typeof displayIcon === 'string' && displayIcon.includes('/')) ? (
+                    <img src={spriteImage || displayIcon} alt={label} style={{ maxWidth: "45px", maxHeight: "45px", objectFit: "contain" }} />
                 ) : (
                     <span style={{ fontSize: "32px" }}>{displayIcon}</span>
                 )}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function Sprite({ id, type, active, x, y, angle, size, visible, speech, currentCostume }) {
+export default function Sprite({ id, type, active, x, y, angle, size, visible, speech, currentCostume, costumes, onClick }) {
     // Local ephemeral state (speech bubbles, feedback)
     // Speech is now propped from App.jsx store
     const [scaleX, setScaleX] = useState(1);
@@ -138,21 +138,30 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
     // Icon mapping logic (now supports costumes)
     // Fallback logic for safety
     const renderIcon = () => {
-        // If currentCostume is a string value directly (emoji), use it.
-        // If it's a key like "default", "wave", look up in... Props? 
-        // We passed costumes object in App.jsx but need to pass it down.
-        // Actually, passed `{ costumes: { default: "🐻"... } }` inside sprite object.
-        // BUT here we only destructured specific props.
-        // Let's assume `currentCostume` is the KEY.
-        // Ideally we should pass the `costumes` map prop.
+        // 1. If we have a costumes map, try looking up by key
+        const costumeValue = costumes?.[currentCostume] || currentCostume;
 
-        // Simple hack for now based on 'type' to keep it robust if props missing
+        // 2. If it looks like a path/URL (image), render img tag
+        if (typeof costumeValue === 'string' && (costumeValue.includes('/') || costumeValue.includes('data:image'))) {
+            return (
+                <img
+                    src={costumeValue}
+                    alt={id}
+                    style={{ width: '80px', height: '80px', objectFit: 'contain' }}
+                    draggable={false}
+                />
+            );
+        }
+
+        // 3. Fallback to emoji logic
         if (currentCostume === "wave") {
             if (type === 'bear') return "👋";
             if (type === 'dog') return "🐕";
+            if (type === 'robot') return "🤖";
         }
         if (type === 'dog') return '🐶';
         if (type === 'cat') return '🐱';
+        if (type === 'robot') return '🤖';
         return '🐻'; // Teddy default
     };
 
@@ -174,6 +183,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                     cursor: 'grab',
                     filter: active ? 'drop-shadow(0 0 5px blue)' : 'none'
                 }}
+                onClick={onClick}
             >
                 {/* Speech Bubble */}
                 {speech && (

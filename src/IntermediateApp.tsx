@@ -486,7 +486,18 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     useEffect(() => {
         if (editorMode === 'stage' && sprites.length === 0) {
             console.log('[APP] Creating default sprite...');
-            const defaultSprite = new Sprite('sprite_default', 'Cat', triggerUpdate);
+            const defaultSprite = new Sprite('sprite_default', 'Robot', triggerUpdate, 'robot');
+
+            // Add robot costumes
+            const loadCostumes = async () => {
+                await defaultSprite.addCostume('idle', 'assets/sprites/robot/robot_idle.svg');
+                await defaultSprite.addCostume('wave 1', 'assets/sprites/robot/robot_wave1.svg');
+                await defaultSprite.addCostume('wave 2', 'assets/sprites/robot/robot_wave2.svg');
+                await defaultSprite.addCostume('talk', 'assets/sprites/robot/robot_talk1.svg');
+                triggerUpdate();
+            };
+            loadCostumes();
+
             animationVM.registerSprite(defaultSprite);
             setSprites([defaultSprite]);
             setSelectedSpriteId('sprite_default');
@@ -527,8 +538,8 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
             // Dynamic Dropdown Colors: Update highlight and background color based on block color
             if (!(Blockly.FieldDropdown.prototype as any)._originalShowEditor) {
-                (Blockly.FieldDropdown.prototype as any)._originalShowEditor = Blockly.FieldDropdown.prototype.showEditor_;
-                Blockly.FieldDropdown.prototype.showEditor_ = function (opt_e) {
+                (Blockly.FieldDropdown.prototype as any)._originalShowEditor = (Blockly.FieldDropdown.prototype as any).showEditor_;
+                (Blockly.FieldDropdown.prototype as any).showEditor_ = function (this: Blockly.FieldDropdown, opt_e: any) {
                     const block = this.getSourceBlock();
                     if (block) {
                         const color = block.getColour();

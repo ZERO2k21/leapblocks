@@ -180,7 +180,15 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                                     justifyContent: 'center',
                                     fontSize: '24px',
                                 }}>
-                                    {getSpriteEmoji(sprite)}
+                                    {sprite.currentCostume ? (
+                                        <img
+                                            src={sprite.currentCostume.image.src}
+                                            alt={sprite.name}
+                                            style={{ maxWidth: '40px', maxHeight: '40px', objectFit: 'contain' }}
+                                        />
+                                    ) : (
+                                        getSpriteEmoji(sprite)
+                                    )}
                                 </div>
                                 <div style={styles.spriteItemName}>{sprite.name}</div>
                                 <button

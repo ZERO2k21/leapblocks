@@ -28,6 +28,12 @@ import DirectionPicker from "./components/DirectionPicker"; // Import Direction 
 import defineLooksBlocks from "./blocks/looksBlocks";
 import defineSoundBlocks from "./blocks/soundBlocks";
 
+// Robot Assets (Static paths from public/)
+const robotIdle = "assets/sprites/robot/robot_idle.svg";
+const robotWave1 = "assets/sprites/robot/robot_wave1.svg";
+const robotWave2 = "assets/sprites/robot/robot_wave2.svg";
+const robotTalk1 = "assets/sprites/robot/robot_talk1.svg";
+
 // Categories
 const CATEGORIES = [
     { id: "motion", name: "Motion", color: "#4C97FF", icon: <Footprints fill="currentColor" stroke="none" /> },
@@ -35,9 +41,6 @@ const CATEGORIES = [
     { id: "sound", name: "Sound", color: "#CF63CF", icon: <Volume2 fill="currentColor" stroke="none" /> },
     { id: "events", name: "Events", color: "#FFBF00", icon: <Flag fill="currentColor" stroke="none" /> },
     { id: "control", name: "Control", color: "#FFAB19", icon: <Hand fill="currentColor" stroke="none" /> },
-    { id: "sensing", name: "Sensing", color: "#5CB1D6", icon: <Radar fill="currentColor" stroke="none" /> },
-    { id: "operators", name: "Operators", color: "#59C059", icon: <Calculator fill="currentColor" stroke="none" /> },
-    { id: "variables", name: "Variables", color: "#FF8C1A", icon: <Database fill="currentColor" stroke="none" /> },
     { id: "pen", name: "Pen", color: "#0FBD8C", icon: <PenTool fill="currentColor" stroke="none" /> },
 ];
 
@@ -164,15 +167,21 @@ export default function JuniorApp({ onBack }) {
             background: "white",
             sprites: [
                 {
-                    id: "teddy", name: "Teddy", type: "bear",
+                    id: "robot_default", name: "Robot", type: "robot",
                     x: 200, y: 150, angle: 0, size: 100, visible: true, speech: null,
-                    costumes: { default: "🐻", wave: "👋" }, currentCostume: "default"
+                    costumes: {
+                        default: robotIdle,
+                        wave1: robotWave1,
+                        wave2: robotWave2,
+                        talk: robotTalk1
+                    },
+                    currentCostume: "default"
                 }
             ]
         }
     ]);
 
-    const [activeSpriteId, setActiveSpriteId] = useState("teddy");
+    const [activeSpriteId, setActiveSpriteId] = useState("robot_default");
     const [winMessage, setWinMessage] = useState(null); // Win Message State
 
     // Derived State
@@ -245,16 +254,31 @@ export default function JuniorApp({ onBack }) {
     };
 
     // Helper: Add Sprite (Delegating to System mainly for storage)
-    const addSprite = (type = "bear") => {
+    const addSprite = (type = "robot") => {
         saveCurrentWorkspace();
-        const newId = `sprite_${Date.now()}`; // Note: Impulse is triggered by user event, so Date.now() here is OK (event handler, not render)
-        // ... (Creation logic remains similar, or move to Hook eventually)
+        const newId = `sprite_${Date.now()}`;
+
+        let costumes = { default: "🐻" };
+        if (type === "robot") {
+            costumes = {
+                default: robotIdle,
+                wave1: robotWave1,
+                wave2: robotWave2,
+                talk: robotTalk1
+            };
+        } else if (type === "bear") {
+            costumes = { default: "🐻", wave: "👋" };
+        } else if (type === "dog") {
+            costumes = { default: "🐶", wave: "wave" }; // Key-based wave fallback in Teddy.jsx
+        }
+
         const newSprite = {
             id: newId,
-            name: type === "bear" ? "Teddy" : type === "dog" ? "Dog" : "Cat",
+            name: type.charAt(0).toUpperCase() + type.slice(1),
             type: type,
             x: 200, y: 150, angle: 0, size: 100, visible: true,
-            costumes: { default: "🐻" }, currentCostume: "default",
+            costumes: costumes,
+            currentCostume: "default",
             blocks: {}
         };
         setScenes(prev => prev.map(s => {
@@ -1036,6 +1060,8 @@ export default function JuniorApp({ onBack }) {
                                     active={activeSpriteId === sprite.id}
                                     x={sprite.x} y={sprite.y} angle={sprite.angle} size={sprite.size}
                                     visible={sprite.visible} currentCostume={sprite.currentCostume}
+                                    costumes={sprite.costumes}
+                                    speech={sprite.speech}
                                     onClick={() => handleSpriteClick(sprite.id)}
                                 />
                             </div>

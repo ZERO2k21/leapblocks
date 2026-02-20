@@ -15,6 +15,10 @@ export const plugins = [
         from: path.resolve(__dirname, 'public', 'icons'),
         to: 'icons',
       },
+      {
+        from: path.resolve(__dirname, 'public', 'assets'),
+        to: 'assets',
+      },
     ],
   }),
 ];
