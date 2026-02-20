@@ -12,6 +12,22 @@ const COLORS = {
     serial: '#8B5CF6',       // Purple - Serial
 };
 
+// Common pin options to ensure consistency
+const DIGITAL_PINS: [string, string][] = [
+    ['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7'],
+    ['8', '8'], ['9', '9'], ['10', '10'], ['11', '11'], ['12', '12'], ['13', '13']
+];
+
+const ANALOG_PINS: [string, string][] = [
+    ['A0', 'A0'], ['A1', 'A1'], ['A2', 'A2'], ['A3', 'A3'], ['A4', 'A4'], ['A5', 'A5']
+];
+
+const PWM_PINS: [string, string][] = [
+    ['3', '3'], ['5', '5'], ['6', '6'], ['9', '9'], ['10', '10'], ['11', '11']
+];
+
+const ALL_PINS = [...DIGITAL_PINS, ...ANALOG_PINS];
+
 // Define Arduino blocks with better styling
 export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
     {
@@ -123,16 +139,12 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
     // ═══════════════════════════════════════════════════════════════════════════
     {
         type: 'arduino_digital_write',
-        message0: '📍 set digital pin %1 output as %2',
+        message0: ' set digital pin %1 output as %2',
         args0: [
             {
                 type: 'field_dropdown',
                 name: 'PIN',
-                options: [
-                    ['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7'],
-                    ['8', '8'], ['9', '9'], ['10', '10'], ['11', '11'], ['12', '12'], ['13', '13'],
-                    ['A0', 'A0'], ['A1', 'A1'], ['A2', 'A2'], ['A3', 'A3'], ['A4', 'A4'], ['A5', 'A5']
-                ]
+                options: ALL_PINS
             },
             { type: 'field_dropdown', name: 'VALUE', options: [['HIGH', 'HIGH'], ['LOW', 'LOW']] },
         ],
@@ -149,11 +161,7 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             {
                 type: 'field_dropdown',
                 name: 'PIN',
-                options: [
-                    ['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7'],
-                    ['8', '8'], ['9', '9'], ['10', '10'], ['11', '11'], ['12', '12'], ['13', '13'],
-                    ['A0', 'A0'], ['A1', 'A1'], ['A2', 'A2'], ['A3', 'A3'], ['A4', 'A4'], ['A5', 'A5']
-                ]
+                options: ALL_PINS
             }
         ],
         output: 'Boolean',
@@ -165,7 +173,7 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
         type: 'arduino_analog_write',
         message0: '📊 set PWM pin %1 to %2',
         args0: [
-            { type: 'field_dropdown', name: 'PIN', options: [['3', '3'], ['5', '5'], ['6', '6'], ['9', '9'], ['10', '10'], ['11', '11']] },
+            { type: 'field_dropdown', name: 'PIN', options: PWM_PINS },
             { type: 'field_number', name: 'VALUE', value: 255, min: 0, max: 255 },
         ],
         previousStatement: null,
@@ -177,7 +185,7 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
     {
         type: 'arduino_analog_read',
         message0: '📈 read analog pin %1',
-        args0: [{ type: 'field_dropdown', name: 'PIN', options: [['A0', 'A0'], ['A1', 'A1'], ['A2', 'A2'], ['A3', 'A3'], ['A4', 'A4'], ['A5', 'A5']] }],
+        args0: [{ type: 'field_dropdown', name: 'PIN', options: ANALOG_PINS }],
         output: 'Number',
         colour: COLORS.arduino,
         tooltip: 'Read analog value from pin (0-1023)',
@@ -187,7 +195,7 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
         type: 'arduino_tone',
         message0: '🔊 play tone on pin %1 frequency %2 Hz',
         args0: [
-            { type: 'field_dropdown', name: 'PIN', options: [['3', '3'], ['5', '5'], ['6', '6'], ['9', '9'], ['10', '10'], ['11', '11']] },
+            { type: 'field_dropdown', name: 'PIN', options: PWM_PINS },
             { type: 'field_number', name: 'FREQ', value: 440, min: 20, max: 20000 },
         ],
         previousStatement: null,
@@ -200,7 +208,7 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
         type: 'arduino_notone',
         message0: '🔇 stop tone on pin %1',
         args0: [
-            { type: 'field_dropdown', name: 'PIN', options: [['3', '3'], ['5', '5'], ['6', '6'], ['9', '9'], ['10', '10'], ['11', '11']] },
+            { type: 'field_dropdown', name: 'PIN', options: PWM_PINS },
         ],
         previousStatement: null,
         nextStatement: null,
@@ -495,7 +503,7 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
         type: 'arduino_servo',
         message0: '🎚️ set servo on pin %1 to %2 °',
         args0: [
-            { type: 'field_dropdown', name: 'PIN', options: [['9', '9'], ['10', '10'], ['11', '11']] },
+            { type: 'field_dropdown', name: 'PIN', options: PWM_PINS },
             { type: 'field_number', name: 'ANGLE', value: 90, min: 0, max: 180 },
         ],
         previousStatement: null,
@@ -522,7 +530,7 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
         type: 'arduino_led',
         message0: '💡 LED on pin %1 brightness %2',
         args0: [
-            { type: 'field_dropdown', name: 'PIN', options: [['3', '3'], ['5', '5'], ['6', '6'], ['9', '9'], ['10', '10'], ['11', '11'], ['13', '13']] },
+            { type: 'field_dropdown', name: 'PIN', options: [...PWM_PINS, ['13', '13']] },
             { type: 'field_number', name: 'BRIGHTNESS', value: 255, min: 0, max: 255 },
         ],
         previousStatement: null,
@@ -552,8 +560,8 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
         type: 'arduino_ultrasonic',
         message0: '📏 ultrasonic distance (cm) trig %1 echo %2',
         args0: [
-            { type: 'field_dropdown', name: 'TRIG', options: [['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7']] },
-            { type: 'field_dropdown', name: 'ECHO', options: [['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7']] },
+            { type: 'field_dropdown', name: 'TRIG', options: ALL_PINS },
+            { type: 'field_dropdown', name: 'ECHO', options: ALL_PINS },
         ],
         output: 'Number',
         colour: COLORS.sensors,
@@ -631,7 +639,7 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             {
                 type: 'field_dropdown',
                 name: 'PIN',
-                options: [['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7'], ['8', '8'], ['9', '9'], ['10', '10'], ['11', '11'], ['12', '12'], ['13', '13']]
+                options: DIGITAL_PINS
             }
         ],
         output: 'Boolean',
@@ -673,15 +681,71 @@ export const arduinoToolbox = {
             name: 'Operators',
             colour: COLORS.operators,
             contents: [
-                { kind: 'block', type: 'arduino_math_add' },
-                { kind: 'block', type: 'arduino_math_subtract' },
-                { kind: 'block', type: 'arduino_math_multiply' },
-                { kind: 'block', type: 'arduino_math_divide' },
-                { kind: 'block', type: 'arduino_mod' },
+                {
+                    kind: 'block',
+                    type: 'arduino_math_add',
+                    inputs: {
+                        A: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } },
+                        B: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'arduino_math_subtract',
+                    inputs: {
+                        A: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } },
+                        B: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'arduino_math_multiply',
+                    inputs: {
+                        A: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } },
+                        B: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'arduino_math_divide',
+                    inputs: {
+                        A: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } },
+                        B: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'arduino_mod',
+                    inputs: {
+                        A: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } },
+                        B: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } }
+                    }
+                },
                 { kind: 'label', text: '── Comparison ──' },
-                { kind: 'block', type: 'arduino_compare_gt' },
-                { kind: 'block', type: 'arduino_compare_lt' },
-                { kind: 'block', type: 'arduino_compare_eq' },
+                {
+                    kind: 'block',
+                    type: 'arduino_compare_gt',
+                    inputs: {
+                        A: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } },
+                        B: { shadow: { type: 'arduino_number', fields: { NUM: 50 } } }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'arduino_compare_lt',
+                    inputs: {
+                        A: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } },
+                        B: { shadow: { type: 'arduino_number', fields: { NUM: 50 } } }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'arduino_compare_eq',
+                    inputs: {
+                        A: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } },
+                        B: { shadow: { type: 'arduino_number', fields: { NUM: 50 } } }
+                    }
+                },
                 { kind: 'label', text: '── Logic ──' },
                 { kind: 'block', type: 'arduino_logic_and' },
                 { kind: 'block', type: 'arduino_logic_or' },

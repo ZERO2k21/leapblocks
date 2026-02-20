@@ -29,10 +29,10 @@ import defineLooksBlocks from "./blocks/looksBlocks";
 import defineSoundBlocks from "./blocks/soundBlocks";
 
 // Robot Assets (Static paths from public/)
-const robotIdle = "assets/sprites/robot/robot_idle.svg";
-const robotWave1 = "assets/sprites/robot/robot_wave1.svg";
-const robotWave2 = "assets/sprites/robot/robot_wave2.svg";
-const robotTalk1 = "assets/sprites/robot/robot_talk1.svg";
+const robotIdle = "/assets/sprites/robot/robot_idle.svg";
+const robotWave1 = "/assets/sprites/robot/robot_wave1.svg";
+const robotWave2 = "/assets/sprites/robot/robot_wave2.svg";
+const robotTalk1 = "/assets/sprites/robot/robot_talk1.svg";
 
 // Categories
 const CATEGORIES = [
@@ -1053,7 +1053,7 @@ export default function JuniorApp({ onBack }) {
                     {/* STAGE CHILDREN */}
                     <div className="stage" style={{ width: '100%', height: '100%', position: "relative", display: "flex", justifyContent: "center", alignItems: "center" }}>
                         {sprites.map(sprite => (
-                            <div key={sprite.id} style={{ display: activeSpriteId === sprite.id ? 'block' : 'none' }}>
+                            <div key={sprite.id} style={{ display: sprite.visible !== false ? 'block' : 'none' }}>
                                 <Teddy
                                     id={sprite.id}
                                     type={sprite.type}
@@ -1189,120 +1189,7 @@ function CategoryButton({ category, isActive, onClick }) {
 // --- TOP BAR COMPONENTS ---
 
 // Inline TopBar Component
-function TopBar({ onBack, projectName, setProjectName, onFileMenu, onEditMenu, onConnect, connectionStatus, connectedDevice, selectedBoard, onSelectBoard, hintMessage }) {
-    const config = getLessonConfig();
-    const isJunior = config.juniorMode;
-    const allowHardware = config.hardware?.allowed !== false;
-
-    return (
-        <div style={{ width: "100%", height: "100vh", display: "flex", background: "#f0f5ff", fontFamily: "Arial, sans-serif", overflow: "hidden" }}>
-
-            {/* LEFT CONTAINER: WORKSPACE + MENU (Connected) */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", margin: "10px", borderRadius: "20px", background: "white", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", overflow: "hidden" }}>
-
-                {/* WORKSPACE */}
-                <div style={{ flex: 1, position: "relative" }}>
-                    <div ref={blocklyDiv} style={{ width: "100%", height: "100%" }} />
-
-                    {/* Floating Connection Status (if needed, or keep in header) */}
-                    {/* For now, we assume the header is gone or minimal based on image. 
-                        The user image shows NO header bar, just the workspace and corner tools. 
-                        We will hide the old header and rely on the new UI.
-                    */}
-                    <div style={{ position: "absolute", top: "10px", right: "10px", zIndex: 10 }}>
-                        <div onClick={onBack} style={{ width: "40px", height: "40px", background: "#FF6B6B", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 5px rgba(0,0,0,0.2)", color: "white", fontSize: "20px" }}>
-                            🏠
-                        </div>
-                    </div>
-                </div>
-
-                {/* BOTTOM MENU BAR */}
-                <div style={{ height: "auto", background: "white", zIndex: 10, position: "relative" }}>
-                    {/* Visual Connector Line? 
-                        The user said "workspace and blocks list tools are connected". 
-                        By putting them in the same white rounded div, they look connected.
-                    */}
-                    <JuniorMenuBar
-                        categories={CATEGORIES}
-                        activeCategory={activeCategory}
-                        onSelectCategory={(id) => {
-                            setActiveCategory(id);
-                            if (workspaceRef.current) workspaceRef.current.updateToolbox(getToolboxXml(id));
-                        }}
-                    />
-                </div>
-            </div>
-
-            {/* RIGHT CONTAINER: STAGE + SPRITES + ICONS */}
-            <div style={{ width: "420px", display: "flex", flexDirection: "column", padding: "10px 10px 10px 0", gap: "15px" }}>
-
-                {/* STAGE AREA */}
-                {/* RightPanel handles Stage and Sprites internally. We need to pass children for the new icons. */}
-                <RightPanel
-                    scenes={scenes}
-                    currentSceneId={currentSceneId}
-                    sprites={sprites}
-                    activeSpriteId={activeSpriteId}
-                    onSpriteSelect={handleSpriteSelect}
-                    onSceneSelect={handleSceneSelect}
-                    onAddSprite={() => setIsSpriteModalOpen(true)}
-                    onUpdateSprite={(id, updates) => spriteActions.update(id, updates)}
-                    onAddScene={addScene}
-                    appMode={appMode}
-                    setAppMode={setAppMode}
-                    isRunning={isRunning.current}
-                    onFlagClick={() => window.dispatchEvent(new Event("green_flag"))}
-                    onStopClick={() => window.dispatchEvent(new Event("stop_all"))}
-                >
-                    {/* BOTTOM RIGHT ACTION ICONS */}
-                    <div style={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        gap: "12px",
-                        marginTop: "15px",
-                        paddingRight: "5px"
-                    }}>
-                        <div title={isRecording ? "Stop Recording" : "Record Sound"} onClick={handleToggleRecording}
-                            style={{
-                                cursor: "pointer", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center",
-                                background: isRecording ? "#FFCDD2" : "transparent", borderRadius: "50%",
-                                border: isRecording ? "1px solid red" : "none"
-                            }}>
-                            <Mic stroke={isRecording ? "red" : "#666"} size={24} />
-                        </div>
-
-                        <div title="Green Flag" onClick={() => window.dispatchEvent(new Event("green_flag"))}
-                            style={{ cursor: "pointer", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <Flag fill="#4C97FF" stroke="none" size={32} />
-                        </div>
-
-                        <div title="Reset" onClick={() => window.resetBear && window.resetBear()}
-                            style={{ cursor: "pointer", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <RotateCcw stroke="#666" size={24} />
-                        </div>
-
-                        <div title="Camera Mode"
-                            style={{ cursor: "pointer", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <Camera fill="#666" stroke="none" size={24} />
-                        </div>
-
-                        <div title="Grid" onClick={() => window.goToLocation && window.toggleGrid && window.toggleGrid()}
-                            style={{ cursor: "pointer", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <Square stroke="#666" size={24} />
-                        </div>
-
-                        <div title="Full Screen"
-                            style={{ cursor: "pointer", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <Maximize stroke="#666" size={24} />
-                        </div>
-                    </div>
-                </RightPanel>
-            </div>
-
-            <style>{`@keyframes popIn { 0% { transform: translateX(-50%) scale(0.8); opacity: 0; } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }`}</style>
-        </div>
-    );
-}
+// --- REMOVED DUPLICATE TOPBAR COMPONENT ---
 
 function Dropdown({ label, options, onSelect }) {
     const [open, setOpen] = useState(false);

@@ -9,6 +9,10 @@ import { animationVM, CompiledScript } from './vm/AnimationVM';
 import { Sprite, SpriteType } from './stage/Sprite';
 import Stage from './stage/Stage';
 import SpritePanel from './stage/SpritePanel';
+import StagePanel from './stage/StagePanel';
+import BackdropLibrary from './components/BackdropLibrary';
+import BackdropEditor from './components/BackdropEditor';
+import { stageManager } from './engine/StageManager';
 import BoardSelectionModal, { BOARDS } from './junior/components/BoardSelectionModal';
 import MenuBar from './junior/components/MenuBar';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
@@ -89,6 +93,11 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<string>('');
 
+    // Backdrop state
+    const [showBackdropLibrary, setShowBackdropLibrary] = useState(false);
+    const [showBackdropEditor, setShowBackdropEditor] = useState(false);
+    const [, setBackdropRefresh] = useState(0); // Force re-render on backdrop change
+
     // Force re-render for sprite updates
     const [, forceUpdate] = useState({});
     const triggerUpdate = useCallback(() => forceUpdate({}), []);
@@ -96,6 +105,12 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // ═══════════════════════════════════════════════════════════════════════
     // HELPERS
     // ═══════════════════════════════════════════════════════════════════════
+    const handleBackdropSelect = async (name: string, src: string) => {
+        await stageManager.addBackdrop(name, src);
+        setShowBackdropLibrary(false);
+        setBackdropRefresh(prev => prev + 1);
+    };
+
     const [promptState, setPromptState] = useState<{
         isOpen: boolean;
         message: string;
@@ -490,13 +505,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
             // Add robot costumes
             const loadCostumes = async () => {
-                await defaultSprite.addCostume('idle', 'assets/sprites/robot/robot_idle.svg');
-                await defaultSprite.addCostume('wave 1', 'assets/sprites/robot/robot_wave1.svg');
-                await defaultSprite.addCostume('wave 2', 'assets/sprites/robot/robot_wave2.svg');
-                await defaultSprite.addCostume('talk', 'assets/sprites/robot/robot_talk1.svg');
+                await defaultSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
+                await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/robot_wave1.svg');
+                await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/robot_wave2.svg');
+                await defaultSprite.addCostume('talk', '/assets/sprites/robot/robot_talk1.svg');
                 triggerUpdate();
             };
-            loadCostumes();
+            loadCostumes().catch(err => console.error('[APP] Failed to initialize costumes:', err));
 
             animationVM.registerSprite(defaultSprite);
             setSprites([defaultSprite]);
@@ -984,14 +999,20 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 />
                             </div>
 
-                            {/* Sprite Panel */}
-                            <SpritePanel
-                                sprites={sprites}
-                                selectedSpriteId={selectedSpriteId}
-                                onSelectSprite={setSelectedSpriteId}
-                                onAddSprite={addSprite}
-                                onDeleteSprite={deleteSprite}
-                            />
+                            {/* Sprite & Stage Panels */}
+                            <div style={styles.assetsContainer}>
+                                <SpritePanel
+                                    sprites={sprites}
+                                    selectedSpriteId={selectedSpriteId}
+                                    onSelectSprite={setSelectedSpriteId}
+                                    onAddSprite={addSprite}
+                                    onDeleteSprite={deleteSprite}
+                                />
+                                <StagePanel
+                                    onOpenLibrary={() => setShowBackdropLibrary(true)}
+                                    onOpenEditor={() => setShowBackdropEditor(true)}
+                                />
+                            </div>
                         </>
                     ) : (
                         <>
@@ -1176,6 +1197,19 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 }}
                 currentBoard={selectedBoard}
             />
+
+            {/* Backdrop Modals */}
+            {showBackdropLibrary && (
+                <BackdropLibrary
+                    onSelect={handleBackdropSelect}
+                    onClose={() => setShowBackdropLibrary(false)}
+                />
+            )}
+            {showBackdropEditor && (
+                <BackdropEditor
+                    onClose={() => setShowBackdropEditor(false)}
+                />
+            )}
         </div>
     );
 };
@@ -1334,6 +1368,11 @@ const styles: { [key: string]: React.CSSProperties } = {
         flexDirection: 'column',
         gap: '8px',
         padding: '8px',
+    },
+    assetsContainer: {
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'flex-start',
     },
 
     // Stage

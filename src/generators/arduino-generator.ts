@@ -243,6 +243,24 @@ arduinoGenerator.forBlock['arduino_constrain'] = function (block, generator) {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// VARIABLES
+// ═══════════════════════════════════════════════════════════════════════════
+arduinoGenerator.forBlock['variables_get'] = function (block, generator) {
+    const varName = Blockly.Variables.getVariable(generator.workspace, block.getFieldValue('VAR')).name;
+    (arduinoGenerator as any).addDefinition(`var_decl_${varName}`, `double ${varName} = 0;`);
+    log('variables_get', 'Generating', { varName });
+    return [varName, ORDER_ATOMIC];
+};
+
+arduinoGenerator.forBlock['variables_set'] = function (block, generator) {
+    const argument0 = generator.valueToCode(block, 'VALUE', ORDER_NONE) || '0';
+    const varName = Blockly.Variables.getVariable(generator.workspace, block.getFieldValue('VAR')).name;
+    (arduinoGenerator as any).addDefinition(`var_decl_${varName}`, `double ${varName} = 0;`);
+    log('variables_set', 'Generating', { varName });
+    return `  ${varName} = ${argument0};\n`;
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
 // SERIAL
 // ═══════════════════════════════════════════════════════════════════════════
 arduinoGenerator.forBlock['arduino_serial_begin'] = function (block) {
@@ -454,7 +472,8 @@ long ${funcName}(int trigPin, int echoPin) {
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
-  long duration = pulseIn(echoPin, HIGH);
+  long duration = pulseIn(echoPin, HIGH, 30000); // 30ms timeout (~5m max)
+  if (duration == 0) return 999; // No pulse detected
   return duration * 0.034 / 2;
 }
 `;
