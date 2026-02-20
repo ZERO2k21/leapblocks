@@ -30,8 +30,9 @@ arduinoGenerator.scrub_ = function (block: Blockly.Block, code: string, thisOnly
 
 // Final code adjustments
 arduinoGenerator.finish = function (code: string) {
-    const defs = Object.values(this.definitions_ || {}).join('\n');
-    const setups = Object.values(this.setups_ || {}).join('\n');
+    const generator = this as any;
+    const defs = Object.values(generator.definitions_ || {}).join('\n');
+    const setups = Object.values(generator.setups_ || {}).join('\n');
 
     let finalCode = '';
     if (defs) finalCode += defs + '\n\n';
@@ -159,6 +160,33 @@ arduinoGenerator.forBlock['arduino_digital_read'] = function (block) {
     (arduinoGenerator as any).addSetup(`pinMode_${pin}`, `  pinMode(${pin}, INPUT);`);
     log('arduino_digital_read', 'Generating', { pin });
     return [`digitalRead(${pin})`, ORDER_ATOMIC];
+};
+
+arduinoGenerator.forBlock['arduino_pir'] = function (block) {
+    const pin = block.getFieldValue('PIN');
+    (arduinoGenerator as any).addSetup(`pinMode_${pin}`, `  pinMode(${pin}, INPUT);`);
+    log('arduino_pir', 'Generating', { pin });
+    return [`digitalRead(${pin}) == HIGH`, ORDER_RELATIONAL];
+};
+
+arduinoGenerator.forBlock['arduino_digital_sensor'] = function (block) {
+    const sensor = block.getFieldValue('SENSOR');
+    const pin = block.getFieldValue('PIN');
+    (arduinoGenerator as any).addSetup(`pinMode_${pin}`, `  pinMode(${pin}, INPUT);`);
+    log('arduino_digital_sensor', 'Generating', { sensor, pin });
+
+    // Most digital sensors (PIR, Soil Moisture, Hall, Touch) are Active High (1 when detected)
+    // IR (Proximity) is often Active Low (0 when detected)
+    // To keep it consistent for kids, we'll try to provide a "detected" state.
+    // However, some users might want the raw state.
+    // Based on the PictoBlox style, usually "read digital sensor" returns true if detection is high.
+    // But for IR proximity, it's usually low.
+    // Let's check the sensor type and handle inversion if it's IR.
+
+    if (sensor === 'IR') {
+        return [`digitalRead(${pin}) == LOW`, ORDER_RELATIONAL];
+    }
+    return [`digitalRead(${pin}) == HIGH`, ORDER_RELATIONAL];
 };
 
 arduinoGenerator.forBlock['arduino_analog_write'] = function (block) {

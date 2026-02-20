@@ -74,6 +74,19 @@ export class AnimationCompiler {
                 // So `item` is `() => string`.
                 return () => animationVM.listContains(list, item());
             }
+            case 'arduino_digital_sensor': {
+                const sensor = conditionBlock.getFieldValue('SENSOR');
+                const pin = conditionBlock.getFieldValue('PIN');
+                return () => {
+                    // For now, we'll return false if not connected, or try to get latest state
+                    // In a full implementation, we'd have a background polling task in VM
+                    // that updates a state map.
+                    // For the "Live" feature to feel responsive, we'll assume the VM 
+                    // or hardwareAdapter provides a way to get the last known state.
+                    console.log(`[AnimationVM] Checking digital sensor ${sensor} on pin ${pin}`);
+                    return false; // Default to false for simulation
+                };
+            }
             default:
                 console.warn('[AnimationCompiler] Unknown condition block:', conditionBlock.type);
                 return () => false;

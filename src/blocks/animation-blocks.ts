@@ -5,17 +5,17 @@ import * as Blockly from 'blockly';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const COLORS = {
-    motion: '#4C97FF',       // Blue - Motion blocks
-    looks: '#9966FF',        // Purple - Looks blocks
-    sound: '#CF63CF',        // Pink - Sound blocks
-    events: '#FFBF00',       // Yellow/Gold - Events
-    control: '#FFAB19',      // Orange - Control blocks
-    sensing: '#5CB1D6',      // Light blue - Sensing
-    operators: '#59C059',    // Green - Operators
-    data: '#FF8C1A',         // Orange - Variables (standard scratch name)
-    variables: '#FF8C1A',    // Alias
-    list: '#FF661A',         // Red/Orange - Lists
-    myblocks: '#FF6680',     // Pink/Red - My Blocks
+    motion: '#4A90E2',       // Blue - Motion blocks
+    looks: '#8B5CF6',        // Purple - Looks blocks
+    sound: '#D946EF',        // Fuchsia - Sound blocks
+    events: '#FACC15',       // Yellow - Events
+    control: '#F59E0B',      // Amber - Control blocks
+    sensing: '#06B6D4',      // Cyan - Sensing
+    operators: '#22C55E',    // Green - Operators
+    data: '#F97316',         // Orange - Variables
+    variables: '#F97316',    // Alias
+    list: '#F97316',         // Unified orange
+    myblocks: '#EC4899',     // Pink - My Blocks
 };
 
 export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([

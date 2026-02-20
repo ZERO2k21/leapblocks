@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
     ChevronDown, File, FolderOpen, Save, Download,
     Undo, Redo, Cpu, Bluetooth, Usb, Wifi,
-    Play, Upload, Settings, HelpCircle
+    Play, Upload, Settings, HelpCircle, Home, RotateCcw
 } from 'lucide-react';
 
 // PictoBlox-inspired purple color scheme
@@ -173,8 +173,15 @@ export default function MenuBar({
     onBoardSelect,
     connectionStatus = "disconnected",
     onConnect,
+    ports = [],
+    selectedPort = "",
+    onPortSelect,
+    onRefreshPorts,
+    onUpload,
+    isUploading,
     onFileAction,
     onEditAction,
+    onBack,
 }) {
     const [openMenu, setOpenMenu] = useState(null);
 
@@ -230,10 +237,32 @@ export default function MenuBar({
             height: '48px',
             background: COLORS.menuBar,
             padding: '0 12px',
-            gap: '4px',
+            gap: '8px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
             zIndex: 100,
+            borderBottom: '1px solid rgba(255,255,255,0.1)',
         }}>
+            {/* Home Link */}
+            <button
+                onClick={onBack}
+                style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'white',
+                    padding: '6px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    marginRight: '8px'
+                }}
+            >
+                <Home size={16} />
+                Home
+            </button>
             {/* Logo */}
             <div style={{
                 display: 'flex',
@@ -275,14 +304,98 @@ export default function MenuBar({
                 onToggle={() => toggleMenu('board')}
                 onClose={closeMenu}
             />
-            <DropdownMenu
-                label="Connect"
-                icon={Usb}
-                items={connectMenuItems}
-                isOpen={openMenu === 'connect'}
-                onToggle={() => toggleMenu('connect')}
-                onClose={closeMenu}
-            />
+
+            {/* Hardware Port Section (Styled for Premium Look) */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: 'rgba(0,0,0,0.2)',
+                padding: '2px 8px',
+                borderRadius: '8px',
+                margin: '0 4px'
+            }}>
+                <button
+                    onClick={onRefreshPorts}
+                    title="Refresh Ports"
+                    style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'white',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        opacity: 0.8
+                    }}
+                >
+                    <RotateCcw size={14} />
+                </button>
+                <select
+                    value={selectedPort}
+                    onChange={(e) => onPortSelect?.(e.target.value)}
+                    style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'white',
+                        fontSize: '12px',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        maxWidth: '120px'
+                    }}
+                >
+                    <option value="" style={{ color: '#333' }}>Select Port</option>
+                    {ports.map(p => (
+                        <option key={p.path} value={p.path} style={{ color: '#333' }}>
+                            {p.path}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    onClick={onConnect}
+                    style={{
+                        background: connectionStatus === 'connected' ? '#2ECC71' : 'rgba(255,255,255,0.15)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: 'white',
+                        padding: '4px 10px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        marginLeft: '4px',
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    {connectionStatus === 'connected' ? 'CONNECTED' : 'CONNECT'}
+                </button>
+            </div>
+
+            {/* Upload Button - Only in Upload Mode */}
+            {mode === 'upload' && (
+                <button
+                    onClick={onUpload}
+                    disabled={isUploading}
+                    style={{
+                        background: isUploading ? '#999' : COLORS.accent,
+                        border: 'none',
+                        borderRadius: '17px',
+                        color: isUploading ? '#fff' : '#000',
+                        padding: '6px 20px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: isUploading ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                        transition: 'all 0.2s',
+                        marginRight: '8px'
+                    }}
+                >
+                    <Upload size={14} />
+                    {isUploading ? 'UPLOADING...' : 'UPLOAD'}
+                </button>
+            )}
 
             {/* Spacer */}
             <div style={{ flex: 1 }} />

@@ -10,6 +10,7 @@ import { Sprite, SpriteType } from './stage/Sprite';
 import Stage from './stage/Stage';
 import SpritePanel from './stage/SpritePanel';
 import BoardSelectionModal, { BOARDS } from './junior/components/BoardSelectionModal';
+import MenuBar from './junior/components/MenuBar';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
 import './custom-toolbox';
 
@@ -64,6 +65,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     const [appMode, setAppMode] = useState<AppMode>('blocks');
     const [editorMode, setEditorMode] = useState<EditorMode>('stage');
+    const [projectName, setProjectName] = useState('My Project');
     const [generatedCode, setGeneratedCode] = useState<string>('// Select blocks to generate code');
     const [activeTab, setActiveTab] = useState<'log' | 'serial'>('log');
     const [workspaceTab, setWorkspaceTab] = useState<'blocks' | 'python' | 'costumes' | 'sounds'>('blocks');
@@ -312,6 +314,14 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     addLog(`[Hardware] Button on ${pin}: ${val ? 'Pressed' : 'Released'}`);
                     break;
                 }
+                case 'arduino_digital_sensor': {
+                    const sensor = block.getFieldValue('SENSOR');
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const val = await hardwareAdapter.readDigitalPin(pin);
+                    const status = (sensor === 'IR' ? !val : val) ? 'Detected' : 'Not Detected';
+                    addLog(`[Hardware] ${sensor} Sensor on ${pin}: ${status} (Raw: ${val ? 'HIGH' : 'LOW'})`);
+                    break;
+                }
             }
         } catch (err) {
             log.app('Interaction error', err);
@@ -495,9 +505,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 zoom: { controls: true, wheel: true, startScale: 0.9, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
                 trashcan: true,
                 sounds: false,
+                renderer: 'zelos',
                 theme: Blockly.Theme.defineTheme('leapblocks', {
                     name: 'leapblocks',
-                    base: 'classic',
+                    base: Blockly.Themes.Zelos,
                     componentStyles: {
                         workspaceBackgroundColour: '#f9f9f9',
                         toolboxBackgroundColour: '#ffffff',
@@ -513,6 +524,22 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     },
                 }),
             });
+
+            // Dynamic Dropdown Colors: Update highlight and background color based on block color
+            if (!(Blockly.FieldDropdown.prototype as any)._originalShowEditor) {
+                (Blockly.FieldDropdown.prototype as any)._originalShowEditor = Blockly.FieldDropdown.prototype.showEditor_;
+                Blockly.FieldDropdown.prototype.showEditor_ = function (opt_e) {
+                    const block = this.getSourceBlock();
+                    if (block) {
+                        const color = block.getColour();
+                        document.documentElement.style.setProperty('--blockly-menu-highlight-color', color);
+                        // Add a subtle tint for the background (10% opacity)
+                        const tint = color.startsWith('#') ? `${color}1A` : 'rgba(0,0,0,0.05)';
+                        document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
+                    }
+                    (this as any)._originalShowEditor(opt_e);
+                };
+            }
 
             addLog('Blockly workspace initialized');
         }
@@ -597,9 +624,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         zoom: { controls: true, wheel: true, startScale: 0.9, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
                         trashcan: true,
                         sounds: false,
+                        renderer: 'zelos',
                         theme: Blockly.Theme.defineTheme('leapblocks', {
                             name: 'leapblocks',
-                            base: 'classic',
+                            base: Blockly.Themes.Zelos,
                             componentStyles: {
                                 workspaceBackgroundColour: '#f9f9f9',
                                 toolboxBackgroundColour: '#ffffff',
@@ -608,7 +636,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 flyoutForegroundColour: '#575E75',
                                 flyoutOpacity: 1,
                                 scrollbarColour: '#ccc',
-                                insertionMarkerColour: '#000',
+                                insertionMarkerColour: '#4C97FF',
                                 insertionMarkerOpacity: 0.3,
                                 scrollbarOpacity: 0.4,
                                 cursorColour: '#d0d0d0',
@@ -817,109 +845,27 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // Main Block Editor UI
     return (
         <div style={styles.container}>
-            {/* Home Button */}
-            {/* Home Button */}
-            <div style={{ padding: '0 16px', display: 'flex', alignItems: 'center' }}>
-                <button
-                    onClick={onBack}
-                    style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#6C4BB4',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontWeight: 'bold'
-                    }}
-                >
-                    🏠 Home
-                </button>
-            </div>
-
-
-            {/* Header */}
-            <header style={styles.header}>
-                <div style={styles.headerLeft}>
-                    <span style={styles.logo}>
-                        🔌 LeapBlocks
-                    </span>
-                    <nav style={styles.nav}>
-                        <span style={styles.navItem}>File</span>
-                        <span style={styles.navItem}>Edit</span>
-                        <span style={styles.navItem}>Tutorials</span>
-                        <span
-                            style={{ ...styles.navItem, fontWeight: 'bold', color: '#FFD700' }}
-                            onClick={() => setIsBoardModalOpen(true)}
-                        >
-                            🔌 Board: {selectedBoardName || 'Select Board'}
-                        </span>
-                    </nav>
-                    <div style={styles.projectName}>
-                        <span>📁</span>
-                        <input type="text" defaultValue="My Project" style={styles.projectInput} />
-                    </div>
-                </div>
-                <div style={styles.headerRight}>
-                    {/* Mode Toggle - Only show for regular blocks mode */}
-                    {appMode === 'blocks' && (
-                        <>
-                            <button
-                                style={editorMode === 'stage' ? styles.modeButtonActive : styles.modeButton}
-                                onClick={() => switchEditorMode('stage')}
-                            >
-                                🎭 Stage
-                            </button>
-                            <button
-                                style={editorMode === 'upload' ? styles.modeButtonActive : styles.modeButton}
-                                onClick={() => switchEditorMode('upload')}
-                            >
-                                ⬆️ Upload
-                            </button>
-                        </>
-                    )}
-
-                    {/* Hardware controls - available in both modes */}
-                    <div style={styles.headerDivider} />
-                    <button
-                        style={styles.refreshButton}
-                        onClick={refreshPorts}
-                        title="Refresh ports"
-                    >
-                        🔄
-                    </button>
-                    <select
-                        style={styles.portSelect}
-                        value={selectedPort}
-                        onChange={(e) => setSelectedPort(e.target.value)}
-                    >
-                        <option value="">Select Port</option>
-                        {ports.map(p => (
-                            <option key={p.path} value={p.path}>
-                                {p.path}{p.manufacturer ? ` (${p.manufacturer})` : ''}
-                            </option>
-                        ))}
-                    </select>
-                    <button
-                        style={isConnected ? styles.connectedButton : styles.connectButton}
-                        onClick={handleConnect}
-                    >
-                        {isConnected ? '🔗 Connected' : '🔌 Connect'}
-                    </button>
-
-                    {/* Upload button - only in Upload mode */}
-                    {editorMode === 'upload' && (
-                        <button
-                            style={isUploading ? styles.uploadButtonDisabled : styles.uploadButton}
-                            onClick={handleUpload}
-                            disabled={isUploading}
-                        >
-                            {isUploading ? '⏳ Uploading...' : '📤 Upload'}
-                        </button>
-                    )}
-
-                    <span style={styles.headerIcon}>⚙️</span>
-                </div>
-            </header>
+            {/* Premium Menu Bar */}
+            <MenuBar
+                onBack={onBack}
+                projectName={projectName}
+                onProjectNameChange={setProjectName}
+                mode={editorMode}
+                onModeChange={(m: string) => switchEditorMode(m as EditorMode)}
+                selectedBoard={selectedBoardName}
+                onBoardSelect={() => setIsBoardModalOpen(true)}
+                connectionStatus={isConnected ? "connected" : "disconnected"}
+                onConnect={handleConnect}
+                // @ts-ignore
+                ports={ports as any}
+                selectedPort={selectedPort}
+                onPortSelect={setSelectedPort}
+                onRefreshPorts={refreshPorts}
+                onUpload={handleUpload}
+                isUploading={isUploading}
+                onFileAction={(action: string) => addLog(`File action: ${action}`)}
+                onEditAction={(action: string) => addLog(`Edit action: ${action}`)}
+            />
 
             {/* Main Content */}
             <div style={styles.main}>
@@ -1212,7 +1158,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             <BoardSelectionModal
                 isOpen={isBoardModalOpen}
                 onClose={() => setIsBoardModalOpen(false)}
-                onSelect={(id, name) => {
+                onSelect={(id: string, name: string) => {
                     setSelectedBoard(id);
                     setSelectedBoardName(name);
                     addLog(`Selected board: ${name}`);

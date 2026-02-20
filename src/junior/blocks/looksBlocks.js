@@ -23,16 +23,12 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
         block.setColour("#9966FF"); // Purple
     }
 
-    /* ===== SAY BLOCK (Dropdown, No Typing) ===== */
+    /* ===== SAY BLOCK (Text Input) ===== */
     Blockly.Blocks["say_text"] = {
         init: function () {
-            const dropdown = new Blockly.FieldDropdown([
-                ["Hello!", "Hello!"],
-                ["Hmm...", "Hmm..."],
-                ["Yay!", "Yay!"],
-                ["Help!", "Help!"]
-            ]);
-            juniorLooksBase(this, "💬", dropdown, "TEXT");
+            // Changed from Dropdown to TextInput for better interactivity
+            const textInput = new Blockly.FieldTextInput("Hello!");
+            juniorLooksBase(this, "💬", textInput, "TEXT");
         },
     };
     javascriptGenerator.forBlock["say_text"] = function (block) {

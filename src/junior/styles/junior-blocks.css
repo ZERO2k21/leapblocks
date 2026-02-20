@@ -1,4 +1,4 @@
-/* Base block */
+/* Base block - More rounded toy feel */
 .blocklySvg .blocklyBlockBackground {
     rx: 24;
     ry: 24;
@@ -6,46 +6,52 @@
 
 /* Block height & padding */
 .blocklySvg .blocklyBlockBackground {
-    height: 56px;
+    height: 64px;
+    stroke-width: 0 !important;
+    /* Let shadows do the work */
 }
 
 /* Statement notch (puzzle tab) – rounded */
 .blocklySvg .blocklyNotch {
-    rx: 8;
-    ry: 8;
+    rx: 10;
+    ry: 10;
 }
 
-/* Remove sharp edges */
+/* Premium Toy Depth Effect */
 .blocklySvg .blocklyPath {
-    stroke-width: 2px;
-    /* Soft outline */
-    stroke: rgba(0, 0, 0, 0.1);
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1)) drop-shadow(0 6px 0 rgba(0, 0, 0, 0.15)) !important;
+    transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Primary motion block & others - Soft Blue Theme */
+/* Specific colors handled by TS, but we add inner glow here */
 .blocklySvg .blocklyBlockBackground {
-    fill: #5FA8F5;
-    filter: drop-shadow(0 6px 0 #3b8acf);
-    /* Deeper toy shadow */
+    /* Subtle inner-glow effect across all blocks */
+    stroke: rgba(255, 255, 255, 0.2) !important;
+    stroke-width: 1.5px !important;
 }
 
-/* Soft text */
+/* Soft white text with shadow for premium look */
 .blocklyText,
 .blocklyNonEditableText>text {
-    fill: white !important;
-    font-size: 16pt !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    fill: #FFFFFF !important;
+    font-size: 14pt !important;
+    font-weight: 700 !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-family: 'Fredoka', 'Quicksand', -apple-system, sans-serif !important;
 }
 
-/* Icons */
+/* Icons shadow */
 .blocklyIconGroup image {
-    filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.2));
+    filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.15));
 }
 
-/* Hover effect */
-.blocklySvg .blocklyBlockBackground:hover {
-    fill: #74b5ff;
-    filter: drop-shadow(0 8px 0 #3b8acf);
-    transform: translateY(-2px);
-    /* Pop up effect if supported by SVG renderer? No, but distinct style */
+/* Interactive Hover effect */
+.blocklySvg g[data-id]:hover>.blocklyPath {
+    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.15)) drop-shadow(0 10px 0 rgba(0, 0, 0, 0.2)) !important;
+    transform: translateY(-3px);
+}
+
+.blocklySvg g[data-id]:active>.blocklyPath {
+    transform: translateY(1px);
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1)) drop-shadow(0 3px 0 rgba(0, 0, 0, 0.2)) !important;
 }

@@ -9,7 +9,7 @@ import {
     Footprints, Eye, Flag, Hand, Volume2, PenTool,
     Settings, MessageCircle, Trophy, Play, Square,
     RotateCcw, ZoomIn, ZoomOut, Maximize, Zap,
-    Radar, Calculator, Database
+    Radar, Calculator, Database, Mic
 } from "lucide-react";
 
 // Import Custom Renderer
@@ -26,6 +26,7 @@ import DirectionPicker from "./components/DirectionPicker"; // Import Direction 
 // Block Definitions
 // Block Definitions
 import defineLooksBlocks from "./blocks/looksBlocks";
+import defineSoundBlocks from "./blocks/soundBlocks";
 
 // Categories
 const CATEGORIES = [
@@ -79,10 +80,10 @@ const categoryContents = {
         { kind: "block", type: "event_press" }
     ],
     sound: [
-        { kind: "block", type: "sound_animal" },
-        { kind: "block", type: "sound_music" },
-        { kind: "block", type: "sound_stop" },
-        { kind: "block", type: "sound_vol" }
+        { kind: "block", type: "sound_play" },
+        { kind: "block", type: "sound_instrument" },
+        { kind: "block", type: "sound_note" },
+        { kind: "block", type: "sound_stop_all" }
     ],
     pen: [
         { kind: "block", type: "pen_down" },
@@ -117,6 +118,7 @@ import { useSpriteSystem } from "./hooks/useSpriteSystem";
 import { getLessonConfig } from "./engine/LessonConfig";
 import { GoalManager } from "./engine/GoalManager";
 import { HintManager } from "./engine/HintManager";
+import { soundManager } from "./engine/SoundManager";
 import { WorkspaceValidator } from "./engine/WorkspaceValidator";
 
 import SuccessModal from "./components/SuccessModal"; // Import Modal
@@ -129,6 +131,10 @@ export default function JuniorApp({ onBack }) {
     const isRunning = useRef(false); // Ref for execution state
     const [projectName, setProjectName] = useState("Untitled Project");
     const [activeCategory, setActiveCategory] = useState("motion");
+
+    // Recording State
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingCount, setRecordingCount] = useState(1);
 
     // Connection State
     const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
@@ -146,6 +152,7 @@ export default function JuniorApp({ onBack }) {
     const [pickerCallback, setPickerCallback] = useState(null);
     const [showDirPicker, setShowDirPicker] = useState(false);
     const [activeBlock, setActiveBlock] = useState(null);
+    const timeoutRefs = useRef({}); // Store timeouts for speech bubbles
 
 
 
@@ -341,10 +348,12 @@ export default function JuniorApp({ onBack }) {
         window.hideSprite = () => window.setVisible(window.activeSpriteId || "teddy", false);
 
         window.say = (id, text) => {
+            if (timeoutRefs.current[id]) clearTimeout(timeoutRefs.current[id]);
             spriteActions.update(id, { speech: text });
-            setTimeout(() => {
+            timeoutRefs.current[id] = setTimeout(() => {
                 spriteActions.update(id, { speech: null });
-            }, 2000);
+                delete timeoutRefs.current[id];
+            }, 3000);
         };
 
         // ===========================================
@@ -416,9 +425,19 @@ export default function JuniorApp({ onBack }) {
             window.penSize = parseInt(size);
         };
 
-        // Stop All Sounds
+        // Sound Manager Hooks
+        window.playSound = (name) => {
+            soundManager.playAsset(name);
+        };
+        window.playNote = (note, octave) => {
+            soundManager.playNote(note, octave, 0.5);
+        };
+        window.setInstrument = (inst) => {
+            soundManager.setInstrument(inst);
+        };
         window.stopAllSounds = () => {
             window.speechSynthesis.cancel();
+            soundManager.stopAll();
         };
 
         // ... (Keep Sounds/Pen)
@@ -505,6 +524,24 @@ export default function JuniorApp({ onBack }) {
         // Defines blocks using the current Blockly instance
         defineLeapBlocks(Blockly, javascriptGenerator);
         defineLooksBlocks(Blockly, javascriptGenerator);
+        defineSoundBlocks(Blockly, javascriptGenerator);
+
+        // Dynamic Dropdown Colors: Update highlight color based on block color
+        if (!Blockly.FieldDropdown.prototype._originalShowEditor) {
+            Blockly.FieldDropdown.prototype._originalShowEditor = Blockly.FieldDropdown.prototype.showEditor_;
+            Blockly.FieldDropdown.prototype.showEditor_ = function (opt_e) {
+                const block = this.getSourceBlock();
+                if (block) {
+                    const color = block.getColour();
+                    document.documentElement.style.setProperty('--blockly-menu-highlight-color', color);
+                    // Add a subtle tint for the background (10% opacity)
+                    const tint = color.startsWith('#') ? `${color}1A` : 'rgba(0,0,0,0.05)';
+                    document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
+                }
+                this._originalShowEditor(opt_e);
+            };
+        }
+
         // Register Custom Renderer
         registerLeapRenderer(Blockly);
 
@@ -839,6 +876,22 @@ export default function JuniorApp({ onBack }) {
     const undo = () => workspaceRef.current?.undo(false);
     const redo = () => workspaceRef.current?.undo(true);
 
+    // --- RECORDING ---
+    const handleToggleRecording = async () => {
+        if (!isRecording) {
+            const success = await soundManager.startRecording();
+            if (success) setIsRecording(true);
+        } else {
+            const name = `Recording ${recordingCount}`;
+            const url = await soundManager.stopRecording(name);
+            setIsRecording(false);
+            if (url) {
+                setRecordingCount(prev => prev + 1);
+                alert(`Saved as ${name}. Note: To perform custom recordings, use 'play sound' block.`);
+            }
+        }
+    };
+
     // --- DELETE SPRITE ---
     const deleteSprite = (spriteId) => {
         if (sprites.length <= 1) {
@@ -1116,113 +1169,108 @@ function TopBar({ onBack, projectName, setProjectName, onFileMenu, onEditMenu, o
     const allowHardware = config.hardware?.allowed !== false;
 
     return (
-        <div style={{ height: "50px", background: "var(--header-purple)", color: "white", display: 'flex', alignItems: 'center', padding: '0 15px', justifyContent: "space-between", boxShadow: "0 2px 5px rgba(0,0,0,0.2)", zIndex: 100 }}>
-            {/* LEFT: Logo & Menus */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <button
-                    onClick={onBack}
-                    style={{
-                        background: 'rgba(255,255,255,0.2)',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '18px',
-                        color: 'white',
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: '5px'
-                    }}
-                    title="Back to Home"
+        <div style={{ width: "100%", height: "100vh", display: "flex", background: "#f0f5ff", fontFamily: "Arial, sans-serif", overflow: "hidden" }}>
+
+            {/* LEFT CONTAINER: WORKSPACE + MENU (Connected) */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", margin: "10px", borderRadius: "20px", background: "white", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", overflow: "hidden" }}>
+
+                {/* WORKSPACE */}
+                <div style={{ flex: 1, position: "relative" }}>
+                    <div ref={blocklyDiv} style={{ width: "100%", height: "100%" }} />
+
+                    {/* Floating Connection Status (if needed, or keep in header) */}
+                    {/* For now, we assume the header is gone or minimal based on image. 
+                        The user image shows NO header bar, just the workspace and corner tools. 
+                        We will hide the old header and rely on the new UI.
+                    */}
+                    <div style={{ position: "absolute", top: "10px", right: "10px", zIndex: 10 }}>
+                        <div onClick={onBack} style={{ width: "40px", height: "40px", background: "#FF6B6B", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 5px rgba(0,0,0,0.2)", color: "white", fontSize: "20px" }}>
+                            🏠
+                        </div>
+                    </div>
+                </div>
+
+                {/* BOTTOM MENU BAR */}
+                <div style={{ height: "auto", background: "white", zIndex: 10, position: "relative" }}>
+                    {/* Visual Connector Line? 
+                        The user said "workspace and blocks list tools are connected". 
+                        By putting them in the same white rounded div, they look connected.
+                    */}
+                    <JuniorMenuBar
+                        categories={CATEGORIES}
+                        activeCategory={activeCategory}
+                        onSelectCategory={(id) => {
+                            setActiveCategory(id);
+                            if (workspaceRef.current) workspaceRef.current.updateToolbox(getToolboxXml(id));
+                        }}
+                    />
+                </div>
+            </div>
+
+            {/* RIGHT CONTAINER: STAGE + SPRITES + ICONS */}
+            <div style={{ width: "420px", display: "flex", flexDirection: "column", padding: "10px 10px 10px 0", gap: "15px" }}>
+
+                {/* STAGE AREA */}
+                {/* RightPanel handles Stage and Sprites internally. We need to pass children for the new icons. */}
+                <RightPanel
+                    scenes={scenes}
+                    currentSceneId={currentSceneId}
+                    sprites={sprites}
+                    activeSpriteId={activeSpriteId}
+                    onSpriteSelect={handleSpriteSelect}
+                    onSceneSelect={handleSceneSelect}
+                    onAddSprite={() => setIsSpriteModalOpen(true)}
+                    onUpdateSprite={(id, updates) => spriteActions.update(id, updates)}
+                    onAddScene={addScene}
+                    appMode={appMode}
+                    setAppMode={setAppMode}
+                    isRunning={isRunning.current}
+                    onFlagClick={() => window.dispatchEvent(new Event("green_flag"))}
+                    onStopClick={() => window.dispatchEvent(new Event("stop_all"))}
                 >
-                    🏠
-                </button>
-                <div style={{ display: "flex", flexDirection: "column", lineHeight: "1" }}>
-                    <div style={{ fontWeight: 'bold', fontSize: "16px" }}>LeapBlocks</div>
-                    <div style={{ fontSize: "10px", opacity: 0.8 }}>Junior Blocks</div>
-                </div>
-
-                <div style={{ height: "30px", width: "1px", background: "rgba(255,255,255,0.2)", margin: "0 5px" }}></div>
-
-                {!isJunior && (
-                    <>
-                        <Dropdown label="File" options={[
-                            { label: "New Workspace", action: "new_workspace" },
-                            { label: "New Project", action: "new_project" },
-                            "-",
-                            { label: "Open Project", action: "open" },
-                            { label: "Save Project", action: "save" },
-                            "-",
-                            { label: "Examples", action: "examples" },
-                        ]} onSelect={onFileMenu} />
-
-                        <Dropdown label="Edit" options={[
-                            { label: "Undo", action: "undo" },
-                            { label: "Redo", action: "redo" }
-                        ]} onSelect={onEditMenu} />
-                    </>
-                )}
-
-                {isJunior && (
-                    <div style={{ fontSize: "14px", fontWeight: "bold", background: "rgba(255,255,255,0.2)", padding: "5px 10px", borderRadius: "12px" }}>
-                        Lesson Mode
-                    </div>
-                )}
-            </div>
-
-            {/* BOARD & CONNECT */}
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                {!isJunior && <BoardDropdown selected={selectedBoard} onSelect={onSelectBoard} />}
-
-                {allowHardware && (
-                    <div onClick={onConnect} className="header-btn" style={{
-                        background: connectionStatus === "connected" ? "rgba(16, 185, 129, 0.2)" : "rgba(255,255,255,0.1)",
-                        border: connectionStatus === "connected" ? "1px solid #10B981" : "1px solid transparent",
-                        color: connectionStatus === "connected" ? "#10B981" : "white"
+                    {/* BOTTOM RIGHT ACTION ICONS */}
+                    <div style={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: "12px",
+                        marginTop: "15px",
+                        paddingRight: "5px"
                     }}>
-                        <span style={{ display: 'flex', alignItems: 'center' }}><Zap fill="currentColor" stroke="none" size={18} /></span>
-                        <span style={{ fontSize: "12px", fontWeight: "bold", color: "inherit" }}>
-                            {connectionStatus === "connected" ? "Connected" : "Connect"}
-                        </span>
+                        <div title={isRecording ? "Stop Recording" : "Record Sound"} onClick={handleToggleRecording}
+                            style={{
+                                cursor: "pointer", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center",
+                                background: isRecording ? "#FFCDD2" : "transparent", borderRadius: "50%",
+                                border: isRecording ? "1px solid red" : "none"
+                            }}>
+                            <Mic stroke={isRecording ? "red" : "#666"} size={24} />
+                        </div>
+
+                        <div title="Green Flag" onClick={() => window.dispatchEvent(new Event("green_flag"))}
+                            style={{ cursor: "pointer", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Flag fill="#4C97FF" stroke="none" size={32} />
+                        </div>
+
+                        <div title="Reset" onClick={() => window.resetBear && window.resetBear()}
+                            style={{ cursor: "pointer", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <RotateCcw stroke="#666" size={24} />
+                        </div>
+
+                        <div title="Camera Mode"
+                            style={{ cursor: "pointer", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Camera fill="#666" stroke="none" size={24} />
+                        </div>
+
+                        <div title="Grid" onClick={() => window.goToLocation && window.toggleGrid && window.toggleGrid()}
+                            style={{ cursor: "pointer", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Square stroke="#666" size={24} />
+                        </div>
+
+                        <div title="Full Screen"
+                            style={{ cursor: "pointer", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Maximize stroke="#666" size={24} />
+                        </div>
                     </div>
-                )}
-            </div>
-
-            {/* CENTER: Hint or Project Name */}
-            {hintMessage ? (
-                <div style={{
-                    position: "absolute", left: "50%", transform: "translateX(-50%)",
-                    background: "#FFD700", color: "#333", padding: "5px 15px", borderRadius: "20px",
-                    fontSize: "14px", fontWeight: "bold", boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
-                    animation: "popIn 0.3s ease-out"
-                }}>
-                    💡 {hintMessage}
-                </div>
-            ) : (
-                <input
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    style={{
-                        background: "transparent", border: "1px solid transparent",
-                        borderBottom: "1px solid rgba(255,255,255,0.3)",
-                        padding: "4px", color: "white", textAlign: "center", width: "200px",
-                        fontSize: "14px"
-                    }}
-                />
-            )}
-
-            {/* RIGHT: User & Settings */}
-            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                <IconButton icon={<MessageCircle fill="currentColor" stroke="none" />} title="Feedback" />
-                <IconButton icon={<Trophy fill="currentColor" stroke="none" />} title="Leaderboard" />
-                <IconButton icon={<Settings fill="currentColor" stroke="none" />} title="Settings" />
-                <button className="header-btn" style={{
-                    background: "#F59E0B", color: "white", fontSize: "12px"
-                }}>
-                    Sign In
-                </button>
+                </RightPanel>
             </div>
 
             <style>{`@keyframes popIn { 0% { transform: translateX(-50%) scale(0.8); opacity: 0; } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }`}</style>

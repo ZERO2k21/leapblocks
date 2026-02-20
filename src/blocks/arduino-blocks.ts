@@ -2,21 +2,18 @@ import * as Blockly from 'blockly';
 
 // Block colors matching PictoBlox/Scratch style
 const COLORS = {
-    control: '#FFAB19',      // Orange - Control blocks
-    operators: '#59C059',    // Green - Operators/Math
-    arduino: '#4C97FF',      // Blue - Arduino blocks
-    sensors: '#5CB1D6',      // Light blue - Sensors
-    actuators: '#0FBD8C',    // Teal - Actuators
-    variables: '#FF8C1A',    // Orange - Variables
-    events: '#FFBF00',       // Yellow/Gold - Events
-    serial: '#9966FF',       // Purple - Serial
+    control: '#F59E0B',      // Amber - Control blocks
+    operators: '#22C55E',    // Green - Operators/Math
+    arduino: '#4A90E2',      // Blue - Arduino blocks
+    sensors: '#06B6D4',      // Cyan - Sensors
+    actuators: '#10B981',    // Emerald - Actuators
+    variables: '#F97316',    // Orange - Variables
+    events: '#FACC15',       // Yellow - Events
+    serial: '#8B5CF6',       // Purple - Serial
 };
 
 // Define Arduino blocks with better styling
 export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
-    // ═══════════════════════════════════════════════════════════════════════════
-    // EVENTS - Yellow/Gold
-    // ═══════════════════════════════════════════════════════════════════════════
     {
         type: 'arduino_setup',
         message0: '⚙️ when Arduino starts up',
@@ -128,7 +125,15 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
         type: 'arduino_digital_write',
         message0: '📍 set digital pin %1 output as %2',
         args0: [
-            { type: 'field_dropdown', name: 'PIN', options: [['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7'], ['8', '8'], ['9', '9'], ['10', '10'], ['11', '11'], ['12', '12'], ['13', '13']] },
+            {
+                type: 'field_dropdown',
+                name: 'PIN',
+                options: [
+                    ['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7'],
+                    ['8', '8'], ['9', '9'], ['10', '10'], ['11', '11'], ['12', '12'], ['13', '13'],
+                    ['A0', 'A0'], ['A1', 'A1'], ['A2', 'A2'], ['A3', 'A3'], ['A4', 'A4'], ['A5', 'A5']
+                ]
+            },
             { type: 'field_dropdown', name: 'VALUE', options: [['HIGH', 'HIGH'], ['LOW', 'LOW']] },
         ],
         previousStatement: null,
@@ -140,7 +145,17 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
     {
         type: 'arduino_digital_read',
         message0: '📖 read digital pin %1',
-        args0: [{ type: 'field_dropdown', name: 'PIN', options: [['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7'], ['8', '8'], ['9', '9'], ['10', '10'], ['11', '11'], ['12', '12'], ['13', '13']] }],
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'PIN',
+                options: [
+                    ['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7'],
+                    ['8', '8'], ['9', '9'], ['10', '10'], ['11', '11'], ['12', '12'], ['13', '13'],
+                    ['A0', 'A0'], ['A1', 'A1'], ['A2', 'A2'], ['A3', 'A3'], ['A4', 'A4'], ['A5', 'A5']
+                ]
+            }
+        ],
         output: 'Boolean',
         colour: COLORS.arduino,
         tooltip: 'Read digital value from pin',
@@ -597,6 +612,33 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
         tooltip: 'Check if motion is detected',
         helpUrl: '',
     },
+    {
+        type: 'arduino_digital_sensor',
+        message0: '🌡️ read digital sensor %1 at %2',
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'SENSOR',
+                options: [
+                    ['IR (proximity)', 'IR'],
+                    ['PIR', 'PIR'],
+                    ['soil moisture', 'SOIL'],
+                    ['hall effect / magnetic field', 'HALL'],
+                    ['touch', 'TOUCH'],
+                    ['Generic', 'GENERIC'],
+                ]
+            },
+            {
+                type: 'field_dropdown',
+                name: 'PIN',
+                options: [['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7'], ['8', '8'], ['9', '9'], ['10', '10'], ['11', '11'], ['12', '12'], ['13', '13']]
+            }
+        ],
+        output: 'Boolean',
+        colour: COLORS.sensors,
+        tooltip: 'Read status from various digital sensors',
+        helpUrl: '',
+    },
 ]);
 
 // Define toolbox with improved categories
@@ -710,6 +752,7 @@ export const arduinoToolbox = {
             name: 'Sensors',
             colour: COLORS.sensors,
             contents: [
+                { kind: 'block', type: 'arduino_digital_sensor' },
                 { kind: 'block', type: 'arduino_button' },
                 { kind: 'block', type: 'arduino_ultrasonic' },
                 { kind: 'block', type: 'arduino_dht_temp' },

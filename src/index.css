@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* LeapBlocks Styles */
 * {
@@ -9,15 +7,32 @@
   box-sizing: border-box;
 }
 
+:root {
+  --motion-color: #4A90E2;
+  --looks-color: #8B5CF6;
+  --sound-color: #D946EF;
+  --events-color: #FACC15;
+  --control-color: #F59E0B;
+  --sensing-color: #06B6D4;
+  --operators-color: #22C55E;
+  --variables-color: #F97316;
+  --myblocks-color: #EC4899;
+  --hardware-color: #10B981;
+  --bg-primary: #F8FAFC;
+  --border-subtle: #E2E8F0;
+  --text-primary: #1E293B;
+  --text-secondary: #64748B;
+}
+
 html,
 body,
 #root {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  background-color: #f5f5f5;
-  color: #333;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -27,11 +42,12 @@ body,
 /* Toolbox container */
 .blocklyToolboxDiv {
   background-color: #ffffff !important;
-  border-right: 1px solid #e0e0e0 !important;
-  padding: 8px 0 10px 0 !important;
-  width: 72px !important;
+  border-right: 1px solid var(--border-subtle) !important;
+  padding: 12px 0 !important;
+  width: 80px !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02) !important;
 }
 
 /* Each category row - MORE vertical spacing */
@@ -106,88 +122,92 @@ body,
 /* Create circular icon before each category label */
 .blocklyToolboxCategory::before {
   content: '';
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  /* Smoothed square */
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  margin-bottom: 4px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  transition: transform 0.15s, box-shadow 0.15s;
+  margin-bottom: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background-size: 20px;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .blocklyToolboxCategory:hover::before {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .blocklyToolboxSelected::before {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 /* Motion - Blue */
 .blocklyToolboxCategory[aria-label*="Motion"]::before,
 .blocklyToolboxCategory[aria-label*="motion"]::before {
-  background-color: #4C97FF;
+  background-color: var(--motion-color);
   content: '🏃';
 }
 
 /* Looks - Purple */
 .blocklyToolboxCategory[aria-label*="Looks"]::before,
 .blocklyToolboxCategory[aria-label*="looks"]::before {
-  background-color: #9966FF;
+  background-color: var(--looks-color);
   content: '👁️';
 }
 
 /* Sound - Pink */
 .blocklyToolboxCategory[aria-label*="Sound"]::before,
 .blocklyToolboxCategory[aria-label*="sound"]::before {
-  background-color: #CF63CF;
+  background-color: var(--sound-color);
   content: '🔊';
 }
 
 /* Events - Yellow/Gold */
 .blocklyToolboxCategory[aria-label*="Events"]::before,
 .blocklyToolboxCategory[aria-label*="events"]::before {
-  background-color: #FFBF00;
+  background-color: var(--events-color);
   content: '⚡';
 }
 
 /* Control - Orange */
 .blocklyToolboxCategory[aria-label*="Control"]::before,
 .blocklyToolboxCategory[aria-label*="control"]::before {
-  background-color: #FFAB19;
+  background-color: var(--control-color);
   content: '🔄';
 }
 
 /* Sensing - Light Blue */
 .blocklyToolboxCategory[aria-label*="Sensing"]::before,
 .blocklyToolboxCategory[aria-label*="sensing"]::before {
-  background-color: #5CB1D6;
+  background-color: var(--sensing-color);
   content: '👆';
 }
 
 /* Operators - Green */
 .blocklyToolboxCategory[aria-label*="Operators"]::before,
 .blocklyToolboxCategory[aria-label*="operators"]::before {
-  background-color: #59C059;
+  background-color: var(--operators-color);
   content: '➕';
 }
 
 /* Variables - Red/Orange */
 .blocklyToolboxCategory[aria-label*="Variables"]::before,
 .blocklyToolboxCategory[aria-label*="variables"]::before {
-  background-color: #FF8C1A;
+  background-color: var(--variables-color);
   content: '📊';
 }
 
 /* My Blocks / Procedures - Pink */
 .blocklyToolboxCategory[aria-label*="My Blocks"]::before,
 .blocklyToolboxCategory[aria-label*="Procedures"]::before {
-  background-color: #FF6680;
+  background-color: var(--myblocks-color);
   content: '🧩';
 }
 
@@ -195,7 +215,7 @@ body,
 .blocklyToolboxCategory[aria-label*="Hardware"]::before,
 .blocklyToolboxCategory[aria-label*="hardware"]::before,
 .blocklyToolboxCategory[aria-label*="Arduino"]::before {
-  background-color: #0FBD8C;
+  background-color: var(--hardware-color);
   content: '🔌';
 }
 
@@ -204,13 +224,14 @@ body,
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .blocklyFlyout {
-  background-color: #f9f9f9 !important;
+  background-color: rgba(249, 249, 249, 0.8) !important;
+  backdrop-filter: blur(8px) !important;
 }
 
 .blocklyFlyoutBackground {
-  fill: #f9f9f9 !important;
-  stroke: #e0e0e0 !important;
-  stroke-width: 1px !important;
+  fill: rgba(249, 249, 249, 0.6) !important;
+  stroke: var(--border-subtle) !important;
+  stroke-width: 0.5px !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -219,11 +240,12 @@ body,
 
 .blocklyMainBackground {
   stroke: none !important;
-  fill: #f9f9f9 !important;
+  fill: #FFFFFF !important;
 }
 
 .blocklyGridLine {
-  stroke: #e8e8e8 !important;
+  stroke: #F1F5F9 !important;
+  /* Extremely subtle grid */
 }
 
 .blocklyScrollbarHandle {
@@ -237,22 +259,85 @@ body,
 
 .blocklyText {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  fill: white !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  fill: rgb(255, 255, 255) !important;
 }
 
 .blocklyEditableText>rect {
-  fill: rgba(255, 255, 255, 0.9) !important;
+  fill: rgba(0, 0, 0, 0.15) !important;
+  stroke: none !important;
   rx: 4px !important;
+}
+
+.blocklyEditableText:hover>rect {
+  fill-opacity: 1 !important;
 }
 
 .blocklyEditableText>text {
   fill: #333 !important;
+  /* Dark text for contrast on solid white background */
+  font-weight: 700 !important;
 }
 
 .blocklyPath {
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2)) !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15)) !important;
+}
+
+/* 3D Depth effect for Zelos blocks */
+.blocklyPathLight {
+  stroke-width: 3px !important;
+  stroke-opacity: 0.2 !important;
+  stroke: #ffffff !important;
+  fill: none !important;
+}
+
+.blocklyPathDark {
+  stroke-width: 3px !important;
+  stroke-opacity: 0.2 !important;
+  stroke: #000 !important;
+  fill: none !important;
+}
+
+/* Beautiful solid dropdown menu */
+.blocklyDropDownDiv {
+  border-radius: 8px !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  background-color: var(--blockly-menu-bg-color, #FFFFFF) !important;
+  padding: 4px 0 !important;
+}
+
+/* Dropdown Menu Items - PictoBlox Style */
+.blocklyDropDownDiv .goog-menuitem,
+.blocklyDropDownDiv .blocklyMenuItem {
+  padding: 8px 16px !important;
+  font-family: 'Segoe UI', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+  /* Force dark text explicitly */
+  cursor: pointer !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.blocklyDropDownDiv .goog-menuitem-hover,
+.blocklyDropDownDiv .blocklyMenuItemHighlight {
+  background-color: var(--blockly-menu-highlight-color, #4A90E2) !important;
+}
+
+.blocklyDropDownDiv .goog-menuitem-content,
+.blocklyDropDownDiv .blocklyMenuItemContent {
+  color: #333 !important;
+  /* Force dark text on content */
+  pointer-events: none;
+}
+
+.blocklyDropDownDiv .goog-menuitem-hover .goog-menuitem-content,
+.blocklyDropDownDiv .blocklyMenuItemHighlight .blocklyMenuItemContent {
+  color: #FFFFFF !important;
+  /* White text on blue highlight */
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
