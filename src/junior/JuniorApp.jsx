@@ -575,14 +575,37 @@ export default function JuniorApp({ onBack }) {
         if (blocklyDiv.current) {
             workspaceRef.current = Blockly.inject(blocklyDiv.current, {
                 toolbox: getToolboxXml("motion"),
-                scrollbars: false, // Junior Preference: No scrollbars on stack? Or Yes? User code had True.
-                trashcan: false, // PictoBlox doesn't usually show trashcan, dragging to palette deletes.
+                scrollbars: false,
+                trashcan: false,
                 horizontalLayout: true,
                 toolboxPosition: "end",
                 renderer: 'leap',
-                sounds: false, // Disable sounds to avoid CSP issues with blockly-demo.appspot.com
-                zoom: { controls: false, wheel: true, startScale: 0.8, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
+                sounds: false,
+                zoom: {
+                    controls: false,
+                    wheel: true,
+                    startScale: 0.8,
+                    maxScale: 3,
+                    minScale: 0.3,
+                    scaleSpeed: 1.2
+                },
                 move: { scrollbars: true, drag: true, wheel: false }
+            });
+
+            // ZOOM & TOOLBOX FIX: Decouple flyout scale from workspace zoom
+            const workspace = workspaceRef.current;
+            workspace.addChangeListener((e) => {
+                if (e.type === Blockly.Events.VIEWPORT_CHANGE) {
+                    const flyout = workspace.getFlyout();
+                    if (flyout && flyout.getWorkspace()) {
+                        // Force flyout workspace to a fixed scale (e.g., 0.8 for Junior)
+                        // This prevents blocks in the toolbox from resizing when zooming the main workspace
+                        const flyoutWs = flyout.getWorkspace();
+                        if (flyoutWs.getScale() !== 0.8) {
+                            flyoutWs.setScale(0.8);
+                        }
+                    }
+                }
             });
         }
 

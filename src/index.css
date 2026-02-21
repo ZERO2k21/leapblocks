@@ -102,18 +102,47 @@ body,
    BLOCKLY FIELD STYLING
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Make editable fields/shadow blocks have white background */
-.blocklyFieldRect {
+/* 1. INPUT FIELDS (Number/Text) - White Pills with Black Text */
+.blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect),
+.blocklyEditableText:not(.blocklyDropdownTextParent)>rect {
   fill: #FFFFFF !important;
   fill-opacity: 1 !important;
-  stroke: rgba(0, 0, 0, 0.1) !important;
-  stroke-width: 1px !important;
+  stroke: rgba(0, 0, 0, 0.15) !important;
+  stroke-width: 1.5px !important;
+  rx: 14px !important;
+  ry: 14px !important;
 }
 
-/* Force black text in editable fields */
-.blocklyEditableText .blocklyText,
-.blocklyEditableText .blocklyFieldRect+.blocklyText {
+.blocklyEditableText:not(.blocklyDropdownTextParent) .blocklyText,
+.blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect)+.blocklyText {
   fill: #000000 !important;
+  font-weight: 700 !important;
+}
+
+/* 2. DROPDOWN FIELDS - Themed (Transparent/Tinted) with White Text */
+.blocklyDropdownText+.blocklyFieldRect,
+.blocklyDropdownTextParent>rect,
+.blocklyEditableText.blocklyDropdownTextParent>rect {
+  fill: rgba(0, 0, 0, 0.15) !important;
+  /* Subtle tint to blend with block */
+  stroke: rgba(255, 255, 255, 0.2) !important;
+  stroke-width: 1px !important;
+  rx: 14px !important;
+  ry: 14px !important;
+}
+
+.blocklyDropdownText,
+.blocklyDropdownTextParent .blocklyText {
+  fill: #FFFFFF !important;
+  /* High contrast on dark blocks */
+  font-weight: 700 !important;
+}
+
+/* Dropdown Arrows - White for contrast */
+.blocklyDropdownText+path.blocklyPath,
+.blocklyEditableText.blocklyDropdownTextParent path {
+  fill: #FFFFFF !important;
+  stroke: none !important;
 }
 
 /* Actual input element while typing */
@@ -291,7 +320,7 @@ body,
    BLOCKS
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.blocklyText {
+.blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText) {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
   font-size: 13px !important;
   font-weight: 600 !important;
@@ -299,9 +328,11 @@ body,
 }
 
 .blocklyEditableText>rect {
-  fill: rgba(0, 0, 0, 0.15) !important;
-  stroke: none !important;
-  rx: 4px !important;
+  fill: #FFFFFF !important;
+  stroke: rgba(0, 0, 0, 0.15) !important;
+  rx: 14px !important;
+  ry: 14px !important;
+  fill-opacity: 1 !important;
 }
 
 .blocklyEditableText:hover>rect {
@@ -556,4 +587,20 @@ div::-webkit-scrollbar-thumb {
   transform: scale(1.02);
   border-color: #855CD6;
   box-shadow: 0 4px 12px rgba(133, 92, 214, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ZOOM & SCALE FIXES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Ensure the toolbox (category list) stays at a fixed, user-friendly size */
+.blocklyToolboxDiv {
+  transform: scale(1) !important;
+  transform-origin: left top !important;
+}
+
+/* Fix category icons scale */
+.pictoblox-icon {
+  transform: scale(1) !important;
+  flex-shrink: 0 !important;
 }

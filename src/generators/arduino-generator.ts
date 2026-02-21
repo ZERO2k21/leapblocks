@@ -245,19 +245,61 @@ arduinoGenerator.forBlock['arduino_constrain'] = function (block, generator) {
 // ═══════════════════════════════════════════════════════════════════════════
 // VARIABLES
 // ═══════════════════════════════════════════════════════════════════════════
-arduinoGenerator.forBlock['variables_get'] = function (block, generator) {
-    const varName = Blockly.Variables.getVariable(generator.workspace, block.getFieldValue('VAR')).name;
-    (arduinoGenerator as any).addDefinition(`var_decl_${varName}`, `double ${varName} = 0;`);
-    log('variables_get', 'Generating', { varName });
-    return [varName, ORDER_ATOMIC];
+// Helper to extract variable info from both 'VAR' and 'VARIABLE' fields
+const getVarInfo = (block: any) => {
+    const varId = block.getFieldValue('VAR') || block.getFieldValue('VARIABLE');
+    const variable = block.workspace.getVariableById(varId);
+    return {
+        id: varId,
+        name: variable ? (variable as any).name : varId,
+        type: variable ? (variable as any).type : ''
+    };
+};
+
+const ensureVarDeclared = (name: string, type: string) => {
+    const declType = (type === 'String') ? 'String' : 'double';
+    const initVal = (type === 'String') ? '""' : '0';
+    (arduinoGenerator as any).addDefinition(`var_decl_${name}`, `${declType} ${name} = ${initVal};`);
+};
+
+arduinoGenerator.forBlock['variables_get'] = function (block) {
+    const { name, type } = getVarInfo(block);
+    ensureVarDeclared(name, type);
+    log('variables_get', 'Generating', { name, type });
+    return [name, ORDER_ATOMIC];
 };
 
 arduinoGenerator.forBlock['variables_set'] = function (block, generator) {
-    const argument0 = generator.valueToCode(block, 'VALUE', ORDER_NONE) || '0';
-    const varName = Blockly.Variables.getVariable(generator.workspace, block.getFieldValue('VAR')).name;
-    (arduinoGenerator as any).addDefinition(`var_decl_${varName}`, `double ${varName} = 0;`);
-    log('variables_set', 'Generating', { varName });
-    return `  ${varName} = ${argument0};\n`;
+    const { name, type } = getVarInfo(block);
+    const value = generator.valueToCode(block, 'VALUE', ORDER_NONE) || '0';
+    ensureVarDeclared(name, type);
+    log('variables_set', 'Generating', { name, type });
+    return `  ${name} = ${value};\n`;
+};
+
+// PictoBlox/Scratch-style variable blocks used by LEAP_VARIABLES category
+arduinoGenerator.forBlock['data_setvariableto'] = function (block, generator) {
+    const { name, type } = getVarInfo(block);
+    const value = generator.valueToCode(block, 'VALUE', ORDER_NONE) || '0';
+    ensureVarDeclared(name, type);
+    log('data_setvariableto', 'Generating', { name, type });
+    return `  ${name} = ${value};\n`;
+};
+
+arduinoGenerator.forBlock['data_changevariableby'] = function (block, generator) {
+    const { name, type } = getVarInfo(block);
+    const value = generator.valueToCode(block, 'VALUE', ORDER_NONE) || '1';
+    ensureVarDeclared(name, type);
+    log('data_changevariableby', 'Generating', { name, type });
+    return `  ${name} = ${name} + ${value};\n`;
+};
+
+arduinoGenerator.forBlock['data_showvariable'] = function (block) {
+    return ''; // UI only, no Arduino code
+};
+
+arduinoGenerator.forBlock['data_hidevariable'] = function (block) {
+    return ''; // UI only, no Arduino code
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

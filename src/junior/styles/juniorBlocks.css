@@ -1,13 +1,13 @@
-/* Rounded blue block body */
+/* Rounded vibrant block body */
 .blocklySvg .blocklyBlockBackground {
-    rx: 18 !important;
-    ry: 18 !important;
-    fill: #5FA8F5 !important;
-    filter: drop-shadow(0 4px 0 #3F7DC1);
+    rx: 22px !important;
+    ry: 22px !important;
+    fill: #4C97FF !important;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
 }
 
-/* Block text */
-.blocklyText {
+/* Block text - exclude fields and icons */
+.blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.junior-block-icon) {
     font-size: 14px;
     font-weight: 700;
     fill: #ffffff !important;

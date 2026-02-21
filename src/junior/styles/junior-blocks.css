@@ -1,26 +1,45 @@
-/* Base block - More rounded toy feel */
+/* Base block - Premium Toy Feel with 3D Depth */
 .blocklySvg .blocklyBlockBackground {
-    rx: 24;
-    ry: 24;
+    rx: 22px !important;
+    ry: 22px !important;
+    fill: #4C97FF !important;
+    /* Vibrant PictoBlox Blue */
+    stroke: rgba(255, 255, 255, 0.2) !important;
+    stroke-width: 1.5px !important;
 }
 
-/* Block height & padding */
-.blocklySvg .blocklyBlockBackground {
-    height: 64px;
-    stroke-width: 0 !important;
-    /* Let shadows do the work */
-}
-
-/* Statement notch (puzzle tab) – rounded */
-.blocklySvg .blocklyNotch {
-    rx: 10;
-    ry: 10;
-}
-
-/* Premium Toy Depth Effect */
+/* 3D Depth using layered shadows */
 .blocklySvg .blocklyPath {
-    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1)) drop-shadow(0 6px 0 rgba(0, 0, 0, 0.15)) !important;
-    transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.15)) drop-shadow(0 6px 12px rgba(0, 0, 0, 0.1)) !important;
+    transition: filter 0.2s ease, transform 0.2s ease !important;
+}
+
+/* 3D Depth using layered shadows and inner sheen */
+.blocklySvg .blocklyPath {
+    filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.2)) drop-shadow(0 6px 12px rgba(0, 0, 0, 0.15)) !important;
+    transition: filter 0.2s ease, transform 0.2s ease !important;
+}
+
+/* Statement notch rounding */
+.blocklySvg .blocklyNotch {
+    rx: 12px;
+    ry: 12px;
+}
+
+/* 2. THEMED DROPDOWN FIELDS - Transparent with White Text */
+.blocklyDropdownText+.blocklyFieldRect,
+.blocklyDropdownTextParent>rect,
+.blocklyEditableText.blocklyDropdownTextParent>rect {
+    fill: rgba(0, 0, 0, 0.15) !important;
+    stroke: rgba(255, 255, 255, 0.25) !important;
+    stroke-width: 1px !important;
+    rx: 14px !important;
+    ry: 14px !important;
+}
+
+.blocklyDropdownText {
+    fill: #FFFFFF !important;
+    font-weight: 700 !important;
 }
 
 /* Specific colors handled by TS, but we add inner glow here */
@@ -30,8 +49,8 @@
     stroke-width: 1.5px !important;
 }
 
-/* Soft white text with shadow for premium look */
-.blocklyText,
+/* Soft white text with shadow for premium look - exclude editable fields */
+.blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText),
 .blocklyNonEditableText>text {
     fill: #FFFFFF !important;
     font-size: 14pt !important;

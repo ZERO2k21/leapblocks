@@ -30,6 +30,109 @@ const ALL_PINS = [...DIGITAL_PINS, ...ANALOG_PINS];
 
 // Define Arduino blocks with better styling
 export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
+    // Standard Variable Blocks
+    {
+        type: 'variables_get',
+        message0: '%1',
+        args0: [
+            {
+                type: 'field_variable',
+                name: 'VAR',
+                variable: 'my variable',
+                variableTypes: ['Number', 'String', '']
+            }
+        ],
+        output: null,
+        colour: COLORS.variables,
+        tooltip: 'Get variable value',
+        helpUrl: '',
+    },
+    {
+        type: 'variables_set',
+        message0: 'set %1 to %2',
+        args0: [
+            {
+                type: 'field_variable',
+                name: 'VAR',
+                variable: 'my variable',
+                variableTypes: ['Number', 'String', '']
+            },
+            { type: 'input_value', name: 'VALUE' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.variables,
+        tooltip: 'Set variable to value',
+        helpUrl: '',
+    },
+    // PictoBlox/Scratch-style Variable Blocks
+    {
+        type: 'data_setvariableto',
+        message0: 'set %1 to %2',
+        args0: [
+            {
+                type: 'field_variable',
+                name: 'VARIABLE',
+                variable: 'my variable',
+                variableTypes: ['Number', 'String', '']
+            },
+            { type: 'input_value', name: 'VALUE' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.variables,
+        tooltip: 'Set variable to value',
+        helpUrl: '',
+    },
+    {
+        type: 'data_changevariableby',
+        message0: 'change %1 by %2',
+        args0: [
+            {
+                type: 'field_variable',
+                name: 'VARIABLE',
+                variable: 'my variable',
+                variableTypes: ['Number', 'String', '']
+            },
+            { type: 'input_value', name: 'VALUE', check: 'Number' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.variables,
+        tooltip: 'Change variable by value',
+        helpUrl: '',
+    },
+    {
+        type: 'data_showvariable',
+        message0: 'show variable %1',
+        args0: [{
+            type: 'field_variable',
+            name: 'VARIABLE',
+            variable: 'my variable',
+            variableTypes: ['Number', 'String', '']
+        }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.variables,
+        tooltip: 'Show variable monitor',
+        helpUrl: '',
+    },
+    {
+        type: 'data_hidevariable',
+        message0: 'hide variable %1',
+        args0: [{
+            type: 'field_variable',
+            name: 'VARIABLE',
+            variable: 'my variable',
+            variableTypes: ['Number', 'String', '']
+        }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.variables,
+        tooltip: 'Hide variable monitor',
+        helpUrl: '',
+    },
+
     {
         type: 'arduino_setup',
         message0: '⚙️ when Arduino starts up',
@@ -763,7 +866,7 @@ export const arduinoToolbox = {
             kind: 'pictobloxCategory',
             name: 'Variables',
             colour: COLORS.variables,
-            custom: 'VARIABLE',
+            custom: 'LEAP_VARIABLES',
         },
         {
             kind: 'sep',

@@ -670,7 +670,22 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         }),
                     });
 
-                    const workspace = workspaceRef.current; // Alias for clarity
+                    // ZOOM & TOOLBOX FIX: Decouple flyout scale from workspace zoom
+                    const workspace = workspaceRef.current;
+                    if (workspace) {
+                        workspace.addChangeListener((e: any) => {
+                            if (e.type === Blockly.Events.VIEWPORT_CHANGE) {
+                                const flyout = workspace.getFlyout();
+                                if (flyout && flyout.getWorkspace()) {
+                                    // Force flyout workspace to a fixed scale (0.9 for Intermediate)
+                                    const flyoutWs = flyout.getWorkspace();
+                                    if (flyoutWs.getScale() !== 0.9) {
+                                        flyoutWs.setScale(0.9);
+                                    }
+                                }
+                            }
+                        });
+                    }
 
                     // Register custom variable category callback
                     workspaceRef.current.registerToolboxCategoryCallback('LEAP_VARIABLES', (workspace: any) => {

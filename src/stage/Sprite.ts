@@ -100,6 +100,10 @@ export class Sprite {
         this.onUpdate();
     }
 
+    changeSize(delta: number) {
+        this.setSize(this.state.size + delta);
+    }
+
     show() { this.state.visible = true; this.onUpdate(); }
     hide() { this.state.visible = false; this.onUpdate(); }
 
