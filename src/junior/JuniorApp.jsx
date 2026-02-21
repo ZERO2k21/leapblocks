@@ -22,6 +22,11 @@ import { previewActions } from "./engine/previewActions"; // Import Preview Acti
 import { looksPreview } from "./engine/looksPreview"; // Import Looks Preview
 import PositionPicker from "./components/PositionPicker"; // Import Picker Component
 import DirectionPicker from "./components/DirectionPicker"; // Import Direction Picker
+import PaintEditor from "../components/PaintEditor";
+import { executionEngine } from "../engine/ExecutionEngine";
+import { projectManager } from "../engine/ProjectManager";
+import { spriteManager } from "../engine/SpriteManager";
+import { stageManager } from "../engine/StageManager";
 
 // Block Definitions
 // Block Definitions
@@ -67,7 +72,8 @@ const categoryContents = {
         { kind: "block", type: "looks_next_costume" },
         { kind: "block", type: "looks_change_costume" },
         { kind: "block", type: "looks_mirror" },
-        { kind: "block", type: "select_sprite" }
+        { kind: "block", type: "select_sprite" },
+        { kind: "block", type: "switch_scene" }
     ],
     control: [
         { kind: "block", type: "control_forever" },
@@ -156,6 +162,17 @@ export default function JuniorApp({ onBack }) {
     const [showDirPicker, setShowDirPicker] = useState(false);
     const [activeBlock, setActiveBlock] = useState(null);
     const timeoutRefs = useRef({}); // Store timeouts for speech bubbles
+
+    // Paint Editor State
+    const [paintEditor, setPaintEditor] = useState({
+        isOpen: false,
+        type: 'sprite', // 'sprite' | 'backdrop'
+        targetId: null,
+        initialImage: null,
+        costumes: [],
+        spriteName: '',
+        mode: 'junior'
+    });
 
 
 
@@ -253,6 +270,64 @@ export default function JuniorApp({ onBack }) {
         }));
     };
 
+    // --- PAINT EDITOR HANDLERS ---
+    const handleEditSprite = (spriteId) => {
+        const sprite = sprites.find(s => s.id === spriteId);
+        if (!sprite) return;
+        setPaintEditor({
+            isOpen: true,
+            type: 'sprite',
+            targetId: spriteId,
+            initialImage: sprite.costumes?.[sprite.currentCostume || 'default'] || null,
+            costumes: Object.entries(sprite.costumes || {}).map(([id, src]) => ({ id, name: id, image: src })),
+            spriteName: sprite.name,
+            mode: 'junior'
+        });
+    };
+
+    const handleEditScene = (sceneId) => {
+        const scene = scenes.find(s => s.id === sceneId);
+        if (!scene) return;
+        setPaintEditor({
+            isOpen: true,
+            type: 'backdrop',
+            targetId: sceneId,
+            initialImage: null,
+            costumes: [],
+            spriteName: scene.name || `Scene ${sceneId}`,
+            mode: 'junior'
+        });
+    };
+
+    const handlePaintSave = (imageData, svgData) => {
+        const savedData = svgData || imageData;
+        if (paintEditor.type === 'sprite') {
+            setScenes(prev => prev.map(scene => {
+                if (scene.id !== currentSceneId) return scene;
+                return {
+                    ...scene,
+                    sprites: scene.sprites.map(sprite => {
+                        if (sprite.id !== paintEditor.targetId) return sprite;
+                        return {
+                            ...sprite,
+                            costumes: {
+                                ...sprite.costumes,
+                                custom: savedData
+                            },
+                            currentCostume: "custom"
+                        };
+                    })
+                };
+            }));
+        } else if (paintEditor.type === 'backdrop') {
+            setScenes(prev => prev.map(scene => {
+                if (scene.id !== paintEditor.targetId) return scene;
+                return { ...scene, background: `url(${imageData})`, backgroundImage: imageData };
+            }));
+        }
+        setPaintEditor({ ...paintEditor, isOpen: false });
+    };
+
     // Helper: Add Sprite (Delegating to System mainly for storage)
     const addSprite = (type = "robot") => {
         saveCurrentWorkspace();
@@ -324,6 +399,12 @@ export default function JuniorApp({ onBack }) {
 
 
 
+    const handleNextScene = () => {
+        const currentIndex = scenes.findIndex(s => s.id === currentSceneId);
+        const nextIndex = (currentIndex + 1) % scenes.length;
+        handleSceneSelect(scenes[nextIndex].id);
+    };
+
     // --- BIND WINDOW ACTIONS TO FSM ---
     useEffect(() => {
         // Expose State Updaters using the SAFE FSM Actions
@@ -357,6 +438,8 @@ export default function JuniorApp({ onBack }) {
         // Standard Getters
         window.getCurrentSceneId = () => currentSceneId;
         window.getActiveSpriteId = () => activeSpriteId;
+        window.switchScene = (sceneId) => handleSceneSelect(sceneId);
+        window.changeScene = () => handleNextScene();
 
         // Selection Logic
         window.selectSprite = (spriteName) => {
@@ -831,6 +914,9 @@ export default function JuniorApp({ onBack }) {
 
         // Delegate to Interpreter
         interpreterRef.current?.runStacks('event_flag');
+
+        // Parallel Execution on Master Engine
+        executionEngine.runEvent('event_flag');
     };
 
     const handleSpriteClick = async (clickedId) => {
@@ -844,28 +930,13 @@ export default function JuniorApp({ onBack }) {
 
     const stopBlocks = () => {
         interpreterRef.current?.stopAll();
+        executionEngine.stopAll();
         if (window.stopAll) window.stopAll();
     };
 
-    // --- SAVE / LOAD ---
+    // --- SAVE / LOAD (ProjectManager Integration) ---
     const saveProject = () => {
-        if (!workspaceRef.current) return;
-        const state = Blockly.serialization.workspaces.save(workspaceRef.current);
-        const projectData = {
-            name: projectName,
-            blocks: state,
-            sprites: sprites
-        };
-        const json = JSON.stringify(projectData, null, 2);
-        const blob = new Blob([json], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${projectName.replace(/\s+/g, "_")}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        projectManager.downloadProject(`${projectName.replace(/\s+/g, "_")}.lbproject`);
     };
 
     const loadProject = () => {
@@ -876,15 +947,15 @@ export default function JuniorApp({ onBack }) {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
             try {
-                const data = JSON.parse(event.target.result);
-                // Handle both old (just serialization) and new schema
-                const state = data.blocks ? data.blocks : data;
-                Blockly.serialization.workspaces.load(state, workspaceRef.current);
+                const json = event.target.result;
+                await projectManager.loadProject(json);
+                const data = JSON.parse(json);
                 if (data.name) setProjectName(data.name);
+                // The managers will trigger UI updates if connected, 
+                // but since we are using useSpriteSystem hook, we need to manually sync for now
                 if (data.sprites) {
-                    // Update scenes with new sprites (Single scene mode assumption for simple load)
                     setScenes(prev => prev.map(s => {
                         if (s.id === currentSceneId) return { ...s, sprites: data.sprites };
                         return s;
@@ -1061,6 +1132,8 @@ export default function JuniorApp({ onBack }) {
                     onSelectScene={handleSceneSelect}
                     onAddScene={addScene}
                     onDeleteScene={deleteScene}
+                    onEditSprite={handleEditSprite}
+                    onEditScene={handleEditScene}
                     onGreenFlag={runBlocks}
                     onStop={stopBlocks}
                     onZoomIn={zoomIn}
@@ -1191,6 +1264,19 @@ export default function JuniorApp({ onBack }) {
                         alert("Next lesson coming soon!");
                         // Future: loadLesson(nextId)
                     }}
+                />
+            )}
+
+            {/* PAINT EDITOR MODAL */}
+            {paintEditor.isOpen && (
+                <PaintEditor
+                    title={paintEditor.type === 'sprite' ? 'Edit Sprite Costume' : 'Edit Scene Backdrop'}
+                    initialImage={paintEditor.initialImage}
+                    onSave={handlePaintSave}
+                    onClose={() => setPaintEditor({ ...paintEditor, isOpen: false })}
+                    costumes={paintEditor.costumes}
+                    spriteName={paintEditor.spriteName}
+                    mode={paintEditor.mode}
                 />
             )}
         </div>

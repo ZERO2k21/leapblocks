@@ -28,7 +28,7 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
         init: function () {
             // Changed from Dropdown to TextInput for better interactivity
             const textInput = new Blockly.FieldTextInput("Hello!");
-            juniorLooksBase(this, "💬", textInput, "TEXT");
+            juniorLooksBase(this, "Say", textInput, "TEXT");
         },
     };
     javascriptGenerator.forBlock["say_text"] = function (block) {
@@ -39,7 +39,7 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
     /* ===== SHOW (Icon Only) ===== */
     Blockly.Blocks["show_sprite"] = {
         init: function () {
-            juniorLooksBase(this, "👁");
+            juniorLooksBase(this, "Show");
         },
     };
     javascriptGenerator.forBlock["show_sprite"] = () => `setVisible(${getTarget()}, true);\n${wait()}`;
@@ -47,7 +47,7 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
     /* ===== HIDE (Icon Only) ===== */
     Blockly.Blocks["hide_sprite"] = {
         init: function () {
-            juniorLooksBase(this, "🙈");
+            juniorLooksBase(this, "Hide");
         },
     };
     javascriptGenerator.forBlock["hide_sprite"] = () => `setVisible(${getTarget()}, false);\n${wait()}`;
@@ -60,7 +60,7 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
                 ["Shrink", "-10"],
                 ["Reset", "reset"]
             ]);
-            juniorLooksBase(this, "⬛", dropdown, "AMOUNT");
+            juniorLooksBase(this, "Size", dropdown, "AMOUNT");
         },
     };
     javascriptGenerator.forBlock["change_size"] = function (block) {
@@ -77,11 +77,29 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
                 ["Dog", "dog"],
                 ["Cat", "cat"]
             ]);
-            juniorLooksBase(this, "→", dropdown, "SPRITE"); // Needs better icon
+            juniorLooksBase(this, "→", dropdown, "SPRITE");
         },
     };
     javascriptGenerator.forBlock["select_sprite"] = function (block) {
         const sprite = block.getFieldValue("SPRITE");
         return `selectSprite("${sprite}");\n${wait()}`;
+    };
+
+    /* ===== SWITCH SCENE (Dropdown) ===== */
+    Blockly.Blocks["switch_scene"] = {
+        init: function () {
+            const dropdown = new Blockly.FieldDropdown([
+                ["Next Scene", "next"],
+                ["Scene 1", "scene1"],
+                ["Scene 2", "scene2"],
+                ["Scene 3", "scene3"]
+            ]);
+            juniorLooksBase(this, "🏞️", dropdown, "SCENE");
+        },
+    };
+    javascriptGenerator.forBlock["switch_scene"] = function (block) {
+        const scene = block.getFieldValue("SCENE");
+        if (scene === "next") return `changeScene();\n${wait()}`;
+        return `switchScene("${scene}");\n${wait()}`;
     };
 }

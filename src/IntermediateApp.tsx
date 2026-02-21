@@ -9,12 +9,13 @@ import { animationVM, CompiledScript } from './vm/AnimationVM';
 import { Sprite, SpriteType } from './stage/Sprite';
 import Stage from './stage/Stage';
 import SpritePanel from './stage/SpritePanel';
+import MenuBar from './junior/components/MenuBar';
+import BoardSelectionModal from './junior/components/BoardSelectionModal';
+import PaintEditor from './components/PaintEditor';
 import StagePanel from './stage/StagePanel';
 import BackdropLibrary from './components/BackdropLibrary';
 import BackdropEditor from './components/BackdropEditor';
 import { stageManager } from './engine/StageManager';
-import BoardSelectionModal, { BOARDS } from './junior/components/BoardSelectionModal';
-import MenuBar from './junior/components/MenuBar';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
 import './custom-toolbox';
 
@@ -644,7 +645,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const timer = setTimeout(() => {
                 if (blocklyDiv.current) {
                     // Inject Blockly
-                    workspaceRef.current = Blockly.inject(blocklyDiv.current, {
+                    const blocksWorkspace = Blockly.inject(blocklyDiv.current, {
                         toolbox: getCurrentToolbox(),
                         grid: { spacing: 20, length: 3, colour: '#e8e8e8', snap: true },
                         zoom: { controls: true, wheel: true, startScale: 0.9, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
@@ -670,12 +671,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         }),
                     });
 
+                    workspaceRef.current = blocksWorkspace;
+
                     // ZOOM & TOOLBOX FIX: Decouple flyout scale from workspace zoom
-                    const workspace = workspaceRef.current;
-                    if (workspace) {
-                        workspace.addChangeListener((e: any) => {
+                    if (blocksWorkspace) {
+                        blocksWorkspace.addChangeListener((e: any) => {
                             if (e.type === Blockly.Events.VIEWPORT_CHANGE) {
-                                const flyout = workspace.getFlyout();
+                                const flyout = blocksWorkspace.getFlyout();
                                 if (flyout && flyout.getWorkspace()) {
                                     // Force flyout workspace to a fixed scale (0.9 for Intermediate)
                                     const flyoutWs = flyout.getWorkspace();
@@ -688,14 +690,14 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     }
 
                     // Register custom variable category callback
-                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_VARIABLES', (workspace: any) => {
+                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_VARIABLES', (ws: any) => {
                         const xmlList: Element[] = [];
                         const btn = document.createElement('button');
                         btn.setAttribute('text', 'Make a Variable');
                         btn.setAttribute('callbackKey', 'CREATE_VARIABLE');
                         xmlList.push(btn); // Standard vars button
 
-                        const allVars = workspace.getAllVariables() || [];
+                        const allVars = ws.getAllVariables() || [];
                         const scalars = allVars.filter((v: any) => v.type === '' || v.type === 'Number' || v.type === 'String');
                         const lists = allVars.filter((v: any) => v.type === 'list'); // Filter by 'list' type
 
@@ -709,6 +711,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 const field = document.createElement('field');
                                 field.setAttribute('name', 'VAR');
                                 field.setAttribute('id', v.getId());
+                                field.setAttribute('variabletype', v.type);
                                 field.textContent = v.name;
                                 block.appendChild(field);
                                 xmlList.push(block);
@@ -728,6 +731,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     const field = document.createElement('field');
                                     field.setAttribute('name', 'VARIABLE');
                                     field.setAttribute('id', defaultVar.getId());
+                                    field.setAttribute('variabletype', defaultVar.type);
                                     field.textContent = defaultVar.name;
                                     block.appendChild(field);
                                 }
@@ -735,7 +739,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     const value = document.createElement('value');
                                     value.setAttribute('name', 'VALUE');
                                     const shadow = document.createElement('shadow');
-                                    shadow.setAttribute('type', 'math_number');
+                                    shadow.setAttribute('type', 'arduino_number');
                                     const field = document.createElement('field');
                                     field.setAttribute('name', 'NUM');
                                     field.textContent = type === 'data_changevariableby' ? '1' : '0';
@@ -789,6 +793,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     const field = document.createElement('field');
                                     field.setAttribute('name', 'LIST');
                                     field.setAttribute('id', defaultList.getId());
+                                    field.setAttribute('variabletype', 'list');
                                     field.textContent = defaultList.name;
                                     block.appendChild(field);
                                 }
@@ -813,7 +818,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             type: 'variable',
                         });
                         setPromptInput('');
-                        setVariableType('Number');
+                        setVariableType('');
                         setVariableScope('global');
                     }));
 
@@ -963,11 +968,37 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     )}
                     {editorMode === 'stage' && workspaceTab === 'costumes' && (
                         <div style={styles.costumesEditor}>
-                            <div style={styles.costumePlaceholder}>
-                                <span style={{ fontSize: '48px' }}>🎨</span>
-                                <h3>Costumes Editor</h3>
-                                <p>Coming soon! Draw and edit sprite costumes.</p>
-                            </div>
+                            {(() => {
+                                const selectedSprite = sprites.find(s => s.id === selectedSpriteId);
+                                if (selectedSprite) {
+                                    return (
+                                        <PaintEditor
+                                            mode="intermediate"
+                                            spriteName={selectedSprite.name}
+                                            initialImage={selectedSprite.currentCostume?.image.src || ''}
+                                            costumes={selectedSprite.costumes.map((c, i) => ({
+                                                id: i.toString(),
+                                                name: c.name,
+                                                image: c.image.src
+                                            }))}
+                                            onSave={async (imageData: string, svgData?: string) => {
+                                                const savedData = svgData || imageData;
+                                                await selectedSprite.addCostume('custom', savedData);
+                                                selectedSprite.switchCostume('custom');
+                                                addLog(`Saved costume for ${selectedSprite.name}`);
+                                            }}
+                                            onClose={() => setWorkspaceTab('blocks')}
+                                        />
+                                    );
+                                }
+                                return (
+                                    <div style={styles.costumePlaceholder}>
+                                        <span style={{ fontSize: '48px' }}>🎨</span>
+                                        <h3>No Sprite Selected</h3>
+                                        <p>Select a sprite from the panel to edit its costumes.</p>
+                                    </div>
+                                );
+                            })()}
                         </div>
                     )}
                     {editorMode === 'stage' && workspaceTab === 'sounds' && (

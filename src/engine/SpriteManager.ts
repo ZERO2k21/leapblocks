@@ -13,6 +13,11 @@ class SpriteManager {
         this.onUpdate = callback;
     }
 
+    createSprite(id: string, name: string, type: string = 'cat'): Sprite {
+        const sprite = new Sprite(id, name, () => this.onUpdate(), type as any);
+        return sprite;
+    }
+
     addSprite(sprite: Sprite) {
         this.sprites.set(sprite.id, sprite);
         if (!this.selectedSpriteId) {

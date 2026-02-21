@@ -29,6 +29,7 @@ export interface SpriteState {
         brightness: number;
         ghost: number;      // transparency 0-100
     };
+    scripts: any[];         // Blocks attached to sprite
     // For animation interpolation
     glideTarget: { x: number; y: number; startX: number; startY: number; duration: number; elapsed: number } | null;
     // Rotation style: how sprite rotates
@@ -57,6 +58,7 @@ export class Sprite {
             effects: { color: 0, brightness: 0, ghost: 0 },
             glideTarget: null,
             rotationStyle: 'all around',
+            scripts: [],
         };
     }
 
@@ -80,6 +82,7 @@ export class Sprite {
     get effects() { return this.state.effects; }
     get isGliding() { return this.state.glideTarget !== null; }
     get rotationStyle() { return this.state.rotationStyle; }
+    get scripts() { return this.state.scripts; }
 
     getState(): SpriteState { return { ...this.state }; }
 
@@ -119,6 +122,11 @@ export class Sprite {
 
     setRotationStyle(style: 'left-right' | 'all around' | 'none') {
         this.state.rotationStyle = style;
+        this.onUpdate();
+    }
+
+    setScripts(scripts: any[]) {
+        this.state.scripts = scripts;
         this.onUpdate();
     }
 

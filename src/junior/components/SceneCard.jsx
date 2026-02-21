@@ -1,7 +1,7 @@
 import React from 'react';
 import { Film } from 'lucide-react';
 
-export default function SceneCard({ scene, active, onClick, onDelete }) {
+export default function SceneCard({ scene, active, onClick, onDelete, onEdit }) {
     const label = scene.name || `Scene ${scene.id}`;
 
     // Get first sprite from scene for thumbnail
@@ -32,7 +32,7 @@ export default function SceneCard({ scene, active, onClick, onDelete }) {
             <div style={{
                 width: "100%",
                 display: "flex",
-                justifyContent: "flex-start",
+                justifyContent: "space-between",
                 padding: "3px",
                 background: active ? "#7B4FC4" : "#E8E8E8"
             }}>
@@ -47,6 +47,25 @@ export default function SceneCard({ scene, active, onClick, onDelete }) {
                     justifyContent: "center"
                 }}>
                     <Film size={10} color={active ? "#7B4FC4" : "white"} />
+                </div>
+
+                {/* Pencil/Edit Icon */}
+                <div
+                    onClick={(e) => { e.stopPropagation(); onEdit && onEdit(scene.id); }}
+                    style={{
+                        width: "18px",
+                        height: "18px",
+                        background: active ? "white" : "#7B4FC4",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer"
+                    }}
+                >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={active ? "#7B4FC4" : "white"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                    </svg>
                 </div>
             </div>
 

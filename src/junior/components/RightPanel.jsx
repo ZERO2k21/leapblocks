@@ -15,6 +15,8 @@ export default function RightPanel({
     onSelectScene,
     onAddScene,
     onDeleteScene,
+    onEditSprite,
+    onEditScene,
     onGreenFlag,
     onStop,
     onZoomIn,
@@ -226,6 +228,7 @@ export default function RightPanel({
                         active={sprite.id === currentSprite}
                         onClick={() => onSelectSprite(sprite.id)}
                         onDelete={() => onDeleteSprite && onDeleteSprite(sprite.id)}
+                        onEdit={() => onEditSprite && onEditSprite(sprite.id)}
                     />
                 ))}
             </div>
@@ -270,6 +273,7 @@ export default function RightPanel({
                         active={scene.id === currentScene}
                         onClick={() => onSelectScene(scene.id)}
                         onDelete={() => onDeleteScene && onDeleteScene(scene.id)}
+                        onEdit={() => onEditScene && onEditScene(scene.id)}
                     />
                 ))}
             </div>

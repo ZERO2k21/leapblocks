@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pencil, X } from 'lucide-react';
 
-export default function SpriteCard({ sprite, active, onClick, onDelete }) {
+export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }) {
     const label = sprite.name;
 
     // Use actual sprite image if available, otherwise emoji
@@ -34,15 +34,19 @@ export default function SpriteCard({ sprite, active, onClick, onDelete }) {
                 background: active ? "#7B4FC4" : "#E8E8E8"
             }}>
                 {/* Pencil/Edit Icon */}
-                <div style={{
-                    width: "18px",
-                    height: "18px",
-                    background: active ? "white" : "#7B4FC4",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                }}>
+                <div
+                    onClick={(e) => { e.stopPropagation(); onEdit && onEdit(sprite.id); }}
+                    style={{
+                        width: "18px",
+                        height: "18px",
+                        background: active ? "white" : "#7B4FC4",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer"
+                    }}
+                >
                     <Pencil size={10} color={active ? "#7B4FC4" : "white"} />
                 </div>
 
