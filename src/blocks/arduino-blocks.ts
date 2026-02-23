@@ -66,6 +66,38 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
         tooltip: 'Set variable to value',
         helpUrl: '',
     },
+    {
+        type: 'variables_set_intermediate',
+        message0: 'set %1 to %2',
+        args0: [
+            {
+                type: 'field_variable',
+                name: 'VAR',
+                variable: 'my variable',
+                variableTypes: ['Number', 'String', '']
+            },
+            { type: 'input_value', name: 'VALUE', check: 'Number' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        inputsInline: true,
+        colour: COLORS.variables,
+        tooltip: 'Set variable to value',
+        helpUrl: '',
+    },
+    {
+        type: 'set_distance',
+        message0: 'set distance to %1',
+        args0: [
+            { type: 'input_value', name: 'VALUE', check: 'Number' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        inputsInline: true,
+        colour: COLORS.variables,
+        tooltip: 'Set distance value',
+        helpUrl: '',
+    },
     // PictoBlox/Scratch-style Variable Blocks
     {
         type: 'data_setvariableto',
@@ -367,7 +399,7 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
     // ═══════════════════════════════════════════════════════════════════════════
     {
         type: 'arduino_serial_begin',
-        message0: '📡 start serial at %1 baud',
+        message0: 'set serial baud rate to %1',
         args0: [{ type: 'field_dropdown', name: 'BAUD', options: [['9600', '9600'], ['115200', '115200'], ['57600', '57600'], ['38400', '38400'], ['19200', '19200']] }],
         previousStatement: null,
         nextStatement: null,
@@ -396,8 +428,21 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
         helpUrl: '',
     },
     {
+        type: 'arduino_serial_print_labeled',
+        message0: 'serial print label: %1 value: %2',
+        args0: [
+            { type: 'input_value', name: 'LABEL', check: 'String' },
+            { type: 'input_value', name: 'VALUE' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.serial,
+        tooltip: 'Print a label followed by a value to the serial monitor',
+        helpUrl: '',
+    },
+    {
         type: 'arduino_serial_available',
-        message0: '📥 serial available?',
+        message0: 'serial available?',
         output: ['Number', 'String', 'Boolean'],
         colour: COLORS.serial,
         tooltip: 'Check if data is available on serial',
@@ -405,11 +450,121 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
     },
     {
         type: 'arduino_serial_read',
-        message0: '📥 serial read',
+        message0: 'read from serial',
         inputsInline: true,
         output: 'Number',
         colour: COLORS.serial,
         tooltip: 'Read byte from serial',
+        helpUrl: '',
+    },
+    // Advanced Communication Blocks
+    {
+        type: 'arduino_bluetooth_serial_begin',
+        message0: 'set bluetooth serial baudrate to %1',
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'BAUD',
+                options: [['9600', '9600'], ['115200', '115200'], ['57600', '57600']]
+            }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.serial,
+        tooltip: 'Initialize Bluetooth Serial (for ESP32)',
+        helpUrl: '',
+    },
+    {
+        type: 'arduino_serial_multi_begin',
+        message0: 'set serial %1 baud rate to %2',
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'PORT',
+                options: [['0', '0'], ['1', '1'], ['2', '2'], ['3', '3']]
+            },
+            {
+                type: 'field_dropdown',
+                name: 'BAUD',
+                options: [['9600', '9600'], ['115200', '115200'], ['57600', '57600']]
+            }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.serial,
+        tooltip: 'Initialize specific serial port (Mega/ESP32)',
+        helpUrl: '',
+    },
+    {
+        type: 'arduino_serial_multi_available',
+        message0: 'bytes available on serial %1 ?',
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'PORT',
+                options: [['0', '0'], ['1', '1'], ['2', '2'], ['3', '3']]
+            }
+        ],
+        output: 'Number',
+        colour: COLORS.serial,
+        tooltip: 'Check bytes available on specific serial port',
+        helpUrl: '',
+    },
+    {
+        type: 'arduino_serial_multi_read',
+        message0: 'read bytes on serial %1',
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'PORT',
+                options: [['0', '0'], ['1', '1'], ['2', '2'], ['3', '3']]
+            }
+        ],
+        output: 'Number',
+        colour: COLORS.serial,
+        tooltip: 'Read byte from specific serial port',
+        helpUrl: '',
+    },
+    {
+        type: 'arduino_serial_multi_read_number',
+        message0: 'get a number from serial %1',
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'PORT',
+                options: [['0', '0'], ['1', '1'], ['2', '2'], ['3', '3']]
+            }
+        ],
+        output: 'Number',
+        colour: COLORS.serial,
+        tooltip: 'Parse integer from specific serial port',
+        helpUrl: '',
+    },
+    {
+        type: 'arduino_serial_multi_read_string',
+        message0: 'read bytes as a string from serial %1',
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'PORT',
+                options: [['0', '0'], ['1', '1'], ['2', '2'], ['3', '3']]
+            }
+        ],
+        output: 'String',
+        colour: COLORS.serial,
+        tooltip: 'Read string from specific serial port',
+        helpUrl: '',
+    },
+    {
+        type: 'arduino_serial_multi_write',
+        message0: 'write %1 to serial',
+        args0: [
+            { type: 'input_value', name: 'VALUE' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.serial,
+        tooltip: 'Write to serial port',
         helpUrl: '',
     },
 
@@ -908,14 +1063,34 @@ export const arduinoToolbox = {
         },
         {
             kind: 'pictobloxCategory',
-            name: 'Serial',
+            name: 'Communication',
             colour: COLORS.serial,
             contents: [
                 { kind: 'block', type: 'arduino_serial_begin' },
-                { kind: 'block', type: 'arduino_serial_print' },
-                { kind: 'block', type: 'arduino_serial_println' },
+                {
+                    kind: 'block',
+                    type: 'arduino_serial_multi_write',
+                    inputs: {
+                        VALUE: { shadow: { type: 'arduino_text', fields: { TEXT: 'Hello World' } } }
+                    }
+                },
                 { kind: 'block', type: 'arduino_serial_available' },
                 { kind: 'block', type: 'arduino_serial_read' },
+                { kind: 'sep', gap: '16' },
+                { kind: 'label', text: '── Details ──' },
+                { kind: 'block', type: 'arduino_serial_print' },
+                { kind: 'block', type: 'arduino_serial_println' },
+                {
+                    kind: 'block',
+                    type: 'arduino_serial_print_labeled',
+                    inputs: {
+                        LABEL: { shadow: { type: 'arduino_text', fields: { TEXT: 'value: ' } } },
+                        VALUE: { shadow: { type: 'arduino_number', fields: { NUM: 0 } } }
+                    }
+                },
+                { kind: 'sep', gap: '16' },
+                { kind: 'label', text: '── Advanced ──' },
+                { kind: 'block', type: 'arduino_bluetooth_serial_begin' },
             ],
         },
         {

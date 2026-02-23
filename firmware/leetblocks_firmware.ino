@@ -92,10 +92,57 @@ void processCommand(String cmd) {
             handleNoTone(args);
             break;
             
+        case 'U':  // Read Ultrasonic - U<trig>:<echo>
+            handleReadUltrasonic(args);
+            break;
+            
         default:
             Serial.println("ERR:Unknown command");
             break;
     }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SENSORS
+// ═══════════════════════════════════════════════════════════════════════════
+
+long getDistance(int trigPin, int echoPin) {
+    pinMode(trigPin, OUTPUT);
+    pinMode(echoPin, INPUT);
+    
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+    
+    noInterrupts();
+    long duration = pulseIn(echoPin, HIGH, 30000UL); // 30ms timeout
+    interrupts();
+    
+    if (duration == 0) {
+        pinMode(echoPin, OUTPUT);
+        digitalWrite(echoPin, LOW);
+        delayMicroseconds(200);
+        pinMode(echoPin, INPUT);
+        return 0;
+    }
+    return (duration / 2) / 29; // Integer conversion (29 microseconds per cm)
+}
+
+void handleReadUltrasonic(String args) {
+    int colonPos = args.indexOf(':');
+    if (colonPos == -1) {
+        Serial.println("ERR:Invalid format");
+        return;
+    }
+    
+    int trig = args.substring(0, colonPos).toInt();
+    int echo = args.substring(colonPos + 1).toInt();
+    
+    long distance = getDistance(trig, echo);
+    Serial.print("OK:");
+    Serial.println(distance);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

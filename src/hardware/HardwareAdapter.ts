@@ -212,6 +212,69 @@ export class HardwareAdapter {
     async setBuiltinLED(on: boolean): Promise<boolean> {
         return this.setDigitalPin(13, on);
     }
+
+    private sensorCache: Map<string, number> = new Map();
+    private activePolling: Map<string, NodeJS.Timeout> = new Map();
+
+    /**
+     * Read ultrasonic distance synchronously from cache
+     */
+    getUltrasonicSync(trig: number | string, echo: number | string): number {
+        const key = `ultrasonic_${trig}_${echo}`;
+        // Start polling if not already active
+        if (!this.activePolling.has(key)) {
+            this.startPollingUltrasonic(trig, echo);
+        }
+        return this.sensorCache.get(key) ?? 0;
+    }
+
+    /**
+     * Start polling ultrasonic sensor
+     */
+    startPollingUltrasonic(trig: number | string, echo: number | string, intervalMs: number = 200): void {
+        const key = `ultrasonic_${trig}_${echo}`;
+        if (this.activePolling.has(key)) return;
+
+        console.log(`[HardwareAdapter] Starting polling for ${key}`);
+        const poll = async () => {
+            if (!this.isConnected) return;
+            const val = await this.readUltrasonic(trig, echo);
+            if (val !== null) {
+                this.sensorCache.set(key, val);
+            }
+        };
+
+        // Initial poll
+        poll();
+
+        // Setup interval
+        const timer = setInterval(poll, intervalMs);
+        this.activePolling.set(key, timer);
+    }
+
+    /**
+     * Stop all sensor polling
+     */
+    stopAllPolling(): void {
+        console.log('[HardwareAdapter] Stopping all polling');
+        this.activePolling.forEach((timer) => clearInterval(timer));
+        this.activePolling.clear();
+        this.sensorCache.clear();
+    }
+
+    /**
+     * Read ultrasonic distance (cm)
+     */
+    async readUltrasonic(trig: number | string, echo: number | string): Promise<number | null> {
+        const response = await this.sendCommand(
+            buildCommand(COMMANDS.READ_ULTRASONIC, trig, echo),
+            500 // Short timeout for polling
+        );
+        if (response.success && response.data !== undefined) {
+            return parseFloat(response.data);
+        }
+        return null;
+    }
 }
 
 // Singleton instance

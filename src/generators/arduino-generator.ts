@@ -19,8 +19,27 @@ const ORDER_LOGICAL_AND = 7;
 const ORDER_LOGICAL_OR = 8;
 const ORDER_NONE = 99;
 
+// Initialize the generator
+arduinoGenerator.init = function (workspace: Blockly.Workspace) {
+    (this as any).definitions_ = {};
+    (this as any).setups_ = {};
+};
+
 // Block scrubbing (concatenation)
 arduinoGenerator.scrub_ = function (block: Blockly.Block, code: string, thisOnly?: boolean) {
+    // Prevent floating non-hat blocks from rendering in global scope if event hats exist
+    if (!block.getParent()) {
+        const isHat = block.type === 'arduino_setup' || block.type === 'arduino_loop';
+        if (!isHat) {
+            const hasHats = block.workspace.getTopBlocks(false).some(
+                b => b.type === 'arduino_setup' || b.type === 'arduino_loop'
+            );
+            if (hasHats) {
+                return ''; // Nullify this entire floating stack's output string
+            }
+        }
+    }
+
     const nextBlock = block.nextConnection && block.nextConnection.targetBlock();
     if (nextBlock && !thisOnly) {
         return code + this.blockToCode(nextBlock);
@@ -52,11 +71,11 @@ arduinoGenerator.finish = function (code: string) {
     if (!hasSetup) {
         finalCode += `void setup() {\n${setups}\n}\n\n`;
     } else {
-        finalCode += processedCode.replace('void setup() {', `void setup() {\n${setups}`);
-        processedCode = ''; // prevent double printing
+        // Inject setups into the existing setup function - handle both with/without newline
+        processedCode = processedCode.replace(/void setup\(\) {(\n)?/, `void setup() {\n${setups}\n`);
     }
 
-    if (!hasLoop && processedCode.trim()) {
+    if (!hasLoop && processedCode.trim() && !hasSetup) {
         finalCode += `void loop() {\n${processedCode}\n}\n`;
     } else {
         finalCode += processedCode;
@@ -246,12 +265,21 @@ arduinoGenerator.forBlock['arduino_constrain'] = function (block, generator) {
 // VARIABLES
 // ═══════════════════════════════════════════════════════════════════════════
 // Helper to extract variable info from both 'VAR' and 'VARIABLE' fields
+const sanitizeName = (name: string) => {
+    let safeName = name.replace(/[^a-zA-Z0-9]/g, '_');
+    if (/^[0-9]/.test(safeName)) {
+        safeName = '_' + safeName;
+    }
+    return safeName;
+};
+
 const getVarInfo = (block: any) => {
     const varId = block.getFieldValue('VAR') || block.getFieldValue('VARIABLE');
     const variable = block.workspace.getVariableById(varId);
+    const rawName = variable ? (variable as any).name : varId;
     return {
         id: varId,
-        name: variable ? (variable as any).name : varId,
+        name: sanitizeName(rawName),
         type: variable ? (variable as any).type : ''
     };
 };
@@ -286,6 +314,14 @@ arduinoGenerator.forBlock['data_setvariableto'] = function (block, generator) {
     return `  ${name} = ${value};\n`;
 };
 
+arduinoGenerator.forBlock['variables_set_intermediate'] = function (block, generator) {
+    const { name, type } = getVarInfo(block);
+    const value = generator.valueToCode(block, 'VALUE', ORDER_NONE) || '0';
+    ensureVarDeclared(name, type);
+    log('variables_set_intermediate', 'Generating', { name, type });
+    return `  ${name} = ${value};\n`;
+};
+
 arduinoGenerator.forBlock['data_changevariableby'] = function (block, generator) {
     const { name, type } = getVarInfo(block);
     const value = generator.valueToCode(block, 'VALUE', ORDER_NONE) || '1';
@@ -306,31 +342,61 @@ arduinoGenerator.forBlock['data_hidevariable'] = function (block) {
 // SERIAL
 // ═══════════════════════════════════════════════════════════════════════════
 arduinoGenerator.forBlock['arduino_serial_begin'] = function (block) {
-    const baud = block.getFieldValue('BAUD');
+    const baud = block.getFieldValue('BAUD') || '9600';
     log('arduino_serial_begin', 'Generating', { baud });
+    (arduinoGenerator as any).addSetup('serial_begin', `  Serial.begin(${baud});`);
     return `  Serial.begin(${baud});\n`;
 };
 
 arduinoGenerator.forBlock['arduino_serial_print'] = function (block, generator) {
     const text = generator.valueToCode(block, 'TEXT', ORDER_NONE) || '""';
     log('arduino_serial_print', 'Generating', { text });
+    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
     return `  Serial.print(${text});\n`;
 };
 
 arduinoGenerator.forBlock['arduino_serial_println'] = function (block, generator) {
     const text = generator.valueToCode(block, 'TEXT', ORDER_NONE) || '""';
     log('arduino_serial_println', 'Generating', { text });
+    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
     return `  Serial.println(${text});\n`;
+};
+
+arduinoGenerator.forBlock['arduino_serial_print_labeled'] = function (block, generator) {
+    const label = generator.valueToCode(block, 'LABEL', ORDER_ATOMIC) || '"label: "';
+    const value = generator.valueToCode(block, 'VALUE', ORDER_ATOMIC) || '0';
+    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    return `  Serial.print(${label});\n  Serial.println(${value});\n`;
 };
 
 arduinoGenerator.forBlock['arduino_serial_available'] = function () {
     log('arduino_serial_available', 'Generating');
+    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
     return [`Serial.available()`, ORDER_ATOMIC];
 };
 
 arduinoGenerator.forBlock['arduino_serial_read'] = function () {
     log('arduino_serial_read', 'Generating');
+    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
     return [`Serial.read()`, ORDER_ATOMIC];
+};
+
+// Advanced Communication Generators
+arduinoGenerator.forBlock['arduino_bluetooth_serial_begin'] = function (block) {
+    const baud = block.getFieldValue('BAUD');
+    (arduinoGenerator as any).addDefinition('bt_serial_include', '#ifdef ARDUINO_ARCH_ESP32\n#include "BluetoothSerial.h"\n#endif');
+    (arduinoGenerator as any).addDefinition('bt_serial_def', '#ifdef ARDUINO_ARCH_ESP32\nBluetoothSerial SerialBT;\n#endif');
+    (arduinoGenerator as any).addSetup('bt_serial_begin', `#ifdef ARDUINO_ARCH_ESP32\n  SerialBT.begin("LeapBlocks_ESP32");\n#else\n  // Bluetooth Serial only supported on ESP32\n#endif\n  // Baud ${baud} ignored by BT Serial normally but kept for compatibility`);
+    return '';
+};
+
+const getSerialPortName = (port: string) => {
+    return port === '0' ? 'Serial' : `Serial${port}`;
+};
+
+arduinoGenerator.forBlock['arduino_serial_multi_write'] = function (block, generator) {
+    const value = generator.valueToCode(block, 'VALUE', ORDER_NONE) || '""';
+    return `  Serial.println(${value});\n`;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -449,9 +515,13 @@ arduinoGenerator.forBlock['arduino_abs'] = function (block, generator) {
 arduinoGenerator.forBlock['arduino_servo'] = function (block) {
     const pin = block.getFieldValue('PIN');
     const angle = block.getFieldValue('ANGLE');
-    (arduinoGenerator as any).addDefinition('servo_include', '#include <Servo.h>');
+
+    // Choose library based on architecture
+    const libDef = '#ifdef ARDUINO_ARCH_ESP32\n#include <ESP32Servo.h>\n#else\n#include <Servo.h>\n#endif';
+    (arduinoGenerator as any).addDefinition('servo_include', libDef);
     (arduinoGenerator as any).addDefinition(`servo_def_${pin}`, `Servo servo_${pin};`);
     (arduinoGenerator as any).addSetup(`servo_attach_${pin}`, `  servo_${pin}.attach(${pin});`);
+
     log('arduino_servo', 'Generating', { pin, angle });
     return `  servo_${pin}.write(${angle});\n`;
 };
@@ -500,29 +570,37 @@ arduinoGenerator.forBlock['arduino_relay'] = function (block) {
 // ═══════════════════════════════════════════════════════════════════════════
 // SENSORS
 // ═══════════════════════════════════════════════════════════════════════════
-arduinoGenerator.forBlock['arduino_ultrasonic'] = function (block) {
+arduinoGenerator.forBlock['arduino_ultrasonic'] = function (block, generator) {
     const trig = block.getFieldValue('TRIG');
     const echo = block.getFieldValue('ECHO');
-    (arduinoGenerator as any).addSetup(`pinMode_trig_${trig}`, `  pinMode(${trig}, OUTPUT);`);
-    (arduinoGenerator as any).addSetup(`pinMode_echo_${echo}`, `  pinMode(${echo}, INPUT);`);
 
-    const funcName = 'getDistance';
-    const funcCode = `
-long ${funcName}(int trigPin, int echoPin) {
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  long duration = pulseIn(echoPin, HIGH, 30000); // 30ms timeout (~5m max)
-  if (duration == 0) return 999; // No pulse detected
-  return duration * 0.034 / 2;
-}
-`;
-    (arduinoGenerator as any).addDefinition(funcName, funcCode);
+    const functionName = '_readUltrasonicDistance';
+    const functionDef = [
+        'long ' + functionName + '(int trigPin, int echoPin) {',
+        '  pinMode(trigPin, OUTPUT);',
+        '  pinMode(echoPin, INPUT);',
+        '  digitalWrite(trigPin, LOW);',
+        '  delayMicroseconds(2);',
+        '  digitalWrite(trigPin, HIGH);',
+        '  delayMicroseconds(10);',
+        '  digitalWrite(trigPin, LOW);',
+        '  noInterrupts(); // Disable interrupts to prevent Servo/Timer collision with pulseIn',
+        '  long duration = pulseIn(echoPin, HIGH, 30000UL); // 30ms timeout',
+        '  interrupts(); // Re-enable interrupts',
+        '  if (duration == 0) {',
+        '    pinMode(echoPin, OUTPUT);',
+        '    digitalWrite(echoPin, LOW);',
+        '    delayMicroseconds(200);',
+        '    pinMode(echoPin, INPUT);',
+        '    return 0; // Timeout/No pulse',
+        '  }',
+        '  return (duration / 2) / 29; // Integer conversion (29 microseconds per cm)',
+        '}'
+    ].join('\n');
 
-    log('arduino_ultrasonic', 'Generating', { trig, echo });
-    return [`${funcName}(${trig}, ${echo})`, ORDER_ATOMIC];
+    (generator as any).addDefinition('ultrasonic_distance', functionDef);
+
+    return [`${functionName}(${trig}, ${echo})`, ORDER_ATOMIC];
 };
 
 arduinoGenerator.forBlock['arduino_dht_temp'] = function (block) {

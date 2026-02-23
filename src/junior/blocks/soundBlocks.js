@@ -32,7 +32,7 @@ export default function defineSoundBlocks() {
                 ["Meow", "meow"],
                 ["Recording 1", "rec_1"]
             ];
-            juniorSoundBase(this, "🔊", options, "SOUND");
+            juniorSoundBase(this, "Play", options, "SOUND");
         }
     };
     javascriptGenerator.forBlock["sound_play"] = function (block) {

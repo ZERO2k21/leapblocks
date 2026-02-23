@@ -1,6 +1,7 @@
 import * as Blockly from 'blockly';
 import { CompiledScript, ScriptStep } from '../vm/AnimationVM';
 import { animationVM } from '../vm/AnimationVM';
+import { hardwareAdapter } from '../hardware/HardwareAdapter';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ANIMATION GENERATOR - Compiles blocks to executable scripts
@@ -212,6 +213,14 @@ export class AnimationCompiler {
             case 'sensing_current': {
                 const unit = valueBlock.getFieldValue('CURRENTMENU');
                 return () => animationVM.getCurrentTime(unit);
+            }
+            case 'arduino_ultrasonic': {
+                const trig = valueBlock.getFieldValue('TRIG');
+                const echo = valueBlock.getFieldValue('ECHO');
+                return () => {
+                    const distance = hardwareAdapter.getUltrasonicSync(trig, echo);
+                    return distance;
+                };
             }
             case 'variables_get': {
                 // Important: We need to get variable name by ID since that's how Blockly stores it

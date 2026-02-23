@@ -30,4 +30,8 @@ export const rules: Required<ModuleOptions>['rules'] = [
       },
     },
   },
+  {
+    test: /\.svg$/,
+    type: 'asset/resource',
+  },
 ];

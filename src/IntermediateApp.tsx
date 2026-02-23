@@ -17,6 +17,7 @@ import BackdropLibrary from './components/BackdropLibrary';
 import BackdropEditor from './components/BackdropEditor';
 import { stageManager } from './engine/StageManager';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
+import SerialMonitor from './components/SerialMonitor';
 import './custom-toolbox';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -90,7 +91,8 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [isBoardModalOpen, setIsBoardModalOpen] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [serialMessages, setSerialMessages] = useState<string[]>([]);
-    const [serialInput, setSerialInput] = useState<string>('');
+    const [baudRate, setBaudRate] = useState<number>(9600);
+    const [lineEnding, setLineEnding] = useState<string>('\r\n');
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<string>('');
 
@@ -253,6 +255,14 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             return;
         }
 
+        if (event.type === Blockly.Events.BLOCK_CHANGE) {
+            // "make them serial monitor visible when user drag blocks in the workspace"
+            // If they interact with the workspace and add blocks, especially serial ones, switch tab
+            if (activeTab !== 'serial') {
+                setActiveTab('serial');
+            }
+        }
+
         log.app('Real-time interaction', { type: block.type, event: event.type });
 
 
@@ -410,6 +420,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const handleStopClick = useCallback(() => {
         setIsRunning(false);
         animationVM.stopAll();
+        hardwareAdapter.stopAllPolling();
         addLog('Stopped animation');
     }, [addLog]);
 
@@ -426,6 +437,23 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
     }, [addLog]);
 
+    // Auto-reconnect when baud rate changes while connected
+    useEffect(() => {
+        if (isConnected && selectedPort) {
+            log.app(`Baud rate changed to ${baudRate}, reconnecting...`);
+            const timer = setTimeout(() => {
+                handleConnect(); // Disconnect
+                setTimeout(() => {
+                    handleConnect(); // Reconnect with new baud
+                }, 500);
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+        // We only want to trigger this when baudRate specifically changes while connected
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [baudRate]);
+
+
     const handleConnect = useCallback(async () => {
         if (!selectedPort) {
             addLog('Select a port first');
@@ -439,7 +467,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     addLog(`Disconnected from ${selectedPort}`);
                 }
             } else {
-                const result = await window.electronAPI.connectPort(selectedPort, 115200);
+                const result = await window.electronAPI.connectPort(selectedPort, baudRate);
                 if (result.success) {
                     setIsConnected(true);
                     addLog(`Connected to ${selectedPort}`);
@@ -450,21 +478,33 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         } catch (e) {
             addLog('Connection error');
         }
-    }, [selectedPort, isConnected, addLog]);
+    }, [selectedPort, isConnected, baudRate, addLog]);
 
-    const handleSendSerial = useCallback(async () => {
-        if (!serialInput.trim() || !isConnected) return;
+    const handleSendSerial = useCallback(async (data: string) => {
+        if (!isConnected) return;
         try {
-            await window.electronAPI.sendSerial(serialInput + '\n');
-            setSerialMessages(prev => [...prev.slice(-100), `> ${serialInput}`]);
-            setSerialInput('');
+            await window.electronAPI.sendSerial(data);
+            setSerialMessages(prev => [...prev.slice(-100), `> ${data.trim()}`]);
         } catch (e) {
             addLog('Failed to send');
         }
-    }, [serialInput, isConnected, addLog]);
+    }, [isConnected, addLog]);
 
     const handleUpload = useCallback(async () => {
         if (!generatedCode || isUploading) return;
+
+        // Auto-disconnect if serial is connected to release the port
+        const wasConnected = isConnected;
+        if (wasConnected) {
+            addLog('Disconnecting serial for upload...');
+            await window.electronAPI.disconnectPort();
+            setIsConnected(false);
+
+            // Critical delay: Windows needs time to physically release the COM port 
+            // before avrdude sweeps it for compiling/uploading to prevent getsync() errors.
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+
         setIsUploading(true);
         setUploadProgress('Uploading...');
         addLog('Starting upload...');
@@ -483,6 +523,22 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             if (result.success) {
                 addLog('Upload complete!');
                 setUploadProgress('Upload complete!');
+
+                // Auto-reconnect if it was connected before
+                if (wasConnected && selectedPort) {
+                    addLog('Reconnecting serial monitor...');
+                    setTimeout(async () => {
+                        try {
+                            const reconnectResult = await window.electronAPI.connectPort(selectedPort, baudRate);
+                            if (reconnectResult.success) {
+                                setIsConnected(true);
+                                addLog('Serial monitor reconnected');
+                            }
+                        } catch (reconnectErr) {
+                            console.error('Auto-reconnect failed:', reconnectErr);
+                        }
+                    }, 1500); // 1.5s delay to allow board to initialize after upload
+                }
             } else {
                 addLog(`Upload failed: ${result.error}`);
                 setUploadProgress(`Failed: ${result.error}`);
@@ -492,7 +548,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             setUploadProgress('Upload error');
         }
         setIsUploading(false);
-    }, [generatedCode, isUploading, addLog, selectedPort, selectedBoard]);
+    }, [generatedCode, isUploading, addLog, selectedPort, selectedBoard, isConnected, baudRate]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // INITIALIZATION
@@ -718,6 +774,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             });
 
                             const blockTypes = [
+                                'variables_set_intermediate',
                                 'data_setvariableto',
                                 'data_changevariableby',
                                 'data_showvariable',
@@ -735,7 +792,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     field.textContent = defaultVar.name;
                                     block.appendChild(field);
                                 }
-                                if (type === 'data_setvariableto' || type === 'data_changevariableby') {
+                                if (type === 'variables_set_intermediate' || type === 'data_setvariableto' || type === 'data_changevariableby') {
                                     const value = document.createElement('value');
                                     value.setAttribute('name', 'VALUE');
                                     const shadow = document.createElement('shadow');
@@ -1089,43 +1146,22 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         <button
                             style={activeTab === 'serial' ? styles.bottomTabActive : styles.bottomTab}
                             onClick={() => setActiveTab('serial')}
-                        >📟 Serial</button>
+                        >📟 Serial Monitor</button>
                     </div>
                     <div style={styles.logArea}>
                         {activeTab === 'log' ? (
                             logMessages.map((msg, i) => <div key={i} style={styles.logLine}>{msg}</div>)
                         ) : (
-                            <div style={styles.serialContainer}>
-                                <div style={styles.serialMessages}>
-                                    {serialMessages.length > 0 ? (
-                                        serialMessages.map((msg, i) => (
-                                            <div key={i} style={styles.serialLine}>{msg}</div>
-                                        ))
-                                    ) : (
-                                        <div style={styles.serialPlaceholder}>
-                                            {isConnected ? 'Waiting for data...' : 'Connect to a device to see serial data'}
-                                        </div>
-                                    )}
-                                </div>
-                                <div style={styles.serialInputRow}>
-                                    <input
-                                        type="text"
-                                        value={serialInput}
-                                        onChange={(e) => setSerialInput(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSendSerial()}
-                                        placeholder="Send data..."
-                                        style={styles.serialInput}
-                                        disabled={!isConnected}
-                                    />
-                                    <button
-                                        style={styles.sendButton}
-                                        onClick={handleSendSerial}
-                                        disabled={!isConnected}
-                                    >
-                                        Send
-                                    </button>
-                                </div>
-                            </div>
+                            <SerialMonitor
+                                baudRate={baudRate}
+                                setBaudRate={setBaudRate}
+                                lineEnding={lineEnding}
+                                setLineEnding={setLineEnding}
+                                messages={serialMessages}
+                                setMessages={setSerialMessages}
+                                onSendMessage={handleSendSerial}
+                                isConnected={isConnected}
+                            />
                         )}
                     </div>
                 </div>
@@ -1348,24 +1384,28 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     tab: {
         padding: '10px 16px',
-        border: 'none',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
+        borderBottom: '2px solid transparent',
         backgroundColor: 'transparent',
         cursor: 'pointer',
         fontSize: '13px',
         fontWeight: 500,
         color: '#666',
-        borderBottom: '2px solid transparent',
         marginBottom: '-1px',
     },
     tabActive: {
         padding: '10px 16px',
-        border: 'none',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
+        borderBottom: '2px solid #855CD6',
         backgroundColor: 'white',
         cursor: 'pointer',
         fontSize: '13px',
         fontWeight: 600,
         color: '#855CD6',
-        borderBottom: '2px solid #855CD6',
         marginBottom: '-1px',
         borderRadius: '8px 8px 0 0',
     },
@@ -1482,7 +1522,9 @@ const styles: { [key: string]: React.CSSProperties } = {
         overflow: 'auto',
         backgroundColor: '#fafafa',
         borderRadius: '0 0 8px 8px',
-        border: '1px solid #eee',
+        borderBottom: '1px solid #eee',
+        borderLeft: '1px solid #eee',
+        borderRight: '1px solid #eee',
         borderTop: 'none',
     },
     codeContent: {
@@ -1506,7 +1548,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     bottomTab: {
         padding: '8px 16px',
         backgroundColor: '#f5f5f5',
-        border: 'none',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
+        borderBottom: '2px solid transparent',
         fontSize: '12px',
         cursor: 'pointer',
         color: '#666'
@@ -1514,7 +1559,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     bottomTabActive: {
         padding: '8px 16px',
         backgroundColor: '#ffffff',
-        border: 'none',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
         borderBottom: '2px solid #4C97FF',
         fontSize: '12px',
         cursor: 'pointer',
@@ -1522,7 +1569,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontWeight: 'bold'
     },
     logArea: {
-        height: '100px',
+        height: '250px',
         overflow: 'auto',
         padding: '8px 12px',
         backgroundColor: '#fff',
@@ -1591,6 +1638,35 @@ const styles: { [key: string]: React.CSSProperties } = {
         marginBottom: '1px',
         fontFamily: 'monospace',
         fontSize: '11px',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-all',
+    },
+    serialHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '4px 8px',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
+        borderBottom: '1px solid #eee',
+        backgroundColor: '#f9f9f9',
+    },
+    serialSelect: {
+        padding: '2px 4px',
+        fontSize: '10px',
+        border: '1px solid #ddd',
+        borderRadius: '3px',
+        outline: 'none',
+    },
+    clearButton: {
+        padding: '2px 6px',
+        backgroundColor: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: '12px',
+        opacity: 0.7,
+        transition: 'opacity 0.2s',
     },
     serialPlaceholder: {
         color: '#999',
@@ -1602,6 +1678,9 @@ const styles: { [key: string]: React.CSSProperties } = {
         display: 'flex',
         gap: '4px',
         paddingTop: '4px',
+        borderBottom: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
         borderTop: '1px solid #eee',
     },
     serialInput: {
