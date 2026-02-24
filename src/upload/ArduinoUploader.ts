@@ -25,6 +25,12 @@ export class ArduinoUploader {
     }
 
     async upload(code: string, port: string, fqbn: string) {
+        if (!port) {
+            return {
+                success: false,
+                error: 'No serial port selected. Please select a COM port in the menu bar.',
+            };
+        }
         try {
             this.sendProgress(5, 'Checking for arduino-cli...');
             let arduinoCliPath = 'arduino-cli';

@@ -8,6 +8,7 @@ export class SerialManager {
     private activePort: any = null;
     private mainWindow: BrowserWindow | null = null;
     private lastBaud: number = 9600;
+    public lastBoard: string = 'arduino_uno';
 
     constructor(window: BrowserWindow | null) {
         this.mainWindow = window;
@@ -18,8 +19,40 @@ export class SerialManager {
     }
 
     async listPorts() {
+        console.log('[SerialManager] Starting port scan...');
         try {
             const ports = await SerialPort.list();
+            console.log(`[SerialManager] Found ${ports.length} standard COM ports:`, ports);
+
+            // If no standard COM ports are found, let's check if there's a recognized Bridge 
+            // that just hasn't been assigned a COM port yet (driver issue).
+            if (ports.length === 0 && process.platform === 'win32') {
+                try {
+                    const { exec } = require('child_process');
+                    const { promisify } = require('util');
+                    const execAsync = promisify(exec);
+
+                    console.log('[SerialManager] No COM ports found. Running PowerShell fallback scan for CP210x/CH340 bridges...');
+                    // Search for common USB-to-UART bridge keywords in PNP entities
+                    const { stdout } = await execAsync('powershell -Command "Get-CimInstance Win32_PnPEntity | Where-Object { $_.Caption -match \'CP210\' -or $_.Caption -match \'CH34\' -or $_.Caption -match \'USB to UART\' } | Select-Object Caption"');
+                    console.log('[SerialManager] PowerShell fallback output:', stdout);
+
+                    if (stdout && stdout.trim()) {
+                        const lines = stdout.split('\n').filter((l: string) => l.trim() && !l.includes('Caption') && !l.includes('-------'));
+                        if (lines.length > 0) {
+                            console.log(`[SerialManager] Detected ${lines.length} unassigned bridge(s):`, lines);
+                            return lines.map((line: string) => ({
+                                path: 'BRIDGE_DETECTED',
+                                manufacturer: line.trim(),
+                                productId: 'MISSING_DRIVER_OR_COM'
+                            }));
+                        }
+                    }
+                } catch (pnpError) {
+                    console.error('[SerialManager] Fallback bridge scan failed:', pnpError);
+                }
+            }
+
             return ports.map((p: any) => ({
                 path: p.path,
                 manufacturer: p.manufacturer,
@@ -31,9 +64,12 @@ export class SerialManager {
         }
     }
 
-    async connect(portPath: string, baudRate: number) {
+    async connect(portPath: string, baudRate: number, board: string = 'arduino_uno') {
+        console.log(`[SerialManager] Attempting to connect to ${portPath} (Board: ${board}) at ${baudRate} baud...`);
         this.lastBaud = baudRate;
+        this.lastBoard = board;
         if (this.activePort && this.activePort.isOpen) {
+            console.log(`[SerialManager] Closing existing port ${this.activePort.path} before reconnecting...`);
             await this.disconnect();
         }
 
@@ -75,7 +111,12 @@ export class SerialManager {
                         return;
                     }
 
-                    this.activePort.set({ dtr: true, rts: true }, (setErr: Error | null) => {
+                    const isESP32 = board.includes('esp32');
+                    const dtr = !isESP32;
+                    const rts = !isESP32;
+                    console.log(`[SerialManager] Port opened successfully. Board is ESP32: ${isESP32}. Setting DTR: ${dtr}, RTS: ${rts}`);
+
+                    this.activePort.set({ dtr, rts }, (setErr: Error | null) => {
                         if (setErr) console.error('[SerialManager] Error setting DTR/RTS:', setErr);
                         if (this.mainWindow) {
                             this.mainWindow.webContents.send('connection-change', true);

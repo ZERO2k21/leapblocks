@@ -81,9 +81,9 @@ ipcMain.handle('get-ports', async () => {
   return await serialManager.listPorts();
 });
 
-ipcMain.handle('connect-port', async (event, portPath: string, baudRate: number) => {
+ipcMain.handle('connect-port', async (event, portPath: string, baudRate: number, board?: string) => {
   try {
-    const result = await serialManager.connect(portPath, baudRate);
+    const result = await serialManager.connect(portPath, baudRate, board || 'arduino_uno');
     return result;
   } catch (error) {
     return { success: false, error: (error as Error).message };
@@ -115,8 +115,9 @@ ipcMain.handle('upload-code', async (event, code: string, selectedPort: string, 
   // 3. Auto-reconnect if board was active
   if (result.success && wasConnected && activePath) {
     const baud = serialManager.currentBaud;
+    const board = serialManager.lastBoard;
     setTimeout(async () => {
-      await serialManager.connect(activePath, baud);
+      await serialManager.connect(activePath, baud, board);
     }, 2000);
   }
 

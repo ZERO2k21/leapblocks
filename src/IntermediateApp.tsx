@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as Blockly from 'blockly';
 import { arduinoBlocks, arduinoToolbox } from './blocks/arduino-blocks';
+import { esp32Blocks, esp32Toolbox } from './blocks/esp32-blocks';
 import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
 import { hardwareBlocks } from './blocks/hardware-blocks';
 import { arduinoGenerator } from './generators/arduino-generator';
@@ -32,6 +33,7 @@ const log = {
 // Register all blocks
 log.app('Registering blocks...');
 Blockly.common.defineBlocks(arduinoBlocks);
+Blockly.common.defineBlocks(esp32Blocks);
 Blockly.common.defineBlocks(animationBlocks);
 Blockly.common.defineBlocks(hardwareBlocks);
 log.app('All blocks registered successfully');
@@ -185,8 +187,9 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, []);
 
     const getCurrentToolbox = useCallback(() => {
-        return editorMode === 'stage' ? animationToolbox : arduinoToolbox;
-    }, [editorMode]);
+        if (editorMode === 'stage') return animationToolbox;
+        return selectedBoard === 'esp32' ? esp32Toolbox : arduinoToolbox;
+    }, [editorMode, selectedBoard]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // WORKSPACE CHANGE HANDLER
@@ -433,11 +436,29 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         try {
             const portList = await window.electronAPI.getPorts();
             setPorts(portList);
-            addLog(`Found ${portList.length} port(s)`);
+            if (portList.length === 0) {
+                // Only log if manual refresh was clicked, or be subtle? 
+                // We'll keep it simple for now. The UI says "Searching..."
+            }
         } catch (e) {
             addLog('Failed to scan ports');
         }
     }, [addLog]);
+
+    // Auto-refresh ports every 5 seconds when in upload mode and no port is selected
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (editorMode === 'upload' && !selectedPort && !isConnected) {
+            timer = setInterval(() => {
+                window.electronAPI.getPorts().then(portList => {
+                    setPorts(portList);
+                }).catch(() => { });
+            }, 5000);
+        }
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [editorMode, selectedPort, isConnected]);
 
     // Auto-reconnect when baud rate changes while connected
     useEffect(() => {
@@ -461,6 +482,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             addLog('Select a port first');
             return;
         }
+        if (selectedPort === 'BRIDGE_DETECTED') {
+            addLog('⚠ Device detected but no COM port assigned. Please install drivers or try a different USB cable.');
+            return;
+        }
         try {
             if (isConnected) {
                 const result = await window.electronAPI.disconnectPort();
@@ -469,7 +494,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     addLog(`Disconnected from ${selectedPort}`);
                 }
             } else {
-                const result = await window.electronAPI.connectPort(selectedPort, baudRate);
+                const result = await window.electronAPI.connectPort(selectedPort, baudRate, selectedBoard);
                 if (result.success) {
                     setIsConnected(true);
                     addLog(`Connected to ${selectedPort}`);
@@ -494,6 +519,12 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     const handleUpload = useCallback(async () => {
         if (!generatedCode || isUploading) return;
+
+        if (!selectedPort) {
+            addLog('No port selected! Please connect your board and select a COM port first.');
+            setUploadProgress('No port selected');
+            return;
+        }
 
         // Auto-disconnect if serial is connected to release the port
         const wasConnected = isConnected;
@@ -521,7 +552,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         const fqbn = fqbnMap[selectedBoard] || 'arduino:avr:uno';
 
         try {
-            const result = await window.electronAPI.uploadCode(generatedCode, selectedPort || undefined, fqbn);
+            const result = await window.electronAPI.uploadCode(generatedCode, selectedPort, fqbn);
             if (result.success) {
                 addLog('Upload complete!');
                 setUploadProgress('Upload complete!');
@@ -531,7 +562,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     addLog('Reconnecting serial monitor...');
                     setTimeout(async () => {
                         try {
-                            const reconnectResult = await window.electronAPI.connectPort(selectedPort, baudRate);
+                            const reconnectResult = await window.electronAPI.connectPort(selectedPort, baudRate, selectedBoard);
                             if (reconnectResult.success) {
                                 setIsConnected(true);
                                 addLog('Serial monitor reconnected');
@@ -542,8 +573,12 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     }, 1500); // 1.5s delay to allow board to initialize after upload
                 }
             } else {
-                addLog(`Upload failed: ${result.error}`);
-                setUploadProgress(`Failed: ${result.error}`);
+                let errorMsg = result.error || 'Unknown error occurred';
+                if (errorMsg.includes('busy') || errorMsg.includes('Access is denied')) {
+                    errorMsg += "\nTIP: Close any other serial monitors or wait 2 seconds and try again.";
+                }
+                addLog(`Upload failed: ${errorMsg}`);
+                setUploadProgress(`Failed: ${errorMsg}`);
             }
         } catch (e) {
             addLog('Upload error');

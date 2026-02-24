@@ -344,10 +344,12 @@ export default function MenuBar({
                         maxWidth: '120px'
                     }}
                 >
-                    <option value="" style={{ color: '#333' }}>Select Port</option>
+                    <option value="" style={{ color: '#333' }}>
+                        {ports.length === 0 ? 'No Ports Found' : 'Select Port'}
+                    </option>
                     {ports.map(p => (
-                        <option key={p.path} value={p.path} style={{ color: '#333' }}>
-                            {p.path}
+                        <option key={p.path} value={p.path} style={{ color: p.path === 'BRIDGE_DETECTED' ? '#E74C3C' : '#333' }}>
+                            {p.path === 'BRIDGE_DETECTED' ? `⚠ Driver Needed: ${p.manufacturer}` : `${p.path} (${p.manufacturer || 'Unknown'})`}
                         </option>
                     ))}
                 </select>

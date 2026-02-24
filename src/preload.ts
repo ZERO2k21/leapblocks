@@ -41,9 +41,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     /**
      * Connect to a serial port
      */
-    connectPort: (path: string, baudRate: number): Promise<ConnectResult> => {
-        console.log('[PRELOAD] connectPort called', { path, baudRate });
-        return ipcRenderer.invoke('connect-port', path, baudRate);
+    connectPort: (path: string, baudRate: number, board?: string): Promise<ConnectResult> => {
+        console.log('[PRELOAD] connectPort called', { path, baudRate, board });
+        return ipcRenderer.invoke('connect-port', path, baudRate, board);
     },
 
     /**
@@ -124,7 +124,7 @@ declare global {
     interface Window {
         electronAPI: {
             getPorts: () => Promise<PortInfo[]>;
-            connectPort: (path: string, baudRate: number) => Promise<ConnectResult>;
+            connectPort: (path: string, baudRate: number, board?: string) => Promise<ConnectResult>;
             disconnectPort: () => Promise<ConnectResult>;
             sendSerial: (data: string) => Promise<void>;
             uploadCode: (code: string, port?: string, fqbn?: string) => Promise<UploadResult>;
