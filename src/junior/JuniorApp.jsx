@@ -675,6 +675,11 @@ export default function JuniorApp({ onBack }) {
                 move: { scrollbars: true, drag: true, wheel: false }
             });
 
+            const flyout = workspaceRef.current.getFlyout();
+            if (flyout) {
+                flyout.autoClose = false;
+            }
+
             // ZOOM & TOOLBOX FIX: Decouple flyout scale from workspace zoom
             const workspace = workspaceRef.current;
             workspace.addChangeListener((e) => {

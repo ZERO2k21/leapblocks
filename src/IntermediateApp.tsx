@@ -361,6 +361,8 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         if (newMode === editorMode) return;
 
         setEditorMode(newMode);
+        //open flyout
+
         addLog(`Switched to ${newMode === 'stage' ? 'Stage' : 'Upload'} Mode`);
 
         // Note: The workspace injection will be handled by the useEffect dependent on editorMode
@@ -604,9 +606,16 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         insertionMarkerOpacity: 0.3,
                         scrollbarOpacity: 0.4,
                         cursorColour: '#d0d0d0',
+
+
                     },
                 }),
             });
+
+            const flyout = workspaceRef.current.getFlyout();
+            if (flyout) {
+                flyout.autoClose = false;
+            }
 
             // Dynamic Dropdown Colors: Update highlight and background color based on block color
             if (!(Blockly.FieldDropdown.prototype as any)._originalShowEditor) {
@@ -731,6 +740,11 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                     // ZOOM & TOOLBOX FIX: Decouple flyout scale from workspace zoom
                     if (blocksWorkspace) {
+                        const flyout = blocksWorkspace.getFlyout();
+                        if (flyout) {
+                            flyout.autoClose = false;
+                        }
+
                         blocksWorkspace.addChangeListener((e: any) => {
                             if (e.type === Blockly.Events.VIEWPORT_CHANGE) {
                                 const flyout = blocksWorkspace.getFlyout();
@@ -744,6 +758,16 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             }
                         });
                     }
+
+                    // Auto-open toolbox on load/mode switch
+                    setTimeout(() => {
+                        if (workspaceRef.current) {
+                            const toolbox = workspaceRef.current.getToolbox();
+                            if (toolbox) {
+                                toolbox.selectItemByPosition(0);
+                            }
+                        }
+                    }, 50);
 
                     // Register custom variable category callback
                     workspaceRef.current.registerToolboxCategoryCallback('LEAP_VARIABLES', (ws: any) => {
