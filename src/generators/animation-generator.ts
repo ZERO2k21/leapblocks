@@ -359,9 +359,9 @@ export class AnimationCompiler {
 
             // Looks
             case 'looks_say':
-                return { type: 'say', message: this.compileStringValue(block, 'MESSAGE') };
+                return { type: 'say', message: String(block.getFieldValue('MESSAGE') || '') };
             case 'looks_say_for_secs':
-                return { type: 'say_for_secs', message: this.compileStringValue(block, 'MESSAGE'), secs: Number(block.getFieldValue('SECS')) };
+                return { type: 'say_for_secs', message: String(block.getFieldValue('MESSAGE') || ''), secs: Number(block.getFieldValue('SECS')) };
             case 'looks_show':
                 return { type: 'show' };
             case 'looks_hide':
@@ -378,9 +378,9 @@ export class AnimationCompiler {
                 return { type: 'clear_effects' };
             // New Looks blocks
             case 'looks_think':
-                return { type: 'think', message: this.compileStringValue(block, 'MESSAGE') };
+                return { type: 'think', message: String(block.getFieldValue('MESSAGE') || '') };
             case 'looks_think_for_secs':
-                return { type: 'think_for_secs', message: this.compileStringValue(block, 'MESSAGE'), secs: Number(block.getFieldValue('SECS')) };
+                return { type: 'think_for_secs', message: String(block.getFieldValue('MESSAGE') || ''), secs: Number(block.getFieldValue('SECS')) };
             case 'looks_switch_costume':
                 return { type: 'switch_costume', costume: block.getFieldValue('COSTUME') };
             case 'looks_switch_backdrop':

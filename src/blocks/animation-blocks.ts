@@ -261,9 +261,10 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         type: 'looks_say_for_secs',
         message0: '🗣️ say %1 for %2 seconds',
         args0: [
-            { type: 'input_value', name: 'MESSAGE' },
+            { type: 'field_input', name: 'MESSAGE', text: 'Hello!' },
             { type: 'field_number', name: 'SECS', value: 2, min: 0.1 },
         ],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -273,7 +274,8 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     {
         type: 'looks_say',
         message0: '🗣️ say %1',
-        args0: [{ type: 'input_value', name: 'MESSAGE' }],
+        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hello!' }],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -353,9 +355,10 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         type: 'looks_think_for_secs',
         message0: '💭 think %1 for %2 seconds',
         args0: [
-            { type: 'input_value', name: 'MESSAGE' },
+            { type: 'field_input', name: 'MESSAGE', text: 'Hmm...' },
             { type: 'field_number', name: 'SECS', value: 2, min: 0.1 },
         ],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -365,7 +368,8 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     {
         type: 'looks_think',
         message0: '💭 think %1',
-        args0: [{ type: 'input_value', name: 'MESSAGE' }],
+        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hmm...' }],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
