@@ -680,21 +680,20 @@ export default function JuniorApp({ onBack }) {
                 flyout.autoClose = false;
             }
 
-            // ZOOM & TOOLBOX FIX: Decouple flyout scale from workspace zoom
+            // ZOOM & TOOLBOX FIX: Lock flyout scale so it never changes with workspace zoom.
+            // ROOT CAUSE: Blockly's reflowInternal_() directly sets:
+            //   this.workspace_.scale = this.getFlyoutScale()
+            // And getFlyoutScale() by default returns this.targetWorkspace.scale (the zoomed scale).
+            // By overriding getFlyoutScale() we intercept ALL scale sync paths.
             const workspace = workspaceRef.current;
-            workspace.addChangeListener((e) => {
-                if (e.type === Blockly.Events.VIEWPORT_CHANGE) {
-                    const flyout = workspace.getFlyout();
-                    if (flyout && flyout.getWorkspace()) {
-                        // Force flyout workspace to a fixed scale (e.g., 0.8 for Junior)
-                        // This prevents blocks in the toolbox from resizing when zooming the main workspace
-                        const flyoutWs = flyout.getWorkspace();
-                        if (flyoutWs.getScale() !== 0.8) {
-                            flyoutWs.setScale(0.8);
-                        }
-                    }
+            const initFlyout = workspace.getFlyout();
+            if (initFlyout) {
+                const FIXED_SCALE = 0.8;
+                initFlyout.getFlyoutScale = () => FIXED_SCALE;
+                if (initFlyout.getWorkspace()) {
+                    initFlyout.getWorkspace().setScale(FIXED_SCALE);
                 }
-            });
+            }
         }
 
         // UI Event Listener for Custom Interactions (Grid Picker & Direction Picker)
@@ -993,9 +992,25 @@ export default function JuniorApp({ onBack }) {
         if (action === "redo") workspaceRef.current?.undo(true);
     };
 
-    const zoomIn = () => workspaceRef.current?.zoom(workspaceRef.current.getMetrics().viewWidth / 2, workspaceRef.current.getMetrics().viewHeight / 2, 1);
-    const zoomOut = () => workspaceRef.current?.zoom(workspaceRef.current.getMetrics().viewWidth / 2, workspaceRef.current.getMetrics().viewHeight / 2, -1);
-    const zoomReset = () => { workspaceRef.current?.setScale(1); workspaceRef.current?.scrollCenter(); };
+    const resetFlyoutScale = () => {
+        const flyout = workspaceRef.current?.getFlyout();
+        if (flyout && flyout.getWorkspace()) {
+            flyout.getWorkspace().setScale(0.8);
+        }
+    };
+    const zoomIn = () => {
+        workspaceRef.current?.zoom(workspaceRef.current.getMetrics().viewWidth / 2, workspaceRef.current.getMetrics().viewHeight / 2, 1);
+        resetFlyoutScale();
+    };
+    const zoomOut = () => {
+        workspaceRef.current?.zoom(workspaceRef.current.getMetrics().viewWidth / 2, workspaceRef.current.getMetrics().viewHeight / 2, -1);
+        resetFlyoutScale();
+    };
+    const zoomReset = () => {
+        workspaceRef.current?.setScale(1);
+        workspaceRef.current?.scrollCenter();
+        resetFlyoutScale();
+    };
     const undo = () => workspaceRef.current?.undo(false);
     const redo = () => workspaceRef.current?.undo(true);
 

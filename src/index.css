@@ -604,3 +604,18 @@ div::-webkit-scrollbar-thumb {
   transform: scale(1) !important;
   flex-shrink: 0 !important;
 }
+
+/* Prevent the flyout container from inheriting workspace transform changes */
+.blocklyFlyout {
+  transform-origin: left top !important;
+}
+
+/* Ensure flyout SVG maintains its own independent transform context */
+.blocklyFlyout > svg {
+  transform: none !important;
+}
+
+/* Prevent flyout buttons (like "Make a Variable") from scaling with workspace */
+.blocklyFlyoutButton {
+  transform: none !important;
+}

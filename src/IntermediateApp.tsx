@@ -661,6 +661,24 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 flyout.autoClose = false;
             }
 
+            // ZOOM & TOOLBOX FIX: Lock flyout scale so it never changes with workspace zoom.
+            // ROOT CAUSE: Blockly's reflowInternal_() directly sets:
+            //   this.workspace_.scale = this.getFlyoutScale()
+            // And getFlyoutScale() by default returns this.targetWorkspace.scale (the zoomed scale).
+            // By overriding getFlyoutScale() we intercept ALL scale sync paths.
+            const initialWs = workspaceRef.current;
+            if (initialWs) {
+                const flyout = initialWs.getFlyout() as any;
+                if (flyout) {
+                    const FIXED_SCALE = 0.9;
+                    flyout.getFlyoutScale = () => FIXED_SCALE;
+                    // Also immediately apply the fixed scale
+                    if (flyout.getWorkspace()) {
+                        flyout.getWorkspace().setScale(FIXED_SCALE);
+                    }
+                }
+            }
+
             // Dynamic Dropdown Colors: Update highlight and background color based on block color
             if (!(Blockly.FieldDropdown.prototype as any)._originalShowEditor) {
                 (Blockly.FieldDropdown.prototype as any)._originalShowEditor = (Blockly.FieldDropdown.prototype as any).showEditor_;
@@ -782,25 +800,18 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                     workspaceRef.current = blocksWorkspace;
 
-                    // ZOOM & TOOLBOX FIX: Decouple flyout scale from workspace zoom
+                    // ZOOM & TOOLBOX FIX: Lock flyout scale permanently.
+                    // Override getFlyoutScale() — this is what Blockly's reflowInternal_() reads.
                     if (blocksWorkspace) {
-                        const flyout = blocksWorkspace.getFlyout();
+                        const flyout = blocksWorkspace.getFlyout() as any;
                         if (flyout) {
                             flyout.autoClose = false;
-                        }
-
-                        blocksWorkspace.addChangeListener((e: any) => {
-                            if (e.type === Blockly.Events.VIEWPORT_CHANGE) {
-                                const flyout = blocksWorkspace.getFlyout();
-                                if (flyout && flyout.getWorkspace()) {
-                                    // Force flyout workspace to a fixed scale (0.9 for Intermediate)
-                                    const flyoutWs = flyout.getWorkspace();
-                                    if (flyoutWs.getScale() !== 0.9) {
-                                        flyoutWs.setScale(0.9);
-                                    }
-                                }
+                            const FIXED_SCALE = 0.9;
+                            flyout.getFlyoutScale = () => FIXED_SCALE;
+                            if (flyout.getWorkspace()) {
+                                flyout.getWorkspace().setScale(FIXED_SCALE);
                             }
-                        });
+                        }
                     }
 
                     // Auto-open toolbox on load/mode switch
@@ -818,7 +829,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         const xmlList: Element[] = [];
                         const btn = document.createElement('button');
                         btn.setAttribute('text', 'Make a Variable');
-                        btn.setAttribute('callbackKey', 'CREATE_VARIABLE');         
+                        btn.setAttribute('callbackKey', 'CREATE_VARIABLE');
                         xmlList.push(btn); // Standard vars button
 
                         const allVars = ws.getAllVariables() || [];
