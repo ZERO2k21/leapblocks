@@ -19,6 +19,7 @@ import BackdropEditor from './components/BackdropEditor';
 import { stageManager } from './engine/StageManager';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
 import SerialMonitor from './components/SerialMonitor';
+import UploadModal from './components/UploadModal';
 import './custom-toolbox';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1351,6 +1352,12 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     onClose={() => setShowBackdropEditor(false)}
                 />
             )}
+
+            {/* Premium Upload Modal */}
+            <UploadModal
+                isOpen={isUploading}
+                progress={uploadProgress}
+            />
         </div>
     );
 };
