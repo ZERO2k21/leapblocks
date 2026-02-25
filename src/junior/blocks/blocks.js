@@ -338,7 +338,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
         init: function () {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("⏳", "junior-block-icon"))
-                .appendField(new Blockly.FieldDropdown([["1", "1"], ["2", "2"], ["3", "3"], ["5", "5"]]), "SECONDS")
+                .appendField(new Blockly.FieldNumber(1, 0.1), "SECONDS")
                 .appendField("sec");
             this.setPreviousStatement(true);
             this.setNextStatement(true);

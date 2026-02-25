@@ -26,13 +26,13 @@
     ry: 12px;
 }
 
-/* 2. THEMED DROPDOWN FIELDS - Transparent with White Text */
+/* 2. THEMED DROPDOWN FIELDS - Block-colored bg with White Text */
 .blocklyDropdownText+.blocklyFieldRect,
 .blocklyDropdownTextParent>rect,
 .blocklyEditableText.blocklyDropdownTextParent>rect {
-    fill: rgba(0, 0, 0, 0.15) !important;
-    stroke: rgba(255, 255, 255, 0.25) !important;
-    stroke-width: 1px !important;
+    fill: rgba(0, 0, 0, 0.25) !important;
+    stroke: rgba(255, 255, 255, 0.35) !important;
+    stroke-width: 1.5px !important;
     rx: 14px !important;
     ry: 14px !important;
 }

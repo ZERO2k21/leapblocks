@@ -102,12 +102,12 @@ body,
    BLOCKLY FIELD STYLING
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* 1. INPUT FIELDS (Number/Text) - White Pills with Black Text */
+/* 1. INPUT FIELDS (Number/Text) - Block-colored with White Text */
 .blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect),
 .blocklyEditableText:not(.blocklyDropdownTextParent)>rect {
-  fill: #FFFFFF !important;
+  fill: rgba(0, 0, 0, 0.25) !important;
   fill-opacity: 1 !important;
-  stroke: rgba(0, 0, 0, 0.15) !important;
+  stroke: rgba(255, 255, 255, 0.3) !important;
   stroke-width: 1.5px !important;
   rx: 14px !important;
   ry: 14px !important;
@@ -115,18 +115,18 @@ body,
 
 .blocklyEditableText:not(.blocklyDropdownTextParent) .blocklyText,
 .blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect)+.blocklyText {
-  fill: #000000 !important;
+  fill: #FFFFFF !important;
   font-weight: 700 !important;
 }
 
-/* 2. DROPDOWN FIELDS - Themed (Transparent/Tinted) with White Text */
+/* 2. DROPDOWN FIELDS - Block-colored background with White Text */
 .blocklyDropdownText+.blocklyFieldRect,
 .blocklyDropdownTextParent>rect,
 .blocklyEditableText.blocklyDropdownTextParent>rect {
-  fill: rgba(0, 0, 0, 0.15) !important;
-  /* Subtle tint to blend with block */
-  stroke: rgba(255, 255, 255, 0.2) !important;
-  stroke-width: 1px !important;
+  fill: rgba(0, 0, 0, 0.25) !important;
+  /* Darker overlay on block color = richer colored pill */
+  stroke: rgba(255, 255, 255, 0.3) !important;
+  stroke-width: 1.5px !important;
   rx: 14px !important;
   ry: 14px !important;
 }
@@ -134,7 +134,7 @@ body,
 .blocklyDropdownText,
 .blocklyDropdownTextParent .blocklyText {
   fill: #FFFFFF !important;
-  /* High contrast on dark blocks */
+  /* White text on block-color background */
   font-weight: 700 !important;
 }
 
@@ -155,9 +155,23 @@ body,
   font-family: inherit !important;
 }
 
-/* Ensure consistency in flyout */
-.blocklyFlyout .blocklyFieldRect {
+/* Ensure consistency in flyout — dropdowns should also have block-color bg */
+.blocklyFlyout .blocklyDropdownText+.blocklyFieldRect,
+.blocklyFlyout .blocklyDropdownTextParent>rect,
+.blocklyFlyout .blocklyEditableText.blocklyDropdownTextParent>rect {
+  fill: rgba(0, 0, 0, 0.25) !important;
+  stroke: rgba(255, 255, 255, 0.3) !important;
+}
+
+.blocklyFlyout .blocklyDropdownText,
+.blocklyFlyout .blocklyDropdownTextParent .blocklyText {
   fill: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* Input fields in flyout also use block-colored background */
+.blocklyFlyout .blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect) {
+  fill: rgba(0, 0, 0, 0.25) !important;
   fill-opacity: 1 !important;
 }
 
@@ -611,7 +625,7 @@ div::-webkit-scrollbar-thumb {
 }
 
 /* Ensure flyout SVG maintains its own independent transform context */
-.blocklyFlyout > svg {
+.blocklyFlyout>svg {
   transform: none !important;
 }
 
