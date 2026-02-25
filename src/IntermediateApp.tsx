@@ -548,7 +548,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             'arduino_uno': 'arduino:avr:uno',
             'arduino_mega': 'arduino:avr:mega',
             'arduino_nano': 'arduino:avr:nano',
-            'esp32': 'esp32:esp32:esp32da', // Default ESP32
+            'esp32': 'esp32:esp32:esp32', // Generic ESP32 dev board (NodeMCU, DOIT, etc.)
         };
         const fqbn = fqbnMap[selectedBoard] || 'arduino:avr:uno';
 

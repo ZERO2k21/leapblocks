@@ -598,18 +598,21 @@ arduinoGenerator.forBlock['arduino_ultrasonic'] = function (block, generator) {
     const echo = block.getFieldValue('ECHO');
 
     const functionName = '_readUltrasonicDistance';
+    // Use pulseInLong() instead of pulseIn() — pulseIn() is unreliable on ESP32
+    // because FreeRTOS task switches interrupt the timing and cause it to return 0.
+    // pulseInLong() uses interrupts internally and works correctly on ESP32.
     const functionDef = [
         'float ' + functionName + '(int trigPin, int echoPin) {',
         '  pinMode(trigPin, OUTPUT);',
         '  pinMode(echoPin, INPUT);',
         '  digitalWrite(trigPin, LOW);',
-        '  delayMicroseconds(2);',
+        '  delayMicroseconds(4);',
         '  digitalWrite(trigPin, HIGH);',
         '  delayMicroseconds(10);',
         '  digitalWrite(trigPin, LOW);',
-        '  long duration = pulseIn(echoPin, HIGH, 38000UL); // 38ms timeout',
-        '  if (duration == 0) return 0.0; // Timeout',
-        '  return (float)duration / 58.2; // Convert to cm',
+        '  long duration = pulseInLong(echoPin, HIGH, 38000UL); // interrupt-safe, 38ms timeout',
+        '  if (duration == 0) return 0.0; // no echo / out of range',
+        '  return (float)duration / 58.2; // convert microseconds to cm',
         '}'
     ].join('\n');
 
@@ -659,7 +662,16 @@ console.log('[GENERATOR] All block generators registered');
 const esp32Mappings = [
     'setup', 'digital_write', 'digital_read', 'analog_read',
     'tone', 'notone', 'servo', 'led', 'relay', 'ultrasonic',
-    'dht_temp', 'button', 'ldr', 'potentiometer', 'pir', 'digital_sensor'
+    'dht_temp', 'button', 'ldr', 'potentiometer', 'pir', 'digital_sensor',
+    // Serial blocks — required for "set baud rate" and "write to serial" in ESP32 mode
+    'serial_begin', 'serial_print', 'serial_println', 'serial_print_labeled',
+    'serial_available', 'serial_read',
+    // Math/logic blocks used in ESP32 toolbox
+    'delay', 'repeat', 'if', 'if_else', 'wait_until', 'repeat_until', 'stop',
+    'map', 'constrain', 'millis', 'math_add', 'math_subtract', 'math_multiply',
+    'math_divide', 'mod', 'round', 'abs', 'random',
+    'compare_gt', 'compare_lt', 'compare_eq', 'logic_and', 'logic_or', 'logic_not',
+    'number', 'text', 'motor',
 ];
 
 esp32Mappings.forEach(name => {

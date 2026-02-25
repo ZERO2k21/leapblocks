@@ -40,6 +40,7 @@ export class ArduinoUploader {
                 await execAsync('arduino-cli version');
             } catch {
                 const possiblePaths = [
+                    path.join(process.cwd(), 'arduino-cli', 'arduino-cli.exe'),
                     path.join(os.homedir(), 'AppData', 'Local', 'Arduino15', 'arduino-cli.exe'),
                     'C:\\Program Files\\Arduino CLI\\arduino-cli.exe',
                     'C:\\arduino-cli\\arduino-cli.exe',

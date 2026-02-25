@@ -1,12 +1,26 @@
 // LeapBlocks - Arduino Code
 
+float _readUltrasonicDistance(int trigPin, int echoPin) {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(4);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  long duration = pulseInLong(echoPin, HIGH, 38000UL); // interrupt-safe, 38ms timeout
+  if (duration == 0) return 0.0; // no echo / out of range
+  return (float)duration / 58.2; // convert microseconds to cm
+}
+double my_variable = 0;
+double distance = 0;
+
 void setup() {
-  pinMode(2, OUTPUT);
+  Serial.begin(9600);
+  Serial.begin(9600);
   while (true) {
-    digitalWrite(2, HIGH);
-    delay(1000);
-    digitalWrite(2, LOW);
-    delay(1000);
+    my_variable = _readUltrasonicDistance(2, 2);
+    Serial.println(distance);
     delay(1);
   }
 }
