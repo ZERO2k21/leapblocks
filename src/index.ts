@@ -100,7 +100,6 @@ ipcMain.handle('send-serial', async (event, data: string) => {
 
 ipcMain.handle('upload-code', async (event, code: string, selectedPort: string, fqbn: string) => {
   const wasConnected = serialManager.isConnected();
-  const activePath = serialManager.activePortPath;
 
   // 1. Auto-disconnect if connected
   if (wasConnected) {
@@ -109,17 +108,8 @@ ipcMain.handle('upload-code', async (event, code: string, selectedPort: string, 
     await new Promise(resolve => setTimeout(resolve, 1500));
   }
 
-  // 2. Perform upload
+  // 2. Perform upload (renderer handles reconnection via IPC)
   const result = await arduinoUploader.upload(code, selectedPort, fqbn);
-
-  // 3. Auto-reconnect if board was active
-  if (result.success && wasConnected && activePath) {
-    const baud = serialManager.currentBaud;
-    const board = serialManager.lastBoard;
-    setTimeout(async () => {
-      await serialManager.connect(activePath, baud, board);
-    }, 2000);
-  }
 
   return result;
 });

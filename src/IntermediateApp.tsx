@@ -21,6 +21,7 @@ import { hardwareAdapter } from './hardware/HardwareAdapter';
 import SerialMonitor from './components/SerialMonitor';
 import UploadModal from './components/UploadModal';
 import './custom-toolbox';
+import { block } from 'blockly/core/tooltip';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LOGGING UTILITY
@@ -527,9 +528,11 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             return;
         }
 
+        // Clear old serial data before new upload
+        setSerialMessages([]);
+
         // Auto-disconnect if serial is connected to release the port
-        const wasConnected = isConnected;
-        if (wasConnected) {
+        if (isConnected) {
             addLog('Disconnecting serial for upload...');
             await window.electronAPI.disconnectPort();
             setIsConnected(false);
@@ -558,20 +561,24 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 addLog('Upload complete!');
                 setUploadProgress('Upload complete!');
 
-                // Auto-reconnect if it was connected before
-                if (wasConnected && selectedPort) {
-                    addLog('Reconnecting serial monitor...');
+                // Always auto-connect serial after successful upload to show sensor data
+                if (selectedPort) {
+                    addLog('Connecting serial monitor...');
+                    setActiveTab('serial'); // Auto-switch to serial monitor tab
                     setTimeout(async () => {
                         try {
                             const reconnectResult = await window.electronAPI.connectPort(selectedPort, baudRate, selectedBoard);
                             if (reconnectResult.success) {
                                 setIsConnected(true);
-                                addLog('Serial monitor reconnected');
+                                addLog('Serial monitor connected — showing live data');
                             }
                         } catch (reconnectErr) {
                             console.error('Auto-reconnect failed:', reconnectErr);
                         }
-                    }, 1500); // 1.5s delay to allow board to initialize after upload
+                        setIsUploading(false); // Close modal AFTER reconnect attempt
+                    }, 2000); // 2s delay to allow board to initialize after upload
+                } else {
+                    setIsUploading(false);
                 }
             } else {
                 let errorMsg = result.error || 'Unknown error occurred';
@@ -580,12 +587,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 }
                 addLog(`Upload failed: ${errorMsg}`);
                 setUploadProgress(`Failed: ${errorMsg}`);
+                setIsUploading(false);
             }
         } catch (e) {
             addLog('Upload error');
             setUploadProgress('Upload error');
+            setIsUploading(false);
         }
-        setIsUploading(false);
     }, [generatedCode, isUploading, addLog, selectedPort, selectedBoard, isConnected, baudRate]);
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -810,7 +818,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         const xmlList: Element[] = [];
                         const btn = document.createElement('button');
                         btn.setAttribute('text', 'Make a Variable');
-                        btn.setAttribute('callbackKey', 'CREATE_VARIABLE');
+                        btn.setAttribute('callbackKey', 'CREATE_VARIABLE');         
                         xmlList.push(btn); // Standard vars button
 
                         const allVars = ws.getAllVariables() || [];
