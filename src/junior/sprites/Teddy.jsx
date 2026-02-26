@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function Sprite({ id, type, active, x, y, angle, size, visible, speech, currentCostume, costumes, onClick }) {
+export default function Sprite({ id, type, active, x, y, angle, size, visible, speech, currentCostume, costumes, onClick, onDragStateChange }) {
     // Local ephemeral state (speech bubbles, feedback)
     // Speech is now propped from App.jsx store
     const [scaleX, setScaleX] = useState(1);
@@ -208,6 +208,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             parentTop: rect?.top || 0,
         };
         setIsDragging(true);
+        if (onDragStateChange) onDragStateChange(true);
 
         const handleMouseMove = (me) => {
             const dx = me.clientX - dragRef.current.startX;
@@ -224,6 +225,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
             setIsDragging(false);
+            if (onDragStateChange) onDragStateChange(false);
             // Only fire click/select if we didn't actually drag
             if (!dragRef.current.didDrag && onClick) {
                 onClick();

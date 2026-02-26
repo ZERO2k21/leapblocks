@@ -27,6 +27,9 @@ export default function RightPanel({
     isRunning = false,
     isCameraOn = false,
     isFullscreen = false,
+    spriteGridX = null,
+    spriteGridY = null,
+    isDraggingSprite = false,
 }) {
 
     return (
@@ -36,10 +39,21 @@ export default function RightPanel({
             <div style={{ flex: 1, position: "relative", display: "flex", overflow: "hidden", background: "#f5f5f5" }}>
                 {/* Y-Axis Labels */}
                 {showGrid && (
-                    <div style={{ width: "20px", display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontSize: "9px", color: "#999" }}>
-                        {[15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(n => (
-                            <span key={n} style={{ color: n % 5 === 0 ? "#7B4FC4" : "#bbb" }}>{n}</span>
-                        ))}
+                    <div style={{ width: "22px", display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontSize: "9px", color: "#999" }}>
+                        {[15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(n => {
+                            const isHighlighted = isDraggingSprite && spriteGridY !== null && Math.round(spriteGridY) === n;
+                            return (
+                                <span key={n} style={{
+                                    color: isHighlighted ? "#fff" : (n % 5 === 0 ? "#7B4FC4" : "#bbb"),
+                                    fontWeight: isHighlighted ? "800" : "normal",
+                                    fontSize: isHighlighted ? "11px" : "9px",
+                                    background: isHighlighted ? "#7B4FC4" : "transparent",
+                                    borderRadius: "4px",
+                                    padding: isHighlighted ? "1px 3px" : "0",
+                                    transition: "all 0.12s ease",
+                                }}>{n}</span>
+                            );
+                        })}
                     </div>
                 )}
 
@@ -49,19 +63,94 @@ export default function RightPanel({
                     <div style={{
                         flex: 1,
                         position: "relative",
-                        background: "#f8f8f8",
-                        backgroundImage: showGrid ? "radial-gradient(circle, #ddd 1.5px, transparent 1.5px)" : "none",
-                        backgroundSize: "20px 20px",
+                        background: "#fafafa",
+                        border: showGrid ? "1px solid #d0d0d0" : "none",
+                        borderRadius: "6px",
+                        overflow: "hidden",
                     }}>
+                        {/* Grid Lines Overlay */}
+                        {showGrid && (
+                            <div style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                height: "100%",
+                                backgroundImage: "linear-gradient(to right, #d5d5d5 1px, transparent 1px), linear-gradient(to bottom, #d5d5d5 1px, transparent 1px)",
+                                backgroundSize: "calc(100% / 20) calc(100% / 15)",
+                                pointerEvents: "none",
+                                zIndex: 2,
+                            }} />
+                        )}
                         {children}
+
+                        {/* Crosshair Guide Lines */}
+                        {isDraggingSprite && spriteGridX !== null && spriteGridY !== null && showGrid && (
+                            <>
+                                {/* Vertical line */}
+                                <div style={{
+                                    position: "absolute",
+                                    left: `${(spriteGridX / 20) * 100}%`,
+                                    top: 0,
+                                    width: "1px",
+                                    height: "100%",
+                                    background: "rgba(123,79,196,0.35)",
+                                    pointerEvents: "none",
+                                    zIndex: 40,
+                                }} />
+                                {/* Horizontal line */}
+                                <div style={{
+                                    position: "absolute",
+                                    top: `${((15 - spriteGridY) / 15) * 100}%`,
+                                    left: 0,
+                                    width: "100%",
+                                    height: "1px",
+                                    background: "rgba(123,79,196,0.35)",
+                                    pointerEvents: "none",
+                                    zIndex: 40,
+                                }} />
+                                {/* Coordinate Label */}
+                                <div style={{
+                                    position: "absolute",
+                                    left: `${(spriteGridX / 20) * 100}%`,
+                                    top: `${((15 - spriteGridY) / 15) * 100}%`,
+                                    transform: "translate(8px, -28px)",
+                                    background: "#7B4FC4",
+                                    color: "white",
+                                    fontSize: "10px",
+                                    fontWeight: "700",
+                                    padding: "2px 6px",
+                                    borderRadius: "4px",
+                                    pointerEvents: "none",
+                                    zIndex: 45,
+                                    whiteSpace: "nowrap",
+                                    boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+                                }}>
+                                    ({Math.round(spriteGridX)}, {Math.round(spriteGridY)})
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     {/* X-Axis Labels */}
                     {showGrid && (
                         <div style={{ height: "18px", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 5px", fontSize: "9px", color: "#999" }}>
-                            {Array.from({ length: 21 }, (_, i) => i).map(n => (
-                                <span key={n} style={{ color: n % 5 === 0 ? "#7B4FC4" : "#bbb", minWidth: "12px", textAlign: "center" }}>{n}</span>
-                            ))}
+                            {Array.from({ length: 21 }, (_, i) => i).map(n => {
+                                const isHighlighted = isDraggingSprite && spriteGridX !== null && Math.round(spriteGridX) === n;
+                                return (
+                                    <span key={n} style={{
+                                        color: isHighlighted ? "#fff" : (n % 5 === 0 ? "#7B4FC4" : "#bbb"),
+                                        fontWeight: isHighlighted ? "800" : "normal",
+                                        fontSize: isHighlighted ? "11px" : "9px",
+                                        minWidth: "12px",
+                                        textAlign: "center",
+                                        background: isHighlighted ? "#7B4FC4" : "transparent",
+                                        borderRadius: "4px",
+                                        padding: isHighlighted ? "1px 3px" : "0",
+                                        transition: "all 0.12s ease",
+                                    }}>{n}</span>
+                                );
+                            })}
                         </div>
                     )}
                 </div>

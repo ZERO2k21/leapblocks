@@ -69,8 +69,8 @@ export class Interpreter {
     async executeThread(code) {
         if (!code) return;
 
-        // JUNIOR SAFETY: Timeout after 10 seconds to prevent huge freezes
-        const TIMEOUT_MS = 10000;
+        // JUNIOR SAFETY: Timeout after 2 minutes to prevent truly infinite freezes
+        const TIMEOUT_MS = 120000;
 
         // Wrapper to allow timeout
         const runUserCode = async () => {

@@ -171,20 +171,20 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                         >
                             <div style={styles.spriteItemInner}>
                                 <div style={{
-                                    width: '48px',
-                                    height: '48px',
-                                    borderRadius: '4px',
+                                    width: '80px',
+                                    height: '80px',
+                                    borderRadius: '6px',
                                     backgroundColor: getSpriteColor(sprite),
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    fontSize: '24px',
+                                    fontSize: '36px',
                                 }}>
                                     {sprite.currentCostume ? (
                                         <img
                                             src={sprite.currentCostume.image.src}
                                             alt={sprite.name}
-                                            style={{ maxWidth: '40px', maxHeight: '40px', objectFit: 'contain' }}
+                                            style={{ maxWidth: '70px', maxHeight: '70px', objectFit: 'contain' }}
                                         />
                                     ) : (
                                         getSpriteEmoji(sprite)
@@ -282,8 +282,8 @@ const styles: { [key: string]: React.CSSProperties } = {
         flexWrap: 'wrap',
         gap: '8px',
         padding: '8px',
-        minHeight: '80px',
-        maxHeight: '150px',
+        minHeight: '100px',
+        maxHeight: '200px',
         overflowY: 'auto',
     },
     spriteItem: {
@@ -302,8 +302,8 @@ const styles: { [key: string]: React.CSSProperties } = {
         backgroundColor: 'rgba(76, 151, 255, 0.1)',
     },
     spriteThumbnail: {
-        width: '48px',
-        height: '48px',
+        width: '80px',
+        height: '80px',
         borderRadius: '8px',
         overflow: 'hidden',
         backgroundColor: '#f0f0f0',

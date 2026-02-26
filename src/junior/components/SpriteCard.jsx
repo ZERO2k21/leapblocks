@@ -13,7 +13,7 @@ export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }
             onClick={onClick}
             style={{
                 position: "relative",
-                width: "80px",
+                width: "110px",
                 background: "white",
                 borderRadius: "10px",
                 border: active ? "3px solid #7B4FC4" : "2px solid #E0E0E0",
@@ -30,7 +30,7 @@ export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }
             {/* Sprite Image Area */}
             <div style={{
                 width: "100%",
-                height: "52px",
+                height: "82px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -92,9 +92,9 @@ export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }
 
                 {/* Sprite Image */}
                 {spriteImage || (typeof displayIcon === 'string' && displayIcon.includes('/')) ? (
-                    <img src={spriteImage || displayIcon} alt={label} style={{ maxWidth: "45px", maxHeight: "45px", objectFit: "contain" }} />
+                    <img src={spriteImage || displayIcon} alt={label} style={{ maxWidth: "76px", maxHeight: "76px", objectFit: "contain" }} />
                 ) : (
-                    <span style={{ fontSize: "32px" }}>{displayIcon}</span>
+                    <span style={{ fontSize: "48px" }}>{displayIcon}</span>
                 )}
             </div>
 

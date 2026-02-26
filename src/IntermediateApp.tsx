@@ -20,6 +20,8 @@ import { stageManager } from './engine/StageManager';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
 import SerialMonitor from './components/SerialMonitor';
 import UploadModal from './components/UploadModal';
+import WorkspaceControls from './components/WorkspaceControls';
+import WorkspaceTrash from './components/WorkspaceTrash';
 import './custom-toolbox';
 import { block } from 'blockly/core/tooltip';
 
@@ -1089,7 +1091,11 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         2. In Upload mode (always shows blocks)
                     */}
                     {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
-                        <div ref={blocklyDiv} style={styles.blockly} />
+                        <>
+                            <div ref={blocklyDiv} style={styles.blockly} />
+                            <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={undefined} style={undefined} />
+                            <WorkspaceTrash workspaceRef={workspaceRef} />
+                        </>
                     )}
 
                     {/* Other Tabs - Only relevant in Stage Mode */}

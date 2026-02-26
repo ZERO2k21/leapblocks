@@ -24,6 +24,8 @@ import { looksPreview } from "./engine/looksPreview"; // Import Looks Preview
 import PositionPicker from "./components/PositionPicker"; // Import Picker Component
 import DirectionPicker from "./components/DirectionPicker"; // Import Direction Picker
 import PaintEditor from "../components/PaintEditor";
+import WorkspaceControls from "../components/WorkspaceControls";
+import WorkspaceTrash from "../components/WorkspaceTrash";
 import { executionEngine } from "../engine/ExecutionEngine";
 import { projectManager } from "../engine/ProjectManager";
 import { spriteManager } from "../engine/SpriteManager";
@@ -144,6 +146,8 @@ export default function JuniorApp({ onBack }) {
     const [isBlocksRunning, setIsBlocksRunning] = useState(false); // UI state for run/stop toggle
     const [projectName, setProjectName] = useState("Untitled Project");
     const [activeCategory, setActiveCategory] = useState("motion");
+    const stageContainerRef = useRef(null); // Ref for stage container to measure dimensions
+    const [isDraggingSpriteOnStage, setIsDraggingSpriteOnStage] = useState(false);
 
     // Camera State
     const [isCameraOn, setIsCameraOn] = useState(false);
@@ -815,7 +819,7 @@ export default function JuniorApp({ onBack }) {
             // 2. BLOCK LIMIT
             if (e.type === Blockly.Events.BLOCK_CREATE || e.type === Blockly.Events.BLOCK_CHANGE || e.type === Blockly.Events.BLOCK_MOVE) {
                 const config = getLessonConfig();
-                const MAX_BLOCKS = config.maxBlocks || 100;
+                const MAX_BLOCKS = config.maxBlocks || 500;
 
                 // Count Check
                 const blocks = workspaceRef.current.getAllBlocks(false);
@@ -1100,21 +1104,6 @@ export default function JuniorApp({ onBack }) {
             flyout.getWorkspace().setScale(1.0);
         }
     };
-    const zoomIn = () => {
-        workspaceRef.current?.zoom(workspaceRef.current.getMetrics().viewWidth / 2, workspaceRef.current.getMetrics().viewHeight / 2, 1);
-        resetFlyoutScale();
-    };
-    const zoomOut = () => {
-        workspaceRef.current?.zoom(workspaceRef.current.getMetrics().viewWidth / 2, workspaceRef.current.getMetrics().viewHeight / 2, -1);
-        resetFlyoutScale();
-    };
-    const zoomReset = () => {
-        workspaceRef.current?.setScale(1);
-        workspaceRef.current?.scrollCenter();
-        resetFlyoutScale();
-    };
-    const undo = () => workspaceRef.current?.undo(false);
-    const redo = () => workspaceRef.current?.undo(true);
 
     // --- RECORDING ---
     const handleToggleRecording = async () => {
@@ -1245,23 +1234,9 @@ export default function JuniorApp({ onBack }) {
                 <div id="wrapper" style={{ width: "60%", height: "100%", position: "relative" }}>
                     <div id="blocklyDiv" ref={blocklyDiv} className="workspace" style={{ width: "100%", height: "100%" }}></div>
 
-                    {/* ════ FLOATING WORKSPACE CONTROLS (right side) ════ */}
-                    <div style={{
-                        position: "absolute",
-                        right: "12px",
-                        top: "50%",
-                        transform: "translateY(-60%)",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "6px",
-                        zIndex: 90,
-                    }}>
-                        <WorkspaceControl icon="↩" title="Undo" onClick={undo} />
-                        <WorkspaceControl icon="↪" title="Redo" onClick={redo} />
-                        <WorkspaceControl icon="⊕" title="Zoom In" onClick={zoomIn} />
-                        <WorkspaceControl icon="⊖" title="Zoom Out" onClick={zoomOut} />
-                        <WorkspaceControl icon="＝" title="Reset Zoom" onClick={zoomReset} />
-                    </div>
+                    {/* ════ FLOATING WORKSPACE CONTROLS (shared component) ════ */}
+                    <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={resetFlyoutScale} />
+                    <WorkspaceTrash workspaceRef={workspaceRef} />
 
                     {/* ════ CATEGORY BAR (bottom-left, above flyout) ════ */}
                     <div style={{
@@ -1342,13 +1317,28 @@ export default function JuniorApp({ onBack }) {
                     isRunning={isBlocksRunning}
                     isCameraOn={isCameraOn}
                     isFullscreen={isFullscreen}
+                    isDraggingSprite={isDraggingSpriteOnStage}
+                    spriteGridX={(() => {
+                        const activeSprite = sprites.find(s => s.id === activeSpriteId);
+                        if (!activeSprite || !stageContainerRef.current) return null;
+                        const w = stageContainerRef.current.offsetWidth || 1;
+                        const spriteCenter = activeSprite.x + 40; // offset for sprite icon center
+                        return Math.max(0, Math.min(20, (spriteCenter / w) * 20));
+                    })()}
+                    spriteGridY={(() => {
+                        const activeSprite = sprites.find(s => s.id === activeSpriteId);
+                        if (!activeSprite || !stageContainerRef.current) return null;
+                        const h = stageContainerRef.current.offsetHeight || 1;
+                        const spriteCenter = activeSprite.y + 40; // offset for sprite icon center
+                        return Math.max(1, Math.min(15, 15 - (spriteCenter / h) * 15));
+                    })()}
                 >
                     {/* STAGE CHILDREN */}
-                    <div className="stage" style={{
+                    <div ref={stageContainerRef} className="stage" style={{
                         width: '100%', height: '100%', position: "relative", overflow: "visible",
                         background: currentScene.backgroundImage
                             ? `url(${currentScene.backgroundImage}) center/cover no-repeat`
-                            : (currentScene.background || '#f8f8f8'),
+                            : (currentScene.background || 'transparent'),
                     }}>
                         {/* Camera Video Backdrop */}
                         {isCameraOn && (
@@ -1381,6 +1371,7 @@ export default function JuniorApp({ onBack }) {
                                 costumes={sprite.costumes}
                                 speech={sprite.speech}
                                 onClick={() => handleSpriteClick(sprite.id)}
+                                onDragStateChange={(dragging) => setIsDraggingSpriteOnStage(dragging)}
                             />
                         ))}
                         <canvas
