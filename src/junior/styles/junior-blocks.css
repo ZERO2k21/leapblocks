@@ -49,8 +49,8 @@
     stroke-width: 1.5px !important;
 }
 
-/* Soft white text with shadow for premium look - exclude editable fields */
-.blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText),
+/* Soft white text with shadow for premium look - exclude editable fields AND icon classes */
+.blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.junior-block-icon):not(.junior-icon-large):not(.junior-icon),
 .blocklyNonEditableText>text {
     fill: #FFFFFF !important;
     font-size: 14pt !important;

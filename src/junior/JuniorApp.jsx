@@ -4,6 +4,7 @@ import { javascriptGenerator } from "blockly/javascript";
 import defineLeapBlocks from "./blocks/blocks";
 import Teddy from "./sprites/Teddy";
 import RightPanel from "./components/RightPanel";
+import BackdropChooser from "./components/BackdropChooser";
 import JuniorMenuBar from "./components/JuniorMenuBar";
 import {
     Footprints, Eye, Flag, Hand, Volume2, PenTool,
@@ -137,9 +138,15 @@ export default function JuniorApp({ onBack }) {
     const blocklyDiv = useRef(null);   // Stores the DIV element
     const fileInputRef = useRef(null);
     const canvasRef = useRef(null); // Canvas for Pen
+    const cameraVideoRef = useRef(null); // Camera video element
+    const cameraStreamRef = useRef(null); // Camera MediaStream
     const isRunning = useRef(false); // Ref for execution state
+    const [isBlocksRunning, setIsBlocksRunning] = useState(false); // UI state for run/stop toggle
     const [projectName, setProjectName] = useState("Untitled Project");
     const [activeCategory, setActiveCategory] = useState("motion");
+
+    // Camera State
+    const [isCameraOn, setIsCameraOn] = useState(false);
 
     // Recording State
     const [isRecording, setIsRecording] = useState(false);
@@ -245,6 +252,8 @@ export default function JuniorApp({ onBack }) {
 
     // --- UI/MODAL STATE ---
     const [isSpriteModalOpen, setIsSpriteModalOpen] = useState(false);
+    const [isBackdropChooserOpen, setIsBackdropChooserOpen] = useState(false);
+    const [backdropEditSceneId, setBackdropEditSceneId] = useState(null);
 
     // --- WORKSPACE PERSISTENCE LOGIC ---
 
@@ -288,13 +297,52 @@ export default function JuniorApp({ onBack }) {
     const handleEditScene = (sceneId) => {
         const scene = scenes.find(s => s.id === sceneId);
         if (!scene) return;
+        setBackdropEditSceneId(sceneId);
+        setIsBackdropChooserOpen(true);
+    };
+
+    // Handle backdrop selection from BackdropChooser
+    const handleBackdropSelect = (name, src, solidColor) => {
+        const targetId = backdropEditSceneId || currentSceneId;
+        if (src) {
+            // Image backdrop
+            setScenes(prev => prev.map(scene => {
+                if (scene.id !== targetId) return scene;
+                return {
+                    ...scene,
+                    background: `url(${src}) center/cover no-repeat`,
+                    backgroundImage: src,
+                    backdropName: name
+                };
+            }));
+        } else if (solidColor) {
+            // Solid color backdrop
+            setScenes(prev => prev.map(scene => {
+                if (scene.id !== targetId) return scene;
+                return {
+                    ...scene,
+                    background: solidColor,
+                    backgroundImage: null,
+                    backdropName: name
+                };
+            }));
+        }
+        setIsBackdropChooserOpen(false);
+        setBackdropEditSceneId(null);
+    };
+
+    // Handle "Paint Custom" from BackdropChooser
+    const handleBackdropPaint = () => {
+        setIsBackdropChooserOpen(false);
+        const targetId = backdropEditSceneId || currentSceneId;
+        const scene = scenes.find(s => s.id === targetId);
         setPaintEditor({
             isOpen: true,
             type: 'backdrop',
-            targetId: sceneId,
+            targetId: targetId,
             initialImage: null,
             costumes: [],
-            spriteName: scene.name || `Scene ${sceneId}`,
+            spriteName: scene?.name || `Scene`,
             mode: 'junior'
         });
     };
@@ -680,20 +728,24 @@ export default function JuniorApp({ onBack }) {
                 flyout.autoClose = false;
             }
 
-            // ZOOM & TOOLBOX FIX: Lock flyout scale so it never changes with workspace zoom.
-            // ROOT CAUSE: Blockly's reflowInternal_() directly sets:
-            //   this.workspace_.scale = this.getFlyoutScale()
-            // And getFlyoutScale() by default returns this.targetWorkspace.scale (the zoomed scale).
-            // By overriding getFlyoutScale() we intercept ALL scale sync paths.
+            // FLYOUT CONFIG: Full-size blocks, fixed height for horizontal bottom strip
             const workspace = workspaceRef.current;
             const initFlyout = workspace.getFlyout();
             if (initFlyout) {
-                const FIXED_SCALE = 0.8;
+                const FIXED_SCALE = 1.0;
                 initFlyout.getFlyoutScale = () => FIXED_SCALE;
                 if (initFlyout.getWorkspace()) {
                     initFlyout.getWorkspace().setScale(FIXED_SCALE);
                 }
+                // Force flyout to a comfortable height for blocks
+                initFlyout.height_ = 140;
             }
+
+            // Force Blockly to recalculate layout after flyout changes
+            setTimeout(() => {
+                workspace.resize();
+                window.dispatchEvent(new Event('resize'));
+            }, 100);
         }
 
         // UI Event Listener for Custom Interactions (Grid Picker & Direction Picker)
@@ -880,6 +932,9 @@ export default function JuniorApp({ onBack }) {
         setActiveCategory(catId);
         if (workspaceRef.current) {
             workspaceRef.current.updateToolbox(getToolboxXml(catId));
+            // Ensure flyout blocks render at correct scale after update
+            resetFlyoutScale();
+            setTimeout(() => workspaceRef.current?.resize(), 50);
         }
     };
 
@@ -916,6 +971,9 @@ export default function JuniorApp({ onBack }) {
         if (window.resetBear) window.resetBear();
         await window.wait(0.2);
 
+        // Set running state for UI
+        setIsBlocksRunning(true);
+
         // Delegate to Interpreter
         interpreterRef.current?.runStacks('event_flag');
 
@@ -936,7 +994,51 @@ export default function JuniorApp({ onBack }) {
         interpreterRef.current?.stopAll();
         executionEngine.stopAll();
         if (window.stopAll) window.stopAll();
+        setIsBlocksRunning(false);
     };
+
+    // Full reset: stops blocks AND resets sprite position to defaults
+    const handleReset = () => {
+        stopBlocks();
+        if (window.hardResetBear) window.hardResetBear();
+    };
+
+    // --- CAMERA TOGGLE ---
+    const toggleCamera = async () => {
+        if (isCameraOn) {
+            // Stop camera
+            if (cameraStreamRef.current) {
+                cameraStreamRef.current.getTracks().forEach(track => track.stop());
+                cameraStreamRef.current = null;
+            }
+            if (cameraVideoRef.current) {
+                cameraVideoRef.current.srcObject = null;
+            }
+            setIsCameraOn(false);
+        } else {
+            // Start camera
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                cameraStreamRef.current = stream;
+                if (cameraVideoRef.current) {
+                    cameraVideoRef.current.srcObject = stream;
+                }
+                setIsCameraOn(true);
+            } catch (err) {
+                console.error('Camera error:', err);
+                alert('Could not access camera. Please allow camera permissions.');
+            }
+        }
+    };
+
+    // Cleanup camera on unmount
+    useEffect(() => {
+        return () => {
+            if (cameraStreamRef.current) {
+                cameraStreamRef.current.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, []);
 
     // --- SAVE / LOAD (ProjectManager Integration) ---
     const saveProject = () => {
@@ -995,7 +1097,7 @@ export default function JuniorApp({ onBack }) {
     const resetFlyoutScale = () => {
         const flyout = workspaceRef.current?.getFlyout();
         if (flyout && flyout.getWorkspace()) {
-            flyout.getWorkspace().setScale(0.8);
+            flyout.getWorkspace().setScale(1.0);
         }
     };
     const zoomIn = () => {
@@ -1093,16 +1195,24 @@ export default function JuniorApp({ onBack }) {
 
     // --- FULLSCREEN ---
     const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Listen for fullscreen changes (e.g. user presses ESC)
+    useEffect(() => {
+        const handleFsChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFsChange);
+        return () => document.removeEventListener('fullscreenchange', handleFsChange);
+    }, []);
+
     const toggleFullscreen = () => {
         const stageContainer = document.querySelector('.stage')?.parentElement;
         if (!stageContainer) return;
 
         if (!document.fullscreenElement) {
             stageContainer.requestFullscreen?.();
-            setIsFullscreen(true);
         } else {
             document.exitFullscreen?.();
-            setIsFullscreen(false);
         }
     };
 
@@ -1134,15 +1244,83 @@ export default function JuniorApp({ onBack }) {
             <div style={{ flex: 1, display: "flex", overflow: 'hidden' }}>
                 <div id="wrapper" style={{ width: "60%", height: "100%", position: "relative" }}>
                     <div id="blocklyDiv" ref={blocklyDiv} className="workspace" style={{ width: "100%", height: "100%" }}></div>
-                    <div style={{ position: "absolute", left: "10px", bottom: "135px", display: "flex", flexDirection: "row", gap: "8px", zIndex: 90, background: "rgba(255,255,255,0.9)", padding: "8px 12px", borderRadius: "30px", boxShadow: "0 2px 10px rgba(0,0,0,0.15)" }}>
+
+                    {/* ════ FLOATING WORKSPACE CONTROLS (right side) ════ */}
+                    <div style={{
+                        position: "absolute",
+                        right: "12px",
+                        top: "50%",
+                        transform: "translateY(-60%)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "6px",
+                        zIndex: 90,
+                    }}>
+                        <WorkspaceControl icon="↩" title="Undo" onClick={undo} />
+                        <WorkspaceControl icon="↪" title="Redo" onClick={redo} />
+                        <WorkspaceControl icon="⊕" title="Zoom In" onClick={zoomIn} />
+                        <WorkspaceControl icon="⊖" title="Zoom Out" onClick={zoomOut} />
+                        <WorkspaceControl icon="＝" title="Reset Zoom" onClick={zoomReset} />
+                    </div>
+
+                    {/* ════ CATEGORY BAR (bottom-left, above flyout) ════ */}
+                    <div style={{
+                        position: "absolute",
+                        left: "10px",
+                        bottom: "135px",
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: "6px",
+                        zIndex: 90,
+                        background: "rgba(255,255,255,0.95)",
+                        padding: "6px 10px",
+                        borderRadius: "30px",
+                        boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+                        backdropFilter: "blur(8px)",
+                    }}>
                         {CATEGORIES.map(cat => (
                             <CategoryButton key={cat.id} category={cat} isActive={activeCategory === cat.id} onClick={() => handleCategoryClick(cat.id)} />
                         ))}
+
+                        {/* Add Blocks Button (purple bag icon) */}
+                        <button
+                            onClick={() => alert("🧩 More blocks coming soon!")}
+                            title="Add More Blocks"
+                            style={{
+                                width: "48px",
+                                height: "48px",
+                                borderRadius: "14px",
+                                background: "linear-gradient(135deg, #7B4FC4 0%, #9B6FE4 100%)",
+                                border: "2px solid rgba(255,255,255,0.4)",
+                                boxShadow: "0 3px 8px rgba(123,79,196,0.4)",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "22px",
+                                color: "white",
+                                marginLeft: "4px",
+                                transition: "all 0.15s",
+                                outline: "none",
+                                padding: 0,
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.transform = "scale(1.08)";
+                                e.currentTarget.style.boxShadow = "0 5px 14px rgba(123,79,196,0.5)";
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.transform = "scale(1)";
+                                e.currentTarget.style.boxShadow = "0 3px 8px rgba(123,79,196,0.4)";
+                            }}
+                        >
+                            🎒
+                        </button>
                     </div>
                 </div>
 
                 <RightPanel
-                    sprites={sprites} // Current scene sprites
+                    sprites={sprites}
                     scenes={scenes}
                     currentSprite={activeSpriteId}
                     currentScene={currentSceneId}
@@ -1156,31 +1334,54 @@ export default function JuniorApp({ onBack }) {
                     onEditScene={handleEditScene}
                     onGreenFlag={runBlocks}
                     onStop={stopBlocks}
-                    onZoomIn={zoomIn}
-                    onZoomOut={zoomOut}
-                    onZoomReset={zoomReset}
-                    onUndo={undo}
-                    onRedo={redo}
-                    onScreenshot={takeScreenshot}
+                    onReset={handleReset}
+                    onCamera={toggleCamera}
                     onToggleGrid={toggleGrid}
                     onFullscreen={toggleFullscreen}
                     showGrid={showGrid}
+                    isRunning={isBlocksRunning}
+                    isCameraOn={isCameraOn}
+                    isFullscreen={isFullscreen}
                 >
                     {/* STAGE CHILDREN */}
-                    <div className="stage" style={{ width: '100%', height: '100%', position: "relative", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <div className="stage" style={{
+                        width: '100%', height: '100%', position: "relative", overflow: "visible",
+                        background: currentScene.backgroundImage
+                            ? `url(${currentScene.backgroundImage}) center/cover no-repeat`
+                            : (currentScene.background || '#f8f8f8'),
+                    }}>
+                        {/* Camera Video Backdrop */}
+                        {isCameraOn && (
+                            <video
+                                ref={cameraVideoRef}
+                                autoPlay
+                                playsInline
+                                muted
+                                style={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                    zIndex: 0,
+                                    transform: "scaleX(-1)",
+                                    borderRadius: "4px",
+                                }}
+                            />
+                        )}
                         {sprites.map(sprite => (
-                            <div key={sprite.id} style={{ display: sprite.visible !== false ? 'block' : 'none' }}>
-                                <Teddy
-                                    id={sprite.id}
-                                    type={sprite.type}
-                                    active={activeSpriteId === sprite.id}
-                                    x={sprite.x} y={sprite.y} angle={sprite.angle} size={sprite.size}
-                                    visible={sprite.visible} currentCostume={sprite.currentCostume}
-                                    costumes={sprite.costumes}
-                                    speech={sprite.speech}
-                                    onClick={() => handleSpriteClick(sprite.id)}
-                                />
-                            </div>
+                            <Teddy
+                                key={sprite.id}
+                                id={sprite.id}
+                                type={sprite.type}
+                                active={activeSpriteId === sprite.id}
+                                x={sprite.x} y={sprite.y} angle={sprite.angle} size={sprite.size}
+                                visible={sprite.visible} currentCostume={sprite.currentCostume}
+                                costumes={sprite.costumes}
+                                speech={sprite.speech}
+                                onClick={() => handleSpriteClick(sprite.id)}
+                            />
                         ))}
                         <canvas
                             ref={canvasRef}
@@ -1200,8 +1401,9 @@ export default function JuniorApp({ onBack }) {
                             <h2 style={{ margin: 0, fontSize: "20px" }}>Choose a Sprite</h2>
                             <button onClick={() => setIsSpriteModalOpen(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer" }}>✕</button>
                         </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "15px" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px" }}>
                             {[
+                                { type: "robot", name: "Robot", icon: null, image: "/assets/sprites/robot/robot_idle.svg" },
                                 { type: "bear", name: "Teddy", icon: "🐻" },
                                 { type: "dog", name: "Dog", icon: "🐶" },
                                 { type: "cat", name: "Cat", icon: "🐱" }
@@ -1210,19 +1412,36 @@ export default function JuniorApp({ onBack }) {
                                     key={s.type}
                                     onClick={() => addSprite(s.type)}
                                     style={{
-                                        border: "1px solid #eee", borderRadius: "8px", padding: "20px",
-                                        textAlign: "center", cursor: "pointer", background: "#f9f9f9"
+                                        border: s.type === "robot" ? "2px solid #7B4FC4" : "1px solid #eee",
+                                        borderRadius: "8px", padding: "20px",
+                                        textAlign: "center", cursor: "pointer",
+                                        background: s.type === "robot" ? "#f5f0ff" : "#f9f9f9"
                                     }}
-                                    onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
-                                    onMouseLeave={e => e.currentTarget.style.background = "#f9f9f9"}
+                                    onMouseEnter={e => e.currentTarget.style.background = s.type === "robot" ? "#ede5ff" : "#f0f0f0"}
+                                    onMouseLeave={e => e.currentTarget.style.background = s.type === "robot" ? "#f5f0ff" : "#f9f9f9"}
                                 >
-                                    <div style={{ fontSize: "40px", marginBottom: "10px" }}>{s.icon}</div>
+                                    <div style={{ fontSize: "40px", marginBottom: "10px", display: "flex", justifyContent: "center", alignItems: "center", height: "50px" }}>
+                                        {s.image ? (
+                                            <img src={s.image} alt={s.name} style={{ width: "50px", height: "50px", objectFit: "contain" }} />
+                                        ) : (
+                                            s.icon
+                                        )}
+                                    </div>
                                     <div style={{ fontWeight: "bold" }}>{s.name}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* BACKDROP CHOOSER MODAL */}
+            {isBackdropChooserOpen && (
+                <BackdropChooser
+                    onSelect={handleBackdropSelect}
+                    onPaint={handleBackdropPaint}
+                    onClose={() => { setIsBackdropChooserOpen(false); setBackdropEditSceneId(null); }}
+                />
             )}
 
             {/* POSITION PICKER MODAL */}
@@ -1309,10 +1528,69 @@ function ControlButton({ onClick, icon, title }) {
 
 function CategoryButton({ category, isActive, onClick }) {
     return (
-        <button onClick={onClick} title={category.name} style={{ width: "45px", height: "45px", borderRadius: "50%", background: category.color, border: isActive ? "3px solid #a8a8a8ff" : "2px solid white", boxShadow: "0 2px 5px rgba(0,0,0,0.2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", color: "white", transform: isActive ? "scale(1.15)" : "scale(1)", transition: "all 0.1s" }}>
+        <button
+            onClick={onClick}
+            title={category.name}
+            style={{
+                width: "42px",
+                height: "42px",
+                borderRadius: "50%",
+                background: category.color,
+                border: isActive ? "3px solid rgba(0,0,0,0.25)" : "2.5px solid rgba(255,255,255,0.7)",
+                boxShadow: isActive ? "0 3px 10px rgba(0,0,0,0.25)" : "0 2px 5px rgba(0,0,0,0.15)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "20px",
+                color: "white",
+                transform: isActive ? "scale(1.15)" : "scale(1)",
+                transition: "all 0.15s ease",
+                outline: "none",
+                padding: 0
+            }}
+        >
             {category.icon}
         </button>
     )
+}
+
+/* ─────────────── Floating Workspace Control Button ─────────────── */
+function WorkspaceControl({ icon, title, onClick }) {
+    return (
+        <button
+            onClick={onClick}
+            title={title}
+            style={{
+                width: "34px",
+                height: "34px",
+                borderRadius: "8px",
+                background: "rgba(255,255,255,0.92)",
+                border: "1px solid #ddd",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "16px",
+                fontWeight: "bold",
+                color: "#666",
+                transition: "all 0.15s",
+                outline: "none",
+                padding: 0,
+            }}
+            onMouseEnter={e => {
+                e.currentTarget.style.background = "#f0f0f0";
+                e.currentTarget.style.transform = "scale(1.08)";
+            }}
+            onMouseLeave={e => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.92)";
+                e.currentTarget.style.transform = "scale(1)";
+            }}
+        >
+            {icon}
+        </button>
+    );
 }
 
 // --- TOP BAR COMPONENTS ---

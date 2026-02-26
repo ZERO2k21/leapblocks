@@ -1,112 +1,141 @@
 import React from 'react';
-import { Film } from 'lucide-react';
+import { Image, X } from 'lucide-react';
 
 export default function SceneCard({ scene, active, onClick, onDelete, onEdit }) {
-    const label = scene.name || `Scene ${scene.id}`;
+    const label = scene.backdropName || scene.name || `Scene ${scene.id}`;
 
     // Get first sprite from scene for thumbnail
-    const thumbnail = scene.sprites?.[0]?.image || null;
-    const thumbnailEmoji = scene.sprites?.[0]?.costumes?.default || "🎬";
+    const firstSprite = scene.sprites?.[0];
+    const spriteThumb = firstSprite?.costumes?.default || null;
+    const hasSpriteImage = spriteThumb && typeof spriteThumb === 'string' && spriteThumb.includes('/');
 
-    // Scene background color
-    const bgColor = scene.background || "#FFFFFF";
+    // Scene background
+    const hasBackdropImage = !!scene.backgroundImage;
+    const bgStyle = hasBackdropImage
+        ? `url(${scene.backgroundImage}) center/cover no-repeat`
+        : (scene.background || '#FFFFFF');
 
     return (
         <div
             onClick={onClick}
             style={{
                 position: "relative",
-                width: "75px",
+                width: "88px",
                 background: "white",
-                borderRadius: "8px",
+                borderRadius: "12px",
                 border: active ? "3px solid #7B4FC4" : "2px solid #E0E0E0",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 cursor: "pointer",
                 overflow: "hidden",
-                boxShadow: active ? "0 2px 8px rgba(123, 79, 196, 0.3)" : "0 1px 3px rgba(0,0,0,0.08)",
+                boxShadow: active ? "0 4px 14px rgba(123, 79, 196, 0.35)" : "0 1px 4px rgba(0,0,0,0.06)",
+                transition: "all 0.2s ease",
+                flexShrink: 0,
             }}
         >
-            {/* Top Icon Bar */}
+            {/* Scene Thumbnail Area */}
             <div style={{
                 width: "100%",
+                height: "60px",
                 display: "flex",
-                justifyContent: "space-between",
-                padding: "3px",
-                background: active ? "#7B4FC4" : "#E8E8E8"
+                alignItems: "center",
+                justifyContent: "center",
+                background: bgStyle,
+                position: "relative",
             }}>
-                {/* Film/Clapperboard Icon */}
-                <div style={{
-                    width: "18px",
-                    height: "18px",
-                    background: active ? "white" : "#7B4FC4",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                }}>
-                    <Film size={10} color={active ? "#7B4FC4" : "white"} />
-                </div>
-
-                {/* Pencil/Edit Icon */}
+                {/* Edit Badge (top-left) */}
                 <div
                     onClick={(e) => { e.stopPropagation(); onEdit && onEdit(scene.id); }}
                     style={{
-                        width: "18px",
-                        height: "18px",
-                        background: active ? "white" : "#7B4FC4",
+                        position: "absolute",
+                        top: "3px",
+                        left: "3px",
+                        width: "24px",
+                        height: "24px",
+                        background: "#7B4FC4",
                         borderRadius: "50%",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        cursor: "pointer"
+                        cursor: "pointer",
+                        zIndex: 2,
+                        boxShadow: "0 2px 6px rgba(123,79,196,0.4)",
+                        transition: "transform 0.15s",
                     }}
+                    title="Change Backdrop"
+                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.15)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
                 >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={active ? "#7B4FC4" : "white"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                    </svg>
+                    <Image size={12} color="white" />
                 </div>
-            </div>
 
-            {/* Scene Thumbnail Area */}
-            <div style={{
-                width: "100%",
-                height: "50px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: bgColor,
-                padding: "5px",
-                position: "relative"
-            }}>
-                {thumbnail ? (
-                    <img src={thumbnail} alt={label} style={{ maxWidth: "40px", maxHeight: "40px", objectFit: "contain" }} />
-                ) : (
-                    <span style={{ fontSize: "24px" }}>{thumbnailEmoji}</span>
+                {/* Delete Badge (top-right) */}
+                <div
+                    onClick={(e) => { e.stopPropagation(); onDelete && onDelete(scene.id); }}
+                    style={{
+                        position: "absolute",
+                        top: "3px",
+                        right: "3px",
+                        width: "24px",
+                        height: "24px",
+                        background: "#7B4FC4",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        zIndex: 2,
+                        boxShadow: "0 2px 6px rgba(123,79,196,0.4)",
+                        transition: "transform 0.15s",
+                    }}
+                    title="Delete Scene"
+                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.15)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                >
+                    <X size={12} color="white" />
+                </div>
+
+                {/* Show sprite in center if no backdrop image */}
+                {!hasBackdropImage && (
+                    hasSpriteImage ? (
+                        <img src={spriteThumb} alt={label} style={{ maxWidth: "36px", maxHeight: "36px", objectFit: "contain", zIndex: 1 }} />
+                    ) : (
+                        <span style={{ fontSize: "24px", zIndex: 1 }}>{firstSprite?.costumes?.default || "🎬"}</span>
+                    )
                 )}
 
-                {/* Small scene indicator */}
-                <div style={{
-                    position: "absolute",
-                    bottom: "2px",
-                    right: "2px",
-                    width: "12px",
-                    height: "12px",
-                    background: "#E74C3C",
-                    borderRadius: "2px"
-                }} />
+                {/* Show small sprite overlay on backdrop */}
+                {hasBackdropImage && hasSpriteImage && (
+                    <img
+                        src={spriteThumb}
+                        alt="sprite"
+                        style={{
+                            position: "absolute",
+                            bottom: "4px",
+                            right: "4px",
+                            width: "22px",
+                            height: "22px",
+                            objectFit: "contain",
+                            zIndex: 1,
+                        }}
+                    />
+                )}
             </div>
 
             {/* Label */}
             <div style={{
                 width: "100%",
-                fontSize: "9px",
-                fontWeight: "600",
+                fontSize: "10px",
+                fontWeight: "700",
                 color: "white",
-                background: "#7B4FC4",
-                padding: "4px 0",
-                textAlign: "center"
+                background: active ? "#7B4FC4" : "#9575CD",
+                padding: "5px 4px",
+                textAlign: "center",
+                letterSpacing: "0.3px",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
             }}>
                 {label}
             </div>

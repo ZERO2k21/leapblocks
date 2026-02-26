@@ -1,0 +1,22 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Body -->
+  <rect x="35" y="52" width="30" height="30" rx="5" fill="#A0D8EF" stroke="#333" stroke-width="3"/>
+  <!-- Chest Light -->
+  <circle cx="50" cy="67" r="5" fill="#FFE135" stroke="#333" stroke-width="2"/>
+  <!-- Legs -->
+  <rect x="38" y="82" width="8" height="12" rx="4" fill="#B0B0B0" stroke="#333" stroke-width="3"/>
+  <rect x="54" y="82" width="8" height="12" rx="4" fill="#B0B0B0" stroke="#333" stroke-width="3"/>
+  <!-- Arms -->
+  <rect x="25" y="55" width="10" height="20" rx="5" fill="#B0B0B0" stroke="#333" stroke-width="3"/>
+  <!-- Wave Arm (raised) -->
+  <g transform="rotate(-20 73 55)">
+    <rect x="65" y="40" width="10" height="20" rx="5" fill="#B0B0B0" stroke="#333" stroke-width="3"/>
+  </g>
+  <!-- Head -->
+  <circle cx="50" cy="30" r="22" fill="#A0D8EF" stroke="#333" stroke-width="3"/>
+  <!-- Visor -->
+  <rect x="32" y="24" width="36" height="12" rx="6" fill="#333"/>
+  <!-- Eyes -->
+  <ellipse cx="42" cy="30" rx="4" ry="2" fill="white"/>
+  <ellipse cx="58" cy="30" rx="4" ry="2" fill="white"/>
+</svg>

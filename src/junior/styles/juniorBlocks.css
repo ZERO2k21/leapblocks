@@ -1,3 +1,7 @@
+/* ============================================
+   BLOCKLY CORE STYLES (PictoBlox Junior)
+   ============================================ */
+
 /* Rounded vibrant block body */
 .blocklySvg .blocklyBlockBackground {
     rx: 22px !important;
@@ -77,7 +81,7 @@ g[class*="blocklyNonEditableText"]>text {
 text.blocklyText.junior-block-icon,
 .blocklySvg text.junior-block-icon,
 .blocklyFlyout text.junior-block-icon {
-    font-size: 32px !important;
+    font-size: 42px !important;
     fill: white !important;
     font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif !important;
     dominant-baseline: middle !important;
@@ -87,7 +91,7 @@ text.blocklyText.junior-block-icon,
 text.blocklyText.junior-icon-large,
 .blocklySvg text.junior-icon-large,
 .blocklyFlyout text.junior-icon-large {
-    font-size: 28px !important;
+    font-size: 38px !important;
     fill: white !important;
     font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif !important;
 }
@@ -96,14 +100,14 @@ text.blocklyText.junior-icon-large,
 text.blocklyText.junior-icon,
 .blocklySvg text.junior-icon,
 .blocklyFlyout text.junior-icon {
-    font-size: 22px !important;
+    font-size: 32px !important;
     fill: white !important;
     font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif !important;
 }
 
 /* Make all arrow/icon text in blocks larger and visible */
 .blocklySvg .blocklyText:first-child {
-    font-size: 28px !important;
+    font-size: 36px !important;
     fill: white !important;
 }
 
@@ -137,4 +141,75 @@ text.blocklyText.junior-icon,
 
 .grid-axis-x {
     bottom: -15px;
+}
+
+/* ============================================
+   FLYOUT STYLES - Bottom Horizontal Bar
+   ============================================ */
+
+/* Make flyout background lighter and cleaner */
+.blocklyFlyoutBackground {
+    fill: #f0f0f0 !important;
+    fill-opacity: 0.97 !important;
+    stroke: #e0e0e0 !important;
+    stroke-width: 1 !important;
+}
+
+/* Flyout scrollbar styling */
+.blocklyFlyout .blocklyScrollbarHandle {
+    fill: #c0c0c0 !important;
+    rx: 4px !important;
+    ry: 4px !important;
+}
+
+.blocklyFlyout .blocklyScrollbarBackground {
+    fill: transparent !important;
+}
+
+/* The flyout container in horizontal mode */
+.blocklyFlyout {
+    overflow: visible !important;
+}
+
+/* Workspace area - ensure proper height allocation */
+.workspace {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Main Blockly SVG - take full workspace area */
+.blocklySvg {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Toolbox styling for horizontal bottom */
+.blocklyToolboxDiv {
+    background: #f5f5f5 !important;
+    border-top: 1px solid #e0e0e0 !important;
+    padding: 0 !important;
+}
+
+/* Scrollbar track for horizontal flyout */
+.blocklyMainWorkspaceScrollbar .blocklyScrollbarHorizontal {
+    height: 8px !important;
+}
+
+/* Make sure blocks in flyout are visible and well-spaced */
+.blocklyFlyout .blocklyDraggable {
+    cursor: grab !important;
+}
+
+.blocklyFlyout .blocklyDraggable:active {
+    cursor: grabbing !important;
+}
+
+/* No-scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }

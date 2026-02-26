@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, X } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 
 export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }) {
     const label = sprite.name;
@@ -13,71 +13,84 @@ export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }
             onClick={onClick}
             style={{
                 position: "relative",
-                width: "75px",
+                width: "80px",
                 background: "white",
-                borderRadius: "8px",
+                borderRadius: "10px",
                 border: active ? "3px solid #7B4FC4" : "2px solid #E0E0E0",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 cursor: "pointer",
                 overflow: "hidden",
-                boxShadow: active ? "0 2px 8px rgba(123, 79, 196, 0.3)" : "0 1px 3px rgba(0,0,0,0.08)",
+                boxShadow: active ? "0 3px 12px rgba(123, 79, 196, 0.3)" : "0 1px 4px rgba(0,0,0,0.06)",
+                transition: "all 0.2s ease",
+                flexShrink: 0,
             }}
         >
-            {/* Top Icon Bar */}
-            <div style={{
-                width: "100%",
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "3px",
-                background: active ? "#7B4FC4" : "#E8E8E8"
-            }}>
-                {/* Pencil/Edit Icon */}
-                <div
-                    onClick={(e) => { e.stopPropagation(); onEdit && onEdit(sprite.id); }}
-                    style={{
-                        width: "18px",
-                        height: "18px",
-                        background: active ? "white" : "#7B4FC4",
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer"
-                    }}
-                >
-                    <Pencil size={10} color={active ? "#7B4FC4" : "white"} />
-                </div>
-
-                {/* X/Delete Icon */}
-                <div
-                    onClick={(e) => { e.stopPropagation(); onDelete && onDelete(sprite.id); }}
-                    style={{
-                        width: "18px",
-                        height: "18px",
-                        background: active ? "white" : "#7B4FC4",
-                        borderRadius: "4px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer"
-                    }}
-                >
-                    <X size={12} color={active ? "#7B4FC4" : "white"} />
-                </div>
-            </div>
-
             {/* Sprite Image Area */}
             <div style={{
                 width: "100%",
-                height: "50px",
+                height: "52px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 background: "white",
-                padding: "5px"
+                padding: "6px",
+                position: "relative",
             }}>
+                {/* Edit Badge (top-left) */}
+                <div
+                    onClick={(e) => { e.stopPropagation(); onEdit && onEdit(sprite.id); }}
+                    style={{
+                        position: "absolute",
+                        top: "3px",
+                        left: "3px",
+                        width: "22px",
+                        height: "22px",
+                        background: "#7B4FC4",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        zIndex: 2,
+                        boxShadow: "0 1px 4px rgba(123,79,196,0.3)",
+                        transition: "transform 0.15s",
+                    }}
+                    title="Edit Sprite"
+                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.15)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                >
+                    <Pencil size={11} color="white" />
+                </div>
+
+                {/* Delete Badge (top-right) */}
+                <div
+                    onClick={(e) => { e.stopPropagation(); onDelete && onDelete(sprite.id); }}
+                    style={{
+                        position: "absolute",
+                        top: "3px",
+                        right: "3px",
+                        width: "22px",
+                        height: "22px",
+                        background: "#7B4FC4",
+                        borderRadius: "5px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        zIndex: 2,
+                        boxShadow: "0 1px 4px rgba(123,79,196,0.3)",
+                        transition: "transform 0.15s",
+                    }}
+                    title="Delete Sprite"
+                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.15)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                >
+                    <Trash2 size={11} color="white" />
+                </div>
+
+                {/* Sprite Image */}
                 {spriteImage || (typeof displayIcon === 'string' && displayIcon.includes('/')) ? (
                     <img src={spriteImage || displayIcon} alt={label} style={{ maxWidth: "45px", maxHeight: "45px", objectFit: "contain" }} />
                 ) : (
@@ -89,11 +102,12 @@ export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }
             <div style={{
                 width: "100%",
                 fontSize: "10px",
-                fontWeight: "600",
+                fontWeight: "700",
                 color: "white",
                 background: "#7B4FC4",
                 padding: "4px 0",
-                textAlign: "center"
+                textAlign: "center",
+                letterSpacing: "0.3px",
             }}>
                 {label}
             </div>

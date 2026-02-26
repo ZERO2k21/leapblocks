@@ -1,7 +1,7 @@
 import React from 'react';
 import SpriteCard from './SpriteCard';
 import SceneCard from './SceneCard';
-import { Flag, RotateCw, Camera, Grid3X3, Maximize, Minimize, Octagon, Square } from 'lucide-react';
+import { Flag, RotateCw, Camera, Grid3X3, Maximize, Minimize, Square } from 'lucide-react';
 
 export default function RightPanel({
     children,
@@ -19,138 +19,20 @@ export default function RightPanel({
     onEditScene,
     onGreenFlag,
     onStop,
-    onZoomIn,
-    onZoomOut,
-    onZoomReset,
-    onUndo,
-    onRedo,
-    onScreenshot,
+    onReset,
+    onCamera,
     onToggleGrid,
     onFullscreen,
     showGrid = true,
-    spriteX = 0,
-    spriteY = 0
+    isRunning = false,
+    isCameraOn = false,
+    isFullscreen = false,
 }) {
 
     return (
         <div style={{ width: "40%", height: "100%", display: "flex", flexDirection: "column", borderLeft: "1px solid #ddd", overflow: "hidden", position: "relative" }}>
 
-            {/* SCRATCH-STYLE STAGE HEADER */}
-            <div style={{
-                height: "42px",
-                background: "#f0f0f0",
-                borderBottom: "1px solid #ddd",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0 12px",
-            }}>
-                {/* Left: Run Controls */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    {/* Green Flag Button */}
-                    <button
-                        onClick={onGreenFlag}
-                        style={{
-                            width: "38px",
-                            height: "38px",
-                            border: "none",
-                            borderRadius: "50%",
-                            background: "linear-gradient(180deg, #4ade80 0%, #22c55e 100%)",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                            transition: "all 0.15s",
-                        }}
-                        title="Run (Green Flag)"
-                        onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
-                    >
-                        <Flag size={18} fill="#fff" stroke="#fff" />
-                    </button>
-
-                    {/* Red Stop Button */}
-                    <button
-                        onClick={onStop}
-                        style={{
-                            width: "38px",
-                            height: "38px",
-                            border: "none",
-                            borderRadius: "50%",
-                            background: "linear-gradient(180deg, #f87171 0%, #ef4444 100%)",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                            transition: "all 0.15s",
-                        }}
-                        title="Stop All"
-                        onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
-                    >
-                        <Octagon size={18} fill="#fff" stroke="#fff" />
-                    </button>
-                </div>
-
-                {/* Center: Sprite Coordinates */}
-                <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    background: "#fff",
-                    padding: "4px 12px",
-                    borderRadius: "4px",
-                    border: "1px solid #e5e5e5",
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    color: "#555",
-                }}>
-                    <span style={{ color: "#4C97FF" }}>x: <strong>{spriteX}</strong></span>
-                    <span style={{ color: "#9966FF" }}>y: <strong>{spriteY}</strong></span>
-                </div>
-
-                {/* Right: View Controls */}
-                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                    <button
-                        onClick={onToggleGrid}
-                        style={{
-                            width: "28px",
-                            height: "28px",
-                            border: showGrid ? "2px solid #7B4FC4" : "1px solid #ccc",
-                            borderRadius: "4px",
-                            background: showGrid ? "rgba(123,79,196,0.1)" : "#fff",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
-                        title={showGrid ? "Hide Grid" : "Show Grid"}
-                    >
-                        <Grid3X3 size={16} color={showGrid ? "#7B4FC4" : "#999"} />
-                    </button>
-                    <button
-                        onClick={onFullscreen}
-                        style={{
-                            width: "28px",
-                            height: "28px",
-                            border: "1px solid #ccc",
-                            borderRadius: "4px",
-                            background: "#fff",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
-                        title="Fullscreen"
-                    >
-                        <Maximize size={16} color="#666" />
-                    </button>
-                </div>
-            </div>
-
-            {/* STAGE AREA - PictoBlox Grid Style */}
+            {/* STAGE AREA */}
             <div style={{ flex: 1, position: "relative", display: "flex", overflow: "hidden", background: "#f5f5f5" }}>
                 {/* Y-Axis Labels */}
                 {showGrid && (
@@ -170,9 +52,6 @@ export default function RightPanel({
                         background: "#f8f8f8",
                         backgroundImage: showGrid ? "radial-gradient(circle, #ddd 1.5px, transparent 1.5px)" : "none",
                         backgroundSize: "20px 20px",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center"
                     }}>
                         {children}
                     </div>
@@ -188,36 +67,49 @@ export default function RightPanel({
                 </div>
             </div>
 
-            {/* SPRITES PANEL - PictoBlox Style */}
+            {/* ═══════════════ BOTTOM PANELS ═══════════════ */}
+
+            {/* SPRITES PANEL */}
             <div style={{
-                height: "100px",
-                background: "#f0f0f0",
-                borderTop: "2px solid #ddd",
+                background: "#f2f2f2",
+                borderTop: "1px solid #e0e0e0",
                 display: "flex",
                 alignItems: "center",
-                padding: "8px 15px",
+                padding: "10px 12px",
                 gap: "10px",
-                overflowX: "auto"
+                overflowX: "auto",
+                minHeight: "100px",
             }} className='no-scrollbar'>
-                {/* Add Sprite Button (Bear Icon) */}
+                {/* Add Sprite Button */}
                 <div
                     onClick={onAddSprite}
                     style={{
-                        width: "50px",
-                        height: "50px",
+                        width: "48px",
+                        height: "48px",
                         background: "white",
                         border: "2px dashed #ccc",
-                        borderRadius: "8px",
+                        borderRadius: "10px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
-                        fontSize: "28px",
-                        flexShrink: 0
+                        flexShrink: 0,
+                        position: "relative",
+                        transition: "border-color 0.2s",
                     }}
                     title="Add Sprite"
+                    onMouseEnter={e => e.currentTarget.style.borderColor = "#7B4FC4"}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = "#ccc"}
                 >
-                    🐻
+                    <span style={{ fontSize: "26px", filter: "grayscale(0.5)" }}>🤖</span>
+                    <span style={{
+                        position: "absolute", top: "-4px", right: "-4px",
+                        width: "16px", height: "16px", borderRadius: "50%",
+                        background: "#7B4FC4", color: "white",
+                        fontSize: "12px", fontWeight: "bold",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        lineHeight: 1,
+                    }}>+</span>
                 </div>
 
                 {/* Sprite Cards */}
@@ -233,36 +125,49 @@ export default function RightPanel({
                 ))}
             </div>
 
-            {/* SCENES PANEL - PictoBlox Style */}
+            {/* SCENES PANEL */}
             <div style={{
-                height: "100px",
-                background: "#f0f0f0",
-                borderTop: "2px solid #ddd",
+                background: "#f2f2f2",
+                borderTop: "1px solid #e0e0e0",
                 display: "flex",
                 alignItems: "center",
-                padding: "8px 15px",
+                padding: "10px 12px",
                 gap: "10px",
-                overflowX: "auto"
+                overflowX: "auto",
+                minHeight: "100px",
             }} className='no-scrollbar'>
-                {/* Add Scene Button (Clapperboard Icon) */}
+                {/* Add Scene Button */}
                 <div
                     onClick={onAddScene}
                     style={{
-                        width: "50px",
-                        height: "50px",
+                        width: "52px",
+                        height: "80px",
                         background: "white",
                         border: "2px dashed #ccc",
-                        borderRadius: "8px",
+                        borderRadius: "12px",
                         display: "flex",
+                        flexDirection: "column",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
-                        fontSize: "28px",
-                        flexShrink: 0
+                        flexShrink: 0,
+                        position: "relative",
+                        transition: "border-color 0.2s, box-shadow 0.2s",
+                        gap: "4px",
                     }}
                     title="Add Scene"
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#7B4FC4"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(123,79,196,0.2)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "#ccc"; e.currentTarget.style.boxShadow = "none"; }}
                 >
-                    🎬
+                    <span style={{ fontSize: "24px" }}>🎬</span>
+                    <span style={{
+                        position: "absolute", top: "-5px", right: "-5px",
+                        width: "18px", height: "18px", borderRadius: "50%",
+                        background: "#7B4FC4", color: "white",
+                        fontSize: "13px", fontWeight: "bold",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        lineHeight: 1, boxShadow: "0 1px 4px rgba(123,79,196,0.3)",
+                    }}>+</span>
                 </div>
 
                 {/* Scene Cards */}
@@ -278,7 +183,117 @@ export default function RightPanel({
                 ))}
             </div>
 
+            {/* ═══════════════ ACTION ICONS BAR ═══════════════ */}
+            <div style={{
+                background: "#fafafa",
+                borderTop: "1px solid #e0e0e0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "10px 16px",
+                gap: "16px",
+            }}>
+                {/* GREEN FLAG / STOP TOGGLE */}
+                {isRunning ? (
+                    <ActionIcon
+                        icon={<Square size={22} fill="#fff" stroke="#fff" />}
+                        label="Stop"
+                        bgColor="#ef4444"
+                        hoverBg="#dc2626"
+                        onClick={onStop}
+                        active
+                        activeBg="#ef4444"
+                    />
+                ) : (
+                    <ActionIcon
+                        icon={<Flag size={22} fill="#fff" stroke="#fff" />}
+                        label="Run"
+                        bgColor="#22c55e"
+                        hoverBg="#16a34a"
+                        onClick={onGreenFlag}
+                    />
+                )}
+
+                {/* RESET */}
+                <ActionIcon
+                    icon={<RotateCw size={22} color="#7B4FC4" strokeWidth={2.5} />}
+                    label="Reset"
+                    onClick={onReset}
+                    outlineColor="#7B4FC4"
+                />
+
+                {/* CAMERA */}
+                <ActionIcon
+                    icon={<Camera size={22} color={isCameraOn ? "#fff" : "#7B4FC4"} strokeWidth={2} />}
+                    label="Camera"
+                    onClick={onCamera}
+                    outlineColor="#7B4FC4"
+                    active={isCameraOn}
+                    activeBg="#7B4FC4"
+                />
+
+                {/* GRID */}
+                <ActionIcon
+                    icon={<Grid3X3 size={22} color={showGrid ? "#fff" : "#7B4FC4"} strokeWidth={2} />}
+                    label="Grid"
+                    onClick={onToggleGrid}
+                    outlineColor="#7B4FC4"
+                    active={showGrid}
+                    activeBg="#7B4FC4"
+                />
+
+                {/* FULLSCREEN */}
+                <ActionIcon
+                    icon={isFullscreen
+                        ? <Minimize size={22} color="#7B4FC4" strokeWidth={2} />
+                        : <Maximize size={22} color="#7B4FC4" strokeWidth={2} />
+                    }
+                    label={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                    onClick={onFullscreen}
+                    outlineColor="#7B4FC4"
+                />
+            </div>
         </div>
     );
+}
 
+/* ─────────────── Action Icon Button ─────────────── */
+function ActionIcon({ icon, label, onClick, bgColor, hoverBg, outlineColor, active, activeBg }) {
+    const [hovered, setHovered] = React.useState(false);
+
+    const isFilled = !!bgColor || active;
+    const bg = active && activeBg
+        ? activeBg
+        : bgColor
+            ? (hovered ? (hoverBg || bgColor) : bgColor)
+            : hovered
+                ? "rgba(123,79,196,0.1)"
+                : "transparent";
+
+    return (
+        <button
+            onClick={onClick}
+            title={label}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "12px",
+                border: outlineColor && !isFilled ? `2.5px solid ${outlineColor}` : "none",
+                background: bg,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.2s ease",
+                transform: hovered ? "scale(1.1)" : "scale(1)",
+                boxShadow: hovered ? "0 4px 12px rgba(123,79,196,0.25)" : "0 1px 4px rgba(0,0,0,0.08)",
+                outline: "none",
+                padding: 0,
+            }}
+        >
+            {icon}
+        </button>
+    );
 }
