@@ -1044,6 +1044,13 @@ export default function JuniorApp({ onBack }) {
         };
     }, []);
 
+    // Sync video stream to the video element after it renders
+    useEffect(() => {
+        if (isCameraOn && cameraVideoRef.current && cameraStreamRef.current) {
+            cameraVideoRef.current.srcObject = cameraStreamRef.current;
+        }
+    }, [isCameraOn]);
+
     // --- SAVE / LOAD (ProjectManager Integration) ---
     const saveProject = () => {
         projectManager.downloadProject(`${projectName.replace(/\s+/g, "_")}.lbproject`);
@@ -1235,61 +1242,64 @@ export default function JuniorApp({ onBack }) {
                     <div id="blocklyDiv" ref={blocklyDiv} className="workspace" style={{ width: "100%", height: "100%" }}></div>
 
                     {/* ════ FLOATING WORKSPACE CONTROLS (shared component) ════ */}
-                    <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={resetFlyoutScale} />
+                    <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={resetFlyoutScale} style={{ bottom: '210px', right: '14px' }} />
                     <WorkspaceTrash workspaceRef={workspaceRef} />
 
-                    {/* ════ CATEGORY BAR (bottom-left, above flyout) ════ */}
+                    {/* ════ CATEGORY BAR (bottom, full width tube) ════ */}
                     <div style={{
                         position: "absolute",
-                        left: "10px",
-                        bottom: "135px",
+                        left: "14px",
+                        right: "14px",
+                        bottom: "145px",
+                        height: "56px",
                         display: "flex",
                         flexDirection: "row",
                         alignItems: "center",
-                        gap: "6px",
+                        justifyContent: "space-between",
                         zIndex: 90,
-                        background: "rgba(255,255,255,0.95)",
-                        padding: "6px 10px",
+                        background: "#f4f4f4",
+                        border: "1px solid #e0e0e0",
+                        padding: "0 0 0 8px",
                         borderRadius: "30px",
-                        boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
-                        backdropFilter: "blur(8px)",
+                        boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+                        overflow: "hidden" /* Essential for the right button to respect border radius */
                     }}>
-                        {CATEGORIES.map(cat => (
-                            <CategoryButton key={cat.id} category={cat} isActive={activeCategory === cat.id} onClick={() => handleCategoryClick(cat.id)} />
-                        ))}
+                        {/* Scrollable Categories List */}
+                        <div style={{ display: "flex", gap: "8px", alignItems: "center", height: "100%", overflowX: "auto", paddingRight: "10px" }} className="no-scrollbar">
+                            {CATEGORIES.map(cat => (
+                                <CategoryButton key={cat.id} category={cat} isActive={activeCategory === cat.id} onClick={() => handleCategoryClick(cat.id)} />
+                            ))}
+                        </div>
 
-                        {/* Add Blocks Button (purple bag icon) */}
+                        {/* Add Blocks Button */}
                         <button
                             onClick={() => alert("🧩 More blocks coming soon!")}
                             title="Add More Blocks"
                             style={{
-                                width: "48px",
-                                height: "48px",
-                                borderRadius: "14px",
-                                background: "linear-gradient(135deg, #7B4FC4 0%, #9B6FE4 100%)",
-                                border: "2px solid rgba(255,255,255,0.4)",
-                                boxShadow: "0 3px 8px rgba(123,79,196,0.4)",
+                                width: "68px",
+                                height: "58px", /* Slightly larger to combat border-radius clipping artifacts */
+                                background: "#762eadff",
+                                border: "none",
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                fontSize: "22px",
-                                color: "white",
-                                marginLeft: "4px",
                                 transition: "all 0.15s",
-                                outline: "none",
-                                padding: 0,
+                                position: "relative",
+                                flexShrink: 0
                             }}
                             onMouseEnter={e => {
-                                e.currentTarget.style.transform = "scale(1.08)";
-                                e.currentTarget.style.boxShadow = "0 5px 14px rgba(123,79,196,0.5)";
+                                e.currentTarget.style.background = "#793ba8";
                             }}
                             onMouseLeave={e => {
-                                e.currentTarget.style.transform = "scale(1)";
-                                e.currentTarget.style.boxShadow = "0 3px 8px rgba(123,79,196,0.4)";
+                                e.currentTarget.style.background = "#662d91";
                             }}
                         >
-                            🎒
+                            {/* Updated puzzle icon with + matching screenshot */}
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="white" stroke="none" style={{ transform: "rotate(15deg) scale(0.9) translate(1px, -2px)" }}>
+                                <path d="M19 14.5a2.5 2.5 0 1 1-5 0V14h-3v4.5a2.5 2.5 0 1 1-5 0V14H4.5a2.5 2.5 0 1 1 0-5H4V6c0-1.1.9-2 2-2h3V2.5a2.5 2.5 0 1 1 5 0V4h3c1.1 0 2 .9 2 2v3h1.5a2.5 2.5 0 1 1 0 5H19v.5z" />
+                            </svg>
+                            <span style={{ position: "absolute", top: "8px", right: "12px", fontWeight: "900", fontSize: "16px", color: "white", lineHeight: 1 }}>+</span>
                         </button>
                     </div>
                 </div>
@@ -1523,25 +1533,26 @@ function CategoryButton({ category, isActive, onClick }) {
             onClick={onClick}
             title={category.name}
             style={{
-                width: "42px",
-                height: "42px",
+                width: "46px",
+                height: "46px",
                 borderRadius: "50%",
-                background: category.color,
-                border: isActive ? "3px solid rgba(0,0,0,0.25)" : "2.5px solid rgba(255,255,255,0.7)",
-                boxShadow: isActive ? "0 3px 10px rgba(0,0,0,0.25)" : "0 2px 5px rgba(0,0,0,0.15)",
+                background: isActive ? category.color : "white",
+                border: isActive ? "2px solid rgba(0,0,0,0.15)" : `2px solid ${category.color}`,
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "20px",
-                color: "white",
-                transform: isActive ? "scale(1.15)" : "scale(1)",
+                color: isActive ? "white" : category.color,
                 transition: "all 0.15s ease",
                 outline: "none",
-                padding: 0
+                padding: 0,
+                flexShrink: 0,
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
             }}
         >
-            {category.icon}
+            <div style={{ transform: isActive ? "scale(1.1)" : "scale(1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {category.icon}
+            </div>
         </button>
     )
 }

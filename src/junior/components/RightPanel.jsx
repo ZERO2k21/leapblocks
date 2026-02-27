@@ -1,7 +1,7 @@
 import React from 'react';
 import SpriteCard from './SpriteCard';
 import SceneCard from './SceneCard';
-import { Flag, RotateCw, Camera, Grid3X3, Maximize, Minimize, Square } from 'lucide-react';
+import { Flag, RotateCw, Camera, CameraOff, Grid3X3, Maximize, Minimize, Square } from 'lucide-react';
 
 export default function RightPanel({
     children,
@@ -313,7 +313,7 @@ export default function RightPanel({
 
                 {/* CAMERA */}
                 <ActionIcon
-                    icon={<Camera size={22} color={isCameraOn ? "#fff" : "#7B4FC4"} strokeWidth={2} />}
+                    icon={<CameraOff size={22} color={isCameraOn ? "#fff" : "#7B4FC4"} strokeWidth={2} />}
                     label="Camera"
                     onClick={onCamera}
                     outlineColor="#7B4FC4"
