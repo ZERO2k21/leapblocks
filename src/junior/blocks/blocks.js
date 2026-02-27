@@ -177,10 +177,20 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
 
     Blockly.Blocks['looks_call'] = {
         init: function () {
+            const dynamicDropdown = new Blockly.FieldDropdown(() => {
+                if (window.getLeapProjectData) {
+                    const data = window.getLeapProjectData();
+                    if (data && data.sprites && data.sprites.length > 0) {
+                        return data.sprites.map(sprite => [sprite.name, sprite.name]);
+                    }
+                }
+                return [["Teddy", "Teddy"]];
+            });
+
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("📢", "junior-icon"))
                 .appendField("Call")
-                .appendField(new Blockly.FieldDropdown([["Bear", "Teddy"], ["Dog", "Dog"], ["Cat", "Cat"]]), "NAME");
+                .appendField(dynamicDropdown, "NAME");
             this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#9966FF");
         }
     };
@@ -379,9 +389,25 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     // --- LOOKS: Change Costume ---
     Blockly.Blocks['looks_change_costume'] = {
         init: function () {
+            const dynamicDropdown = new Blockly.FieldDropdown(() => {
+                if (window.getLeapProjectData) {
+                    const data = window.getLeapProjectData();
+                    if (data && data.sprites && data.activeSpriteId) {
+                        const sprite = data.sprites.find(s => s.id === data.activeSpriteId);
+                        if (sprite && sprite.costumes) {
+                            return Object.keys(sprite.costumes).map(key => [
+                                key.charAt(0).toUpperCase() + key.slice(1),
+                                key
+                            ]);
+                        }
+                    }
+                }
+                return [["Default", "default"]];
+            });
+
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("🎭", "junior-block-icon"))
-                .appendField(new Blockly.FieldDropdown([["Default", "default"], ["Wave", "wave"], ["Happy", "happy"]]), "COSTUME");
+                .appendField(dynamicDropdown, "COSTUME");
             this.setPreviousStatement(true);
             this.setNextStatement(true);
             this.setColour("#9966FF");

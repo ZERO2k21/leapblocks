@@ -7,11 +7,13 @@ interface BackdropAsset {
 }
 
 const DEFAULT_BACKDROPS: BackdropAsset[] = [
-    { name: 'Arctic', src: '', color: '#E0F7FA' },
-    { name: 'Beach', src: '', color: '#FFF9C4' },
-    { name: 'Bedroom', src: '', color: '#F8BBD0' },
-    { name: 'Castle', src: '', color: '#E1BEE7' },
-    { name: 'City', src: '', color: '#CFD8DC' },
+    { name: 'Arctic', src: '/assets/backdrops/arctic.png', color: '#E0F7FA' },
+    { name: 'Beach', src: '/assets/backdrops/beach.png', color: '#FFF9C4' },
+    { name: 'City', src: '/assets/backdrops/city.png', color: '#CFD8DC' },
+    { name: 'Maze', src: '/assets/backdrops/maze.png', color: '#E1BEE7' },
+    { name: 'Park', src: '/assets/backdrops/park.png', color: '#B2EBF2' },
+    { name: 'Space', src: '/assets/backdrops/space.png', color: '#CFD8DC' },
+    { name: 'Underwater', src: '/assets/backdrops/underwater.png', color: '#FFF9C4' },
 ];
 
 interface BackdropLibraryProps {
@@ -33,7 +35,39 @@ export const BackdropLibrary: React.FC<BackdropLibraryProps> = ({ onSelect, onCl
                             key={bg.name}
                             className="backdrop-item"
                             style={styles.item}
-                            onClick={() => onSelect(bg.name, bg.src)}
+                            onClick={() => {
+                                if (!bg.src) {
+                                    onSelect(bg.name, bg.src);
+                                    return;
+                                }
+
+                                const img = new Image();
+                                img.onload = () => {
+                                    const canvas = document.createElement("canvas");
+                                    canvas.width = 480;
+                                    canvas.height = 360;
+                                    const ctx = canvas.getContext("2d");
+                                    ctx?.drawImage(img, 0, 0, 480, 360);
+                                    onSelect(bg.name, canvas.toDataURL());
+
+                                    // Hack to force re-render in parent app
+                                    window.dispatchEvent(new Event('leap-stage-update'));
+                                };
+                                img.onerror = () => {
+                                    console.warn(`Could not load ${bg.name}, adding blank.`);
+                                    const canvas = document.createElement("canvas");
+                                    canvas.width = 480;
+                                    canvas.height = 360;
+                                    const ctx = canvas.getContext("2d");
+                                    if (ctx) {
+                                        ctx.fillStyle = bg.color;
+                                        ctx.fillRect(0, 0, 480, 360);
+                                    }
+                                    onSelect(bg.name, canvas.toDataURL());
+                                    window.dispatchEvent(new Event('leap-stage-update'));
+                                };
+                                img.src = bg.src;
+                            }}
                         >
                             <div style={{ ...styles.preview, backgroundColor: bg.color }}>
                                 {bg.src ? <img src={bg.src} alt={bg.name} style={styles.image} /> : <span>🖼️</span>}

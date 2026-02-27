@@ -22,6 +22,7 @@ import SerialMonitor from './components/SerialMonitor';
 import UploadModal from './components/UploadModal';
 import WorkspaceControls from './components/WorkspaceControls';
 import WorkspaceTrash from './components/WorkspaceTrash';
+import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft } from 'lucide-react';
 import './custom-toolbox';
 import { block } from 'blockly/core/tooltip';
 
@@ -102,6 +103,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<string>('');
 
+    // Stage enhancements state
+    const [isCameraOn, setIsCameraOn] = useState(false);
+    const [showGrid, setShowGrid] = useState(false);
+    const [isDraggingSprite, setIsDraggingSprite] = useState(false);
+    const [stageLayout, setStageLayout] = useState<'normal' | 'small' | 'large'>('normal');
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
     // Backdrop state
     const [showBackdropLibrary, setShowBackdropLibrary] = useState(false);
     const [showBackdropEditor, setShowBackdropEditor] = useState(false);
@@ -116,8 +124,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // ═══════════════════════════════════════════════════════════════════════
     const handleBackdropSelect = async (name: string, src: string) => {
         await stageManager.addBackdrop(name, src);
+        stageManager.setBackdrop(name); // Force the stage to switch to this backdrop
         setShowBackdropLibrary(false);
         setBackdropRefresh(prev => prev + 1);
+        window.dispatchEvent(new Event('leap-stage-update')); // Ensure canvas repaints
     };
 
     const [promptState, setPromptState] = useState<{
@@ -1058,30 +1068,32 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     {/* PictoBlox-style tabs - ONLY in Stage Mode */}
                     {appMode === 'blocks' && editorMode === 'stage' && (
                         <div style={styles.tabBar}>
-                            <button
-                                style={workspaceTab === 'blocks' ? styles.tabActive : styles.tab}
-                                onClick={() => setWorkspaceTab('blocks')}
-                            >
-                                🧩 Blocks
-                            </button>
-                            <button
-                                style={workspaceTab === 'python' ? styles.tabActive : styles.tab}
-                                onClick={() => setWorkspaceTab('python')}
-                            >
-                                🐍 Python
-                            </button>
-                            <button
-                                style={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
-                                onClick={() => setWorkspaceTab('costumes')}
-                            >
-                                🎨 Costumes
-                            </button>
-                            <button
-                                style={workspaceTab === 'sounds' ? styles.tabActive : styles.tab}
-                                onClick={() => setWorkspaceTab('sounds')}
-                            >
-                                🔊 Sounds
-                            </button>
+                            <div style={{ display: 'flex', height: '100%' }}>
+                                <button
+                                    style={workspaceTab === 'blocks' ? styles.tabActive : styles.tab}
+                                    onClick={() => setWorkspaceTab('blocks')}
+                                >
+                                    🧩 Blocks
+                                </button>
+                                <button
+                                    style={workspaceTab === 'python' ? styles.tabActive : styles.tab}
+                                    onClick={() => setWorkspaceTab('python')}
+                                >
+                                    🐍 Python
+                                </button>
+                                <button
+                                    style={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
+                                    onClick={() => setWorkspaceTab('costumes')}
+                                >
+                                    🎨 Costumes
+                                </button>
+                                <button
+                                    style={workspaceTab === 'sounds' ? styles.tabActive : styles.tab}
+                                    onClick={() => setWorkspaceTab('sounds')}
+                                >
+                                    🔊 Sounds
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -1092,6 +1104,36 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     */}
                     {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
                         <>
+                            {/* Selected Sprite Indicator overlay */}
+                            {editorMode === 'stage' && (
+                                (() => {
+                                    const activeSprite = sprites.find(s => s.id === selectedSpriteId);
+                                    if (activeSprite && activeSprite.currentCostume) {
+                                        return (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '16px',
+                                                right: '16px',
+                                                width: '40px',
+                                                height: '40px',
+                                                opacity: 0.5,
+                                                pointerEvents: 'none',
+                                                zIndex: 10,
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'center'
+                                            }}>
+                                                <img
+                                                    src={activeSprite.currentCostume.image.src}
+                                                    alt={activeSprite.name}
+                                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                                />
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()
+                            )}
                             <div ref={blocklyDiv} style={styles.blockly} />
                             <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={undefined} style={undefined} />
                             <WorkspaceTrash workspaceRef={workspaceRef} />
@@ -1159,31 +1201,91 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     {editorMode === 'stage' ? (
                         <>
                             {/* Stage */}
+                            {/* Stage */}
                             <div style={styles.stageContainer}>
-                                <div style={styles.stageHeader}>
-                                    <span>🎬 Stage</span>
-                                    <div>
+                                <div style={styles.iconBar}>
+                                    <div style={styles.actionButtons}>
                                         <button
-                                            style={styles.flagButton}
+                                            style={styles.runButtonTop}
                                             onClick={handleRunClick}
                                             title="Run"
                                         >
-                                            🏳️▶
+                                            <Flag size={22} fill="white" stroke="white" />
                                         </button>
                                         <button
-                                            style={styles.stopButtonSmall}
+                                            style={styles.stopButtonTop}
                                             onClick={handleStopClick}
                                             title="Stop"
                                         >
-                                            🛑
+                                            <Square size={20} fill="white" stroke="white" />
+                                        </button>
+                                    </div>
+
+                                    <div style={styles.layoutButtons}>
+                                        <button
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '6px',
+                                                background: 'white', color: '#575E75', border: '1px solid #D9D9D9',
+                                                padding: '6px 12px', borderRadius: '4px', cursor: 'pointer',
+                                                fontWeight: '600', fontSize: '12px', marginRight: '8px'
+                                            }}
+                                            onClick={() => alert("Upload Firmware (Coming Soon)")}
+                                            title="Upload Firmware"
+                                        >
+                                            <Upload size={16} color="#855CD6" /> Upload Firmware
+                                        </button>
+
+                                        <div style={{ width: '1px', height: '24px', background: '#d9d9d9', margin: '0 4px' }} />
+
+                                        <button
+                                            style={{ ...styles.iconBtn, ...(isCameraOn ? styles.iconBtnActive : {}) }}
+                                            onClick={() => setIsCameraOn(!isCameraOn)}
+                                            title="Toggle Camera"
+                                        >
+                                            {isCameraOn ? <Camera size={20} /> : <CameraOff size={20} />}
+                                        </button>
+
+                                        <button
+                                            style={{ ...styles.iconBtn, ...(showGrid ? styles.iconBtnActive : {}) }}
+                                            onClick={() => setShowGrid(!showGrid)}
+                                            title="Toggle Grid"
+                                        >
+                                            <Grid3X3 size={20} />
+                                        </button>
+
+                                        <button
+                                            style={{ ...styles.iconBtn, ...(stageLayout === 'small' ? styles.iconBtnActive : {}) }}
+                                            onClick={() => setStageLayout('small')}
+                                            title="Small Stage"
+                                        >
+                                            <LayoutTemplate size={20} />
+                                        </button>
+                                        <button
+                                            style={{ ...styles.iconBtn, ...(stageLayout === 'large' ? styles.iconBtnActive : {}) }}
+                                            onClick={() => setStageLayout('large')}
+                                            title="Large Stage"
+                                        >
+                                            <LayoutPanelLeft size={20} />
+                                        </button>
+
+                                        <button
+                                            style={{ ...styles.iconBtn, ...(isFullscreen ? styles.iconBtnActive : {}) }}
+                                            onClick={() => setIsFullscreen(!isFullscreen)}
+                                            title="Fullscreen"
+                                        >
+                                            {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
                                         </button>
                                     </div>
                                 </div>
+
                                 <Stage
-                                    width={320}
-                                    height={240}
+                                    width={480}
+                                    height={360}
                                     sprites={sprites}
                                     isRunning={isRunning}
+                                    showGridNumbers={showGrid}
+                                    onSpriteSelect={setSelectedSpriteId}
+                                    isCameraOn={isCameraOn}
                                 />
                             </div>
 
@@ -1222,136 +1324,142 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         </>
                     )}
 
-                    {/* Bottom tabs */}
-                    <div style={styles.bottomTabs}>
-                        <button
-                            style={activeTab === 'log' ? styles.bottomTabActive : styles.bottomTab}
-                            onClick={() => setActiveTab('log')}
-                        >⏩ Log</button>
-                        <button
-                            style={activeTab === 'serial' ? styles.bottomTabActive : styles.bottomTab}
-                            onClick={() => setActiveTab('serial')}
-                        >📟 Serial Monitor</button>
-                    </div>
-                    <div style={styles.logArea}>
-                        {activeTab === 'log' ? (
-                            logMessages.map((msg, i) => <div key={i} style={styles.logLine}>{msg}</div>)
-                        ) : (
-                            <SerialMonitor
-                                baudRate={baudRate}
-                                setBaudRate={setBaudRate}
-                                lineEnding={lineEnding}
-                                setLineEnding={setLineEnding}
-                                messages={serialMessages}
-                                setMessages={setSerialMessages}
-                                onSendMessage={handleSendSerial}
-                                isConnected={isConnected}
-                            />
-                        )}
-                    </div>
+                    {/* Bottom tabs - Only visible in Upload mode */}
+                    {editorMode !== 'stage' && (
+                        <>
+                            <div style={styles.bottomTabs}>
+                                <button
+                                    style={activeTab === 'log' ? styles.bottomTabActive : styles.bottomTab}
+                                    onClick={() => setActiveTab('log')}
+                                >⏩ Log</button>
+                                <button
+                                    style={activeTab === 'serial' ? styles.bottomTabActive : styles.bottomTab}
+                                    onClick={() => setActiveTab('serial')}
+                                >📟 Serial Monitor</button>
+                            </div>
+                            <div style={styles.logArea}>
+                                {activeTab === 'log' ? (
+                                    logMessages.map((msg, i) => <div key={i} style={styles.logLine}>{msg}</div>)
+                                ) : (
+                                    <SerialMonitor
+                                        baudRate={baudRate}
+                                        setBaudRate={setBaudRate}
+                                        lineEnding={lineEnding}
+                                        setLineEnding={setLineEnding}
+                                        messages={serialMessages}
+                                        setMessages={setSerialMessages}
+                                        onSendMessage={handleSendSerial}
+                                        isConnected={isConnected}
+                                    />
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
             {/* Custom Prompt Modal */}
-            {promptState.isOpen && (
-                <div style={styles.modalOverlay}>
-                    <div style={styles.modalContent}>
-                        <div style={{ ...styles.modalTitle, backgroundColor: promptState.type === 'variable' ? '#855CD6' : '#855CD6' }}>
-                            {promptState.type === 'variable' ? 'New Variable' : 'Input'}
-                            <div
-                                onClick={handlePromptCancel}
-                                style={{ cursor: 'pointer', float: 'right', fontSize: '20px', fontWeight: 'bold' }}
-                            >×</div>
-                        </div>
+            {
+                promptState.isOpen && (
+                    <div style={styles.modalOverlay}>
+                        <div style={styles.modalContent}>
+                            <div style={{ ...styles.modalTitle, backgroundColor: promptState.type === 'variable' ? '#855CD6' : '#855CD6' }}>
+                                {promptState.type === 'variable' ? 'New Variable' : 'Input'}
+                                <div
+                                    onClick={handlePromptCancel}
+                                    style={{ cursor: 'pointer', float: 'right', fontSize: '20px', fontWeight: 'bold' }}
+                                >×</div>
+                            </div>
 
-                        <div style={{ padding: '20px' }}>
-                            {promptState.type === 'variable' && (
-                                <div style={{ marginBottom: '10px', fontSize: '14px', color: '#575E75' }}>
-                                    New variable name:
-                                </div>
-                            )}
+                            <div style={{ padding: '20px' }}>
+                                {promptState.type === 'variable' && (
+                                    <div style={{ marginBottom: '10px', fontSize: '14px', color: '#575E75' }}>
+                                        New variable name:
+                                    </div>
+                                )}
 
-                            <input
-                                ref={(input) => { if (input) input.focus(); }}
-                                type="text"
-                                value={promptInput}
-                                onChange={(e) => setPromptInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handlePromptSubmit();
-                                    if (e.key === 'Escape') handlePromptCancel();
-                                }}
-                                style={styles.modalInput}
-                            />
+                                <input
+                                    ref={(input) => { if (input) input.focus(); }}
+                                    type="text"
+                                    value={promptInput}
+                                    onChange={(e) => setPromptInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handlePromptSubmit();
+                                        if (e.key === 'Escape') handlePromptCancel();
+                                    }}
+                                    style={styles.modalInput}
+                                />
 
-                            {promptState.type === 'variable' && (
-                                <>
-                                    <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '14px', color: '#575E75' }}>Data Type :</span>
-                                        <div style={{ display: 'flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #ddd' }}>
-                                            <div
-                                                onClick={() => setVariableType('Number')}
-                                                style={{
-                                                    padding: '4px 12px',
-                                                    backgroundColor: variableType === 'Number' ? '#855CD6' : '#eee',
-                                                    color: variableType === 'Number' ? 'white' : '#555',
-                                                    cursor: 'pointer',
-                                                    fontSize: '13px',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >Number</div>
-                                            <div
-                                                onClick={() => setVariableType('String')}
-                                                style={{
-                                                    padding: '4px 12px',
-                                                    backgroundColor: variableType === 'String' ? '#855CD6' : '#eee',
-                                                    color: variableType === 'String' ? 'white' : '#555',
-                                                    cursor: 'pointer',
-                                                    fontSize: '13px',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >String</div>
+                                {promptState.type === 'variable' && (
+                                    <>
+                                        <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '14px', color: '#575E75' }}>Data Type :</span>
+                                            <div style={{ display: 'flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #ddd' }}>
+                                                <div
+                                                    onClick={() => setVariableType('Number')}
+                                                    style={{
+                                                        padding: '4px 12px',
+                                                        backgroundColor: variableType === 'Number' ? '#855CD6' : '#eee',
+                                                        color: variableType === 'Number' ? 'white' : '#555',
+                                                        cursor: 'pointer',
+                                                        fontSize: '13px',
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                >Number</div>
+                                                <div
+                                                    onClick={() => setVariableType('String')}
+                                                    style={{
+                                                        padding: '4px 12px',
+                                                        backgroundColor: variableType === 'String' ? '#855CD6' : '#eee',
+                                                        color: variableType === 'String' ? 'white' : '#555',
+                                                        cursor: 'pointer',
+                                                        fontSize: '13px',
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                >String</div>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div style={{ marginTop: '16px', display: 'flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #ddd' }}>
-                                        <div
-                                            onClick={() => setVariableScope('global')}
-                                            style={{
-                                                flex: 1,
-                                                padding: '8px 12px',
-                                                backgroundColor: variableScope === 'global' ? '#855CD6' : '#eee',
-                                                color: variableScope === 'global' ? 'white' : '#555',
-                                                cursor: 'pointer',
-                                                fontSize: '13px',
-                                                textAlign: 'center',
-                                                fontWeight: 'bold'
-                                            }}
-                                        >For all sprites</div>
-                                        <div
-                                            onClick={() => setVariableScope('local')}
-                                            style={{
-                                                flex: 1,
-                                                padding: '8px 12px',
-                                                backgroundColor: variableScope === 'local' ? '#855CD6' : '#eee',
-                                                color: variableScope === 'local' ? 'white' : '#555',
-                                                cursor: 'pointer',
-                                                fontSize: '13px',
-                                                textAlign: 'center',
-                                                fontWeight: 'bold'
-                                            }}
-                                        >For this sprite only</div>
-                                    </div>
-                                </>
-                            )}
+                                        <div style={{ marginTop: '16px', display: 'flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #ddd' }}>
+                                            <div
+                                                onClick={() => setVariableScope('global')}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '8px 12px',
+                                                    backgroundColor: variableScope === 'global' ? '#855CD6' : '#eee',
+                                                    color: variableScope === 'global' ? 'white' : '#555',
+                                                    cursor: 'pointer',
+                                                    fontSize: '13px',
+                                                    textAlign: 'center',
+                                                    fontWeight: 'bold'
+                                                }}
+                                            >For all sprites</div>
+                                            <div
+                                                onClick={() => setVariableScope('local')}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '8px 12px',
+                                                    backgroundColor: variableScope === 'local' ? '#855CD6' : '#eee',
+                                                    color: variableScope === 'local' ? 'white' : '#555',
+                                                    cursor: 'pointer',
+                                                    fontSize: '13px',
+                                                    textAlign: 'center',
+                                                    fontWeight: 'bold'
+                                                }}
+                                            >For this sprite only</div>
+                                        </div>
+                                    </>
+                                )}
 
-                            <div style={styles.modalButtons}>
-                                <button onClick={handlePromptCancel} style={styles.modalCancel}>Cancel</button>
-                                <button onClick={handlePromptSubmit} style={styles.modalSubmit}>OK</button>
+                                <div style={styles.modalButtons}>
+                                    <button onClick={handlePromptCancel} style={styles.modalCancel}>Cancel</button>
+                                    <button onClick={handlePromptSubmit} style={styles.modalSubmit}>OK</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Board Selection Modal */}
             <BoardSelectionModal
@@ -1366,24 +1474,28 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             />
 
             {/* Backdrop Modals */}
-            {showBackdropLibrary && (
-                <BackdropLibrary
-                    onSelect={handleBackdropSelect}
-                    onClose={() => setShowBackdropLibrary(false)}
-                />
-            )}
-            {showBackdropEditor && (
-                <BackdropEditor
-                    onClose={() => setShowBackdropEditor(false)}
-                />
-            )}
+            {
+                showBackdropLibrary && (
+                    <BackdropLibrary
+                        onSelect={handleBackdropSelect}
+                        onClose={() => setShowBackdropLibrary(false)}
+                    />
+                )
+            }
+            {
+                showBackdropEditor && (
+                    <BackdropEditor
+                        onClose={() => setShowBackdropEditor(false)}
+                    />
+                )
+            }
 
             {/* Premium Upload Modal */}
             <UploadModal
                 isOpen={isUploading}
                 progress={uploadProgress}
             />
-        </div>
+        </div >
     );
 };
 
@@ -1460,6 +1572,61 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     headerIcon: { cursor: 'pointer', opacity: 0.9, fontSize: '14px' },
 
+    iconBar: {
+        background: '#f5f5f5',
+        borderBottom: '1px solid #ddd',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 16px',
+        height: '40px',
+    },
+    actionButtons: { display: 'flex', gap: '12px', alignItems: 'center' },
+    layoutButtons: { display: 'flex', gap: '4px', alignItems: 'center' },
+    iconBtn: {
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '6px',
+        borderRadius: '4px',
+        color: '#855CD6',
+        transition: 'background 0.2s',
+        outline: 'none',
+    },
+    iconBtnActive: {
+        background: '#e0d6ff',
+        color: '#855CD6'
+    },
+    runButtonTop: {
+        backgroundColor: '#2e7d32',
+        color: 'white',
+        border: 'none',
+        borderRadius: '50%',
+        width: '32px',
+        height: '32px',
+        cursor: 'pointer',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    },
+    stopButtonTop: {
+        backgroundColor: '#c62828',
+        color: 'white',
+        border: 'none',
+        borderRadius: '50%',
+        width: '32px',
+        height: '32px',
+        cursor: 'pointer',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    },
+
     main: { flex: 1, display: 'flex', overflow: 'hidden' },
 
     // Workspace
@@ -1469,9 +1636,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     // PictoBlox-style tabs
     tabBar: {
         display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         backgroundColor: '#f5f5f5',
         borderBottom: '1px solid #ddd',
         padding: '0 8px',
+        height: '40px',
     },
     tab: {
         padding: '10px 16px',
@@ -1538,9 +1708,9 @@ const styles: { [key: string]: React.CSSProperties } = {
 
     // Right Panel
     rightPanel: {
-        width: '340px',
+        width: '496px',
         backgroundColor: '#f5f5f5',
-        borderLeft: '1px solid #ddd',
+        borderLeft: '1px solid #d9d9d9',
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
@@ -1549,7 +1719,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     assetsContainer: {
         display: 'flex',
         gap: '8px',
-        alignItems: 'flex-start',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     // Stage

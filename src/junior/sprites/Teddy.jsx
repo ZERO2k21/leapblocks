@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function Sprite({ id, type, active, x, y, angle, size, visible, speech, currentCostume, costumes, onClick, onDragStateChange }) {
+export default function Sprite({ id, type, active, x, y, angle, size, visible, speech, currentCostume, costumes, mirrored, onClick, onDragStateChange }) {
     // Local ephemeral state (speech bubbles, feedback)
     // Speech is now propped from App.jsx store
     const [scaleX, setScaleX] = useState(1);
@@ -243,7 +243,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                     position: 'absolute',
                     left: x,
                     top: y,
-                    transform: `rotate(${angle}deg) scale(${size / 100}) scaleX(${scaleX})`,
+                    transform: `rotate(${angle}deg) scale(${size / 100}) scaleX(${mirrored ? -scaleX : scaleX})`,
                     transition: isDragging ? 'none' : 'transform 0.2s, top 0.2s, left 0.2s',
                     opacity: visible ? 1 : 0.5,
                     display: visible ? 'block' : 'none',
@@ -257,7 +257,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                 {/* Speech Bubble */}
                 {speech && (
                     <div style={{
-                        position: 'absolute', bottom: '100%', left: '50%', transform: `translateX(-50%) scaleX(${scaleX})`,
+                        position: 'absolute', bottom: '100%', left: '50%', transform: `translateX(-50%) scaleX(${mirrored ? -scaleX : scaleX})`,
                         background: 'white', border: '2px solid #333', borderRadius: '10px', padding: '5px 10px',
                         marginBottom: '10px', whiteSpace: 'nowrap', zIndex: 10
                     }}>

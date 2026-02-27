@@ -196,7 +196,7 @@ export default function JuniorApp({ onBack }) {
             sprites: [
                 {
                     id: "robot_default", name: "Robot", type: "robot",
-                    x: 200, y: 150, angle: 0, size: 100, visible: true, speech: null,
+                    x: 200, y: 150, angle: 0, size: 100, visible: true, mirrored: false, speech: null,
                     costumes: {
                         default: robotIdle,
                         wave1: robotWave1,
@@ -404,6 +404,7 @@ export default function JuniorApp({ onBack }) {
             name: type.charAt(0).toUpperCase() + type.slice(1),
             type: type,
             x: 200, y: 150, angle: 0, size: 100, visible: true,
+            mirrored: false,
             costumes: costumes,
             currentCostume: "default",
             blocks: {}
@@ -459,6 +460,8 @@ export default function JuniorApp({ onBack }) {
 
     // --- BIND WINDOW ACTIONS TO FSM ---
     useEffect(() => {
+        window.getLeapProjectData = () => ({ scenes, currentSceneId, activeSpriteId, sprites });
+
         // Expose State Updaters using the SAFE FSM Actions
         window.updateSprite = (id, updates) => spriteActions.update(id, updates);
 
@@ -494,8 +497,8 @@ export default function JuniorApp({ onBack }) {
         window.changeScene = () => handleNextScene();
 
         // Selection Logic
-        window.selectSprite = (spriteName) => {
-            const sprite = sprites.find(s => s.id.includes(spriteName.toLowerCase()) || s.type === spriteName.toLowerCase());
+        window.selectSprite = (spriteIdOrName) => {
+            const sprite = sprites.find(s => s.id === spriteIdOrName || s.id.includes(spriteIdOrName.toLowerCase()) || s.type === spriteIdOrName.toLowerCase());
             if (sprite) {
                 handleSpriteSelect(sprite.id);
             }
@@ -978,11 +981,13 @@ export default function JuniorApp({ onBack }) {
         // Set running state for UI
         setIsBlocksRunning(true);
 
-        // Delegate to Interpreter
-        interpreterRef.current?.runStacks('event_flag');
+        // Delegate to Interpreter and wait for completion
+        if (interpreterRef.current) {
+            await interpreterRef.current.runStacks('event_flag');
+        }
 
-        // Parallel Execution on Master Engine
-        executionEngine.runEvent('event_flag');
+        // Parallel Execution on Master Engine (if applicable, but likely replaced by Interpreter in Junior)
+        // executionEngine.runEvent('event_flag');
     };
 
     const handleSpriteClick = async (clickedId) => {
@@ -1239,6 +1244,46 @@ export default function JuniorApp({ onBack }) {
 
             <div style={{ flex: 1, display: "flex", overflow: 'hidden' }}>
                 <div id="wrapper" style={{ width: "60%", height: "100%", position: "relative" }}>
+                    {/* Selected Sprite Indicator overlay */}
+                    {appMode === 'stage' && (
+                        (() => {
+                            const activeSprite = sprites.find(s => s.id === activeSpriteId);
+                            if (activeSprite && activeSprite.currentCostume) {
+                                // Use static import for robot or fallback to currentCostume src if it's dynamic
+                                let imgSrc = null;
+                                if (activeSprite.type === 'robot' && activeSprite.costumes) {
+                                    imgSrc = activeSprite.costumes[activeSprite.currentCostume];
+                                } else if (activeSprite.currentCostume && typeof activeSprite.currentCostume === 'object' && activeSprite.currentCostume.image) {
+                                    imgSrc = activeSprite.currentCostume.image.src;
+                                }
+
+                                if (imgSrc) {
+                                    return (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '16px',
+                                            right: '16px',
+                                            width: '50px',
+                                            height: '50px',
+                                            opacity: 0.35,
+                                            pointerEvents: 'none',
+                                            zIndex: 10,
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            alignItems: 'center'
+                                        }}>
+                                            <img
+                                                src={imgSrc}
+                                                alt={activeSprite.name}
+                                                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                            />
+                                        </div>
+                                    );
+                                }
+                            }
+                            return null;
+                        })()
+                    )}
                     <div id="blocklyDiv" ref={blocklyDiv} className="workspace" style={{ width: "100%", height: "100%" }}></div>
 
                     {/* ════ FLOATING WORKSPACE CONTROLS (shared component) ════ */}
@@ -1380,6 +1425,7 @@ export default function JuniorApp({ onBack }) {
                                 visible={sprite.visible} currentCostume={sprite.currentCostume}
                                 costumes={sprite.costumes}
                                 speech={sprite.speech}
+                                mirrored={sprite.mirrored}
                                 onClick={() => handleSpriteClick(sprite.id)}
                                 onDragStateChange={(dragging) => setIsDraggingSpriteOnStage(dragging)}
                             />
