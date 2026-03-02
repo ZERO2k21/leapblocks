@@ -4,6 +4,7 @@ import {
     Undo, Redo, BookOpen, HelpCircle, Home,
     MessageSquareWarning, Trophy, Settings
 } from 'lucide-react';
+import Logo from '../../components/Logo';
 
 // PictoBlox Junior-inspired purple color scheme
 const COLORS = {
@@ -187,27 +188,21 @@ export default function JuniorMenuBar({
             {/* Logo */}
             <div style={{
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-end',
                 gap: '8px',
                 marginRight: '20px',
             }}>
-                <span style={{ fontSize: '24px' }}>🚀</span>
-                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-                    <span style={{
-                        color: COLORS.text,
-                        fontSize: '15px',
-                        fontWeight: 800,
-                    }}>
-                        LeapBlocks
-                    </span>
-                    <span style={{
-                        color: 'rgba(255,255,255,0.7)',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                    }}>
-                        Junior
-                    </span>
-                </div>
+                <Logo height={28} />
+                <span style={{
+                    color: '#FFD500',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.8px',
+                    marginBottom: '4px',
+                }}>
+                    JUNIOR
+                </span>
             </div>
 
             {/* Menus - Only File, Edit, Tutorials for Junior */}

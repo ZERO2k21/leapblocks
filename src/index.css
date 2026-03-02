@@ -102,12 +102,12 @@ body,
    BLOCKLY FIELD STYLING
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* 1. INPUT FIELDS (Number/Text) - Block-colored with White Text */
+/* 1. INPUT FIELDS (Number/Text) - White background with dark text */
 .blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect),
 .blocklyEditableText:not(.blocklyDropdownTextParent)>rect {
-  fill: rgba(0, 0, 0, 0.25) !important;
+  fill: #FFFFFF !important;
   fill-opacity: 1 !important;
-  stroke: rgba(255, 255, 255, 0.3) !important;
+  stroke: rgba(0, 0, 0, 0.15) !important;
   stroke-width: 1.5px !important;
   rx: 14px !important;
   ry: 14px !important;
@@ -115,7 +115,9 @@ body,
 
 .blocklyEditableText:not(.blocklyDropdownTextParent) .blocklyText,
 .blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect)+.blocklyText {
-  fill: #FFFFFF !important;
+  fill: #575E75 !important;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+  font-size: 13px !important;
   font-weight: 700 !important;
 }
 
@@ -138,6 +140,12 @@ body,
   font-weight: 700 !important;
 }
 
+/* Explicitly target uneditable parts of white inputs to stay dark */
+.blocklyEditableText:not(.blocklyDropdownTextParent) text,
+.blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect)+text {
+  fill: #575E75 !important;
+}
+
 /* Dropdown Arrows - White for contrast */
 .blocklyDropdownText+path.blocklyPath,
 .blocklyEditableText.blocklyDropdownTextParent path {
@@ -149,10 +157,14 @@ body,
 .blocklyHtmlInput {
   color: #000 !important;
   background-color: #fff !important;
-  border: none !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  padding: 0 4px !important;
-  font-family: inherit !important;
+  border: 2px solid #4C97FF !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 0 3px rgba(76, 151, 255, 0.4) !important;
+  padding: 0 6px !important;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  box-sizing: border-box !important;
 }
 
 /* Ensure consistency in flyout — dropdowns should also have block-color bg */
@@ -341,23 +353,7 @@ body,
   fill: rgb(255, 255, 255) !important;
 }
 
-.blocklyEditableText>rect {
-  fill: #FFFFFF !important;
-  stroke: rgba(0, 0, 0, 0.15) !important;
-  rx: 14px !important;
-  ry: 14px !important;
-  fill-opacity: 1 !important;
-}
 
-.blocklyEditableText:hover>rect {
-  fill-opacity: 1 !important;
-}
-
-.blocklyEditableText>text {
-  fill: #333 !important;
-  /* Dark text for contrast on solid white background */
-  font-weight: 700 !important;
-}
 
 .blocklyPath {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15)) !important;
@@ -629,9 +625,35 @@ div::-webkit-scrollbar-thumb {
   transform: none !important;
 }
 
-/* Prevent flyout buttons (like "Make a Variable") from scaling with workspace */
+/* Professional styling for flyout buttons (like "Make a Variable") */
 .blocklyFlyoutButton {
-  transform: none !important;
+  cursor: pointer !important;
+}
+
+/* Hide Blockly's default sharp button shadow */
+.blocklyFlyoutButtonShadow {
+  fill: transparent !important;
+  stroke: none !important;
+}
+
+.blocklyFlyoutButtonBackground {
+  fill: #ffffff !important;
+  stroke: #d9d9d9 !important;
+  stroke-width: 1.5px !important;
+  rx: 18px !important;
+  ry: 18px !important;
+}
+
+.blocklyFlyoutButton:hover .blocklyFlyoutButtonBackground {
+  fill: #f0f4f8 !important;
+  stroke: #4A90E2 !important;
+}
+
+/* Use high specificity to override the global white text rule */
+body #root .blocklyFlyoutButton .blocklyText,
+.blocklyFlyoutButton text {
+  fill: #575E75 !important;
+  font-weight: 600 !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

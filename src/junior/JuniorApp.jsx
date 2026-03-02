@@ -1263,14 +1263,18 @@ export default function JuniorApp({ onBack }) {
                                             position: 'absolute',
                                             top: '16px',
                                             right: '16px',
-                                            width: '50px',
-                                            height: '50px',
-                                            opacity: 0.35,
+                                            width: '60px',
+                                            height: '60px',
+                                            background: 'white',
+                                            borderRadius: '8px',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                            border: '2px solid #855CD6',
                                             pointerEvents: 'none',
                                             zIndex: 10,
                                             display: 'flex',
                                             justifyContent: 'center',
-                                            alignItems: 'center'
+                                            alignItems: 'center',
+                                            padding: '6px',
                                         }}>
                                             <img
                                                 src={imgSrc}

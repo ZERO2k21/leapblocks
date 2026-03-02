@@ -4,6 +4,7 @@ import {
     Undo, Redo, Cpu, Bluetooth, Usb, Wifi,
     Play, Upload, Settings, HelpCircle, Home, RotateCcw
 } from 'lucide-react';
+import Logo from '../../components/Logo';
 
 // PictoBlox-inspired purple color scheme
 const COLORS = {
@@ -267,18 +268,9 @@ export default function MenuBar({
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
                 marginRight: '16px',
             }}>
-                <span style={{ fontSize: '24px' }}>🚀</span>
-                <span style={{
-                    color: COLORS.text,
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    letterSpacing: '-0.5px',
-                }}>
-                    LeapBlocks
-                </span>
+                <Logo height={28} />
             </div>
 
             {/* Menus */}

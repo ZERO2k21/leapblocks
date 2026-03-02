@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Bell } from 'lucide-react';
 
 // ─── inject keyframes once ───────────────────────────────────────────────────
 function injectCSS() {
@@ -8,6 +9,14 @@ function injectCSS() {
     s.id = 'lp-anims';
     s.textContent = `
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+
+        @font-face {
+            font-family: 'Azonix';
+            src: url('/assets/fonts/Azonix.woff') format('woff'),
+                 url('/assets/fonts/Azonix.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
 
         * { box-sizing: border-box; }
 
@@ -252,18 +261,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
     // Cards data
     const mainCards = [
+
         {
-            icon: '🚀', title: 'Intermediate', subtitle: 'Blockly + Arduino hardware coding',
-            color: '#855CD6', gradient: 'linear-gradient(135deg, #855CD6, #6D28D9)',
-            available: true, onClick: () => onSelect('intermediate'),
-        },
-        {
-            icon: '🐻', title: 'Junior', subtitle: 'Icon blocks & visual stories',
+            icon: '🐻', title: 'Junior Blocks', subtitle: 'Icon blocks & visual stories for Classes 1 to 5',
             color: '#F59E0B', gradient: 'linear-gradient(135deg, #F59E0B, #D97706)',
             available: true, onClick: () => onSelect('junior'),
         },
         {
-            icon: '⚡', title: 'Advanced', subtitle: 'Pro-level coding & IoT projects',
+            icon: '🚀', title: 'Intermediate Blocks', subtitle: 'Blockly + Arduino hardware coding for Classes 6 to 8',
+            color: '#855CD6', gradient: 'linear-gradient(135deg, #855CD6, #6D28D9)',
+            available: true, onClick: () => onSelect('intermediate'),
+        },
+        {
+            icon: '', title: 'Python IDE', subtitle: 'Python IDE for Classes 9 to 12',
+            color: '#c5d032ff', gradient: 'linear-gradient(135deg, #cdf54cff, #d8c91dff)',
+            available: false, onClick: () => showComingSoon('Python IDE'),
+        },
+        {
+            icon: '⚡', title: 'Advanced Blocks', subtitle: 'AI/ML',
             color: '#3B82F6', gradient: 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
             available: false, onClick: () => showComingSoon('Advanced'),
         },
@@ -271,16 +286,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
     const extraCards = [
         {
-            icon: '🎮', title: 'Game', subtitle: 'Build interactive games',
+            icon: '🎮', title: 'Creocad', subtitle: 'Online simulation for 3D printing',
+            color: '#44efe9ff', gradient: 'linear-gradient(135deg, #44efe9ff, #26dcd8ff)',
+            available: false, onClick: () => showComingSoon('Creocad')
+        },
+        {
+            icon: '📱', title: 'App & Game Development', subtitle: 'Build interactive games',
             color: '#EF4444', gradient: 'linear-gradient(135deg, #EF4444, #DC2626)',
-            available: false, onClick: () => showComingSoon('Game'),
+            available: false, onClick: () => showComingSoon('App & Game Development'),
         },
         {
             icon: '🧩', title: 'Quiz', subtitle: 'Create fun learning quizzes',
             color: '#10B981', gradient: 'linear-gradient(135deg, #10B981, #059669)',
             available: false, onClick: () => showComingSoon('Quiz'),
         },
-        
+
         {
             icon: '📱', title: 'App Design', subtitle: 'Design beautiful app interfaces',
             color: '#EC4899', gradient: 'linear-gradient(135deg, #EC4899, #DB2777)',
@@ -298,10 +318,81 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             minHeight: '100vh',
         }}>
+            {/* Topbar */}
+            <div style={{
+                position: 'absolute',
+                top: 0, left: 0, right: 0,
+                height: '70px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 32px',
+                background: 'rgba(255, 255, 255)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.5)',
+                boxShadow: '0 4px 30px rgba(0, 0, 0, 0.05)',
+                zIndex: 100,
+                animation: phase === 'main' ? 'lp-fadeup 0.6s ease-out both' : 'none',
+                opacity: phase === 'main' ? 1 : 0,
+                pointerEvents: phase === 'main' ? 'auto' : 'none',
+            }}>
+                {/* Left Logo */}
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <img
+                        src="/assets/topbar_logo.svg"
+                        alt="LeapBlocks"
+                        style={{ height: '36px', objectFit: 'contain' }}
+                        onError={(e) => {
+                            // Fallback if topbar_logo.svg is missing
+                            (e.target as HTMLImageElement).src = '/assets/leapblocks_logo.svg';
+                        }}
+                    />
+                </div>
+
+                {/* Right Notification Icon */}
+                <div style={{
+                    position: 'relative',
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: 'rgba(255, 255, 255, 0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8)',
+                    transition: 'all 0.2sease',
+                }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(133,92,214,0.15), inset 0 1px 0 rgba(255,255,255,0.9)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8)';
+                    }}
+                    onClick={() => showComingSoon('Notifications')}
+                >
+                    <Bell size={20} color="#475569" strokeWidth={2.5} />
+                    {/* Notification indicator dot */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '10px',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: '#EF4444',
+                        border: '2px solid white',
+                        boxShadow: '0 0 0 1px rgba(239,68,68,0.2)',
+                    }} />
+                </div>
+            </div>
             {/* Decorative floating shapes */}
             <div style={{
                 position: 'absolute', top: '8%', left: '6%',
-                width: 80, height: 80, borderRadius: '50%',
+                width: 100, height: 100, borderRadius: '10%',
                 background: 'linear-gradient(135deg, rgba(133,92,214,0.12), rgba(99,102,241,0.08))',
                 animation: 'lp-float-shape 6s ease-in-out infinite',
                 pointerEvents: 'none',
@@ -421,8 +512,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                         <div style={{
                             fontSize: 36,
                             fontWeight: 900,
-                            fontFamily: '"Poppins", sans-serif',
-                            letterSpacing: '-0.02em',
+                            fontFamily: '"Azonix", "Poppins", sans-serif',
+                            letterSpacing: '1px',
                             background: 'linear-gradient(135deg, #855CD6, #6D28D9)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
@@ -431,19 +522,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                         </div>
                         <div style={{
                             fontSize: 13,
-                            color: '#94A3B8',
+                            color: '#3e8fffff',
                             letterSpacing: '0.15em',
                             textTransform: 'uppercase',
                             fontFamily: '"Poppins", sans-serif',
                             fontWeight: 500,
                         }}>
-                            Curiosity · Creativity · Critical Thinking
+                            Curiosity · Creativity · Criticalthinking
                         </div>
                     </div>
 
                     {/* ── Subtitle ── */}
                     <div style={{
-                        fontSize: 15, color: '#64748B', marginBottom: 28,
+                        fontSize: 15, color: '#1f242cff', marginBottom: 28,
                         fontFamily: '"Poppins", sans-serif',
                         fontWeight: 500,
                         animation: 'lp-fadeup .5s .2s both',
@@ -493,13 +584,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     {/* ── Footer ── */}
                     <div style={{
                         marginTop: 28,
-                        fontSize: 11, color: '#CBD5E1',
-                        fontFamily: '"Poppins", sans-serif',
+                        fontSize: 11, color: '#001125ff',
+                        fontFamily: '"Poppins",azonix',
                         fontWeight: 500,
                         animation: 'lp-fadeup .5s .9s both',
                         letterSpacing: '0.05em',
                     }}>
-                        v1.0 · Powered by Blockly & Electron
+                        v1.0 · Creoleap Technologies Pvt. Ltd.
                     </div>
                 </div>
             )}
