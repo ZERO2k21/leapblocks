@@ -10,11 +10,11 @@ import * as Blockly from 'blockly';
 // - Simpler concepts (no variables, loops with fixed counts)
 
 const COLORS = {
-    motion: '#4C97FF',       // Blue - Motion blocks
-    looks: '#9966FF',        // Purple - Looks blocks
-    sound: '#CF63CF',        // Pink - Sound blocks
-    events: '#FFBF00',       // Yellow/Gold - Events
-    control: '#FFAB19',      // Orange - Control blocks
+    motion: '#4A90E2',       // Premium Blue
+    looks: '#8B5CF6',        // Vibrant Violet
+    sound: '#D946EF',        // Bright Fuchsia
+    events: '#FACC15',       // Sun Yellow
+    control: '#F59E0B',      // Warm Amber
 };
 
 // Junior Block Definitions

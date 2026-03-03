@@ -37,6 +37,8 @@ export const COMMANDS = {
     TONE: 'T',           // T<pin>:<freq>,<duration> -> OK (e.g., T8:440,500)
     NOTONE: 'N',         // N<pin> -> OK
 
+    // Advanced Sensors
+    READ_ULTRASONIC: 'U', // U<trig>:<echo> -> OK:<distance>
 } as const;
 
 export type CommandType = typeof COMMANDS[keyof typeof COMMANDS];

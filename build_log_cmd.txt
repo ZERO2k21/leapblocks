@@ -1,0 +1,58 @@
+
+> leapblocks@1.0.0 start
+> electron-forge start
+
+[33m❯[39m Checking your system
+2026-02-25T04:48:46.748Z electron-forge:check-system checking system, create ~/.skip-forge-system-check to stop doing this
+[33m❯[39m Checking package manager version
+2026-02-25T04:48:46.752Z electron-forge:package-manager Resolved package manager to npm. (Derived from NODE_INSTALLER: undefined, npm_config_user_agent: npm/11.3.0 node/v24.0.2 win32 x64 workspaces/false, lockfile: npm)
+[32m✔[39m Found npm@11.3.0
+[32m✔[39m Checking your system
+[?25h[33m❯[39m Locating application
+2026-02-25T04:48:47.784Z electron-forge:project-resolver searching for project in: C:\Users\chris\Desktop\leapblocks
+2026-02-25T04:48:47.797Z electron-forge:project-resolver package.json with forge dependency found in C:\Users\chris\Desktop\leapblocks\package.json
+[32m✔[39m Locating application
+[33m❯[39m Loading configuration
+2026-02-25T04:48:48.774Z electron-forge:plugin:webpack hooking process events
+[32m✔[39m Loading configuration
+[33m❯[39m Preparing native dependencies
+[32m✔[39m Preparing native dependencies
+[33m❯[39m Running generateAssets hook
+[32m✔[39m Running generateAssets hook
+[33m❯[39m Running preStart hook
+[33m❯[39m [plugin-webpack] Preparing webpack bundles
+[33m❯[39m Compiling main process code
+2026-02-25T04:48:50.095Z electron-forge:plugin:webpack:webpackconfig Config mode: development
+[32m✔[39m Compiling main process code
+[33m❯[39m Launching dev servers for renderer process code
+<i> [ForkTsCheckerWebpackPlugin] Type-checking in progress...
+<i> [ForkTsCheckerWebpackPlugin] No errors found.
+› Output Available: http://localhost:9000
+
+[32m✔[39m Launching dev servers for renderer process code
+[32m✔[39m [plugin-webpack] Preparing webpack bundles
+[32m✔[39m Running preStart hook
+[32m✔[39m Launched Electron app. Type rs in terminal to restart main process.
+[?25h
+An unhandled rejection has occurred inside Forge:
+Error: Electron failed to install correctly, please delete node_modules/electron and try installing again
+at getElectronPath (C:\Users\chris\Desktop\leapblocks\node_modules\electron\index.js:17:11)
+    at Object.<anonymous> (C:\Users\chris\Desktop\leapblocks\node_modules\electron\index.js:21:18)
+    at Module._compile (node:internal/modules/cjs/loader:1734:14)
+    at Object..js (node:internal/modules/cjs/loader:1899:10)
+    at Module.load (node:internal/modules/cjs/loader:1469:32)
+    at Module._load (node:internal/modules/cjs/loader:1286:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1491:12)
+    at require (node:internal/modules/helpers:135:16)
+    at locateElectronExecutable (C:\Users\chris\Desktop\leapblocks\node_modules\@electron-forge\core\dist\util\electron-executable.js:12:28)
+    at async forgeSpawn (C:\Users\chris\Desktop\leapblocks\node_modules\@electron-forge\core\dist\api\start.js:126:32)
+    at async forgeSpawnWrapper (C:\Users\chris\Desktop\leapblocks\node_modules\@electron-forge\core\dist\api\start.js:160:25)
+    at async C:\Users\chris\Desktop\leapblocks\node_modules\@electron-forge\core\dist\api\start.js:197:21
+    at async C:\Users\chris\Desktop\leapblocks\node_modules\@electron-forge\tracer\dist\index.js:58:20
+    at async C:\Users\chris\Desktop\leapblocks\node_modules\@electron-forge\cli\dist\electron-forge-start.js:59:21
+2026-02-25T04:49:02.690Z electron-forge:plugin:webpack handling process exit with: { cleanup: true }
+2026-02-25T04:49:02.691Z electron-forge:plugin:webpack cleaning webpack watcher
+2026-02-25T04:49:02.693Z electron-forge:plugin:webpack cleaning http server
+2026-02-25T04:49:02.694Z electron-forge:plugin:webpack stopping logger

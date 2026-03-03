@@ -23,16 +23,12 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
         block.setColour("#9966FF"); // Purple
     }
 
-    /* ===== SAY BLOCK (Dropdown, No Typing) ===== */
+    /* ===== SAY BLOCK (Text Input) ===== */
     Blockly.Blocks["say_text"] = {
         init: function () {
-            const dropdown = new Blockly.FieldDropdown([
-                ["Hello!", "Hello!"],
-                ["Hmm...", "Hmm..."],
-                ["Yay!", "Yay!"],
-                ["Help!", "Help!"]
-            ]);
-            juniorLooksBase(this, "💬", dropdown, "TEXT");
+            // Changed from Dropdown to TextInput for better interactivity
+            const textInput = new Blockly.FieldTextInput("Hello!");
+            juniorLooksBase(this, "Say", textInput, "TEXT");
         },
     };
     javascriptGenerator.forBlock["say_text"] = function (block) {
@@ -43,7 +39,7 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
     /* ===== SHOW (Icon Only) ===== */
     Blockly.Blocks["show_sprite"] = {
         init: function () {
-            juniorLooksBase(this, "👁");
+            juniorLooksBase(this, "Show");
         },
     };
     javascriptGenerator.forBlock["show_sprite"] = () => `setVisible(${getTarget()}, true);\n${wait()}`;
@@ -51,7 +47,7 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
     /* ===== HIDE (Icon Only) ===== */
     Blockly.Blocks["hide_sprite"] = {
         init: function () {
-            juniorLooksBase(this, "🙈");
+            juniorLooksBase(this, "Hide");
         },
     };
     javascriptGenerator.forBlock["hide_sprite"] = () => `setVisible(${getTarget()}, false);\n${wait()}`;
@@ -64,7 +60,7 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
                 ["Shrink", "-10"],
                 ["Reset", "reset"]
             ]);
-            juniorLooksBase(this, "⬛", dropdown, "AMOUNT");
+            juniorLooksBase(this, "Size", dropdown, "AMOUNT");
         },
     };
     javascriptGenerator.forBlock["change_size"] = function (block) {
@@ -76,16 +72,47 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
     /* ===== SELECT SPRITE (Dropdown) ===== */
     Blockly.Blocks["select_sprite"] = {
         init: function () {
-            const dropdown = new Blockly.FieldDropdown([
-                ["Teddy", "teddy"],
-                ["Dog", "dog"],
-                ["Cat", "cat"]
-            ]);
-            juniorLooksBase(this, "→", dropdown, "SPRITE"); // Needs better icon
+            const dynamicDropdown = new Blockly.FieldDropdown(() => {
+                if (window.getLeapProjectData) {
+                    const data = window.getLeapProjectData();
+                    if (data && data.sprites && data.sprites.length > 0) {
+                        return data.sprites.map(sprite => [sprite.name, sprite.id]);
+                    }
+                }
+                return [["Teddy", "teddy"]]; // Fallback
+            });
+            juniorLooksBase(this, "→", dynamicDropdown, "SPRITE");
         },
     };
     javascriptGenerator.forBlock["select_sprite"] = function (block) {
         const sprite = block.getFieldValue("SPRITE");
         return `selectSprite("${sprite}");\n${wait()}`;
+    };
+
+    /* ===== SWITCH SCENE (Dropdown) ===== */
+    Blockly.Blocks["switch_scene"] = {
+        init: function () {
+            const dynamicDropdown = new Blockly.FieldDropdown(() => {
+                const options = [["Next Scene", "next"]];
+                if (window.getLeapProjectData) {
+                    const data = window.getLeapProjectData();
+                    if (data && data.scenes && data.scenes.length > 0) {
+                        data.scenes.forEach(scene => {
+                            options.push([scene.name, scene.id]);
+                        });
+                    }
+                }
+                if (options.length === 1) {
+                    options.push(["Scene 1", "scene1"]);
+                }
+                return options;
+            });
+            juniorLooksBase(this, "🏞️", dynamicDropdown, "SCENE");
+        },
+    };
+    javascriptGenerator.forBlock["switch_scene"] = function (block) {
+        const scene = block.getFieldValue("SCENE");
+        if (scene === "next") return `changeScene();\n${wait()}`;
+        return `switchScene("${scene}");\n${wait()}`;
     };
 }

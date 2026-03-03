@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function Sprite({ id, type, active, x, y, angle, size, visible, speech, currentCostume }) {
+export default function Sprite({ id, type, active, x, y, angle, size, visible, speech, currentCostume, costumes, mirrored, onClick, onDragStateChange }) {
     // Local ephemeral state (speech bubbles, feedback)
     // Speech is now propped from App.jsx store
     const [scaleX, setScaleX] = useState(1);
@@ -114,9 +114,18 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
         window.penUp = (tid) => { if (check(tid)) setIsPenDown(false); };
 
         window.resetBear = () => {
-            // Reset to defaults (Hardcoded roughly or could store "initialState")
+            // Soft reset: keep current position, reset visual/state only
+            // This lets sprites run from wherever the user dragged them
+            updateStore({ angle: 0, size: 100, visible: true, currentCostume: "default", speech: null });
+            setScaleX(1);
+            setFeedback(null);
+            setIsPenDown(false);
+            if (window.clearPen) window.clearPen();
+        };
+
+        window.hardResetBear = () => {
+            // Full reset: also resets position to defaults
             updateStore({ x: 200 + (id === 'dog' ? 100 : 0), y: 150, angle: 0, size: 100, visible: true, currentCostume: "default", speech: null });
-            // setSpeech(null); // Managed by store now
             setScaleX(1);
             setFeedback(null);
             setIsPenDown(false);
@@ -137,27 +146,95 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
 
     // Icon mapping logic (now supports costumes)
     // Fallback logic for safety
-    const renderIcon = () => {
-        // If currentCostume is a string value directly (emoji), use it.
-        // If it's a key like "default", "wave", look up in... Props? 
-        // We passed costumes object in App.jsx but need to pass it down.
-        // Actually, passed `{ costumes: { default: "🐻"... } }` inside sprite object.
-        // BUT here we only destructured specific props.
-        // Let's assume `currentCostume` is the KEY.
-        // Ideally we should pass the `costumes` map prop.
+    // Track image load errors to fallback gracefully
+    const [imgError, setImgError] = useState(false);
 
-        // Simple hack for now based on 'type' to keep it robust if props missing
+    // Reset error state when costume changes
+    useEffect(() => {
+        setImgError(false);
+    }, [currentCostume]);
+
+    const getEmojiForType = () => {
+        if (type === 'robot') return '🤖';
+        if (type === 'dog') return '🐶';
+        if (type === 'cat') return '🐱';
+        return '🐻';
+    };
+
+    const renderIcon = () => {
+        // 1. If we have a costumes map, try looking up by key
+        const costumeValue = costumes?.[currentCostume] || currentCostume;
+
+        // 2. If it looks like a path/URL (image) and hasn't errored, render img tag
+        if (!imgError && typeof costumeValue === 'string' && (costumeValue.includes('/') || costumeValue.includes('data:image'))) {
+            return (
+                <img
+                    src={costumeValue}
+                    alt={id}
+                    style={{ width: '80px', height: '80px', objectFit: 'contain' }}
+                    draggable={false}
+                    onError={() => setImgError(true)}
+                />
+            );
+        }
+
+        // 3. Fallback to emoji logic
         if (currentCostume === "wave") {
             if (type === 'bear') return "👋";
             if (type === 'dog') return "🐕";
+            if (type === 'robot') return "🤖";
         }
-        if (type === 'dog') return '🐶';
-        if (type === 'cat') return '🐱';
-        return '🐻'; // Teddy default
+        return getEmojiForType();
     };
 
     // Better: Receive costumes object
     // For now, let's just stick to the Emoji logic above as "Costume" implies.
+
+    // --- DRAG TO MOVE ---
+    const [isDragging, setIsDragging] = useState(false);
+    const dragRef = useRef({ startX: 0, startY: 0, origX: 0, origY: 0, didDrag: false });
+
+    const handleMouseDown = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = e.currentTarget.parentElement?.getBoundingClientRect();
+        dragRef.current = {
+            startX: e.clientX,
+            startY: e.clientY,
+            origX: x,
+            origY: y,
+            didDrag: false,
+            parentLeft: rect?.left || 0,
+            parentTop: rect?.top || 0,
+        };
+        setIsDragging(true);
+        if (onDragStateChange) onDragStateChange(true);
+
+        const handleMouseMove = (me) => {
+            const dx = me.clientX - dragRef.current.startX;
+            const dy = me.clientY - dragRef.current.startY;
+            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+                dragRef.current.didDrag = true;
+            }
+            const newX = dragRef.current.origX + dx;
+            const newY = dragRef.current.origY + dy;
+            updateStore({ x: newX, y: newY });
+        };
+
+        const handleMouseUp = () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            setIsDragging(false);
+            if (onDragStateChange) onDragStateChange(false);
+            // Only fire click/select if we didn't actually drag
+            if (!dragRef.current.didDrag && onClick) {
+                onClick();
+            }
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    };
 
     return (
         <React.Fragment>
@@ -166,19 +243,21 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                     position: 'absolute',
                     left: x,
                     top: y,
-                    transform: `rotate(${angle}deg) scale(${size / 100}) scaleX(${scaleX})`,
-                    transition: 'transform 0.2s, top 0.2s, left 0.2s',
+                    transform: `rotate(${angle}deg) scale(${size / 100}) scaleX(${mirrored ? -scaleX : scaleX})`,
+                    transition: isDragging ? 'none' : 'transform 0.2s, top 0.2s, left 0.2s',
                     opacity: visible ? 1 : 0.5,
                     display: visible ? 'block' : 'none',
-                    zIndex: active ? 20 : 10,
-                    cursor: 'grab',
-                    filter: active ? 'drop-shadow(0 0 5px blue)' : 'none'
+                    zIndex: isDragging ? 50 : (active ? 20 : 10),
+                    cursor: isDragging ? 'grabbing' : 'grab',
+                    filter: active ? 'drop-shadow(0 0 6px rgba(123,79,196,0.6))' : 'none',
+                    userSelect: 'none',
                 }}
+                onMouseDown={handleMouseDown}
             >
                 {/* Speech Bubble */}
                 {speech && (
                     <div style={{
-                        position: 'absolute', bottom: '100%', left: '50%', transform: `translateX(-50%) scaleX(${scaleX})`,
+                        position: 'absolute', bottom: '100%', left: '50%', transform: `translateX(-50%) scaleX(${mirrored ? -scaleX : scaleX})`,
                         background: 'white', border: '2px solid #333', borderRadius: '10px', padding: '5px 10px',
                         marginBottom: '10px', whiteSpace: 'nowrap', zIndex: 10
                     }}>

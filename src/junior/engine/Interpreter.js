@@ -32,7 +32,7 @@ export class Interpreter {
      * @param {string} triggerType - 'event_flag' | 'event_press'
      * @param {string} spriteId - optional filter
      */
-    runStacks(triggerType, spriteId = null) {
+    async runStacks(triggerType, spriteId = null) {
         if (!this.workspaceRef.current) return;
 
         // Ensure we are active
@@ -41,15 +41,19 @@ export class Interpreter {
         const topBlocks = this.workspaceRef.current.getTopBlocks(true);
         const validStacks = topBlocks.filter(b => b.type === triggerType);
 
-        if (validStacks.length === 0) return;
+        if (validStacks.length === 0) {
+            this.stopAll();
+            return;
+        }
 
-        validStacks.forEach(block => {
+        // We map block execution into an array of Promises so we can wait until ALL finish
+        const stackPromises = validStacks.map(block => {
             // VALIDATE
             const check = WorkspaceValidator.validateStack(block);
             if (!check.isValid) {
                 console.warn(`Validation Error on stack starting with ${block.type}: ${check.error}`);
                 alert(`⚠️ Oops! ${check.error}`);
-                return;
+                return Promise.resolve(); // Resolves safely for invalid stacked code
             }
 
             // INITIALIZE GENERATOR (required before blockToCode in Blockly v12+)
@@ -59,18 +63,26 @@ export class Interpreter {
             const code = this.generator.blockToCode(block);
 
             // EXECUTE
-            this.executeThread(code);
+            return this.executeThread(code);
 
             // NOTE: Goal Checking is handled Reactively in App.jsx based on State Changes
-            // This ensures visuals match success.
         });
+
+        // Wait for all execution threads to finish.
+        await Promise.all(stackPromises);
+
+        // If the workspace is still considered 'active' by the time all blocks finish running,
+        // we trigger a global stop to revert UI states back to 'play'.
+        if (this.isActive) {
+            this.stopAll();
+        }
     }
 
     async executeThread(code) {
         if (!code) return;
 
-        // JUNIOR SAFETY: Timeout after 10 seconds to prevent huge freezes
-        const TIMEOUT_MS = 10000;
+        // JUNIOR SAFETY: Timeout after 2 minutes to prevent truly infinite freezes
+        const TIMEOUT_MS = 120000;
 
         // Wrapper to allow timeout
         const runUserCode = async () => {

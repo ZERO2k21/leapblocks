@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as Blockly from 'blockly';
 import { arduinoBlocks, arduinoToolbox } from './blocks/arduino-blocks';
+import { esp32Blocks, esp32Toolbox } from './blocks/esp32-blocks';
 import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
 import { hardwareBlocks } from './blocks/hardware-blocks';
 import { arduinoGenerator } from './generators/arduino-generator';
@@ -9,7 +10,21 @@ import { animationVM, CompiledScript } from './vm/AnimationVM';
 import { Sprite, SpriteType } from './stage/Sprite';
 import Stage from './stage/Stage';
 import SpritePanel from './stage/SpritePanel';
+import MenuBar from './junior/components/MenuBar';
+import BoardSelectionModal from './junior/components/BoardSelectionModal';
+import PaintEditor from './components/PaintEditor';
+import StagePanel from './stage/StagePanel';
+import BackdropLibrary from './components/BackdropLibrary';
+import BackdropEditor from './components/BackdropEditor';
+import { stageManager } from './engine/StageManager';
+import { hardwareAdapter } from './hardware/HardwareAdapter';
+import SerialMonitor from './components/SerialMonitor';
+import UploadModal from './components/UploadModal';
+import WorkspaceControls from './components/WorkspaceControls';
+import WorkspaceTrash from './components/WorkspaceTrash';
+import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft } from 'lucide-react';
 import './custom-toolbox';
+import { block } from 'blockly/core/tooltip';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LOGGING UTILITY
@@ -23,6 +38,7 @@ const log = {
 // Register all blocks
 log.app('Registering blocks...');
 Blockly.common.defineBlocks(arduinoBlocks);
+Blockly.common.defineBlocks(esp32Blocks);
 Blockly.common.defineBlocks(animationBlocks);
 Blockly.common.defineBlocks(hardwareBlocks);
 log.app('All blocks registered successfully');
@@ -62,6 +78,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     const [appMode, setAppMode] = useState<AppMode>('blocks');
     const [editorMode, setEditorMode] = useState<EditorMode>('stage');
+    const [projectName, setProjectName] = useState('My Project');
     const [generatedCode, setGeneratedCode] = useState<string>('// Select blocks to generate code');
     const [activeTab, setActiveTab] = useState<'log' | 'serial'>('log');
     const [workspaceTab, setWorkspaceTab] = useState<'blocks' | 'python' | 'costumes' | 'sounds'>('blocks');
@@ -76,11 +93,27 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // Hardware
     const [ports, setPorts] = useState<{ path: string; manufacturer?: string }[]>([]);
     const [selectedPort, setSelectedPort] = useState<string>('');
+    const [selectedBoard, setSelectedBoard] = useState<string>('arduino_uno');
+    const [selectedBoardName, setSelectedBoardName] = useState<string>('Arduino Uno');
+    const [isBoardModalOpen, setIsBoardModalOpen] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [serialMessages, setSerialMessages] = useState<string[]>([]);
-    const [serialInput, setSerialInput] = useState<string>('');
+    const [baudRate, setBaudRate] = useState<number>(9600);
+    const [lineEnding, setLineEnding] = useState<string>('\r\n');
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<string>('');
+
+    // Stage enhancements state
+    const [isCameraOn, setIsCameraOn] = useState(false);
+    const [showGrid, setShowGrid] = useState(false);
+    const [isDraggingSprite, setIsDraggingSprite] = useState(false);
+    const [stageLayout, setStageLayout] = useState<'normal' | 'small' | 'large'>('normal');
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Backdrop state
+    const [showBackdropLibrary, setShowBackdropLibrary] = useState(false);
+    const [showBackdropEditor, setShowBackdropEditor] = useState(false);
+    const [, setBackdropRefresh] = useState(0); // Force re-render on backdrop change
 
     // Force re-render for sprite updates
     const [, forceUpdate] = useState({});
@@ -89,6 +122,14 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // ═══════════════════════════════════════════════════════════════════════
     // HELPERS
     // ═══════════════════════════════════════════════════════════════════════
+    const handleBackdropSelect = async (name: string, src: string) => {
+        await stageManager.addBackdrop(name, src);
+        stageManager.setBackdrop(name); // Force the stage to switch to this backdrop
+        setShowBackdropLibrary(false);
+        setBackdropRefresh(prev => prev + 1);
+        window.dispatchEvent(new Event('leap-stage-update')); // Ensure canvas repaints
+    };
+
     const [promptState, setPromptState] = useState<{
         isOpen: boolean;
         message: string;
@@ -160,8 +201,9 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, []);
 
     const getCurrentToolbox = useCallback(() => {
-        return editorMode === 'stage' ? animationToolbox : arduinoToolbox;
-    }, [editorMode]);
+        if (editorMode === 'stage') return animationToolbox;
+        return selectedBoard === 'esp32' ? esp32Toolbox : arduinoToolbox;
+    }, [editorMode, selectedBoard]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // WORKSPACE CHANGE HANDLER
@@ -208,6 +250,127 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
     }, [editorMode, appMode, sprites, selectedSpriteId]);
 
+    /**
+     * Handle real-time hardware interaction when a block is clicked or changed
+     */
+    const handleBlockInteraction = useCallback(async (event: Blockly.Events.Abstract) => {
+        if (!workspaceRef.current || editorMode !== 'stage' || !isConnected) return;
+
+        // We only care about clicks or UI changes that represent immediate intent
+        if (event.type !== Blockly.Events.CLICK && event.type !== Blockly.Events.BLOCK_CHANGE) return;
+
+        const blockId = (event as any).blockId;
+        const block = workspaceRef.current.getBlockById(blockId);
+        if (!block || !block.type.startsWith('arduino_')) return;
+
+        // If clicking a setup or loop block, trigger the flag scripts (which include arduino_setup)
+        if (event.type === Blockly.Events.CLICK && (block.type === 'arduino_setup' || block.type === 'arduino_loop')) {
+            console.log('[APP] Starting Arduino scripts from block click');
+            setIsRunning(true);
+            animationVM.triggerFlag(compiledScripts);
+            addLog('Started Arduino script');
+            return;
+        }
+
+        if (event.type === Blockly.Events.BLOCK_CHANGE) {
+            // "make them serial monitor visible when user drag blocks in the workspace"
+            // If they interact with the workspace and add blocks, especially serial ones, switch tab
+            if (activeTab !== 'serial') {
+                setActiveTab('serial');
+            }
+        }
+
+        log.app('Real-time interaction', { type: block.type, event: event.type });
+
+
+        try {
+            switch (block.type) {
+                case 'arduino_digital_write': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const val = block.getFieldValue('VALUE') === 'HIGH';
+                    await hardwareAdapter.setDigitalPin(pin, val);
+                    break;
+                }
+                case 'arduino_analog_write': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const val = parseInt(block.getFieldValue('VALUE'), 10);
+                    await hardwareAdapter.setPWM(pin, val);
+                    break;
+                }
+                case 'arduino_led': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const val = parseInt(block.getFieldValue('BRIGHTNESS'), 10);
+                    await hardwareAdapter.setPWM(pin, val);
+                    break;
+                }
+                case 'arduino_servo': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const angle = parseInt(block.getFieldValue('ANGLE'), 10);
+                    await hardwareAdapter.setServo(pin, angle);
+                    break;
+                }
+                case 'arduino_tone': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const freq = parseInt(block.getFieldValue('FREQ'), 10);
+                    await hardwareAdapter.playTone(pin, freq, 500); // 500ms default for preview
+                    break;
+                }
+                case 'arduino_notone': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    await hardwareAdapter.stopTone(pin);
+                    break;
+                }
+                case 'arduino_relay': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const state = block.getFieldValue('STATE') === 'HIGH';
+                    await hardwareAdapter.setDigitalPin(pin, state);
+                    break;
+                }
+                case 'arduino_motor': {
+                    const motor = block.getFieldValue('MOTOR'); // 'A' or 'B'
+                    const motorId = motor === 'A' ? 1 : 2;
+                    const dir = block.getFieldValue('DIR');
+                    const speedVal = parseInt(block.getFieldValue('SPEED'), 10);
+
+                    let speed = 0;
+                    if (dir === 'forward') speed = speedVal;
+                    else if (dir === 'backward') speed = -speedVal;
+
+                    await hardwareAdapter.setMotor(motorId, speed);
+                    break;
+                }
+                case 'arduino_analog_read': {
+                    const pin = block.getFieldValue('PIN');
+                    const val = await hardwareAdapter.readAnalogPin(pin);
+                    addLog(`[Hardware] Read Analog ${pin}: ${val}`);
+                    break;
+                }
+                case 'arduino_digital_read': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const val = await hardwareAdapter.readDigitalPin(pin);
+                    addLog(`[Hardware] Read Digital ${pin}: ${val ? 'HIGH' : 'LOW'}`);
+                    break;
+                }
+                case 'arduino_button': {
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const val = await hardwareAdapter.readDigitalPin(pin);
+                    addLog(`[Hardware] Button on ${pin}: ${val ? 'Pressed' : 'Released'}`);
+                    break;
+                }
+                case 'arduino_digital_sensor': {
+                    const sensor = block.getFieldValue('SENSOR');
+                    const pin = parseInt(block.getFieldValue('PIN'), 10);
+                    const val = await hardwareAdapter.readDigitalPin(pin);
+                    const status = (sensor === 'IR' ? !val : val) ? 'Detected' : 'Not Detected';
+                    addLog(`[Hardware] ${sensor} Sensor on ${pin}: ${status} (Raw: ${val ? 'HIGH' : 'LOW'})`);
+                    break;
+                }
+            }
+        } catch (err) {
+            log.app('Interaction error', err);
+        }
+    }, [editorMode, isConnected]);
+
     // ═══════════════════════════════════════════════════════════════════════
     // MODE SWITCHING
     // ═══════════════════════════════════════════════════════════════════════
@@ -215,6 +378,8 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         if (newMode === editorMode) return;
 
         setEditorMode(newMode);
+        //open flyout
+
         addLog(`Switched to ${newMode === 'stage' ? 'Stage' : 'Upload'} Mode`);
 
         // Note: The workspace injection will be handled by the useEffect dependent on editorMode
@@ -274,6 +439,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const handleStopClick = useCallback(() => {
         setIsRunning(false);
         animationVM.stopAll();
+        hardwareAdapter.stopAllPolling();
         addLog('Stopped animation');
     }, [addLog]);
 
@@ -284,15 +450,54 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         try {
             const portList = await window.electronAPI.getPorts();
             setPorts(portList);
-            addLog(`Found ${portList.length} port(s)`);
+            if (portList.length === 0) {
+                // Only log if manual refresh was clicked, or be subtle? 
+                // We'll keep it simple for now. The UI says "Searching..."
+            }
         } catch (e) {
             addLog('Failed to scan ports');
         }
     }, [addLog]);
 
+    // Auto-refresh ports every 5 seconds when in upload mode and no port is selected
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (editorMode === 'upload' && !selectedPort && !isConnected) {
+            timer = setInterval(() => {
+                window.electronAPI.getPorts().then(portList => {
+                    setPorts(portList);
+                }).catch(() => { });
+            }, 5000);
+        }
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [editorMode, selectedPort, isConnected]);
+
+    // Auto-reconnect when baud rate changes while connected
+    useEffect(() => {
+        if (isConnected && selectedPort) {
+            log.app(`Baud rate changed to ${baudRate}, reconnecting...`);
+            const timer = setTimeout(() => {
+                handleConnect(); // Disconnect
+                setTimeout(() => {
+                    handleConnect(); // Reconnect with new baud
+                }, 500);
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+        // We only want to trigger this when baudRate specifically changes while connected
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [baudRate]);
+
+
     const handleConnect = useCallback(async () => {
         if (!selectedPort) {
             addLog('Select a port first');
+            return;
+        }
+        if (selectedPort === 'BRIDGE_DETECTED') {
+            addLog('⚠ Device detected but no COM port assigned. Please install drivers or try a different USB cable.');
             return;
         }
         try {
@@ -303,7 +508,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     addLog(`Disconnected from ${selectedPort}`);
                 }
             } else {
-                const result = await window.electronAPI.connectPort(selectedPort, 115200);
+                const result = await window.electronAPI.connectPort(selectedPort, baudRate, selectedBoard);
                 if (result.success) {
                     setIsConnected(true);
                     addLog(`Connected to ${selectedPort}`);
@@ -314,39 +519,94 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         } catch (e) {
             addLog('Connection error');
         }
-    }, [selectedPort, isConnected, addLog]);
+    }, [selectedPort, isConnected, baudRate, addLog]);
 
-    const handleSendSerial = useCallback(async () => {
-        if (!serialInput.trim() || !isConnected) return;
+    const handleSendSerial = useCallback(async (data: string) => {
+        if (!isConnected) return;
         try {
-            await window.electronAPI.sendSerial(serialInput + '\n');
-            setSerialMessages(prev => [...prev.slice(-100), `> ${serialInput}`]);
-            setSerialInput('');
+            await window.electronAPI.sendSerial(data);
+            setSerialMessages(prev => [...prev.slice(-100), `> ${data.trim()}`]);
         } catch (e) {
             addLog('Failed to send');
         }
-    }, [serialInput, isConnected, addLog]);
+    }, [isConnected, addLog]);
 
     const handleUpload = useCallback(async () => {
         if (!generatedCode || isUploading) return;
+
+        if (!selectedPort) {
+            addLog('No port selected! Please connect your board and select a COM port first.');
+            setUploadProgress('No port selected');
+            return;
+        }
+
+        // Clear old serial data before new upload
+        setSerialMessages([]);
+
+        // Auto-disconnect if serial is connected to release the port
+        if (isConnected) {
+            addLog('Disconnecting serial for upload...');
+            await window.electronAPI.disconnectPort();
+            setIsConnected(false);
+
+            // Critical delay: Windows needs time to physically release the COM port 
+            // before avrdude sweeps it for compiling/uploading to prevent getsync() errors.
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+
         setIsUploading(true);
         setUploadProgress('Uploading...');
         addLog('Starting upload...');
+
+        // Map board ID to FQBN
+        const fqbnMap: Record<string, string> = {
+            'arduino_uno': 'arduino:avr:uno',
+            'arduino_mega': 'arduino:avr:mega',
+            'arduino_nano': 'arduino:avr:nano',
+            'esp32': 'esp32:esp32:esp32', // Generic ESP32 dev board (NodeMCU, DOIT, etc.)
+        };
+        const fqbn = fqbnMap[selectedBoard] || 'arduino:avr:uno';
+
         try {
-            const result = await window.electronAPI.uploadCode(generatedCode, selectedPort || undefined);
+            const result = await window.electronAPI.uploadCode(generatedCode, selectedPort, fqbn);
             if (result.success) {
                 addLog('Upload complete!');
                 setUploadProgress('Upload complete!');
+
+                // Always auto-connect serial after successful upload to show sensor data
+                if (selectedPort) {
+                    addLog('Connecting serial monitor...');
+                    setActiveTab('serial'); // Auto-switch to serial monitor tab
+                    setTimeout(async () => {
+                        try {
+                            const reconnectResult = await window.electronAPI.connectPort(selectedPort, baudRate, selectedBoard);
+                            if (reconnectResult.success) {
+                                setIsConnected(true);
+                                addLog('Serial monitor connected — showing live data');
+                            }
+                        } catch (reconnectErr) {
+                            console.error('Auto-reconnect failed:', reconnectErr);
+                        }
+                        setIsUploading(false); // Close modal AFTER reconnect attempt
+                    }, 2000); // 2s delay to allow board to initialize after upload
+                } else {
+                    setIsUploading(false);
+                }
             } else {
-                addLog(`Upload failed: ${result.error}`);
-                setUploadProgress(`Failed: ${result.error}`);
+                let errorMsg = result.error || 'Unknown error occurred';
+                if (errorMsg.includes('busy') || errorMsg.includes('Access is denied')) {
+                    errorMsg += "\nTIP: Close any other serial monitors or wait 2 seconds and try again.";
+                }
+                addLog(`Upload failed: ${errorMsg}`);
+                setUploadProgress(`Failed: ${errorMsg}`);
+                setIsUploading(false);
             }
         } catch (e) {
             addLog('Upload error');
             setUploadProgress('Upload error');
+            setIsUploading(false);
         }
-        setIsUploading(false);
-    }, [generatedCode, isUploading, addLog, selectedPort]);
+    }, [generatedCode, isUploading, addLog, selectedPort, selectedBoard, isConnected, baudRate]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // INITIALIZATION
@@ -356,7 +616,18 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     useEffect(() => {
         if (editorMode === 'stage' && sprites.length === 0) {
             console.log('[APP] Creating default sprite...');
-            const defaultSprite = new Sprite('sprite_default', 'Cat', triggerUpdate);
+            const defaultSprite = new Sprite('sprite_default', 'Robot', triggerUpdate, 'robot');
+
+            // Add robot costumes
+            const loadCostumes = async () => {
+                await defaultSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
+                await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/robot_wave1.svg');
+                await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/robot_wave2.svg');
+                await defaultSprite.addCostume('talk', '/assets/sprites/robot/robot_talk1.svg');
+                triggerUpdate();
+            };
+            loadCostumes().catch(err => console.error('[APP] Failed to initialize costumes:', err));
+
             animationVM.registerSprite(defaultSprite);
             setSprites([defaultSprite]);
             setSelectedSpriteId('sprite_default');
@@ -375,9 +646,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 zoom: { controls: true, wheel: true, startScale: 0.9, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
                 trashcan: true,
                 sounds: false,
+                renderer: 'zelos',
                 theme: Blockly.Theme.defineTheme('leapblocks', {
                     name: 'leapblocks',
-                    base: 'classic',
+                    base: Blockly.Themes.Zelos,
                     componentStyles: {
                         workspaceBackgroundColour: '#f9f9f9',
                         toolboxBackgroundColour: '#ffffff',
@@ -390,9 +662,50 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         insertionMarkerOpacity: 0.3,
                         scrollbarOpacity: 0.4,
                         cursorColour: '#d0d0d0',
+
+
                     },
                 }),
             });
+
+            const flyout = workspaceRef.current.getFlyout();
+            if (flyout) {
+                flyout.autoClose = false;
+            }
+
+            // ZOOM & TOOLBOX FIX: Lock flyout scale so it never changes with workspace zoom.
+            // ROOT CAUSE: Blockly's reflowInternal_() directly sets:
+            //   this.workspace_.scale = this.getFlyoutScale()
+            // And getFlyoutScale() by default returns this.targetWorkspace.scale (the zoomed scale).
+            // By overriding getFlyoutScale() we intercept ALL scale sync paths.
+            const initialWs = workspaceRef.current;
+            if (initialWs) {
+                const flyout = initialWs.getFlyout() as any;
+                if (flyout) {
+                    const FIXED_SCALE = 0.9;
+                    flyout.getFlyoutScale = () => FIXED_SCALE;
+                    // Also immediately apply the fixed scale
+                    if (flyout.getWorkspace()) {
+                        flyout.getWorkspace().setScale(FIXED_SCALE);
+                    }
+                }
+            }
+
+            // Dynamic Dropdown Colors: Update highlight and background color based on block color
+            if (!(Blockly.FieldDropdown.prototype as any)._originalShowEditor) {
+                (Blockly.FieldDropdown.prototype as any)._originalShowEditor = (Blockly.FieldDropdown.prototype as any).showEditor_;
+                (Blockly.FieldDropdown.prototype as any).showEditor_ = function (this: Blockly.FieldDropdown, opt_e: any) {
+                    const block = this.getSourceBlock();
+                    if (block) {
+                        const color = block.getColour();
+                        document.documentElement.style.setProperty('--blockly-menu-highlight-color', color);
+                        // Add a subtle tint for the background (10% opacity)
+                        const tint = color.startsWith('#') ? `${color}1A` : 'rgba(0,0,0,0.05)';
+                        document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
+                    }
+                    (this as any)._originalShowEditor(opt_e);
+                };
+            }
 
             addLog('Blockly workspace initialized');
         }
@@ -443,13 +756,16 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             workspaceRef.current.removeChangeListener(handleWorkspaceChange);
             workspaceRef.current.addChangeListener(handleWorkspaceChange);
 
+            workspaceRef.current.removeChangeListener(handleBlockInteraction);
+            workspaceRef.current.addChangeListener(handleBlockInteraction);
+
             // Trigger an initial recompile with the current workspace state
             if (sprites.length > 0 && selectedSpriteId) {
                 console.log('[APP] Sprites/selection changed, triggering recompile...');
                 handleWorkspaceChange({ isUiEvent: false } as Blockly.Events.Abstract);
             }
         }
-    }, [sprites, selectedSpriteId, handleWorkspaceChange]);
+    }, [sprites, selectedSpriteId, handleWorkspaceChange, handleBlockInteraction]);
 
     // Reinitialize workspace when appMode changes (e.g., from home to blocks/junior)
     // This ensures the correct toolbox is shown
@@ -468,15 +784,16 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const timer = setTimeout(() => {
                 if (blocklyDiv.current) {
                     // Inject Blockly
-                    workspaceRef.current = Blockly.inject(blocklyDiv.current, {
+                    const blocksWorkspace = Blockly.inject(blocklyDiv.current, {
                         toolbox: getCurrentToolbox(),
                         grid: { spacing: 20, length: 3, colour: '#e8e8e8', snap: true },
                         zoom: { controls: true, wheel: true, startScale: 0.9, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
                         trashcan: true,
                         sounds: false,
+                        renderer: 'zelos',
                         theme: Blockly.Theme.defineTheme('leapblocks', {
                             name: 'leapblocks',
-                            base: 'classic',
+                            base: Blockly.Themes.Zelos,
                             componentStyles: {
                                 workspaceBackgroundColour: '#f9f9f9',
                                 toolboxBackgroundColour: '#ffffff',
@@ -485,7 +802,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 flyoutForegroundColour: '#575E75',
                                 flyoutOpacity: 1,
                                 scrollbarColour: '#ccc',
-                                insertionMarkerColour: '#000',
+                                insertionMarkerColour: '#4C97FF',
                                 insertionMarkerOpacity: 0.3,
                                 scrollbarOpacity: 0.4,
                                 cursorColour: '#d0d0d0',
@@ -493,17 +810,41 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         }),
                     });
 
-                    const workspace = workspaceRef.current; // Alias for clarity
+                    workspaceRef.current = blocksWorkspace;
+
+                    // ZOOM & TOOLBOX FIX: Lock flyout scale permanently.
+                    // Override getFlyoutScale() — this is what Blockly's reflowInternal_() reads.
+                    if (blocksWorkspace) {
+                        const flyout = blocksWorkspace.getFlyout() as any;
+                        if (flyout) {
+                            flyout.autoClose = false;
+                            const FIXED_SCALE = 0.9;
+                            flyout.getFlyoutScale = () => FIXED_SCALE;
+                            if (flyout.getWorkspace()) {
+                                flyout.getWorkspace().setScale(FIXED_SCALE);
+                            }
+                        }
+                    }
+
+                    // Auto-open toolbox on load/mode switch
+                    setTimeout(() => {
+                        if (workspaceRef.current) {
+                            const toolbox = workspaceRef.current.getToolbox();
+                            if (toolbox) {
+                                toolbox.selectItemByPosition(0);
+                            }
+                        }
+                    }, 50);
 
                     // Register custom variable category callback
-                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_VARIABLES', (workspace: any) => {
+                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_VARIABLES', (ws: any) => {
                         const xmlList: Element[] = [];
                         const btn = document.createElement('button');
                         btn.setAttribute('text', 'Make a Variable');
                         btn.setAttribute('callbackKey', 'CREATE_VARIABLE');
                         xmlList.push(btn); // Standard vars button
 
-                        const allVars = workspace.getAllVariables() || [];
+                        const allVars = ws.getAllVariables() || [];
                         const scalars = allVars.filter((v: any) => v.type === '' || v.type === 'Number' || v.type === 'String');
                         const lists = allVars.filter((v: any) => v.type === 'list'); // Filter by 'list' type
 
@@ -517,12 +858,14 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 const field = document.createElement('field');
                                 field.setAttribute('name', 'VAR');
                                 field.setAttribute('id', v.getId());
+                                field.setAttribute('variabletype', v.type);
                                 field.textContent = v.name;
                                 block.appendChild(field);
                                 xmlList.push(block);
                             });
 
                             const blockTypes = [
+                                'variables_set_intermediate',
                                 'data_setvariableto',
                                 'data_changevariableby',
                                 'data_showvariable',
@@ -536,14 +879,15 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     const field = document.createElement('field');
                                     field.setAttribute('name', 'VARIABLE');
                                     field.setAttribute('id', defaultVar.getId());
+                                    field.setAttribute('variabletype', defaultVar.type);
                                     field.textContent = defaultVar.name;
                                     block.appendChild(field);
                                 }
-                                if (type === 'data_setvariableto' || type === 'data_changevariableby') {
+                                if (type === 'variables_set_intermediate' || type === 'data_setvariableto' || type === 'data_changevariableby') {
                                     const value = document.createElement('value');
                                     value.setAttribute('name', 'VALUE');
                                     const shadow = document.createElement('shadow');
-                                    shadow.setAttribute('type', 'math_number');
+                                    shadow.setAttribute('type', 'arduino_number');
                                     const field = document.createElement('field');
                                     field.setAttribute('name', 'NUM');
                                     field.textContent = type === 'data_changevariableby' ? '1' : '0';
@@ -597,6 +941,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     const field = document.createElement('field');
                                     field.setAttribute('name', 'LIST');
                                     field.setAttribute('id', defaultList.getId());
+                                    field.setAttribute('variabletype', 'list');
                                     field.textContent = defaultList.name;
                                     block.appendChild(field);
                                 }
@@ -621,7 +966,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             type: 'variable',
                         });
                         setPromptInput('');
-                        setVariableType('Number');
+                        setVariableType('');
                         setVariableScope('global');
                     }));
 
@@ -694,104 +1039,27 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // Main Block Editor UI
     return (
         <div style={styles.container}>
-            {/* Home Button */}
-            {/* Home Button */}
-            <div style={{ padding: '0 16px', display: 'flex', alignItems: 'center' }}>
-                <button
-                    onClick={onBack}
-                    style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#6C4BB4',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontWeight: 'bold'
-                    }}
-                >
-                    🏠 Home
-                </button>
-            </div>
-
-
-            {/* Header */}
-            <header style={styles.header}>
-                <div style={styles.headerLeft}>
-                    <span style={styles.logo}>
-                        🔌 LeapBlocks
-                    </span>
-                    <nav style={styles.nav}>
-                        <span style={styles.navItem}>File</span>
-                        <span style={styles.navItem}>Edit</span>
-                        <span style={styles.navItem}>Tutorials</span>
-                        {editorMode === 'upload' && <span style={styles.navItem}>Board</span>}
-                    </nav>
-                    <div style={styles.projectName}>
-                        <span>📁</span>
-                        <input type="text" defaultValue="My Project" style={styles.projectInput} />
-                    </div>
-                </div>
-                <div style={styles.headerRight}>
-                    {/* Mode Toggle - Only show for regular blocks mode */}
-                    {appMode === 'blocks' && (
-                        <>
-                            <button
-                                style={editorMode === 'stage' ? styles.modeButtonActive : styles.modeButton}
-                                onClick={() => switchEditorMode('stage')}
-                            >
-                                🎭 Stage
-                            </button>
-                            <button
-                                style={editorMode === 'upload' ? styles.modeButtonActive : styles.modeButton}
-                                onClick={() => switchEditorMode('upload')}
-                            >
-                                ⬆️ Upload
-                            </button>
-                        </>
-                    )}
-
-                    {/* Hardware controls - available in both modes */}
-                    <div style={styles.headerDivider} />
-                    <button
-                        style={styles.refreshButton}
-                        onClick={refreshPorts}
-                        title="Refresh ports"
-                    >
-                        🔄
-                    </button>
-                    <select
-                        style={styles.portSelect}
-                        value={selectedPort}
-                        onChange={(e) => setSelectedPort(e.target.value)}
-                    >
-                        <option value="">Select Port</option>
-                        {ports.map(p => (
-                            <option key={p.path} value={p.path}>
-                                {p.path}{p.manufacturer ? ` (${p.manufacturer})` : ''}
-                            </option>
-                        ))}
-                    </select>
-                    <button
-                        style={isConnected ? styles.connectedButton : styles.connectButton}
-                        onClick={handleConnect}
-                    >
-                        {isConnected ? '🔗 Connected' : '🔌 Connect'}
-                    </button>
-
-                    {/* Upload button - only in Upload mode */}
-                    {editorMode === 'upload' && (
-                        <button
-                            style={isUploading ? styles.uploadButtonDisabled : styles.uploadButton}
-                            onClick={handleUpload}
-                            disabled={isUploading}
-                        >
-                            {isUploading ? '⏳ Uploading...' : '📤 Upload'}
-                        </button>
-                    )}
-
-                    <span style={styles.headerIcon}>⚙️</span>
-                </div>
-            </header>
+            {/* Premium Menu Bar */}
+            <MenuBar
+                onBack={onBack}
+                projectName={projectName}
+                onProjectNameChange={setProjectName}
+                mode={editorMode}
+                onModeChange={(m: string) => switchEditorMode(m as EditorMode)}
+                selectedBoard={selectedBoardName}
+                onBoardSelect={() => setIsBoardModalOpen(true)}
+                connectionStatus={isConnected ? "connected" : "disconnected"}
+                onConnect={handleConnect}
+                // @ts-ignore
+                ports={ports as any}
+                selectedPort={selectedPort}
+                onPortSelect={setSelectedPort}
+                onRefreshPorts={refreshPorts}
+                onUpload={handleUpload}
+                isUploading={isUploading}
+                onFileAction={(action: string) => addLog(`File action: ${action}`)}
+                onEditAction={(action: string) => addLog(`Edit action: ${action}`)}
+            />
 
             {/* Main Content */}
             <div style={styles.main}>
@@ -800,30 +1068,32 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     {/* PictoBlox-style tabs - ONLY in Stage Mode */}
                     {appMode === 'blocks' && editorMode === 'stage' && (
                         <div style={styles.tabBar}>
-                            <button
-                                style={workspaceTab === 'blocks' ? styles.tabActive : styles.tab}
-                                onClick={() => setWorkspaceTab('blocks')}
-                            >
-                                🧩 Blocks
-                            </button>
-                            <button
-                                style={workspaceTab === 'python' ? styles.tabActive : styles.tab}
-                                onClick={() => setWorkspaceTab('python')}
-                            >
-                                🐍 Python
-                            </button>
-                            <button
-                                style={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
-                                onClick={() => setWorkspaceTab('costumes')}
-                            >
-                                🎨 Costumes
-                            </button>
-                            <button
-                                style={workspaceTab === 'sounds' ? styles.tabActive : styles.tab}
-                                onClick={() => setWorkspaceTab('sounds')}
-                            >
-                                🔊 Sounds
-                            </button>
+                            <div style={{ display: 'flex', height: '100%' }}>
+                                <button
+                                    style={workspaceTab === 'blocks' ? styles.tabActive : styles.tab}
+                                    onClick={() => setWorkspaceTab('blocks')}
+                                >
+                                    🧩 Blocks
+                                </button>
+                                <button
+                                    style={workspaceTab === 'python' ? styles.tabActive : styles.tab}
+                                    onClick={() => setWorkspaceTab('python')}
+                                >
+                                    🐍 Python
+                                </button>
+                                <button
+                                    style={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
+                                    onClick={() => setWorkspaceTab('costumes')}
+                                >
+                                    🎨 Costumes
+                                </button>
+                                <button
+                                    style={workspaceTab === 'sounds' ? styles.tabActive : styles.tab}
+                                    onClick={() => setWorkspaceTab('sounds')}
+                                >
+                                    🔊 Sounds
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -833,7 +1103,45 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         2. In Upload mode (always shows blocks)
                     */}
                     {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
-                        <div ref={blocklyDiv} style={styles.blockly} />
+                        <>
+                            {/* Selected Sprite Indicator overlay */}
+                            {editorMode === 'stage' && (
+                                (() => {
+                                    const activeSprite = sprites.find(s => s.id === selectedSpriteId);
+                                    if (activeSprite && activeSprite.currentCostume) {
+                                        return (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '16px',
+                                                right: '16px',
+                                                width: '60px',
+                                                height: '60px',
+                                                background: 'white',
+                                                borderRadius: '8px',
+                                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                                border: '2px solid #855CD6',
+                                                pointerEvents: 'none',
+                                                zIndex: 10,
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                padding: '6px',
+                                            }}>
+                                                <img
+                                                    src={activeSprite.currentCostume.image.src}
+                                                    alt={activeSprite.name}
+                                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                                />
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()
+                            )}
+                            <div ref={blocklyDiv} style={styles.blockly} />
+                            <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={undefined} style={undefined} />
+                            <WorkspaceTrash workspaceRef={workspaceRef} />
+                        </>
                     )}
 
                     {/* Other Tabs - Only relevant in Stage Mode */}
@@ -848,11 +1156,37 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     )}
                     {editorMode === 'stage' && workspaceTab === 'costumes' && (
                         <div style={styles.costumesEditor}>
-                            <div style={styles.costumePlaceholder}>
-                                <span style={{ fontSize: '48px' }}>🎨</span>
-                                <h3>Costumes Editor</h3>
-                                <p>Coming soon! Draw and edit sprite costumes.</p>
-                            </div>
+                            {(() => {
+                                const selectedSprite = sprites.find(s => s.id === selectedSpriteId);
+                                if (selectedSprite) {
+                                    return (
+                                        <PaintEditor
+                                            mode="intermediate"
+                                            spriteName={selectedSprite.name}
+                                            initialImage={selectedSprite.currentCostume?.image.src || ''}
+                                            costumes={selectedSprite.costumes.map((c, i) => ({
+                                                id: i.toString(),
+                                                name: c.name,
+                                                image: c.image.src
+                                            }))}
+                                            onSave={async (imageData: string, svgData?: string) => {
+                                                const savedData = svgData || imageData;
+                                                await selectedSprite.addCostume('custom', savedData);
+                                                selectedSprite.switchCostume('custom');
+                                                addLog(`Saved costume for ${selectedSprite.name}`);
+                                            }}
+                                            onClose={() => setWorkspaceTab('blocks')}
+                                        />
+                                    );
+                                }
+                                return (
+                                    <div style={styles.costumePlaceholder}>
+                                        <span style={{ fontSize: '48px' }}>🎨</span>
+                                        <h3>No Sprite Selected</h3>
+                                        <p>Select a sprite from the panel to edit its costumes.</p>
+                                    </div>
+                                );
+                            })()}
                         </div>
                     )}
                     {editorMode === 'stage' && workspaceTab === 'sounds' && (
@@ -871,42 +1205,108 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     {editorMode === 'stage' ? (
                         <>
                             {/* Stage */}
+                            {/* Stage */}
                             <div style={styles.stageContainer}>
-                                <div style={styles.stageHeader}>
-                                    <span>🎬 Stage</span>
-                                    <div>
+                                <div style={styles.iconBar}>
+                                    <div style={styles.actionButtons}>
                                         <button
-                                            style={styles.flagButton}
+                                            style={styles.runButtonTop}
                                             onClick={handleRunClick}
                                             title="Run"
                                         >
-                                            🏳️▶
+                                            <Flag size={22} fill="white" stroke="white" />
                                         </button>
                                         <button
-                                            style={styles.stopButtonSmall}
+                                            style={styles.stopButtonTop}
                                             onClick={handleStopClick}
                                             title="Stop"
                                         >
-                                            🛑
+                                            <Square size={20} fill="white" stroke="white" />
+                                        </button>
+                                    </div>
+
+                                    <div style={styles.layoutButtons}>
+                                        <button
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '6px',
+                                                background: 'white', color: '#575E75', border: '1px solid #D9D9D9',
+                                                padding: '6px 12px', borderRadius: '4px', cursor: 'pointer',
+                                                fontWeight: '600', fontSize: '12px', marginRight: '8px'
+                                            }}
+                                            onClick={() => alert("Upload Firmware (Coming Soon)")}
+                                            title="Upload Firmware"
+                                        >
+                                            <Upload size={16} color="#855CD6" /> Upload Firmware
+                                        </button>
+
+                                        <div style={{ width: '1px', height: '24px', background: '#d9d9d9', margin: '0 4px' }} />
+
+                                        <button
+                                            style={{ ...styles.iconBtn, ...(isCameraOn ? styles.iconBtnActive : {}) }}
+                                            onClick={() => setIsCameraOn(!isCameraOn)}
+                                            title="Toggle Camera"
+                                        >
+                                            {isCameraOn ? <Camera size={20} /> : <CameraOff size={20} />}
+                                        </button>
+
+                                        <button
+                                            style={{ ...styles.iconBtn, ...(showGrid ? styles.iconBtnActive : {}) }}
+                                            onClick={() => setShowGrid(!showGrid)}
+                                            title="Toggle Grid"
+                                        >
+                                            <Grid3X3 size={20} />
+                                        </button>
+
+                                        <button
+                                            style={{ ...styles.iconBtn, ...(stageLayout === 'small' ? styles.iconBtnActive : {}) }}
+                                            onClick={() => setStageLayout('small')}
+                                            title="Small Stage"
+                                        >
+                                            <LayoutTemplate size={20} />
+                                        </button>
+                                        <button
+                                            style={{ ...styles.iconBtn, ...(stageLayout === 'large' ? styles.iconBtnActive : {}) }}
+                                            onClick={() => setStageLayout('large')}
+                                            title="Large Stage"
+                                        >
+                                            <LayoutPanelLeft size={20} />
+                                        </button>
+
+                                        <button
+                                            style={{ ...styles.iconBtn, ...(isFullscreen ? styles.iconBtnActive : {}) }}
+                                            onClick={() => setIsFullscreen(!isFullscreen)}
+                                            title="Fullscreen"
+                                        >
+                                            {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
                                         </button>
                                     </div>
                                 </div>
+
                                 <Stage
-                                    width={320}
-                                    height={240}
+                                    width={480}
+                                    height={360}
                                     sprites={sprites}
                                     isRunning={isRunning}
+                                    showGridNumbers={showGrid}
+                                    onSpriteSelect={setSelectedSpriteId}
+                                    isCameraOn={isCameraOn}
                                 />
                             </div>
 
-                            {/* Sprite Panel */}
-                            <SpritePanel
-                                sprites={sprites}
-                                selectedSpriteId={selectedSpriteId}
-                                onSelectSprite={setSelectedSpriteId}
-                                onAddSprite={addSprite}
-                                onDeleteSprite={deleteSprite}
-                            />
+                            {/* Sprite & Stage Panels */}
+                            <div style={styles.assetsContainer}>
+                                <SpritePanel
+                                    sprites={sprites}
+                                    selectedSpriteId={selectedSpriteId}
+                                    onSelectSprite={setSelectedSpriteId}
+                                    onAddSprite={addSprite}
+                                    onDeleteSprite={deleteSprite}
+                                />
+                                <StagePanel
+                                    onOpenLibrary={() => setShowBackdropLibrary(true)}
+                                    onOpenEditor={() => setShowBackdropEditor(true)}
+                                />
+                            </div>
                         </>
                     ) : (
                         <>
@@ -928,158 +1328,178 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         </>
                     )}
 
-                    {/* Bottom tabs */}
-                    <div style={styles.bottomTabs}>
-                        <button
-                            style={activeTab === 'log' ? styles.bottomTabActive : styles.bottomTab}
-                            onClick={() => setActiveTab('log')}
-                        >⏩ Log</button>
-                        <button
-                            style={activeTab === 'serial' ? styles.bottomTabActive : styles.bottomTab}
-                            onClick={() => setActiveTab('serial')}
-                        >📟 Serial</button>
-                    </div>
-                    <div style={styles.logArea}>
-                        {activeTab === 'log' ? (
-                            logMessages.map((msg, i) => <div key={i} style={styles.logLine}>{msg}</div>)
-                        ) : (
-                            <div style={styles.serialContainer}>
-                                <div style={styles.serialMessages}>
-                                    {serialMessages.length > 0 ? (
-                                        serialMessages.map((msg, i) => (
-                                            <div key={i} style={styles.serialLine}>{msg}</div>
-                                        ))
-                                    ) : (
-                                        <div style={styles.serialPlaceholder}>
-                                            {isConnected ? 'Waiting for data...' : 'Connect to a device to see serial data'}
-                                        </div>
-                                    )}
-                                </div>
-                                <div style={styles.serialInputRow}>
-                                    <input
-                                        type="text"
-                                        value={serialInput}
-                                        onChange={(e) => setSerialInput(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSendSerial()}
-                                        placeholder="Send data..."
-                                        style={styles.serialInput}
-                                        disabled={!isConnected}
-                                    />
-                                    <button
-                                        style={styles.sendButton}
-                                        onClick={handleSendSerial}
-                                        disabled={!isConnected}
-                                    >
-                                        Send
-                                    </button>
-                                </div>
+                    {/* Bottom tabs - Only visible in Upload mode */}
+                    {editorMode !== 'stage' && (
+                        <>
+                            <div style={styles.bottomTabs}>
+                                <button
+                                    style={activeTab === 'log' ? styles.bottomTabActive : styles.bottomTab}
+                                    onClick={() => setActiveTab('log')}
+                                >⏩ Log</button>
+                                <button
+                                    style={activeTab === 'serial' ? styles.bottomTabActive : styles.bottomTab}
+                                    onClick={() => setActiveTab('serial')}
+                                >📟 Serial Monitor</button>
                             </div>
-                        )}
-                    </div>
+                            <div style={styles.logArea}>
+                                {activeTab === 'log' ? (
+                                    logMessages.map((msg, i) => <div key={i} style={styles.logLine}>{msg}</div>)
+                                ) : (
+                                    <SerialMonitor
+                                        baudRate={baudRate}
+                                        setBaudRate={setBaudRate}
+                                        lineEnding={lineEnding}
+                                        setLineEnding={setLineEnding}
+                                        messages={serialMessages}
+                                        setMessages={setSerialMessages}
+                                        onSendMessage={handleSendSerial}
+                                        isConnected={isConnected}
+                                    />
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
             {/* Custom Prompt Modal */}
-            {promptState.isOpen && (
-                <div style={styles.modalOverlay}>
-                    <div style={styles.modalContent}>
-                        <div style={{ ...styles.modalTitle, backgroundColor: promptState.type === 'variable' ? '#855CD6' : '#855CD6' }}>
-                            {promptState.type === 'variable' ? 'New Variable' : 'Input'}
-                            <div
-                                onClick={handlePromptCancel}
-                                style={{ cursor: 'pointer', float: 'right', fontSize: '20px', fontWeight: 'bold' }}
-                            >×</div>
-                        </div>
+            {
+                promptState.isOpen && (
+                    <div style={styles.modalOverlay}>
+                        <div style={styles.modalContent}>
+                            <div style={{ ...styles.modalTitle, backgroundColor: promptState.type === 'variable' ? '#855CD6' : '#855CD6' }}>
+                                {promptState.type === 'variable' ? 'New Variable' : 'Input'}
+                                <div
+                                    onClick={handlePromptCancel}
+                                    style={{ cursor: 'pointer', float: 'right', fontSize: '20px', fontWeight: 'bold' }}
+                                >×</div>
+                            </div>
 
-                        <div style={{ padding: '20px' }}>
-                            {promptState.type === 'variable' && (
-                                <div style={{ marginBottom: '10px', fontSize: '14px', color: '#575E75' }}>
-                                    New variable name:
-                                </div>
-                            )}
+                            <div style={{ padding: '20px' }}>
+                                {promptState.type === 'variable' && (
+                                    <div style={{ marginBottom: '10px', fontSize: '14px', color: '#575E75' }}>
+                                        New variable name:
+                                    </div>
+                                )}
 
-                            <input
-                                ref={(input) => { if (input) input.focus(); }}
-                                type="text"
-                                value={promptInput}
-                                onChange={(e) => setPromptInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handlePromptSubmit();
-                                    if (e.key === 'Escape') handlePromptCancel();
-                                }}
-                                style={styles.modalInput}
-                            />
+                                <input
+                                    ref={(input) => { if (input) input.focus(); }}
+                                    type="text"
+                                    value={promptInput}
+                                    onChange={(e) => setPromptInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handlePromptSubmit();
+                                        if (e.key === 'Escape') handlePromptCancel();
+                                    }}
+                                    style={styles.modalInput}
+                                />
 
-                            {promptState.type === 'variable' && (
-                                <>
-                                    <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '14px', color: '#575E75' }}>Data Type :</span>
-                                        <div style={{ display: 'flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #ddd' }}>
-                                            <div
-                                                onClick={() => setVariableType('Number')}
-                                                style={{
-                                                    padding: '4px 12px',
-                                                    backgroundColor: variableType === 'Number' ? '#855CD6' : '#eee',
-                                                    color: variableType === 'Number' ? 'white' : '#555',
-                                                    cursor: 'pointer',
-                                                    fontSize: '13px',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >Number</div>
-                                            <div
-                                                onClick={() => setVariableType('String')}
-                                                style={{
-                                                    padding: '4px 12px',
-                                                    backgroundColor: variableType === 'String' ? '#855CD6' : '#eee',
-                                                    color: variableType === 'String' ? 'white' : '#555',
-                                                    cursor: 'pointer',
-                                                    fontSize: '13px',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >String</div>
+                                {promptState.type === 'variable' && (
+                                    <>
+                                        <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '14px', color: '#575E75' }}>Data Type :</span>
+                                            <div style={{ display: 'flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #ddd' }}>
+                                                <div
+                                                    onClick={() => setVariableType('Number')}
+                                                    style={{
+                                                        padding: '4px 12px',
+                                                        backgroundColor: variableType === 'Number' ? '#855CD6' : '#eee',
+                                                        color: variableType === 'Number' ? 'white' : '#555',
+                                                        cursor: 'pointer',
+                                                        fontSize: '13px',
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                >Number</div>
+                                                <div
+                                                    onClick={() => setVariableType('String')}
+                                                    style={{
+                                                        padding: '4px 12px',
+                                                        backgroundColor: variableType === 'String' ? '#855CD6' : '#eee',
+                                                        color: variableType === 'String' ? 'white' : '#555',
+                                                        cursor: 'pointer',
+                                                        fontSize: '13px',
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                >String</div>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div style={{ marginTop: '16px', display: 'flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #ddd' }}>
-                                        <div
-                                            onClick={() => setVariableScope('global')}
-                                            style={{
-                                                flex: 1,
-                                                padding: '8px 12px',
-                                                backgroundColor: variableScope === 'global' ? '#855CD6' : '#eee',
-                                                color: variableScope === 'global' ? 'white' : '#555',
-                                                cursor: 'pointer',
-                                                fontSize: '13px',
-                                                textAlign: 'center',
-                                                fontWeight: 'bold'
-                                            }}
-                                        >For all sprites</div>
-                                        <div
-                                            onClick={() => setVariableScope('local')}
-                                            style={{
-                                                flex: 1,
-                                                padding: '8px 12px',
-                                                backgroundColor: variableScope === 'local' ? '#855CD6' : '#eee',
-                                                color: variableScope === 'local' ? 'white' : '#555',
-                                                cursor: 'pointer',
-                                                fontSize: '13px',
-                                                textAlign: 'center',
-                                                fontWeight: 'bold'
-                                            }}
-                                        >For this sprite only</div>
-                                    </div>
-                                </>
-                            )}
+                                        <div style={{ marginTop: '16px', display: 'flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #ddd' }}>
+                                            <div
+                                                onClick={() => setVariableScope('global')}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '8px 12px',
+                                                    backgroundColor: variableScope === 'global' ? '#855CD6' : '#eee',
+                                                    color: variableScope === 'global' ? 'white' : '#555',
+                                                    cursor: 'pointer',
+                                                    fontSize: '13px',
+                                                    textAlign: 'center',
+                                                    fontWeight: 'bold'
+                                                }}
+                                            >For all sprites</div>
+                                            <div
+                                                onClick={() => setVariableScope('local')}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '8px 12px',
+                                                    backgroundColor: variableScope === 'local' ? '#855CD6' : '#eee',
+                                                    color: variableScope === 'local' ? 'white' : '#555',
+                                                    cursor: 'pointer',
+                                                    fontSize: '13px',
+                                                    textAlign: 'center',
+                                                    fontWeight: 'bold'
+                                                }}
+                                            >For this sprite only</div>
+                                        </div>
+                                    </>
+                                )}
 
-                            <div style={styles.modalButtons}>
-                                <button onClick={handlePromptCancel} style={styles.modalCancel}>Cancel</button>
-                                <button onClick={handlePromptSubmit} style={styles.modalSubmit}>OK</button>
+                                <div style={styles.modalButtons}>
+                                    <button onClick={handlePromptCancel} style={styles.modalCancel}>Cancel</button>
+                                    <button onClick={handlePromptSubmit} style={styles.modalSubmit}>OK</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+
+            {/* Board Selection Modal */}
+            <BoardSelectionModal
+                isOpen={isBoardModalOpen}
+                onClose={() => setIsBoardModalOpen(false)}
+                onSelect={(id: string, name: string) => {
+                    setSelectedBoard(id);
+                    setSelectedBoardName(name);
+                    addLog(`Selected board: ${name}`);
+                }}
+                currentBoard={selectedBoard}
+            />
+
+            {/* Backdrop Modals */}
+            {
+                showBackdropLibrary && (
+                    <BackdropLibrary
+                        onSelect={handleBackdropSelect}
+                        onClose={() => setShowBackdropLibrary(false)}
+                    />
+                )
+            }
+            {
+                showBackdropEditor && (
+                    <BackdropEditor
+                        onClose={() => setShowBackdropEditor(false)}
+                    />
+                )
+            }
+
+            {/* Premium Upload Modal */}
+            <UploadModal
+                isOpen={isUploading}
+                progress={uploadProgress}
+            />
+        </div >
     );
 };
 
@@ -1156,6 +1576,61 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     headerIcon: { cursor: 'pointer', opacity: 0.9, fontSize: '14px' },
 
+    iconBar: {
+        background: '#f5f5f5',
+        borderBottom: '1px solid #ddd',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 16px',
+        height: '40px',
+    },
+    actionButtons: { display: 'flex', gap: '12px', alignItems: 'center' },
+    layoutButtons: { display: 'flex', gap: '4px', alignItems: 'center' },
+    iconBtn: {
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '6px',
+        borderRadius: '4px',
+        color: '#855CD6',
+        transition: 'background 0.2s',
+        outline: 'none',
+    },
+    iconBtnActive: {
+        background: '#e0d6ff',
+        color: '#855CD6'
+    },
+    runButtonTop: {
+        backgroundColor: '#2e7d32',
+        color: 'white',
+        border: 'none',
+        borderRadius: '50%',
+        width: '32px',
+        height: '32px',
+        cursor: 'pointer',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    },
+    stopButtonTop: {
+        backgroundColor: '#c62828',
+        color: 'white',
+        border: 'none',
+        borderRadius: '50%',
+        width: '32px',
+        height: '32px',
+        cursor: 'pointer',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    },
+
     main: { flex: 1, display: 'flex', overflow: 'hidden' },
 
     // Workspace
@@ -1165,30 +1640,37 @@ const styles: { [key: string]: React.CSSProperties } = {
     // PictoBlox-style tabs
     tabBar: {
         display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         backgroundColor: '#f5f5f5',
         borderBottom: '1px solid #ddd',
         padding: '0 8px',
+        height: '40px',
     },
     tab: {
         padding: '10px 16px',
-        border: 'none',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
+        borderBottom: '2px solid transparent',
         backgroundColor: 'transparent',
         cursor: 'pointer',
         fontSize: '13px',
         fontWeight: 500,
         color: '#666',
-        borderBottom: '2px solid transparent',
         marginBottom: '-1px',
     },
     tabActive: {
         padding: '10px 16px',
-        border: 'none',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
+        borderBottom: '2px solid #855CD6',
         backgroundColor: 'white',
         cursor: 'pointer',
         fontSize: '13px',
         fontWeight: 600,
         color: '#855CD6',
-        borderBottom: '2px solid #855CD6',
         marginBottom: '-1px',
         borderRadius: '8px 8px 0 0',
     },
@@ -1230,13 +1712,19 @@ const styles: { [key: string]: React.CSSProperties } = {
 
     // Right Panel
     rightPanel: {
-        width: '340px',
+        width: '496px',
         backgroundColor: '#f5f5f5',
-        borderLeft: '1px solid #ddd',
+        borderLeft: '1px solid #d9d9d9',
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
         padding: '8px',
+    },
+    assetsContainer: {
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     // Stage
@@ -1300,7 +1788,9 @@ const styles: { [key: string]: React.CSSProperties } = {
         overflow: 'auto',
         backgroundColor: '#fafafa',
         borderRadius: '0 0 8px 8px',
-        border: '1px solid #eee',
+        borderBottom: '1px solid #eee',
+        borderLeft: '1px solid #eee',
+        borderRight: '1px solid #eee',
         borderTop: 'none',
     },
     codeContent: {
@@ -1324,7 +1814,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     bottomTab: {
         padding: '8px 16px',
         backgroundColor: '#f5f5f5',
-        border: 'none',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
+        borderBottom: '2px solid transparent',
         fontSize: '12px',
         cursor: 'pointer',
         color: '#666'
@@ -1332,7 +1825,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     bottomTabActive: {
         padding: '8px 16px',
         backgroundColor: '#ffffff',
-        border: 'none',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
         borderBottom: '2px solid #4C97FF',
         fontSize: '12px',
         cursor: 'pointer',
@@ -1340,7 +1835,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontWeight: 'bold'
     },
     logArea: {
-        height: '100px',
+        height: '250px',
         overflow: 'auto',
         padding: '8px 12px',
         backgroundColor: '#fff',
@@ -1409,6 +1904,35 @@ const styles: { [key: string]: React.CSSProperties } = {
         marginBottom: '1px',
         fontFamily: 'monospace',
         fontSize: '11px',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-all',
+    },
+    serialHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '4px 8px',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
+        borderBottom: '1px solid #eee',
+        backgroundColor: '#f9f9f9',
+    },
+    serialSelect: {
+        padding: '2px 4px',
+        fontSize: '10px',
+        border: '1px solid #ddd',
+        borderRadius: '3px',
+        outline: 'none',
+    },
+    clearButton: {
+        padding: '2px 6px',
+        backgroundColor: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: '12px',
+        opacity: 0.7,
+        transition: 'opacity 0.2s',
     },
     serialPlaceholder: {
         color: '#999',
@@ -1420,6 +1944,9 @@ const styles: { [key: string]: React.CSSProperties } = {
         display: 'flex',
         gap: '4px',
         paddingTop: '4px',
+        borderBottom: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
         borderTop: '1px solid #eee',
     },
     serialInput: {

@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* LeapBlocks Styles */
 * {
@@ -9,15 +7,32 @@
   box-sizing: border-box;
 }
 
+:root {
+  --motion-color: #4A90E2;
+  --looks-color: #8B5CF6;
+  --sound-color: #D946EF;
+  --events-color: #FACC15;
+  --control-color: #F59E0B;
+  --sensing-color: #06B6D4;
+  --operators-color: #22C55E;
+  --variables-color: #F97316;
+  --myblocks-color: #EC4899;
+  --hardware-color: #10B981;
+  --bg-primary: #F8FAFC;
+  --border-subtle: #E2E8F0;
+  --text-primary: #1E293B;
+  --text-secondary: #64748B;
+}
+
 html,
 body,
 #root {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  background-color: #f5f5f5;
-  color: #333;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -27,11 +42,12 @@ body,
 /* Toolbox container */
 .blocklyToolboxDiv {
   background-color: #ffffff !important;
-  border-right: 1px solid #e0e0e0 !important;
-  padding: 8px 0 10px 0 !important;
-  width: 72px !important;
+  border-right: 1px solid var(--border-subtle) !important;
+  padding: 12px 0 !important;
+  width: 80px !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02) !important;
 }
 
 /* Each category row - MORE vertical spacing */
@@ -82,6 +98,95 @@ body,
   display: block !important;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   BLOCKLY FIELD STYLING
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. INPUT FIELDS (Number/Text) - White background with dark text */
+.blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect),
+.blocklyEditableText:not(.blocklyDropdownTextParent)>rect {
+  fill: #FFFFFF !important;
+  fill-opacity: 1 !important;
+  stroke: rgba(0, 0, 0, 0.15) !important;
+  stroke-width: 1.5px !important;
+  rx: 14px !important;
+  ry: 14px !important;
+}
+
+.blocklyEditableText:not(.blocklyDropdownTextParent) .blocklyText,
+.blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect)+.blocklyText {
+  fill: #575E75 !important;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+/* 2. DROPDOWN FIELDS - Block-colored background with White Text */
+.blocklyDropdownText+.blocklyFieldRect,
+.blocklyDropdownTextParent>rect,
+.blocklyEditableText.blocklyDropdownTextParent>rect {
+  fill: rgba(0, 0, 0, 0.25) !important;
+  /* Darker overlay on block color = richer colored pill */
+  stroke: rgba(255, 255, 255, 0.3) !important;
+  stroke-width: 1.5px !important;
+  rx: 14px !important;
+  ry: 14px !important;
+}
+
+.blocklyDropdownText,
+.blocklyDropdownTextParent .blocklyText {
+  fill: #FFFFFF !important;
+  /* White text on block-color background */
+  font-weight: 700 !important;
+}
+
+/* Explicitly target uneditable parts of white inputs to stay dark */
+.blocklyEditableText:not(.blocklyDropdownTextParent) text,
+.blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect)+text {
+  fill: #575E75 !important;
+}
+
+/* Dropdown Arrows - White for contrast */
+.blocklyDropdownText+path.blocklyPath,
+.blocklyEditableText.blocklyDropdownTextParent path {
+  fill: #FFFFFF !important;
+  stroke: none !important;
+}
+
+/* Actual input element while typing */
+.blocklyHtmlInput {
+  color: #000 !important;
+  background-color: #fff !important;
+  border: 2px solid #4C97FF !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 0 3px rgba(76, 151, 255, 0.4) !important;
+  padding: 0 6px !important;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  box-sizing: border-box !important;
+}
+
+/* Ensure consistency in flyout — dropdowns should also have block-color bg */
+.blocklyFlyout .blocklyDropdownText+.blocklyFieldRect,
+.blocklyFlyout .blocklyDropdownTextParent>rect,
+.blocklyFlyout .blocklyEditableText.blocklyDropdownTextParent>rect {
+  fill: rgba(0, 0, 0, 0.25) !important;
+  stroke: rgba(255, 255, 255, 0.3) !important;
+}
+
+.blocklyFlyout .blocklyDropdownText,
+.blocklyFlyout .blocklyDropdownTextParent .blocklyText {
+  fill: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* Input fields in flyout also use block-colored background */
+.blocklyFlyout .blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect) {
+  fill: rgba(0, 0, 0, 0.25) !important;
+  fill-opacity: 1 !important;
+}
+
 /* Selected state */
 .blocklyToolboxSelected {
   background-color: rgba(0, 0, 0, 0.07) !important;
@@ -106,88 +211,92 @@ body,
 /* Create circular icon before each category label */
 .blocklyToolboxCategory::before {
   content: '';
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  /* Smoothed square */
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  margin-bottom: 4px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  transition: transform 0.15s, box-shadow 0.15s;
+  margin-bottom: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background-size: 20px;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .blocklyToolboxCategory:hover::before {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .blocklyToolboxSelected::before {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 /* Motion - Blue */
 .blocklyToolboxCategory[aria-label*="Motion"]::before,
 .blocklyToolboxCategory[aria-label*="motion"]::before {
-  background-color: #4C97FF;
+  background-color: var(--motion-color);
   content: '🏃';
 }
 
 /* Looks - Purple */
 .blocklyToolboxCategory[aria-label*="Looks"]::before,
 .blocklyToolboxCategory[aria-label*="looks"]::before {
-  background-color: #9966FF;
+  background-color: var(--looks-color);
   content: '👁️';
 }
 
 /* Sound - Pink */
 .blocklyToolboxCategory[aria-label*="Sound"]::before,
 .blocklyToolboxCategory[aria-label*="sound"]::before {
-  background-color: #CF63CF;
+  background-color: var(--sound-color);
   content: '🔊';
 }
 
 /* Events - Yellow/Gold */
 .blocklyToolboxCategory[aria-label*="Events"]::before,
 .blocklyToolboxCategory[aria-label*="events"]::before {
-  background-color: #FFBF00;
+  background-color: var(--events-color);
   content: '⚡';
 }
 
 /* Control - Orange */
 .blocklyToolboxCategory[aria-label*="Control"]::before,
 .blocklyToolboxCategory[aria-label*="control"]::before {
-  background-color: #FFAB19;
+  background-color: var(--control-color);
   content: '🔄';
 }
 
 /* Sensing - Light Blue */
 .blocklyToolboxCategory[aria-label*="Sensing"]::before,
 .blocklyToolboxCategory[aria-label*="sensing"]::before {
-  background-color: #5CB1D6;
+  background-color: var(--sensing-color);
   content: '👆';
 }
 
 /* Operators - Green */
 .blocklyToolboxCategory[aria-label*="Operators"]::before,
 .blocklyToolboxCategory[aria-label*="operators"]::before {
-  background-color: #59C059;
+  background-color: var(--operators-color);
   content: '➕';
 }
 
 /* Variables - Red/Orange */
 .blocklyToolboxCategory[aria-label*="Variables"]::before,
 .blocklyToolboxCategory[aria-label*="variables"]::before {
-  background-color: #FF8C1A;
+  background-color: var(--variables-color);
   content: '📊';
 }
 
 /* My Blocks / Procedures - Pink */
 .blocklyToolboxCategory[aria-label*="My Blocks"]::before,
 .blocklyToolboxCategory[aria-label*="Procedures"]::before {
-  background-color: #FF6680;
+  background-color: var(--myblocks-color);
   content: '🧩';
 }
 
@@ -195,7 +304,7 @@ body,
 .blocklyToolboxCategory[aria-label*="Hardware"]::before,
 .blocklyToolboxCategory[aria-label*="hardware"]::before,
 .blocklyToolboxCategory[aria-label*="Arduino"]::before {
-  background-color: #0FBD8C;
+  background-color: var(--hardware-color);
   content: '🔌';
 }
 
@@ -204,13 +313,14 @@ body,
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .blocklyFlyout {
-  background-color: #f9f9f9 !important;
+  background-color: rgba(249, 249, 249, 0.8) !important;
+  backdrop-filter: blur(8px) !important;
 }
 
 .blocklyFlyoutBackground {
-  fill: #f9f9f9 !important;
-  stroke: #e0e0e0 !important;
-  stroke-width: 1px !important;
+  fill: rgba(249, 249, 249, 0.6) !important;
+  stroke: var(--border-subtle) !important;
+  stroke-width: 0.5px !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -219,11 +329,12 @@ body,
 
 .blocklyMainBackground {
   stroke: none !important;
-  fill: #f9f9f9 !important;
+  fill: #FFFFFF !important;
 }
 
 .blocklyGridLine {
-  stroke: #e8e8e8 !important;
+  stroke: #F1F5F9 !important;
+  /* Extremely subtle grid */
 }
 
 .blocklyScrollbarHandle {
@@ -235,24 +346,73 @@ body,
    BLOCKS
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.blocklyText {
+.blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText) {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  fill: white !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  fill: rgb(255, 255, 255) !important;
 }
 
-.blocklyEditableText>rect {
-  fill: rgba(255, 255, 255, 0.9) !important;
-  rx: 4px !important;
-}
 
-.blocklyEditableText>text {
-  fill: #333 !important;
-}
 
 .blocklyPath {
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2)) !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15)) !important;
+}
+
+/* 3D Depth effect for Zelos blocks */
+.blocklyPathLight {
+  stroke-width: 3px !important;
+  stroke-opacity: 0.2 !important;
+  stroke: #ffffff !important;
+  fill: none !important;
+}
+
+.blocklyPathDark {
+  stroke-width: 3px !important;
+  stroke-opacity: 0.2 !important;
+  stroke: #000 !important;
+  fill: none !important;
+}
+
+/* Beautiful solid dropdown menu */
+.blocklyDropDownDiv {
+  border-radius: 8px !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  background-color: var(--blockly-menu-bg-color, #FFFFFF) !important;
+  padding: 4px 0 !important;
+}
+
+/* Dropdown Menu Items - PictoBlox Style */
+.blocklyDropDownDiv .goog-menuitem,
+.blocklyDropDownDiv .blocklyMenuItem {
+  padding: 8px 16px !important;
+  font-family: 'Segoe UI', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+  /* Force dark text explicitly */
+  cursor: pointer !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.blocklyDropDownDiv .goog-menuitem-hover,
+.blocklyDropDownDiv .blocklyMenuItemHighlight {
+  background-color: var(--blockly-menu-highlight-color, #4A90E2) !important;
+}
+
+.blocklyDropDownDiv .goog-menuitem-content,
+.blocklyDropDownDiv .blocklyMenuItemContent {
+  color: #333 !important;
+  /* Force dark text on content */
+  pointer-events: none;
+}
+
+.blocklyDropDownDiv .goog-menuitem-hover .goog-menuitem-content,
+.blocklyDropDownDiv .blocklyMenuItemHighlight .blocklyMenuItemContent {
+  color: #FFFFFF !important;
+  /* White text on blue highlight */
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -414,4 +574,202 @@ div::-webkit-scrollbar-thumb {
 
 .connection-indicator.disconnected {
   background-color: #9E9E9E;
+}
+
+/* Backdrop and Stage Panel Styles */
+.backdrop-item {
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.backdrop-item:hover {
+  background-color: #f5f5f5;
+  border-color: #855CD6;
+  transform: translateY(-2px);
+}
+
+.stage-panel-container {
+  transition: all 0.15s ease;
+}
+
+.stage-panel-container:hover {
+  transform: scale(1.02);
+  border-color: #855CD6;
+  box-shadow: 0 4px 12px rgba(133, 92, 214, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ZOOM & SCALE FIXES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Ensure the toolbox (category list) stays at a fixed, user-friendly size */
+.blocklyToolboxDiv {
+  transform: scale(1) !important;
+  transform-origin: left top !important;
+}
+
+/* Fix category icons scale */
+.pictoblox-icon {
+  transform: scale(1) !important;
+  flex-shrink: 0 !important;
+}
+
+/* Prevent the flyout container from inheriting workspace transform changes */
+.blocklyFlyout {
+  transform-origin: left top !important;
+}
+
+/* Ensure flyout SVG maintains its own independent transform context */
+.blocklyFlyout>svg {
+  transform: none !important;
+}
+
+/* Professional styling for flyout buttons (like "Make a Variable") */
+.blocklyFlyoutButton {
+  cursor: pointer !important;
+}
+
+/* Hide Blockly's default sharp button shadow */
+.blocklyFlyoutButtonShadow {
+  fill: transparent !important;
+  stroke: none !important;
+}
+
+.blocklyFlyoutButtonBackground {
+  fill: #ffffff !important;
+  stroke: #d9d9d9 !important;
+  stroke-width: 1.5px !important;
+  rx: 18px !important;
+  ry: 18px !important;
+}
+
+.blocklyFlyoutButton:hover .blocklyFlyoutButtonBackground {
+  fill: #f0f4f8 !important;
+  stroke: #4A90E2 !important;
+}
+
+/* Use high specificity to override the global white text rule */
+body #root .blocklyFlyoutButton .blocklyText,
+.blocklyFlyoutButton text {
+  fill: #575E75 !important;
+  font-weight: 600 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WORKSPACE CONTROLS (Shared: Junior + Intermediate)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.workspace-controls {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 90;
+}
+
+.workspace-control-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: all 0.18s ease;
+  outline: none;
+  padding: 0;
+  backdrop-filter: blur(6px);
+}
+
+.workspace-control-btn:hover {
+  background: #f0f0f0;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  color: #333;
+}
+
+.workspace-control-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WORKSPACE TRASH OVERLAY (Shared: Junior + Intermediate)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.workspace-trash-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 18%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 85;
+  pointer-events: none;
+  animation: trashFadeIn 0.2s ease-out;
+}
+
+.workspace-trash-overlay.active {
+  background: rgba(255, 80, 80, 0.10);
+}
+
+.workspace-trash-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(150, 150, 150, 0.55);
+  transition: all 0.2s ease;
+}
+
+.workspace-trash-overlay.active .workspace-trash-icon {
+  color: rgba(220, 60, 60, 0.7);
+  transform: scale(1.15);
+}
+
+.workspace-trash-x {
+  font-size: 22px;
+  font-weight: bold;
+  color: rgba(220, 60, 60, 0.8);
+  margin-top: 2px;
+  animation: trashPulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes trashFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes trashPulse {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.12);
+  }
+}
+
+/* Hide Blockly's built-in zoom controls when custom controls are used */
+.blocklyZoom {
+  display: none !important;
+}
+
+/* Hide Blockly's built-in trashcan when custom trash is used */
+.blocklyTrash {
+  display: none !important;
 }

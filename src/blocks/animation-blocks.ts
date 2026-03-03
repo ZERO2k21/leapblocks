@@ -5,17 +5,17 @@ import * as Blockly from 'blockly';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const COLORS = {
-    motion: '#4C97FF',       // Blue - Motion blocks
-    looks: '#9966FF',        // Purple - Looks blocks
-    sound: '#CF63CF',        // Pink - Sound blocks
-    events: '#FFBF00',       // Yellow/Gold - Events
-    control: '#FFAB19',      // Orange - Control blocks
-    sensing: '#5CB1D6',      // Light blue - Sensing
-    operators: '#59C059',    // Green - Operators
-    data: '#FF8C1A',         // Orange - Variables (standard scratch name)
-    variables: '#FF8C1A',    // Alias
-    list: '#FF661A',         // Red/Orange - Lists
-    myblocks: '#FF6680',     // Pink/Red - My Blocks
+    motion: '#4A90E2',       // Blue - Motion blocks
+    looks: '#8B5CF6',        // Purple - Looks blocks
+    sound: '#D946EF',        // Fuchsia - Sound blocks
+    events: '#FACC15',       // Yellow - Events
+    control: '#F59E0B',      // Amber - Control blocks
+    sensing: '#06B6D4',      // Cyan - Sensing
+    operators: '#22C55E',    // Green - Operators
+    data: '#F97316',         // Orange - Variables
+    variables: '#F97316',    // Alias
+    list: '#F97316',         // Unified orange
+    myblocks: '#EC4899',     // Pink - My Blocks
 };
 
 export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
@@ -261,9 +261,10 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         type: 'looks_say_for_secs',
         message0: '🗣️ say %1 for %2 seconds',
         args0: [
-            { type: 'input_value', name: 'MESSAGE' },
+            { type: 'field_input', name: 'MESSAGE', text: 'Hello!' },
             { type: 'field_number', name: 'SECS', value: 2, min: 0.1 },
         ],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -273,7 +274,8 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     {
         type: 'looks_say',
         message0: '🗣️ say %1',
-        args0: [{ type: 'input_value', name: 'MESSAGE' }],
+        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hello!' }],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -353,9 +355,10 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         type: 'looks_think_for_secs',
         message0: '💭 think %1 for %2 seconds',
         args0: [
-            { type: 'input_value', name: 'MESSAGE' },
+            { type: 'field_input', name: 'MESSAGE', text: 'Hmm...' },
             { type: 'field_number', name: 'SECS', value: 2, min: 0.1 },
         ],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -365,7 +368,8 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     {
         type: 'looks_think',
         message0: '💭 think %1',
-        args0: [{ type: 'input_value', name: 'MESSAGE' }],
+        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hmm...' }],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -751,7 +755,12 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         type: 'data_setvariableto',
         message0: 'set %1 to %2',
         args0: [
-            { type: 'field_variable', name: 'VARIABLE', variable: 'my variable' },
+            {
+                type: 'field_variable',
+                name: 'VARIABLE',
+                variable: 'my variable',
+                variableTypes: ['Number', 'String', '']
+            },
             { type: 'input_value', name: 'VALUE' },
         ],
         previousStatement: null,
@@ -764,7 +773,12 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         type: 'data_changevariableby',
         message0: 'change %1 by %2',
         args0: [
-            { type: 'field_variable', name: 'VARIABLE', variable: 'my variable' },
+            {
+                type: 'field_variable',
+                name: 'VARIABLE',
+                variable: 'my variable',
+                variableTypes: ['Number', 'String', '']
+            },
             { type: 'input_value', name: 'VALUE', check: 'Number' },
         ],
         previousStatement: null,
@@ -776,7 +790,12 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     {
         type: 'data_showvariable',
         message0: 'show variable %1',
-        args0: [{ type: 'field_variable', name: 'VARIABLE', variable: 'my variable' }],
+        args0: [{
+            type: 'field_variable',
+            name: 'VARIABLE',
+            variable: 'my variable',
+            variableTypes: ['Number', 'String', '']
+        }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.data,
@@ -786,11 +805,50 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     {
         type: 'data_hidevariable',
         message0: 'hide variable %1',
-        args0: [{ type: 'field_variable', name: 'VARIABLE', variable: 'my variable' }],
+        args0: [{
+            type: 'field_variable',
+            name: 'VARIABLE',
+            variable: 'my variable',
+            variableTypes: ['Number', 'String', '']
+        }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.data,
         tooltip: 'Hide variable monitor',
+        helpUrl: '',
+    },
+    {
+        type: 'variables_get',
+        message0: '%1',
+        args0: [
+            {
+                type: 'field_variable',
+                name: 'VAR',
+                variable: 'my variable',
+                variableTypes: ['Number', 'String', '']
+            }
+        ],
+        output: null,
+        colour: COLORS.data,
+        tooltip: 'Get variable value',
+        helpUrl: '',
+    },
+    {
+        type: 'variables_set',
+        message0: 'set %1 to %2',
+        args0: [
+            {
+                type: 'field_variable',
+                name: 'VAR',
+                variable: 'my variable',
+                variableTypes: ['Number', 'String', '']
+            },
+            { type: 'input_value', name: 'VALUE' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.data,
+        tooltip: 'Set variable to value',
         helpUrl: '',
     },
 

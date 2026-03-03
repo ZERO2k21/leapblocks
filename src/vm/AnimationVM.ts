@@ -1,5 +1,10 @@
 import { Sprite } from '../stage/Sprite';
 import { hardwareAdapter } from '../hardware/HardwareAdapter';
+import { spriteManager } from '../engine/SpriteManager';
+import { motionEngine } from '../engine/MotionEngine';
+import { costumeEngine } from '../engine/CostumeEngine';
+import { eventEngine } from '../engine/EventEngine';
+import { stageManager } from '../engine/StageManager';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ANIMATION VM - Executes animation scripts
@@ -86,14 +91,16 @@ export type ScriptStep =
     | { type: 'ask'; question: string }
     | { type: 'reset_timer' }
     // Hardware blocks for Stage mode
-    | { type: 'hw_set_digital'; pin: number; value: boolean }
+    | { type: 'hw_set_digital'; pin: number | string; value: boolean }
     | { type: 'hw_set_led'; on: boolean }
-    | { type: 'hw_set_pwm'; pin: number; value: number }
-    | { type: 'hw_set_servo'; pin: number; angle: number }
+    | { type: 'hw_set_pwm'; pin: number | string; value: number }
+    | { type: 'hw_set_servo'; pin: number | string; angle: number }
     | { type: 'hw_set_motor'; motor: number; speed: number }
     | { type: 'hw_stop_motors' }
-    | { type: 'hw_play_tone'; pin: number; freq: number; duration: number }
-    | { type: 'hw_stop_tone'; pin: number }
+    | { type: 'hw_play_tone'; pin: number | string; freq: number; duration: number }
+    | { type: 'hw_stop_tone'; pin: number | string }
+    | { type: 'hw_analog_read'; pin: number | string }
+    | { type: 'hw_digital_read'; pin: number | string }
     // Variable
     | { type: 'data_setvariableto'; variable: string; value: () => number | string }
     | { type: 'data_changevariableby'; variable: string; value: () => number }
@@ -118,7 +125,6 @@ const vmLog = {
 
 export class AnimationVM {
     private runningScripts: Map<string, AbortController> = new Map();
-    private sprites: Map<string, Sprite> = new Map();
     private keysPressed: Set<string> = new Set();
     private mouseX: number = 0;
     private mouseY: number = 0;
@@ -136,7 +142,19 @@ export class AnimationVM {
     // Broadcast system
     private broadcastListeners: Map<string, CompiledScript[]> = new Map();
 
-    // Audio manager (simplified)
+    constructor() {
+        // Set up key listeners
+        if (typeof window !== 'undefined') {
+            window.addEventListener('keydown', (e) => {
+                this.keysPressed.add(e.key);
+                eventEngine.trigger('keydown', e.key);
+            });
+            window.addEventListener('keyup', (e) => {
+                this.keysPressed.delete(e.key);
+                eventEngine.trigger('keyup', e.key);
+            });
+        }
+    }
     public audioManager = {
         playSound: (name: string) => {
             vmLog.step('play_sound', { sound: name });
@@ -245,56 +263,34 @@ export class AnimationVM {
 
 
 
-    constructor() {
-        // Set up key listeners
-        if (typeof window !== 'undefined') {
-            window.addEventListener('keydown', (e) => {
-                this.keysPressed.add(e.key);
-            });
-            window.addEventListener('keyup', (e) => {
-                this.keysPressed.delete(e.key);
-            });
-            window.addEventListener('mousemove', (e) => {
-                // Convert to stage coordinates - will be updated when stage is available
-            });
-        }
-    }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // SPRITE MANAGEMENT
+    // SPRITE MANAGEMENT (Delegated to SpriteManager)
     // ═══════════════════════════════════════════════════════════════════════
     registerSprite(sprite: Sprite): void {
-        this.sprites.set(sprite.id, sprite);
+        spriteManager.addSprite(sprite);
     }
 
     unregisterSprite(id: string): void {
-        this.sprites.delete(id);
+        spriteManager.removeSprite(id);
     }
 
     getSprite(id: string): Sprite | undefined {
-        return this.sprites.get(id);
+        return spriteManager.getSprite(id);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     // SCRIPT EXECUTION
     // ═══════════════════════════════════════════════════════════════════════
     triggerFlag(scripts: CompiledScript[]): void {
-        console.log('[AnimationVM] ══════════════════════════════════════════');
-        console.log('[AnimationVM] triggerFlag called with', scripts.length, 'scripts');
-        console.log('[AnimationVM] Registered sprites:', Array.from(this.sprites.keys()));
-
         this.isRunning = true;
         let flagScripts = 0;
         for (const script of scripts) {
-            console.log('[AnimationVM]   Script:', script.trigger, 'for sprite:', script.spriteId, 'steps:', script.steps.length);
             if (script.trigger === 'flag') {
                 flagScripts++;
-                console.log('[AnimationVM]   → Running flag script');
                 this.runScript(script);
             }
         }
-        console.log('[AnimationVM] Started', flagScripts, 'flag scripts');
-        console.log('[AnimationVM] ══════════════════════════════════════════');
     }
 
     triggerSpriteClick(spriteId: string, scripts: CompiledScript[]): void {
@@ -325,7 +321,7 @@ export class AnimationVM {
     }
 
     private async runScript(script: CompiledScript): Promise<void> {
-        const sprite = this.sprites.get(script.spriteId);
+        const sprite = spriteManager.getSprite(script.spriteId);
         vmLog.info(`runScript started`, {
             spriteId: script.spriteId,
             found: !!sprite,
@@ -387,38 +383,36 @@ export class AnimationVM {
 
         switch (step.type) {
             case 'move_steps':
-                console.log('[AnimationVM]   → move', step.steps, 'steps, sprite at', sprite.x, sprite.y);
-                sprite.move(step.steps);
-                console.log('[AnimationVM]   → sprite now at', sprite.x, sprite.y);
+                motionEngine.move(sprite, step.steps);
                 break;
 
             case 'turn_right':
-                sprite.turnRight(step.degrees);
+                motionEngine.turnRight(sprite, step.degrees);
                 break;
 
             case 'turn_left':
-                sprite.turnLeft(step.degrees);
+                motionEngine.turnLeft(sprite, step.degrees);
                 break;
 
             case 'go_to_xy':
-                sprite.goTo(step.x, step.y);
+                motionEngine.goTo(sprite, step.x, step.y);
                 break;
 
             case 'glide_to_xy':
-                sprite.startGlide(step.x, step.y, step.secs);
+                motionEngine.glide(sprite, step.x, step.y, step.secs);
                 await this.waitForGlide(sprite, signal);
                 break;
 
             case 'point_direction':
-                sprite.pointInDirection(step.direction);
+                motionEngine.pointInDirection(sprite, step.direction);
                 break;
 
             case 'change_x':
-                sprite.changeX(step.dx);
+                sprite.setX(sprite.x + step.dx);
                 break;
 
             case 'change_y':
-                sprite.changeY(step.dy);
+                sprite.setY(sprite.y + step.dy);
                 break;
 
             case 'set_x':
@@ -439,31 +433,31 @@ export class AnimationVM {
                 break;
 
             case 'show':
-                sprite.show();
+                costumeEngine.show(sprite);
                 break;
 
             case 'hide':
-                sprite.hide();
+                costumeEngine.hide(sprite);
                 break;
 
             case 'next_costume':
-                sprite.nextCostume();
+                costumeEngine.nextCostume(sprite);
                 break;
 
             case 'set_size':
-                sprite.setSize(step.size);
+                costumeEngine.setSize(sprite, step.size);
                 break;
 
             case 'change_size':
-                sprite.changeSize(step.change);
+                costumeEngine.changeSize(sprite, step.change);
                 break;
 
             case 'set_effect':
-                sprite.setEffect(step.effect, step.value);
+                costumeEngine.setEffect(sprite, step.effect, step.value);
                 break;
 
             case 'clear_effects':
-                sprite.clearEffects();
+                costumeEngine.clearEffects(sprite);
                 break;
 
             // New Looks blocks
@@ -477,25 +471,25 @@ export class AnimationVM {
                 break;
 
             case 'switch_costume':
-                sprite.switchCostume(step.costume);
+                costumeEngine.setCostume(sprite, step.costume);
                 break;
 
             case 'switch_backdrop':
-                // TODO: Implement backdrop switching on stage
-                console.log('[AnimationVM] switch_backdrop not yet implemented');
+                stageManager.setBackdrop(step.backdrop);
                 break;
 
             case 'next_backdrop':
-                // TODO: Implement next backdrop on stage
-                console.log('[AnimationVM] next_backdrop not yet implemented');
+                stageManager.nextBackdrop();
                 break;
 
             case 'go_to_layer':
-                sprite.goToLayer(step.layer);
+                // Delegate to look engine or stage
+                console.log('[AnimationVM] go_to_layer not yet implemented');
                 break;
 
             case 'go_forward_layers':
-                sprite.goForwardLayers(step.direction, step.layers);
+                // Delegate to look engine or stage
+                console.log('[AnimationVM] go_forward_layers not yet implemented');
                 break;
 
             // Control blocks
@@ -645,6 +639,18 @@ export class AnimationVM {
                 await hardwareAdapter.stopTone(step.pin);
                 break;
 
+            case 'hw_analog_read': {
+                const val = await hardwareAdapter.readAnalogPin(step.pin);
+                console.log(`[AnimationVM] Analog read ${step.pin}: ${val}`);
+                break;
+            }
+
+            case 'hw_digital_read': {
+                const val = await hardwareAdapter.readDigitalPin(step.pin);
+                console.log(`[AnimationVM] Digital read ${step.pin}: ${val}`);
+                break;
+            }
+
             // Variable blocks
             case 'data_setvariableto':
                 this.setVariable(step.variable, step.value());
@@ -763,7 +769,7 @@ export class AnimationVM {
     }
 
     getDistanceTo(target: string, fromSpriteId: string): number {
-        const fromSprite = this.sprites.get(fromSpriteId);
+        const fromSprite = spriteManager.getSprite(fromSpriteId);
         if (!fromSprite) return 0;
 
         let targetX = 0;
@@ -773,7 +779,7 @@ export class AnimationVM {
             targetX = this.mouseX;
             targetY = this.mouseY;
         } else {
-            const targetSprite = this.sprites.get(target);
+            const targetSprite = spriteManager.getSprite(target);
             if (!targetSprite) return 0;
             targetX = targetSprite.x;
             targetY = targetSprite.y;
@@ -785,7 +791,7 @@ export class AnimationVM {
     }
 
     isTouching(target: string, fromSpriteId: string): boolean {
-        const fromSprite = this.sprites.get(fromSpriteId);
+        const fromSprite = spriteManager.getSprite(fromSpriteId);
         if (!fromSprite) return false;
 
         if (target === '_mouse_') {

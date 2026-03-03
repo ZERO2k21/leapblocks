@@ -4,12 +4,13 @@ import { javascriptGenerator } from "blockly/javascript";
 import defineLeapBlocks from "./blocks/blocks";
 import Teddy from "./sprites/Teddy";
 import RightPanel from "./components/RightPanel";
+import BackdropChooser from "./components/BackdropChooser";
 import JuniorMenuBar from "./components/JuniorMenuBar";
 import {
     Footprints, Eye, Flag, Hand, Volume2, PenTool,
     Settings, MessageCircle, Trophy, Play, Square,
     RotateCcw, ZoomIn, ZoomOut, Maximize, Zap,
-    Radar, Calculator, Database
+    Radar, Calculator, Database, Mic
 } from "lucide-react";
 
 // Import Custom Renderer
@@ -22,10 +23,24 @@ import { previewActions } from "./engine/previewActions"; // Import Preview Acti
 import { looksPreview } from "./engine/looksPreview"; // Import Looks Preview
 import PositionPicker from "./components/PositionPicker"; // Import Picker Component
 import DirectionPicker from "./components/DirectionPicker"; // Import Direction Picker
+import PaintEditor from "../components/PaintEditor";
+import WorkspaceControls from "../components/WorkspaceControls";
+import WorkspaceTrash from "../components/WorkspaceTrash";
+import { executionEngine } from "../engine/ExecutionEngine";
+import { projectManager } from "../engine/ProjectManager";
+import { spriteManager } from "../engine/SpriteManager";
+import { stageManager } from "../engine/StageManager";
 
 // Block Definitions
 // Block Definitions
 import defineLooksBlocks from "./blocks/looksBlocks";
+import defineSoundBlocks from "./blocks/soundBlocks";
+
+// Robot Assets (Static paths from public/)
+const robotIdle = "/assets/sprites/robot/robot_idle.svg";
+const robotWave1 = "/assets/sprites/robot/robot_wave1.svg";
+const robotWave2 = "/assets/sprites/robot/robot_wave2.svg";
+const robotTalk1 = "/assets/sprites/robot/robot_talk1.svg";
 
 // Categories
 const CATEGORIES = [
@@ -34,9 +49,6 @@ const CATEGORIES = [
     { id: "sound", name: "Sound", color: "#CF63CF", icon: <Volume2 fill="currentColor" stroke="none" /> },
     { id: "events", name: "Events", color: "#FFBF00", icon: <Flag fill="currentColor" stroke="none" /> },
     { id: "control", name: "Control", color: "#FFAB19", icon: <Hand fill="currentColor" stroke="none" /> },
-    { id: "sensing", name: "Sensing", color: "#5CB1D6", icon: <Radar fill="currentColor" stroke="none" /> },
-    { id: "operators", name: "Operators", color: "#59C059", icon: <Calculator fill="currentColor" stroke="none" /> },
-    { id: "variables", name: "Variables", color: "#FF8C1A", icon: <Database fill="currentColor" stroke="none" /> },
     { id: "pen", name: "Pen", color: "#0FBD8C", icon: <PenTool fill="currentColor" stroke="none" /> },
 ];
 
@@ -63,7 +75,8 @@ const categoryContents = {
         { kind: "block", type: "looks_next_costume" },
         { kind: "block", type: "looks_change_costume" },
         { kind: "block", type: "looks_mirror" },
-        { kind: "block", type: "select_sprite" }
+        { kind: "block", type: "select_sprite" },
+        { kind: "block", type: "switch_scene" }
     ],
     control: [
         { kind: "block", type: "control_forever" },
@@ -79,10 +92,10 @@ const categoryContents = {
         { kind: "block", type: "event_press" }
     ],
     sound: [
-        { kind: "block", type: "sound_animal" },
-        { kind: "block", type: "sound_music" },
-        { kind: "block", type: "sound_stop" },
-        { kind: "block", type: "sound_vol" }
+        { kind: "block", type: "sound_play" },
+        { kind: "block", type: "sound_instrument" },
+        { kind: "block", type: "sound_note" },
+        { kind: "block", type: "sound_stop_all" }
     ],
     pen: [
         { kind: "block", type: "pen_down" },
@@ -117,6 +130,7 @@ import { useSpriteSystem } from "./hooks/useSpriteSystem";
 import { getLessonConfig } from "./engine/LessonConfig";
 import { GoalManager } from "./engine/GoalManager";
 import { HintManager } from "./engine/HintManager";
+import { soundManager } from "./engine/SoundManager";
 import { WorkspaceValidator } from "./engine/WorkspaceValidator";
 
 import SuccessModal from "./components/SuccessModal"; // Import Modal
@@ -126,9 +140,21 @@ export default function JuniorApp({ onBack }) {
     const blocklyDiv = useRef(null);   // Stores the DIV element
     const fileInputRef = useRef(null);
     const canvasRef = useRef(null); // Canvas for Pen
+    const cameraVideoRef = useRef(null); // Camera video element
+    const cameraStreamRef = useRef(null); // Camera MediaStream
     const isRunning = useRef(false); // Ref for execution state
+    const [isBlocksRunning, setIsBlocksRunning] = useState(false); // UI state for run/stop toggle
     const [projectName, setProjectName] = useState("Untitled Project");
     const [activeCategory, setActiveCategory] = useState("motion");
+    const stageContainerRef = useRef(null); // Ref for stage container to measure dimensions
+    const [isDraggingSpriteOnStage, setIsDraggingSpriteOnStage] = useState(false);
+
+    // Camera State
+    const [isCameraOn, setIsCameraOn] = useState(false);
+
+    // Recording State
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingCount, setRecordingCount] = useState(1);
 
     // Connection State
     const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
@@ -146,6 +172,18 @@ export default function JuniorApp({ onBack }) {
     const [pickerCallback, setPickerCallback] = useState(null);
     const [showDirPicker, setShowDirPicker] = useState(false);
     const [activeBlock, setActiveBlock] = useState(null);
+    const timeoutRefs = useRef({}); // Store timeouts for speech bubbles
+
+    // Paint Editor State
+    const [paintEditor, setPaintEditor] = useState({
+        isOpen: false,
+        type: 'sprite', // 'sprite' | 'backdrop'
+        targetId: null,
+        initialImage: null,
+        costumes: [],
+        spriteName: '',
+        mode: 'junior'
+    });
 
 
 
@@ -157,15 +195,21 @@ export default function JuniorApp({ onBack }) {
             background: "white",
             sprites: [
                 {
-                    id: "teddy", name: "Teddy", type: "bear",
-                    x: 200, y: 150, angle: 0, size: 100, visible: true, speech: null,
-                    costumes: { default: "🐻", wave: "👋" }, currentCostume: "default"
+                    id: "robot_default", name: "Robot", type: "robot",
+                    x: 200, y: 150, angle: 0, size: 100, visible: true, mirrored: false, speech: null,
+                    costumes: {
+                        default: robotIdle,
+                        wave1: robotWave1,
+                        wave2: robotWave2,
+                        talk: robotTalk1
+                    },
+                    currentCostume: "default"
                 }
             ]
         }
     ]);
 
-    const [activeSpriteId, setActiveSpriteId] = useState("teddy");
+    const [activeSpriteId, setActiveSpriteId] = useState("robot_default");
     const [winMessage, setWinMessage] = useState(null); // Win Message State
 
     // Derived State
@@ -212,6 +256,8 @@ export default function JuniorApp({ onBack }) {
 
     // --- UI/MODAL STATE ---
     const [isSpriteModalOpen, setIsSpriteModalOpen] = useState(false);
+    const [isBackdropChooserOpen, setIsBackdropChooserOpen] = useState(false);
+    const [backdropEditSceneId, setBackdropEditSceneId] = useState(null);
 
     // --- WORKSPACE PERSISTENCE LOGIC ---
 
@@ -237,17 +283,130 @@ export default function JuniorApp({ onBack }) {
         }));
     };
 
+    // --- PAINT EDITOR HANDLERS ---
+    const handleEditSprite = (spriteId) => {
+        const sprite = sprites.find(s => s.id === spriteId);
+        if (!sprite) return;
+        setPaintEditor({
+            isOpen: true,
+            type: 'sprite',
+            targetId: spriteId,
+            initialImage: sprite.costumes?.[sprite.currentCostume || 'default'] || null,
+            costumes: Object.entries(sprite.costumes || {}).map(([id, src]) => ({ id, name: id, image: src })),
+            spriteName: sprite.name,
+            mode: 'junior'
+        });
+    };
+
+    const handleEditScene = (sceneId) => {
+        const scene = scenes.find(s => s.id === sceneId);
+        if (!scene) return;
+        setBackdropEditSceneId(sceneId);
+        setIsBackdropChooserOpen(true);
+    };
+
+    // Handle backdrop selection from BackdropChooser
+    const handleBackdropSelect = (name, src, solidColor) => {
+        const targetId = backdropEditSceneId || currentSceneId;
+        if (src) {
+            // Image backdrop
+            setScenes(prev => prev.map(scene => {
+                if (scene.id !== targetId) return scene;
+                return {
+                    ...scene,
+                    background: `url(${src}) center/cover no-repeat`,
+                    backgroundImage: src,
+                    backdropName: name
+                };
+            }));
+        } else if (solidColor) {
+            // Solid color backdrop
+            setScenes(prev => prev.map(scene => {
+                if (scene.id !== targetId) return scene;
+                return {
+                    ...scene,
+                    background: solidColor,
+                    backgroundImage: null,
+                    backdropName: name
+                };
+            }));
+        }
+        setIsBackdropChooserOpen(false);
+        setBackdropEditSceneId(null);
+    };
+
+    // Handle "Paint Custom" from BackdropChooser
+    const handleBackdropPaint = () => {
+        setIsBackdropChooserOpen(false);
+        const targetId = backdropEditSceneId || currentSceneId;
+        const scene = scenes.find(s => s.id === targetId);
+        setPaintEditor({
+            isOpen: true,
+            type: 'backdrop',
+            targetId: targetId,
+            initialImage: null,
+            costumes: [],
+            spriteName: scene?.name || `Scene`,
+            mode: 'junior'
+        });
+    };
+
+    const handlePaintSave = (imageData, svgData) => {
+        const savedData = svgData || imageData;
+        if (paintEditor.type === 'sprite') {
+            setScenes(prev => prev.map(scene => {
+                if (scene.id !== currentSceneId) return scene;
+                return {
+                    ...scene,
+                    sprites: scene.sprites.map(sprite => {
+                        if (sprite.id !== paintEditor.targetId) return sprite;
+                        return {
+                            ...sprite,
+                            costumes: {
+                                ...sprite.costumes,
+                                custom: savedData
+                            },
+                            currentCostume: "custom"
+                        };
+                    })
+                };
+            }));
+        } else if (paintEditor.type === 'backdrop') {
+            setScenes(prev => prev.map(scene => {
+                if (scene.id !== paintEditor.targetId) return scene;
+                return { ...scene, background: `url(${imageData})`, backgroundImage: imageData };
+            }));
+        }
+        setPaintEditor({ ...paintEditor, isOpen: false });
+    };
+
     // Helper: Add Sprite (Delegating to System mainly for storage)
-    const addSprite = (type = "bear") => {
+    const addSprite = (type = "robot") => {
         saveCurrentWorkspace();
-        const newId = `sprite_${Date.now()}`; // Note: Impulse is triggered by user event, so Date.now() here is OK (event handler, not render)
-        // ... (Creation logic remains similar, or move to Hook eventually)
+        const newId = `sprite_${Date.now()}`;
+
+        let costumes = { default: "🐻" };
+        if (type === "robot") {
+            costumes = {
+                default: robotIdle,
+                wave1: robotWave1,
+                wave2: robotWave2,
+                talk: robotTalk1
+            };
+        } else if (type === "bear") {
+            costumes = { default: "🐻", wave: "👋" };
+        } else if (type === "dog") {
+            costumes = { default: "🐶", wave: "wave" }; // Key-based wave fallback in Teddy.jsx
+        }
+
         const newSprite = {
             id: newId,
-            name: type === "bear" ? "Teddy" : type === "dog" ? "Dog" : "Cat",
+            name: type.charAt(0).toUpperCase() + type.slice(1),
             type: type,
             x: 200, y: 150, angle: 0, size: 100, visible: true,
-            costumes: { default: "🐻" }, currentCostume: "default",
+            mirrored: false,
+            costumes: costumes,
+            currentCostume: "default",
             blocks: {}
         };
         setScenes(prev => prev.map(s => {
@@ -293,8 +452,16 @@ export default function JuniorApp({ onBack }) {
 
 
 
+    const handleNextScene = () => {
+        const currentIndex = scenes.findIndex(s => s.id === currentSceneId);
+        const nextIndex = (currentIndex + 1) % scenes.length;
+        handleSceneSelect(scenes[nextIndex].id);
+    };
+
     // --- BIND WINDOW ACTIONS TO FSM ---
     useEffect(() => {
+        window.getLeapProjectData = () => ({ scenes, currentSceneId, activeSpriteId, sprites });
+
         // Expose State Updaters using the SAFE FSM Actions
         window.updateSprite = (id, updates) => spriteActions.update(id, updates);
 
@@ -326,10 +493,12 @@ export default function JuniorApp({ onBack }) {
         // Standard Getters
         window.getCurrentSceneId = () => currentSceneId;
         window.getActiveSpriteId = () => activeSpriteId;
+        window.switchScene = (sceneId) => handleSceneSelect(sceneId);
+        window.changeScene = () => handleNextScene();
 
         // Selection Logic
-        window.selectSprite = (spriteName) => {
-            const sprite = sprites.find(s => s.id.includes(spriteName.toLowerCase()) || s.type === spriteName.toLowerCase());
+        window.selectSprite = (spriteIdOrName) => {
+            const sprite = sprites.find(s => s.id === spriteIdOrName || s.id.includes(spriteIdOrName.toLowerCase()) || s.type === spriteIdOrName.toLowerCase());
             if (sprite) {
                 handleSpriteSelect(sprite.id);
             }
@@ -341,10 +510,12 @@ export default function JuniorApp({ onBack }) {
         window.hideSprite = () => window.setVisible(window.activeSpriteId || "teddy", false);
 
         window.say = (id, text) => {
+            if (timeoutRefs.current[id]) clearTimeout(timeoutRefs.current[id]);
             spriteActions.update(id, { speech: text });
-            setTimeout(() => {
+            timeoutRefs.current[id] = setTimeout(() => {
                 spriteActions.update(id, { speech: null });
-            }, 2000);
+                delete timeoutRefs.current[id];
+            }, 3000);
         };
 
         // ===========================================
@@ -416,9 +587,19 @@ export default function JuniorApp({ onBack }) {
             window.penSize = parseInt(size);
         };
 
-        // Stop All Sounds
+        // Sound Manager Hooks
+        window.playSound = (name) => {
+            soundManager.playAsset(name);
+        };
+        window.playNote = (note, octave) => {
+            soundManager.playNote(note, octave, 0.5);
+        };
+        window.setInstrument = (inst) => {
+            soundManager.setInstrument(inst);
+        };
         window.stopAllSounds = () => {
             window.speechSynthesis.cancel();
+            soundManager.stopAll();
         };
 
         // ... (Keep Sounds/Pen)
@@ -505,6 +686,24 @@ export default function JuniorApp({ onBack }) {
         // Defines blocks using the current Blockly instance
         defineLeapBlocks(Blockly, javascriptGenerator);
         defineLooksBlocks(Blockly, javascriptGenerator);
+        defineSoundBlocks(Blockly, javascriptGenerator);
+
+        // Dynamic Dropdown Colors: Update highlight color based on block color
+        if (!Blockly.FieldDropdown.prototype._originalShowEditor) {
+            Blockly.FieldDropdown.prototype._originalShowEditor = Blockly.FieldDropdown.prototype.showEditor_;
+            Blockly.FieldDropdown.prototype.showEditor_ = function (opt_e) {
+                const block = this.getSourceBlock();
+                if (block) {
+                    const color = block.getColour();
+                    document.documentElement.style.setProperty('--blockly-menu-highlight-color', color);
+                    // Add a subtle tint for the background (10% opacity)
+                    const tint = color.startsWith('#') ? `${color}1A` : 'rgba(0,0,0,0.05)';
+                    document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
+                }
+                this._originalShowEditor(opt_e);
+            };
+        }
+
         // Register Custom Renderer
         registerLeapRenderer(Blockly);
 
@@ -514,15 +713,46 @@ export default function JuniorApp({ onBack }) {
         if (blocklyDiv.current) {
             workspaceRef.current = Blockly.inject(blocklyDiv.current, {
                 toolbox: getToolboxXml("motion"),
-                scrollbars: false, // Junior Preference: No scrollbars on stack? Or Yes? User code had True.
-                trashcan: false, // PictoBlox doesn't usually show trashcan, dragging to palette deletes.
+                scrollbars: false,
+                trashcan: false,
                 horizontalLayout: true,
                 toolboxPosition: "end",
                 renderer: 'leap',
-                sounds: false, // Disable sounds to avoid CSP issues with blockly-demo.appspot.com
-                zoom: { controls: false, wheel: true, startScale: 0.8, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
+                sounds: false,
+                zoom: {
+                    controls: false,
+                    wheel: true,
+                    startScale: 0.8,
+                    maxScale: 3,
+                    minScale: 0.3,
+                    scaleSpeed: 1.2
+                },
                 move: { scrollbars: true, drag: true, wheel: false }
             });
+
+            const flyout = workspaceRef.current.getFlyout();
+            if (flyout) {
+                flyout.autoClose = false;
+            }
+
+            // FLYOUT CONFIG: Full-size blocks, fixed height for horizontal bottom strip
+            const workspace = workspaceRef.current;
+            const initFlyout = workspace.getFlyout();
+            if (initFlyout) {
+                const FIXED_SCALE = 1.0;
+                initFlyout.getFlyoutScale = () => FIXED_SCALE;
+                if (initFlyout.getWorkspace()) {
+                    initFlyout.getWorkspace().setScale(FIXED_SCALE);
+                }
+                // Force flyout to a comfortable height for blocks
+                initFlyout.height_ = 140;
+            }
+
+            // Force Blockly to recalculate layout after flyout changes
+            setTimeout(() => {
+                workspace.resize();
+                window.dispatchEvent(new Event('resize'));
+            }, 100);
         }
 
         // UI Event Listener for Custom Interactions (Grid Picker & Direction Picker)
@@ -592,7 +822,7 @@ export default function JuniorApp({ onBack }) {
             // 2. BLOCK LIMIT
             if (e.type === Blockly.Events.BLOCK_CREATE || e.type === Blockly.Events.BLOCK_CHANGE || e.type === Blockly.Events.BLOCK_MOVE) {
                 const config = getLessonConfig();
-                const MAX_BLOCKS = config.maxBlocks || 100;
+                const MAX_BLOCKS = config.maxBlocks || 500;
 
                 // Count Check
                 const blocks = workspaceRef.current.getAllBlocks(false);
@@ -709,6 +939,9 @@ export default function JuniorApp({ onBack }) {
         setActiveCategory(catId);
         if (workspaceRef.current) {
             workspaceRef.current.updateToolbox(getToolboxXml(catId));
+            // Ensure flyout blocks render at correct scale after update
+            resetFlyoutScale();
+            setTimeout(() => workspaceRef.current?.resize(), 50);
         }
     };
 
@@ -745,8 +978,16 @@ export default function JuniorApp({ onBack }) {
         if (window.resetBear) window.resetBear();
         await window.wait(0.2);
 
-        // Delegate to Interpreter
-        interpreterRef.current?.runStacks('event_flag');
+        // Set running state for UI
+        setIsBlocksRunning(true);
+
+        // Delegate to Interpreter and wait for completion
+        if (interpreterRef.current) {
+            await interpreterRef.current.runStacks('event_flag');
+        }
+
+        // Parallel Execution on Master Engine (if applicable, but likely replaced by Interpreter in Junior)
+        // executionEngine.runEvent('event_flag');
     };
 
     const handleSpriteClick = async (clickedId) => {
@@ -760,28 +1001,64 @@ export default function JuniorApp({ onBack }) {
 
     const stopBlocks = () => {
         interpreterRef.current?.stopAll();
+        executionEngine.stopAll();
         if (window.stopAll) window.stopAll();
+        setIsBlocksRunning(false);
     };
 
-    // --- SAVE / LOAD ---
-    const saveProject = () => {
-        if (!workspaceRef.current) return;
-        const state = Blockly.serialization.workspaces.save(workspaceRef.current);
-        const projectData = {
-            name: projectName,
-            blocks: state,
-            sprites: sprites
+    // Full reset: stops blocks AND resets sprite position to defaults
+    const handleReset = () => {
+        stopBlocks();
+        if (window.hardResetBear) window.hardResetBear();
+    };
+
+    // --- CAMERA TOGGLE ---
+    const toggleCamera = async () => {
+        if (isCameraOn) {
+            // Stop camera
+            if (cameraStreamRef.current) {
+                cameraStreamRef.current.getTracks().forEach(track => track.stop());
+                cameraStreamRef.current = null;
+            }
+            if (cameraVideoRef.current) {
+                cameraVideoRef.current.srcObject = null;
+            }
+            setIsCameraOn(false);
+        } else {
+            // Start camera
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                cameraStreamRef.current = stream;
+                if (cameraVideoRef.current) {
+                    cameraVideoRef.current.srcObject = stream;
+                }
+                setIsCameraOn(true);
+            } catch (err) {
+                console.error('Camera error:', err);
+                alert('Could not access camera. Please allow camera permissions.');
+            }
+        }
+    };
+
+    // Cleanup camera on unmount
+    useEffect(() => {
+        return () => {
+            if (cameraStreamRef.current) {
+                cameraStreamRef.current.getTracks().forEach(track => track.stop());
+            }
         };
-        const json = JSON.stringify(projectData, null, 2);
-        const blob = new Blob([json], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${projectName.replace(/\s+/g, "_")}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+    }, []);
+
+    // Sync video stream to the video element after it renders
+    useEffect(() => {
+        if (isCameraOn && cameraVideoRef.current && cameraStreamRef.current) {
+            cameraVideoRef.current.srcObject = cameraStreamRef.current;
+        }
+    }, [isCameraOn]);
+
+    // --- SAVE / LOAD (ProjectManager Integration) ---
+    const saveProject = () => {
+        projectManager.downloadProject(`${projectName.replace(/\s+/g, "_")}.lbproject`);
     };
 
     const loadProject = () => {
@@ -792,15 +1069,15 @@ export default function JuniorApp({ onBack }) {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
             try {
-                const data = JSON.parse(event.target.result);
-                // Handle both old (just serialization) and new schema
-                const state = data.blocks ? data.blocks : data;
-                Blockly.serialization.workspaces.load(state, workspaceRef.current);
+                const json = event.target.result;
+                await projectManager.loadProject(json);
+                const data = JSON.parse(json);
                 if (data.name) setProjectName(data.name);
+                // The managers will trigger UI updates if connected, 
+                // but since we are using useSpriteSystem hook, we need to manually sync for now
                 if (data.sprites) {
-                    // Update scenes with new sprites (Single scene mode assumption for simple load)
                     setScenes(prev => prev.map(s => {
                         if (s.id === currentSceneId) return { ...s, sprites: data.sprites };
                         return s;
@@ -833,11 +1110,28 @@ export default function JuniorApp({ onBack }) {
         if (action === "redo") workspaceRef.current?.undo(true);
     };
 
-    const zoomIn = () => workspaceRef.current?.zoom(workspaceRef.current.getMetrics().viewWidth / 2, workspaceRef.current.getMetrics().viewHeight / 2, 1);
-    const zoomOut = () => workspaceRef.current?.zoom(workspaceRef.current.getMetrics().viewWidth / 2, workspaceRef.current.getMetrics().viewHeight / 2, -1);
-    const zoomReset = () => { workspaceRef.current?.setScale(1); workspaceRef.current?.scrollCenter(); };
-    const undo = () => workspaceRef.current?.undo(false);
-    const redo = () => workspaceRef.current?.undo(true);
+    const resetFlyoutScale = () => {
+        const flyout = workspaceRef.current?.getFlyout();
+        if (flyout && flyout.getWorkspace()) {
+            flyout.getWorkspace().setScale(1.0);
+        }
+    };
+
+    // --- RECORDING ---
+    const handleToggleRecording = async () => {
+        if (!isRecording) {
+            const success = await soundManager.startRecording();
+            if (success) setIsRecording(true);
+        } else {
+            const name = `Recording ${recordingCount}`;
+            const url = await soundManager.stopRecording(name);
+            setIsRecording(false);
+            if (url) {
+                setRecordingCount(prev => prev + 1);
+                alert(`Saved as ${name}. Note: To perform custom recordings, use 'play sound' block.`);
+            }
+        }
+    };
 
     // --- DELETE SPRITE ---
     const deleteSprite = (spriteId) => {
@@ -902,16 +1196,24 @@ export default function JuniorApp({ onBack }) {
 
     // --- FULLSCREEN ---
     const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Listen for fullscreen changes (e.g. user presses ESC)
+    useEffect(() => {
+        const handleFsChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFsChange);
+        return () => document.removeEventListener('fullscreenchange', handleFsChange);
+    }, []);
+
     const toggleFullscreen = () => {
         const stageContainer = document.querySelector('.stage')?.parentElement;
         if (!stageContainer) return;
 
         if (!document.fullscreenElement) {
             stageContainer.requestFullscreen?.();
-            setIsFullscreen(true);
         } else {
             document.exitFullscreen?.();
-            setIsFullscreen(false);
         }
     };
 
@@ -942,16 +1244,117 @@ export default function JuniorApp({ onBack }) {
 
             <div style={{ flex: 1, display: "flex", overflow: 'hidden' }}>
                 <div id="wrapper" style={{ width: "60%", height: "100%", position: "relative" }}>
+                    {/* Selected Sprite Indicator overlay */}
+                    {appMode === 'stage' && (
+                        (() => {
+                            const activeSprite = sprites.find(s => s.id === activeSpriteId);
+                            if (activeSprite && activeSprite.currentCostume) {
+                                // Use static import for robot or fallback to currentCostume src if it's dynamic
+                                let imgSrc = null;
+                                if (activeSprite.type === 'robot' && activeSprite.costumes) {
+                                    imgSrc = activeSprite.costumes[activeSprite.currentCostume];
+                                } else if (activeSprite.currentCostume && typeof activeSprite.currentCostume === 'object' && activeSprite.currentCostume.image) {
+                                    imgSrc = activeSprite.currentCostume.image.src;
+                                }
+
+                                if (imgSrc) {
+                                    return (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '16px',
+                                            right: '16px',
+                                            width: '60px',
+                                            height: '60px',
+                                            background: 'white',
+                                            borderRadius: '8px',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                            border: '2px solid #855CD6',
+                                            pointerEvents: 'none',
+                                            zIndex: 10,
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            padding: '6px',
+                                        }}>
+                                            <img
+                                                src={imgSrc}
+                                                alt={activeSprite.name}
+                                                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                            />
+                                        </div>
+                                    );
+                                }
+                            }
+                            return null;
+                        })()
+                    )}
                     <div id="blocklyDiv" ref={blocklyDiv} className="workspace" style={{ width: "100%", height: "100%" }}></div>
-                    <div style={{ position: "absolute", left: "10px", bottom: "135px", display: "flex", flexDirection: "row", gap: "8px", zIndex: 90, background: "rgba(255,255,255,0.9)", padding: "8px 12px", borderRadius: "30px", boxShadow: "0 2px 10px rgba(0,0,0,0.15)" }}>
-                        {CATEGORIES.map(cat => (
-                            <CategoryButton key={cat.id} category={cat} isActive={activeCategory === cat.id} onClick={() => handleCategoryClick(cat.id)} />
-                        ))}
+
+                    {/* ════ FLOATING WORKSPACE CONTROLS (shared component) ════ */}
+                    <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={resetFlyoutScale} style={{ bottom: '210px', right: '14px' }} />
+                    <WorkspaceTrash workspaceRef={workspaceRef} />
+
+                    {/* ════ CATEGORY BAR (bottom, full width tube) ════ */}
+                    <div style={{
+                        position: "absolute",
+                        left: "14px",
+                        right: "14px",
+                        bottom: "145px",
+                        height: "56px",
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        zIndex: 90,
+                        background: "#f4f4f4",
+                        border: "1px solid #e0e0e0",
+                        padding: "0 0 0 8px",
+                        borderRadius: "30px",
+                        boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+                        overflow: "hidden" /* Essential for the right button to respect border radius */
+                    }}>
+                        {/* Scrollable Categories List */}
+                        <div style={{ display: "flex", gap: "8px", alignItems: "center", height: "100%", overflowX: "auto", paddingRight: "10px" }} className="no-scrollbar">
+                            {CATEGORIES.map(cat => (
+                                <CategoryButton key={cat.id} category={cat} isActive={activeCategory === cat.id} onClick={() => handleCategoryClick(cat.id)} />
+                            ))}
+                        </div>
+
+                        {/* Add Blocks Button */}
+                        <button
+                            onClick={() => alert("🧩 More blocks coming soon!")}
+                            title="Add More Blocks"
+                            style={{
+                                width: "68px",
+                                height: "58px", /* Slightly larger to combat border-radius clipping artifacts */
+                                background: "#762eadff",
+                                border: "none",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                transition: "all 0.15s",
+                                position: "relative",
+                                flexShrink: 0
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.background = "#793ba8";
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.background = "#662d91";
+                            }}
+                        >
+                            {/* Updated puzzle icon with + matching screenshot */}
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="white" stroke="none" style={{ transform: "rotate(15deg) scale(0.9) translate(1px, -2px)" }}>
+                                <path d="M19 14.5a2.5 2.5 0 1 1-5 0V14h-3v4.5a2.5 2.5 0 1 1-5 0V14H4.5a2.5 2.5 0 1 1 0-5H4V6c0-1.1.9-2 2-2h3V2.5a2.5 2.5 0 1 1 5 0V4h3c1.1 0 2 .9 2 2v3h1.5a2.5 2.5 0 1 1 0 5H19v.5z" />
+                            </svg>
+                            <span style={{ position: "absolute", top: "8px", right: "12px", fontWeight: "900", fontSize: "16px", color: "white", lineHeight: 1 }}>+</span>
+                        </button>
                     </div>
                 </div>
 
                 <RightPanel
-                    sprites={sprites} // Current scene sprites
+                    sprites={sprites}
                     scenes={scenes}
                     currentSprite={activeSpriteId}
                     currentScene={currentSceneId}
@@ -961,31 +1364,75 @@ export default function JuniorApp({ onBack }) {
                     onSelectScene={handleSceneSelect}
                     onAddScene={addScene}
                     onDeleteScene={deleteScene}
+                    onEditSprite={handleEditSprite}
+                    onEditScene={handleEditScene}
                     onGreenFlag={runBlocks}
                     onStop={stopBlocks}
-                    onZoomIn={zoomIn}
-                    onZoomOut={zoomOut}
-                    onZoomReset={zoomReset}
-                    onUndo={undo}
-                    onRedo={redo}
-                    onScreenshot={takeScreenshot}
+                    onReset={handleReset}
+                    onCamera={toggleCamera}
                     onToggleGrid={toggleGrid}
                     onFullscreen={toggleFullscreen}
                     showGrid={showGrid}
+                    isRunning={isBlocksRunning}
+                    isCameraOn={isCameraOn}
+                    isFullscreen={isFullscreen}
+                    isDraggingSprite={isDraggingSpriteOnStage}
+                    spriteGridX={(() => {
+                        const activeSprite = sprites.find(s => s.id === activeSpriteId);
+                        if (!activeSprite || !stageContainerRef.current) return null;
+                        const w = stageContainerRef.current.offsetWidth || 1;
+                        const spriteCenter = activeSprite.x + 40; // offset for sprite icon center
+                        return Math.max(0, Math.min(20, (spriteCenter / w) * 20));
+                    })()}
+                    spriteGridY={(() => {
+                        const activeSprite = sprites.find(s => s.id === activeSpriteId);
+                        if (!activeSprite || !stageContainerRef.current) return null;
+                        const h = stageContainerRef.current.offsetHeight || 1;
+                        const spriteCenter = activeSprite.y + 40; // offset for sprite icon center
+                        return Math.max(1, Math.min(15, 15 - (spriteCenter / h) * 15));
+                    })()}
                 >
                     {/* STAGE CHILDREN */}
-                    <div className="stage" style={{ width: '100%', height: '100%', position: "relative", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <div ref={stageContainerRef} className="stage" style={{
+                        width: '100%', height: '100%', position: "relative", overflow: "visible",
+                        background: currentScene.backgroundImage
+                            ? `url(${currentScene.backgroundImage}) center/cover no-repeat`
+                            : (currentScene.background || 'transparent'),
+                    }}>
+                        {/* Camera Video Backdrop */}
+                        {isCameraOn && (
+                            <video
+                                ref={cameraVideoRef}
+                                autoPlay
+                                playsInline
+                                muted
+                                style={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                    zIndex: 0,
+                                    transform: "scaleX(-1)",
+                                    borderRadius: "4px",
+                                }}
+                            />
+                        )}
                         {sprites.map(sprite => (
-                            <div key={sprite.id} style={{ display: activeSpriteId === sprite.id ? 'block' : 'none' }}>
-                                <Teddy
-                                    id={sprite.id}
-                                    type={sprite.type}
-                                    active={activeSpriteId === sprite.id}
-                                    x={sprite.x} y={sprite.y} angle={sprite.angle} size={sprite.size}
-                                    visible={sprite.visible} currentCostume={sprite.currentCostume}
-                                    onClick={() => handleSpriteClick(sprite.id)}
-                                />
-                            </div>
+                            <Teddy
+                                key={sprite.id}
+                                id={sprite.id}
+                                type={sprite.type}
+                                active={activeSpriteId === sprite.id}
+                                x={sprite.x} y={sprite.y} angle={sprite.angle} size={sprite.size}
+                                visible={sprite.visible} currentCostume={sprite.currentCostume}
+                                costumes={sprite.costumes}
+                                speech={sprite.speech}
+                                mirrored={sprite.mirrored}
+                                onClick={() => handleSpriteClick(sprite.id)}
+                                onDragStateChange={(dragging) => setIsDraggingSpriteOnStage(dragging)}
+                            />
                         ))}
                         <canvas
                             ref={canvasRef}
@@ -1005,8 +1452,9 @@ export default function JuniorApp({ onBack }) {
                             <h2 style={{ margin: 0, fontSize: "20px" }}>Choose a Sprite</h2>
                             <button onClick={() => setIsSpriteModalOpen(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer" }}>✕</button>
                         </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "15px" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px" }}>
                             {[
+                                { type: "robot", name: "Robot", icon: null, image: "/assets/sprites/robot/robot_idle.svg" },
                                 { type: "bear", name: "Teddy", icon: "🐻" },
                                 { type: "dog", name: "Dog", icon: "🐶" },
                                 { type: "cat", name: "Cat", icon: "🐱" }
@@ -1015,19 +1463,36 @@ export default function JuniorApp({ onBack }) {
                                     key={s.type}
                                     onClick={() => addSprite(s.type)}
                                     style={{
-                                        border: "1px solid #eee", borderRadius: "8px", padding: "20px",
-                                        textAlign: "center", cursor: "pointer", background: "#f9f9f9"
+                                        border: s.type === "robot" ? "2px solid #7B4FC4" : "1px solid #eee",
+                                        borderRadius: "8px", padding: "20px",
+                                        textAlign: "center", cursor: "pointer",
+                                        background: s.type === "robot" ? "#f5f0ff" : "#f9f9f9"
                                     }}
-                                    onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
-                                    onMouseLeave={e => e.currentTarget.style.background = "#f9f9f9"}
+                                    onMouseEnter={e => e.currentTarget.style.background = s.type === "robot" ? "#ede5ff" : "#f0f0f0"}
+                                    onMouseLeave={e => e.currentTarget.style.background = s.type === "robot" ? "#f5f0ff" : "#f9f9f9"}
                                 >
-                                    <div style={{ fontSize: "40px", marginBottom: "10px" }}>{s.icon}</div>
+                                    <div style={{ fontSize: "40px", marginBottom: "10px", display: "flex", justifyContent: "center", alignItems: "center", height: "50px" }}>
+                                        {s.image ? (
+                                            <img src={s.image} alt={s.name} style={{ width: "50px", height: "50px", objectFit: "contain" }} />
+                                        ) : (
+                                            s.icon
+                                        )}
+                                    </div>
                                     <div style={{ fontWeight: "bold" }}>{s.name}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* BACKDROP CHOOSER MODAL */}
+            {isBackdropChooserOpen && (
+                <BackdropChooser
+                    onSelect={handleBackdropSelect}
+                    onPaint={handleBackdropPaint}
+                    onClose={() => { setIsBackdropChooserOpen(false); setBackdropEditSceneId(null); }}
+                />
             )}
 
             {/* POSITION PICKER MODAL */}
@@ -1091,6 +1556,19 @@ export default function JuniorApp({ onBack }) {
                     }}
                 />
             )}
+
+            {/* PAINT EDITOR MODAL */}
+            {paintEditor.isOpen && (
+                <PaintEditor
+                    title={paintEditor.type === 'sprite' ? 'Edit Sprite Costume' : 'Edit Scene Backdrop'}
+                    initialImage={paintEditor.initialImage}
+                    onSave={handlePaintSave}
+                    onClose={() => setPaintEditor({ ...paintEditor, isOpen: false })}
+                    costumes={paintEditor.costumes}
+                    spriteName={paintEditor.spriteName}
+                    mode={paintEditor.mode}
+                />
+            )}
         </div>
     );
 }
@@ -1101,134 +1579,76 @@ function ControlButton({ onClick, icon, title }) {
 
 function CategoryButton({ category, isActive, onClick }) {
     return (
-        <button onClick={onClick} title={category.name} style={{ width: "45px", height: "45px", borderRadius: "50%", background: category.color, border: isActive ? "3px solid #a8a8a8ff" : "2px solid white", boxShadow: "0 2px 5px rgba(0,0,0,0.2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", color: "white", transform: isActive ? "scale(1.15)" : "scale(1)", transition: "all 0.1s" }}>
-            {category.icon}
+        <button
+            onClick={onClick}
+            title={category.name}
+            style={{
+                width: "46px",
+                height: "46px",
+                borderRadius: "50%",
+                background: isActive ? category.color : "white",
+                border: isActive ? "2px solid rgba(0,0,0,0.15)" : `2px solid ${category.color}`,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: isActive ? "white" : category.color,
+                transition: "all 0.15s ease",
+                outline: "none",
+                padding: 0,
+                flexShrink: 0,
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+            }}
+        >
+            <div style={{ transform: isActive ? "scale(1.1)" : "scale(1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {category.icon}
+            </div>
         </button>
     )
+}
+
+/* ─────────────── Floating Workspace Control Button ─────────────── */
+function WorkspaceControl({ icon, title, onClick }) {
+    return (
+        <button
+            onClick={onClick}
+            title={title}
+            style={{
+                width: "34px",
+                height: "34px",
+                borderRadius: "8px",
+                background: "rgba(255,255,255,0.92)",
+                border: "1px solid #ddd",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "16px",
+                fontWeight: "bold",
+                color: "#666",
+                transition: "all 0.15s",
+                outline: "none",
+                padding: 0,
+            }}
+            onMouseEnter={e => {
+                e.currentTarget.style.background = "#f0f0f0";
+                e.currentTarget.style.transform = "scale(1.08)";
+            }}
+            onMouseLeave={e => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.92)";
+                e.currentTarget.style.transform = "scale(1)";
+            }}
+        >
+            {icon}
+        </button>
+    );
 }
 
 // --- TOP BAR COMPONENTS ---
 
 // Inline TopBar Component
-function TopBar({ onBack, projectName, setProjectName, onFileMenu, onEditMenu, onConnect, connectionStatus, connectedDevice, selectedBoard, onSelectBoard, hintMessage }) {
-    const config = getLessonConfig();
-    const isJunior = config.juniorMode;
-    const allowHardware = config.hardware?.allowed !== false;
-
-    return (
-        <div style={{ height: "50px", background: "var(--header-purple)", color: "white", display: 'flex', alignItems: 'center', padding: '0 15px', justifyContent: "space-between", boxShadow: "0 2px 5px rgba(0,0,0,0.2)", zIndex: 100 }}>
-            {/* LEFT: Logo & Menus */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <button
-                    onClick={onBack}
-                    style={{
-                        background: 'rgba(255,255,255,0.2)',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '18px',
-                        color: 'white',
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: '5px'
-                    }}
-                    title="Back to Home"
-                >
-                    🏠
-                </button>
-                <div style={{ display: "flex", flexDirection: "column", lineHeight: "1" }}>
-                    <div style={{ fontWeight: 'bold', fontSize: "16px" }}>LeapBlocks</div>
-                    <div style={{ fontSize: "10px", opacity: 0.8 }}>Junior Blocks</div>
-                </div>
-
-                <div style={{ height: "30px", width: "1px", background: "rgba(255,255,255,0.2)", margin: "0 5px" }}></div>
-
-                {!isJunior && (
-                    <>
-                        <Dropdown label="File" options={[
-                            { label: "New Workspace", action: "new_workspace" },
-                            { label: "New Project", action: "new_project" },
-                            "-",
-                            { label: "Open Project", action: "open" },
-                            { label: "Save Project", action: "save" },
-                            "-",
-                            { label: "Examples", action: "examples" },
-                        ]} onSelect={onFileMenu} />
-
-                        <Dropdown label="Edit" options={[
-                            { label: "Undo", action: "undo" },
-                            { label: "Redo", action: "redo" }
-                        ]} onSelect={onEditMenu} />
-                    </>
-                )}
-
-                {isJunior && (
-                    <div style={{ fontSize: "14px", fontWeight: "bold", background: "rgba(255,255,255,0.2)", padding: "5px 10px", borderRadius: "12px" }}>
-                        Lesson Mode
-                    </div>
-                )}
-            </div>
-
-            {/* BOARD & CONNECT */}
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                {!isJunior && <BoardDropdown selected={selectedBoard} onSelect={onSelectBoard} />}
-
-                {allowHardware && (
-                    <div onClick={onConnect} className="header-btn" style={{
-                        background: connectionStatus === "connected" ? "rgba(16, 185, 129, 0.2)" : "rgba(255,255,255,0.1)",
-                        border: connectionStatus === "connected" ? "1px solid #10B981" : "1px solid transparent",
-                        color: connectionStatus === "connected" ? "#10B981" : "white"
-                    }}>
-                        <span style={{ display: 'flex', alignItems: 'center' }}><Zap fill="currentColor" stroke="none" size={18} /></span>
-                        <span style={{ fontSize: "12px", fontWeight: "bold", color: "inherit" }}>
-                            {connectionStatus === "connected" ? "Connected" : "Connect"}
-                        </span>
-                    </div>
-                )}
-            </div>
-
-            {/* CENTER: Hint or Project Name */}
-            {hintMessage ? (
-                <div style={{
-                    position: "absolute", left: "50%", transform: "translateX(-50%)",
-                    background: "#FFD700", color: "#333", padding: "5px 15px", borderRadius: "20px",
-                    fontSize: "14px", fontWeight: "bold", boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
-                    animation: "popIn 0.3s ease-out"
-                }}>
-                    💡 {hintMessage}
-                </div>
-            ) : (
-                <input
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    style={{
-                        background: "transparent", border: "1px solid transparent",
-                        borderBottom: "1px solid rgba(255,255,255,0.3)",
-                        padding: "4px", color: "white", textAlign: "center", width: "200px",
-                        fontSize: "14px"
-                    }}
-                />
-            )}
-
-            {/* RIGHT: User & Settings */}
-            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                <IconButton icon={<MessageCircle fill="currentColor" stroke="none" />} title="Feedback" />
-                <IconButton icon={<Trophy fill="currentColor" stroke="none" />} title="Leaderboard" />
-                <IconButton icon={<Settings fill="currentColor" stroke="none" />} title="Settings" />
-                <button className="header-btn" style={{
-                    background: "#F59E0B", color: "white", fontSize: "12px"
-                }}>
-                    Sign In
-                </button>
-            </div>
-
-            <style>{`@keyframes popIn { 0% { transform: translateX(-50%) scale(0.8); opacity: 0; } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }`}</style>
-        </div>
-    );
-}
+// --- REMOVED DUPLICATE TOPBAR COMPONENT ---
 
 function Dropdown({ label, options, onSelect }) {
     const [open, setOpen] = useState(false);

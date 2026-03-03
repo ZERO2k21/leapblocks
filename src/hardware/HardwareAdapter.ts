@@ -112,7 +112,7 @@ export class HardwareAdapter {
     /**
      * Set a digital pin HIGH or LOW
      */
-    async setDigitalPin(pin: number, value: boolean): Promise<boolean> {
+    async setDigitalPin(pin: number | string, value: boolean): Promise<boolean> {
         const response = await this.sendCommand(
             buildCommand(COMMANDS.SET_DIGITAL, pin, value ? 1 : 0)
         );
@@ -122,7 +122,7 @@ export class HardwareAdapter {
     /**
      * Read a digital pin
      */
-    async readDigitalPin(pin: number): Promise<boolean | null> {
+    async readDigitalPin(pin: number | string): Promise<boolean | null> {
         const response = await this.sendCommand(
             buildCommand(COMMANDS.READ_DIGITAL, pin)
         );
@@ -135,7 +135,7 @@ export class HardwareAdapter {
     /**
      * Read an analog pin (0-1023)
      */
-    async readAnalogPin(pin: number): Promise<number | null> {
+    async readAnalogPin(pin: number | string): Promise<number | null> {
         const response = await this.sendCommand(
             buildCommand(COMMANDS.READ_ANALOG, pin)
         );
@@ -148,7 +148,7 @@ export class HardwareAdapter {
     /**
      * Set PWM value on a pin (0-255)
      */
-    async setPWM(pin: number, value: number): Promise<boolean> {
+    async setPWM(pin: number | string, value: number): Promise<boolean> {
         const clamped = Math.max(0, Math.min(255, Math.round(value)));
         const response = await this.sendCommand(
             buildCommand(COMMANDS.SET_PWM, pin, clamped)
@@ -159,7 +159,7 @@ export class HardwareAdapter {
     /**
      * Set servo angle (0-180 degrees)
      */
-    async setServo(pin: number, angle: number): Promise<boolean> {
+    async setServo(pin: number | string, angle: number): Promise<boolean> {
         const clamped = Math.max(0, Math.min(180, Math.round(angle)));
         const response = await this.sendCommand(
             buildCommand(COMMANDS.SET_SERVO, pin, clamped)
@@ -189,7 +189,7 @@ export class HardwareAdapter {
     /**
      * Play a tone on a buzzer
      */
-    async playTone(pin: number, frequency: number, durationMs: number): Promise<boolean> {
+    async playTone(pin: number | string, frequency: number, durationMs: number): Promise<boolean> {
         const response = await this.sendCommand(
             buildCommand(COMMANDS.TONE, pin, `${frequency},${durationMs}`)
         );
@@ -199,7 +199,7 @@ export class HardwareAdapter {
     /**
      * Stop tone on a pin
      */
-    async stopTone(pin: number): Promise<boolean> {
+    async stopTone(pin: number | string): Promise<boolean> {
         const response = await this.sendCommand(
             buildCommand(COMMANDS.NOTONE, pin)
         );
@@ -211,6 +211,69 @@ export class HardwareAdapter {
      */
     async setBuiltinLED(on: boolean): Promise<boolean> {
         return this.setDigitalPin(13, on);
+    }
+
+    private sensorCache: Map<string, number> = new Map();
+    private activePolling: Map<string, NodeJS.Timeout> = new Map();
+
+    /**
+     * Read ultrasonic distance synchronously from cache
+     */
+    getUltrasonicSync(trig: number | string, echo: number | string): number {
+        const key = `ultrasonic_${trig}_${echo}`;
+        // Start polling if not already active
+        if (!this.activePolling.has(key)) {
+            this.startPollingUltrasonic(trig, echo);
+        }
+        return this.sensorCache.get(key) ?? 0;
+    }
+
+    /**
+     * Start polling ultrasonic sensor
+     */
+    startPollingUltrasonic(trig: number | string, echo: number | string, intervalMs: number = 200): void {
+        const key = `ultrasonic_${trig}_${echo}`;
+        if (this.activePolling.has(key)) return;
+
+        console.log(`[HardwareAdapter] Starting polling for ${key}`);
+        const poll = async () => {
+            if (!this.isConnected) return;
+            const val = await this.readUltrasonic(trig, echo);
+            if (val !== null) {
+                this.sensorCache.set(key, val);
+            }
+        };
+
+        // Initial poll
+        poll();
+
+        // Setup interval
+        const timer = setInterval(poll, intervalMs);
+        this.activePolling.set(key, timer);
+    }
+
+    /**
+     * Stop all sensor polling
+     */
+    stopAllPolling(): void {
+        console.log('[HardwareAdapter] Stopping all polling');
+        this.activePolling.forEach((timer) => clearInterval(timer));
+        this.activePolling.clear();
+        this.sensorCache.clear();
+    }
+
+    /**
+     * Read ultrasonic distance (cm)
+     */
+    async readUltrasonic(trig: number | string, echo: number | string): Promise<number | null> {
+        const response = await this.sendCommand(
+            buildCommand(COMMANDS.READ_ULTRASONIC, trig, echo),
+            500 // Short timeout for polling
+        );
+        if (response.success && response.data !== undefined) {
+            return parseFloat(response.data);
+        }
+        return null;
     }
 }
 

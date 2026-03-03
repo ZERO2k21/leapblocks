@@ -15,7 +15,9 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
   },
-  rebuildConfig: {},
+  rebuildConfig: {
+    onlyModules: ['serialport']
+  },
   makers: [
     new MakerSquirrel({}),
     new MakerZIP({}, ['darwin']),
