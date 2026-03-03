@@ -10,7 +10,8 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
-    "build:web": "webpack --config webpack.web.config.js"
+    "build:web": "webpack --config webpack.web.config.js",
+    "build": "webpack --config webpack.web.config.js"
   },
   "keywords": [],
   "author": {
