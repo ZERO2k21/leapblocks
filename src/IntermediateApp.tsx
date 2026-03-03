@@ -431,10 +431,21 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         });
 
         setIsRunning(true);
-        animationVM.triggerFlag(compiledScripts);
-        addLog('Started animation');
+
+        // Check if execution was paused (stopped by stop_all block)
+        if (animationVM.isPaused) {
+            console.log('[APP] Resuming paused animation...');
+            animationVM.resume();
+            addLog('Resumed animation');
+        } else {
+            console.log('[APP] Starting new animation...');
+            // Fresh start
+            animationVM.triggerFlag(compiledScripts);
+            addLog('Started animation');
+        }
         console.log('[APP] ══════════════════════════════════════════');
     }, [compiledScripts, addLog, selectedSpriteId, sprites]);
+
 
     const handleStopClick = useCallback(() => {
         setIsRunning(false);

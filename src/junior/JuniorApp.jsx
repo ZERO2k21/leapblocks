@@ -125,7 +125,7 @@ const categoryContents = {
 };
 
 // --- JUNIOR BACKEND INTEGRATION ---
-import { Interpreter as LeapInterpreter } from "./engine/Interpreter";
+import { Interpreter as LeapInterpreter, ExecutionStop } from "./engine/Interpreter";
 import { useSpriteSystem } from "./hooks/useSpriteSystem";
 import { getLessonConfig } from "./engine/LessonConfig";
 import { GoalManager } from "./engine/GoalManager";
@@ -602,6 +602,11 @@ export default function JuniorApp({ onBack }) {
             soundManager.stopAll();
         };
 
+        // Stop Execution - Throws ExecutionStop error to halt execution immediately
+        window.stopExecution = () => {
+            throw new ExecutionStop("Execution stopped by Stop block");
+        };
+
         // ... (Keep Sounds/Pen)
 
     }, [spriteActions, activeSpriteId, currentSceneId, sprites]); // Added sprites to dependencies
@@ -971,10 +976,25 @@ export default function JuniorApp({ onBack }) {
         }
 
         if (isRunning.current) {
+            // If already running and NOT paused, then a click might mean restart or stop
+            // Usually green flag on running script restarts it or stops it. 
+            // In PictoBlox/Scratch, green flag restarts.
+            // But if we want pause/resume: we shouldn't be running. 
+            // Wait, if it is paused, isRunning.current is FALSE (we set it to false on stop/pause)
             stopBlocks();
             await window.wait(0.1);
         }
 
+        // Check if execution was paused (stopped by stop block)
+        if (interpreterRef.current?.isPaused) {
+            console.log("Resuming paused execution...");
+            setIsBlocksRunning(true);
+            // This will resolve the pause Promise in the interpreter
+            interpreterRef.current.resumeExecution();
+            return; // Don't run stacks again, just let the existing ones continue
+        }
+
+        // Fresh start - Reset sprite
         if (window.resetBear) window.resetBear();
         await window.wait(0.2);
 
@@ -1001,6 +1021,7 @@ export default function JuniorApp({ onBack }) {
 
     const stopBlocks = () => {
         interpreterRef.current?.stopAll();
+        interpreterRef.current?.clearPauseFlag(); // Clear pause flag on manual stop
         executionEngine.stopAll();
         if (window.stopAll) window.stopAll();
         setIsBlocksRunning(false);
@@ -1008,7 +1029,7 @@ export default function JuniorApp({ onBack }) {
 
     // Full reset: stops blocks AND resets sprite position to defaults
     const handleReset = () => {
-        stopBlocks();
+        stopBlocks(); // This already clears pause flag
         if (window.hardResetBear) window.hardResetBear();
     };
 

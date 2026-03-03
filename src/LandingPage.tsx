@@ -300,12 +300,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             color: '#10B981', gradient: 'linear-gradient(135deg, #10B981, #059669)',
             available: false, onClick: () => showComingSoon('Quiz'),
         },
-
-        {
-            icon: '📱', title: 'App Design', subtitle: 'Design beautiful app interfaces',
-            color: '#EC4899', gradient: 'linear-gradient(135deg, #EC4899, #DB2777)',
-            available: false, onClick: () => showComingSoon('App Design'),
-        },
     ];
 
     return (

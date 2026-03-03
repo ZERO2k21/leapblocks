@@ -139,6 +139,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                 setTimeout(() => setFeedback(null), 1000);
             };
             window.changeScene = () => window.showFeedback("Scene Changed! 🖼️");
+            // Updated stopAll to show feedback (ExecutionStop is thrown by the stop block)
             window.stopAll = () => window.showFeedback("STOPPED 🛑");
         }
 
