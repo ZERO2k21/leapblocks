@@ -217,7 +217,7 @@ export default function JuniorApp({ onBack }) {
     const currentScene = scenes.find(s => s.id === currentSceneId) || scenes[0];
     const sprites = currentScene.sprites;
 
-    // --- GOAL CHECKING (Reactive) ---
+    // --- GOAL CHECKING (Reactive) ---#
     useEffect(() => {
         const config = getLessonConfig();
         if (config.goal && !winMessage) {
