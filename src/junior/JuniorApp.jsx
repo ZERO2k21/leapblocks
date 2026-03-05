@@ -24,6 +24,7 @@ import { looksPreview } from "./engine/looksPreview"; // Import Looks Preview
 import PositionPicker from "./components/PositionPicker"; // Import Picker Component
 import DirectionPicker from "./components/DirectionPicker"; // Import Direction Picker
 import PaintEditor from "../components/PaintEditor";
+import { SpriteLibrary } from "../components/SpriteLibrary";
 import WorkspaceControls from "../components/WorkspaceControls";
 import WorkspaceTrash from "../components/WorkspaceTrash";
 import { executionEngine } from "../engine/ExecutionEngine";
@@ -125,7 +126,7 @@ const categoryContents = {
 };
 
 // --- JUNIOR BACKEND INTEGRATION ---
-import { Interpreter as LeapInterpreter } from "./engine/Interpreter";
+import { Interpreter as LeapInterpreter, ExecutionStop } from "./engine/Interpreter";
 import { useSpriteSystem } from "./hooks/useSpriteSystem";
 import { getLessonConfig } from "./engine/LessonConfig";
 import { GoalManager } from "./engine/GoalManager";
@@ -381,28 +382,48 @@ export default function JuniorApp({ onBack }) {
     };
 
     // Helper: Add Sprite (Delegating to System mainly for storage)
-    const addSprite = (type = "robot") => {
+    const addSprite = (spriteData = null) => {
         saveCurrentWorkspace();
         const newId = `sprite_${Date.now()}`;
 
         let costumes = { default: "🐻" };
-        if (type === "robot") {
-            costumes = {
-                default: robotIdle,
-                wave1: robotWave1,
-                wave2: robotWave2,
-                talk: robotTalk1
-            };
-        } else if (type === "bear") {
-            costumes = { default: "🐻", wave: "👋" };
-        } else if (type === "dog") {
-            costumes = { default: "🐶", wave: "wave" }; // Key-based wave fallback in Teddy.jsx
+        let spriteName = "Bear";
+        let spriteType = "bear";
+
+        if (spriteData && typeof spriteData === 'object') {
+            // From SpriteLibrary selection
+            spriteName = spriteData.name || 'Sprite';
+            spriteType = spriteData.id || spriteData.name?.toLowerCase() || 'custom';
+
+            if (spriteData.image) {
+                costumes = { default: spriteData.image };
+            } else if (spriteData.emoji) {
+                costumes = { default: spriteData.emoji };
+            }
+        } else {
+            // Legacy string-based type
+            const type = spriteData || 'robot';
+            spriteType = type;
+            spriteName = type.charAt(0).toUpperCase() + type.slice(1);
+
+            if (type === "robot") {
+                costumes = {
+                    default: robotIdle,
+                    wave1: robotWave1,
+                    wave2: robotWave2,
+                    talk: robotTalk1
+                };
+            } else if (type === "bear") {
+                costumes = { default: "🐻", wave: "👋" };
+            } else if (type === "dog") {
+                costumes = { default: "🐶", wave: "wave" };
+            }
         }
 
         const newSprite = {
             id: newId,
-            name: type.charAt(0).toUpperCase() + type.slice(1),
-            type: type,
+            name: spriteName,
+            type: spriteType,
             x: 200, y: 150, angle: 0, size: 100, visible: true,
             mirrored: false,
             costumes: costumes,
@@ -602,6 +623,11 @@ export default function JuniorApp({ onBack }) {
             soundManager.stopAll();
         };
 
+        // Stop Execution - Throws ExecutionStop error to halt execution immediately
+        window.stopExecution = () => {
+            throw new ExecutionStop("Execution stopped by Stop block");
+        };
+
         // ... (Keep Sounds/Pen)
 
     }, [spriteActions, activeSpriteId, currentSceneId, sprites]); // Added sprites to dependencies
@@ -778,10 +804,18 @@ export default function JuniorApp({ onBack }) {
                 }
 
                 // 3. PROPER PREVIEW (Unified)
+                let previewed = false;
                 if (looksPreview[block.type]) {
                     looksPreview[block.type](block);
+                    previewed = true;
                 } else if (previewActions[block.type]) {
                     previewActions[block.type](block); // Pass block to read fields
+                    previewed = true;
+                }
+
+                // Add jiggle animation for visual feedback on block interaction
+                if (previewed && window.jiggle) {
+                    window.jiggle(window.activeSpriteId || activeSpriteId);
                 }
             }
         });
@@ -796,10 +830,18 @@ export default function JuniorApp({ onBack }) {
                     const block = flyoutWs.getBlockById(e.blockId);
                     if (block) {
                         // Unified Preview
+                        let previewed = false;
                         if (looksPreview[block.type]) {
                             looksPreview[block.type](block);
+                            previewed = true;
                         } else if (previewActions[block.type]) {
                             previewActions[block.type](block);
+                            previewed = true;
+                        }
+
+                        // Add jiggle animation for visual feedback
+                        if (previewed && window.jiggle) {
+                            window.jiggle(window.activeSpriteId || activeSpriteId);
                         }
 
                         // Undo creation (Visual only click)
@@ -975,19 +1017,63 @@ export default function JuniorApp({ onBack }) {
             await window.wait(0.1);
         }
 
+        // Check if execution was paused (stopped by stop block)
+        if (interpreterRef.current?.isPaused) {
+            console.log("Resuming paused execution...");
+            setIsBlocksRunning(true);
+            interpreterRef.current.resumeExecution();
+            return;
+        }
+
+        // Fresh start - Reset sprite
         if (window.resetBear) window.resetBear();
         await window.wait(0.2);
+
+        // Save current workspace so all sprites' blocks are up to date
+        saveCurrentWorkspace();
 
         // Set running state for UI
         setIsBlocksRunning(true);
 
-        // Delegate to Interpreter and wait for completion
-        if (interpreterRef.current) {
-            await interpreterRef.current.runStacks('event_flag');
+        // Gather ALL sprites' block data from the current scene
+        const currentSprites = scenes.find(s => s.id === currentSceneId)?.sprites || [];
+        const spriteEntries = currentSprites
+            .filter(sprite => sprite.blocks && Object.keys(sprite.blocks).length > 0)
+            .map(sprite => ({ spriteId: sprite.id, blocks: sprite.blocks }));
+
+        if (spriteEntries.length === 0) {
+            // Fallback: run current workspace only (single sprite mode)
+            console.log("[Junior] No saved sprite blocks found, running current workspace only");
+            if (interpreterRef.current) {
+                await interpreterRef.current.runStacks('event_flag');
+            }
+        } else if (spriteEntries.length === 1) {
+            // Single sprite - use original method for simplicity
+            console.log("[Junior] Single sprite mode");
+            // Make sure activeSpriteId is set correctly
+            window.activeSpriteId = spriteEntries[0].spriteId;
+            if (interpreterRef.current) {
+                // Load that sprite's workspace and run
+                const sprite = currentSprites.find(s => s.id === spriteEntries[0].spriteId);
+                if (sprite && sprite.blocks) {
+                    Blockly.serialization.workspaces.load(sprite.blocks, workspaceRef.current);
+                }
+                await interpreterRef.current.runStacks('event_flag');
+            }
+        } else {
+            // MULTI-SPRITE MODE: Run all sprites' blocks concurrently
+            console.log(`[Junior] Multi-sprite mode: running ${spriteEntries.length} sprites concurrently`);
+            if (interpreterRef.current) {
+                await interpreterRef.current.runAllSpritesStacks('event_flag', spriteEntries, Blockly);
+            }
         }
 
-        // Parallel Execution on Master Engine (if applicable, but likely replaced by Interpreter in Junior)
-        // executionEngine.runEvent('event_flag');
+        // Restore the active sprite's workspace after execution
+        const activeSprite = currentSprites.find(s => s.id === activeSpriteId);
+        if (activeSprite) {
+            loadWorkspace(activeSprite);
+        }
+        window.activeSpriteId = activeSpriteId;
     };
 
     const handleSpriteClick = async (clickedId) => {
@@ -1001,6 +1087,7 @@ export default function JuniorApp({ onBack }) {
 
     const stopBlocks = () => {
         interpreterRef.current?.stopAll();
+        interpreterRef.current?.clearPauseFlag(); // Clear pause flag on manual stop
         executionEngine.stopAll();
         if (window.stopAll) window.stopAll();
         setIsBlocksRunning(false);
@@ -1008,7 +1095,7 @@ export default function JuniorApp({ onBack }) {
 
     // Full reset: stops blocks AND resets sprite position to defaults
     const handleReset = () => {
-        stopBlocks();
+        stopBlocks(); // This already clears pause flag
         if (window.hardResetBear) window.hardResetBear();
     };
 
@@ -1251,13 +1338,23 @@ export default function JuniorApp({ onBack }) {
                             if (activeSprite && activeSprite.currentCostume) {
                                 // Use static import for robot or fallback to currentCostume src if it's dynamic
                                 let imgSrc = null;
+                                let isEmoji = false;
+
                                 if (activeSprite.type === 'robot' && activeSprite.costumes) {
                                     imgSrc = activeSprite.costumes[activeSprite.currentCostume];
                                 } else if (activeSprite.currentCostume && typeof activeSprite.currentCostume === 'object' && activeSprite.currentCostume.image) {
                                     imgSrc = activeSprite.currentCostume.image.src;
+                                } else if (activeSprite.costumes && activeSprite.costumes[activeSprite.currentCostume]) {
+                                    const val = activeSprite.costumes[activeSprite.currentCostume];
+                                    if (typeof val === 'string' && (val.startsWith('data:image') || val.startsWith('/') || val.startsWith('http') || val.endsWith('.png') || val.endsWith('.jpg') || val.endsWith('.svg'))) {
+                                        imgSrc = val;
+                                    } else if (typeof val === 'string') {
+                                        imgSrc = val; // Emoji
+                                        isEmoji = true;
+                                    }
                                 }
 
-                                if (imgSrc) {
+                                if (imgSrc || isEmoji) {
                                     return (
                                         <div style={{
                                             position: 'absolute',
@@ -1265,7 +1362,8 @@ export default function JuniorApp({ onBack }) {
                                             right: '16px',
                                             width: '60px',
                                             height: '60px',
-                                            background: 'white',
+                                            background: 'rgba(255,255,255,0.85)',
+                                            backdropFilter: 'blur(5px)',
                                             borderRadius: '8px',
                                             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                                             border: '2px solid #855CD6',
@@ -1276,11 +1374,15 @@ export default function JuniorApp({ onBack }) {
                                             alignItems: 'center',
                                             padding: '6px',
                                         }}>
-                                            <img
-                                                src={imgSrc}
-                                                alt={activeSprite.name}
-                                                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                                            />
+                                            {(!isEmoji && imgSrc) ? (
+                                                <img
+                                                    src={imgSrc}
+                                                    alt={activeSprite.name}
+                                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                                />
+                                            ) : (
+                                                <span style={{ fontSize: '36px' }}>{imgSrc}</span>
+                                            )}
                                         </div>
                                     );
                                 }
@@ -1553,6 +1655,21 @@ export default function JuniorApp({ onBack }) {
                         window.resetBear();
                         alert("Next lesson coming soon!");
                         // Future: loadLesson(nextId)
+                    }}
+                />
+            )}
+
+            {/* SPRITE LIBRARY MODAL */}
+            {isSpriteModalOpen && (
+                <SpriteLibrary
+                    isOpen={isSpriteModalOpen}
+                    onClose={() => setIsSpriteModalOpen(false)}
+                    onSelectSprite={(entry) => {
+                        addSprite(entry);
+                    }}
+                    onPaintSprite={() => {
+                        setIsSpriteModalOpen(false);
+                        alert('Paint editor - select a sprite first, then edit its costume');
                     }}
                 />
             )}

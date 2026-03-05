@@ -4,8 +4,8 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     // Helper to get target code
     const getTarget = () => 'window.activeSpriteId || "teddy"';
     // Helper to inject wait and check execution state for immediate stop
-    const wait = () => 'if(!window.isActive()) return;\nawait window.wait(0.5);\nif(!window.isActive()) return;\n';
-    const yieldLoop = () => 'if(!window.isActive()) return;\nawait window.wait(0.01);\n'; // Faster wait for loop cycles
+    const wait = () => 'if(!window.isActive()) return;\nawait window.wait(0.5);\nif(window.checkPause) await window.checkPause();\nif(!window.isActive()) return;\n';
+    const yieldLoop = () => 'if(!window.isActive()) return;\nawait window.wait(0.01);\nif(window.checkPause) await window.checkPause();\n'; // Faster wait for loop cycles
 
     // --- MOTION (Blue #4C97FF) ---
 
@@ -234,7 +234,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     javascriptGenerator.forBlock['control_reverse'] = () => `turnLeft(${getTarget()});\n${wait()}`;
 
     Blockly.Blocks['control_stop'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("✋", "junior-icon")).appendField("Stop"); this.setPreviousStatement(true); this.setColour("#FFAB19"); } };
-    javascriptGenerator.forBlock['control_stop'] = () => 'stopAll();\n';
+    javascriptGenerator.forBlock['control_stop'] = () => 'if(window.pauseExecution) window.pauseExecution();\nif(window.checkPause) await window.checkPause();\n';
 
     Blockly.Blocks['control_scene'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("🚩", "junior-icon")).appendField("Change Scene"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#FFAB19"); } };
     javascriptGenerator.forBlock['control_scene'] = () => `changeScene();\n${wait()}`;
@@ -357,7 +357,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     };
     javascriptGenerator.forBlock['control_wait'] = (block) => {
         const seconds = block.getFieldValue("SECONDS");
-        return `await window.wait(${seconds});\nif(!window.isActive()) return;\n`;
+        return `await window.wait(${seconds});\nif(window.checkPause) await window.checkPause();\nif(!window.isActive()) return;\n`;
     };
 
     // --- LOOKS: Reset Size ---

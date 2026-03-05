@@ -129,6 +129,9 @@ export class AnimationVM {
     private mouseX: number = 0;
     private mouseY: number = 0;
     private isRunning: boolean = false;
+    public isPaused: boolean = false;
+    private pausePromise: Promise<void> | null = null;
+    private resolvePause: (() => void) | null = null;
 
     // Timer
     private timerStart: number = Date.now();
@@ -312,6 +315,13 @@ export class AnimationVM {
     stopAll(): void {
         vmLog.info('stopAll() called');
         this.isRunning = false;
+
+        // Resolve any pending pause so aborted scripts can exit cleanly
+        if (this.isPaused && this.resolvePause) {
+            this.resolvePause();
+        }
+        this.isPaused = false;
+
         for (const [id, controller] of this.runningScripts) {
             vmLog.info(`Aborting script: ${id}`);
             controller.abort();
@@ -319,6 +329,32 @@ export class AnimationVM {
         this.runningScripts.clear();
         vmLog.info('All scripts stopped');
     }
+
+    pause(): void {
+        if (!this.isRunning || this.isPaused) return;
+        vmLog.info('pause() called');
+        this.isPaused = true;
+        this.pausePromise = new Promise(resolve => {
+            this.resolvePause = resolve;
+        });
+    }
+
+    resume(): void {
+        if (!this.isRunning || !this.isPaused) return;
+        vmLog.info('resume() called');
+        this.isPaused = false;
+        if (this.resolvePause) {
+            this.resolvePause();
+            this.resolvePause = null;
+        }
+    }
+
+    private async checkPause(): Promise<void> {
+        if (this.isPaused && this.pausePromise) {
+            await this.pausePromise;
+        }
+    }
+
 
     private async runScript(script: CompiledScript): Promise<void> {
         const sprite = spriteManager.getSprite(script.spriteId);
@@ -367,6 +403,8 @@ export class AnimationVM {
     private async executeSteps(steps: ScriptStep[], ctx: VMContext, signal: AbortSignal): Promise<void> {
         vmLog.info(`executeSteps: ${steps.length} steps`);
         for (let i = 0; i < steps.length; i++) {
+            await this.checkPause();
+
             if (signal.aborted || !this.isRunning) {
                 vmLog.info(`Execution interrupted at step ${i}`);
                 throw new DOMException('Aborted', 'AbortError');
@@ -376,6 +414,7 @@ export class AnimationVM {
         }
         vmLog.info('All steps completed');
     }
+
 
     private async executeStep(step: ScriptStep, ctx: VMContext, signal: AbortSignal): Promise<void> {
         const { sprite } = ctx;
@@ -539,7 +578,9 @@ export class AnimationVM {
                 break;
 
             case 'stop_all':
-                this.stopAll();
+                // Instead of aborting everything immediately (which breaks resume), 
+                // we treat stop_all as a pause. Clicking Green Flag will resume.
+                this.pause();
                 break;
 
             case 'stop_this_script':
@@ -724,16 +765,45 @@ export class AnimationVM {
 
     private sleep(ms: number, signal: AbortSignal): Promise<void> {
         return new Promise((resolve, reject) => {
-            const timeout = setTimeout(resolve, ms);
-            signal.addEventListener('abort', () => {
-                clearTimeout(timeout);
+            if (signal.aborted) {
+                return reject(new DOMException('Aborted', 'AbortError'));
+            }
+
+            const abortHandler = () => {
+                clearTimeout(timeoutId);
+                clearInterval(checkIntervalId);
                 reject(new DOMException('Aborted', 'AbortError'));
-            });
+            };
+
+            signal.addEventListener('abort', abortHandler);
+
+            let elapsed = 0;
+            const intervalMs = 16;
+
+            let timeoutId: any;
+            let checkIntervalId: any = setInterval(async () => {
+                if (this.isPaused) return; // Wait while paused
+
+                await this.checkPause();
+
+                if (signal.aborted) {
+                    abortHandler();
+                    return;
+                }
+
+                elapsed += intervalMs;
+                if (elapsed >= ms) {
+                    clearInterval(checkIntervalId);
+                    signal.removeEventListener('abort', abortHandler);
+                    resolve();
+                }
+            }, intervalMs);
         });
     }
 
     private async waitForGlide(sprite: Sprite, signal: AbortSignal): Promise<void> {
         while (sprite.isGliding && !signal.aborted) {
+            await this.checkPause();
             await this.sleep(16, signal);
         }
     }
