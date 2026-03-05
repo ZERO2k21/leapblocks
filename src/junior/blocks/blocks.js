@@ -248,7 +248,29 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
                 .appendField("Start"); // Optional: Keep short label "Start" or remove entirely if icon is enough.
             this.setNextStatement(true);
             this.setColour("#FFBF00");
-            this.setDeletable(false);
+            this.setDeletable(true);
+        },
+        customContextMenu: function (options) {
+            // Add Delete option
+            options.push({
+                text: "Delete Block",
+                enabled: true,
+                callback: () => {
+                    this.dispose(true);
+                }
+            });
+            // Add Duplicate option
+            options.push({
+                text: "Duplicate",
+                enabled: true,
+                callback: () => {
+                    const blockXML = Blockly.Xml.blockToDom(this);
+                    const newBlock = Blockly.Xml.domToBlock(blockXML, this.workspace);
+                    // Position the duplicated block slightly offset
+                    const xy = this.getRelativeToSurfaceXY();
+                    newBlock.moveBy(20, 20);
+                }
+            });
         }
     };
     javascriptGenerator.forBlock['event_flag'] = () => '// On Flag\n';

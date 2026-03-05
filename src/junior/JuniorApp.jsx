@@ -1025,9 +1025,16 @@ export default function JuniorApp({ onBack }) {
             return;
         }
 
-        // Fresh start - Reset sprite
-        if (window.resetBear) window.resetBear();
-        await window.wait(0.2);
+        // Fresh start - Reset ALL sprites in current scene to their default state
+        // This ensures no previous execution artifacts remain before running new program
+        const currentSceneSprites = scenes.find(s => s.id === currentSceneId)?.sprites || [];
+        if (currentSceneSprites.length > 0) {
+            spriteActions.resetAll(); // Reset all sprites to default state
+        }
+        if (window.hardResetBear) window.hardResetBear();
+        // Clear pen drawings from previous execution
+        if (window.clearPen) window.clearPen();
+        await window.wait(0.3);
 
         // Save current workspace so all sprites' blocks are up to date
         saveCurrentWorkspace();
