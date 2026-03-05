@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Sprite, SpriteType } from "./Sprite";
 import { ActionMenu } from "./ActionMenu";
+import { SpriteLibrary, SpriteEntry } from "../components/SpriteLibrary";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SPRITE PANEL - Match Scratch 3.0 Look
@@ -24,6 +25,7 @@ interface SpritePanelProps {
   onSelectSprite: (id: string) => void;
   onAddSprite: (type: SpriteType) => void;
   onDeleteSprite: (id: string) => void;
+  onOpenSpriteLibrary?: () => void;
 }
 
 export const SpritePanel: React.FC<SpritePanelProps> = ({
@@ -32,6 +34,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   onSelectSprite,
   onAddSprite,
   onDeleteSprite,
+  onOpenSpriteLibrary,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -248,7 +251,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 id: 'search',
                 icon: '🔍',
                 label: 'Choose a Sprite',
-                onClick: () => setShowPicker(!showPicker)
+                onClick: () => onOpenSpriteLibrary ? onOpenSpriteLibrary() : setShowPicker(!showPicker)
               }
             ]}
           />

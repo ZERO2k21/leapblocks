@@ -143,7 +143,17 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             window.stopAll = () => window.showFeedback("STOPPED 🛑");
         }
 
+        // Animation Triggers
+        window.jiggle = (tid) => {
+            if (check(tid)) {
+                setJiggleKey(k => k + 1); // Triggers re-render with animation
+            }
+        };
+
     }, [id]); // Re-bind only if ID changes (refs handle state access)
+
+    // Jiggle animation state
+    const [jiggleKey, setJiggleKey] = useState(0);
 
     // Icon mapping logic (now supports costumes)
     // Fallback logic for safety
@@ -167,19 +177,31 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
         const costumeValue = costumes?.[currentCostume] || currentCostume;
 
         // 2. If it looks like a path/URL (image) and hasn't errored, render img tag
-        if (!imgError && typeof costumeValue === 'string' && (costumeValue.includes('/') || costumeValue.includes('data:image'))) {
+        if (!imgError && typeof costumeValue === 'string' && (
+            costumeValue.includes('/') ||
+            costumeValue.startsWith('http') ||
+            costumeValue.includes('data:image') ||
+            costumeValue.endsWith('.png') ||
+            costumeValue.endsWith('.jpg') ||
+            costumeValue.endsWith('.svg')
+        )) {
             return (
                 <img
                     src={costumeValue}
                     alt={id}
-                    style={{ width: '80px', height: '80px', objectFit: 'contain' }}
+                    style={{ width: '80px', height: '80px', objectFit: 'contain', filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.15))' }}
                     draggable={false}
                     onError={() => setImgError(true)}
                 />
             );
         }
 
-        // 3. Fallback to emoji logic
+        // 3. If it is an emoji string
+        if (typeof costumeValue === 'string' && costumeValue !== "default" && costumeValue !== "wave") {
+            return costumeValue;
+        }
+
+        // 4. Fallback to emoji logic for legacy string-based states
         if (currentCostume === "wave") {
             if (type === 'bear') return "👋";
             if (type === 'dog') return "🐕";
@@ -239,18 +261,36 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
 
     return (
         <React.Fragment>
+            <style>
+                {`
+                @keyframes spriteJiggle {
+                    0% { transform: scale(1) rotate(0deg); }
+                    25% { transform: scale(1.1) rotate(-5deg); filter: brightness(1.2); }
+                    50% { transform: scale(1.1) rotate(5deg); filter: brightness(1.2); }
+                    75% { transform: scale(1.05) rotate(-2deg); }
+                    100% { transform: scale(1) rotate(0deg); }
+                }
+                .sprite-jiggle {
+                    animation: spriteJiggle 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                }
+                `}
+            </style>
             <div
+                className={jiggleKey > 0 ? 'sprite-jiggle' : ''}
+                key={`sprite-wrapper-${jiggleKey}`} // Force re-mount to re-trigger animation
                 style={{
                     position: 'absolute',
                     left: x,
                     top: y,
-                    transform: `rotate(${angle}deg) scale(${size / 100}) scaleX(${mirrored ? -scaleX : scaleX})`,
-                    transition: isDragging ? 'none' : 'transform 0.2s, top 0.2s, left 0.2s',
+                    transform: `rotate(${angle}deg) scale(${(size / 100) * (isDragging ? 1.15 : 1)}) scaleX(${mirrored ? -scaleX : scaleX})`,
+                    transition: isDragging ? 'transform 0.1s ease-out' : 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), top 0.2s, left 0.2s',
                     opacity: visible ? 1 : 0.5,
                     display: visible ? 'block' : 'none',
                     zIndex: isDragging ? 50 : (active ? 20 : 10),
                     cursor: isDragging ? 'grabbing' : 'grab',
-                    filter: active ? 'drop-shadow(0 0 6px rgba(123,79,196,0.6))' : 'none',
+                    filter: isDragging
+                        ? 'drop-shadow(0 15px 15px rgba(0,0,0,0.3)) brightness(1.1)'
+                        : (active ? 'drop-shadow(0 0 8px rgba(123,79,196,0.6))' : 'none'),
                     userSelect: 'none',
                 }}
                 onMouseDown={handleMouseDown}

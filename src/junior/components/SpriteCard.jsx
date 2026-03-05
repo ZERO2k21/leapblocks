@@ -14,9 +14,10 @@ export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }
             style={{
                 position: "relative",
                 width: "110px",
-                background: "white",
+                background: "rgba(255, 255, 255, 0.7)",
+                backdropFilter: "blur(8px)",
                 borderRadius: "10px",
-                border: active ? "3px solid #7B4FC4" : "2px solid #E0E0E0",
+                border: active ? "3px solid #7B4FC4" : "2px solid rgba(224, 224, 224, 0.5)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -34,7 +35,7 @@ export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "white",
+                background: "transparent",
                 padding: "6px",
                 position: "relative",
             }}>

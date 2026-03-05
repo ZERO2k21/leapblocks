@@ -34,6 +34,9 @@ export interface SpriteState {
     glideTarget: { x: number; y: number; startX: number; startY: number; duration: number; elapsed: number } | null;
     // Rotation style: how sprite rotates
     rotationStyle: 'left-right' | 'all around' | 'none';
+    // Interactive visual state
+    isDragging: boolean;
+    jiggleStartTime: number | null;
 }
 
 export class Sprite {
@@ -59,6 +62,8 @@ export class Sprite {
             glideTarget: null,
             rotationStyle: 'all around',
             scripts: [],
+            isDragging: false,
+            jiggleStartTime: null,
         };
     }
 
@@ -83,6 +88,7 @@ export class Sprite {
     get isGliding() { return this.state.glideTarget !== null; }
     get rotationStyle() { return this.state.rotationStyle; }
     get scripts() { return this.state.scripts; }
+    get isDragging() { return this.state.isDragging; }
 
     getState(): SpriteState { return { ...this.state }; }
 
@@ -128,6 +134,24 @@ export class Sprite {
     setScripts(scripts: any[]) {
         this.state.scripts = scripts;
         this.onUpdate();
+    }
+
+    setDragging(isDragging: boolean) {
+        this.state.isDragging = isDragging;
+        this.onUpdate();
+    }
+
+    jiggle() {
+        this.state.jiggleStartTime = performance.now();
+        this.onUpdate();
+
+        // Ensure UI updates enough times for the animation
+        const interval = setInterval(() => this.onUpdate(), 16);
+        setTimeout(() => {
+            clearInterval(interval);
+            this.state.jiggleStartTime = null;
+            this.onUpdate();
+        }, 300); // 300ms animation
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -254,23 +278,54 @@ export class Sprite {
         const costume = this.currentCostume;
         const centerX = stageWidth / 2 + this.state.x;
         const centerY = stageHeight / 2 - this.state.y;
+
         ctx.save();
         ctx.translate(centerX, centerY);
-        if (this.state.rotationStyle === 'all around') {
-            ctx.rotate((this.state.direction - 90) * Math.PI / 180);
-        } else if (this.state.rotationStyle === 'left-right') {
-            if (this.state.direction > 180 || this.state.direction < 0) ctx.scale(-1, 1);
+
+        // Calculate visual feedback animations
+        let animScale = 1;
+        let animRotate = 0;
+
+        if (this.state.jiggleStartTime) {
+            const elapsed = performance.now() - this.state.jiggleStartTime;
+            if (elapsed < 300) {
+                const t = elapsed / 300;
+                animScale = 1 + Math.sin(t * Math.PI) * 0.15; // Pulse up
+                animRotate = Math.sin(t * Math.PI * 4) * 0.15; // Wiggle
+            }
         }
+
+        if (this.state.isDragging) {
+            animScale *= 1.15; // Enlarge slightly while dragged
+            ctx.filter = 'drop-shadow(0px 15px 15px rgba(0,0,0,0.3)) brightness(1.1)';
+        } else {
+            ctx.filter = 'none';
+        }
+
+        ctx.scale(animScale, animScale);
+
+        if (this.state.rotationStyle === 'all around') {
+            ctx.rotate((this.state.direction - 90) * Math.PI / 180 + animRotate);
+        } else {
+            ctx.rotate(animRotate);
+            if (this.state.rotationStyle === 'left-right' && (this.state.direction > 180 || this.state.direction < 0)) {
+                ctx.scale(-1, 1);
+            }
+        }
+
         ctx.globalAlpha = 1 - (this.state.effects.ghost / 100);
+        const scale = this.state.size / 100;
+
         if (costume) {
-            const scale = this.state.size / 100;
             const w = costume.width * scale;
             const h = costume.height * scale;
             ctx.drawImage(costume.image, -w / 2, -h / 2, w, h);
         } else {
+            ctx.scale(scale, scale);
             this.renderDefaultSprite(ctx);
         }
         ctx.restore();
+
         if (this.state.sayText) this.renderSpeechBubble(ctx, centerX, centerY, this.state.sayText);
     }
 

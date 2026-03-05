@@ -193,6 +193,7 @@ export const Stage: React.FC<StageProps> = ({
             if (Math.abs(mouseX - sprite.x) <= w / 2 && Math.abs(mouseY - sprite.y) <= h / 2) {
                 setDraggingSpriteId(sprite.id);
                 setDragOffset({ x: sprite.x - mouseX, y: sprite.y - mouseY });
+                sprite.setDragging(true); // Trigger drag scale/shadow
                 if (onSpriteSelect) onSpriteSelect(sprite.id);
                 // Capture pointer to track outside canvas
                 canvas.setPointerCapture(e.pointerId);
@@ -221,6 +222,10 @@ export const Stage: React.FC<StageProps> = ({
 
     const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (draggingSpriteId) {
+            const sprite = sprites.find(s => s.id === draggingSpriteId);
+            if (sprite) {
+                sprite.setDragging(false);
+            }
             setDraggingSpriteId(null);
             const canvas = canvasRef.current;
             if (canvas) canvas.releasePointerCapture(e.pointerId);

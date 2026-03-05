@@ -20,6 +20,7 @@ import { stageManager } from './engine/StageManager';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
 import SerialMonitor from './components/SerialMonitor';
 import UploadModal from './components/UploadModal';
+import { SpriteLibrary, SpriteEntry } from './components/SpriteLibrary';
 import WorkspaceControls from './components/WorkspaceControls';
 import WorkspaceTrash from './components/WorkspaceTrash';
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft } from 'lucide-react';
@@ -90,6 +91,9 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [selectedSpriteId, setSelectedSpriteId] = useState<string | null>(null);
     const [compiledScripts, setCompiledScripts] = useState<CompiledScript[]>([]);
 
+    // Per-sprite workspace storage: maps spriteId -> Blockly serialized JSON
+    const spriteWorkspacesRef = useRef<Map<string, object>>(new Map());
+
     // Hardware
     const [ports, setPorts] = useState<{ path: string; manufacturer?: string }[]>([]);
     const [selectedPort, setSelectedPort] = useState<string>('');
@@ -114,6 +118,9 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [showBackdropLibrary, setShowBackdropLibrary] = useState(false);
     const [showBackdropEditor, setShowBackdropEditor] = useState(false);
     const [, setBackdropRefresh] = useState(0); // Force re-render on backdrop change
+
+    // Sprite Library state
+    const [showSpriteLibrary, setShowSpriteLibrary] = useState(false);
 
     // Force re-render for sprite updates
     const [, forceUpdate] = useState({});
@@ -261,6 +268,15 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         const blockId = (event as any).blockId;
         const block = workspaceRef.current.getBlockById(blockId);
+
+        // --- VISUAL FEEDBACK: Jiggle sprite on block interaction ---
+        if (block && event.type === Blockly.Events.CLICK && selectedSpriteId) {
+            const activeSprite = sprites.find(s => s.id === selectedSpriteId);
+            if (activeSprite) {
+                activeSprite.jiggle();
+            }
+        }
+
         if (!block || !block.type.startsWith('arduino_')) return;
 
         // If clicking a setup or loop block, trigger the flag scripts (which include arduino_setup)
@@ -388,7 +404,39 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // ═══════════════════════════════════════════════════════════════════════
     // SPRITE MANAGEMENT
     // ═══════════════════════════════════════════════════════════════════════
+    // Save current workspace blocks to the per-sprite map
+    const saveCurrentSpriteWorkspace = useCallback(() => {
+        if (!workspaceRef.current || !selectedSpriteId) return;
+        const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+        spriteWorkspacesRef.current.set(selectedSpriteId, json);
+        console.log('[APP] Saved workspace for sprite:', selectedSpriteId);
+    }, [selectedSpriteId]);
+
+    // Load workspace blocks from the per-sprite map
+    const loadSpriteWorkspace = useCallback((spriteId: string) => {
+        if (!workspaceRef.current) return;
+        const json = spriteWorkspacesRef.current.get(spriteId);
+        if (json && Object.keys(json).length > 0) {
+            Blockly.serialization.workspaces.load(json, workspaceRef.current);
+            console.log('[APP] Loaded workspace for sprite:', spriteId);
+        } else {
+            workspaceRef.current.clear();
+            console.log('[APP] Cleared workspace for new sprite:', spriteId);
+        }
+    }, []);
+
+    // Handle sprite selection: save old, load new
+    const handleSpriteSelect = useCallback((newId: string) => {
+        if (newId === selectedSpriteId) return;
+        saveCurrentSpriteWorkspace();
+        setSelectedSpriteId(newId);
+        loadSpriteWorkspace(newId);
+    }, [selectedSpriteId, saveCurrentSpriteWorkspace, loadSpriteWorkspace]);
+
     const addSprite = useCallback((spriteType: SpriteType = 'cat') => {
+        // Save current sprite's workspace before switching
+        saveCurrentSpriteWorkspace();
+
         const id = `sprite_${Date.now()}`;
         const typeNames: Record<SpriteType, string> = { cat: 'Cat', ball: 'Ball', arrow: 'Arrow', robot: 'Robot' };
         const name = `${typeNames[spriteType]} ${sprites.filter(s => s.spriteType === spriteType).length + 1}`;
@@ -397,54 +445,88 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         animationVM.registerSprite(newSprite);
         setSprites(prev => [...prev, newSprite]);
         setSelectedSpriteId(id);
+        // Clear workspace for the new sprite
+        if (workspaceRef.current) workspaceRef.current.clear();
         addLog(`Added sprite: ${name}`);
-    }, [sprites, addLog, triggerUpdate]);
+    }, [sprites, addLog, triggerUpdate, saveCurrentSpriteWorkspace]);
 
     const deleteSprite = useCallback((id: string) => {
         animationVM.unregisterSprite(id);
+        spriteWorkspacesRef.current.delete(id); // Clean up saved workspace
         setSprites(prev => prev.filter(s => s.id !== id));
         if (selectedSpriteId === id) {
-            setSelectedSpriteId(sprites.length > 1 ? sprites[0].id : null);
+            const remaining = sprites.filter(s => s.id !== id);
+            const newSelected = remaining.length > 0 ? remaining[0].id : null;
+            setSelectedSpriteId(newSelected);
+            if (newSelected) loadSpriteWorkspace(newSelected);
+            else if (workspaceRef.current) workspaceRef.current.clear();
         }
         addLog('Deleted sprite');
-    }, [sprites, selectedSpriteId, addLog]);
+    }, [sprites, selectedSpriteId, addLog, loadSpriteWorkspace]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // ANIMATION CONTROLS
     // ═══════════════════════════════════════════════════════════════════════
     const handleRunClick = useCallback(() => {
         console.log('[APP] ══════════════════════════════════════════');
-        console.log('[APP] Run button clicked');
-        console.log('[APP] compiledScripts:', compiledScripts.length);
-        console.log('[APP] Selected sprite:', selectedSpriteId);
+        console.log('[APP] Run button clicked - MULTI-SPRITE MODE');
         console.log('[APP] All sprites:', sprites.map(s => ({ id: s.id, name: s.name })));
-
-        if (compiledScripts.length === 0) {
-            console.log('[APP] ✗ No scripts to run!');
-            addLog('No scripts to run!');
-            return;
-        }
-
-        console.log('[APP] Scripts to run:');
-        compiledScripts.forEach((s, i) => {
-            console.log(`[APP]   ${i}: trigger=${s.trigger}, spriteId=${s.spriteId}, steps=${s.steps.length}`);
-        });
-
-        setIsRunning(true);
 
         // Check if execution was paused (stopped by stop_all block)
         if (animationVM.isPaused) {
             console.log('[APP] Resuming paused animation...');
+            setIsRunning(true);
             animationVM.resume();
             addLog('Resumed animation');
-        } else {
-            console.log('[APP] Starting new animation...');
-            // Fresh start
-            animationVM.triggerFlag(compiledScripts);
-            addLog('Started animation');
+            return;
         }
+
+        // Save current sprite's workspace before compiling all
+        saveCurrentSpriteWorkspace();
+
+        // Compile scripts for ALL sprites by loading each sprite's saved workspace
+        const allScripts: CompiledScript[] = [];
+
+        for (const sprite of sprites) {
+            const savedJson = spriteWorkspacesRef.current.get(sprite.id);
+            if (!savedJson || Object.keys(savedJson).length === 0) {
+                console.log(`[APP] Sprite ${sprite.name} has no blocks, skipping`);
+                continue;
+            }
+
+            try {
+                // Create a temporary headless workspace for compilation
+                const tempWs = new Blockly.Workspace();
+                Blockly.serialization.workspaces.load(savedJson, tempWs);
+
+                const compiler = new AnimationCompiler(sprite.id);
+                const scripts = compiler.compile(tempWs);
+                console.log(`[APP] Compiled ${scripts.length} scripts for sprite: ${sprite.name}`);
+                allScripts.push(...scripts);
+
+                tempWs.dispose();
+            } catch (e) {
+                console.error(`[APP] Error compiling sprite ${sprite.name}:`, e);
+            }
+        }
+
+        if (allScripts.length === 0) {
+            console.log('[APP] ✗ No scripts to run across all sprites!');
+            addLog('No scripts to run!');
+            return;
+        }
+
+        console.log(`[APP] Total scripts across all sprites: ${allScripts.length}`);
+        allScripts.forEach((s, i) => {
+            console.log(`[APP]   ${i}: trigger=${s.trigger}, spriteId=${s.spriteId}, steps=${s.steps.length}`);
+        });
+
+        setIsRunning(true);
+        setCompiledScripts(allScripts);
+        animationVM.triggerFlag(allScripts);
+        addLog(`Started animation for ${sprites.length} sprite(s)`);
         console.log('[APP] ══════════════════════════════════════════');
-    }, [compiledScripts, addLog, selectedSpriteId, sprites]);
+    }, [sprites, addLog, saveCurrentSpriteWorkspace]);
 
 
     const handleStopClick = useCallback(() => {
@@ -1299,7 +1381,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     sprites={sprites}
                                     isRunning={isRunning}
                                     showGridNumbers={showGrid}
-                                    onSpriteSelect={setSelectedSpriteId}
+                                    onSpriteSelect={handleSpriteSelect}
                                     isCameraOn={isCameraOn}
                                 />
                             </div>
@@ -1309,9 +1391,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <SpritePanel
                                     sprites={sprites}
                                     selectedSpriteId={selectedSpriteId}
-                                    onSelectSprite={setSelectedSpriteId}
+                                    onSelectSprite={handleSpriteSelect}
                                     onAddSprite={addSprite}
                                     onDeleteSprite={deleteSprite}
+                                    onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
                                 />
                                 <StagePanel
                                     onOpenLibrary={() => setShowBackdropLibrary(true)}
@@ -1504,6 +1587,53 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     />
                 )
             }
+
+            {/* Sprite Library Modal */}
+            <SpriteLibrary
+                isOpen={showSpriteLibrary}
+                onClose={() => setShowSpriteLibrary(false)}
+                onSelectSprite={(entry: SpriteEntry) => {
+                    // Save current sprite workspace before adding new one
+                    saveCurrentSpriteWorkspace();
+
+                    const id = `sprite_${Date.now()}`;
+                    const newSprite = new Sprite(id, entry.name, triggerUpdate, 'cat');
+
+                    // If the sprite has an image, use it as the costume
+                    if (entry.image) {
+                        newSprite.addCostume(entry.name, entry.image).then(() => {
+                            newSprite.switchCostume(entry.name);
+                        });
+                    } else {
+                        // Create costume from emoji by drawing on canvas
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 100;
+                        canvas.height = 100;
+                        const ctx = canvas.getContext('2d');
+                        if (ctx) {
+                            ctx.font = '72px serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(entry.emoji, 50, 55);
+                        }
+                        const dataUrl = canvas.toDataURL();
+                        newSprite.addCostume(entry.name, dataUrl).then(() => {
+                            newSprite.switchCostume(entry.name);
+                        });
+                    }
+
+                    animationVM.registerSprite(newSprite);
+                    setSprites(prev => [...prev, newSprite]);
+                    setSelectedSpriteId(id);
+                    if (workspaceRef.current) workspaceRef.current.clear();
+                    setShowSpriteLibrary(false);
+                    addLog(`Added sprite: ${entry.name}`);
+                }}
+                onPaintSprite={() => {
+                    setShowSpriteLibrary(false);
+                    alert('Paint editor - select a sprite first, then edit its costume');
+                }}
+            />
 
             {/* Premium Upload Modal */}
             <UploadModal

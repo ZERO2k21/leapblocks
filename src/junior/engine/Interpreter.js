@@ -163,6 +163,71 @@ export class Interpreter {
         }
     }
 
+    /**
+     * Executes stacks for ALL sprites concurrently.
+     * @param {string} triggerType - 'event_flag' | 'event_press'
+     * @param {Array<{spriteId: string, blocks: object}>} spriteEntries - sprites with their saved workspace JSON
+     * @param {object} Blockly - the Blockly instance
+     */
+    async runAllSpritesStacks(triggerType, spriteEntries, Blockly) {
+        if (!this.workspaceRef.current) return;
+
+        // Ensure we are active
+        if (!this.isActive) this.start();
+
+        const allThreadPromises = [];
+
+        for (const { spriteId, blocks } of spriteEntries) {
+            if (!blocks || Object.keys(blocks).length === 0) continue;
+
+            try {
+                // Load the sprite's blocks into a temporary workspace for code generation
+                const tempWs = new Blockly.Workspace();
+                Blockly.serialization.workspaces.load(blocks, tempWs);
+
+                const topBlocks = tempWs.getTopBlocks(true);
+                const validStacks = topBlocks.filter(b => b.type === triggerType);
+
+                for (const block of validStacks) {
+                    const check = WorkspaceValidator.validateStack(block);
+                    if (!check.isValid) {
+                        console.warn(`Validation Error on stack for sprite ${spriteId}: ${check.error}`);
+                        continue;
+                    }
+
+                    // INITIALIZE GENERATOR
+                    this.generator.init(tempWs);
+
+                    // GENERATE code
+                    const code = this.generator.blockToCode(block);
+                    if (!code) continue;
+
+                    // Wrap code to set the active sprite context
+                    const wrappedCode = `window.activeSpriteId = "${spriteId}";\n${code}`;
+                    allThreadPromises.push(this.executeThread(wrappedCode));
+                }
+
+                tempWs.dispose();
+            } catch (e) {
+                console.error(`Error generating code for sprite ${spriteId}:`, e);
+            }
+        }
+
+        if (allThreadPromises.length === 0) {
+            this.stopAll();
+            return;
+        }
+
+        console.log(`[Interpreter] Running ${allThreadPromises.length} threads across ${spriteEntries.length} sprites`);
+
+        // Wait for all execution threads across all sprites to finish
+        await Promise.all(allThreadPromises);
+
+        if (this.isActive) {
+            this.stopAll();
+        }
+    }
+
     async executeThread(code) {
         if (!code) return;
 

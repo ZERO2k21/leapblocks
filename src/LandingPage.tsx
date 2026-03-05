@@ -156,7 +156,7 @@ const ModeCard: React.FC<ModeCardProps> = ({ icon, title, subtitle, color, gradi
             {/* Subtitle */}
             <div style={{
                 fontSize: 11,
-                color: hovered ? 'rgba(255,255,255,0.85)' : '#94A3B8',
+                color: hovered ? 'rgba(34, 34, 34, 0.85)' : '#000206ff',
                 textAlign: 'center',
                 lineHeight: 1.5,
                 fontFamily: '"Inter", sans-serif',
@@ -287,7 +287,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     const extraCards = [
         {
             icon: '🎮', title: 'Creocad', subtitle: 'Online simulation for 3D printing',
-            color: '#44efe9ff', gradient: 'linear-gradient(135deg, #44efe9ff, #26dcd8ff)',
+            color: '#51c1bdff', gradient: 'linear-gradient(135deg, #51c1bdff, #26dcd8ff)',
             available: false, onClick: () => showComingSoon('Creocad')
         },
         {
@@ -316,7 +316,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             <div style={{
                 position: 'absolute',
                 top: 0, left: 0, right: 0,
-                height: '70px',
+                height: '45px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
