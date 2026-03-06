@@ -25,7 +25,7 @@
 
 /* White number pill (Targeting standard Blockly editable fields) */
 .blocklyEditableText>rect {
-    fill: rgba(0, 0, 0, 0.15) !important;
+    fill: #ffffff !important;
     stroke: none !important;
     rx: 14px !important;
     ry: 14px !important;
@@ -55,7 +55,7 @@ g[class*="blocklyNonEditableText"]>text {
 /* Ensure background rect is white for both editable and non-editable (flyout) */
 .blocklyEditableText>rect,
 .blocklyNonEditableText>rect {
-    fill: rgba(0, 0, 0, 0.15) !important;
+    fill: #ffffff !important;
     stroke: none !important;
     rx: 14px !important;
     ry: 14px !important;

@@ -121,13 +121,12 @@ body,
   font-weight: 700 !important;
 }
 
-/* 2. DROPDOWN FIELDS - Block-colored background with White Text */
+/* 2. DROPDOWN FIELDS - White background with Dark text */
 .blocklyDropdownText+.blocklyFieldRect,
 .blocklyDropdownTextParent>rect,
 .blocklyEditableText.blocklyDropdownTextParent>rect {
-  fill: rgba(0, 0, 0, 0.25) !important;
-  /* Darker overlay on block color = richer colored pill */
-  stroke: rgba(255, 255, 255, 0.3) !important;
+  fill: #FFFFFF !important;
+  stroke: rgba(0, 0, 0, 0.15) !important;
   stroke-width: 1.5px !important;
   rx: 14px !important;
   ry: 14px !important;
@@ -135,8 +134,7 @@ body,
 
 .blocklyDropdownText,
 .blocklyDropdownTextParent .blocklyText {
-  fill: #FFFFFF !important;
-  /* White text on block-color background */
+  fill: #575E75 !important;
   font-weight: 700 !important;
 }
 
@@ -146,10 +144,10 @@ body,
   fill: #575E75 !important;
 }
 
-/* Dropdown Arrows - White for contrast */
+/* Dropdown Arrows - Dark for contrast */
 .blocklyDropdownText+path.blocklyPath,
 .blocklyEditableText.blocklyDropdownTextParent path {
-  fill: #FFFFFF !important;
+  fill: #575E75 !important;
   stroke: none !important;
 }
 
@@ -167,24 +165,36 @@ body,
   box-sizing: border-box !important;
 }
 
-/* Ensure consistency in flyout — dropdowns should also have block-color bg */
+/* Ensure consistency in flyout — dropdowns should also have white bg */
 .blocklyFlyout .blocklyDropdownText+.blocklyFieldRect,
 .blocklyFlyout .blocklyDropdownTextParent>rect,
 .blocklyFlyout .blocklyEditableText.blocklyDropdownTextParent>rect {
-  fill: rgba(0, 0, 0, 0.25) !important;
-  stroke: rgba(255, 255, 255, 0.3) !important;
+  fill: #FFFFFF !important;
+  stroke: rgba(0, 0, 0, 0.15) !important;
 }
 
 .blocklyFlyout .blocklyDropdownText,
 .blocklyFlyout .blocklyDropdownTextParent .blocklyText {
-  fill: #FFFFFF !important;
+  fill: #575E75 !important;
   font-weight: 700 !important;
 }
 
-/* Input fields in flyout also use block-colored background */
+/* Input fields in flyout should also be white for consistency */
 .blocklyFlyout .blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect) {
-  fill: rgba(0, 0, 0, 0.25) !important;
+  fill: #FFFFFF !important;
   fill-opacity: 1 !important;
+  stroke: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 3. SHADOW BLOCKS (Oval inputs like 0 + 0) - White background with dark text */
+.blocklyShadow .blocklyPath {
+  fill: #FFFFFF !important;
+  stroke: rgba(0, 0, 0, 0.1) !important;
+}
+
+.blocklyShadow .blocklyText {
+  fill: #575E75 !important;
+  font-weight: 700 !important;
 }
 
 /* Selected state */

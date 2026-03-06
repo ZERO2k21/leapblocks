@@ -232,6 +232,29 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         return selectedBoard === 'esp32' ? esp32Toolbox : arduinoToolbox;
     }, [editorMode, selectedBoard]);
 
+    // Helper to extract all blocks/labels from a categorized toolbox into a single flyout list
+    const getFlattenedFlyoutContents = (toolbox: any) => {
+        if (!toolbox || !toolbox.contents) return [];
+        const flattened: any[] = [];
+        toolbox.contents.forEach((category: any, index: number) => {
+            if (category.kind === 'pictoBloxCategory' || category.kind === 'category') {
+                // Add a label/header for the category
+                flattened.push({
+                    kind: 'label',
+                    text: category.name,
+                    'web-class': 'category-header'
+                });
+                // Add all blocks/buttons from this category
+                if (Array.isArray(category.contents)) {
+                    flattened.push(...category.contents);
+                }
+                // Add some spacing
+                flattened.push({ kind: 'sep', gap: 24 });
+            }
+        });
+        return flattened;
+    };
+
     // ═══════════════════════════════════════════════════════════════════════
     // WORKSPACE CHANGE HANDLER
     // ═══════════════════════════════════════════════════════════════════════
@@ -1325,6 +1348,76 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             if (flyout.getWorkspace()) {
                                 flyout.getWorkspace().setScale(FIXED_SCALE);
                             }
+
+                            // CONTINUOUS FLYOUT OVERRIDE:
+                            // Always show ALL blocks in the flyout instead of just the selected category
+                            const originalShow = flyout.show.bind(flyout);
+                            const allContents = getFlattenedFlyoutContents(getCurrentToolbox());
+
+                            flyout.show = (contents: any) => {
+                                // If the contents passed is just a single category's blocks, ignore it
+                                // and show EVERYTHING. This is what makes it "continuous".
+                                if (allContents.length > 0) {
+                                    originalShow(allContents);
+                                } else {
+                                    originalShow(contents);
+                                }
+                            };
+
+                            // Force first show
+                            flyout.show(allContents);
+                        }
+
+                        // TOOLBOX SCROLL OVERRIDE:
+                        // When a toolbox item is selected, scroll the flyout instead of just showing it
+                        const toolbox = blocksWorkspace.getToolbox() as any;
+                        if (toolbox) {
+                            const originalSelectItem = toolbox.selectItemByPosition.bind(toolbox);
+                            toolbox.selectItemByPosition = (position: number) => {
+                                // Find the category being selected
+                                const items = toolbox.getToolboxItems();
+                                if (items[position]) {
+                                    const categoryName = items[position].getName();
+
+                                    // Update visual selection
+                                    originalSelectItem(position);
+
+                                    // Scroll flyout to the corresponding label/header
+                                    const flyoutWs = flyout.getWorkspace();
+                                    if (flyoutWs) {
+                                        const blocks = flyoutWs.getTopBlocks(true);
+                                        // Find the first block or label that belongs to this category
+                                        // (Our flattened flyout puts a label with the category name at the start)
+                                        const labels = flyoutWs.getCanvas().querySelectorAll('.category-header');
+                                        // This is a bit tricky with raw Blockly, but we can look for the first block
+                                        // that matches the category's typical blocks.
+
+                                        // Alternative: Find the first block and match by type prefix
+                                        const targetBlock = blocks.find((b: any) => {
+                                            const type = b.type;
+                                            if (categoryName === 'Motion') return type.startsWith('motion_');
+                                            if (categoryName === 'Looks') return type.startsWith('looks_');
+                                            if (categoryName === 'Sound') return type.startsWith('sound_');
+                                            if (categoryName === 'Events') return type.startsWith('event_');
+                                            if (categoryName === 'Control') return type.startsWith('control_');
+                                            if (categoryName === 'Sensing') return type.startsWith('sensing_');
+                                            if (categoryName === 'Operators') return type.startsWith('operator_');
+                                            if (categoryName === 'Variables') return type.startsWith('data_');
+                                            if (categoryName === 'My Blocks') return type.startsWith('procedures_');
+                                            return false;
+                                        });
+
+                                        if (targetBlock) {
+                                            const y = targetBlock.getRelativeToSurfaceXY().y;
+                                            if (flyoutWs.scrollbar) {
+                                                flyoutWs.scrollbar.set(0, y);
+                                            } else {
+                                                flyoutWs.translate(0, -y);
+                                            }
+                                        }
+                                    }
+                                }
+                            };
                         }
                     }
 
@@ -1342,6 +1435,91 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             previewBlockActionRef.current(block);
                         });
                         console.log('[APP] Flyout block preview listener attached');
+                    }
+
+                    // ── FLYOUT-TOOLBOX SYNC (Continuous Scroll) ───────────
+                    // Sync toolbox category selection with flyout scroll
+                    const syncFlyout = blocksWorkspace.getFlyout() as any;
+                    if (syncFlyout && syncFlyout.getWorkspace()) {
+                        const flyoutWs = syncFlyout.getWorkspace();
+                        let isInternalScroll = false;
+
+                        flyoutWs.addChangeListener((event: any) => {
+                            if (event.type !== Blockly.Events.VIEWPORT_CHANGE || isInternalScroll) return;
+
+                            const toolbox = blocksWorkspace.getToolbox();
+                            if (!toolbox) return;
+
+                            const flyout = blocksWorkspace.getFlyout() as any;
+                            if (!flyout || !flyout.isVisible()) return;
+
+                            // Get all blocks in flyout and their positions
+                            const blocks = flyoutWs.getTopBlocks(true);
+                            if (blocks.length === 0) return;
+
+                            // Find the first block that is currently visible at the top of the flyout
+                            const metrics = flyoutWs.getMetrics();
+                            const scrollY = metrics.viewTop - metrics.contentTop;
+                            const scale = flyoutWs.scale;
+
+                            // Map blocks to their categories based on their type prefix or workspace labels
+                            // In this app, we can use the block's Y position to find the current section
+                            // and match it with the toolbox categories.
+
+                            // More robust: Map the scroll position to category headers/labels if they exist
+                            // For simplicity, let's find the 'top-most' block and its category
+                            let topBlock = blocks[0];
+                            let minDist = Infinity;
+
+                            for (const block of blocks) {
+                                const blockY = block.getRelativeToSurfaceXY().y * scale;
+                                const dist = Math.abs(blockY - scrollY);
+                                if (dist < minDist) {
+                                    minDist = dist;
+                                    topBlock = block;
+                                }
+                            }
+
+                            if (topBlock) {
+                                // Determine category from block type
+                                const type = topBlock.type;
+                                let categoryName = '';
+
+                                if (type.startsWith('motion_')) categoryName = 'Motion';
+                                else if (type.startsWith('looks_')) categoryName = 'Looks';
+                                else if (type.startsWith('sound_')) categoryName = 'Sound';
+                                else if (type.startsWith('event_')) categoryName = 'Events';
+                                else if (type.startsWith('control_')) categoryName = 'Control';
+                                else if (type.startsWith('sensing_')) categoryName = 'Sensing';
+                                else if (type.startsWith('operator_') || type.startsWith('arduino_math_')) categoryName = 'Operators';
+                                else if (type.startsWith('data_') || type.startsWith('variables_')) categoryName = 'Variables';
+                                else if (type.startsWith('procedures_')) categoryName = 'My Blocks';
+                                else if (type.startsWith('arduino_')) {
+                                    if (type.includes('serial')) categoryName = 'Communication';
+                                    else if (type.includes('servo') || type.includes('motor') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
+                                    else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic')) categoryName = 'Sensors';
+                                    else categoryName = 'Arduino';
+                                }
+                                else if (type.startsWith('esp32_')) {
+                                    if (type.includes('servo') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
+                                    else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic') || type.includes('touch') || type.includes('hall')) categoryName = 'Sensors';
+                                    else categoryName = 'ESP32';
+                                }
+
+                                if (categoryName) {
+                                    const items = toolbox.getToolboxItems();
+                                    const index = items.findIndex(item => item.getName() === categoryName);
+                                    if (index !== -1 && toolbox.getSelectedItem() !== items[index]) {
+                                        isInternalScroll = true;
+                                        // Use selectItemByPosition but prevent it from scrolling the flyout (loop)
+                                        // Blockly's standard toolbox always scrolls on selection.
+                                        // To avoid jumping, we visually select it if possible or use a flag.
+                                        toolbox.selectItemByPosition(index);
+                                        setTimeout(() => { isInternalScroll = false; }, 50);
+                                    }
+                                }
+                            }
+                        });
                     }
 
                     // Dynamic Dropdown Colors: Update highlight and background color based on block color

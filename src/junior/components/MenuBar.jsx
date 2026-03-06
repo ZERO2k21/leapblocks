@@ -262,15 +262,25 @@ export default function MenuBar({
                 }}
             >
                 <Home size={16} />
-                Home
             </button>
             {/* Logo */}
             <div style={{
                 display: 'flex',
-                alignItems: 'center',
-                marginRight: '16px',
+                alignItems: 'flex-end',
+                gap: '8px',
+                marginRight: '20px',
             }}>
                 <Logo height={28} />
+                <span style={{
+                    color: '#FFD500',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.8px',
+                    marginBottom: '4px',
+                }}>
+                    INTERMEDIATE BLOCKS
+                </span>
             </div>
 
             {/* Menus */}

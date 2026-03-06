@@ -29,7 +29,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({ mainIcon, color, tooltip
                 backgroundColor: color,
                 opacity: isHovered ? 1 : 0,
                 visibility: isHovered ? 'visible' : 'hidden',
-                bottom: isHovered ? '56px' : '30px', // Slide up effect
+                bottom: isHovered ? '44px' : '22px', // Slide up effect
             }}>
                 {actions.map((action, index) => (
                     <div
@@ -156,21 +156,21 @@ const styles: { [key: string]: React.CSSProperties } = {
         position: 'relative',
         display: 'flex',
         justifyContent: 'flex-end',
-        width: '48px',
-        height: '48px',
+        width: '36px',
+        height: '36px',
     },
     mainButton: {
-        width: '48px',
-        height: '48px',
+        width: '36px',
+        height: '36px',
         borderRadius: '50%',
         color: 'white',
-        border: '3px solid white', // Thick white border from screenshot
-        fontSize: '24px',
+        border: '2px solid white',
+        fontSize: '16px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
         position: 'relative',
         zIndex: 101, // Above flyout
     },

@@ -231,10 +231,11 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           })}
         </div>
 
+        {/* Floating action button - inside list container so it stays within panel border */}
         <div style={styles.floatingAction}>
           <ActionMenu
             mainIcon="🐱"
-            color="#f11a69ff" // Red/Pink from screenshot
+            color="#f11a69ff"
             tooltipLabel="Choose a Sprite"
             actions={[
               {
@@ -280,7 +281,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: "8px",
     border: "1px solid #d9d9d9",
     overflow: "hidden",
-    width: "376px", // 376 + 8 (gap) + 96 (stage) = 480px
+    width: "376px",
   },
   propertyPanel: {
     padding: "12px",
@@ -361,8 +362,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     flexDirection: "column",
     backgroundColor: "#FFFFFF",
     position: "relative",
-    minHeight: "180px",
+    minHeight: "200px",
     padding: "8px",
+    paddingBottom: "60px",
   },
   spriteList: {
     display: "flex",
@@ -434,8 +436,8 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   floatingAction: {
     position: "absolute",
-    bottom: "16px",
-    right: "16px",
+    bottom: "12px",
+    right: "12px",
     zIndex: 100,
   },
   floatingAddButton: {
