@@ -25,6 +25,7 @@ interface SpritePanelProps {
   onSelectSprite: (id: string) => void;
   onAddSprite: (type: SpriteType) => void;
   onDeleteSprite: (id: string) => void;
+  onRemoveBackground: (spriteId: string) => void; // v2
   onOpenSpriteLibrary?: () => void;
 }
 
@@ -34,6 +35,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   onSelectSprite,
   onAddSprite,
   onDeleteSprite,
+  onRemoveBackground,
   onOpenSpriteLibrary,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
@@ -139,6 +141,15 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
               style={styles.numberInput}
             />
           </div>
+          {selectedSprite && (
+            <button
+              onClick={() => onRemoveBackground(selectedSprite.id)}
+              style={styles.actionBtnSmall}
+              title="Remove White Background"
+            >
+              🪄 Clear BG
+            </button>
+          )}
         </div>
       </div>
 
@@ -492,6 +503,18 @@ const styles: { [key: string]: React.CSSProperties } = {
   pickerLabel: {
     fontSize: "10px",
     fontWeight: "bold",
+  },
+  actionBtnSmall: {
+    backgroundColor: '#855CD6',
+    border: 'none',
+    borderRadius: '12px',
+    color: 'white',
+    fontSize: '10px',
+    padding: '4px 8px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    whiteSpace: 'nowrap',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
   },
 };
 

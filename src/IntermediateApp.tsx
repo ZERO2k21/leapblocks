@@ -93,6 +93,8 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     // Per-sprite workspace storage: maps spriteId -> Blockly serialized JSON
     const spriteWorkspacesRef = useRef<Map<string, object>>(new Map());
+    const selectedSpriteIdRef = useRef<string | null>(null);
+    const isLoadingWorkspaceRef = useRef(false);
 
     // Hardware
     const [ports, setPorts] = useState<{ path: string; manufacturer?: string }[]>([]);
@@ -282,28 +284,153 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, [editorMode, appMode, sprites, selectedSpriteId]);
 
     /**
-     * Handle real-time hardware interaction when a block is clicked or changed
+     * Preview a block's action on the selected sprite with 2-second auto-revert.
+     * Stored as a ref so the flyout listener (attached once) always accesses latest state.
+     */
+    const previewRevertTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const previewBlockActionRef = useRef<(block: Blockly.Block) => void>(() => { });
+    previewBlockActionRef.current = (block: Blockly.Block) => {
+        const activeSprite = selectedSpriteId ? sprites.find(s => s.id === selectedSpriteId) : null;
+        if (!activeSprite) return;
+
+        // Cancel any previous revert timer
+        if (previewRevertTimerRef.current) {
+            clearTimeout(previewRevertTimerRef.current);
+            previewRevertTimerRef.current = null;
+        }
+
+        // Save current sprite state before preview
+        const saved = {
+            x: activeSprite.x, y: activeSprite.y,
+            direction: activeSprite.direction, size: activeSprite.size,
+            visible: activeSprite.visible, sayText: activeSprite.sayText,
+            effects: { ...activeSprite.effects }, rotationStyle: activeSprite.rotationStyle,
+        };
+
+        let previewed = true;
+        switch (block.type) {
+            case 'motion_move_steps': {
+                const steps = Number(block.getFieldValue('STEPS')) || 10;
+                const rad = (activeSprite.direction - 90) * Math.PI / 180;
+                activeSprite.setX(activeSprite.x + Math.cos(rad) * steps);
+                activeSprite.setY(activeSprite.y - Math.sin(rad) * steps);
+                break;
+            }
+            case 'motion_turn_right': {
+                const deg = Number(block.getFieldValue('DEGREES')) || 15;
+                activeSprite.pointInDirection(activeSprite.direction + deg);
+                break;
+            }
+            case 'motion_turn_left': {
+                const deg = Number(block.getFieldValue('DEGREES')) || 15;
+                activeSprite.pointInDirection(activeSprite.direction - deg);
+                break;
+            }
+            case 'motion_go_to_xy': {
+                activeSprite.setX(Number(block.getFieldValue('X')) || 0);
+                activeSprite.setY(Number(block.getFieldValue('Y')) || 0);
+                break;
+            }
+            case 'motion_glide_to_xy': {
+                activeSprite.startGlide(
+                    Number(block.getFieldValue('X')) || 0,
+                    Number(block.getFieldValue('Y')) || 0,
+                    Number(block.getFieldValue('SECS')) || 1);
+                break;
+            }
+            case 'motion_point_direction':
+                activeSprite.pointInDirection(Number(block.getFieldValue('DIRECTION')) || 90);
+                break;
+            case 'motion_change_x':
+                activeSprite.setX(activeSprite.x + (Number(block.getFieldValue('DX')) || 10));
+                break;
+            case 'motion_change_y':
+                activeSprite.setY(activeSprite.y + (Number(block.getFieldValue('DY')) || 10));
+                break;
+            case 'motion_set_x':
+                activeSprite.setX(Number(block.getFieldValue('X')) || 0);
+                break;
+            case 'motion_set_y':
+                activeSprite.setY(Number(block.getFieldValue('Y')) || 0);
+                break;
+            case 'motion_if_on_edge_bounce':
+                activeSprite.ifOnEdgeBounce();
+                break;
+            case 'motion_set_rotation_style':
+                activeSprite.setRotationStyle(block.getFieldValue('STYLE') as any);
+                break;
+            case 'looks_say':
+                activeSprite.say(String(block.getFieldValue('MESSAGE') || 'Hello!'));
+                break;
+            case 'looks_say_for_secs':
+                activeSprite.say(String(block.getFieldValue('MESSAGE') || 'Hello!'), Number(block.getFieldValue('SECS')) || 2);
+                break;
+            case 'looks_think':
+                activeSprite.think(String(block.getFieldValue('MESSAGE') || 'Hmm...'));
+                break;
+            case 'looks_think_for_secs':
+                activeSprite.think(String(block.getFieldValue('MESSAGE') || 'Hmm...'), Number(block.getFieldValue('SECS')) || 2);
+                break;
+            case 'looks_show': activeSprite.show(); break;
+            case 'looks_hide': activeSprite.hide(); break;
+            case 'looks_next_costume': activeSprite.nextCostume(); break;
+            case 'looks_switch_costume': { const c = block.getFieldValue('COSTUME'); if (c) activeSprite.switchCostume(c); break; }
+            case 'looks_set_size': activeSprite.setSize(Number(block.getFieldValue('SIZE')) || 100); break;
+            case 'looks_change_size': activeSprite.changeSize(Number(block.getFieldValue('CHANGE')) || 10); break;
+            case 'looks_set_effect':
+                activeSprite.setEffect(block.getFieldValue('EFFECT') as any, Number(block.getFieldValue('VALUE')) || 0);
+                break;
+            case 'looks_clear_effects': activeSprite.clearEffects(); break;
+            case 'looks_switch_backdrop': { const b = block.getFieldValue('BACKDROP'); if (b) stageManager.setBackdrop(b); break; }
+            case 'looks_next_backdrop': stageManager.nextBackdrop(); break;
+            default: previewed = false; break;
+        }
+
+        if (previewed) {
+            activeSprite.jiggle();
+            console.log(`[APP] Block preview: ${block.type} on sprite ${activeSprite.name}`);
+            // Revert to original state after 2 seconds
+            previewRevertTimerRef.current = setTimeout(() => {
+                activeSprite.setX(saved.x);
+                activeSprite.setY(saved.y);
+                activeSprite.pointInDirection(saved.direction);
+                activeSprite.setSize(saved.size);
+                if (saved.visible) activeSprite.show(); else activeSprite.hide();
+                activeSprite.setRotationStyle(saved.rotationStyle);
+                activeSprite.clearEffects();
+                if (saved.effects) {
+                    Object.entries(saved.effects).forEach(([eff, val]) => {
+                        if (val !== 0) activeSprite.setEffect(eff as any, val as number);
+                    });
+                }
+                if (saved.sayText) activeSprite.say(saved.sayText); else activeSprite.clearSay();
+                previewRevertTimerRef.current = null;
+                console.log(`[APP] Preview reverted for sprite ${activeSprite.name}`);
+            }, 2000);
+        }
+    };
+
+    /**
+     * Handle real-time block interaction: preview animation blocks + hardware control
      */
     const handleBlockInteraction = useCallback(async (event: Blockly.Events.Abstract) => {
-        if (!workspaceRef.current || editorMode !== 'stage' || !isConnected) return;
-
-        // We only care about clicks or UI changes that represent immediate intent
+        if (!workspaceRef.current) return;
         if (event.type !== Blockly.Events.CLICK && event.type !== Blockly.Events.BLOCK_CHANGE) return;
 
         const blockId = (event as any).blockId;
+        if (!blockId) return;
         const block = workspaceRef.current.getBlockById(blockId);
+        if (!block) return;
 
-        // --- VISUAL FEEDBACK: Jiggle sprite on block interaction ---
-        if (block && event.type === Blockly.Events.CLICK && selectedSpriteId) {
-            const activeSprite = sprites.find(s => s.id === selectedSpriteId);
-            if (activeSprite) {
-                activeSprite.jiggle();
-            }
+        // Animation block preview on click
+        if (event.type === Blockly.Events.CLICK) {
+            previewBlockActionRef.current(block);
         }
 
-        if (!block || !block.type.startsWith('arduino_')) return;
+        // Hardware block interaction (Arduino)
+        if (editorMode !== 'stage' || !isConnected) return;
+        if (!block.type.startsWith('arduino_')) return;
 
-        // If clicking a setup or loop block, trigger the flag scripts (which include arduino_setup)
         if (event.type === Blockly.Events.CLICK && (block.type === 'arduino_setup' || block.type === 'arduino_loop')) {
             console.log('[APP] Starting Arduino scripts from block click');
             setIsRunning(true);
@@ -313,15 +440,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
 
         if (event.type === Blockly.Events.BLOCK_CHANGE) {
-            // "make them serial monitor visible when user drag blocks in the workspace"
-            // If they interact with the workspace and add blocks, especially serial ones, switch tab
-            if (activeTab !== 'serial') {
-                setActiveTab('serial');
-            }
+            if (activeTab !== 'serial') setActiveTab('serial');
         }
 
         log.app('Real-time interaction', { type: block.type, event: event.type });
-
 
         try {
             switch (block.type) {
@@ -352,7 +474,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 case 'arduino_tone': {
                     const pin = parseInt(block.getFieldValue('PIN'), 10);
                     const freq = parseInt(block.getFieldValue('FREQ'), 10);
-                    await hardwareAdapter.playTone(pin, freq, 500); // 500ms default for preview
+                    await hardwareAdapter.playTone(pin, freq, 500);
                     break;
                 }
                 case 'arduino_notone': {
@@ -367,15 +489,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     break;
                 }
                 case 'arduino_motor': {
-                    const motor = block.getFieldValue('MOTOR'); // 'A' or 'B'
+                    const motor = block.getFieldValue('MOTOR');
                     const motorId = motor === 'A' ? 1 : 2;
                     const dir = block.getFieldValue('DIR');
                     const speedVal = parseInt(block.getFieldValue('SPEED'), 10);
-
                     let speed = 0;
                     if (dir === 'forward') speed = speedVal;
                     else if (dir === 'backward') speed = -speedVal;
-
                     await hardwareAdapter.setMotor(motorId, speed);
                     break;
                 }
@@ -409,7 +529,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         } catch (err) {
             log.app('Interaction error', err);
         }
-    }, [editorMode, isConnected]);
+    }, [editorMode, isConnected, sprites, selectedSpriteId]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // MODE SWITCHING
@@ -517,6 +637,49 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         if (workspaceRef.current) workspaceRef.current.clear();
         addLog(`Added sprite: ${name}`);
     }, [sprites, addLog, triggerUpdate, saveCurrentSpriteWorkspace]);
+
+    const handleRemoveBackground = useCallback(async (spriteId: string) => {
+        const sprite = sprites.find(s => s.id === spriteId);
+        if (!sprite || !sprite.currentCostume) return;
+
+        addLog(`Removing background for ${sprite.name}...`);
+        const imagePath = sprite.currentCostume.image.src;
+        // The src might be a full URL, we need the relative path from public/
+        const relativePath = imagePath.split('/assets/')[1];
+        if (!relativePath) {
+            addLog('Error: Could not resolve image path');
+            return;
+        }
+
+        const fullRelativePath = `public/assets/${relativePath}`;
+        try {
+            const result = await window.electronAPI.removeBackground(fullRelativePath);
+            if (result.success) {
+                addLog(`Background removed for ${sprite.name}`);
+
+                // If it was a jpeg/jpg, the script converted it to png
+                let finalSrc = imagePath;
+                if (imagePath.toLowerCase().endsWith('.jpeg') || imagePath.toLowerCase().endsWith('.jpg')) {
+                    finalSrc = imagePath.replace(/\.(jpeg|jpg)$/i, '.png');
+                }
+
+                const name = sprite.currentCostume.name;
+                const cacheBuster = `t=${Date.now()}`;
+                const newSrc = `${finalSrc}${finalSrc.includes('?') ? '&' : '?'}${cacheBuster}`;
+
+                // Re-add the costume (this will update the image object in the costume map)
+                await sprite.addCostume(name, newSrc);
+
+                triggerUpdate();
+                window.dispatchEvent(new Event('leap-stage-update'));
+            } else {
+                addLog(`Failed to remove background: ${result.error}`);
+            }
+        } catch (e) {
+            addLog('Error in background removal');
+            console.error(e);
+        }
+    }, [sprites, addLog, triggerUpdate]);
 
     const deleteSprite = useCallback((id: string) => {
         animationVM.unregisterSprite(id);
@@ -803,11 +966,15 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
             // Add robot costumes
             const loadCostumes = async () => {
+                console.log('[APP] Loading costumes for robot...');
                 await defaultSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
-                await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/robot_wave1.svg');
-                await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/robot_wave2.svg');
-                await defaultSprite.addCostume('talk', '/assets/sprites/robot/robot_talk1.svg');
+                await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/robot_wave1.png');
+                await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/robot_wave2.png');
+                await defaultSprite.addCostume('talk', '/assets/sprites/robot/robot_talk.png');
+                console.log('[APP] Costumes loaded:', defaultSprite.costumes.length);
                 triggerUpdate();
+                // Manually nudge the stage to repaint in case it didn't catch the update
+                window.dispatchEvent(new Event('leap-stage-update'));
             };
             loadCostumes().catch(err => console.error('[APP] Failed to initialize costumes:', err));
 
@@ -867,38 +1034,6 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Update workspace change listener whenever sprites/selectedSpriteId change
-    // This ensures the listener closure has the latest state
-    useEffect(() => {
-        if (workspaceRef.current) {
-            // Remove old listener and add new one with updated closure
-            workspaceRef.current.removeChangeListener(handleWorkspaceChange);
-            workspaceRef.current.addChangeListener(handleWorkspaceChange);
-
-            workspaceRef.current.removeChangeListener(handleBlockInteraction);
-            workspaceRef.current.addChangeListener(handleBlockInteraction);
-
-            // Trigger an initial recompile with the current workspace state
-            if (sprites.length > 0 && selectedSpriteId) {
-                console.log('[APP] Sprites/selection changed, triggering recompile...');
-                handleWorkspaceChange({ isUiEvent: false } as Blockly.Events.Abstract);
-            }
-        }
-
-        // Register highlighting callback that knows about the selectedSpriteId
-        animationVM.onHighlightBlock = (spriteId, blockId) => {
-            if (workspaceRef.current && spriteId === selectedSpriteId) {
-                // @ts-ignore
-                workspaceRef.current.highlightBlock(blockId);
-            }
-        };
-
-        // Clear highlight initially
-        if (workspaceRef.current) {
-            // @ts-ignore
-            workspaceRef.current.highlightBlock(null);
-        }
-    }, [sprites, selectedSpriteId, handleWorkspaceChange, handleBlockInteraction]);
 
     // Reinitialize workspace when appMode changes (e.g., from home to blocks/junior)
     // This ensures the correct toolbox is shown
@@ -957,6 +1092,22 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 flyout.getWorkspace().setScale(FIXED_SCALE);
                             }
                         }
+                    }
+
+                    // ── FLYOUT BLOCK PREVIEW ─────────────────────────────
+                    // Click a block in the flyout → preview it on the sprite
+                    const previewFlyout = blocksWorkspace.getFlyout() as any;
+                    if (previewFlyout && previewFlyout.getWorkspace()) {
+                        const flyoutWs = previewFlyout.getWorkspace();
+                        flyoutWs.addChangeListener((event: any) => {
+                            if (event.type !== Blockly.Events.CLICK) return;
+                            const blockId = event.blockId;
+                            if (!blockId) return;
+                            const block = flyoutWs.getBlockById(blockId);
+                            if (!block) return;
+                            previewBlockActionRef.current(block);
+                        });
+                        console.log('[APP] Flyout block preview listener attached');
                     }
 
                     // Dynamic Dropdown Colors: Update highlight and background color based on block color
@@ -1157,13 +1308,71 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     }
 
                     addLog(`Workspace initialized for ${editorMode === 'stage' ? 'Stage' : 'Upload'} mode`);
+
+                    // ── ATTACH LISTENERS ─────────────────────────────────
+                    if (workspaceRef.current) {
+                        workspaceRef.current.addChangeListener(handleBlockInteraction);
+
+                        // Trigger an initial recompile
+                        if (sprites.length > 0 && selectedSpriteId) {
+                            handleWorkspaceChange({ isUiEvent: false } as Blockly.Events.Abstract);
+                        }
+
+                        // Register highlighting callback
+                        animationVM.onHighlightBlock = (spriteId, blockId) => {
+                            if (workspaceRef.current && spriteId === selectedSpriteId) {
+                                // @ts-ignore
+                                workspaceRef.current.highlightBlock(blockId);
+                            }
+                        };
+
+                        // Clear highlight initially
+                        // @ts-ignore
+                        workspaceRef.current.highlightBlock(null);
+                    }
                 }
             }, 0);
 
             return () => clearTimeout(timer);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [appMode, editorMode, selectedBoard]);
+    }, [appMode, editorMode, selectedBoard, workspaceTab]); // Re-inject on these changes
+
+    // Update workspace listeners and highlights when sprite selection or workspace changes
+    useEffect(() => {
+        if (!workspaceRef.current) {
+            console.log('[APP] No workspaceRef.current, skipping listener attachment');
+            return;
+        }
+
+        console.log('[APP] Updating listeners for sprite:', selectedSpriteId);
+
+        // Remove old and add new (to ensure only ONE instance of the handler is attached)
+        workspaceRef.current.removeChangeListener(handleWorkspaceChange);
+        workspaceRef.current.addChangeListener(handleWorkspaceChange);
+
+        workspaceRef.current.removeChangeListener(handleBlockInteraction);
+        workspaceRef.current.addChangeListener(handleBlockInteraction);
+
+        // Trigger an initial recompile for the new sprite
+        if (sprites.length > 0 && selectedSpriteId) {
+            handleWorkspaceChange({ isUiEvent: false } as Blockly.Events.Abstract);
+        }
+
+        // Register highlighting callback that knows about the *current* selectedSpriteId
+        animationVM.onHighlightBlock = (spriteId, blockId) => {
+            if (workspaceRef.current && spriteId === selectedSpriteId) {
+                // @ts-ignore
+                workspaceRef.current.highlightBlock(blockId);
+            }
+        };
+
+        // Clear highlights initially
+        // @ts-ignore
+        workspaceRef.current.highlightBlock(null);
+
+    }, [sprites, selectedSpriteId, handleWorkspaceChange, handleBlockInteraction, workspaceTab]);
+
 
     // ═══════════════════════════════════════════════════════════════════════
     // RENDER
@@ -1473,6 +1682,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     onSelectSprite={handleSpriteSelect}
                                     onAddSprite={addSprite}
                                     onDeleteSprite={deleteSprite}
+                                    onRemoveBackground={handleRemoveBackground} // v2
                                     onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
                                 />
                                 <StagePanel
