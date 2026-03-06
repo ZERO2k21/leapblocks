@@ -96,6 +96,8 @@ const categoryContents = {
     ],
     sound: [
         { kind: "block", type: "sound_play" },
+        { kind: "block", type: "sound_play_music" },
+        { kind: "block", type: "sound_stop_music" },
         { kind: "block", type: "sound_instrument" },
         { kind: "block", type: "sound_note" },
         { kind: "block", type: "sound_stop_all" }
@@ -588,7 +590,7 @@ export default function JuniorApp({ onBack }) {
         };
 
         // ===========================================
-        // NEW PICTOBLOX FUNCTIONS
+        // NEW LEAPBLOCKS FUNCTIONS
         // ===========================================
 
         // Go to Random Position
@@ -635,13 +637,50 @@ export default function JuniorApp({ onBack }) {
             }
         };
 
-        // Stamp Sprite
+        // Stamp Sprite - dispatches to sprite's stamp action
         window.stampSprite = (id) => {
-            // Uses the pen canvas to stamp
-            const sprite = sprites.find(s => s.id === id);
-            if (sprite) {
-                showFeedback("🖼️ Stamped!");
+            // Dispatch to the sprite's registered stamp action
+            const handler = window._spriteActions?.[id];
+            if (handler && handler.stamp) {
+                handler.stamp();
             }
+        };
+
+        // Stamp implementation: draw sprite appearance onto the pen canvas
+        window.stampSpriteOnCanvas = (spriteId, sx, sy, costumeVal, spriteSize) => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return;
+
+            const scale = (spriteSize || 100) / 100;
+            const drawSize = 50 * scale;
+
+            // Check if costumeValue is an image path
+            if (typeof costumeVal === 'string' && (
+                costumeVal.includes('/') ||
+                costumeVal.startsWith('http') ||
+                costumeVal.includes('data:image') ||
+                costumeVal.endsWith('.png') ||
+                costumeVal.endsWith('.jpg') ||
+                costumeVal.endsWith('.svg')
+            )) {
+                // Draw image onto canvas
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => {
+                    ctx.drawImage(img, sx, sy, drawSize, drawSize);
+                };
+                img.src = costumeVal;
+            } else {
+                // Draw emoji text onto canvas
+                ctx.font = `${Math.round(drawSize)}px serif`;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                ctx.fillText(costumeVal || '✏️', sx, sy);
+            }
+
+            if (window.showFeedback) window.showFeedback("Stamped!");
         };
 
         // Pen Color
@@ -669,6 +708,14 @@ export default function JuniorApp({ onBack }) {
         window.stopAllSounds = () => {
             window.speechSynthesis.cancel();
             soundManager.stopAll();
+            soundManager.stopMusic();
+        };
+
+        window.playMusic = (name) => {
+            soundManager.playMusic(name);
+        };
+        window.stopMusic = () => {
+            soundManager.stopMusic();
         };
 
         // Stop Execution - Throws ExecutionStop error to halt execution immediately
@@ -715,12 +762,6 @@ export default function JuniorApp({ onBack }) {
             if (workspaceRef.current) workspaceRef.current.clear();
         }
     }, [activeSpriteId, currentSceneId]); // Reload when sprite OR scene changes
-
-
-
-
-
-
 
     // Convert JSON blocks to XML string + FILTERING
     const getToolboxXml = (catId) => {
@@ -887,15 +928,7 @@ export default function JuniorApp({ onBack }) {
                             previewed = true;
                         }
 
-                        // Add jiggle animation for visual feedback
-                        if (previewed && window.jiggle) {
-                            window.jiggle(window.activeSpriteId || activeSpriteId);
-                        }
-
-                        // Undo creation (Visual only click)
-                        setTimeout(() => {
-                            workspaceRef.current.undo(false);
-                        }, 0);
+                        // Visual only feedback handled by jiggle above
                     }
                 }
             });
@@ -905,9 +938,8 @@ export default function JuniorApp({ onBack }) {
         const handleWorkspaceChange = (e) => {
             if (e.type === Blockly.Events.UI) return;
 
-            // 1. AUTOSAVE
-            const state = Blockly.serialization.workspaces.save(workspaceRef.current);
-            localStorage.setItem("leap_autosave", JSON.stringify(state));
+            // 1. AUTOSAVE to sprite state
+            saveCurrentWorkspace();
 
             // 2. BLOCK LIMIT
             if (e.type === Blockly.Events.BLOCK_CREATE || e.type === Blockly.Events.BLOCK_CHANGE || e.type === Blockly.Events.BLOCK_MOVE) {
@@ -945,17 +977,7 @@ export default function JuniorApp({ onBack }) {
         };
         workspaceRef.current.addChangeListener(handleWorkspaceChange);
 
-        // AUTOSAVE DISABLED - Start fresh each time
-        // const saved = localStorage.getItem("leap_autosave");
-        // if (saved) {
-        //     try {
-        //         Blockly.serialization.workspaces.load(JSON.parse(saved), workspaceRef.current);
-        //     } catch (e) { console.warn("Failed to load autosave"); }
-        // }
-
-        // Clear any old autosave
-        localStorage.removeItem("leap_autosave");
-
+        // Fresh layout
         window.dispatchEvent(new Event('resize'));
         // Cleanup on unmount
         return () => {
@@ -969,9 +991,11 @@ export default function JuniorApp({ onBack }) {
         window.drawSegment = (x1, y1, x2, y2, color, width) => {
             const ctx = canvasRef.current?.getContext("2d");
             if (ctx) {
+                ctx.imageSmoothingEnabled = true;
                 ctx.strokeStyle = color;
                 ctx.lineWidth = width;
                 ctx.lineCap = "round";
+                ctx.lineJoin = "round"; // smooth strokes
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
                 ctx.lineTo(x2, y2);
@@ -1140,9 +1164,12 @@ export default function JuniorApp({ onBack }) {
             console.log("[Junior] Single sprite mode");
             window.activeSpriteId = spriteEntries[0].spriteId;
             if (interpreterRef.current) {
-                const sprite = currentSprites.find(s => s.id === spriteEntries[0].spriteId);
-                if (sprite && sprite.blocks) {
-                    Blockly.serialization.workspaces.load(sprite.blocks, workspaceRef.current);
+                // If it's NOT the active sprite (rare in single mode), load its blocks
+                if (spriteEntries[0].spriteId !== activeSpriteId) {
+                    const sprite = currentSprites.find(s => s.id === spriteEntries[0].spriteId);
+                    if (sprite && sprite.blocks) {
+                        Blockly.serialization.workspaces.load(sprite.blocks, workspaceRef.current);
+                    }
                 }
                 await interpreterRef.current.runStacks('event_flag');
             }
@@ -1846,171 +1873,5 @@ function WorkspaceControl({ icon, title, onClick }) {
         >
             {icon}
         </button>
-    );
-}
-
-// --- TOP BAR COMPONENTS ---
-
-// Inline TopBar Component
-// --- REMOVED DUPLICATE TOPBAR COMPONENT ---
-
-function Dropdown({ label, options, onSelect }) {
-    const [open, setOpen] = useState(false);
-    return (
-        <div style={{ position: 'relative', cursor: 'pointer', height: "100%", display: "flex", alignItems: "center" }}>
-            <span
-                onClick={() => setOpen(!open)}
-                style={{ padding: "5px 10px", borderRadius: "4px", background: open ? "rgba(255,255,255,0.1)" : "transparent", userSelect: "none" }}
-            >
-                {label}
-            </span>
-            {open && (
-                <div style={{
-                    position: 'absolute', top: '100%', left: 0,
-                    background: 'white', color: '#333', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    zIndex: 1000, minWidth: '180px', borderRadius: '4px', padding: '5px 0', border: "1px solid #eee"
-                }}>
-                    {options.map((opt, i) => (
-                        opt === "-" ?
-                            <div key={i} style={{ height: "1px", background: "#eee", margin: "4px 0" }}></div> :
-                            <div
-                                key={i}
-                                onClick={() => { onSelect && onSelect(opt.action); setOpen(false); }}
-                                style={{ padding: '8px 15px', fontSize: '13px', cursor: 'pointer', display: "flex", justifyContent: "space-between" }}
-                                onMouseEnter={e => e.target.style.background = "#f5f5f5"}
-                                onMouseLeave={e => e.target.style.background = "white"}
-                            >
-                                {opt.label}
-                            </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    )
-}
-
-function BoardDropdown({ selected, onSelect }) {
-    const [open, setOpen] = useState(false);
-    const boards = [
-        { id: "quarky", name: "Quarky", icon: "🤖" },
-        { id: "wizbot", name: "Wizbot", icon: "🏎️" }
-    ];
-    // Keep logic for selection, but don't show it in the main button as per request
-
-    return (
-        <div style={{ position: 'relative', cursor: 'pointer' }}>
-            <div
-                onClick={() => setOpen(!open)}
-                style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 10px", borderRadius: "4px", border: "1px solid rgba(255,255,255,0.3)", userSelect: "none" }}
-            >
-                <span>Board</span>
-            </div>
-            {open && (
-                <div style={{
-                    position: 'absolute', top: '100%', left: 0,
-                    background: 'white', color: '#333', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    zIndex: 1000, minWidth: '150px', borderRadius: '4px', padding: '5px 0'
-                }}>
-                    {boards.map(b => (
-                        <div
-                            key={b.id}
-                            onClick={() => { onSelect(b.id); setOpen(false); }}
-                            style={{ padding: '8px 15px', fontSize: '13px', cursor: 'pointer', display: "flex", alignItems: "center", gap: "8px", background: selected === b.id ? "#e6f0ff" : "transparent" }}
-                            onMouseEnter={e => e.target.style.background = "#f5f5f5"}
-                            onMouseLeave={e => e.target.style.background = selected === b.id ? "#e6f0ff" : "white"}
-                        >
-                            <span>{b.icon}</span> {b.name}
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
-
-function IconButton({ icon, title }) {
-    return (
-        <div title={title} style={{
-            width: "30px", height: "30px", borderRadius: "50%",
-            background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", fontSize: "16px"
-        }}>
-            {icon}
-        </div>
-    );
-}
-
-function ConnectModal({ onClose, status, setStatus, setDevice, currentDevice }) {
-    const [scanning, setScanning] = useState(false);
-    const [devices, setDevices] = useState([]);
-
-    useEffect(() => {
-        if (status === "disconnected") {
-            const timer = setTimeout(() => setScanning(true), 0);
-
-            // Simulate scan
-            const scanTimer = setTimeout(() => {
-                setDevices([
-                    { id: "qk1", name: "Quarky (A1:B2)", signal: "Strong" },
-                    { id: "wb1", name: "Wizbot (C3:D4)", signal: "Medium" }
-                ]);
-                setScanning(false);
-            }, 2000);
-            return () => { clearTimeout(timer); clearTimeout(scanTimer); };
-        }
-    }, [status]);
-
-    const handleConnect = (dev) => {
-        setDevice(dev);
-        setStatus("connected");
-        setTimeout(onClose, 500); // Close shortly after connecting
-    };
-
-    const handleDisconnect = () => {
-        setDevice(null);
-        setStatus("disconnected");
-        setDevices([]);
-    };
-
-    return (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", zIndex: 2000, display: "flex", justifyContent: "center", alignItems: "center" }}>
-            <div style={{ background: "white", width: "400px", borderRadius: "10px", padding: "20px", boxShadow: "0 10px 25px rgba(0,0,0,0.2)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                    <h2 style={{ margin: 0, fontSize: "20px" }}>Connect Device</h2>
-                    <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer" }}>✕</button>
-                </div>
-
-                {status === "connected" ? (
-                    <div style={{ textAlign: "center", padding: "20px" }}>
-                        <div style={{ fontSize: "50px", marginBottom: "10px" }}>✅</div>
-                        <h3>Connected to {currentDevice?.name}</h3>
-                        <button onClick={handleDisconnect} style={{ marginTop: "20px", padding: "8px 16px", background: "#EF4444", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>Disconnect</button>
-                    </div>
-                ) : (
-                    <div>
-                        {scanning ? (
-                            <div style={{ textAlign: "center", padding: "30px" }}>
-                                <div className="spinner" style={{ border: "4px solid #f3f3f3", borderTop: "4px solid #3498db", borderRadius: "50%", width: "30px", height: "30px", margin: "0 auto 15px", animation: "spin 1s linear infinite" }}></div>
-                                <div>Scanning for devices...</div>
-                                <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-                            </div>
-                        ) : (
-                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                                {devices.length === 0 ? <div>No devices found. <button onClick={() => setScanning(true)} style={{ color: "blue", background: "none", border: "none", cursor: "pointer" }}>Scan Again</button></div> : null}
-                                {devices.map(d => (
-                                    <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", border: "1px solid #eee", borderRadius: "5px" }}>
-                                        <div>
-                                            <div style={{ fontWeight: "bold" }}>{d.name}</div>
-                                            <div style={{ fontSize: "12px", color: "green" }}>Signal: {d.signal}</div>
-                                        </div>
-                                        <button onClick={() => handleConnect(d)} style={{ background: "#4C97FF", color: "white", border: "none", padding: "5px 15px", borderRadius: "5px", cursor: "pointer" }}>Connect</button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-        </div>
     );
 }

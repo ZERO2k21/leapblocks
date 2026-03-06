@@ -8,6 +8,10 @@ const GRID_H = 15; // 360px
 const STAGE_WIDTH = GRID_W * CELL_SIZE; // 480
 const STAGE_HEIGHT = GRID_H * CELL_SIZE; // 360
 
+// Hiding/Peeking Constants
+const PEEK_LIMIT = 20; // Pixels to keep visible
+const SPRITE_DIM = 80; // Standard sprite bounding box (80x80)
+
 /**
  * useSpriteSystem Hook
  * Manages the "Physics" and "State" of the sprites.
@@ -20,8 +24,9 @@ export function useSpriteSystem(initialScenes) {
     const initialStatesRef = useRef(new Map());
 
     // Helper: Clamp values to Stage Boundaries
-    const clampX = (x) => Math.max(0, Math.min(x, STAGE_WIDTH));
-    const clampY = (y) => Math.max(0, Math.min(y, STAGE_HEIGHT));
+    // Allows sprites to partially hide/peek (PEEK_LIMIT) from all edges
+    const clampX = (x) => Math.max(-(SPRITE_DIM - PEEK_LIMIT), Math.min(x, STAGE_WIDTH - PEEK_LIMIT));
+    const clampY = (y) => Math.max(-(SPRITE_DIM - PEEK_LIMIT), Math.min(y, STAGE_HEIGHT - PEEK_LIMIT));
 
     // Capture initial state on first load (or add) for Reset
     // In a real app, this might be more robust

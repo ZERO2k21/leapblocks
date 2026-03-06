@@ -109,6 +109,9 @@ const SPRITE_CATALOG: SpriteEntry[] = [
     { id: 'arrow2', name: 'Arrow 2', emoji: '⬆️', category: 'Objects' },
     { id: 'heart', name: 'Heart', emoji: '❤️', category: 'Objects' },
     { id: 'lightning', name: 'Lightning', emoji: '⚡', category: 'Objects' },
+    { id: 'pencil', name: 'Pencil', emoji: '✏️', category: 'Objects' },
+    { id: 'pen', name: 'Pen', emoji: '🖊️', category: 'Objects' },
+    { id: 'drawing_pen', name: 'Drawing Pen', emoji: '🖋️', category: 'Objects' },
 
     // ─── Transport ───
     { id: 'car', name: 'Car', emoji: '🚗', image: '/assets/sprites/library/sprite_car.png', category: 'Transport' },

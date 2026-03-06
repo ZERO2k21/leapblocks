@@ -10,6 +10,12 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
     const [isPenDown, setIsPenDown] = useState(false);
     const [penColor, setPenColor] = useState("#000000");
 
+    // Helper: detect if this is a pen-type sprite
+    const isPenSprite = ['pencil', 'pen', 'drawing_pen'].includes(type) ||
+        ['pencil', 'pen', 'drawing_pen'].includes(id?.toLowerCase?.());
+
+    // Offset calculated dynamically now
+
     // REFS to hold Props for EVENT HANDLERS (Closure Trap Fix)
     const xRef = useRef(x);
     const yRef = useRef(y);
@@ -30,6 +36,33 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
         }
     };
 
+    // Get Pencil Tip precisely based on sprite direction and size
+    const getPencilTip = (currentX, currentY, currentAngle, currentSize) => {
+        // Sprite Center is at +40, +40 inside the 80x80 bounding box
+        const centerX = currentX + 40;
+        const centerY = currentY + 40;
+
+        if (isPenSprite) {
+            const angleRad = currentAngle * Math.PI / 180;
+            const offsetX = 28;
+            const offsetY = 18;
+
+            const tipX =
+                centerX +
+                Math.cos(angleRad) * offsetX -
+                Math.sin(angleRad) * offsetY;
+
+            const tipY =
+                centerY +
+                Math.sin(angleRad) * offsetX +
+                Math.cos(angleRad) * offsetY;
+
+            return { x: tipX, y: tipY };
+        }
+
+        return { x: centerX, y: centerY };
+    };
+
     // Calculate new position based on angle
     const performMove = (step) => {
         const rad = (angleRef.current * Math.PI) / 180;
@@ -48,8 +81,15 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
 
         // Draw if pen is down
         if (penRef.current && window.drawSegment) {
-            const offset = 25; // Center
-            window.drawSegment(oldX + offset, oldY + offset, newX + offset, newY + offset, penColor, 4);
+            const currentAngle = angleRef.current;
+            const currentSize = size;
+            const oldTip = getPencilTip(oldX, oldY, currentAngle, currentSize);
+            const newTip = getPencilTip(newX, newY, currentAngle, currentSize);
+
+            const activeColor = window.penColor || penColor;
+            const activeSize = window.penSize || 4;
+
+            window.drawSegment(oldTip.x, oldTip.y, newTip.x, newTip.y, activeColor, activeSize);
         }
 
         updateStore({ x: newX, y: newY });
@@ -88,8 +128,28 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             },
             symmetry: () => setScaleX(s => s * -1),
             switchCostume: (name) => updateStore({ currentCostume: name }),
-            penDown: () => setIsPenDown(true),
-            penUp: () => setIsPenDown(false),
+            penDown: () => {
+                setIsPenDown(true);
+                // Show visual feedback for pen-type sprites
+                if (['pencil', 'pen', 'drawing_pen'].includes(type) ||
+                    ['pencil', 'pen', 'drawing_pen'].includes(id?.toLowerCase?.())) {
+                    window.say && window.say(id, "✏️ Drawing!");
+                }
+            },
+            penUp: () => {
+                setIsPenDown(false);
+                if (['pencil', 'pen', 'drawing_pen'].includes(type) ||
+                    ['pencil', 'pen', 'drawing_pen'].includes(id?.toLowerCase?.())) {
+                    window.say && window.say(id, "✒️ Pen Up");
+                }
+            },
+            stamp: () => {
+                // Draw this sprite's current appearance onto the pen canvas
+                if (window.stampSpriteOnCanvas) {
+                    const costumeVal = costumes?.[currentCostume] || currentCostume;
+                    window.stampSpriteOnCanvas(id, xRef.current, yRef.current, costumeVal, size);
+                }
+            },
             jiggle: () => setJiggleKey(k => k + 1),
         };
 
@@ -224,6 +284,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
         e.preventDefault();
         e.stopPropagation();
         const rect = e.currentTarget.parentElement?.getBoundingClientRect();
+
         dragRef.current = {
             startX: e.clientX,
             startY: e.clientY,
@@ -232,7 +293,12 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             didDrag: false,
             parentLeft: rect?.left || 0,
             parentTop: rect?.top || 0,
+            prevTip: null,
         };
+
+        // Drawing While Dragging - Store initial tip
+        dragRef.current.prevTip = getPencilTip(x, y, angleRef.current, size);
+
         setIsDragging(true);
         if (onDragStateChange) onDragStateChange(true);
 
@@ -244,6 +310,28 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             }
             const newX = dragRef.current.origX + dx;
             const newY = dragRef.current.origY + dy;
+
+            // If it's a pen sprite, draw while dragging!
+            if (isPenSprite && window.drawSegment) {
+                const tip = getPencilTip(newX, newY, angleRef.current, size);
+
+                if (dragRef.current.prevTip) {
+                    const activeColor = window.penColor || penColor;
+                    const activeSize = window.penSize || 4;
+
+                    window.drawSegment(
+                        dragRef.current.prevTip.x,
+                        dragRef.current.prevTip.y,
+                        tip.x,
+                        tip.y,
+                        activeColor,
+                        activeSize
+                    );
+                }
+
+                dragRef.current.prevTip = tip;
+            }
+
             updateStore({ x: newX, y: newY });
         };
 
@@ -262,6 +350,18 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
         document.addEventListener('mouseup', handleMouseUp);
     };
 
+    // Determine pen-down indicator color
+    const penIndicatorColor = window.penColor || penColor || '#FF0000';
+    const isPenType = ['pencil', 'pen', 'drawing_pen'].includes(type) ||
+        ['pencil', 'pen', 'drawing_pen'].includes(id?.toLowerCase?.());
+
+    // Calculate current tip dynamically for render positions
+    const renderTip = getPencilTip(x, y, angle, size);
+
+    // Relative tip coordinates (for CSS transform origin within bounding box)
+    const relativeTipX = renderTip.x - x;
+    const relativeTipY = renderTip.y - y;
+
     return (
         <React.Fragment>
             <style>
@@ -275,6 +375,15 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                 }
                 .sprite-jiggle {
                     animation: spriteJiggle 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                }
+                @keyframes penPulse {
+                    0%, 100% { transform: scale(1); opacity: 0.8; }
+                    50% { transform: scale(1.3); opacity: 1; }
+                }
+                @keyframes penWriting {
+                    0%, 100% { transform: rotate(0deg); }
+                    25% { transform: rotate(-3deg); }
+                    75% { transform: rotate(3deg); }
                 }
                 `}
             </style>
@@ -310,9 +419,32 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                 )}
 
                 {/* Avatar */}
-                <div style={{ fontSize: '50px', lineHeight: 1 }}>
+                <div style={{
+                    fontSize: '50px',
+                    lineHeight: 1,
+                    transform: (isPenDown && isPenType) ? 'rotate(-5deg)' : 'none',
+                    transformOrigin: `${relativeTipX}px ${relativeTipY}px` // Pivot near the tip
+                }}>
                     {renderIcon()}
                 </div>
+
+                {/* Pen-Down Indicator: colored dot exactly at the drawing tip */}
+                {isPenDown && isPenSprite && (
+                    <div style={{
+                        position: 'absolute',
+                        left: `${relativeTipX}px`,
+                        top: `${relativeTipY}px`,
+                        transform: 'translate(-50%, -50%)',
+                        width: Math.max(6, (window.penSize || 5)),
+                        height: Math.max(6, (window.penSize || 5)),
+                        borderRadius: '50%',
+                        backgroundColor: penIndicatorColor,
+                        boxShadow: `0 0 6px ${penIndicatorColor}, 0 0 12px ${penIndicatorColor}40`,
+                        animation: 'penPulse 1s ease-in-out infinite',
+                        zIndex: 5,
+                        pointerEvents: 'none',
+                    }} />
+                )}
             </div>
             {/* Stage Feedback Toast */}
             {active && feedback && (

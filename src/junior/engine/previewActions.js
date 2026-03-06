@@ -8,4 +8,32 @@ export const previewActions = {
     turn_left: (b) => window.turnLeft(window.activeSpriteId || "teddy", Number(b?.getFieldValue("TIMES") || 1)),
 
     jump: (b) => window.jump(window.activeSpriteId || "teddy", Number(b?.getFieldValue("TIMES") || 1)),
+
+    // --- Pen Previews ---
+    pen_down: () => {
+        const tid = window.activeSpriteId || "teddy";
+        if (window.penDown) window.penDown(tid);
+    },
+    pen_up: () => {
+        const tid = window.activeSpriteId || "teddy";
+        if (window.penUp) window.penUp(tid);
+    },
+    pen_set_color: (b) => {
+        const color = b?.getFieldValue?.("COLOR") || "#FF0000";
+        if (window.setPenColor) window.setPenColor(color);
+        if (window.showFeedback) window.showFeedback(`🎨 Color: ${color}`);
+    },
+    pen_set_size: (b) => {
+        const size = b?.getFieldValue?.("SIZE") || "5";
+        if (window.setPenSize) window.setPenSize(parseInt(size));
+        if (window.showFeedback) window.showFeedback(`📏 Pen Size: ${size}`);
+    },
+    pen_stamp: () => {
+        const tid = window.activeSpriteId || "teddy";
+        if (window.stampSprite) window.stampSprite(tid);
+    },
+    pen_eraser: () => {
+        if (window.clearPen) window.clearPen();
+        if (window.showFeedback) window.showFeedback("🧹 Erased!");
+    },
 };
