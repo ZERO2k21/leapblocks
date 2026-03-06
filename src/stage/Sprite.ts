@@ -245,6 +245,10 @@ export class Sprite {
         };
     }
 
+    stopGlide(): void {
+        this.state.glideTarget = null;
+    }
+
     updateGlide(deltaMs: number): boolean {
         if (!this.state.glideTarget) return false;
         this.state.glideTarget.elapsed += deltaMs;

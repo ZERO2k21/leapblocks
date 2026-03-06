@@ -44,7 +44,7 @@ body,
   background-color: #ffffff !important;
   border-right: 1px solid var(--border-subtle) !important;
   padding: 12px 0 !important;
-  width: 80px !important;
+  width: 90px !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02) !important;
@@ -86,15 +86,15 @@ body,
 
 /* Labels below icons */
 .blocklyToolboxCategoryLabel {
-  font-size: 8px !important;
-  font-weight: 500 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
   color: #575E75 !important;
   text-align: center !important;
-  line-height: 1.1 !important;
+  line-height: 1.2 !important;
   white-space: nowrap !important;
   overflow: visible !important;
-  max-width: 66px !important;
-  margin-top: 4px !important;
+  max-width: 76px !important;
+  margin-top: 6px !important;
   display: block !important;
 }
 
@@ -211,18 +211,17 @@ body,
 /* Create circular icon before each category label */
 .blocklyToolboxCategory::before {
   content: '';
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  /* Smoothed square */
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 24px;
   margin-bottom: 6px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  background-size: 20px;
+  background-size: 26px;
   background-repeat: no-repeat;
   background-position: center;
 }

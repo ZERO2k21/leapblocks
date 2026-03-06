@@ -664,4 +664,28 @@ export class AnimationCompiler {
 
         return steps;
     }
+
+    public compileStack(block: Blockly.Block): CompiledScript | null {
+        // Find the top-most block of this stack
+        let root = block;
+        while (root.getPreviousBlock()) {
+            root = root.getPreviousBlock()!;
+        }
+
+        // If it's a hat block, use the normal compile logic
+        const script = this.compileTopBlock(root);
+        if (script) return script;
+
+        // If it's not a hat block, compile the stack starting from root
+        const steps: ScriptStep[] = [];
+        let curr: Blockly.Block | null = root;
+        while (curr) {
+            const step = this.compileBlock(curr);
+            if (step) steps.push(step);
+            curr = curr.getNextBlock();
+        }
+
+        if (steps.length === 0) return null;
+        return { trigger: 'flag', spriteId: this.spriteId, steps };
+    }
 }

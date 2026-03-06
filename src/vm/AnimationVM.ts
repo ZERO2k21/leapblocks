@@ -360,6 +360,27 @@ export class AnimationVM {
         vmLog.info('All scripts stopped');
     }
 
+    /**
+     * Stop all scripts running for a specific sprite.
+     * Useful for restarting a script stack on click.
+     */
+    stopSpriteScripts(spriteId: string): void {
+        const toStop: string[] = [];
+        for (const [id, controller] of this.runningScripts) {
+            if (id.startsWith(`${spriteId}-`)) {
+                toStop.push(id);
+            }
+        }
+        toStop.forEach(id => {
+            const controller = this.runningScripts.get(id);
+            if (controller) {
+                controller.abort();
+                this.runningScripts.delete(id);
+            }
+        });
+        this.checkAllFinished();
+    }
+
     pause(): void {
         if (!this.isRunning || this.isPaused) return;
         vmLog.info('pause() called');
@@ -386,7 +407,8 @@ export class AnimationVM {
     }
 
 
-    private async runScript(script: CompiledScript): Promise<void> {
+    public async runScript(script: CompiledScript): Promise<void> {
+        this.setRunning(true);
         const sprite = spriteManager.getSprite(script.spriteId);
         vmLog.info(`runScript started`, {
             spriteId: script.spriteId,
@@ -414,6 +436,7 @@ export class AnimationVM {
             stopAll: () => this.stopAll(),
         };
 
+        let isAborted = false;
         try {
             vmLog.info(`Executing ${script.steps.length} steps for sprite: ${sprite.name}`);
             await this.executeSteps(script.steps, context, controller.signal);
@@ -422,16 +445,22 @@ export class AnimationVM {
             if ((e as Error).name !== 'AbortError') {
                 vmLog.error('Script execution error', e);
             } else {
+                isAborted = true;
                 vmLog.info('Script aborted');
             }
         } finally {
             this.runningScripts.delete(id);
             vmLog.info(`Script removed: ${id}`);
-            this.checkAllFinished();
+            this.checkAllFinished(isAborted);
         }
     }
 
-    private checkAllFinished() {
+    private checkAllFinished(isAborted: boolean = false) {
+        // If a script was aborted, it was likely due to a stopAll() or restart.
+        // We shouldn't let an aborting script indiscriminately turn off the engine,
+        // because a new script might have just started!
+        if (isAborted) return;
+
         if (this.runningScripts.size === 0) {
             this.setRunning(false);
         }
@@ -623,9 +652,7 @@ export class AnimationVM {
                 break;
 
             case 'stop_all':
-                // Instead of aborting everything immediately (which breaks resume), 
-                // we treat stop_all as a pause. Clicking Green Flag will resume.
-                this.pause();
+                ctx.stopAll();
                 break;
 
             case 'stop_this_script':

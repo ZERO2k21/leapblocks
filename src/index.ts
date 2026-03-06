@@ -113,3 +113,20 @@ ipcMain.handle('upload-code', async (event, code: string, selectedPort: string, 
 
   return result;
 });
+
+ipcMain.handle('remove-background', async (event, imagePath: string) => {
+  const { exec } = require('child_process');
+  const fullPath = path.isAbsolute(imagePath) ? imagePath : path.join(app.getAppPath(), imagePath);
+
+  return new Promise((resolve) => {
+    // Note: ensure python is in PATH or use a specific path
+    exec(`python remove_bg.py "${fullPath}"`, (error: any, stdout: any, stderr: any) => {
+      if (error) {
+        console.error(`[MAIN:BG_REMOVAL] Error: ${error}`);
+        resolve({ success: false, error: error.message });
+        return;
+      }
+      resolve({ success: true, stdout, stderr });
+    });
+  });
+});

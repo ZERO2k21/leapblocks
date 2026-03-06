@@ -407,6 +407,10 @@ export default function MenuBar({
                     type="text"
                     value={projectName}
                     onChange={(e) => onProjectNameChange?.(e.target.value)}
+                    onBlur={(e) => {
+                        // Just an extra safety measure to ensure focus is lost
+                        e.target.blur();
+                    }}
                     style={{
                         background: 'transparent',
                         border: 'none',

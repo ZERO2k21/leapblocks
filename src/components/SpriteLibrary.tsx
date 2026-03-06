@@ -8,6 +8,7 @@ export interface SpriteEntry {
     name: string;
     emoji: string;        // fallback emoji
     image?: string;       // optional image path
+    costumes?: string[];   // multiple costumes for slideshow
     category: string;
 }
 
@@ -49,7 +50,19 @@ const SPRITE_CATALOG: SpriteEntry[] = [
     { id: 'superhero', name: 'Superhero', emoji: '🦸', category: 'People' },
 
     // ─── Fantasy ───
-    { id: 'robot', name: 'Robot', emoji: '🤖', image: '/assets/sprites/library/sprite_robot.png', category: 'Fantasy' },
+    {
+        id: 'robot',
+        name: 'Robot',
+        emoji: '🤖',
+        image: '/assets/sprites/robot/robot_idle.svg',
+        costumes: [
+            '/assets/sprites/robot/robot_idle.svg',
+            '/assets/sprites/robot/robot_talk.png',
+            '/assets/sprites/robot/robot_wave1.png',
+            '/assets/sprites/robot/robot_wave2.png'
+        ],
+        category: 'Fantasy'
+    },
     { id: 'ghost', name: 'Ghost', emoji: '👻', image: '/assets/sprites/library/sprite_ghost.png', category: 'Fantasy' },
     { id: 'dragon', name: 'Dragon', emoji: '🐉', category: 'Fantasy' },
     { id: 'monster', name: 'Monster', emoji: '👾', category: 'Fantasy' },
@@ -211,6 +224,8 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
     const [activeCategory, setActiveCategory] = useState('All');
     const [activeTab, setActiveTab] = useState<'sprites' | 'emoji'>('sprites');
     const [hoveredId, setHoveredId] = useState<string | null>(null);
+    const [slideshowIndex, setSlideshowIndex] = useState(0);
+    const slideshowIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     if (!isOpen) return null;
@@ -259,8 +274,8 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
     };
 
     return (
-        <div style={styles.overlay}>
-            <div style={styles.modal}>
+        <div style={styles.overlay} onClick={onClose}>
+            <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
                 <div style={styles.header}>
                     <button style={styles.backButton} onClick={onClose}>
@@ -334,13 +349,32 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
                                             ...(hoveredId === sprite.id ? styles.spriteCardHover : {}),
                                         }}
                                         onClick={() => onSelectSprite(sprite)}
-                                        onMouseEnter={() => setHoveredId(sprite.id)}
-                                        onMouseLeave={() => setHoveredId(null)}
+                                        onMouseEnter={() => {
+                                            setHoveredId(sprite.id);
+                                            if (sprite.costumes && sprite.costumes.length > 1) {
+                                                setSlideshowIndex(0);
+                                                slideshowIntervalRef.current = setInterval(() => {
+                                                    setSlideshowIndex(prev => (prev + 1) % sprite.costumes!.length);
+                                                }, 500); // 500ms cycle
+                                            }
+                                        }}
+                                        onMouseLeave={() => {
+                                            setHoveredId(null);
+                                            if (slideshowIntervalRef.current) {
+                                                clearInterval(slideshowIntervalRef.current);
+                                                slideshowIntervalRef.current = null;
+                                            }
+                                            setSlideshowIndex(0);
+                                        }}
                                     >
                                         <div style={styles.spritePreview}>
-                                            {sprite.image ? (
+                                            {sprite.image || (sprite.costumes && sprite.costumes.length > 0) ? (
                                                 <img
-                                                    src={sprite.image}
+                                                    src={
+                                                        hoveredId === sprite.id && sprite.costumes && sprite.costumes.length > 1
+                                                            ? sprite.costumes[slideshowIndex]
+                                                            : (sprite.image || sprite.costumes?.[0])
+                                                    }
                                                     alt={sprite.name}
                                                     style={styles.spriteImage}
                                                     onError={(e) => {

@@ -42,6 +42,7 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
     const [zoom, setZoom] = useState(1);
     const [history, setHistory] = useState<string[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
+    const [activeImage, setActiveImage] = useState<string>(initialImage || '');
 
     // Initialize Canvas
     useEffect(() => {
@@ -56,32 +57,37 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
 
         canvasRef.current = canvas;
 
-        if (initialImage) {
-            const isSVG = initialImage.includes('<svg') || initialImage.endsWith('.svg');
+        if (activeImage) {
+            const isSVG = activeImage.includes('<svg') || activeImage.endsWith('.svg');
 
             if (isSVG) {
-                fabric.loadSVGFromString(initialImage, (objects, options) => {
-                    if (mode === 'junior') {
-                        // Load as group (Scratch Junior style)
-                        const obj = fabric.util.groupSVGElements(objects, options);
-                        obj.set({
-                            left: canvas.width! / 2,
-                            top: canvas.height! / 2,
-                            originX: 'center',
-                            originY: 'center',
-                        });
-                        canvas.add(obj);
-                    } else {
-                        // Load as individual objects (Intermediate mode)
-                        const group = fabric.util.groupSVGElements(objects, options);
-                        group.set({
-                            left: canvas.width! / 2,
-                            top: canvas.height! / 2,
-                            originX: 'center',
-                            originY: 'center',
-                        });
+                const handleLoadedSVG = (objects: fabric.Object[], options: any) => {
+                    if (!objects || objects.length === 0) {
+                        console.error('[PAINT] No objects found in SVG:', activeImage);
+                        return;
+                    }
+                    const group = fabric.util.groupSVGElements(objects, options);
 
-                        // "Explode" group into canvas
+                    // Center it
+                    group.set({
+                        left: canvas.width! / 2,
+                        top: canvas.height! / 2,
+                        originX: 'center',
+                        originY: 'center',
+                    });
+
+                    // ── SCALE TO FIT ─────────────────────────────────
+                    const pad = 40; // Padding
+                    const scale = Math.min(
+                        (canvas.width! - pad) / (group.width! || 1),
+                        (canvas.height! - pad) / (group.height! || 1)
+                    );
+                    if (scale < 1) group.scale(scale);
+
+                    if (mode === 'junior') {
+                        canvas.add(group);
+                    } else {
+                        // "Explode" group into canvas for intermediate style editing
                         if (group.type === 'group') {
                             const items = (group as fabric.Group).getObjects();
                             (group as any)._restoreObjectsState();
@@ -95,21 +101,42 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
                     }
                     canvas.renderAll();
                     saveState();
-                });
+                };
+
+                if (activeImage.includes('<svg')) {
+                    fabric.loadSVGFromString(activeImage, handleLoadedSVG);
+                } else {
+                    fabric.loadSVGFromURL(activeImage, handleLoadedSVG);
+                }
             } else {
-                fabric.Image.fromURL(initialImage, (img) => {
+                console.log('[PAINT] Loading image from URL:', activeImage);
+                fabric.Image.fromURL(activeImage, (img) => {
+                    if (!img) {
+                        console.error('[PAINT] Failed to load image:', activeImage);
+                        return;
+                    }
                     img.set({
                         left: canvas.width! / 2,
                         top: canvas.height! / 2,
                         originX: 'center',
                         originY: 'center',
                     });
+
+                    // ── SCALE TO FIT ─────────────────────────────────
+                    const pad = 40;
+                    const scale = Math.min(
+                        (canvas.width! - pad) / (img.width! || 1),
+                        (canvas.height! - pad) / (img.height! || 1)
+                    );
+                    if (scale < 1) img.scale(scale);
+
                     canvas.add(img);
                     canvas.renderAll();
                     saveState();
-                });
+                }, { crossOrigin: 'anonymous' });
             }
-        } else {
+        }
+        else {
             saveState();
         }
 
@@ -129,7 +156,7 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
         return () => {
             canvas.dispose();
         };
-    }, []);
+    }, [activeImage]); // Reload when activeImage changes
 
     // Tool Management
     useEffect(() => {
@@ -170,19 +197,42 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
     const saveState = () => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        const json = JSON.stringify(canvas.toJSON());
-        setHistory(prev => [...prev.slice(0, historyIndex + 1), json]);
-        setHistoryIndex(prev => prev + 1);
+        try {
+            const json = JSON.stringify(canvas.toJSON());
+            if (json) {
+                setHistory(prev => {
+                    const newHistory = [...prev.slice(0, historyIndex + 1), json];
+                    // Limit history to 50 steps
+                    if (newHistory.length > 50) return newHistory.slice(newHistory.length - 50);
+                    return newHistory;
+                });
+                setHistoryIndex(prev => {
+                    const next = prev + 1;
+                    return next >= 50 ? 49 : next;
+                });
+            }
+        } catch (e) {
+            console.error('[PAINT] Failed to save state:', e);
+        }
     };
 
     const undo = () => {
         if (historyIndex > 0) {
             const canvas = canvasRef.current;
             const newIndex = historyIndex - 1;
-            canvas?.loadFromJSON(JSON.parse(history[newIndex]), () => {
-                canvas.renderAll();
-                setHistoryIndex(newIndex);
-            });
+            const state = history[newIndex];
+            if (!state || state === 'undefined') {
+                console.warn('[PAINT] Cannot undo: invalid state in history at index', newIndex);
+                return;
+            }
+            try {
+                canvas?.loadFromJSON(JSON.parse(state), () => {
+                    canvas.renderAll();
+                    setHistoryIndex(newIndex);
+                });
+            } catch (e) {
+                console.error('[PAINT] Undo failed:', e);
+            }
         }
     };
 
@@ -190,10 +240,16 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
         if (historyIndex < history.length - 1) {
             const canvas = canvasRef.current;
             const newIndex = historyIndex + 1;
-            canvas?.loadFromJSON(JSON.parse(history[newIndex]), () => {
-                canvas.renderAll();
-                setHistoryIndex(newIndex);
-            });
+            const state = history[newIndex];
+            if (!state || state === 'undefined') return;
+            try {
+                canvas?.loadFromJSON(JSON.parse(state), () => {
+                    canvas.renderAll();
+                    setHistoryIndex(newIndex);
+                });
+            } catch (e) {
+                console.error('[PAINT] Redo failed:', e);
+            }
         }
     };
 
@@ -277,12 +333,55 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
     const deleteActive = () => {
         const canvas = canvasRef.current;
         const activeObjects = canvas?.getActiveObjects();
-        if (activeObjects) {
+        if (activeObjects && activeObjects.length > 0) {
             canvas?.discardActiveObject();
             activeObjects.forEach((obj) => {
                 canvas?.remove(obj);
             });
             canvas?.renderAll();
+            saveState();
+        }
+    };
+
+    const clearBackground = async () => {
+        if (!activeImage || activeImage.includes('<svg')) {
+            alert('Background removal is only for PNG/JPG images.');
+            return;
+        }
+
+        try {
+            // Extract relative path from URL (similar to IntermediateApp)
+            const filePath = activeImage.split('?')[0]; // Remove cache buster
+            const relativePath = filePath.split('/assets/')[1];
+            if (!relativePath) {
+                alert('Could not resolve image path for background removal.');
+                return;
+            }
+
+            const fullRelativePath = `public/assets/${relativePath}`;
+            console.log('[PAINT] Removing background for:', fullRelativePath);
+
+            // @ts-ignore
+            const result = await window.electronAPI.removeBackground(fullRelativePath);
+
+            if (result.success) {
+                // Determine final path (JPEG -> PNG)
+                let finalPath = filePath;
+                if (filePath.toLowerCase().endsWith('.jpeg') || filePath.toLowerCase().endsWith('.jpg')) {
+                    finalPath = filePath.replace(/\.(jpeg|jpg)$/i, '.png');
+                }
+
+                const cacheBuster = `t=${Date.now()}`;
+                const newSrc = `${finalPath}?${cacheBuster}`;
+
+                console.log('[PAINT] Background removed, reloading:', newSrc);
+                setActiveImage(newSrc);
+            } else {
+                alert(`Failed to remove background: ${result.error}`);
+            }
+        } catch (e) {
+            console.error('[PAINT] Error removing background:', e);
+            alert('An error occurred during background removal.');
         }
     };
 
@@ -319,8 +418,8 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
                         <ToolIconButton active={activeTool === 'pencil'} onClick={() => setActiveTool('pencil')} icon={<Pen size={24} />} title="Pencil" />
                         <ToolIconButton active={activeTool === 'eraser'} onClick={() => setActiveTool('eraser')} icon={<Eraser size={24} />} title="Eraser" />
                         <ToolIconButton active={activeTool === 'bucket'} onClick={() => setActiveTool('bucket')} icon={<PaintBucket size={24} />} title="Fill" />
+                        <ToolIconButton active={false} onClick={clearBackground} icon={<div className="relative"><Camera size={24} /><div className="absolute -top-1 -right-1 bg-indigo-500 text-white text-[8px] rounded-full px-1 font-bold">BG</div></div>} title="Clear Background" />
                         <ToolIconButton active={false} onClick={() => { }} icon={<Type size={24} />} title="Text" />
-                        <ToolIconButton active={false} onClick={() => { }} icon={<Camera size={24} />} title="Camera" />
 
                         <div className="w-12 h-px bg-slate-200 my-2" />
 
@@ -363,8 +462,8 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
                                 <Pen size={14} className="text-slate-400" />
                             </div>
                             <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-200 flex items-center justify-center">
-                                <div className="w-24 h-24 bg-slate-50 rounded-lg border border-dashed border-slate-300 flex items-center justify-center overflow-hidden">
-                                    {initialImage && <img src={initialImage} className="max-w-full max-h-full object-contain" alt="Preview" />}
+                                <div className="w-32 h-32 bg-slate-50 rounded-lg border border-dashed border-slate-300 flex items-center justify-center overflow-hidden">
+                                    {activeImage && <img src={activeImage} className="max-w-full max-h-full object-contain" alt="Preview" />}
                                 </div>
                             </div>
                         </div>
@@ -376,21 +475,19 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
                                 <button className="p-1 hover:bg-slate-200 rounded-lg text-slate-500"><Plus size={18} /></button>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="aspect-square bg-white rounded-2xl border-4 border-indigo-500 shadow-lg shadow-indigo-100 flex items-center justify-center relative group">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-lg flex items-center justify-center p-2">
-                                        {initialImage && (initialImage.includes('<svg') ?
-                                            <div dangerouslySetInnerHTML={{ __html: initialImage }} className="w-full h-full object-contain" /> :
-                                            <img src={initialImage} className="w-full h-full object-contain" alt="Current" />
-                                        )}
-                                    </div>
-                                </div>
-                                {/* Placeholder for other costumes */}
-                                {costumes.filter(c => c.image !== initialImage).map((c, i) => (
-                                    <div key={i} className="aspect-square bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center hover:bg-white transition-all cursor-pointer">
-                                        <div className="w-12 h-12 flex items-center justify-center">
+                                {costumes.map((c, i) => (
+                                    <div
+                                        key={c.id || i}
+                                        onClick={() => setActiveImage(c.image)}
+                                        className={`aspect-square rounded-2xl border-4 transition-all cursor-pointer flex items-center justify-center relative group p-2 ${activeImage === c.image
+                                            ? 'border-indigo-500 bg-white shadow-lg shadow-indigo-100'
+                                            : 'border-transparent bg-slate-50 hover:bg-white hover:border-slate-200'
+                                            }`}
+                                    >
+                                        <div className="w-full h-full flex items-center justify-center overflow-hidden">
                                             {c.image.includes('<svg') ?
-                                                <div dangerouslySetInnerHTML={{ __html: c.image }} className="w-full h-full object-contain opacity-50" /> :
-                                                <img src={c.image} className="w-full h-full object-contain opacity-50" alt={c.name} />
+                                                <div dangerouslySetInnerHTML={{ __html: c.image }} className="w-full h-full object-contain" /> :
+                                                <img src={c.image} className="w-full h-full object-contain" alt={c.name} />
                                             }
                                         </div>
                                     </div>
