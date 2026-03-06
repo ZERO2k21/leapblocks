@@ -348,7 +348,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   spriteListContainer: {
     display: "flex",
     flexDirection: "column",
-    backgroundColor: "#F9F9F9",
+    backgroundColor: "#FFFFFF",
     position: "relative",
     minHeight: "180px",
     padding: "8px",

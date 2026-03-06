@@ -251,6 +251,12 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     setGeneratedCode('// Add a sprite to start programming!');
                 }
             }
+
+            // Auto-save workspace for current sprite on every meaningful change
+            if (workspaceRef.current && selectedSpriteId) {
+                const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+                spriteWorkspacesRef.current.set(selectedSpriteId, json);
+            }
         } catch (e) {
             console.error('[APP] Code generation error:', e);
             log.generator('Code generation error', e);
@@ -1159,6 +1165,16 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     }));
 
                     workspaceRef.current.addChangeListener(handleWorkspaceChange);
+
+                    // Restore the selected sprite's blocks after workspace re-initialization
+                    if (selectedSpriteId) {
+                        const savedJson = spriteWorkspacesRef.current.get(selectedSpriteId);
+                        if (savedJson && Object.keys(savedJson).length > 0) {
+                            console.log('[APP] Restoring workspace for sprite after re-init:', selectedSpriteId);
+                            Blockly.serialization.workspaces.load(savedJson, blocksWorkspace);
+                        }
+                    }
+
                     addLog(`Workspace initialized for ${editorMode === 'stage' ? 'Stage' : 'Upload'} mode`);
                 }
             }, 0);
