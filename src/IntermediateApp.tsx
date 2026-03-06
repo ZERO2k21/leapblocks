@@ -1017,7 +1017,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         hardwareAdapter.stopAllPolling();
         addLog('Stopped animation');
-    }, [addLog]);
+    }, [addLog, sprites]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // HARDWARE CONTROLS
@@ -1214,6 +1214,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             animationVM.registerSprite(defaultSprite);
             setSprites([defaultSprite]);
             setSelectedSpriteId('sprite_default');
+            activeSpriteIdRef.current = 'sprite_default';
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -1538,6 +1539,8 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             console.log('[APP] Restoring workspace for sprite after re-init:', selectedSpriteId);
                             Blockly.serialization.workspaces.load(savedJson, blocksWorkspace);
                         }
+                        // Ensure activeSpriteIdRef is set so workspace saves work correctly
+                        activeSpriteIdRef.current = selectedSpriteId;
                     }
 
                     addLog(`Workspace initialized for ${editorMode === 'stage' ? 'Stage' : 'Upload'} mode`);
