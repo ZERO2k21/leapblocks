@@ -238,6 +238,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const handleWorkspaceChange = useCallback((event: Blockly.Events.Abstract) => {
         if (event.isUiEvent) return;
         if (!workspaceRef.current) return;
+        if (isLoadingWorkspaceRef.current) {
+            console.log('[APP] Ignoring workspace change during load phase');
+            return;
+        }
 
         try {
             if (editorMode === 'upload') {
@@ -572,6 +576,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         // ALWAYS disable events when manually changing workspace content
         // to prevent handleWorkspaceChange from saving intermediate/wrong states
+        isLoadingWorkspaceRef.current = true;
         Blockly.Events.disable();
         try {
             if (json && Object.keys(json).length > 0) {
@@ -587,6 +592,11 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         } finally {
             Blockly.Events.enable();
             activeSpriteIdRef.current = spriteId; // Update true owner only after loading finishes
+            // Use setTimeout to ensure any strictly asynchronous layout events 
+            // thrown by Blockly immediately after enable() are also swallowed.
+            setTimeout(() => {
+                isLoadingWorkspaceRef.current = false;
+            }, 50);
         }
     }, []);
 
@@ -686,9 +696,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         // 2. Clear the actual Blockly workspace on screen (SILENTLY)
         if (workspaceRef.current) {
+            isLoadingWorkspaceRef.current = true;
             Blockly.Events.disable();
             workspaceRef.current.clear();
             Blockly.Events.enable();
+            setTimeout(() => {
+                isLoadingWorkspaceRef.current = false;
+            }, 50);
         }
 
         // 3. Update the selected ID
@@ -748,7 +762,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             setProjectName('Untitled');
             spriteWorkspacesRef.current.clear();
             if (workspaceRef.current) {
+                isLoadingWorkspaceRef.current = true;
+                Blockly.Events.disable();
                 workspaceRef.current.clear();
+                Blockly.Events.enable();
+                setTimeout(() => {
+                    isLoadingWorkspaceRef.current = false;
+                }, 50);
             }
             // Add a default robot sprite
             const id = `sprite_${Date.now()}`;
@@ -767,9 +787,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     const handleSaveProject = useCallback(() => {
         // 1. Force save of current workspace if it's active
-        if (workspaceRef.current && selectedSpriteId) {
+        const activeId = activeSpriteIdRef.current;
+        if (workspaceRef.current && activeId) {
             const json = Blockly.serialization.workspaces.save(workspaceRef.current);
-            spriteWorkspacesRef.current.set(selectedSpriteId, json);
+            spriteWorkspacesRef.current.set(activeId, json);
             console.log('[APP] Force-saved current workspace before project export');
         }
 
@@ -977,10 +998,21 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         setIsRunning(false);
         animationVM.stopAll();
 
-        // Clear highlight
+        // Clear ongoing visual actions for all sprites
+        sprites.forEach(sprite => {
+            sprite.clearSay();
+            sprite.stopGlide();
+            sprite.clearEffects();
+        });
+
+        // Clear highlight, wrapped in try-catch in case Blockly throws on null ID
         if (workspaceRef.current) {
-            // @ts-ignore
-            workspaceRef.current.highlightBlock(null);
+            try {
+                // @ts-ignore
+                workspaceRef.current.highlightBlock(null);
+            } catch (e) {
+                console.log('[APP] Ignoring highlight clear error', e);
+            }
         }
 
         hardwareAdapter.stopAllPolling();
@@ -2164,9 +2196,14 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                     // Silently clear workspace to prevent event bleed
                     if (workspaceRef.current) {
+                        isLoadingWorkspaceRef.current = true;
                         Blockly.Events.disable();
                         workspaceRef.current.clear();
                         Blockly.Events.enable();
+                        // Allow layout events to fizzle before accepting changes
+                        setTimeout(() => {
+                            isLoadingWorkspaceRef.current = false;
+                        }, 50);
                     }
 
                     activeSpriteIdRef.current = id;
