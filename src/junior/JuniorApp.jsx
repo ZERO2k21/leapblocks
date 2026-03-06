@@ -96,6 +96,8 @@ const categoryContents = {
     ],
     sound: [
         { kind: "block", type: "sound_play" },
+        { kind: "block", type: "sound_play_music" },
+        { kind: "block", type: "sound_stop_music" },
         { kind: "block", type: "sound_instrument" },
         { kind: "block", type: "sound_note" },
         { kind: "block", type: "sound_stop_all" }
@@ -706,6 +708,14 @@ export default function JuniorApp({ onBack }) {
         window.stopAllSounds = () => {
             window.speechSynthesis.cancel();
             soundManager.stopAll();
+            soundManager.stopMusic();
+        };
+
+        window.playMusic = (name) => {
+            soundManager.playMusic(name);
+        };
+        window.stopMusic = () => {
+            soundManager.stopMusic();
         };
 
         // Stop Execution - Throws ExecutionStop error to halt execution immediately

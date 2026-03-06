@@ -27,10 +27,13 @@ export default function defineSoundBlocks() {
         init: function () {
             // Dropdown options
             const options = [
-                ["Grunt", "grunt"],
                 ["Bark", "bark"],
                 ["Meow", "meow"],
-                ["Recording 1", "rec_1"]
+                ["Pop", "pop"],
+                ["Boing", "boing"],
+                ["Chirp", "chirp"],
+                ["Clap", "clap"],
+                ["Snore", "snore"]
             ];
             juniorSoundBase(this, "Play", options, "SOUND");
         }
@@ -38,6 +41,37 @@ export default function defineSoundBlocks() {
     javascriptGenerator.forBlock["sound_play"] = function (block) {
         const sound = block.getFieldValue("SOUND");
         return `playSound("${sound}");\n`;
+    };
+
+    // --- PLAY MUSIC ---
+    Blockly.Blocks["sound_play_music"] = {
+        init: function () {
+            const options = [
+                ["Music 1", "music_1"],
+                ["Music 2", "music_2"],
+                ["Music 3", "music_3"]
+            ];
+            juniorSoundBase(this, "🎵 Play Music", options, "MUSIC");
+        }
+    };
+    javascriptGenerator.forBlock["sound_play_music"] = function (block) {
+        const music = block.getFieldValue("MUSIC");
+        return `playMusic("${music}");\n`;
+    };
+
+    // --- STOP MUSIC ---
+    Blockly.Blocks["sound_stop_music"] = {
+        init: function () {
+            this.jsonInit({
+                "message0": "🔇 Stop Music",
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#CF63CF"
+            });
+        }
+    };
+    javascriptGenerator.forBlock["sound_stop_music"] = function (block) {
+        return `stopMusic();\n`;
     };
 
     // --- PLAY NOTE (Note + Octave) ---

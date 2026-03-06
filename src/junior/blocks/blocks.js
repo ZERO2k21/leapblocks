@@ -320,7 +320,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
 
     Blockly.Blocks['sound_animal'] = {
         init: function () {
-            this.appendDummyInput().appendField(new Blockly.FieldLabel("🔊", "junior-icon")).appendField("Sound of").appendField(new Blockly.FieldDropdown([["Bear", "grunt"], ["Dog", "bark"], ["Cat", "meow"]]), "VAL");
+            this.appendDummyInput().appendField(new Blockly.FieldLabel("🔊", "junior-icon")).appendField("Sound of").appendField(new Blockly.FieldDropdown([["Bear", "grunt"], ["Dog", "bark"], ["Cat", "meow"], ["Robot", "robot"]]), "VAL");
             this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#CF63CF");
         }
     };
