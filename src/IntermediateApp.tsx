@@ -23,7 +23,7 @@ import UploadModal from './components/UploadModal';
 import { SpriteLibrary, SpriteEntry } from './components/SpriteLibrary';
 import WorkspaceControls from './components/WorkspaceControls';
 import WorkspaceTrash from './components/WorkspaceTrash';
-import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft } from 'lucide-react';
+import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Pen } from 'lucide-react';
 import './custom-toolbox';
 import { block } from 'blockly/core/tooltip';
 
@@ -1341,6 +1341,9 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     // Override getFlyoutScale() — this is what Blockly's reflowInternal_() reads.
                     if (blocksWorkspace) {
                         const flyout = blocksWorkspace.getFlyout() as any;
+                        const toolbox = (blocksWorkspace as any).getToolbox() as any;
+                        let isInternalSync = false;
+
                         if (flyout) {
                             flyout.autoClose = false;
                             const FIXED_SCALE = 0.9;
@@ -1368,158 +1371,122 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             flyout.show(allContents);
                         }
 
-                        // TOOLBOX SCROLL OVERRIDE:
-                        // When a toolbox item is selected, scroll the flyout instead of just showing it
-                        const toolbox = blocksWorkspace.getToolbox() as any;
+                        // 2. TOOLBOX -> FLYOUT (Click to Scroll)
                         if (toolbox) {
                             const originalSelectItem = toolbox.selectItemByPosition.bind(toolbox);
                             toolbox.selectItemByPosition = (position: number) => {
-                                // Find the category being selected
                                 const items = toolbox.getToolboxItems();
                                 if (items[position]) {
                                     const categoryName = items[position].getName();
-
-                                    // Update visual selection
                                     originalSelectItem(position);
 
-                                    // Scroll flyout to the corresponding label/header
-                                    const flyoutWs = flyout.getWorkspace();
-                                    if (flyoutWs) {
-                                        const blocks = flyoutWs.getTopBlocks(true);
-                                        // Find the first block or label that belongs to this category
-                                        // (Our flattened flyout puts a label with the category name at the start)
-                                        const labels = flyoutWs.getCanvas().querySelectorAll('.category-header');
-                                        // This is a bit tricky with raw Blockly, but we can look for the first block
-                                        // that matches the category's typical blocks.
+                                    // Only scroll flyout if NOT triggered by the scroll sync itself
+                                    if (!isInternalSync) {
+                                        isInternalSync = true; // Block back-sync
+                                        const flyoutWs = flyout.getWorkspace();
+                                        if (flyoutWs) {
+                                            const blocks = flyoutWs.getTopBlocks(true);
+                                            const targetBlock = blocks.find((b: any) => {
+                                                const type = b.type;
+                                                const matches = (cat: string) => {
+                                                    if (cat === 'Motion') return type.startsWith('motion_');
+                                                    if (cat === 'Looks') return type.startsWith('looks_');
+                                                    if (cat === 'Sound') return type.startsWith('sound_');
+                                                    if (cat === 'Events') return type.startsWith('event_');
+                                                    if (cat === 'Control') return type.startsWith('control_');
+                                                    if (cat === 'Sensing') return type.startsWith('sensing_');
+                                                    if (cat === 'Operators') return type.startsWith('operator_') || type.startsWith('arduino_math_');
+                                                    if (cat === 'Variables') return type.startsWith('data_') || type.startsWith('variables_');
+                                                    if (cat === 'My Blocks') return type.startsWith('procedures_');
+                                                    if (cat === 'Arduino' || cat === 'ESP32') return type.startsWith('arduino_') || type.startsWith('esp32_');
+                                                    return false;
+                                                };
+                                                return matches(categoryName);
+                                            });
 
-                                        // Alternative: Find the first block and match by type prefix
-                                        const targetBlock = blocks.find((b: any) => {
-                                            const type = b.type;
-                                            if (categoryName === 'Motion') return type.startsWith('motion_');
-                                            if (categoryName === 'Looks') return type.startsWith('looks_');
-                                            if (categoryName === 'Sound') return type.startsWith('sound_');
-                                            if (categoryName === 'Events') return type.startsWith('event_');
-                                            if (categoryName === 'Control') return type.startsWith('control_');
-                                            if (categoryName === 'Sensing') return type.startsWith('sensing_');
-                                            if (categoryName === 'Operators') return type.startsWith('operator_');
-                                            if (categoryName === 'Variables') return type.startsWith('data_');
-                                            if (categoryName === 'My Blocks') return type.startsWith('procedures_');
-                                            return false;
-                                        });
-
-                                        if (targetBlock) {
-                                            const y = targetBlock.getRelativeToSurfaceXY().y;
-                                            if (flyoutWs.scrollbar) {
-                                                flyoutWs.scrollbar.set(0, y);
-                                            } else {
-                                                flyoutWs.translate(0, -y);
+                                            if (targetBlock) {
+                                                const y = targetBlock.getRelativeToSurfaceXY().y;
+                                                if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
+                                                else flyoutWs.translate(0, -y);
                                             }
                                         }
+                                        setTimeout(() => { isInternalSync = false; }, 100);
                                     }
                                 }
                             };
                         }
-                    }
 
-                    // ── FLYOUT BLOCK PREVIEW ─────────────────────────────
-                    // Click a block in the flyout → preview it on the sprite
-                    const previewFlyout = blocksWorkspace.getFlyout() as any;
-                    if (previewFlyout && previewFlyout.getWorkspace()) {
-                        const flyoutWs = previewFlyout.getWorkspace();
-                        flyoutWs.addChangeListener((event: any) => {
-                            if (event.type !== Blockly.Events.CLICK) return;
-                            const blockId = event.blockId;
-                            if (!blockId) return;
-                            const block = flyoutWs.getBlockById(blockId);
-                            if (!block) return;
-                            previewBlockActionRef.current(block);
-                        });
-                        console.log('[APP] Flyout block preview listener attached');
-                    }
+                        // 3. FLYOUT -> TOOLBOX (Scroll to Highlight)
+                        const flyoutWs = flyout ? flyout.getWorkspace() : null;
+                        if (flyoutWs && toolbox) {
+                            flyoutWs.addChangeListener((event: any) => {
+                                if (event.type !== Blockly.Events.VIEWPORT_CHANGE || isInternalSync || !flyout.isVisible()) return;
 
-                    // ── FLYOUT-TOOLBOX SYNC (Continuous Scroll) ───────────
-                    // Sync toolbox category selection with flyout scroll
-                    const syncFlyout = blocksWorkspace.getFlyout() as any;
-                    if (syncFlyout && syncFlyout.getWorkspace()) {
-                        const flyoutWs = syncFlyout.getWorkspace();
-                        let isInternalScroll = false;
+                                const blocks = flyoutWs.getTopBlocks(true);
+                                if (blocks.length === 0) return;
 
-                        flyoutWs.addChangeListener((event: any) => {
-                            if (event.type !== Blockly.Events.VIEWPORT_CHANGE || isInternalScroll) return;
+                                const metrics = flyoutWs.getMetrics();
+                                const scrollY = metrics.viewTop - metrics.contentTop;
+                                const scale = flyoutWs.scale;
 
-                            const toolbox = blocksWorkspace.getToolbox();
-                            if (!toolbox) return;
-
-                            const flyout = blocksWorkspace.getFlyout() as any;
-                            if (!flyout || !flyout.isVisible()) return;
-
-                            // Get all blocks in flyout and their positions
-                            const blocks = flyoutWs.getTopBlocks(true);
-                            if (blocks.length === 0) return;
-
-                            // Find the first block that is currently visible at the top of the flyout
-                            const metrics = flyoutWs.getMetrics();
-                            const scrollY = metrics.viewTop - metrics.contentTop;
-                            const scale = flyoutWs.scale;
-
-                            // Map blocks to their categories based on their type prefix or workspace labels
-                            // In this app, we can use the block's Y position to find the current section
-                            // and match it with the toolbox categories.
-
-                            // More robust: Map the scroll position to category headers/labels if they exist
-                            // For simplicity, let's find the 'top-most' block and its category
-                            let topBlock = blocks[0];
-                            let minDist = Infinity;
-
-                            for (const block of blocks) {
-                                const blockY = block.getRelativeToSurfaceXY().y * scale;
-                                const dist = Math.abs(blockY - scrollY);
-                                if (dist < minDist) {
-                                    minDist = dist;
-                                    topBlock = block;
-                                }
-                            }
-
-                            if (topBlock) {
-                                // Determine category from block type
-                                const type = topBlock.type;
-                                let categoryName = '';
-
-                                if (type.startsWith('motion_')) categoryName = 'Motion';
-                                else if (type.startsWith('looks_')) categoryName = 'Looks';
-                                else if (type.startsWith('sound_')) categoryName = 'Sound';
-                                else if (type.startsWith('event_')) categoryName = 'Events';
-                                else if (type.startsWith('control_')) categoryName = 'Control';
-                                else if (type.startsWith('sensing_')) categoryName = 'Sensing';
-                                else if (type.startsWith('operator_') || type.startsWith('arduino_math_')) categoryName = 'Operators';
-                                else if (type.startsWith('data_') || type.startsWith('variables_')) categoryName = 'Variables';
-                                else if (type.startsWith('procedures_')) categoryName = 'My Blocks';
-                                else if (type.startsWith('arduino_')) {
-                                    if (type.includes('serial')) categoryName = 'Communication';
-                                    else if (type.includes('servo') || type.includes('motor') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
-                                    else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic')) categoryName = 'Sensors';
-                                    else categoryName = 'Arduino';
-                                }
-                                else if (type.startsWith('esp32_')) {
-                                    if (type.includes('servo') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
-                                    else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic') || type.includes('touch') || type.includes('hall')) categoryName = 'Sensors';
-                                    else categoryName = 'ESP32';
-                                }
-
-                                if (categoryName) {
-                                    const items = toolbox.getToolboxItems();
-                                    const index = items.findIndex(item => item.getName() === categoryName);
-                                    if (index !== -1 && toolbox.getSelectedItem() !== items[index]) {
-                                        isInternalScroll = true;
-                                        // Use selectItemByPosition but prevent it from scrolling the flyout (loop)
-                                        // Blockly's standard toolbox always scrolls on selection.
-                                        // To avoid jumping, we visually select it if possible or use a flag.
-                                        toolbox.selectItemByPosition(index);
-                                        setTimeout(() => { isInternalScroll = false; }, 50);
+                                // Find top-most block that is visible at the very top
+                                let topBlock = null;
+                                for (const block of blocks) {
+                                    const blockY = block.getRelativeToSurfaceXY().y * scale;
+                                    if (blockY >= scrollY - 20) {
+                                        topBlock = block;
+                                        break;
                                     }
                                 }
-                            }
-                        });
+
+                                if (topBlock) {
+                                    const type = topBlock.type;
+                                    let categoryName = '';
+                                    if (type.startsWith('motion_')) categoryName = 'Motion';
+                                    else if (type.startsWith('looks_')) categoryName = 'Looks';
+                                    else if (type.startsWith('sound_')) categoryName = 'Sound';
+                                    else if (type.startsWith('event_')) categoryName = 'Events';
+                                    else if (type.startsWith('control_')) categoryName = 'Control';
+                                    else if (type.startsWith('sensing_')) categoryName = 'Sensing';
+                                    else if (type.startsWith('operator_') || type.startsWith('arduino_math_')) categoryName = 'Operators';
+                                    else if (type.startsWith('data_') || type.startsWith('variables_')) categoryName = 'Variables';
+                                    else if (type.startsWith('procedures_')) categoryName = 'My Blocks';
+                                    else if (type.startsWith('arduino_')) {
+                                        if (type.includes('serial')) categoryName = 'Communication';
+                                        else if (type.includes('servo') || type.includes('motor') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
+                                        else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic')) categoryName = 'Sensors';
+                                        else categoryName = 'Arduino';
+                                    }
+                                    else if (type.startsWith('esp32_')) {
+                                        if (type.includes('servo') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
+                                        else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic') || type.includes('touch') || type.includes('hall')) categoryName = 'Sensors';
+                                        else categoryName = 'ESP32';
+                                    }
+
+                                    if (categoryName) {
+                                        const items = (toolbox as any).getToolboxItems();
+                                        const index = items.findIndex((item: any) => item.getName() === categoryName);
+                                        if (index !== -1 && (toolbox as any).getSelectedItem() !== items[index]) {
+                                            isInternalSync = true; // Block scroll-sync back
+                                            toolbox.selectItemByPosition(index);
+                                            setTimeout(() => { isInternalSync = false; }, 100);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
+                        // 4. FLYOUT BLOCK PREVIEW (Click to Preview)
+                        if (flyout && flyout.getWorkspace()) {
+                            flyout.getWorkspace().addChangeListener((event: any) => {
+                                if (event.type !== Blockly.Events.CLICK) return;
+                                const blockId = (event as any).blockId;
+                                if (!blockId) return;
+                                const block = flyout.getWorkspace().getBlockById(blockId);
+                                if (!block) return;
+                                previewBlockActionRef.current(block);
+                            });
+                        }
                     }
 
                     // Dynamic Dropdown Colors: Update highlight and background color based on block color
@@ -1872,25 +1839,25 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     style={workspaceTab === 'blocks' ? styles.tabActive : styles.tab}
                                     onClick={() => handleWorkspaceTabChange('blocks')}
                                 >
-                                    🧩 Blocks
+                                    <LayoutTemplate size={18} color={workspaceTab === 'blocks' ? '#855CD6' : '#999'} /> Blocks
                                 </button>
                                 <button
                                     style={workspaceTab === 'python' ? styles.tabActive : styles.tab}
                                     onClick={() => handleWorkspaceTabChange('python')}
                                 >
-                                    🐍 Python
+                                    <Grid3X3 size={18} color={workspaceTab === 'python' ? '#855CD6' : '#999'} /> Python
                                 </button>
                                 <button
                                     style={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
                                     onClick={() => handleWorkspaceTabChange('costumes')}
                                 >
-                                    🎨 Costumes
+                                    <Pen size={18} color={workspaceTab === 'costumes' ? '#855CD6' : '#999'} /> Costumes
                                 </button>
                                 <button
                                     style={workspaceTab === 'sounds' ? styles.tabActive : styles.tab}
                                     onClick={() => handleWorkspaceTabChange('sounds')}
                                 >
-                                    🔊 Sounds
+                                    <Flag size={18} color={workspaceTab === 'sounds' ? '#855CD6' : '#999'} /> Sounds
                                 </button>
                             </div>
                         </div>
@@ -2544,39 +2511,51 @@ const styles: { [key: string]: React.CSSProperties } = {
     // PictoBlox-style tabs
     tabBar: {
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: '#f5f5f5',
+        justifyContent: 'flex-start',
+        alignItems: 'end',
+        backgroundColor: '#fff',
         borderBottom: '1px solid #ddd',
-        padding: '0 8px',
-        height: '40px',
+        padding: '0 20px',
+        height: '44px',
+        gap: '4px',
     },
     tab: {
-        padding: '10px 16px',
-        borderTop: 'none',
-        borderLeft: 'none',
-        borderRight: 'none',
-        borderBottom: '2px solid transparent',
-        backgroundColor: 'transparent',
+        padding: '8px 24px',
+        borderTop: '1px solid #ddd',
+        borderLeft: '1px solid #ddd',
+        borderRight: '1px solid #ddd',
+        borderBottom: 'none',
+        backgroundColor: '#f9f9f9',
         cursor: 'pointer',
         fontSize: '13px',
-        fontWeight: 500,
-        color: '#666',
-        marginBottom: '-1px',
+        fontWeight: 600,
+        color: '#999',
+        borderTopLeftRadius: '10px',
+        borderTopRightRadius: '10px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        transition: 'all 0.2s',
     },
     tabActive: {
-        padding: '10px 16px',
-        borderTop: 'none',
-        borderLeft: 'none',
-        borderRight: 'none',
-        borderBottom: '2px solid #855CD6',
-        backgroundColor: 'white',
+        padding: '10px 24px',
+        borderTop: '1px solid #ddd',
+        borderLeft: '1px solid #ddd',
+        borderRight: '1px solid #ddd',
+        borderBottom: '1px solid #fff',
+        backgroundColor: '#fff',
         cursor: 'pointer',
         fontSize: '13px',
         fontWeight: 600,
         color: '#855CD6',
         marginBottom: '-1px',
-        borderRadius: '8px 8px 0 0',
+        borderTopLeftRadius: '10px',
+        borderTopRightRadius: '10px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        zIndex: 5,
+        boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
     },
 
     // Placeholder editors
