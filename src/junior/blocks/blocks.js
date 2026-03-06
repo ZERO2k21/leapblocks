@@ -293,10 +293,10 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
 
     // --- PEN (Green 120 -> #0FBD8C) ---
     Blockly.Blocks['pen_down'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("✏️", "junior-icon")).appendField("Writing Down"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#0FBD8C"); } };
-    javascriptGenerator.forBlock['pen_down'] = () => `penDown();\n${wait()}`;
+    javascriptGenerator.forBlock['pen_down'] = () => `penDown(${getTarget()});\n${wait()}`;
 
     Blockly.Blocks['pen_up'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("✒️", "junior-icon")).appendField("Writing Up"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#0FBD8C"); } };
-    javascriptGenerator.forBlock['pen_up'] = () => `penUp();\n${wait()}`;
+    javascriptGenerator.forBlock['pen_up'] = () => `penUp(${getTarget()});\n${wait()}`;
 
     Blockly.Blocks['pen_brush'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("✏️", "junior-icon")).appendField("Brush"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#0FBD8C"); } };
     javascriptGenerator.forBlock['pen_brush'] = () => `showFeedback("Brush Mode");\n${wait()}`;
