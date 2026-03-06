@@ -83,30 +83,30 @@ export const Stage: React.FC<StageProps> = ({
         }
 
         // 2. Draw grid (PictoBlox style)
-        ctx.strokeStyle = showGridNumbers ? '#e5e5e5' : '#f0f0f0';
-        ctx.lineWidth = 1;
-
-        const gridSpacing = showGridNumbers ? width / 20 : 20;
-        const xCount = showGridNumbers ? 20 : Math.floor(width / 20);
-        const yCount = showGridNumbers ? 15 : Math.floor(height / 20);
-
-        for (let i = 0; i <= xCount; i++) {
-            const x = i * (showGridNumbers ? (width / 20) : 20);
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, height);
-            ctx.stroke();
-        }
-        for (let i = 0; i <= yCount; i++) {
-            const y = i * (showGridNumbers ? (height / 15) : 20);
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(width, y);
-            ctx.stroke();
-        }
-
-        // 3. Junior numbers
         if (showGridNumbers) {
+            ctx.strokeStyle = '#e5e5e5';
+            ctx.lineWidth = 1;
+
+            const gridSpacing = width / 20;
+            const xCount = 20;
+            const yCount = 15;
+
+            for (let i = 0; i <= xCount; i++) {
+                const x = i * gridSpacing;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            for (let i = 0; i <= yCount; i++) {
+                const y = i * (height / 15);
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            // 3. Junior numbers
             ctx.fillStyle = '#999';
             ctx.font = '10px Arial';
             ctx.textAlign = 'center';
@@ -120,14 +120,14 @@ export const Stage: React.FC<StageProps> = ({
                 const y = height - (i * (height / 15)) + (height / 30);
                 ctx.fillText(String(i), width - 4, y);
             }
-        }
 
-        // 4. Center cross
-        ctx.strokeStyle = '#ddd';
-        ctx.beginPath();
-        ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, height);
-        ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2);
-        ctx.stroke();
+            // 4. Center cross
+            ctx.strokeStyle = '#ddd';
+            ctx.beginPath();
+            ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, height);
+            ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2);
+            ctx.stroke();
+        }
 
         // 5. Drag overlay
         if (draggingSpriteId) {
