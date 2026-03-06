@@ -323,167 +323,227 @@ export class AnimationCompiler {
     }
 
     private compileBlock(block: Blockly.Block): ScriptStep | null {
+        let step: ScriptStep | null = null;
         switch (block.type) {
             // Motion
             case 'motion_move_steps':
-                return { type: 'move_steps', steps: Number(block.getFieldValue('STEPS')) };
+                step = { type: 'move_steps', steps: Number(block.getFieldValue('STEPS')) };
+                break;
             case 'motion_turn_right':
-                return { type: 'turn_right', degrees: Number(block.getFieldValue('DEGREES')) };
+                step = { type: 'turn_right', degrees: Number(block.getFieldValue('DEGREES')) };
+                break;
             case 'motion_turn_left':
-                return { type: 'turn_left', degrees: Number(block.getFieldValue('DEGREES')) };
+                step = { type: 'turn_left', degrees: Number(block.getFieldValue('DEGREES')) };
+                break;
             case 'motion_go_to_xy':
-                return { type: 'go_to_xy', x: Number(block.getFieldValue('X')), y: Number(block.getFieldValue('Y')) };
+                step = { type: 'go_to_xy', x: Number(block.getFieldValue('X')), y: Number(block.getFieldValue('Y')) };
+                break;
             case 'motion_glide_to_xy':
-                return { type: 'glide_to_xy', secs: Number(block.getFieldValue('SECS')), x: Number(block.getFieldValue('X')), y: Number(block.getFieldValue('Y')) };
+                step = { type: 'glide_to_xy', secs: Number(block.getFieldValue('SECS')), x: Number(block.getFieldValue('X')), y: Number(block.getFieldValue('Y')) };
+                break;
             case 'motion_point_direction':
-                return { type: 'point_direction', direction: Number(block.getFieldValue('DIRECTION')) };
+                step = { type: 'point_direction', direction: Number(block.getFieldValue('DIRECTION')) };
+                break;
             case 'motion_change_x':
-                return { type: 'change_x', dx: Number(block.getFieldValue('DX')) };
+                step = { type: 'change_x', dx: Number(block.getFieldValue('DX')) };
+                break;
             case 'motion_change_y':
-                return { type: 'change_y', dy: Number(block.getFieldValue('DY')) };
+                step = { type: 'change_y', dy: Number(block.getFieldValue('DY')) };
+                break;
             case 'motion_set_x':
-                return { type: 'set_x', x: Number(block.getFieldValue('X')) };
+                step = { type: 'set_x', x: Number(block.getFieldValue('X')) };
+                break;
             case 'motion_set_y':
-                return { type: 'set_y', y: Number(block.getFieldValue('Y')) };
+                step = { type: 'set_y', y: Number(block.getFieldValue('Y')) };
+                break;
             // New PictoBlox motion blocks
             case 'motion_go_to':
-                return { type: 'go_to', target: block.getFieldValue('TO') as 'random' | 'mouse' };
+                step = { type: 'go_to', target: block.getFieldValue('TO') as 'random' | 'mouse' };
+                break;
             case 'motion_glide_to':
-                return { type: 'glide_to', secs: Number(block.getFieldValue('SECS')), target: block.getFieldValue('TO') as 'random' | 'mouse' };
+                step = { type: 'glide_to', secs: Number(block.getFieldValue('SECS')), target: block.getFieldValue('TO') as 'random' | 'mouse' };
+                break;
             case 'motion_point_towards':
-                return { type: 'point_towards', towards: block.getFieldValue('TOWARDS') as 'mouse' | 'random' };
+                step = { type: 'point_towards', towards: block.getFieldValue('TOWARDS') as 'mouse' | 'random' };
+                break;
             case 'motion_if_on_edge_bounce':
-                return { type: 'if_on_edge_bounce' };
+                step = { type: 'if_on_edge_bounce' };
+                break;
             case 'motion_set_rotation_style':
-                return { type: 'set_rotation_style', style: block.getFieldValue('STYLE') as 'left-right' | 'all around' | 'none' };
+                step = { type: 'set_rotation_style', style: block.getFieldValue('STYLE') as 'left-right' | 'all around' | 'none' };
+                break;
 
             // Looks
             case 'looks_say':
-                return { type: 'say', message: String(block.getFieldValue('MESSAGE') || '') };
+                step = { type: 'say', message: String(block.getFieldValue('MESSAGE') || '') };
+                break;
             case 'looks_say_for_secs':
-                return { type: 'say_for_secs', message: String(block.getFieldValue('MESSAGE') || ''), secs: Number(block.getFieldValue('SECS')) };
+                step = { type: 'say_for_secs', message: String(block.getFieldValue('MESSAGE') || ''), secs: Number(block.getFieldValue('SECS')) };
+                break;
             case 'looks_show':
-                return { type: 'show' };
+                step = { type: 'show' };
+                break;
             case 'looks_hide':
-                return { type: 'hide' };
+                step = { type: 'hide' };
+                break;
             case 'looks_next_costume':
-                return { type: 'next_costume' };
+                step = { type: 'next_costume' };
+                break;
             case 'looks_set_size':
-                return { type: 'set_size', size: Number(block.getFieldValue('SIZE')) };
+                step = { type: 'set_size', size: Number(block.getFieldValue('SIZE')) };
+                break;
             case 'looks_change_size':
-                return { type: 'change_size', change: Number(block.getFieldValue('CHANGE')) };
+                step = { type: 'change_size', change: Number(block.getFieldValue('CHANGE')) };
+                break;
             case 'looks_set_effect':
-                return { type: 'set_effect', effect: block.getFieldValue('EFFECT') as 'ghost' | 'brightness', value: Number(block.getFieldValue('VALUE')) };
+                step = { type: 'set_effect', effect: block.getFieldValue('EFFECT') as 'ghost' | 'brightness', value: Number(block.getFieldValue('VALUE')) };
+                break;
             case 'looks_clear_effects':
-                return { type: 'clear_effects' };
+                step = { type: 'clear_effects' };
+                break;
             // New Looks blocks
             case 'looks_think':
-                return { type: 'think', message: String(block.getFieldValue('MESSAGE') || '') };
+                step = { type: 'think', message: String(block.getFieldValue('MESSAGE') || '') };
+                break;
             case 'looks_think_for_secs':
-                return { type: 'think_for_secs', message: String(block.getFieldValue('MESSAGE') || ''), secs: Number(block.getFieldValue('SECS')) };
+                step = { type: 'think_for_secs', message: String(block.getFieldValue('MESSAGE') || ''), secs: Number(block.getFieldValue('SECS')) };
+                break;
             case 'looks_switch_costume':
-                return { type: 'switch_costume', costume: block.getFieldValue('COSTUME') };
+                step = { type: 'switch_costume', costume: block.getFieldValue('COSTUME') };
+                break;
             case 'looks_switch_backdrop':
-                return { type: 'switch_backdrop', backdrop: block.getFieldValue('BACKDROP') };
+                step = { type: 'switch_backdrop', backdrop: block.getFieldValue('BACKDROP') };
+                break;
             case 'looks_next_backdrop':
-                return { type: 'next_backdrop' };
+                step = { type: 'next_backdrop' };
+                break;
             case 'looks_go_to_layer':
-                return { type: 'go_to_layer', layer: block.getFieldValue('LAYER') as 'front' | 'back' };
+                step = { type: 'go_to_layer', layer: block.getFieldValue('LAYER') as 'front' | 'back' };
+                break;
             case 'looks_go_forward_layers':
-                return { type: 'go_forward_layers', direction: block.getFieldValue('DIRECTION') as 'forward' | 'backward', layers: Number(block.getFieldValue('LAYERS')) };
+                step = { type: 'go_forward_layers', direction: block.getFieldValue('DIRECTION') as 'forward' | 'backward', layers: Number(block.getFieldValue('LAYERS')) };
+                break;
 
             // Control & Arduino Control
             case 'control_wait':
             case 'arduino_delay':
-                return { type: 'wait', secs: Number(block.getFieldValue('SECS')) };
+                step = { type: 'wait', secs: Number(block.getFieldValue('SECS')) };
+                break;
             case 'control_repeat':
             case 'arduino_repeat':
-                return { type: 'repeat', times: Number(block.getFieldValue('TIMES')), body: this.compileStatementInput(block, 'DO') };
+                step = { type: 'repeat', times: Number(block.getFieldValue('TIMES')), body: this.compileStatementInput(block, 'DO') };
+                break;
             case 'control_forever':
             case 'arduino_loop':
-                return { type: 'forever', body: this.compileStatementInput(block, 'DO') };
+                step = { type: 'forever', body: this.compileStatementInput(block, 'DO') };
+                break;
             case 'control_if':
             case 'arduino_if':
-                return { type: 'if', condition: this.compileCondition(block, 'CONDITION'), body: this.compileStatementInput(block, 'DO') };
+                step = { type: 'if', condition: this.compileCondition(block, 'CONDITION'), body: this.compileStatementInput(block, 'DO') };
+                break;
             case 'control_if_else':
             case 'arduino_if_else':
-                return { type: 'if_else', condition: this.compileCondition(block, 'CONDITION'), body: this.compileStatementInput(block, 'DO'), elseBody: this.compileStatementInput(block, 'ELSE') };
+                step = { type: 'if_else', condition: this.compileCondition(block, 'CONDITION'), body: this.compileStatementInput(block, 'DO'), elseBody: this.compileStatementInput(block, 'ELSE') };
+                break;
             case 'control_wait_until':
             case 'arduino_wait_until':
-                return { type: 'wait_until', condition: this.compileCondition(block, 'CONDITION') };
+                step = { type: 'wait_until', condition: this.compileCondition(block, 'CONDITION') };
+                break;
             case 'control_repeat_until':
             case 'arduino_repeat_until':
-                return { type: 'repeat_until', condition: this.compileCondition(block, 'CONDITION'), body: this.compileStatementInput(block, 'DO') };
+                step = { type: 'repeat_until', condition: this.compileCondition(block, 'CONDITION'), body: this.compileStatementInput(block, 'DO') };
+                break;
             case 'control_stop':
             case 'arduino_stop': {
                 const stopOption = block.getFieldValue('STOP_OPTION') || block.getFieldValue('MODE');
                 if (stopOption === 'this script' || stopOption === 'this') {
-                    return { type: 'stop_this_script' };
+                    step = { type: 'stop_this_script' };
+                } else {
+                    step = { type: 'stop_all' };
                 }
-                return { type: 'stop_all' };
+                break;
             }
             case 'control_create_clone':
-                return { type: 'create_clone', target: block.getFieldValue('CLONE_OPTION') };
+                step = { type: 'create_clone', target: block.getFieldValue('CLONE_OPTION') };
+                break;
             case 'control_delete_clone':
-                return { type: 'delete_clone' };
+                step = { type: 'delete_clone' };
+                break;
 
             // Events - broadcast
             case 'event_broadcast':
-                return { type: 'broadcast', message: block.getFieldValue('MESSAGE') };
+                step = { type: 'broadcast', message: block.getFieldValue('MESSAGE') };
+                break;
             case 'event_broadcast_wait':
-                return { type: 'broadcast_wait', message: block.getFieldValue('MESSAGE') };
+                step = { type: 'broadcast_wait', message: block.getFieldValue('MESSAGE') };
+                break;
 
             // Sound
             case 'sound_play':
-                return { type: 'play_sound', sound: block.getFieldValue('SOUND') };
+                step = { type: 'play_sound', sound: block.getFieldValue('SOUND') };
+                break;
             case 'sound_play_until_done':
-                return { type: 'play_sound_until_done', sound: block.getFieldValue('SOUND') };
+                step = { type: 'play_sound_until_done', sound: block.getFieldValue('SOUND') };
+                break;
             case 'sound_stop_all':
-                return { type: 'stop_all_sounds' };
+                step = { type: 'stop_all_sounds' };
+                break;
             case 'sound_set_volume':
-                return { type: 'set_volume', volume: Number(block.getFieldValue('VOLUME')) };
+                step = { type: 'set_volume', volume: Number(block.getFieldValue('VOLUME')) };
+                break;
             case 'sound_change_volume':
-                return { type: 'change_volume', change: Number(block.getFieldValue('VOLUME')) };
+                step = { type: 'change_volume', change: Number(block.getFieldValue('VOLUME')) };
+                break;
             case 'sound_set_effect':
-                return {
+                step = {
                     type: 'set_sound_effect',
                     effect: block.getFieldValue('EFFECT') as 'pitch' | 'pan',
                     value: Number(block.getFieldValue('VALUE'))
                 };
+                break;
             case 'sound_change_effect':
-                return {
+                step = {
                     type: 'change_sound_effect',
                     effect: block.getFieldValue('EFFECT') as 'pitch' | 'pan',
                     value: Number(block.getFieldValue('VALUE'))
                 };
+                break;
             case 'sound_clear_effects':
-                return { type: 'clear_sound_effects' };
+                step = { type: 'clear_sound_effects' };
+                break;
 
             // Sensing
             case 'ask':
-                return { type: 'ask', question: block.getFieldValue('QUESTION') };
+                step = { type: 'ask', question: block.getFieldValue('QUESTION') };
+                break;
             case 'sensing_reset_timer':
-                return { type: 'reset_timer' };
+                step = { type: 'reset_timer' };
+                break;
 
             // Hardware blocks & Arduino Blocks
             case 'hw_set_digital':
             case 'arduino_digital_write':
             case 'arduino_relay':
-                return {
+                step = {
                     type: 'hw_set_digital',
                     pin: block.getFieldValue('PIN'),
                     value: (block.getFieldValue('VALUE') === '1' || block.getFieldValue('VALUE') === 'HIGH' || block.getFieldValue('STATE') === 'HIGH')
                 };
+                break;
             case 'hw_set_led':
-                return { type: 'hw_set_led', on: block.getFieldValue('STATE') === '1' };
+                step = { type: 'hw_set_led', on: block.getFieldValue('STATE') === '1' };
+                break;
             case 'arduino_led':
-                return { type: 'hw_set_pwm', pin: block.getFieldValue('PIN'), value: Number(block.getFieldValue('BRIGHTNESS')) };
+                step = { type: 'hw_set_pwm', pin: block.getFieldValue('PIN'), value: Number(block.getFieldValue('BRIGHTNESS')) };
+                break;
             case 'hw_set_pwm':
             case 'arduino_analog_write':
-                return { type: 'hw_set_pwm', pin: block.getFieldValue('PIN'), value: Number(block.getFieldValue('VALUE')) };
+                step = { type: 'hw_set_pwm', pin: block.getFieldValue('PIN'), value: Number(block.getFieldValue('VALUE')) };
+                break;
             case 'hw_set_servo':
             case 'arduino_servo':
-                return { type: 'hw_set_servo', pin: block.getFieldValue('PIN'), angle: Number(block.getFieldValue('ANGLE')) };
+                step = { type: 'hw_set_servo', pin: block.getFieldValue('PIN'), angle: Number(block.getFieldValue('ANGLE')) };
+                break;
             case 'hw_set_motor':
             case 'arduino_motor': {
                 const motor = block.getFieldValue('MOTOR');
@@ -493,79 +553,101 @@ export class AnimationCompiler {
                 let speed = speedVal;
                 if (dir === 'backward') speed = -speedVal;
                 else if (dir === 'stop') speed = 0;
-                return { type: 'hw_set_motor', motor: motorId, speed };
+                step = { type: 'hw_set_motor', motor: motorId, speed };
+                break;
             }
             case 'hw_stop_motors':
-                return { type: 'hw_stop_motors' };
+                step = { type: 'hw_stop_motors' };
+                break;
             case 'hw_play_tone':
             case 'arduino_tone':
-                return {
+                step = {
                     type: 'hw_play_tone',
                     pin: block.getFieldValue('PIN'),
                     freq: Number(block.getFieldValue('FREQ')),
                     duration: Number(block.getFieldValue('DURATION') || 0) || 500 // Default 500ms if not specified
                 };
+                break;
             case 'hw_stop_tone':
             case 'arduino_notone':
-                return { type: 'hw_stop_tone', pin: block.getFieldValue('PIN') };
+                step = { type: 'hw_stop_tone', pin: block.getFieldValue('PIN') };
+                break;
 
 
             // Variable blocks
             case 'data_setvariableto':
-                return {
+                step = {
                     type: 'data_setvariableto',
                     variable: this.getVariableName(block),
                     value: this.compileStringValue(block, 'VALUE') // Assume string for now to support both numbers and strings
                 };
+                break;
             case 'data_changevariableby':
-                return {
+                step = {
                     type: 'data_changevariableby',
                     variable: this.getVariableName(block),
                     value: this.compileNumberValue(block, 'VALUE')
                 };
+                break;
             case 'data_showvariable':
-                return { type: 'data_showvariable', variable: this.getVariableName(block) };
+                step = { type: 'data_showvariable', variable: this.getVariableName(block) };
+                break;
             case 'data_hidevariable':
-                return { type: 'data_hidevariable', variable: this.getVariableName(block) };
+                step = { type: 'data_hidevariable', variable: this.getVariableName(block) };
+                break;
 
             // List blocks
             case 'data_addtolist':
-                return {
+                step = {
                     type: 'list_add',
                     list: this.getVariableName(block),
                     item: this.compileStringValue(block, 'ITEM')
                 };
+                break;
             case 'data_deleteoflist':
-                return {
+                step = {
                     type: 'list_delete',
                     list: this.getVariableName(block),
                     index: this.compileNumberValue(block, 'INDEX')
                 };
+                break;
             case 'data_deletealloflist':
-                return { type: 'list_delete_all', list: this.getVariableName(block) };
+                step = { type: 'list_delete_all', list: this.getVariableName(block) };
+                break;
             case 'data_insertatlist':
-                return {
+                step = {
                     type: 'list_insert',
                     list: this.getVariableName(block),
                     index: this.compileNumberValue(block, 'INDEX'),
                     item: this.compileStringValue(block, 'ITEM')
                 };
+                break;
             case 'data_replaceitemoflist':
-                return {
+                step = {
                     type: 'list_replace',
                     list: this.getVariableName(block),
                     index: this.compileNumberValue(block, 'INDEX'),
                     item: this.compileStringValue(block, 'ITEM')
                 };
+                break;
             case 'data_showlist':
-                return { type: 'list_show', list: this.getVariableName(block) };
+                step = { type: 'list_show', list: this.getVariableName(block) };
+                break;
             case 'data_hidelist':
-                return { type: 'list_hide', list: this.getVariableName(block) };
+                step = { type: 'list_hide', list: this.getVariableName(block) };
+                break;
 
             default:
-                console.warn('[AnimationCompiler] Unknown block type:', block.type);
-                return null;
+                compilerLog.warn(`Unknown statement block: ${block.type}`);
+                step = null; // Ensure step is null for unknown blocks
+                break;
         }
+
+        if (step) {
+            step.blockId = block.id;
+        }
+
+        return step;
     }
 
     private compileStatementInput(block: Blockly.Block, inputName: string): ScriptStep[] {

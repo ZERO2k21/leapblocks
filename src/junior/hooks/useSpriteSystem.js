@@ -107,6 +107,26 @@ export function useSpriteSystem(initialScenes) {
             }));
         },
 
+        // Soft reset: clears visual state but preserves each sprite's current position
+        // Used by green flag so sprites execute from where the user placed them
+        softResetAll: () => {
+            setScenes(prev => prev.map(scene => {
+                return {
+                    ...scene,
+                    sprites: scene.sprites.map(sprite => ({
+                        ...sprite,
+                        angle: 0,
+                        size: 100,
+                        visible: true,
+                        currentCostume: "default",
+                        speech: null,
+                        mirrored: false,
+                        // x, y are PRESERVED — sprites stay where user placed them
+                    }))
+                };
+            }));
+        },
+
         // Generic accessor
         update: updateSprite
     };

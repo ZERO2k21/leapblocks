@@ -510,5 +510,42 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
         }
     };
     javascriptGenerator.forBlock['sound_stop'] = () => `stopAllSounds();\n${wait()}`;
+
+    // ===========================================
+    // INTER-SPRITE COMMUNICATION (Broadcast)
+    // ===========================================
+
+    // --- EVENTS: Send Message (Broadcast) ---
+    const MESSAGE_OPTIONS = [["go", "go"], ["hello", "hello"], ["start", "start"], ["done", "done"], ["win", "win"]];
+
+    Blockly.Blocks['broadcast_message'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField(new Blockly.FieldLabel("\u{1F4E1}", "junior-block-icon"))
+                .appendField("Send Message")
+                .appendField(new Blockly.FieldDropdown(MESSAGE_OPTIONS), "MESSAGE");
+            this.setPreviousStatement(true);
+            this.setNextStatement(true);
+            this.setColour("#FFBF00");
+        }
+    };
+    javascriptGenerator.forBlock['broadcast_message'] = (block) => {
+        const msg = block.getFieldValue("MESSAGE");
+        return `window.broadcastMessage("${msg}");\n${wait()}`;
+    };
+
+    // --- EVENTS: When I Receive Message (Hat Block) ---
+    Blockly.Blocks['when_receive_message'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField(new Blockly.FieldLabel("\u{1F4E8}", "junior-icon-large"))
+                .appendField("When I Receive")
+                .appendField(new Blockly.FieldDropdown(MESSAGE_OPTIONS), "MESSAGE");
+            this.setNextStatement(true);
+            this.setColour("#FFBF00");
+            this.setDeletable(true);
+        }
+    };
+    javascriptGenerator.forBlock['when_receive_message'] = () => '// On Receive Message\n';
 }
 

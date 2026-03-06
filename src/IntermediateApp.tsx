@@ -428,6 +428,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // Handle sprite selection: save old, load new
     const handleSpriteSelect = useCallback((newId: string) => {
         if (newId === selectedSpriteId) return;
+
+        // Clear highlights in old workspace before switching
+        if (workspaceRef.current) {
+            // @ts-ignore
+            workspaceRef.current.highlightBlock(null);
+        }
+
         saveCurrentSpriteWorkspace();
         setSelectedSpriteId(newId);
         loadSpriteWorkspace(newId);
@@ -441,6 +448,39 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         const typeNames: Record<SpriteType, string> = { cat: 'Cat', ball: 'Ball', arrow: 'Arrow', robot: 'Robot' };
         const name = `${typeNames[spriteType]} ${sprites.filter(s => s.spriteType === spriteType).length + 1}`;
         const newSprite = new Sprite(id, name, triggerUpdate, spriteType);
+
+        // Set unique position in Scratch coords (-240..240, -180..180)
+        // Predefined spread-out positions across the stage
+        const spreadPositions = [
+            { x: 120, y: 0 },      // Right area
+            { x: -120, y: 0 },     // Left area
+            { x: 0, y: 80 },       // Top center
+            { x: 0, y: -80 },      // Bottom center
+            { x: -160, y: 100 },   // Top-left
+            { x: 160, y: 100 },    // Top-right
+            { x: -160, y: -100 },  // Bottom-left
+            { x: 160, y: -100 },   // Bottom-right
+        ];
+
+        const MIN_DIST = 80;
+        let assigned = false;
+        for (const pos of spreadPositions) {
+            const tooClose = sprites.some(s => {
+                const dx = Math.abs(s.x - pos.x);
+                const dy = Math.abs(s.y - pos.y);
+                return dx < MIN_DIST && dy < MIN_DIST;
+            });
+            if (!tooClose) {
+                newSprite.setX(pos.x);
+                newSprite.setY(pos.y);
+                assigned = true;
+                break;
+            }
+        }
+        if (!assigned) {
+            newSprite.setX(Math.random() * 320 - 160);
+            newSprite.setY(Math.random() * 240 - 120);
+        }
 
         animationVM.registerSprite(newSprite);
         setSprites(prev => [...prev, newSprite]);
@@ -494,10 +534,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 continue;
             }
 
+            let tempWs: Blockly.Workspace | null = null;
             try {
-                // Create a temporary headless workspace for compilation
-                const tempWs = new Blockly.Workspace();
+                // Disable Blockly events to prevent FocusManager crash on temp workspace
+                Blockly.Events.disable();
+                tempWs = new Blockly.Workspace();
                 Blockly.serialization.workspaces.load(savedJson, tempWs);
+                Blockly.Events.enable();
 
                 const compiler = new AnimationCompiler(sprite.id);
                 const scripts = compiler.compile(tempWs);
@@ -505,8 +548,11 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 allScripts.push(...scripts);
 
                 tempWs.dispose();
+                tempWs = null;
             } catch (e) {
+                Blockly.Events.enable();
                 console.error(`[APP] Error compiling sprite ${sprite.name}:`, e);
+                if (tempWs) { try { tempWs.dispose(); } catch (_) { } }
             }
         }
 
@@ -521,6 +567,12 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             console.log(`[APP]   ${i}: trigger=${s.trigger}, spriteId=${s.spriteId}, steps=${s.steps.length}`);
         });
 
+        // Soft reset: clear speech bubbles and effects but preserve positions
+        sprites.forEach(s => {
+            if (s.sayText) s.clearSay();
+            s.clearEffects();
+        });
+
         setIsRunning(true);
         setCompiledScripts(allScripts);
         animationVM.triggerFlag(allScripts);
@@ -532,6 +584,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const handleStopClick = useCallback(() => {
         setIsRunning(false);
         animationVM.stopAll();
+
+        // Clear highlight
+        if (workspaceRef.current) {
+            // @ts-ignore
+            workspaceRef.current.highlightBlock(null);
+        }
+
         hardwareAdapter.stopAllPolling();
         addLog('Stopped animation');
     }, [addLog]);
@@ -710,6 +769,9 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         if (editorMode === 'stage' && sprites.length === 0) {
             console.log('[APP] Creating default sprite...');
             const defaultSprite = new Sprite('sprite_default', 'Robot', triggerUpdate, 'robot');
+            // Scratch coords: (0,0) is center of stage
+            defaultSprite.setX(0);
+            defaultSprite.setY(0);
 
             // Add robot costumes
             const loadCostumes = async () => {
@@ -829,6 +891,11 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             });
         }
 
+        // --- VM CALLBACKS ---
+        animationVM.onRunningChange = (running) => {
+            setIsRunning(running);
+        };
+
         return () => {
             if (window.electronAPI?.removeAllListeners) {
                 window.electronAPI.removeAllListeners();
@@ -857,6 +924,20 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 console.log('[APP] Sprites/selection changed, triggering recompile...');
                 handleWorkspaceChange({ isUiEvent: false } as Blockly.Events.Abstract);
             }
+        }
+
+        // Register highlighting callback that knows about the selectedSpriteId
+        animationVM.onHighlightBlock = (spriteId, blockId) => {
+            if (workspaceRef.current && spriteId === selectedSpriteId) {
+                // @ts-ignore
+                workspaceRef.current.highlightBlock(blockId);
+            }
+        };
+
+        // Clear highlight initially
+        if (workspaceRef.current) {
+            // @ts-ignore
+            workspaceRef.current.highlightBlock(null);
         }
     }, [sprites, selectedSpriteId, handleWorkspaceChange, handleBlockInteraction]);
 

@@ -90,7 +90,9 @@ const categoryContents = {
         { kind: "block", type: "event_flag" },
         { kind: "block", type: "event_up" },
         { kind: "block", type: "event_down" },
-        { kind: "block", type: "event_press" }
+        { kind: "block", type: "event_press" },
+        { kind: "block", type: "broadcast_message" },
+        { kind: "block", type: "when_receive_message" }
     ],
     sound: [
         { kind: "block", type: "sound_play" },
@@ -145,6 +147,8 @@ export default function JuniorApp({ onBack }) {
     const cameraStreamRef = useRef(null); // Camera MediaStream
     const isRunning = useRef(false); // Ref for execution state
     const [isBlocksRunning, setIsBlocksRunning] = useState(false); // UI state for run/stop toggle
+    const activeSpriteIdRef = useRef(null); // Ref for active sprite ID for highlighting
+    const scenesRef = useRef(null); // Ref for latest scenes state to avoid stale closures
     const [projectName, setProjectName] = useState("Untitled Project");
     const [activeCategory, setActiveCategory] = useState("motion");
     const stageContainerRef = useRef(null); // Ref for stage container to measure dimensions
@@ -420,11 +424,55 @@ export default function JuniorApp({ onBack }) {
             }
         }
 
+        // Calculate a unique position that doesn't overlap with existing sprites
+        // Stage is 480x360 (20x15 grid at 24px cells)
+        const CELL_SIZE = 24;
+        const existingSprites = currentScene?.sprites || [];
+
+        // Predefined spread-out positions (in pixels) across the stage
+        const spreadPositions = [
+            { x: 14 * CELL_SIZE, y: 6 * CELL_SIZE },   // Right area
+            { x: 5 * CELL_SIZE, y: 6 * CELL_SIZE },    // Left area
+            { x: 10 * CELL_SIZE, y: 3 * CELL_SIZE },   // Top center
+            { x: 10 * CELL_SIZE, y: 10 * CELL_SIZE },  // Bottom center
+            { x: 3 * CELL_SIZE, y: 3 * CELL_SIZE },    // Top-left
+            { x: 16 * CELL_SIZE, y: 3 * CELL_SIZE },   // Top-right
+            { x: 3 * CELL_SIZE, y: 10 * CELL_SIZE },   // Bottom-left
+            { x: 16 * CELL_SIZE, y: 10 * CELL_SIZE },  // Bottom-right
+            { x: 7 * CELL_SIZE, y: 8 * CELL_SIZE },    // Mid-left
+            { x: 12 * CELL_SIZE, y: 4 * CELL_SIZE },   // Mid-right-top
+        ];
+
+        // Find a position not too close to existing sprites
+        const MIN_DISTANCE = CELL_SIZE * 3; // At least 3 cells apart
+        let newX = 200, newY = 150;
+
+        let foundPosition = false;
+        for (const pos of spreadPositions) {
+            const tooClose = existingSprites.some(s => {
+                const dx = Math.abs(s.x - pos.x);
+                const dy = Math.abs(s.y - pos.y);
+                return dx < MIN_DISTANCE && dy < MIN_DISTANCE;
+            });
+            if (!tooClose) {
+                newX = pos.x;
+                newY = pos.y;
+                foundPosition = true;
+                break;
+            }
+        }
+
+        // Fallback: random position if all predefined spots are taken
+        if (!foundPosition) {
+            newX = Math.floor(Math.random() * 14 + 3) * CELL_SIZE;
+            newY = Math.floor(Math.random() * 9 + 3) * CELL_SIZE;
+        }
+
         const newSprite = {
             id: newId,
             name: spriteName,
             type: spriteType,
-            x: 200, y: 150, angle: 0, size: 100, visible: true,
+            x: newX, y: newY, angle: 0, size: 100, visible: true,
             mirrored: false,
             costumes: costumes,
             currentCostume: "default",
@@ -970,10 +1018,30 @@ export default function JuniorApp({ onBack }) {
 
     // Sync state helpers for Async Execution
     useEffect(() => {
+        activeSpriteIdRef.current = activeSpriteId;
+        scenesRef.current = scenes; // Keep ref in sync for stale-state prevention
         window.activeSpriteId = activeSpriteId; // Legacy support
         window.isActive = () => isRunning.current; // Global stop flag
         window.wait = (s) => new Promise(r => setTimeout(r, s * 1000));
-    }, [activeSpriteId]);
+
+        // Setup broadcast listener for inter-sprite communication
+        if (interpreterRef.current) {
+            const getSpriteEntries = () => {
+                const latestScenes = scenesRef.current || scenes;
+                const currentSprites = latestScenes.find(s => s.id === currentSceneId)?.sprites || [];
+                return currentSprites
+                    .filter(sprite => sprite.blocks && Object.keys(sprite.blocks).length > 0)
+                    .map(sprite => ({ spriteId: sprite.id, blocks: sprite.blocks }));
+            };
+            interpreterRef.current.setupBroadcastListener(getSpriteEntries, Blockly);
+        }
+
+        // Broadcast helper for blocks to call
+        window.broadcastMessage = (message) => {
+            console.log(`[Junior] Broadcasting: "${message}"`);
+            window.dispatchEvent(new CustomEvent('leap-broadcast', { detail: { message } }));
+        };
+    }, [activeSpriteId, scenes, currentSceneId]);
 
 
 
@@ -995,8 +1063,19 @@ export default function JuniorApp({ onBack }) {
     // Initialize Interpreter
     useEffect(() => {
         interpreterRef.current = new LeapInterpreter(workspaceRef, javascriptGenerator, {
-            onRun: () => isRunning.current = true,
-            onStop: () => isRunning.current = false
+            onRun: () => {
+                isRunning.current = true;
+                setIsBlocksRunning(true);
+            },
+            onStop: () => {
+                isRunning.current = false;
+                setIsBlocksRunning(false);
+            },
+            onHighlight: (id, spriteId) => {
+                if (workspaceRef.current && (!spriteId || spriteId === activeSpriteIdRef.current)) {
+                    workspaceRef.current.highlightBlock(id);
+                }
+            }
         });
     }, []);
 
@@ -1025,13 +1104,12 @@ export default function JuniorApp({ onBack }) {
             return;
         }
 
-        // Fresh start - Reset ALL sprites in current scene to their default state
-        // This ensures no previous execution artifacts remain before running new program
+        // Fresh start - Soft reset: clear visual state but PRESERVE sprite positions
+        // Sprites execute from wherever the user placed them on the stage
         const currentSceneSprites = scenes.find(s => s.id === currentSceneId)?.sprites || [];
         if (currentSceneSprites.length > 0) {
-            spriteActions.resetAll(); // Reset all sprites to default state
+            spriteActions.softResetAll();
         }
-        if (window.hardResetBear) window.hardResetBear();
         // Clear pen drawings from previous execution
         if (window.clearPen) window.clearPen();
         await window.wait(0.3);
@@ -1039,14 +1117,17 @@ export default function JuniorApp({ onBack }) {
         // Save current workspace so all sprites' blocks are up to date
         saveCurrentWorkspace();
 
-        // Set running state for UI
-        setIsBlocksRunning(true);
+        // Wait for React state to flush so scenesRef has the latest saved blocks
+        await new Promise(r => setTimeout(r, 50));
 
-        // Gather ALL sprites' block data from the current scene
-        const currentSprites = scenes.find(s => s.id === currentSceneId)?.sprites || [];
+        // Use scenesRef.current to read the LATEST scenes (avoids stale closure)
+        const latestScenes = scenesRef.current || scenes;
+        const currentSprites = latestScenes.find(s => s.id === currentSceneId)?.sprites || [];
         const spriteEntries = currentSprites
             .filter(sprite => sprite.blocks && Object.keys(sprite.blocks).length > 0)
             .map(sprite => ({ spriteId: sprite.id, blocks: sprite.blocks }));
+
+        console.log(`[Junior] Found ${spriteEntries.length} sprite(s) with blocks out of ${currentSprites.length} total`);
 
         if (spriteEntries.length === 0) {
             // Fallback: run current workspace only (single sprite mode)
@@ -1057,10 +1138,8 @@ export default function JuniorApp({ onBack }) {
         } else if (spriteEntries.length === 1) {
             // Single sprite - use original method for simplicity
             console.log("[Junior] Single sprite mode");
-            // Make sure activeSpriteId is set correctly
             window.activeSpriteId = spriteEntries[0].spriteId;
             if (interpreterRef.current) {
-                // Load that sprite's workspace and run
                 const sprite = currentSprites.find(s => s.id === spriteEntries[0].spriteId);
                 if (sprite && sprite.blocks) {
                     Blockly.serialization.workspaces.load(sprite.blocks, workspaceRef.current);
@@ -1070,6 +1149,7 @@ export default function JuniorApp({ onBack }) {
         } else {
             // MULTI-SPRITE MODE: Run all sprites' blocks concurrently
             console.log(`[Junior] Multi-sprite mode: running ${spriteEntries.length} sprites concurrently`);
+            spriteEntries.forEach(e => console.log(`  [Junior] Sprite: ${e.spriteId}, blocks keys: ${Object.keys(e.blocks).length}`));
             if (interpreterRef.current) {
                 await interpreterRef.current.runAllSpritesStacks('event_flag', spriteEntries, Blockly);
             }

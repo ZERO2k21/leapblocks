@@ -56,100 +56,103 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
     };
 
     useEffect(() => {
-        // Register Global Functions specific to THIS sprite ID
-        // Note: These now modify the STORE via updateStore
+        // =================================================================
+        // SPRITE ACTION REGISTRY
+        // Each sprite registers its own handlers keyed by ID.
+        // Global functions dispatch to the correct sprite's handler.
+        // This allows concurrent multi-sprite execution without conflicts.
+        // =================================================================
 
-        const check = (targetId) => targetId === id; // Only run if ID matches
+        if (!window._spriteActions) window._spriteActions = {};
 
-        window.moveForward = (tid, steps = 1) => { if (check(tid)) performMove(20 * steps); };
-        window.moveBackward = (tid, steps = 1) => { if (check(tid)) performMove(-20 * steps); };
-        window.moveUp = (tid, steps = 1) => { if (check(tid)) performMoveY(-20 * steps); };
-        window.moveDown = (tid, steps = 1) => { if (check(tid)) performMoveY(20 * steps); };
-
-        window.turnRight = (tid, times = 3) => { if (check(tid)) updateStore({ angle: a => a + (15 * times) }); };
-        window.turnLeft = (tid, times = 3) => { if (check(tid)) updateStore({ angle: a => a - (15 * times) }); };
-
-        window.jump = (tid, times = 3) => {
-            if (check(tid)) {
-                // Height based on times ? Or fixed? Let's scale it slightly or keep fixed?
-                // Request said "Jump [3]" (editable). 
-                // Let's assume input maps to 'height multiplier' or 'grid units'.
-                // Default was 50 (approx 2.5 grid units).
-                // Let's use 20 * times.
+        // Register this sprite's actions under its ID
+        window._spriteActions[id] = {
+            moveForward: (steps = 1) => performMove(20 * steps),
+            moveBackward: (steps = 1) => performMove(-20 * steps),
+            moveUp: (steps = 1) => performMoveY(-20 * steps),
+            moveDown: (steps = 1) => performMoveY(20 * steps),
+            turnRight: (times = 3) => updateStore({ angle: a => a + (15 * times) }),
+            turnLeft: (times = 3) => updateStore({ angle: a => a - (15 * times) }),
+            jump: (times = 3) => {
                 const height = 20 * times;
                 performMoveY(-height);
                 setTimeout(() => performMoveY(height), 300);
-            }
-        };
-
-        window.run = (tid) => {
-            if (check(tid)) {
+            },
+            run: () => {
                 performMove(60);
-                window.say(tid, "Running!! 🏃");
+                window.say(id, "Running!! \u{1F3C3}");
+            },
+            findout: () => {
+                window.say(id, "Searching... \u{1F50D}");
+                setTimeout(() => window.say(id, "Found it!"), 1000);
+            },
+            symmetry: () => setScaleX(s => s * -1),
+            switchCostume: (name) => updateStore({ currentCostume: name }),
+            penDown: () => setIsPenDown(true),
+            penUp: () => setIsPenDown(false),
+            jiggle: () => setJiggleKey(k => k + 1),
+        };
+
+        // ---- GLOBAL DISPATCH FUNCTIONS ----
+        // These look up the target sprite's registered handler and call it.
+        // Safe for concurrent multi-sprite execution.
+        const dispatch = (action, tid, ...args) => {
+            const handler = window._spriteActions?.[tid];
+            if (handler && handler[action]) {
+                handler[action](...args);
             }
         };
 
-        window.findout = (tid) => {
-            if (check(tid)) {
-                window.say(tid, "Searching... 🔍");
-                setTimeout(() => window.say(tid, "Found it!"), 1000);
-            }
-        };
-
-        window.symmetry = (tid) => { if (check(tid)) setScaleX(s => s * -1); };
-
-        window.symmetry = (tid) => { if (check(tid)) setScaleX(s => s * -1); };
-
-        // window.say, setVisible, changeSize are now handled by App.jsx updates
-        // to prevent overwriting global functions logic.
-
-
-        // Costume
-        window.switchCostume = (tid, name) => {
-            if (check(tid)) updateStore({ currentCostume: name });
-        };
-
-        // Pen
-        window.penDown = (tid) => { if (check(tid)) setIsPenDown(true); };
-        window.penUp = (tid) => { if (check(tid)) setIsPenDown(false); };
+        window.moveForward = (tid, steps) => dispatch('moveForward', tid, steps);
+        window.moveBackward = (tid, steps) => dispatch('moveBackward', tid, steps);
+        window.moveUp = (tid, steps) => dispatch('moveUp', tid, steps);
+        window.moveDown = (tid, steps) => dispatch('moveDown', tid, steps);
+        window.turnRight = (tid, times) => dispatch('turnRight', tid, times);
+        window.turnLeft = (tid, times) => dispatch('turnLeft', tid, times);
+        window.jump = (tid, times) => dispatch('jump', tid, times);
+        window.run = (tid) => dispatch('run', tid);
+        window.findout = (tid) => dispatch('findout', tid);
+        window.symmetry = (tid) => dispatch('symmetry', tid);
+        window.switchCostume = (tid, name) => dispatch('switchCostume', tid, name);
+        window.penDown = (tid) => dispatch('penDown', tid);
+        window.penUp = (tid) => dispatch('penUp', tid);
+        window.jiggle = (tid) => dispatch('jiggle', tid);
 
         window.resetBear = () => {
-            // Soft reset: keep current position, reset visual/state only
-            // This lets sprites run from wherever the user dragged them
+            // Soft reset: keep position, reset visual state only
+            // Lets sprites start from where user dragged them
             updateStore({ angle: 0, size: 100, visible: true, currentCostume: "default", speech: null });
             setScaleX(1);
             setFeedback(null);
             setIsPenDown(false);
-            if (window.clearPen) window.clearPen();
         };
 
         window.hardResetBear = () => {
-            // Full reset: also resets position to defaults
-            updateStore({ x: 200 + (id === 'dog' ? 100 : 0), y: 150, angle: 0, size: 100, visible: true, currentCostume: "default", speech: null });
+            // Full reset: also resets position with per-sprite offset
+            const spriteIndex = Object.keys(window._spriteActions || {}).indexOf(id);
+            const offsetX = spriteIndex * 100;
+            updateStore({ x: 120 + offsetX, y: 150, angle: 0, size: 100, visible: true, currentCostume: "default", speech: null });
             setScaleX(1);
             setFeedback(null);
             setIsPenDown(false);
-            if (window.clearPen) window.clearPen();
         };
 
-        // Global Feedback (Only for first sprite/Teddy just to have a handler)
-        if (id === 'teddy') {
+        // Global Feedback handler
+        if (id === 'teddy' || id === 'robot_default') {
             window.showFeedback = (msg) => {
                 setFeedback(msg);
                 setTimeout(() => setFeedback(null), 1000);
             };
-            window.changeScene = () => window.showFeedback("Scene Changed! 🖼️");
-            // Updated stopAll to show feedback (ExecutionStop is thrown by the stop block)
-            window.stopAll = () => window.showFeedback("STOPPED 🛑");
+            window.changeScene = () => window.showFeedback("Scene Changed! \u{1F5BC}\u{FE0F}");
+            window.stopAll = () => window.showFeedback("STOPPED \u{1F6D1}");
         }
 
-        // Animation Triggers
-        window.jiggle = (tid) => {
-            if (check(tid)) {
-                setJiggleKey(k => k + 1); // Triggers re-render with animation
+        // Cleanup: unregister this sprite when it unmounts
+        return () => {
+            if (window._spriteActions) {
+                delete window._spriteActions[id];
             }
         };
-
     }, [id]); // Re-bind only if ID changes (refs handle state access)
 
     // Jiggle animation state
@@ -166,10 +169,10 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
     }, [currentCostume]);
 
     const getEmojiForType = () => {
-        if (type === 'robot') return '🤖';
-        if (type === 'dog') return '🐶';
-        if (type === 'cat') return '🐱';
-        return '🐻';
+        if (type === 'robot') return '\u{1F916}';
+        if (type === 'dog') return '\u{1F436}';
+        if (type === 'cat') return '\u{1F431}';
+        return '\u{1F43B}';
     };
 
     const renderIcon = () => {
@@ -203,9 +206,9 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
 
         // 4. Fallback to emoji logic for legacy string-based states
         if (currentCostume === "wave") {
-            if (type === 'bear') return "👋";
-            if (type === 'dog') return "🐕";
-            if (type === 'robot') return "🤖";
+            if (type === 'bear') return "\u{1F44B}";
+            if (type === 'dog') return "\u{1F415}";
+            if (type === 'robot') return "\u{1F916}";
         }
         return getEmojiForType();
     };

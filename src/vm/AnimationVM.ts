@@ -26,7 +26,7 @@ export interface CompiledScript {
     steps: ScriptStep[];
 }
 
-export type ScriptStep =
+export type ScriptStep = (
     // Motion
     | { type: 'move_steps'; steps: number }
     | { type: 'turn_right'; degrees: number }
@@ -113,7 +113,8 @@ export type ScriptStep =
     | { type: 'list_insert'; list: string; index: () => number; item: () => string }
     | { type: 'list_replace'; list: string; index: () => number; item: () => string }
     | { type: 'list_show'; list: string }
-    | { type: 'list_hide'; list: string };
+    | { type: 'list_hide'; list: string }
+) & { blockId?: string };
 
 // Logging utility for AnimationVM
 const vmLog = {
@@ -132,6 +133,10 @@ export class AnimationVM {
     public isPaused: boolean = false;
     private pausePromise: Promise<void> | null = null;
     private resolvePause: (() => void) | null = null;
+
+    // Callbacks for UI sync
+    public onHighlightBlock?: (blockId: string | null, spriteId: string) => void;
+    public onRunningChange?: (isRunning: boolean) => void;
 
     // Timer
     private timerStart: number = Date.now();
@@ -285,8 +290,15 @@ export class AnimationVM {
     // ═══════════════════════════════════════════════════════════════════════
     // SCRIPT EXECUTION
     // ═══════════════════════════════════════════════════════════════════════
+    private setRunning(val: boolean) {
+        if (this.isRunning !== val) {
+            this.isRunning = val;
+            if (this.onRunningChange) this.onRunningChange(val);
+        }
+    }
+
     triggerFlag(scripts: CompiledScript[]): void {
-        this.isRunning = true;
+        this.setRunning(true);
         let flagScripts = 0;
         for (const script of scripts) {
             if (script.trigger === 'flag') {
@@ -294,19 +306,28 @@ export class AnimationVM {
                 this.runScript(script);
             }
         }
+        if (flagScripts === 0) {
+            this.checkAllFinished();
+        }
     }
 
     triggerSpriteClick(spriteId: string, scripts: CompiledScript[]): void {
+        let matched = 0;
         for (const script of scripts) {
             if (script.trigger === 'sprite_click' && script.spriteId === spriteId) {
+                matched++;
+                this.setRunning(true);
                 this.runScript(script);
             }
         }
     }
 
     triggerKey(key: string, scripts: CompiledScript[]): void {
+        let matched = 0;
         for (const script of scripts) {
             if (script.trigger === 'key' && script.triggerKey === key) {
+                matched++;
+                this.setRunning(true);
                 this.runScript(script);
             }
         }
@@ -314,7 +335,7 @@ export class AnimationVM {
 
     stopAll(): void {
         vmLog.info('stopAll() called');
-        this.isRunning = false;
+        this.setRunning(false);
 
         // Resolve any pending pause so aborted scripts can exit cleanly
         if (this.isPaused && this.resolvePause) {
@@ -327,6 +348,15 @@ export class AnimationVM {
             controller.abort();
         }
         this.runningScripts.clear();
+
+        // Clear highlights
+        if (this.onHighlightBlock) {
+            // We'd need to clear for all sprites if we tracked them, 
+            // but clearing for current is usually enough as UI only shows one.
+            // We pass null to clear.
+            this.onHighlightBlock(null, '');
+        }
+
         vmLog.info('All scripts stopped');
     }
 
@@ -397,6 +427,13 @@ export class AnimationVM {
         } finally {
             this.runningScripts.delete(id);
             vmLog.info(`Script removed: ${id}`);
+            this.checkAllFinished();
+        }
+    }
+
+    private checkAllFinished() {
+        if (this.runningScripts.size === 0) {
+            this.setRunning(false);
         }
     }
 
@@ -407,11 +444,19 @@ export class AnimationVM {
 
             if (signal.aborted || !this.isRunning) {
                 vmLog.info(`Execution interrupted at step ${i}`);
+                if (this.onHighlightBlock) this.onHighlightBlock(null, ctx.sprite.id);
                 throw new DOMException('Aborted', 'AbortError');
             }
-            vmLog.step(`[${i + 1}/${steps.length}] ${steps[i].type}`);
-            await this.executeStep(steps[i], ctx, signal);
+
+            const step = steps[i];
+            if (step.blockId && this.onHighlightBlock) {
+                this.onHighlightBlock(step.blockId, ctx.sprite.id);
+            }
+
+            vmLog.step(`[${i + 1}/${steps.length}] ${step.type}`);
+            await this.executeStep(step, ctx, signal);
         }
+        if (this.onHighlightBlock) this.onHighlightBlock(null, ctx.sprite.id);
         vmLog.info('All steps completed');
     }
 
