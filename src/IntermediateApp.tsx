@@ -165,6 +165,24 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             });
             setPromptInput(defaultValue);
         });
+
+        // Global click listener to force blur on Blockly input fields
+        const handleGlobalClick = (e: MouseEvent) => {
+            const activeElement = document.activeElement;
+            if (activeElement && activeElement.classList.contains('blocklyHtmlInput')) {
+                // Check if the click was *outside* the input field itself
+                if (!activeElement.contains(e.target as Node)) {
+                    (activeElement as HTMLElement).blur();
+                    // Force Blockly's widget div (which holds the input) to hide
+                    if (Blockly.WidgetDiv) {
+                        Blockly.WidgetDiv.hide();
+                    }
+                }
+            }
+        };
+        window.addEventListener('mousedown', handleGlobalClick);
+
+        return () => window.removeEventListener('mousedown', handleGlobalClick);
     }, []);
 
     const handlePromptSubmit = () => {
@@ -484,8 +502,12 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             }
         }
         if (!assigned) {
-            newSprite.setX(Math.random() * 320 - 160);
-            newSprite.setY(Math.random() * 240 - 120);
+            // Generate a small random offset explicitly close to the center 
+            // instead of completely scattering them across the stage
+            const offsetX = Math.floor(Math.random() * 60) - 30;
+            const offsetY = Math.floor(Math.random() * 60) - 30;
+            newSprite.setX(offsetX);
+            newSprite.setY(offsetY);
         }
 
         animationVM.registerSprite(newSprite);
@@ -800,76 +822,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     useEffect(() => {
         log.app('Initializing Blockly workspace');
 
-        if (blocklyDiv.current && !workspaceRef.current) {
-            workspaceRef.current = Blockly.inject(blocklyDiv.current, {
-                toolbox: getCurrentToolbox(),
-                grid: { spacing: 20, length: 3, colour: '#e8e8e8', snap: true },
-                zoom: { controls: true, wheel: true, startScale: 0.9, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
-                trashcan: true,
-                sounds: false,
-                renderer: 'zelos',
-                theme: Blockly.Theme.defineTheme('leapblocks', {
-                    name: 'leapblocks',
-                    base: Blockly.Themes.Zelos,
-                    componentStyles: {
-                        workspaceBackgroundColour: '#f9f9f9',
-                        toolboxBackgroundColour: '#ffffff',
-                        toolboxForegroundColour: '#575E75',
-                        flyoutBackgroundColour: '#f9f9f9',
-                        flyoutForegroundColour: '#575E75',
-                        flyoutOpacity: 1,
-                        scrollbarColour: '#ccc',
-                        insertionMarkerColour: '#000',
-                        insertionMarkerOpacity: 0.3,
-                        scrollbarOpacity: 0.4,
-                        cursorColour: '#d0d0d0',
-
-
-                    },
-                }),
-            });
-
-            const flyout = workspaceRef.current.getFlyout();
-            if (flyout) {
-                flyout.autoClose = false;
-            }
-
-            // ZOOM & TOOLBOX FIX: Lock flyout scale so it never changes with workspace zoom.
-            // ROOT CAUSE: Blockly's reflowInternal_() directly sets:
-            //   this.workspace_.scale = this.getFlyoutScale()
-            // And getFlyoutScale() by default returns this.targetWorkspace.scale (the zoomed scale).
-            // By overriding getFlyoutScale() we intercept ALL scale sync paths.
-            const initialWs = workspaceRef.current;
-            if (initialWs) {
-                const flyout = initialWs.getFlyout() as any;
-                if (flyout) {
-                    const FIXED_SCALE = 0.9;
-                    flyout.getFlyoutScale = () => FIXED_SCALE;
-                    // Also immediately apply the fixed scale
-                    if (flyout.getWorkspace()) {
-                        flyout.getWorkspace().setScale(FIXED_SCALE);
-                    }
-                }
-            }
-
-            // Dynamic Dropdown Colors: Update highlight and background color based on block color
-            if (!(Blockly.FieldDropdown.prototype as any)._originalShowEditor) {
-                (Blockly.FieldDropdown.prototype as any)._originalShowEditor = (Blockly.FieldDropdown.prototype as any).showEditor_;
-                (Blockly.FieldDropdown.prototype as any).showEditor_ = function (this: Blockly.FieldDropdown, opt_e: any) {
-                    const block = this.getSourceBlock();
-                    if (block) {
-                        const color = block.getColour();
-                        document.documentElement.style.setProperty('--blockly-menu-highlight-color', color);
-                        // Add a subtle tint for the background (10% opacity)
-                        const tint = color.startsWith('#') ? `${color}1A` : 'rgba(0,0,0,0.05)';
-                        document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
-                    }
-                    (this as any)._originalShowEditor(opt_e);
-                };
-            }
-
-            addLog('Blockly workspace initialized');
-        }
+        log.app('Initializing Blockly workspace on first mount avoided. Will be handled by mode change effect.');
 
         // Set up serial data listener (only if electronAPI is available)
         if (window.electronAPI?.onSerialData) {
@@ -1004,6 +957,22 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 flyout.getWorkspace().setScale(FIXED_SCALE);
                             }
                         }
+                    }
+
+                    // Dynamic Dropdown Colors: Update highlight and background color based on block color
+                    if (!(Blockly.FieldDropdown.prototype as any)._originalShowEditor) {
+                        (Blockly.FieldDropdown.prototype as any)._originalShowEditor = (Blockly.FieldDropdown.prototype as any).showEditor_;
+                        (Blockly.FieldDropdown.prototype as any).showEditor_ = function (this: Blockly.FieldDropdown, opt_e: any) {
+                            const block = this.getSourceBlock();
+                            if (block) {
+                                const color = block.getColour();
+                                document.documentElement.style.setProperty('--blockly-menu-highlight-color', color);
+                                // Add a subtle tint for the background (10% opacity)
+                                const tint = color.startsWith('#') ? `${color}1A` : 'rgba(0,0,0,0.05)';
+                                document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
+                            }
+                            (this as any)._originalShowEditor(opt_e);
+                        };
                     }
 
                     // Auto-open toolbox on load/mode switch
@@ -1166,6 +1135,18 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                     workspaceRef.current.addChangeListener(handleWorkspaceChange);
 
+                    // Add click listener to the workspace to handle blurring inputs
+                    workspaceRef.current.addChangeListener((event: any) => {
+                        if (event.type === Blockly.Events.UI && event.element === 'click') {
+                            // If a user clicks anywhere on the workspace, blur any active HTML inputs
+                            // This fixes the issue where Blockly text inputs stay focused when clicking away
+                            const activeElement = document.activeElement;
+                            if (activeElement && activeElement.classList.contains('blocklyHtmlInput')) {
+                                (activeElement as HTMLElement).blur();
+                            }
+                        }
+                    });
+
                     // Restore the selected sprite's blocks after workspace re-initialization
                     if (selectedSpriteId) {
                         const savedJson = spriteWorkspacesRef.current.get(selectedSpriteId);
@@ -1181,7 +1162,8 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
             return () => clearTimeout(timer);
         }
-    }, [appMode, editorMode, getCurrentToolbox, handleWorkspaceChange, addLog]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [appMode, editorMode, selectedBoard]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // RENDER
@@ -1578,6 +1560,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     type="text"
                                     value={promptInput}
                                     onChange={(e) => setPromptInput(e.target.value)}
+                                    onBlur={() => {
+                                        // Slight delay so if they clicked Submit it still registers
+                                        setTimeout(handlePromptCancel, 100);
+                                    }}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') handlePromptSubmit();
                                         if (e.key === 'Escape') handlePromptCancel();
@@ -1695,6 +1681,42 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                     const id = `sprite_${Date.now()}`;
                     const newSprite = new Sprite(id, entry.name, triggerUpdate, 'cat');
+
+                    // Predefined spread-out positions across the stage
+                    const spreadPositions = [
+                        { x: 120, y: 0 },      // Right area
+                        { x: -120, y: 0 },     // Left area
+                        { x: 0, y: 80 },       // Top center
+                        { x: 0, y: -80 },      // Bottom center
+                        { x: -160, y: 100 },   // Top-left
+                        { x: 160, y: 100 },    // Top-right
+                        { x: -160, y: -100 },  // Bottom-left
+                        { x: 160, y: -100 },   // Bottom-right
+                    ];
+
+                    const MIN_DIST = 80;
+                    let assigned = false;
+                    for (const pos of spreadPositions) {
+                        const tooClose = sprites.some(s => {
+                            const dx = Math.abs(s.x - pos.x);
+                            const dy = Math.abs(s.y - pos.y);
+                            return dx < MIN_DIST && dy < MIN_DIST;
+                        });
+                        if (!tooClose) {
+                            newSprite.setX(pos.x);
+                            newSprite.setY(pos.y);
+                            assigned = true;
+                            break;
+                        }
+                    }
+                    if (!assigned) {
+                        // Generate a small random offset explicitly close to the center 
+                        // instead of completely scattering them across the stage
+                        const offsetX = Math.floor(Math.random() * 60) - 30;
+                        const offsetY = Math.floor(Math.random() * 60) - 30;
+                        newSprite.setX(offsetX);
+                        newSprite.setY(offsetY);
+                    }
 
                     // If the sprite has an image, use it as the costume
                     if (entry.image) {

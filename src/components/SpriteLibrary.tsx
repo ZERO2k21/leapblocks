@@ -256,8 +256,8 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
     };
 
     return (
-        <div style={styles.overlay}>
-            <div style={styles.modal}>
+        <div style={styles.overlay} onClick={onClose}>
+            <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
                 <div style={styles.header}>
                     <button style={styles.backButton} onClick={onClose}>

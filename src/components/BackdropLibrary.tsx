@@ -23,8 +23,8 @@ interface BackdropLibraryProps {
 
 export const BackdropLibrary: React.FC<BackdropLibraryProps> = ({ onSelect, onClose }) => {
     return (
-        <div style={styles.overlay}>
-            <div style={styles.modal}>
+        <div style={styles.overlay} onClick={onClose}>
+            <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
                 <div style={styles.header}>
                     <h2 style={styles.title}>Choose a Backdrop</h2>
                     <button style={styles.closeButton} onClick={onClose}>✕</button>
