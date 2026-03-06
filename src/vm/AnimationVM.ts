@@ -360,6 +360,27 @@ export class AnimationVM {
         vmLog.info('All scripts stopped');
     }
 
+    /**
+     * Stop all scripts running for a specific sprite.
+     * Useful for restarting a script stack on click.
+     */
+    stopSpriteScripts(spriteId: string): void {
+        const toStop: string[] = [];
+        for (const [id, controller] of this.runningScripts) {
+            if (id.startsWith(`${spriteId}-`)) {
+                toStop.push(id);
+            }
+        }
+        toStop.forEach(id => {
+            const controller = this.runningScripts.get(id);
+            if (controller) {
+                controller.abort();
+                this.runningScripts.delete(id);
+            }
+        });
+        this.checkAllFinished();
+    }
+
     pause(): void {
         if (!this.isRunning || this.isPaused) return;
         vmLog.info('pause() called');
@@ -386,7 +407,7 @@ export class AnimationVM {
     }
 
 
-    private async runScript(script: CompiledScript): Promise<void> {
+    public async runScript(script: CompiledScript): Promise<void> {
         const sprite = spriteManager.getSprite(script.spriteId);
         vmLog.info(`runScript started`, {
             spriteId: script.spriteId,

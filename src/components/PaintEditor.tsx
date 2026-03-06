@@ -197,19 +197,42 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
     const saveState = () => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        const json = JSON.stringify(canvas.toJSON());
-        setHistory(prev => [...prev.slice(0, historyIndex + 1), json]);
-        setHistoryIndex(prev => prev + 1);
+        try {
+            const json = JSON.stringify(canvas.toJSON());
+            if (json) {
+                setHistory(prev => {
+                    const newHistory = [...prev.slice(0, historyIndex + 1), json];
+                    // Limit history to 50 steps
+                    if (newHistory.length > 50) return newHistory.slice(newHistory.length - 50);
+                    return newHistory;
+                });
+                setHistoryIndex(prev => {
+                    const next = prev + 1;
+                    return next >= 50 ? 49 : next;
+                });
+            }
+        } catch (e) {
+            console.error('[PAINT] Failed to save state:', e);
+        }
     };
 
     const undo = () => {
         if (historyIndex > 0) {
             const canvas = canvasRef.current;
             const newIndex = historyIndex - 1;
-            canvas?.loadFromJSON(JSON.parse(history[newIndex]), () => {
-                canvas.renderAll();
-                setHistoryIndex(newIndex);
-            });
+            const state = history[newIndex];
+            if (!state || state === 'undefined') {
+                console.warn('[PAINT] Cannot undo: invalid state in history at index', newIndex);
+                return;
+            }
+            try {
+                canvas?.loadFromJSON(JSON.parse(state), () => {
+                    canvas.renderAll();
+                    setHistoryIndex(newIndex);
+                });
+            } catch (e) {
+                console.error('[PAINT] Undo failed:', e);
+            }
         }
     };
 
@@ -217,10 +240,16 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
         if (historyIndex < history.length - 1) {
             const canvas = canvasRef.current;
             const newIndex = historyIndex + 1;
-            canvas?.loadFromJSON(JSON.parse(history[newIndex]), () => {
-                canvas.renderAll();
-                setHistoryIndex(newIndex);
-            });
+            const state = history[newIndex];
+            if (!state || state === 'undefined') return;
+            try {
+                canvas?.loadFromJSON(JSON.parse(state), () => {
+                    canvas.renderAll();
+                    setHistoryIndex(newIndex);
+                });
+            } catch (e) {
+                console.error('[PAINT] Redo failed:', e);
+            }
         }
     };
 
@@ -304,12 +333,55 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
     const deleteActive = () => {
         const canvas = canvasRef.current;
         const activeObjects = canvas?.getActiveObjects();
-        if (activeObjects) {
+        if (activeObjects && activeObjects.length > 0) {
             canvas?.discardActiveObject();
             activeObjects.forEach((obj) => {
                 canvas?.remove(obj);
             });
             canvas?.renderAll();
+            saveState();
+        }
+    };
+
+    const clearBackground = async () => {
+        if (!activeImage || activeImage.includes('<svg')) {
+            alert('Background removal is only for PNG/JPG images.');
+            return;
+        }
+
+        try {
+            // Extract relative path from URL (similar to IntermediateApp)
+            const filePath = activeImage.split('?')[0]; // Remove cache buster
+            const relativePath = filePath.split('/assets/')[1];
+            if (!relativePath) {
+                alert('Could not resolve image path for background removal.');
+                return;
+            }
+
+            const fullRelativePath = `public/assets/${relativePath}`;
+            console.log('[PAINT] Removing background for:', fullRelativePath);
+
+            // @ts-ignore
+            const result = await window.electronAPI.removeBackground(fullRelativePath);
+
+            if (result.success) {
+                // Determine final path (JPEG -> PNG)
+                let finalPath = filePath;
+                if (filePath.toLowerCase().endsWith('.jpeg') || filePath.toLowerCase().endsWith('.jpg')) {
+                    finalPath = filePath.replace(/\.(jpeg|jpg)$/i, '.png');
+                }
+
+                const cacheBuster = `t=${Date.now()}`;
+                const newSrc = `${finalPath}?${cacheBuster}`;
+
+                console.log('[PAINT] Background removed, reloading:', newSrc);
+                setActiveImage(newSrc);
+            } else {
+                alert(`Failed to remove background: ${result.error}`);
+            }
+        } catch (e) {
+            console.error('[PAINT] Error removing background:', e);
+            alert('An error occurred during background removal.');
         }
     };
 
@@ -346,8 +418,8 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
                         <ToolIconButton active={activeTool === 'pencil'} onClick={() => setActiveTool('pencil')} icon={<Pen size={24} />} title="Pencil" />
                         <ToolIconButton active={activeTool === 'eraser'} onClick={() => setActiveTool('eraser')} icon={<Eraser size={24} />} title="Eraser" />
                         <ToolIconButton active={activeTool === 'bucket'} onClick={() => setActiveTool('bucket')} icon={<PaintBucket size={24} />} title="Fill" />
+                        <ToolIconButton active={false} onClick={clearBackground} icon={<div className="relative"><Camera size={24} /><div className="absolute -top-1 -right-1 bg-indigo-500 text-white text-[8px] rounded-full px-1 font-bold">BG</div></div>} title="Clear Background" />
                         <ToolIconButton active={false} onClick={() => { }} icon={<Type size={24} />} title="Text" />
-                        <ToolIconButton active={false} onClick={() => { }} icon={<Camera size={24} />} title="Camera" />
 
                         <div className="w-12 h-px bg-slate-200 my-2" />
 
