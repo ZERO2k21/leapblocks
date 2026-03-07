@@ -23,6 +23,7 @@ import UploadModal from './components/UploadModal';
 import { SpriteLibrary, SpriteEntry } from './components/SpriteLibrary';
 import WorkspaceControls from './components/WorkspaceControls';
 import WorkspaceTrash from './components/WorkspaceTrash';
+import UnsavedWarningModal from './junior/components/UnsavedWarningModal';
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Pen } from 'lucide-react';
 import './custom-toolbox';
 import { block } from 'blockly/core/tooltip';
@@ -155,6 +156,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [promptInput, setPromptInput] = useState('');
     const [variableType, setVariableType] = useState('Number'); // Number | String
     const [variableScope, setVariableScope] = useState('global'); // global | local
+
+    // Unsaved Changes Modal State
+    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+    const [pendingAction, setPendingAction] = useState<string | null>(null);
 
     useEffect(() => {
         Blockly.dialog.setPrompt((message, defaultValue, callback) => {
@@ -778,37 +783,40 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
     }, [sprites, addLog, triggerUpdate]);
 
-    const handleNewProject = useCallback(() => {
-        if (window.confirm('Are you sure you want to create a new project? All unsaved changes will be lost.')) {
-            setSprites([]);
-            setSelectedSpriteId(null);
-            setProjectName('Untitled');
-            spriteWorkspacesRef.current.clear();
-            if (workspaceRef.current) {
-                isLoadingWorkspaceRef.current = true;
-                Blockly.Events.disable();
-                workspaceRef.current.clear();
-                Blockly.Events.enable();
-                setTimeout(() => {
-                    isLoadingWorkspaceRef.current = false;
-                }, 50);
-            }
-            // Add a default robot sprite
-            const id = `sprite_${Date.now()}`;
-            const newSprite = new Sprite(id, 'Robot', triggerUpdate, 'robot');
-            newSprite.setX(0); // Center of Scratch-like stage
-            newSprite.setY(0);
-            newSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg').then(() => {
-                setSprites([newSprite]);
-                activeSpriteIdRef.current = id;
-                setSelectedSpriteId(id);
-                triggerUpdate();
-            });
-            addLog('New project created');
+    const executeNewProject = useCallback(() => {
+        setSprites([]);
+        setSelectedSpriteId(null);
+        setProjectName('Untitled');
+        spriteWorkspacesRef.current.clear();
+        if (workspaceRef.current) {
+            isLoadingWorkspaceRef.current = true;
+            Blockly.Events.disable();
+            workspaceRef.current.clear();
+            Blockly.Events.enable();
+            setTimeout(() => {
+                isLoadingWorkspaceRef.current = false;
+            }, 50);
         }
-    }, [triggerUpdate]);
+        // Add a default robot sprite
+        const id = `sprite_${Date.now()}`;
+        const newSprite = new Sprite(id, 'Robot', triggerUpdate, 'robot');
+        newSprite.setX(0); // Center of Scratch-like stage
+        newSprite.setY(0);
+        newSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg').then(() => {
+            setSprites([newSprite]);
+            activeSpriteIdRef.current = id;
+            setSelectedSpriteId(id);
+            triggerUpdate();
+        });
+        addLog('New project created');
+    }, [triggerUpdate, addLog]);
 
-    const handleSaveProject = useCallback(() => {
+    const handleNewProject = useCallback(() => {
+        setPendingAction('new');
+        setShowUnsavedModal(true);
+    }, []);
+
+    const handleSaveProject = useCallback((isSilent = false) => {
         // 1. Force save of current workspace if it's active
         const activeId = activeSpriteIdRef.current;
         if (workspaceRef.current && activeId) {
@@ -864,12 +872,12 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
         addLog(`Project saved: ${projectName}`);
-    }, [projectName, sprites, saveCurrentSpriteWorkspace]);
+    }, [projectName, sprites, saveCurrentSpriteWorkspace, addLog]);
 
-    const handleOpenProject = useCallback(() => {
+    const executeOpenProject = useCallback(() => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.leap,application/json';
+        input.accept = '.leap,.lbproject,application/json';
         input.onchange = (e) => {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (!file) return;
@@ -878,7 +886,15 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             reader.onload = async (event) => {
                 try {
                     const data = JSON.parse(event.target?.result as string);
-                    if (!data.sprites || !data.workspaces) throw new Error('Invalid project file');
+                    // Standard intermediate project format validation
+                    if (!data.sprites || !data.workspaces) {
+                        // Attempt fallback to see if it's a junior .lbproject with scenes
+                        if (data.scenes && data.mode === 'junior') {
+                            throw new Error('This appears to be a Junior Mode project. Please open it in the Junior Stage.');
+                        } else {
+                            throw new Error('Invalid project file');
+                        }
+                    }
 
                     addLog(`Loading project: ${data.projectName || 'Untitled'}`);
 
@@ -937,15 +953,36 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         triggerUpdate();
                         addLog('Project loaded successfully (Empty)');
                     }
-                } catch (err) {
+                } catch (err: any) {
                     console.error('Failed to load project:', err);
-                    alert('Failed to load project file');
+                    alert(`Failed to load project file: ${err.message}`);
                 }
             };
             reader.readAsText(file);
         };
         input.click();
-    }, [triggerUpdate, sprites, loadSpriteWorkspace]);
+    }, [triggerUpdate, sprites, loadSpriteWorkspace, addLog]);
+
+    const handleOpenProject = useCallback(() => {
+        setPendingAction('open');
+        setShowUnsavedModal(true);
+    }, []);
+
+    const confirmUnsavedAction = useCallback((saveFirst: boolean) => {
+        setShowUnsavedModal(false);
+        if (saveFirst) {
+            handleSaveProject(true);
+            setTimeout(() => {
+                if (pendingAction === 'new') executeNewProject();
+                if (pendingAction === 'open') executeOpenProject();
+                setPendingAction(null);
+            }, 500);
+        } else {
+            if (pendingAction === 'new') executeNewProject();
+            if (pendingAction === 'open') executeOpenProject();
+            setPendingAction(null);
+        }
+    }, [pendingAction, handleSaveProject, executeNewProject, executeOpenProject]);
 
     const deleteSprite = useCallback((id: string) => {
         animationVM.unregisterSprite(id);
@@ -1825,6 +1862,16 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     if (action === 'open') handleOpenProject();
                 }}
                 onEditAction={(action: string) => addLog(`Edit action: ${action}`)}
+            />
+
+            <UnsavedWarningModal
+                isOpen={showUnsavedModal}
+                onYes={() => confirmUnsavedAction(true)}
+                onNo={() => confirmUnsavedAction(false)}
+                onCancel={() => {
+                    setShowUnsavedModal(false);
+                    setPendingAction(null);
+                }}
             />
 
             {/* Main Content */}

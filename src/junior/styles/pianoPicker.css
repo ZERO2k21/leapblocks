@@ -1,0 +1,132 @@
+.piano-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9005;
+}
+
+.piano-container {
+    background: #CF63CF;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    user-select: none;
+    min-width: 320px;
+}
+
+.piano-arrow-up {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid #CF63CF;
+}
+
+.piano-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    padding: 4px 10px;
+}
+
+.octave-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0;
+}
+
+.octave-display {
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.piano-keyboard {
+    background: white;
+    border-radius: 6px;
+    display: flex;
+    padding: 4px;
+    position: relative;
+    height: 120px;
+}
+
+.piano-key {
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.1s;
+}
+
+.piano-key.white {
+    width: 40px;
+    height: 100%;
+    background: white;
+    border: 1px solid #ddd;
+    margin-right: 2px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 10px;
+    z-index: 1;
+}
+
+.piano-key.white:last-child {
+    margin-right: 0;
+}
+
+.piano-key.white.selected {
+    background: #B3E5FC;
+}
+
+.piano-key.black {
+    width: 24px;
+    height: 65px;
+    background: #333;
+    position: absolute;
+    z-index: 2;
+    margin-left: -13px;
+    /* Shift to sit between whites */
+}
+
+/* Positioning for black keys */
+.piano-key.black:nth-of-type(2) {
+    left: 45px;
+}
+
+.piano-key.black:nth-of-type(4) {
+    left: 87px;
+}
+
+.piano-key.black:nth-of-type(7) {
+    left: 171px;
+}
+
+.piano-key.black:nth-of-type(9) {
+    left: 213px;
+}
+
+.piano-key.black:nth-of-type(11) {
+    left: 255px;
+}
+
+.piano-key.black.selected {
+    background: #03A9F4;
+}
+
+.key-label {
+    color: #666;
+    font-weight: bold;
+    font-size: 16px;
+}
