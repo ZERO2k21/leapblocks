@@ -3,11 +3,15 @@ import { stageManager } from "../engine/StageManager";
 import { ActionMenu } from "./ActionMenu";
 
 interface StagePanelProps {
+    isSelected: boolean;
+    onSelect: () => void;
     onOpenLibrary: () => void;
     onOpenEditor: () => void;
 }
 
 export const StagePanel: React.FC<StagePanelProps> = ({
+    isSelected,
+    onSelect,
     onOpenLibrary,
     onOpenEditor,
 }) => {
@@ -27,8 +31,16 @@ export const StagePanel: React.FC<StagePanelProps> = ({
 
             {/* Thumbnail Card */}
             <div
-                style={styles.thumbnailCard}
-                onClick={onOpenEditor}
+                style={{
+                    ...styles.thumbnailCard,
+                    ...(isSelected ? styles.thumbnailSelected : {})
+                }}
+                onClick={() => {
+                    onSelect();
+                    // Don't auto-open editor here, just select. 
+                    // But PictoBlox opens it if already on that tab or similar.
+                    // For now, let's just select.
+                }}
                 title="Manage backdrops"
             >
                 <div style={styles.preview}>
@@ -55,7 +67,7 @@ export const StagePanel: React.FC<StagePanelProps> = ({
                 <ActionMenu
                     mainIcon="🖼️"
                     color="#855CD6" // Purple matching Stage Panel button
-                    tooltipLabel="Choose a Backdrop"    
+                    tooltipLabel="Choose a Backdrop"
                     actions={[
                         {
                             id: 'upload',
@@ -126,8 +138,8 @@ export const StagePanel: React.FC<StagePanelProps> = ({
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: {
-        width: '96px',
-        backgroundColor: '#F9F9F9',
+        width: '100px',
+        backgroundColor: '#EDF1F7', // PictoBlox style light blue-gray
         borderRadius: '8px',
         border: '1px solid #d9d9d9',
         display: 'flex',
@@ -135,25 +147,33 @@ const styles: { [key: string]: React.CSSProperties } = {
         alignItems: 'center',
         padding: '8px',
         position: 'relative',
-        height: '240px', // Match SpritePanel's approximate list height if needed or allow it to be flex
+        minHeight: '260px',
     },
     header: {
         width: "100%",
         display: "flex",
         justifyContent: "flex-start",
-        marginBottom: "8px",
+        marginBottom: "6px",
         paddingLeft: "4px",
     },
     thumbnailCard: {
         width: "100%",
         height: "70px",
         backgroundColor: "#fff",
-        border: "2px solid #4C97FF", // Similar to selected sprite in Scratch
+        border: "2px solid #d9d9d9",
         borderRadius: "8px",
-        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "space-between",
         cursor: "pointer",
-        boxShadow: "0 0 0 2px rgba(76, 151, 255, 0.2)",
+        overflow: "hidden",
+        position: "relative",
         marginBottom: "8px",
+    },
+    thumbnailSelected: {
+        border: "2px solid #855CD6",
+        boxShadow: "0 0 0 2px rgba(133, 92, 214, 0.2)",
     },
     preview: {
         width: "100%",

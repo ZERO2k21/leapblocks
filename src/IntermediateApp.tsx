@@ -23,7 +23,7 @@ import UploadModal from './components/UploadModal';
 import { SpriteLibrary, SpriteEntry } from './components/SpriteLibrary';
 import WorkspaceControls from './components/WorkspaceControls';
 import WorkspaceTrash from './components/WorkspaceTrash';
-import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Pen } from 'lucide-react';
+import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
 import './custom-toolbox';
 import { block } from 'blockly/core/tooltip';
 
@@ -1040,7 +1040,19 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         hardwareAdapter.stopAllPolling();
         addLog('Stopped animation');
-    }, [addLog, sprites]);
+    }, [sprites, workspaceRef, addLog]);
+
+    const handleUndo = useCallback(() => {
+        if (workspaceRef.current) {
+            workspaceRef.current.undo(false);
+        }
+    }, []);
+
+    const handleRedo = useCallback(() => {
+        if (workspaceRef.current) {
+            workspaceRef.current.undo(true);
+        }
+    }, []);
 
     // ═══════════════════════════════════════════════════════════════════════
     // HARDWARE CONTROLS
@@ -1827,41 +1839,92 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 onEditAction={(action: string) => addLog(`Edit action: ${action}`)}
             />
 
+            {/* Unified Toolbar - Tabs on left, Stage controls on right */}
+            {appMode === 'blocks' && editorMode === 'stage' && (
+                <div style={styles.unifiedToolbar}>
+                    {/* Left: Workspace Tabs */}
+                    <div style={{ display: 'flex', height: '100%', alignItems: 'flex-end', paddingLeft: '20px', flex: 1 }}>
+                        <button
+                            style={workspaceTab === 'blocks' ? styles.tabActive : styles.tab}
+                            onClick={() => handleWorkspaceTabChange('blocks')}
+                        >
+                            <LayoutTemplate size={18} color={workspaceTab === 'blocks' ? '#855CD6' : '#999'} /> Blocks
+                        </button>
+                        <button
+                            style={workspaceTab === 'python' ? styles.tabActive : styles.tab}
+                            onClick={() => handleWorkspaceTabChange('python')}
+                        >
+                            <Terminal size={18} color={workspaceTab === 'python' ? '#855CD6' : '#999'} /> Python
+                        </button>
+                        <div style={{ width: '1px', height: '20px', background: '#ddd', margin: '0 8px 10px 8px' }} />
+                        <button
+                            style={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
+                            onClick={() => handleWorkspaceTabChange('costumes')}
+                        >
+                            <Pen size={18} color={workspaceTab === 'costumes' ? '#855CD6' : '#999'} /> {selectedSpriteId === 'stage' ? 'Backdrops' : 'Costumes'}
+                        </button>
+                        <button
+                            style={workspaceTab === 'sounds' ? styles.tabActive : styles.tab}
+                            onClick={() => handleWorkspaceTabChange('sounds')}
+                        >
+                            <Volume2 size={18} color={workspaceTab === 'sounds' ? '#855CD6' : '#999'} /> Sounds
+                        </button>
+                    </div>
+
+                    {/* Middle: Undo/Redo Controls */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '16px', borderRight: '1px solid #ddd', height: '100%', paddingLeft: '16px' }}>
+                        <button style={styles.undoRedoBtn} onClick={handleUndo} title="Undo">
+                            <Undo2 size={18} color="#575E75" />
+                        </button>
+                        <button style={styles.undoRedoBtn} onClick={handleRedo} title="Redo">
+                            <Redo2 size={18} color="#575E75" />
+                        </button>
+                    </div>
+
+                    {/* Right: Stage Controls */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '12px', paddingLeft: '12px' }}>
+                        <div style={styles.actionButtons}>
+                            <button style={styles.runButtonTop} onClick={handleRunClick} title="Run">
+                                <svg viewBox="0 0 24 24" width="22" height="22"><path fill="#4CBB17" d="M5 3v18M19 8l-14-5v10l14 5V8z" stroke="#4CBB17" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+                            </button>
+                            <button style={styles.stopButtonTop} onClick={handleStopClick} title="Stop">
+                                <svg viewBox="0 0 24 24" width="22" height="22"><polygon fill="#EC5959" points="7.3,2 16.7,2 22,7.3 22,16.7 16.7,22 7.3,22 2,16.7 2,7.3" /></svg>
+                            </button>
+                        </div>
+
+                        <button
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'white', color: '#575E75', border: '1px solid #D9D9D9', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '11px' }}
+                            onClick={() => alert("Upload Firmware (Coming Soon)")}
+                            title="Upload Firmware"
+                        >
+                            <Upload size={14} color="#855CD6" /> Upload Firmware
+                        </button>
+
+                        <div style={{ width: '1px', height: '22px', background: '#d9d9d9' }} />
+
+                        <button style={{ ...styles.iconBtn, ...(isCameraOn ? styles.iconBtnActive : {}) }} onClick={() => setIsCameraOn(!isCameraOn)} title="Toggle Camera">
+                            {isCameraOn ? <Camera size={18} /> : <CameraOff size={18} />}
+                        </button>
+                        <button style={{ ...styles.iconBtn, ...(showGrid ? styles.iconBtnActive : {}) }} onClick={() => setShowGrid(!showGrid)} title="Toggle Grid">
+                            <Grid3X3 size={18} />
+                        </button>
+                        <button style={{ ...styles.iconBtn, ...(stageLayout === 'small' ? styles.iconBtnActive : {}) }} onClick={() => setStageLayout('small')} title="Small Stage">
+                            <LayoutTemplate size={18} />
+                        </button>
+                        <button style={{ ...styles.iconBtn, ...(stageLayout === 'large' ? styles.iconBtnActive : {}) }} onClick={() => setStageLayout('large')} title="Large Stage">
+                            <LayoutPanelLeft size={18} />
+                        </button>
+                        <button style={{ ...styles.iconBtn, ...(isFullscreen ? styles.iconBtnActive : {}) }} onClick={() => setIsFullscreen(!isFullscreen)} title="Fullscreen">
+                            {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Main Content */}
             <div style={styles.main}>
-                {/* Blockly Workspace with Tabs */}
+                {/* Blockly Workspace */}
                 <div style={styles.workspaceContainer}>
-                    {/* PictoBlox-style tabs - ONLY in Stage Mode */}
-                    {appMode === 'blocks' && editorMode === 'stage' && (
-                        <div style={styles.tabBar}>
-                            <div style={{ display: 'flex', height: '100%' }}>
-                                <button
-                                    style={workspaceTab === 'blocks' ? styles.tabActive : styles.tab}
-                                    onClick={() => handleWorkspaceTabChange('blocks')}
-                                >
-                                    <LayoutTemplate size={18} color={workspaceTab === 'blocks' ? '#855CD6' : '#999'} /> Blocks
-                                </button>
-                                <button
-                                    style={workspaceTab === 'python' ? styles.tabActive : styles.tab}
-                                    onClick={() => handleWorkspaceTabChange('python')}
-                                >
-                                    <Grid3X3 size={18} color={workspaceTab === 'python' ? '#855CD6' : '#999'} /> Python
-                                </button>
-                                <button
-                                    style={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
-                                    onClick={() => handleWorkspaceTabChange('costumes')}
-                                >
-                                    <Pen size={18} color={workspaceTab === 'costumes' ? '#855CD6' : '#999'} /> Costumes
-                                </button>
-                                <button
-                                    style={workspaceTab === 'sounds' ? styles.tabActive : styles.tab}
-                                    onClick={() => handleWorkspaceTabChange('sounds')}
-                                >
-                                    <Flag size={18} color={workspaceTab === 'sounds' ? '#855CD6' : '#999'} /> Sounds
-                                </button>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Workspace content */}
                     {/* Show Blockly if:
@@ -1973,80 +2036,6 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             {/* Stage */}
                             {/* Stage */}
                             <div style={styles.stageContainer}>
-                                <div style={styles.iconBar}>
-                                    <div style={styles.actionButtons}>
-                                        <button
-                                            style={styles.runButtonTop}
-                                            onClick={handleRunClick}
-                                            title="Run"
-                                        >
-                                            <Flag size={22} fill="white" stroke="white" />
-                                        </button>
-                                        <button
-                                            style={styles.stopButtonTop}
-                                            onClick={handleStopClick}
-                                            title="Stop"
-                                        >
-                                            <Square size={20} fill="white" stroke="white" />
-                                        </button>
-                                    </div>
-
-                                    <div style={styles.layoutButtons}>
-                                        <button
-                                            style={{
-                                                display: 'flex', alignItems: 'center', gap: '6px',
-                                                background: 'white', color: '#575E75', border: '1px solid #D9D9D9',
-                                                padding: '6px 12px', borderRadius: '4px', cursor: 'pointer',
-                                                fontWeight: '600', fontSize: '12px', marginRight: '8px'
-                                            }}
-                                            onClick={() => alert("Upload Firmware (Coming Soon)")}
-                                            title="Upload Firmware"
-                                        >
-                                            <Upload size={16} color="#855CD6" /> Upload Firmware
-                                        </button>
-
-                                        <div style={{ width: '1px', height: '24px', background: '#d9d9d9', margin: '0 4px' }} />
-
-                                        <button
-                                            style={{ ...styles.iconBtn, ...(isCameraOn ? styles.iconBtnActive : {}) }}
-                                            onClick={() => setIsCameraOn(!isCameraOn)}
-                                            title="Toggle Camera"
-                                        >
-                                            {isCameraOn ? <Camera size={20} /> : <CameraOff size={20} />}
-                                        </button>
-
-                                        <button
-                                            style={{ ...styles.iconBtn, ...(showGrid ? styles.iconBtnActive : {}) }}
-                                            onClick={() => setShowGrid(!showGrid)}
-                                            title="Toggle Grid"
-                                        >
-                                            <Grid3X3 size={20} />
-                                        </button>
-
-                                        <button
-                                            style={{ ...styles.iconBtn, ...(stageLayout === 'small' ? styles.iconBtnActive : {}) }}
-                                            onClick={() => setStageLayout('small')}
-                                            title="Small Stage"
-                                        >
-                                            <LayoutTemplate size={20} />
-                                        </button>
-                                        <button
-                                            style={{ ...styles.iconBtn, ...(stageLayout === 'large' ? styles.iconBtnActive : {}) }}
-                                            onClick={() => setStageLayout('large')}
-                                            title="Large Stage"
-                                        >
-                                            <LayoutPanelLeft size={20} />
-                                        </button>
-
-                                        <button
-                                            style={{ ...styles.iconBtn, ...(isFullscreen ? styles.iconBtnActive : {}) }}
-                                            onClick={() => setIsFullscreen(!isFullscreen)}
-                                            title="Fullscreen"
-                                        >
-                                            {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-                                        </button>
-                                    </div>
-                                </div>
 
                                 <Stage
                                     width={480}
@@ -2071,8 +2060,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
                                 />
                                 <StagePanel
+                                    isSelected={selectedSpriteId === 'stage'}
+                                    onSelect={() => handleSpriteSelect('stage')}
                                     onOpenLibrary={() => setShowBackdropLibrary(true)}
-                                    onOpenEditor={() => setShowBackdropEditor(true)}
+                                    onOpenEditor={() => {
+                                        handleSpriteSelect('stage');
+                                        handleWorkspaceTabChange('costumes');
+                                    }}
                                 />
                             </div>
                         </>
@@ -2447,17 +2441,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     headerIcon: { cursor: 'pointer', opacity: 0.9, fontSize: '14px' },
 
-    iconBar: {
-        background: '#f5f5f5',
-        borderBottom: '1px solid #ddd',
+    unifiedToolbar: {
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 16px',
-        height: '40px',
+        alignItems: 'flex-end',
+        backgroundColor: '#fff',
+        borderBottom: '1px solid #ddd',
+        height: '44px',
+        padding: '0',
     },
-    actionButtons: { display: 'flex', gap: '12px', alignItems: 'center' },
-    layoutButtons: { display: 'flex', gap: '4px', alignItems: 'center' },
+    actionButtons: { display: 'flex', gap: '6px', alignItems: 'center' },
     iconBtn: {
         background: 'transparent',
         border: 'none',
@@ -2465,9 +2457,9 @@ const styles: { [key: string]: React.CSSProperties } = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '6px',
+        padding: '5px',
         borderRadius: '4px',
-        color: '#855CD6',
+        color: '#575E75',
         transition: 'background 0.2s',
         outline: 'none',
     },
@@ -2476,30 +2468,36 @@ const styles: { [key: string]: React.CSSProperties } = {
         color: '#855CD6'
     },
     runButtonTop: {
-        backgroundColor: '#2e7d32',
-        color: 'white',
+        backgroundColor: 'transparent',
         border: 'none',
-        borderRadius: '50%',
-        width: '32px',
-        height: '32px',
         cursor: 'pointer',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        padding: '4px',
     },
     stopButtonTop: {
-        backgroundColor: '#c62828',
-        color: 'white',
+        backgroundColor: 'transparent',
         border: 'none',
-        borderRadius: '50%',
-        width: '32px',
-        height: '32px',
         cursor: 'pointer',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        padding: '4px',
+    },
+    undoRedoBtn: {
+        backgroundColor: '#fff',
+        border: '1px solid #ddd',
+        borderRadius: '50%',
+        width: '32px',
+        height: '32px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        transition: 'all 0.2s',
+        outline: 'none',
     },
 
     main: { flex: 1, display: 'flex', overflow: 'hidden' },

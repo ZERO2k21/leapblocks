@@ -235,6 +235,8 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
         {/* Floating action button - inside list container so it stays within panel border */}
         <div style={styles.floatingAction}>
           <ActionMenu
+            mainIcon="🐱"
+            color="#855CD6"
             tooltipLabel="Choose a Sprite"
             actions={[
               {
@@ -283,12 +285,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     width: "376px",
   },
   propertyPanel: {
-    padding: "16px",
-    backgroundColor: "#fff",
+    padding: "12px 16px",
+    backgroundColor: "#EDF1F7", // PictoBlox style light blue-gray
     borderBottom: "1px solid #d9d9d9",
     display: "flex",
     flexDirection: "column",
-    gap: "16px",
+    gap: "12px",
   },
   propertyRow: {
     display: "flex",
@@ -320,27 +322,25 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   propertyInput: {
     minWidth: "0",
-    padding: "6px 12px",
+    padding: "4px 12px",
     border: "1px solid #d9d9d9",
-    borderRadius: "16px",
-    fontSize: "13px",
+    borderRadius: "12px",
+    fontSize: "12px",
     color: "#575E75",
     backgroundColor: "#fff",
     outline: "none",
     textAlign: "left",
-    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)",
   },
   numberInput: {
     width: "48px",
-    padding: "6px 4px",
+    padding: "4px 4px",
     border: "1px solid #d9d9d9",
-    borderRadius: "16px",
-    fontSize: "13px",
+    borderRadius: "12px",
+    fontSize: "12px",
     color: "#575E75",
     backgroundColor: "#fff",
     outline: "none",
     textAlign: "center",
-    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)",
   },
   toggleContainer: {
     display: "flex",
