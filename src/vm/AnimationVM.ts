@@ -114,6 +114,14 @@ export type ScriptStep = (
     | { type: 'list_replace'; list: string; index: () => number; item: () => string }
     | { type: 'list_show'; list: string }
     | { type: 'list_hide'; list: string }
+    // Pen
+    | { type: 'pen_clear' }
+    | { type: 'pen_stamp' }
+    | { type: 'pen_penDown' }
+    | { type: 'pen_penUp' }
+    | { type: 'pen_setPenColorToColor'; color: string }
+    | { type: 'pen_changePenSizeBy'; size: number }
+    | { type: 'pen_setPenSizeTo'; size: number }
 ) & { blockId?: string };
 
 // Logging utility for AnimationVM

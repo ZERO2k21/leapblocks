@@ -16,6 +16,7 @@ const COLORS = {
     variables: '#F97316',    // Alias
     list: '#F97316',         // Unified orange
     myblocks: '#EC4899',     // Pink - My Blocks
+    pen: '#00B1B0',          // Teal - Pen blocks (PictoBlox style)
 };
 
 export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
@@ -1387,6 +1388,76 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         tooltip: 'Call custom block',
         helpUrl: '',
     },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // PEN
+    // ═══════════════════════════════════════════════════════════════════════════
+    {
+        type: 'pen_clear',
+        message0: '🖌️ erase all',
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.pen,
+        tooltip: 'Clear all pen marks',
+        helpUrl: '',
+    },
+    {
+        type: 'pen_stamp',
+        message0: '🖼️ stamp',
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.pen,
+        tooltip: 'Stamp the sprite onto the background',
+        helpUrl: '',
+    },
+    {
+        type: 'pen_penDown',
+        message0: '🖋️ pen down',
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.pen,
+        tooltip: 'Start drawing with the pen',
+        helpUrl: '',
+    },
+    {
+        type: 'pen_penUp',
+        message0: '🖊️ pen up',
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.pen,
+        tooltip: 'Stop drawing with the pen',
+        helpUrl: '',
+    },
+    {
+        type: 'pen_setPenColorToColor',
+        message0: '🎨 set pen color to %1',
+        args0: [{ type: 'field_colour', name: 'COLOR', colour: '#4c97ff' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.pen,
+        tooltip: 'Set the pen color',
+        helpUrl: '',
+    },
+    {
+        type: 'pen_changePenSizeBy',
+        message0: '📏 change pen size by %1',
+        args0: [{ type: 'field_number', name: 'SIZE', value: 1 }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.pen,
+        tooltip: 'Change the pen thickness',
+        helpUrl: '',
+    },
+    {
+        type: 'pen_setPenSizeTo',
+        message0: '📏 set pen size to %1',
+        args0: [{ type: 'field_number', name: 'SIZE', value: 1 }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.pen,
+        tooltip: 'Set the pen thickness',
+        helpUrl: '',
+    }
 ]);
 
 // Animation Toolbox
@@ -1579,6 +1650,20 @@ export const animationToolbox = {
                 { kind: 'button', text: 'Make a Block', callbackKey: 'CREATE_PROCEDURE' },
                 { kind: 'block', type: 'procedures_definition' },
                 { kind: 'block', type: 'procedures_call' },
+            ],
+        },
+        {
+            kind: 'pictobloxCategory',
+            name: 'Pen',
+            colour: COLORS.pen,
+            contents: [
+                { kind: 'block', type: 'pen_clear' },
+                { kind: 'block', type: 'pen_stamp' },
+                { kind: 'block', type: 'pen_penDown' },
+                { kind: 'block', type: 'pen_penUp' },
+                { kind: 'block', type: 'pen_setPenColorToColor' },
+                { kind: 'block', type: 'pen_changePenSizeBy' },
+                { kind: 'block', type: 'pen_setPenSizeTo' },
             ],
         },
     ],
