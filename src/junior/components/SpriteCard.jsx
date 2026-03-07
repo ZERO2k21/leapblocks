@@ -95,7 +95,23 @@ export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }
                 {spriteImage || (typeof displayIcon === 'string' && displayIcon.includes('/')) ? (
                     <img src={spriteImage || displayIcon} alt={label} style={{ maxWidth: "76px", maxHeight: "76px", objectFit: "contain" }} />
                 ) : (
-                    <span style={{ fontSize: "48px" }}>{displayIcon}</span>
+                    <span style={{
+                        fontSize: (sprite.type?.startsWith('letter_') || sprite.id?.startsWith('letter_') || sprite.type?.startsWith('number_') || sprite.id?.startsWith('number_')) ? "56px" : "48px",
+                        fontWeight: "900",
+                        color: sprite.textColor || '#FF8C1A',
+                        fontFamily: (sprite.type?.startsWith('letter_') || sprite.id?.startsWith('letter_') || sprite.type?.startsWith('number_') || sprite.id?.startsWith('number_'))
+                            ? '"Arial Black", sans-serif'
+                            : 'inherit',
+                        WebkitTextStroke: (sprite.type?.startsWith('letter_') || sprite.id?.startsWith('letter_') || sprite.type?.startsWith('number_') || sprite.id?.startsWith('number_'))
+                            ? '2px black'
+                            : 'none',
+                        textShadow: (sprite.type?.startsWith('letter_') || sprite.id?.startsWith('letter_') || sprite.type?.startsWith('number_') || sprite.id?.startsWith('number_'))
+                            ? '4px 4px 0px rgba(0,0,0,1)'
+                            : 'none',
+                        lineHeight: 1,
+                    }}>
+                        {displayIcon}
+                    </span>
                 )}
             </div>
 

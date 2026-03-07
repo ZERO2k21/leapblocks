@@ -25,21 +25,21 @@ export default function defineSoundBlocks() {
     // --- PLAY SOUND (Dynamic Source) ---
     Blockly.Blocks["sound_play"] = {
         init: function () {
-            // Dynamic Dropdown options
             const optionsGenerator = function () {
                 if (typeof window !== 'undefined' && window.getActiveSpriteSounds) {
                     const dynamicOptions = window.getActiveSpriteSounds();
-                    if (dynamicOptions && dynamicOptions.length > 0) {
-                        return dynamicOptions;
-                    }
+                    if (dynamicOptions && dynamicOptions.length > 0) return dynamicOptions;
                 }
-                return [
-                    ["Pop", "pop"],
-                    ["Boing", "boing"],
-                    ["Clap", "clap"]
-                ];
+                return [["Pop", "pop"], ["Boing", "boing"], ["Clap", "clap"]];
             };
-            juniorSoundBase(this, "Play", optionsGenerator, "SOUND");
+
+            this.appendDummyInput()
+                .appendField("Play")
+                .appendField(new Blockly.FieldDropdown(optionsGenerator), "SOUND");
+
+            this.setPreviousStatement(true);
+            this.setNextStatement(true);
+            this.setColour("#CF63CF");
         }
     };
     javascriptGenerator.forBlock["sound_play"] = function (block) {
@@ -47,16 +47,17 @@ export default function defineSoundBlocks() {
         return `playSound("${sound}");\n`;
     };
 
-
     // --- PLAY MUSIC ---
     Blockly.Blocks["sound_play_music"] = {
         init: function () {
-            const options = [
-                ["Music 1", "music_1"],
-                ["Music 2", "music_2"],
-                ["Music 3", "music_3"]
-            ];
-            juniorSoundBase(this, "🎵 Play Music", options, "MUSIC");
+            const options = [["1", "music_1"], ["2", "music_2"], ["3", "music_3"]];
+            this.appendDummyInput()
+                .appendField("🎵 Play Music Music")
+                .appendField(new Blockly.FieldDropdown(options), "MUSIC");
+
+            this.setPreviousStatement(true);
+            this.setNextStatement(true);
+            this.setColour("#CF63CF");
         }
     };
     javascriptGenerator.forBlock["sound_play_music"] = function (block) {
@@ -67,34 +68,24 @@ export default function defineSoundBlocks() {
     // --- PLAY NOTE (Note + Octave) ---
     Blockly.Blocks["sound_note"] = {
         init: function () {
-            this.jsonInit({
-                "message0": "%1",
-                "args0": [
-                    {
-                        "type": "field_dropdown",
-                        "name": "NOTE",
-                        "options": [["C", "C"], ["D", "D"], ["E", "E"], ["F", "F"], ["G", "G"], ["A", "A"], ["B", "B"]]
-                    }
-                ],
-                "previousStatement": null,
-                "nextStatement": null,
-                "colour": "#CF63CF"
-            });
-            // We'll also store the octave as a hidden field or use a label field that updates.
-            // For now, let's keep it simple and add the Label as a dynamic field if possible, 
-            // but Blockly.FieldLabel with a function is easier.
+            this.appendDummyInput("SPACER")
+                .appendField(" "); // Add some vertical space if needed, 
+            // though CSS usually handles height.
 
             this.appendDummyInput("DISPLAY")
                 .appendField(new Blockly.FieldLabel("C(4)"), "PILL");
 
-            // Hide the actual dropdown in the UI if possible, or just use it as the data store.
-            // In Junior, we often use FieldLabel for display and hidden fields for data.
-            this.getField("NOTE").setVisible(false);
+            this.appendDummyInput()
+                .appendField(new Blockly.FieldDropdown([["C", "C"], ["D", "D"], ["E", "E"], ["F", "F"], ["G", "G"], ["A", "A"], ["B", "B"]]), "NOTE")
+                .setVisible(false);
 
-            // Add hidden OCTAVE field
             this.appendDummyInput()
                 .appendField(new Blockly.FieldTextInput("4"), "OCTAVE")
                 .setVisible(false);
+
+            this.setPreviousStatement(true);
+            this.setNextStatement(true);
+            this.setColour("#CF63CF");
         },
         onchange: function () {
             const note = this.getFieldValue("NOTE");
@@ -111,25 +102,19 @@ export default function defineSoundBlocks() {
     // --- SET INSTRUMENT ---
     Blockly.Blocks["sound_instrument"] = {
         init: function () {
-            this.jsonInit({
-                "message0": "%1",
-                "args0": [
-                    {
-                        "type": "field_dropdown",
-                        "name": "INSTRUMENT",
-                        "options": [
-                            ["🎹", "piano"],
-                            ["🎹", "organ"],
-                            ["🪈", "flute"],
-                            ["🎸", "guitar"],
-                            ["🎸", "electric_guitar"]
-                        ]
-                    }
-                ],
-                "previousStatement": null,
-                "nextStatement": null,
-                "colour": "#CF63CF"
-            });
+            const options = [
+                ["🎹", "piano"],
+                ["🎛️", "organ"],
+                ["🪈", "flute"],
+                ["🎸", "guitar"],
+                ["🎸", "electric_guitar"]
+            ];
+            this.appendDummyInput()
+                .appendField(new Blockly.FieldDropdown(options), "INSTRUMENT");
+
+            this.setPreviousStatement(true);
+            this.setNextStatement(true);
+            this.setColour("#CF63CF");
         }
     };
     javascriptGenerator.forBlock["sound_instrument"] = function (block) {
@@ -140,12 +125,12 @@ export default function defineSoundBlocks() {
     // --- STOP ALL SOUNDS ---
     Blockly.Blocks["sound_stop"] = {
         init: function () {
-            this.jsonInit({
-                "message0": "🔇 Stop",
-                "previousStatement": null,
-                "nextStatement": null,
-                "colour": "#CF63CF"
-            });
+            this.appendDummyInput()
+                .appendField("🔇 Stop");
+
+            this.setPreviousStatement(true);
+            this.setNextStatement(true);
+            this.setColour("#CF63CF");
         }
     };
     javascriptGenerator.forBlock["sound_stop"] = function (block) {

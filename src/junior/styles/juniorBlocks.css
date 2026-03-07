@@ -81,7 +81,7 @@ g[class*="blocklyNonEditableText"]>text {
 text.blocklyText.junior-block-icon,
 .blocklySvg text.junior-block-icon,
 .blocklyFlyout text.junior-block-icon {
-    font-size: 42px !important;
+    font-size: 48px !important;
     fill: white !important;
     font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif !important;
     dominant-baseline: middle !important;
@@ -91,7 +91,7 @@ text.blocklyText.junior-block-icon,
 text.blocklyText.junior-icon-large,
 .blocklySvg text.junior-icon-large,
 .blocklyFlyout text.junior-icon-large {
-    font-size: 38px !important;
+    font-size: 44px !important;
     fill: white !important;
     font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif !important;
 }
@@ -100,7 +100,7 @@ text.blocklyText.junior-icon-large,
 text.blocklyText.junior-icon,
 .blocklySvg text.junior-icon,
 .blocklyFlyout text.junior-icon {
-    font-size: 32px !important;
+    font-size: 38px !important;
     fill: white !important;
     font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif !important;
 }

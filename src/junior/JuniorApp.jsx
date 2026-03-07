@@ -356,8 +356,10 @@ export default function JuniorApp({ onBack }) {
         });
     };
 
-    const handlePaintSave = (imageData, svgData) => {
+    const handlePaintSave = (imageData, svgData, name) => {
         const savedData = svgData || imageData;
+        const costumeKey = name ? name.toLowerCase().replace(/\s+/g, '_') : 'custom';
+
         if (paintEditor.type === 'sprite') {
             setScenes(prev => prev.map(scene => {
                 if (scene.id !== currentSceneId) return scene;
@@ -369,9 +371,9 @@ export default function JuniorApp({ onBack }) {
                             ...sprite,
                             costumes: {
                                 ...sprite.costumes,
-                                custom: savedData
+                                [costumeKey]: savedData
                             },
-                            currentCostume: "custom"
+                            currentCostume: costumeKey
                         };
                     })
                 };
@@ -476,6 +478,7 @@ export default function JuniorApp({ onBack }) {
             mirrored: false,
             costumes: costumes,
             currentCostume: "default",
+            textColor: (spriteType.startsWith('letter_') || spriteType.startsWith('number_')) ? "#FF8C1A" : "#575E75",
             blocks: {}
         };
         setScenes(prev => prev.map(s => {
@@ -605,6 +608,12 @@ export default function JuniorApp({ onBack }) {
             window.animationSpeed = speedValues[speed] || 500;
         };
         window.animationSpeed = 500; // Default
+
+        // Set Sprite Color (Fill Color for 3D Sticker)
+        window.setSpriteColor = (color) => {
+            const id = window.activeSpriteId || activeSpriteId;
+            spriteActions.update(id, { textColor: color });
+        };
 
         // Reset Size
         window.resetSize = (id) => {
@@ -1880,6 +1889,7 @@ export default function JuniorApp({ onBack }) {
                                 costumes={sprite.costumes}
                                 speech={sprite.speech}
                                 mirrored={sprite.mirrored}
+                                textColor={sprite.textColor}
                                 onClick={() => handleSpriteClick(sprite.id)}
                                 onDragStateChange={(dragging) => setIsDraggingSpriteOnStage(dragging)}
                             />
@@ -2059,8 +2069,8 @@ function CategoryButton({ category, isActive, onClick }) {
             onClick={onClick}
             title={category.name}
             style={{
-                width: "46px",
-                height: "46px",
+                width: "54px",
+                height: "54px",
                 borderRadius: "50%",
                 background: isActive ? category.color : "white",
                 border: isActive ? "2px solid rgba(0,0,0,0.15)" : `2px solid ${category.color}`,
@@ -2076,7 +2086,7 @@ function CategoryButton({ category, isActive, onClick }) {
                 boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
             }}
         >
-            <div style={{ transform: isActive ? "scale(1.1)" : "scale(1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ transform: isActive ? "scale(1.2)" : "scale(1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {category.icon}
             </div>
         </button>

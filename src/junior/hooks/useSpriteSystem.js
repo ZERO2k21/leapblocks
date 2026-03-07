@@ -126,6 +126,7 @@ export function useSpriteSystem(initialScenes) {
                         currentCostume: "default",
                         speech: null,
                         mirrored: false,
+                        textColor: sprite.textColor || "#FF8C1A",
                         // x, y are PRESERVED — sprites stay where user placed them
                     }))
                 };
