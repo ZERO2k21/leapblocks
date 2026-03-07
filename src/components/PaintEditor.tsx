@@ -284,8 +284,8 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
 
     return (
         <div className="flex flex-1 w-full h-full bg-white select-none overflow-hidden font-sans border-t border-gray-100">
-            {/* 1. LEFT COSTUME SIDEBAR */}
-            <div className="w-[100px] border-r border-gray-200 flex flex-col bg-[#f0f0f0] overflow-hidden">
+            {/* 1. LEFT SIDEBAR (Costumes/Backdrops) */}
+            <div className="w-[100px] border-r border-gray-200 flex flex-col bg-[#EDF1F7] overflow-hidden">
                 <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-3 no-scrollbar">
                     {costumes.map((c, i) => (
                         <div key={c.id || i} className="relative group">
@@ -321,7 +321,7 @@ const PaintEditor: React.FC<PaintEditorProps> = ({
                 <div className="h-14 px-6 border-b border-gray-100 flex items-center bg-white">
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-gray-400">Costume</span>
+                            <span className="text-xs font-bold text-gray-400">{title === 'Backdrop Editor' ? 'Backdrop' : 'Costume'}</span>
                             <input
                                 type="text"
                                 value={costumeName}

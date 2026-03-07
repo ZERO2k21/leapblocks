@@ -1986,11 +1986,35 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     {editorMode === 'stage' && workspaceTab === 'costumes' && (
                         <div style={styles.costumesEditor}>
                             {(() => {
+                                if (selectedSpriteId === 'stage') {
+                                    return (
+                                        <PaintEditor
+                                            mode="intermediate"
+                                            title="Backdrop Editor"
+                                            spriteName="Stage"
+                                            initialImage={stageManager.getCurrentBackdrop()?.src || ''}
+                                            costumes={stageManager.getAllBackdrops().map((b, i) => ({
+                                                id: i.toString(),
+                                                name: b.name,
+                                                image: b.src
+                                            }))}
+                                            onSave={async (imageData: string, svgData?: string) => {
+                                                const savedData = svgData || imageData;
+                                                await stageManager.addBackdrop('custom', savedData);
+                                                stageManager.setBackdrop('custom');
+                                                addLog('Saved backdrop for Stage');
+                                            }}
+                                            onClose={() => handleWorkspaceTabChange('blocks')}
+                                        />
+                                    );
+                                }
+
                                 const selectedSprite = sprites.find(s => s.id === selectedSpriteId);
                                 if (selectedSprite) {
                                     return (
                                         <PaintEditor
                                             mode="intermediate"
+                                            title="Costume Editor"
                                             spriteName={selectedSprite.name}
                                             initialImage={selectedSprite.currentCostume?.image.src || ''}
                                             costumes={selectedSprite.costumes.map((c, i) => ({
@@ -2012,7 +2036,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     <div style={styles.costumePlaceholder}>
                                         <span style={{ fontSize: '48px' }}>🎨</span>
                                         <h3>No Sprite Selected</h3>
-                                        <p>Select a sprite from the panel to edit its costumes.</p>
+                                        <p>Select a sprite or stage from the panel to edit its costumes/backdrops.</p>
                                     </div>
                                 );
                             })()}
@@ -2030,22 +2054,42 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 </div>
 
                 {/* Right Panel */}
-                <div style={styles.rightPanel}>
+                <div style={{
+                    ...styles.rightPanel,
+                    width: stageLayout === 'small' ? '256px' : '496px',
+                    transition: 'width 0.2s ease-in-out',
+                }}>
                     {editorMode === 'stage' ? (
                         <>
                             {/* Stage */}
                             {/* Stage */}
-                            <div style={styles.stageContainer}>
-
-                                <Stage
-                                    width={480}
-                                    height={360}
-                                    sprites={sprites}
-                                    isRunning={isRunning}
-                                    showGridNumbers={showGrid}
-                                    onSpriteSelect={handleSpriteSelect}
-                                    isCameraOn={isCameraOn}
-                                />
+                            <div style={{
+                                ...styles.stageContainer,
+                                width: stageLayout === 'small' ? '240px' : '480px',
+                                height: stageLayout === 'small' ? '180px' : '360px',
+                                transition: 'all 0.2s ease-in-out',
+                                position: 'relative',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: '#fff',
+                            }}>
+                                <div style={{
+                                    transform: stageLayout === 'small' ? 'scale(0.5)' : 'scale(1)',
+                                    transformOrigin: 'top left',
+                                    width: '480px',
+                                    height: '360px',
+                                }}>
+                                    <Stage
+                                        width={480}
+                                        height={360}
+                                        sprites={sprites}
+                                        isRunning={isRunning}
+                                        showGridNumbers={showGrid}
+                                        onSpriteSelect={handleSpriteSelect}
+                                        isCameraOn={isCameraOn}
+                                    />
+                                </div>
                             </div>
 
                             {/* Sprite & Stage Panels */}
