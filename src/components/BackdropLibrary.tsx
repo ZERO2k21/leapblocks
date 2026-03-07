@@ -7,13 +7,14 @@ interface BackdropAsset {
 }
 
 const DEFAULT_BACKDROPS: BackdropAsset[] = [
-    { name: 'Arctic', src: '/assets/backdrops/arctic.png', color: '#E0F7FA' },
-    { name: 'Beach', src: '/assets/backdrops/beach.png', color: '#FFF9C4' },
-    { name: 'City', src: '/assets/backdrops/city.png', color: '#CFD8DC' },
-    { name: 'Maze', src: '/assets/backdrops/maze.png', color: '#E1BEE7' },
-    { name: 'Park', src: '/assets/backdrops/park.png', color: '#B2EBF2' },
-    { name: 'Space', src: '/assets/backdrops/space.png', color: '#CFD8DC' },
-    { name: 'Underwater', src: '/assets/backdrops/underwater.png', color: '#FFF9C4' },
+    { name: 'Arctic', src: '/assets/backdrops/Artic.png', color: '#E0F7FA' },
+    { name: 'Beach', src: '/assets/backdrops/Beach.png', color: '#FFF9C4' },
+    { name: 'Castle', src: '/assets/backdrops/Castle.png', color: '#EDF1F7' },
+    { name: 'City', src: '/assets/backdrops/city.svg', color: '#CFD8DC' },
+    { name: 'Maze', src: '/assets/backdrops/maze.svg', color: '#E1BEE7' },
+    { name: 'Park', src: '/assets/backdrops/park.svg', color: '#B2EBF2' },
+    { name: 'Space', src: '/assets/backdrops/Space.png', color: '#CFD8DC' },
+    { name: 'Underwater', src: '/assets/backdrops/underwater.svg', color: '#FFF9C4' },
 ];
 
 interface BackdropLibraryProps {

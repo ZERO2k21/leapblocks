@@ -58,8 +58,11 @@ const SPRITE_CATALOG: SpriteEntry[] = [
         costumes: [
             '/assets/sprites/robot/robot_idle.svg',
             '/assets/sprites/robot/robot_talk.png',
+            '/assets/sprites/robot/robot_talk1.svg',
             '/assets/sprites/robot/robot_wave1.png',
-            '/assets/sprites/robot/robot_wave2.png'
+            '/assets/sprites/robot/robot_wave1.svg',
+            '/assets/sprites/robot/robot_wave2.png',
+            '/assets/sprites/robot/robot_wave2.svg'
         ],
         category: 'Fantasy'
     },

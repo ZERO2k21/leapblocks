@@ -2351,29 +2351,40 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         newSprite.setY(offsetY);
                     }
 
-                    // If the sprite has an image, use it as the costume
-                    if (entry.image) {
-                        newSprite.addCostume(entry.name, entry.image).then(() => {
-                            newSprite.switchCostume(entry.name);
-                        });
-                    } else {
+                    // If the sprite has an image or costumes, use them
+                    const costumesToLoad = entry.costumes && entry.costumes.length > 0
+                        ? entry.costumes
+                        : (entry.image ? [entry.image] : []);
+
+                    if (costumesToLoad.length > 0) {
+                        // Load all costumes sequentially to maintain order and wait for completion
+                        (async () => {
+                            for (let i = 0; i < costumesToLoad.length; i++) {
+                                const costumeSrc = costumesToLoad[i];
+                                const costumeName = i === 0 ? entry.name : `${entry.name} ${i + 1}`;
+                                await newSprite.addCostume(costumeName, costumeSrc);
+                            }
+                            // Set initial costume
+                            newSprite.switchCostume(0);
+                            triggerUpdate();
+                        })();
+                    } else if (entry.emoji) {
                         // Create costume from emoji by drawing on canvas
                         const canvas = document.createElement('canvas');
-                        canvas.width = 100;
-                        canvas.height = 100;
+                        canvas.width = 200;
+                        canvas.height = 200;
                         const ctx = canvas.getContext('2d');
                         if (ctx) {
-                            ctx.font = '72px serif';
+                            ctx.font = '120px Arial';
                             ctx.textAlign = 'center';
                             ctx.textBaseline = 'middle';
-                            ctx.fillText(entry.emoji, 50, 55);
+                            ctx.fillText(entry.emoji, 100, 100);
+                            newSprite.addCostume(entry.name, canvas.toDataURL()).then(() => {
+                                newSprite.switchCostume(entry.name);
+                                triggerUpdate();
+                            });
                         }
-                        const dataUrl = canvas.toDataURL();
-                        newSprite.addCostume(entry.name, dataUrl).then(() => {
-                            newSprite.switchCostume(entry.name);
-                        });
                     }
-
                     animationVM.registerSprite(newSprite);
                     setSprites(prev => [...prev, newSprite]);
 
