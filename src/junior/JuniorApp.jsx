@@ -23,6 +23,8 @@ import { previewActions } from "./engine/previewActions"; // Import Preview Acti
 import { looksPreview } from "./engine/looksPreview"; // Import Looks Preview
 import PositionPicker from "./components/PositionPicker"; // Import Picker Component
 import DirectionPicker from "./components/DirectionPicker"; // Import Direction Picker
+import InstrumentPicker from "./components/InstrumentPicker"; // Import Instrument Picker
+import PianoPicker from "./components/PianoPicker"; // Import Piano Picker
 import PaintEditor from "../components/PaintEditor";
 import { SpriteLibrary } from "../components/SpriteLibrary";
 import WorkspaceControls from "../components/WorkspaceControls";
@@ -96,11 +98,11 @@ const categoryContents = {
     ],
     sound: [
         { kind: "block", type: "sound_play" },
+        { kind: "button", text: "🎤", callbackKey: "RECORD_SOUND" },
         { kind: "block", type: "sound_play_music" },
-        { kind: "block", type: "sound_stop_music" },
         { kind: "block", type: "sound_instrument" },
         { kind: "block", type: "sound_note" },
-        { kind: "block", type: "sound_stop_all" }
+        { kind: "block", type: "sound_stop" }
     ],
     pen: [
         { kind: "block", type: "pen_down" },
@@ -135,10 +137,21 @@ import { useSpriteSystem } from "./hooks/useSpriteSystem";
 import { getLessonConfig } from "./engine/LessonConfig";
 import { GoalManager } from "./engine/GoalManager";
 import { HintManager } from "./engine/HintManager";
-import { soundManager } from "./engine/SoundManager";
+import { AudioEngine } from "../scratch-audio/src/AudioEngine";
+import { Scratch3SoundBlocks } from "../scratch-vm/src/extensions/scratch3_sound/index.js";
+import { Scratch3MusicBlocks } from "../scratch-vm/src/extensions/scratch3_music/index.js";
 import { WorkspaceValidator } from "./engine/WorkspaceValidator";
 
+// Initialize the Audio Environment natively
+const audioEngine = new AudioEngine();
+const runtimeShim = { audioEngine };
+const soundBlocksExt = new Scratch3SoundBlocks(runtimeShim);
+const musicBlocksExt = new Scratch3MusicBlocks(runtimeShim);
+
+
 import SuccessModal from "./components/SuccessModal"; // Import Modal
+import UnsavedWarningModal from "./components/UnsavedWarningModal";
+import JuniorSoundRecorder from "./components/JuniorSoundRecorder";
 
 export default function JuniorApp({ onBack }) {
     const workspaceRef = useRef(null); // Stores the Blockly Workspace Instance
@@ -160,6 +173,8 @@ export default function JuniorApp({ onBack }) {
     const [isCameraOn, setIsCameraOn] = useState(false);
 
     // Recording State
+    const [isSoundRecorderOpen, setIsSoundRecorderOpen] = useState(false);
+    // (Legacy recording state left for reference, though replaced by modal)
     const [isRecording, setIsRecording] = useState(false);
     const [recordingCount, setRecordingCount] = useState(1);
 
@@ -174,10 +189,17 @@ export default function JuniorApp({ onBack }) {
     const [appMode, setAppMode] = useState("stage"); // "stage" | "upload"
     const [isBoardModalOpen, setIsBoardModalOpen] = useState(false);
 
+    // Unsaved Changes Modal State
+    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+    const [pendingAction, setPendingAction] = useState(null); // 'new' or 'open'
+
     // UI State for Pickers
     const [showPicker, setShowPicker] = useState(false);
     const [pickerCallback, setPickerCallback] = useState(null);
     const [showDirPicker, setShowDirPicker] = useState(false);
+    const [showInstPicker, setShowInstPicker] = useState(false);
+    const [showPianoPicker, setShowPianoPicker] = useState(false);
+    const [pickerPos, setPickerPos] = useState(null);
     const [activeBlock, setActiveBlock] = useState(null);
     const timeoutRefs = useRef({}); // Store timeouts for speech bubbles
 
@@ -203,7 +225,7 @@ export default function JuniorApp({ onBack }) {
             sprites: [
                 {
                     id: "robot_default", name: "Robot", type: "robot",
-                    x: 200, y: 150, angle: 0, size: 100, visible: true, mirrored: false, speech: null,
+                    x: 200, y: 150, angle: 0, size: 150, visible: true, mirrored: false, speech: null,
                     costumes: {
                         default: robotIdle,
                         wave1: robotWave1,
@@ -265,30 +287,6 @@ export default function JuniorApp({ onBack }) {
     const [isSpriteModalOpen, setIsSpriteModalOpen] = useState(false);
     const [isBackdropChooserOpen, setIsBackdropChooserOpen] = useState(false);
     const [backdropEditSceneId, setBackdropEditSceneId] = useState(null);
-
-    // --- WORKSPACE PERSISTENCE LOGIC ---
-
-    // Save current blocks to the Active Sprite in the Store
-    const saveCurrentWorkspace = () => {
-        if (!workspaceRef.current || !activeSpriteId) return;
-        const json = Blockly.serialization.workspaces.save(workspaceRef.current);
-
-        // We use a functional update to ensure we have the latest scenes, 
-        // BUT 'activeSpriteId' is a closure capture. 
-        // Ideally we pass the ID to save.
-        const targetId = activeSpriteId;
-
-        setScenes(prevScenes => prevScenes.map(scene => {
-            if (scene.id !== currentSceneId) return scene;
-            return {
-                ...scene,
-                sprites: scene.sprites.map(sprite => {
-                    if (sprite.id !== targetId) return sprite;
-                    return { ...sprite, blocks: json };
-                })
-            };
-        }));
-    };
 
     // --- PAINT EDITOR HANDLERS ---
     const handleEditSprite = (spriteId) => {
@@ -358,8 +356,10 @@ export default function JuniorApp({ onBack }) {
         });
     };
 
-    const handlePaintSave = (imageData, svgData) => {
+    const handlePaintSave = (imageData, svgData, name) => {
         const savedData = svgData || imageData;
+        const costumeKey = name ? name.toLowerCase().replace(/\s+/g, '_') : 'custom';
+
         if (paintEditor.type === 'sprite') {
             setScenes(prev => prev.map(scene => {
                 if (scene.id !== currentSceneId) return scene;
@@ -371,9 +371,9 @@ export default function JuniorApp({ onBack }) {
                             ...sprite,
                             costumes: {
                                 ...sprite.costumes,
-                                custom: savedData
+                                [costumeKey]: savedData
                             },
-                            currentCostume: "custom"
+                            currentCostume: costumeKey
                         };
                     })
                 };
@@ -478,6 +478,7 @@ export default function JuniorApp({ onBack }) {
             mirrored: false,
             costumes: costumes,
             currentCostume: "default",
+            textColor: (spriteType.startsWith('letter_') || spriteType.startsWith('number_')) ? "#FF8C1A" : "#575E75",
             blocks: {}
         };
         setScenes(prev => prev.map(s => {
@@ -608,6 +609,12 @@ export default function JuniorApp({ onBack }) {
         };
         window.animationSpeed = 500; // Default
 
+        // Set Sprite Color (Fill Color for 3D Sticker)
+        window.setSpriteColor = (color) => {
+            const id = window.activeSpriteId || activeSpriteId;
+            spriteActions.update(id, { textColor: color });
+        };
+
         // Reset Size
         window.resetSize = (id) => {
             spriteActions.update(id, { size: 100 });
@@ -697,25 +704,24 @@ export default function JuniorApp({ onBack }) {
 
         // Sound Manager Hooks
         window.playSound = (name) => {
-            soundManager.playAsset(name);
+            soundBlocksExt.playSound({ SOUND_MENU: name }, { target: { id: window.activeSpriteId || activeSpriteId } });
         };
         window.playNote = (note, octave) => {
-            soundManager.playNote(note, octave, 0.5);
+            musicBlocksExt.playNoteForDuration({ NOTE: note, OCTAVE: octave, DURATION: 0.5 });
         };
         window.setInstrument = (inst) => {
-            soundManager.setInstrument(inst);
+            musicBlocksExt.setInstrument({ INSTRUMENT: inst });
         };
         window.stopAllSounds = () => {
             window.speechSynthesis.cancel();
-            soundManager.stopAll();
-            soundManager.stopMusic();
+            soundBlocksExt.stopAllSounds();
         };
 
         window.playMusic = (name) => {
-            soundManager.playMusic(name);
+            musicBlocksExt.playMusic({ MUSIC: name });
         };
         window.stopMusic = () => {
-            soundManager.stopMusic();
+            musicBlocksExt.stopMusic();
         };
 
         // Stop Execution - Throws ExecutionStop error to halt execution immediately
@@ -787,11 +793,15 @@ export default function JuniorApp({ onBack }) {
 
         let xml = '<xml xmlns="https://developers.google.com/blockly/xml">';
         blocks.forEach(b => {
-            xml += `<block type="${b.type}">`;
-            // Add default values
-            if (b.type === 'looks_call') xml += `<field name="NAME">Tobi</field>`;
-            if (b.type === 'sound_animal') xml += `<field name="VAL">grunt</field>`;
-            xml += `</block>`;
+            if (b.kind === "button") {
+                xml += `<button text="${b.text}" callbackKey="${b.callbackKey}"></button>`;
+            } else {
+                xml += `<block type="${b.type}">`;
+                // Add default values
+                if (b.type === 'looks_call') xml += `<field name="NAME">Tobi</field>`;
+                if (b.type === 'sound_animal') xml += `<field name="VAL">grunt</field>`;
+                xml += `</block>`;
+            }
         });
         xml += '</xml>';
         return xml;
@@ -850,6 +860,11 @@ export default function JuniorApp({ onBack }) {
                 flyout.autoClose = false;
             }
 
+            // --- SOUND RECORDER CALLBACK ---
+            workspaceRef.current.registerButtonCallback('RECORD_SOUND', () => {
+                setIsSoundRecorderOpen(true);
+            });
+
             // FLYOUT CONFIG: Full-size blocks, fixed height for horizontal bottom strip
             const workspace = workspaceRef.current;
             const initFlyout = workspace.getFlyout();
@@ -890,6 +905,37 @@ export default function JuniorApp({ onBack }) {
                 if (block.type === "move_relative") {
                     setActiveBlock(block);
                     setShowDirPicker(true);
+                }
+
+                // 2b. Instrument Picker (sound_instrument)
+                if (block.type === "sound_instrument") {
+                    setActiveBlock(block);
+                    // Get block position for the picker
+                    const xy = block.getRelativeToSurfaceXY();
+                    const scale = workspaceRef.current.getScale();
+                    const injectionDiv = workspaceRef.current.getInjectionDiv();
+                    const bBox = injectionDiv.getBoundingClientRect();
+
+                    setPickerPos({
+                        x: bBox.left + (xy.x * scale) + (block.width / 2 * scale) - 90, // Center the 180px picker
+                        y: bBox.top + (xy.y * scale) + (block.height * scale) + 10
+                    });
+                    setShowInstPicker(true);
+                }
+
+                // 2c. Piano Picker (sound_note)
+                if (block.type === "sound_note") {
+                    setActiveBlock(block);
+                    const xy = block.getRelativeToSurfaceXY();
+                    const scale = workspaceRef.current.getScale();
+                    const injectionDiv = workspaceRef.current.getInjectionDiv();
+                    const bBox = injectionDiv.getBoundingClientRect();
+
+                    setPickerPos({
+                        x: bBox.left + (xy.x * scale) + (block.width / 2 * scale) - 160, // Center 320px wide picker
+                        y: bBox.top + (xy.y * scale) + (block.height * scale) + 10
+                    });
+                    setShowPianoPicker(true);
                 }
 
                 // 3. PROPER PREVIEW (Unified)
@@ -1013,29 +1059,39 @@ export default function JuniorApp({ onBack }) {
 
         // Sound API
         window.playSound = (name) => {
-            // Simple synth for animals
-            const msg = new SpeechSynthesisUtterance();
-            if (name === "bark") msg.text = "Woof!";
-            else if (name === "meow") msg.text = "Meow!";
-            else if (name === "grunt") msg.text = "Grr!";
-            else msg.text = name; // Fallback
-            msg.rate = 1.5;
-            msg.pitch = name === "meow" ? 1.5 : 0.8;
-            window.speechSynthesis.speak(msg);
+            if (!name) return;
+            // soundBlocksExt is defined at module level in JuniorApp.jsx
+            soundBlocksExt.playSound({ SOUND: name }, { target: { id: activeSpriteIdRef.current || 'stage' } });
         };
 
-        window.playNote = () => {
-            // Simple beep
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            oscillator.type = "sine";
-            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
-            oscillator.start();
-            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
-            oscillator.stop(audioCtx.currentTime + 0.5);
+        window.playNote = (note, octave) => {
+            musicBlocksExt.playNoteForDuration({ NOTE: note, OCTAVE: octave, DURATION: 0.5 }, { target: { id: activeSpriteIdRef.current || 'stage' } });
+        };
+
+        window.setInstrument = (instrument) => {
+            musicBlocksExt.setInstrument({ INSTRUMENT: instrument }, { target: { id: activeSpriteIdRef.current || 'stage' } });
+        };
+
+        window.stopAllSounds = () => {
+            soundBlocksExt.stopAllSounds();
+        };
+
+        window.getActiveSpriteSounds = () => {
+            // Get built-in sounds
+            const builtIn = [
+                ["Pop", "pop"],
+                ["Boing", "boing"],
+                ["Clap", "clap"],
+                ["Meow", "meow"],
+                ["Bark", "bark"]
+            ];
+
+            // Get user recordings from the soundBank
+            const recordings = Object.keys(audioEngine.soundBank.assets)
+                .filter(name => name.startsWith("Recording"))
+                .map(name => [name, name]);
+
+            return [...builtIn, ...recordings];
         };
 
     }, []);
@@ -1258,35 +1314,187 @@ export default function JuniorApp({ onBack }) {
     }, [isCameraOn]);
 
     // --- SAVE / LOAD (ProjectManager Integration) ---
-    const saveProject = () => {
-        projectManager.downloadProject(`${projectName.replace(/\s+/g, "_")}.lbproject`);
+    const saveCurrentWorkspace = () => {
+        if (!workspaceRef.current || !activeSpriteIdRef.current) return;
+        const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+
+        // Find the current sprite and update its blocks
+        const scenesCopy = [...(scenesRef.current || scenes)];
+        const currentScene = scenesCopy.find(s => s.id === currentSceneId);
+        if (currentScene) {
+            const sprite = currentScene.sprites.find(s => s.id === activeSpriteIdRef.current);
+            if (sprite) {
+                sprite.blocks = json;
+                setScenes(scenesCopy);
+                console.log(`[JuniorApp] Saved workspace blocks to sprite: ${sprite.name}`);
+            }
+        }
     };
 
-    const loadProject = () => {
-        if (fileInputRef.current) fileInputRef.current.click();
+    const executeNewProject = () => {
+        if (workspaceRef.current) {
+            // Clear the Blockly workspace
+            Blockly.Events.disable();
+            workspaceRef.current.clear();
+            Blockly.Events.enable();
+        }
+
+        // Create default robot sprite mapped to the junior format
+        const id = `robot_default`;
+        const newSprite = {
+            id: id,
+            name: "Robot",
+            type: "robot",
+            x: 200, // Centered logically for Junior
+            y: 150,
+            angle: 0,
+            size: 100,
+            visible: true,
+            mirrored: false,
+            speech: null,
+            costumes: {
+                default: "/assets/sprites/robot/robot_idle.svg",
+                wave1: "/assets/sprites/robot/robot_wave1.svg",
+                wave2: "/assets/sprites/robot/robot_wave2.svg",
+                talk: "/assets/sprites/robot/robot_talk1.svg"
+            },
+            currentCostume: "default",
+            blocks: {}
+        };
+
+        const defaultScene = {
+            id: "scene1",
+            name: "Scene 1",
+            background: "white",
+            sprites: [newSprite]
+        };
+
+        setScenes([defaultScene]);
+        setCurrentSceneId("scene1");
+        setActiveSpriteId(id);
+        activeSpriteIdRef.current = id;
+        setProjectName('Untitled');
+        console.log('[JuniorApp] New project created');
+    };
+
+    const handleNewProject = () => {
+        setPendingAction('new');
+        setShowUnsavedModal(true);
+    };
+
+    const handleSaveProject = (isSilent = false) => {
+        // 1. Force save of current workspace if it's active
+        saveCurrentWorkspace();
+
+        // 2. Prepare the project data structure
+        setTimeout(() => {
+            const latestScenes = scenesRef.current || scenes;
+
+            const projectData = {
+                version: '1.0',
+                projectName,
+                mode: 'junior', // Distinct mode marker
+                scenes: latestScenes, // Junior mode relies entirely on the scenes array
+                timestamp: Date.now()
+            };
+
+            const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${projectName.replace(/\s+/g, '_')}.leap`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            console.log(`[JuniorApp] Project saved: ${projectName}`);
+        }, 50);
+    };
+
+    const executeOpenProject = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.accept = '.leap,.lbproject,application/json';
+            fileInputRef.current.click();
+        }
+    };
+
+    const handleOpenProject = () => {
+        setPendingAction('open');
+        setShowUnsavedModal(true);
+    };
+
+    const confirmUnsavedAction = (saveFirst) => {
+        setShowUnsavedModal(false);
+        if (saveFirst) {
+            handleSaveProject(true);
+            // Wait slightly for the save download to trigger before clearing/opening
+            setTimeout(() => {
+                if (pendingAction === 'new') executeNewProject();
+                if (pendingAction === 'open') executeOpenProject();
+                setPendingAction(null);
+            }, 500);
+        } else {
+            if (pendingAction === 'new') executeNewProject();
+            if (pendingAction === 'open') executeOpenProject();
+            setPendingAction(null);
+        }
     };
 
     const handleFileLoad = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
         const reader = new FileReader();
         reader.onload = async (event) => {
             try {
-                const json = event.target.result;
-                await projectManager.loadProject(json);
-                const data = JSON.parse(json);
-                if (data.name) setProjectName(data.name);
-                // The managers will trigger UI updates if connected, 
-                // but since we are using useSpriteSystem hook, we need to manually sync for now
-                if (data.sprites) {
-                    setScenes(prev => prev.map(s => {
-                        if (s.id === currentSceneId) return { ...s, sprites: data.sprites };
-                        return s;
-                    }));
+                const data = JSON.parse(event.target?.result);
+                if (!data.scenes) throw new Error('Invalid or legacy Junior project file (missing scenes array)');
+
+                console.log(`[JuniorApp] Loading project: ${data.projectName || 'Untitled'}`);
+
+                // Full Reset before loading
+                stopBlocks();
+                if (workspaceRef.current) {
+                    Blockly.Events.disable();
+                    workspaceRef.current.clear();
+                    Blockly.Events.enable();
                 }
+
+                setProjectName(data.projectName || 'My Project');
+
+                // Restore imported state
+                setScenes(data.scenes);
+                const firstScene = data.scenes[0];
+                if (firstScene) {
+                    setCurrentSceneId(firstScene.id);
+                    const firstSprite = firstScene.sprites[0];
+                    if (firstSprite) {
+                        const newId = firstSprite.id;
+                        setActiveSpriteId(newId);
+                        activeSpriteIdRef.current = newId;
+
+                        // Give React time to re-render sprites, then inject blocks into workspace
+                        setTimeout(() => {
+                            if (workspaceRef.current && firstSprite.blocks) {
+                                try {
+                                    Blockly.Events.disable();
+                                    Blockly.serialization.workspaces.load(firstSprite.blocks, workspaceRef.current);
+                                } finally {
+                                    Blockly.Events.enable();
+                                }
+                            }
+                        }, 100);
+                    } else {
+                        setActiveSpriteId(null);
+                        activeSpriteIdRef.current = null;
+                        if (workspaceRef.current) workspaceRef.current.clear();
+                    }
+                }
+
+                console.log('[JuniorApp] Project loaded successfully');
             } catch (err) {
-                console.error(err);
-                alert("Invalid project file.");
+                console.error('Failed to load project:', err);
+                alert('Failed to load project file: ' + err.message);
             }
         };
         reader.readAsText(file);
@@ -1295,12 +1503,11 @@ export default function JuniorApp({ onBack }) {
 
     // HANDLING MENUS (Enhanced)
     const handleFileMenu = (action) => {
-        if (action === "save" || action === "save_as") saveProject();
-        if (action === "open" || action === "load") loadProject();
-        if (action === "new_workspace") {
-            if (confirm("Clear Workspace?")) workspaceRef.current.clear();
-        }
-        if (["new_project", "qr", "examples", "guide", "record"].includes(action)) {
+        if (action === "save" || action === "save_as") handleSaveProject();
+        if (action === "open" || action === "load") handleOpenProject();
+        if (action === "new_project" || action === "new" || action === "new_workspace") handleNewProject();
+
+        if (["qr", "examples", "guide", "record"].includes(action)) {
             alert(`Feature '${action}' coming soon!`);
         }
     };
@@ -1319,24 +1526,22 @@ export default function JuniorApp({ onBack }) {
     };
 
     // --- RECORDING ---
-    const handleToggleRecording = async () => {
-        if (!isRecording) {
-            const success = await soundManager.startRecording();
-            if (success) setIsRecording(true);
-        } else {
-            const name = `Recording ${recordingCount}`;
-            const url = await soundManager.stopRecording(name);
-            setIsRecording(false);
-            if (url) {
-                setRecordingCount(prev => prev + 1);
-                alert(`Saved as ${name}. Note: To perform custom recordings, use 'play sound' block.`);
-            }
-        }
+    const handleSaveRecording = (audioData) => {
+        // audioData contains { blob, buffer, blobUrl }
+        const name = `Recording ${recordingCount}`;
+        setRecordingCount(prev => prev + 1);
+
+        // Feed to global soundBank explicitly so the engine can look it up
+        audioEngine.soundBank.assets[name] = audioData.blobUrl;
+
+        // In a full implementation, we would save this to the sprite's sound collection.
+        // For the current JuniorApp, we'll alert the user and make it available.
+        alert(`Saved as '${name}'. You can now select it in the 'play sound' block dropdown!`);
     };
 
     // --- DELETE SPRITE ---
     const deleteSprite = (spriteId) => {
-        if (sprites.length <= 1) {
+        if (sprites.length <= 0) {
             alert("Cannot delete the last sprite!");
             return;
         }
@@ -1357,7 +1562,7 @@ export default function JuniorApp({ onBack }) {
 
     // --- DELETE SCENE ---
     const deleteScene = (sceneId) => {
-        if (scenes.length <= 1) {
+        if (scenes.length <= 0) {
             alert("Cannot delete the last scene!");
             return;
         }
@@ -1442,6 +1647,44 @@ export default function JuniorApp({ onBack }) {
                 />
             )}
 
+            {/* JUNIOR SOUND RECORDER MODAL */}
+            <JuniorSoundRecorder
+                isOpen={isSoundRecorderOpen}
+                onClose={() => setIsSoundRecorderOpen(false)}
+                onSave={handleSaveRecording}
+            />
+
+            {showInstPicker && (
+                <InstrumentPicker
+                    position={pickerPos}
+                    onClose={() => setShowInstPicker(false)}
+                    onPick={(inst) => {
+                        if (activeBlock) {
+                            activeBlock.setFieldValue(inst, "INSTRUMENT");
+                            // Update audio engine instrument immediately
+                            musicBlocksExt.setInstrument({ INSTRUMENT: inst });
+                        }
+                    }}
+                />
+            )}
+
+            {showPianoPicker && (
+                <PianoPicker
+                    position={pickerPos}
+                    initialNote={activeBlock?.getFieldValue("NOTE")}
+                    initialOctave={parseInt(activeBlock?.getFieldValue("OCTAVE") || "4")}
+                    onClose={() => setShowPianoPicker(false)}
+                    onPreview={(note, octave) => {
+                        musicBlocksExt.playNoteForDuration({ NOTE: note, OCTAVE: octave, DURATION: 0.3 });
+                    }}
+                    onPick={(note, octave) => {
+                        if (activeBlock) {
+                            activeBlock.setFieldValue(note, "NOTE");
+                            activeBlock.setFieldValue(octave.toString(), "OCTAVE");
+                        }
+                    }}
+                />
+            )}
 
             <div style={{ flex: 1, display: "flex", overflow: 'hidden' }}>
                 <div id="wrapper" style={{ width: "60%", height: "100%", position: "relative" }}>
@@ -1646,6 +1889,7 @@ export default function JuniorApp({ onBack }) {
                                 costumes={sprite.costumes}
                                 speech={sprite.speech}
                                 mirrored={sprite.mirrored}
+                                textColor={sprite.textColor}
                                 onClick={() => handleSpriteClick(sprite.id)}
                                 onDragStateChange={(dragging) => setIsDraggingSpriteOnStage(dragging)}
                             />
@@ -1791,15 +2035,26 @@ export default function JuniorApp({ onBack }) {
             {/* PAINT EDITOR MODAL */}
             {paintEditor.isOpen && (
                 <PaintEditor
-                    title={paintEditor.type === 'sprite' ? 'Edit Sprite Costume' : 'Edit Scene Backdrop'}
-                    initialImage={paintEditor.initialImage}
-                    onSave={handlePaintSave}
+                    isOpen={paintEditor.isOpen}
                     onClose={() => setPaintEditor({ ...paintEditor, isOpen: false })}
+                    onSave={handlePaintSave}
+                    initialImage={paintEditor.initialImage}
                     costumes={paintEditor.costumes}
                     spriteName={paintEditor.spriteName}
                     mode={paintEditor.mode}
                 />
             )}
+
+            <UnsavedWarningModal
+                isOpen={showUnsavedModal}
+                onYes={() => confirmUnsavedAction(true)}
+                onNo={() => confirmUnsavedAction(false)}
+                onCancel={() => {
+                    setShowUnsavedModal(false);
+                    setPendingAction(null);
+                }}
+            />
+
         </div>
     );
 }
@@ -1814,8 +2069,8 @@ function CategoryButton({ category, isActive, onClick }) {
             onClick={onClick}
             title={category.name}
             style={{
-                width: "46px",
-                height: "46px",
+                width: "54px",
+                height: "54px",
                 borderRadius: "50%",
                 background: isActive ? category.color : "white",
                 border: isActive ? "2px solid rgba(0,0,0,0.15)" : `2px solid ${category.color}`,
@@ -1831,7 +2086,7 @@ function CategoryButton({ category, isActive, onClick }) {
                 boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
             }}
         >
-            <div style={{ transform: isActive ? "scale(1.1)" : "scale(1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ transform: isActive ? "scale(1.2)" : "scale(1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {category.icon}
             </div>
         </button>

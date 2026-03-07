@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function Sprite({ id, type, active, x, y, angle, size, visible, speech, currentCostume, costumes, mirrored, onClick, onDragStateChange }) {
+export default function Sprite({ id, type, active, x, y, angle, size, visible, speech, currentCostume, costumes, mirrored, textColor, onClick, onDragStateChange }) {
     // Local ephemeral state (speech bubbles, feedback)
     // Speech is now propped from App.jsx store
     const [scaleX, setScaleX] = useState(1);
@@ -261,6 +261,26 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
 
         // 3. If it is an emoji string
         if (typeof costumeValue === 'string' && costumeValue !== "default" && costumeValue !== "wave") {
+            const isLetterOrNumber = type?.startsWith('letter_') || type?.startsWith('number_') || id?.startsWith('letter_') || id?.startsWith('number_');
+
+            if (isLetterOrNumber) {
+                return (
+                    <div style={{
+                        color: textColor || '#FF8C1A',
+                        fontSize: '90px',
+                        fontWeight: '900',
+                        fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif',
+                        WebkitTextStroke: '4px black',
+                        textShadow: '8px 8px 0px rgba(0,0,0,1)',
+                        lineHeight: 1,
+                        display: 'inline-block',
+                        userSelect: 'none',
+                        transform: 'scale(1.1)', // Slightly larger to match the premium feel
+                    }}>
+                        {costumeValue}
+                    </div>
+                );
+            }
             return costumeValue;
         }
 

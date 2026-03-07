@@ -8,15 +8,7 @@ function injectCSS() {
     const s = document.createElement('style');
     s.id = 'lp-anims';
     s.textContent = `
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
-
-        @font-face {
-            font-family: 'Azonix';
-            src: url('/assets/fonts/Azonix.woff') format('woff'),
-                 url('/assets/fonts/Azonix.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
 
         * { box-sizing: border-box; }
 
@@ -506,7 +498,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                         <div style={{
                             fontSize: 36,
                             fontWeight: 900,
-                            fontFamily: '"Azonix", "Poppins", sans-serif',
+                            fontFamily: '"Orbitron", "Poppins", sans-serif',
                             letterSpacing: '1px',
                             background: 'linear-gradient(135deg, #855CD6, #6D28D9)',
                             WebkitBackgroundClip: 'text',
@@ -579,7 +571,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     <div style={{
                         marginTop: 28,
                         fontSize: 11, color: '#001125ff',
-                        fontFamily: '"Poppins",azonix',
+                        fontFamily: '"Poppins", Orbitron',
                         fontWeight: 500,
                         animation: 'lp-fadeup .5s .9s both',
                         letterSpacing: '0.05em',

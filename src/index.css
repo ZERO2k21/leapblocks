@@ -662,7 +662,8 @@ div::-webkit-scrollbar-thumb {
 body #root .blocklyFlyoutButton .blocklyText,
 .blocklyFlyoutButton text {
   fill: #575E75 !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
+  font-size: 24px !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
