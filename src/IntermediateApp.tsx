@@ -12,7 +12,7 @@ import Stage from './stage/Stage';
 import SpritePanel from './stage/SpritePanel';
 import MenuBar from './junior/components/MenuBar';
 import BoardSelectionModal from './junior/components/BoardSelectionModal';
-import PaintEditor from './components/PaintEditor';
+import { CostumesTab } from './stage/CostumesTab';
 import StagePanel from './stage/StagePanel';
 import BackdropLibrary from './components/BackdropLibrary';
 import BackdropEditor from './components/BackdropEditor';
@@ -2040,61 +2040,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     )}
                     {editorMode === 'stage' && workspaceTab === 'costumes' && (
                         <div style={styles.costumesEditor}>
-                            {(() => {
-                                if (selectedSpriteId === 'stage') {
-                                    return (
-                                        <PaintEditor
-                                            mode="intermediate"
-                                            title="Backdrop Editor"
-                                            spriteName="Stage"
-                                            initialImage={stageManager.getCurrentBackdrop()?.src || ''}
-                                            costumes={stageManager.getAllBackdrops().map((b, i) => ({
-                                                id: i.toString(),
-                                                name: b.name,
-                                                image: b.src
-                                            }))}
-                                            onSave={async (imageData: string, svgData?: string) => {
-                                                const savedData = svgData || imageData;
-                                                await stageManager.addBackdrop('custom', savedData);
-                                                stageManager.setBackdrop('custom');
-                                                addLog('Saved backdrop for Stage');
-                                            }}
-                                            onClose={() => handleWorkspaceTabChange('blocks')}
-                                        />
-                                    );
-                                }
-
-                                const selectedSprite = sprites.find(s => s.id === selectedSpriteId);
-                                if (selectedSprite) {
-                                    return (
-                                        <PaintEditor
-                                            mode="intermediate"
-                                            title="Costume Editor"
-                                            spriteName={selectedSprite.name}
-                                            initialImage={selectedSprite.currentCostume?.image.src || ''}
-                                            costumes={selectedSprite.costumes.map((c, i) => ({
-                                                id: i.toString(),
-                                                name: c.name,
-                                                image: c.image.src
-                                            }))}
-                                            onSave={async (imageData: string, svgData?: string) => {
-                                                const savedData = svgData || imageData;
-                                                await selectedSprite.addCostume('custom', savedData);
-                                                selectedSprite.switchCostume('custom');
-                                                addLog(`Saved costume for ${selectedSprite.name}`);
-                                            }}
-                                            onClose={() => handleWorkspaceTabChange('blocks')}
-                                        />
-                                    );
-                                }
-                                return (
-                                    <div style={styles.costumePlaceholder}>
-                                        <span style={{ fontSize: '48px' }}>🎨</span>
-                                        <h3>No Sprite Selected</h3>
-                                        <p>Select a sprite or stage from the panel to edit its costumes/backdrops.</p>
-                                    </div>
-                                );
-                            })()}
+                            <CostumesTab
+                                selectedSpriteId={selectedSpriteId}
+                                sprites={sprites}
+                                stageManager={stageManager}
+                                addLog={addLog}
+                                onClose={() => handleWorkspaceTabChange('blocks')}
+                            />
                         </div>
                     )}
                     {editorMode === 'stage' && workspaceTab === 'sounds' && (
