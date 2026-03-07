@@ -233,9 +233,17 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, []);
 
     const getCurrentToolbox = useCallback(() => {
-        if (editorMode === 'stage') return animationToolbox;
+        if (editorMode === 'stage') {
+            if (selectedSpriteId === 'stage') {
+                return {
+                    ...animationToolbox,
+                    contents: animationToolbox.contents.filter((cat: any) => cat.name !== 'Motion')
+                };
+            }
+            return animationToolbox;
+        }
         return selectedBoard === 'esp32' ? esp32Toolbox : arduinoToolbox;
-    }, [editorMode, selectedBoard]);
+    }, [editorMode, selectedBoard, selectedSpriteId]);
 
     // Helper to extract all blocks/labels from a categorized toolbox into a single flyout list
     const getFlattenedFlyoutContents = (toolbox: any) => {
