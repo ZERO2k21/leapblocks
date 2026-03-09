@@ -22,6 +22,7 @@ export interface SpriteState {
     visible: boolean;
     costumes: Costume[];
     currentCostumeIndex: number;
+    sounds: { name: string; src: string }[];
     sayText: string | null;
     sayTimeout: number | null;
     effects: {
@@ -56,6 +57,7 @@ export class Sprite {
             visible: true,
             costumes: [],
             currentCostumeIndex: 0,
+            sounds: [],
             sayText: null,
             sayTimeout: null,
             effects: { color: 0, brightness: 0, ghost: 0 },
@@ -84,6 +86,7 @@ export class Sprite {
     }
     get costumes() { return this.state.costumes; }
     get currentCostumeIndex() { return this.state.currentCostumeIndex; }
+    get sounds() { return this.state.sounds; }
     get effects() { return this.state.effects; }
     get isGliding() { return this.state.glideTarget !== null; }
     get rotationStyle() { return this.state.rotationStyle; }
@@ -195,6 +198,35 @@ export class Sprite {
     nextCostume(): void {
         if (this.state.costumes.length > 0) {
             this.state.currentCostumeIndex = (this.state.currentCostumeIndex + 1) % this.state.costumes.length;
+            this.onUpdate();
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SOUND MANAGEMENT
+    // ═══════════════════════════════════════════════════════════════════════
+    async addSound(name: string, src: string): Promise<void> {
+        return new Promise((resolve) => {
+            this.state.sounds.push({ name, src });
+            this.onUpdate();
+            resolve();
+        });
+    }
+
+    deleteSound(index: number): void {
+        if (index >= 0 && index < this.state.sounds.length) {
+            this.state.sounds.splice(index, 1);
+            this.onUpdate();
+        }
+    }
+
+    duplicateSound(index: number): void {
+        if (index >= 0 && index < this.state.sounds.length) {
+            const soundToDuplicate = this.state.sounds[index];
+            this.state.sounds.splice(index + 1, 0, {
+                name: `${soundToDuplicate.name} (copy)`,
+                src: soundToDuplicate.src
+            });
             this.onUpdate();
         }
     }

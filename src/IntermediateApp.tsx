@@ -13,6 +13,8 @@ import SpritePanel from './stage/SpritePanel';
 import MenuBar from './junior/components/MenuBar';
 import BoardSelectionModal from './junior/components/BoardSelectionModal';
 import { CostumesTab } from './stage/CostumesTab';
+import { SoundsTab } from './stage/SoundsTab';
+import { PythonEditorTab } from './components/PythonEditorTab';
 import StagePanel from './stage/StagePanel';
 import BackdropLibrary from './components/BackdropLibrary';
 import BackdropEditor from './components/BackdropEditor';
@@ -2013,11 +2015,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     {/* Other Tabs - Only relevant in Stage Mode */}
                     {editorMode === 'stage' && workspaceTab === 'python' && (
                         <div style={styles.pythonEditor}>
-                            <div style={styles.pythonPlaceholder}>
-                                <span style={{ fontSize: '48px' }}>🐍</span>
-                                <h3>Python Editor</h3>
-                                <p>Coming soon! Write Python code to control your sprites.</p>
-                            </div>
+                            <PythonEditorTab workspace={workspaceRef.current} />
                         </div>
                     )}
                     {editorMode === 'stage' && workspaceTab === 'costumes' && (
@@ -2033,11 +2031,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     )}
                     {editorMode === 'stage' && workspaceTab === 'sounds' && (
                         <div style={styles.soundsEditor}>
-                            <div style={styles.soundPlaceholder}>
-                                <span style={{ fontSize: '48px' }}>🔊</span>
-                                <h3>Sounds Editor</h3>
-                                <p>Coming soon! Add and edit sounds for your project.</p>
-                            </div>
+                            <SoundsTab
+                                selectedSpriteId={selectedSpriteId}
+                                sprites={sprites}
+                                stageManager={stageManager}
+                                addLog={addLog}
+                                onClose={() => handleWorkspaceTabChange('blocks')}
+                            />
                         </div>
                     )}
                 </div>
