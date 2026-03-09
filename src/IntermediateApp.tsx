@@ -2272,21 +2272,21 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             />
 
             {/* Backdrop Modals */}
-            {
+            {/*
                 showBackdropLibrary && (
                     <BackdropLibrary
                         onSelect={handleBackdropSelect}
                         onClose={() => setShowBackdropLibrary(false)}
                     />
                 )
-            }
-            {
+            */}
+            {/*
                 showBackdropEditor && (
                     <BackdropEditor
                         onClose={() => setShowBackdropEditor(false)}
                     />
                 )
-            }
+            */}
 
             {/* Sprite Library Modal */}
             <SpriteLibrary
