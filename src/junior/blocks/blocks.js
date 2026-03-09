@@ -153,7 +153,10 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
             this.setColour("#9966FF");
         }
     };
-    javascriptGenerator.forBlock['looks_say'] = (block) => `say(${getTarget()}, "${block.getFieldValue('MSG')}");\n${wait()}`;
+    javascriptGenerator.forBlock['looks_say'] = (block) => {
+        const msg = block.getFieldValue('MSG') || block.getFieldValue('MESSAGE') || "";
+        return `say(${getTarget()}, ${JSON.stringify(msg)});\n${wait()}`;
+    };
 
     // ... (Show/Hide/Grow/Shrink remain strict stacks)
 

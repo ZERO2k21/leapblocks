@@ -375,10 +375,10 @@ export class AnimationCompiler {
 
             // Looks
             case 'looks_say':
-                step = { type: 'say', message: String(block.getFieldValue('MESSAGE') || '') };
+                step = { type: 'say', message: String(block.getFieldValue('MESSAGE') || block.getFieldValue('MSG') || '') };
                 break;
             case 'looks_say_for_secs':
-                step = { type: 'say_for_secs', message: String(block.getFieldValue('MESSAGE') || ''), secs: Number(block.getFieldValue('SECS')) };
+                step = { type: 'say_for_secs', message: String(block.getFieldValue('MESSAGE') || block.getFieldValue('MSG') || ''), secs: Number(block.getFieldValue('SECS')) };
                 break;
             case 'looks_show':
                 step = { type: 'show' };
@@ -403,10 +403,10 @@ export class AnimationCompiler {
                 break;
             // New Looks blocks
             case 'looks_think':
-                step = { type: 'think', message: String(block.getFieldValue('MESSAGE') || '') };
+                step = { type: 'think', message: String(block.getFieldValue('MESSAGE') || block.getFieldValue('MSG') || '') };
                 break;
             case 'looks_think_for_secs':
-                step = { type: 'think_for_secs', message: String(block.getFieldValue('MESSAGE') || ''), secs: Number(block.getFieldValue('SECS')) };
+                step = { type: 'think_for_secs', message: String(block.getFieldValue('MESSAGE') || block.getFieldValue('MSG') || ''), secs: Number(block.getFieldValue('SECS')) };
                 break;
             case 'looks_switch_costume':
                 step = { type: 'switch_costume', costume: block.getFieldValue('COSTUME') };
