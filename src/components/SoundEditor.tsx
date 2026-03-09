@@ -13,8 +13,43 @@ import WavEncoder from 'wav-encoder';
 // ═══════════════════════════════════════════════════════════════════════════
 // WAVEFORM COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════
-const Waveform: React.FC<{ buffer: AudioBuffer | null, color: string }> = ({ buffer, color }) => {
+interface WaveformProps {
+    buffer: AudioBuffer | null;
+    color: string;
+    selectionStart?: number;
+    selectionEnd?: number;
+    onSelectionChange?: (start: number, end: number) => void;
+}
+
+const Waveform: React.FC<WaveformProps> = ({ buffer, color, selectionStart = 0, selectionEnd = 1, onSelectionChange }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState(0);
+
+    const getRatioFromEvent = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return 0;
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+        return x / rect.width;
+    };
+
+    const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        const ratio = getRatioFromEvent(e);
+        setIsDragging(true);
+        setDragStart(ratio);
+        if (onSelectionChange) onSelectionChange(ratio, ratio);
+    };
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        if (!isDragging || !onSelectionChange) return;
+        const currentRatio = getRatioFromEvent(e);
+        onSelectionChange(Math.min(dragStart, currentRatio), Math.max(dragStart, currentRatio));
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -30,6 +65,8 @@ const Waveform: React.FC<{ buffer: AudioBuffer | null, color: string }> = ({ buf
         const amp = height / 2;
 
         ctx.clearRect(0, 0, width, height);
+
+        // Draw basic waveform
         ctx.beginPath();
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
@@ -48,9 +85,36 @@ const Waveform: React.FC<{ buffer: AudioBuffer | null, color: string }> = ({ buf
         }
 
         ctx.stroke();
-    }, [buffer, color]);
 
-    return <canvas ref={canvasRef} className="w-full h-full" width={1000} height={200} />;
+        // Draw selection overlay
+        if (selectionStart !== selectionEnd) {
+            ctx.fillStyle = 'rgba(133, 92, 214, 0.3)';
+            ctx.fillRect(width * selectionStart, 0, width * (selectionEnd - selectionStart), height);
+
+            // Draw Handles
+            ctx.fillStyle = '#6e45c4';
+            const handleRadius = 6;
+            ctx.beginPath();
+            ctx.arc(width * selectionStart, handleRadius, handleRadius, 0, Math.PI * 2);
+            ctx.arc(width * selectionStart, height - handleRadius, handleRadius, 0, Math.PI * 2);
+            ctx.arc(width * selectionEnd, handleRadius, handleRadius, 0, Math.PI * 2);
+            ctx.arc(width * selectionEnd, height - handleRadius, handleRadius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }, [buffer, color, selectionStart, selectionEnd]);
+
+    return (
+        <canvas
+            ref={canvasRef}
+            className="w-full h-full cursor-crosshair"
+            width={1000}
+            height={200}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+        />
+    );
 };
 
 export interface Sound {
@@ -106,6 +170,8 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
     const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
     const [history, setHistory] = useState<AudioBuffer[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
+    const [selectionStart, setSelectionStart] = useState(0);
+    const [selectionEnd, setSelectionEnd] = useState(1);
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const currentSoundPlayer = useRef<AudioBufferSourceNode | null>(null);
@@ -418,24 +484,33 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
 
                             {/* Waveform Visualization */}
                             <div className="flex-1 bg-white rounded-2xl border-2 border-[#e0d6ff] shadow-sm relative overflow-hidden flex items-center justify-center mt-20 mb-8 mx-auto w-full max-w-4xl">
-                                <div className="absolute inset-0 flex items-center group cursor-pointer w-full">
-                                    <Waveform buffer={audioBuffer} color="#855CD6" />
+                                <div className="absolute inset-0 flex items-center group w-full">
+                                    <Waveform
+                                        buffer={audioBuffer}
+                                        color="#855CD6"
+                                        selectionStart={selectionStart}
+                                        selectionEnd={selectionEnd}
+                                        onSelectionChange={(start, end) => {
+                                            setSelectionStart(start);
+                                            setSelectionEnd(end);
+                                        }}
+                                    />
                                 </div>
                             </div>
 
                             {/* Audio Effect Tools */}
-                            <div className="h-24 bg-white border border-gray-200 rounded-2xl shadow-sm flex items-center justify-around px-4 max-w-4xl mx-auto w-full">
+                            <div className="h-24 bg-white border border-gray-200 rounded-2xl shadow-sm flex items-center justify-around px-4 max-w-4xl mx-auto w-full overflow-x-auto no-scrollbar">
                                 <EffectTool icon={<ArrowUpFromLine size={24} />} onClick={() => applyEffect('faster')} label="Faster" />
                                 <EffectTool icon={<ArrowDownToLine size={24} />} onClick={() => applyEffect('slower')} label="Slower" />
-                                <div className="w-px h-12 bg-gray-200" />
-                                <EffectTool icon={<Volume2 size={24} />} onClick={() => applyEffect('higher')} label="Louder" />
-                                <EffectTool icon={<VolumeX size={24} />} onClick={() => applyEffect('lower')} label="Softer" />
+                                <div className="w-px h-12 bg-gray-200 mx-1 flex-shrink-0" />
+                                <EffectTool icon={<Volume2 size={24} />} onClick={() => applyEffect('louder')} label="Louder" />
+                                <EffectTool icon={<VolumeX size={24} />} onClick={() => applyEffect('softer')} label="Softer" />
                                 <EffectTool icon={<VolumeX size={24} />} onClick={() => applyEffect('mute')} label="Mute" />
-                                <div className="w-px h-12 bg-gray-200" />
+                                <div className="w-px h-12 bg-gray-200 mx-1 flex-shrink-0" />
                                 <EffectTool icon={<ArrowLeftRight size={24} />} onClick={() => applyEffect('fade in')} label="Fade in" />
                                 <EffectTool icon={<ArrowRightLeft size={24} />} onClick={() => applyEffect('fade out')} label="Fade out" />
                                 <EffectTool icon={<RotateCcw size={24} />} onClick={() => applyEffect('reverse')} label="Reverse" />
-                                <div className="w-px h-12 bg-gray-200" />
+                                <div className="w-px h-12 bg-gray-200 mx-1 flex-shrink-0" />
                                 <EffectTool icon={<MusicIcon size={24} />} onClick={() => applyEffect('robot')} label="Robot" />
                             </div>
                         </div>

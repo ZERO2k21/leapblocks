@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { ActionMenu } from '../stage/ActionMenu';
 import { CostumeLibrary } from './CostumeLibrary';
+import HSBColorPicker from './HSBColorPicker';
 
 // Built-in costumes for "Surprise" feature
 const BUILTIN_COSTUMES = [
@@ -62,6 +63,7 @@ function PaintEditor({
     const [costumeName, setCostumeName] = useState(spriteName);
     const [clipboard, setClipboard] = useState<fabric.Object | null>(null);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+    const [activeColorPicker, setActiveColorPicker] = useState<'fill' | 'outline' | null>(null);
 
     // Initialize Canvas
     useEffect(() => {
@@ -448,12 +450,14 @@ function PaintEditor({
                             tooltipLabel="Choose a Costume"
                             actions={[
                                 { id: 'upload', icon: '📁', label: 'Upload Costume', onClick: triggerUpload },
-                                { id: 'surprise', icon: '✨', label: 'Surprise', onClick: () => {
-                                    // Pick a random costume from built-in library
-                                    const idx = Math.floor(Math.random() * DEFAULT_COSTUMES.length);
-                                    const costume = DEFAULT_COSTUMES[idx];
-                                    onSave(costume.src, undefined, costume.name);
-                                }},
+                                {
+                                    id: 'surprise', icon: '✨', label: 'Surprise', onClick: () => {
+                                        // Pick a random costume from built-in library
+                                        const idx = Math.floor(Math.random() * BUILTIN_COSTUMES.length);
+                                        const costume = BUILTIN_COSTUMES[idx];
+                                        onSave(costume.src, undefined, costume.name);
+                                    }
+                                },
                                 { id: 'paint', icon: '🖌️', label: 'Paint', onClick: () => { /* already in editor */ } },
                                 { id: 'search', icon: '🔍', label: 'Choose a Costume', onClick: () => setIsLibraryOpen(true) },
                             ]}
@@ -464,27 +468,34 @@ function PaintEditor({
                 {/* 2. MAIN EDITOR AREA */}
                 <div className="flex-1 flex flex-col overflow-hidden">
                     {/* TOP TOOLBAR ROW 1 */}
-                    <div className="h-14 px-6 border-b border-gray-100 flex items-center bg-white">
+                    <div className="h-14 px-6 border-b border-gray-100 flex items-center bg-white justify-between">
                         <div className="flex items-center gap-6">
                             <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-gray-400">{title === 'Backdrop Editor' ? 'Backdrop' : 'Costume'}</span>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{title === 'Backdrop Editor' ? 'Backdrop' : 'Costume'}</span>
                                 <input
                                     type="text"
                                     value={costumeName}
                                     onChange={(e) => setCostumeName(e.target.value)}
-                                    className="bg-[#f8f8f8] border border-gray-200 rounded-full px-4 py-1.5 text-sm font-semibold text-gray-600 outline-none focus:border-[#855CD6] w-32"
+                                    className="bg-white border rounded-full px-4 py-1.5 text-sm font-semibold text-gray-600 outline-none focus:border-[#855CD6] focus:ring-2 focus:ring-purple-100 w-32 shadow-sm transition-all"
                                 />
                             </div>
-                            <div className="flex items-center gap-2">
-                                <ToolBtn onClick={undo} icon={<Undo size={18} />} title="Undo" />
-                                <ToolBtn onClick={redo} icon={<Redo size={18} />} title="Redo" />
+
+                            <div className="h-6 w-px bg-gray-200" />
+
+                            <div className="flex items-center gap-1">
+                                <ToolBtn onClick={undo} icon={<Undo size={18} />} title="Undo" disabled={historyIndex <= 0} />
+                                <ToolBtn onClick={redo} icon={<Redo size={18} />} title="Redo" disabled={historyIndex >= history.length - 1} />
                             </div>
-                            <div className="h-6 w-px bg-gray-100" />
-                            <div className="flex items-center gap-4">
-                                <ToolBtnHorizontal onClick={groupObjects} icon={<Combine size={18} />} label="Group" />
-                                <ToolBtnHorizontal onClick={ungroupObjects} icon={<Ungroup size={18} />} label="Ungroup" />
+
+                            <div className="h-6 w-px bg-gray-200" />
+
+                            <div className="flex items-center gap-3">
+                                <ToolBtnVertical onClick={groupObjects} icon={<Combine size={18} />} label="Group" />
+                                <ToolBtnVertical onClick={ungroupObjects} icon={<Ungroup size={18} />} label="Ungroup" />
                             </div>
-                            <div className="h-6 w-px bg-gray-100" />
+
+                            <div className="h-6 w-px bg-gray-200" />
+
                             <div className="flex items-center gap-1">
                                 <ToolBtnVertical onClick={() => handleLayering('forward')} icon={<ArrowUp size={16} />} label="Forward" />
                                 <ToolBtnVertical onClick={() => handleLayering('backward')} icon={<ArrowDown size={16} />} label="Backward" />
@@ -492,78 +503,155 @@ function PaintEditor({
                                 <ToolBtnVertical onClick={() => handleLayering('back')} icon={<MoveDown size={16} />} label="Back" />
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 ml-auto">
-                            <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-400"><Undo size={22} /></button>
-                            <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-400"><Redo size={22} /></button>
-                        </div>
                     </div>
 
                     {/* TOP TOOLBAR ROW 2 */}
-                    <div className="h-14 px-6 border-b border-gray-100 flex items-center bg-white gap-8">
+                    <div className="h-14 px-6 border-b border-gray-200 flex flex-shrink-0 items-center bg-white gap-6 shadow-sm z-20 relative">
                         <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[11px] font-bold text-gray-400 uppercase">Fill</span>
-                                <div className="flex items-center gap-1 bg-[#f8f8f8] p-1 rounded-lg border border-gray-200">
-                                    <div className="w-8 h-8 rounded-md cursor-pointer border border-gray-100 shadow-sm" style={{ backgroundColor: fillColor }}>
-                                        <input type="color" value={fillColor} onChange={(e) => setFillColor(e.target.value)} className="w-full h-full opacity-0 cursor-pointer" />
+                            {/* Fill Color Picker Dropdown */}
+                            <div className="flex items-center gap-2 relative">
+                                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Fill</span>
+                                <div
+                                    className="flex items-center gap-1 bg-white p-1 rounded-lg border shadow-sm cursor-pointer hover:border-[#855CD6] transition-colors"
+                                    onClick={() => setActiveColorPicker(activeColorPicker === 'fill' ? null : 'fill')}
+                                >
+                                    <div className="w-8 h-8 rounded-md border border-gray-100 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjY2NjIi8+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNjY2MiLz48L3N2Zz4=')]" style={{ position: 'relative' }}>
+                                        {fillColor !== 'transparent' && <div className="absolute inset-0 rounded-md" style={{ backgroundColor: fillColor }} />}
+                                        {fillColor === 'transparent' && (
+                                            <div className="absolute w-[140%] h-[2px] bg-red-500 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-45" />
+                                        )}
                                     </div>
-                                    <ChevronDown size={12} className="text-gray-400 mr-1" />
+                                    <ChevronDown size={14} className="text-gray-400 mr-1" />
                                 </div>
+                                {activeColorPicker === 'fill' && (
+                                    <HSBColorPicker
+                                        color={fillColor}
+                                        onChange={(c) => {
+                                            setFillColor(c);
+                                            const canvas = canvasRef.current;
+                                            const activeOpt = canvas?.getActiveObject();
+                                            if (activeOpt && !activeOpt.isType('path')) {
+                                                activeOpt.set('fill', c);
+                                                canvas?.renderAll();
+                                                saveState();
+                                            }
+                                        }}
+                                        onClose={() => setActiveColorPicker(null)}
+                                        title="Fill"
+                                    />
+                                )}
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[11px] font-bold text-gray-400 uppercase">Outline</span>
-                                <div className="flex items-center gap-1 bg-[#f8f8f8] p-1 rounded-lg border border-gray-200">
-                                    <div className="w-8 h-8 rounded-md cursor-pointer border border-gray-100 shadow-sm" style={{ backgroundColor: outlineColor }}>
-                                        <input type="color" value={outlineColor} onChange={(e) => setOutlineColor(e.target.value)} className="w-full h-full opacity-0 cursor-pointer" />
+
+                            {/* Outline Color Picker Dropdown */}
+                            <div className="flex items-center gap-2 relative">
+                                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Outline</span>
+                                <div
+                                    className="flex items-center gap-1 bg-white p-1 rounded-lg border shadow-sm cursor-pointer hover:border-[#855CD6] transition-colors"
+                                    onClick={() => setActiveColorPicker(activeColorPicker === 'outline' ? null : 'outline')}
+                                >
+                                    <div className="w-8 h-8 rounded-md border border-gray-100 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjY2NjIi8+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNjY2MiLz48L3N2Zz4=')]" style={{ position: 'relative' }}>
+                                        {outlineColor !== 'transparent' && <div className="absolute inset-1 rounded-md border-[4px]" style={{ borderColor: outlineColor }} />}
+                                        {outlineColor === 'transparent' && (
+                                            <div className="absolute w-[140%] h-[2px] bg-red-500 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-45" />
+                                        )}
                                     </div>
-                                    <ChevronDown size={12} className="text-gray-400 mr-1" />
+                                    <ChevronDown size={14} className="text-gray-400 mr-1" />
                                 </div>
+                                {activeColorPicker === 'outline' && (
+                                    <HSBColorPicker
+                                        color={outlineColor}
+                                        onChange={(c) => {
+                                            setOutlineColor(c);
+                                            // Update stroke for brush tool if active
+                                            const canvas = canvasRef.current;
+                                            if (canvas && canvas.freeDrawingBrush && activeTool === 'brush') {
+                                                canvas.freeDrawingBrush.color = c;
+                                            }
+                                            const activeOpt = canvas?.getActiveObject();
+                                            if (activeOpt) {
+                                                activeOpt.set('stroke', c);
+                                                canvas?.renderAll();
+                                                saveState();
+                                            }
+                                        }}
+                                        onClose={() => setActiveColorPicker(null)}
+                                        title="Outline"
+                                    />
+                                )}
                             </div>
+
+                            {/* Stroke Width input */}
                             <div className="flex items-center gap-2">
-                                <span className="text-[11px] font-bold text-gray-400 uppercase">Thickness</span>
-                                <div className="bg-[#f8f8f8] px-4 py-1.5 rounded-full border border-gray-200 text-sm font-bold text-gray-600 flex items-center justify-center min-w-[50px]">
-                                    {strokeWidth}
-                                </div>
+                                <span className="text-[11px] font-bold text-gray-500 uppercase">Thickness</span>
+                                <input
+                                    type="number"
+                                    value={strokeWidth}
+                                    onChange={(e) => {
+                                        const w = Math.max(0, parseInt(e.target.value) || 0);
+                                        setStrokeWidth(w);
+                                        const canvas = canvasRef.current;
+                                        if (canvas && canvas.freeDrawingBrush && activeTool === 'brush') {
+                                            canvas.freeDrawingBrush.width = w;
+                                        }
+                                        const activeOpt = canvas?.getActiveObject();
+                                        if (activeOpt) {
+                                            activeOpt.set('strokeWidth', w);
+                                            canvas?.renderAll();
+                                            saveState();
+                                        }
+                                    }}
+                                    className="bg-white border text-center rounded-lg px-2 py-2 text-sm font-bold text-gray-700 w-14 outline-none focus:border-[#855CD6] shadow-sm"
+                                    min="0"
+                                    max="100"
+                                />
                             </div>
                         </div>
 
-                        <div className="h-6 w-px bg-gray-100" />
+                        <div className="h-8 w-px bg-gray-200" />
 
                         <div className="flex items-center gap-4">
-                            <ToolBtnHorizontal onClick={copy} icon={<Copy size={18} />} label="Copy" />
-                            <ToolBtnHorizontal onClick={paste} icon={<Clipboard size={18} />} label="Paste" />
-                            <ToolBtnHorizontal onClick={deleteActive} icon={<Trash2 size={18} />} label="Delete" color="text-rose-500" />
+                            <ToolBtnVertical onClick={copy} icon={<Copy size={18} />} label="Copy" />
+                            <ToolBtnVertical onClick={paste} icon={<Clipboard size={18} />} label="Paste" />
+                            <ToolBtnVertical onClick={deleteActive} icon={<Trash2 size={18} />} label="Delete" color="hover:text-rose-500" />
                         </div>
 
-                        <div className="h-6 w-px bg-gray-100" />
+                        <div className="h-8 w-px bg-gray-200" />
 
                         <div className="flex items-center gap-4">
-                            <ToolBtnHorizontal onClick={() => handleFlip('h')} icon={<FlipHorizontal size={18} />} label="Flip Horizontal" />
-                            <ToolBtnHorizontal onClick={() => handleFlip('v')} icon={<FlipVertical size={18} />} label="Flip Vertical" />
+                            <ToolBtnVertical onClick={() => handleFlip('h')} icon={<FlipHorizontal size={18} />} label="Flip Horizontal" />
+                            <ToolBtnVertical onClick={() => handleFlip('v')} icon={<FlipVertical size={18} />} label="Flip Vertical" />
                         </div>
                     </div>
 
-                    <div className="flex-1 flex relative">
-                        {/* DRAWING TOOLS (VERTICAL) */}
-                        <div className="w-16 border-r border-gray-100 flex flex-col items-center py-4 gap-4 bg-white">
-                            <DrawTool active={activeTool === 'select'} onClick={() => setActiveTool('select')} icon={<MousePointer2 size={24} fill={activeTool === 'select' ? 'white' : 'transparent'} />} />
-                            <DrawTool active={activeTool === 'reshape'} onClick={() => setActiveTool('reshape')} icon={<MousePointer size={24} />} />
-                            <DrawTool active={activeTool === 'brush'} onClick={() => setActiveTool('brush')} icon={<Pen size={22} />} />
-                            <DrawTool active={activeTool === 'eraser'} onClick={() => setActiveTool('eraser')} icon={<Eraser size={22} />} />
-                            <DrawTool active={activeTool === 'fill'} onClick={() => setActiveTool('fill')} icon={<PaintBucket size={22} />} />
-                            <DrawTool active={activeTool === 'text'} onClick={() => addShape('text')} icon={<Type size={22} />} />
-                            <DrawTool active={activeTool === 'line'} onClick={() => addShape('line')} icon={<Minus size={24} className="-rotate-45" />} />
-                            <DrawTool active={activeTool === 'circle'} onClick={() => addShape('circle')} icon={<Circle size={22} />} />
-                            <DrawTool active={activeTool === 'rect'} onClick={() => addShape('rect')} icon={<Square size={22} />} />
+                    <div className="flex-1 flex relative bg-[#E9EEF2]">
+                        {/* DRAWING TOOLS (2-COLUMN GRID matching Scratch) */}
+                        <div className="w-[100px] border-r border-[#d9e1e8] bg-white flex flex-col p-2 gap-2 shadow-sm z-10">
+                            <div className="grid grid-cols-2 gap-2">
+                                <DrawTool active={activeTool === 'select'} onClick={() => setActiveTool('select')} icon={<MousePointer2 size={20} className={activeTool === 'select' ? "fill-white" : ""} />} label="Select" />
+                                <DrawTool active={activeTool === 'reshape'} onClick={() => setActiveTool('reshape')} icon={<MousePointer size={20} />} label="Reshape" />
+
+                                <DrawTool active={activeTool === 'brush'} onClick={() => setActiveTool('brush')} icon={<Pen size={20} />} label="Brush" />
+                                <DrawTool active={activeTool === 'eraser'} onClick={() => setActiveTool('eraser')} icon={<Eraser size={20} />} label="Eraser" />
+
+                                <DrawTool active={activeTool === 'fill'} onClick={() => setActiveTool('fill')} icon={<PaintBucket size={20} />} label="Fill" />
+                                <DrawTool active={activeTool === 'text'} onClick={() => addShape('text')} icon={<Type size={20} />} label="Text" />
+
+                                <DrawTool active={activeTool === 'line'} onClick={() => addShape('line')} icon={<Minus size={22} className="-rotate-45" />} label="Line" />
+                                <DrawTool active={activeTool === 'circle'} onClick={() => addShape('circle')} icon={<Circle size={20} />} label="Circle" />
+
+                                <DrawTool active={activeTool === 'rect'} onClick={() => addShape('rect')} icon={<Square size={20} />} label="Rectangle" />
+                            </div>
                         </div>
 
                         {/* CANVAS AREA */}
-                        <div className="flex-1 bg-[#f8fafe] flex items-center justify-center p-8 overflow-hidden relative">
-                            <div className="relative shadow-2xl border border-gray-100 bg-white"
+                        <div className="flex-1 flex items-center justify-center p-8 overflow-hidden relative" style={{ cursor: activeTool === 'fill' ? 'crosshair' : 'default' }}>
+                            <div className="relative shadow-md border-2 border-[#d9e1e8] bg-white rounded-lg overflow-hidden"
                                 style={{
                                     backgroundImage: `url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZjhmOGY4Ii8+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNmOGY4ZjgiLz48L3N2Zz4=')`,
+                                    backgroundSize: '20px 20px',
                                     width: '800px', height: '600px',
-                                    transform: `scale(${zoom})`
+                                    transform: `scale(${zoom})`,
+                                    transformOrigin: 'center center'
                                 }}>
                                 <canvas id="fabric-canvas" />
                             </div>
@@ -605,30 +693,36 @@ function PaintEditor({
     );
 };
 
-const ToolBtn = ({ onClick, icon, title }: any) => (
-    <button onClick={onClick} title={title} className="p-2 hover:bg-gray-50 rounded-lg text-[#855CD6] bg-[#f8f6ff] transition-all active:scale-95">
+const ToolBtn = ({ onClick, icon, title, disabled }: any) => (
+    <button
+        onClick={onClick}
+        disabled={disabled}
+        title={title}
+        className={`p-2 rounded-lg transition-all ${disabled ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:text-[#855CD6] hover:bg-purple-50 active:scale-95'}`}
+    >
         {icon}
     </button>
 );
 
-const ToolBtnHorizontal = ({ onClick, icon, label, color = "text-[#855CD6]" }: any) => (
-    <button onClick={onClick} className="flex flex-col items-center gap-0.5 px-3 hover:bg-gray-50 rounded-lg transition-all active:scale-95">
-        <div className={color}>{icon}</div>
-        <span className="text-[10px] font-bold text-gray-400 capitalize">{label}</span>
+const ToolBtnHorizontal = ({ onClick, icon, label, color = "text-gray-500 hover:text-[#855CD6]" }: any) => (
+    <button onClick={onClick} className="flex flex-col items-center gap-0.5 px-3 hover:bg-gray-50 rounded-lg transition-all active:scale-95 group py-1">
+        <div className={`${color} transition-colors`}>{icon}</div>
+        <span className="text-[10px] font-bold text-gray-400 capitalize group-hover:text-gray-600 transition-colors">{label}</span>
     </button>
 );
 
-const ToolBtnVertical = ({ onClick, icon, label }: any) => (
-    <button onClick={onClick} className="flex flex-col items-center px-1.5 hover:bg-gray-50 rounded-lg group">
-        <div className="text-gray-400 group-hover:text-[#855CD6]">{icon}</div>
-        <span className="text-[8px] font-bold text-gray-300 group-hover:text-gray-400 uppercase tracking-tighter">{label}</span>
+const ToolBtnVertical = ({ onClick, icon, label, color = "group-hover:text-[#855CD6]" }: any) => (
+    <button onClick={onClick} className="flex flex-col items-center px-2 py-1 hover:bg-gray-50 rounded-lg group active:scale-95 transition-all">
+        <div className={`text-gray-500 ${color} transition-colors`}>{icon}</div>
+        <span className="text-[9px] font-bold text-gray-400 group-hover:text-gray-600 transition-colors mt-0.5">{label}</span>
     </button>
 );
 
-const DrawTool = ({ active, onClick, icon }: any) => (
+const DrawTool = ({ active, onClick, icon, label }: any) => (
     <button
         onClick={onClick}
-        className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all ${active ? 'bg-[#855CD6] text-white shadow-lg shadow-purple-100' : 'text-gray-400 hover:bg-gray-100'}`}
+        title={label}
+        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all stroke-2 ${active ? 'bg-[#855CD6] text-white shadow-md' : 'text-[#4d4d4d] hover:bg-[#e8f0fe] hover:text-[#855CD6] hover:shadow-sm bg-[#f8f9fa] border border-[#d9e1e8]'}`}
     >
         {icon}
     </button>
