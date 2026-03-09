@@ -24,6 +24,7 @@ import { SpriteLibrary, SpriteEntry } from './components/SpriteLibrary';
 import WorkspaceControls from './components/WorkspaceControls';
 import WorkspaceTrash from './components/WorkspaceTrash';
 import UnsavedWarningModal from './junior/components/UnsavedWarningModal';
+import { fileService } from './services/FileService';
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
 import './custom-toolbox';
 import { block } from 'blockly/core/tooltip';
@@ -857,116 +858,97 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             }
         });
 
-        const projectData = {
-            version: '1.0',
-            projectName,
+        const payload = {
             sprites: spritesData,
             workspaces: workspacesData,
-            timestamp: Date.now()
         };
 
-        console.log('[APP] Exporting project data...', {
-            spriteCount: spritesData.length,
-            workspaceCount: Object.keys(workspacesData).length
-        });
-
-        const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${projectName.replace(/\s+/g, '_')}.leap`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        fileService.saveProject(projectName, 'intermediate', payload);
         addLog(`Project saved: ${projectName}`);
-    }, [projectName, sprites, saveCurrentSpriteWorkspace, addLog]);
+    }, [projectName, sprites, addLog]);
 
     const executeOpenProject = useCallback(() => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.leap,.lbproject,application/json';
-        input.onchange = (e) => {
+        input.onchange = async (e) => {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const data = JSON.parse(event.target?.result as string);
-                    // Standard intermediate project format validation
-                    if (!data.sprites || !data.workspaces) {
-                        // Attempt fallback to see if it's a junior .lbproject with scenes
-                        if (data.scenes && data.mode === 'junior') {
-                            throw new Error('This appears to be a Junior Mode project. Please open it in the Junior Stage.');
-                        } else {
-                            throw new Error('Invalid project file');
-                        }
-                    }
+            try {
+                const data = await fileService.loadProject(file);
+                const validation = fileService.validateProject(data, 'intermediate');
 
-                    addLog(`Loading project: ${data.projectName || 'Untitled'}`);
-
-                    // Full Reset before loading
-                    sprites.forEach(s => animationVM.unregisterSprite(s.id));
-                    spriteWorkspacesRef.current.clear();
-                    if (workspaceRef.current) workspaceRef.current.clear();
-
-                    setProjectName(data.projectName || 'My Project');
-
-                    const newSprites: Sprite[] = [];
-                    for (const sData of data.sprites) {
-                        const s = new Sprite(sData.id, sData.name, triggerUpdate, sData.spriteType || 'cat');
-                        s.setX(sData.x);
-                        s.setY(sData.y);
-                        s.pointInDirection(sData.direction);
-                        s.setSize(sData.size);
-                        if (sData.visible) s.show(); else s.hide();
-
-                        for (const cData of sData.costumes) {
-                            await s.addCostume(cData.name, cData.src);
-                        }
-                        newSprites.push(s);
-                        animationVM.registerSprite(s);
-                    }
-
-                    // 3. Restore All Workspaces to the Map FIRST
-                    Object.keys(data.workspaces).forEach(id => {
-                        spriteWorkspacesRef.current.set(id, data.workspaces[id]);
-                    });
-
-                    // 4. Update UI state (triggers re-render)
-                    setSprites(newSprites);
-                    const firstId = newSprites.length > 0 ? newSprites[0].id : null;
-                    setSelectedSpriteId(firstId);
-
-                    // 5. Final attempt to load the workspace for the selected sprite
-                    // We use multiple attempts because Blockly injection is async
-                    if (firstId) {
-                        let attempts = 0;
-                        const tryLoad = () => {
-                            if (workspaceRef.current) {
-                                loadSpriteWorkspace(firstId);
-                                triggerUpdate();
-                                addLog('Project loaded successfully');
-                            } else if (attempts < 10) {
-                                attempts++;
-                                setTimeout(tryLoad, 200);
-                            } else {
-                                console.warn('[APP] Project loaded but workspace injection timed out');
-                                addLog('Project loaded (Workspace loading delayed)');
-                            }
-                        };
-                        tryLoad();
-                    } else {
-                        triggerUpdate();
-                        addLog('Project loaded successfully (Empty)');
-                    }
-                } catch (err: any) {
-                    console.error('Failed to load project:', err);
-                    alert(`Failed to load project file: ${err.message}`);
+                if (!validation.isValid) {
+                    alert(validation.error);
+                    return;
                 }
-            };
-            reader.readAsText(file);
+
+                // Standard intermediate project format validation
+                if (!data.sprites || !data.workspaces) {
+                    throw new Error('Invalid project file (missing sprites or workspaces)');
+                }
+
+                addLog(`Loading project: ${data.projectName || 'Untitled'}`);
+
+                // Full Reset before loading
+                sprites.forEach(s => animationVM.unregisterSprite(s.id));
+                spriteWorkspacesRef.current.clear();
+                if (workspaceRef.current) workspaceRef.current.clear();
+
+                setProjectName(data.projectName || 'My Project');
+
+                const newSprites: Sprite[] = [];
+                for (const sData of data.sprites) {
+                    const s = new Sprite(sData.id, sData.name, triggerUpdate, sData.spriteType || 'cat');
+                    s.setX(sData.x);
+                    s.setY(sData.y);
+                    s.pointInDirection(sData.direction);
+                    s.setSize(sData.size);
+                    if (sData.visible) s.show(); else s.hide();
+
+                    for (const cData of sData.costumes) {
+                        await s.addCostume(cData.name, cData.src);
+                    }
+                    newSprites.push(s);
+                    animationVM.registerSprite(s);
+                }
+
+                // 3. Restore All Workspaces to the Map FIRST
+                Object.keys(data.workspaces).forEach(id => {
+                    spriteWorkspacesRef.current.set(id, data.workspaces[id]);
+                });
+
+                // 4. Update UI state (triggers re-render)
+                setSprites(newSprites);
+                const firstId = newSprites.length > 0 ? newSprites[0].id : null;
+                setSelectedSpriteId(firstId);
+
+                // 5. Final attempt to load the workspace for the selected sprite
+                if (firstId) {
+                    let attempts = 0;
+                    const tryLoad = () => {
+                        if (workspaceRef.current) {
+                            loadSpriteWorkspace(firstId);
+                            triggerUpdate();
+                            addLog('Project loaded successfully');
+                        } else if (attempts < 10) {
+                            attempts++;
+                            setTimeout(tryLoad, 200);
+                        } else {
+                            console.warn('[APP] Project loaded but workspace injection timed out');
+                            addLog('Project loaded (Workspace loading delayed)');
+                        }
+                    };
+                    tryLoad();
+                } else {
+                    triggerUpdate();
+                    addLog('Project loaded successfully (Empty)');
+                }
+            } catch (err: any) {
+                console.error('Failed to load project:', err);
+                alert(`Failed to load project file: ${err.message}`);
+            }
         };
         input.click();
     }, [triggerUpdate, sprites, loadSpriteWorkspace, addLog]);

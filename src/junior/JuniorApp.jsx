@@ -141,6 +141,7 @@ import { AudioEngine } from "../scratch-audio/src/AudioEngine";
 import { Scratch3SoundBlocks } from "../scratch-vm/src/extensions/scratch3_sound/index.js";
 import { Scratch3MusicBlocks } from "../scratch-vm/src/extensions/scratch3_music/index.js";
 import { WorkspaceValidator } from "./engine/WorkspaceValidator";
+import { fileService } from "../services/FileService";
 
 // Initialize the Audio Environment natively
 const audioEngine = new AudioEngine();
@@ -1390,23 +1391,11 @@ export default function JuniorApp({ onBack }) {
         setTimeout(() => {
             const latestScenes = scenesRef.current || scenes;
 
-            const projectData = {
-                version: '1.0',
-                projectName,
-                mode: 'junior', // Distinct mode marker
+            const payload = {
                 scenes: latestScenes, // Junior mode relies entirely on the scenes array
-                timestamp: Date.now()
             };
 
-            const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${projectName.replace(/\s+/g, '_')}.leap`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            fileService.saveProject(projectName, 'junior', payload);
             console.log(`[JuniorApp] Project saved: ${projectName}`);
         }, 50);
     };
@@ -1440,65 +1429,69 @@ export default function JuniorApp({ onBack }) {
         }
     };
 
-    const handleFileLoad = (e) => {
+    const handleFileLoad = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            try {
-                const data = JSON.parse(event.target?.result);
-                if (!data.scenes) throw new Error('Invalid or legacy Junior project file (missing scenes array)');
+        try {
+            const data = await fileService.loadProject(file);
+            const validation = fileService.validateProject(data, 'junior');
 
-                console.log(`[JuniorApp] Loading project: ${data.projectName || 'Untitled'}`);
-
-                // Full Reset before loading
-                stopBlocks();
-                if (workspaceRef.current) {
-                    Blockly.Events.disable();
-                    workspaceRef.current.clear();
-                    Blockly.Events.enable();
-                }
-
-                setProjectName(data.projectName || 'My Project');
-
-                // Restore imported state
-                setScenes(data.scenes);
-                const firstScene = data.scenes[0];
-                if (firstScene) {
-                    setCurrentSceneId(firstScene.id);
-                    const firstSprite = firstScene.sprites[0];
-                    if (firstSprite) {
-                        const newId = firstSprite.id;
-                        setActiveSpriteId(newId);
-                        activeSpriteIdRef.current = newId;
-
-                        // Give React time to re-render sprites, then inject blocks into workspace
-                        setTimeout(() => {
-                            if (workspaceRef.current && firstSprite.blocks) {
-                                try {
-                                    Blockly.Events.disable();
-                                    Blockly.serialization.workspaces.load(firstSprite.blocks, workspaceRef.current);
-                                } finally {
-                                    Blockly.Events.enable();
-                                }
-                            }
-                        }, 100);
-                    } else {
-                        setActiveSpriteId(null);
-                        activeSpriteIdRef.current = null;
-                        if (workspaceRef.current) workspaceRef.current.clear();
-                    }
-                }
-
-                console.log('[JuniorApp] Project loaded successfully');
-            } catch (err) {
-                console.error('Failed to load project:', err);
-                alert('Failed to load project file: ' + err.message);
+            if (!validation.isValid) {
+                alert(validation.error);
+                return;
             }
-        };
-        reader.readAsText(file);
-        e.target.value = "";
+
+            if (!data.scenes) throw new Error('Invalid Junior project file (missing scenes array)');
+
+            console.log(`[JuniorApp] Loading project: ${data.projectName || 'Untitled'}`);
+
+            // Full Reset before loading
+            stopBlocks();
+            if (workspaceRef.current) {
+                Blockly.Events.disable();
+                workspaceRef.current.clear();
+                Blockly.Events.enable();
+            }
+
+            setProjectName(data.projectName || 'My Project');
+
+            // Restore imported state
+            setScenes(data.scenes);
+            const firstScene = data.scenes[0];
+            if (firstScene) {
+                setCurrentSceneId(firstScene.id);
+                const firstSprite = firstScene.sprites[0];
+                if (firstSprite) {
+                    const newId = firstSprite.id;
+                    setActiveSpriteId(newId);
+                    activeSpriteIdRef.current = newId;
+
+                    // Give React time to re-render sprites, then inject blocks into workspace
+                    setTimeout(() => {
+                        if (workspaceRef.current && firstSprite.blocks) {
+                            try {
+                                Blockly.Events.disable();
+                                Blockly.serialization.workspaces.load(firstSprite.blocks, workspaceRef.current);
+                            } finally {
+                                Blockly.Events.enable();
+                            }
+                        }
+                    }, 100);
+                } else {
+                    setActiveSpriteId(null);
+                    activeSpriteIdRef.current = null;
+                    if (workspaceRef.current) workspaceRef.current.clear();
+                }
+            }
+
+            console.log('[JuniorApp] Project loaded successfully');
+        } catch (err) {
+            console.error('Failed to load project:', err);
+            alert('Failed to load project file: ' + err.message);
+        } finally {
+            e.target.value = "";
+        }
     };
 
     // HANDLING MENUS (Enhanced)
