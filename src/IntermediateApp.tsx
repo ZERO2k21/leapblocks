@@ -6,6 +6,7 @@ import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
 import { hardwareBlocks } from './blocks/hardware-blocks';
 import { arduinoGenerator } from './generators/arduino-generator';
 import { AnimationCompiler } from './generators/animation-generator';
+import './generators/python-generator'; // Register Python code generation handlers
 import { animationVM, CompiledScript } from './vm/AnimationVM';
 import { Sprite, SpriteType } from './stage/Sprite';
 import Stage from './stage/Stage';

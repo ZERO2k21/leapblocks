@@ -6,9 +6,19 @@ import {
     ChevronDown, ArrowUp, ArrowDown,
     Plus, Search, MousePointer,
     MoveUp, MoveDown, Layers, Image as ImageIcon,
-    Combine, Ungroup, Download
+    Combine, Ungroup, Download, Sparkles
 } from 'lucide-react';
 import { ActionMenu } from '../stage/ActionMenu';
+import { CostumeLibrary } from './CostumeLibrary';
+
+// Built-in costumes for "Surprise" feature
+const BUILTIN_COSTUMES = [
+    { name: 'Robot Idle', src: '/assets/sprites/robot/robot_idle.svg' },
+    { name: 'Cat', src: '/assets/sprites/scratch/cat.svg' },
+    { name: 'Butterfly', src: '/assets/sprites/scratch/butterfly.svg' },
+    { name: 'Dolphin', src: '/assets/sprites/scratch/dolphin.svg' },
+    { name: 'Elephant', src: '/assets/sprites/scratch/elephant.svg' },
+];
 
 interface Costume {
     id: string;
@@ -51,6 +61,7 @@ function PaintEditor({
     const [activeImage, setActiveImage] = useState<string>(initialImage || '');
     const [costumeName, setCostumeName] = useState(spriteName);
     const [clipboard, setClipboard] = useState<fabric.Object | null>(null);
+    const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
     // Initialize Canvas
     useEffect(() => {
@@ -357,6 +368,16 @@ function PaintEditor({
                 style={{ display: 'none' }}
             />
 
+            {/* Costume Library Modal */}
+            <CostumeLibrary
+                isOpen={isLibraryOpen}
+                onClose={() => setIsLibraryOpen(false)}
+                onSelectCostume={(name, src) => {
+                    onSave(src, undefined, name);
+                    setIsLibraryOpen(false);
+                }}
+            />
+
             {/* 0. JUNIOR HEADER (matches JuniorApp style) */}
             {mode === 'junior' && (
                 <div className="h-12 bg-[#7B4FC4] flex items-center px-4 justify-between shadow-md">
@@ -427,9 +448,14 @@ function PaintEditor({
                             tooltipLabel="Choose a Costume"
                             actions={[
                                 { id: 'upload', icon: '📁', label: 'Upload Costume', onClick: triggerUpload },
-                                { id: 'surprise', icon: '✨', label: 'Surprise', onClick: () => console.log('Surprise') },
-                                { id: 'paint', icon: '🖌️', label: 'Paint', onClick: () => console.log('Paint') },
-                                { id: 'search', icon: '🔍', label: 'Choose a Costume', onClick: () => console.log('Search') },
+                                { id: 'surprise', icon: '✨', label: 'Surprise', onClick: () => {
+                                    // Pick a random costume from built-in library
+                                    const idx = Math.floor(Math.random() * DEFAULT_COSTUMES.length);
+                                    const costume = DEFAULT_COSTUMES[idx];
+                                    onSave(costume.src, undefined, costume.name);
+                                }},
+                                { id: 'paint', icon: '🖌️', label: 'Paint', onClick: () => { /* already in editor */ } },
+                                { id: 'search', icon: '🔍', label: 'Choose a Costume', onClick: () => setIsLibraryOpen(true) },
                             ]}
                         />
                     </div>

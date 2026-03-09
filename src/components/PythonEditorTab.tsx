@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import * as Blockly from 'blockly';
 
-// @ts-ignore
-import { pythonGenerator } from 'blockly/python';
-
 interface PythonEditorTabProps {
     workspace: Blockly.WorkspaceSvg | null;
 }
@@ -17,15 +14,15 @@ export const PythonEditorTab: React.FC<PythonEditorTabProps> = ({ workspace }) =
 
         const updateCode = () => {
             try {
-                // Use any for the generator to bypass type issues during unblocking
-                const gen = pythonGenerator || (Blockly as any).Python;
+                // Use the global Blockly.Python which has our custom handlers
+                const gen = (Blockly as any).Python;
 
                 if (gen && typeof gen.workspaceToCode === 'function') {
                     const generatedCode = gen.workspaceToCode(workspace);
                     setCode(generatedCode || '# No blocks in workspace');
                     setRenderError(null);
                 } else {
-                    setCode('# Python generator is not available');
+                    setCode('# Python generator is not available. Make sure python-generator.ts is loaded.');
                 }
             } catch (err: any) {
                 console.error('[PythonEditorTab] Code generation failed:', err);
@@ -55,26 +52,27 @@ export const PythonEditorTab: React.FC<PythonEditorTabProps> = ({ workspace }) =
                 alignItems: 'center',
                 color: '#cccccc'
             }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold' }}>PYTHON OUTPUT (DEBUG VIEW)</span>
+                <span style={{ fontSize: '12px', fontWeight: 'bold' }}>PYTHON CODE</span>
                 <button
                     onClick={() => navigator.clipboard.writeText(code)}
                     style={{
                         padding: '4px 10px',
                         fontSize: '11px',
-                        backgroundColor: '#3c3c3c',
+                        backgroundColor: '#22c55e',
                         color: 'white',
                         border: 'none',
-                        borderRadius: '2px',
-                        cursor: 'pointer'
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
                     }}
                 >
-                    Copy
+                    📋 Copy Python
                 </button>
             </div>
             <div style={{ flex: 1, overflow: 'hidden', padding: '10px' }}>
                 {renderError ? (
-                    <div style={{ color: '#ff5555', fontFamily: 'monospace' }}>
-                        Error: {renderError}
+                    <div style={{ color: '#ff5555', fontFamily: 'monospace', padding: '10px' }}>
+                        <strong>Error:</strong> {renderError}
                     </div>
                 ) : (
                     <textarea
@@ -86,11 +84,14 @@ export const PythonEditorTab: React.FC<PythonEditorTabProps> = ({ workspace }) =
                             backgroundColor: '#1e1e1e',
                             color: '#d4d4d4',
                             border: 'none',
-                            fontFamily: 'Consolas, "Courier New", monospace',
-                            fontSize: '14px',
+                            fontFamily: '"Fira Code", "Cascadia Code", Consolas, monospace',
+                            fontSize: '13px',
+                            lineHeight: '1.6',
                             resize: 'none',
                             outline: 'none',
-                            padding: '10px'
+                            padding: '15px',
+                            whiteSpace: 'pre',
+                            overflow: 'auto'
                         }}
                     />
                 )}
