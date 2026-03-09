@@ -109,6 +109,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const currentSoundPlayer = useRef<AudioBufferSourceNode | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const activeSound = sounds[activeSoundIndex];
 
@@ -246,8 +247,47 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
         setIsLibraryOpen(false);
     };
 
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !onAddSound) return;
+
+        // Convert to base64 data URL
+        const arrayBuffer = await file.arrayBuffer();
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const buffer = await audioContext.decodeAudioData(arrayBuffer);
+
+        // Convert to WAV blob for storage
+        const wavData = await WavEncoder.encode({
+            sampleRate: buffer.sampleRate,
+            channelData: [buffer.getChannelData(0)]
+        });
+        const blob = new Blob([wavData], { type: 'audio/wav' });
+        const url = URL.createObjectURL(blob);
+
+        const name = file.name.replace(/\.[^/.]+$/, ''); // Remove extension
+        await onAddSound(name, url);
+
+        // Reset input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const triggerUpload = () => {
+        fileInputRef.current?.click();
+    };
+
     return (
         <div className="flex flex-1 w-full h-full bg-white select-none overflow-hidden font-sans border-t border-gray-100">
+            {/* Hidden file input for sound upload */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="audio/*"
+                onChange={handleUpload}
+                style={{ display: 'none' }}
+            />
+
             <SoundLibrary
                 isOpen={isLibraryOpen}
                 onClose={() => setIsLibraryOpen(false)}
@@ -303,7 +343,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                         color="#855CD6"
                         tooltipLabel="Choose a Sound"
                         actions={[
-                            { id: 'upload', icon: '📁', label: 'Upload Sound', onClick: () => console.log('Upload Sound') },
+                            { id: 'upload', icon: '📁', label: 'Upload Sound', onClick: triggerUpload },
                             {
                                 id: 'surprise', icon: '✨', label: 'Surprise', onClick: () => {
                                     const surprises = ['meow', 'bark', 'grunt', 'pop', 'boing'];

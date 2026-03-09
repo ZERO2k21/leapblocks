@@ -2,6 +2,7 @@ import * as Blockly from 'blockly';
 import { CompiledScript, ScriptStep } from '../vm/AnimationVM';
 import { animationVM } from '../vm/AnimationVM';
 import { hardwareAdapter } from '../hardware/HardwareAdapter';
+import { stageManager } from '../engine/StageManager';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ANIMATION GENERATOR - Compiles blocks to executable scripts
@@ -151,6 +152,19 @@ export class AnimationCompiler {
                     return idx > 0 && idx <= str.length ? str[idx - 1] : '';
                 };
             }
+            case 'looks_costume_name': {
+                const sprite = animationVM.getSprite(this.spriteId);
+                return () => {
+                    if (!sprite || !sprite.currentCostume) return '';
+                    return sprite.currentCostume.name;
+                };
+            }
+            case 'looks_backdrop_name': {
+                return () => {
+                    const backdrop = stageManager.currentBackdrop;
+                    return backdrop ? backdrop.name : '';
+                };
+            }
             default: {
                 // Try compileNumberValue as fallback, convert to string
                 const numFunc = this.compileNumberValue(block, inputName);
@@ -192,13 +206,22 @@ export class AnimationCompiler {
             }
             case 'looks_costume_number': {
                 const sprite = animationVM.getSprite(this.spriteId);
-                // Simple assumption: first costume is 1, etc.
-                // A real implementation would need to look up index
-                return () => 1;
+                return () => {
+                    if (!sprite || !sprite.costumes || sprite.costumes.length === 0) return 0;
+                    return sprite.currentCostumeIndex + 1; // 1-based index
+                };
             }
             case 'looks_backdrop_number': {
-                // TODO: Implement
-                return () => 1;
+                // Access stageManager to get current backdrop index
+                const stageMgr = stageManager; // capture reference
+                return () => {
+                    const current = stageMgr.currentBackdrop;
+                    if (!current) return 0;
+                    // Since stageManager doesn't expose index directly, we need to compute from array
+                    const all = stageMgr.getAllBackdrops();
+                    const idx = all.findIndex(b => b.name === current.name);
+                    return idx >= 0 ? idx + 1 : 1; // 1-based
+                };
             }
             case 'sensing_distance_to': {
                 const target = valueBlock.getFieldValue('OBJECT');
@@ -278,7 +301,7 @@ export class AnimationCompiler {
     }
 
     private compileTopBlock(block: Blockly.Block): CompiledScript | null {
-        let trigger: 'flag' | 'sprite_click' | 'key';
+        let trigger: 'flag' | 'sprite_click' | 'key' | 'clone';
         let triggerKey: string | undefined;
 
         compilerLog.block(block.type, 'checking trigger type...');
@@ -303,9 +326,9 @@ export class AnimationCompiler {
                 compilerLog.info(`  Trigger: broadcast receive (TODO)`);
                 return null;
             case 'event_clone_start':
-                // TODO: Add 'clone' trigger type
-                compilerLog.info(`  Trigger: clone start (TODO)`);
-                return null;
+                trigger = 'clone';
+                compilerLog.info(`  Trigger: clone start`);
+                break;
             default:
                 compilerLog.info(`  Not an event block, returning null`);
                 return null; // Not an event block
@@ -358,13 +381,13 @@ export class AnimationCompiler {
                 break;
             // New PictoBlox motion blocks
             case 'motion_go_to':
-                step = { type: 'go_to', target: block.getFieldValue('TO') as 'random' | 'mouse' };
+                step = { type: 'go_to', target: block.getFieldValue('TO') as 'random' | 'mouse' | string };
                 break;
             case 'motion_glide_to':
-                step = { type: 'glide_to', secs: Number(block.getFieldValue('SECS')), target: block.getFieldValue('TO') as 'random' | 'mouse' };
+                step = { type: 'glide_to', secs: Number(block.getFieldValue('SECS')), target: block.getFieldValue('TO') as 'random' | 'mouse' | string };
                 break;
             case 'motion_point_towards':
-                step = { type: 'point_towards', towards: block.getFieldValue('TOWARDS') as 'mouse' | 'random' };
+                step = { type: 'point_towards', towards: block.getFieldValue('TOWARDS') as 'mouse' | 'random' | string };
                 break;
             case 'motion_if_on_edge_bounce':
                 step = { type: 'if_on_edge_bounce' };
@@ -510,6 +533,29 @@ export class AnimationCompiler {
                 break;
             case 'sound_clear_effects':
                 step = { type: 'clear_sound_effects' };
+                break;
+
+            // Pen blocks
+            case 'pen_clear':
+                step = { type: 'pen_clear' };
+                break;
+            case 'pen_stamp':
+                step = { type: 'pen_stamp' };
+                break;
+            case 'pen_penDown':
+                step = { type: 'pen_penDown' };
+                break;
+            case 'pen_penUp':
+                step = { type: 'pen_penUp' };
+                break;
+            case 'pen_setPenColorToColor':
+                step = { type: 'pen_setPenColorToColor', color: block.getFieldValue('COLOR') };
+                break;
+            case 'pen_changePenSizeBy':
+                step = { type: 'pen_changePenSizeBy', size: Number(block.getFieldValue('SIZE')) };
+                break;
+            case 'pen_setPenSizeTo':
+                step = { type: 'pen_setPenSizeTo', size: Number(block.getFieldValue('SIZE')) };
                 break;
 
             // Sensing

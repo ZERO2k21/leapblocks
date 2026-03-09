@@ -26,10 +26,18 @@ export interface SpriteState {
     sayText: string | null;
     sayTimeout: number | null;
     effects: {
-        color: number;
-        brightness: number;
+        color: number;      // color tint/hue shift 0-100
+        brightness: number; // brightness 0-100
         ghost: number;      // transparency 0-100
+        fisheye: number;    // fisheye distortion 0-100
+        whirl: number;      // whirl/swirl distortion 0-100
+        pixelate: number;   // pixelation level 0-100
+        mosaic: number;     // mosaic tile size 0-100
     };
+    // Pen drawing state
+    isPenDown: boolean;
+    penColor: string;
+    penSize: number;
     scripts: any[];         // Blocks attached to sprite
     // For animation interpolation
     glideTarget: { x: number; y: number; startX: number; startY: number; duration: number; elapsed: number } | null;
@@ -60,12 +68,16 @@ export class Sprite {
             sounds: [],
             sayText: null,
             sayTimeout: null,
-            effects: { color: 0, brightness: 0, ghost: 0 },
+            effects: { color: 0, brightness: 0, ghost: 0, fisheye: 0, whirl: 0, pixelate: 0, mosaic: 0 },
             glideTarget: null,
             rotationStyle: 'all around',
             scripts: [],
             isDragging: false,
             jiggleStartTime: null,
+            // Pen state
+            isPenDown: false,
+            penColor: '#000000',
+            penSize: 1,
         };
     }
 
@@ -92,6 +104,9 @@ export class Sprite {
     get rotationStyle() { return this.state.rotationStyle; }
     get scripts() { return this.state.scripts; }
     get isDragging() { return this.state.isDragging; }
+    get isPenDown() { return this.state.isPenDown; }
+    get penColor() { return this.state.penColor; }
+    get penSize() { return this.state.penSize; }
 
     getState(): SpriteState { return { ...this.state }; }
 
@@ -119,19 +134,79 @@ export class Sprite {
     show() { this.state.visible = true; this.onUpdate(); }
     hide() { this.state.visible = false; this.onUpdate(); }
 
-    setEffect(effect: 'color' | 'brightness' | 'ghost', value: number) {
+    setEffect(effect: 'color' | 'brightness' | 'ghost' | 'fisheye' | 'whirl' | 'pixelate' | 'mosaic', value: number) {
         this.state.effects[effect] = value;
         this.onUpdate();
     }
 
     clearEffects() {
-        this.state.effects = { color: 0, brightness: 0, ghost: 0 };
+        this.state.effects = { color: 0, brightness: 0, ghost: 0, fisheye: 0, whirl: 0, pixelate: 0, mosaic: 0 };
         this.onUpdate();
     }
 
     setRotationStyle(style: 'left-right' | 'all around' | 'none') {
         this.state.rotationStyle = style;
         this.onUpdate();
+    }
+
+    setPenDown(down: boolean) {
+        this.state.isPenDown = down;
+        this.onUpdate();
+    }
+
+    setPenColor(color: string) {
+        this.state.penColor = color;
+        this.onUpdate();
+    }
+
+    setPenSize(size: number) {
+        this.state.penSize = Math.max(0.1, size);
+        this.onUpdate();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // CLONE SUPPORT
+    // ═══════════════════════════════════════════════════════════════════════
+    copyCostumesFrom(other: Sprite) {
+        // Deep copy the costumes array (shallow copy of image objects is fine)
+        this.state.costumes = other.state.costumes.map(c => ({
+            name: c.name,
+            image: c.image,
+            width: c.width,
+            height: c.height,
+        }));
+        this.state.currentCostumeIndex = other.state.currentCostumeIndex;
+        this.onUpdate();
+    }
+
+    copySoundsFrom(other: Sprite) {
+        this.state.sounds = other.state.sounds.map(s => ({ name: s.name, src: s.src }));
+        this.onUpdate();
+    }
+
+    deleteCostume(index: number): void {
+        if (index >= 0 && index < this.state.costumes.length) {
+            this.state.costumes.splice(index, 1);
+            // Adjust currentCostumeIndex if we deleted the current or a previous costume
+            if (this.state.currentCostumeIndex >= this.state.costumes.length) {
+                this.state.currentCostumeIndex = Math.max(0, this.state.costumes.length - 1);
+            }
+            this.onUpdate();
+        }
+    }
+
+    duplicateCostume(index: number): void {
+        if (index >= 0 && index < this.state.costumes.length) {
+            const original = this.state.costumes[index];
+            const duplicate: Costume = {
+                name: `${original.name} (copy)`,
+                image: original.image,
+                width: original.width,
+                height: original.height,
+            };
+            this.state.costumes.splice(index + 1, 0, duplicate);
+            this.onUpdate();
+        }
     }
 
     setScripts(scripts: any[]) {
@@ -318,24 +393,20 @@ export class Sprite {
         ctx.save();
         ctx.translate(centerX, centerY);
 
-        // Calculate visual feedback animations
+        // Visual feedback animations
         let animScale = 1;
         let animRotate = 0;
-
         if (this.state.jiggleStartTime) {
             const elapsed = performance.now() - this.state.jiggleStartTime;
             if (elapsed < 300) {
                 const t = elapsed / 300;
-                animScale = 1 + Math.sin(t * Math.PI) * 0.15; // Pulse up
-                animRotate = Math.sin(t * Math.PI * 4) * 0.15; // Wiggle
+                animScale = 1 + Math.sin(t * Math.PI) * 0.15;
+                animRotate = Math.sin(t * Math.PI * 4) * 0.15;
             }
         }
 
         if (this.state.isDragging) {
-            animScale *= 1.15; // Enlarge slightly while dragged
-            ctx.filter = 'drop-shadow(0px 15px 15px rgba(0,0,0,0.3)) brightness(1.1)';
-        } else {
-            ctx.filter = 'none';
+            animScale *= 1.15; // enlarge while dragged
         }
 
         ctx.scale(animScale, animScale);
@@ -349,17 +420,85 @@ export class Sprite {
             }
         }
 
-        ctx.globalAlpha = 1 - (this.state.effects.ghost / 100);
+        const eff = this.state.effects;
+        const alpha = 1 - (eff.ghost / 100);
+
+        // Build combined filter string from dragging, brightness, and color effects
+        const filters: string[] = [];
+        if (this.state.isDragging) {
+            filters.push('drop-shadow(0px 15px 15px rgba(0,0,0,0.3))', 'brightness(110%)');
+        }
+        if (eff.brightness !== 0) {
+            const pct = 100 + eff.brightness; // value can be negative
+            filters.push(`brightness(${pct}%)`);
+        }
+        if (eff.color !== 0) {
+            const deg = eff.color * 3.6; // 0-100 -> 0-360 degrees
+            filters.push(`hue-rotate(${deg}deg)`);
+        }
+        if (filters.length > 0) {
+            ctx.filter = filters.join(' ');
+        }
+
         const scale = this.state.size / 100;
 
         if (costume) {
             const w = costume.width * scale;
             const h = costume.height * scale;
-            ctx.drawImage(costume.image, -w / 2, -h / 2, w, h);
+
+            const hasPixelate = eff.pixelate > 0 || eff.mosaic > 0;
+            const hasFisheye = eff.fisheye > 0;
+            const hasWhirl = eff.whirl > 0;
+            const hasDistortion = hasPixelate || hasFisheye || hasWhirl;
+
+            ctx.globalAlpha = alpha;
+
+            if (hasDistortion) {
+                // Determine pixelation factor (mosaic uses same factor)
+                let factor = 1;
+                if (hasPixelate) {
+                    const pv = eff.pixelate > 0 ? eff.pixelate : eff.mosaic;
+                    factor = Math.max(1, Math.floor(pv / 10) + 1);
+                }
+                const smallW = Math.max(1, Math.floor(w / factor));
+                const smallH = Math.max(1, Math.floor(h / factor));
+
+                const offscreen = document.createElement('canvas');
+                offscreen.width = smallW;
+                offscreen.height = smallH;
+                const offCtx = offscreen.getContext('2d');
+                if (offCtx) {
+                    // Draw costume downscaled to small canvas
+                    offCtx.drawImage(costume.image, 0, 0, smallW, smallH);
+
+                    // Apply additional pixel-level distortions
+                    if (hasFisheye) {
+                        this.applyFisheye(offCtx, smallW, smallH, eff.fisheye);
+                    }
+                    if (hasWhirl) {
+                        this.applyWhirl(offCtx, smallW, smallH, eff.whirl);
+                    }
+
+                    // Render the distorted offscreen canvas scaled up with nearest-neighbor (pixelated)
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(offscreen, -w / 2, -h / 2, w, h);
+                    ctx.imageSmoothingEnabled = true;
+                } else {
+                    // Fallback: direct draw if offscreen context fails
+                    ctx.drawImage(costume.image, -w / 2, -h / 2, w, h);
+                }
+            } else {
+                // No distortion; direct draw
+                ctx.drawImage(costume.image, -w / 2, -h / 2, w, h);
+            }
         } else {
+            // Default vector sprites (cat, ball, arrow, robot)
+            // Distortion effects not applicable to vector sprites
+            ctx.globalAlpha = alpha;
             ctx.scale(scale, scale);
             this.renderDefaultSprite(ctx);
         }
+
         ctx.restore();
 
         if (this.state.sayText) this.renderSpeechBubble(ctx, centerX, centerY, this.state.sayText);
@@ -481,5 +620,93 @@ export class Sprite {
         ctx.textBaseline = 'middle';
         ctx.fillText(text, x, bubbleY + bubbleHeight / 2);
         ctx.restore();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // DISTORTION EFFECT HELPERS (Fisheye, Whirl)
+    // Applied to offscreen canvases at low resolution for performance
+    // ═══════════════════════════════════════════════════════════════════════════
+    private applyFisheye(ctx: CanvasRenderingContext2D, width: number, height: number, strength: number): void {
+        // Barrel distortion: magnifies center, compresses edges
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        const output = ctx.createImageData(width, height);
+        const dst = output.data;
+        const cx = width / 2;
+        const cy = height / 2;
+        const maxR = Math.min(width, height) / 2;
+        const s = strength / 100; // normalize to 0-1
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const dx = x - cx;
+                const dy = y - cy;
+                const r = Math.sqrt(dx * dx + dy * dy);
+                let srcX = x, srcY = y;
+                if (r < maxR && r > 0) {
+                    const amount = r / maxR;
+                    // Quadratic distortion: more push outward as radius increases
+                    const newR = r * (1 + s * amount * amount);
+                    const angle = Math.atan2(dy, dx);
+                    srcX = cx + Math.cos(angle) * newR;
+                    srcY = cy + Math.sin(angle) * newR;
+                }
+                const dstIdx = (y * width + x) * 4;
+                if (srcX >= 0 && srcX < width && srcY >= 0 && srcY < height) {
+                    const sx = Math.round(srcX);
+                    const sy = Math.round(srcY);
+                    const srcIdx = (sy * width + sx) * 4;
+                    dst[dstIdx] = data[srcIdx];
+                    dst[dstIdx + 1] = data[srcIdx + 1];
+                    dst[dstIdx + 2] = data[srcIdx + 2];
+                    dst[dstIdx + 3] = data[srcIdx + 3];
+                } else {
+                    dst[dstIdx + 3] = 0; // transparent
+                }
+            }
+        }
+        ctx.putImageData(output, 0, 0);
+    }
+
+    private applyWhirl(ctx: CanvasRenderingContext2D, width: number, height: number, strength: number): void {
+        // Swirl distortion: rotates pixels more near center
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        const output = ctx.createImageData(width, height);
+        const dst = output.data;
+        const cx = width / 2;
+        const cy = height / 2;
+        const maxR = Math.min(width, height) / 2;
+        const s = strength / 100; // normalize
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const dx = x - cx;
+                const dy = y - cy;
+                const r = Math.sqrt(dx * dx + dy * dy);
+                let srcX = x, srcY = y;
+                if (r < maxR && r > 0) {
+                    const amount = r / maxR;
+                    // Spin decreases linearly from center to edge; at center full rotation, at edge 0
+                    const spin = s * (1 - amount) * Math.PI * 2; // up to 2π*s at center
+                    const angle = Math.atan2(dy, dx) + spin;
+                    srcX = cx + Math.cos(angle) * r;
+                    srcY = cy + Math.sin(angle) * r;
+                }
+                const dstIdx = (y * width + x) * 4;
+                if (srcX >= 0 && srcX < width && srcY >= 0 && srcY < height) {
+                    const sx = Math.round(srcX);
+                    const sy = Math.round(srcY);
+                    const srcIdx = (sy * width + sx) * 4;
+                    dst[dstIdx] = data[srcIdx];
+                    dst[dstIdx + 1] = data[srcIdx + 1];
+                    dst[dstIdx + 2] = data[srcIdx + 2];
+                    dst[dstIdx + 3] = data[srcIdx + 3];
+                } else {
+                    dst[dstIdx + 3] = 0;
+                }
+            }
+        }
+        ctx.putImageData(output, 0, 0);
     }
 }

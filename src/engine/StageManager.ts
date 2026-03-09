@@ -83,6 +83,19 @@ export class StageManager {
         }
     }
 
+    duplicateBackdrop(index: number): void {
+        if (index >= 0 && index < this.backdrops.length) {
+            const original = this.backdrops[index];
+            const duplicate: BackdropState = {
+                name: `${original.name} (copy)`,
+                src: original.src,
+                image: original.image,
+            };
+            this.backdrops.splice(index + 1, 0, duplicate);
+            this.onUpdate();
+        }
+    }
+
     // --- SOUND MANAGEMENT --- //
     async addSound(name: string, src: string): Promise<void> {
         return new Promise((resolve) => {

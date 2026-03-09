@@ -154,120 +154,188 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
         </div>
       </div>
 
-      {/* Bottom Area: Sprites List */}
-      <div style={styles.spriteListContainer}>
-        {showPicker && (
-          <div style={styles.picker}>
-            <div style={styles.pickerTitle}>Choose a sprite:</div>
-            <div style={styles.pickerGrid}>
-              {SPRITE_TYPES.map((spriteType) => (
-                <button
-                  key={spriteType.type}
-                  style={{
-                    ...styles.pickerItem,
-                    backgroundColor: spriteType.color,
-                  }}
-                  onClick={() => handleAddSprite(spriteType.type)}
-                  title={spriteType.name}
-                >
-                  <span style={styles.pickerEmoji}>{spriteType.emoji}</span>
-                  <span style={styles.pickerLabel}>{spriteType.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+      {/* Bottom Area: Sprites and Stage Lists */}
+      <div style={{ display: "flex", flex: 1, backgroundColor: "#F9F9F9", minHeight: "240px" }}>
 
-        <div style={styles.spriteList}>
-          {sprites.map((sprite) => {
-            const isSelected = selectedSpriteId === sprite.id;
+        {/* Main Sprites Area */}
+        <div style={{ ...styles.spriteListContainer, flex: 1, borderRight: "1px solid #d9d9d9" }}>
+          {showPicker && (
+            <div style={styles.picker}>
+              <div style={styles.pickerTitle}>Choose a sprite:</div>
+              <div style={styles.pickerGrid}>
+                {SPRITE_TYPES.map((spriteType) => (
+                  <button
+                    key={spriteType.type}
+                    style={{
+                      ...styles.pickerItem,
+                      backgroundColor: spriteType.color,
+                    }}
+                    onClick={() => handleAddSprite(spriteType.type)}
+                    title={spriteType.name}
+                  >
+                    <span style={styles.pickerEmoji}>{spriteType.emoji}</span>
+                    <span style={styles.pickerLabel}>{spriteType.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div style={styles.spriteList}>
+            {sprites.filter(s => s.id !== 'stage').map((sprite) => {
+              const isSelected = selectedSpriteId === sprite.id;
+              return (
+                <div
+                  key={sprite.id}
+                  style={{
+                    ...styles.spriteItem,
+                    ...(isSelected ? styles.spriteItemSelected : {}),
+                  }}
+                  onClick={() => onSelectSprite(sprite.id)}
+                >
+                  {isSelected && (
+                    <button
+                      style={styles.deleteButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteSprite(sprite.id);
+                      }}
+                      title="Delete"
+                    >
+                      🗑️
+                    </button>
+                  )}
+                  <div style={styles.spriteThumbnail}>
+                    {sprite.currentCostume ? (
+                      <img
+                        src={sprite.currentCostume.image.src}
+                        alt={sprite.name}
+                        style={{
+                          maxWidth: "40px",
+                          maxHeight: "40px",
+                          objectFit: "contain",
+                        }}
+                      />
+                    ) : (
+                      <div style={{ fontSize: "32px" }}>
+                        {getSpriteEmoji(sprite)}
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      ...styles.spriteName,
+                      ...(isSelected ? styles.spriteNameSelected : {}),
+                    }}
+                  >
+                    {sprite.name}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Floating action button for Sprites */}
+          <div style={styles.floatingAction}>
+            <ActionMenu
+              mainIcon="🐱"
+              color="#855CD6"
+              tooltipLabel="Choose a Sprite"
+              actions={[
+                {
+                  id: 'upload',
+                  icon: '⬆️',
+                  label: 'Upload Sprite',
+                  onClick: () => alert('Upload sprite coming soon!')
+                },
+                {
+                  id: 'surprise',
+                  icon: '✨',
+                  label: 'Surprise',
+                  onClick: () => {
+                    const randomSprite = SPRITE_TYPES[Math.floor(Math.random() * SPRITE_TYPES.length)];
+                    handleAddSprite(randomSprite.type);
+                  }
+                },
+                {
+                  id: 'paint',
+                  icon: '🖌️',
+                  label: 'Paint',
+                  onClick: () => alert('Paint editor coming soon!')
+                },
+                {
+                  id: 'search',
+                  icon: '🔍',
+                  label: 'Choose a Sprite',
+                  onClick: () => onOpenSpriteLibrary ? onOpenSpriteLibrary() : setShowPicker(!showPicker)
+                }
+              ]}
+            />
+          </div>
+        </div>
+
+        {/* Stage Area */}
+        <div style={{ width: "88px", padding: "16px 8px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#575E75', marginBottom: '8px' }}>Stage</div>
+          {sprites.filter(s => s.id === 'stage').map((stageSprite) => {
+            const isSelected = selectedSpriteId === 'stage';
             return (
               <div
-                key={sprite.id}
+                key="stage"
                 style={{
                   ...styles.spriteItem,
                   ...(isSelected ? styles.spriteItemSelected : {}),
+                  borderColor: isSelected ? '#3498DB' : '#d9d9d9', // Differentiate Stage color slightly
+                  width: '64px',
+                  height: '76px',
                 }}
-                onClick={() => onSelectSprite(sprite.id)}
+                onClick={() => onSelectSprite('stage')}
               >
-                {isSelected && (
-                  <button
-                    style={styles.deleteButton}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteSprite(sprite.id);
-                    }}
-                    title="Delete"
-                  >
-                    🗑️
-                  </button>
-                )}
-                <div style={styles.spriteThumbnail}>
-                  {sprite.currentCostume ? (
+                <div style={{ ...styles.spriteThumbnail, height: '48px', backgroundColor: '#f0f0f0', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
+                  {stageSprite.currentCostume ? (
                     <img
-                      src={sprite.currentCostume.image.src}
-                      alt={sprite.name}
-                      style={{
-                        maxWidth: "40px",
-                        maxHeight: "40px",
-                        objectFit: "contain",
-                      }}
+                      src={stageSprite.currentCostume.image.src}
+                      alt="Backdrop"
+                      style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "cover" }}
                     />
                   ) : (
-                    <div style={{ fontSize: "32px" }}>
-                      {getSpriteEmoji(sprite)}
-                    </div>
+                    <div style={{ fontSize: "20px" }}>🖼️</div>
                   )}
                 </div>
-                <div
-                  style={{
-                    ...styles.spriteName,
-                    ...(isSelected ? styles.spriteNameSelected : {}),
-                  }}
-                >
-                  {sprite.name}
+                <div style={{
+                  ...styles.spriteName,
+                  padding: '2px 0',
+                  fontSize: '9px',
+                  ...(isSelected ? { backgroundColor: '#3498DB', color: '#fff' } : {})
+                }}>
+                  Backdrops<br />1
                 </div>
               </div>
             );
           })}
-        </div>
 
-        {/* Floating action button - inside list container so it stays within panel border */}
-        <div style={styles.floatingAction}>
-          <ActionMenu
-            mainIcon="🐱"
-            color="#855CD6"
-            tooltipLabel="Choose a Sprite"
-            actions={[
-              {
-                id: 'upload',
-                icon: '⬆️',
-                label: 'Upload Sprite',
-                onClick: () => alert('Upload sprite coming soon!')
-              },
-              {
-                id: 'surprise',
-                icon: '✨',
-                label: 'Surprise',
-                onClick: () => {
-                  const randomSprite = SPRITE_TYPES[Math.floor(Math.random() * SPRITE_TYPES.length)];
-                  handleAddSprite(randomSprite.type);
+          {/* Floating action button for Backdrops */}
+          <div style={{ ...styles.floatingAction, right: '4px', bottom: '12px' }}>
+            <ActionMenu
+              mainIcon="🖼️"
+              color="#3498DB"
+              tooltipLabel="Choose a Backdrop"
+              actions={[
+                {
+                  id: 'upload',
+                  icon: '⬆️',
+                  label: 'Upload Backdrop',
+                  onClick: () => alert('Upload backdrop coming soon!')
+                },
+                {
+                  id: 'search',
+                  icon: '🔍',
+                  label: 'Choose a Backdrop',
+                  onClick: () => alert('Backdrop library coming soon!')
                 }
-              },
-              {
-                id: 'paint',
-                icon: '🖌️',
-                label: 'Paint',
-                onClick: () => alert('Paint editor coming soon!')
-              },
-              {
-                id: 'search',
-                icon: '🔍',
-                label: 'Choose a Sprite',
-                onClick: () => onOpenSpriteLibrary ? onOpenSpriteLibrary() : setShowPicker(!showPicker)
-              }
-            ]}
-          />
+              ]}
+            />
+          </div>
         </div>
       </div>
     </div>

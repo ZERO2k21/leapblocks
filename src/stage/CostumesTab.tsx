@@ -35,11 +35,20 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                     spriteName="Stage"
                     initialImage={currentBackdrop}
                     costumes={allBackdrops}
-                    onSave={async (imageData: string, svgData?: string) => {
+                    onSave={async (imageData: string, svgData?: string, name?: string) => {
                         const savedData = svgData || imageData;
-                        await stageManager.addBackdrop('custom', savedData);
-                        stageManager.setBackdrop('custom');
-                        addLog('Saved backdrop for Stage');
+                        const backdropName = name || 'custom';
+                        await stageManager.addBackdrop(backdropName, savedData);
+                        stageManager.setBackdrop(backdropName);
+                        addLog(`Saved backdrop for Stage: ${backdropName}`);
+                    }}
+                    onDeleteSound={(index: number) => {
+                        stageManager.deleteBackdrop(index);
+                        addLog(`Deleted backdrop from Stage`);
+                    }}
+                    onDuplicateSound={(index: number) => {
+                        stageManager.duplicateBackdrop(index);
+                        addLog(`Duplicated backdrop on Stage`);
                     }}
                     onClose={onClose}
                 />
@@ -65,11 +74,20 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                     spriteName={selectedSprite.name}
                     initialImage={currentCostume}
                     costumes={allCostumes}
-                    onSave={async (imageData: string, svgData?: string) => {
+                    onSave={async (imageData: string, svgData?: string, name?: string) => {
                         const savedData = svgData || imageData;
-                        await selectedSprite.addCostume('custom', savedData);
-                        selectedSprite.switchCostume('custom');
-                        addLog(`Saved costume for ${selectedSprite.name}`);
+                        const costumeName = name || 'custom';
+                        await selectedSprite.addCostume(costumeName, savedData);
+                        selectedSprite.switchCostume(costumeName);
+                        addLog(`Saved costume for ${selectedSprite.name}: ${costumeName}`);
+                    }}
+                    onDeleteSound={(index: number) => {
+                        selectedSprite.deleteCostume(index);
+                        addLog(`Deleted costume from ${selectedSprite.name}`);
+                    }}
+                    onDuplicateSound={(index: number) => {
+                        selectedSprite.duplicateCostume(index);
+                        addLog(`Duplicated costume on ${selectedSprite.name}`);
                     }}
                     onClose={onClose}
                 />

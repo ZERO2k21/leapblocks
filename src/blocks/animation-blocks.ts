@@ -256,6 +256,94 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     },
 
     // ═══════════════════════════════════════════════════════════════════════════
+    // PICToblOX MOTION BLOCKS (Additional)
+    // ═══════════════════════════════════════════════════════════════════════════
+    {
+        type: 'motion_go_to',
+        message0: '📍 go to %1',
+        args0: [{
+            type: 'field_dropdown',
+            name: 'TO',
+            options: [
+                ['random position', 'random'],
+                ['mouse-pointer', 'mouse'],
+                // Sprite options will be populated dynamically at runtime
+            ],
+        }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.motion,
+        tooltip: 'Go to random position or mouse-pointer',
+        helpUrl: '',
+    },
+    {
+        type: 'motion_glide_to',
+        message0: '✨ glide %1 secs to %2',
+        args0: [
+            { type: 'field_number', name: 'SECS', value: 1, min: 0.1 },
+            {
+                type: 'field_dropdown',
+                name: 'TO',
+                options: [
+                    ['random position', 'random'],
+                    ['mouse-pointer', 'mouse'],
+                    // Sprite options will be populated dynamically at runtime
+                ],
+            },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.motion,
+        tooltip: 'Glide smoothly to random position or mouse',
+        helpUrl: '',
+    },
+    {
+        type: 'motion_point_towards',
+        message0: '🧭 point towards %1',
+        args0: [{
+            type: 'field_dropdown',
+            name: 'TOWARDS',
+            options: [
+                ['mouse-pointer', 'mouse'],
+                ['random direction', 'random'],
+                // Sprite options will be populated dynamically at runtime
+            ],
+        }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.motion,
+        tooltip: 'Point towards mouse or random direction',
+        helpUrl: '',
+    },
+    {
+        type: 'motion_if_on_edge_bounce',
+        message0: '🔄 if on edge, bounce',
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.motion,
+        tooltip: 'Bounce when reaching stage edge',
+        helpUrl: '',
+    },
+    {
+        type: 'motion_set_rotation_style',
+        message0: '🔄 set rotation style to %1',
+        args0: [{
+            type: 'field_dropdown',
+            name: 'STYLE',
+            options: [
+                ['left-right', 'left-right'],
+                ['all around', 'all around'],
+                ["don't rotate", 'none'],
+            ],
+        }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.motion,
+        tooltip: 'How sprite rotates when moving',
+        helpUrl: '',
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
     // LOOKS
     // ═══════════════════════════════════════════════════════════════════════════
     {
@@ -334,8 +422,20 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         type: 'looks_set_effect',
         message0: '🎨 set %1 effect to %2',
         args0: [
-            { type: 'field_dropdown', name: 'EFFECT', options: [['ghost', 'ghost'], ['brightness', 'brightness']] },
-            { type: 'field_number', name: 'VALUE', value: 0 },
+            {
+                type: 'field_dropdown',
+                name: 'EFFECT',
+                options: [
+                    ['color', 'color'],
+                    ['fisheye', 'fisheye'],
+                    ['whirl', 'whirl'],
+                    ['pixelate', 'pixelate'],
+                    ['mosaic', 'mosaic'],
+                    ['brightness', 'brightness'],
+                    ['ghost', 'ghost'],
+                ],
+            },
+            { type: 'field_number', name: 'VALUE', value: 0, min: 0, max: 100 },
         ],
         previousStatement: null,
         nextStatement: null,
@@ -447,20 +547,34 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     },
     {
         type: 'looks_costume_number',
-        message0: 'costume %1',
-        args0: [{ type: 'field_dropdown', name: 'TYPE', options: [['number', 'number'], ['name', 'name']] }],
-        output: null,
+        message0: 'costume #',
+        output: 'Number',
         colour: COLORS.looks,
-        tooltip: 'Get costume number or name',
+        tooltip: 'Get current costume number (1-based)',
+        helpUrl: '',
+    },
+    {
+        type: 'looks_costume_name',
+        message0: 'costume name',
+        output: 'String',
+        colour: COLORS.looks,
+        tooltip: 'Get current costume name',
         helpUrl: '',
     },
     {
         type: 'looks_backdrop_number',
-        message0: 'backdrop %1',
-        args0: [{ type: 'field_dropdown', name: 'TYPE', options: [['number', 'number'], ['name', 'name']] }],
-        output: null,
+        message0: 'backdrop #',
+        output: 'Number',
         colour: COLORS.looks,
-        tooltip: 'Get backdrop number or name',
+        tooltip: 'Get current backdrop number (1-based)',
+        helpUrl: '',
+    },
+    {
+        type: 'looks_backdrop_name',
+        message0: 'backdrop name',
+        output: 'String',
+        colour: COLORS.looks,
+        tooltip: 'Get current backdrop name',
         helpUrl: '',
     },
 
@@ -1534,7 +1648,9 @@ export const animationToolbox = {
                 { kind: 'label', text: '── Reporters ──' },
                 { kind: 'block', type: 'looks_size' },
                 { kind: 'block', type: 'looks_costume_number' },
+                { kind: 'block', type: 'looks_costume_name' },
                 { kind: 'block', type: 'looks_backdrop_number' },
+                { kind: 'block', type: 'looks_backdrop_name' },
             ],
         },
         {

@@ -24,6 +24,8 @@ interface PaintEditorProps {
     costumes?: Costume[];
     spriteName?: string;
     mode?: 'junior' | 'intermediate';
+    onDeleteSound?: (index: number) => void;
+    onDuplicateSound?: (index: number) => void;
 }
 
 function PaintEditor({
@@ -33,9 +35,12 @@ function PaintEditor({
     initialImage,
     costumes = [],
     spriteName = "Sprite",
-    mode = 'intermediate'
+    mode = 'intermediate',
+    onDeleteSound,
+    onDuplicateSound
 }: PaintEditorProps) {
     const canvasRef = useRef<fabric.Canvas | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [activeTool, setActiveTool] = useState<string>('select');
     const [fillColor, setFillColor] = useState('#855CD6');
     const [outlineColor, setOutlineColor] = useState('#000000');
@@ -317,8 +322,41 @@ function PaintEditor({
         onClose();
     };
 
+    const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const dataUrl = event.target?.result as string;
+            // Set as active image (will display in editor)
+            setActiveImage(dataUrl);
+            // Also save it as a new costume
+            onSave(dataUrl, undefined, file.name.replace(/\.[^/.]+$/, '')); // Remove extension
+        };
+        reader.readAsDataURL(file);
+
+        // Reset input so same file can be selected again
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const triggerUpload = () => {
+        fileInputRef.current?.click();
+    };
+
     return (
         <div className={mode === 'junior' ? "fixed inset-0 z-[5000] flex flex-col bg-white select-none overflow-hidden font-sans" : "flex flex-1 w-full h-full bg-white select-none overflow-hidden font-sans border-t border-gray-100"}>
+            {/* Hidden file input for uploading costumes */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleUpload}
+                style={{ display: 'none' }}
+            />
+
             {/* 0. JUNIOR HEADER (matches JuniorApp style) */}
             {mode === 'junior' && (
                 <div className="h-12 bg-[#7B4FC4] flex items-center px-4 justify-between shadow-md">
@@ -361,8 +399,7 @@ function PaintEditor({
                                         title="Delete"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            // TODO: actual delete handler
-                                            console.log('Delete costume', i);
+                                            if (onDeleteSound) onDeleteSound(i);
                                         }}
                                     >
                                         <Trash2 size={12} />
@@ -372,8 +409,7 @@ function PaintEditor({
                                         title="Duplicate"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            // TODO: actual duplicate handler
-                                            console.log('Duplicate costume', i);
+                                            if (onDuplicateSound) onDuplicateSound(i);
                                         }}
                                     >
                                         <Copy size={12} />
@@ -390,7 +426,7 @@ function PaintEditor({
                             color="#855CD6"
                             tooltipLabel="Choose a Costume"
                             actions={[
-                                { id: 'upload', icon: '📁', label: 'Upload Costume', onClick: () => console.log('Upload') },
+                                { id: 'upload', icon: '📁', label: 'Upload Costume', onClick: triggerUpload },
                                 { id: 'surprise', icon: '✨', label: 'Surprise', onClick: () => console.log('Surprise') },
                                 { id: 'paint', icon: '🖌️', label: 'Paint', onClick: () => console.log('Paint') },
                                 { id: 'search', icon: '🔍', label: 'Choose a Costume', onClick: () => console.log('Search') },
