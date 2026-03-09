@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import Editor from '@monaco-editor/react';
 import * as Blockly from 'blockly';
+
+// @ts-ignore
 import { pythonGenerator } from 'blockly/python';
 
 interface PythonEditorTabProps {
@@ -9,18 +10,26 @@ interface PythonEditorTabProps {
 
 export const PythonEditorTab: React.FC<PythonEditorTabProps> = ({ workspace }) => {
     const [code, setCode] = useState<string>('# Generated Python code will appear here\n');
+    const [renderError, setRenderError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!workspace) return;
 
         const updateCode = () => {
             try {
-                // @ts-ignore
-                const generatedCode = pythonGenerator.workspaceToCode(workspace);
-                setCode(generatedCode || '# No blocks in workspace');
-            } catch (err) {
-                console.error('Code generation failed:', err);
-                setCode('# Error generating code:\n' + err);
+                // Use any for the generator to bypass type issues during unblocking
+                const gen = pythonGenerator || (Blockly as any).Python;
+
+                if (gen && typeof gen.workspaceToCode === 'function') {
+                    const generatedCode = gen.workspaceToCode(workspace);
+                    setCode(generatedCode || '# No blocks in workspace');
+                    setRenderError(null);
+                } else {
+                    setCode('# Python generator is not available');
+                }
+            } catch (err: any) {
+                console.error('[PythonEditorTab] Code generation failed:', err);
+                setRenderError(err.message || String(err));
             }
         };
 
@@ -28,52 +37,63 @@ export const PythonEditorTab: React.FC<PythonEditorTabProps> = ({ workspace }) =
         updateCode();
 
         // Listen for workspace changes
-        workspace.addChangeListener(updateCode);
+        const listener = workspace.addChangeListener(updateCode);
 
         return () => {
-            workspace.removeChangeListener(updateCode);
+            if (workspace) workspace.removeChangeListener(listener);
         };
     }, [workspace]);
 
     return (
-        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#1e1e1e' }}>
             <div style={{
                 padding: '8px 16px',
-                backgroundColor: '#f3f4f6',
-                borderBottom: '1px solid #e5e7eb',
+                backgroundColor: '#252526',
+                borderBottom: '1px solid #333',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                color: '#cccccc'
             }}>
-                <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#4b5563' }}>Python Preview</span>
+                <span style={{ fontSize: '12px', fontWeight: 'bold' }}>PYTHON OUTPUT (DEBUG VIEW)</span>
                 <button
                     onClick={() => navigator.clipboard.writeText(code)}
                     style={{
-                        padding: '4px 8px',
+                        padding: '4px 10px',
                         fontSize: '11px',
-                        backgroundColor: '#FFF',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '4px',
+                        backgroundColor: '#3c3c3c',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '2px',
                         cursor: 'pointer'
                     }}
                 >
-                    Copy Code
+                    Copy
                 </button>
             </div>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
-                <Editor
-                    height="100%"
-                    defaultLanguage="python"
-                    value={code}
-                    theme="vs-dark"
-                    options={{
-                        readOnly: true,
-                        minimap: { enabled: false },
-                        fontSize: 14,
-                        scrollBeyondLastLine: false,
-                        automaticLayout: true,
-                    }}
-                />
+            <div style={{ flex: 1, overflow: 'hidden', padding: '10px' }}>
+                {renderError ? (
+                    <div style={{ color: '#ff5555', fontFamily: 'monospace' }}>
+                        Error: {renderError}
+                    </div>
+                ) : (
+                    <textarea
+                        readOnly
+                        value={code}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: '#1e1e1e',
+                            color: '#d4d4d4',
+                            border: 'none',
+                            fontFamily: 'Consolas, "Courier New", monospace',
+                            fontSize: '14px',
+                            resize: 'none',
+                            outline: 'none',
+                            padding: '10px'
+                        }}
+                    />
+                )}
             </div>
         </div>
     );

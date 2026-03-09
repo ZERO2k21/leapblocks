@@ -2604,9 +2604,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     pythonEditor: {
         flex: 1,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        flexDirection: 'column',
         backgroundColor: '#1e1e1e',
+        overflow: 'hidden'
     },
     pythonPlaceholder: {
         textAlign: 'center',
