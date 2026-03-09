@@ -406,15 +406,12 @@ const styles: { [key: string]: React.CSSProperties } = {
         backdropFilter: 'blur(4px)',
     },
     modal: {
-        width: '90vw',
-        maxWidth: '1100px',
-        height: '85vh',
+        width: '100vw',
+        height: '100vh',
         backgroundColor: '#fff',
-        borderRadius: '16px',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         position: 'relative',
     },
     header: {

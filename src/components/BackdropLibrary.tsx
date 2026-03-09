@@ -98,13 +98,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     modal: {
         backgroundColor: '#fff',
-        borderRadius: '12px',
-        width: '80%',
-        maxWidth: '800px',
-        maxHeight: '80%',
+        width: '100%',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
         overflow: 'hidden',
     },
     header: {

@@ -37,10 +37,9 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }) {
             backdropFilter: 'blur(4px)',
         }}>
             <div style={{
-                background: 'white', width: '620px', maxHeight: '85vh',
-                borderRadius: '16px', overflow: 'hidden',
-                boxShadow: '0 16px 48px rgba(0,0,0,0.3)',
+                background: 'white', width: '100vw', height: '100vh',
                 display: 'flex', flexDirection: 'column',
+                overflow: 'hidden',
             }}>
                 {/* Header */}
                 <div style={{
