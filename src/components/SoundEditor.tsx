@@ -172,6 +172,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
     const [historyIndex, setHistoryIndex] = useState(-1);
     const [selectionStart, setSelectionStart] = useState(0);
     const [selectionEnd, setSelectionEnd] = useState(1);
+    const [clipboardBuffer, setClipboardBuffer] = useState<AudioBuffer | null>(null);
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const currentSoundPlayer = useRef<AudioBufferSourceNode | null>(null);
@@ -278,10 +279,111 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
     const applyEffect = (effectName: string) => {
         if (!audioBuffer) return;
 
-        const effects = new AudioEffects(audioBuffer, effectName, 0, 1);
+        const effects = new AudioEffects(audioBuffer, effectName, selectionStart, selectionEnd);
         effects.process((renderedBuffer: AudioBuffer) => {
             pushHistory(renderedBuffer);
         });
+    };
+
+    const copyToClipboard = () => {
+        if (!audioBuffer || selectionStart === selectionEnd) return;
+        const startSample = Math.floor(selectionStart * audioBuffer.length);
+        const endSample = Math.floor(selectionEnd * audioBuffer.length);
+        const newLength = endSample - startSample;
+
+        if (newLength <= 0) return;
+
+        const newBuffer = audioContext.createBuffer(1, newLength, audioBuffer.sampleRate);
+        const newChannelData = newBuffer.getChannelData(0);
+        const originalData = audioBuffer.getChannelData(0);
+
+        for (let i = 0; i < newLength; i++) {
+            newChannelData[i] = originalData[startSample + i];
+        }
+
+        setClipboardBuffer(newBuffer);
+    };
+
+    const copyToNew = async () => {
+        if (!audioBuffer || !onAddSound || selectionStart === selectionEnd) return;
+
+        const startSample = Math.floor(selectionStart * audioBuffer.length);
+        const endSample = Math.floor(selectionEnd * audioBuffer.length);
+        const newLength = endSample - startSample;
+
+        const newBuffer = audioContext.createBuffer(1, newLength, audioBuffer.sampleRate);
+        const newChannelData = newBuffer.getChannelData(0);
+        const originalData = audioBuffer.getChannelData(0);
+
+        for (let i = 0; i < newLength; i++) {
+            newChannelData[i] = originalData[startSample + i];
+        }
+
+        try {
+            const wavData = await WavEncoder.encode({
+                sampleRate: newBuffer.sampleRate,
+                channelData: [newBuffer.getChannelData(0)]
+            });
+            const blob = new Blob([wavData], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+            onAddSound(`${activeSound.name} (copy)`, url);
+        } catch (err) {
+            console.error("Failed to copy to new:", err);
+        }
+    };
+
+    const pasteFromClipboard = () => {
+        if (!audioBuffer || !clipboardBuffer) return;
+
+        const startSample = Math.floor(selectionStart * audioBuffer.length);
+        const newLength = audioBuffer.length + clipboardBuffer.length;
+
+        const newBuffer = audioContext.createBuffer(1, newLength, audioBuffer.sampleRate);
+        const newChannelData = newBuffer.getChannelData(0);
+        const originalData = audioBuffer.getChannelData(0);
+        const clipboardData = clipboardBuffer.getChannelData(0);
+
+        // Pre-paste
+        for (let i = 0; i < startSample; i++) {
+            newChannelData[i] = originalData[i];
+        }
+        // Paste
+        for (let i = 0; i < clipboardBuffer.length; i++) {
+            newChannelData[startSample + i] = clipboardData[i];
+        }
+        // Post-paste
+        for (let i = startSample; i < audioBuffer.length; i++) {
+            newChannelData[clipboardBuffer.length + i] = originalData[i];
+        }
+
+        pushHistory(newBuffer);
+        setSelectionEnd(selectionStart);
+    };
+
+    const deleteSelection = () => {
+        if (!audioBuffer || selectionStart === selectionEnd) return;
+
+        const startSample = Math.floor(selectionStart * audioBuffer.length);
+        const endSample = Math.floor(selectionEnd * audioBuffer.length);
+        const newLength = audioBuffer.length - (endSample - startSample);
+
+        if (newLength <= 0) return;
+
+        const newBuffer = audioContext.createBuffer(1, newLength, audioBuffer.sampleRate);
+        const newChannelData = newBuffer.getChannelData(0);
+        const originalData = audioBuffer.getChannelData(0);
+
+        // Before selection
+        for (let i = 0; i < startSample; i++) {
+            newChannelData[i] = originalData[i];
+        }
+        // After selection
+        for (let i = endSample; i < audioBuffer.length; i++) {
+            newChannelData[startSample + (i - endSample)] = originalData[i];
+        }
+
+        pushHistory(newBuffer);
+        setSelectionEnd(selectionStart);
     };
 
     const handlePlayPause = async () => {
@@ -459,13 +561,15 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                                     <Redo size={20} />
                                 </button>
                                 <div className="w-px h-6 bg-gray-200 mx-1" />
-                                <ToolBtnHorizontal icon={<Copy size={18} />} label="Copy" />
-                                <ToolBtnHorizontal icon={<ClipboardIcon size={18} />} label="Paste" />
-                                <button className="p-2 hover:bg-gray-50 rounded-lg text-gray-400 transition-colors">
-                                    <Scissors size={20} />
-                                </button>
-                                <button className="p-2 hover:bg-gray-50 rounded-lg text-gray-400 transition-colors">
-                                    <Trash2 size={20} />
+                                <ToolBtnHorizontal onClick={copyToClipboard} icon={<Copy size={18} />} label="Copy" disabled={selectionStart === selectionEnd} />
+                                <ToolBtnHorizontal onClick={pasteFromClipboard} icon={<ClipboardIcon size={18} />} label="Paste" disabled={!clipboardBuffer} />
+                                <ToolBtnHorizontal onClick={copyToNew} icon={<MusicIcon size={18} />} label="Copy to New" disabled={selectionStart === selectionEnd} />
+                                <button
+                                    onClick={deleteSelection}
+                                    disabled={selectionStart === selectionEnd}
+                                    className={`flex flex-col items-center gap-0.5 px-3 hover:bg-gray-50 rounded-lg transition-all active:scale-95 ${selectionStart === selectionEnd ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    <div className="text-[#855CD6]"><Scissors size={18} /></div>
+                                    <span className="text-[10px] font-bold text-gray-400 capitalize">Delete</span>
                                 </button>
                             </div>
                         </div>
@@ -527,8 +631,8 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
     );
 };
 
-const ToolBtnHorizontal = ({ onClick, icon, label, color = "text-[#855CD6]" }: any) => (
-    <button onClick={onClick} className="flex flex-col items-center gap-0.5 px-3 hover:bg-gray-50 rounded-lg transition-all active:scale-95">
+const ToolBtnHorizontal = ({ onClick, icon, label, color = "text-[#855CD6]", disabled = false }: any) => (
+    <button onClick={onClick} disabled={disabled} className={`flex flex-col items-center gap-0.5 px-3 hover:bg-gray-50 rounded-lg transition-all active:scale-95 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
         <div className={color}>{icon}</div>
         <span className="text-[10px] font-bold text-gray-400 capitalize">{label}</span>
     </button>
