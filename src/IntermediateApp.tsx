@@ -16,9 +16,9 @@ import BoardSelectionModal from './junior/components/BoardSelectionModal';
 import { CostumesTab } from './stage/CostumesTab';
 import { SoundsTab } from './stage/SoundsTab';
 import { PythonEditorTab } from './components/PythonEditorTab';
-import StagePanel from './stage/StagePanel';
-import BackdropLibrary from './components/BackdropLibrary';
-import BackdropEditor from './components/BackdropEditor';
+// import StagePanel from './stage/StagePanel'; // Temporarily disabled - component needs to be created
+// import BackdropLibrary from './components/BackdropLibrary'; // Temporarily disabled
+// import BackdropEditor from './components/BackdropEditor'; // Temporarily disabled
 import { stageManager } from './engine/StageManager';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
 import SerialMonitor from './components/SerialMonitor';
@@ -1922,13 +1922,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             </button>
                         </div>
 
-                        <button
-                            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'white', color: '#575E75', border: '1px solid #D9D9D9', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '11px' }}
-                            onClick={() => alert("Upload Firmware (Coming Soon)")}
-                            title="Upload Firmware"
-                        >
-                            <Upload size={14} color="#855CD6" /> Upload Firmware
-                        </button>
+
 
                         <div style={{ width: '1px', height: '22px', background: '#d9d9d9' }} />
 
@@ -2093,7 +2087,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     onRemoveBackground={handleRemoveBackground} // v2
                                     onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
                                 />
-                                <StagePanel
+                                {/* <StagePanel
                                     isSelected={selectedSpriteId === 'stage'}
                                     onSelect={() => handleSpriteSelect('stage')}
                                     onOpenLibrary={() => setShowBackdropLibrary(true)}
@@ -2101,7 +2095,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         handleSpriteSelect('stage');
                                         handleWorkspaceTabChange('costumes');
                                     }}
-                                />
+                                /> */}
                             </div>
                         </>
                     ) : (
