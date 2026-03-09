@@ -5,6 +5,8 @@ import { motionEngine } from '../engine/MotionEngine';
 import { costumeEngine } from '../engine/CostumeEngine';
 import { eventEngine } from '../engine/EventEngine';
 import { stageManager } from '../engine/StageManager';
+import { penManager } from '../engine/PenManager';
+import { soundManager } from '../engine/SoundManager';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ANIMATION VM - Executes animation scripts
@@ -20,7 +22,7 @@ export interface VMContext {
 }
 
 export interface CompiledScript {
-    trigger: 'flag' | 'sprite_click' | 'key';
+    trigger: 'flag' | 'sprite_click' | 'key' | 'clone';
     triggerKey?: string;
     spriteId: string;
     steps: ScriptStep[];
@@ -40,9 +42,9 @@ export type ScriptStep = (
     | { type: 'set_x'; x: number }
     | { type: 'set_y'; y: number }
     // PictoBlox Motion
-    | { type: 'go_to'; target: 'random' | 'mouse' }
-    | { type: 'glide_to'; secs: number; target: 'random' | 'mouse' }
-    | { type: 'point_towards'; towards: 'mouse' | 'random' }
+    | { type: 'go_to'; target: 'random' | 'mouse' | string }  // string = sprite name
+    | { type: 'glide_to'; secs: number; target: 'random' | 'mouse' | string }
+    | { type: 'point_towards'; towards: 'mouse' | 'random' | string }
     | { type: 'if_on_edge_bounce' }
     | { type: 'set_rotation_style'; style: 'left-right' | 'all around' | 'none' }
     // Looks
@@ -114,6 +116,14 @@ export type ScriptStep = (
     | { type: 'list_replace'; list: string; index: () => number; item: () => string }
     | { type: 'list_show'; list: string }
     | { type: 'list_hide'; list: string }
+    // Pen
+    | { type: 'pen_clear' }
+    | { type: 'pen_stamp' }
+    | { type: 'pen_penDown' }
+    | { type: 'pen_penUp' }
+    | { type: 'pen_setPenColorToColor'; color: string }
+    | { type: 'pen_changePenSizeBy'; size: number }
+    | { type: 'pen_setPenSizeTo'; size: number }
 ) & { blockId?: string };
 
 // Logging utility for AnimationVM
@@ -151,6 +161,9 @@ export class AnimationVM {
     private broadcastListeners: Map<string, CompiledScript[]> = new Map();
 
     constructor() {
+        // Initialize sound manager
+        soundManager.init();
+
         // Set up key listeners
         if (typeof window !== 'undefined') {
             window.addEventListener('keydown', (e) => {
@@ -163,40 +176,43 @@ export class AnimationVM {
             });
         }
     }
-    public audioManager = {
-        playSound: (name: string) => {
-            vmLog.step('play_sound', { sound: name });
-            console.log(`[Audio] Playing: ${name}`);
-        },
-        playSoundUntilDone: async (name: string) => {
-            vmLog.step('play_sound_until_done', { sound: name });
-            console.log(`[Audio] Playing until done: ${name}`);
-        },
-        stopAllSounds: () => {
-            vmLog.step('stop_all_sounds');
-            console.log('[Audio] Stopping all sounds');
-        },
-        setVolume: (vol: number) => {
-            vmLog.step('set_volume', { volume: vol });
-            this.volume = Math.max(0, Math.min(100, vol));
-        },
-        changeVolume: (delta: number) => {
-            vmLog.step('change_volume', { delta, newVolume: this.volume + delta });
-            this.volume = Math.max(0, Math.min(100, this.volume + delta));
-        },
-        getVolume: () => this.volume,
-        setEffect: (effect: 'pitch' | 'pan', value: number) => {
-            vmLog.step('set_sound_effect', { effect, value });
-            // TODO: Implement actual WebAudio effects
-        },
-        changeEffect: (effect: 'pitch' | 'pan', delta: number) => {
-            vmLog.step('change_sound_effect', { effect, delta });
-            // TODO: Implement actual WebAudio effects
-        },
-        clearEffects: () => {
-            vmLog.step('clear_sound_effects');
-            // TODO: Clear WebAudio effects
-        },
+
+    // Sound playback helper
+    private async playSound(sprite: Sprite, name: string, wait: boolean = false): Promise<void> {
+        soundManager.setVolume(this.volume / 100);
+
+        // Look for sound in sprite's sounds first
+        const sound = sprite.sounds.find(s => s.name === name);
+        if (sound) {
+            if (wait) {
+                await soundManager.playAndWait(name, sound.src);
+            } else {
+                await soundManager.play(name, sound.src);
+            }
+            return;
+        }
+
+        // Look in stage sounds
+        const stageSound = stageManager.getAllSounds().find(s => s.name === name);
+        if (stageSound) {
+            if (wait) {
+                await soundManager.playAndWait(name, stageSound.src);
+            } else {
+                await soundManager.play(name, stageSound.src);
+            }
+            return;
+        }
+
+        console.warn(`[Audio] Sound not found: ${name}`);
+    }
+
+    // Helper to get current sprite id from context
+    private currentSpriteId(): string {
+        // This is a workaround; we need to track current sprite in VM context
+        // For now, we'll rely on the fact that runScript gets sprite from script.spriteId
+        // But audioManager doesn't have access to that directly. Let's change approach: instead of
+        // trying to get sprite from manager, we'll store current sprite in the VM context and pass to audioManager
+        return ''; // placeholder - we'll fix this by modifying audioManager calls to pass sprite
     };
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -520,6 +536,74 @@ export class AnimationVM {
                 motionEngine.pointInDirection(sprite, step.direction);
                 break;
 
+            // PictoBlox motion extensions
+            case 'go_to':
+                if (step.target === 'random') {
+                    const randX = Math.random() * 480 - 240; // -240 to 240
+                    const randY = Math.random() * 360 - 180; // -180 to 180
+                    motionEngine.goTo(sprite, randX, randY);
+                } else if (step.target === 'mouse') {
+                    motionEngine.goTo(sprite, this.mouseX, this.mouseY);
+                } else {
+                    // target is a sprite name
+                    const targetSprite = spriteManager.getSprite(step.target);
+                    if (targetSprite) {
+                        motionEngine.goTo(sprite, targetSprite.x, targetSprite.y);
+                    } else {
+                        console.warn(`[AnimationVM] go_to: Sprite '${step.target}' not found`);
+                    }
+                }
+                break;
+
+            case 'glide_to':
+                if (step.target === 'random') {
+                    const randX = Math.random() * 480 - 240;
+                    const randY = Math.random() * 360 - 180;
+                    sprite.startGlide(randX, randY, step.secs);
+                } else if (step.target === 'mouse') {
+                    sprite.startGlide(this.mouseX, this.mouseY, step.secs);
+                } else {
+                    const targetSprite = spriteManager.getSprite(step.target);
+                    if (targetSprite) {
+                        sprite.startGlide(targetSprite.x, targetSprite.y, step.secs);
+                    } else {
+                        console.warn(`[AnimationVM] glide_to: Sprite '${step.target}' not found`);
+                    }
+                }
+                await this.waitForGlide(sprite, signal);
+                break;
+
+            case 'point_towards':
+                if (step.towards === 'mouse') {
+                    const dx = this.mouseX - sprite.x;
+                    const dy = this.mouseY - sprite.y;
+                    const angle = Math.atan2(dy, dx) * 180 / Math.PI + 90; // Convert to Scratch direction (0=up, 90=right)
+                    sprite.pointInDirection(angle);
+                } else if (step.towards === 'random') {
+                    const randomDir = Math.random() * 360;
+                    sprite.pointInDirection(randomDir);
+                } else {
+                    // towards a sprite
+                    const targetSprite = spriteManager.getSprite(step.towards);
+                    if (targetSprite) {
+                        const dx = targetSprite.x - sprite.x;
+                        const dy = targetSprite.y - sprite.y;
+                        const angle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+                        sprite.pointInDirection(angle);
+                    } else {
+                        console.warn(`[AnimationVM] point_towards: Sprite '${step.towards}' not found`);
+                    }
+                }
+                break;
+
+            case 'if_on_edge_bounce':
+                motionEngine.ifOnEdgeBounce(sprite);
+                break;
+
+            case 'set_rotation_style':
+                sprite.setRotationStyle(step.style);
+                break;
+
             case 'change_x':
                 sprite.setX(sprite.x + step.dx);
                 break;
@@ -596,13 +680,15 @@ export class AnimationVM {
                 break;
 
             case 'go_to_layer':
-                // Delegate to look engine or stage
-                console.log('[AnimationVM] go_to_layer not yet implemented');
+                // Simple implementation: set layer index based on front/back
+                // In a full implementation, we'd have layer ordering in spriteManager
+                console.log(`[AnimationVM] go_to_layer: ${step.layer} (layer ordering not fully implemented)`);
+                // TODO: Implement proper layer ordering
                 break;
 
             case 'go_forward_layers':
-                // Delegate to look engine or stage
-                console.log('[AnimationVM] go_forward_layers not yet implemented');
+                console.log(`[AnimationVM] go_forward_layers: ${step.direction} ${step.layers} layers (not fully implemented)`);
+                // TODO: Implement proper layer ordering
                 break;
 
             // Control blocks
@@ -658,14 +744,88 @@ export class AnimationVM {
             case 'stop_this_script':
                 throw new DOMException('Aborted', 'AbortError');
 
-            case 'create_clone':
-                // TODO: Implement cloning
-                console.log('[AnimationVM] create_clone not yet implemented');
+            case 'create_clone': {
+                // Determine which sprite to clone
+                const targetSprite = step.target === 'myself' || step.target === sprite.name
+                    ? sprite
+                    : spriteManager.getSprite(step.target);
+
+                if (!targetSprite) {
+                    vmLog.error(`create_clone: target sprite not found: ${step.target}`);
+                    break;
+                }
+
+                // Generate unique ID for the clone
+                const cloneId = `${targetSprite.id}_clone_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+                // Create new sprite as a clone
+                const clone = spriteManager.createSprite(
+                    cloneId,
+                    targetSprite.name,
+                    targetSprite.spriteType
+                );
+
+                // Copy state from target sprite to clone (excluding dynamic state)
+                clone.setX(targetSprite.x);
+                clone.setY(targetSprite.y);
+                clone.pointInDirection(targetSprite.direction);
+                clone.setSize(targetSprite.size);
+                clone.setRotationStyle(targetSprite.rotationStyle);
+                if (!targetSprite.visible) {
+                    clone.hide(); // copy visibility
+                }
+
+                // Copy costumes and sounds
+                clone.copyCostumesFrom(targetSprite);
+                clone.copySoundsFrom(targetSprite);
+
+                // Copy effects
+                const targetEffects = targetSprite.effects;
+                for (const key of Object.keys(targetEffects) as (keyof typeof targetEffects)[]) {
+                    clone.setEffect(key, targetEffects[key]);
+                }
+
+                // Clone does not start with pen down
+                clone.setPenDown(false);
+
+                // Copy scripts from target sprite, updating spriteId to clone's ID
+                const targetScripts = targetSprite.scripts;
+                const clonedScripts = targetScripts.map((script: any) => ({
+                    ...script,
+                    spriteId: cloneId,
+                }));
+                clone.setScripts(clonedScripts);
+
+                // Add clone to spriteManager
+                spriteManager.addSprite(clone);
+
+                // Immediately trigger the "when I start as a clone" scripts for the clone
+                const cloneStartScripts = clonedScripts.filter((s: any) => s.trigger === 'clone');
+                for (const script of cloneStartScripts) {
+                    this.runScript(script).catch(err => {
+                        vmLog.error('Error in clone start script', err);
+                    });
+                }
                 break;
+            }
 
             case 'delete_clone':
-                // TODO: Implement clone deletion
-                console.log('[AnimationVM] delete_clone not yet implemented');
+                // Only delete if this is a clone (ID contains '_clone_')
+                if (sprite.id.includes('_clone_')) {
+                    spriteManager.removeSprite(sprite.id);
+                    // Stop any running scripts for this sprite to avoid memory leaks
+                    const scriptIdsToAbort = Array.from(this.runningScripts.keys())
+                        .filter(id => id.startsWith(`${sprite.id}-`));
+                    for (const abortId of scriptIdsToAbort) {
+                        const controller = this.runningScripts.get(abortId);
+                        if (controller) {
+                            controller.abort();
+                            this.runningScripts.delete(abortId);
+                        }
+                    }
+                } else {
+                    vmLog.info('delete_clone ignored: not a clone');
+                }
                 break;
 
             // Event blocks
@@ -679,35 +839,73 @@ export class AnimationVM {
 
             // Sound blocks
             case 'play_sound':
-                this.audioManager.playSound(step.sound);
+                await this.playSound(ctx.sprite, step.sound, false);
                 break;
 
             case 'play_sound_until_done':
-                await this.audioManager.playSoundUntilDone(step.sound);
+                await this.playSound(ctx.sprite, step.sound, true);
                 break;
 
             case 'stop_all_sounds':
-                this.audioManager.stopAllSounds();
+                soundManager.stopAll();
                 break;
 
             case 'set_volume':
-                this.audioManager.setVolume(step.volume);
+                this.volume = Math.max(0, Math.min(100, step.volume));
+                soundManager.setVolume(this.volume);
                 break;
 
             case 'change_volume':
-                this.audioManager.changeVolume(step.change);
+                this.volume = Math.max(0, Math.min(100, this.volume + step.change));
+                soundManager.setVolume(this.volume);
                 break;
 
             case 'set_sound_effect':
-                this.audioManager.setEffect(step.effect, step.value);
+                vmLog.info('set_sound_effect not fully implemented', { effect: step.effect, value: step.value });
                 break;
 
             case 'change_sound_effect':
-                this.audioManager.changeEffect(step.effect, step.value);
+                vmLog.info('change_sound_effect not fully implemented', { effect: step.effect, delta: step.value });
                 break;
 
             case 'clear_sound_effects':
-                this.audioManager.clearEffects();
+                vmLog.info('clear_sound_effects not implemented');
+                break;
+
+            // Pen blocks
+            case 'pen_clear':
+                penManager.clear();
+                break;
+            case 'pen_stamp': {
+                const costume = sprite.currentCostume;
+                if (costume && costume.image) {
+                    penManager.stamp(
+                        costume.image,
+                        costume.width,
+                        costume.height,
+                        sprite.x,
+                        sprite.y,
+                        sprite.size,
+                        sprite.direction,
+                        sprite.rotationStyle
+                    );
+                }
+                break;
+            }
+            case 'pen_penDown':
+                sprite.setPenDown(true);
+                break;
+            case 'pen_penUp':
+                sprite.setPenDown(false);
+                break;
+            case 'pen_setPenColorToColor':
+                sprite.setPenColor(step.color);
+                break;
+            case 'pen_changePenSizeBy':
+                sprite.setPenSize(sprite.penSize + step.size);
+                break;
+            case 'pen_setPenSizeTo':
+                sprite.setPenSize(step.size);
                 break;
 
             // Sensing blocks

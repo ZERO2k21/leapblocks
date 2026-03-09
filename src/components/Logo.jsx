@@ -3,7 +3,7 @@ import React from 'react';
 export default function Logo({ height = 28, className = "" }) {
     return (
         <img
-            src="/assets/c-logo-svg.svg"
+            src="/assets/Copy of Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
             alt="LeapBlocks"
             onError={(e) => {
                 // Fallback if topbar_logo.svg is missing

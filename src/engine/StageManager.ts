@@ -9,6 +9,7 @@ export interface BackdropState {
 export class StageManager {
     private backdrops: BackdropState[] = [];
     private currentBackdropIndex: number = -1;
+    private sounds: { name: string; src: string }[] = [];
     private onUpdate: () => void;
 
     constructor(onUpdate: () => void) {
@@ -80,6 +81,50 @@ export class StageManager {
             }
             this.onUpdate();
         }
+    }
+
+    duplicateBackdrop(index: number): void {
+        if (index >= 0 && index < this.backdrops.length) {
+            const original = this.backdrops[index];
+            const duplicate: BackdropState = {
+                name: `${original.name} (copy)`,
+                src: original.src,
+                image: original.image,
+            };
+            this.backdrops.splice(index + 1, 0, duplicate);
+            this.onUpdate();
+        }
+    }
+
+    // --- SOUND MANAGEMENT --- //
+    async addSound(name: string, src: string): Promise<void> {
+        return new Promise((resolve) => {
+            this.sounds.push({ name, src });
+            this.onUpdate();
+            resolve();
+        });
+    }
+
+    deleteSound(index: number): void {
+        if (index >= 0 && index < this.sounds.length) {
+            this.sounds.splice(index, 1);
+            this.onUpdate();
+        }
+    }
+
+    duplicateSound(index: number): void {
+        if (index >= 0 && index < this.sounds.length) {
+            const soundToDuplicate = this.sounds[index];
+            this.sounds.splice(index + 1, 0, {
+                name: `${soundToDuplicate.name} (copy)`,
+                src: soundToDuplicate.src
+            });
+            this.onUpdate();
+        }
+    }
+
+    getAllSounds() {
+        return [...this.sounds];
     }
 
     getCurrentBackdrop(): BackdropState | null {

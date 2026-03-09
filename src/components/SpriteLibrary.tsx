@@ -12,44 +12,10 @@ export interface SpriteEntry {
     category: string;
 }
 
-const SPRITE_CATALOG: SpriteEntry[] = [
-    // ─── Animals ───
-    { id: 'cat', name: 'Cat', emoji: '🐱', image: '/assets/sprites/library/sprite_cat.png', category: 'Animals' },
-    { id: 'dog', name: 'Dog', emoji: '🐶', image: '/assets/sprites/library/sprite_dog.png', category: 'Animals' },
-    { id: 'bear', name: 'Bear', emoji: '🐻', image: '/assets/sprites/library/sprite_bear.png', category: 'Animals' },
-    { id: 'rabbit', name: 'Rabbit', emoji: '🐰', image: '/assets/sprites/library/sprite_rabbit.png', category: 'Animals' },
-    { id: 'fish', name: 'Fish', emoji: '🐟', image: '/assets/sprites/library/sprite_fish.png', category: 'Animals' },
-    { id: 'butterfly', name: 'Butterfly', emoji: '🦋', image: '/assets/sprites/library/sprite_butterfly.png', category: 'Animals' },
-    { id: 'elephant', name: 'Elephant', emoji: '🐘', image: '/assets/sprites/library/sprite_elephant.png', category: 'Animals' },
-    { id: 'dinosaur', name: 'Dinosaur', emoji: '🦕', image: '/assets/sprites/library/sprite_dinosaur.png', category: 'Animals' },
-    { id: 'fox', name: 'Fox', emoji: '🦊', image: '/assets/sprites/library/sprite_fox.png', category: 'Animals' },
-    { id: 'penguin', name: 'Penguin', emoji: '🐧', image: '/assets/sprites/library/sprite_penguin.png', category: 'Animals' },
-    { id: 'rat', name: 'Rat', emoji: '🐭', category: 'Animals' },
-    { id: 'bat', name: 'Bat', emoji: '🦇', category: 'Animals' },
-    { id: 'bird', name: 'Bird', emoji: '🐦', category: 'Animals' },
-    { id: 'chick', name: 'Chick', emoji: '🐥', category: 'Animals' },
-    { id: 'duck', name: 'Duck', emoji: '🦆', category: 'Animals' },
-    { id: 'frog', name: 'Frog', emoji: '🐸', category: 'Animals' },
-    { id: 'turtle', name: 'Turtle', emoji: '🐢', category: 'Animals' },
-    { id: 'snake', name: 'Snake', emoji: '🐍', category: 'Animals' },
-    { id: 'lion', name: 'Lion', emoji: '🦁', category: 'Animals' },
-    { id: 'pig', name: 'Pig', emoji: '🐷', category: 'Animals' },
-    { id: 'ant', name: 'Ant', emoji: '🐜', category: 'Animals' },
-    { id: 'dino2', name: 'Dino 2', emoji: '🦖', category: 'Animals' },
+import { scratchSprites } from './generated_scratch_sprites';
 
-    // ─── People ───
-    { id: 'boy', name: 'Boy', emoji: '👦', image: '/assets/sprites/library/sprite_boy.png', category: 'People' },
-    { id: 'girl', name: 'Girl', emoji: '👧', category: 'People' },
-    { id: 'wizard', name: 'Wizard', emoji: '🧙', category: 'People' },
-    { id: 'fairy', name: 'Fairy', emoji: '🧚', category: 'People' },
-    { id: 'astronaut', name: 'Astronaut', emoji: '🧑‍🚀', category: 'People' },
-    { id: 'cricketer', name: 'Cricketer', emoji: '🏏', category: 'People' },
-    { id: 'dancer', name: 'Dancer', emoji: '💃', category: 'People' },
-    { id: 'singer', name: 'Singer', emoji: '🧑‍🎤', category: 'People' },
-    { id: 'ninja', name: 'Ninja', emoji: '🥷', category: 'People' },
-    { id: 'superhero', name: 'Superhero', emoji: '🦸', category: 'People' },
 
-    // ─── Fantasy ───
+const LEAPBLOCKS_SPRITES: SpriteEntry[] = [
     {
         id: 'robot',
         name: 'Robot',
@@ -58,86 +24,14 @@ const SPRITE_CATALOG: SpriteEntry[] = [
         costumes: [
             '/assets/sprites/robot/robot_idle.svg',
             '/assets/sprites/robot/robot_talk.png',
+            '/assets/sprites/robot/robot_talk1.svg',
             '/assets/sprites/robot/robot_wave1.png',
-            '/assets/sprites/robot/robot_wave2.png'
+            '/assets/sprites/robot/robot_wave1.svg',
+            '/assets/sprites/robot/robot_wave2.png',
+            '/assets/sprites/robot/robot_wave2.svg'
         ],
         category: 'Fantasy'
-    },
-    { id: 'ghost', name: 'Ghost', emoji: '👻', image: '/assets/sprites/library/sprite_ghost.png', category: 'Fantasy' },
-    { id: 'dragon', name: 'Dragon', emoji: '🐉', category: 'Fantasy' },
-    { id: 'monster', name: 'Monster', emoji: '👾', category: 'Fantasy' },
-    { id: 'zombie', name: 'Zombie', emoji: '🧟', category: 'Fantasy' },
-    { id: 'mermaid', name: 'Mermaid', emoji: '🧜', category: 'Fantasy' },
-    { id: 'alien', name: 'Alien', emoji: '👽', category: 'Fantasy' },
-    { id: 'unicorn', name: 'Unicorn', emoji: '🦄', category: 'Fantasy' },
-
-    // ─── Music ───
-    { id: 'drums', name: 'Drums', emoji: '🥁', category: 'Music' },
-    { id: 'guitar', name: 'Guitar', emoji: '🎸', category: 'Music' },
-    { id: 'violin', name: 'Violin', emoji: '🎻', category: 'Music' },
-    { id: 'piano', name: 'Piano', emoji: '🎹', category: 'Music' },
-    { id: 'trumpet', name: 'Trumpet', emoji: '🎺', category: 'Music' },
-    { id: 'saxophone', name: 'Saxophone', emoji: '🎷', category: 'Music' },
-
-    // ─── Sports ───
-    { id: 'basketball', name: 'Basketball', emoji: '🏀', image: '/assets/sprites/library/sprite_basketball.png', category: 'Sports' },
-    { id: 'football', name: 'Football', emoji: '⚽', category: 'Sports' },
-    { id: 'cricket_bat', name: 'Cricket Bat', emoji: '🏏', category: 'Sports' },
-    { id: 'tennis', name: 'Tennis Ball', emoji: '🎾', category: 'Sports' },
-    { id: 'volleyball', name: 'Volleyball', emoji: '🏐', category: 'Sports' },
-    { id: 'trophy', name: 'Trophy', emoji: '🏆', category: 'Sports' },
-
-    // ─── Food ───
-    { id: 'apple', name: 'Apple', emoji: '🍎', category: 'Food' },
-    { id: 'orange', name: 'Orange', emoji: '🍊', category: 'Food' },
-    { id: 'banana', name: 'Banana', emoji: '🍌', category: 'Food' },
-    { id: 'cake', name: 'Cake', emoji: '🍰', category: 'Food' },
-    { id: 'pizza', name: 'Pizza', emoji: '🍕', category: 'Food' },
-    { id: 'donut', name: 'Donut', emoji: '🍩', category: 'Food' },
-    { id: 'ice_cream', name: 'Ice Cream', emoji: '🍦', category: 'Food' },
-    { id: 'basket', name: 'Basket', emoji: '🧺', category: 'Food' },
-
-    // ─── Objects ───
-    { id: 'balloon', name: 'Balloon', emoji: '🎈', category: 'Objects' },
-    { id: 'cloud', name: 'Cloud', emoji: '☁️', category: 'Objects' },
-    { id: 'building', name: 'Building', emoji: '🏢', category: 'Objects' },
-    { id: 'star', name: 'Star', emoji: '⭐', category: 'Objects' },
-    { id: 'diamond', name: 'Diamond', emoji: '💎', category: 'Objects' },
-    { id: 'box', name: 'Box', emoji: '📦', category: 'Objects' },
-    { id: 'square_box', name: 'Square', emoji: '⬛', category: 'Objects' },
-    { id: 'arrow1', name: 'Arrow 1', emoji: '➡️', category: 'Objects' },
-    { id: 'arrow2', name: 'Arrow 2', emoji: '⬆️', category: 'Objects' },
-    { id: 'heart', name: 'Heart', emoji: '❤️', category: 'Objects' },
-    { id: 'lightning', name: 'Lightning', emoji: '⚡', category: 'Objects' },
-    { id: 'pencil', name: 'Pencil', emoji: '✏️', category: 'Objects' },
-    { id: 'pen', name: 'Pen', emoji: '🖊️', category: 'Objects' },
-    { id: 'drawing_pen', name: 'Drawing Pen', emoji: '🖋️', category: 'Objects' },
-
-    // ─── Transport ───
-    { id: 'car', name: 'Car', emoji: '🚗', image: '/assets/sprites/library/sprite_car.png', category: 'Transport' },
-    { id: 'spaceship', name: 'Spaceship', emoji: '🚀', image: '/assets/sprites/library/sprite_spaceship.png', category: 'Transport' },
-    { id: 'bus', name: 'Bus', emoji: '🚌', category: 'Transport' },
-    { id: 'bike', name: 'Bike', emoji: '🏍️', category: 'Transport' },
-    { id: 'airplane', name: 'Airplane', emoji: '✈️', category: 'Transport' },
-    { id: 'train', name: 'Train', emoji: '🚂', category: 'Transport' },
-    { id: 'helicopter', name: 'Helicopter', emoji: '🚁', category: 'Transport' },
-    { id: 'boat', name: 'Boat', emoji: '⛵', category: 'Transport' },
-
-    // ─── Letters ───
-    ...('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(letter => ({
-        id: `letter_${letter.toLowerCase()}`,
-        name: `Block-${letter}`,
-        emoji: letter,
-        category: 'Letters'
-    }))),
-
-    // ─── Numbers ───
-    ...('0123456789'.split('').map(num => ({
-        id: `number_${num}`,
-        name: `Block-${num}`,
-        emoji: num,
-        category: 'Letters'
-    }))),
+    }
 ];
 
 const CATEGORIES = [
@@ -145,13 +39,36 @@ const CATEGORIES = [
     { id: 'Animals', color: '#4C97FF' },
     { id: 'People', color: '#9966FF' },
     { id: 'Fantasy', color: '#CF63CF' },
+    { id: 'Dance', color: '#E066FF' },
     { id: 'Music', color: '#FFAB19' },
     { id: 'Sports', color: '#FF8C1A' },
     { id: 'Food', color: '#0FBD8C' },
+    { id: 'Fashion', color: '#F97316' },
+    { id: 'Letters', color: '#FF6680' },
     { id: 'Objects', color: '#855CD6' },
     { id: 'Transport', color: '#4CBFE6' },
-    { id: 'Letters', color: '#FF6680' },
 ];
+
+const mappedScratchSprites = scratchSprites.map((sprite: any) => {
+    const tags = Array.isArray(sprite.tags) ? sprite.tags.map((t: string) => t.toLowerCase()) : [];
+
+    let category = 'Objects';
+
+    if (tags.includes('animals')) category = 'Animals';
+    else if (tags.includes('people') || tags.includes('person')) category = 'People';
+    else if (tags.includes('fantasy')) category = 'Fantasy';
+    else if (tags.includes('dance') || tags.includes('dancing')) category = 'Dance';
+    else if (tags.includes('music') || tags.includes('instruments')) category = 'Music';
+    else if (tags.includes('sports') || tags.includes('fitness')) category = 'Sports';
+    else if (tags.includes('food') || tags.includes('drink')) category = 'Food';
+    else if (tags.includes('fashion') || tags.includes('clothing')) category = 'Fashion';
+    else if (tags.includes('letters')) category = 'Letters';
+    else if (tags.includes('transportation') || tags.includes('vehicles')) category = 'Transport';
+
+    return { ...sprite, category } as SpriteEntry;
+});
+
+const FULL_CATALOG = [...LEAPBLOCKS_SPRITES, ...mappedScratchSprites];
 
 // ═══════════════════════════════════════════════════════════════════════════
 // EMOJI PICKER DATA
@@ -231,7 +148,7 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
     if (!isOpen) return null;
 
     // Filter sprites
-    const filteredSprites = SPRITE_CATALOG.filter(sprite => {
+    const filteredSprites = FULL_CATALOG.filter(sprite => {
         const matchesCategory = activeCategory === 'All' || sprite.category === activeCategory;
         const matchesSearch = !searchQuery ||
             sprite.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -489,15 +406,12 @@ const styles: { [key: string]: React.CSSProperties } = {
         backdropFilter: 'blur(4px)',
     },
     modal: {
-        width: '90vw',
-        maxWidth: '1100px',
-        height: '85vh',
+        width: '100vw',
+        height: '100vh',
         backgroundColor: '#fff',
-        borderRadius: '16px',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         position: 'relative',
     },
     header: {

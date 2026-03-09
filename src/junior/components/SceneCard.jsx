@@ -71,30 +71,32 @@ export default function SceneCard({ scene, active, onClick, onDelete, onEdit }) 
                 </div>
 
                 {/* Delete Badge (top-right) */}
-                <div
-                    onClick={(e) => { e.stopPropagation(); onDelete && onDelete(scene.id); }}
-                    style={{
-                        position: "absolute",
-                        top: "3px",
-                        right: "3px",
-                        width: "24px",
-                        height: "24px",
-                        background: "#7B4FC4",
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        zIndex: 2,
-                        boxShadow: "0 2px 6px rgba(123,79,196,0.4)",
-                        transition: "transform 0.15s",
-                    }}
-                    title="Delete Scene"
-                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.15)"}
-                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-                >
-                    <X size={12} color="white" />
-                </div>
+                {onDelete && (
+                    <div
+                        onClick={(e) => { e.stopPropagation(); onDelete && onDelete(scene.id); }}
+                        style={{
+                            position: "absolute",
+                            top: "3px",
+                            right: "3px",
+                            width: "24px",
+                            height: "24px",
+                            background: "#7B4FC4",
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            zIndex: 2,
+                            boxShadow: "0 2px 6px rgba(123,79,196,0.4)",
+                            transition: "transform 0.15s",
+                        }}
+                        title="Delete Scene"
+                        onMouseEnter={e => e.currentTarget.style.transform = "scale(1.15)"}
+                        onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                    >
+                        <X size={12} color="white" />
+                    </div>
+                )}
 
                 {/* Show sprite in center if no backdrop image */}
                 {!hasBackdropImage && (

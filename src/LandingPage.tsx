@@ -210,7 +210,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     injectCSS();
 
     // Phases: 'intro' → robot drops, 'welcome' → text types, 'main' → full UI
-    const [phase, setPhase] = useState<'intro' | 'welcome' | 'main'>('intro');
+    const hasSeenIntro = sessionStorage.getItem('leapblocks_intro_seen') === 'true';
+    const [phase, setPhase] = useState<'intro' | 'welcome' | 'main'>(hasSeenIntro ? 'main' : 'intro');
     const [typedText, setTypedText] = useState('');
     const [showCursor, setShowCursor] = useState(true);
     const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
@@ -219,9 +220,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
     // Phase timer
     useEffect(() => {
+        if (hasSeenIntro) return;
         const t1 = setTimeout(() => setPhase('welcome'), 1800);
         return () => clearTimeout(t1);
-    }, []);
+    }, [hasSeenIntro]);
 
     // Typewriter
     useEffect(() => {
@@ -232,6 +234,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             setTypedText(FULL_TEXT.slice(0, i));
             if (i >= FULL_TEXT.length) {
                 clearInterval(interval);
+                sessionStorage.setItem('leapblocks_intro_seen', 'true');
                 setTimeout(() => setPhase('main'), 600);
             }
         }, 50);

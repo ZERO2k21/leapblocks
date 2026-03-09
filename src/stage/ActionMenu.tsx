@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 
 export interface ActionMenuItem {
     id: string;
-    icon: string;
+    icon: React.ReactNode;
     label: string;
     onClick: () => void;
 }
 
 interface ActionMenuProps {
-    mainIcon: string;
+    mainIcon: React.ReactNode;
     color: string;
     tooltipLabel: string;
     actions: ActionMenuItem[];

@@ -6,16 +6,19 @@ import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
 import { hardwareBlocks } from './blocks/hardware-blocks';
 import { arduinoGenerator } from './generators/arduino-generator';
 import { AnimationCompiler } from './generators/animation-generator';
+import './generators/python-generator'; // Register Python code generation handlers
 import { animationVM, CompiledScript } from './vm/AnimationVM';
 import { Sprite, SpriteType } from './stage/Sprite';
 import Stage from './stage/Stage';
 import SpritePanel from './stage/SpritePanel';
 import MenuBar from './junior/components/MenuBar';
 import BoardSelectionModal from './junior/components/BoardSelectionModal';
-import PaintEditor from './components/PaintEditor';
-import StagePanel from './stage/StagePanel';
-import BackdropLibrary from './components/BackdropLibrary';
-import BackdropEditor from './components/BackdropEditor';
+import { CostumesTab } from './stage/CostumesTab';
+import { SoundsTab } from './stage/SoundsTab';
+import { PythonEditorTab } from './components/PythonEditorTab';
+// import StagePanel from './stage/StagePanel'; // Temporarily disabled - component needs to be created
+// import BackdropLibrary from './components/BackdropLibrary'; // Temporarily disabled
+// import BackdropEditor from './components/BackdropEditor'; // Temporarily disabled
 import { stageManager } from './engine/StageManager';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
 import SerialMonitor from './components/SerialMonitor';
@@ -24,7 +27,8 @@ import { SpriteLibrary, SpriteEntry } from './components/SpriteLibrary';
 import WorkspaceControls from './components/WorkspaceControls';
 import WorkspaceTrash from './components/WorkspaceTrash';
 import UnsavedWarningModal from './junior/components/UnsavedWarningModal';
-import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Pen } from 'lucide-react';
+import { fileService } from './services/FileService';
+import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
 import './custom-toolbox';
 import { block } from 'blockly/core/tooltip';
 
@@ -233,9 +237,17 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, []);
 
     const getCurrentToolbox = useCallback(() => {
-        if (editorMode === 'stage') return animationToolbox;
+        if (editorMode === 'stage') {
+            if (selectedSpriteId === 'stage') {
+                return {
+                    ...animationToolbox,
+                    contents: animationToolbox.contents.filter((cat: any) => cat.name !== 'Motion')
+                };
+            }
+            return animationToolbox;
+        }
         return selectedBoard === 'esp32' ? esp32Toolbox : arduinoToolbox;
-    }, [editorMode, selectedBoard]);
+    }, [editorMode, selectedBoard, selectedSpriteId]);
 
     // Helper to extract all blocks/labels from a categorized toolbox into a single flyout list
     const getFlattenedFlyoutContents = (toolbox: any) => {
@@ -849,116 +861,97 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             }
         });
 
-        const projectData = {
-            version: '1.0',
-            projectName,
+        const payload = {
             sprites: spritesData,
             workspaces: workspacesData,
-            timestamp: Date.now()
         };
 
-        console.log('[APP] Exporting project data...', {
-            spriteCount: spritesData.length,
-            workspaceCount: Object.keys(workspacesData).length
-        });
-
-        const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${projectName.replace(/\s+/g, '_')}.leap`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        fileService.saveProject(projectName, 'intermediate', payload);
         addLog(`Project saved: ${projectName}`);
-    }, [projectName, sprites, saveCurrentSpriteWorkspace, addLog]);
+    }, [projectName, sprites, addLog]);
 
     const executeOpenProject = useCallback(() => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.leap,.lbproject,application/json';
-        input.onchange = (e) => {
+        input.onchange = async (e) => {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const data = JSON.parse(event.target?.result as string);
-                    // Standard intermediate project format validation
-                    if (!data.sprites || !data.workspaces) {
-                        // Attempt fallback to see if it's a junior .lbproject with scenes
-                        if (data.scenes && data.mode === 'junior') {
-                            throw new Error('This appears to be a Junior Mode project. Please open it in the Junior Stage.');
-                        } else {
-                            throw new Error('Invalid project file');
-                        }
-                    }
+            try {
+                const data = await fileService.loadProject(file);
+                const validation = fileService.validateProject(data, 'intermediate');
 
-                    addLog(`Loading project: ${data.projectName || 'Untitled'}`);
-
-                    // Full Reset before loading
-                    sprites.forEach(s => animationVM.unregisterSprite(s.id));
-                    spriteWorkspacesRef.current.clear();
-                    if (workspaceRef.current) workspaceRef.current.clear();
-
-                    setProjectName(data.projectName || 'My Project');
-
-                    const newSprites: Sprite[] = [];
-                    for (const sData of data.sprites) {
-                        const s = new Sprite(sData.id, sData.name, triggerUpdate, sData.spriteType || 'cat');
-                        s.setX(sData.x);
-                        s.setY(sData.y);
-                        s.pointInDirection(sData.direction);
-                        s.setSize(sData.size);
-                        if (sData.visible) s.show(); else s.hide();
-
-                        for (const cData of sData.costumes) {
-                            await s.addCostume(cData.name, cData.src);
-                        }
-                        newSprites.push(s);
-                        animationVM.registerSprite(s);
-                    }
-
-                    // 3. Restore All Workspaces to the Map FIRST
-                    Object.keys(data.workspaces).forEach(id => {
-                        spriteWorkspacesRef.current.set(id, data.workspaces[id]);
-                    });
-
-                    // 4. Update UI state (triggers re-render)
-                    setSprites(newSprites);
-                    const firstId = newSprites.length > 0 ? newSprites[0].id : null;
-                    setSelectedSpriteId(firstId);
-
-                    // 5. Final attempt to load the workspace for the selected sprite
-                    // We use multiple attempts because Blockly injection is async
-                    if (firstId) {
-                        let attempts = 0;
-                        const tryLoad = () => {
-                            if (workspaceRef.current) {
-                                loadSpriteWorkspace(firstId);
-                                triggerUpdate();
-                                addLog('Project loaded successfully');
-                            } else if (attempts < 10) {
-                                attempts++;
-                                setTimeout(tryLoad, 200);
-                            } else {
-                                console.warn('[APP] Project loaded but workspace injection timed out');
-                                addLog('Project loaded (Workspace loading delayed)');
-                            }
-                        };
-                        tryLoad();
-                    } else {
-                        triggerUpdate();
-                        addLog('Project loaded successfully (Empty)');
-                    }
-                } catch (err: any) {
-                    console.error('Failed to load project:', err);
-                    alert(`Failed to load project file: ${err.message}`);
+                if (!validation.isValid) {
+                    alert(validation.error);
+                    return;
                 }
-            };
-            reader.readAsText(file);
+
+                // Standard intermediate project format validation
+                if (!data.sprites || !data.workspaces) {
+                    throw new Error('Invalid project file (missing sprites or workspaces)');
+                }
+
+                addLog(`Loading project: ${data.projectName || 'Untitled'}`);
+
+                // Full Reset before loading
+                sprites.forEach(s => animationVM.unregisterSprite(s.id));
+                spriteWorkspacesRef.current.clear();
+                if (workspaceRef.current) workspaceRef.current.clear();
+
+                setProjectName(data.projectName || 'My Project');
+
+                const newSprites: Sprite[] = [];
+                for (const sData of data.sprites) {
+                    const s = new Sprite(sData.id, sData.name, triggerUpdate, sData.spriteType || 'cat');
+                    s.setX(sData.x);
+                    s.setY(sData.y);
+                    s.pointInDirection(sData.direction);
+                    s.setSize(sData.size);
+                    if (sData.visible) s.show(); else s.hide();
+
+                    for (const cData of sData.costumes) {
+                        await s.addCostume(cData.name, cData.src);
+                    }
+                    newSprites.push(s);
+                    animationVM.registerSprite(s);
+                }
+
+                // 3. Restore All Workspaces to the Map FIRST
+                Object.keys(data.workspaces).forEach(id => {
+                    spriteWorkspacesRef.current.set(id, data.workspaces[id]);
+                });
+
+                // 4. Update UI state (triggers re-render)
+                setSprites(newSprites);
+                const firstId = newSprites.length > 0 ? newSprites[0].id : null;
+                setSelectedSpriteId(firstId);
+
+                // 5. Final attempt to load the workspace for the selected sprite
+                if (firstId) {
+                    let attempts = 0;
+                    const tryLoad = () => {
+                        if (workspaceRef.current) {
+                            loadSpriteWorkspace(firstId);
+                            triggerUpdate();
+                            addLog('Project loaded successfully');
+                        } else if (attempts < 10) {
+                            attempts++;
+                            setTimeout(tryLoad, 200);
+                        } else {
+                            console.warn('[APP] Project loaded but workspace injection timed out');
+                            addLog('Project loaded (Workspace loading delayed)');
+                        }
+                    };
+                    tryLoad();
+                } else {
+                    triggerUpdate();
+                    addLog('Project loaded successfully (Empty)');
+                }
+            } catch (err: any) {
+                console.error('Failed to load project:', err);
+                alert(`Failed to load project file: ${err.message}`);
+            }
         };
         input.click();
     }, [triggerUpdate, sprites, loadSpriteWorkspace, addLog]);
@@ -1077,7 +1070,19 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         hardwareAdapter.stopAllPolling();
         addLog('Stopped animation');
-    }, [addLog, sprites]);
+    }, [sprites, workspaceRef, addLog]);
+
+    const handleUndo = useCallback(() => {
+        if (workspaceRef.current) {
+            workspaceRef.current.undo(false);
+        }
+    }, []);
+
+    const handleRedo = useCallback(() => {
+        if (workspaceRef.current) {
+            workspaceRef.current.undo(true);
+        }
+    }, []);
 
     // ═══════════════════════════════════════════════════════════════════════
     // HARDWARE CONTROLS
@@ -1864,6 +1869,82 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 onEditAction={(action: string) => addLog(`Edit action: ${action}`)}
             />
 
+            {/* Unified Toolbar - Tabs on left, Stage controls on right */}
+            {appMode === 'blocks' && editorMode === 'stage' && (
+                <div style={styles.unifiedToolbar}>
+                    {/* Left: Workspace Tabs */}
+                    <div style={{ display: 'flex', height: '100%', alignItems: 'flex-end', paddingLeft: '20px', flex: 1 }}>
+                        <button
+                            style={workspaceTab === 'blocks' ? styles.tabActive : styles.tab}
+                            onClick={() => handleWorkspaceTabChange('blocks')}
+                        >
+                            <LayoutTemplate size={18} color={workspaceTab === 'blocks' ? '#855CD6' : '#999'} /> Blocks
+                        </button>
+                        <button
+                            style={workspaceTab === 'python' ? styles.tabActive : styles.tab}
+                            onClick={() => handleWorkspaceTabChange('python')}
+                        >
+                            <Terminal size={18} color={workspaceTab === 'python' ? '#855CD6' : '#999'} /> Python
+                        </button>
+                        <div style={{ width: '1px', height: '20px', background: '#ddd', margin: '0 8px 10px 8px' }} />
+                        <button
+                            style={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
+                            onClick={() => handleWorkspaceTabChange('costumes')}
+                        >
+                            <Pen size={18} color={workspaceTab === 'costumes' ? '#855CD6' : '#999'} /> {selectedSpriteId === 'stage' ? 'Backdrops' : 'Costumes'}
+                        </button>
+                        <button
+                            style={workspaceTab === 'sounds' ? styles.tabActive : styles.tab}
+                            onClick={() => handleWorkspaceTabChange('sounds')}
+                        >
+                            <Volume2 size={18} color={workspaceTab === 'sounds' ? '#855CD6' : '#999'} /> Sounds
+                        </button>
+                    </div>
+
+                    {/* Middle: Undo/Redo Controls */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '16px', borderRight: '1px solid #ddd', height: '100%', paddingLeft: '16px' }}>
+                        <button style={styles.undoRedoBtn} onClick={handleUndo} title="Undo">
+                            <Undo2 size={18} color="#575E75" />
+                        </button>
+                        <button style={styles.undoRedoBtn} onClick={handleRedo} title="Redo">
+                            <Redo2 size={18} color="#575E75" />
+                        </button>
+                    </div>
+
+                    {/* Right: Stage Controls */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '12px', paddingLeft: '12px' }}>
+                        <div style={styles.actionButtons}>
+                            <button style={styles.runButtonTop} onClick={handleRunClick} title="Run">
+                                <svg viewBox="0 0 24 24" width="22" height="22"><path fill="#4CBB17" d="M5 3v18M19 8l-14-5v10l14 5V8z" stroke="#4CBB17" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+                            </button>
+                            <button style={styles.stopButtonTop} onClick={handleStopClick} title="Stop">
+                                <svg viewBox="0 0 24 24" width="22" height="22"><polygon fill="#EC5959" points="7.3,2 16.7,2 22,7.3 22,16.7 16.7,22 7.3,22 2,16.7 2,7.3" /></svg>
+                            </button>
+                        </div>
+
+
+
+                        <div style={{ width: '1px', height: '22px', background: '#d9d9d9' }} />
+
+                        <button style={{ ...styles.iconBtn, ...(isCameraOn ? styles.iconBtnActive : {}) }} onClick={() => setIsCameraOn(!isCameraOn)} title="Toggle Camera">
+                            {isCameraOn ? <Camera size={18} /> : <CameraOff size={18} />}
+                        </button>
+                        <button style={{ ...styles.iconBtn, ...(showGrid ? styles.iconBtnActive : {}) }} onClick={() => setShowGrid(!showGrid)} title="Toggle Grid">
+                            <Grid3X3 size={18} />
+                        </button>
+                        <button style={{ ...styles.iconBtn, ...(stageLayout === 'small' ? styles.iconBtnActive : {}) }} onClick={() => setStageLayout('small')} title="Small Stage">
+                            <LayoutTemplate size={18} />
+                        </button>
+                        <button style={{ ...styles.iconBtn, ...(stageLayout === 'large' ? styles.iconBtnActive : {}) }} onClick={() => setStageLayout('large')} title="Large Stage">
+                            <LayoutPanelLeft size={18} />
+                        </button>
+                        <button style={{ ...styles.iconBtn, ...(isFullscreen ? styles.iconBtnActive : {}) }} onClick={() => setIsFullscreen(!isFullscreen)} title="Fullscreen">
+                            {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <UnsavedWarningModal
                 isOpen={showUnsavedModal}
                 onYes={() => confirmUnsavedAction(true)}
@@ -1876,39 +1957,8 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
             {/* Main Content */}
             <div style={styles.main}>
-                {/* Blockly Workspace with Tabs */}
+                {/* Blockly Workspace */}
                 <div style={styles.workspaceContainer}>
-                    {/* PictoBlox-style tabs - ONLY in Stage Mode */}
-                    {appMode === 'blocks' && editorMode === 'stage' && (
-                        <div style={styles.tabBar}>
-                            <div style={{ display: 'flex', height: '100%' }}>
-                                <button
-                                    style={workspaceTab === 'blocks' ? styles.tabActive : styles.tab}
-                                    onClick={() => handleWorkspaceTabChange('blocks')}
-                                >
-                                    <LayoutTemplate size={18} color={workspaceTab === 'blocks' ? '#855CD6' : '#999'} /> Blocks
-                                </button>
-                                <button
-                                    style={workspaceTab === 'python' ? styles.tabActive : styles.tab}
-                                    onClick={() => handleWorkspaceTabChange('python')}
-                                >
-                                    <Grid3X3 size={18} color={workspaceTab === 'python' ? '#855CD6' : '#999'} /> Python
-                                </button>
-                                <button
-                                    style={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
-                                    onClick={() => handleWorkspaceTabChange('costumes')}
-                                >
-                                    <Pen size={18} color={workspaceTab === 'costumes' ? '#855CD6' : '#999'} /> Costumes
-                                </button>
-                                <button
-                                    style={workspaceTab === 'sounds' ? styles.tabActive : styles.tab}
-                                    onClick={() => handleWorkspaceTabChange('sounds')}
-                                >
-                                    <Flag size={18} color={workspaceTab === 'sounds' ? '#855CD6' : '#999'} /> Sounds
-                                </button>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Workspace content */}
                     {/* Show Blockly if:
@@ -1960,150 +2010,70 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     {/* Other Tabs - Only relevant in Stage Mode */}
                     {editorMode === 'stage' && workspaceTab === 'python' && (
                         <div style={styles.pythonEditor}>
-                            <div style={styles.pythonPlaceholder}>
-                                <span style={{ fontSize: '48px' }}>🐍</span>
-                                <h3>Python Editor</h3>
-                                <p>Coming soon! Write Python code to control your sprites.</p>
-                            </div>
+                            <PythonEditorTab workspace={workspaceRef.current} />
                         </div>
                     )}
                     {editorMode === 'stage' && workspaceTab === 'costumes' && (
                         <div style={styles.costumesEditor}>
-                            {(() => {
-                                const selectedSprite = sprites.find(s => s.id === selectedSpriteId);
-                                if (selectedSprite) {
-                                    return (
-                                        <PaintEditor
-                                            mode="intermediate"
-                                            spriteName={selectedSprite.name}
-                                            initialImage={selectedSprite.currentCostume?.image.src || ''}
-                                            costumes={selectedSprite.costumes.map((c, i) => ({
-                                                id: i.toString(),
-                                                name: c.name,
-                                                image: c.image.src
-                                            }))}
-                                            onSave={async (imageData: string, svgData?: string) => {
-                                                const savedData = svgData || imageData;
-                                                await selectedSprite.addCostume('custom', savedData);
-                                                selectedSprite.switchCostume('custom');
-                                                addLog(`Saved costume for ${selectedSprite.name}`);
-                                            }}
-                                            onClose={() => handleWorkspaceTabChange('blocks')}
-                                        />
-                                    );
-                                }
-                                return (
-                                    <div style={styles.costumePlaceholder}>
-                                        <span style={{ fontSize: '48px' }}>🎨</span>
-                                        <h3>No Sprite Selected</h3>
-                                        <p>Select a sprite from the panel to edit its costumes.</p>
-                                    </div>
-                                );
-                            })()}
+                            <CostumesTab
+                                selectedSpriteId={selectedSpriteId}
+                                sprites={sprites}
+                                stageManager={stageManager}
+                                addLog={addLog}
+                                onClose={() => handleWorkspaceTabChange('blocks')}
+                            />
                         </div>
                     )}
                     {editorMode === 'stage' && workspaceTab === 'sounds' && (
                         <div style={styles.soundsEditor}>
-                            <div style={styles.soundPlaceholder}>
-                                <span style={{ fontSize: '48px' }}>🔊</span>
-                                <h3>Sounds Editor</h3>
-                                <p>Coming soon! Add and edit sounds for your project.</p>
-                            </div>
+                            <SoundsTab
+                                selectedSpriteId={selectedSpriteId}
+                                sprites={sprites}
+                                stageManager={stageManager}
+                                addLog={addLog}
+                                onClose={() => handleWorkspaceTabChange('blocks')}
+                            />
                         </div>
                     )}
                 </div>
 
                 {/* Right Panel */}
-                <div style={styles.rightPanel}>
+                <div style={{
+                    ...styles.rightPanel,
+                    width: stageLayout === 'small' ? '256px' : '496px',
+                    transition: 'width 0.2s ease-in-out',
+                }}>
                     {editorMode === 'stage' ? (
                         <>
                             {/* Stage */}
                             {/* Stage */}
-                            <div style={styles.stageContainer}>
-                                <div style={styles.iconBar}>
-                                    <div style={styles.actionButtons}>
-                                        <button
-                                            style={styles.runButtonTop}
-                                            onClick={handleRunClick}
-                                            title="Run"
-                                        >
-                                            <Flag size={22} fill="white" stroke="white" />
-                                        </button>
-                                        <button
-                                            style={styles.stopButtonTop}
-                                            onClick={handleStopClick}
-                                            title="Stop"
-                                        >
-                                            <Square size={20} fill="white" stroke="white" />
-                                        </button>
-                                    </div>
-
-                                    <div style={styles.layoutButtons}>
-                                        <button
-                                            style={{
-                                                display: 'flex', alignItems: 'center', gap: '6px',
-                                                background: 'white', color: '#575E75', border: '1px solid #D9D9D9',
-                                                padding: '6px 12px', borderRadius: '4px', cursor: 'pointer',
-                                                fontWeight: '600', fontSize: '12px', marginRight: '8px'
-                                            }}
-                                            onClick={() => alert("Upload Firmware (Coming Soon)")}
-                                            title="Upload Firmware"
-                                        >
-                                            <Upload size={16} color="#855CD6" /> Upload Firmware
-                                        </button>
-
-                                        <div style={{ width: '1px', height: '24px', background: '#d9d9d9', margin: '0 4px' }} />
-
-                                        <button
-                                            style={{ ...styles.iconBtn, ...(isCameraOn ? styles.iconBtnActive : {}) }}
-                                            onClick={() => setIsCameraOn(!isCameraOn)}
-                                            title="Toggle Camera"
-                                        >
-                                            {isCameraOn ? <Camera size={20} /> : <CameraOff size={20} />}
-                                        </button>
-
-                                        <button
-                                            style={{ ...styles.iconBtn, ...(showGrid ? styles.iconBtnActive : {}) }}
-                                            onClick={() => setShowGrid(!showGrid)}
-                                            title="Toggle Grid"
-                                        >
-                                            <Grid3X3 size={20} />
-                                        </button>
-
-                                        <button
-                                            style={{ ...styles.iconBtn, ...(stageLayout === 'small' ? styles.iconBtnActive : {}) }}
-                                            onClick={() => setStageLayout('small')}
-                                            title="Small Stage"
-                                        >
-                                            <LayoutTemplate size={20} />
-                                        </button>
-                                        <button
-                                            style={{ ...styles.iconBtn, ...(stageLayout === 'large' ? styles.iconBtnActive : {}) }}
-                                            onClick={() => setStageLayout('large')}
-                                            title="Large Stage"
-                                        >
-                                            <LayoutPanelLeft size={20} />
-                                        </button>
-
-                                        <button
-                                            style={{ ...styles.iconBtn, ...(isFullscreen ? styles.iconBtnActive : {}) }}
-                                            onClick={() => setIsFullscreen(!isFullscreen)}
-                                            title="Fullscreen"
-                                        >
-                                            {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-                                        </button>
-                                    </div>
+                            <div style={{
+                                ...styles.stageContainer,
+                                width: stageLayout === 'small' ? '240px' : '480px',
+                                height: stageLayout === 'small' ? '180px' : '360px',
+                                transition: 'all 0.2s ease-in-out',
+                                position: 'relative',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: '#fff',
+                            }}>
+                                <div style={{
+                                    transform: stageLayout === 'small' ? 'scale(0.5)' : 'scale(1)',
+                                    transformOrigin: 'top left',
+                                    width: '480px',
+                                    height: '360px',
+                                }}>
+                                    <Stage
+                                        width={480}
+                                        height={360}
+                                        sprites={sprites}
+                                        isRunning={isRunning}
+                                        showGridNumbers={showGrid}
+                                        onSpriteSelect={handleSpriteSelect}
+                                        isCameraOn={isCameraOn}
+                                    />
                                 </div>
-
-                                <Stage
-                                    width={480}
-                                    height={360}
-                                    sprites={sprites}
-                                    isRunning={isRunning}
-                                    showGridNumbers={showGrid}
-                                    onSpriteSelect={handleSpriteSelect}
-                                    isCameraOn={isCameraOn}
-                                />
                             </div>
 
                             {/* Sprite & Stage Panels */}
@@ -2117,10 +2087,15 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     onRemoveBackground={handleRemoveBackground} // v2
                                     onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
                                 />
-                                <StagePanel
+                                {/* <StagePanel
+                                    isSelected={selectedSpriteId === 'stage'}
+                                    onSelect={() => handleSpriteSelect('stage')}
                                     onOpenLibrary={() => setShowBackdropLibrary(true)}
-                                    onOpenEditor={() => setShowBackdropEditor(true)}
-                                />
+                                    onOpenEditor={() => {
+                                        handleSpriteSelect('stage');
+                                        handleWorkspaceTabChange('costumes');
+                                    }}
+                                /> */}
                             </div>
                         </>
                     ) : (
@@ -2297,21 +2272,21 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             />
 
             {/* Backdrop Modals */}
-            {
+            {/*
                 showBackdropLibrary && (
                     <BackdropLibrary
                         onSelect={handleBackdropSelect}
                         onClose={() => setShowBackdropLibrary(false)}
                     />
                 )
-            }
-            {
+            */}
+            {/*
                 showBackdropEditor && (
                     <BackdropEditor
                         onClose={() => setShowBackdropEditor(false)}
                     />
                 )
-            }
+            */}
 
             {/* Sprite Library Modal */}
             <SpriteLibrary
@@ -2360,29 +2335,40 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         newSprite.setY(offsetY);
                     }
 
-                    // If the sprite has an image, use it as the costume
-                    if (entry.image) {
-                        newSprite.addCostume(entry.name, entry.image).then(() => {
-                            newSprite.switchCostume(entry.name);
-                        });
-                    } else {
+                    // If the sprite has an image or costumes, use them
+                    const costumesToLoad = entry.costumes && entry.costumes.length > 0
+                        ? entry.costumes
+                        : (entry.image ? [entry.image] : []);
+
+                    if (costumesToLoad.length > 0) {
+                        // Load all costumes sequentially to maintain order and wait for completion
+                        (async () => {
+                            for (let i = 0; i < costumesToLoad.length; i++) {
+                                const costumeSrc = costumesToLoad[i];
+                                const costumeName = i === 0 ? entry.name : `${entry.name} ${i + 1}`;
+                                await newSprite.addCostume(costumeName, costumeSrc);
+                            }
+                            // Set initial costume
+                            newSprite.switchCostume(0);
+                            triggerUpdate();
+                        })();
+                    } else if (entry.emoji) {
                         // Create costume from emoji by drawing on canvas
                         const canvas = document.createElement('canvas');
-                        canvas.width = 100;
-                        canvas.height = 100;
+                        canvas.width = 200;
+                        canvas.height = 200;
                         const ctx = canvas.getContext('2d');
                         if (ctx) {
-                            ctx.font = '72px serif';
+                            ctx.font = '120px Arial';
                             ctx.textAlign = 'center';
                             ctx.textBaseline = 'middle';
-                            ctx.fillText(entry.emoji, 50, 55);
+                            ctx.fillText(entry.emoji, 100, 100);
+                            newSprite.addCostume(entry.name, canvas.toDataURL()).then(() => {
+                                newSprite.switchCostume(entry.name);
+                                triggerUpdate();
+                            });
                         }
-                        const dataUrl = canvas.toDataURL();
-                        newSprite.addCostume(entry.name, dataUrl).then(() => {
-                            newSprite.switchCostume(entry.name);
-                        });
                     }
-
                     animationVM.registerSprite(newSprite);
                     setSprites(prev => [...prev, newSprite]);
 
@@ -2494,17 +2480,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     headerIcon: { cursor: 'pointer', opacity: 0.9, fontSize: '14px' },
 
-    iconBar: {
-        background: '#f5f5f5',
-        borderBottom: '1px solid #ddd',
+    unifiedToolbar: {
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 16px',
-        height: '40px',
+        alignItems: 'flex-end',
+        backgroundColor: '#fff',
+        borderBottom: '1px solid #ddd',
+        height: '44px',
+        padding: '0',
     },
-    actionButtons: { display: 'flex', gap: '12px', alignItems: 'center' },
-    layoutButtons: { display: 'flex', gap: '4px', alignItems: 'center' },
+    actionButtons: { display: 'flex', gap: '6px', alignItems: 'center' },
     iconBtn: {
         background: 'transparent',
         border: 'none',
@@ -2512,9 +2496,9 @@ const styles: { [key: string]: React.CSSProperties } = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '6px',
+        padding: '5px',
         borderRadius: '4px',
-        color: '#855CD6',
+        color: '#575E75',
         transition: 'background 0.2s',
         outline: 'none',
     },
@@ -2523,30 +2507,36 @@ const styles: { [key: string]: React.CSSProperties } = {
         color: '#855CD6'
     },
     runButtonTop: {
-        backgroundColor: '#2e7d32',
-        color: 'white',
+        backgroundColor: 'transparent',
         border: 'none',
-        borderRadius: '50%',
-        width: '32px',
-        height: '32px',
         cursor: 'pointer',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        padding: '4px',
     },
     stopButtonTop: {
-        backgroundColor: '#c62828',
-        color: 'white',
+        backgroundColor: 'transparent',
         border: 'none',
-        borderRadius: '50%',
-        width: '32px',
-        height: '32px',
         cursor: 'pointer',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        padding: '4px',
+    },
+    undoRedoBtn: {
+        backgroundColor: '#fff',
+        border: '1px solid #ddd',
+        borderRadius: '50%',
+        width: '32px',
+        height: '32px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        transition: 'all 0.2s',
+        outline: 'none',
     },
 
     main: { flex: 1, display: 'flex', overflow: 'hidden' },
@@ -2609,9 +2599,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     pythonEditor: {
         flex: 1,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        flexDirection: 'column',
         backgroundColor: '#1e1e1e',
+        overflow: 'hidden'
     },
     pythonPlaceholder: {
         textAlign: 'center',

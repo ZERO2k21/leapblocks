@@ -1,8 +1,12 @@
 export const looksPreview = {
     say_text: (block) => {
-        const text = block.getFieldValue("TEXT");
-        // Pass active ID to Teddy's global handler
+        const text = block.getFieldValue("TEXT") || block.getFieldValue("MESSAGE") || "";
         if (window.say) window.say(window.activeSpriteId || "teddy", text);
+    },
+
+    looks_say: (block) => {
+        const msg = block.getFieldValue("MSG") || block.getFieldValue("MESSAGE") || "";
+        if (window.say) window.say(window.activeSpriteId || "teddy", msg);
     },
 
     show_sprite: () => {

@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Sprite } from './Sprite';
 import { gameLoop } from '../engine/GameLoop';
 import { stageManager } from '../engine/StageManager';
+import { penManager } from '../engine/PenManager';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STAGE component
@@ -29,9 +30,12 @@ export const Stage: React.FC<StageProps> = ({
     isCameraOn = false,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const penCanvasRef = useRef<HTMLCanvasElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [draggingSpriteId, setDraggingSpriteId] = useState<string | null>(null);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    // Track previous positions for pen drawing
+    const prevPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
 
     useEffect(() => {
         let stream: MediaStream | null = null;
@@ -64,6 +68,16 @@ export const Stage: React.FC<StageProps> = ({
         const handleUpdate = () => forceRender({});
         window.addEventListener('leap-stage-update', handleUpdate);
         return () => window.removeEventListener('leap-stage-update', handleUpdate);
+    }, []);
+
+    // Initialize pen manager with the pen canvas
+    useEffect(() => {
+        if (penCanvasRef.current) {
+            penManager.setPenCanvas(penCanvasRef.current);
+        }
+        return () => {
+            penManager.setPenCanvas(null);
+        };
     }, []);
 
     const render = useCallback(() => {
@@ -157,6 +171,41 @@ export const Stage: React.FC<StageProps> = ({
         // 6. Render sprites
         for (const sprite of sprites) {
             sprite.render(ctx, width, height);
+        }
+
+        // 7. Draw pen trails (on separate canvas)
+        const penCanvas = penCanvasRef.current;
+        if (penCanvas) {
+            const penCtx = penCanvas.getContext('2d');
+            if (penCtx) {
+                // Draw lines for sprites with pen down
+                for (const sprite of sprites) {
+                    if (sprite.isPenDown && sprite.visible) {
+                        const prevPos = prevPositionsRef.current.get(sprite.id);
+                        const cx = width / 2 + sprite.x;
+                        const cy = height / 2 - sprite.y;
+
+                        if (prevPos) {
+                            // Draw line from previous to current position
+                            penCtx.beginPath();
+                            penCtx.moveTo(width / 2 + prevPos.x, height / 2 - prevPos.y);
+                            penCtx.lineTo(cx, cy);
+                            penCtx.strokeStyle = sprite.penColor;
+                            penCtx.lineWidth = sprite.penSize;
+                            penCtx.lineCap = 'round';
+                            penCtx.stroke();
+                        }
+
+                        // Update previous position
+                        prevPositionsRef.current.set(sprite.id, { x: sprite.x, y: sprite.y });
+                    } else {
+                        // Remove from tracking if pen is up
+                        if (prevPositionsRef.current.has(sprite.id)) {
+                            prevPositionsRef.current.delete(sprite.id);
+                        }
+                    }
+                }
+            }
         }
     }, [width, height, sprites, showGridNumbers, draggingSpriteId, isCameraOn]);
 
@@ -267,6 +316,18 @@ export const Stage: React.FC<StageProps> = ({
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
+            />
+            {/* Pen trails layer - persists between frames */}
+            <canvas
+                ref={penCanvasRef}
+                width={width}
+                height={height}
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    pointerEvents: 'none', // Let clicks pass through to main canvas
+                }}
             />
         </div>
     );

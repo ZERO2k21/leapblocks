@@ -17,7 +17,7 @@ class CostumeEngine {
         sprite.changeSize(delta);
     }
 
-    setEffect(sprite: Sprite, effect: 'color' | 'brightness' | 'ghost', value: number) {
+    setEffect(sprite: Sprite, effect: 'color' | 'brightness' | 'ghost' | 'fisheye' | 'whirl' | 'pixelate' | 'mosaic', value: number) {
         sprite.setEffect(effect, value);
     }
 

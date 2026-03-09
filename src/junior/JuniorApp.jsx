@@ -141,6 +141,7 @@ import { AudioEngine } from "../scratch-audio/src/AudioEngine";
 import { Scratch3SoundBlocks } from "../scratch-vm/src/extensions/scratch3_sound/index.js";
 import { Scratch3MusicBlocks } from "../scratch-vm/src/extensions/scratch3_music/index.js";
 import { WorkspaceValidator } from "./engine/WorkspaceValidator";
+import { fileService } from "../services/FileService";
 
 // Initialize the Audio Environment natively
 const audioEngine = new AudioEngine();
@@ -164,6 +165,8 @@ export default function JuniorApp({ onBack }) {
     const [isBlocksRunning, setIsBlocksRunning] = useState(false); // UI state for run/stop toggle
     const activeSpriteIdRef = useRef(null); // Ref for active sprite ID for highlighting
     const scenesRef = useRef(null); // Ref for latest scenes state to avoid stale closures
+    const previewRevertTimerRef = useRef(null); // For block preview auto-revert
+    const isLoadingWorkspaceRef = useRef(false); // To block autosave during workspace load
     const [projectName, setProjectName] = useState("Untitled Project");
     const [activeCategory, setActiveCategory] = useState("motion");
     const stageContainerRef = useRef(null); // Ref for stage container to measure dimensions
@@ -242,8 +245,8 @@ export default function JuniorApp({ onBack }) {
     const [winMessage, setWinMessage] = useState(null); // Win Message State
 
     // Derived State
-    const currentScene = scenes.find(s => s.id === currentSceneId) || scenes[0];
-    const sprites = currentScene.sprites;
+    const currentScene = scenes?.find(s => s.id === currentSceneId) || scenes?.[0];
+    const sprites = currentScene?.sprites || [];
 
     // --- GOAL CHECKING (Reactive) ---
     useEffect(() => {
@@ -255,6 +258,38 @@ export default function JuniorApp({ onBack }) {
             }
         }
     }, [sprites, activeSpriteId, winMessage]);
+
+    // --- WORKSPACE SWITCHING (Per-Sprite) ---
+    useEffect(() => {
+        if (!workspaceRef.current || !activeSpriteId) return;
+
+        // Skip if this sprite is already the one in the workspace
+        if (activeSpriteIdRef.current === activeSpriteId && !isLoadingWorkspaceRef.current) {
+            // Check if workspace is empty but sprite has blocks (initial cold load)
+            const topBlocks = workspaceRef.current.getTopBlocks(false);
+            const activeSprite = sprites.find(s => s.id === activeSpriteId);
+            if (topBlocks.length > 0 || !activeSprite?.blocks || Object.keys(activeSprite?.blocks || {}).length === 0) {
+                return;
+            }
+        }
+
+        const activeSprite = sprites.find(s => s.id === activeSpriteId);
+        if (activeSprite) {
+            console.log(`[JuniorApp] Switching workspace to sprite: ${activeSprite.name}`);
+            isLoadingWorkspaceRef.current = true;
+            Blockly.Events.disable();
+            try {
+                loadWorkspace(activeSprite);
+            } finally {
+                Blockly.Events.enable();
+                activeSpriteIdRef.current = activeSpriteId;
+                // Tiny delay to ensure layout events are processed before we allow autosave
+                setTimeout(() => {
+                    isLoadingWorkspaceRef.current = false;
+                }, 50);
+            }
+        }
+    }, [activeSpriteId, sprites]);
 
     // --- HINT SYSTEM ---
     const [hint, setHint] = useState(null);
@@ -938,19 +973,53 @@ export default function JuniorApp({ onBack }) {
                     setShowPianoPicker(true);
                 }
 
-                // 3. PROPER PREVIEW (Unified)
+                // 3. PROPER PREVIEW (Unified with Auto-Revert)
+                const sid = activeSpriteIdRef.current || window.activeSpriteId || activeSpriteId;
+                const latestScenes = scenesRef.current || scenes;
+                let activeSprite = null;
+                for (const scene of latestScenes) {
+                    activeSprite = scene.sprites.find(s => s.id === sid);
+                    if (activeSprite) break;
+                }
+                if (!activeSprite) return;
+
+                // Cancel any previous revert timer
+                if (previewRevertTimerRef.current) {
+                    clearTimeout(previewRevertTimerRef.current);
+                    previewRevertTimerRef.current = null;
+                }
+
+                // Save current sprite state before preview
+                const savedState = {
+                    x: activeSprite.x,
+                    y: activeSprite.y,
+                    angle: activeSprite.angle,
+                    size: activeSprite.size,
+                    visible: activeSprite.visible,
+                    mirrored: activeSprite.mirrored,
+                    speech: activeSprite.speech,
+                    currentCostume: activeSprite.currentCostume
+                };
+
                 let previewed = false;
                 if (looksPreview[block.type]) {
                     looksPreview[block.type](block);
                     previewed = true;
                 } else if (previewActions[block.type]) {
-                    previewActions[block.type](block); // Pass block to read fields
+                    previewActions[block.type](block);
                     previewed = true;
                 }
 
                 // Add jiggle animation for visual feedback on block interaction
-                if (previewed && window.jiggle) {
-                    window.jiggle(window.activeSpriteId || activeSpriteId);
+                if (previewed) {
+                    if (window.jiggle) window.jiggle(activeSprite.id);
+
+                    // Revert to original state after 2 seconds
+                    previewRevertTimerRef.current = setTimeout(() => {
+                        console.log(`[JuniorApp] Reverting preview for ${activeSprite.name}`);
+                        spriteActions.update(activeSprite.id, savedState);
+                        previewRevertTimerRef.current = null;
+                    }, 2000);
                 }
             }
         });
@@ -963,18 +1032,52 @@ export default function JuniorApp({ onBack }) {
             flyoutWs.addChangeListener((e) => {
                 if (e.type === Blockly.Events.CLICK) {
                     const block = flyoutWs.getBlockById(e.blockId);
-                    if (block) {
-                        // Unified Preview
-                        let previewed = false;
-                        if (looksPreview[block.type]) {
-                            looksPreview[block.type](block);
-                            previewed = true;
-                        } else if (previewActions[block.type]) {
-                            previewActions[block.type](block);
-                            previewed = true;
-                        }
+                    if (!block) return;
 
-                        // Visual only feedback handled by jiggle above
+                    const sid = activeSpriteIdRef.current || window.activeSpriteId || activeSpriteId;
+                    const latestScenes = scenesRef.current || scenes;
+                    let activeSprite = null;
+                    for (const scene of latestScenes) {
+                        activeSprite = scene.sprites.find(s => s.id === sid);
+                        if (activeSprite) break;
+                    }
+                    if (!activeSprite) return;
+
+                    // Cancel any previous revert timer
+                    if (previewRevertTimerRef.current) {
+                        clearTimeout(previewRevertTimerRef.current);
+                        previewRevertTimerRef.current = null;
+                    }
+
+                    // Save state
+                    const savedState = {
+                        x: activeSprite.x,
+                        y: activeSprite.y,
+                        angle: activeSprite.angle,
+                        size: activeSprite.size,
+                        visible: activeSprite.visible,
+                        mirrored: activeSprite.mirrored,
+                        speech: activeSprite.speech,
+                        currentCostume: activeSprite.currentCostume
+                    };
+
+                    let previewed = false;
+                    if (looksPreview[block.type]) {
+                        looksPreview[block.type](block);
+                        previewed = true;
+                    } else if (previewActions[block.type]) {
+                        previewActions[block.type](block);
+                        previewed = true;
+                    }
+
+                    if (previewed) {
+                        if (window.jiggle) window.jiggle(activeSprite.id);
+
+                        previewRevertTimerRef.current = setTimeout(() => {
+                            console.log(`[JuniorApp] Reverting flyout preview for ${activeSprite.name}`);
+                            spriteActions.update(activeSprite.id, savedState);
+                            previewRevertTimerRef.current = null;
+                        }, 2000);
                     }
                 }
             });
@@ -1213,7 +1316,7 @@ export default function JuniorApp({ onBack }) {
             // Fallback: run current workspace only (single sprite mode)
             console.log("[Junior] No saved sprite blocks found, running current workspace only");
             if (interpreterRef.current) {
-                await interpreterRef.current.runStacks('event_flag');
+                await interpreterRef.current.runStacks(['event_flag', 'event_flag_clicked']);
             }
         } else if (spriteEntries.length === 1) {
             // Single sprite - use original method for simplicity
@@ -1227,14 +1330,14 @@ export default function JuniorApp({ onBack }) {
                         Blockly.serialization.workspaces.load(sprite.blocks, workspaceRef.current);
                     }
                 }
-                await interpreterRef.current.runStacks('event_flag');
+                await interpreterRef.current.runStacks(['event_flag', 'event_flag_clicked']);
             }
         } else {
             // MULTI-SPRITE MODE: Run all sprites' blocks concurrently
             console.log(`[Junior] Multi-sprite mode: running ${spriteEntries.length} sprites concurrently`);
             spriteEntries.forEach(e => console.log(`  [Junior] Sprite: ${e.spriteId}, blocks keys: ${Object.keys(e.blocks).length}`));
             if (interpreterRef.current) {
-                await interpreterRef.current.runAllSpritesStacks('event_flag', spriteEntries, Blockly);
+                await interpreterRef.current.runAllSpritesStacks(['event_flag', 'event_flag_clicked'], spriteEntries, Blockly);
             }
         }
 
@@ -1315,7 +1418,7 @@ export default function JuniorApp({ onBack }) {
 
     // --- SAVE / LOAD (ProjectManager Integration) ---
     const saveCurrentWorkspace = () => {
-        if (!workspaceRef.current || !activeSpriteIdRef.current) return;
+        if (!workspaceRef.current || !activeSpriteIdRef.current || isLoadingWorkspaceRef.current) return;
         const json = Blockly.serialization.workspaces.save(workspaceRef.current);
 
         // Find the current sprite and update its blocks
@@ -1324,9 +1427,12 @@ export default function JuniorApp({ onBack }) {
         if (currentScene) {
             const sprite = currentScene.sprites.find(s => s.id === activeSpriteIdRef.current);
             if (sprite) {
-                sprite.blocks = json;
-                setScenes(scenesCopy);
-                console.log(`[JuniorApp] Saved workspace blocks to sprite: ${sprite.name}`);
+                // Only update if changed
+                if (JSON.stringify(sprite.blocks) !== JSON.stringify(json)) {
+                    sprite.blocks = json;
+                    setScenes(scenesCopy);
+                    console.log(`[JuniorApp] Saved workspace blocks to sprite: ${sprite.name}`);
+                }
             }
         }
     };
@@ -1390,23 +1496,11 @@ export default function JuniorApp({ onBack }) {
         setTimeout(() => {
             const latestScenes = scenesRef.current || scenes;
 
-            const projectData = {
-                version: '1.0',
-                projectName,
-                mode: 'junior', // Distinct mode marker
+            const payload = {
                 scenes: latestScenes, // Junior mode relies entirely on the scenes array
-                timestamp: Date.now()
             };
 
-            const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${projectName.replace(/\s+/g, '_')}.leap`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            fileService.saveProject(projectName, 'junior', payload);
             console.log(`[JuniorApp] Project saved: ${projectName}`);
         }, 50);
     };
@@ -1440,65 +1534,69 @@ export default function JuniorApp({ onBack }) {
         }
     };
 
-    const handleFileLoad = (e) => {
+    const handleFileLoad = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            try {
-                const data = JSON.parse(event.target?.result);
-                if (!data.scenes) throw new Error('Invalid or legacy Junior project file (missing scenes array)');
+        try {
+            const data = await fileService.loadProject(file);
+            const validation = fileService.validateProject(data, 'junior');
 
-                console.log(`[JuniorApp] Loading project: ${data.projectName || 'Untitled'}`);
-
-                // Full Reset before loading
-                stopBlocks();
-                if (workspaceRef.current) {
-                    Blockly.Events.disable();
-                    workspaceRef.current.clear();
-                    Blockly.Events.enable();
-                }
-
-                setProjectName(data.projectName || 'My Project');
-
-                // Restore imported state
-                setScenes(data.scenes);
-                const firstScene = data.scenes[0];
-                if (firstScene) {
-                    setCurrentSceneId(firstScene.id);
-                    const firstSprite = firstScene.sprites[0];
-                    if (firstSprite) {
-                        const newId = firstSprite.id;
-                        setActiveSpriteId(newId);
-                        activeSpriteIdRef.current = newId;
-
-                        // Give React time to re-render sprites, then inject blocks into workspace
-                        setTimeout(() => {
-                            if (workspaceRef.current && firstSprite.blocks) {
-                                try {
-                                    Blockly.Events.disable();
-                                    Blockly.serialization.workspaces.load(firstSprite.blocks, workspaceRef.current);
-                                } finally {
-                                    Blockly.Events.enable();
-                                }
-                            }
-                        }, 100);
-                    } else {
-                        setActiveSpriteId(null);
-                        activeSpriteIdRef.current = null;
-                        if (workspaceRef.current) workspaceRef.current.clear();
-                    }
-                }
-
-                console.log('[JuniorApp] Project loaded successfully');
-            } catch (err) {
-                console.error('Failed to load project:', err);
-                alert('Failed to load project file: ' + err.message);
+            if (!validation.isValid) {
+                alert(validation.error);
+                return;
             }
-        };
-        reader.readAsText(file);
-        e.target.value = "";
+
+            if (!data.scenes) throw new Error('Invalid Junior project file (missing scenes array)');
+
+            console.log(`[JuniorApp] Loading project: ${data.projectName || 'Untitled'}`);
+
+            // Full Reset before loading
+            stopBlocks();
+            if (workspaceRef.current) {
+                Blockly.Events.disable();
+                workspaceRef.current.clear();
+                Blockly.Events.enable();
+            }
+
+            setProjectName(data.projectName || 'My Project');
+
+            // Restore imported state
+            setScenes(data.scenes);
+            const firstScene = data.scenes[0];
+            if (firstScene) {
+                setCurrentSceneId(firstScene.id);
+                const firstSprite = firstScene.sprites[0];
+                if (firstSprite) {
+                    const newId = firstSprite.id;
+                    setActiveSpriteId(newId);
+                    activeSpriteIdRef.current = newId;
+
+                    // Give React time to re-render sprites, then inject blocks into workspace
+                    setTimeout(() => {
+                        if (workspaceRef.current && firstSprite.blocks) {
+                            try {
+                                Blockly.Events.disable();
+                                Blockly.serialization.workspaces.load(firstSprite.blocks, workspaceRef.current);
+                            } finally {
+                                Blockly.Events.enable();
+                            }
+                        }
+                    }, 100);
+                } else {
+                    setActiveSpriteId(null);
+                    activeSpriteIdRef.current = null;
+                    if (workspaceRef.current) workspaceRef.current.clear();
+                }
+            }
+
+            console.log('[JuniorApp] Project loaded successfully');
+        } catch (err) {
+            console.error('Failed to load project:', err);
+            alert('Failed to load project file: ' + err.message);
+        } finally {
+            e.target.value = "";
+        }
     };
 
     // HANDLING MENUS (Enhanced)
@@ -1541,7 +1639,7 @@ export default function JuniorApp({ onBack }) {
 
     // --- DELETE SPRITE ---
     const deleteSprite = (spriteId) => {
-        if (sprites.length <= 0) {
+        if (sprites.length <= 1) {
             alert("Cannot delete the last sprite!");
             return;
         }
@@ -1562,7 +1660,7 @@ export default function JuniorApp({ onBack }) {
 
     // --- DELETE SCENE ---
     const deleteScene = (sceneId) => {
-        if (scenes.length <= 0) {
+        if (scenes.length <= 1) {
             alert("Cannot delete the last scene!");
             return;
         }
@@ -1819,10 +1917,10 @@ export default function JuniorApp({ onBack }) {
                     currentScene={currentSceneId}
                     onSelectSprite={handleSpriteSelect}
                     onAddSprite={() => setIsSpriteModalOpen(true)}
-                    onDeleteSprite={deleteSprite}
+                    onDeleteSprite={sprites.length > 1 ? deleteSprite : null}
                     onSelectScene={handleSceneSelect}
                     onAddScene={addScene}
-                    onDeleteScene={deleteScene}
+                    onDeleteScene={scenes.length > 1 ? deleteScene : null}
                     onEditSprite={handleEditSprite}
                     onEditScene={handleEditScene}
                     onGreenFlag={runBlocks}

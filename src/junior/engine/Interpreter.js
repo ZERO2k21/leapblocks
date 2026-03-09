@@ -129,20 +129,24 @@ export class Interpreter {
 
     /**
      * Executes all stacks matching the criteria (e.g., Flag clicked)
-     * @param {string} triggerType - 'event_flag' | 'event_press'
+     * @param {string|Array<string>} triggerTypes - 'event_flag' | 'event_press' or array
      * @param {string} spriteId - optional filter
      */
-    async runStacks(triggerType, spriteId = null) {
+    async runStacks(triggerTypes, spriteId = null) {
         if (!this.workspaceRef.current) return;
 
         // Ensure we are active
         if (!this.isActive) this.start();
 
         const topBlocks = this.workspaceRef.current.getTopBlocks(true);
-        const validStacks = topBlocks.filter(b => b.type === triggerType);
+        const types = Array.isArray(triggerTypes) ? triggerTypes : [triggerTypes];
+        const validStacks = topBlocks.filter(b => types.includes(b.type));
 
         if (validStacks.length === 0) {
-            this.stopAll();
+            // Only stop if this is a primary trigger
+            if (types.some(t => t.includes('flag'))) {
+                this.stopAll();
+            }
             return;
         }
 
@@ -186,12 +190,12 @@ export class Interpreter {
 
     /**
      * Executes stacks for ALL sprites concurrently.
-     * @param {string} triggerType - 'event_flag' | 'event_press' | 'event_broadcast'
+     * @param {string|Array<string>} triggerTypes - 'event_flag' | 'event_press' | 'event_broadcast' or array
      * @param {Array<{spriteId: string, blocks: object}>} spriteEntries - sprites with their saved workspace JSON
      * @param {object} Blockly - the Blockly instance
      * @param {string} broadcastMessage - optional, for broadcast triggers only
      */
-    async runAllSpritesStacks(triggerType, spriteEntries, Blockly, broadcastMessage = null) {
+    async runAllSpritesStacks(triggerTypes, spriteEntries, Blockly, broadcastMessage = null) {
         if (!this.workspaceRef.current) return;
 
         // Ensure we are active
@@ -220,14 +224,15 @@ export class Interpreter {
                 const topBlocks = tempWs.getTopBlocks(true);
                 let validStacks;
 
-                if (triggerType === 'event_broadcast') {
+                if (triggerTypes === 'event_broadcast') {
                     validStacks = topBlocks.filter(b => {
                         if (b.type !== 'when_receive_message') return false;
                         const msg = b.getFieldValue && b.getFieldValue('MESSAGE');
                         return msg === broadcastMessage;
                     });
                 } else {
-                    validStacks = topBlocks.filter(b => b.type === triggerType);
+                    const types = Array.isArray(triggerTypes) ? triggerTypes : [triggerTypes];
+                    validStacks = topBlocks.filter(b => types.includes(b.type));
                 }
 
                 for (const block of validStacks) {
@@ -257,7 +262,8 @@ export class Interpreter {
 
         if (allThreadPromises.length === 0) {
             // Only stop if this was the primary trigger (flag), not a broadcast
-            if (triggerType === 'event_flag') this.stopAll();
+            const types = Array.isArray(triggerTypes) ? triggerTypes : [triggerTypes];
+            if (types.some(t => t.includes('flag'))) this.stopAll();
             return;
         }
 
