@@ -288,6 +288,7 @@ export default function JuniorApp({ onBack }) {
             } finally {
                 Blockly.Events.enable();
                 activeSpriteIdRef.current = activeSpriteId;
+                window.activeSpriteId = activeSpriteId;
                 // Tiny delay to ensure layout events are processed before we allow autosave
                 setTimeout(() => {
                     isLoadingWorkspaceRef.current = false;
@@ -441,7 +442,12 @@ export default function JuniorApp({ onBack }) {
             spriteName = spriteData.name || 'Sprite';
             spriteType = spriteData.id || spriteData.name?.toLowerCase() || 'custom';
 
-            if (spriteData.image) {
+            if (spriteData.costumes && spriteData.costumes.length > 0) {
+                costumes = {};
+                spriteData.costumes.forEach((c, index) => {
+                    costumes[index === 0 ? 'default' : `costume${index}`] = c;
+                });
+            } else if (spriteData.image) {
                 costumes = { default: spriteData.image };
             } else if (spriteData.emoji) {
                 costumes = { default: spriteData.emoji };
@@ -460,9 +466,11 @@ export default function JuniorApp({ onBack }) {
                     talk: robotTalk1
                 };
             } else if (type === "bear") {
-                costumes = { default: "🐻", wave: "👋" };
+                costumes = { default: "🐻", wave: "👋", angry: "😠" };
             } else if (type === "dog") {
-                costumes = { default: "🐶", wave: "wave" };
+                costumes = { default: "🐶", wave: "🐩", bark: "🗣️" };
+            } else if (type === "cat") {
+                costumes = { default: "🐱", sleep: "😴", wave: "🐾" };
             }
         }
 
@@ -618,62 +626,63 @@ export default function JuniorApp({ onBack }) {
 
         // Aliases for Looks blocks
         window.setVisible = (id, val) => spriteActions.update(id, { visible: val });
-        window.showSprite = () => window.setVisible(window.activeSpriteId || "teddy", true);
-        window.hideSprite = () => window.setVisible(window.activeSpriteId || "teddy", false);
+        window.showSprite = (id) => window.setVisible(id || window.activeSpriteId || "robot_default", true);
+        window.hideSprite = (id) => window.setVisible(id || window.activeSpriteId || "robot_default", false);
 
         window.say = (id, text) => {
-            if (timeoutRefs.current[id]) clearTimeout(timeoutRefs.current[id]);
-            spriteActions.update(id, { speech: text });
-            timeoutRefs.current[id] = setTimeout(() => {
-                spriteActions.update(id, { speech: null });
-                delete timeoutRefs.current[id];
+            const tid = id || window.activeSpriteId || "robot_default";
+            if (timeoutRefs.current[tid]) clearTimeout(timeoutRefs.current[tid]);
+            spriteActions.update(tid, { speech: text });
+            timeoutRefs.current[tid] = setTimeout(() => {
+                spriteActions.update(tid, { speech: null });
+                delete timeoutRefs.current[tid];
             }, 3000);
         };
 
-        // ===========================================
-        // NEW LEAPBLOCKS FUNCTIONS
-        // ===========================================
-
         // Go to Random Position
-        window.goToRandom = () => {
-            const id = window.activeSpriteId || activeSpriteId;
+        window.goToRandom = (id) => {
+            const tid = id || window.activeSpriteId || "robot_default";
             const randomX = Math.floor(Math.random() * 15) + 1;
             const randomY = Math.floor(Math.random() * 10) + 1;
-            spriteActions.goToGrid(id, randomX, randomY);
+            spriteActions.goToGrid(tid, randomX, randomY);
         };
 
-        // Set Speed
-        window.setSpeed = (speed) => {
-            const speedValues = { slow: 1000, normal: 500, fast: 200 };
-            window.animationSpeed = speedValues[speed] || 500;
-        };
+        // ... Set Speed etc ...
         window.animationSpeed = 500; // Default
 
         // Set Sprite Color (Fill Color for 3D Sticker)
-        window.setSpriteColor = (color) => {
-            const id = window.activeSpriteId || activeSpriteId;
-            spriteActions.update(id, { textColor: color });
+        window.setSpriteColor = (id, color) => {
+            const tid = id || window.activeSpriteId || "robot_default";
+            spriteActions.update(tid, { textColor: color });
         };
 
         // Reset Size
         window.resetSize = (id) => {
-            spriteActions.update(id, { size: 100 });
+            const tid = id || window.activeSpriteId || "robot_default";
+            spriteActions.update(tid, { size: 100 });
         };
 
         // Next Costume
         window.nextCostume = (id) => {
-            const sprite = sprites.find(s => s.id === id);
-            if (sprite && sprite.costumes) {
-                const costumeKeys = Object.keys(sprite.costumes);
-                const currentIndex = costumeKeys.indexOf(sprite.currentCostume);
-                const nextIndex = (currentIndex + 1) % costumeKeys.length;
-                spriteActions.update(id, { currentCostume: costumeKeys[nextIndex] });
-            }
+            const tid = id || window.activeSpriteId || "robot_default";
+            // Use current state via spriteActions to avoid closure trap
+            spriteActions.update(tid, (current) => {
+                if (current.costumes) {
+                    const keys = Object.keys(current.costumes);
+                    if (keys.length > 1) {
+                        const idx = keys.indexOf(current.currentCostume || "default");
+                        const nextIdx = (idx + 1) % keys.length;
+                        return { currentCostume: keys[nextIdx] };
+                    }
+                }
+                return {};
+            });
         };
 
         // Change Costume
         window.changeCostume = (id, costume) => {
-            spriteActions.update(id, { currentCostume: costume });
+            const tid = id || window.activeSpriteId || "robot_default";
+            spriteActions.update(tid, { currentCostume: costume });
         };
 
         // Mirror Sprite
@@ -1331,11 +1340,28 @@ export default function JuniorApp({ onBack }) {
         if (window.clearPen) window.clearPen();
         await window.wait(0.3);
 
-        // Run ONLY the currently active sprite's blocks (the one whose workspace is visible)
-        console.log(`[Junior] Running blocks for active sprite: ${activeSpriteId}`);
-        window.activeSpriteId = activeSpriteId;
+        // Gather block data for ALL sprites in the current scene
+        const currentScene = scenes.find(s => s.id === currentSceneId);
+        if (!currentScene) return;
+
+        const spriteEntries = currentScene.sprites.map(sprite => {
+            // For the active sprite, always use the live workspace data to capture unsaved changes
+            if (sprite.id === activeSpriteId && workspaceRef.current) {
+                return {
+                    spriteId: sprite.id,
+                    blocks: Blockly.serialization.workspaces.save(workspaceRef.current)
+                };
+            }
+            // For others, use their saved blocks
+            return {
+                spriteId: sprite.id,
+                blocks: sprite.blocks || {}
+            };
+        });
+
+        console.log(`[Junior] Running blocks for all sprites in scene: ${currentScene.name}`);
         if (interpreterRef.current) {
-            await interpreterRef.current.runStacks(['event_flag', 'event_flag_clicked']);
+            await interpreterRef.current.runAllSpritesStacks(['event_flag', 'event_flag_clicked'], spriteEntries, Blockly);
         }
     };
 
@@ -2014,46 +2040,6 @@ export default function JuniorApp({ onBack }) {
             </div>
 
             {/* SPRITE LIBRARY MODAL */}
-            {isSpriteModalOpen && (
-                <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", zIndex: 3000, display: "flex", justifyContent: "center", alignItems: "center" }}>
-                    <div style={{ background: "white", width: "500px", borderRadius: "10px", padding: "20px", boxShadow: "0 10px 25px rgba(0,0,0,0.2)" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                            <h2 style={{ margin: 0, fontSize: "20px" }}>Choose a Sprite</h2>
-                            <button onClick={() => setIsSpriteModalOpen(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer" }}>✕</button>
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px" }}>
-                            {[
-                                { type: "robot", name: "Robot", icon: null, image: "/assets/sprites/robot/robot_idle.svg" },
-                                { type: "bear", name: "Teddy", icon: "🐻" },
-                                { type: "dog", name: "Dog", icon: "🐶" },
-                                { type: "cat", name: "Cat", icon: "🐱" }
-                            ].map(s => (
-                                <div
-                                    key={s.type}
-                                    onClick={() => addSprite(s.type)}
-                                    style={{
-                                        border: s.type === "robot" ? "2px solid #7B4FC4" : "1px solid #eee",
-                                        borderRadius: "8px", padding: "20px",
-                                        textAlign: "center", cursor: "pointer",
-                                        background: s.type === "robot" ? "#f5f0ff" : "#f9f9f9"
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.background = s.type === "robot" ? "#ede5ff" : "#f0f0f0"}
-                                    onMouseLeave={e => e.currentTarget.style.background = s.type === "robot" ? "#f5f0ff" : "#f9f9f9"}
-                                >
-                                    <div style={{ fontSize: "40px", marginBottom: "10px", display: "flex", justifyContent: "center", alignItems: "center", height: "50px" }}>
-                                        {s.image ? (
-                                            <img src={s.image} alt={s.name} style={{ width: "50px", height: "50px", objectFit: "contain" }} />
-                                        ) : (
-                                            s.icon
-                                        )}
-                                    </div>
-                                    <div style={{ fontWeight: "bold" }}>{s.name}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* BACKDROP CHOOSER MODAL */}
             {isBackdropChooserOpen && (

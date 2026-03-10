@@ -2,7 +2,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     if (!Blockly || !javascriptGenerator) return;
 
     // Helper to get target code
-    const getTarget = () => 'window.activeSpriteId || "teddy"';
+    const getTarget = () => 'window.activeSpriteId || "robot_default"';
     // Helper to inject wait and check execution state for immediate stop
     const wait = () => 'if(!window.isActive()) return;\nawait window.wait(0.5);\nif(window.checkPause) await window.checkPause();\nif(!window.isActive()) return;\n';
     const yieldLoop = () => 'if(!window.isActive()) return;\nawait window.wait(0.01);\nif(window.checkPause) await window.checkPause();\n'; // Faster wait for loop cycles
