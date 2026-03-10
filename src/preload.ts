@@ -121,10 +121,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.removeAllListeners('upload-progress');
     },
 
-    /**
-     * Remove background from image using Python script
-     */
-    removeBackground: (imagePath: string): Promise<{ success: boolean; error?: string; stdout?: string; stderr?: string }> => {
+    removeBackground: (imagePath: string): Promise<{ success: boolean; error?: string; stdout?: string; stderr?: string, base64?: string }> => {
         console.log('[PRELOAD] removeBackground called', { imagePath });
         return ipcRenderer.invoke('remove-background', imagePath);
     },
@@ -143,7 +140,7 @@ declare global {
             onConnectionChange: (callback: (connected: boolean) => void) => void;
             onUploadProgress: (callback: (progress: number, message: string) => void) => void;
             removeAllListeners: () => void;
-            removeBackground: (imagePath: string) => Promise<{ success: boolean; error?: string; stdout?: string; stderr?: string }>;
+            removeBackground: (imagePath: string) => Promise<{ success: boolean; error?: string; stdout?: string; stderr?: string; base64?: string }>;
         };
     }
 }

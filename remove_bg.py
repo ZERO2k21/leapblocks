@@ -1,34 +1,29 @@
 import os
+import sys
 from PIL import Image
 
-def remove_background(image_path, threshold=40):
+try:
+    from rembg import remove
+except ImportError:
+    print("Error: The 'rembg' library is required. Please run: pip install rembg pillow")
+    sys.exit(1)
+
+def remove_background(image_path):
     try:
-        img = Image.open(image_path).convert("RGBA")
-        datas = img.getdata()
+        # Open the image using PIL
+        img = Image.open(image_path)
         
-        newData = []
-        for item in datas:
-            # item is (R, G, B, A)
-            # Check for near-white
-            is_white = item[0] > (255 - threshold) and item[1] > (255 - threshold) and item[2] > (255 - threshold)
-            # Check for near-black
-            is_black = item[0] < threshold and item[1] < threshold and item[2] < threshold
-            
-            if is_white or is_black:
-                # Background pixel -> transparent
-                newData.append((0, 0, 0, 0))
-            else:
-                newData.append(item)
-                
-        img.putdata(newData)
+        # Remove the background using rembg
+        output_img = remove(img)
         
-        # Determine new filename
+        # Determine new filename (force .png)
         base = os.path.splitext(image_path)[0]
         new_path = base + ".png"
         
-        img.save(new_path, "PNG")
+        # Save exact object extraction as PNG with transparency
+        output_img.save(new_path, "PNG")
         
-        # Remove old jpeg if it was one
+        # Remove old image if it was not already a PNG and had different extension
         if image_path.lower().endswith(('.jpeg', '.jpg')) and image_path != new_path:
             os.remove(image_path)
             
@@ -39,24 +34,15 @@ def remove_background(image_path, threshold=40):
         return None
 
 if __name__ == "__main__":
-    import sys
     if len(sys.argv) > 1:
         target = sys.argv[1]
         if os.path.isfile(target):
             remove_background(target)
         elif os.path.isdir(target):
             for filename in os.listdir(target):
-                if filename.lower().endswith((".png", ".jpeg", ".jpg")):
+                if filename.lower().endswith((".png", ".jpeg", ".jpg", ".webp")):
                     file_path = os.path.join(target, filename)
                     remove_background(file_path)
     else:
-        directory = "public/assets/sprites/library"
-        print(f"Scanning directory: {directory}")
-        if os.path.exists(directory):
-            for filename in os.listdir(directory):
-                if filename.lower().endswith((".png", ".jpeg", ".jpg")):
-                    file_path = os.path.join(directory, filename)
-                    remove_background(file_path)
-        else:
-            print(f"Directory {directory} not found.")
-    print("Done!")
+        print("Usage: python remove_bg.py <path_to_image_or_directory>")
+        sys.exit(1)

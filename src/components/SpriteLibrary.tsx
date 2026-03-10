@@ -156,15 +156,60 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
         return matchesCategory && matchesSearch;
     });
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        // In Electron, File objects have a 'path' property
+        const imagePath = (file as any).path;
+
+        if (imagePath && window.electronAPI) {
+            // ML-based exact object extraction
+            try {
+                const result = await window.electronAPI.removeBackground(imagePath);
+
+                if (result.success) {
+                    // Python script outputs a .png
+                    const newPath = imagePath.replace(/\.[^/.]+$/, '.png');
+
+                    // We need to read the new local file into a data URL for the canvas/app
+                    // We can either fetch it via file:// or read it directly if we had a node api.
+                    // A simple fetch file:// works in many electron configs if webSecurity is false,
+                    // but since we only have path, we can try fetching it.
+                    // Better approach: Since we don't have fs, we can just use the absolute path 
+                    // with a cache-buster as the image source if local files are allowed.
+                    const cacheBuster = `t=${Date.now()}`;
+                    const finalUrl = `file://${newPath}?${cacheBuster}`;
+
+                    const customSprite: SpriteEntry = {
+                        id: `custom_${Date.now()}`,
+                        name: file.name.replace(/\.[^/.]+$/, ''),
+                        emoji: '🖼️',
+                        image: finalUrl,
+                        category: 'Objects'
+                    };
+                    onSelectSprite(customSprite);
+                } else {
+                    console.error("BG Removal failed:", result.error);
+                    fallbackUpload(file);
+                }
+            } catch (err) {
+                console.error("IPC Remove BG failed:", err);
+                fallbackUpload(file);
+            }
+        } else {
+            // Web fallback
+            fallbackUpload(file);
+        }
+
+        e.target.value = '';
+    };
+
+    const fallbackUpload = (file: File) => {
         const reader = new FileReader();
         reader.onload = async (event) => {
             const dataUrl = event.target?.result as string;
-
-            // Ensure newly uploaded files also get transparent styling
+            // Legacy simplistic white bg removal
             const processedDataUrl = await removeWhiteBackground(dataUrl);
 
             const customSprite: SpriteEntry = {
@@ -177,7 +222,6 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
             onSelectSprite(customSprite);
         };
         reader.readAsDataURL(file);
-        e.target.value = '';
     };
 
     const handleEmojiSelect = (emoji: string) => {

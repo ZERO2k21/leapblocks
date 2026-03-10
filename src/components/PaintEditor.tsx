@@ -61,11 +61,69 @@ function PaintEditor({
     const [zoom, setZoom] = useState(1);
     const [history, setHistory] = useState<string[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
+    const historyIndexRef = useRef(-1);
+    const isRestoring = useRef(false);
+
+    // Keep ref in sync
+    useEffect(() => {
+        historyIndexRef.current = historyIndex;
+    }, [historyIndex]);
+
     const [activeImage, setActiveImage] = useState<string>(initialImage || '');
     const [costumeName, setCostumeName] = useState(spriteName);
     const [clipboard, setClipboard] = useState<fabric.Object | null>(null);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [activeColorPicker, setActiveColorPicker] = useState<'fill' | 'outline' | null>(null);
+    const [isRemovingBg, setIsRemovingBg] = useState(false);
+
+    // Auto BG Removal handler
+    const handleAutoRemoveBG = async () => {
+        const canvas = canvasRef.current;
+        if (!canvas || isRemovingBg) return;
+
+        // If there's an active selected object that is an image, we could theoretically just remove its bg.
+        // But for a generalized approach, we remove the background of the ENTIRE canvas content.
+
+        setIsRemovingBg(true);
+        // Get high quality PNG of current canvas
+        const dataUrl = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 2 });
+
+        if (window.electronAPI) {
+            try {
+                const result = await window.electronAPI.removeBackground(dataUrl);
+                if (result.success && (result as any).base64) {
+                    // Clear the current canvas and load the new strict-object image
+                    canvas.clear();
+
+                    fabric.Image.fromURL((result as any).base64, (img) => {
+                        img.set({
+                            left: canvas.width! / 2,
+                            top: canvas.height! / 2,
+                            originX: 'center',
+                            originY: 'center',
+                        });
+
+                        // Fit to canvas
+                        const pad = 60;
+                        const scale = Math.min(
+                            (canvas.width! - pad) / (img.width! || 1),
+                            (canvas.height! - pad) / (img.height! || 1)
+                        );
+                        if (scale < 1) img.scale(scale);
+
+                        canvas.add(img);
+                        canvas.renderAll();
+                        saveState();
+                    }, { crossOrigin: 'anonymous' });
+                } else {
+                    console.error("Auto BG Removal Failed:", result.error);
+                }
+            } catch (err) {
+                console.error("Auto BG IPC Failed:", err);
+            }
+        }
+        setIsRemovingBg(false);
+    };
 
     // Initialize Canvas
     useEffect(() => {
@@ -177,24 +235,34 @@ function PaintEditor({
     }, [activeTool, outlineColor, fillColor, strokeWidth]);
 
     const saveState = () => {
+        if (isRestoring.current) return;
         const canvas = canvasRef.current;
         if (!canvas) return;
         const json = JSON.stringify(canvas.toJSON());
         setHistory(prev => {
-            const next = [...prev.slice(0, historyIndex + 1), json];
+            const currentIdx = historyIndexRef.current;
+            const next = [...prev.slice(0, currentIdx + 1), json];
             return next.slice(-50);
         });
-        setHistoryIndex(prev => Math.min(prev + 1, 49));
+        setHistoryIndex(prev => {
+            const newIndex = Math.min(prev + 1, 49);
+            historyIndexRef.current = newIndex; // update sync to avoid multiple state calls using stale index
+            return newIndex;
+        });
     };
 
     const undo = () => {
         if (historyIndex > 0) {
             const canvas = canvasRef.current;
             const state = history[historyIndex - 1];
-            canvas?.loadFromJSON(JSON.parse(state), () => {
-                canvas.renderAll();
-                setHistoryIndex(historyIndex - 1);
-            });
+            if (state) {
+                isRestoring.current = true;
+                canvas?.loadFromJSON(JSON.parse(state), () => {
+                    canvas.renderAll();
+                    setHistoryIndex(historyIndex - 1);
+                    isRestoring.current = false;
+                });
+            }
         }
     };
 
@@ -202,10 +270,14 @@ function PaintEditor({
         if (historyIndex < history.length - 1) {
             const canvas = canvasRef.current;
             const state = history[historyIndex + 1];
-            canvas?.loadFromJSON(JSON.parse(state), () => {
-                canvas.renderAll();
-                setHistoryIndex(historyIndex + 1);
-            });
+            if (state) {
+                isRestoring.current = true;
+                canvas?.loadFromJSON(JSON.parse(state), () => {
+                    canvas.renderAll();
+                    setHistoryIndex(historyIndex + 1);
+                    isRestoring.current = false;
+                });
+            }
         }
     };
 
@@ -624,6 +696,12 @@ function PaintEditor({
                         <div className="flex items-center gap-4">
                             <ToolBtnVertical onClick={() => handleFlip('h')} icon={<FlipHorizontal size={18} />} label="Flip Horizontal" />
                             <ToolBtnVertical onClick={() => handleFlip('v')} icon={<FlipVertical size={18} />} label="Flip Vertical" />
+                        </div>
+
+                        <div className="h-8 w-px bg-gray-200" />
+
+                        <div className="flex items-center gap-4">
+                            <ToolBtnVertical onClick={handleAutoRemoveBG} icon={<Sparkles size={18} />} label="Auto BG Remove" color={isRemovingBg ? "text-purple-500 animate-pulse" : "group-hover:text-purple-500"} />
                         </div>
                     </div>
 

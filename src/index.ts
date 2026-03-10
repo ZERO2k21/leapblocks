@@ -116,17 +116,56 @@ ipcMain.handle('upload-code', async (event, code: string, selectedPort: string, 
 
 ipcMain.handle('remove-background', async (event, imagePath: string) => {
   const { exec } = require('child_process');
-  const fullPath = path.isAbsolute(imagePath) ? imagePath : path.join(app.getAppPath(), imagePath);
+  const fs = require('fs');
+  const crypto = require('crypto');
+
+  let targetPath = imagePath;
+  let isTempFile = false;
+  let returnAsBase64 = false;
+
+  // Handle Base64 Data URL
+  if (imagePath.startsWith('data:image/')) {
+    isTempFile = true;
+    returnAsBase64 = true;
+    const matches = imagePath.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return { success: false, error: 'Invalid base64 image data' };
+    }
+    const buffer = Buffer.from(matches[2], 'base64');
+    const tempName = crypto.randomBytes(16).toString('hex') + '.png';
+    targetPath = path.join(app.getPath('temp'), tempName);
+    fs.writeFileSync(targetPath, buffer);
+  }
+
+  // Convert to absolute path if not already
+  const fullPath = path.isAbsolute(targetPath)
+    ? targetPath
+    : path.join(app.getAppPath(), targetPath);
 
   return new Promise((resolve) => {
     // Note: ensure python is in PATH or use a specific path
-    exec(`python remove_bg.py "${fullPath}"`, (error: any, stdout: any, stderr: any) => {
+    exec(`python "${path.join(app.getAppPath(), 'remove_bg.py')}" "${fullPath}"`, (error: any, stdout: any, stderr: any) => {
+      let resultBase64;
+
+      // If we used a temp file, the python script outputs a new file (replace extension with .png)
+      // Since we forced the input to be .png, the output is the same path.
+      if (returnAsBase64 && fs.existsSync(fullPath) && !error) {
+        const outBuffer = fs.readFileSync(fullPath);
+        resultBase64 = `data:image/png;base64,${outBuffer.toString('base64')}`;
+      }
+
+      // Cleanup temp file
+      if (isTempFile && fs.existsSync(fullPath)) {
+        try { fs.unlinkSync(fullPath); } catch (e) { }
+      }
+
       if (error) {
         console.error(`[MAIN:BG_REMOVAL] Error: ${error}`);
-        resolve({ success: false, error: error.message });
+        resolve({ success: false, error: error.message, stderr });
         return;
       }
-      resolve({ success: true, stdout, stderr });
+
+      resolve({ success: true, stdout, stderr, base64: resultBase64 });
     });
   });
 });

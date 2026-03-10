@@ -47,10 +47,10 @@ const robotTalk1 = "/assets/sprites/robot/robot_talk1.svg";
 
 // Categories
 const CATEGORIES = [
+    { id: "events", name: "Events", color: "#FFBF00", icon: <Flag fill="currentColor" stroke="none" /> },
     { id: "motion", name: "Motion", color: "#4C97FF", icon: <Footprints fill="currentColor" stroke="none" /> },
     { id: "looks", name: "Looks", color: "#9966FF", icon: <Eye fill="currentColor" stroke="none" /> },
     { id: "sound", name: "Sound", color: "#CF63CF", icon: <Volume2 fill="currentColor" stroke="none" /> },
-    { id: "events", name: "Events", color: "#FFBF00", icon: <Flag fill="currentColor" stroke="none" /> },
     { id: "control", name: "Control", color: "#FFAB19", icon: <Hand fill="currentColor" stroke="none" /> },
     { id: "pen", name: "Pen", color: "#0FBD8C", icon: <PenTool fill="currentColor" stroke="none" /> },
 ];
@@ -170,7 +170,7 @@ export default function JuniorApp({ onBack }) {
     const previewRevertTimerRef = useRef(null); // For block preview auto-revert
     const isLoadingWorkspaceRef = useRef(false); // To block autosave during workspace load
     const [projectName, setProjectName] = useState("Untitled Project");
-    const [activeCategory, setActiveCategory] = useState("motion");
+    const [activeCategory, setActiveCategory] = useState("events");
     const [categories, setCategories] = useState(CATEGORIES);
     const [categoryBlocks, setCategoryBlocks] = useState(categoryContents);
     const [isExtensionLibraryOpen, setIsExtensionLibraryOpen] = useState(false);
@@ -877,7 +877,7 @@ export default function JuniorApp({ onBack }) {
         // Assign the Result (Workspace) to workspaceRef.current
         if (blocklyDiv.current) {
             workspaceRef.current = Blockly.inject(blocklyDiv.current, {
-                toolbox: getToolboxXml("motion"),
+                toolbox: getToolboxXml("events"),
                 scrollbars: false,
                 trashcan: false,
                 horizontalLayout: true,
