@@ -1395,11 +1395,24 @@ export default function JuniorApp({ onBack }) {
     };
 
     const handleSpriteClick = async (clickedId) => {
-        if (clickedId === activeSpriteId) {
-            // Delegate to Interpreter
-            interpreterRef.current?.runStacks('event_press');
-        } else {
-            console.log("Clicked Inactive Sprite:", clickedId);
+        // First save any current workspace blocks
+        saveCurrentWorkspace();
+
+        // Wait briefly for state flush
+        await new Promise(r => setTimeout(r, 50));
+
+        const latestScenes = scenesRef.current || scenes;
+        const currentScene = latestScenes.find(s => s.id === currentSceneId);
+        if (!currentScene) return;
+
+        const sprite = currentScene.sprites.find(s => s.id === clickedId);
+
+        if (sprite && sprite.blocks && Object.keys(sprite.blocks).length > 0) {
+            const spriteEntries = [{ spriteId: clickedId, blocks: sprite.blocks }];
+            interpreterRef.current?.runAllSpritesStacks(['event_press', 'event_sprite_clicked'], spriteEntries, Blockly);
+        } else if (clickedId === activeSpriteId) {
+            // Fallback for current active sprite workspace
+            interpreterRef.current?.runStacks(['event_press', 'event_sprite_clicked']);
         }
     };
 

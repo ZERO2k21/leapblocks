@@ -151,10 +151,12 @@ export class Interpreter {
         }
 
         // Configure statement prefix for highlighting
-        this.generator.STATEMENT_PREFIX = 'window.highlightBlock(%1, window.activeSpriteId);\n';
-
         // We map block execution into an array of Promises so we can wait until ALL finish
         const stackPromises = validStacks.map(block => {
+            const currentSpriteId = spriteId || window.activeSpriteId;
+            // Configure statement prefix for highlighting AND sprite context
+            this.generator.STATEMENT_PREFIX = `window.activeSpriteId = "${currentSpriteId}";\nwindow.highlightBlock(%1, "${currentSpriteId}");\n`;
+
             // VALIDATE
             const check = WorkspaceValidator.validateStack(block);
             if (!check.isValid) {
@@ -201,13 +203,12 @@ export class Interpreter {
         // Ensure we are active
         if (!this.isActive) this.start();
 
-        // Configure statement prefix: Set activeSpriteId BEFORE EVERY BLOCK to prevent race conditions
-        // The %1 is the block ID (for highlighting). We inject spriteId restoration via wrapped code.
-        this.generator.STATEMENT_PREFIX = 'window.highlightBlock(%1, window.activeSpriteId);\n';
-
         const allThreadPromises = [];
 
         for (const { spriteId, blocks } of spriteEntries) {
+            // Configure statement prefix: Set activeSpriteId BEFORE EVERY BLOCK to prevent race conditions
+            this.generator.STATEMENT_PREFIX = `window.activeSpriteId = "${spriteId}";\nwindow.highlightBlock(%1, "${spriteId}");\n`;
+
             if (!blocks || Object.keys(blocks).length === 0) continue;
 
             let tempWs = null;
@@ -288,16 +289,11 @@ export class Interpreter {
      */
     _wrapCodeWithSpriteContext(code, spriteId) {
         const setter = `window.activeSpriteId = "${spriteId}";\n`;
-        // Insert sprite context restoration before every line that could yield
-        // (contains await) and at the very start
-        const lines = code.split('\n');
-        const wrappedLines = lines.map(line => {
-            if (line.trim().startsWith('await ') || line.trim().startsWith('if(window.checkPause)')) {
-                return setter + line;
-            }
-            return line;
-        });
-        return setter + wrappedLines.join('\n');
+        // Insert sprite context restoration AFTER every line that could yield
+        // so that returning from an async operation reinstates the sprite context.
+        const regex = /(await\s+[^;]+;)/g;
+        let wrappedCode = code.replace(regex, `$1\n${setter}`);
+        return setter + wrappedCode;
     }
 
     /**
@@ -343,10 +339,8 @@ export class Interpreter {
                 } catch(e) { 
                     throw e;
                 } finally {
-                    // Clear highlighting for this sprite if it finishes
-                    if (window.activeSpriteId === "${spriteId}") {
-                        window.highlightBlock(null);
-                    }
+                    // Clear highlighting for this sprite if it finishes quietly
+                    window.highlightBlock(null, "${spriteId}");
                 }
             })()`;
             await eval(asyncCode);

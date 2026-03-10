@@ -138,7 +138,6 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     };
 
 
-
     // --- LOOKS (Purple 260 -> #9966FF) ---
     const EMOJI_OPTIONS = [["🙂", "🙂"], ["👋", "👋"], ["❤️", "❤️"], ["🎉", "🎉"], ["⭐", "⭐"], ["🍎", "🍎"], ["🐶", "🐶"]];
 

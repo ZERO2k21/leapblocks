@@ -149,7 +149,7 @@ export default function JuniorMenuBar({
 
     const tutorialsMenuItems = [
         { label: 'Getting Started', icon: BookOpen, onClick: () => alert('Tutorial coming soon!') },
-        { label: 'Move the Bear', icon: BookOpen, onClick: () => alert('Tutorial coming soon!') },
+        { label: 'Move the Robo', icon: BookOpen, onClick: () => alert('Tutorial coming soon!') },
         { label: 'Make Sounds', icon: BookOpen, onClick: () => alert('Tutorial coming soon!') },
     ];
 
