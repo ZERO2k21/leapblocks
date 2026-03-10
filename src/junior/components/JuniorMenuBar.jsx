@@ -157,9 +157,9 @@ export default function JuniorMenuBar({
         <div style={{
             display: 'flex',
             alignItems: 'center',
-            height: '48px',
+            height: '56px',
             background: COLORS.menuBar,
-            padding: '0 16px',
+            padding: '0px',
             gap: '8px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
             zIndex: 100,
@@ -192,14 +192,14 @@ export default function JuniorMenuBar({
                 gap: '8px',
                 marginRight: '20px',
             }}>
-                <Logo height={28} />
+                <Logo height={44} />
                 <span style={{
                     color: '#FFD500',
                     fontSize: '12px',
                     fontWeight: 800,
                     textTransform: 'uppercase',
                     letterSpacing: '0.8px',
-                    marginBottom: '4px',
+                    marginBottom: '15px',
                 }}>
                     JUNIOR
                 </span>

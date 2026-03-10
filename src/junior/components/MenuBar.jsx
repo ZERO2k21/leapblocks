@@ -235,7 +235,7 @@ export default function MenuBar({
         <div style={{
             display: 'flex',
             alignItems: 'center',
-            height: '48px',
+            height: '56px',
             background: COLORS.menuBar,
             padding: '0 12px',
             gap: '8px',
@@ -270,7 +270,7 @@ export default function MenuBar({
                 gap: '8px',
                 marginRight: '20px',
             }}>
-                <Logo height={28} />
+                <Logo height={44} />
                 <span style={{
                     color: '#FFD500',
                     fontSize: '12px',

@@ -445,7 +445,8 @@ export default function JuniorApp({ onBack }) {
             if (spriteData.costumes && spriteData.costumes.length > 0) {
                 costumes = {};
                 spriteData.costumes.forEach((c, index) => {
-                    costumes[index === 0 ? 'default' : `costume${index}`] = c;
+                    const key = index === 0 ? 'default' : `costume${index}`;
+                    costumes[key] = c;
                 });
             } else if (spriteData.image) {
                 costumes = { default: spriteData.image };
@@ -665,13 +666,15 @@ export default function JuniorApp({ onBack }) {
         // Next Costume
         window.nextCostume = (id) => {
             const tid = id || window.activeSpriteId || "robot_default";
-            // Use current state via spriteActions to avoid closure trap
+            // Use top-level functional update to get the LATEST sprite state
             spriteActions.update(tid, (current) => {
                 if (current.costumes) {
                     const keys = Object.keys(current.costumes);
                     if (keys.length > 1) {
-                        const idx = keys.indexOf(current.currentCostume || "default");
-                        const nextIdx = (idx + 1) % keys.length;
+                        const currentKey = current.currentCostume || "default";
+                        const idx = keys.indexOf(currentKey);
+                        // Fallback if current key not found (shouldn't happen with proper init)
+                        const nextIdx = (idx === -1) ? 0 : (idx + 1) % keys.length;
                         return { currentCostume: keys[nextIdx] };
                     }
                 }
@@ -687,10 +690,8 @@ export default function JuniorApp({ onBack }) {
 
         // Mirror Sprite
         window.mirrorSprite = (id) => {
-            const sprite = sprites.find(s => s.id === id);
-            if (sprite) {
-                spriteActions.update(id, { mirrored: !sprite.mirrored });
-            }
+            const tid = id || window.activeSpriteId || "robot_default";
+            spriteActions.update(tid, (prev) => ({ mirrored: !prev.mirrored }));
         };
 
         // Stamp Sprite - dispatches to sprite's stamp action
