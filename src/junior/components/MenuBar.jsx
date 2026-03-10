@@ -6,17 +6,6 @@ import {
 } from 'lucide-react';
 import Logo from '../../components/Logo';
 
-// PictoBlox-inspired purple color scheme
-const COLORS = {
-    menuBar: 'linear-gradient(180deg, #7B4FC4 0%, #5A2D82 100%)',
-    menuHover: 'rgba(255,255,255,0.15)',
-    menuActive: 'rgba(0,0,0,0.2)',
-    text: '#FFFFFF',
-    accent: '#FFD500',
-    stageMode: '#2ECC71',
-    uploadMode: '#3498DB',
-};
-
 // Dropdown Menu Component
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     const menuRef = useRef(null);
@@ -34,81 +23,32 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     }, [isOpen, onClose]);
 
     return (
-        <div ref={menuRef} style={{ position: 'relative' }}>
+        <div ref={menuRef} className="relative">
             <button
                 onClick={onToggle}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '8px 12px',
-                    background: isOpen ? COLORS.menuActive : 'transparent',
-                    border: 'none',
-                    color: COLORS.text,
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    borderRadius: '4px',
-                    transition: 'background 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                    if (!isOpen) e.target.style.background = COLORS.menuHover;
-                }}
-                onMouseLeave={(e) => {
-                    if (!isOpen) e.target.style.background = 'transparent';
-                }}
+                className={`flex items-center gap-1 px-3 py-2 border-none text-white text-[13px] font-medium cursor-pointer rounded transition-colors duration-150 ${isOpen ? 'bg-black/20' : 'bg-transparent hover:bg-white/15'}`}
             >
                 {Icon && <Icon size={16} />}
                 {label}
-                <ChevronDown size={14} style={{ opacity: 0.7 }} />
+                <ChevronDown size={14} className="opacity-70" />
             </button>
 
             {isOpen && (
-                <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    marginTop: '4px',
-                    background: '#FFFFFF',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                    minWidth: '180px',
-                    overflow: 'hidden',
-                    zIndex: 1000,
-                }}>
+                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] min-w-[180px] overflow-hidden z-[1000]">
                     {items.map((item, idx) => (
                         item.divider ? (
-                            <div key={idx} style={{ height: '1px', background: '#eee', margin: '4px 0' }} />
+                            <div key={idx} className="h-px bg-gray-200 my-1" />
                         ) : (
                             <button
                                 key={idx}
                                 onClick={() => { item.onClick?.(); onClose(); }}
                                 disabled={item.disabled}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    width: '100%',
-                                    padding: '10px 14px',
-                                    border: 'none',
-                                    background: 'transparent',
-                                    color: item.disabled ? '#999' : '#333',
-                                    fontSize: '13px',
-                                    textAlign: 'left',
-                                    cursor: item.disabled ? 'not-allowed' : 'pointer',
-                                    transition: 'background 0.1s',
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (!item.disabled) e.target.style.background = '#f5f5f5';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.background = 'transparent';
-                                }}
+                                className={`flex items-center gap-2.5 w-full px-3.5 py-2.5 border-none bg-transparent text-[13px] text-left transition-colors duration-100 ${item.disabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 cursor-pointer hover:bg-gray-100'}`}
                             >
                                 {item.icon && <item.icon size={16} color="#7B4FC4" />}
-                                <span style={{ flex: 1 }}>{item.label}</span>
+                                <span className="flex-1">{item.label}</span>
                                 {item.shortcut && (
-                                    <span style={{ fontSize: '11px', color: '#999' }}>{item.shortcut}</span>
+                                    <span className="text-[11px] text-gray-400">{item.shortcut}</span>
                                 )}
                             </button>
                         )
@@ -122,41 +62,16 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
 // Mode Toggle Component (Stage / Upload)
 function ModeToggle({ mode, onModeChange }) {
     return (
-        <div style={{
-            display: 'flex',
-            background: 'rgba(0,0,0,0.2)',
-            borderRadius: '20px',
-            padding: '3px',
-        }}>
+        <div className="flex bg-black/20 rounded-[20px] p-[3px]">
             <button
                 onClick={() => onModeChange('stage')}
-                style={{
-                    padding: '6px 16px',
-                    border: 'none',
-                    borderRadius: '17px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    background: mode === 'stage' ? COLORS.stageMode : 'transparent',
-                    color: mode === 'stage' ? '#fff' : 'rgba(255,255,255,0.7)',
-                }}
+                className={`px-4 py-1.5 border-none rounded-[17px] text-xs font-semibold cursor-pointer transition-all duration-200 ${mode === 'stage' ? 'bg-emerald-500 text-white' : 'bg-transparent text-white/70'}`}
             >
                 Stage
             </button>
             <button
                 onClick={() => onModeChange('upload')}
-                style={{
-                    padding: '6px 16px',
-                    border: 'none',
-                    borderRadius: '17px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    background: mode === 'upload' ? COLORS.uploadMode : 'transparent',
-                    color: mode === 'upload' ? '#fff' : 'rgba(255,255,255,0.7)',
-                }}
+                className={`px-4 py-1.5 border-none rounded-[17px] text-xs font-semibold cursor-pointer transition-all duration-200 ${mode === 'upload' ? 'bg-blue-500 text-white' : 'bg-transparent text-white/70'}`}
             >
                 Upload
             </button>
@@ -232,53 +147,21 @@ export default function MenuBar({
     ];
 
     return (
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            height: '56px',
-            background: COLORS.menuBar,
-            padding: '0 12px',
-            gap: '8px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            zIndex: 100,
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
-        }}>
+        <div className="flex items-center h-14 px-3 gap-2 shadow-[0_2px_8px_rgba(0,0,0,0.15)] z-[100] border-b border-white/10"
+            style={{ background: 'linear-gradient(180deg, #7B4FC4 0%, #5A2D82 100%)' }}>
+
             {/* Home Link */}
             <button
                 onClick={onBack}
-                style={{
-                    background: 'rgba(255,255,255,0.15)',
-                    border: 'none',
-                    borderRadius: '8px',
-                    color: 'white',
-                    padding: '6px 12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    marginRight: '8px'
-                }}
+                className="flex items-center gap-1.5 bg-white/15 border-none rounded-lg text-white px-3 py-1.5 cursor-pointer text-[13px] font-semibold mr-2"
             >
                 <Home size={16} />
             </button>
+
             {/* Logo */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                gap: '8px',
-                marginRight: '20px',
-            }}>
+            <div className="flex items-end gap-2 mr-5">
                 <Logo height={44} />
-                <span style={{
-                    color: '#FFD500',
-                    fontSize: '12px',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.8px',
-                    marginBottom: '4px',
-                }}>
+                <span className="text-[#FFD500] text-xs font-extrabold uppercase tracking-wider mb-[15px]">
                     INTERMEDIATE BLOCKS
                 </span>
             </div>
@@ -307,68 +190,32 @@ export default function MenuBar({
                 onClose={closeMenu}
             />
 
-            {/* Hardware Port Section (Styled for Premium Look) */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                background: 'rgba(0,0,0,0.2)',
-                padding: '2px 8px',
-                borderRadius: '8px',
-                margin: '0 4px'
-            }}>
+            {/* Hardware Port Section */}
+            <div className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded-lg mx-1">
                 <button
                     onClick={onRefreshPorts}
                     title="Refresh Ports"
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'white',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        opacity: 0.8
-                    }}
+                    className="bg-transparent border-none text-white cursor-pointer flex items-center opacity-80"
                 >
                     <RotateCcw size={14} />
                 </button>
                 <select
                     value={selectedPort}
                     onChange={(e) => onPortSelect?.(e.target.value)}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'white',
-                        fontSize: '12px',
-                        outline: 'none',
-                        cursor: 'pointer',
-                        padding: '4px',
-                        maxWidth: '120px'
-                    }}
+                    className="bg-transparent border-none text-white text-xs outline-none cursor-pointer p-1 max-w-[120px]"
                 >
-                    <option value="" style={{ color: '#333' }}>
+                    <option value="" className="text-gray-700">
                         {ports.length === 0 ? 'No Ports Found' : 'Select Port'}
                     </option>
                     {ports.map(p => (
-                        <option key={p.path} value={p.path} style={{ color: p.path === 'BRIDGE_DETECTED' ? '#E74C3C' : '#333' }}>
+                        <option key={p.path} value={p.path} className={p.path === 'BRIDGE_DETECTED' ? 'text-red-500' : 'text-gray-700'}>
                             {p.path === 'BRIDGE_DETECTED' ? `⚠ Driver Needed: ${p.manufacturer}` : `${p.path} (${p.manufacturer || 'Unknown'})`}
                         </option>
                     ))}
                 </select>
                 <button
                     onClick={onConnect}
-                    style={{
-                        background: connectionStatus === 'connected' ? '#2ECC71' : 'rgba(255,255,255,0.15)',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: 'white',
-                        padding: '4px 10px',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        marginLeft: '4px',
-                        transition: 'all 0.2s'
-                    }}
+                    className={`border-none rounded-md text-white px-2.5 py-1 text-[11px] font-bold cursor-pointer ml-1 transition-all duration-200 ${connectionStatus === 'connected' ? 'bg-emerald-500' : 'bg-white/15'}`}
                 >
                     {connectionStatus === 'connected' ? 'CONNECTED' : 'CONNECT'}
                 </button>
@@ -379,22 +226,7 @@ export default function MenuBar({
                 <button
                     onClick={onUpload}
                     disabled={isUploading}
-                    style={{
-                        background: isUploading ? '#999' : COLORS.accent,
-                        border: 'none',
-                        borderRadius: '17px',
-                        color: isUploading ? '#fff' : '#000',
-                        padding: '6px 20px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        cursor: isUploading ? 'not-allowed' : 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                        transition: 'all 0.2s',
-                        marginRight: '8px'
-                    }}
+                    className={`border-none rounded-[17px] px-5 py-1.5 text-xs font-bold cursor-pointer flex items-center gap-1.5 shadow-[0_2px_4px_rgba(0,0,0,0.2)] transition-all duration-200 mr-2 ${isUploading ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-[#FFD500] text-black'}`}
                 >
                     <Upload size={14} />
                     {isUploading ? 'UPLOADING...' : 'UPLOAD'}
@@ -402,58 +234,27 @@ export default function MenuBar({
             )}
 
             {/* Spacer */}
-            <div style={{ flex: 1 }} />
+            <div className="flex-1" />
 
             {/* Project Name */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: 'rgba(255,255,255,0.1)',
-                borderRadius: '6px',
-                padding: '0 12px',
-            }}>
-                <span style={{ marginRight: '8px', fontSize: '14px' }}>📁</span>
+            <div className="flex items-center bg-white/10 rounded-md px-3">
+                <span className="mr-2 text-sm">📁</span>
                 <input
                     type="text"
                     value={projectName}
                     onChange={(e) => onProjectNameChange?.(e.target.value)}
-                    onBlur={(e) => {
-                        // Just an extra safety measure to ensure focus is lost
-                        e.target.blur();
-                    }}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: COLORS.text,
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        width: '150px',
-                        outline: 'none',
-                    }}
+                    className="bg-transparent border-none text-white text-[13px] font-medium w-[150px] outline-none"
                     placeholder="Project Name"
                 />
             </div>
 
             {/* Spacer */}
-            <div style={{ flex: 1 }} />
+            <div className="flex-1" />
 
             {/* Connection Status */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                marginRight: '16px',
-            }}>
-                <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: connectionStatus === 'connected' ? '#2ECC71' : '#E74C3C',
-                }} />
-                <span style={{
-                    color: 'rgba(255,255,255,0.7)',
-                    fontSize: '11px',
-                }}>
+            <div className="flex items-center gap-1.5 mr-4">
+                <div className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                <span className="text-white/70 text-[11px]">
                     {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
                 </span>
             </div>
@@ -462,21 +263,7 @@ export default function MenuBar({
             <ModeToggle mode={mode} onModeChange={onModeChange} />
 
             {/* Help Button */}
-            <button
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '32px',
-                    height: '32px',
-                    marginLeft: '8px',
-                    background: 'rgba(255,255,255,0.1)',
-                    border: 'none',
-                    borderRadius: '50%',
-                    cursor: 'pointer',
-                    color: COLORS.text,
-                }}
-            >
+            <button className="flex items-center justify-center w-8 h-8 ml-2 bg-white/10 border-none rounded-full cursor-pointer text-white">
                 <HelpCircle size={18} />
             </button>
         </div>

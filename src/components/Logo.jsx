@@ -9,8 +9,8 @@ export default function Logo({ height = 36, className = "" }) {
                 // Fallback if topbar_logo.svg is missing
                 e.target.src = '/assets/leapblocks_logo.svg';
             }}
-            style={{ height, objectFit: 'contain' }}
-            className={className}
+            style={{ height }}
+            className={`object-contain ${className}`}
         />
     );
 }

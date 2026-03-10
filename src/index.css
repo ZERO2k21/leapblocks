@@ -144,11 +144,24 @@ body,
   fill: #575E75 !important;
 }
 
-/* Dropdown Arrows - Dark for contrast */
+/* Dropdown Arrows - Force black for contrast on white backgrounds */
 .blocklyDropdownText+path.blocklyPath,
-.blocklyEditableText.blocklyDropdownTextParent path {
-  fill: #575E75 !important;
+.blocklyEditableText.blocklyDropdownTextParent path,
+.blocklyEditableText path {
+  fill: #333333 !important;
   stroke: none !important;
+}
+
+/* Force ALL dropdown arrow images inside blocks to black */
+.blocklySvg image[xlink\:href*="dropdown"],
+.blocklySvg image[href*="dropdown"],
+.blocklySvg .blocklyEditableText image,
+.blocklySvg .blocklyDropdownTextParent image,
+.blocklyEditableText image,
+.blocklyFlyout .blocklyEditableText image,
+.blocklySvg image[xlink\:href*="data:image"],
+.blocklySvg image[href*="data:image"] {
+  filter: brightness(0) !important;
 }
 
 /* Actual input element while typing */
@@ -383,13 +396,20 @@ body,
   fill: none !important;
 }
 
-/* Beautiful solid dropdown menu */
+/* Beautiful solid dropdown menu - Force pure white */
 .blocklyDropDownDiv {
   border-radius: 8px !important;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
   border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  background-color: var(--blockly-menu-bg-color, #FFFFFF) !important;
+  background-color: #FFFFFF !important;
+  border-color: #e0e0e0 !important;
   padding: 4px 0 !important;
+}
+
+/* Force the arrow to be white too */
+.blocklyDropDownArrow {
+  background-color: #f7f4f4 !important;
+  border-color: #e0e0e0 !important;
 }
 
 /* Dropdown Menu Items - PictoBlox Style */

@@ -869,6 +869,41 @@ export default function JuniorApp({ onBack }) {
             };
         }
 
+        // Force all dropdown arrows to be black
+        if (!Blockly.FieldDropdown.prototype._arrowColourPatched) {
+            const origApplyColour = Blockly.FieldDropdown.prototype.applyColour;
+            Blockly.FieldDropdown.prototype.applyColour = function () {
+                if (origApplyColour) origApplyColour.call(this);
+                // Handle both property naming conventions (svgArrow / svgArrow_)
+                const svgArrow = this.svgArrow_ || this.svgArrow;
+                if (svgArrow) {
+                    svgArrow.style.filter = 'brightness(0)';
+                }
+                // Handle text-based arrow element (arrow / arrow_)
+                const arrow = this.arrow_ || this.arrow;
+                if (arrow) {
+                    try {
+                        const arrowEl = arrow.getSvgRoot ? arrow.getSvgRoot() : arrow;
+                        if (arrowEl && arrowEl.style) {
+                            arrowEl.style.fill = '#333333';
+                        }
+                        if (arrowEl && arrowEl.setAttribute) {
+                            arrowEl.setAttribute('fill', '#333333');
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+                // Also try to find any image child within the field group
+                try {
+                    const fieldGroup = this.fieldGroup_ || this.fieldGroup;
+                    if (fieldGroup) {
+                        const images = fieldGroup.querySelectorAll('image');
+                        images.forEach(img => { img.style.filter = 'brightness(0)'; });
+                    }
+                } catch (e) { /* ignore */ }
+            };
+            Blockly.FieldDropdown.prototype._arrowColourPatched = true;
+        }
+
         // Register Custom Renderer
         registerLeapRenderer(Blockly);
 
