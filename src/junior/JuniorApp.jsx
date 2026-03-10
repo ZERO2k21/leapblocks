@@ -294,7 +294,7 @@ export default function JuniorApp({ onBack }) {
                 }, 50);
             }
         }
-    }, [activeSpriteId, sprites]);
+    }, [activeSpriteId, sprites, currentSceneId]);
 
     // --- HINT SYSTEM ---
     const [hint, setHint] = useState(null);
@@ -795,19 +795,8 @@ export default function JuniorApp({ onBack }) {
         setCurrentSceneId(newId);
     };
 
-    // Effect: Whenever activeSpriteId changes, LOAD the new workspace
-    // We must wait for the STATE to update so we can find the sprite in 'scenes'.
-    // BUT 'scenes' might not be updated yet if we just called setScenes(save)
-    // Actually, 'scenes' in this effect will be the *rendered* scenes.
-    // If we just saved, the re-render happens.
-    useEffect(() => {
-        const sprite = sprites.find(s => s.id === activeSpriteId);
-        if (sprite) {
-            loadWorkspace(sprite);
-        } else {
-            if (workspaceRef.current) workspaceRef.current.clear();
-        }
-    }, [activeSpriteId, currentSceneId]); // Reload when sprite OR scene changes
+    // NOTE: Workspace loading is handled by the "WORKSPACE SWITCHING (Per-Sprite)" effect above (line ~268).
+    // That effect properly disables Blockly events during load to prevent autosave corruption.
 
     // Convert JSON blocks to XML string + FILTERING
     const getToolboxXml = (catId) => {
@@ -1342,56 +1331,12 @@ export default function JuniorApp({ onBack }) {
         if (window.clearPen) window.clearPen();
         await window.wait(0.3);
 
-        // Save current workspace so all sprites' blocks are up to date
-        saveCurrentWorkspace();
-
-        // Wait for React state to flush so scenesRef has the latest saved blocks
-        await new Promise(r => setTimeout(r, 50));
-
-        // Use scenesRef.current to read the LATEST scenes (avoids stale closure)
-        const latestScenes = scenesRef.current || scenes;
-        const currentSprites = latestScenes.find(s => s.id === currentSceneId)?.sprites || [];
-        const spriteEntries = currentSprites
-            .filter(sprite => sprite.blocks && Object.keys(sprite.blocks).length > 0)
-            .map(sprite => ({ spriteId: sprite.id, blocks: sprite.blocks }));
-
-        console.log(`[Junior] Found ${spriteEntries.length} sprite(s) with blocks out of ${currentSprites.length} total`);
-
-        if (spriteEntries.length === 0) {
-            // Fallback: run current workspace only (single sprite mode)
-            console.log("[Junior] No saved sprite blocks found, running current workspace only");
-            if (interpreterRef.current) {
-                await interpreterRef.current.runStacks(['event_flag', 'event_flag_clicked']);
-            }
-        } else if (spriteEntries.length === 1) {
-            // Single sprite - use original method for simplicity
-            console.log("[Junior] Single sprite mode");
-            window.activeSpriteId = spriteEntries[0].spriteId;
-            if (interpreterRef.current) {
-                // If it's NOT the active sprite (rare in single mode), load its blocks
-                if (spriteEntries[0].spriteId !== activeSpriteId) {
-                    const sprite = currentSprites.find(s => s.id === spriteEntries[0].spriteId);
-                    if (sprite && sprite.blocks) {
-                        Blockly.serialization.workspaces.load(sprite.blocks, workspaceRef.current);
-                    }
-                }
-                await interpreterRef.current.runStacks(['event_flag', 'event_flag_clicked']);
-            }
-        } else {
-            // MULTI-SPRITE MODE: Run all sprites' blocks concurrently
-            console.log(`[Junior] Multi-sprite mode: running ${spriteEntries.length} sprites concurrently`);
-            spriteEntries.forEach(e => console.log(`  [Junior] Sprite: ${e.spriteId}, blocks keys: ${Object.keys(e.blocks).length}`));
-            if (interpreterRef.current) {
-                await interpreterRef.current.runAllSpritesStacks(['event_flag', 'event_flag_clicked'], spriteEntries, Blockly);
-            }
-        }
-
-        // Restore the active sprite's workspace after execution
-        const activeSprite = currentSprites.find(s => s.id === activeSpriteId);
-        if (activeSprite) {
-            loadWorkspace(activeSprite);
-        }
+        // Run ONLY the currently active sprite's blocks (the one whose workspace is visible)
+        console.log(`[Junior] Running blocks for active sprite: ${activeSpriteId}`);
         window.activeSpriteId = activeSpriteId;
+        if (interpreterRef.current) {
+            await interpreterRef.current.runStacks(['event_flag', 'event_flag_clicked']);
+        }
     };
 
     const handleSpriteClick = async (clickedId) => {
