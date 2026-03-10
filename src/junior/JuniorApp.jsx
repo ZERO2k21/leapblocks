@@ -142,6 +142,8 @@ import { Scratch3SoundBlocks } from "../scratch-vm/src/extensions/scratch3_sound
 import { Scratch3MusicBlocks } from "../scratch-vm/src/extensions/scratch3_music/index.js";
 import { WorkspaceValidator } from "./engine/WorkspaceValidator";
 import { fileService } from "../services/FileService";
+import defineExtensionBlocks from "./blocks/extensionBlocks";
+import JuniorExtensionLibrary from "./components/JuniorExtensionLibrary";
 
 // Initialize the Audio Environment natively
 const audioEngine = new AudioEngine();
@@ -169,6 +171,9 @@ export default function JuniorApp({ onBack }) {
     const isLoadingWorkspaceRef = useRef(false); // To block autosave during workspace load
     const [projectName, setProjectName] = useState("Untitled Project");
     const [activeCategory, setActiveCategory] = useState("motion");
+    const [categories, setCategories] = useState(CATEGORIES);
+    const [categoryBlocks, setCategoryBlocks] = useState(categoryContents);
+    const [isExtensionLibraryOpen, setIsExtensionLibraryOpen] = useState(false);
     const stageContainerRef = useRef(null); // Ref for stage container to measure dimensions
     const [isDraggingSpriteOnStage, setIsDraggingSpriteOnStage] = useState(false);
 
@@ -815,10 +820,10 @@ export default function JuniorApp({ onBack }) {
         // Actually, we imported BlockRegistry? No, we didn't import ValidBlocks in App.jsx yet.
         // Let's rely on block defaults or just filter by implicit knowledge for now,
         // OR better: Assume categoryContents contains the definitive list, 
-        // but we might want to hide 'loop' blocks in Beginner mode.
+        // actually we might want to hide 'loop' blocks in Beginner mode.
         // Let's implement a simple filter:
 
-        let blocks = categoryContents[catId] || [];
+        let blocks = categoryBlocks[catId] || [];
 
         // Filter by shape/type if config demands
         if (!allowedShapes.includes("c-block")) {
@@ -847,6 +852,7 @@ export default function JuniorApp({ onBack }) {
         defineLeapBlocks(Blockly, javascriptGenerator);
         defineLooksBlocks(Blockly, javascriptGenerator);
         defineSoundBlocks(Blockly, javascriptGenerator);
+        defineExtensionBlocks(Blockly, javascriptGenerator);
 
         // Dynamic Dropdown Colors: Update highlight color based on block color
         if (!Blockly.FieldDropdown.prototype._originalShowEditor) {
@@ -1235,6 +1241,45 @@ export default function JuniorApp({ onBack }) {
             // Ensure flyout blocks render at correct scale after update
             resetFlyoutScale();
             setTimeout(() => workspaceRef.current?.resize(), 50);
+        }
+    };
+
+    const handleAddExtension = (extId) => {
+        setIsExtensionLibraryOpen(false);
+
+        let newCategory = null;
+        let newBlocks = [];
+
+        if (extId === 'face_detection') {
+            if (!categories.find(c => c.id === 'face_detection')) {
+                newCategory = { id: "face_detection", name: "Face Detection", color: "#D43D41", icon: <span>👤</span> };
+                newBlocks = [
+                    { kind: "block", type: "fd_camera" },
+                    { kind: "block", type: "fd_analyze" },
+                    { kind: "block", type: "fd_count" },
+                    { kind: "block", type: "fd_guess_emotion" },
+                    { kind: "block", type: "fd_feature" },
+                    { kind: "block", type: "fd_when_emotion" }
+                ];
+            }
+        } else if (extId === 'hand_pose') {
+            if (!categories.find(c => c.id === 'hand_pose')) {
+                newCategory = { id: "hand_pose", name: "Hand Pose", color: "#D43D41", icon: <span>✋</span> };
+                newBlocks = [
+                    { kind: "block", type: "hp_camera" },
+                    { kind: "block", type: "hp_analyze" },
+                    { kind: "block", type: "hp_move_with" },
+                    { kind: "block", type: "hp_guess_sign" },
+                    { kind: "block", type: "hp_when_sign" }
+                ];
+            }
+        }
+
+        if (newCategory) {
+            setCategories(prev => [...prev, newCategory]);
+            setCategoryBlocks(prev => ({ ...prev, [extId]: newBlocks }));
+            // Automatically switch to the new category
+            setTimeout(() => handleCategoryClick(extId), 50);
         }
     };
 
@@ -1752,6 +1797,14 @@ export default function JuniorApp({ onBack }) {
                 onSave={handleSaveRecording}
             />
 
+            {/* JUNIOR EXTENSION LIBRARY MODAL */}
+            {isExtensionLibraryOpen && (
+                <JuniorExtensionLibrary
+                    onClose={() => setIsExtensionLibraryOpen(false)}
+                    onSelectExtension={handleAddExtension}
+                />
+            )}
+
             {showInstPicker && (
                 <InstrumentPicker
                     position={pickerPos}
@@ -1872,14 +1925,14 @@ export default function JuniorApp({ onBack }) {
                     }}>
                         {/* Scrollable Categories List */}
                         <div style={{ display: "flex", gap: "8px", alignItems: "center", height: "100%", overflowX: "auto", paddingRight: "10px" }} className="no-scrollbar">
-                            {CATEGORIES.map(cat => (
+                            {categories.map(cat => (
                                 <CategoryButton key={cat.id} category={cat} isActive={activeCategory === cat.id} onClick={() => handleCategoryClick(cat.id)} />
                             ))}
                         </div>
 
                         {/* Add Blocks Button */}
                         <button
-                            onClick={() => alert("🧩 More blocks coming soon!")}
+                            onClick={() => setIsExtensionLibraryOpen(true)}
                             title="Add More Blocks"
                             style={{
                                 width: "68px",
