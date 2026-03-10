@@ -136,7 +136,7 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     {
         type: 'motion_turn_right',
         message0: '↻ turn right %1 degrees',
-        args0: [{ type: 'field_number', name: 'DEGREES', value: 15 }],
+        args0: [{ type: 'field_angle', name: 'DEGREES', angle: 15 }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -146,7 +146,7 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     {
         type: 'motion_turn_left',
         message0: '↺ turn left %1 degrees',
-        args0: [{ type: 'field_number', name: 'DEGREES', value: 15 }],
+        args0: [{ type: 'field_angle', name: 'DEGREES', angle: 15 }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -183,7 +183,7 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     {
         type: 'motion_point_direction',
         message0: '🧭 point in direction %1',
-        args0: [{ type: 'field_number', name: 'DIRECTION', value: 90 }],
+        args0: [{ type: 'field_angle', name: 'DIRECTION', angle: 90 }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,

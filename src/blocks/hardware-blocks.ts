@@ -78,7 +78,7 @@ export const hardwareBlocks = Blockly.common.createBlockDefinitionsFromJsonArray
         message0: '🎚️ set servo on pin %1 to %2 degrees',
         args0: [
             { type: 'field_number', name: 'PIN', value: 9, min: 0, max: 13 },
-            { type: 'field_number', name: 'ANGLE', value: 90, min: 0, max: 180 },
+            { type: 'field_angle', name: 'ANGLE', angle: 90 },
         ],
         previousStatement: null,
         nextStatement: null,

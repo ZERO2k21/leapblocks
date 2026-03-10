@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as Blockly from 'blockly';
+import { FieldAngle } from '@blockly/field-angle';
 import { arduinoBlocks, arduinoToolbox } from './blocks/arduino-blocks';
 import { esp32Blocks, esp32Toolbox } from './blocks/esp32-blocks';
 import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
@@ -1340,6 +1341,15 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+
+    // Register custom fields before injection
+    useEffect(() => {
+        try {
+            Blockly.fieldRegistry.register('field_angle', FieldAngle);
+        } catch (e) {
+            // Already registered
+        }
+    }, []);
 
     // Reinitialize workspace when appMode changes (e.g., from home to blocks/junior)
     // This ensures the correct toolbox is shown

@@ -109,9 +109,9 @@ export default function JuniorMenuBar({
             </button>
 
             {/* Logo */}
-            <div className="flex items-end gap-2 mr-5">
-                <Logo height={44} />
-                <span className="text-[#FFD500] text-xs font-extrabold uppercase tracking-wider mb-[15px]">
+            <div className="flex items-center gap-3 mr-6">
+                <Logo height={38} />
+                <span className="text-[#FFD500] text-[11px] font-[900] uppercase tracking-[0.2em] leading-none ">
                     JUNIOR
                 </span>
             </div>
