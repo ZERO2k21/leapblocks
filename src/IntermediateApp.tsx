@@ -1796,6 +1796,17 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     }, [sprites, selectedSpriteId, handleWorkspaceChange, handleBlockInteraction, workspaceTab]);
 
+    // Keep Blockly resized correctly when container transitions (like stageLayout changes)
+    useEffect(() => {
+        if (!blocklyDiv.current) return;
+        const resizeObserver = new ResizeObserver(() => {
+            if (workspaceRef.current) {
+                Blockly.svgResize(workspaceRef.current as Blockly.WorkspaceSvg);
+            }
+        });
+        resizeObserver.observe(blocklyDiv.current);
+        return () => resizeObserver.disconnect();
+    }, [blocklyDiv, workspaceRef]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // RENDER
@@ -1959,8 +1970,8 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             <SpriteLibrary
                 isOpen={showSpriteLibrary}
                 onClose={() => setShowSpriteLibrary(false)}
-                onSelectSprite={(sprite) => {
-                    addSprite(sprite.type as any); // Adapt as needed
+                onSelectSprite={(sprite: any) => {
+                    addSprite(sprite.id as any); // Adapt as needed
                     setShowSpriteLibrary(false);
                 }}
             />
@@ -2036,6 +2047,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 stageManager={stageManager}
                                 addLog={addLog}
                                 onClose={() => handleWorkspaceTabChange('blocks')}
+                                onOpenLibrary={() => setShowBackdropLibrary(true)}
                             />
                         </div>
                     )}
@@ -2075,7 +2087,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             }}>
                                 <div style={{
                                     transform: stageLayout === 'small' ? 'scale(0.5)' : 'scale(1)',
-                                    transformOrigin: 'top left',
+                                    transformOrigin: 'center',
                                     width: '480px',
                                     height: '360px',
                                 }}>
@@ -2102,6 +2114,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     onRemoveBackground={handleRemoveBackground} // v2
                                     onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
                                     onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
+                                    stageManager={stageManager}
                                 />
                                 {/* <StagePanel
                                     isSelected={selectedSpriteId === 'stage'}

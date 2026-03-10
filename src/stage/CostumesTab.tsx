@@ -9,6 +9,7 @@ interface CostumesTabProps {
     stageManager: StageManager;
     addLog: (msg: string) => void;
     onClose: () => void;
+    onOpenLibrary?: () => void;
 }
 
 export const CostumesTab: React.FC<CostumesTabProps> = ({
@@ -16,7 +17,8 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
     sprites,
     stageManager,
     addLog,
-    onClose
+    onClose,
+    onOpenLibrary
 }) => {
     // If Stage is selected, render Backdrop Editor
     if (selectedSpriteId === 'stage') {
@@ -51,6 +53,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                         addLog(`Duplicated backdrop on Stage`);
                     }}
                     onClose={onClose}
+                    onOpenLibrary={onOpenLibrary}
                 />
             </div>
         );
@@ -90,6 +93,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                         addLog(`Duplicated costume on ${selectedSprite.name}`);
                     }}
                     onClose={onClose}
+                    onOpenLibrary={onOpenLibrary}
                 />
             </div>
         );

@@ -37,6 +37,7 @@ interface PaintEditorProps {
     mode?: 'junior' | 'intermediate';
     onDeleteSound?: (index: number) => void;
     onDuplicateSound?: (index: number) => void;
+    onOpenLibrary?: () => void;
 }
 
 function PaintEditor({
@@ -48,7 +49,8 @@ function PaintEditor({
     spriteName = "Sprite",
     mode = 'intermediate',
     onDeleteSound,
-    onDuplicateSound
+    onDuplicateSound,
+    onOpenLibrary
 }: PaintEditorProps) {
     const canvasRef = useRef<fabric.Canvas | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -370,15 +372,17 @@ function PaintEditor({
                 style={{ display: 'none' }}
             />
 
-            {/* Costume Library Modal */}
-            <CostumeLibrary
-                isOpen={isLibraryOpen}
-                onClose={() => setIsLibraryOpen(false)}
-                onSelectCostume={(name, src) => {
-                    onSave(src, undefined, name);
-                    setIsLibraryOpen(false);
-                }}
-            />
+            {/* Costume Library Modal (rendered only if not overridden) */}
+            {!onOpenLibrary && (
+                <CostumeLibrary
+                    isOpen={isLibraryOpen}
+                    onClose={() => setIsLibraryOpen(false)}
+                    onSelectCostume={(name, src) => {
+                        onSave(src, undefined, name);
+                        setIsLibraryOpen(false);
+                    }}
+                />
+            )}
 
             {/* 0. JUNIOR HEADER (matches JuniorApp style) */}
             {mode === 'junior' && (
@@ -459,7 +463,7 @@ function PaintEditor({
                                     }
                                 },
                                 { id: 'paint', icon: '🖌️', label: 'Paint', onClick: () => { /* already in editor */ } },
-                                { id: 'search', icon: '🔍', label: 'Choose a Costume', onClick: () => setIsLibraryOpen(true) },
+                                { id: 'search', icon: '🔍', label: 'Choose a Costume', onClick: () => onOpenLibrary ? onOpenLibrary() : setIsLibraryOpen(true) },
                             ]}
                         />
                     </div>
