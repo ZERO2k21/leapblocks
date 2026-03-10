@@ -81,7 +81,7 @@ export const SoundLibrary: React.FC<SoundLibraryProps> = ({
         return matchesCategory && matchesSearch;
     });
 
-    const getSoundUrl = (md5: string) => `https://assets.scratch.mit.edu/internalapi/asset/${md5}/get/`;
+    const getSoundUrl = (md5: string) => `/assets/sounds/${md5}`;
 
     const handlePlayPause = (e: React.MouseEvent, sound: SoundEntry) => {
         e.stopPropagation();

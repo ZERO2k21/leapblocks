@@ -17,7 +17,7 @@ import { CostumesTab } from './stage/CostumesTab';
 import { SoundsTab } from './stage/SoundsTab';
 import { PythonEditorTab } from './components/PythonEditorTab';
 // import StagePanel from './stage/StagePanel'; // Temporarily disabled - component needs to be created
-// import BackdropLibrary from './components/BackdropLibrary'; // Temporarily disabled
+import BackdropLibrary from './components/BackdropLibrary';
 // import BackdropEditor from './components/BackdropEditor'; // Temporarily disabled
 import { stageManager } from './engine/StageManager';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
@@ -124,7 +124,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // Backdrop state
     const [showBackdropLibrary, setShowBackdropLibrary] = useState(false);
     const [showBackdropEditor, setShowBackdropEditor] = useState(false);
-    const [, setBackdropRefresh] = useState(0); // Force re-render on backdrop change
+    const [backdropRefresh, setBackdropRefresh] = useState(0); // Force re-render on backdrop change
 
     // Sprite Library state
     const [showSpriteLibrary, setShowSpriteLibrary] = useState(false);
@@ -1796,6 +1796,17 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     }, [sprites, selectedSpriteId, handleWorkspaceChange, handleBlockInteraction, workspaceTab]);
 
+    // Keep Blockly resized correctly when container transitions (like stageLayout changes)
+    useEffect(() => {
+        if (!blocklyDiv.current) return;
+        const resizeObserver = new ResizeObserver(() => {
+            if (workspaceRef.current) {
+                Blockly.svgResize(workspaceRef.current as Blockly.WorkspaceSvg);
+            }
+        });
+        resizeObserver.observe(blocklyDiv.current);
+        return () => resizeObserver.disconnect();
+    }, [blocklyDiv, workspaceRef]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // RENDER
@@ -1955,6 +1966,21 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 }}
             />
 
+            {/* Sprite Library Modal */}
+            <SpriteLibrary
+                isOpen={showSpriteLibrary}
+                onClose={() => setShowSpriteLibrary(false)}
+                onSelectSprite={(sprite: any) => {
+                    addSprite(sprite.id as any); // Adapt as needed
+                    setShowSpriteLibrary(false);
+                }}
+            />
+
+            <BackdropLibrary
+                isOpen={showBackdropLibrary}
+                onClose={() => setShowBackdropLibrary(false)}
+                onSelectBackdrop={(backdrop) => handleBackdropSelect(backdrop.name, backdrop.image)}
+            />
             {/* Main Content */}
             <div style={styles.main}>
                 {/* Blockly Workspace */}
@@ -2021,6 +2047,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 stageManager={stageManager}
                                 addLog={addLog}
                                 onClose={() => handleWorkspaceTabChange('blocks')}
+                                onOpenLibrary={() => setShowBackdropLibrary(true)}
                             />
                         </div>
                     )}
@@ -2060,7 +2087,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             }}>
                                 <div style={{
                                     transform: stageLayout === 'small' ? 'scale(0.5)' : 'scale(1)',
-                                    transformOrigin: 'top left',
+                                    transformOrigin: 'center',
                                     width: '480px',
                                     height: '360px',
                                 }}>
@@ -2086,6 +2113,9 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     onDeleteSprite={deleteSprite}
                                     onRemoveBackground={handleRemoveBackground} // v2
                                     onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
+                                    onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
+                                    stageManager={stageManager}
+                                    backdropVersion={backdropRefresh}
                                 />
                                 {/* <StagePanel
                                     isSelected={selectedSpriteId === 'stage'}

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Sprite, SpriteType } from "./Sprite";
 import { ActionMenu } from "./ActionMenu";
 import { SpriteLibrary, SpriteEntry } from "../components/SpriteLibrary";
+import { StageManager } from '../engine/StageManager';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SPRITE PANEL - Match Scratch 3.0 Look
@@ -27,6 +28,9 @@ interface SpritePanelProps {
   onDeleteSprite: (id: string) => void;
   onRemoveBackground: (spriteId: string) => void; // v2
   onOpenSpriteLibrary?: () => void;
+  onOpenBackdropLibrary?: () => void;
+  stageManager: StageManager;
+  backdropVersion?: number; // triggers re-render when backdrops change
 }
 
 export const SpritePanel: React.FC<SpritePanelProps> = ({
@@ -37,6 +41,8 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   onDeleteSprite,
   onRemoveBackground,
   onOpenSpriteLibrary,
+  onOpenBackdropLibrary,
+  stageManager,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -292,7 +298,13 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 onClick={() => onSelectSprite('stage')}
               >
                 <div style={{ ...styles.spriteThumbnail, height: '48px', backgroundColor: '#f0f0f0', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
-                  {stageSprite.currentCostume ? (
+                  {stageManager.getCurrentBackdrop() ? (
+                    <img
+                      src={stageManager.getCurrentBackdrop()?.src}
+                      alt="Backdrop"
+                      style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "cover" }}
+                    />
+                  ) : stageSprite.currentCostume ? (
                     <img
                       src={stageSprite.currentCostume.image.src}
                       alt="Backdrop"
@@ -308,7 +320,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   fontSize: '9px',
                   ...(isSelected ? { backgroundColor: '#3498DB', color: '#fff' } : {})
                 }}>
-                  Backdrops<br />1
+                  Backdrops<br />{stageManager.getAllBackdrops().length}
                 </div>
               </div>
             );
@@ -331,7 +343,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   id: 'search',
                   icon: '🔍',
                   label: 'Choose a Backdrop',
-                  onClick: () => alert('Backdrop library coming soon!')
+                  onClick: () => onOpenBackdropLibrary ? onOpenBackdropLibrary() : alert('Backdrop library coming soon!')
                 }
               ]}
             />
