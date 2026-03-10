@@ -196,7 +196,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
     const loadBuffer = async (urlOrName: string) => {
         try {
             let buffer: AudioBuffer | null = null;
-            if (urlOrName.startsWith('http') || urlOrName.startsWith('blob:') || urlOrName.startsWith('data:')) {
+            if (urlOrName.startsWith('http') || urlOrName.startsWith('blob:') || urlOrName.startsWith('data:') || urlOrName.startsWith('/')) {
                 const response = await fetch(urlOrName);
                 const arrayBuffer = await response.arrayBuffer();
                 buffer = await audioContext.decodeAudioData(arrayBuffer);
