@@ -27,6 +27,7 @@ interface SpritePanelProps {
   onDeleteSprite: (id: string) => void;
   onRemoveBackground: (spriteId: string) => void; // v2
   onOpenSpriteLibrary?: () => void;
+  onOpenBackdropLibrary?: () => void;
 }
 
 export const SpritePanel: React.FC<SpritePanelProps> = ({
@@ -37,6 +38,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   onDeleteSprite,
   onRemoveBackground,
   onOpenSpriteLibrary,
+  onOpenBackdropLibrary,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -331,7 +333,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   id: 'search',
                   icon: '🔍',
                   label: 'Choose a Backdrop',
-                  onClick: () => alert('Backdrop library coming soon!')
+                  onClick: () => onOpenBackdropLibrary ? onOpenBackdropLibrary() : alert('Backdrop library coming soon!')
                 }
               ]}
             />

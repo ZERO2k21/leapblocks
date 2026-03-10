@@ -17,7 +17,7 @@ import { CostumesTab } from './stage/CostumesTab';
 import { SoundsTab } from './stage/SoundsTab';
 import { PythonEditorTab } from './components/PythonEditorTab';
 // import StagePanel from './stage/StagePanel'; // Temporarily disabled - component needs to be created
-// import BackdropLibrary from './components/BackdropLibrary'; // Temporarily disabled
+import BackdropLibrary from './components/BackdropLibrary';
 // import BackdropEditor from './components/BackdropEditor'; // Temporarily disabled
 import { stageManager } from './engine/StageManager';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
@@ -1955,6 +1955,21 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 }}
             />
 
+            {/* Sprite Library Modal */}
+            <SpriteLibrary
+                isOpen={showSpriteLibrary}
+                onClose={() => setShowSpriteLibrary(false)}
+                onSelectSprite={(sprite) => {
+                    addSprite(sprite.type as any); // Adapt as needed
+                    setShowSpriteLibrary(false);
+                }}
+            />
+
+            <BackdropLibrary
+                isOpen={showBackdropLibrary}
+                onClose={() => setShowBackdropLibrary(false)}
+                onSelectBackdrop={(backdrop) => handleBackdropSelect(backdrop.name, backdrop.image)}
+            />
             {/* Main Content */}
             <div style={styles.main}>
                 {/* Blockly Workspace */}
@@ -2086,6 +2101,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     onDeleteSprite={deleteSprite}
                                     onRemoveBackground={handleRemoveBackground} // v2
                                     onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
+                                    onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
                                 />
                                 {/* <StagePanel
                                     isSelected={selectedSpriteId === 'stage'}

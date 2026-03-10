@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { X, Paintbrush, Image } from 'lucide-react';
+import { scratchBackdrops } from '../../components/generated_scratch_backdrops';
 
 // Pre-built backdrops available in the library
-const BACKDROP_LIBRARY = [
+const PRESET_BACKDROPS = [
     { id: 'maze', name: 'Maze', src: '/assets/backdrops/maze.svg', color: '#FFD54F' },
     { id: 'park', name: 'Park', src: '/assets/backdrops/park.svg', color: '#66BB6A' },
     { id: 'underwater', name: 'Underwater', src: '/assets/backdrops/underwater.svg', color: '#0288D1' },
@@ -13,6 +14,15 @@ const BACKDROP_LIBRARY = [
     { id: 'castle', name: 'Castle', src: '/assets/backdrops/Castle.png', color: '#E1BEE7' },
     { id: 'space_photo', name: 'Galaxy', src: '/assets/backdrops/Space.png', color: '#0D0D2B' },
 ];
+
+const mappedScratchBackdrops = scratchBackdrops.map(bg => ({
+    id: bg.name.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+    name: bg.name,
+    src: `/assets/backdrops/${bg.md5ext || bg.md5}`,
+    color: '#E0E0E0'
+}));
+
+const BACKDROP_LIBRARY = [...PRESET_BACKDROPS, ...mappedScratchBackdrops];
 
 const SOLID_COLORS = [
     { name: 'White', color: '#FFFFFF' },
