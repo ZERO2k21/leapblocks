@@ -6,15 +6,6 @@ import {
 } from 'lucide-react';
 import Logo from '../../components/Logo';
 
-// PictoBlox Junior-inspired purple color scheme
-const COLORS = {
-    menuBar: 'linear-gradient(180deg, #7B4FC4 0%, #5A2D82 100%)',
-    menuHover: 'rgba(255,255,255,0.15)',
-    menuActive: 'rgba(0,0,0,0.2)',
-    text: '#FFFFFF',
-    accent: '#FFD500',
-};
-
 // Dropdown Menu Component
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     const menuRef = useRef(null);
@@ -32,81 +23,32 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     }, [isOpen, onClose]);
 
     return (
-        <div ref={menuRef} style={{ position: 'relative' }}>
+        <div ref={menuRef} className="relative">
             <button
                 onClick={onToggle}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '8px 12px',
-                    background: isOpen ? COLORS.menuActive : 'transparent',
-                    border: 'none',
-                    color: COLORS.text,
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    borderRadius: '4px',
-                    transition: 'background 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                    if (!isOpen) e.target.style.background = COLORS.menuHover;
-                }}
-                onMouseLeave={(e) => {
-                    if (!isOpen) e.target.style.background = 'transparent';
-                }}
+                className={`flex items-center gap-1 px-3 py-2 border-none text-white text-[13px] font-medium cursor-pointer rounded transition-colors duration-150 ${isOpen ? 'bg-black/20' : 'bg-transparent hover:bg-white/15'}`}
             >
                 {Icon && <Icon size={16} />}
                 {label}
-                <ChevronDown size={14} style={{ opacity: 0.7 }} />
+                <ChevronDown size={14} className="opacity-70" />
             </button>
 
             {isOpen && (
-                <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    marginTop: '4px',
-                    background: '#FFFFFF',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                    minWidth: '180px',
-                    overflow: 'hidden',
-                    zIndex: 1000,
-                }}>
+                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] min-w-[180px] overflow-hidden z-[1000]">
                     {items.map((item, idx) => (
                         item.divider ? (
-                            <div key={idx} style={{ height: '1px', background: '#eee', margin: '4px 0' }} />
+                            <div key={idx} className="h-px bg-gray-200 my-1" />
                         ) : (
                             <button
                                 key={idx}
                                 onClick={() => { item.onClick?.(); onClose(); }}
                                 disabled={item.disabled}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    width: '100%',
-                                    padding: '10px 14px',
-                                    border: 'none',
-                                    background: 'transparent',
-                                    color: item.disabled ? '#999' : '#333',
-                                    fontSize: '13px',
-                                    textAlign: 'left',
-                                    cursor: item.disabled ? 'not-allowed' : 'pointer',
-                                    transition: 'background 0.1s',
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (!item.disabled) e.target.style.background = '#f5f5f5';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.background = 'transparent';
-                                }}
+                                className={`flex items-center gap-2.5 w-full px-3.5 py-2.5 border-none bg-transparent text-[13px] text-left transition-colors duration-100 ${item.disabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 cursor-pointer hover:bg-gray-100'}`}
                             >
                                 {item.icon && <item.icon size={16} color="#7B4FC4" />}
-                                <span style={{ flex: 1 }}>{item.label}</span>
+                                <span className="flex-1">{item.label}</span>
                                 {item.shortcut && (
-                                    <span style={{ fontSize: '11px', color: '#999' }} className="shortcut-text">{item.shortcut}</span>
+                                    <span className="text-[11px] text-gray-400">{item.shortcut}</span>
                                 )}
                             </button>
                         )
@@ -154,53 +96,22 @@ export default function JuniorMenuBar({
     ];
 
     return (
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            height: '56px',
-            background: COLORS.menuBar,
-            padding: '0px',
-            gap: '8px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            zIndex: 100,
-        }}>
+        <div className="flex items-center h-14 gap-2 shadow-[0_2px_8px_rgba(0,0,0,0.15)] z-[100]"
+            style={{ background: 'linear-gradient(180deg, #7B4FC4 0%, #5A2D82 100%)' }}>
+
             {/* Home Button */}
             <button
                 onClick={onBack}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '32px',
-                    height: '32px',
-                    background: 'rgba(255,255,255,0.15)',
-                    border: 'none',
-                    borderRadius: '50%',
-                    cursor: 'pointer',
-                    color: COLORS.text,
-                    marginRight: '8px',
-                }}
+                className="flex items-center justify-center w-8 h-8 bg-white/15 border-none rounded-full cursor-pointer text-white mr-2"
                 title="Back to Home"
             >
                 <Home size={18} />
             </button>
 
             {/* Logo */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                gap: '8px',
-                marginRight: '20px',
-            }}>
+            <div className="flex items-end gap-2 mr-5">
                 <Logo height={44} />
-                <span style={{
-                    color: '#FFD500',
-                    fontSize: '12px',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.8px',
-                    marginBottom: '15px',
-                }}>
+                <span className="text-[#FFD500] text-xs font-extrabold uppercase tracking-wider mb-[15px]">
                     JUNIOR
                 </span>
             </div>
@@ -230,102 +141,45 @@ export default function JuniorMenuBar({
             />
 
             {/* Spacer */}
-            <div style={{ flex: 1 }} />
+            <div className="flex-1" />
 
-            {/* Project Name and Save (Right Side Layout) */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                marginRight: '16px'
-            }}>
+            {/* Project Name and Save */}
+            <div className="flex items-center gap-3 mr-4">
                 <input
                     type="text"
                     value={projectName}
                     onChange={(e) => onProjectNameChange?.(e.target.value)}
-                    style={{
-                        background: 'rgba(255,255,255,0.15)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: COLORS.text,
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        width: '180px',
-                        outline: 'none',
-                        padding: '6px 12px',
-                        borderRadius: '4px',
-                    }}
+                    className="bg-white/15 border border-white/10 text-white text-sm font-semibold w-[180px] outline-none px-3 py-1.5 rounded"
                     placeholder="My Project"
                 />
                 <button
                     onClick={() => onFileAction?.('save')}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: COLORS.text,
-                        cursor: 'pointer',
-                        padding: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        opacity: 0.9,
-                    }}
+                    className="bg-transparent border-none text-white cursor-pointer p-1 flex items-center justify-center opacity-90 hover:opacity-100"
                     title="Save Project"
-                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.9'}
                 >
                     <Save size={20} strokeWidth={2.5} />
                 </button>
             </div>
 
             {/* Right Side Utility Icons */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '18px',
-                paddingLeft: '16px',
-                borderLeft: '1px solid rgba(255,255,255,0.2)',
-            }}>
-                {/* Fallback to text if MessageSquareWarning import fails in older lucide */}
-                <button style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: 0 }} title="Feedback">
+            <div className="flex items-center gap-[18px] pl-4 border-l border-white/20">
+                <button className="bg-transparent border-none text-white cursor-pointer p-0" title="Feedback">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
                 </button>
-                <button style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: 0 }} title="Achievements">
+                <button className="bg-transparent border-none text-white cursor-pointer p-0" title="Achievements">
                     <Trophy size={20} strokeWidth={2.5} />
                 </button>
-                <button style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: 0 }} title="Settings">
+                <button className="bg-transparent border-none text-white cursor-pointer p-0" title="Settings">
                     <Settings size={20} strokeWidth={2.5} />
                 </button>
 
                 {/* Sign In Button / Profile */}
-                <button
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: 'white',
-                        fontWeight: 600,
-                        fontSize: '14px',
-                        padding: 0
-                    }}
-                >
-                    <div style={{
-                        width: '28px',
-                        height: '28px',
-                        backgroundColor: '#FFD166',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '16px',
-                        border: '2px solid white'
-                    }}>
+                <button className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer text-white font-semibold text-sm p-0">
+                    <div className="w-7 h-7 bg-[#FFD166] rounded-full flex items-center justify-center text-base border-2 border-white">
                         🐻
                     </div>
                     Sign In

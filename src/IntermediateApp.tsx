@@ -1554,6 +1554,38 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         };
                     }
 
+                    // Force all dropdown arrows to be black
+                    if (!(Blockly.FieldDropdown.prototype as any)._arrowColourPatched) {
+                        const origApplyColour = Blockly.FieldDropdown.prototype.applyColour;
+                        (Blockly.FieldDropdown.prototype as any).applyColour = function (this: Blockly.FieldDropdown) {
+                            if (origApplyColour) origApplyColour.call(this);
+                            const self = this as any;
+                            // Handle both property naming conventions (svgArrow / svgArrow_)
+                            const svgArrow = self.svgArrow_ || self.svgArrow;
+                            if (svgArrow) {
+                                svgArrow.style.filter = 'brightness(0)';
+                            }
+                            // Handle text-based arrow element
+                            const arrow = self.arrow_ || self.arrow;
+                            if (arrow) {
+                                try {
+                                    const arrowEl = arrow.getSvgRoot ? arrow.getSvgRoot() : arrow;
+                                    if (arrowEl && arrowEl.style) arrowEl.style.fill = '#333333';
+                                    if (arrowEl && arrowEl.setAttribute) arrowEl.setAttribute('fill', '#333333');
+                                } catch (e) { /* ignore */ }
+                            }
+                            // Fallback: find any image child within the field group
+                            try {
+                                const fieldGroup = self.fieldGroup_ || self.fieldGroup;
+                                if (fieldGroup) {
+                                    const images = fieldGroup.querySelectorAll('image');
+                                    images.forEach((img: any) => { img.style.filter = 'brightness(0)'; });
+                                }
+                            } catch (e) { /* ignore */ }
+                        };
+                        (Blockly.FieldDropdown.prototype as any)._arrowColourPatched = true;
+                    }
+
                     // Auto-open toolbox on load/mode switch
                     setTimeout(() => {
                         if (workspaceRef.current) {
