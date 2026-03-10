@@ -236,8 +236,16 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
     };
 
     const renderIcon = () => {
-        // 1. If we have a costumes map, try looking up by key
-        const costumeValue = costumes?.[currentCostume] || currentCostume;
+        // 1. Resolve costume value (can be an index or a key if costumes is a map/array)
+        let costumeValue = costumes?.[currentCostume] || currentCostume;
+
+        // If costumes is an array and currentCostume is a numeric string/index
+        if (Array.isArray(costumes)) {
+            const idx = parseInt(currentCostume);
+            if (!isNaN(idx) && costumes[idx]) {
+                costumeValue = costumes[idx];
+            }
+        }
 
         // 2. If it looks like a path/URL (image) and hasn't errored, render img tag
         if (!imgError && typeof costumeValue === 'string' && (

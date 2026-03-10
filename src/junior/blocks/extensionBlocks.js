@@ -2,7 +2,7 @@ export default function defineExtensionBlocks(Blockly, javascriptGenerator) {
     if (!Blockly || !javascriptGenerator) return;
 
     // Helper to get target code
-    const getTarget = () => 'window.activeSpriteId || "teddy"';
+    const getTarget = () => 'window.activeSpriteId || "robot_default"';
     const wait = () => 'if(!window.isActive()) return;\nawait window.wait(0.5);\nif(window.checkPause) await window.checkPause();\nif(!window.isActive()) return;\n';
 
     // Face Detection Blocks (Color: Redish #D43D41)

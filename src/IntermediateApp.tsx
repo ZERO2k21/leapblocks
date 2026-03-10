@@ -1002,47 +1002,54 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         // Stop any currently running scripts before starting
         animationVM.stopAll();
 
-        // Save current sprite's workspace
-        saveCurrentSpriteWorkspace();
-
-        const sprite = sprites.find(s => s.id === selectedSpriteId);
-        if (!sprite || !selectedSpriteId) {
-            console.log('[APP] No sprite selected, nothing to run');
-            return;
-        }
-
-        const savedJson = spriteWorkspacesRef.current.get(selectedSpriteId);
-        if (!savedJson || Object.keys(savedJson).length === 0) {
-            console.log(`[APP] Sprite ${sprite.name} has no blocks, nothing to run`);
-            return;
-        }
-
-        let tempWs: Blockly.Workspace | null = null;
+        let allScripts: CompiledScript[] = [];
         try {
-            Blockly.Events.disable();
-            tempWs = new Blockly.Workspace();
-            Blockly.serialization.workspaces.load(savedJson, tempWs);
-            Blockly.Events.enable();
+            // Compile scripts for EVERY sprite
+            for (const s of sprites) {
+                // Determine workspace JSON for this sprite
+                let savedJson = spriteWorkspacesRef.current.get(s.id);
+                // If it's the active sprite, always use real-time workspace state
+                if (s.id === selectedSpriteId && workspaceRef.current) {
+                    savedJson = Blockly.serialization.workspaces.save(workspaceRef.current);
+                }
 
-            const compiler = new AnimationCompiler(selectedSpriteId);
-            const scripts = compiler.compile(tempWs);
+                if (!savedJson || Object.keys(savedJson).length === 0) {
+                    continue; // Skip sprites with no blocks
+                }
 
-            // Soft reset effects for this sprite
-            if (sprite.sayText) sprite.clearSay();
-            sprite.clearEffects();
+                let tempWs: Blockly.Workspace | null = null;
+                try {
+                    Blockly.Events.disable();
+                    tempWs = new Blockly.Workspace();
+                    Blockly.serialization.workspaces.load(savedJson, tempWs);
+                    Blockly.Events.enable();
 
-            setCompiledScripts(scripts);
-            setIsRunning(true);
-            animationVM.triggerFlag(scripts);
+                    const compiler = new AnimationCompiler(s.id);
+                    const scripts = compiler.compile(tempWs);
+                    allScripts = allScripts.concat(scripts);
 
-            addLog(`Started animation for ${sprite.name}`);
+                    // Soft reset effects for this sprite
+                    if (s.sayText) s.clearSay();
+                    s.clearEffects();
 
-            tempWs.dispose();
-            tempWs = null;
+                    tempWs.dispose();
+                } catch (e) {
+                    Blockly.Events.enable();
+                    console.error(`[APP] Error compiling isolated sprite ${s.name}:`, e);
+                    if (tempWs) { try { tempWs.dispose(); } catch (_) { } }
+                }
+            }
+
+            if (allScripts.length > 0) {
+                setCompiledScripts(allScripts);
+                setIsRunning(true);
+                animationVM.triggerFlag(allScripts);
+                addLog(`Started animation for ${sprites.length} sprites`);
+            } else {
+                console.log('[APP] No sprites have blocks to run');
+            }
         } catch (e) {
-            Blockly.Events.enable();
-            console.error(`[APP] Error compiling isolated sprite ${sprite.name}:`, e);
-            if (tempWs) { try { tempWs.dispose(); } catch (_) { } }
+            console.error(`[APP] Error during multi-sprite compilation:`, e);
         }
     }, [sprites, selectedSpriteId, addLog, saveCurrentSpriteWorkspace]);
 

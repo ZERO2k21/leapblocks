@@ -1,7 +1,7 @@
 
 export default function defineLooksBlocks(Blockly, javascriptGenerator) {
     // Helper to get target code
-    const getTarget = () => 'window.activeSpriteId || "teddy"';
+    const getTarget = () => 'window.activeSpriteId || "robot_default"';
     const wait = () => 'await window.wait(0.5);\n';
 
     // Helper for Vertical Junior Blocks (Icon Top, Input Bottom)
@@ -79,7 +79,7 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
                         return data.sprites.map(sprite => [sprite.name, sprite.id]);
                     }
                 }
-                return [["Teddy", "teddy"]]; // Fallback
+                return [["Robot", "robot_default"]]; // Fallback
             });
             juniorLooksBase(this, "→", dynamicDropdown, "SPRITE");
         },

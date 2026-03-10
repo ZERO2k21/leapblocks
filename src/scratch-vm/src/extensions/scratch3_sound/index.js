@@ -10,7 +10,7 @@ export class Scratch3SoundBlocks {
      * @param {object} util - The block utility.
      */
     playSound(args, util) {
-        const soundName = args.SOUND_MENU;
+        const soundName = args.SOUND_MENU || args.SOUND;
         const targetId = util?.target?.id || "global";
 
         return this.runtime.audioEngine.playSound(soundName, targetId);

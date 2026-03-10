@@ -50,10 +50,11 @@ export function useSpriteSystem(initialScenes) {
 
                     // Calculate New State
                     let newState = { ...sprite };
+                    const actualUpdates = typeof updates === 'function' ? updates(sprite) : updates;
 
-                    // Apply Functional Updates
-                    for (const key in updates) {
-                        const val = updates[key];
+                    // Apply Updates
+                    for (const key in actualUpdates) {
+                        const val = actualUpdates[key];
                         newState[key] = typeof val === 'function' ? val(sprite[key]) : val;
                     }
 
