@@ -30,6 +30,7 @@ interface SpritePanelProps {
   onOpenSpriteLibrary?: () => void;
   onOpenBackdropLibrary?: () => void;
   stageManager: StageManager;
+  backdropVersion?: number; // triggers re-render when backdrops change
 }
 
 export const SpritePanel: React.FC<SpritePanelProps> = ({

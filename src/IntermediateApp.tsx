@@ -124,7 +124,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // Backdrop state
     const [showBackdropLibrary, setShowBackdropLibrary] = useState(false);
     const [showBackdropEditor, setShowBackdropEditor] = useState(false);
-    const [, setBackdropRefresh] = useState(0); // Force re-render on backdrop change
+    const [backdropRefresh, setBackdropRefresh] = useState(0); // Force re-render on backdrop change
 
     // Sprite Library state
     const [showSpriteLibrary, setShowSpriteLibrary] = useState(false);
@@ -2115,6 +2115,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
                                     onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
                                     stageManager={stageManager}
+                                    backdropVersion={backdropRefresh}
                                 />
                                 {/* <StagePanel
                                     isSelected={selectedSpriteId === 'stage'}
