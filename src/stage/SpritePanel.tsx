@@ -297,21 +297,15 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 }}
                 onClick={() => onSelectSprite('stage')}
               >
-                <div style={{ ...styles.spriteThumbnail, height: '48px', backgroundColor: '#f0f0f0', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
-                  {stageManager.getCurrentBackdrop() ? (
+                <div style={{ ...styles.spriteThumbnail, height: '48px', backgroundColor: '#f0f0f0', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {stageManager.getCurrentBackdrop()?.src ? (
                     <img
                       src={stageManager.getCurrentBackdrop()?.src}
                       alt="Backdrop"
                       style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "cover" }}
                     />
-                  ) : stageSprite.currentCostume ? (
-                    <img
-                      src={stageSprite.currentCostume.image.src}
-                      alt="Backdrop"
-                      style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "cover" }}
-                    />
                   ) : (
-                    <div style={{ fontSize: "20px" }}>🖼️</div>
+                    <div style={{ width: '100%', height: '100%', backgroundColor: '#FFFFFF' }} />
                   )}
                 </div>
                 <div style={{
