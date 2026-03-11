@@ -1,0 +1,8 @@
+﻿
+C:\Users\ruthr\OneDrive\Desktop\leapblocks\src\junior\JuniorApp.jsx
+  264:12  warning  'hint' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  908:83  error    Empty block statement                         no-empty
+  999:10  warning  'WorkspaceControl' is defined but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 3 problems (1 error, 2 warnings)
+
