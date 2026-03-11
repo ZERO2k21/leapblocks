@@ -3,10 +3,11 @@ import { Volume2, Play, Square } from 'lucide-react';
 
 // Load the scratch sounds metadata
 import soundsData from '../lib/libraries/sounds.json';
+import { ADPCMSoundDecoder } from '../scratch-audio/src/ADPCMSoundDecoder';
 
 export interface SoundEntry {
     name: string;
-    md5: string;
+    md5ext: string;
     sampleCount: number;
     rate: number;
     format: string;
@@ -50,6 +51,18 @@ interface SoundLibraryProps {
     onSelectSound: (sound: { name: string, src: string }) => void;
 }
 
+// Global audio context management
+let _audioContext: AudioContext | null = null;
+const getAudioContext = () => {
+    if (!_audioContext) {
+        _audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (_audioContext.state === 'suspended') {
+        _audioContext.resume();
+    }
+    return _audioContext;
+};
+
 export const SoundLibrary: React.FC<SoundLibraryProps> = ({
     isOpen,
     onClose,
@@ -59,13 +72,22 @@ export const SoundLibrary: React.FC<SoundLibraryProps> = ({
     const [activeCategory, setActiveCategory] = useState('All');
     const [hoveredId, setHoveredId] = useState<string | null>(null);
     const [playingId, setPlayingId] = useState<string | null>(null);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
     // Stop playing when closed
     useEffect(() => {
-        if (!isOpen && audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
+        return () => {
+            if (audioSourceRef.current) {
+                try { audioSourceRef.current.stop(); } catch (e) { }
+                audioSourceRef.current = null;
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!isOpen && audioSourceRef.current) {
+            try { audioSourceRef.current.stop(); } catch (e) { }
+            audioSourceRef.current = null;
             setPlayingId(null);
         }
     }, [isOpen]);
@@ -81,43 +103,67 @@ export const SoundLibrary: React.FC<SoundLibraryProps> = ({
         return matchesCategory && matchesSearch;
     });
 
-    const getSoundUrl = (md5: string) => `/assets/sounds/${md5}`;
+    const getSoundUrl = (md5ext: string) => `/assets/sounds/${md5ext}`;
 
-    const handlePlayPause = (e: React.MouseEvent, sound: SoundEntry) => {
+    const handlePlayPause = async (e: React.MouseEvent, sound: SoundEntry) => {
         e.stopPropagation();
 
-        if (playingId === sound.md5 && audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
+        if (playingId === sound.md5ext && audioSourceRef.current) {
+            try { audioSourceRef.current.stop(); } catch (e) { }
+            audioSourceRef.current = null;
             setPlayingId(null);
             return;
         }
 
-        if (audioRef.current) {
-            audioRef.current.pause();
+        if (audioSourceRef.current) {
+            try { audioSourceRef.current.stop(); } catch (e) { }
+            audioSourceRef.current = null;
         }
 
-        const url = getSoundUrl(sound.md5);
-        audioRef.current = new Audio(url);
-        audioRef.current.onended = () => setPlayingId(null);
-        audioRef.current.play().then(() => {
-            setPlayingId(sound.md5);
-        }).catch(err => {
+        setPlayingId(null);
+
+        const url = getSoundUrl(sound.md5ext);
+        const context = getAudioContext();
+        const decoder = new ADPCMSoundDecoder(context);
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await decoder.decode(arrayBuffer);
+
+            if (playingId === sound.md5ext) return; // Guard against rapid clicks
+
+            const source = context.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(context.destination);
+            source.onended = () => {
+                if (audioSourceRef.current === source) {
+                    setPlayingId(null);
+                    audioSourceRef.current = null;
+                }
+            };
+            
+            audioSourceRef.current = source;
+            setPlayingId(sound.md5ext);
+            source.start(0);
+
+        } catch (err) {
             console.error("Playback failed", err);
             setPlayingId(null);
-        });
+        }
     };
 
     const handleSelect = (sound: SoundEntry) => {
-        const url = getSoundUrl(sound.md5);
+        const url = getSoundUrl(sound.md5ext);
         onSelectSound({
             name: sound.name,
             src: url
         });
 
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
+        if (audioSourceRef.current) {
+            try { audioSourceRef.current.stop(); } catch (e) { }
+            audioSourceRef.current = null;
             setPlayingId(null);
         }
     };
@@ -167,13 +213,13 @@ export const SoundLibrary: React.FC<SoundLibraryProps> = ({
                         <div style={styles.grid}>
                             {filteredSounds.map((sound, index) => (
                                 <div
-                                    key={index}
+                                    key={sound.md5ext}
                                     style={{
                                         ...styles.card,
-                                        borderColor: hoveredId === sound.md5 ? '#855CD6' : '#E5E7EB',
-                                        boxShadow: hoveredId === sound.md5 ? '0 4px 12px rgba(133, 92, 214, 0.2)' : '0 2px 4px rgba(0,0,0,0.05)',
+                                        borderColor: hoveredId === sound.md5ext ? '#855CD6' : '#E5E7EB',
+                                        boxShadow: hoveredId === sound.md5ext ? '0 4px 12px rgba(133, 92, 214, 0.2)' : '0 2px 4px rgba(0,0,0,0.05)',
                                     }}
-                                    onMouseEnter={() => setHoveredId(sound.md5)}
+                                    onMouseEnter={() => setHoveredId(sound.md5ext)}
                                     onMouseLeave={() => setHoveredId(null)}
                                     onClick={() => handleSelect(sound)}
                                 >
@@ -190,7 +236,7 @@ export const SoundLibrary: React.FC<SoundLibraryProps> = ({
                                         style={styles.playButton}
                                         onClick={(e) => handlePlayPause(e, sound)}
                                     >
-                                        {playingId === sound.md5 ? (
+                                        {playingId === sound.md5ext ? (
                                             <Square size={16} fill="#cf63cf" color="#cf63cf" />
                                         ) : (
                                             <Play size={16} fill="#855CD6" color="#855CD6" style={{ marginLeft: '2px' }} />
