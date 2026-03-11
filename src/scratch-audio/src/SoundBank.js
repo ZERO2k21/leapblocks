@@ -1,7 +1,10 @@
+import { ADPCMSoundDecoder } from './ADPCMSoundDecoder';
+
 export class SoundBank {
     constructor(audioContext) {
         this.audioContext = audioContext;
         this.soundBuffers = new Map(); // assetName -> AudioBuffer
+        this.decoder = new ADPCMSoundDecoder(this.audioContext);
 
         // Setup initial assets mapping directly to leapblocks assets
         this.assets = {
@@ -33,7 +36,7 @@ export class SoundBank {
                 const response = await fetch(path);
                 if (response.ok) {
                     const arrayBuffer = await response.arrayBuffer();
-                    const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+                    const audioBuffer = await this.decoder.decode(arrayBuffer);
                     this.soundBuffers.set(soundId, audioBuffer);
                     return audioBuffer;
                 }
@@ -43,7 +46,7 @@ export class SoundBank {
         }
 
         // Fallback to synthesizing a buffer
-        const buffer = this.generateFallbackBuffer(soundId);
+        const buffer = await this.generateFallbackBuffer(soundId);
         if (buffer) {
             this.soundBuffers.set(soundId, buffer);
         }
@@ -60,7 +63,7 @@ export class SoundBank {
             const response = await fetch(path);
             if (response.ok) {
                 const arrayBuffer = await response.arrayBuffer();
-                const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+                const audioBuffer = await this.decoder.decode(arrayBuffer);
 
                 this.musicSource = this.audioContext.createBufferSource();
                 this.musicSource.buffer = audioBuffer;

@@ -9,6 +9,7 @@ import { SoundBank } from '../scratch-audio/src/SoundBank';
 import { SoundLibrary } from './SoundLibrary';
 import AudioEffects from '../scratch-audio/src/audio/audio-effects';
 import WavEncoder from 'wav-encoder';
+import { ADPCMSoundDecoder } from '../scratch-audio/src/ADPCMSoundDecoder';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // WAVEFORM COMPONENT
@@ -198,8 +199,10 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
             let buffer: AudioBuffer | null = null;
             if (urlOrName.startsWith('http') || urlOrName.startsWith('blob:') || urlOrName.startsWith('data:') || urlOrName.startsWith('/')) {
                 const response = await fetch(urlOrName);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const arrayBuffer = await response.arrayBuffer();
-                buffer = await audioContext.decodeAudioData(arrayBuffer);
+                const decoder = new ADPCMSoundDecoder(audioContext);
+                buffer = await decoder.decode(arrayBuffer);
             } else {
                 buffer = await globalSoundBank.getSoundBuffer(urlOrName);
             }
