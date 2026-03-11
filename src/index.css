@@ -799,6 +799,34 @@ body #root .blocklyFlyoutButton .blocklyText,
   display: none !important;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   FIELD ANGLE CUSTOMIZATION (Analog Dial)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Color of the gauge arc (the highlighted sector) */
+.blocklyAngleGauge {
+  fill: #855CD6 !important; /* LeapBlocks Purple */
+  fill-opacity: 0.3 !important;
+}
+
+/* Color of the tick marks */
+.blocklyAngleMarks {
+  stroke: #575E75 !important;
+  stroke-opacity: 0.5 !important;
+}
+
+/* Color of the pointer line */
+.blocklyAngleLine {
+  stroke: #855CD6 !important;
+  stroke-width: 2px !important;
+}
+
+/* Color of the center circle */
+.blocklyAngleCircle {
+  fill: #FFFFFF !important;
+  stroke: #855CD6 !important;
+}
+
 /* Hide Blockly's built-in trashcan when custom trash is used */
 .blocklyTrash {
   display: none !important;

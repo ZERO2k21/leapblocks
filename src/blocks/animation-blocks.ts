@@ -40,6 +40,14 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         helpUrl: '',
     },
     {
+        type: 'event_stage_clicked',
+        message0: '👆 when stage clicked',
+        nextStatement: null,
+        colour: COLORS.events,
+        tooltip: 'Runs when the stage is clicked',
+        helpUrl: '',
+    },
+    {
         type: 'event_key_pressed',
         message0: '⌨️ when %1 key pressed',
         args0: [{
@@ -136,7 +144,7 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     {
         type: 'motion_turn_right',
         message0: '↻ turn right %1 degrees',
-        args0: [{ type: 'field_number', name: 'DEGREES', value: 15 }],
+        args0: [{ type: 'field_angle', name: 'DEGREES', angle: 15 }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -146,7 +154,7 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     {
         type: 'motion_turn_left',
         message0: '↺ turn left %1 degrees',
-        args0: [{ type: 'field_number', name: 'DEGREES', value: 15 }],
+        args0: [{ type: 'field_angle', name: 'DEGREES', angle: 15 }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -183,7 +191,7 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     {
         type: 'motion_point_direction',
         message0: '🧭 point in direction %1',
-        args0: [{ type: 'field_number', name: 'DIRECTION', value: 90 }],
+        args0: [{ type: 'field_angle', name: 'DIRECTION', angle: 90 }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -483,7 +491,13 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         args0: [{
             type: 'field_dropdown',
             name: 'COSTUME',
-            options: [['costume1', 'costume1'], ['costume2', 'costume2']],
+            options: () => {
+                if (typeof window !== 'undefined' && (window as any).getActiveSpriteCostumes) {
+                    const costumes = (window as any).getActiveSpriteCostumes();
+                    if (costumes && costumes.length > 0) return costumes.map((c: string) => [c, c]);
+                }
+                return [['costume1', 'costume1'], ['costume2', 'costume2']];
+            },
         }],
         previousStatement: null,
         nextStatement: null,
@@ -497,7 +511,13 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         args0: [{
             type: 'field_dropdown',
             name: 'BACKDROP',
-            options: [['backdrop1', 'backdrop1']],
+            options: () => {
+                if (typeof window !== 'undefined' && (window as any).getActiveStageBackdrops) {
+                    const backdrops = (window as any).getActiveStageBackdrops();
+                    if (backdrops && backdrops.length > 0) return backdrops.map((b: string) => [b, b]);
+                }
+                return [['backdrop1', 'backdrop1']];
+            },
         }],
         previousStatement: null,
         nextStatement: null,
@@ -976,7 +996,13 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         args0: [{
             type: 'field_dropdown',
             name: 'SOUND',
-            options: [['pop', 'pop'], ['meow', 'meow'], ['boing', 'boing']],
+            options: () => {
+                if (typeof window !== 'undefined' && (window as any).getActiveSpriteSounds) {
+                    const sounds = (window as any).getActiveSpriteSounds();
+                    if (sounds && sounds.length > 0) return sounds.map((s: string) => [s, s]);
+                }
+                return [['pop', 'pop'], ['meow', 'meow'], ['boing', 'boing']];
+            },
         }],
         previousStatement: null,
         nextStatement: null,
@@ -990,7 +1016,13 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         args0: [{
             type: 'field_dropdown',
             name: 'SOUND',
-            options: [['pop', 'pop'], ['meow', 'meow'], ['boing', 'boing']],
+            options: () => {
+                if (typeof window !== 'undefined' && (window as any).getActiveSpriteSounds) {
+                    const sounds = (window as any).getActiveSpriteSounds();
+                    if (sounds && sounds.length > 0) return sounds.map((s: string) => [s, s]);
+                }
+                return [['pop', 'pop'], ['meow', 'meow'], ['boing', 'boing']];
+            },
         }],
         previousStatement: null,
         nextStatement: null,

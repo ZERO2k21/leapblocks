@@ -313,8 +313,9 @@ export class AnimationCompiler {
                 compilerLog.info(`  Trigger: flag (green flag or arduino setup)`);
                 break;
             case 'event_sprite_clicked':
+            case 'event_stage_clicked':
                 trigger = 'sprite_click';
-                compilerLog.info(`  Trigger: sprite_click`);
+                compilerLog.info(`  Trigger: sprite_click (sprite or stage)`);
                 break;
             case 'event_key_pressed':
                 trigger = 'key';
