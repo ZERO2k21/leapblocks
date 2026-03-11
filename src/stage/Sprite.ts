@@ -50,6 +50,7 @@ export interface SpriteState {
 
 export class Sprite {
     private state: SpriteState;
+
     private onUpdate: () => void;
 
     constructor(id: string, name: string, onUpdate: () => void, spriteType: SpriteType = 'cat') {
@@ -620,6 +621,15 @@ export class Sprite {
         ctx.textBaseline = 'middle';
         ctx.fillText(text, x, bubbleY + bubbleHeight / 2);
         ctx.restore();
+    }
+
+    isPointInSprite(x: number, y: number): boolean {
+        const scale = this.state.size / 100;
+        const w = (this.currentCostume?.width || 80) * scale;
+        const h = (this.currentCostume?.height || 80) * scale;
+
+        // Simple bounding box hit detection
+        return Math.abs(x - this.state.x) <= w / 2 && Math.abs(y - this.state.y) <= h / 2;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

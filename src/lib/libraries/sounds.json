@@ -1,18 +1,5 @@
 [
     {
-        "name": "A Bass",
-        "tags": [
-            "music",
-            "instruments",
-            "notes"
-        ],
-        "assetId": "c04ebf21e5e19342fa1535e4efcdb43b",
-        "dataFormat": "",
-        "md5ext": "c04ebf21e5e19342fa1535e4efcdb43b.wav",
-        "sampleCount": 56320,
-        "rate": 44100
-    },
-    {
         "name": "A Elec Bass",
         "tags": [
             "music",

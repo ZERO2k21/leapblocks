@@ -1858,49 +1858,27 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, [blocklyDiv, workspaceRef]);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // RENDER
+    // GLOBAL SOUND API (for sound blocks dropdown)
     // ═══════════════════════════════════════════════════════════════════════
+    useEffect(() => {
+        // Expose function for sound block dropdown to get current sprite's sounds
+        (window as any).getActiveSpriteSounds = () => {
+            if (!selectedSpriteId) return [['No sounds', '']];
+            // If stage is selected, return stage sounds
+            if (selectedSpriteId === 'stage') {
+                const stageSounds = stageManager.getAllSounds();
+                if (stageSounds.length === 0) return [['No sounds', '']];
+                return stageSounds.map(s => [s.name, s.name]);
+            }
+            // Otherwise return sprite sounds
+            const sprite = sprites.find(s => s.id === selectedSpriteId);
+            if (!sprite) return [['No sounds', '']];
+            if (sprite.sounds.length === 0) return [['No sounds', '']];
+            return sprite.sounds.map(s => [s.name, s.name]);
+        };
+    }, [selectedSpriteId, sprites]);
 
-    // Show "Coming Soon" placeholder for unimplemented modes (not blocks)
-    if (appMode !== 'blocks') {
-        return (
-            <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100vh',
-                backgroundColor: '#855CD6',
-                color: 'white',
-                fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
-            }}>
-                <h1 style={{ fontSize: '48px', marginBottom: '16px' }}>
-                    {appMode === 'python' && '🐍 Py Editor'}
-                    {appMode === 'notebook' && '📓 Py Notebook'}
-                    {appMode === 'ml' && '🧠 Machine Learning'}
-                    {appMode === 'xr' && '🌐 3D & XR Studio'}
-                </h1>
-                <p style={{ fontSize: '24px', opacity: 0.8, marginBottom: '32px' }}>Coming Soon!</p>
-                <button
-                    onClick={() => setAppMode('blocks')}
-                    style={{
-                        padding: '12px 32px',
-                        fontSize: '18px',
-                        backgroundColor: 'white',
-                        color: '#855CD6',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontWeight: 600,
-                    }}
-                >
-                    ← Back to Editor
-                </button>
-            </div>
-        );
-    }
-
-    // Main Block Editor UI
+    // Render
     return (
         <div style={styles.container}>
             {/* Premium Menu Bar */}

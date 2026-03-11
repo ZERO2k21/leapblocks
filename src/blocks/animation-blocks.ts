@@ -1,5 +1,10 @@
 import * as Blockly from 'blockly';
 
+declare global {
+    interface Window {
+        getActiveSpriteSounds?: () => [string, string][];
+    }
+}
 // ═══════════════════════════════════════════════════════════════════════════
 // ANIMATION BLOCKS - For Stage Mode (sprites and animation)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -976,7 +981,13 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         args0: [{
             type: 'field_dropdown',
             name: 'SOUND',
-            options: [['pop', 'pop'], ['meow', 'meow'], ['boing', 'boing']],
+            options: function() {
+                if (typeof window !== 'undefined' && window.getActiveSpriteSounds) {
+                    const dynamicOptions = window.getActiveSpriteSounds();
+                    if (dynamicOptions && dynamicOptions.length > 0) return dynamicOptions;
+                }
+                return [['No sounds', ''], ['Pop', 'pop'], ['Boing', 'boing'], ['Clap', 'clap']];
+            }
         }],
         previousStatement: null,
         nextStatement: null,
@@ -990,7 +1001,13 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         args0: [{
             type: 'field_dropdown',
             name: 'SOUND',
-            options: [['pop', 'pop'], ['meow', 'meow'], ['boing', 'boing']],
+            options: function() {
+                if (typeof window !== 'undefined' && window.getActiveSpriteSounds) {
+                    const dynamicOptions = window.getActiveSpriteSounds();
+                    if (dynamicOptions && dynamicOptions.length > 0) return dynamicOptions;
+                }
+                return [['No sounds', ''], ['Pop', 'pop'], ['Boing', 'boing'], ['Clap', 'clap']];
+            }
         }],
         previousStatement: null,
         nextStatement: null,
