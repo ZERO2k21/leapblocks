@@ -483,7 +483,13 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         args0: [{
             type: 'field_dropdown',
             name: 'COSTUME',
-            options: [['costume1', 'costume1'], ['costume2', 'costume2']],
+            options: () => {
+                if (typeof window !== 'undefined' && (window as any).getActiveSpriteCostumes) {
+                    const costumes = (window as any).getActiveSpriteCostumes();
+                    if (costumes && costumes.length > 0) return costumes.map((c: string) => [c, c]);
+                }
+                return [['costume1', 'costume1'], ['costume2', 'costume2']];
+            },
         }],
         previousStatement: null,
         nextStatement: null,
@@ -497,7 +503,13 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         args0: [{
             type: 'field_dropdown',
             name: 'BACKDROP',
-            options: [['backdrop1', 'backdrop1']],
+            options: () => {
+                if (typeof window !== 'undefined' && (window as any).getActiveStageBackdrops) {
+                    const backdrops = (window as any).getActiveStageBackdrops();
+                    if (backdrops && backdrops.length > 0) return backdrops.map((b: string) => [b, b]);
+                }
+                return [['backdrop1', 'backdrop1']];
+            },
         }],
         previousStatement: null,
         nextStatement: null,

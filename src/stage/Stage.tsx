@@ -168,10 +168,11 @@ export const Stage: React.FC<StageProps> = ({
             }
         }
 
-        // 6. Render sprites
-        for (const sprite of sprites) {
+        // Draw sprites
+        sprites.forEach((sprite) => {
+            if (sprite.id === 'stage') return; // The stage itself is not a physical sprite to render
             sprite.render(ctx, width, height);
-        }
+        });
 
         // 7. Draw pen trails (on separate canvas)
         const penCanvas = penCanvasRef.current;

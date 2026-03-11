@@ -146,4 +146,5 @@ export class StageManager {
 // Singleton instance
 export const stageManager = new StageManager(() => {
     // This will be connected to the GameLoop or direct render triggers
+    window.dispatchEvent(new Event('leap-stage-update'));
 });

@@ -1265,10 +1265,15 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // INITIALIZATION
     // ═══════════════════════════════════════════════════════════════════════
 
-    // Create default sprite FIRST (before workspace) so it's available for compilation
+    // Create default sprites (Stage + Robot) on mount
     useEffect(() => {
         if (editorMode === 'stage' && sprites.length === 0) {
-            console.log('[APP] Creating default sprite...');
+            console.log('[APP] Initializing sprites (Stage + Default Robot)...');
+            
+            // 1. Create Stage Sprite (for backdrop management and stage scripts)
+            const stageSprite = new Sprite('stage', 'Stage', triggerUpdate, 'cat'); // cat is dummy type
+            
+            // 2. Create Default Robot Sprite
             const defaultSprite = new Sprite('sprite_default', 'Robot', triggerUpdate, 'robot');
             // Scratch coords: (0,0) is center of stage
             defaultSprite.setX(0);
@@ -1292,24 +1297,39 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             };
             loadAssets().catch(err => console.error('[APP] Failed to initialize assets:', err));
 
+            // Register both with VM
+            animationVM.registerSprite(stageSprite);
             animationVM.registerSprite(defaultSprite);
-            setSprites([defaultSprite]);
+            
+            setSprites([stageSprite, defaultSprite]);
             setSelectedSpriteId('sprite_default');
             activeSpriteIdRef.current = 'sprite_default';
         }
     }, [editorMode]);
 
-    // Define sound helper for Blockly
+    // Define sound, costume, and backdrop helpers for Blockly
     useEffect(() => {
         (window as any).getActiveSpriteSounds = () => {
             const activeId = activeSpriteIdRef.current;
             if (!activeId) return [];
-            // Find the sprite instance by ID
-            // We need to access the latest sprites array. Since this is a window helper, 
-            // it's better to use a ref or find it in the animationVM which should have them all.
             const sprite = animationVM.getSprite(activeId);
             if (sprite && sprite.sounds) {
                 return sprite.sounds.map((s: any) => s.name);
+            }
+            return [];
+        };
+        (window as any).getActiveSpriteCostumes = () => {
+            const activeId = activeSpriteIdRef.current;
+            if (!activeId) return [];
+            const sprite = animationVM.getSprite(activeId);
+            if (sprite && sprite.costumes) {
+                return sprite.costumes.map((c: any) => c.name);
+            }
+            return [];
+        };
+        (window as any).getActiveStageBackdrops = () => {
+            if (stageManager) {
+                return stageManager.getAllBackdrops().map(b => b.name);
             }
             return [];
         };

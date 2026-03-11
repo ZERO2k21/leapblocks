@@ -59,6 +59,10 @@ function PaintEditor({
     const [outlineColor, setOutlineColor] = useState('#000000');
     const [strokeWidth, setStrokeWidth] = useState(4);
     const [zoom, setZoom] = useState(1);
+    const isBackdropMode = title === 'Backdrop Editor';
+    const canvasW = isBackdropMode ? 480 : 800;
+    const canvasH = isBackdropMode ? 360 : 600;
+
     const [history, setHistory] = useState<string[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
     const historyIndexRef = useRef(-1);
@@ -104,7 +108,7 @@ function PaintEditor({
                         });
 
                         // Fit to canvas
-                        const pad = 60;
+                        const pad = isBackdropMode ? 0 : 60;
                         const scale = Math.min(
                             (canvas.width! - pad) / (img.width! || 1),
                             (canvas.height! - pad) / (img.height! || 1)
@@ -128,8 +132,8 @@ function PaintEditor({
     // Initialize Canvas
     useEffect(() => {
         const canvas = new fabric.Canvas('fabric-canvas', {
-            width: 800,
-            height: 600,
+            width: canvasW,
+            height: canvasH,
             backgroundColor: 'transparent',
             isDrawingMode: false,
             selection: true,
@@ -148,7 +152,7 @@ function PaintEditor({
                         originX: 'center',
                         originY: 'center',
                     });
-                    const pad = 60;
+                    const pad = isBackdropMode ? 0 : 60;
                     const scale = Math.min(
                         (canvas.width! - pad) / (group.width! || 1),
                         (canvas.height! - pad) / (group.height! || 1)
@@ -176,7 +180,7 @@ function PaintEditor({
                         originX: 'center',
                         originY: 'center',
                     });
-                    const pad = 60;
+                    const pad = isBackdropMode ? 0 : 60;
                     const scale = Math.min(
                         (canvas.width! - pad) / (img.width! || 1),
                         (canvas.height! - pad) / (img.height! || 1)
@@ -731,7 +735,7 @@ function PaintEditor({
                                 style={{
                                     backgroundImage: `url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZjhmOGY4Ii8+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNmOGY4ZjgiLz48L3N2Zz4=')`,
                                     backgroundSize: '20px 20px',
-                                    width: '800px', height: '600px',
+                                    width: `${canvasW}px`, height: `${canvasH}px`,
                                     transform: `scale(${zoom})`,
                                     transformOrigin: 'center center'
                                 }}>
