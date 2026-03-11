@@ -203,7 +203,7 @@ const Toast: React.FC<{ message: string; visible: boolean }> = ({ message, visib
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 interface LandingPageProps {
-    onSelect: (mode: 'intermediate' | 'junior') => void;
+    onSelect: (mode: 'intermediate' | 'junior' | 'python') => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
@@ -268,9 +268,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             available: true, onClick: () => onSelect('intermediate'),
         },
         {
-            icon: '', title: 'Python IDE', subtitle: 'Python IDE for Classes 9 to 12',
-            color: '#c5d032ff', gradient: 'linear-gradient(135deg, #cdf54cff, #d8c91dff)',
-            available: false, onClick: () => showComingSoon('Python IDE'),
+            icon: '🐍', title: 'Python IDE', subtitle: 'Step into the world of text-based coding',
+            color: '#3776ab', gradient: 'linear-gradient(135deg, #3776ab, #ffd343)',
+            available: true, onClick: () => onSelect('python'),
         },
         {
             icon: '⚡', title: 'Advanced Blocks', subtitle: 'AI/ML',
@@ -351,7 +351,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     justifyContent: 'center',
                     cursor: 'pointer',
                     boxShadow: '0 2px 10px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8)',
-                    transition: 'all 0.2sease',
+                    transition: 'all 0.2s ease',
                 }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-2px)';
