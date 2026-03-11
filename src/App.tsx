@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import LandingPage from './LandingPage';
-import IntermediateApp from './IntermediateApp';
+
+const IntermediateApp = lazy(() => import('./IntermediateApp'));
 // @ts-ignore
-import JuniorApp from './junior/JuniorApp';
+const JuniorApp = lazy(() => import('./junior/JuniorApp'));
 // @ts-ignore
-import PythonApp from './python/PythonApp';
+const PythonApp = lazy(() => import('./python/PythonApp'));
 
 type AppMode = 'home' | 'intermediate' | 'junior' | 'python';
 
@@ -39,10 +40,12 @@ export default function App() {
 
     return (
         <ErrorBoundary>
-            {mode === 'intermediate' && <IntermediateApp onBack={() => setMode('home')} />}
-            {mode === 'junior' && <JuniorApp onBack={() => setMode('home')} />}
-            {mode === 'python' && <PythonApp onBack={() => setMode('home')} />}
-            {mode === 'home' && <LandingPage onSelect={setMode} />}
+            <Suspense fallback={<div style={{ padding: 20, color: '#673AB7', fontWeight: 'bold' }}>Loading LeapBlocks...</div>}>
+                {mode === 'intermediate' && <IntermediateApp onBack={() => setMode('home')} />}
+                {mode === 'junior' && <JuniorApp onBack={() => setMode('home')} />}
+                {mode === 'python' && <PythonApp onBack={() => setMode('home')} />}
+                {mode === 'home' && <LandingPage onSelect={setMode} />}
+            </Suspense>
         </ErrorBoundary>
     );
 }

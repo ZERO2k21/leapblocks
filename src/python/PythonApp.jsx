@@ -1,5 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
-import Editor from "@monaco-editor/react";
+import Editor, { loader } from "@monaco-editor/react";
+
+// Configure Monaco loader to use a stable version and handle Electron context
+loader.config({
+    paths: {
+        vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs"
+    }
+});
 import { 
     Folder, 
     Play, 
