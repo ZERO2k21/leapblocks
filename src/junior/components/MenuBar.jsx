@@ -159,11 +159,13 @@ export default function MenuBar({
             </button>
 
             {/* Logo */}
-            <div className="flex items-end gap-2 mr-5">
-                <Logo height={44} />
-                <span className="text-[#FFD500] text-xs font-extrabold uppercase tracking-wider mb-[15px]">
-                    INTERMEDIATE BLOCKS
-                </span>
+            <div className="flex items-center gap-4 mr-10 group cursor-pointer transition-transform duration-300 hover:scale-[1.02]">
+                <Logo height={42} />
+                <div className="flex flex-col">
+                    <span className="text-[#FFD500] text-[12px] font-[900] uppercase tracking-[0.25em] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+                        INTERMEDIATE
+                    </span>
+                </div>
             </div>
 
             {/* Menus */}
@@ -191,31 +193,35 @@ export default function MenuBar({
             />
 
             {/* Hardware Port Section */}
-            <div className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded-lg mx-1">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-black/25 to-black/15 px-3 py-1.5 rounded-xl mx-2 border border-white/5 backdrop-blur-md shadow-inner">
                 <button
                     onClick={onRefreshPorts}
                     title="Refresh Ports"
-                    className="bg-transparent border-none text-white cursor-pointer flex items-center opacity-80"
+                    className="bg-transparent border-none text-white/70 hover:text-white cursor-pointer flex items-center transition-colors duration-200"
                 >
-                    <RotateCcw size={14} />
+                    <RotateCcw size={16} />
                 </button>
+                <div className="w-[1px] h-4 bg-white/10 mx-1" />
                 <select
                     value={selectedPort}
                     onChange={(e) => onPortSelect?.(e.target.value)}
-                    className="bg-transparent border-none text-white text-xs outline-none cursor-pointer p-1 max-w-[120px]"
+                    className="bg-transparent border-none text-white text-xs font-semibold outline-none cursor-pointer p-0.5 max-w-[140px] hover:text-blue-300 transition-colors"
                 >
-                    <option value="" className="text-gray-700">
+                    <option value="" className="text-gray-900 bg-white">
                         {ports.length === 0 ? 'No Ports Found' : 'Select Port'}
                     </option>
                     {ports.map(p => (
-                        <option key={p.path} value={p.path} className={p.path === 'BRIDGE_DETECTED' ? 'text-red-500' : 'text-gray-700'}>
+                        <option key={p.path} value={p.path} className={p.path === 'BRIDGE_DETECTED' ? 'text-red-600 bg-white' : 'text-gray-900 bg-white'}>
                             {p.path === 'BRIDGE_DETECTED' ? `⚠ Driver Needed: ${p.manufacturer}` : `${p.path} (${p.manufacturer || 'Unknown'})`}
                         </option>
                     ))}
                 </select>
                 <button
                     onClick={onConnect}
-                    className={`border-none rounded-md text-white px-2.5 py-1 text-[11px] font-bold cursor-pointer ml-1 transition-all duration-200 ${connectionStatus === 'connected' ? 'bg-emerald-500' : 'bg-white/15'}`}
+                    className={`border-none rounded-lg text-white px-4 py-1.5 text-[11px] font-[800] cursor-pointer ml-2 transition-all duration-300 shadow-lg ${connectionStatus === 'connected'
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 scale-105 ring-2 ring-emerald-400/30'
+                        : 'bg-white/10 hover:bg-white/20 active:scale-95'
+                        }`}
                 >
                     {connectionStatus === 'connected' ? 'CONNECTED' : 'CONNECT'}
                 </button>
@@ -226,9 +232,12 @@ export default function MenuBar({
                 <button
                     onClick={onUpload}
                     disabled={isUploading}
-                    className={`border-none rounded-[17px] px-5 py-1.5 text-xs font-bold cursor-pointer flex items-center gap-1.5 shadow-[0_2px_4px_rgba(0,0,0,0.2)] transition-all duration-200 mr-2 ${isUploading ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-[#FFD500] text-black'}`}
+                    className={`border-none rounded-xl px-6 py-2 text-xs font-[900] cursor-pointer flex items-center gap-2 shadow-xl transition-all duration-300 active:scale-95 mr-4 ${isUploading
+                        ? 'bg-gray-500 text-white/50 cursor-not-allowed'
+                        : 'bg-gradient-to-b from-[#FFE600] to-[#FFCC00] text-black hover:brightness-110 ring-2 ring-[#FFD500]/20'
+                        }`}
                 >
-                    <Upload size={14} />
+                    <Upload size={16} strokeWidth={3} />
                     {isUploading ? 'UPLOADING...' : 'UPLOAD'}
                 </button>
             )}
@@ -237,13 +246,13 @@ export default function MenuBar({
             <div className="flex-1" />
 
             {/* Project Name */}
-            <div className="flex items-center bg-white/10 rounded-md px-3">
-                <span className="mr-2 text-sm">📁</span>
+            <div className="flex items-center bg-black/20 rounded-xl px-4 py-1.5 border border-white/5 hover:bg-black/30 transition-colors duration-200 group">
+                <span className="mr-3 text-lg filter grayscale group-hover:grayscale-0 transition-all duration-300">📁</span>
                 <input
                     type="text"
                     value={projectName}
                     onChange={(e) => onProjectNameChange?.(e.target.value)}
-                    className="bg-transparent border-none text-white text-[13px] font-medium w-[150px] outline-none"
+                    className="bg-transparent border-none text-white text-[14px] font-bold w-[180px] outline-none placeholder:text-white/20"
                     placeholder="Project Name"
                 />
             </div>
@@ -252,10 +261,10 @@ export default function MenuBar({
             <div className="flex-1" />
 
             {/* Connection Status */}
-            <div className="flex items-center gap-1.5 mr-4">
-                <div className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                <span className="text-white/70 text-[11px]">
-                    {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
+            <div className="flex items-center gap-2 mr-6 bg-black/10 px-3 py-1.5 rounded-full border border-white/5">
+                <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)] ${connectionStatus === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}`} />
+                <span className={`text-[11px] font-[800] uppercase tracking-wider ${connectionStatus === 'connected' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {connectionStatus === 'connected' ? 'LIVE' : 'OFFLINE'}
                 </span>
             </div>
 
@@ -263,8 +272,8 @@ export default function MenuBar({
             <ModeToggle mode={mode} onModeChange={onModeChange} />
 
             {/* Help Button */}
-            <button className="flex items-center justify-center w-8 h-8 ml-2 bg-white/10 border-none rounded-full cursor-pointer text-white">
-                <HelpCircle size={18} />
+            <button className="flex items-center justify-center w-9 h-9 ml-3 bg-white/10 hover:bg-white/20 border border-white/5 rounded-full cursor-pointer text-white transition-all active:scale-95 shadow-lg">
+                <HelpCircle size={20} />
             </button>
         </div>
     );
