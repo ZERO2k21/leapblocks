@@ -1,5 +1,7 @@
 // SoundManager.ts - Handles sound playback for animation VM
 
+import { ADPCMSoundDecoder } from '../scratch-audio/src/ADPCMSoundDecoder';
+
 export class SoundManager {
     private static instance: SoundManager;
     private audioContext: AudioContext | null = null;
@@ -49,8 +51,10 @@ export class SoundManager {
 
         try {
             const response = await fetch(src);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const arrayBuffer = await response.arrayBuffer();
-            const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+            const decoder = new ADPCMSoundDecoder(this.audioContext);
+            const audioBuffer = await decoder.decode(arrayBuffer);
             this.soundBuffers.set(name, audioBuffer);
             return audioBuffer;
         } catch (err) {
