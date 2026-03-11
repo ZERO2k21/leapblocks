@@ -6,6 +6,7 @@ import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
 import { hardwareBlocks } from './blocks/hardware-blocks';
 import { arduinoGenerator } from './generators/arduino-generator';
 import { AnimationCompiler } from './generators/animation-generator';
+import { FieldAngle } from '@blockly/field-angle';
 import './generators/python-generator'; // Register Python code generation handlers
 import { animationVM, CompiledScript } from './vm/AnimationVM';
 import { Sprite, SpriteType } from './stage/Sprite';
@@ -48,6 +49,10 @@ Blockly.common.defineBlocks(esp32Blocks);
 Blockly.common.defineBlocks(animationBlocks);
 Blockly.common.defineBlocks(hardwareBlocks);
 log.app('All blocks registered successfully');
+
+// Register FieldAngle
+log.app('Registering FieldAngle...');
+Blockly.fieldRegistry.register('field_angle', FieldAngle);
 
 // Configure Blockly dialogs for Electron (native prompt/alert not supported)
 Blockly.dialog.setPrompt((message, defaultValue, callback) => {
@@ -1270,25 +1275,44 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             defaultSprite.setY(0);
 
             // Add robot costumes
-            const loadCostumes = async () => {
-                console.log('[APP] Loading costumes for robot...');
+            const loadAssets = async () => {
+                console.log('[APP] Loading assets for robot...');
                 await defaultSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
                 await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/robot_wave1.png');
                 await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/robot_wave2.png');
                 await defaultSprite.addCostume('talk', '/assets/sprites/robot/robot_talk.png');
-                console.log('[APP] Costumes loaded:', defaultSprite.costumes.length);
+                
+                // Add default sound
+                await defaultSprite.addSound('Meow', '/assets/sounds/meow.wav');
+                
+                console.log('[APP] Assets loaded:', defaultSprite.costumes.length, 'costumes', defaultSprite.sounds.length, 'sounds');
                 triggerUpdate();
                 // Manually nudge the stage to repaint in case it didn't catch the update
                 window.dispatchEvent(new Event('leap-stage-update'));
             };
-            loadCostumes().catch(err => console.error('[APP] Failed to initialize costumes:', err));
+            loadAssets().catch(err => console.error('[APP] Failed to initialize assets:', err));
 
             animationVM.registerSprite(defaultSprite);
             setSprites([defaultSprite]);
             setSelectedSpriteId('sprite_default');
             activeSpriteIdRef.current = 'sprite_default';
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editorMode]);
+
+    // Define sound helper for Blockly
+    useEffect(() => {
+        (window as any).getActiveSpriteSounds = () => {
+            const activeId = activeSpriteIdRef.current;
+            if (!activeId) return [];
+            // Find the sprite instance by ID
+            // We need to access the latest sprites array. Since this is a window helper, 
+            // it's better to use a ref or find it in the animationVM which should have them all.
+            const sprite = animationVM.getSprite(activeId);
+            if (sprite && sprite.sounds) {
+                return sprite.sounds.map((s: any) => s.name);
+            }
+            return [];
+        };
     }, []);
 
     // Initialize Blockly workspace AFTER sprite state is set
@@ -2417,6 +2441,9 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 const costumeName = i === 0 ? entry.name : `${entry.name} ${i + 1}`;
                                 await newSprite.addCostume(costumeName, costumeSrc);
                             }
+                            // Add default sound
+                            await newSprite.addSound('Meow', '/assets/sounds/meow.wav');
+                            
                             // Set initial costume
                             newSprite.switchCostume(0);
                             triggerUpdate();
