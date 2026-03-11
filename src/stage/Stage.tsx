@@ -251,6 +251,7 @@ export const Stage: React.FC<StageProps> = ({
             }
         }
 
+        if (onSpriteSelect) onSpriteSelect('stage');
         if (onStageClick) onStageClick(mouseX, mouseY);
     };
 

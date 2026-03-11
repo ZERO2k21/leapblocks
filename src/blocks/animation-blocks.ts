@@ -40,6 +40,14 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         helpUrl: '',
     },
     {
+        type: 'event_stage_clicked',
+        message0: '👆 when stage clicked',
+        nextStatement: null,
+        colour: COLORS.events,
+        tooltip: 'Runs when the stage is clicked',
+        helpUrl: '',
+    },
+    {
         type: 'event_key_pressed',
         message0: '⌨️ when %1 key pressed',
         args0: [{

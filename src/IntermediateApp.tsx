@@ -246,7 +246,40 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             if (selectedSpriteId === 'stage') {
                 return {
                     ...animationToolbox,
-                    contents: animationToolbox.contents.filter((cat: any) => cat.name !== 'Motion')
+                    contents: animationToolbox.contents
+                        .filter((cat: any) => cat.name !== 'Motion')
+                        .map((cat: any) => {
+                            let contents = cat.contents;
+                            if (cat.name === 'Looks') {
+                                contents = contents.filter((item: any) => {
+                                    if (item.kind !== 'block') return true;
+                                    const t = item.type;
+                                    return !t.startsWith('looks_say') && !t.startsWith('looks_think') &&
+                                           t !== 'looks_show' && t !== 'looks_hide' &&
+                                           t !== 'looks_switch_costume' && t !== 'looks_next_costume' &&
+                                           t !== 'looks_set_size' && t !== 'looks_change_size' &&
+                                           t !== 'looks_go_to_layer' && t !== 'looks_go_forward_layers' &&
+                                           t !== 'looks_size' && !t.startsWith('looks_costume_');
+                                });
+                            } else if (cat.name === 'Events') {
+                                contents = contents.map((item: any) => 
+                                    (item.kind === 'block' && item.type === 'event_sprite_clicked') 
+                                    ? { ...item, type: 'event_stage_clicked' } : item
+                                );
+                            } else if (cat.name === 'Control') {
+                                contents = contents.filter((item: any) => 
+                                    item.kind !== 'block' || item.type !== 'control_delete_clone'
+                                );
+                            } else if (cat.name === 'Sensing') {
+                                contents = contents.filter((item: any) => {
+                                    if (item.kind !== 'block') return true;
+                                    const t = item.type;
+                                    return t !== 'sensing_touching' && t !== 'sensing_touching_color' &&
+                                           t !== 'sensing_color_touching_color' && t !== 'sensing_distance_to';
+                                });
+                            }
+                            return { ...cat, contents };
+                        })
                 };
             }
             return animationToolbox;
@@ -674,7 +707,11 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     // Handle sprite selection: save old, load new
     const handleSpriteSelect = useCallback((newId: string) => {
-        if (newId === selectedSpriteId) return;
+        if (newId === selectedSpriteId) {
+            // Trigger click event even if already selected (Scratch behavior)
+            animationVM.triggerSpriteClick(newId, compiledScripts);
+            return;
+        }
 
         // Clear highlights in old workspace before switching
         if (workspaceRef.current) {
@@ -685,7 +722,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         saveCurrentSpriteWorkspace();
         setSelectedSpriteId(newId);
         loadSpriteWorkspace(newId);
-    }, [selectedSpriteId, saveCurrentSpriteWorkspace, loadSpriteWorkspace]);
+    }, [selectedSpriteId, compiledScripts, saveCurrentSpriteWorkspace, loadSpriteWorkspace]);
 
     const addSprite = useCallback((spriteType: SpriteType = 'cat') => {
         // Save current sprite's workspace before switching
