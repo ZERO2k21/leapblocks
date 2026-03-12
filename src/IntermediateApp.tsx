@@ -74,6 +74,50 @@ Blockly.dialog.setConfirm((message, callback) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// GLOBAL BLOCKLY OVERRIDES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// 1. Persist Flyout: Prevent hiding when autoClose is false (Continuous Toolbox)
+// Also override show() to always show ALL contents (continuous mode)
+let _continuousFlyoutContents: any[] = []; // Module-level storage for continuous flyout contents
+
+if (Blockly.Flyout && !(Blockly.Flyout.prototype as any)._hidePatched) {
+    // Set default to false globally
+    Blockly.Flyout.prototype.autoClose = false;
+
+    // Override hide: suppress if continuous mode
+    const originalHide = Blockly.Flyout.prototype.hide;
+    Blockly.Flyout.prototype.hide = function (this: any) {
+        if (this.autoClose === false) {
+            return; // NEVER hide in continuous mode
+        }
+        originalHide.call(this);
+    };
+
+    // Override setVisible: suppress setVisible(false) if continuous mode
+    const originalSetVisible = Blockly.Flyout.prototype.setVisible;
+    Blockly.Flyout.prototype.setVisible = function (this: any, visible: boolean) {
+        if (this.autoClose === false && visible === false) {
+            return; // NEVER make invisible in continuous mode
+        }
+        originalSetVisible.call(this, visible);
+    };
+
+    // Override show: in continuous mode, always show ALL blocks
+    const originalShow = Blockly.Flyout.prototype.show;
+    Blockly.Flyout.prototype.show = function (this: any, flyoutDef: any) {
+        if (this.autoClose === false && _continuousFlyoutContents.length > 0) {
+            // Always use the full flattened contents regardless of what Blockly internally requests
+            originalShow.call(this, _continuousFlyoutContents);
+        } else {
+            originalShow.call(this, flyoutDef);
+        }
+    };
+
+    (Blockly.Flyout.prototype as any)._hidePatched = true;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MAIN APP COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════
 // Main app mode: home (welcome screen) or one of the coding modes
@@ -138,6 +182,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // Dynamic toolbox state for continuous flyout
     const [currentToolboxContents, setCurrentToolboxContents] = useState<any[]>([]);
     const currentToolboxContentsRef = useRef<any[]>([]);
+    const lastToolboxJsonRef = useRef<string>('');
 
     // Force re-render for sprite updates
     const [, forceUpdate] = useState({});
@@ -299,7 +344,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         if (!toolbox || !toolbox.contents) return [];
         const flattened: any[] = [];
         toolbox.contents.forEach((category: any, index: number) => {
-            if (category.kind === 'pictoBloxCategory' || category.kind === 'category') {
+            if (category.kind === 'pictobloxCategory' || category.kind === 'pictoBloxCategory' || category.kind === 'category') {
                 // Add a label/header for the category
                 flattened.push({
                     kind: 'label',
@@ -677,6 +722,19 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         } finally {
             Blockly.Events.enable();
             activeSpriteIdRef.current = spriteId; // Update true owner only after loading finishes
+
+            // PERSIST FLYOUT: Ensure flyout stays open after workspace load/clear
+            const flyout = workspaceRef.current.getFlyout() as any;
+            if (flyout) {
+                const contents = currentToolboxContentsRef.current;
+                if (contents && contents.length > 0) {
+                    console.log('[APP] Restoring flyout after workspace load');
+                    flyout.show(contents);
+                    // @ts-ignore
+                    if (flyout.reflowInternal_) flyout.reflowInternal_();
+                }
+            }
+
             // Use setTimeout to ensure any strictly asynchronous layout events 
             // thrown by Blockly immediately after enable() are also swallowed.
             setTimeout(() => {
@@ -1429,45 +1487,45 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, []);
 
 
-    // Reinitialize workspace when appMode changes (e.g., from home to blocks/junior)
-    // This ensures the correct toolbox is shown
+    // Update flyout contents when sprite changes
     useEffect(() => {
         if (workspaceRef.current && appMode === 'blocks') {
             const toolbox = getCurrentToolbox();
-            console.log('[APP] Updating toolbox dynamically (Sprite:', selectedSpriteId, ')');
+            const toolboxJson = JSON.stringify(toolbox);
             
-            // 1. Standard Blockly toolbox update
-            workspaceRef.current.updateToolbox(toolbox);
-            
-            // 2. Refresh continuous flyout
+            // Recompute continuous flyout contents
             const contents = getFlattenedFlyoutContents(toolbox);
             setCurrentToolboxContents(contents);
             currentToolboxContentsRef.current = contents;
+            _continuousFlyoutContents = contents; // Update module-level storage for prototype override
             
+            console.log('[APP] Updating flyout contents for sprite:', selectedSpriteId, '(', contents.length, 'items)');
+            
+            // Update the toolbox sidebar (category icons) if the definition changed
+            if (toolboxJson !== lastToolboxJsonRef.current) {
+                console.log('[APP] Updating toolbox dynamically (Sprite:', selectedSpriteId, ')');
+                lastToolboxJsonRef.current = toolboxJson;
+                workspaceRef.current.updateToolbox(toolbox);
+            }
+            
+            // Always ensure flyout is showing the latest contents
             const flyout = workspaceRef.current.getFlyout() as any;
             if (flyout) {
-                // Ensure flyout is correctly configured and shown
                 flyout.autoClose = false;
-                flyout.hide = () => {
-                    console.log('[BLOCKLY] Flyout hide requested after toolbox update - ignoring');
-                };
-                
-                // Show latest contents
                 flyout.show(contents);
-                
-                // Force a relayout
-                // @ts-ignore
-                if (flyout.reflowInternal_) flyout.reflowInternal_();
-                
-                // Safety re-show to catch any async Blockly hide calls
-                setTimeout(() => {
-                    if (flyout && contents) {
-                         flyout.show(contents);
-                         // @ts-ignore
-                         if (flyout.reflowInternal_) flyout.reflowInternal_();
-                    }
-                }, 50);
+                console.log('[APP] Flyout re-shown with', contents.length, 'items');
             }
+            
+            // Safety: re-show after a short delay to catch any async hide calls from updateToolbox
+            setTimeout(() => {
+                if (workspaceRef.current) {
+                    const flyout2 = workspaceRef.current.getFlyout() as any;
+                    if (flyout2 && _continuousFlyoutContents.length > 0) {
+                        flyout2.autoClose = false;
+                        flyout2.show(_continuousFlyoutContents);
+                    }
+                }
+            }, 100);
         }
     }, [selectedSpriteId, editorMode, appMode, getCurrentToolbox]);
 
@@ -1529,28 +1587,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 flyout.getWorkspace().setScale(FIXED_SCALE);
                             }
 
-                            // CONTINUOUS FLYOUT OVERRIDE:
-                            // Always show ALL blocks in the flyout instead of just the selected category
-                            const originalShow = flyout.show.bind(flyout);
+                            // Initialize continuous flyout contents
+                            const initContents = getFlattenedFlyoutContents(getCurrentToolbox());
+                            currentToolboxContentsRef.current = initContents;
+                            _continuousFlyoutContents = initContents; // Update module-level storage
 
-                            flyout.show = (contents: any) => {
-                                // IMPORTANT: Use Ref for synchronous access to most recent contents
-                                // during rapid sprite switching where State might be stale.
-                                const latestContents = currentToolboxContentsRef.current;
-                                if (latestContents && latestContents.length > 0) {
-                                    originalShow(latestContents);
-                                } else {
-                                    originalShow(contents);
-                                }
-                            };
-
-                            // PREVENT FLYOUT HIDING: No-op for hide()
-                            flyout.hide = () => {
-                                console.log('[BLOCKLY] Flyout hide requested - ignoring to keep continuous toolbox visible');
-                            };
-
-                            // Force first show
-                            flyout.show(getFlattenedFlyoutContents(getCurrentToolbox()));
+                            // Force first show (prototype override will use _continuousFlyoutContents)
+                            flyout.show(initContents);
                         }
 
                         // 2. TOOLBOX -> FLYOUT (Click to Scroll)
