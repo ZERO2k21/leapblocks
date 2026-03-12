@@ -196,7 +196,10 @@ export default function JuniorApp({ onBack }) {
     });
 
     const loadWorkspace = (sprite) => {
-        if (!workspaceRef.current) return;
+        if (!workspaceRef.current) {
+            console.warn('[JuniorApp] Cannot load workspace: workspaceRef.current is null');
+            return;
+        }
         const json = sprite?.blocks || {};
         
         // Disable events BEFORE clearing to prevent change listener from saving empty state
@@ -213,11 +216,33 @@ export default function JuniorApp({ onBack }) {
             console.error(`[JuniorApp] Error loading workspace:`, err);
         } finally {
             Blockly.Events.enable();
+            
+            // PERSIST FLYOUT: Ensure flyout stays open after workspace load/clear
+            const flyout = workspaceRef.current.getFlyout();
+            if (flyout) {
+                // Re-show flyout contents if available
+                if (typeof flyout.show === 'function') {
+                    const toolbox = workspaceRef.current.getToolbox();
+                    if (toolbox) {
+                        // Trigger toolbox refresh to ensure flyout is visible
+                        const selected = toolbox.getSelectedItem?.();
+                        if (selected) {
+                            toolbox.selectItem(selected);
+                        }
+                    }
+                }
+            }
         }
     };
 
     const handleSceneSelect = (newSceneId) => {
         if (newSceneId === currentSceneId) return;
+        
+        // Clear highlights before switching
+        if (workspaceRef.current) {
+            workspaceRef.current.highlightBlock(null);
+        }
+        
         saveCurrentWorkspace(); 
         setCurrentSceneId(newSceneId);
 
@@ -226,12 +251,27 @@ export default function JuniorApp({ onBack }) {
             setActiveSpriteId(newScene.sprites[0].id);
         } else {
             setActiveSpriteId(null);
-            if (workspaceRef.current) workspaceRef.current.clear();
+            // Clear workspace when no sprites in scene
+            if (workspaceRef.current) {
+                isLoadingWorkspaceRef.current = true;
+                Blockly.Events.disable();
+                workspaceRef.current.clear();
+                Blockly.Events.enable();
+                setTimeout(() => {
+                    isLoadingWorkspaceRef.current = false;
+                }, 50);
+            }
         }
     };
 
     const handleSpriteSelect = (newId) => {
         if (newId === activeSpriteId) return;
+        
+        // Clear highlights in old workspace before switching
+        if (workspaceRef.current) {
+            workspaceRef.current.highlightBlock(null);
+        }
+        
         saveCurrentWorkspace();
         setActiveSpriteId(newId);
     };
@@ -267,6 +307,7 @@ export default function JuniorApp({ onBack }) {
         setCurrentSceneId,
         setActiveSpriteId,
         workspaceRef,
+        scenesRef,
         paintEditor,
         setPaintEditor,
         backdropEditSceneId,
@@ -281,7 +322,8 @@ export default function JuniorApp({ onBack }) {
         recordingCount,
         setRecordingCount,
         audioEngine,
-        project
+        project,
+        isLoadingWorkspaceRef
     });
 
     // --- EFFECT HOOKS ---
@@ -310,7 +352,20 @@ export default function JuniorApp({ onBack }) {
             }
         }
 
-        const activeSprite = sprites.find(s => s.id === activeSpriteId);
+        // Find the sprite in the current scene using scenesRef for latest state
+        let activeSprite = null;
+        if (scenesRef.current) {
+            for (const scene of scenesRef.current) {
+                activeSprite = scene.sprites.find(s => s.id === activeSpriteId);
+                if (activeSprite) break;
+            }
+        }
+        
+        // Fallback to sprites prop if not found in scenesRef
+        if (!activeSprite) {
+            activeSprite = sprites.find(s => s.id === activeSpriteId);
+        }
+        
         if (activeSprite) {
             console.log(`[JuniorApp] Switching workspace to sprite: ${activeSprite.name} (changed: ${spriteChanged})`);
             isLoadingWorkspaceRef.current = true;
@@ -326,7 +381,7 @@ export default function JuniorApp({ onBack }) {
                 }, 50);
             }
         }
-    }, [activeSpriteId, sprites, currentSceneId]);
+    }, [activeSpriteId, currentSceneId]); // Remove sprites from deps to avoid stale closure
 
     const [, setHint] = useState(null);
     const lastInteraction = useRef(null);

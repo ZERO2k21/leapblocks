@@ -1,3 +1,5 @@
+import * as Blockly from "blockly";
+
 export function useJuniorUIHandlers({
     sprites,
     scenes,
@@ -6,6 +8,7 @@ export function useJuniorUIHandlers({
     setCurrentSceneId,
     setActiveSpriteId,
     workspaceRef,
+    scenesRef,
     paintEditor,
     setPaintEditor,
     backdropEditSceneId,
@@ -20,7 +23,8 @@ export function useJuniorUIHandlers({
     recordingCount,
     setRecordingCount,
     audioEngine,
-    project
+    project,
+    isLoadingWorkspaceRef
 }) {
 
     const handleEditSprite = (spriteId) => {
@@ -211,10 +215,37 @@ export function useJuniorUIHandlers({
             textColor: (spriteType.startsWith('letter_') || spriteType.startsWith('number_')) ? "#FF8C1A" : "#575E75",
             blocks: {}
         };
-        setScenes(prev => prev.map(s => {
-            if (s.id === currentSceneId) return { ...s, sprites: [...s.sprites, newSprite] };
-            return s;
-        }));
+        
+        // Update scenes and immediately update scenesRef to ensure workspace loading works
+        setScenes(prev => {
+            const updated = prev.map(s => {
+                if (s.id === currentSceneId) return { ...s, sprites: [...s.sprites, newSprite] };
+                return s;
+            });
+            // Update scenesRef immediately so the workspace loading effect can find the new sprite
+            if (scenesRef && scenesRef.current) {
+                scenesRef.current = updated;
+            }
+            return updated;
+        });
+        
+        // Clear workspace before switching to new sprite
+        // Set loading flag to prevent change listener from saving empty state
+        if (isLoadingWorkspaceRef) {
+            isLoadingWorkspaceRef.current = true;
+        }
+        if (workspaceRef && workspaceRef.current) {
+            Blockly.Events.disable();
+            workspaceRef.current.clear();
+            Blockly.Events.enable();
+            // Reset loading flag after a short delay
+            setTimeout(() => {
+                if (isLoadingWorkspaceRef) {
+                    isLoadingWorkspaceRef.current = false;
+                }
+            }, 50);
+        }
+        
         setActiveSpriteId(newId);
         setIsSpriteModalOpen(false);
     };
