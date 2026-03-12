@@ -188,6 +188,16 @@ export default function PythonApp({ onBack }) {
     const [spriteFilter, setSpriteFilter] = useState("");
     const [installedExtensions, setInstalledExtensions] = useState([]);
 
+    // Modal state
+    const [modalState, setModalState] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        defaultValue: '',
+        callback: null
+    });
+    const [modalInput, setModalInput] = useState('');
+
     // Engine ref
     const skulptRef = useRef(null);
 
@@ -290,13 +300,56 @@ export default function PythonApp({ onBack }) {
         }
     };
 
+    // ── Modal Handlers ────────────────────────────────────────────────────────
+    const openModal = (title, message, defaultValue, callback) => {
+        setModalState({
+            isOpen: true,
+            title,
+            message,
+            defaultValue,
+            callback
+        });
+        setModalInput(defaultValue);
+    };
+
+    const closeModal = () => {
+        setModalState({
+            isOpen: false,
+            title: '',
+            message: '',
+            defaultValue: '',
+            callback: null
+        });
+        setModalInput('');
+    };
+
+    const handleModalSubmit = () => {
+        if (modalState.callback) {
+            modalState.callback(modalInput);
+        }
+        closeModal();
+    };
+
+    const handleModalCancel = () => {
+        if (modalState.callback) {
+            modalState.callback(null);
+        }
+        closeModal();
+    };
+
     // ── File Management ────────────────────────────────────────────────────────
     const handleAddFile = () => {
-        const name = prompt("New file name (e.g. helpers.py):");
-        if (!name) return;
-        const fname = name.endsWith(".py") ? name : name + ".py";
-        setProjectFiles(prev => ({ ...prev, [fname]: `# ${fname}\n` }));
-        setActiveFile(fname);
+        openModal(
+            "New File",
+            "Enter file name (e.g. helpers.py):",
+            "",
+            (name) => {
+                if (!name) return;
+                const fname = name.endsWith(".py") ? name : name + ".py";
+                setProjectFiles(prev => ({ ...prev, [fname]: `# ${fname}\n` }));
+                setActiveFile(fname);
+            }
+        );
     };
 
     const handleDeleteFile = (file) => {
@@ -388,18 +441,18 @@ export default function PythonApp({ onBack }) {
 
             {/* ══ TOPBAR ══════════════════════════════════════════════════════ */}
             <header style={{
-                height: 48, background: C.PURPLE, display: "flex",
+                height: 48, background: "#673AB7", display: "flex",
                 alignItems: "center", padding: "0 16px",
                 justifyContent: "space-between", color: "#fff", zIndex: 100,
                 boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                 flexShrink: 0,
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <div style={{ cursor: "pointer", display: "flex", alignItems: "center" }} onClick={onBack}>
-                        <img src="/assets/topbar_logo.svg" alt="Logo" style={{ height: 28, filter: "brightness(0) invert(1)" }} />
+                    <div style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }} onClick={onBack}>
+                        <span style={{ fontSize: 20, fontWeight: "bold" }}>PictoBlox</span>
                     </div>
                     <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.3)" }} />
-                    {["File", "Edit", "View", "Run", "Help"].map(m => (
+                    {["File", "Edit", "Tutorials", "Board", "Connect"].map(m => (
                         <span key={m} style={{ fontSize: 13, cursor: "pointer", opacity: 0.85, letterSpacing: "0.01em" }}
                             onMouseEnter={e => e.target.style.opacity = 1}
                             onMouseLeave={e => e.target.style.opacity = 0.85}
@@ -412,14 +465,12 @@ export default function PythonApp({ onBack }) {
                         <input defaultValue="My Project" style={{ background: "transparent", border: "none", color: "#fff", width: 100, outline: "none", fontSize: 13 }} />
                         <Save size={14} style={{ opacity: 0.8 }} />
                     </div>
-                    {/* Run controls */}
-                    <button onClick={handleRun} disabled={isRunning}
-                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 16px", background: isRunning ? "rgba(255,255,255,0.2)" : "#43A047", color: "#fff", border: "none", borderRadius: 6, cursor: isRunning ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 13 }}>
-                        <Play size={14} fill="white" /> {isRunning ? "Running..." : "Run"}
-                    </button>
-                    <button onClick={handleStop} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 6, cursor: "pointer", fontSize: 13 }}>
-                        <Square size={14} fill="white" /> Stop
-                    </button>
+                    {/* Mode buttons */}
+                    <div style={{ display: "flex", background: "rgba(0,0,0,0.25)", borderRadius: 6, overflow: "hidden" }}>
+                        <div style={{ padding: "6px 12px", background: "#673AB7", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Mode</div>
+                        <div style={{ padding: "6px 12px", background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Stage</div>
+                        <div style={{ padding: "6px 12px", background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Upload</div>
+                    </div>
                     <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.3)" }} />
                     <button onClick={() => setShowGuide(g => !g)}
                         title="Help & Guide"
@@ -484,18 +535,18 @@ export default function PythonApp({ onBack }) {
                 </div>
 
                 {/* ── LEFT SIDEBAR ── */}
-                <div style={{ width: 200, background: C.BG2, borderRight: `1px solid ${C.BORDER}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+                <div style={{ width: 200, background: "#fff", borderRight: `1px solid ${C.BORDER}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
 
                     {sidePanel === "files" && (
                         <>
                             <div style={{ padding: "10px 12px 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: C.MUTED, letterSpacing: "0.08em" }}>PROJECT</span>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: C.TEXT }}>Project Files</span>
                                 <div style={{ display: "flex", gap: 4 }}>
                                     <div onClick={handleAddFile} title="New File" style={{ cursor: "pointer", color: C.MUTED, padding: 2, borderRadius: 4 }}>
                                         <Plus size={14} />
                                     </div>
-                                    <div title="Open Folder" style={{ cursor: "pointer", color: C.MUTED, padding: 2, borderRadius: 4 }}>
-                                        <Folder size={14} />
+                                    <div title="Refresh" style={{ cursor: "pointer", color: C.MUTED, padding: 2, borderRadius: 4 }}>
+                                        <RefreshCw size={14} />
                                     </div>
                                 </div>
                             </div>
@@ -504,31 +555,38 @@ export default function PythonApp({ onBack }) {
                                     <div key={file}
                                         onClick={() => setActiveFile(file)}
                                         style={{
-                                            padding: "7px 12px", fontSize: 13, cursor: "pointer",
-                                            background: activeFile === file ? C.LIGHT_PURPLE : "transparent",
+                                            padding: "6px 12px", fontSize: 13, cursor: "pointer",
+                                            background: activeFile === file ? "#EDE7F6" : "transparent",
                                             color: activeFile === file ? C.PURPLE : C.TEXT,
-                                            borderLeft: activeFile === file ? `3px solid ${C.PURPLE}` : "3px solid transparent",
-                                            display: "flex", alignItems: "center", justifyContent: "space-between",
-                                            gap: 8, transition: "background 0.15s",
+                                            display: "flex", alignItems: "center", gap: 8,
+                                            transition: "background 0.15s",
                                         }}
-                                        onMouseEnter={e => { if (activeFile !== file) e.currentTarget.style.background = "#F0EDF8"; }}
+                                        onMouseEnter={e => { if (activeFile !== file) e.currentTarget.style.background = "#F5F5F5"; }}
                                         onMouseLeave={e => { if (activeFile !== file) e.currentTarget.style.background = "transparent"; }}
                                     >
-                                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                            <FileText size={13} style={{ opacity: 0.6 }} />
-                                            <span style={{ fontSize: 12 }}>{file}</span>
+                                        <div style={{ width: 16, height: 16, background: "#E8F5E9", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            <FileText size={10} style={{ color: "#2E7D32" }} />
                                         </div>
-                                        {Object.keys(projectFiles).length > 1 && (
-                                            <div onClick={e => { e.stopPropagation(); handleDeleteFile(file); }}
-                                                style={{ opacity: 0, cursor: "pointer", color: C.RED, padding: 2 }}
-                                                onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                                                onMouseLeave={e => e.currentTarget.style.opacity = 0}
-                                            >
-                                                <X size={12} />
-                                            </div>
-                                        )}
+                                        <span style={{ fontSize: 12 }}>{file}</span>
                                     </div>
                                 ))}
+                            </div>
+                            
+                            {/* Modules/Libraries Section */}
+                            <div style={{ borderTop: `1px solid ${C.BORDER}`, padding: "10px 12px 6px" }}>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: C.TEXT }}>Modules/Libraries</span>
+                            </div>
+                            <div style={{ padding: "0 12px 12px" }}>
+                                <div style={{ 
+                                    padding: "6px 8px", fontSize: 12, cursor: "pointer",
+                                    background: "#F5F5F5", borderRadius: 6,
+                                    display: "flex", alignItems: "center", gap: 8,
+                                }}>
+                                    <div style={{ width: 16, height: 16, background: "#E3F2FD", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <span style={{ fontSize: 10 }}>📦</span>
+                                    </div>
+                                    <span>Sprite</span>
+                                </div>
                             </div>
                         </>
                     )}
@@ -767,8 +825,9 @@ export default function PythonApp({ onBack }) {
                         {/* Panel Tabs */}
                         <div style={{ display: "flex", background: "#F5F5F5", borderBottom: `1px solid ${C.BORDER}`, height: 32, alignItems: "center" }}>
                             {[
-                                { id: "terminal", label: "Terminal", icon: <TerminalIcon size={12} /> },
-                                { id: "repl", label: "REPL", icon: <Zap size={12} /> },
+                                { id: "terminal", label: "Terminal", icon: <span style={{ fontSize: 12 }}>▶</span> },
+                                { id: "log", label: "Log", icon: <FileText size={12} /> },
+                                { id: "serial", label: "Serial Monitor", icon: <TerminalIcon size={12} /> },
                             ].map(({ id, label, icon }) => (
                                 <div key={id} onClick={() => { setActivePanel(id); if (id === "repl") setTimeout(() => replInputRef.current?.focus(), 80); }}
                                     style={{
@@ -830,6 +889,47 @@ export default function PythonApp({ onBack }) {
                                     <button onClick={handleReplSubmit}
                                         style={{ padding: "4px 12px", background: C.PURPLE, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
                                         Run
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Log */}
+                        {activePanel === "log" && (
+                            <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6 }}>
+                                {terminalOutput.length === 0 ? (
+                                    <div style={{ color: "#aaa", fontStyle: "italic" }}>— Log output will appear here —</div>
+                                ) : terminalOutput.map((log, i) => (
+                                    <div key={i} style={{
+                                        color: log.type === "error" ? "#E53935" : log.type === "success" ? "#2E7D32" : log.type === "info" ? "#1565C0" : "#333",
+                                        marginBottom: 2,
+                                    }}>
+                                        <span style={{ color: C.MUTED, marginRight: 8 }}>[{log.ts?.toLocaleTimeString() || ""}]</span>
+                                        {log.text}
+                                    </div>
+                                ))}
+                                <div ref={terminalEndRef} />
+                            </div>
+                        )}
+
+                        {/* Serial Monitor */}
+                        {activePanel === "serial" && (
+                            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                                <div style={{ padding: "6px 14px", fontSize: 11, color: C.MUTED, borderBottom: `1px solid ${C.BORDER}` }}>
+                                    Serial Monitor — Connect to Arduino/ESP32
+                                </div>
+                                <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6, background: "#1E1E1E", color: "#D4D4D4" }}>
+                                    <div style={{ color: "#6A9955" }}>// Serial monitor output will appear here</div>
+                                    <div style={{ color: "#6A9955" }}>// Click "Connect" to establish serial connection</div>
+                                </div>
+                                <div style={{ display: "flex", borderTop: `1px solid ${C.BORDER}`, padding: "6px 10px", alignItems: "center", gap: 8, background: "#FAFAFA" }}>
+                                    <input
+                                        placeholder="Enter data to send..."
+                                        style={{ flex: 1, border: `1px solid ${C.BORDER}`, outline: "none", fontFamily: "'Fira Code', monospace", fontSize: 13, background: "#fff", color: C.TEXT, padding: "4px 8px", borderRadius: 4 }}
+                                    />
+                                    <button
+                                        style={{ padding: "4px 12px", background: C.PURPLE, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+                                        Send
                                     </button>
                                 </div>
                             </div>
@@ -900,26 +1000,171 @@ export default function PythonApp({ onBack }) {
                         </div>
                     )}
 
+                    {/* Sprite List (below stage) */}
+                    <div style={{ borderTop: `1px solid ${C.BORDER}`, padding: "8px", background: "#F5F5F5", display: "flex", gap: 8, overflowX: "auto", flexShrink: 0 }}>
+                        {sprites.map(sp => (
+                            <div key={sp.id} onClick={() => setSelectedSpriteId(sp.id)}
+                                style={{ 
+                                    padding: "4px", 
+                                    background: selectedSpriteId === sp.id ? "#EDE7F6" : "#fff", 
+                                    border: `2px solid ${selectedSpriteId === sp.id ? C.PURPLE : C.BORDER}`, 
+                                    borderRadius: 8, 
+                                    cursor: "pointer",
+                                    minWidth: 60,
+                                    textAlign: "center"
+                                }}>
+                                <img src={sp.costumes[sp.currentCostume]} style={{ width: 40, height: 40, objectFit: "contain" }} alt={sp.name} />
+                                <div style={{ fontSize: 10, fontWeight: 600, marginTop: 2, color: C.TEXT }}>{sp.name}</div>
+                            </div>
+                        ))}
+                    </div>
+
                     {/* Sprite Properties */}
-                    <div style={{ borderTop: `1px solid ${C.BORDER}`, padding: "10px 12px", background: C.BG2, flexShrink: 0 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: C.MUTED, marginBottom: 8, letterSpacing: "0.06em" }}>SPRITE PROPERTIES</div>
+                    <div style={{ borderTop: `1px solid ${C.BORDER}`, padding: "10px 12px", background: "#fff", flexShrink: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: C.TEXT }}>Sprite:</span>
+                            <span style={{ fontSize: 12, color: C.PURPLE, fontWeight: 600 }}>{selectedSprite?.name}</span>
+                        </div>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                            <PropInput label="Name" value={selectedSprite?.name} onChange={v => updateSpriteProperty(selectedSpriteId, 'name', v)} />
-                            <PropInput label="Size" value={selectedSprite?.size} onChange={v => updateSpriteProperty(selectedSpriteId, 'size', v)} />
-                            <PropInput label="X" value={Math.round(selectedSprite?.x || 0)} onChange={v => updateSpriteProperty(selectedSpriteId, 'x', v)} />
-                            <PropInput label="Y" value={Math.round(selectedSprite?.y || 0)} onChange={v => updateSpriteProperty(selectedSpriteId, 'y', v)} />
-                            <PropInput label="Direction" value={selectedSprite?.angle} onChange={v => updateSpriteProperty(selectedSpriteId, 'angle', v)} />
-                            <div style={{ display: "flex", alignItems: "flex-end", gap: 6 }}>
-                                <div style={{ fontSize: 10, color: C.MUTED, fontWeight: 700 }}>VISIBLE</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                <span style={{ fontSize: 11, color: C.MUTED }}>x</span>
+                                <input 
+                                    type="number" 
+                                    value={Math.round(selectedSprite?.x || 0)} 
+                                    onChange={e => updateSpriteProperty(selectedSpriteId, 'x', parseFloat(e.target.value) || 0)}
+                                    style={{ width: 50, padding: "4px 6px", border: `1px solid ${C.BORDER}`, borderRadius: 4, fontSize: 12 }}
+                                />
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                <span style={{ fontSize: 11, color: C.MUTED }}>y</span>
+                                <input 
+                                    type="number" 
+                                    value={Math.round(selectedSprite?.y || 0)} 
+                                    onChange={e => updateSpriteProperty(selectedSpriteId, 'y', parseFloat(e.target.value) || 0)}
+                                    style={{ width: 50, padding: "4px 6px", border: `1px solid ${C.BORDER}`, borderRadius: 4, fontSize: 12 }}
+                                />
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                <span style={{ fontSize: 11, color: C.MUTED }}>Show</span>
                                 <div onClick={() => updateSpriteProperty(selectedSpriteId, 'visible', !selectedSprite?.visible)}
-                                    style={{ cursor: "pointer", color: selectedSprite?.visible ? C.GREEN : C.MUTED }}>
+                                    style={{ cursor: "pointer", color: selectedSprite?.visible ? C.PURPLE : C.MUTED }}>
                                     {selectedSprite?.visible ? <Eye size={16} /> : <EyeOff size={16} />}
                                 </div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                <span style={{ fontSize: 11, color: C.MUTED }}>Size</span>
+                                <input 
+                                    type="number" 
+                                    value={selectedSprite?.size || 100} 
+                                    onChange={e => updateSpriteProperty(selectedSpriteId, 'size', parseFloat(e.target.value) || 100)}
+                                    style={{ width: 50, padding: "4px 6px", border: `1px solid ${C.BORDER}`, borderRadius: 4, fontSize: 12 }}
+                                />
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4, gridColumn: "span 2" }}>
+                                <span style={{ fontSize: 11, color: C.MUTED }}>Direction</span>
+                                <input 
+                                    type="number" 
+                                    value={selectedSprite?.angle || 90} 
+                                    onChange={e => updateSpriteProperty(selectedSpriteId, 'angle', parseFloat(e.target.value) || 90)}
+                                    style={{ width: 50, padding: "4px 6px", border: `1px solid ${C.BORDER}`, borderRadius: 4, fontSize: 12 }}
+                                />
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Custom Prompt Modal */}
+            {modalState.isOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                }}>
+                    <div style={{
+                        backgroundColor: 'white',
+                        borderRadius: '12px',
+                        width: '400px',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                        overflow: 'hidden',
+                    }}>
+                        <div style={{
+                            backgroundColor: '#673AB7',
+                            color: 'white',
+                            padding: '12px 16px',
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                        }}>
+                            {modalState.title}
+                            <div
+                                onClick={handleModalCancel}
+                                style={{ cursor: 'pointer', fontSize: '20px', fontWeight: 'bold' }}
+                            >×</div>
+                        </div>
+                        <div style={{ padding: '20px' }}>
+                            <div style={{ marginBottom: '10px', fontSize: '14px', color: '#575E75' }}>
+                                {modalState.message}
+                            </div>
+                            <input
+                                autoFocus
+                                type="text"
+                                value={modalInput}
+                                onChange={(e) => setModalInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleModalSubmit();
+                                    if (e.key === 'Escape') handleModalCancel();
+                                }}
+                                style={{
+                                    padding: '12px',
+                                    fontSize: '16px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    width: '100%',
+                                    fontFamily: 'inherit',
+                                    outline: 'none',
+                                    boxSizing: 'border-box',
+                                }}
+                            />
+                        </div>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            gap: '12px',
+                            padding: '0 20px 20px',
+                        }}>
+                            <button onClick={handleModalCancel} style={{
+                                padding: '8px 16px',
+                                borderRadius: '6px',
+                                border: '1px solid #ddd',
+                                backgroundColor: 'white',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                color: '#666',
+                            }}>Cancel</button>
+                            <button onClick={handleModalSubmit} style={{
+                                padding: '8px 16px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                backgroundColor: '#673AB7',
+                                color: 'white',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                            }}>OK</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

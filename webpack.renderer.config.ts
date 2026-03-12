@@ -8,7 +8,17 @@ rules.push({
   use: [
     { loader: 'style-loader' },
     { loader: 'css-loader' },
-    { loader: 'postcss-loader' },
+    { 
+      loader: 'postcss-loader',
+      options: {
+        postcssOptions: {
+          plugins: [
+            ['@tailwindcss/postcss', {}],
+            ['autoprefixer', {}],
+          ],
+        },
+      },
+    },
   ],
 });
 
