@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as Blockly from 'blockly';
-import { common } from 'blockly';
 import { arduinoBlocks, arduinoToolbox } from './blocks/arduino-blocks';
 import { esp32Blocks, esp32Toolbox } from './blocks/esp32-blocks';
 import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
@@ -45,10 +44,10 @@ const log = {
 
 // Register all blocks
 log.app('Registering blocks...');
-common.defineBlocks(arduinoBlocks);
-common.defineBlocks(esp32Blocks);
-common.defineBlocks(animationBlocks);
-common.defineBlocks(hardwareBlocks);
+Blockly.common.defineBlocks(arduinoBlocks);
+Blockly.common.defineBlocks(esp32Blocks);
+Blockly.common.defineBlocks(animationBlocks);
+Blockly.common.defineBlocks(hardwareBlocks);
 log.app('All blocks registered successfully');
 
 // Register FieldAngle

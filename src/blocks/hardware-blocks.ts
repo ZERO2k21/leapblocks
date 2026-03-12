@@ -1,5 +1,4 @@
 import * as Blockly from 'blockly';
-import { common } from 'blockly';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HARDWARE BLOCKS - Blocks for real-time hardware control in Stage mode
@@ -10,7 +9,7 @@ const COLORS = {
     sensor: '#5CB1D6',       // Light blue
 };
 
-export const hardwareBlocks = common.createBlockDefinitionsFromJsonArray([
+export const hardwareBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
     // ═══════════════════════════════════════════════════════════════════════
     // DIGITAL OUTPUT
     // ═══════════════════════════════════════════════════════════════════════

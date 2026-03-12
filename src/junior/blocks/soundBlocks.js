@@ -28,7 +28,9 @@ export default function defineSoundBlocks() {
             const optionsGenerator = function () {
                 if (typeof window !== 'undefined' && window.getActiveSpriteSounds) {
                     const dynamicOptions = window.getActiveSpriteSounds();
-                    if (dynamicOptions && dynamicOptions.length > 0) return dynamicOptions;
+                    if (dynamicOptions && dynamicOptions.length > 0) {
+                        return dynamicOptions.map(opt => Array.isArray(opt) ? opt : [opt, opt]);
+                    }
                 }
                 return [["Pop", "pop"], ["Boing", "boing"], ["Clap", "clap"]];
             };

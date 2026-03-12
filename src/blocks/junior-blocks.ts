@@ -1,5 +1,4 @@
 import * as Blockly from 'blockly';
-import { common } from 'blockly';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // JUNIOR BLOCKS - Simplified blocks for ages 4+
@@ -19,7 +18,7 @@ const COLORS = {
 };
 
 // Junior Block Definitions
-export const juniorBlocks = common.createBlockDefinitionsFromJsonArray([
+export const juniorBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
     // ═══════════════════════════════════════════════════════════════════════════
     // EVENTS (Simplified)
     // ═══════════════════════════════════════════════════════════════════════════
