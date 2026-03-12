@@ -1,5 +1,4 @@
 import * as Blockly from 'blockly';
-import { common } from 'blockly';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ANIMATION BLOCKS - For Stage Mode (sprites and animation)
@@ -20,7 +19,7 @@ const COLORS = {
     pen: '#00B1B0',          // Teal - Pen blocks (PictoBlox style)
 };
 
-export const animationBlocks = common.createBlockDefinitionsFromJsonArray([
+export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
     // ═══════════════════════════════════════════════════════════════════════════
     // EVENTS
     // ═══════════════════════════════════════════════════════════════════════════

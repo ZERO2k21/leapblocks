@@ -101,44 +101,60 @@ const ModeCard: React.FC<ModeCardProps> = ({ icon, title, subtitle, color, gradi
             onMouseLeave={() => setHovered(false)}
             style={{
                 position: 'relative',
-                width: 190,
-                background: hovered ? gradient : '#FFFFFF',
-                border: `2px solid ${hovered ? color : '#E5E7EB'}`,
-                borderRadius: 20,
-                padding: '24px 18px 20px',
+                width: 200,
+                height: 260, // Fixed height for consistency
+                background: hovered ? '#FFFFFF' : '#FFFFFF', // Maintain light theme
+                border: `2.5px solid ${hovered ? color : '#F1F5F9'}`,
+                borderRadius: 24,
+                padding: '32px 20px 24px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                justifyContent: 'flex-start',
                 cursor: 'pointer',
-                transition: 'all .3s cubic-bezier(.34,1.56,.64,1)',
-                transform: hovered ? 'translateY(-6px) scale(1.03)' : 'translateY(0) scale(1)',
+                transition: 'all .4s cubic-bezier(.34,1.56,.64,1)',
+                transform: hovered ? 'translateY(-10px)' : 'translateY(0)',
                 boxShadow: hovered
-                    ? `0 12px 36px ${color}33, 0 0 0 1px ${color}22`
-                    : '0 2px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03)',
+                    ? `0 20px 40px ${color}25, 0 0 0 1px ${color}15`
+                    : '0 4px 20px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.02)',
                 animation: `lp-fadeup .5s ${delay}s both`,
+                overflow: 'hidden',
             }}
         >
+            {/* Hover Gradient Overlay */}
+            <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: gradient,
+                opacity: hovered ? 0.03 : 0,
+                transition: 'opacity .4s',
+                pointerEvents: 'none',
+            }} />
+
             {/* Icon circle */}
             <div style={{
-                width: 64, height: 64,
+                width: 72, height: 72,
                 borderRadius: '50%',
-                background: gradient,
+                background: hovered ? gradient : '#F8FAFC',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 30,
-                marginBottom: 14,
-                boxShadow: `0 4px 16px ${color}33`,
-                transition: 'transform .3s',
-                transform: hovered ? 'scale(1.1)' : 'scale(1)',
+                fontSize: 34,
+                marginBottom: 20,
+                boxShadow: hovered ? `0 8px 24px ${color}44` : 'none',
+                transition: 'all .4s ease',
+                transform: hovered ? 'scale(1.1) rotate(5deg)' : 'scale(1) rotate(0deg)',
+                border: hovered ? 'none' : '1px solid #E2E8F0',
             }}>
-                {icon}
+                <div style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {icon}
+                </div>
             </div>
 
             {/* Title */}
             <div style={{
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: 700,
-                color: hovered ? '#FFFFFF' : '#1E293B',
-                marginBottom: 4,
+                color: '#1E293B',
+                marginBottom: 8,
                 fontFamily: '"Poppins", sans-serif',
                 textAlign: 'center',
                 transition: 'color .3s',
@@ -148,25 +164,39 @@ const ModeCard: React.FC<ModeCardProps> = ({ icon, title, subtitle, color, gradi
 
             {/* Subtitle */}
             <div style={{
-                fontSize: 11,
-                color: hovered ? 'rgba(34, 34, 34, 0.85)' : '#000206ff',
+                fontSize: 12,
+                color: '#64748B',
                 textAlign: 'center',
-                lineHeight: 1.5,
+                lineHeight: 1.6,
+                padding: '0 4px',
                 fontFamily: '"Inter", sans-serif',
                 transition: 'color .3s',
+                fontWeight: 400,
             }}>
                 {subtitle}
             </div>
+
+            {/* Bottom Glow */}
+            <div style={{
+                position: 'absolute',
+                bottom: 0, left: '10%', right: '10%',
+                height: 4,
+                background: gradient,
+                borderRadius: '4px 4px 0 0',
+                opacity: hovered ? 1 : 0,
+                transition: 'opacity .3s',
+            }} />
 
             {/* Available indicator */}
             {available && (
                 <div style={{
                     position: 'absolute',
-                    top: 10, right: 10,
-                    width: 8, height: 8,
+                    top: 14, right: 14,
+                    width: 10, height: 10,
                     borderRadius: '50%',
                     backgroundColor: '#22C55E',
-                    boxShadow: '0 0 6px rgba(34,197,94,0.5)',
+                    boxShadow: '0 0 10px rgba(34,197,94,0.4)',
+                    border: '2px solid white',
                 }} />
             )}
         </div>
@@ -224,7 +254,33 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     const extraCardsContainerRef = useRef<HTMLDivElement>(null);
     const logoRef = useRef<HTMLDivElement>(null);
     const robotRef = useRef<HTMLImageElement>(null);
-    const bgShapesRef = useRef<HTMLDivElement[]>([]);
+    const bgShapesRef = useRef<(HTMLDivElement | null)[]>([]);
+
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+    const shapes = useMemo(() => {
+        const shapeTypes = ['square', 'circle', 'plus', 'puzzle', 'triangle'];
+        return Array.from({ length: 45 }).map((_, i) => ({
+            id: i,
+            type: shapeTypes[i % shapeTypes.length],
+            size: random(20, 70), // Slightly smaller but more of them
+            x: random(-5, 105), // Spread slightly beyond bounds to avoid edges
+            y: random(-5, 105),
+            rotation: random(0, 360),
+            opacity: random(0.03, 0.07),
+            color: ['#855CD6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'][i % 5]
+        }));
+    }, []);
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 2;
+            const y = (e.clientY / window.innerHeight - 0.5) * 2;
+            setMousePos({ x, y });
+        };
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, []);
 
     const FULL_TEXT = 'Welcome to LeapBlocks';
 
@@ -262,72 +318,87 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     useEffect(() => {
         if (phase !== 'main') return;
 
-        // Logo bouncy entrance
-        if (logoRef.current) {
-            animate(logoRef.current, {
-                translateY: [30, 0],
-                opacity: [0, 1],
-                scale: [0.8, 1],
-                duration: 1200,
-                ease: 'outElastic(1, .6)',
-                delay: 200
-            });
-        }
-
-        // Robot happy bounce
+        // Sequence: Robot -> Logo/Subtitle -> Cards
+        
+        // 1. Robot Entrance (First)
         if (robotRef.current) {
             animate(robotRef.current, {
-                translateY: [-20, 0],
-                rotate: [-5, 5],
-                duration: 2000,
-                direction: 'alternate',
-                loop: true,
-                ease: 'inOutQuad'
+                translateY: [100, 0],
+                opacity: [0, 1],
+                scale: [0.5, 1],
+                rotate: [20, 0],
+                duration: 1200,
+                ease: 'outElastic(1, .6)',
+            });
+
+            // Start hover float after entrance
+            setTimeout(() => {
+                if (robotRef.current) {
+                    animate(robotRef.current, {
+                        translateY: [-15, 0],
+                        rotate: [-3, 3],
+                        duration: 2000,
+                        direction: 'alternate',
+                        loop: true,
+                        ease: 'inOutQuad'
+                    });
+                }
+            }, 1200);
+        }
+
+        // 2. Logo / Branding (Offset slightly)
+        if (logoRef.current) {
+            animate(logoRef.current, {
+                translateY: [40, 0],
+                opacity: [0, 1],
+                scale: [0.9, 1],
+                duration: 1000,
+                ease: 'outQuad',
+                delay: 400
             });
         }
 
-        // Main cards staggered entrance
-        animate('.lp-main-card', {
-            translateY: [100, 0],
+        // 3. Subtitle
+        animate('.lp-subtitle', {
             opacity: [0, 1],
-            scale: [0.5, 1],
-            delay: stagger(150, { start: 500 }),
-            duration: 1000,
-            ease: 'outElastic(1, .5)'
+            translateY: [20, 0],
+            duration: 800,
+            delay: 800,
+            ease: 'outQuad'
         });
 
-        // Extra cards staggered entrance
-        animate('.lp-extra-card', {
+        // 4. Mode Cards (Staggered last)
+        animate('.lp-main-card', {
             translateY: [80, 0],
             opacity: [0, 1],
-            scale: [0.7, 1],
-            delay: stagger(100, { start: 1000 }),
+            scale: [0.8, 1],
+            delay: stagger(100, { start: 1200 }),
+            duration: 1000,
+            ease: 'outElastic(1, .7)'
+        });
+
+        animate('.lp-extra-card', {
+            translateY: [60, 0],
+            opacity: [0, 1],
+            scale: [0.8, 1],
+            delay: stagger(100, { start: 1600 }),
             duration: 800,
-            ease: 'outElastic(1, .6)'
+            ease: 'outElastic(1, .7)'
         });
 
         // Background shapes floating
         bgShapesRef.current.forEach((shape, i) => {
             if (!shape) return;
             animate(shape, {
-                translateX: () => random(-20, 20),
-                translateY: () => random(-20, 20),
-                rotate: () => random(-15, 15),
-                duration: () => random(3000, 5000),
-                delay: i * 200,
+                translateX: () => random(-50, 50),
+                translateY: () => random(-50, 50),
+                rotate: () => random(-30, 30),
+                duration: () => random(6000, 10000),
+                delay: i * 50,
                 direction: 'alternate',
                 loop: true,
                 ease: 'inOutSine'
             });
-        });
-
-        // Subtitle typewriter-like fade
-        animate('.lp-subtitle', {
-            opacity: [0, 1],
-            translateY: [10, 0],
-            duration: 1000,
-            delay: 1500,
-            ease: 'outQuad'
         });
 
         return () => scope.revert();
@@ -359,11 +430,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <img
                     src="/assets/arduino_icon.png"
                     alt="Intermediate Blocks"
-                    style={{ width: '80%', height: '80%', objectFit: 'contain' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
             ),
             title: 'Intermediate Blocks', subtitle: 'Blockly + Arduino hardware coding for Classes 6 to 8',
-            color: '#5a29bdff', gradient: 'linear-gradient(135deg, #855CD6, #6D28D9)',
+            color: '#5a29bdff', gradient: 'linear-gradient(135deg, #855CD6, #370091ff)',
             available: true, onClick: () => onSelect('intermediate'),
         },
         {
@@ -371,7 +442,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <img
                     src="/assets/python_icon.png"
                     alt="Python IDE"
-                    style={{ width: '90%', height: '90%', objectFit: 'contain' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
             ),
             title: 'Python IDE', subtitle: 'Step into the world of text-based coding',
@@ -383,7 +454,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <img
                     src="/assets/ml_brain_icon.png"
                     alt="Advanced Blocks"
-                    style={{ width: '95%', height: '95%', objectFit: 'contain' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
             ),
             title: 'Advanced Blocks', subtitle: 'AI/ML Coding with intelligent blocks',
@@ -398,7 +469,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <img
                     src="/assets/creocad_icon.png"
                     alt="Creocad"
-                    style={{ width: '90%', height: '90%', objectFit: 'contain' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
             ),
             title: 'Creocad', subtitle: 'Online simulation for 3D printing',
@@ -410,11 +481,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <img
                     src="/assets/app_game_dev_icon.png"
                     alt="App & Game Development"
-                    style={{ width: '90%', height: '90%', objectFit: 'contain' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
             ),
             title: 'App & Game Development', subtitle: 'Build interactive games',
-            color: '#EF4444', gradient: 'linear-gradient(135deg, #ff6a6aff, #fd0404ff)',
+            color: '#EF4444', gradient: 'linear-gradient(135deg, #ff6a6aff, #b70000ff)',
             available: false, onClick: () => showComingSoon('App & Game Development'),
         },
         {
@@ -422,7 +493,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <img
                     src="/assets/quiz_icon.png"
                     alt="Quiz"
-                    style={{ width: '90%', height: '90%', objectFit: 'contain' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
             ),
             title: 'Quiz', subtitle: 'Create fun learning quizzes',
@@ -434,9 +505,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     return (
         <div style={{
             position: 'fixed', inset: 0, overflow: 'auto',
-            background: 'linear-gradient(135deg, #F8F7FF 0%, #EDE9FE 25%, #F0F9FF 50%, #FDF2F8 75%, #F8F7FF 100%)',
-            backgroundSize: '400% 400%',
-            animation: 'lp-bg-shift 15s ease-in-out infinite',
+            background: 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)', // Cleaner light theme
             fontFamily: '"Inter", "Segoe UI", sans-serif',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             minHeight: '100vh',
@@ -445,16 +514,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             <div style={{
                 position: 'absolute',
                 top: 0, left: 0, right: 0,
-                height: '45px',
+                height: '56px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '0 32px',
-                background: 'rgba(255, 255, 255)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.5)',
-                boxShadow: '0 4px 30px rgba(0, 0, 0, 0.05)',
+                padding: '0 40px',
+                background: 'rgba(255, 255, 255, 0.8)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                borderBottom: '1px solid rgba(226, 232, 240, 0.8)',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
                 zIndex: 100,
                 animation: phase === 'main' ? 'lp-fadeup 0.6s ease-out both' : 'none',
                 opacity: phase === 'main' ? 1 : 0,
@@ -465,9 +534,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     <img
                         src="/assets/topbar_logo.svg"
                         alt="LeapBlocks"
-                        style={{ height: '36px', objectFit: 'contain' }}
+                        style={{ height: '40px', objectFit: 'contain' }}
                         onError={(e) => {
-                            // Fallback if topbar_logo.svg is missing
                             (e.target as HTMLImageElement).src = '/assets/leapblocks_logo.svg';
                         }}
                     />
@@ -476,79 +544,95 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 {/* Right Notification Icon */}
                 <div style={{
                     position: 'relative',
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: 'rgba(255, 255, 255, 0.6)',
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '12px',
+                    background: 'white',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    boxShadow: '0 2px 10px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8)',
-                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    border: '1px solid #F1F5F9',
                 }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(133,92,214,0.15), inset 0 1px 0 rgba(255,255,255,0.9)';
+                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(133,92,214,0.12)';
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
                     }}
                     onClick={() => showComingSoon('Notifications')}
                 >
-                    <Bell size={20} color="#475569" strokeWidth={2.5} />
-                    {/* Notification indicator dot */}
+                    <Bell size={20} color="#475569" strokeWidth={2} />
                     <div style={{
                         position: 'absolute',
-                        top: '8px',
-                        right: '10px',
+                        top: '10px',
+                        right: '11px',
                         width: '8px',
                         height: '8px',
                         borderRadius: '50%',
                         background: '#EF4444',
                         border: '2px solid white',
-                        boxShadow: '0 0 0 1px rgba(239,68,68,0.2)',
                     }} />
                 </div>
             </div>
-            {/* Decorative floating shapes */}
-            <div 
-                ref={el => { if (el) bgShapesRef.current[0] = el; }}
-                style={{
-                position: 'absolute', top: '8%', left: '6%',
-                width: 100, height: 100, borderRadius: '10%',
-                background: 'linear-gradient(135deg, rgba(133,92,214,0.12), rgba(99,102,241,0.08))',
-                animation: 'lp-float-shape 6s ease-in-out infinite',
-                pointerEvents: 'none',
-            }} />
-            <div 
-                ref={el => { if (el) bgShapesRef.current[1] = el; }}
-                style={{
-                position: 'absolute', top: '15%', right: '8%',
-                width: 60, height: 60, borderRadius: 16,
-                background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(236,72,153,0.08))',
-                animation: 'lp-float-shape 8s 2s ease-in-out infinite',
-                pointerEvents: 'none', transform: 'rotate(30deg)',
-            }} />
-            <div 
-                ref={el => { if (el) bgShapesRef.current[2] = el; }}
-                style={{
-                position: 'absolute', bottom: '12%', left: '10%',
-                width: 50, height: 50, borderRadius: 12,
-                background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(59,130,246,0.08))',
-                animation: 'lp-float-shape 7s 1s ease-in-out infinite',
-                pointerEvents: 'none', transform: 'rotate(-15deg)',
-            }} />
-            <div 
-                ref={el => { if (el) bgShapesRef.current[3] = el; }}
-                style={{
-                position: 'absolute', bottom: '20%', right: '12%',
-                width: 40, height: 40, borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(239,68,68,0.10), rgba(245,158,11,0.08))',
-                animation: 'lp-float-shape 9s 3s ease-in-out infinite',
-                pointerEvents: 'none',
-            }} />
+
+            {/* Interactive Decorative Shapes Layer */}
+            <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
+                {shapes.map((shape, i) => (
+                    <div
+                        key={shape.id}
+                        style={{
+                            position: 'absolute',
+                            left: `${shape.x}%`,
+                            top: `${shape.y}%`,
+                            width: shape.size,
+                            height: shape.size,
+                            transform: `translate(${mousePos.x * shape.size * 0.4}px, ${mousePos.y * shape.size * 0.4}px)`,
+                            transition: 'transform 0.15s ease-out', 
+                        }}
+                    >
+                        <div
+                            ref={el => { bgShapesRef.current[i] = el; }}
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                opacity: shape.opacity,
+                                transform: `rotate(${shape.rotation}deg)`,
+                            }}
+                        >
+                            {shape.type === 'square' && (
+                                <svg viewBox="0 0 100 100" fill={shape.color}>
+                                    <rect x="10" y="10" width="80" height="80" rx="16" />
+                                </svg>
+                            )}
+                            {shape.type === 'circle' && (
+                                <svg viewBox="0 0 100 100" fill={shape.color}>
+                                    <circle cx="50" cy="50" r="40" />
+                                </svg>
+                            )}
+                            {shape.type === 'plus' && (
+                                <svg viewBox="0 0 100 100" fill={shape.color}>
+                                    <path d="M40 10h20v30h30v20h-30v30h-20v-30h-30v-20h30z" />
+                                </svg>
+                            )}
+                            {shape.type === 'puzzle' && (
+                                <svg viewBox="0 0 100 100" fill={shape.color}>
+                                    <path d="M85 40c0-8.3-6.7-15-15-15h-5.2c-2.4-5.8-8.1-10-14.8-10s-12.4 4.2-14.8 10H30c-8.3 0-15 6.7-15 15v5.2c5.8 2.4 10 8.1 10 14.8s-4.2 12.4-10 14.8V80c0 8.3 6.7 15 15 15h35c8.3 0 15-6.7 15-15v-5.2c-5.8-2.4-10-8.1-10-14.8s4.2-12.4 10-14.8V40z" />
+                                </svg>
+                            )}
+                            {shape.type === 'triangle' && (
+                                <svg viewBox="0 0 100 100" fill={shape.color}>
+                                    <path d="M50 15L85 85H15L50 15Z" />
+                                </svg>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
 
             {/* ══════════ INTRO PHASE ══════════ */}
             {(phase === 'intro' || phase === 'welcome') && (
@@ -621,22 +705,27 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                         ref={logoRef}
                         style={{
                         position: 'relative',
-                        marginBottom: 8,
+                        marginBottom: 12,
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        // animation: 'lp-fadeup .5s .1s both', // Removing CSS anim as Anime.js handles this
+                        zIndex: 2, // Above background
                     }}>
-                        {/* Floating robot mascot */}
+                        {/* Floating robot mascot container */}
                         <div style={{
-                            marginBottom: 12,
+                            marginBottom: 20, // More space to avoid clipping
+                            height: 100, // Explicit height to prevent layout shift
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                         }}>
                             <img
                                 ref={robotRef}
                                 src="/assets/sprites/robot/robot_idle.svg"
                                 alt="LeapBlocks Robot"
                                 style={{
-                                    width: 80,
-                                    height: 80,
-                                    filter: 'drop-shadow(0 6px 16px rgba(133,92,214,0.3))',
+                                    width: 90,
+                                    height: 90,
+                                    filter: 'drop-shadow(0 8px 20px rgba(133,92,214,0.3))',
+                                    opacity: 0, // Starts invisible for Anime.js
                                 }}
                             />
                         </div>

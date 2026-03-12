@@ -1,5 +1,4 @@
 import * as Blockly from 'blockly';
-import { common } from 'blockly';
 
 const COLORS = {
     control: '#F59E0B',
@@ -34,7 +33,7 @@ const ESP32_TOUCH_PINS: [string, string][] = [
 
 const ESP32_ICON = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2" fill="%235A6169"/><rect x="6" y="7" width="12" height="10" fill="%23757B82"/><path d="M 2 5 L 2 19" stroke="%23F1C40F" stroke-width="3" stroke-dasharray="2 2"/><path d="M 8 10 A 4 4 0 0 1 16 10 M 10 12 A 2 2 0 0 1 14 12 M 12 14 v 0.1" stroke="%23FFF" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>`;
 
-export const esp32Blocks = common.createBlockDefinitionsFromJsonArray([
+export const esp32Blocks = Blockly.common.createBlockDefinitionsFromJsonArray([
     // Core ESP32 Category Blocks
     {
         type: 'esp32_setup',

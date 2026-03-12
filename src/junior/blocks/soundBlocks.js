@@ -73,7 +73,9 @@ export default function defineSoundBlocks() {
             const optionsGenerator = function () {
                 if (typeof window !== 'undefined' && window.getActiveSpriteSounds) {
                     const dynamicOptions = window.getActiveSpriteSounds();
-                    return normalizeDropdownOptions(dynamicOptions, defaultSoundOptions);
+                    if (dynamicOptions && dynamicOptions.length > 0) {
+                        return normalizeDropdownOptions(dynamicOptions, defaultSoundOptions);
+                    }
                 }
                 return defaultSoundOptions;
             };

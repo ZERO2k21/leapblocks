@@ -1,157 +1,171 @@
 /**
- * SkulptEngine handles Python execution using Skulpt (in-browser Python).
- * It provides a bridge between Python code and the sprite system.
+ * SkulptEngine – in-browser Python execution.
+ * Skulpt is imported directly from the npm package (bundled by webpack).
+ * No CDN or dynamic script tags needed.
  */
+
+// Import Skulpt from the npm package — webpack bundles this directly.
+// skulpt/main.js does: require('./dist/skulpt.min.js') + require('./dist/skulpt-stdlib.js')
+// and then: module.exports = Sk;
+let Sk;
+try {
+    // eslint-disable-next-line import/no-extraneous-dependencies
+    Sk = require('skulpt');
+    // Skulpt also attaches to window.Sk, but let's keep a direct reference
+    if (!Sk) Sk = window.Sk;
+} catch (e) {
+    console.warn('[SkulptEngine] Direct require failed, will use window.Sk:', e);
+    Sk = window.Sk;
+}
+
+// ─── Sprite preamble ─────────────────────────────────────────────────────────
+const SPRITE_PREAMBLE = `
+class Sprite:
+    """Control a sprite on the LeapBlocks stage from Python."""
+    def __init__(self, name):
+        self._name = str(name)
+
+    def _action(self, action, *args):
+        import __leap__
+        __leap__._dispatch(self._name, action, list(args))
+
+    def move_right(self, steps=20):   self._action("RIGHT",   steps)
+    def move_left(self, steps=20):    self._action("LEFT",    steps)
+    def move_up(self, steps=20):      self._action("UP",      steps)
+    def move_down(self, steps=20):    self._action("DOWN",    steps)
+    def move(self, steps=20):         self._action("FORWARD", steps)
+    def goto(self, x, y):             self._action("GOTO",    x, y)
+    def set_x(self, x):               self._action("SETX",    x)
+    def set_y(self, y):               self._action("SETY",    y)
+    def say(self, message, secs=2):   self._action("SAY",     str(message))
+    def hide(self):                   self._action("HIDE")
+    def show(self):                   self._action("SHOW")
+    def set_size(self, pct):          self._action("SIZE",    pct)
+    def point_in_direction(self, a):  self._action("ANGLE",   a)
+    def switch_costume(self, name):   self._action("COSTUME", name)
+
+def sprite(name): return Sprite(name)
+`;
+
+// ─── SkulptEngine ────────────────────────────────────────────────────────────
 export class SkulptEngine {
     constructor(callbacks) {
-        this.callbacks = callbacks; // { onOut: (text), onErr: (text), actions: { ...spriteActions } }
-        this.isLoaded = false;
-        this.isLoading = false;
+        this.callbacks = callbacks; // { onOut, onErr, actions }
+        this._replReady = false;
     }
 
-    async loadSkulpt() {
-        if (this.isLoaded) return;
-        if (this.isLoading) {
-            while (this.isLoading) await new Promise(r => setTimeout(r, 100));
-            return;
-        }
-
-        this.isLoading = true;
-        try {
-            await this._loadScript("https://cdn.jsdelivr.net/npm/skulpt@1.2.0/skulpt.min.js");
-            await this._loadScript("https://cdn.jsdelivr.net/npm/skulpt@1.2.0/skulpt-stdlib.js");
-            this.isLoaded = true;
-            console.log("[SkulptEngine] Skulpt loaded successfully.");
-        } catch (e) {
-            console.error("[SkulptEngine] Failed to load Skulpt:", e);
-        } finally {
-            this.isLoading = false;
-        }
+    _getSk() {
+        const sk = Sk || window.Sk;
+        if (!sk) throw new Error('Python runtime (Skulpt) is not available. Try refreshing the page.');
+        return sk;
     }
 
-    _loadScript(src) {
-        return new Promise((resolve, reject) => {
-            const script = document.createElement("script");
-            script.src = src;
-            script.async = true;
-            script.crossOrigin = "anonymous";
-            script.onload = resolve;
-            script.onerror = (e) => {
-                console.error(`[SkulptEngine] Failed to load script: ${src}`, e);
-                reject(e);
-            };
-            document.head.appendChild(script);
+    _buildLeapModule(sk) {
+        const bridge = this.callbacks.actions;
+
+        const toJS = (a) => {
+            if (a == null) return a;
+            if (a instanceof sk.builtin.int_)   return a.v;
+            if (a instanceof sk.builtin.float_) return parseFloat(sk.ffi.remapToJs(a));
+            if (a instanceof sk.builtin.str)    return a.v;
+            try { return sk.ffi.remapToJs(a); } catch (_) { return a?.v; }
+        };
+
+        const dispatch = (skName, skAction, skArgs) => {
+            const n   = toJS(skName);
+            const act = toJS(skAction);
+            const args = (skArgs?.v ?? []).map(toJS);
+            switch (act) {
+                case 'RIGHT':   bridge.moveRelative(n, 'RIGHT',  args[0] ?? 20); break;
+                case 'LEFT':    bridge.moveRelative(n, 'LEFT',   args[0] ?? 20); break;
+                case 'UP':      bridge.moveRelative(n, 'UP',     args[0] ?? 20); break;
+                case 'DOWN':    bridge.moveRelative(n, 'DOWN',   args[0] ?? 20); break;
+                case 'FORWARD': bridge.moveSteps(n,              args[0] ?? 20); break;
+                case 'GOTO':    bridge.update(n, { x: args[0] ?? 0, y: args[1] ?? 0 }); break;
+                case 'SETX':    bridge.update(n, { x: args[0] ?? 0 }); break;
+                case 'SETY':    bridge.update(n, { y: args[0] ?? 0 }); break;
+                case 'SAY':     bridge.update(n, { speech: args[0] ?? '' }); break;
+                case 'HIDE':    bridge.update(n, { visible: false }); break;
+                case 'SHOW':    bridge.update(n, { visible: true  }); break;
+                case 'SIZE':    bridge.update(n, { size:  args[0] ?? 100 }); break;
+                case 'ANGLE':   bridge.update(n, { angle: args[0] ?? 90  }); break;
+                case 'COSTUME': bridge.update(n, { currentCostume: args[0] }); break;
+                default: break;
+            }
+            return sk.builtin.none.none$;
+        };
+
+        const mod = new sk.builtin.module();
+        mod.$d = { _dispatch: new sk.builtin.func(dispatch) };
+        sk.sysmodules.mp$ass_subscript(new sk.builtin.str('__leap__'), mod);
+    }
+
+    _configureSkulpt(sk) {
+        sk.configure({
+            output: (text) => this.callbacks.onOut(text),
+            read: (x) => {
+                if (x === "__leap__" || x === "__leap__.py") {
+                    return "def _dispatch(name, action, args): pass";
+                }
+                if (sk.builtinFiles?.files?.[x]) return sk.builtinFiles.files[x];
+                throw new Error("Module not found: '" + x + "'");
+            },
+            __future__: sk.python3,
+            execLimit: 30000,
         });
+
+        this._buildLeapModule(sk);
+    }
+
+    _errStr(e) {
+        if (!e) return 'Unknown error';
+        if (typeof e === 'string') return e;
+        try { if (e.tp$str) return e.tp$str().v; } catch (_) {}
+        if (e.message && e.message !== '[object Event]') return e.message;
+        if (e.toString && !e.toString().includes('[object')) return e.toString();
+        try { return JSON.stringify(e); } catch { return 'Unknown error'; }
     }
 
     async runPython(code) {
-        if (!this.isLoaded) await this.loadSkulpt();
-        if (!window.Sk) return;
+        let sk;
+        try { sk = this._getSk(); }
+        catch (err) { this.callbacks.onErr(this._errStr(err)); throw err; }
 
-        const Sk = window.Sk;
-
-        // Configure Skulpt
-        Sk.configure({
-            output: (text) => this.callbacks.onOut(text),
-            read: (x) => {
-                if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined) {
-                    throw "File not found: '" + x + "'";
-                }
-                return Sk.builtinFiles["files"][x];
-            },
-            __future__: Sk.python3
-        });
-
-        // Define the Sprite API in Python
-        const bridge = this.callbacks.actions;
-        
-        // This is a simplified bridge. 
-        // We'll define a 'Sprite' class in the main scope before running.
-        const externalLibs = {
-            "leapblocks": {
-                "Sprite": (name) => {
-                    return {
-                        move_right: () => bridge.moveRelative(name, "RIGHT"),
-                        move_left: () => bridge.moveRelative(name, "LEFT"),
-                        move_up: () => bridge.moveRelative(name, "UP"),
-                        move_down: () => bridge.moveRelative(name, "DOWN"),
-                        say: (msg) => bridge.update(name, { speech: msg }),
-                    };
-                }
-            }
-        };
-
-        // Injected preamble to make the API feel native
-        const preamble = `
-class Sprite:
-    def __init__(self, name):
-        self._name = name
-    def move(self, steps):
-        import leap_internal
-        leap_internal.move_steps(self._name, steps)
-    def move_right(self, steps=20):
-        import leap_internal
-        leap_internal.move(self._name, "RIGHT", steps)
-    def move_left(self, steps=20):
-        import leap_internal
-        leap_internal.move(self._name, "LEFT", steps)
-    def move_up(self, steps=20):
-        import leap_internal
-        leap_internal.move(self._name, "UP", steps)
-    def move_down(self, steps=20):
-        import leap_internal
-        leap_internal.move(self._name, "DOWN", steps)
-    def set_x(self, x):
-        import leap_internal
-        leap_internal.set_pos(self._name, x, None)
-    def set_y(self, y):
-        import leap_internal
-        leap_internal.set_pos(self._name, None, y)
-    def goto(self, x, y):
-        import leap_internal
-        leap_internal.set_pos(self._name, x, y)
-    def point_in_direction(self, angle):
-        import leap_internal
-        leap_internal.set_angle(self._name, angle)
-    def say(self, message):
-        import leap_internal
-        leap_internal.say(self._name, message)
-
-`;
-
-        // Define internal module for the bridge
-        Sk.builtin.leap_internal = {
-            move: Sk.builtin.func((name, dir, steps) => {
-                const s = steps ? steps.v : 20;
-                bridge.moveRelative(name.v, dir.v, s);
-            }),
-            move_steps: Sk.builtin.func((name, steps) => {
-                bridge.moveSteps(name.v, steps.v);
-            }),
-            set_pos: Sk.builtin.func((name, x, y) => {
-                const props = {};
-                if (x && x !== Sk.builtin.none.none$) props.x = x.v;
-                if (y && y !== Sk.builtin.none.none$) props.y = y.v;
-                bridge.update(name.v, props);
-            }),
-            set_angle: Sk.builtin.func((name, angle) => {
-                bridge.update(name.v, { angle: angle.v });
-            }),
-            say: Sk.builtin.func((name, msg) => {
-                bridge.update(name.v, { speech: msg.v });
-            })
-        };
+        this._configureSkulpt(sk);
+        this._replReady = false;
 
         try {
-            const runner = Sk.importMainWithBody("<stdin>", false, preamble + code, true);
-            if (runner && runner.then) {
-                await runner;
-            } else if (typeof Sk.miscellaneous.pyCheck60 === "function") {
-                await Sk.miscellaneous.pyCheck60(runner);
-            }
+            const prog = SPRITE_PREAMBLE + '\n' + code;
+            const runner = sk.importMainWithBody('<stdin>', false, prog, true);
+            if (runner?.then) await runner;
         } catch (e) {
-            console.error("[SkulptEngine] Execution error:", e);
-            this.callbacks.onErr(e.toString());
+            const msg = this._errStr(e);
+            this.callbacks.onErr(msg);
+            throw new Error(msg);
+        }
+    }
+
+    async runRepl(line) {
+        let sk;
+        try { sk = this._getSk(); }
+        catch (err) { this.callbacks.onErr(this._errStr(err)); throw err; }
+
+        this._configureSkulpt(sk);
+
+        if (!this._replReady) {
+            this._replReady = true;
+            try {
+                await sk.importMainWithBody('<repl-init>', false, SPRITE_PREAMBLE, true);
+            } catch (_) {}
+        }
+
+        try {
+            const result = await sk.importMainWithBody('<repl>', false, line, true);
+            return result;
+        } catch (e) {
+            const msg = this._errStr(e);
+            this.callbacks.onErr(msg);
+            throw new Error(msg);
         }
     }
 }
