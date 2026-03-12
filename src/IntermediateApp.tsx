@@ -7,7 +7,6 @@ import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
 import { hardwareBlocks } from './blocks/hardware-blocks';
 import { arduinoGenerator } from './generators/arduino-generator';
 import { AnimationCompiler } from './generators/animation-generator';
-import { FieldAngle } from '@blockly/field-angle';
 import './generators/python-generator'; // Register Python code generation handlers
 import { animationVM, CompiledScript } from './vm/AnimationVM';
 import { Sprite, SpriteType } from './stage/Sprite';
@@ -51,10 +50,6 @@ common.defineBlocks(animationBlocks);
 common.defineBlocks(hardwareBlocks);
 log.app('All blocks registered successfully');
 
-// Register FieldAngle
-log.app('Registering FieldAngle...');
-Blockly.fieldRegistry.register('field_angle', FieldAngle);
-
 // Configure Blockly dialogs for Electron (native prompt/alert not supported)
 Blockly.dialog.setPrompt((message, defaultValue, callback) => {
     // Use a simple window.prompt replacement with a custom modal approach
@@ -72,6 +67,50 @@ Blockly.dialog.setConfirm((message, callback) => {
     const result = window.confirm(message);
     callback(result);
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GLOBAL BLOCKLY OVERRIDES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// 1. Persist Flyout: Prevent hiding when autoClose is false (Continuous Toolbox)
+// Also override show() to always show ALL contents (continuous mode)
+let _continuousFlyoutContents: any[] = []; // Module-level storage for continuous flyout contents
+
+if (Blockly.Flyout && !(Blockly.Flyout.prototype as any)._hidePatched) {
+    // Set default to false globally
+    Blockly.Flyout.prototype.autoClose = false;
+
+    // Override hide: suppress if continuous mode
+    const originalHide = Blockly.Flyout.prototype.hide;
+    Blockly.Flyout.prototype.hide = function (this: any) {
+        if (this.autoClose === false) {
+            return; // NEVER hide in continuous mode
+        }
+        originalHide.call(this);
+    };
+
+    // Override setVisible: suppress setVisible(false) if continuous mode
+    const originalSetVisible = Blockly.Flyout.prototype.setVisible;
+    Blockly.Flyout.prototype.setVisible = function (this: any, visible: boolean) {
+        if (this.autoClose === false && visible === false) {
+            return; // NEVER make invisible in continuous mode
+        }
+        originalSetVisible.call(this, visible);
+    };
+
+    // Override show: in continuous mode, always show ALL blocks
+    const originalShow = Blockly.Flyout.prototype.show;
+    Blockly.Flyout.prototype.show = function (this: any, flyoutDef: any) {
+        if (this.autoClose === false && _continuousFlyoutContents.length > 0) {
+            // Always use the full flattened contents regardless of what Blockly internally requests
+            originalShow.call(this, _continuousFlyoutContents);
+        } else {
+            originalShow.call(this, flyoutDef);
+        }
+    };
+
+    (Blockly.Flyout.prototype as any)._hidePatched = true;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN APP COMPONENT
@@ -134,6 +173,11 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     // Sprite Library state
     const [showSpriteLibrary, setShowSpriteLibrary] = useState(false);
+
+    // Dynamic toolbox state for continuous flyout
+    const [currentToolboxContents, setCurrentToolboxContents] = useState<any[]>([]);
+    const currentToolboxContentsRef = useRef<any[]>([]);
+    const lastToolboxJsonRef = useRef<string>('');
 
     // Force re-render for sprite updates
     const [, forceUpdate] = useState({});
@@ -248,35 +292,37 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 return {
                     ...animationToolbox,
                     contents: animationToolbox.contents
-                        .filter((cat: any) => cat.name !== 'Motion')
+                        .filter((cat: any) => cat.name !== 'Motion' && cat.name !== 'Pen')
                         .map((cat: any) => {
                             let contents = cat.contents;
                             if (cat.name === 'Looks') {
                                 contents = contents.filter((item: any) => {
                                     if (item.kind !== 'block') return true;
                                     const t = item.type;
+                                    // Stage does not have costumes, size, or layers in the same way sprites do
                                     return !t.startsWith('looks_say') && !t.startsWith('looks_think') &&
-                                           t !== 'looks_show' && t !== 'looks_hide' &&
-                                           t !== 'looks_switch_costume' && t !== 'looks_next_costume' &&
-                                           t !== 'looks_set_size' && t !== 'looks_change_size' &&
-                                           t !== 'looks_go_to_layer' && t !== 'looks_go_forward_layers' &&
-                                           t !== 'looks_size' && !t.startsWith('looks_costume_');
+                                        t !== 'looks_show' && t !== 'looks_hide' &&
+                                        t !== 'looks_switch_costume' && t !== 'looks_next_costume' &&
+                                        t !== 'looks_set_size' && t !== 'looks_change_size' &&
+                                        t !== 'looks_go_to_layer' && t !== 'looks_go_forward_layers' &&
+                                        t !== 'looks_size' && !t.startsWith('looks_costume_');
                                 });
                             } else if (cat.name === 'Events') {
-                                contents = contents.map((item: any) => 
-                                    (item.kind === 'block' && item.type === 'event_sprite_clicked') 
-                                    ? { ...item, type: 'event_stage_clicked' } : item
+                                contents = contents.map((item: any) =>
+                                    (item.kind === 'block' && item.type === 'event_sprite_clicked')
+                                        ? { ...item, type: 'event_stage_clicked' } : item
                                 );
                             } else if (cat.name === 'Control') {
-                                contents = contents.filter((item: any) => 
+                                contents = contents.filter((item: any) =>
                                     item.kind !== 'block' || item.type !== 'control_delete_clone'
                                 );
                             } else if (cat.name === 'Sensing') {
                                 contents = contents.filter((item: any) => {
                                     if (item.kind !== 'block') return true;
                                     const t = item.type;
+                                    // Stage cannot touch other things or have distance to them
                                     return t !== 'sensing_touching' && t !== 'sensing_touching_color' &&
-                                           t !== 'sensing_color_touching_color' && t !== 'sensing_distance_to';
+                                        t !== 'sensing_color_touching_color' && t !== 'sensing_distance_to';
                                 });
                             }
                             return { ...cat, contents };
@@ -293,7 +339,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         if (!toolbox || !toolbox.contents) return [];
         const flattened: any[] = [];
         toolbox.contents.forEach((category: any, index: number) => {
-            if (category.kind === 'pictoBloxCategory' || category.kind === 'category') {
+            if (category.kind === 'pictobloxCategory' || category.kind === 'pictoBloxCategory' || category.kind === 'category') {
                 // Add a label/header for the category
                 flattened.push({
                     kind: 'label',
@@ -671,6 +717,19 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         } finally {
             Blockly.Events.enable();
             activeSpriteIdRef.current = spriteId; // Update true owner only after loading finishes
+
+            // PERSIST FLYOUT: Ensure flyout stays open after workspace load/clear
+            const flyout = workspaceRef.current.getFlyout() as any;
+            if (flyout) {
+                const contents = currentToolboxContentsRef.current;
+                if (contents && contents.length > 0) {
+                    console.log('[APP] Restoring flyout after workspace load');
+                    flyout.show(contents);
+                    // @ts-ignore
+                    if (flyout.reflowInternal_) flyout.reflowInternal_();
+                }
+            }
+
             // Use setTimeout to ensure any strictly asynchronous layout events 
             // thrown by Blockly immediately after enable() are also swallowed.
             setTimeout(() => {
@@ -1307,10 +1366,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     useEffect(() => {
         if (editorMode === 'stage' && sprites.length === 0) {
             console.log('[APP] Initializing sprites (Stage + Default Robot)...');
-            
+
             // 1. Create Stage Sprite (for backdrop management and stage scripts)
             const stageSprite = new Sprite('stage', 'Stage', triggerUpdate, 'cat'); // cat is dummy type
-            
+
             // 2. Create Default Robot Sprite
             const defaultSprite = new Sprite('sprite_default', 'Robot', triggerUpdate, 'robot');
             // Scratch coords: (0,0) is center of stage
@@ -1324,10 +1383,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/robot_wave1.png');
                 await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/robot_wave2.png');
                 await defaultSprite.addCostume('talk', '/assets/sprites/robot/robot_talk.png');
-                
+
                 // Add default sound
                 await defaultSprite.addSound('Meow', '/assets/sounds/meow.wav');
-                
+
                 console.log('[APP] Assets loaded:', defaultSprite.costumes.length, 'costumes', defaultSprite.sounds.length, 'sounds');
                 triggerUpdate();
                 // Manually nudge the stage to repaint in case it didn't catch the update
@@ -1338,7 +1397,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             // Register both with VM
             animationVM.registerSprite(stageSprite);
             animationVM.registerSprite(defaultSprite);
-            
+
             setSprites([stageSprite, defaultSprite]);
             setSelectedSpriteId('sprite_default');
             activeSpriteIdRef.current = 'sprite_default';
@@ -1370,6 +1429,11 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 return stageManager.getAllBackdrops().map(b => b.name);
             }
             return [];
+        };
+        return () => {
+            delete (window as any).getActiveSpriteSounds;
+            delete (window as any).getActiveSpriteCostumes;
+            delete (window as any).getActiveStageBackdrops;
         };
     }, []);
 
@@ -1423,8 +1487,48 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, []);
 
 
-    // Reinitialize workspace when appMode changes (e.g., from home to blocks/junior)
-    // This ensures the correct toolbox is shown
+    // Update flyout contents when sprite changes
+    useEffect(() => {
+        if (workspaceRef.current && appMode === 'blocks') {
+            const toolbox = getCurrentToolbox();
+            const toolboxJson = JSON.stringify(toolbox);
+
+            // Recompute continuous flyout contents
+            const contents = getFlattenedFlyoutContents(toolbox);
+            setCurrentToolboxContents(contents);
+            currentToolboxContentsRef.current = contents;
+            _continuousFlyoutContents = contents; // Update module-level storage for prototype override
+
+            console.log('[APP] Updating flyout contents for sprite:', selectedSpriteId, '(', contents.length, 'items)');
+
+            // Update the toolbox sidebar (category icons) if the definition changed
+            if (toolboxJson !== lastToolboxJsonRef.current) {
+                console.log('[APP] Updating toolbox dynamically (Sprite:', selectedSpriteId, ')');
+                lastToolboxJsonRef.current = toolboxJson;
+                workspaceRef.current.updateToolbox(toolbox);
+            }
+
+            // Always ensure flyout is showing the latest contents
+            const flyout = workspaceRef.current.getFlyout() as any;
+            if (flyout) {
+                flyout.autoClose = false;
+                flyout.show(contents);
+                console.log('[APP] Flyout re-shown with', contents.length, 'items');
+            }
+
+            // Safety: re-show after a short delay to catch any async hide calls from updateToolbox
+            setTimeout(() => {
+                if (workspaceRef.current) {
+                    const flyout2 = workspaceRef.current.getFlyout() as any;
+                    if (flyout2 && _continuousFlyoutContents.length > 0) {
+                        flyout2.autoClose = false;
+                        flyout2.show(_continuousFlyoutContents);
+                    }
+                }
+            }, 100);
+        }
+    }, [selectedSpriteId, editorMode, appMode, getCurrentToolbox]);
+
     // Reinitialize workspace when appMode or editorMode changes
     useEffect(() => {
         if (appMode === 'blocks' && blocklyDiv.current) {
@@ -1483,23 +1587,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 flyout.getWorkspace().setScale(FIXED_SCALE);
                             }
 
-                            // CONTINUOUS FLYOUT OVERRIDE:
-                            // Always show ALL blocks in the flyout instead of just the selected category
-                            const originalShow = flyout.show.bind(flyout);
-                            const allContents = getFlattenedFlyoutContents(getCurrentToolbox());
+                            // Initialize continuous flyout contents
+                            const initContents = getFlattenedFlyoutContents(getCurrentToolbox());
+                            currentToolboxContentsRef.current = initContents;
+                            _continuousFlyoutContents = initContents; // Update module-level storage
 
-                            flyout.show = (contents: any) => {
-                                // If the contents passed is just a single category's blocks, ignore it
-                                // and show EVERYTHING. This is what makes it "continuous".
-                                if (allContents.length > 0) {
-                                    originalShow(allContents);
-                                } else {
-                                    originalShow(contents);
-                                }
-                            };
-
-                            // Force first show
-                            flyout.show(allContents);
+                            // Force first show (prototype override will use _continuousFlyoutContents)
+                            flyout.show(initContents);
                         }
 
                         // 2. TOOLBOX -> FLYOUT (Click to Scroll)
@@ -1516,29 +1610,41 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         isInternalSync = true; // Block back-sync
                                         const flyoutWs = flyout.getWorkspace();
                                         if (flyoutWs) {
-                                            const blocks = flyoutWs.getTopBlocks(true);
-                                            const targetBlock = blocks.find((b: any) => {
-                                                const type = b.type;
-                                                const matches = (cat: string) => {
-                                                    if (cat === 'Motion') return type.startsWith('motion_');
-                                                    if (cat === 'Looks') return type.startsWith('looks_');
-                                                    if (cat === 'Sound') return type.startsWith('sound_');
-                                                    if (cat === 'Events') return type.startsWith('event_');
-                                                    if (cat === 'Control') return type.startsWith('control_');
-                                                    if (cat === 'Sensing') return type.startsWith('sensing_');
-                                                    if (cat === 'Operators') return type.startsWith('operator_') || type.startsWith('arduino_math_');
-                                                    if (cat === 'Variables') return type.startsWith('data_') || type.startsWith('variables_');
-                                                    if (cat === 'My Blocks') return type.startsWith('procedures_');
-                                                    if (cat === 'Arduino' || cat === 'ESP32') return type.startsWith('arduino_') || type.startsWith('esp32_');
-                                                    return false;
-                                                };
-                                                return matches(categoryName);
+                                            // Find the label matching the category name
+                                            const blocks = flyoutWs.getTopBlocks(false); // false = all blocks including labels
+                                            const targetLabel = blocks.find((b: any) => {
+                                                return b.type === 'blockly_flyout_label_block' &&
+                                                    b.getFieldValue('TEXT') === categoryName;
                                             });
 
-                                            if (targetBlock) {
-                                                const y = targetBlock.getRelativeToSurfaceXY().y;
+                                            if (targetLabel) {
+                                                const y = targetLabel.getRelativeToSurfaceXY().y;
                                                 if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
                                                 else flyoutWs.translate(0, -y);
+                                            } else {
+                                                // Fallback to original block prefix logic if label not found
+                                                const targetBlock = blocks.find((b: any) => {
+                                                    const type = b.type;
+                                                    const matches = (cat: string) => {
+                                                        if (cat === 'Motion') return type.startsWith('motion_');
+                                                        if (cat === 'Looks') return type.startsWith('looks_');
+                                                        if (cat === 'Sound') return type.startsWith('sound_');
+                                                        if (cat === 'Events') return type.startsWith('event_');
+                                                        if (cat === 'Control') return type.startsWith('control_');
+                                                        if (cat === 'Sensing') return type.startsWith('sensing_');
+                                                        if (cat === 'Operators') return type.startsWith('operator_') || type.startsWith('arduino_math_');
+                                                        if (cat === 'Variables') return type.startsWith('data_') || type.startsWith('variables_');
+                                                        if (cat === 'My Blocks') return type.startsWith('procedures_');
+                                                        if (cat === 'Arduino' || cat === 'ESP32') return type.startsWith('arduino_') || type.startsWith('esp32_');
+                                                        return false;
+                                                    };
+                                                    return matches(categoryName);
+                                                });
+                                                if (targetBlock) {
+                                                    const y = targetBlock.getRelativeToSurfaceXY().y;
+                                                    if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
+                                                    else flyoutWs.translate(0, -y);
+                                                }
                                             }
                                         }
                                         setTimeout(() => { isInternalSync = false; }, 100);
@@ -1553,54 +1659,66 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             flyoutWs.addChangeListener((event: any) => {
                                 if (event.type !== Blockly.Events.VIEWPORT_CHANGE || isInternalSync || !flyout.isVisible()) return;
 
-                                const blocks = flyoutWs.getTopBlocks(true);
+                                const blocks = flyoutWs.getTopBlocks(true); // true = ordered by Y
                                 if (blocks.length === 0) return;
 
                                 const metrics = flyoutWs.getMetrics();
                                 const scrollY = metrics.viewTop - metrics.contentTop;
                                 const scale = flyoutWs.scale;
 
-                                // Find top-most block that is visible at the very top
+                                // Find first visible block at the top (+ small offset for labels)
                                 let topBlock = null;
+                                const scrollThreshold = scrollY;
+
                                 for (const block of blocks) {
                                     const blockY = block.getRelativeToSurfaceXY().y * scale;
-                                    if (blockY >= scrollY - 20) {
+                                    // If block is at or slightly past the top edge
+                                    if (blockY >= scrollThreshold - 40) {
                                         topBlock = block;
                                         break;
                                     }
                                 }
 
                                 if (topBlock) {
-                                    const type = topBlock.type;
                                     let categoryName = '';
-                                    if (type.startsWith('motion_')) categoryName = 'Motion';
-                                    else if (type.startsWith('looks_')) categoryName = 'Looks';
-                                    else if (type.startsWith('sound_')) categoryName = 'Sound';
-                                    else if (type.startsWith('event_')) categoryName = 'Events';
-                                    else if (type.startsWith('control_')) categoryName = 'Control';
-                                    else if (type.startsWith('sensing_')) categoryName = 'Sensing';
-                                    else if (type.startsWith('operator_') || type.startsWith('arduino_math_')) categoryName = 'Operators';
-                                    else if (type.startsWith('data_') || type.startsWith('variables_')) categoryName = 'Variables';
-                                    else if (type.startsWith('procedures_')) categoryName = 'My Blocks';
-                                    else if (type.startsWith('arduino_')) {
-                                        if (type.includes('serial')) categoryName = 'Communication';
-                                        else if (type.includes('servo') || type.includes('motor') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
-                                        else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic')) categoryName = 'Sensors';
-                                        else categoryName = 'Arduino';
-                                    }
-                                    else if (type.startsWith('esp32_')) {
-                                        if (type.includes('servo') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
-                                        else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic') || type.includes('touch') || type.includes('hall')) categoryName = 'Sensors';
-                                        else categoryName = 'ESP32';
+                                    console.log(`[FLYOUT_SYNC] Top block identified: ${topBlock.type} at Y=${topBlock.getRelativeToSurfaceXY().y * scale}, Threshold=${scrollThreshold}`);
+                                    if (topBlock.type === 'blockly_flyout_label_block') {
+                                        categoryName = topBlock.getFieldValue('TEXT');
+                                    } else {
+                                        // Infer category from block type prefix
+                                        const type = topBlock.type;
+                                        if (type.startsWith('motion_')) categoryName = 'Motion';
+                                        else if (type.startsWith('looks_')) categoryName = 'Looks';
+                                        else if (type.startsWith('sound_')) categoryName = 'Sound';
+                                        else if (type.startsWith('event_')) categoryName = 'Events';
+                                        else if (type.startsWith('control_')) categoryName = 'Control';
+                                        else if (type.startsWith('sensing_')) categoryName = 'Sensing';
+                                        else if (type.startsWith('operator_') || type.startsWith('arduino_math_')) categoryName = 'Operators';
+                                        else if (type.startsWith('data_') || type.startsWith('variables_')) categoryName = 'Variables';
+                                        else if (type.startsWith('procedures_')) categoryName = 'My Blocks';
+                                        else if (type.startsWith('arduino_')) {
+                                            if (type.includes('serial')) categoryName = 'Communication';
+                                            else if (type.includes('servo') || type.includes('motor') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
+                                            else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic')) categoryName = 'Sensors';
+                                            else categoryName = 'Arduino';
+                                        }
+                                        else if (type.startsWith('esp32_')) {
+                                            if (type.includes('servo') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
+                                            else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic') || type.includes('touch') || type.includes('hall')) categoryName = 'Sensors';
+                                            else categoryName = 'ESP32';
+                                        }
                                     }
 
                                     if (categoryName) {
                                         const items = (toolbox as any).getToolboxItems();
                                         const index = items.findIndex((item: any) => item.getName() === categoryName);
+                                        // Only select if it's a different category than currently selected
+                                        console.log(`[FLYOUT_SYNC] Detected category: ${categoryName}, Current toolbox index: ${index}`);
                                         if (index !== -1 && (toolbox as any).getSelectedItem() !== items[index]) {
-                                            isInternalSync = true; // Block scroll-sync back
+                                            console.log(`[FLYOUT_SYNC] Switching toolbox to: ${categoryName} (index ${index})`);
+                                            isInternalSync = true;
                                             toolbox.selectItemByPosition(index);
-                                            setTimeout(() => { isInternalSync = false; }, 100);
+                                            setTimeout(() => { isInternalSync = false; }, 50);
                                         }
                                     }
                                 }
@@ -2194,7 +2312,6 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     {editorMode === 'stage' ? (
                         <>
                             {/* Stage */}
-                            {/* Stage */}
                             <div style={{
                                 ...styles.stageContainer,
                                 width: stageLayout === 'small' ? '240px' : '480px',
@@ -2501,7 +2618,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             }
                             // Add default sound
                             await newSprite.addSound('Meow', '/assets/sounds/meow.wav');
-                            
+
                             // Set initial costume
                             newSprite.switchCostume(0);
                             triggerUpdate();
