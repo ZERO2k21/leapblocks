@@ -62,13 +62,44 @@ export const Stage: React.FC<StageProps> = ({
         };
     }, [isCameraOn]);
 
-    // Force re-render on external stage events like backdrop changes
-    const [, forceRender] = useState({});
-    useEffect(() => {
-        const handleUpdate = () => forceRender({});
-        window.addEventListener('leap-stage-update', handleUpdate);
-        return () => window.removeEventListener('leap-stage-update', handleUpdate);
-    }, []);
+    // Handle canvas click for audio context resume and sprite selection
+    const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        // Convert to Scratch coordinates (-240 to 240, -180 to 180)
+        const scratchX = (x - width / 2) * (480 / width);
+        const scratchY = (height / 2 - y) * (360 / height);
+
+        // Resume audio context on user interaction (required by browser autoplay policy)
+        const soundManager = (window as any).soundManager;
+        if (soundManager && soundManager.audioContext && soundManager.audioContext.state === 'suspended') {
+            soundManager.audioContext.resume().then(() => {
+                console.log('[Stage] Audio context resumed');
+            }).catch((err: any) => {
+                console.warn('[Stage] Failed to resume audio context:', err);
+            });
+        }
+
+        // Check if clicking on a sprite
+        let clickedSprite = null;
+        for (const sprite of sprites) {
+            if (sprite.visible && sprite.isPointInSprite(scratchX, scratchY)) {
+                clickedSprite = sprite;
+                break;
+            }
+        }
+
+        if (clickedSprite && onSpriteSelect) {
+            onSpriteSelect(clickedSprite.id);
+        } else if (onStageClick) {
+            onStageClick(scratchX, scratchY);
+        }
+    }, [width, height, sprites, onSpriteSelect, onStageClick]);
 
     // Initialize pen manager with the pen canvas
     useEffect(() => {
@@ -168,11 +199,10 @@ export const Stage: React.FC<StageProps> = ({
             }
         }
 
-        // Draw sprites
-        sprites.forEach((sprite) => {
-            if (sprite.id === 'stage') return; // The stage itself is not a physical sprite to render
+        // 6. Render sprites
+        for (const sprite of sprites) {
             sprite.render(ctx, width, height);
-        });
+        }
 
         // 7. Draw pen trails (on separate canvas)
         const penCanvas = penCanvasRef.current;
@@ -251,7 +281,6 @@ export const Stage: React.FC<StageProps> = ({
             }
         }
 
-        if (onSpriteSelect) onSpriteSelect('stage');
         if (onStageClick) onStageClick(mouseX, mouseY);
     };
 

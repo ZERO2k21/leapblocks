@@ -253,6 +253,11 @@ export function useJuniorWorkspace({
         registerLeapRenderer(Blockly);
 
         if (blocklyDiv.current && !workspaceRef.current) {
+            // Reset any lingering flyout contents from Intermediate mode
+            if (typeof _continuousFlyoutContents !== 'undefined') {
+                _continuousFlyoutContents = [];
+            }
+
             workspaceRef.current = Blockly.inject(blocklyDiv.current, {
                 toolbox: getToolboxXml("events"),
                 scrollbars: false,
@@ -275,6 +280,9 @@ export function useJuniorWorkspace({
             const flyout = workspaceRef.current.getFlyout();
             if (flyout) {
                 flyout.autoClose = false;
+                // Force refresh the flyout with Junior blocks
+                const toolbox = getToolboxXml("events");
+                workspaceRef.current.updateToolbox(toolbox);
             }
 
             workspaceRef.current.registerButtonCallback('RECORD_SOUND', () => {

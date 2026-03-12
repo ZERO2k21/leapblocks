@@ -142,18 +142,24 @@ export default function JuniorApp({ onBack }) {
         if (!workspaceRef.current || !activeSpriteIdRef.current || isLoadingWorkspaceRef.current) return;
         const json = Blockly.serialization.workspaces.save(workspaceRef.current);
 
-        const scenesCopy = [...(scenesRef.current || scenes)];
-        const curScene = scenesCopy.find(s => s.id === currentSceneId);
-        if (curScene) {
-            const sprite = curScene.sprites.find(s => s.id === activeSpriteIdRef.current);
-            if (sprite) {
-                if (JSON.stringify(sprite.blocks) !== JSON.stringify(json)) {
-                    sprite.blocks = json;
-                    setScenes(scenesCopy);
-                    console.log(`[JuniorApp] Saved workspace blocks to sprite: ${sprite.name}`);
-                }
-            }
-        }
+        setScenes(prevScenes => {
+            return prevScenes.map(scene => {
+                if (scene.id !== currentSceneId) return scene;
+                
+                return {
+                    ...scene,
+                    sprites: scene.sprites.map(sprite => {
+                        if (sprite.id !== activeSpriteIdRef.current) return sprite;
+                        
+                        if (JSON.stringify(sprite.blocks) !== JSON.stringify(json)) {
+                            console.log(`[JuniorApp] Saved workspace blocks to sprite: ${sprite.name}`);
+                            return { ...sprite, blocks: json };
+                        }
+                        return sprite;
+                    })
+                };
+            });
+        });
     };
 
     const wp = useJuniorWorkspace({
@@ -193,10 +199,18 @@ export default function JuniorApp({ onBack }) {
         if (!workspaceRef.current) return;
         const json = sprite?.blocks || {};
         
+        // Disable events BEFORE clearing to prevent change listener from saving empty state
         Blockly.Events.disable();
         try {
             workspaceRef.current.clear();
-            Blockly.serialization.workspaces.load(json, workspaceRef.current);
+            if (json && Object.keys(json).length > 0) {
+                Blockly.serialization.workspaces.load(json, workspaceRef.current);
+                console.log(`[JuniorApp] Loaded ${Object.keys(json).length} blocks for sprite: ${sprite.name}`);
+            } else {
+                console.log(`[JuniorApp] No blocks to load for sprite: ${sprite.name}`);
+            }
+        } catch (err) {
+            console.error(`[JuniorApp] Error loading workspace:`, err);
         } finally {
             Blockly.Events.enable();
         }
@@ -283,7 +297,12 @@ export default function JuniorApp({ onBack }) {
 
     useEffect(() => {
         if (!workspaceRef.current || !activeSpriteId) return;
-        if (activeSpriteIdRef.current === activeSpriteId && !isLoadingWorkspaceRef.current) {
+        
+        // Always load workspace when sprite changes (compare with ref to detect actual changes)
+        const spriteChanged = activeSpriteIdRef.current !== activeSpriteId;
+        
+        if (!spriteChanged && !isLoadingWorkspaceRef.current) {
+            // Same sprite, only reload if workspace is empty but sprite has blocks
             const topBlocks = workspaceRef.current.getTopBlocks(false);
             const activeSprite = sprites.find(s => s.id === activeSpriteId);
             if (topBlocks.length > 0 || !activeSprite?.blocks || Object.keys(activeSprite?.blocks || {}).length === 0) {
@@ -293,8 +312,9 @@ export default function JuniorApp({ onBack }) {
 
         const activeSprite = sprites.find(s => s.id === activeSpriteId);
         if (activeSprite) {
-            console.log(`[JuniorApp] Switching workspace to sprite: ${activeSprite.name}`);
+            console.log(`[JuniorApp] Switching workspace to sprite: ${activeSprite.name} (changed: ${spriteChanged})`);
             isLoadingWorkspaceRef.current = true;
+            Blockly.Events.disable();
             try {
                 loadWorkspace(activeSprite);
             } finally {

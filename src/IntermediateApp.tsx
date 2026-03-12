@@ -287,11 +287,14 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     const getCurrentToolbox = useCallback(() => {
         if (editorMode === 'stage') {
+            // Remove Pen category from intermediate session
+            const filteredContents = animationToolbox.contents.filter((cat: any) => cat.name !== 'Pen');
+            
             if (selectedSpriteId === 'stage') {
                 return {
                     ...animationToolbox,
-                    contents: animationToolbox.contents
-                        .filter((cat: any) => cat.name !== 'Motion' && cat.name !== 'Pen')
+                    contents: filteredContents
+                        .filter((cat: any) => cat.name !== 'Motion')
                         .map((cat: any) => {
                             let contents = cat.contents;
                             if (cat.name === 'Looks') {
@@ -328,7 +331,11 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         })
                 };
             }
-            return animationToolbox;
+            // Return animation toolbox without Pen category for all intermediate sessions
+            return {
+                ...animationToolbox,
+                contents: filteredContents
+            };
         }
         return selectedBoard === 'esp32' ? esp32Toolbox : arduinoToolbox;
     }, [editorMode, selectedBoard, selectedSpriteId]);
@@ -1481,6 +1488,8 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 workspaceRef.current.dispose();
                 workspaceRef.current = null;
             }
+            // Clear the module-level flyout contents to prevent interference with Junior mode
+            _continuousFlyoutContents = [];
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -1600,7 +1609,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             const originalSelectItem = toolbox.selectItemByPosition.bind(toolbox);
                             toolbox.selectItemByPosition = (position: number) => {
                                 const items = toolbox.getToolboxItems();
-                                if (items[position]) {
+                                if (items[position] && typeof items[position].getName === 'function') {
                                     const categoryName = items[position].getName();
                                     originalSelectItem(position);
 
@@ -1652,77 +1661,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             };
                         }
 
-                        // 3. FLYOUT -> TOOLBOX (Scroll to Highlight)
-                        const flyoutWs = flyout ? flyout.getWorkspace() : null;
-                        if (flyoutWs && toolbox) {
-                            flyoutWs.addChangeListener((event: any) => {
-                                if (event.type !== Blockly.Events.VIEWPORT_CHANGE || isInternalSync || !flyout.isVisible()) return;
-
-                                const blocks = flyoutWs.getTopBlocks(true); // true = ordered by Y
-                                if (blocks.length === 0) return;
-
-                                const metrics = flyoutWs.getMetrics();
-                                const scrollY = metrics.viewTop - metrics.contentTop;
-                                const scale = flyoutWs.scale;
-
-                                // Find first visible block at the top (+ small offset for labels)
-                                let topBlock = null;
-                                const scrollThreshold = scrollY;
-
-                                for (const block of blocks) {
-                                    const blockY = block.getRelativeToSurfaceXY().y * scale;
-                                    // If block is at or slightly past the top edge
-                                    if (blockY >= scrollThreshold - 40) {
-                                        topBlock = block;
-                                        break;
-                                    }
-                                }
-
-                                if (topBlock) {
-                                    let categoryName = '';
-                                    console.log(`[FLYOUT_SYNC] Top block identified: ${topBlock.type} at Y=${topBlock.getRelativeToSurfaceXY().y * scale}, Threshold=${scrollThreshold}`);
-                                    if (topBlock.type === 'blockly_flyout_label_block') {
-                                        categoryName = topBlock.getFieldValue('TEXT');
-                                    } else {
-                                        // Infer category from block type prefix
-                                        const type = topBlock.type;
-                                        if (type.startsWith('motion_')) categoryName = 'Motion';
-                                        else if (type.startsWith('looks_')) categoryName = 'Looks';
-                                        else if (type.startsWith('sound_')) categoryName = 'Sound';
-                                        else if (type.startsWith('event_')) categoryName = 'Events';
-                                        else if (type.startsWith('control_')) categoryName = 'Control';
-                                        else if (type.startsWith('sensing_')) categoryName = 'Sensing';
-                                        else if (type.startsWith('operator_') || type.startsWith('arduino_math_')) categoryName = 'Operators';
-                                        else if (type.startsWith('data_') || type.startsWith('variables_')) categoryName = 'Variables';
-                                        else if (type.startsWith('procedures_')) categoryName = 'My Blocks';
-                                        else if (type.startsWith('arduino_')) {
-                                            if (type.includes('serial')) categoryName = 'Communication';
-                                            else if (type.includes('servo') || type.includes('motor') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
-                                            else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic')) categoryName = 'Sensors';
-                                            else categoryName = 'Arduino';
-                                        }
-                                        else if (type.startsWith('esp32_')) {
-                                            if (type.includes('servo') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
-                                            else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic') || type.includes('touch') || type.includes('hall')) categoryName = 'Sensors';
-                                            else categoryName = 'ESP32';
-                                        }
-                                    }
-
-                                    if (categoryName) {
-                                        const items = (toolbox as any).getToolboxItems();
-                                        const index = items.findIndex((item: any) => item.getName() === categoryName);
-                                        // Only select if it's a different category than currently selected
-                                        console.log(`[FLYOUT_SYNC] Detected category: ${categoryName}, Current toolbox index: ${index}`);
-                                        if (index !== -1 && (toolbox as any).getSelectedItem() !== items[index]) {
-                                            console.log(`[FLYOUT_SYNC] Switching toolbox to: ${categoryName} (index ${index})`);
-                                            isInternalSync = true;
-                                            toolbox.selectItemByPosition(index);
-                                            setTimeout(() => { isInternalSync = false; }, 50);
-                                        }
-                                    }
-                                }
-                            });
-                        }
+                        // 3. FLYOUT -> TOOLBOX (Scroll to Highlight) - DISABLED
+                        // Note: In continuous flyout mode, all blocks are visible, so automatic
+                        // category switching on scroll is unnecessary and disruptive.
+                        // Users can manually select categories in the toolbox if needed.
 
                         // 4. FLYOUT BLOCK PREVIEW (Click to Preview)
                         if (flyout && flyout.getWorkspace()) {
