@@ -38,7 +38,9 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                     initialImage={currentBackdrop}
                     costumes={allBackdrops}
                     onSave={async (imageData: string, svgData?: string, name?: string) => {
-                        const savedData = svgData || imageData;
+                        // Use imageData (PNG) for the thumbnail `src` string, and keep the svg logic if needed somewhere else
+                        // But StageManager expects an Image capable of being drawn to a Canvas, so PNG `imageData` is much safer and more reliable.
+                        const savedData = imageData; 
                         const backdropName = name || 'custom';
                         await stageManager.addBackdrop(backdropName, savedData);
                         stageManager.setBackdrop(backdropName);
@@ -77,11 +79,12 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                     spriteName={selectedSprite.name}
                     initialImage={currentCostume}
                     costumes={allCostumes}
-                    onSave={async (imageData: string, svgData?: string, name?: string) => {
-                        const savedData = svgData || imageData;
+                    onSave={(imageData: string, svgData?: string, name?: string) => {
+                        // Default to PNG imageData for robust React <img> and Canvas rendering
+                        const savedData = imageData;
                         const costumeName = name || 'custom';
-                        await selectedSprite.addCostume(costumeName, savedData);
-                        selectedSprite.switchCostume(costumeName);
+                        selectedSprite.addCostume(costumeName, savedData);
+                        selectedSprite.switchCostume(selectedSprite.costumes.length - 1);
                         addLog(`Saved costume for ${selectedSprite.name}: ${costumeName}`);
                     }}
                     onDeleteSound={(index: number) => {

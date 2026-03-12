@@ -7,6 +7,7 @@ import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
 import { hardwareBlocks } from './blocks/hardware-blocks';
 import { arduinoGenerator } from './generators/arduino-generator';
 import { AnimationCompiler } from './generators/animation-generator';
+import { FieldAngle } from '@blockly/field-angle';
 import './generators/python-generator'; // Register Python code generation handlers
 import { animationVM, CompiledScript } from './vm/AnimationVM';
 import { Sprite, SpriteType } from './stage/Sprite';
@@ -49,6 +50,10 @@ common.defineBlocks(esp32Blocks);
 common.defineBlocks(animationBlocks);
 common.defineBlocks(hardwareBlocks);
 log.app('All blocks registered successfully');
+
+// Register FieldAngle
+log.app('Registering FieldAngle...');
+Blockly.fieldRegistry.register('field_angle', FieldAngle);
 
 // Configure Blockly dialogs for Electron (native prompt/alert not supported)
 Blockly.dialog.setPrompt((message, defaultValue, callback) => {
@@ -242,7 +247,40 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             if (selectedSpriteId === 'stage') {
                 return {
                     ...animationToolbox,
-                    contents: animationToolbox.contents.filter((cat: any) => cat.name !== 'Motion')
+                    contents: animationToolbox.contents
+                        .filter((cat: any) => cat.name !== 'Motion')
+                        .map((cat: any) => {
+                            let contents = cat.contents;
+                            if (cat.name === 'Looks') {
+                                contents = contents.filter((item: any) => {
+                                    if (item.kind !== 'block') return true;
+                                    const t = item.type;
+                                    return !t.startsWith('looks_say') && !t.startsWith('looks_think') &&
+                                           t !== 'looks_show' && t !== 'looks_hide' &&
+                                           t !== 'looks_switch_costume' && t !== 'looks_next_costume' &&
+                                           t !== 'looks_set_size' && t !== 'looks_change_size' &&
+                                           t !== 'looks_go_to_layer' && t !== 'looks_go_forward_layers' &&
+                                           t !== 'looks_size' && !t.startsWith('looks_costume_');
+                                });
+                            } else if (cat.name === 'Events') {
+                                contents = contents.map((item: any) => 
+                                    (item.kind === 'block' && item.type === 'event_sprite_clicked') 
+                                    ? { ...item, type: 'event_stage_clicked' } : item
+                                );
+                            } else if (cat.name === 'Control') {
+                                contents = contents.filter((item: any) => 
+                                    item.kind !== 'block' || item.type !== 'control_delete_clone'
+                                );
+                            } else if (cat.name === 'Sensing') {
+                                contents = contents.filter((item: any) => {
+                                    if (item.kind !== 'block') return true;
+                                    const t = item.type;
+                                    return t !== 'sensing_touching' && t !== 'sensing_touching_color' &&
+                                           t !== 'sensing_color_touching_color' && t !== 'sensing_distance_to';
+                                });
+                            }
+                            return { ...cat, contents };
+                        })
                 };
             }
             return animationToolbox;
@@ -670,7 +708,11 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     // Handle sprite selection: save old, load new
     const handleSpriteSelect = useCallback((newId: string) => {
-        if (newId === selectedSpriteId) return;
+        if (newId === selectedSpriteId) {
+            // Trigger click event even if already selected (Scratch behavior)
+            animationVM.triggerSpriteClick(newId, compiledScripts);
+            return;
+        }
 
         // Clear highlights in old workspace before switching
         if (workspaceRef.current) {
@@ -681,7 +723,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         saveCurrentSpriteWorkspace();
         setSelectedSpriteId(newId);
         loadSpriteWorkspace(newId);
-    }, [selectedSpriteId, saveCurrentSpriteWorkspace, loadSpriteWorkspace]);
+    }, [selectedSpriteId, compiledScripts, saveCurrentSpriteWorkspace, loadSpriteWorkspace]);
 
     const addSprite = useCallback((spriteType: SpriteType = 'cat') => {
         // Save current sprite's workspace before switching
@@ -1261,35 +1303,74 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // INITIALIZATION
     // ═══════════════════════════════════════════════════════════════════════
 
-    // Create default sprite FIRST (before workspace) so it's available for compilation
+    // Create default sprites (Stage + Robot) on mount
     useEffect(() => {
         if (editorMode === 'stage' && sprites.length === 0) {
-            console.log('[APP] Creating default sprite...');
+            console.log('[APP] Initializing sprites (Stage + Default Robot)...');
+            
+            // 1. Create Stage Sprite (for backdrop management and stage scripts)
+            const stageSprite = new Sprite('stage', 'Stage', triggerUpdate, 'cat'); // cat is dummy type
+            
+            // 2. Create Default Robot Sprite
             const defaultSprite = new Sprite('sprite_default', 'Robot', triggerUpdate, 'robot');
             // Scratch coords: (0,0) is center of stage
             defaultSprite.setX(0);
             defaultSprite.setY(0);
 
             // Add robot costumes
-            const loadCostumes = async () => {
-                console.log('[APP] Loading costumes for robot...');
+            const loadAssets = async () => {
+                console.log('[APP] Loading assets for robot...');
                 await defaultSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
                 await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/robot_wave1.png');
                 await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/robot_wave2.png');
                 await defaultSprite.addCostume('talk', '/assets/sprites/robot/robot_talk.png');
-                console.log('[APP] Costumes loaded:', defaultSprite.costumes.length);
+                
+                // Add default sound
+                await defaultSprite.addSound('Meow', '/assets/sounds/meow.wav');
+                
+                console.log('[APP] Assets loaded:', defaultSprite.costumes.length, 'costumes', defaultSprite.sounds.length, 'sounds');
                 triggerUpdate();
                 // Manually nudge the stage to repaint in case it didn't catch the update
                 window.dispatchEvent(new Event('leap-stage-update'));
             };
-            loadCostumes().catch(err => console.error('[APP] Failed to initialize costumes:', err));
+            loadAssets().catch(err => console.error('[APP] Failed to initialize assets:', err));
 
+            // Register both with VM
+            animationVM.registerSprite(stageSprite);
             animationVM.registerSprite(defaultSprite);
-            setSprites([defaultSprite]);
+            
+            setSprites([stageSprite, defaultSprite]);
             setSelectedSpriteId('sprite_default');
             activeSpriteIdRef.current = 'sprite_default';
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editorMode]);
+
+    // Define sound, costume, and backdrop helpers for Blockly
+    useEffect(() => {
+        (window as any).getActiveSpriteSounds = () => {
+            const activeId = activeSpriteIdRef.current;
+            if (!activeId) return [];
+            const sprite = animationVM.getSprite(activeId);
+            if (sprite && sprite.sounds) {
+                return sprite.sounds.map((s: any) => s.name);
+            }
+            return [];
+        };
+        (window as any).getActiveSpriteCostumes = () => {
+            const activeId = activeSpriteIdRef.current;
+            if (!activeId) return [];
+            const sprite = animationVM.getSprite(activeId);
+            if (sprite && sprite.costumes) {
+                return sprite.costumes.map((c: any) => c.name);
+            }
+            return [];
+        };
+        (window as any).getActiveStageBackdrops = () => {
+            if (stageManager) {
+                return stageManager.getAllBackdrops().map(b => b.name);
+            }
+            return [];
+        };
     }, []);
 
     // Initialize Blockly workspace AFTER sprite state is set
@@ -2418,6 +2499,9 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 const costumeName = i === 0 ? entry.name : `${entry.name} ${i + 1}`;
                                 await newSprite.addCostume(costumeName, costumeSrc);
                             }
+                            // Add default sound
+                            await newSprite.addSound('Meow', '/assets/sounds/meow.wav');
+                            
                             // Set initial costume
                             newSprite.switchCostume(0);
                             triggerUpdate();

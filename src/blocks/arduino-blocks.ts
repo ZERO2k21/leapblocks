@@ -771,7 +771,7 @@ export const arduinoBlocks = common.createBlockDefinitionsFromJsonArray([
         message0: '🎚️ set servo on pin %1 to %2 °',
         args0: [
             { type: 'field_dropdown', name: 'PIN', options: PWM_PINS },
-            { type: 'field_number', name: 'ANGLE', value: 90, min: 0, max: 180 },
+            { type: 'field_angle', name: 'ANGLE', angle: 90 },
         ],
         previousStatement: null,
         nextStatement: null,

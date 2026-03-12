@@ -14,8 +14,9 @@ export class StageManager {
 
     constructor(onUpdate: () => void) {
         this.onUpdate = onUpdate;
-        // Default white backdrop
-        this.addBackdrop('default', '');
+        // Default white backdrop (480x360 white base64 SVG)
+        const whiteDataUrl = 'data:image/svg+xml;base64,' + btoa('<svg width="480" height="360" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="white"/></svg>');
+        this.addBackdrop('default', whiteDataUrl);
     }
 
     async addBackdrop(name: string, src: string): Promise<void> {
@@ -146,4 +147,5 @@ export class StageManager {
 // Singleton instance
 export const stageManager = new StageManager(() => {
     // This will be connected to the GameLoop or direct render triggers
+    window.dispatchEvent(new Event('leap-stage-update'));
 });
