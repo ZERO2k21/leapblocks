@@ -920,6 +920,9 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             }, 50);
         }
 
+        // Reset stage manager (clears old backdrops and creates fresh default)
+        stageManager.reset();
+
         // Create Stage Sprite (for backdrop management and stage scripts)
         const stageSprite = new Sprite('stage', 'Stage', triggerUpdate, 'cat');
         animationVM.registerSprite(stageSprite);

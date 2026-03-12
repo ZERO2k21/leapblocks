@@ -14,9 +14,22 @@ export class StageManager {
 
     constructor(onUpdate: () => void) {
         this.onUpdate = onUpdate;
+        this.initDefaultBackdrop();
+    }
+
+    private initDefaultBackdrop(): void {
         // Default white backdrop (480x360 white base64 SVG)
         const whiteDataUrl = 'data:image/svg+xml;base64,' + btoa('<svg width="480" height="360" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="white"/></svg>');
         this.addBackdrop('default', whiteDataUrl);
+    }
+
+    // Reset stage manager to initial state (for new projects)
+    reset(): void {
+        this.backdrops = [];
+        this.currentBackdropIndex = -1;
+        this.sounds = [];
+        this.initDefaultBackdrop();
+        this.onUpdate();
     }
 
     async addBackdrop(name: string, src: string): Promise<void> {
