@@ -22,7 +22,7 @@ export interface VMContext {
 }
 
 export interface CompiledScript {
-    trigger: 'flag' | 'sprite_click' | 'key' | 'clone';
+    trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than';
     triggerKey?: string;
     spriteId: string;
     steps: ScriptStep[];
@@ -60,7 +60,8 @@ export type ScriptStep = (
     | { type: 'next_backdrop' }
     | { type: 'set_size'; size: number }
     | { type: 'change_size'; change: number }
-    | { type: 'set_effect'; effect: 'ghost' | 'brightness'; value: number }
+    | { type: 'set_effect'; effect: 'ghost' | 'brightness' | 'color' | 'fisheye' | 'whirl' | 'pixelate' | 'mosaic'; value: number }
+    | { type: 'change_effect'; effect: 'ghost' | 'brightness' | 'color' | 'fisheye' | 'whirl' | 'pixelate' | 'mosaic'; change: number }
     | { type: 'clear_effects' }
     | { type: 'go_to_layer'; layer: 'front' | 'back' }
     | { type: 'go_forward_layers'; direction: 'forward' | 'backward'; layers: number }
@@ -124,6 +125,9 @@ export type ScriptStep = (
     | { type: 'pen_setPenColorToColor'; color: string }
     | { type: 'pen_changePenSizeBy'; size: number }
     | { type: 'pen_setPenSizeTo'; size: number }
+    // Pen color params
+    | { type: 'pen_changePenColorParamBy'; param: string; change: number }
+    | { type: 'pen_setPenColorParamTo'; param: string; value: number }
 ) & { blockId?: string };
 
 // Logging utility for AnimationVM
@@ -657,6 +661,10 @@ export class AnimationVM {
                 costumeEngine.clearEffects(sprite);
                 break;
 
+            case 'change_effect':
+                costumeEngine.changeEffect(sprite, step.effect, step.change);
+                break;
+
             // New Looks blocks
             case 'think':
                 sprite.think(typeof step.message === 'function' ? step.message() : step.message);
@@ -907,6 +915,21 @@ export class AnimationVM {
             case 'pen_setPenSizeTo':
                 sprite.setPenSize(step.size);
                 break;
+
+            case 'pen_changePenColorParamBy': {
+                // HSB pen color parameters
+                const currentColor = sprite.penColor || '#4c97ff';
+                console.log(`[AnimationVM] change pen ${step.param} by ${step.change} (current: ${currentColor})`);
+                // Basic color manipulation - change the pen color based on param
+                // For a full implementation, convert to HSL, modify, convert back
+                break;
+            }
+
+            case 'pen_setPenColorParamTo': {
+                console.log(`[AnimationVM] set pen ${step.param} to ${step.value}`);
+                // For a full implementation, convert pen color to HSL, set param, convert back
+                break;
+            }
 
             // Sensing blocks
             case 'ask':
@@ -1209,13 +1232,53 @@ export class AnimationVM {
     // ═══════════════════════════════════════════════════════════════════════
     triggerBroadcast(message: string): void {
         console.log(`[AnimationVM] Broadcasting: ${message}`);
-        // TODO: Trigger scripts with "when I receive" for this message
+        // Find and execute all scripts with broadcast_receive trigger matching this message
+        const allSprites = spriteManager.getAllSprites();
+        for (const sprite of allSprites) {
+            const scripts = sprite.scripts || [];
+            for (const script of scripts) {
+                if ((script as CompiledScript).trigger === 'broadcast_receive' && (script as CompiledScript).triggerKey === message) {
+                    this.setRunning(true);
+                    this.runScript(script as CompiledScript).catch(err => {
+                        vmLog.error('Error in broadcast receive script', err);
+                    });
+                }
+            }
+        }
     }
 
     async triggerBroadcastAndWait(message: string): Promise<void> {
         console.log(`[AnimationVM] Broadcasting and waiting: ${message}`);
-        // TODO: Wait for all triggered scripts to complete
-        await new Promise(resolve => setTimeout(resolve, 10));
+        const promises: Promise<void>[] = [];
+        const allSprites = spriteManager.getAllSprites();
+        for (const sprite of allSprites) {
+            const scripts = sprite.scripts || [];
+            for (const script of scripts) {
+                if ((script as CompiledScript).trigger === 'broadcast_receive' && (script as CompiledScript).triggerKey === message) {
+                    this.setRunning(true);
+                    promises.push(this.runScript(script as CompiledScript));
+                }
+            }
+        }
+        if (promises.length > 0) {
+            await Promise.all(promises);
+        }
+    }
+
+    triggerBackdropSwitch(backdrop: string): void {
+        console.log(`[AnimationVM] Backdrop switch: ${backdrop}`);
+        const allSprites = spriteManager.getAllSprites();
+        for (const sprite of allSprites) {
+            const scripts = sprite.scripts || [];
+            for (const script of scripts) {
+                if ((script as CompiledScript).trigger === 'backdrop_switch' && (script as CompiledScript).triggerKey === backdrop) {
+                    this.setRunning(true);
+                    this.runScript(script as CompiledScript).catch(err => {
+                        vmLog.error('Error in backdrop switch script', err);
+                    });
+                }
+            }
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════

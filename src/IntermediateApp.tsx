@@ -135,6 +135,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // Sprite Library state
     const [showSpriteLibrary, setShowSpriteLibrary] = useState(false);
 
+    // Dynamic toolbox state for continuous flyout
+    const [currentToolboxContents, setCurrentToolboxContents] = useState<any[]>([]);
+    const currentToolboxContentsRef = useRef<any[]>([]);
+
     // Force re-render for sprite updates
     const [, forceUpdate] = useState({});
     const triggerUpdate = useCallback(() => forceUpdate({}), []);
@@ -248,13 +252,14 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 return {
                     ...animationToolbox,
                     contents: animationToolbox.contents
-                        .filter((cat: any) => cat.name !== 'Motion')
+                        .filter((cat: any) => cat.name !== 'Motion' && cat.name !== 'Pen')
                         .map((cat: any) => {
                             let contents = cat.contents;
                             if (cat.name === 'Looks') {
                                 contents = contents.filter((item: any) => {
                                     if (item.kind !== 'block') return true;
                                     const t = item.type;
+                                    // Stage does not have costumes, size, or layers in the same way sprites do
                                     return !t.startsWith('looks_say') && !t.startsWith('looks_think') &&
                                            t !== 'looks_show' && t !== 'looks_hide' &&
                                            t !== 'looks_switch_costume' && t !== 'looks_next_costume' &&
@@ -275,6 +280,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 contents = contents.filter((item: any) => {
                                     if (item.kind !== 'block') return true;
                                     const t = item.type;
+                                    // Stage cannot touch other things or have distance to them
                                     return t !== 'sensing_touching' && t !== 'sensing_touching_color' &&
                                            t !== 'sensing_color_touching_color' && t !== 'sensing_distance_to';
                                 });
@@ -1425,6 +1431,46 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     // Reinitialize workspace when appMode changes (e.g., from home to blocks/junior)
     // This ensures the correct toolbox is shown
+    useEffect(() => {
+        if (workspaceRef.current && appMode === 'blocks') {
+            const toolbox = getCurrentToolbox();
+            console.log('[APP] Updating toolbox dynamically (Sprite:', selectedSpriteId, ')');
+            
+            // 1. Standard Blockly toolbox update
+            workspaceRef.current.updateToolbox(toolbox);
+            
+            // 2. Refresh continuous flyout
+            const contents = getFlattenedFlyoutContents(toolbox);
+            setCurrentToolboxContents(contents);
+            currentToolboxContentsRef.current = contents;
+            
+            const flyout = workspaceRef.current.getFlyout() as any;
+            if (flyout) {
+                // Ensure flyout is correctly configured and shown
+                flyout.autoClose = false;
+                flyout.hide = () => {
+                    console.log('[BLOCKLY] Flyout hide requested after toolbox update - ignoring');
+                };
+                
+                // Show latest contents
+                flyout.show(contents);
+                
+                // Force a relayout
+                // @ts-ignore
+                if (flyout.reflowInternal_) flyout.reflowInternal_();
+                
+                // Safety re-show to catch any async Blockly hide calls
+                setTimeout(() => {
+                    if (flyout && contents) {
+                         flyout.show(contents);
+                         // @ts-ignore
+                         if (flyout.reflowInternal_) flyout.reflowInternal_();
+                    }
+                }, 50);
+            }
+        }
+    }, [selectedSpriteId, editorMode, appMode, getCurrentToolbox]);
+
     // Reinitialize workspace when appMode or editorMode changes
     useEffect(() => {
         if (appMode === 'blocks' && blocklyDiv.current) {
@@ -1486,20 +1532,25 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             // CONTINUOUS FLYOUT OVERRIDE:
                             // Always show ALL blocks in the flyout instead of just the selected category
                             const originalShow = flyout.show.bind(flyout);
-                            const allContents = getFlattenedFlyoutContents(getCurrentToolbox());
 
                             flyout.show = (contents: any) => {
-                                // If the contents passed is just a single category's blocks, ignore it
-                                // and show EVERYTHING. This is what makes it "continuous".
-                                if (allContents.length > 0) {
-                                    originalShow(allContents);
+                                // IMPORTANT: Use Ref for synchronous access to most recent contents
+                                // during rapid sprite switching where State might be stale.
+                                const latestContents = currentToolboxContentsRef.current;
+                                if (latestContents && latestContents.length > 0) {
+                                    originalShow(latestContents);
                                 } else {
                                     originalShow(contents);
                                 }
                             };
 
+                            // PREVENT FLYOUT HIDING: No-op for hide()
+                            flyout.hide = () => {
+                                console.log('[BLOCKLY] Flyout hide requested - ignoring to keep continuous toolbox visible');
+                            };
+
                             // Force first show
-                            flyout.show(allContents);
+                            flyout.show(getFlattenedFlyoutContents(getCurrentToolbox()));
                         }
 
                         // 2. TOOLBOX -> FLYOUT (Click to Scroll)
@@ -1516,29 +1567,41 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         isInternalSync = true; // Block back-sync
                                         const flyoutWs = flyout.getWorkspace();
                                         if (flyoutWs) {
-                                            const blocks = flyoutWs.getTopBlocks(true);
-                                            const targetBlock = blocks.find((b: any) => {
-                                                const type = b.type;
-                                                const matches = (cat: string) => {
-                                                    if (cat === 'Motion') return type.startsWith('motion_');
-                                                    if (cat === 'Looks') return type.startsWith('looks_');
-                                                    if (cat === 'Sound') return type.startsWith('sound_');
-                                                    if (cat === 'Events') return type.startsWith('event_');
-                                                    if (cat === 'Control') return type.startsWith('control_');
-                                                    if (cat === 'Sensing') return type.startsWith('sensing_');
-                                                    if (cat === 'Operators') return type.startsWith('operator_') || type.startsWith('arduino_math_');
-                                                    if (cat === 'Variables') return type.startsWith('data_') || type.startsWith('variables_');
-                                                    if (cat === 'My Blocks') return type.startsWith('procedures_');
-                                                    if (cat === 'Arduino' || cat === 'ESP32') return type.startsWith('arduino_') || type.startsWith('esp32_');
-                                                    return false;
-                                                };
-                                                return matches(categoryName);
+                                            // Find the label matching the category name
+                                            const blocks = flyoutWs.getTopBlocks(false); // false = all blocks including labels
+                                            const targetLabel = blocks.find((b: any) => {
+                                                return b.type === 'blockly_flyout_label_block' && 
+                                                       b.getFieldValue('TEXT') === categoryName;
                                             });
 
-                                            if (targetBlock) {
-                                                const y = targetBlock.getRelativeToSurfaceXY().y;
+                                            if (targetLabel) {
+                                                const y = targetLabel.getRelativeToSurfaceXY().y;
                                                 if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
                                                 else flyoutWs.translate(0, -y);
+                                            } else {
+                                                // Fallback to original block prefix logic if label not found
+                                                const targetBlock = blocks.find((b: any) => {
+                                                    const type = b.type;
+                                                    const matches = (cat: string) => {
+                                                        if (cat === 'Motion') return type.startsWith('motion_');
+                                                        if (cat === 'Looks') return type.startsWith('looks_');
+                                                        if (cat === 'Sound') return type.startsWith('sound_');
+                                                        if (cat === 'Events') return type.startsWith('event_');
+                                                        if (cat === 'Control') return type.startsWith('control_');
+                                                        if (cat === 'Sensing') return type.startsWith('sensing_');
+                                                        if (cat === 'Operators') return type.startsWith('operator_') || type.startsWith('arduino_math_');
+                                                        if (cat === 'Variables') return type.startsWith('data_') || type.startsWith('variables_');
+                                                        if (cat === 'My Blocks') return type.startsWith('procedures_');
+                                                        if (cat === 'Arduino' || cat === 'ESP32') return type.startsWith('arduino_') || type.startsWith('esp32_');
+                                                        return false;
+                                                    };
+                                                    return matches(categoryName);
+                                                });
+                                                if (targetBlock) {
+                                                    const y = targetBlock.getRelativeToSurfaceXY().y;
+                                                    if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
+                                                    else flyoutWs.translate(0, -y);
+                                                }
                                             }
                                         }
                                         setTimeout(() => { isInternalSync = false; }, 100);
@@ -1562,36 +1625,48 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                                 // Find top-most block that is visible at the very top
                                 let topBlock = null;
+                                let topLabel = null;
+                                const scrollThreshold = scrollY - 20;
+
                                 for (const block of blocks) {
                                     const blockY = block.getRelativeToSurfaceXY().y * scale;
-                                    if (blockY >= scrollY - 20) {
-                                        topBlock = block;
+                                    if (blockY >= scrollThreshold) {
+                                        if (block.type === 'blockly_flyout_label_block') {
+                                            topLabel = block;
+                                        } else {
+                                            topBlock = block;
+                                        }
                                         break;
                                     }
                                 }
 
-                                if (topBlock) {
-                                    const type = topBlock.type;
+                                if (topLabel || topBlock) {
                                     let categoryName = '';
-                                    if (type.startsWith('motion_')) categoryName = 'Motion';
-                                    else if (type.startsWith('looks_')) categoryName = 'Looks';
-                                    else if (type.startsWith('sound_')) categoryName = 'Sound';
-                                    else if (type.startsWith('event_')) categoryName = 'Events';
-                                    else if (type.startsWith('control_')) categoryName = 'Control';
-                                    else if (type.startsWith('sensing_')) categoryName = 'Sensing';
-                                    else if (type.startsWith('operator_') || type.startsWith('arduino_math_')) categoryName = 'Operators';
-                                    else if (type.startsWith('data_') || type.startsWith('variables_')) categoryName = 'Variables';
-                                    else if (type.startsWith('procedures_')) categoryName = 'My Blocks';
-                                    else if (type.startsWith('arduino_')) {
-                                        if (type.includes('serial')) categoryName = 'Communication';
-                                        else if (type.includes('servo') || type.includes('motor') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
-                                        else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic')) categoryName = 'Sensors';
-                                        else categoryName = 'Arduino';
-                                    }
-                                    else if (type.startsWith('esp32_')) {
-                                        if (type.includes('servo') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
-                                        else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic') || type.includes('touch') || type.includes('hall')) categoryName = 'Sensors';
-                                        else categoryName = 'ESP32';
+                                    
+                                    if (topLabel) {
+                                        categoryName = topLabel.getFieldValue('TEXT');
+                                    } else if (topBlock) {
+                                        const type = topBlock.type;
+                                        if (type.startsWith('motion_')) categoryName = 'Motion';
+                                        else if (type.startsWith('looks_')) categoryName = 'Looks';
+                                        else if (type.startsWith('sound_')) categoryName = 'Sound';
+                                        else if (type.startsWith('event_')) categoryName = 'Events';
+                                        else if (type.startsWith('control_')) categoryName = 'Control';
+                                        else if (type.startsWith('sensing_')) categoryName = 'Sensing';
+                                        else if (type.startsWith('operator_') || type.startsWith('arduino_math_')) categoryName = 'Operators';
+                                        else if (type.startsWith('data_') || type.startsWith('variables_')) categoryName = 'Variables';
+                                        else if (type.startsWith('procedures_')) categoryName = 'My Blocks';
+                                        else if (type.startsWith('arduino_')) {
+                                            if (type.includes('serial')) categoryName = 'Communication';
+                                            else if (type.includes('servo') || type.includes('motor') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
+                                            else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic')) categoryName = 'Sensors';
+                                            else categoryName = 'Arduino';
+                                        }
+                                        else if (type.startsWith('esp32_')) {
+                                            if (type.includes('servo') || type.includes('led') || type.includes('relay')) categoryName = 'Actuators';
+                                            else if (type.includes('sensor') || type.includes('read') || type.includes('ultrasonic') || type.includes('touch') || type.includes('hall')) categoryName = 'Sensors';
+                                            else categoryName = 'ESP32';
+                                        }
                                     }
 
                                     if (categoryName) {
@@ -2193,7 +2268,6 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 }}>
                     {editorMode === 'stage' ? (
                         <>
-                            {/* Stage */}
                             {/* Stage */}
                             <div style={{
                                 ...styles.stageContainer,

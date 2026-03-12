@@ -161,7 +161,7 @@ export default function MenuBar({
             {/* Logo */}
             <div className="flex items-end gap-2 mr-5">
                 <Logo height={44} />
-                <span className="text-[#FFD500] text-xs font-extrabold uppercase tracking-wider mb-[15px]">
+                <span className="text-[#FFD500] text-xs font-extrabold uppercase tracking-wider mb-[10px]">
                     INTERMEDIATE BLOCKS
                 </span>
             </div>

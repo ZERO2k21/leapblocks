@@ -21,6 +21,11 @@ class CostumeEngine {
         sprite.setEffect(effect, value);
     }
 
+    changeEffect(sprite: Sprite, effect: 'color' | 'brightness' | 'ghost' | 'fisheye' | 'whirl' | 'pixelate' | 'mosaic', change: number) {
+        const currentValue = sprite.effects?.[effect] ?? 0;
+        sprite.setEffect(effect, currentValue + change);
+    }
+
     clearEffects(sprite: Sprite) {
         sprite.clearEffects();
     }

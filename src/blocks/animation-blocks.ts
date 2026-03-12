@@ -453,6 +453,31 @@ export const animationBlocks = common.createBlockDefinitionsFromJsonArray([
         helpUrl: '',
     },
     {
+        type: 'looks_change_effect',
+        message0: '🎨 change %1 effect by %2',
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'EFFECT',
+                options: [
+                    ['color', 'color'],
+                    ['fisheye', 'fisheye'],
+                    ['whirl', 'whirl'],
+                    ['pixelate', 'pixelate'],
+                    ['mosaic', 'mosaic'],
+                    ['brightness', 'brightness'],
+                    ['ghost', 'ghost'],
+                ],
+            },
+            { type: 'field_number', name: 'CHANGE', value: 25 },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.looks,
+        tooltip: 'Change graphic effect by amount',
+        helpUrl: '',
+    },
+    {
         type: 'looks_clear_effects',
         message0: '🎨 clear graphic effects',
         previousStatement: null,
@@ -1604,6 +1629,82 @@ export const animationBlocks = common.createBlockDefinitionsFromJsonArray([
         colour: COLORS.pen,
         tooltip: 'Set the pen thickness',
         helpUrl: '',
+    },
+    {
+        type: 'pen_changePenColorParamBy',
+        message0: '🎨 change pen %1 by %2',
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'PARAM',
+                options: [
+                    ['color', 'color'],
+                    ['saturation', 'saturation'],
+                    ['brightness', 'brightness'],
+                    ['transparency', 'transparency'],
+                ],
+            },
+            { type: 'field_number', name: 'CHANGE', value: 10 },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.pen,
+        tooltip: 'Change pen color parameter by amount',
+        helpUrl: '',
+    },
+    {
+        type: 'pen_setPenColorParamTo',
+        message0: '🎨 set pen %1 to %2',
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'PARAM',
+                options: [
+                    ['color', 'color'],
+                    ['saturation', 'saturation'],
+                    ['brightness', 'brightness'],
+                    ['transparency', 'transparency'],
+                ],
+            },
+            { type: 'field_number', name: 'VALUE', value: 50 },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.pen,
+        tooltip: 'Set pen color parameter to value',
+        helpUrl: '',
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // SENSING (Additional)
+    // ═══════════════════════════════════════════════════════════════════════════
+    {
+        type: 'sensing_of',
+        message0: '%1 of %2',
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'PROPERTY',
+                options: [
+                    ['x position', 'x position'],
+                    ['y position', 'y position'],
+                    ['direction', 'direction'],
+                    ['costume #', 'costume #'],
+                    ['costume name', 'costume name'],
+                    ['size', 'size'],
+                    ['volume', 'volume'],
+                ],
+            },
+            {
+                type: 'field_dropdown',
+                name: 'OBJECT',
+                options: [['Stage', '_stage_']],
+            },
+        ],
+        output: null,
+        colour: COLORS.sensing,
+        tooltip: 'Get attribute of a sprite or the stage',
+        helpUrl: '',
     }
 ]);
 
@@ -1641,11 +1742,18 @@ export const animationToolbox = {
                 { kind: 'block', type: 'motion_go_to_xy' },
                 { kind: 'block', type: 'motion_glide_to_xy' },
                 { kind: 'block', type: 'motion_point_direction' },
+                { kind: 'label', text: '── Go To / Glide ──' },
+                { kind: 'block', type: 'motion_go_to' },
+                { kind: 'block', type: 'motion_glide_to' },
+                { kind: 'block', type: 'motion_point_towards' },
                 { kind: 'label', text: '── Change ──' },
                 { kind: 'block', type: 'motion_change_x' },
                 { kind: 'block', type: 'motion_change_y' },
                 { kind: 'block', type: 'motion_set_x' },
                 { kind: 'block', type: 'motion_set_y' },
+                { kind: 'label', text: '── Edge & Rotation ──' },
+                { kind: 'block', type: 'motion_if_on_edge_bounce' },
+                { kind: 'block', type: 'motion_set_rotation_style' },
                 { kind: 'label', text: '── Reporters ──' },
                 { kind: 'block', type: 'motion_x_position' },
                 { kind: 'block', type: 'motion_y_position' },
@@ -1674,6 +1782,7 @@ export const animationToolbox = {
                 { kind: 'block', type: 'looks_change_size' },
                 { kind: 'label', text: '── Effects ──' },
                 { kind: 'block', type: 'looks_set_effect' },
+                { kind: 'block', type: 'looks_change_effect' },
                 { kind: 'block', type: 'looks_clear_effects' },
                 { kind: 'label', text: '── Layers ──' },
                 { kind: 'block', type: 'looks_go_to_layer' },
@@ -1752,6 +1861,8 @@ export const animationToolbox = {
                 { kind: 'block', type: 'sensing_current' },
                 { kind: 'block', type: 'sensing_days_since_2000' },
                 { kind: 'block', type: 'sensing_username' },
+                { kind: 'label', text: '── Attributes ──' },
+                { kind: 'block', type: 'sensing_of' },
             ],
         },
         {
@@ -1811,6 +1922,8 @@ export const animationToolbox = {
                 { kind: 'block', type: 'pen_penDown' },
                 { kind: 'block', type: 'pen_penUp' },
                 { kind: 'block', type: 'pen_setPenColorToColor' },
+                { kind: 'block', type: 'pen_changePenColorParamBy' },
+                { kind: 'block', type: 'pen_setPenColorParamTo' },
                 { kind: 'block', type: 'pen_changePenSizeBy' },
                 { kind: 'block', type: 'pen_setPenSizeTo' },
             ],

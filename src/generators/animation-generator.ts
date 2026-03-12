@@ -266,6 +266,28 @@ export class AnimationCompiler {
                 const itemFunc = this.compileStringValue(valueBlock, 'ITEM');
                 return () => animationVM.getListItemNum(list, itemFunc());
             }
+            case 'sensing_of': {
+                const property = valueBlock.getFieldValue('PROPERTY');
+                const object = valueBlock.getFieldValue('OBJECT');
+                return () => {
+                    if (object === '_stage_') {
+                        // Stage properties
+                        if (property === 'backdrop #') return stageManager.getAllBackdrops().findIndex(b => b.name === stageManager.currentBackdrop?.name) + 1;
+                        if (property === 'backdrop name') return 0; // Name is string, will be handled by compileStringValue
+                        if (property === 'volume') return 100;
+                        return 0;
+                    }
+                    const target = animationVM.getSprite(object);
+                    if (!target) return 0;
+                    if (property === 'x position') return target.x;
+                    if (property === 'y position') return target.y;
+                    if (property === 'direction') return target.direction;
+                    if (property === 'costume #') return target.currentCostumeIndex + 1;
+                    if (property === 'size') return target.size;
+                    if (property === 'volume') return 100;
+                    return 0;
+                };
+            }
             default:
                 compilerLog.warn(`Unknown value block: ${valueBlock.type}`);
                 return () => 0;
@@ -301,7 +323,7 @@ export class AnimationCompiler {
     }
 
     private compileTopBlock(block: Blockly.Block): CompiledScript | null {
-        let trigger: 'flag' | 'sprite_click' | 'key' | 'clone';
+        let trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than';
         let triggerKey: string | undefined;
 
         compilerLog.block(block.type, 'checking trigger type...');
@@ -323,12 +345,23 @@ export class AnimationCompiler {
                 compilerLog.info(`  Trigger: key (${triggerKey})`);
                 break;
             case 'event_receive':
-                // TODO: Add 'broadcast' trigger type to CompiledScript
-                compilerLog.info(`  Trigger: broadcast receive (TODO)`);
-                return null;
+                trigger = 'broadcast_receive';
+                triggerKey = block.getFieldValue('MESSAGE');
+                compilerLog.info(`  Trigger: broadcast receive (${triggerKey})`);
+                break;
             case 'event_clone_start':
                 trigger = 'clone';
                 compilerLog.info(`  Trigger: clone start`);
+                break;
+            case 'event_backdrop_switch':
+                trigger = 'backdrop_switch';
+                triggerKey = block.getFieldValue('BACKDROP');
+                compilerLog.info(`  Trigger: backdrop switch (${triggerKey})`);
+                break;
+            case 'event_greater_than':
+                trigger = 'greater_than';
+                triggerKey = block.getFieldValue('SENSOR') + ':' + block.getFieldValue('VALUE');
+                compilerLog.info(`  Trigger: greater than (${triggerKey})`);
                 break;
             default:
                 compilerLog.info(`  Not an event block, returning null`);
@@ -424,6 +457,9 @@ export class AnimationCompiler {
                 break;
             case 'looks_clear_effects':
                 step = { type: 'clear_effects' };
+                break;
+            case 'looks_change_effect':
+                step = { type: 'change_effect', effect: block.getFieldValue('EFFECT'), change: Number(block.getFieldValue('CHANGE')) };
                 break;
             // New Looks blocks
             case 'looks_think':
@@ -558,9 +594,16 @@ export class AnimationCompiler {
             case 'pen_setPenSizeTo':
                 step = { type: 'pen_setPenSizeTo', size: Number(block.getFieldValue('SIZE')) };
                 break;
+            case 'pen_changePenColorParamBy':
+                step = { type: 'pen_changePenColorParamBy', param: block.getFieldValue('PARAM'), change: Number(block.getFieldValue('CHANGE')) };
+                break;
+            case 'pen_setPenColorParamTo':
+                step = { type: 'pen_setPenColorParamTo', param: block.getFieldValue('PARAM'), value: Number(block.getFieldValue('VALUE')) };
+                break;
 
             // Sensing
             case 'ask':
+            case 'sensing_ask':
                 step = { type: 'ask', question: block.getFieldValue('QUESTION') };
                 break;
             case 'sensing_reset_timer':
