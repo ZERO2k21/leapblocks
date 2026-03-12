@@ -168,7 +168,7 @@ text.blocklyText.junior-icon,
 
 /* The flyout container in horizontal mode */
 .blocklyFlyout {
-    overflow: visible !important;
+  /* background-color: #33333388 !important; */
 }
 
 /* Workspace area - ensure proper height allocation */

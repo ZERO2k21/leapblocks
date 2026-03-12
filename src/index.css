@@ -244,8 +244,8 @@ body,
   margin-bottom: 6px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-   background-size: 26px;
-   background-repeat: no-repeat;
+  background-size: 26px;
+  background-repeat: no-repeat;
   background-position: center;
 }
 
@@ -646,12 +646,12 @@ div::-webkit-scrollbar-thumb {
 
 /* Prevent the flyout container from inheriting workspace transform changes */
 .blocklyFlyout {
-  transform-origin: left top !important;
+    /* Fixed scale should be set via getFlyoutScale() in code, not CSS transform */
 }
 
 /* Ensure flyout SVG maintains its own independent transform context */
 .blocklyFlyout>svg {
-  transform: none !important;
+    /* Allow Blockly to handle transforms for scrolling */
 }
 
 /* Professional styling for flyout buttons (like "Make a Variable") */
@@ -805,7 +805,8 @@ body #root .blocklyFlyoutButton .blocklyText,
 
 /* Color of the gauge arc (the highlighted sector) */
 .blocklyAngleGauge {
-  fill: #855CD6 !important; /* LeapBlocks Purple */
+  fill: #855CD6 !important;
+  /* LeapBlocks Purple */
   fill-opacity: 0.3 !important;
 }
 
