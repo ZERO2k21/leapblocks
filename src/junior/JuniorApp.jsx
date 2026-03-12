@@ -137,11 +137,20 @@ export default function JuniorApp({ onBack }) {
     const currentScene = scenes?.find(s => s.id === currentSceneId) || scenes?.[0];
     const sprites = currentScene?.sprites || [];
 
+    // Per-sprite workspace storage: maps spriteId -> Blockly serialized JSON (synchronous ref-based storage)
+    const spriteWorkspacesRef = useRef(new Map());
+
     // --- HOOKS SETUP ---
     const saveCurrentWorkspace = () => {
         if (!workspaceRef.current || !activeSpriteIdRef.current || isLoadingWorkspaceRef.current) return;
         const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+        
+        // Save to ref for immediate access
+        spriteWorkspacesRef.current.set(activeSpriteIdRef.current, json);
+        spriteWorkspacesRef.current.set('activeId', activeSpriteIdRef.current); // Store active ID for handlers
+        console.log(`[JuniorApp] Saved workspace to ref for sprite: ${activeSpriteIdRef.current}`);
 
+        // Also update state for persistence
         setScenes(prevScenes => {
             return prevScenes.map(scene => {
                 if (scene.id !== currentSceneId) return scene;
@@ -200,7 +209,12 @@ export default function JuniorApp({ onBack }) {
             console.warn('[JuniorApp] Cannot load workspace: workspaceRef.current is null');
             return;
         }
-        const json = sprite?.blocks || {};
+        
+        // First check ref-based storage (immediate), then fall back to sprite.blocks
+        let json = spriteWorkspacesRef.current.get(sprite.id);
+        if (!json || Object.keys(json).length === 0) {
+            json = sprite?.blocks || {};
+        }
         
         // Disable events BEFORE clearing to prevent change listener from saving empty state
         Blockly.Events.disable();
@@ -243,11 +257,20 @@ export default function JuniorApp({ onBack }) {
             workspaceRef.current.highlightBlock(null);
         }
         
+        // Save current workspace to ref immediately BEFORE changing state
+        if (workspaceRef.current && activeSpriteIdRef.current && !isLoadingWorkspaceRef.current) {
+            const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+            spriteWorkspacesRef.current.set(activeSpriteIdRef.current, json);
+            console.log(`[JuniorApp] Saved workspace to ref for sprite: ${activeSpriteIdRef.current}`);
+        }
+        
         saveCurrentWorkspace(); 
         setCurrentSceneId(newSceneId);
 
         const newScene = scenes.find(s => s.id === newSceneId);
         if (newScene && newScene.sprites.length > 0) {
+            // DON'T update activeSpriteIdRef.current here - let the useEffect handle it
+            // This ensures the useEffect can detect the sprite change correctly
             setActiveSpriteId(newScene.sprites[0].id);
         } else {
             setActiveSpriteId(null);
@@ -272,7 +295,16 @@ export default function JuniorApp({ onBack }) {
             workspaceRef.current.highlightBlock(null);
         }
         
-        saveCurrentWorkspace();
+        // Save current workspace to ref immediately BEFORE changing state
+        if (workspaceRef.current && activeSpriteIdRef.current && !isLoadingWorkspaceRef.current) {
+            const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+            spriteWorkspacesRef.current.set(activeSpriteIdRef.current, json);
+            console.log(`[JuniorApp] Saved workspace to ref for sprite: ${activeSpriteIdRef.current}`);
+        }
+        
+        // DON'T update activeSpriteIdRef.current here - let the useEffect handle it
+        // This ensures the useEffect can detect the sprite change correctly
+        
         setActiveSpriteId(newId);
     };
 
@@ -323,7 +355,9 @@ export default function JuniorApp({ onBack }) {
         setRecordingCount,
         audioEngine,
         project,
-        isLoadingWorkspaceRef
+        isLoadingWorkspaceRef,
+        spriteWorkspacesRef,
+        activeSpriteIdRef
     });
 
     // --- EFFECT HOOKS ---
@@ -374,6 +408,7 @@ export default function JuniorApp({ onBack }) {
                 loadWorkspace(activeSprite);
             } finally {
                 Blockly.Events.enable();
+                // Update the ref to match the current sprite
                 activeSpriteIdRef.current = activeSpriteId;
                 window.activeSpriteId = activeSpriteId;
                 setTimeout(() => {

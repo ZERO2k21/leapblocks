@@ -2173,40 +2173,6 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     */}
                     {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
                         <>
-                            {/* Selected Sprite Indicator overlay */}
-                            {editorMode === 'stage' && (
-                                (() => {
-                                    const activeSprite = sprites.find(s => s.id === selectedSpriteId);
-                                    if (activeSprite && activeSprite.currentCostume) {
-                                        return (
-                                            <div style={{
-                                                position: 'absolute',
-                                                top: '16px',
-                                                right: '16px',
-                                                width: '60px',
-                                                height: '60px',
-                                                background: 'white',
-                                                borderRadius: '8px',
-                                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                                border: '2px solid #855CD6',
-                                                pointerEvents: 'none',
-                                                zIndex: 10,
-                                                display: 'flex',
-                                                justifyContent: 'center',
-                                                alignItems: 'center',
-                                                padding: '6px',
-                                            }}>
-                                                <img
-                                                    src={activeSprite.currentCostume.image.src}
-                                                    alt={activeSprite.name}
-                                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                                                />
-                                            </div>
-                                        );
-                                    }
-                                    return null;
-                                })()
-                            )}
                             <div ref={blocklyDiv} style={styles.blockly} />
                             <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={undefined} style={undefined} />
                             <WorkspaceTrash workspaceRef={workspaceRef} />

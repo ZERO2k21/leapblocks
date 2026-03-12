@@ -24,7 +24,9 @@ export function useJuniorUIHandlers({
     setRecordingCount,
     audioEngine,
     project,
-    isLoadingWorkspaceRef
+    isLoadingWorkspaceRef,
+    spriteWorkspacesRef,
+    activeSpriteIdRef
 }) {
 
     const handleEditSprite = (spriteId) => {
@@ -122,6 +124,14 @@ export function useJuniorUIHandlers({
     };
 
     const addSprite = (spriteData = null) => {
+        // Save current workspace to ref immediately before clearing
+        if (workspaceRef && workspaceRef.current && spriteWorkspacesRef && spriteWorkspacesRef.current && activeSpriteIdRef && activeSpriteIdRef.current) {
+            const activeId = activeSpriteIdRef.current;
+            const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+            spriteWorkspacesRef.current.set(activeId, json);
+            console.log(`[useJuniorUIHandlers] Saved workspace to ref for sprite: ${activeId}`);
+        }
+        
         saveCurrentWorkspace();
         const newId = `sprite_${Date.now()}`;
 
@@ -229,6 +239,12 @@ export function useJuniorUIHandlers({
             return updated;
         });
         
+        // Initialize empty workspace for the new sprite in ref storage
+        if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
+            spriteWorkspacesRef.current.set(newId, {});
+            console.log(`[useJuniorUIHandlers] Initialized empty workspace for new sprite: ${newId}`);
+        }
+        
         // Clear workspace before switching to new sprite
         // Set loading flag to prevent change listener from saving empty state
         if (isLoadingWorkspaceRef) {
@@ -244,6 +260,11 @@ export function useJuniorUIHandlers({
                     isLoadingWorkspaceRef.current = false;
                 }
             }, 50);
+        }
+        
+        // Update the ref to point to the new sprite immediately
+        if (activeSpriteIdRef) {
+            activeSpriteIdRef.current = newId;
         }
         
         setActiveSpriteId(newId);
@@ -268,6 +289,12 @@ export function useJuniorUIHandlers({
             return;
         }
         if (!confirm(`Delete sprite?`)) return;
+
+        // Clean up workspace from ref storage
+        if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
+            spriteWorkspacesRef.current.delete(spriteId);
+            console.log(`[useJuniorUIHandlers] Deleted workspace for sprite: ${spriteId}`);
+        }
 
         setScenes(prev => prev.map(scene => {
             if (scene.id !== currentSceneId) return scene;
