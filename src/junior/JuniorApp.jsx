@@ -155,8 +155,8 @@ export default function JuniorApp({ onBack }) {
         workspaceRef,
         scenes,
         currentSceneId,
-        activeSpriteIdRef,
         activeSpriteId,
+        setActiveSpriteId,
         spriteActions
     });
 
@@ -177,7 +177,14 @@ export default function JuniorApp({ onBack }) {
     const loadWorkspace = (sprite) => {
         if (!workspaceRef.current) return;
         const json = sprite?.blocks || {};
-        Blockly.serialization.workspaces.load(json, workspaceRef.current);
+        
+        Blockly.Events.disable();
+        try {
+            workspaceRef.current.clear();
+            Blockly.serialization.workspaces.load(json, workspaceRef.current);
+        } finally {
+            Blockly.Events.enable();
+        }
     };
 
     const handleSceneSelect = (newSceneId) => {
@@ -273,7 +280,6 @@ export default function JuniorApp({ onBack }) {
         if (activeSprite) {
             console.log(`[JuniorApp] Switching workspace to sprite: ${activeSprite.name}`);
             isLoadingWorkspaceRef.current = true;
-            Blockly.Events.disable();
             try {
                 loadWorkspace(activeSprite);
             } finally {
@@ -333,6 +339,8 @@ export default function JuniorApp({ onBack }) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
         };
+
+        window.wait = (ms) => new Promise(resolve => setTimeout(resolve, ms * 1000));
     }, []);
 
     useEffect(() => {

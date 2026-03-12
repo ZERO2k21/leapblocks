@@ -11,6 +11,7 @@ export function useJuniorExecution({
     currentSceneId,
     activeSpriteIdRef,
     activeSpriteId,
+    setActiveSpriteId,
     spriteActions
 }) {
     const interpreterRef = useRef(null);
@@ -87,8 +88,11 @@ export function useJuniorExecution({
     };
 
     const handleSpriteClick = async (clickedId, saveCurrentWorkspace) => {
-        saveCurrentWorkspace();
-        await new Promise(r => setTimeout(r, 50));
+        if (clickedId !== activeSpriteId) {
+            saveCurrentWorkspace();
+            setActiveSpriteId(clickedId);
+            await new Promise(r => setTimeout(r, 100));
+        }
 
         const currentScene = scenes.find(s => s.id === currentSceneId);
         if (!currentScene) return;
