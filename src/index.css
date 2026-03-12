@@ -646,12 +646,12 @@ div::-webkit-scrollbar-thumb {
 
 /* Prevent the flyout container from inheriting workspace transform changes */
 .blocklyFlyout {
-    /* Fixed scale should be set via getFlyoutScale() in code, not CSS transform */
+  transform-origin: left top !important;
 }
 
 /* Ensure flyout SVG maintains its own independent transform context */
 .blocklyFlyout>svg {
-    /* Allow Blockly to handle transforms for scrolling */
+  transform: none !important;
 }
 
 /* Professional styling for flyout buttons (like "Make a Variable") */

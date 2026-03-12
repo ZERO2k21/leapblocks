@@ -1,5 +1,6 @@
 import React, { useState, lazy, Suspense } from 'react';
 import LandingPage from './LandingPage';
+import './blockly/registerCustomFields';
 
 const IntermediateApp = lazy(() => import('./IntermediateApp'));
 // @ts-ignore
@@ -39,7 +40,7 @@ export default function App() {
     const [mode, setMode] = useState<AppMode>('home');
 
     return (
-        <ErrorBoundary>
+        <ErrorBoundary key={mode}>
             <Suspense fallback={<div style={{ padding: 20, color: '#673AB7', fontWeight: 'bold' }}>Loading LeapBlocks...</div>}>
                 {mode === 'intermediate' && <IntermediateApp onBack={() => setMode('home')} />}
                 {mode === 'junior' && <JuniorApp onBack={() => setMode('home')} />}

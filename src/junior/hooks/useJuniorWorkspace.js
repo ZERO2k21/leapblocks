@@ -481,6 +481,25 @@ export function useJuniorWorkspace({
 
             window.dispatchEvent(new Event('resize'));
         }
+
+        return () => {
+            try {
+                if (Blockly.WidgetDiv) {
+                    Blockly.WidgetDiv.hide();
+                }
+            } catch (e) { }
+
+            try {
+                if (Blockly.DropDownDiv) {
+                    Blockly.DropDownDiv.hideWithoutAnimation();
+                }
+            } catch (e) { }
+
+            if (workspaceRef.current) {
+                workspaceRef.current.dispose();
+                workspaceRef.current = null;
+            }
+        };
     }, []);
 
     return {

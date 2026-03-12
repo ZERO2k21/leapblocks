@@ -18,6 +18,44 @@ export function useJuniorWindowActions({
     setWinMessage
 }) {
     useEffect(() => {
+        const cleanupKeys = [
+            "getLeapProjectData",
+            "updateSprite",
+            "moveRelative",
+            "goToLocation",
+            "resetBear",
+            "changeSize",
+            "getCurrentSceneId",
+            "getActiveSpriteId",
+            "switchScene",
+            "changeScene",
+            "selectSprite",
+            "setVisible",
+            "showSprite",
+            "hideSprite",
+            "say",
+            "goToRandom",
+            "animationSpeed",
+            "setSpriteColor",
+            "resetSize",
+            "nextCostume",
+            "changeCostume",
+            "mirrorSprite",
+            "stampSprite",
+            "stampSpriteOnCanvas",
+            "penColor",
+            "setPenColor",
+            "penSize",
+            "setPenSize",
+            "playSound",
+            "playNote",
+            "setInstrument",
+            "stopAllSounds",
+            "playMusic",
+            "stopMusic",
+            "stopExecution"
+        ];
+
         window.getLeapProjectData = () => ({ scenes, currentSceneId, activeSpriteId, sprites });
 
         window.updateSprite = (id, updates) => spriteActions.update(id, updates);
@@ -187,6 +225,12 @@ export function useJuniorWindowActions({
 
         window.stopExecution = () => {
             throw new ExecutionStop("Execution stopped by Stop block");
+        };
+
+        return () => {
+            cleanupKeys.forEach(key => {
+                delete window[key];
+            });
         };
 
     }, [spriteActions, activeSpriteId, currentSceneId, sprites, handleSceneSelect, handleNextScene, handleSpriteSelect, timeoutRefs, canvasRef, soundBlocksExt, musicBlocksExt, setWinMessage]);
