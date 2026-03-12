@@ -2,6 +2,51 @@ import * as Blockly from "blockly";
 import { javascriptGenerator } from "blockly/javascript";
 
 export default function defineSoundBlocks() {
+    const defaultSoundOptions = [["Pop", "pop"], ["Boing", "boing"], ["Clap", "clap"]];
+
+    const normalizeDropdownOptions = (options, fallbackOptions) => {
+        if (!Array.isArray(options) || options.length === 0) {
+            return fallbackOptions;
+        }
+
+        const normalizedOptions = options
+            .map(option => {
+                if (option === "separator") {
+                    return option;
+                }
+
+                if (Array.isArray(option)) {
+                    if (option.length >= 2) {
+                        return [String(option[0]), String(option[1])];
+                    }
+
+                    if (option.length === 1) {
+                        return [String(option[0]), String(option[0])];
+                    }
+                }
+
+                if (typeof option === "string") {
+                    const label = option
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, char => char.toUpperCase());
+                    return [label, option];
+                }
+
+                if (option && typeof option === "object") {
+                    const label = option.label ?? option.text ?? option.name ?? option.value ?? option.id;
+                    const value = option.value ?? option.id ?? option.name ?? option.label ?? option.text;
+
+                    if (label != null && value != null) {
+                        return [String(label), String(value)];
+                    }
+                }
+
+                return null;
+            })
+            .filter(Boolean);
+
+        return normalizedOptions.length > 0 ? normalizedOptions : fallbackOptions;
+    };
 
     // Helper for base style
     const juniorSoundBase = (block, icon, options, fieldName) => {
@@ -28,9 +73,9 @@ export default function defineSoundBlocks() {
             const optionsGenerator = function () {
                 if (typeof window !== 'undefined' && window.getActiveSpriteSounds) {
                     const dynamicOptions = window.getActiveSpriteSounds();
-                    if (dynamicOptions && dynamicOptions.length > 0) return dynamicOptions;
+                    return normalizeDropdownOptions(dynamicOptions, defaultSoundOptions);
                 }
-                return [["Pop", "pop"], ["Boing", "boing"], ["Clap", "clap"]];
+                return defaultSoundOptions;
             };
 
             this.appendDummyInput()
