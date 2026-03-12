@@ -1,4 +1,5 @@
 import * as Blockly from 'blockly';
+import { common } from 'blockly';
 
 // Block colors matching PictoBlox/Scratch style
 const COLORS = {
@@ -29,7 +30,7 @@ const PWM_PINS: [string, string][] = [
 const ALL_PINS = [...DIGITAL_PINS, ...ANALOG_PINS];
 
 // Define Arduino blocks with better styling
-export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
+export const arduinoBlocks = common.createBlockDefinitionsFromJsonArray([
     // Standard Variable Blocks
     {
         type: 'variables_get',

@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Bell } from 'lucide-react';
+import { animate, stagger, random, createScope } from 'animejs';
 
 // ─── inject keyframes once ───────────────────────────────────────────────────
 function injectCSS() {
@@ -80,7 +81,7 @@ function injectCSS() {
 
 // ─── Mode card ───────────────────────────────────────────────────────────────
 interface ModeCardProps {
-    icon: string;
+    icon: React.ReactNode;
     title: string;
     subtitle: string;
     color: string;
@@ -209,12 +210,21 @@ interface LandingPageProps {
 const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     injectCSS();
 
+    const scope = useMemo(() => createScope(), []);
+
     // Phases: 'intro' → robot drops, 'welcome' → text types, 'main' → full UI
     const hasSeenIntro = sessionStorage.getItem('leapblocks_intro_seen') === 'true';
     const [phase, setPhase] = useState<'intro' | 'welcome' | 'main'>(hasSeenIntro ? 'main' : 'intro');
     const [typedText, setTypedText] = useState('');
     const [showCursor, setShowCursor] = useState(true);
     const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
+
+    // Refs for anime.js
+    const cardsContainerRef = useRef<HTMLDivElement>(null);
+    const extraCardsContainerRef = useRef<HTMLDivElement>(null);
+    const logoRef = useRef<HTMLDivElement>(null);
+    const robotRef = useRef<HTMLImageElement>(null);
+    const bgShapesRef = useRef<HTMLDivElement[]>([]);
 
     const FULL_TEXT = 'Welcome to LeapBlocks';
 
@@ -248,6 +258,81 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         return () => clearInterval(iv);
     }, [phase]);
 
+    // Anime.js Main Entrance
+    useEffect(() => {
+        if (phase !== 'main') return;
+
+        // Logo bouncy entrance
+        if (logoRef.current) {
+            animate(logoRef.current, {
+                translateY: [30, 0],
+                opacity: [0, 1],
+                scale: [0.8, 1],
+                duration: 1200,
+                ease: 'outElastic(1, .6)',
+                delay: 200
+            });
+        }
+
+        // Robot happy bounce
+        if (robotRef.current) {
+            animate(robotRef.current, {
+                translateY: [-20, 0],
+                rotate: [-5, 5],
+                duration: 2000,
+                direction: 'alternate',
+                loop: true,
+                ease: 'inOutQuad'
+            });
+        }
+
+        // Main cards staggered entrance
+        animate('.lp-main-card', {
+            translateY: [100, 0],
+            opacity: [0, 1],
+            scale: [0.5, 1],
+            delay: stagger(150, { start: 500 }),
+            duration: 1000,
+            ease: 'outElastic(1, .5)'
+        });
+
+        // Extra cards staggered entrance
+        animate('.lp-extra-card', {
+            translateY: [80, 0],
+            opacity: [0, 1],
+            scale: [0.7, 1],
+            delay: stagger(100, { start: 1000 }),
+            duration: 800,
+            ease: 'outElastic(1, .6)'
+        });
+
+        // Background shapes floating
+        bgShapesRef.current.forEach((shape, i) => {
+            if (!shape) return;
+            animate(shape, {
+                translateX: () => random(-20, 20),
+                translateY: () => random(-20, 20),
+                rotate: () => random(-15, 15),
+                duration: () => random(3000, 5000),
+                delay: i * 200,
+                direction: 'alternate',
+                loop: true,
+                ease: 'inOutSine'
+            });
+        });
+
+        // Subtitle typewriter-like fade
+        animate('.lp-subtitle', {
+            opacity: [0, 1],
+            translateY: [10, 0],
+            duration: 1000,
+            delay: 1500,
+            ease: 'outQuad'
+        });
+
+        return () => scope.revert();
+    }, [phase, scope]);
+
     // Show toast for coming soon
     const showComingSoon = (name: string) => {
         setToast({ message: `${name} — Coming Soon! 🚀`, visible: true });
@@ -258,41 +343,90 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     const mainCards = [
 
         {
-            icon: '🐻', title: 'Junior Blocks', subtitle: 'Icon blocks & visual stories for Classes 1 to 5',
-            color: '#F59E0B', gradient: 'linear-gradient(135deg, #F59E0B, #D97706)',
+            icon: (
+                <img
+                    src="/assets/sprites/robot/robot_idle.svg"
+                    alt="Junior Blocks"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'Junior Blocks', subtitle: 'Icon blocks & visual stories for Classes 1 to 5',
+            color: '#c77e00ff', gradient: 'linear-gradient(135deg, #ffbb44ff, #fe8b08ff)',
             available: true, onClick: () => onSelect('junior'),
         },
         {
-            icon: '🚀', title: 'Intermediate Blocks', subtitle: 'Blockly + Arduino hardware coding for Classes 6 to 8',
-            color: '#855CD6', gradient: 'linear-gradient(135deg, #855CD6, #6D28D9)',
+            icon: (
+                <img
+                    src="/assets/arduino_icon.png"
+                    alt="Intermediate Blocks"
+                    style={{ width: '80%', height: '80%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'Intermediate Blocks', subtitle: 'Blockly + Arduino hardware coding for Classes 6 to 8',
+            color: '#5a29bdff', gradient: 'linear-gradient(135deg, #855CD6, #6D28D9)',
             available: true, onClick: () => onSelect('intermediate'),
         },
         {
-            icon: '🐍', title: 'Python IDE', subtitle: 'Step into the world of text-based coding',
+            icon: (
+                <img
+                    src="/assets/python_icon.png"
+                    alt="Python IDE"
+                    style={{ width: '90%', height: '90%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'Python IDE', subtitle: 'Step into the world of text-based coding',
             color: '#3776ab', gradient: 'linear-gradient(135deg, #3776ab, #ffd343)',
             available: true, onClick: () => onSelect('python'),
         },
         {
-            icon: '⚡', title: 'Advanced Blocks', subtitle: 'AI/ML',
-            color: '#3B82F6', gradient: 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+            icon: (
+                <img
+                    src="/assets/ml_brain_icon.png"
+                    alt="Advanced Blocks"
+                    style={{ width: '95%', height: '95%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'Advanced Blocks', subtitle: 'AI/ML Coding with intelligent blocks',
+            color: '#2c5fb3ff', gradient: 'linear-gradient(135deg, #5a99ffff, #033cd7ff)',
             available: false, onClick: () => showComingSoon('Advanced'),
         },
     ];
 
     const extraCards = [
         {
-            icon: '🎮', title: 'Creocad', subtitle: 'Online simulation for 3D printing',
-            color: '#51c1bdff', gradient: 'linear-gradient(135deg, #51c1bdff, #26dcd8ff)',
+            icon: (
+                <img
+                    src="/assets/creocad_icon.png"
+                    alt="Creocad"
+                    style={{ width: '90%', height: '90%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'Creocad', subtitle: 'Online simulation for 3D printing',
+            color: '#51c1bdff', gradient: 'linear-gradient(135deg, #51c1bdff, #00fefaff)',
             available: false, onClick: () => showComingSoon('Creocad')
         },
         {
-            icon: '📱', title: 'App & Game Development', subtitle: 'Build interactive games',
-            color: '#EF4444', gradient: 'linear-gradient(135deg, #EF4444, #DC2626)',
+            icon: (
+                <img
+                    src="/assets/app_game_dev_icon.png"
+                    alt="App & Game Development"
+                    style={{ width: '90%', height: '90%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'App & Game Development', subtitle: 'Build interactive games',
+            color: '#EF4444', gradient: 'linear-gradient(135deg, #ff6a6aff, #fd0404ff)',
             available: false, onClick: () => showComingSoon('App & Game Development'),
         },
         {
-            icon: '🧩', title: 'Quiz', subtitle: 'Create fun learning quizzes',
-            color: '#10B981', gradient: 'linear-gradient(135deg, #10B981, #059669)',
+            icon: (
+                <img
+                    src="/assets/quiz_icon.png"
+                    alt="Quiz"
+                    style={{ width: '90%', height: '90%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'Quiz', subtitle: 'Create fun learning quizzes',
+            color: '#10B981', gradient: 'linear-gradient(135deg, #10B981, #00faabff)',
             available: false, onClick: () => showComingSoon('Quiz'),
         },
     ];
@@ -379,28 +513,36 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 </div>
             </div>
             {/* Decorative floating shapes */}
-            <div style={{
+            <div 
+                ref={el => { if (el) bgShapesRef.current[0] = el; }}
+                style={{
                 position: 'absolute', top: '8%', left: '6%',
                 width: 100, height: 100, borderRadius: '10%',
                 background: 'linear-gradient(135deg, rgba(133,92,214,0.12), rgba(99,102,241,0.08))',
                 animation: 'lp-float-shape 6s ease-in-out infinite',
                 pointerEvents: 'none',
             }} />
-            <div style={{
+            <div 
+                ref={el => { if (el) bgShapesRef.current[1] = el; }}
+                style={{
                 position: 'absolute', top: '15%', right: '8%',
                 width: 60, height: 60, borderRadius: 16,
                 background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(236,72,153,0.08))',
                 animation: 'lp-float-shape 8s 2s ease-in-out infinite',
                 pointerEvents: 'none', transform: 'rotate(30deg)',
             }} />
-            <div style={{
+            <div 
+                ref={el => { if (el) bgShapesRef.current[2] = el; }}
+                style={{
                 position: 'absolute', bottom: '12%', left: '10%',
                 width: 50, height: 50, borderRadius: 12,
                 background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(59,130,246,0.08))',
                 animation: 'lp-float-shape 7s 1s ease-in-out infinite',
                 pointerEvents: 'none', transform: 'rotate(-15deg)',
             }} />
-            <div style={{
+            <div 
+                ref={el => { if (el) bgShapesRef.current[3] = el; }}
+                style={{
                 position: 'absolute', bottom: '20%', right: '12%',
                 width: 40, height: 40, borderRadius: '50%',
                 background: 'linear-gradient(135deg, rgba(239,68,68,0.10), rgba(245,158,11,0.08))',
@@ -475,18 +617,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 }}>
 
                     {/* ── Logo / Brand ── */}
-                    <div style={{
+                    <div 
+                        ref={logoRef}
+                        style={{
                         position: 'relative',
                         marginBottom: 8,
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        animation: 'lp-fadeup .5s .1s both',
+                        // animation: 'lp-fadeup .5s .1s both', // Removing CSS anim as Anime.js handles this
                     }}>
                         {/* Floating robot mascot */}
                         <div style={{
-                            animation: 'lp-robot-float 3s ease-in-out infinite',
                             marginBottom: 12,
                         }}>
                             <img
+                                ref={robotRef}
                                 src="/assets/sprites/robot/robot_idle.svg"
                                 alt="LeapBlocks Robot"
                                 style={{
@@ -522,11 +666,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     </div>
 
                     {/* ── Subtitle ── */}
-                    <div style={{
+                    <div 
+                        className="lp-subtitle"
+                        style={{
                         fontSize: 15, color: '#1f242cff', marginBottom: 28,
                         fontFamily: '"Poppins", sans-serif',
                         fontWeight: 500,
-                        animation: 'lp-fadeup .5s .2s both',
+                        // animation: 'lp-fadeup .5s .2s both',
                     }}>
                         Choose your coding adventure ✨
                     </div>
@@ -537,17 +683,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                         marginBottom: 16,
                     }}>
                         {mainCards.map((card, i) => (
-                            <ModeCard
-                                key={card.title}
-                                icon={card.icon}
-                                title={card.title}
-                                subtitle={card.subtitle}
-                                color={card.color}
-                                gradient={card.gradient}
-                                delay={0.3 + i * 0.1}
-                                available={card.available}
-                                onClick={card.onClick}
-                            />
+                            <div key={card.title} className="lp-main-card">
+                                <ModeCard
+                                    icon={card.icon}
+                                    title={card.title}
+                                    subtitle={card.subtitle}
+                                    color={card.color}
+                                    gradient={card.gradient}
+                                    delay={0} // Anime handles delay now
+                                    available={card.available}
+                                    onClick={card.onClick}
+                                />
+                            </div>
                         ))}
                     </div>
 
@@ -556,17 +703,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                         display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center',
                     }}>
                         {extraCards.map((card, i) => (
-                            <ModeCard
-                                key={card.title}
-                                icon={card.icon}
-                                title={card.title}
-                                subtitle={card.subtitle}
-                                color={card.color}
-                                gradient={card.gradient}
-                                delay={0.6 + i * 0.1}
-                                available={card.available}
-                                onClick={card.onClick}
-                            />
+                            <div key={card.title} className="lp-extra-card">
+                                <ModeCard
+                                    icon={card.icon}
+                                    title={card.title}
+                                    subtitle={card.subtitle}
+                                    color={card.color}
+                                    gradient={card.gradient}
+                                    delay={0} // Anime handles delay now
+                                    available={card.available}
+                                    onClick={card.onClick}
+                                />
+                            </div>
                         ))}
                     </div>
 
