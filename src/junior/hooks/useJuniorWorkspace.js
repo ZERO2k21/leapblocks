@@ -94,7 +94,9 @@ export function useJuniorWorkspace({
     scenesRef,
     setIsSoundRecorderOpen,
     saveCurrentWorkspace,
-    spriteActions
+    spriteActions,
+    currentToolboxContentsRef,
+    isLoadingWorkspaceRef
 }) {
     const [activeCategory, setActiveCategory] = useState("events");
     const [categories, setCategories] = useState(CATEGORIES);
@@ -147,7 +149,14 @@ export function useJuniorWorkspace({
     const handleCategoryClick = (catId) => {
         setActiveCategory(catId);
         if (workspaceRef.current) {
-            workspaceRef.current.updateToolbox(getToolboxXml(catId, categoryBlocks));
+            const toolboxXml = getToolboxXml(catId, categoryBlocks);
+            workspaceRef.current.updateToolbox(toolboxXml);
+            
+            // Store toolbox contents for flyout restoration after workspace switches
+            if (currentToolboxContentsRef) {
+                currentToolboxContentsRef.current = categoryBlocks[catId] || [];
+            }
+            
             resetFlyoutScale();
             setTimeout(() => workspaceRef.current?.resize(), 50);
         }
@@ -460,6 +469,12 @@ export function useJuniorWorkspace({
 
             const handleWorkspaceChange = (e) => {
                 if (e.type === Blockly.Events.UI) return;
+                
+                // Ignore changes during workspace loading to prevent saving empty/intermediate states
+                if (isLoadingWorkspaceRef && isLoadingWorkspaceRef.current) {
+                    console.log('[JuniorWorkspace] Ignoring workspace change during load phase');
+                    return;
+                }
 
                 saveCurrentWorkspace();
 

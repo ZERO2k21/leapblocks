@@ -904,6 +904,8 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, [sprites, addLog, triggerUpdate]);
 
     const executeNewProject = useCallback(() => {
+        // Clear all sprites and workspaces
+        sprites.forEach(s => animationVM.unregisterSprite(s.id));
         setSprites([]);
         setSelectedSpriteId(null);
         setProjectName('Untitled');
@@ -917,19 +919,38 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 isLoadingWorkspaceRef.current = false;
             }, 50);
         }
-        // Add a default robot sprite
-        const id = `sprite_${Date.now()}`;
-        const newSprite = new Sprite(id, 'Robot', triggerUpdate, 'robot');
-        newSprite.setX(0); // Center of Scratch-like stage
-        newSprite.setY(0);
-        newSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg').then(() => {
-            setSprites([newSprite]);
-            activeSpriteIdRef.current = id;
-            setSelectedSpriteId(id);
+
+        // Create Stage Sprite (for backdrop management and stage scripts)
+        const stageSprite = new Sprite('stage', 'Stage', triggerUpdate, 'cat');
+        animationVM.registerSprite(stageSprite);
+        spriteWorkspacesRef.current.set('stage', {}); // Initialize empty workspace for stage
+
+        // Create Default Robot Sprite
+        const robotId = 'sprite_default';
+        const robotSprite = new Sprite(robotId, 'Robot', triggerUpdate, 'robot');
+        robotSprite.setX(0); // Center of Scratch-like stage
+        robotSprite.setY(0);
+        spriteWorkspacesRef.current.set(robotId, {}); // Initialize empty workspace for robot
+
+        // Load robot costumes
+        const loadAssets = async () => {
+            await robotSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
+            await robotSprite.addCostume('wave 1', '/assets/sprites/robot/robot_wave1.png');
+            await robotSprite.addCostume('wave 2', '/assets/sprites/robot/robot_wave2.png');
+            await robotSprite.addCostume('talk', '/assets/sprites/robot/robot_talk.png');
+            await robotSprite.addSound('Meow', '/assets/sounds/meow.wav');
+            
+            animationVM.registerSprite(robotSprite);
+            setSprites([stageSprite, robotSprite]);
+            activeSpriteIdRef.current = robotId;
+            setSelectedSpriteId(robotId);
             triggerUpdate();
-        });
+            window.dispatchEvent(new Event('leap-stage-update'));
+        };
+        loadAssets().catch(err => console.error('[APP] Failed to initialize assets:', err));
+
         addLog('New project created');
-    }, [triggerUpdate, addLog]);
+    }, [triggerUpdate, addLog, sprites]);
 
     const handleNewProject = useCallback(() => {
         setPendingAction('new');
@@ -1375,12 +1396,14 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
             // 1. Create Stage Sprite (for backdrop management and stage scripts)
             const stageSprite = new Sprite('stage', 'Stage', triggerUpdate, 'cat'); // cat is dummy type
+            spriteWorkspacesRef.current.set('stage', {}); // Initialize empty workspace for stage
 
             // 2. Create Default Robot Sprite
             const defaultSprite = new Sprite('sprite_default', 'Robot', triggerUpdate, 'robot');
             // Scratch coords: (0,0) is center of stage
             defaultSprite.setX(0);
             defaultSprite.setY(0);
+            spriteWorkspacesRef.current.set('sprite_default', {}); // Initialize empty workspace for robot
 
             // Add robot costumes
             const loadAssets = async () => {

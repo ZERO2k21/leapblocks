@@ -245,26 +245,34 @@ export function useJuniorUIHandlers({
             console.log(`[useJuniorUIHandlers] Initialized empty workspace for new sprite: ${newId}`);
         }
         
-        // Clear workspace before switching to new sprite
+        // Clear workspace before switching to new sprite (matching Intermediate Blocks pattern)
         // Set loading flag to prevent change listener from saving empty state
         if (isLoadingWorkspaceRef) {
             isLoadingWorkspaceRef.current = true;
         }
         if (workspaceRef && workspaceRef.current) {
             Blockly.Events.disable();
-            workspaceRef.current.clear();
-            Blockly.Events.enable();
-            // Reset loading flag after a short delay
-            setTimeout(() => {
-                if (isLoadingWorkspaceRef) {
-                    isLoadingWorkspaceRef.current = false;
+            try {
+                workspaceRef.current.clear();
+                console.log(`[useJuniorUIHandlers] Cleared workspace for new sprite: ${newId}`);
+            } finally {
+                Blockly.Events.enable();
+                // Update the ref to point to the new sprite immediately
+                if (activeSpriteIdRef) {
+                    activeSpriteIdRef.current = newId;
                 }
-            }, 50);
-        }
-        
-        // Update the ref to point to the new sprite immediately
-        if (activeSpriteIdRef) {
-            activeSpriteIdRef.current = newId;
+                // Reset loading flag after a short delay to ensure any async events are swallowed
+                setTimeout(() => {
+                    if (isLoadingWorkspaceRef) {
+                        isLoadingWorkspaceRef.current = false;
+                    }
+                }, 50);
+            }
+        } else {
+            // Even if workspace ref is not available, update the active sprite ref
+            if (activeSpriteIdRef) {
+                activeSpriteIdRef.current = newId;
+            }
         }
         
         setActiveSpriteId(newId);
@@ -290,6 +298,14 @@ export function useJuniorUIHandlers({
         }
         if (!confirm(`Delete sprite?`)) return;
 
+        // Save current workspace before deletion
+        if (workspaceRef && workspaceRef.current && activeSpriteIdRef && activeSpriteIdRef.current && !isLoadingWorkspaceRef?.current) {
+            const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+            if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
+                spriteWorkspacesRef.current.set(activeSpriteIdRef.current, json);
+            }
+        }
+
         // Clean up workspace from ref storage
         if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
             spriteWorkspacesRef.current.delete(spriteId);
@@ -304,7 +320,32 @@ export function useJuniorUIHandlers({
 
         const remaining = sprites.filter(s => s.id !== spriteId);
         if (remaining.length > 0) {
-            setActiveSpriteId(remaining[0].id);
+            const newActiveId = remaining[0].id;
+            setActiveSpriteId(newActiveId);
+            
+            // Load workspace for the new active sprite (matching Intermediate Blocks pattern)
+            if (workspaceRef && workspaceRef.current && spriteWorkspacesRef && spriteWorkspacesRef.current) {
+                isLoadingWorkspaceRef.current = true;
+                Blockly.Events.disable();
+                try {
+                    const json = spriteWorkspacesRef.current.get(newActiveId);
+                    workspaceRef.current.clear();
+                    if (json && Object.keys(json).length > 0) {
+                        Blockly.serialization.workspaces.load(json, workspaceRef.current);
+                        console.log(`[useJuniorUIHandlers] Loaded workspace for new active sprite: ${newActiveId}`);
+                    }
+                } catch (err) {
+                    console.error(`[useJuniorUIHandlers] Error loading workspace after delete:`, err);
+                } finally {
+                    Blockly.Events.enable();
+                    if (activeSpriteIdRef) {
+                        activeSpriteIdRef.current = newActiveId;
+                    }
+                    setTimeout(() => {
+                        isLoadingWorkspaceRef.current = false;
+                    }, 50);
+                }
+            }
         }
     };
 
