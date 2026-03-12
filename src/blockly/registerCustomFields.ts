@@ -1,0 +1,23 @@
+import * as Blockly from 'blockly';
+import { FieldAngle } from '@blockly/field-angle';
+import { FieldColour } from '@blockly/field-colour';
+
+declare global {
+    interface Window {
+        __leapblocksBlocklyFieldsRegistered?: boolean;
+    }
+}
+
+const globalWindow = window as Window;
+
+if (!globalWindow.__leapblocksBlocklyFieldsRegistered) {
+    if (!Blockly.registry.hasItem(Blockly.registry.Type.FIELD, 'field_angle')) {
+        Blockly.fieldRegistry.register('field_angle', FieldAngle);
+    }
+
+    if (!Blockly.registry.hasItem(Blockly.registry.Type.FIELD, 'field_colour')) {
+        Blockly.fieldRegistry.register('field_colour', FieldColour);
+    }
+
+    globalWindow.__leapblocksBlocklyFieldsRegistered = true;
+}

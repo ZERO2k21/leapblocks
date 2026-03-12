@@ -6,7 +6,6 @@ import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
 import { hardwareBlocks } from './blocks/hardware-blocks';
 import { arduinoGenerator } from './generators/arduino-generator';
 import { AnimationCompiler } from './generators/animation-generator';
-import { FieldAngle } from '@blockly/field-angle';
 import './generators/python-generator'; // Register Python code generation handlers
 import { animationVM, CompiledScript } from './vm/AnimationVM';
 import { Sprite, SpriteType } from './stage/Sprite';
@@ -50,10 +49,6 @@ Blockly.common.defineBlocks(animationBlocks);
 Blockly.common.defineBlocks(hardwareBlocks);
 log.app('All blocks registered successfully');
 
-// Register FieldAngle
-log.app('Registering FieldAngle...');
-Blockly.fieldRegistry.register('field_angle', FieldAngle);
-
 // Configure Blockly dialogs for Electron (native prompt/alert not supported)
 Blockly.dialog.setPrompt((message, defaultValue, callback) => {
     // Use a simple window.prompt replacement with a custom modal approach
@@ -71,6 +66,50 @@ Blockly.dialog.setConfirm((message, callback) => {
     const result = window.confirm(message);
     callback(result);
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GLOBAL BLOCKLY OVERRIDES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// 1. Persist Flyout: Prevent hiding when autoClose is false (Continuous Toolbox)
+// Also override show() to always show ALL contents (continuous mode)
+let _continuousFlyoutContents: any[] = []; // Module-level storage for continuous flyout contents
+
+if (Blockly.Flyout && !(Blockly.Flyout.prototype as any)._hidePatched) {
+    // Set default to false globally
+    Blockly.Flyout.prototype.autoClose = false;
+
+    // Override hide: suppress if continuous mode
+    const originalHide = Blockly.Flyout.prototype.hide;
+    Blockly.Flyout.prototype.hide = function (this: any) {
+        if (this.autoClose === false) {
+            return; // NEVER hide in continuous mode
+        }
+        originalHide.call(this);
+    };
+
+    // Override setVisible: suppress setVisible(false) if continuous mode
+    const originalSetVisible = Blockly.Flyout.prototype.setVisible;
+    Blockly.Flyout.prototype.setVisible = function (this: any, visible: boolean) {
+        if (this.autoClose === false && visible === false) {
+            return; // NEVER make invisible in continuous mode
+        }
+        originalSetVisible.call(this, visible);
+    };
+
+    // Override show: in continuous mode, always show ALL blocks
+    const originalShow = Blockly.Flyout.prototype.show;
+    Blockly.Flyout.prototype.show = function (this: any, flyoutDef: any) {
+        if (this.autoClose === false && _continuousFlyoutContents.length > 0) {
+            // Always use the full flattened contents regardless of what Blockly internally requests
+            originalShow.call(this, _continuousFlyoutContents);
+        } else {
+            originalShow.call(this, flyoutDef);
+        }
+    };
+
+    (Blockly.Flyout.prototype as any)._hidePatched = true;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN APP COMPONENT
@@ -137,6 +176,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // Dynamic toolbox state for continuous flyout
     const [currentToolboxContents, setCurrentToolboxContents] = useState<any[]>([]);
     const currentToolboxContentsRef = useRef<any[]>([]);
+    const lastToolboxJsonRef = useRef<string>('');
 
     // Force re-render for sprite updates
     const [, forceUpdate] = useState({});
@@ -260,19 +300,19 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     const t = item.type;
                                     // Stage does not have costumes, size, or layers in the same way sprites do
                                     return !t.startsWith('looks_say') && !t.startsWith('looks_think') &&
-                                           t !== 'looks_show' && t !== 'looks_hide' &&
-                                           t !== 'looks_switch_costume' && t !== 'looks_next_costume' &&
-                                           t !== 'looks_set_size' && t !== 'looks_change_size' &&
-                                           t !== 'looks_go_to_layer' && t !== 'looks_go_forward_layers' &&
-                                           t !== 'looks_size' && !t.startsWith('looks_costume_');
+                                        t !== 'looks_show' && t !== 'looks_hide' &&
+                                        t !== 'looks_switch_costume' && t !== 'looks_next_costume' &&
+                                        t !== 'looks_set_size' && t !== 'looks_change_size' &&
+                                        t !== 'looks_go_to_layer' && t !== 'looks_go_forward_layers' &&
+                                        t !== 'looks_size' && !t.startsWith('looks_costume_');
                                 });
                             } else if (cat.name === 'Events') {
-                                contents = contents.map((item: any) => 
-                                    (item.kind === 'block' && item.type === 'event_sprite_clicked') 
-                                    ? { ...item, type: 'event_stage_clicked' } : item
+                                contents = contents.map((item: any) =>
+                                    (item.kind === 'block' && item.type === 'event_sprite_clicked')
+                                        ? { ...item, type: 'event_stage_clicked' } : item
                                 );
                             } else if (cat.name === 'Control') {
-                                contents = contents.filter((item: any) => 
+                                contents = contents.filter((item: any) =>
                                     item.kind !== 'block' || item.type !== 'control_delete_clone'
                                 );
                             } else if (cat.name === 'Sensing') {
@@ -281,7 +321,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     const t = item.type;
                                     // Stage cannot touch other things or have distance to them
                                     return t !== 'sensing_touching' && t !== 'sensing_touching_color' &&
-                                           t !== 'sensing_color_touching_color' && t !== 'sensing_distance_to';
+                                        t !== 'sensing_color_touching_color' && t !== 'sensing_distance_to';
                                 });
                             }
                             return { ...cat, contents };
@@ -298,7 +338,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         if (!toolbox || !toolbox.contents) return [];
         const flattened: any[] = [];
         toolbox.contents.forEach((category: any, index: number) => {
-            if (category.kind === 'pictoBloxCategory' || category.kind === 'category') {
+            if (category.kind === 'pictobloxCategory' || category.kind === 'pictoBloxCategory' || category.kind === 'category') {
                 // Add a label/header for the category
                 flattened.push({
                     kind: 'label',
@@ -676,6 +716,19 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         } finally {
             Blockly.Events.enable();
             activeSpriteIdRef.current = spriteId; // Update true owner only after loading finishes
+
+            // PERSIST FLYOUT: Ensure flyout stays open after workspace load/clear
+            const flyout = workspaceRef.current.getFlyout() as any;
+            if (flyout) {
+                const contents = currentToolboxContentsRef.current;
+                if (contents && contents.length > 0) {
+                    console.log('[APP] Restoring flyout after workspace load');
+                    flyout.show(contents);
+                    // @ts-ignore
+                    if (flyout.reflowInternal_) flyout.reflowInternal_();
+                }
+            }
+
             // Use setTimeout to ensure any strictly asynchronous layout events 
             // thrown by Blockly immediately after enable() are also swallowed.
             setTimeout(() => {
@@ -1312,10 +1365,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     useEffect(() => {
         if (editorMode === 'stage' && sprites.length === 0) {
             console.log('[APP] Initializing sprites (Stage + Default Robot)...');
-            
+
             // 1. Create Stage Sprite (for backdrop management and stage scripts)
             const stageSprite = new Sprite('stage', 'Stage', triggerUpdate, 'cat'); // cat is dummy type
-            
+
             // 2. Create Default Robot Sprite
             const defaultSprite = new Sprite('sprite_default', 'Robot', triggerUpdate, 'robot');
             // Scratch coords: (0,0) is center of stage
@@ -1329,10 +1382,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/robot_wave1.png');
                 await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/robot_wave2.png');
                 await defaultSprite.addCostume('talk', '/assets/sprites/robot/robot_talk.png');
-                
+
                 // Add default sound
                 await defaultSprite.addSound('Meow', '/assets/sounds/meow.wav');
-                
+
                 console.log('[APP] Assets loaded:', defaultSprite.costumes.length, 'costumes', defaultSprite.sounds.length, 'sounds');
                 triggerUpdate();
                 // Manually nudge the stage to repaint in case it didn't catch the update
@@ -1343,7 +1396,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             // Register both with VM
             animationVM.registerSprite(stageSprite);
             animationVM.registerSprite(defaultSprite);
-            
+
             setSprites([stageSprite, defaultSprite]);
             setSelectedSpriteId('sprite_default');
             activeSpriteIdRef.current = 'sprite_default';
@@ -1375,6 +1428,11 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 return stageManager.getAllBackdrops().map(b => b.name);
             }
             return [];
+        };
+        return () => {
+            delete (window as any).getActiveSpriteSounds;
+            delete (window as any).getActiveSpriteCostumes;
+            delete (window as any).getActiveStageBackdrops;
         };
     }, []);
 
@@ -1428,45 +1486,45 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, []);
 
 
-    // Reinitialize workspace when appMode changes (e.g., from home to blocks/junior)
-    // This ensures the correct toolbox is shown
+    // Update flyout contents when sprite changes
     useEffect(() => {
         if (workspaceRef.current && appMode === 'blocks') {
             const toolbox = getCurrentToolbox();
-            console.log('[APP] Updating toolbox dynamically (Sprite:', selectedSpriteId, ')');
-            
-            // 1. Standard Blockly toolbox update
-            workspaceRef.current.updateToolbox(toolbox);
-            
-            // 2. Refresh continuous flyout
+            const toolboxJson = JSON.stringify(toolbox);
+
+            // Recompute continuous flyout contents
             const contents = getFlattenedFlyoutContents(toolbox);
             setCurrentToolboxContents(contents);
             currentToolboxContentsRef.current = contents;
-            
+            _continuousFlyoutContents = contents; // Update module-level storage for prototype override
+
+            console.log('[APP] Updating flyout contents for sprite:', selectedSpriteId, '(', contents.length, 'items)');
+
+            // Update the toolbox sidebar (category icons) if the definition changed
+            if (toolboxJson !== lastToolboxJsonRef.current) {
+                console.log('[APP] Updating toolbox dynamically (Sprite:', selectedSpriteId, ')');
+                lastToolboxJsonRef.current = toolboxJson;
+                workspaceRef.current.updateToolbox(toolbox);
+            }
+
+            // Always ensure flyout is showing the latest contents
             const flyout = workspaceRef.current.getFlyout() as any;
             if (flyout) {
-                // Ensure flyout is correctly configured and shown
                 flyout.autoClose = false;
-                flyout.hide = () => {
-                    console.log('[BLOCKLY] Flyout hide requested after toolbox update - ignoring');
-                };
-                
-                // Show latest contents
                 flyout.show(contents);
-                
-                // Force a relayout
-                // @ts-ignore
-                if (flyout.reflowInternal_) flyout.reflowInternal_();
-                
-                // Safety re-show to catch any async Blockly hide calls
-                setTimeout(() => {
-                    if (flyout && contents) {
-                         flyout.show(contents);
-                         // @ts-ignore
-                         if (flyout.reflowInternal_) flyout.reflowInternal_();
-                    }
-                }, 50);
+                console.log('[APP] Flyout re-shown with', contents.length, 'items');
             }
+
+            // Safety: re-show after a short delay to catch any async hide calls from updateToolbox
+            setTimeout(() => {
+                if (workspaceRef.current) {
+                    const flyout2 = workspaceRef.current.getFlyout() as any;
+                    if (flyout2 && _continuousFlyoutContents.length > 0) {
+                        flyout2.autoClose = false;
+                        flyout2.show(_continuousFlyoutContents);
+                    }
+                }
+            }, 100);
         }
     }, [selectedSpriteId, editorMode, appMode, getCurrentToolbox]);
 
@@ -1528,28 +1586,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 flyout.getWorkspace().setScale(FIXED_SCALE);
                             }
 
-                            // CONTINUOUS FLYOUT OVERRIDE:
-                            // Always show ALL blocks in the flyout instead of just the selected category
-                            const originalShow = flyout.show.bind(flyout);
+                            // Initialize continuous flyout contents
+                            const initContents = getFlattenedFlyoutContents(getCurrentToolbox());
+                            currentToolboxContentsRef.current = initContents;
+                            _continuousFlyoutContents = initContents; // Update module-level storage
 
-                            flyout.show = (contents: any) => {
-                                // IMPORTANT: Use Ref for synchronous access to most recent contents
-                                // during rapid sprite switching where State might be stale.
-                                const latestContents = currentToolboxContentsRef.current;
-                                if (latestContents && latestContents.length > 0) {
-                                    originalShow(latestContents);
-                                } else {
-                                    originalShow(contents);
-                                }
-                            };
-
-                            // PREVENT FLYOUT HIDING: No-op for hide()
-                            flyout.hide = () => {
-                                console.log('[BLOCKLY] Flyout hide requested - ignoring to keep continuous toolbox visible');
-                            };
-
-                            // Force first show
-                            flyout.show(getFlattenedFlyoutContents(getCurrentToolbox()));
+                            // Force first show (prototype override will use _continuousFlyoutContents)
+                            flyout.show(initContents);
                         }
 
                         // 2. TOOLBOX -> FLYOUT (Click to Scroll)
@@ -1569,8 +1612,8 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                             // Find the label matching the category name
                                             const blocks = flyoutWs.getTopBlocks(false); // false = all blocks including labels
                                             const targetLabel = blocks.find((b: any) => {
-                                                return b.type === 'blockly_flyout_label_block' && 
-                                                       b.getFieldValue('TEXT') === categoryName;
+                                                return b.type === 'blockly_flyout_label_block' &&
+                                                    b.getFieldValue('TEXT') === categoryName;
                                             });
 
                                             if (targetLabel) {
@@ -1615,36 +1658,33 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             flyoutWs.addChangeListener((event: any) => {
                                 if (event.type !== Blockly.Events.VIEWPORT_CHANGE || isInternalSync || !flyout.isVisible()) return;
 
-                                const blocks = flyoutWs.getTopBlocks(true);
+                                const blocks = flyoutWs.getTopBlocks(true); // true = ordered by Y
                                 if (blocks.length === 0) return;
 
                                 const metrics = flyoutWs.getMetrics();
                                 const scrollY = metrics.viewTop - metrics.contentTop;
                                 const scale = flyoutWs.scale;
 
-                                // Find top-most block that is visible at the very top
+                                // Find first visible block at the top (+ small offset for labels)
                                 let topBlock = null;
-                                let topLabel = null;
-                                const scrollThreshold = scrollY - 20;
+                                const scrollThreshold = scrollY;
 
                                 for (const block of blocks) {
                                     const blockY = block.getRelativeToSurfaceXY().y * scale;
-                                    if (blockY >= scrollThreshold) {
-                                        if (block.type === 'blockly_flyout_label_block') {
-                                            topLabel = block;
-                                        } else {
-                                            topBlock = block;
-                                        }
+                                    // If block is at or slightly past the top edge
+                                    if (blockY >= scrollThreshold - 40) {
+                                        topBlock = block;
                                         break;
                                     }
                                 }
 
-                                if (topLabel || topBlock) {
+                                if (topBlock) {
                                     let categoryName = '';
-                                    
-                                    if (topLabel) {
-                                        categoryName = topLabel.getFieldValue('TEXT');
-                                    } else if (topBlock) {
+                                    console.log(`[FLYOUT_SYNC] Top block identified: ${topBlock.type} at Y=${topBlock.getRelativeToSurfaceXY().y * scale}, Threshold=${scrollThreshold}`);
+                                    if (topBlock.type === 'blockly_flyout_label_block') {
+                                        categoryName = topBlock.getFieldValue('TEXT');
+                                    } else {
+                                        // Infer category from block type prefix
                                         const type = topBlock.type;
                                         if (type.startsWith('motion_')) categoryName = 'Motion';
                                         else if (type.startsWith('looks_')) categoryName = 'Looks';
@@ -1671,10 +1711,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     if (categoryName) {
                                         const items = (toolbox as any).getToolboxItems();
                                         const index = items.findIndex((item: any) => item.getName() === categoryName);
+                                        // Only select if it's a different category than currently selected
+                                        console.log(`[FLYOUT_SYNC] Detected category: ${categoryName}, Current toolbox index: ${index}`);
                                         if (index !== -1 && (toolbox as any).getSelectedItem() !== items[index]) {
-                                            isInternalSync = true; // Block scroll-sync back
+                                            console.log(`[FLYOUT_SYNC] Switching toolbox to: ${categoryName} (index ${index})`);
+                                            isInternalSync = true;
                                             toolbox.selectItemByPosition(index);
-                                            setTimeout(() => { isInternalSync = false; }, 100);
+                                            setTimeout(() => { isInternalSync = false; }, 50);
                                         }
                                     }
                                 }
@@ -2574,7 +2617,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             }
                             // Add default sound
                             await newSprite.addSound('Meow', '/assets/sounds/meow.wav');
-                            
+
                             // Set initial costume
                             newSprite.switchCostume(0);
                             triggerUpdate();

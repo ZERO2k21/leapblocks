@@ -114,9 +114,24 @@ export default function JuniorApp({ onBack }) {
 
     // Sync refs
     useEffect(() => {
+        const getJuniorSoundOptions = () => {
+            const assets = audioEngine.soundBank?.assets || {};
+            return Object.keys(assets);
+        };
+
         scenesRef.current = scenes;
         activeSpriteIdRef.current = activeSpriteId;
         window.activeSpriteId = activeSpriteId;
+
+        // Override any stale global from other editors before Blockly builds dropdowns.
+        window.getActiveSpriteSounds = getJuniorSoundOptions;
+
+        return () => {
+            delete window.activeSpriteId;
+            if (window.getActiveSpriteSounds === getJuniorSoundOptions) {
+                delete window.getActiveSpriteSounds;
+            }
+        };
     }, [scenes, activeSpriteId]);
 
     const currentScene = scenes?.find(s => s.id === currentSceneId) || scenes?.[0];
@@ -341,6 +356,12 @@ export default function JuniorApp({ onBack }) {
         };
 
         window.wait = (ms) => new Promise(resolve => setTimeout(resolve, ms * 1000));
+
+        return () => {
+            delete window.drawSegment;
+            delete window.clearPen;
+            delete window.wait;
+        };
     }, []);
 
     useEffect(() => {

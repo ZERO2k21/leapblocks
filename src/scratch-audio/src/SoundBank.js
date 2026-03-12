@@ -32,7 +32,13 @@ export class SoundBank {
         // Try to load physical file if it exists in assets map
         if (this.assets[soundId]) {
             try {
-                const path = this.assets[soundId].startsWith("/") ? this.assets[soundId] : "/" + this.assets[soundId];
+                const assetPath = this.assets[soundId];
+                const path = assetPath.startsWith("/") ||
+                    assetPath.startsWith("blob:") ||
+                    assetPath.startsWith("data:") ||
+                    /^[a-z]+:\/\//i.test(assetPath)
+                    ? assetPath
+                    : "/" + assetPath;
                 const response = await fetch(path);
                 if (response.ok) {
                     const arrayBuffer = await response.arrayBuffer();
