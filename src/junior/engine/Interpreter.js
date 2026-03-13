@@ -243,9 +243,14 @@ export class Interpreter {
                         continue;
                     }
 
+                    // Log block execution for debugging
+                    console.log(`[Interpreter] [${spriteId}] Executing block: ${block.type}`);
+
                     this.generator.init(tempWs);
                     const code = this.generator.blockToCode(block);
                     if (!code) continue;
+
+                    console.log(`[Interpreter] [${spriteId}] Generated code:`, code.trim().split("\n")[0]);
 
                     const wrappedCode = this._wrapCodeWithSpriteContext(code, spriteId);
                     allThreadPromises.push(this.executeThread(wrappedCode, spriteId));
