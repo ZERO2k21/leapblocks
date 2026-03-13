@@ -79,6 +79,7 @@ function PaintEditor({
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [activeColorPicker, setActiveColorPicker] = useState<'fill' | 'outline' | null>(null);
     const [isRemovingBg, setIsRemovingBg] = useState(false);
+    const [activeCostumeIndex, setActiveCostumeIndex] = useState(0);
 
     // Auto BG Removal handler
     const handleAutoRemoveBG = async () => {
@@ -157,20 +158,25 @@ function PaintEditor({
         const canvas = canvasRef.current;
         if (!canvas) return;
 
+        let isActive = true;
+
         // Resize canvas if needed
         if (canvas.width !== canvasW || canvas.height !== canvasH) {
             canvas.setWidth(canvasW);
             canvas.setHeight(canvasH);
         }
 
-        // Clear existing content
+        // Clear existing content immediately
         canvas.clear();
         canvas.backgroundColor = 'transparent';
 
-        if (activeImage) {
-            const isSVG = activeImage.includes('<svg') || activeImage.endsWith('.svg');
+        const currentImage = costumes[activeCostumeIndex]?.image || '';
+
+        if (currentImage) {
+            const isSVG = currentImage.includes('<svg') || currentImage.endsWith('.svg');
             if (isSVG) {
                 const handleLoadedSVG = (objects: fabric.Object[], options: any) => {
+                    if (!isActive) return;
                     const group = fabric.util.groupSVGElements(objects, options);
                     group.set({
                         left: canvas.width! / 2,
@@ -196,10 +202,11 @@ function PaintEditor({
                     canvas.renderAll();
                     saveState();
                 };
-                if (activeImage.includes('<svg')) fabric.loadSVGFromString(activeImage, handleLoadedSVG);
-                else fabric.loadSVGFromURL(activeImage, handleLoadedSVG);
+                if (currentImage.includes('<svg')) fabric.loadSVGFromString(currentImage, handleLoadedSVG);
+                else fabric.loadSVGFromURL(currentImage, handleLoadedSVG);
             } else {
-                fabric.Image.fromURL(activeImage, (img) => {
+                fabric.Image.fromURL(currentImage, (img) => {
+                    if (!isActive) return;
                     img.set({
                         left: canvas.width! / 2,
                         top: canvas.height! / 2,
@@ -220,14 +227,27 @@ function PaintEditor({
         } else {
             saveState();
         }
-    }, [activeImage, isBackdropMode, canvasW, canvasH]);
+
+        return () => {
+            isActive = false;
+        };
+    }, [activeCostumeIndex, costumes, isBackdropMode, canvasW, canvasH]);
 
     // Update canvas when initialImage changes (e.g., switching between sprite and stage)
     useEffect(() => {
         if (initialImage !== activeImage) {
             setActiveImage(initialImage || '');
         }
-    }, [initialImage, activeImage]);
+        if (costumes.length > 0) {
+            const index = costumes.findIndex(c => c.image === initialImage);
+            setActiveCostumeIndex(index >= 0 ? index : 0);
+        }
+    }, [initialImage, activeImage, costumes]);
+
+    // Update costume name when spriteName changes (e.g., switching between sprite and stage)
+    useEffect(() => {
+        setCostumeName(spriteName);
+    }, [spriteName]);
 
     // Tool Management
     useEffect(() => {
@@ -510,8 +530,8 @@ function PaintEditor({
                         {costumes.map((c, i) => (
                             <div key={c.id || i} className="relative group">
                                 <div
-                                    onClick={() => setActiveImage(c.image)}
-                                    className={`w-[80px] h-[80px] rounded-lg border-2 flex flex-col items-center justify-center p-1 bg-white cursor-pointer relative ${activeImage === c.image ? 'border-[#855CD6] shadow-sm' : 'border-gray-200'}`}
+                                    onClick={() => setActiveCostumeIndex(i)}
+                                    className={`w-[80px] h-[80px] rounded-lg border-2 flex flex-col items-center justify-center p-1 bg-white cursor-pointer relative ${activeCostumeIndex === i ? 'border-[#855CD6] shadow-sm' : 'border-gray-200'}`}
                                 >
                                     <span className="absolute top-1 left-1.5 text-[10px] text-gray-500 font-bold">{i + 1}</span>
                                     <div className="flex-1 w-full flex items-center justify-center overflow-hidden">
@@ -521,7 +541,7 @@ function PaintEditor({
                                 </div>
 
                                 {/* Context Actions (Hover) */}
-                                <div className={`absolute -top-2 -right-2 flex-col gap-1 z-10 hidden group-hover:flex ${activeImage === c.image ? 'flex' : ''}`}>
+                                <div className={`absolute -top-2 -right-2 flex-col gap-1 z-10 hidden group-hover:flex ${activeCostumeIndex === i ? 'flex' : ''}`}>
                                     <button
                                         className="w-6 h-6 bg-white border border-gray-200 text-gray-500 hover:text-rose-500 rounded-full flex items-center justify-center shadow-md transition-colors"
                                         title="Delete"

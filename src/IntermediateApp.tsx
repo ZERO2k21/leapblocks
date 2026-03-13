@@ -698,8 +698,12 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     // Load workspace blocks from the per-sprite map
     const loadSpriteWorkspace = useCallback((spriteId: string) => {
+        // ALWAYS update the true owner tracking, even if workspace is null (unmounted)
+        // This ensures that when the workspace is re-initialized, it knows what it should be loading.
+        activeSpriteIdRef.current = spriteId;
+
         if (!workspaceRef.current) {
-            console.warn('[APP] Cannot load workspace: workspaceRef.current is null');
+            console.log('[APP] Workspace unmounted, deferred loading for sprite:', spriteId);
             return;
         }
 
@@ -722,7 +726,6 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             console.error('[APP] Error loading workspace JSON:', err);
         } finally {
             Blockly.Events.enable();
-            activeSpriteIdRef.current = spriteId; // Update true owner only after loading finishes
 
             // PERSIST FLYOUT: Ensure flyout stays open after workspace load/clear
             const flyout = workspaceRef.current.getFlyout() as any;
@@ -740,9 +743,13 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             // thrown by Blockly immediately after enable() are also swallowed.
             setTimeout(() => {
                 isLoadingWorkspaceRef.current = false;
+                // Force a recompile for the newly loaded sprite/backdrop
+                if (workspaceRef.current) {
+                    handleWorkspaceChange({ isUiEvent: false } as Blockly.Events.Abstract);
+                }
             }, 50);
         }
-    }, []);
+    }, [handleWorkspaceChange]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // MODE SWITCHING
@@ -764,12 +771,8 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         // Save blocks if we are moving AWAY from blocks or switching between sprites
         saveCurrentSpriteWorkspace();
 
-        // In Scratch-like UX, Backdrops/Sounds tabs always operate on the Stage.
-        // When switching to these tabs, auto-select the stage so the editor updates correctly.
-        if (newTab === 'costumes' || newTab === 'sounds') {
-            setSelectedSpriteId('stage');
-            loadSpriteWorkspace('stage');
-        }
+        // In Scratch-like UX, tabs maintain the current selection.
+        // Costumes/Sounds tabs will dynamically show content for the selected target.
 
         setWorkspaceTab(newTab);
         addLog(`Switched to ${newTab} tab`);
@@ -947,9 +950,9 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         // Load robot costumes
         const loadAssets = async () => {
             await robotSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
-            await robotSprite.addCostume('wave 1', '/assets/sprites/robot/robot_wave1.png');
-            await robotSprite.addCostume('wave 2', '/assets/sprites/robot/robot_wave2.png');
-            await robotSprite.addCostume('talk', '/assets/sprites/robot/robot_talk.png');
+            await robotSprite.addCostume('wave 1', '/assets/sprites/robot/image-removebg-preview (1).png');
+            await robotSprite.addCostume('wave 2', '/assets/sprites/robot/image-Photoroom.png');
+            await robotSprite.addCostume('talk', '/assets/sprites/robot/image-removebg-preview.png');
             await robotSprite.addSound('Meow', '/assets/sounds/meow.wav');
             
             animationVM.registerSprite(robotSprite);
@@ -1422,9 +1425,9 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const loadAssets = async () => {
                 console.log('[APP] Loading assets for robot...');
                 await defaultSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
-                await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/robot_wave1.png');
-                await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/robot_wave2.png');
-                await defaultSprite.addCostume('talk', '/assets/sprites/robot/robot_talk.png');
+                await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/image-removebg-preview (1).png');
+                await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/image-Photoroom.png');
+                await defaultSprite.addCostume('talk', '/assets/sprites/robot/image-removebg-preview.png');
 
                 // Add default sound
                 await defaultSprite.addSound('Meow', '/assets/sounds/meow.wav');
@@ -1934,14 +1937,19 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     });
 
                     // Restore the selected sprite's blocks after workspace re-initialization
-                    if (selectedSpriteId) {
-                        const savedJson = spriteWorkspacesRef.current.get(selectedSpriteId);
+                    // Crucial: prioritize activeSpriteIdRef.current as the source of truth for current state
+                    const targetSpriteId = activeSpriteIdRef.current || selectedSpriteId;
+                    if (targetSpriteId) {
+                        const savedJson = spriteWorkspacesRef.current.get(targetSpriteId);
                         if (savedJson && Object.keys(savedJson).length > 0) {
-                            console.log('[APP] Restoring workspace for sprite after re-init:', selectedSpriteId);
+                            console.log('[APP] Restoring workspace for sprite after re-init:', targetSpriteId);
                             Blockly.serialization.workspaces.load(savedJson, blocksWorkspace);
                         }
-                        // Ensure activeSpriteIdRef is set so workspace saves work correctly
-                        activeSpriteIdRef.current = selectedSpriteId;
+                        // Ensure activeSpriteIdRef is set and matches selectedSpriteId if they diverged
+                        activeSpriteIdRef.current = targetSpriteId;
+                        if (targetSpriteId !== selectedSpriteId) {
+                            setSelectedSpriteId(targetSpriteId);
+                        }
                     }
 
                     addLog(`Workspace initialized for ${editorMode === 'stage' ? 'Stage' : 'Upload'} mode`);

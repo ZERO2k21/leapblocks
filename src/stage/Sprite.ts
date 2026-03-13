@@ -535,28 +535,10 @@ export class Sprite {
             case 'ball': this.renderBall(ctx); break;
             case 'arrow': this.renderArrow(ctx); break;
             case 'robot': this.renderRobot(ctx); break;
-            default: this.renderCat(ctx); break;
+            // default: this.renderCat(ctx); break;
         }
     }
 
-    private renderCat(ctx: CanvasRenderingContext2D): void {
-        const scale = this.state.size / 100;
-        const size = 40 * scale;
-        ctx.fillStyle = '#FF8C1A';
-        ctx.beginPath();
-        ctx.ellipse(0, 0, size / 2, size / 2.5, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = 'white';
-        ctx.beginPath();
-        ctx.ellipse(-size / 5, -size / 8, size / 8, size / 6, 0, 0, Math.PI * 2);
-        ctx.ellipse(size / 5, -size / 8, size / 8, size / 6, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = 'black';
-        ctx.beginPath();
-        ctx.arc(-size / 5, -size / 8, size / 16, 0, Math.PI * 2);
-        ctx.arc(size / 5, -size / 8, size / 16, 0, Math.PI * 2);
-        ctx.fill();
-    }
 
     private renderBall(ctx: CanvasRenderingContext2D): void {
         const scale = this.state.size / 100;

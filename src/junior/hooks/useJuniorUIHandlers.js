@@ -32,12 +32,31 @@ export function useJuniorUIHandlers({
     const handleEditSprite = (spriteId) => {
         const sprite = sprites.find(s => s.id === spriteId);
         if (!sprite) return;
+
+        // Map costume IDs to display names
+        const costumeNameMap = {
+            default: 'Idle',
+            wave1: 'Wave 1',
+            wave2: 'Wave 2',
+            talk: 'Talk',
+            costume1: 'Talk',
+            costume2: 'Talk 2',
+            costume3: 'Wave 1',
+            costume4: 'Wave 2',
+            costume5: 'Wave 3',
+            costume6: 'Wave 4'
+        };
+
         setPaintEditor({
             isOpen: true,
             type: 'sprite',
             targetId: spriteId,
             initialImage: sprite.costumes?.[sprite.currentCostume || 'default'] || null,
-            costumes: Object.entries(sprite.costumes || {}).map(([id, src]) => ({ id, name: id, image: src })),
+            costumes: Object.entries(sprite.costumes || {}).map(([id, src]) => ({ 
+                id, 
+                name: costumeNameMap[id] || id, 
+                image: src 
+            })),
             spriteName: sprite.name,
             mode: 'junior'
         });

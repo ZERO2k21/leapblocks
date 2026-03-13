@@ -51,7 +51,13 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
         },
     };
     javascriptGenerator.forBlock["hide_sprite"] = () => `setVisible(${getTarget()}, false);\n${wait()}`;
-
+    /* ===== CHANGE COSTUME (Icon Only) ===== */
+    Blockly.Blocks["junior_change_costume"] = {
+        init: function () {
+            juniorLooksBase(this, "👔");
+        },
+    };
+    javascriptGenerator.forBlock["junior_change_costume"] = () => `nextCostume();\n${wait()}`;
     /* ===== CHANGE SIZE (Dropdown: Grow/Shrink) ===== */
     Blockly.Blocks["change_size"] = {
         init: function () {

@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import * as Blockly from "blockly";
+import { javascriptGenerator } from 'blockly/javascript';
 import Teddy from "./sprites/Teddy";
 import RightPanel from "./components/RightPanel";
 import BackdropChooser from "./components/BackdropChooser";
@@ -16,6 +17,7 @@ import SuccessModal from "./components/SuccessModal";
 import UnsavedWarningModal from "./components/UnsavedWarningModal";
 import JuniorSoundRecorder from "./components/JuniorSoundRecorder";
 import JuniorExtensionLibrary from "./components/JuniorExtensionLibrary";
+import { juniorBlocks } from "../blocks/junior-blocks";
 
 import { useSpriteSystem } from "./hooks/useSpriteSystem";
 import { useJuniorWorkspace } from "./hooks/useJuniorWorkspace";
@@ -40,14 +42,20 @@ import "./styles/juniorLooksBlocks.css";
 
 // Robot Assets
 const robotIdle = "/assets/sprites/robot/robot_idle.svg";
-const robotWave1 = "/assets/sprites/robot/robot_wave1.svg";
-const robotWave2 = "/assets/sprites/robot/robot_wave2.svg";
-const robotTalk1 = "/assets/sprites/robot/robot_talk1.svg";
+const robotWave1 = "/assets/sprites/robot/image-Photoroom.png";
+const robotWave2 = "/assets/sprites/robot/image-removebg-preview (1).png";
+const robotTalk1 = "/assets/sprites/robot/image-removebg-preview.png";
 
 const audioEngine = new AudioEngine();
 const runtimeShim = { audioEngine };
 export const soundBlocksExt = new Scratch3SoundBlocks(runtimeShim);
 export const musicBlocksExt = new Scratch3MusicBlocks(runtimeShim);
+
+// Register junior blocks
+Blockly.common.defineBlocks(juniorBlocks);
+
+// Define generators for junior blocks
+javascriptGenerator.forBlock['junior_change_costume'] = () => 'nextCostume();\n';
 
 export default function JuniorApp({ onBack }) {
     // Refs
@@ -70,12 +78,12 @@ export default function JuniorApp({ onBack }) {
     const [recordingCount, setRecordingCount] = useState(1);
     const [showGrid, setShowGrid] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    
+
     // Modals state
     const [isSpriteModalOpen, setIsSpriteModalOpen] = useState(false);
     const [isBackdropChooserOpen, setIsBackdropChooserOpen] = useState(false);
     const [backdropEditSceneId, setBackdropEditSceneId] = useState(null);
-    
+
     // Paint Editor
     const [paintEditor, setPaintEditor] = useState({
         isOpen: false,
@@ -93,7 +101,7 @@ export default function JuniorApp({ onBack }) {
             id: "scene1",
             name: "Scene 1",
             background: "white",
-            backgroundImage: "/assets/backdrops/WhatsApp Image 2026-03-13 at 10.12.26.jpeg",
+            backgroundImage: "/assets/backdrops/WhatsApp Image 2026-03-13 at 12.05.21.jpeg",
             backdropName: "WhatsApp Image",
             sprites: [
                 {
@@ -121,17 +129,40 @@ export default function JuniorApp({ onBack }) {
             return Object.keys(assets);
         };
 
+        const getActiveSpriteCostumes = () => {
+            const sprite = scenes.find(s => s.id === currentSceneId)?.sprites.find(s => s.id === activeSpriteId);
+            if (sprite) {
+                return Object.keys(sprite.costumes);
+            }
+            return [];
+        };
+
         scenesRef.current = scenes;
         activeSpriteIdRef.current = activeSpriteId;
         window.activeSpriteId = activeSpriteId;
 
         // Override any stale global from other editors before Blockly builds dropdowns.
         window.getActiveSpriteSounds = getJuniorSoundOptions;
+        window.getActiveSpriteCostumes = getActiveSpriteCostumes;
+        window.nextCostume = () => spriteActions.nextCostume(activeSpriteId);
+        window.selectSprite = (id) => {
+            setActiveSpriteId(id);
+            if (activeSpriteIdRef) activeSpriteIdRef.current = id;
+        };
 
         return () => {
             delete window.activeSpriteId;
             if (window.getActiveSpriteSounds === getJuniorSoundOptions) {
                 delete window.getActiveSpriteSounds;
+            }
+            if (window.getActiveSpriteCostumes === getActiveSpriteCostumes) {
+                delete window.getActiveSpriteCostumes;
+            }
+            if (window.nextCostume) {
+                delete window.nextCostume;
+            }
+            if (window.selectSprite) {
+                delete window.selectSprite;
             }
         };
     }, [scenes, activeSpriteId]);
@@ -146,14 +177,14 @@ export default function JuniorApp({ onBack }) {
     // ═══════════════════════════════════════════════════════════════════════
     // SPRITE WORKSPACE MANAGEMENT (Matching Intermediate Blocks Architecture)
     // ═══════════════════════════════════════════════════════════════════════
-    
+
     // Save current workspace blocks to the per-sprite map
     const saveCurrentWorkspace = useCallback(() => {
         const activeId = activeSpriteIdRef.current;
         if (!workspaceRef.current || !activeId || isLoadingWorkspaceRef.current) return;
-        
+
         const json = Blockly.serialization.workspaces.save(workspaceRef.current);
-        
+
         // Save to ref for immediate access
         spriteWorkspacesRef.current.set(activeId, json);
         console.log(`[JuniorApp] Saved workspace for sprite: ${activeId}`);
@@ -162,12 +193,12 @@ export default function JuniorApp({ onBack }) {
         setScenes(prevScenes => {
             return prevScenes.map(scene => {
                 if (scene.id !== currentSceneId) return scene;
-                
+
                 return {
                     ...scene,
                     sprites: scene.sprites.map(sprite => {
                         if (sprite.id !== activeId) return sprite;
-                        
+
                         if (JSON.stringify(sprite.blocks) !== JSON.stringify(json)) {
                             console.log(`[JuniorApp] Saved workspace blocks to sprite: ${sprite.name}`);
                             return { ...sprite, blocks: json };
@@ -282,12 +313,12 @@ export default function JuniorApp({ onBack }) {
     // Handle scene selection: save old, load new
     const handleSceneSelect = useCallback((newSceneId) => {
         if (newSceneId === currentSceneId) return;
-        
+
         // Clear highlights before switching
         if (workspaceRef.current) {
             workspaceRef.current.highlightBlock(null);
         }
-        
+
         // Save current workspace before switching
         saveCurrentWorkspace();
         setCurrentSceneId(newSceneId);
@@ -315,15 +346,15 @@ export default function JuniorApp({ onBack }) {
     // Handle sprite selection: save old, load new
     const handleSpriteSelect = useCallback((newId) => {
         if (newId === activeSpriteId) return;
-        
+
         // Clear highlights in old workspace before switching
         if (workspaceRef.current) {
             workspaceRef.current.highlightBlock(null);
         }
-        
+
         // Save current workspace before switching
         saveCurrentWorkspace();
-        
+
         // Load new sprite's workspace
         setActiveSpriteId(newId);
         loadSpriteWorkspace(newId);
@@ -395,10 +426,10 @@ export default function JuniorApp({ onBack }) {
     // Initial workspace load effect - only runs once on mount
     useEffect(() => {
         if (!workspaceRef.current || !activeSpriteId) return;
-        
+
         // Only load if this is the initial load (ref is null)
         if (activeSpriteIdRef.current !== null) return;
-        
+
         // Find the sprite in the current scene
         let activeSprite = null;
         if (scenesRef.current) {
@@ -407,11 +438,11 @@ export default function JuniorApp({ onBack }) {
                 if (activeSprite) break;
             }
         }
-        
+
         if (!activeSprite) {
             activeSprite = sprites.find(s => s.id === activeSpriteId);
         }
-        
+
         if (activeSprite) {
             console.log(`[JuniorApp] Initial workspace load for sprite: ${activeSprite.name}`);
             loadSpriteWorkspace(activeSpriteId);

@@ -46,6 +46,7 @@ const categoryContents = {
         { kind: "block", type: "say_text" },
         { kind: "block", type: "show_sprite" },
         { kind: "block", type: "hide_sprite" },
+        { kind: "block", type: "junior_change_costume" },
         { kind: "block", type: "change_size" },
         { kind: "block", type: "looks_reset_size" },
         { kind: "block", type: "looks_next_costume" },
