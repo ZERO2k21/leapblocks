@@ -68,7 +68,7 @@ const mappedScratchSprites = scratchSprites.map((sprite: any) => {
     return { ...sprite, category } as SpriteEntry;
 });
 
-const FULL_CATALOG = [...LEAPBLOCKS_SPRITES, ...mappedScratchSprites];
+export const FULL_CATALOG = [...LEAPBLOCKS_SPRITES, ...mappedScratchSprites];
 
 // ═══════════════════════════════════════════════════════════════════════════
 // EMOJI PICKER DATA

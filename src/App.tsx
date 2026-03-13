@@ -42,7 +42,7 @@ export default function App() {
     return (
         <ErrorBoundary key={mode}>
             <Suspense fallback={<div style={{ padding: 20, color: '#673AB7', fontWeight: 'bold' }}>Loading LeapBlocks...</div>}>
-                {mode === 'intermediate' && <IntermediateApp onBack={() => setMode('home')} />}
+                {mode === 'intermediate' && <IntermediateApp onBack={() => setMode('home')} onOpenPython={() => setMode('python')} />}
                 {mode === 'junior' && <JuniorApp onBack={() => setMode('home')} />}
                 {mode === 'python' && <PythonApp onBack={() => setMode('home')} />}
                 {mode === 'home' && <LandingPage onSelect={setMode} />}

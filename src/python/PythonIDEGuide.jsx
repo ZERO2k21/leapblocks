@@ -239,7 +239,7 @@ export default function PythonIDEGuide({ onClose }) {
         <div style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 10, padding: "16px 18px", marginTop: 4 }}>
           <div style={{ color: "#58a6ff", fontWeight: 700, fontSize: 13, marginBottom: 12 }}>⚡ Quick Reference — Sprite API</div>
           {[
-            ["sprite = Sprite('Tobi')", "Link to the Tobi sprite on stage"],
+            ["sprite = Sprite('Robot')", "Link to the Robot sprite on stage"],
             ["sprite.say('Hello!')", "Show speech bubble"],
             ["sprite.move_right(50)", "Move 50px to the right"],
             ["sprite.goto(0, 0)", "Go to center of stage"],

@@ -119,7 +119,7 @@ type AppMode = 'home' | 'blocks' | 'python' | 'notebook' | 'ml' | 'xr';
 // Editor sub-mode for blocks: stage (animation) or upload (hardware)
 type EditorMode = 'stage' | 'upload';
 
-const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void }> = ({ onBack, onOpenPython }) => {
     // ═══════════════════════════════════════════════════════════════════════
     // STATE
     // ═══════════════════════════════════════════════════════════════════════
@@ -1988,11 +1988,18 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         return () => resizeObserver.disconnect();
     }, [blocklyDiv, workspaceRef]);
 
+    // Route to Python IDE when appMode changes to 'python'
+    useEffect(() => {
+        if (appMode === 'python' && onOpenPython) {
+            onOpenPython();
+        }
+    }, [appMode, onOpenPython]);
+
     // ═══════════════════════════════════════════════════════════════════════
     // RENDER
     // ═══════════════════════════════════════════════════════════════════════
 
-    // Show "Coming Soon" placeholder for unimplemented modes (not blocks)
+    // Show "Coming Soon" for non-blocks modes (python mode will trigger routing via useEffect)
     if (appMode !== 'blocks') {
         return (
             <div style={{
@@ -2006,7 +2013,6 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
             }}>
                 <h1 style={{ fontSize: '48px', marginBottom: '16px' }}>
-                    {appMode === 'python' && '🐍 Py Editor'}
                     {appMode === 'notebook' && '📓 Py Notebook'}
                     {appMode === 'ml' && '🧠 Machine Learning'}
                     {appMode === 'xr' && '🌐 3D & XR Studio'}

@@ -18,10 +18,18 @@ try {
     Sk = window.Sk;
 }
 
-// ─── Sprite preamble ─────────────────────────────────────────────────────────
+// ─── Sprite preamble (PictoBlox-compatible API) ──────────────────────────────
 const SPRITE_PREAMBLE = `
 class Sprite:
-    """Control a sprite on the LeapBlocks stage from Python."""
+    """Control a sprite on the LeapBlocks stage from Python.
+    
+    Usage:
+        sprite = Sprite('Robot')
+        sprite.say('Hello!')
+        sprite.move(50)
+        sprite.turn_right()
+        sprite.go_to(100, 50)
+    """
     def __init__(self, name):
         self._name = str(name)
 
@@ -29,22 +37,96 @@ class Sprite:
         import __leap__
         __leap__._dispatch(self._name, action, list(args))
 
-    def move_right(self, steps=20):   self._action("RIGHT",   steps)
-    def move_left(self, steps=20):    self._action("LEFT",    steps)
-    def move_up(self, steps=20):      self._action("UP",      steps)
-    def move_down(self, steps=20):    self._action("DOWN",    steps)
-    def move(self, steps=20):         self._action("FORWARD", steps)
-    def goto(self, x, y):             self._action("GOTO",    x, y)
-    def set_x(self, x):               self._action("SETX",    x)
-    def set_y(self, y):               self._action("SETY",    y)
-    def say(self, message, secs=2):   self._action("SAY",     str(message))
-    def hide(self):                   self._action("HIDE")
-    def show(self):                   self._action("SHOW")
-    def set_size(self, pct):          self._action("SIZE",    pct)
-    def point_in_direction(self, a):  self._action("ANGLE",   a)
-    def switch_costume(self, name):   self._action("COSTUME", name)
+    # ─── Movement and Positioning ───
+    def move(self, steps=20):
+        """Advance the sprite forward by steps in its current direction."""
+        self._action("FORWARD", steps)
+    
+    def move_right(self, steps=20):
+        """Move the sprite to the right."""
+        self._action("RIGHT", steps)
+    
+    def move_left(self, steps=20):
+        """Move the sprite to the left."""
+        self._action("LEFT", steps)
+    
+    def move_up(self, steps=20):
+        """Move the sprite up."""
+        self._action("UP", steps)
+    
+    def move_down(self, steps=20):
+        """Move the sprite down."""
+        self._action("DOWN", steps)
+    
+    def turn_right(self, times=1):
+        """Rotate the sprite to the right."""
+        self._action("TURN_RIGHT", times)
+    
+    def turn_left(self, times=1):
+        """Rotate the sprite to the left."""
+        self._action("TURN_LEFT", times)
+    
+    def go_to(self, x, y):
+        """Move the sprite to a specific coordinate position."""
+        self._action("GOTO", x, y)
+    
+    def setx(self, x):
+        """Set the absolute horizontal (x) coordinate."""
+        self._action("SETX", x)
+    
+    def sety(self, y):
+        """Set the absolute vertical (y) coordinate."""
+        self._action("SETY", y)
+    
+    def set_x(self, x):
+        """Set the absolute horizontal (x) coordinate."""
+        self._action("SETX", x)
+    
+    def set_y(self, y):
+        """Set the absolute vertical (y) coordinate."""
+        self._action("SETY", y)
 
-def sprite(name): return Sprite(name)
+    # ─── Appearance and Interaction ───
+    def say(self, message, secs=2):
+        """Display a speech bubble with text for specified duration."""
+        self._action("SAY", str(message), secs)
+    
+    def think(self, message, secs=2):
+        """Display a thought bubble with text."""
+        self._action("THINK", str(message), secs)
+    
+    def hide(self):
+        """Make the sprite invisible."""
+        self._action("HIDE")
+    
+    def show(self):
+        """Make the sprite visible."""
+        self._action("SHOW")
+    
+    def set_size(self, pct):
+        """Modify the size of the sprite (percentage)."""
+        self._action("SIZE", pct)
+    
+    def change_size(self, delta):
+        """Change the size by a delta amount."""
+        self._action("CHANGE_SIZE", delta)
+    
+    def point_in_direction(self, angle):
+        """Set the sprite's direction in degrees."""
+        self._action("ANGLE", angle)
+    
+    def next_costume(self):
+        """Switch to the next costume."""
+        self._action("NEXT_COSTUME")
+    
+    def switch_costume(self, name):
+        """Switch to a specific costume by name."""
+        self._action("COSTUME", name)
+
+# ─── Helper function ───
+def sprite(name):
+    """Create a sprite by its library name."""
+    return Sprite(name)
 `;
 
 // ─── SkulptEngine ────────────────────────────────────────────────────────────
@@ -76,20 +158,30 @@ export class SkulptEngine {
             const act = toJS(skAction);
             const args = (skArgs?.v ?? []).map(toJS);
             switch (act) {
-                case 'RIGHT':   bridge.moveRelative(n, 'RIGHT',  args[0] ?? 20); break;
-                case 'LEFT':    bridge.moveRelative(n, 'LEFT',   args[0] ?? 20); break;
-                case 'UP':      bridge.moveRelative(n, 'UP',     args[0] ?? 20); break;
-                case 'DOWN':    bridge.moveRelative(n, 'DOWN',   args[0] ?? 20); break;
-                case 'FORWARD': bridge.moveSteps(n,              args[0] ?? 20); break;
-                case 'GOTO':    bridge.update(n, { x: args[0] ?? 0, y: args[1] ?? 0 }); break;
-                case 'SETX':    bridge.update(n, { x: args[0] ?? 0 }); break;
-                case 'SETY':    bridge.update(n, { y: args[0] ?? 0 }); break;
+                // Movement
+                case 'RIGHT':      bridge.moveRelative(n, 'RIGHT',  args[0] ?? 20); break;
+                case 'LEFT':       bridge.moveRelative(n, 'LEFT',   args[0] ?? 20); break;
+                case 'UP':         bridge.moveRelative(n, 'UP',     args[0] ?? 20); break;
+                case 'DOWN':       bridge.moveRelative(n, 'DOWN',   args[0] ?? 20); break;
+                case 'FORWARD':    bridge.moveSteps(n,              args[0] ?? 20); break;
+                case 'GOTO':       bridge.update(n, { x: args[0] ?? 0, y: args[1] ?? 0 }); break;
+                case 'SETX':       bridge.update(n, { x: args[0] ?? 0 }); break;
+                case 'SETY':       bridge.update(n, { y: args[0] ?? 0 }); break;
+                case 'TURN_RIGHT': bridge.update(n, { angle: (old) => (old || 90) + (15 * (args[0] ?? 1)) }); break;
+                case 'TURN_LEFT':  bridge.update(n, { angle: (old) => (old || 90) - (15 * (args[0] ?? 1)) }); break;
+                
+                // Appearance
                 case 'SAY':     bridge.update(n, { speech: args[0] ?? '' }); break;
+                case 'THINK':   bridge.update(n, { speech: '💭 ' + (args[0] ?? '') }); break;
                 case 'HIDE':    bridge.update(n, { visible: false }); break;
                 case 'SHOW':    bridge.update(n, { visible: true  }); break;
                 case 'SIZE':    bridge.update(n, { size:  args[0] ?? 100 }); break;
+                case 'CHANGE_SIZE': bridge.update(n, { size: (old) => (old || 100) + (args[0] ?? 10) }); break;
                 case 'ANGLE':   bridge.update(n, { angle: args[0] ?? 90  }); break;
                 case 'COSTUME': bridge.update(n, { currentCostume: args[0] }); break;
+                case 'NEXT_COSTUME': 
+                    bridge.update(n, { nextCostume: true }); 
+                    break;
                 default: break;
             }
             return sk.builtin.none.none$;

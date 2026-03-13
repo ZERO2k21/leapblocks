@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { fabric } from 'fabric';
+import * as fabric from 'fabric';
 import {
     Undo, Redo, Copy, Clipboard, Trash2, Square, Circle, Pen, Eraser,
     Type, MousePointer2, PaintBucket, Minus, FlipHorizontal, FlipVertical,
@@ -99,7 +99,7 @@ function PaintEditor({
                     // Clear the current canvas and load the new strict-object image
                     canvas.clear();
 
-                    fabric.Image.fromURL((result as any).base64, (img) => {
+                    fabric.Image.fromURL((result as any).base64, (img: fabric.FabricImage) => {
                         img.set({
                             left: canvas.width! / 2,
                             top: canvas.height! / 2,
@@ -163,7 +163,7 @@ function PaintEditor({
                         const items = (group as fabric.Group).getObjects();
                         (group as any)._restoreObjectsState();
                         canvas.remove(group);
-                        items.forEach(item => canvas.add(item));
+                        items.forEach((item: fabric.FabricObject) => canvas.add(item));
                     } else {
                         canvas.add(group);
                     }
@@ -173,7 +173,7 @@ function PaintEditor({
                 if (activeImage.includes('<svg')) fabric.loadSVGFromString(activeImage, handleLoadedSVG);
                 else fabric.loadSVGFromURL(activeImage, handleLoadedSVG);
             } else {
-                fabric.Image.fromURL(activeImage, (img) => {
+                fabric.Image.fromURL(activeImage, (img: fabric.FabricImage) => {
                     img.set({
                         left: canvas.width! / 2,
                         top: canvas.height! / 2,
@@ -322,7 +322,7 @@ function PaintEditor({
         const activeObjects = canvas?.getActiveObjects();
         if (activeObjects?.length) {
             canvas?.discardActiveObject();
-            activeObjects.forEach(obj => canvas?.remove(obj));
+            activeObjects.forEach((obj: fabric.FabricObject) => canvas?.remove(obj));
             canvas?.renderAll();
         }
     };
