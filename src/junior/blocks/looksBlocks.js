@@ -54,7 +54,7 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
     /* ===== CHANGE COSTUME (Icon Only) ===== */
     Blockly.Blocks["junior_change_costume"] = {
         init: function () {
-            juniorLooksBase(this, "👔");
+            juniorLooksBase(this, "Next Costume");
         },
     };
     javascriptGenerator.forBlock["junior_change_costume"] = () => `nextCostume();\n${wait()}`;

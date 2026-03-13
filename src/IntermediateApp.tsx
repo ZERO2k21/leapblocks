@@ -1782,7 +1782,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         btn.setAttribute('callbackKey', 'CREATE_VARIABLE');
                         xmlList.push(btn); // Standard vars button
 
-                        const allVars = ws.getAllVariables() || [];
+                        const allVars = ws.getVariableMap().getAllVariables() || [];
                         const scalars = allVars.filter((v: any) => v.type === '' || v.type === 'Number' || v.type === 'String');
                         const lists = allVars.filter((v: any) => v.type === 'list'); // Filter by 'list' type
 

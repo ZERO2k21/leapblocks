@@ -39,9 +39,9 @@ export function useJuniorUIHandlers({
             wave1: 'Wave 1',
             wave2: 'Wave 2',
             talk: 'Talk',
-            costume1: 'Talk',
-            costume2: 'Talk 2',
-            costume3: 'Wave 1',
+            costume1: 'Photoroom',
+            costume2: 'Preview 1',
+            costume3: 'Preview 2',
             costume4: 'Wave 2',
             costume5: 'Wave 3',
             costume6: 'Wave 4'
@@ -181,9 +181,9 @@ export function useJuniorUIHandlers({
             if (type === "robot") {
                 costumes = {
                     default: '/assets/sprites/robot/robot_idle.svg',
-                    wave1: '/assets/sprites/robot/robot_wave1.svg',
-                    wave2: '/assets/sprites/robot/robot_wave2.svg',
-                    talk: '/assets/sprites/robot/robot_talk1.svg'
+                    wave1: '/assets/sprites/robot/image-Photoroom.png',
+                    wave2: '/assets/sprites/robot/image-removebg-preview (1).png',
+                    talk: '/assets/sprites/robot/image-removebg-preview.png'
                 };
             } else if (type === "bear") {
                 costumes = { default: "🐻", wave: "👋", angry: "😠" };

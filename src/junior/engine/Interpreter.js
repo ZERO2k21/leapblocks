@@ -49,6 +49,7 @@ export class Interpreter {
                     await this.pausePromise;
                 }
             };
+            window.isActive = () => this.isActive;
             window.pauseExecution = () => this.pauseExecution();
             // Global highlight helper for Junior blocks
             window.highlightBlock = (blockId, spriteId) => {

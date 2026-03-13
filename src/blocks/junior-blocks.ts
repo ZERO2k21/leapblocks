@@ -156,11 +156,11 @@ export const juniorBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
     },
     {
         type: 'junior_change_costume',
-        message0: '👔 CHANGE LOOK',
+        message0: '👔 NEXT COSTUME',
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
-        tooltip: 'Change how you look',
+        tooltip: 'Change to the next costume',
         helpUrl: '',
     },
 
