@@ -289,7 +289,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
         if (editorMode === 'stage') {
             // Remove Pen category from intermediate session
             const filteredContents = animationToolbox.contents.filter((cat: any) => cat.name !== 'Pen');
-            
+
             if (selectedSpriteId === 'stage') {
                 return {
                     ...animationToolbox,
@@ -698,8 +698,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
 
     // Load workspace blocks from the per-sprite map
     const loadSpriteWorkspace = useCallback((spriteId: string) => {
+        // ALWAYS update the true owner tracking, even if workspace is null (unmounted)
+        // This ensures that when the workspace is re-initialized, it knows what it should be loading.
+        activeSpriteIdRef.current = spriteId;
+
         if (!workspaceRef.current) {
-            console.warn('[APP] Cannot load workspace: workspaceRef.current is null');
+            console.log('[APP] Workspace unmounted, deferred loading for sprite:', spriteId);
             return;
         }
 
@@ -722,7 +726,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
             console.error('[APP] Error loading workspace JSON:', err);
         } finally {
             Blockly.Events.enable();
-            activeSpriteIdRef.current = spriteId; // Update true owner only after loading finishes
 
             // PERSIST FLYOUT: Ensure flyout stays open after workspace load/clear
             const flyout = workspaceRef.current.getFlyout() as any;
@@ -740,9 +743,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
             // thrown by Blockly immediately after enable() are also swallowed.
             setTimeout(() => {
                 isLoadingWorkspaceRef.current = false;
+                // Force a recompile for the newly loaded sprite/backdrop
+                if (workspaceRef.current) {
+                    handleWorkspaceChange({ isUiEvent: false } as Blockly.Events.Abstract);
+                }
             }, 50);
         }
-    }, []);
+    }, [handleWorkspaceChange]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // MODE SWITCHING
@@ -763,9 +770,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
 
         // Save blocks if we are moving AWAY from blocks or switching between sprites
         saveCurrentSpriteWorkspace();
+
+        // In Scratch-like UX, tabs maintain the current selection.
+        // Costumes/Sounds tabs will dynamically show content for the selected target.
+
         setWorkspaceTab(newTab);
         addLog(`Switched to ${newTab} tab`);
-    }, [workspaceTab, saveCurrentSpriteWorkspace, addLog]);
+    }, [workspaceTab, saveCurrentSpriteWorkspace, addLog, loadSpriteWorkspace]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // SPRITE MANAGEMENT
@@ -904,6 +915,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
     }, [sprites, addLog, triggerUpdate]);
 
     const executeNewProject = useCallback(() => {
+        // Clear all sprites and workspaces
+        sprites.forEach(s => animationVM.unregisterSprite(s.id));
         setSprites([]);
         setSelectedSpriteId(null);
         setProjectName('Untitled');
@@ -917,19 +930,42 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
                 isLoadingWorkspaceRef.current = false;
             }, 50);
         }
-        // Add a default robot sprite
-        const id = `sprite_${Date.now()}`;
-        const newSprite = new Sprite(id, 'Robot', triggerUpdate, 'robot');
-        newSprite.setX(0); // Center of Scratch-like stage
-        newSprite.setY(0);
-        newSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg').then(() => {
-            setSprites([newSprite]);
-            activeSpriteIdRef.current = id;
-            setSelectedSpriteId(id);
+
+        // Reset stage manager (clears old backdrops and creates fresh default)
+        stageManager.reset();
+
+        // Create Stage Sprite (for backdrop management and stage scripts)
+        const stageSprite = new Sprite('stage', 'Stage', triggerUpdate, 'cat');
+        stageSprite.hide(); // Hide the stage sprite so the user doesn't see the default cat-like placeholder
+        animationVM.registerSprite(stageSprite);
+        spriteWorkspacesRef.current.set('stage', {}); // Initialize empty workspace for stage
+
+        // Create Default Robot Sprite
+        const robotId = 'sprite_default';
+        const robotSprite = new Sprite(robotId, 'Robot', triggerUpdate, 'robot');
+        robotSprite.setX(0); // Center of Scratch-like stage
+        robotSprite.setY(0);
+        spriteWorkspacesRef.current.set(robotId, {}); // Initialize empty workspace for robot
+
+        // Load robot costumes
+        const loadAssets = async () => {
+            await robotSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
+            await robotSprite.addCostume('wave 1', '/assets/sprites/robot/image-removebg-preview (1).png');
+            await robotSprite.addCostume('wave 2', '/assets/sprites/robot/image-Photoroom.png');
+            await robotSprite.addCostume('talk', '/assets/sprites/robot/image-removebg-preview.png');
+            await robotSprite.addSound('Meow', '/assets/sounds/meow.wav');
+
+            animationVM.registerSprite(robotSprite);
+            setSprites([stageSprite, robotSprite]);
+            activeSpriteIdRef.current = robotId;
+            setSelectedSpriteId(robotId);
             triggerUpdate();
-        });
+            window.dispatchEvent(new Event('leap-stage-update'));
+        };
+        loadAssets().catch(err => console.error('[APP] Failed to initialize assets:', err));
+
         addLog('New project created');
-    }, [triggerUpdate, addLog]);
+    }, [triggerUpdate, addLog, sprites]);
 
     const handleNewProject = useCallback(() => {
         setPendingAction('new');
@@ -1375,20 +1411,23 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
 
             // 1. Create Stage Sprite (for backdrop management and stage scripts)
             const stageSprite = new Sprite('stage', 'Stage', triggerUpdate, 'cat'); // cat is dummy type
+            stageSprite.hide(); // Stage sprite is only for scripting/backdrops and should not be visible on canvas
+            spriteWorkspacesRef.current.set('stage', {}); // Initialize empty workspace for stage
 
             // 2. Create Default Robot Sprite
             const defaultSprite = new Sprite('sprite_default', 'Robot', triggerUpdate, 'robot');
             // Scratch coords: (0,0) is center of stage
             defaultSprite.setX(0);
             defaultSprite.setY(0);
+            spriteWorkspacesRef.current.set('sprite_default', {}); // Initialize empty workspace for robot
 
             // Add robot costumes
             const loadAssets = async () => {
                 console.log('[APP] Loading assets for robot...');
                 await defaultSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
-                await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/robot_wave1.png');
-                await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/robot_wave2.png');
-                await defaultSprite.addCostume('talk', '/assets/sprites/robot/robot_talk.png');
+                await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/image-removebg-preview (1).png');
+                await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/image-Photoroom.png');
+                await defaultSprite.addCostume('talk', '/assets/sprites/robot/image-removebg-preview.png');
 
                 // Add default sound
                 await defaultSprite.addSound('Meow', '/assets/sounds/meow.wav');
@@ -1521,19 +1560,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
             if (flyout) {
                 flyout.autoClose = false;
                 flyout.show(contents);
+                // Ensure flyout is properly laid out
+                if (flyout.reflowInternal_) flyout.reflowInternal_();
                 console.log('[APP] Flyout re-shown with', contents.length, 'items');
             }
-
-            // Safety: re-show after a short delay to catch any async hide calls from updateToolbox
-            setTimeout(() => {
-                if (workspaceRef.current) {
-                    const flyout2 = workspaceRef.current.getFlyout() as any;
-                    if (flyout2 && _continuousFlyoutContents.length > 0) {
-                        flyout2.autoClose = false;
-                        flyout2.show(_continuousFlyoutContents);
-                    }
-                }
-            }, 100);
         }
     }, [selectedSpriteId, editorMode, appMode, getCurrentToolbox]);
 
@@ -1618,17 +1648,21 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
                                         isInternalSync = true; // Block back-sync
                                         const flyoutWs = flyout.getWorkspace();
                                         if (flyoutWs) {
+                                            // Force reflow to ensure positions are updated
+                                            if (flyout.reflowInternal_) flyout.reflowInternal_();
                                             // Find the label matching the category name
                                             const blocks = flyoutWs.getTopBlocks(false); // false = all blocks including labels
                                             const targetLabel = blocks.find((b: any) => {
-                                                return b.type === 'blockly_flyout_label_block' &&
-                                                    b.getFieldValue('TEXT') === categoryName;
+                                                return b.getField && b.getField('TEXT') && b.getFieldValue('TEXT') === categoryName;
                                             });
 
                                             if (targetLabel) {
-                                                const y = targetLabel.getRelativeToSurfaceXY().y;
-                                                if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
-                                                else flyoutWs.translate(0, -y);
+                                                // Delay scrolling to ensure blocks are positioned after flyout.show()
+                                                setTimeout(() => {
+                                                    const y = targetLabel.getRelativeToSurfaceXY().y;
+                                                    if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
+                                                    else flyoutWs.translate(0, -y);
+                                                }, 300);
                                             } else {
                                                 // Fallback to original block prefix logic if label not found
                                                 const targetBlock = blocks.find((b: any) => {
@@ -1649,9 +1683,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
                                                     return matches(categoryName);
                                                 });
                                                 if (targetBlock) {
-                                                    const y = targetBlock.getRelativeToSurfaceXY().y;
-                                                    if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
-                                                    else flyoutWs.translate(0, -y);
+                                                    // Delay scrolling to ensure blocks are positioned
+                                                    setTimeout(() => {
+                                                        const y = targetBlock.getRelativeToSurfaceXY().y;
+                                                        if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
+                                                        else flyoutWs.translate(0, -y);
+                                                    }, 300);
                                                 }
                                             }
                                         }
@@ -1745,7 +1782,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
                         btn.setAttribute('callbackKey', 'CREATE_VARIABLE');
                         xmlList.push(btn); // Standard vars button
 
-                        const allVars = ws.getAllVariables() || [];
+                        const allVars = ws.getVariableMap().getAllVariables() || [];
                         const scalars = allVars.filter((v: any) => v.type === '' || v.type === 'Number' || v.type === 'String');
                         const lists = allVars.filter((v: any) => v.type === 'list'); // Filter by 'list' type
 
@@ -1900,14 +1937,19 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
                     });
 
                     // Restore the selected sprite's blocks after workspace re-initialization
-                    if (selectedSpriteId) {
-                        const savedJson = spriteWorkspacesRef.current.get(selectedSpriteId);
+                    // Crucial: prioritize activeSpriteIdRef.current as the source of truth for current state
+                    const targetSpriteId = activeSpriteIdRef.current || selectedSpriteId;
+                    if (targetSpriteId) {
+                        const savedJson = spriteWorkspacesRef.current.get(targetSpriteId);
                         if (savedJson && Object.keys(savedJson).length > 0) {
-                            console.log('[APP] Restoring workspace for sprite after re-init:', selectedSpriteId);
+                            console.log('[APP] Restoring workspace for sprite after re-init:', targetSpriteId);
                             Blockly.serialization.workspaces.load(savedJson, blocksWorkspace);
                         }
-                        // Ensure activeSpriteIdRef is set so workspace saves work correctly
-                        activeSpriteIdRef.current = selectedSpriteId;
+                        // Ensure activeSpriteIdRef is set and matches selectedSpriteId if they diverged
+                        activeSpriteIdRef.current = targetSpriteId;
+                        if (targetSpriteId !== selectedSpriteId) {
+                            setSelectedSpriteId(targetSpriteId);
+                        }
                     }
 
                     addLog(`Workspace initialized for ${editorMode === 'stage' ? 'Stage' : 'Upload'} mode`);
@@ -2179,40 +2221,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
                     */}
                     {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
                         <>
-                            {/* Selected Sprite Indicator overlay */}
-                            {editorMode === 'stage' && (
-                                (() => {
-                                    const activeSprite = sprites.find(s => s.id === selectedSpriteId);
-                                    if (activeSprite && activeSprite.currentCostume) {
-                                        return (
-                                            <div style={{
-                                                position: 'absolute',
-                                                top: '16px',
-                                                right: '16px',
-                                                width: '60px',
-                                                height: '60px',
-                                                background: 'white',
-                                                borderRadius: '8px',
-                                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                                border: '2px solid #855CD6',
-                                                pointerEvents: 'none',
-                                                zIndex: 10,
-                                                display: 'flex',
-                                                justifyContent: 'center',
-                                                alignItems: 'center',
-                                                padding: '6px',
-                                            }}>
-                                                <img
-                                                    src={activeSprite.currentCostume.image.src}
-                                                    alt={activeSprite.name}
-                                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                                                />
-                                            </div>
-                                        );
-                                    }
-                                    return null;
-                                })()
-                            )}
                             <div ref={blocklyDiv} style={styles.blockly} />
                             <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={undefined} style={undefined} />
                             <WorkspaceTrash workspaceRef={workspaceRef} />

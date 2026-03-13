@@ -10,6 +10,7 @@ import { SoundLibrary } from './SoundLibrary';
 import AudioEffects from '../scratch-audio/src/audio/audio-effects';
 import WavEncoder from 'wav-encoder';
 import { ADPCMSoundDecoder } from '../scratch-audio/src/ADPCMSoundDecoder';
+import { MiniWaveform } from './MiniWaveform';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // WAVEFORM COMPONENT
@@ -174,6 +175,8 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
     const [selectionStart, setSelectionStart] = useState(0);
     const [selectionEnd, setSelectionEnd] = useState(1);
     const [clipboardBuffer, setClipboardBuffer] = useState<AudioBuffer | null>(null);
+    const [sidebarBuffers, setSidebarBuffers] = useState<Map<number, AudioBuffer>>(new Map());
+    const [volume, setVolume] = useState<number>(100);
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const currentSoundPlayer = useRef<AudioBufferSourceNode | null>(null);
@@ -194,28 +197,57 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
         stopPlayback();
     }, [activeSoundIndex, activeSound]);
 
-    const loadBuffer = async (urlOrName: string) => {
+    const fetchBuffer = async (urlOrName: string) => {
         try {
-            let buffer: AudioBuffer | null = null;
             if (urlOrName.startsWith('http') || urlOrName.startsWith('blob:') || urlOrName.startsWith('data:') || urlOrName.startsWith('/')) {
                 const response = await fetch(urlOrName);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const arrayBuffer = await response.arrayBuffer();
                 const decoder = new ADPCMSoundDecoder(audioContext);
-                buffer = await decoder.decode(arrayBuffer);
+                return await decoder.decode(arrayBuffer);
             } else {
-                buffer = await globalSoundBank.getSoundBuffer(urlOrName);
-            }
-
-            if (buffer) {
-                setAudioBuffer(buffer);
-                setHistory([buffer]);
-                setHistoryIndex(0);
+                return await globalSoundBank.getSoundBuffer(urlOrName);
             }
         } catch (err) {
-            console.error("Failed to load buffer:", err);
+            console.error("Failed to fetch buffer:", err);
+            return null;
         }
     };
+
+    const loadBuffer = async (urlOrName: string) => {
+        const buffer = await fetchBuffer(urlOrName);
+        if (buffer) {
+            setAudioBuffer(buffer);
+            setHistory([buffer]);
+            setHistoryIndex(0);
+            
+            // Also update sidebar cache for the active sound
+            setSidebarBuffers(prev => {
+                const next = new Map(prev);
+                next.set(activeSoundIndex, buffer);
+                return next;
+            });
+        }
+    };
+
+    // Pre-load all buffers for sidebar previews
+    useEffect(() => {
+        const loadAllSidebarBuffers = async () => {
+            const newBuffers = new Map(sidebarBuffers);
+            let updated = false;
+            for (let i = 0; i < sounds.length; i++) {
+                if (!newBuffers.has(i)) {
+                    const buffer = await fetchBuffer(sounds[i].src || sounds[i].name);
+                    if (buffer) {
+                        newBuffers.set(i, buffer);
+                        updated = true;
+                    }
+                }
+            }
+            if (updated) setSidebarBuffers(newBuffers);
+        };
+        loadAllSidebarBuffers();
+    }, [sounds]);
 
     const stopPlayback = () => {
         if (currentSoundPlayer.current) {
@@ -399,8 +431,14 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
 
         try {
             const source = audioContext.createBufferSource();
+            const gainNode = audioContext.createGain();
+            
             source.buffer = audioBuffer;
-            source.connect(audioContext.destination);
+            gainNode.gain.value = volume / 100;
+            
+            source.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
             source.onended = () => setIsPlaying(false);
             source.start();
             currentSoundPlayer.current = source;
@@ -473,13 +511,22 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                                 onClick={() => setActiveSoundIndex(i)}
                                 className={`w-[80px] h-[80px] rounded-lg border-2 flex flex-col items-center justify-center p-1 bg-white cursor-pointer relative ${activeSoundIndex === i ? 'border-[#855CD6] shadow-sm' : 'border-gray-200'}`}
                             >
-                                <span className="absolute top-1 left-1.5 text-[10px] text-gray-500 font-bold">{i + 1}</span>
-                                <div className="flex-1 w-full flex items-center justify-center">
-                                    <div className="w-10 h-10 bg-[#e0d6ff] rounded-full flex items-center justify-center text-[#855CD6]">
-                                        <Volume2 size={24} />
-                                    </div>
+                                <span className="absolute top-1 left-1.5 text-[10px] text-gray-400 font-bold">{i + 1}</span>
+                                <div className="flex-1 w-full flex items-center justify-center overflow-hidden">
+                                    {sidebarBuffers.has(i) ? (
+                                        <MiniWaveform 
+                                            buffer={sidebarBuffers.get(i)!} 
+                                            width={60} 
+                                            height={40}
+                                            color={activeSoundIndex === i ? '#855CD6' : '#999'}
+                                        />
+                                    ) : (
+                                        <div className="w-10 h-10 bg-[#f0f0f0] rounded-lg flex items-center justify-center text-gray-300">
+                                            <Volume2 size={24} />
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="w-full text-[10px] text-center truncate text-gray-700 font-medium px-0.5 mt-0.5" title={s.name}>{s.name}</div>
+                                <div className="w-full text-[10px] text-center truncate text-gray-500 font-bold px-0.5 mt-0.5" title={s.name}>{s.name}</div>
                             </div>
 
                             {/* Context Actions (Hover) */}
@@ -536,15 +583,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                         {/* TOP TOOLBAR */}
                         <div className="h-14 px-6 border-b border-gray-200 flex items-center bg-white justify-between">
                             <div className="flex items-center gap-6">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-gray-400">Sound</span>
-                                    <input
-                                        type="text"
-                                        value={soundName}
-                                        onChange={(e) => setSoundName(e.target.value)}
-                                        className="bg-[#f8f8f8] border border-gray-200 rounded-full px-4 py-1.5 text-sm font-semibold text-gray-600 outline-none focus:border-[#855CD6] w-48"
-                                    />
-                                </div>
+                                <div className="text-sm font-bold text-gray-400">Edit Sound</div>
                             </div>
                             <div className="flex items-center gap-4">
                                 <button
@@ -577,48 +616,105 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                             </div>
                         </div>
 
-                        {/* WAVEFORM & CONTROLS */}
-                        <div className="flex-1 flex flex-col p-8 relative">
-                            {/* Playback Control Button */}
-                            <div className="absolute top-8 left-8 z-10">
-                                <button
-                                    onClick={handlePlayPause}
-                                    className="w-16 h-16 rounded-full bg-[#855CD6] text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all outline-none"
-                                >
-                                    {isPlaying ? <Square size={28} fill="white" /> : <Play size={32} fill="white" className="ml-2" />}
-                                </button>
-                            </div>
+                        {/* EDITOR CONTENT AREA (Waveform + Properties) */}
+                        <div className="flex-1 flex flex-row overflow-hidden">
+                            {/* WAVEFORM & CONTROLS */}
+                            <div className="flex-1 flex flex-col p-8 relative overflow-y-auto">
+                                {/* Playback Control Button */}
+                                <div className="absolute top-8 left-8 z-10">
+                                    <button
+                                        onClick={handlePlayPause}
+                                        className="w-16 h-16 rounded-full bg-[#855CD6] text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all outline-none"
+                                    >
+                                        {isPlaying ? <Square size={28} fill="white" /> : <Play size={32} fill="white" className="ml-2" />}
+                                    </button>
+                                </div>
 
-                            {/* Waveform Visualization */}
-                            <div className="flex-1 bg-white rounded-2xl border-2 border-[#e0d6ff] shadow-sm relative overflow-hidden flex items-center justify-center mt-20 mb-8 mx-auto w-full max-w-4xl">
-                                <div className="absolute inset-0 flex items-center group w-full">
-                                    <Waveform
-                                        buffer={audioBuffer}
-                                        color="#855CD6"
-                                        selectionStart={selectionStart}
-                                        selectionEnd={selectionEnd}
-                                        onSelectionChange={(start, end) => {
-                                            setSelectionStart(start);
-                                            setSelectionEnd(end);
-                                        }}
-                                    />
+                                {/* Waveform Visualization */}
+                                <div className="flex-1 bg-white rounded-2xl border-2 border-[#e0d6ff] shadow-sm relative overflow-hidden flex items-center justify-center mt-20 mb-8 mx-auto w-full max-w-4xl">
+                                    <div className="absolute inset-0 flex items-center group w-full">
+                                        <Waveform
+                                            buffer={audioBuffer}
+                                            color="#855CD6"
+                                            selectionStart={selectionStart}
+                                            selectionEnd={selectionEnd}
+                                            onSelectionChange={(start, end) => {
+                                                setSelectionStart(start);
+                                                setSelectionEnd(end);
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Audio Effect Tools */}
+                                <div className="h-24 bg-white border border-gray-200 rounded-2xl shadow-sm flex items-center justify-around px-4 max-w-4xl mx-auto w-full overflow-x-auto no-scrollbar">
+                                    <EffectTool icon={<ArrowUpFromLine size={24} />} onClick={() => applyEffect('faster')} label="Faster" />
+                                    <EffectTool icon={<ArrowDownToLine size={24} />} onClick={() => applyEffect('slower')} label="Slower" />
+                                    <div className="w-px h-12 bg-gray-200 mx-1 flex-shrink-0" />
+                                    <EffectTool icon={<Volume2 size={24} />} onClick={() => applyEffect('louder')} label="Louder" />
+                                    <EffectTool icon={<VolumeX size={24} />} onClick={() => applyEffect('softer')} label="Softer" />
+                                    <EffectTool icon={<VolumeX size={24} />} onClick={() => applyEffect('mute')} label="Mute" />
+                                    <div className="w-px h-12 bg-gray-200 mx-1 flex-shrink-0" />
+                                    <EffectTool icon={<ArrowLeftRight size={24} />} onClick={() => applyEffect('fade in')} label="Fade in" />
+                                    <EffectTool icon={<ArrowRightLeft size={24} />} onClick={() => applyEffect('fade out')} label="Fade out" />
+                                    <EffectTool icon={<RotateCcw size={24} />} onClick={() => applyEffect('reverse')} label="Reverse" />
+                                    <div className="w-px h-12 bg-gray-200 mx-1 flex-shrink-0" />
+                                    <EffectTool icon={<MusicIcon size={24} />} onClick={() => applyEffect('robot')} label="Robot" />
                                 </div>
                             </div>
 
-                            {/* Audio Effect Tools */}
-                            <div className="h-24 bg-white border border-gray-200 rounded-2xl shadow-sm flex items-center justify-around px-4 max-w-4xl mx-auto w-full overflow-x-auto no-scrollbar">
-                                <EffectTool icon={<ArrowUpFromLine size={24} />} onClick={() => applyEffect('faster')} label="Faster" />
-                                <EffectTool icon={<ArrowDownToLine size={24} />} onClick={() => applyEffect('slower')} label="Slower" />
-                                <div className="w-px h-12 bg-gray-200 mx-1 flex-shrink-0" />
-                                <EffectTool icon={<Volume2 size={24} />} onClick={() => applyEffect('louder')} label="Louder" />
-                                <EffectTool icon={<VolumeX size={24} />} onClick={() => applyEffect('softer')} label="Softer" />
-                                <EffectTool icon={<VolumeX size={24} />} onClick={() => applyEffect('mute')} label="Mute" />
-                                <div className="w-px h-12 bg-gray-200 mx-1 flex-shrink-0" />
-                                <EffectTool icon={<ArrowLeftRight size={24} />} onClick={() => applyEffect('fade in')} label="Fade in" />
-                                <EffectTool icon={<ArrowRightLeft size={24} />} onClick={() => applyEffect('fade out')} label="Fade out" />
-                                <EffectTool icon={<RotateCcw size={24} />} onClick={() => applyEffect('reverse')} label="Reverse" />
-                                <div className="w-px h-12 bg-gray-200 mx-1 flex-shrink-0" />
-                                <EffectTool icon={<MusicIcon size={24} />} onClick={() => applyEffect('robot')} label="Robot" />
+                            {/* 3. PROPERTIES PANEL (Right Sidebar) */}
+                            <div className="w-64 border-l border-gray-200 bg-white p-6 flex flex-col gap-8 shadow-sm">
+                                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Properties</h3>
+                                
+                                {/* Sound Name */}
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Sound Name</label>
+                                    <input
+                                        type="text"
+                                        value={soundName}
+                                        onChange={(e) => setSoundName(e.target.value)}
+                                        className="bg-[#f8f8f8] border-2 border-gray-100 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 outline-none focus:border-[#855CD6] focus:bg-white transition-all"
+                                    />
+                                </div>
+
+                                {/* Volume Control */}
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Volume</label>
+                                        <span className="text-xs font-bold text-[#855CD6] bg-[#e0d6ff] px-2 py-0.5 rounded-full">{volume}%</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <VolumeX size={16} className="text-gray-400" />
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={volume}
+                                            onChange={(e) => setVolume(Number(e.target.value))}
+                                            className="flex-1 accent-[#855CD6] cursor-pointer"
+                                        />
+                                        <Volume2 size={16} className="text-gray-400" />
+                                    </div>
+                                </div>
+
+                                {/* Duration */}
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Duration</label>
+                                    <div className="bg-[#f8f8f8] border-2 border-gray-100 rounded-xl px-4 py-2.5 flex items-center justify-between">
+                                        <span className="text-sm font-bold text-gray-700">
+                                            {audioBuffer ? audioBuffer.duration.toFixed(2) : '0.00'}s
+                                        </span>
+                                        <MusicIcon size={16} className="text-gray-300" />
+                                    </div>
+                                </div>
+
+                                {/* Info Box */}
+                                <div className="mt-auto bg-[#f8f6ff] border border-[#e0d6ff] rounded-xl p-4">
+                                    <p className="text-[11px] text-[#855CD6] font-medium leading-relaxed">
+                                        You can edit, trim, and apply effects to your sounds here. Use the Action Menu below the sound list to add more!
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </>

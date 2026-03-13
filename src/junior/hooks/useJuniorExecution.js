@@ -29,7 +29,7 @@ export function useJuniorExecution({
                 setIsBlocksRunning(false);
             },
             onHighlight: (id, spriteId) => {
-                if (workspaceRef.current && (!spriteId || spriteId === activeSpriteIdRef.current)) {
+                if (workspaceRef.current && (!spriteId || (activeSpriteIdRef && spriteId === activeSpriteIdRef.current))) {
                     workspaceRef.current.highlightBlock(id);
                 }
             }

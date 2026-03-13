@@ -101,6 +101,16 @@ export function useSpriteSystem(initialScenes) {
             updateSprite(spriteId, { x: px, y: py });
         },
 
+        nextCostume: (spriteId) => {
+            updateSprite(spriteId, (prev) => {
+                const costumeKeys = Object.keys(prev.costumes);
+                if (costumeKeys.length === 0) return {};
+                const currentIndex = costumeKeys.indexOf(prev.currentCostume);
+                const nextIndex = (currentIndex + 1) % costumeKeys.length;
+                return { currentCostume: costumeKeys[nextIndex] };
+            });
+        },
+
         resetAll: () => {
             setScenes(prev => prev.map(scene => {
                 return {

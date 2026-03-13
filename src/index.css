@@ -642,6 +642,8 @@ div::-webkit-scrollbar-thumb {
 .pictoblox-icon {
   transform: scale(1) !important;
   flex-shrink: 0 !important;
+  /* Allow clicks to pass through the icon to the toolbox category row */
+  pointer-events: none !important;
 }
 
 /* Prevent the flyout container from inheriting workspace transform changes */

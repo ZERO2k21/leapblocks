@@ -1,5 +1,6 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import * as Blockly from "blockly";
+import { javascriptGenerator } from 'blockly/javascript';
 import Teddy from "./sprites/Teddy";
 import RightPanel from "./components/RightPanel";
 import BackdropChooser from "./components/BackdropChooser";
@@ -16,6 +17,7 @@ import SuccessModal from "./components/SuccessModal";
 import UnsavedWarningModal from "./components/UnsavedWarningModal";
 import JuniorSoundRecorder from "./components/JuniorSoundRecorder";
 import JuniorExtensionLibrary from "./components/JuniorExtensionLibrary";
+import { juniorBlocks } from "../blocks/junior-blocks";
 
 import { useSpriteSystem } from "./hooks/useSpriteSystem";
 import { useJuniorWorkspace } from "./hooks/useJuniorWorkspace";
@@ -40,14 +42,20 @@ import "./styles/juniorLooksBlocks.css";
 
 // Robot Assets
 const robotIdle = "/assets/sprites/robot/robot_idle.svg";
-const robotWave1 = "/assets/sprites/robot/robot_wave1.svg";
-const robotWave2 = "/assets/sprites/robot/robot_wave2.svg";
-const robotTalk1 = "/assets/sprites/robot/robot_talk1.svg";
+const robotWave1 = "/assets/sprites/robot/image-Photoroom.png";
+const robotWave2 = "/assets/sprites/robot/image-removebg-preview (1).png";
+const robotTalk1 = "/assets/sprites/robot/image-removebg-preview.png";
 
 const audioEngine = new AudioEngine();
 const runtimeShim = { audioEngine };
 export const soundBlocksExt = new Scratch3SoundBlocks(runtimeShim);
 export const musicBlocksExt = new Scratch3MusicBlocks(runtimeShim);
+
+// Register junior blocks
+Blockly.common.defineBlocks(juniorBlocks);
+
+// Define generators for junior blocks
+javascriptGenerator.forBlock['junior_change_costume'] = () => 'nextCostume();\n';
 
 export default function JuniorApp({ onBack }) {
     // Refs
@@ -70,12 +78,12 @@ export default function JuniorApp({ onBack }) {
     const [recordingCount, setRecordingCount] = useState(1);
     const [showGrid, setShowGrid] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    
+
     // Modals state
     const [isSpriteModalOpen, setIsSpriteModalOpen] = useState(false);
     const [isBackdropChooserOpen, setIsBackdropChooserOpen] = useState(false);
     const [backdropEditSceneId, setBackdropEditSceneId] = useState(null);
-    
+
     // Paint Editor
     const [paintEditor, setPaintEditor] = useState({
         isOpen: false,
@@ -93,6 +101,8 @@ export default function JuniorApp({ onBack }) {
             id: "scene1",
             name: "Scene 1",
             background: "white",
+            backgroundImage: "/assets/backdrops/WhatsApp Image 2026-03-13 at 12.05.21.jpeg",
+            backdropName: "WhatsApp Image",
             sprites: [
                 {
                     id: "robot_default", name: "Robot", type: "robot",
@@ -119,17 +129,40 @@ export default function JuniorApp({ onBack }) {
             return Object.keys(assets);
         };
 
+        const getActiveSpriteCostumes = () => {
+            const sprite = scenes.find(s => s.id === currentSceneId)?.sprites.find(s => s.id === activeSpriteId);
+            if (sprite) {
+                return Object.keys(sprite.costumes);
+            }
+            return [];
+        };
+
         scenesRef.current = scenes;
         activeSpriteIdRef.current = activeSpriteId;
         window.activeSpriteId = activeSpriteId;
 
         // Override any stale global from other editors before Blockly builds dropdowns.
         window.getActiveSpriteSounds = getJuniorSoundOptions;
+        window.getActiveSpriteCostumes = getActiveSpriteCostumes;
+        window.nextCostume = () => spriteActions.nextCostume(activeSpriteId);
+        window.selectSprite = (id) => {
+            setActiveSpriteId(id);
+            if (activeSpriteIdRef) activeSpriteIdRef.current = id;
+        };
 
         return () => {
             delete window.activeSpriteId;
             if (window.getActiveSpriteSounds === getJuniorSoundOptions) {
                 delete window.getActiveSpriteSounds;
+            }
+            if (window.getActiveSpriteCostumes === getActiveSpriteCostumes) {
+                delete window.getActiveSpriteCostumes;
+            }
+            if (window.nextCostume) {
+                delete window.nextCostume;
+            }
+            if (window.selectSprite) {
+                delete window.selectSprite;
             }
         };
     }, [scenes, activeSpriteId]);
@@ -137,20 +170,35 @@ export default function JuniorApp({ onBack }) {
     const currentScene = scenes?.find(s => s.id === currentSceneId) || scenes?.[0];
     const sprites = currentScene?.sprites || [];
 
-    // --- HOOKS SETUP ---
-    const saveCurrentWorkspace = () => {
-        if (!workspaceRef.current || !activeSpriteIdRef.current || isLoadingWorkspaceRef.current) return;
+    // Per-sprite workspace storage: maps spriteId -> Blockly serialized JSON (synchronous ref-based storage)
+    const spriteWorkspacesRef = useRef(new Map());
+    const currentToolboxContentsRef = useRef([]);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SPRITE WORKSPACE MANAGEMENT (Matching Intermediate Blocks Architecture)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Save current workspace blocks to the per-sprite map
+    const saveCurrentWorkspace = useCallback(() => {
+        const activeId = activeSpriteIdRef.current;
+        if (!workspaceRef.current || !activeId || isLoadingWorkspaceRef.current) return;
+
         const json = Blockly.serialization.workspaces.save(workspaceRef.current);
 
+        // Save to ref for immediate access
+        spriteWorkspacesRef.current.set(activeId, json);
+        console.log(`[JuniorApp] Saved workspace for sprite: ${activeId}`);
+
+        // Also update state for persistence
         setScenes(prevScenes => {
             return prevScenes.map(scene => {
                 if (scene.id !== currentSceneId) return scene;
-                
+
                 return {
                     ...scene,
                     sprites: scene.sprites.map(sprite => {
-                        if (sprite.id !== activeSpriteIdRef.current) return sprite;
-                        
+                        if (sprite.id !== activeId) return sprite;
+
                         if (JSON.stringify(sprite.blocks) !== JSON.stringify(json)) {
                             console.log(`[JuniorApp] Saved workspace blocks to sprite: ${sprite.name}`);
                             return { ...sprite, blocks: json };
@@ -160,7 +208,65 @@ export default function JuniorApp({ onBack }) {
                 };
             });
         });
-    };
+    }, [currentSceneId]);
+
+    // Load workspace blocks from the per-sprite map
+    const loadSpriteWorkspace = useCallback((spriteId) => {
+        if (!workspaceRef.current) {
+            console.warn('[JuniorApp] Cannot load workspace: workspaceRef.current is null');
+            return;
+        }
+
+        // First check ref-based storage (immediate), then fall back to sprite.blocks
+        let json = spriteWorkspacesRef.current.get(spriteId);
+        if (!json || Object.keys(json).length === 0) {
+            // Fallback to sprite.blocks from scenes
+            for (const scene of scenesRef.current || []) {
+                const sprite = scene.sprites.find(s => s.id === spriteId);
+                if (sprite && sprite.blocks && Object.keys(sprite.blocks).length > 0) {
+                    json = sprite.blocks;
+                    break;
+                }
+            }
+        }
+
+        // ALWAYS disable events when manually changing workspace content
+        // to prevent handleWorkspaceChange from saving intermediate/wrong states
+        isLoadingWorkspaceRef.current = true;
+        Blockly.Events.disable();
+        try {
+            if (json && Object.keys(json).length > 0) {
+                workspaceRef.current.clear();
+                Blockly.serialization.workspaces.load(json, workspaceRef.current);
+                console.log('[JuniorApp] Successfully loaded workspace for sprite:', spriteId);
+            } else {
+                workspaceRef.current.clear();
+                console.log('[JuniorApp] Cleared workspace (no saved blocks) for sprite:', spriteId);
+            }
+        } catch (err) {
+            console.error('[JuniorApp] Error loading workspace JSON:', err);
+        } finally {
+            Blockly.Events.enable();
+            activeSpriteIdRef.current = spriteId; // Update true owner only after loading finishes
+
+            // PERSIST FLYOUT: Ensure flyout stays open after workspace load/clear
+            const flyout = workspaceRef.current.getFlyout();
+            if (flyout) {
+                const contents = currentToolboxContentsRef.current;
+                if (contents && contents.length > 0) {
+                    console.log('[JuniorApp] Restoring flyout after workspace load');
+                    flyout.show(contents);
+                    if (flyout.reflowInternal_) flyout.reflowInternal_();
+                }
+            }
+
+            // Use setTimeout to ensure any strictly asynchronous layout events 
+            // thrown by Blockly immediately after enable() are also swallowed.
+            setTimeout(() => {
+                isLoadingWorkspaceRef.current = false;
+            }, 50);
+        }
+    }, []);
 
     const wp = useJuniorWorkspace({
         workspaceRef,
@@ -169,7 +275,9 @@ export default function JuniorApp({ onBack }) {
         scenesRef,
         setIsSoundRecorderOpen,
         saveCurrentWorkspace,
-        spriteActions
+        spriteActions,
+        currentToolboxContentsRef,
+        isLoadingWorkspaceRef
     });
 
     const exec = useJuniorExecution({
@@ -192,49 +300,65 @@ export default function JuniorApp({ onBack }) {
         stopBlocks: exec.stopBlocks,
         projectName,
         setProjectName,
-        saveCurrentWorkspace
+        saveCurrentWorkspace,
+        spriteWorkspacesRef,
+        isLoadingWorkspaceRef
     });
 
+    // Wrapper for backward compatibility - delegates to loadSpriteWorkspace
     const loadWorkspace = (sprite) => {
-        if (!workspaceRef.current) return;
-        const json = sprite?.blocks || {};
-        
-        // Disable events BEFORE clearing to prevent change listener from saving empty state
-        Blockly.Events.disable();
-        try {
-            workspaceRef.current.clear();
-            if (json && Object.keys(json).length > 0) {
-                Blockly.serialization.workspaces.load(json, workspaceRef.current);
-                console.log(`[JuniorApp] Loaded ${Object.keys(json).length} blocks for sprite: ${sprite.name}`);
-            } else {
-                console.log(`[JuniorApp] No blocks to load for sprite: ${sprite.name}`);
-            }
-        } catch (err) {
-            console.error(`[JuniorApp] Error loading workspace:`, err);
-        } finally {
-            Blockly.Events.enable();
-        }
+        loadSpriteWorkspace(sprite.id);
     };
 
-    const handleSceneSelect = (newSceneId) => {
+    // Handle scene selection: save old, load new
+    const handleSceneSelect = useCallback((newSceneId) => {
         if (newSceneId === currentSceneId) return;
-        saveCurrentWorkspace(); 
+
+        // Clear highlights before switching
+        if (workspaceRef.current) {
+            workspaceRef.current.highlightBlock(null);
+        }
+
+        // Save current workspace before switching
+        saveCurrentWorkspace();
         setCurrentSceneId(newSceneId);
 
         const newScene = scenes.find(s => s.id === newSceneId);
         if (newScene && newScene.sprites.length > 0) {
-            setActiveSpriteId(newScene.sprites[0].id);
+            const newSpriteId = newScene.sprites[0].id;
+            setActiveSpriteId(newSpriteId);
+            loadSpriteWorkspace(newSpriteId);
         } else {
             setActiveSpriteId(null);
-            if (workspaceRef.current) workspaceRef.current.clear();
+            // Clear workspace when no sprites in scene
+            if (workspaceRef.current) {
+                isLoadingWorkspaceRef.current = true;
+                Blockly.Events.disable();
+                workspaceRef.current.clear();
+                Blockly.Events.enable();
+                setTimeout(() => {
+                    isLoadingWorkspaceRef.current = false;
+                }, 50);
+            }
         }
-    };
+    }, [currentSceneId, scenes, saveCurrentWorkspace, loadSpriteWorkspace]);
 
-    const handleSpriteSelect = (newId) => {
+    // Handle sprite selection: save old, load new
+    const handleSpriteSelect = useCallback((newId) => {
         if (newId === activeSpriteId) return;
+
+        // Clear highlights in old workspace before switching
+        if (workspaceRef.current) {
+            workspaceRef.current.highlightBlock(null);
+        }
+
+        // Save current workspace before switching
         saveCurrentWorkspace();
+
+        // Load new sprite's workspace
         setActiveSpriteId(newId);
-    };
+        loadSpriteWorkspace(newId);
+    }, [activeSpriteId, saveCurrentWorkspace, loadSpriteWorkspace]);
 
     const handleNextScene = () => {
         const currentIndex = scenes.findIndex(s => s.id === currentSceneId);
@@ -267,6 +391,7 @@ export default function JuniorApp({ onBack }) {
         setCurrentSceneId,
         setActiveSpriteId,
         workspaceRef,
+        scenesRef,
         paintEditor,
         setPaintEditor,
         backdropEditSceneId,
@@ -281,7 +406,10 @@ export default function JuniorApp({ onBack }) {
         recordingCount,
         setRecordingCount,
         audioEngine,
-        project
+        project,
+        isLoadingWorkspaceRef,
+        spriteWorkspacesRef,
+        activeSpriteIdRef
     });
 
     // --- EFFECT HOOKS ---
@@ -295,38 +423,31 @@ export default function JuniorApp({ onBack }) {
         }
     }, [sprites, activeSpriteId, winMessage]);
 
+    // Initial workspace load effect - only runs once on mount
     useEffect(() => {
         if (!workspaceRef.current || !activeSpriteId) return;
-        
-        // Always load workspace when sprite changes (compare with ref to detect actual changes)
-        const spriteChanged = activeSpriteIdRef.current !== activeSpriteId;
-        
-        if (!spriteChanged && !isLoadingWorkspaceRef.current) {
-            // Same sprite, only reload if workspace is empty but sprite has blocks
-            const topBlocks = workspaceRef.current.getTopBlocks(false);
-            const activeSprite = sprites.find(s => s.id === activeSpriteId);
-            if (topBlocks.length > 0 || !activeSprite?.blocks || Object.keys(activeSprite?.blocks || {}).length === 0) {
-                return;
+
+        // Only load if this is the initial load (ref is null)
+        if (activeSpriteIdRef.current !== null) return;
+
+        // Find the sprite in the current scene
+        let activeSprite = null;
+        if (scenesRef.current) {
+            for (const scene of scenesRef.current) {
+                activeSprite = scene.sprites.find(s => s.id === activeSpriteId);
+                if (activeSprite) break;
             }
         }
 
-        const activeSprite = sprites.find(s => s.id === activeSpriteId);
-        if (activeSprite) {
-            console.log(`[JuniorApp] Switching workspace to sprite: ${activeSprite.name} (changed: ${spriteChanged})`);
-            isLoadingWorkspaceRef.current = true;
-            Blockly.Events.disable();
-            try {
-                loadWorkspace(activeSprite);
-            } finally {
-                Blockly.Events.enable();
-                activeSpriteIdRef.current = activeSpriteId;
-                window.activeSpriteId = activeSpriteId;
-                setTimeout(() => {
-                    isLoadingWorkspaceRef.current = false;
-                }, 50);
-            }
+        if (!activeSprite) {
+            activeSprite = sprites.find(s => s.id === activeSpriteId);
         }
-    }, [activeSpriteId, sprites, currentSceneId]);
+
+        if (activeSprite) {
+            console.log(`[JuniorApp] Initial workspace load for sprite: ${activeSprite.name}`);
+            loadSpriteWorkspace(activeSpriteId);
+        }
+    }, []); // Empty deps - only run on mount
 
     const [, setHint] = useState(null);
     const lastInteraction = useRef(null);

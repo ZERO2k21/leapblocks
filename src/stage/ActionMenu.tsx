@@ -186,7 +186,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         right: '55px', // Will animate to 65px via CSS
         top: '50%',
         transform: 'translateY(-50%)',
-        backgroundColor: '#e30b5d',
+        backgroundColor: '#855CD6',
         color: 'white',
         padding: '8px 16px',
         borderRadius: '4px',
@@ -204,7 +204,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         right: '35px', // Will animate to 45px via CSS
         top: '50%',
         transform: 'translateY(-50%)',
-        backgroundColor: '#e30b5d',
+        backgroundColor: '#855CD6',
         color: 'white',
         padding: '6px 12px',
         borderRadius: '4px',
