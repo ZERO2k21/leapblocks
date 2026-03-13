@@ -131,15 +131,41 @@ function PaintEditor({
 
     // Initialize Canvas
     useEffect(() => {
-        const canvas = new fabric.Canvas('fabric-canvas', {
-            width: canvasW,
-            height: canvasH,
-            backgroundColor: 'transparent',
-            isDrawingMode: false,
-            selection: true,
-        });
+        if (!canvasRef.current) {
+            const canvas = new fabric.Canvas('fabric-canvas', {
+                width: canvasW,
+                height: canvasH,
+                backgroundColor: 'transparent',
+                isDrawingMode: false,
+                selection: true,
+            });
 
-        canvasRef.current = canvas;
+            canvasRef.current = canvas;
+
+            canvas.on('object:added', () => saveState());
+            canvas.on('object:modified', () => saveState());
+            canvas.on('object:removed', () => saveState());
+
+            return () => {
+                canvas.dispose();
+            };
+        }
+    }, []); // Only run once to create the canvas
+
+    // Load image when activeImage changes
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        // Resize canvas if needed
+        if (canvas.width !== canvasW || canvas.height !== canvasH) {
+            canvas.setWidth(canvasW);
+            canvas.setHeight(canvasH);
+        }
+
+        // Clear existing content
+        canvas.clear();
+        canvas.backgroundColor = 'transparent';
 
         if (activeImage) {
             const isSVG = activeImage.includes('<svg') || activeImage.endsWith('.svg');
@@ -194,15 +220,14 @@ function PaintEditor({
         } else {
             saveState();
         }
+    }, [activeImage, isBackdropMode, canvasW, canvasH]);
 
-        canvas.on('object:added', () => saveState());
-        canvas.on('object:modified', () => saveState());
-        canvas.on('object:removed', () => saveState());
-
-        return () => {
-            canvas.dispose();
-        };
-    }, [activeImage]);
+    // Update canvas when initialImage changes (e.g., switching between sprite and stage)
+    useEffect(() => {
+        if (initialImage !== activeImage) {
+            setActiveImage(initialImage || '');
+        }
+    }, [initialImage, activeImage]);
 
     // Tool Management
     useEffect(() => {

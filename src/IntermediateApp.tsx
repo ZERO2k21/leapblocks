@@ -763,9 +763,17 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         // Save blocks if we are moving AWAY from blocks or switching between sprites
         saveCurrentSpriteWorkspace();
+
+        // In Scratch-like UX, Backdrops/Sounds tabs always operate on the Stage.
+        // When switching to these tabs, auto-select the stage so the editor updates correctly.
+        if (newTab === 'costumes' || newTab === 'sounds') {
+            setSelectedSpriteId('stage');
+            loadSpriteWorkspace('stage');
+        }
+
         setWorkspaceTab(newTab);
         addLog(`Switched to ${newTab} tab`);
-    }, [workspaceTab, saveCurrentSpriteWorkspace, addLog]);
+    }, [workspaceTab, saveCurrentSpriteWorkspace, addLog, loadSpriteWorkspace]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // SPRITE MANAGEMENT
@@ -925,6 +933,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         // Create Stage Sprite (for backdrop management and stage scripts)
         const stageSprite = new Sprite('stage', 'Stage', triggerUpdate, 'cat');
+        stageSprite.hide(); // Hide the stage sprite so the user doesn't see the default cat-like placeholder
         animationVM.registerSprite(stageSprite);
         spriteWorkspacesRef.current.set('stage', {}); // Initialize empty workspace for stage
 
@@ -1399,6 +1408,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
             // 1. Create Stage Sprite (for backdrop management and stage scripts)
             const stageSprite = new Sprite('stage', 'Stage', triggerUpdate, 'cat'); // cat is dummy type
+            stageSprite.hide(); // Stage sprite is only for scripting/backdrops and should not be visible on canvas
             spriteWorkspacesRef.current.set('stage', {}); // Initialize empty workspace for stage
 
             // 2. Create Default Robot Sprite
@@ -1547,19 +1557,10 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             if (flyout) {
                 flyout.autoClose = false;
                 flyout.show(contents);
+                // Ensure flyout is properly laid out
+                if (flyout.reflowInternal_) flyout.reflowInternal_();
                 console.log('[APP] Flyout re-shown with', contents.length, 'items');
             }
-
-            // Safety: re-show after a short delay to catch any async hide calls from updateToolbox
-            setTimeout(() => {
-                if (workspaceRef.current) {
-                    const flyout2 = workspaceRef.current.getFlyout() as any;
-                    if (flyout2 && _continuousFlyoutContents.length > 0) {
-                        flyout2.autoClose = false;
-                        flyout2.show(_continuousFlyoutContents);
-                    }
-                }
-            }, 100);
         }
     }, [selectedSpriteId, editorMode, appMode, getCurrentToolbox]);
 
@@ -1644,17 +1645,21 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         isInternalSync = true; // Block back-sync
                                         const flyoutWs = flyout.getWorkspace();
                                         if (flyoutWs) {
+                                            // Force reflow to ensure positions are updated
+                                            if (flyout.reflowInternal_) flyout.reflowInternal_();
                                             // Find the label matching the category name
                                             const blocks = flyoutWs.getTopBlocks(false); // false = all blocks including labels
                                             const targetLabel = blocks.find((b: any) => {
-                                                return b.type === 'blockly_flyout_label_block' &&
-                                                    b.getFieldValue('TEXT') === categoryName;
+                                                return b.getField && b.getField('TEXT') && b.getFieldValue('TEXT') === categoryName;
                                             });
 
                                             if (targetLabel) {
-                                                const y = targetLabel.getRelativeToSurfaceXY().y;
-                                                if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
-                                                else flyoutWs.translate(0, -y);
+                                                // Delay scrolling to ensure blocks are positioned after flyout.show()
+                                                setTimeout(() => {
+                                                    const y = targetLabel.getRelativeToSurfaceXY().y;
+                                                    if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
+                                                    else flyoutWs.translate(0, -y);
+                                                }, 300);
                                             } else {
                                                 // Fallback to original block prefix logic if label not found
                                                 const targetBlock = blocks.find((b: any) => {
@@ -1675,9 +1680,12 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                                     return matches(categoryName);
                                                 });
                                                 if (targetBlock) {
-                                                    const y = targetBlock.getRelativeToSurfaceXY().y;
-                                                    if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
-                                                    else flyoutWs.translate(0, -y);
+                                                    // Delay scrolling to ensure blocks are positioned
+                                                    setTimeout(() => {
+                                                        const y = targetBlock.getRelativeToSurfaceXY().y;
+                                                        if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
+                                                        else flyoutWs.translate(0, -y);
+                                                    }, 300);
                                                 }
                                             }
                                         }

@@ -18,9 +18,8 @@ export class StageManager {
     }
 
     private initDefaultBackdrop(): void {
-        // Default white backdrop (480x360 white base64 SVG)
-        const whiteDataUrl = 'data:image/svg+xml;base64,' + btoa('<svg width="480" height="360" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="white"/></svg>');
-        this.addBackdrop('default', whiteDataUrl);
+        // Default backdrop from user image
+        this.addBackdrop('default', '/assets/backdrops/WhatsApp Image 2026-03-13 at 10.12.26.jpeg');
     }
 
     // Reset stage manager to initial state (for new projects)
