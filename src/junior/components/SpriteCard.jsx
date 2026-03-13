@@ -5,8 +5,8 @@ export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }
     const label = sprite.name;
 
     // Use actual sprite image if available, otherwise emoji
-    const spriteImage = sprite.image || null;
-    const displayIcon = sprite.costumes?.default || "🐻";
+    const spriteImage = sprite.costumes?.[sprite.currentCostume] || null;
+    const displayIcon = sprite.costumes?.[sprite.currentCostume] || "🐻";
 
     return (
         <div

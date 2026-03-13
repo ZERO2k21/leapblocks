@@ -13,17 +13,32 @@ export function useJuniorProject({
     stopBlocks,
     projectName,
     setProjectName,
-    saveCurrentWorkspace
+    saveCurrentWorkspace,
+    spriteWorkspacesRef,
+    isLoadingWorkspaceRef
 }) {
     const fileInputRef = useRef(null);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const [pendingAction, setPendingAction] = useState(null); // 'new' or 'open'
 
     const executeNewProject = () => {
+        // Clear all per-sprite workspaces
+        if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
+            spriteWorkspacesRef.current.clear();
+            console.log('[JuniorProject] Cleared all sprite workspaces');
+        }
+
         if (workspaceRef.current) {
+            isLoadingWorkspaceRef.current = true;
             Blockly.Events.disable();
-            workspaceRef.current.clear();
-            Blockly.Events.enable();
+            try {
+                workspaceRef.current.clear();
+            } finally {
+                Blockly.Events.enable();
+                setTimeout(() => {
+                    isLoadingWorkspaceRef.current = false;
+                }, 50);
+            }
         }
 
         const id = `robot_default`;
@@ -125,10 +140,32 @@ export function useJuniorProject({
             console.log(`[JuniorApp] Loading project: ${data.projectName || 'Untitled'}`);
 
             if (stopBlocks) stopBlocks();
+            
+            // Clear per-sprite workspaces and initialize from loaded project
+            if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
+                spriteWorkspacesRef.current.clear();
+                // Pre-populate sprite workspaces from loaded data
+                data.scenes.forEach(scene => {
+                    scene.sprites.forEach(sprite => {
+                        if (sprite.blocks && Object.keys(sprite.blocks).length > 0) {
+                            spriteWorkspacesRef.current.set(sprite.id, sprite.blocks);
+                            console.log(`[JuniorProject] Pre-loaded workspace for sprite: ${sprite.id}`);
+                        }
+                    });
+                });
+            }
+
             if (workspaceRef.current) {
+                isLoadingWorkspaceRef.current = true;
                 Blockly.Events.disable();
-                workspaceRef.current.clear();
-                Blockly.Events.enable();
+                try {
+                    workspaceRef.current.clear();
+                } finally {
+                    Blockly.Events.enable();
+                    setTimeout(() => {
+                        isLoadingWorkspaceRef.current = false;
+                    }, 50);
+                }
             }
 
             setProjectName(data.projectName || 'My Project');
@@ -143,13 +180,24 @@ export function useJuniorProject({
                     setActiveSpriteId(newId);
                     activeSpriteIdRef.current = newId;
 
+                    // Load workspace for first sprite
                     setTimeout(() => {
-                        if (workspaceRef.current && firstSprite.blocks) {
+                        if (workspaceRef.current) {
+                            isLoadingWorkspaceRef.current = true;
+                            Blockly.Events.disable();
                             try {
-                                Blockly.Events.disable();
-                                Blockly.serialization.workspaces.load(firstSprite.blocks, workspaceRef.current);
+                                const json = spriteWorkspacesRef?.current?.get(newId) || firstSprite.blocks;
+                                if (json && Object.keys(json).length > 0) {
+                                    Blockly.serialization.workspaces.load(json, workspaceRef.current);
+                                    console.log(`[JuniorProject] Loaded workspace for first sprite: ${newId}`);
+                                }
+                            } catch (err) {
+                                console.error('[JuniorProject] Error loading workspace:', err);
                             } finally {
                                 Blockly.Events.enable();
+                                setTimeout(() => {
+                                    isLoadingWorkspaceRef.current = false;
+                                }, 50);
                             }
                         }
                     }, 100);

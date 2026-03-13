@@ -23,12 +23,9 @@ const LEAPBLOCKS_SPRITES: SpriteEntry[] = [
         image: '/assets/sprites/robot/robot_idle.svg',
         costumes: [
             '/assets/sprites/robot/robot_idle.svg',
-            '/assets/sprites/robot/robot_talk.png',
-            '/assets/sprites/robot/robot_talk1.svg',
-            '/assets/sprites/robot/robot_wave1.png',
-            '/assets/sprites/robot/robot_wave1.svg',
-            '/assets/sprites/robot/robot_wave2.png',
-            '/assets/sprites/robot/robot_wave2.svg'
+            '/assets/sprites/robot/image-Photoroom.png',
+            '/assets/sprites/robot/image-removebg-preview (1).png',
+            '/assets/sprites/robot/image-removebg-preview.png'
         ],
         category: 'Fantasy'
     }

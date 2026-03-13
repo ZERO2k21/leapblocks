@@ -24,6 +24,14 @@ export const looksPreview = {
         if (window.changeSize) window.changeSize(window.activeSpriteId || "robot_default", amt);
     },
 
+    junior_change_costume: () => {
+        if (window.nextCostume) window.nextCostume();
+    },
+
+    looks_next_costume: () => {
+        if (window.nextCostume) window.nextCostume();
+    },
+
     select_sprite: (block) => {
         const spriteName = block.getFieldValue("SPRITE");
         if (window.selectSprite) window.selectSprite(spriteName);
