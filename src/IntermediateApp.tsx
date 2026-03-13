@@ -289,7 +289,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         if (editorMode === 'stage') {
             // Remove Pen category from intermediate session
             const filteredContents = animationToolbox.contents.filter((cat: any) => cat.name !== 'Pen');
-            
+
             if (selectedSpriteId === 'stage') {
                 return {
                     ...animationToolbox,
@@ -954,7 +954,7 @@ const IntermediateApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             await robotSprite.addCostume('wave 2', '/assets/sprites/robot/image-Photoroom.png');
             await robotSprite.addCostume('talk', '/assets/sprites/robot/image-removebg-preview.png');
             await robotSprite.addSound('Meow', '/assets/sounds/meow.wav');
-            
+
             animationVM.registerSprite(robotSprite);
             setSprites([stageSprite, robotSprite]);
             activeSpriteIdRef.current = robotId;
