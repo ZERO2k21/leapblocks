@@ -111,32 +111,6 @@ export class Sprite {
     getState(): SpriteState { return { ...this.state }; }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // HIT DETECTION
-    // ═══════════════════════════════════════════════════════════════════════
-    /**
-     * Check if a point (in Scratch coordinates) is within this sprite's bounds
-     * @param scratchX - X coordinate in Scratch space (-240 to 240)
-     * @param scratchY - Y coordinate in Scratch space (-180 to 180)
-     * @returns true if the point is within the sprite's costume bounds
-     */
-    isPointInSprite(scratchX: number, scratchY: number): boolean {
-        const costume = this.currentCostume;
-        if (!costume) return false;
-
-        // Calculate the sprite's bounding box in Scratch coordinates
-        const halfWidth = (costume.width * this.state.size) / 200;
-        const halfHeight = (costume.height * this.state.size) / 200;
-
-        // Check if point is within the sprite's bounding box
-        const minX = this.state.x - halfWidth;
-        const maxX = this.state.x + halfWidth;
-        const minY = this.state.y - halfHeight;
-        const maxY = this.state.y + halfHeight;
-
-        return scratchX >= minX && scratchX <= maxX && scratchY >= minY && scratchY <= maxY;
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
     // STATE MODIFIERS
     // ═══════════════════════════════════════════════════════════════════════
     setX(x: number) { this.state.x = Math.max(-240, Math.min(240, x)); this.onUpdate(); }

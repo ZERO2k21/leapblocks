@@ -97,10 +97,9 @@ function PaintEditor({
             try {
                 const result = await window.electronAPI.removeBackground(dataUrl);
                 if (result.success && (result as any).base64) {
-                    // Clear the current canvas and load the new strict-object image
                     canvas.clear();
-
-                    fabric.Image.fromURL((result as any).base64, (img: fabric.FabricImage) => {
+                    
+                    fabric.Image.fromURL((result as any).base64, { crossOrigin: 'anonymous' }).then((img: fabric.FabricImage) => {
                         img.set({
                             left: canvas.width! / 2,
                             top: canvas.height! / 2,
@@ -116,10 +115,11 @@ function PaintEditor({
                         );
                         if (scale < 1) img.scale(scale);
 
-                        canvas.add(img);
                         canvas.renderAll();
                         saveState();
-                    }, { crossOrigin: 'anonymous' });
+                    }).catch((err) => {
+                        console.error('Failed to load image for BG auto removal:', err);
+                    });
                 } else {
                     console.error("Auto BG Removal Failed:", result.error);
                 }
@@ -162,8 +162,7 @@ function PaintEditor({
 
         // Resize canvas if needed
         if (canvas.width !== canvasW || canvas.height !== canvasH) {
-            canvas.setWidth(canvasW);
-            canvas.setHeight(canvasH);
+            canvas.setDimensions({ width: canvasW, height: canvasH });
         }
 
         // Clear existing content immediately
@@ -175,9 +174,10 @@ function PaintEditor({
         if (currentImage) {
             const isSVG = currentImage.includes('<svg') || currentImage.endsWith('.svg');
             if (isSVG) {
-                const handleLoadedSVG = (objects: fabric.Object[], options: any) => {
+                const handleLoadedSVG = ({ objects, options }: any) => {
                     if (!isActive) return;
-                    const group = fabric.util.groupSVGElements(objects, options);
+                    const validObjects = objects.filter((o: any) => o !== null);
+                    const group = fabric.util.groupSVGElements(validObjects, options);
                     group.set({
                         left: canvas.width! / 2,
                         top: canvas.height! / 2,
@@ -202,10 +202,10 @@ function PaintEditor({
                     canvas.renderAll();
                     saveState();
                 };
-                if (currentImage.includes('<svg')) fabric.loadSVGFromString(currentImage, handleLoadedSVG);
-                else fabric.loadSVGFromURL(currentImage, handleLoadedSVG);
+                if (currentImage.includes('<svg')) fabric.loadSVGFromString(currentImage).then(handleLoadedSVG);
+                else fabric.loadSVGFromURL(currentImage).then(handleLoadedSVG);
             } else {
-                fabric.Image.fromURL(currentImage, (img: fabric.FabricImage) => {
+                fabric.Image.fromURL(currentImage, { crossOrigin: 'anonymous' }).then((img: fabric.FabricImage) => {
                     if (!isActive) return;
                     img.set({
                         left: canvas.width! / 2,
@@ -222,7 +222,9 @@ function PaintEditor({
                     canvas.add(img);
                     canvas.renderAll();
                     saveState();
-                }, { crossOrigin: 'anonymous' });
+                }).catch((err) => {
+                    console.error('Failed to load costume image:', err);
+                });
             }
         } else {
             saveState();
@@ -269,7 +271,7 @@ function PaintEditor({
             canvas.freeDrawingBrush.width = strokeWidth * 2;
         }
 
-        const handleMouseDown = (opt: fabric.IEvent) => {
+        const handleMouseDown = (opt: any) => {
             if (activeTool === 'fill' && opt.target) {
                 opt.target.set('fill', fillColor);
                 canvas.renderAll();
@@ -334,14 +336,14 @@ function PaintEditor({
         const canvas = canvasRef.current;
         const activeObject = canvas?.getActiveObject();
         if (activeObject) {
-            activeObject.clone((cloned: fabric.Object) => setClipboard(cloned));
+            activeObject.clone().then((cloned: fabric.Object) => setClipboard(cloned));
         }
     };
 
     const paste = () => {
         const canvas = canvasRef.current;
         if (clipboard) {
-            clipboard.clone((cloned: fabric.Object) => {
+            clipboard.clone().then((cloned: fabric.Object) => {
                 canvas?.discardActiveObject();
                 cloned.set({
                     left: (cloned.left || 0) + 10,
@@ -376,7 +378,10 @@ function PaintEditor({
         const canvas = canvasRef.current;
         const activeObj = canvas?.getActiveObject();
         if (activeObj?.type === 'activeSelection') {
-            (activeObj as fabric.ActiveSelection).toGroup();
+            const items = (activeObj as fabric.ActiveSelection).removeAll();
+            const group = new fabric.Group(items);
+            canvas?.add(group);
+            canvas?.setActiveObject(group);
             canvas?.requestRenderAll();
             saveState();
         }
@@ -386,7 +391,11 @@ function PaintEditor({
         const canvas = canvasRef.current;
         const activeObj = canvas?.getActiveObject();
         if (activeObj?.type === 'group') {
-            (activeObj as fabric.Group).toActiveSelection();
+            const items = (activeObj as fabric.Group).removeAll();
+            canvas?.remove(activeObj);
+            canvas?.add(...items);
+            const sel = new fabric.ActiveSelection(items, { canvas: canvas! });
+            canvas?.setActiveObject(sel);
             canvas?.requestRenderAll();
             saveState();
         }
@@ -431,12 +440,12 @@ function PaintEditor({
     const handleLayering = (action: 'front' | 'back' | 'forward' | 'backward') => {
         const canvas = canvasRef.current;
         const obj = canvas?.getActiveObject();
-        if (obj) {
-            if (action === 'front') canvas?.bringToFront(obj);
-            else if (action === 'back') canvas?.sendToBack(obj);
-            else if (action === 'forward') canvas?.bringForward(obj);
-            else if (action === 'backward') canvas?.sendBackwards(obj);
-            canvas?.renderAll();
+        if (obj && canvas) {
+            if (action === 'front') canvas.bringObjectToFront(obj);
+            else if (action === 'back') canvas.sendObjectToBack(obj);
+            else if (action === 'forward') canvas.bringObjectForward(obj);
+            else if (action === 'backward') canvas.sendObjectBackwards(obj);
+            canvas.renderAll();
         }
     };
 
@@ -451,7 +460,8 @@ function PaintEditor({
         // Export as PNG (backup/preview)
         const imageData = canvas.toDataURL({
             format: 'png',
-            quality: 1
+            quality: 1,
+            multiplier: 1
         });
 
         onSave(imageData, svgDataUrl, costumeName);

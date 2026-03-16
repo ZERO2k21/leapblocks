@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import * as Blockly from "blockly";
 import { javascriptGenerator } from 'blockly/javascript';
 import Teddy from "./sprites/Teddy";
