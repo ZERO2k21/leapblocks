@@ -101,7 +101,7 @@ export default function JuniorApp({ onBack }) {
             id: "scene1",
             name: "Scene 1",
             background: "white",
-            backgroundImage: "/assets/backdrops/WhatsApp Image 2026-03-13 at 12.05.21.jpeg",
+            backgroundImage: "/assets/backdrops/Default.jpeg",
             backdropName: "WhatsApp Image",
             sprites: [
                 {

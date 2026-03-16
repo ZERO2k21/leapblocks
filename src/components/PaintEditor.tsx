@@ -25,6 +25,7 @@ interface Costume {
     id: string;
     name: string;
     image: string;
+    vectorImage?: string;
 }
 
 interface PaintEditorProps {
@@ -76,7 +77,6 @@ function PaintEditor({
         historyIndexRef.current = historyIndex;
     }, [historyIndex]);
 
-    const [activeImage, setActiveImage] = useState<string>(initialImage || '');
     const [costumeName, setCostumeName] = useState(spriteName);
     const [clipboard, setClipboard] = useState<fabric.Object | null>(null);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
@@ -86,7 +86,7 @@ function PaintEditor({
     // Initialize activeCostumeIndex based on initialImage, but ONLY ONCE
     const [activeCostumeIndex, setActiveCostumeIndex] = useState(() => {
         if (costumes.length > 0 && initialImage) {
-            const index = costumes.findIndex(c => c.image === initialImage);
+            const index = costumes.findIndex(c => c.image === initialImage || c.vectorImage === initialImage);
             return index >= 0 ? index : 0;
         }
         return 0;
@@ -186,7 +186,7 @@ function PaintEditor({
         canvas.clear();
         canvas.backgroundColor = 'transparent';
 
-        const currentImage = costumes[activeCostumeIndex]?.image || '';
+        const currentImage = costumes[activeCostumeIndex]?.vectorImage || costumes[activeCostumeIndex]?.image || '';
 
         if (currentImage) {
             const isSVGDataUrl = currentImage.startsWith('data:image/svg+xml');
@@ -197,9 +197,32 @@ function PaintEditor({
                 const handleLoadedSVG = ({ objects, options }: any) => {
                     if (!isActive) return;
                     const validObjects = objects.filter((o: any) => o !== null);
+                    
+                    // Detect if this is an internal save (matches canvas dimensions exactly)
+                    // Internal saves from PaintEditor.tsx always match canvasW/canvasH
+                    const isInternalSave = Math.floor(options.width || 0) === canvasW && Math.floor(options.height || 0) === canvasH;
+
+                    if (isInternalSave) {
+                        console.log(`[DEBUG_BREAKPOINT] Detected internal save (${options.width}x${options.height}), preserving layout.`);
+                        const group = fabric.util.groupSVGElements(validObjects, options);
+                        group.set({
+                            left: 0,
+                            top: 0,
+                            originX: 'left',
+                            originY: 'top',
+                            scaleX: 1,
+                            scaleY: 1,
+                        });
+                        canvas.add(group);
+                        canvas.renderAll();
+                        saveState();
+                        return;
+                    }
+
+                    console.log(`[DEBUG_BREAKPOINT] Detected foreign SVG (${options.width}x${options.height}), applying auto-fit.`);
                     const group = fabric.util.groupSVGElements(validObjects, options);
 
-                    // Calculate scale to fit canvas
+                    // Calculate scale to fit canvas (for library or uploaded SVGs)
                     const pad = isBackdropMode ? 0 : 60;
                     const scale = Math.min(
                         (canvasW - pad) / (group.width || 1),
@@ -212,8 +235,8 @@ function PaintEditor({
                         top: canvasH / 2,
                         originX: 'center',
                         originY: 'center',
-                        scaleX: scale < 1 ? scale : 1,
-                        scaleY: scale < 1 ? scale : 1,
+                        scaleX: scale, // Always fit to padded area
+                        scaleY: scale, // Always fit to padded area
                     });
 
                     canvas.add(group);
@@ -259,7 +282,7 @@ function PaintEditor({
                         (canvas.width! - pad) / (img.width! || 1),
                         (canvas.height! - pad) / (img.height! || 1)
                     );
-                    if (scale < 1) img.scale(scale);
+                    img.scale(scale); // Always fit to padded area
                     canvas.add(img);
                     canvas.renderAll();
                     saveState();
@@ -605,8 +628,6 @@ function PaintEditor({
         const reader = new FileReader();
         reader.onload = (event) => {
             const dataUrl = event.target?.result as string;
-            // Set as active image (will display in editor)
-            setActiveImage(dataUrl);
             // Also save it as a new costume
             onSave(dataUrl, undefined, file.name.replace(/\.[^/.]+$/, '')); // Remove extension
         };
@@ -678,7 +699,8 @@ function PaintEditor({
                                             autoSave();
                                         }
                                         setActiveCostumeIndex(i);
-                                        setActiveImage(c.image || '');
+                                        setZoom(1); // Reset zoom on costume switch
+                                        console.log(`[DEBUG_BREAKPOINT] Resetting zoom for costume switch: ${i}`);
                                     }}
                                     className={`w-[80px] h-[80px] rounded-lg border-2 flex flex-col items-center justify-center p-1 bg-white cursor-pointer relative ${activeCostumeIndex === i ? 'border-[#855CD6] shadow-sm' : 'border-gray-200'}`}
                                 >
