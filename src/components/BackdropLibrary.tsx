@@ -44,15 +44,15 @@ const mappedScratchBackdrops = scratchBackdrops.map((backdrop: any) => {
 });
 
 const PRESET_BACKDROPS: BackdropEntry[] = [
-    { id: 'maze', name: 'Maze', image: '/assets/backdrops/maze.svg', category: 'Patterns' },
-    { id: 'park', name: 'Park', image: '/assets/backdrops/park.svg', category: 'Outdoors' },
+    { id: 'preset_maze', name: 'Maze', image: '/assets/backdrops/maze.svg', category: 'Patterns' },
+    { id: 'preset_park', name: 'Park', image: '/assets/backdrops/park.svg', category: 'Outdoors' },
     { id: 'preset_underwater', name: 'Underwater', image: '/assets/backdrops/underwater.svg', category: 'Underwater' },
-    { id: 'space_bg', name: 'Space', image: '/assets/backdrops/space_bg.svg', category: 'Space' },
-    { id: 'city', name: 'City', image: '/assets/backdrops/city.svg', category: 'Outdoors' },
-    { id: 'arctic', name: 'Arctic', image: '/assets/backdrops/Artic.png', category: 'Outdoors' },
-    { id: 'beach', name: 'Beach', image: '/assets/backdrops/Beach.png', category: 'Outdoors' },
-    { id: 'castle', name: 'Castle', image: '/assets/backdrops/Castle.png', category: 'Fantasy' },
-    { id: 'space_photo', name: 'Galaxy', image: '/assets/backdrops/Space.png', category: 'Space' },
+    { id: 'preset_space_bg', name: 'Space', image: '/assets/backdrops/space_bg.svg', category: 'Space' },
+    { id: 'preset_city', name: 'City', image: '/assets/backdrops/city.svg', category: 'Outdoors' },
+    { id: 'preset_arctic', name: 'Arctic', image: '/assets/backdrops/Artic.png', category: 'Outdoors' },
+    { id: 'preset_beach', name: 'Beach', image: '/assets/backdrops/Beach.png', category: 'Outdoors' },
+    { id: 'preset_castle', name: 'Castle', image: '/assets/backdrops/Castle.png', category: 'Fantasy' },
+    { id: 'preset_space_photo', name: 'Galaxy', image: '/assets/backdrops/Space.png', category: 'Space' },
 ];
 
 const FULL_CATALOG = [...PRESET_BACKDROPS, ...mappedScratchBackdrops];

@@ -102,7 +102,7 @@ export default function JuniorApp({ onBack }) {
             name: "Scene 1",
             background: "white",
             backgroundImage: "/assets/backdrops/Default.jpeg",
-            backdropName: "WhatsApp Image",
+            backdropName: "Default",
             sprites: [
                 {
                     id: "robot_default", name: "Robot", type: "robot",

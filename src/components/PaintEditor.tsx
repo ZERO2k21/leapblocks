@@ -21,14 +21,14 @@ const BUILTIN_COSTUMES = [
     { name: 'Elephant', src: '/assets/sprites/scratch/elephant.svg' },
 ];
 
-interface Costume {
+export interface Costume {
     id: string;
     name: string;
     image: string;
     vectorImage?: string;
 }
 
-interface PaintEditorProps {
+export interface PaintEditorProps {
     onSave: (imageData: string, svgData?: string, name?: string, id?: string) => void;
     onClose: () => void;
     title?: string;
@@ -39,7 +39,7 @@ interface PaintEditorProps {
     onDeleteSound?: (index: number) => void;
     onDuplicateSound?: (index: number) => void;
     onOpenLibrary?: () => void;
-    onAutoSave?: (imageData: string, svgData?: string, name?: string, id?: string) => void; // Auto-save callback
+    onAutoSave?: (imageData: string, svgData?: string, name?: string, id?: string) => void;
 }
 
 function PaintEditor({
@@ -86,7 +86,7 @@ function PaintEditor({
     // Initialize activeCostumeIndex based on initialImage, but ONLY ONCE
     const [activeCostumeIndex, setActiveCostumeIndex] = useState(() => {
         if (costumes.length > 0 && initialImage) {
-            const index = costumes.findIndex(c => c.image === initialImage || c.vectorImage === initialImage);
+            const index = costumes.findIndex((c: any) => c.image === initialImage || c.vectorImage === initialImage);
             return index >= 0 ? index : 0;
         }
         return 0;
@@ -186,7 +186,7 @@ function PaintEditor({
         canvas.clear();
         canvas.backgroundColor = 'transparent';
 
-        const currentImage = costumes[activeCostumeIndex]?.vectorImage || costumes[activeCostumeIndex]?.image || '';
+        const currentImage = (costumes[activeCostumeIndex] as any)?.vectorImage || (costumes[activeCostumeIndex] as any)?.image || '';
 
         if (currentImage) {
             const isSVGDataUrl = currentImage.startsWith('data:image/svg+xml');
