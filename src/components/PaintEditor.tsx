@@ -28,7 +28,7 @@ interface Costume {
 }
 
 interface PaintEditorProps {
-    onSave: (imageData: string, svgData?: string, name?: string) => void;
+    onSave: (imageData: string, svgData?: string, name?: string, id?: string) => void;
     onClose: () => void;
     title?: string;
     initialImage?: string;
@@ -38,7 +38,7 @@ interface PaintEditorProps {
     onDeleteSound?: (index: number) => void;
     onDuplicateSound?: (index: number) => void;
     onOpenLibrary?: () => void;
-    onAutoSave?: (imageData: string, svgData?: string, name?: string) => void; // Auto-save callback
+    onAutoSave?: (imageData: string, svgData?: string, name?: string, id?: string) => void; // Auto-save callback
 }
 
 function PaintEditor({
@@ -57,6 +57,7 @@ function PaintEditor({
     const canvasRef = useRef<fabric.Canvas | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [activeTool, setActiveTool] = useState<string>('select');
+    const isUnmounting = useRef(false);
     const [fillColor, setFillColor] = useState('#855CD6');
     const [outlineColor, setOutlineColor] = useState('#000000');
     const [strokeWidth, setStrokeWidth] = useState(4);
@@ -81,7 +82,16 @@ function PaintEditor({
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [activeColorPicker, setActiveColorPicker] = useState<'fill' | 'outline' | null>(null);
     const [isRemovingBg, setIsRemovingBg] = useState(false);
-    const [activeCostumeIndex, setActiveCostumeIndex] = useState(0);
+
+    // Initialize activeCostumeIndex based on initialImage, but ONLY ONCE
+    const [activeCostumeIndex, setActiveCostumeIndex] = useState(() => {
+        if (costumes.length > 0 && initialImage) {
+            const index = costumes.findIndex(c => c.image === initialImage);
+            return index >= 0 ? index : 0;
+        }
+        return 0;
+    });
+
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
     const hasUnsavedChanges = useRef(false);
 
@@ -151,7 +161,10 @@ function PaintEditor({
             canvas.on('object:modified', () => saveState());
             canvas.on('object:removed', () => saveState());
 
+            canvas.on('object:removed', () => saveState());
+
             return () => {
+                isUnmounting.current = true;
                 canvas.dispose();
             };
         }
@@ -176,8 +189,11 @@ function PaintEditor({
         const currentImage = costumes[activeCostumeIndex]?.image || '';
 
         if (currentImage) {
-            const isSVG = currentImage.includes('<svg') || currentImage.endsWith('.svg');
-            if (isSVG) {
+            const isSVGDataUrl = currentImage.startsWith('data:image/svg+xml');
+            const isRawSVG = currentImage.startsWith('<svg');
+            const isSVGUrl = currentImage.endsWith('.svg');
+
+            if (isSVGDataUrl || isRawSVG || isSVGUrl) {
                 const handleLoadedSVG = ({ objects, options }: any) => {
                     if (!isActive) return;
                     const validObjects = objects.filter((o: any) => o !== null);
@@ -204,8 +220,31 @@ function PaintEditor({
                     canvas.renderAll();
                     saveState();
                 };
-                if (currentImage.includes('<svg')) fabric.loadSVGFromString(currentImage).then(handleLoadedSVG);
-                else fabric.loadSVGFromURL(currentImage).then(handleLoadedSVG);
+
+                if (isRawSVG) {
+                    fabric.loadSVGFromString(currentImage).then(handleLoadedSVG);
+                } else if (isSVGDataUrl) {
+                    // Manually decode data URL to bypass CSP connect-src blocks
+                    try {
+                        const isBase64 = currentImage.includes(';base64,');
+                        let svgXml = '';
+                        if (isBase64) {
+                            const base64Part = currentImage.split(';base64,')[1];
+                            svgXml = decodeURIComponent(escape(atob(base64Part)));
+                        } else {
+                            const urlEncodedPart = currentImage.split(',')[1];
+                            svgXml = decodeURIComponent(urlEncodedPart);
+                        }
+                        console.log(`[DEBUG_BREAKPOINT] Manually decoded SVG (len: ${svgXml.length}) to bypass CSP`);
+                        fabric.loadSVGFromString(svgXml).then(handleLoadedSVG);
+                    } catch (err) {
+                        console.error('[DEBUG_BREAKPOINT] Failed to manually decode SVG data URL:', err);
+                        // Fallback to URL loading if manual decoding fails
+                        fabric.loadSVGFromURL(currentImage).then(handleLoadedSVG);
+                    }
+                } else {
+                    fabric.loadSVGFromURL(currentImage).then(handleLoadedSVG);
+                }
             } else {
                 fabric.Image.fromURL(currentImage, { crossOrigin: 'anonymous' }).then((img: fabric.FabricImage) => {
                     if (!isActive) return;
@@ -236,17 +275,6 @@ function PaintEditor({
             isActive = false;
         };
     }, [activeCostumeIndex, costumes, isBackdropMode, canvasW, canvasH]);
-
-    // Update canvas when initialImage changes (e.g., switching between sprite and stage)
-    useEffect(() => {
-        if (initialImage !== activeImage) {
-            setActiveImage(initialImage || '');
-        }
-        if (costumes.length > 0) {
-            const index = costumes.findIndex(c => c.image === initialImage);
-            setActiveCostumeIndex(index >= 0 ? index : 0);
-        }
-    }, [initialImage, activeImage, costumes]);
 
     // Update costume name when spriteName changes (e.g., switching between sprite and stage)
     useEffect(() => {
@@ -308,44 +336,66 @@ function PaintEditor({
 
     // Auto-save function (saves without closing)
     const autoSave = useCallback(() => {
-        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] autoSave triggered`);
         const canvas = canvasRef.current;
-        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] hasUnsavedChanges: ${hasUnsavedChanges.current}`);
+        const index = activeCostumeIndex;
+
+        if (isUnmounting.current) {
+            console.log(`[DEBUG_BREAKPOINT][Costume: ${index}] Skipping autoSave (unmounting)`);
+            return;
+        }
+
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${index}] autoSave triggered`);
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${index}] hasUnsavedChanges: ${hasUnsavedChanges.current}`);
 
         if (!canvas || !hasUnsavedChanges.current) {
-            console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Skipping autoSave (nothing to save)`);
+            console.log(`[DEBUG_BREAKPOINT][Costume: ${index}] Skipping autoSave (nothing to save or no canvas)`);
             return;
         }
 
         setSaveStatus('saving');
 
-        const svgString = canvas.toSVG();
-        const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
-        const imageData = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 1 });
-        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Exported SVG and PNG for autoSave`);
+        try {
+            // Robust check for Fabric.js internal state (contextContainer is a good indicator of life)
+            if (!(canvas as any).contextContainer) {
+                console.warn(`[DEBUG_BREAKPOINT][Costume: ${index}] autoSave skipped: Canvas context is already gone.`);
+                return;
+            }
 
-        if (onAutoSave) {
-            console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Calling onAutoSave callback`);
-            onAutoSave(imageData, svgDataUrl, costumeName);
+            const svgString = canvas.toSVG();
+            // Use robust base64 encoding that handles UTF-8 correctly
+            const svgBase64 = btoa(unescape(encodeURIComponent(svgString)));
+            const svgDataUrl = `data:image/svg+xml;base64,${svgBase64}`;
+
+            const imageData = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 1 });
+            console.log(`[DEBUG_BREAKPOINT][Costume: ${index}] Exported SVG (len: ${svgDataUrl.length}) and PNG (len: ${imageData.length}) for autoSave`);
+
+            if (onAutoSave) {
+                const currentId = costumes[index]?.id;
+                console.log(`[DEBUG_BREAKPOINT][Costume: ${index}] Calling onAutoSave callback with id: ${currentId}`);
+                onAutoSave(imageData, svgDataUrl, costumeName, currentId);
+            }
+            hasUnsavedChanges.current = false;
+            setSaveStatus('saved');
+            console.log(`[DEBUG_BREAKPOINT][Costume: ${index}] autoSave completed`);
+        } catch (err) {
+            console.error(`[DEBUG_BREAKPOINT][Costume: ${index}] autoSave failed:`, err);
+            setSaveStatus('idle');
         }
 
-        hasUnsavedChanges.current = false;
-        setSaveStatus('saved');
-        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] autoSave completed`);
-
         // Reset status after 2 seconds
-        setTimeout(() => setSaveStatus('idle'), 2000);
-    }, [activeCostumeIndex, costumeName, onAutoSave]);
+        setTimeout(() => {
+            if (!isUnmounting.current) setSaveStatus('idle');
+        }, 2000);
+    }, [activeCostumeIndex, costumes, costumeName, onAutoSave]);
 
-    // Auto-save when costume index changes (switching costumes)
+    // Auto-save when leaving or switching happens via sidebar click (moved from here to sidebar)
     useEffect(() => {
         return () => {
-            // Cleanup: auto-save when leaving
-            if (hasUnsavedChanges.current) {
-                autoSave();
-            }
+            // ONLY auto-save on unmount if we aren't switching indices (which handles itself)
+            // But actually, safer to just let the individual triggers handle it.
+            // Leaving this empty to prevent the race condition.
         };
-    }, [activeCostumeIndex, autoSave]);
+    }, []);
 
     const undo = () => {
         if (historyIndex > 0) {
@@ -515,29 +565,37 @@ function PaintEditor({
 
         setSaveStatus('saving');
 
-        // Export as SVG data URL (vibrant and sharp)
-        const svgString = canvas.toSVG();
-        const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
-        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] SVG data generated`);
+        try {
+            // Export as SVG data URL (vibrant and sharp)
+            const svgString = canvas.toSVG();
+            // Use robust base64 encoding that handles UTF-8 correctly
+            const svgBase64 = btoa(unescape(encodeURIComponent(svgString)));
+            const svgDataUrl = `data:image/svg+xml;base64,${svgBase64}`;
+            console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] SVG data generated (len: ${svgDataUrl.length})`);
 
-        // Export as PNG (backup/preview)
-        const imageData = canvas.toDataURL({
-            format: 'png',
-            quality: 1,
-            multiplier: 1
-        });
-        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] PNG preview generated`);
+            // Export as PNG (backup/preview)
+            const imageData = canvas.toDataURL({
+                format: 'png',
+                quality: 1,
+                multiplier: 1
+            });
+            console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] PNG preview generated (len: ${imageData.length})`);
 
-        hasUnsavedChanges.current = false;
-        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Calling onSave for costume: ${costumeName}`);
-        onSave(imageData, svgDataUrl, costumeName);
+            hasUnsavedChanges.current = false;
+            const currentId = costumes[activeCostumeIndex]?.id;
+            console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Calling onSave for costume: ${costumeName}, id: ${currentId}`);
+            onSave(imageData, svgDataUrl, costumeName, currentId);
 
-        // Show saved status briefly before closing
-        setSaveStatus('saved');
-        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] handleSave completed, closing editor...`);
-        setTimeout(() => {
-            onClose();
-        }, 300);
+            // Show saved status briefly before closing
+            setSaveStatus('saved');
+            console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] handleSave completed, closing editor...`);
+            setTimeout(() => {
+                onClose();
+            }, 300);
+        } catch (err) {
+            console.error(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] handleSave failed:`, err);
+            setSaveStatus('idle');
+        }
     };
 
     const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -612,7 +670,16 @@ function PaintEditor({
                         {costumes.map((c, i) => (
                             <div key={c.id || i} className="relative group">
                                 <div
-                                    onClick={() => setActiveCostumeIndex(i)}
+                                    onClick={() => {
+                                        if (i === activeCostumeIndex) return;
+                                        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Switching to costume: ${i}`);
+                                        if (hasUnsavedChanges.current) {
+                                            console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Saving changes before switch...`);
+                                            autoSave();
+                                        }
+                                        setActiveCostumeIndex(i);
+                                        setActiveImage(c.image || '');
+                                    }}
                                     className={`w-[80px] h-[80px] rounded-lg border-2 flex flex-col items-center justify-center p-1 bg-white cursor-pointer relative ${activeCostumeIndex === i ? 'border-[#855CD6] shadow-sm' : 'border-gray-200'}`}
                                 >
                                     <span className="absolute top-1 left-1.5 text-[10px] text-gray-500 font-bold">{i + 1}</span>
@@ -904,8 +971,8 @@ function PaintEditor({
                                 {/* Save Status Indicator */}
                                 {saveStatus !== 'idle' && (
                                     <div className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${saveStatus === 'saving'
-                                            ? 'bg-yellow-500 text-white animate-pulse'
-                                            : 'bg-green-500 text-white'
+                                        ? 'bg-yellow-500 text-white animate-pulse'
+                                        : 'bg-green-500 text-white'
                                         }`}>
                                         {saveStatus === 'saving' ? '💾 Saving...' : '✓ Saved!'}
                                     </div>

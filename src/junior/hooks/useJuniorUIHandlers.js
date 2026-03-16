@@ -47,16 +47,23 @@ export function useJuniorUIHandlers({
             costume6: 'Wave 4'
         };
 
+        const currentId = sprite.currentCostume || 'default';
+        const initialVector = sprite.costumes?.[`vector_${currentId}`];
+        const initialDisplay = sprite.costumes?.[currentId];
+
         setPaintEditor({
             isOpen: true,
             type: 'sprite',
             targetId: spriteId,
-            initialImage: sprite.costumes?.[sprite.currentCostume || 'default'] || null,
-            costumes: Object.entries(sprite.costumes || {}).map(([id, src]) => ({ 
-                id, 
-                name: costumeNameMap[id] || id, 
-                image: src 
-            })),
+            initialImage: initialVector || initialDisplay || null,
+            costumes: Object.entries(sprite.costumes || {})
+                .filter(([id]) => !id.startsWith('vector_'))
+                .map(([id, src]) => ({ 
+                    id, 
+                    name: costumeNameMap[id] || id, 
+                    image: src,
+                    vectorImage: sprite.costumes[`vector_${id}`]
+                })),
             spriteName: sprite.name,
             mode: 'junior'
         });
@@ -131,6 +138,7 @@ export function useJuniorUIHandlers({
                     if (sprite.id !== spriteId) return sprite;
                     const newCostumes = { ...sprite.costumes };
                     delete newCostumes[costumeToDelete.id];
+                    delete newCostumes[`vector_${costumeToDelete.id}`];
                     
                     // If we deleted the current costume, pick another one
                     let nextCurrent = sprite.currentCostume;
@@ -179,7 +187,8 @@ export function useJuniorUIHandlers({
                         ...sprite,
                         costumes: {
                             ...sprite.costumes,
-                            [newId]: costumeToDuplicate.image
+                            [newId]: costumeToDuplicate.image,
+                            [`vector_${newId}`]: costumeToDuplicate.vectorImage
                         }
                     };
                 })
@@ -191,7 +200,8 @@ export function useJuniorUIHandlers({
         newCostumes.splice(index + 1, 0, {
             id: newId,
             name: newName,
-            image: costumeToDuplicate.image
+            image: costumeToDuplicate.image,
+            vectorImage: costumeToDuplicate.vectorImage
         });
         
         setPaintEditor(prev => ({
@@ -201,27 +211,42 @@ export function useJuniorUIHandlers({
         console.log('[DEBUG_BREAKPOINT] handleDuplicateCostume: State updates dispatched');
     };
 
-    const handlePaintSave = (imageData, svgData, name) => {
-        const savedData = svgData || imageData;
-        const costumeKey = name ? name.toLowerCase().replace(/\s+/g, '_') : 'custom';
+    const handlePaintSave = (imageData, svgData, name, originalId, shouldClose = true) => {
+        // Use PNG for display (consistent, small, reliable), SVG for vector editing
+        const displayData = imageData; 
+        const vectorData = svgData;
+        
+        let costumeKey = originalId;
+        if (!costumeKey) {
+            costumeKey = name ? name.toLowerCase().replace(/\s+/g, '_') : `costume_${Date.now()}`;
+        }
 
-        console.log(`[DEBUG_BREAKPOINT][JuniorApp] handlePaintSave triggered for costume: ${costumeKey}`);
+        console.log(`[DEBUG_BREAKPOINT][JuniorApp] handlePaintSave triggered (Key: ${costumeKey}, shouldClose: ${shouldClose})`);
 
         if (paintEditor.type === 'sprite') {
             const targetSpriteId = paintEditor.targetId;
-            console.log(`[DEBUG_BREAKPOINT][JuniorApp] Updating sprite: ${targetSpriteId} with new/edited costume`);
+            
+            // Sync the costumes in the current paintEditor state so the editor component remains stable
+            const updatedCostumes = paintEditor.costumes.map(c => {
+                if (c.id === costumeKey) {
+                    return { ...c, image: displayData, vectorImage: vectorData };
+                }
+                return c;
+            });
+            setPaintEditor(prev => ({ ...prev, costumes: updatedCostumes }));
+
             setScenes(prev => prev.map(scene => {
                 if (scene.id !== currentSceneId) return scene;
                 return {
                     ...scene,
                     sprites: scene.sprites.map(sprite => {
                         if (sprite.id !== targetSpriteId) return sprite;
-                        console.log(`[DEBUG_BREAKPOINT][JuniorApp] State update: Adding costume key "${costumeKey}" to sprite "${sprite.name}"`);
                         return {
                             ...sprite,
                             costumes: {
                                 ...sprite.costumes,
-                                [costumeKey]: savedData
+                                [costumeKey]: displayData, // Standard field for UI previews (PNG)
+                                [`vector_${costumeKey}`]: vectorData // Source for editor (SVG)
                             },
                             currentCostume: costumeKey
                         };
@@ -229,14 +254,18 @@ export function useJuniorUIHandlers({
                 };
             }));
         } else if (paintEditor.type === 'backdrop') {
-            console.log(`[DEBUG_BREAKPOINT][JuniorApp] Updating backdrop for scene: ${paintEditor.targetId}`);
             setScenes(prev => prev.map(scene => {
                 if (scene.id !== paintEditor.targetId) return scene;
                 return { ...scene, background: `url(${imageData})`, backgroundImage: imageData };
             }));
         }
-        setPaintEditor({ ...paintEditor, isOpen: false });
-        console.log(`[DEBUG_BREAKPOINT][JuniorApp] handlePaintSave completed`);
+
+        if (shouldClose) {
+            console.log(`[DEBUG_BREAKPOINT][JuniorApp] Closing editor as requested`);
+            setPaintEditor({ ...paintEditor, isOpen: false });
+        } else {
+            console.log(`[DEBUG_BREAKPOINT][JuniorApp] keeping editor open (auto-save)`);
+        }
     };
 
     const addSprite = (spriteData = null) => {

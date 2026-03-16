@@ -841,6 +841,7 @@ export default function JuniorApp({ onBack }) {
                     isOpen={paintEditor.isOpen}
                     onClose={() => setPaintEditor({ ...paintEditor, isOpen: false })}
                     onSave={handlers.handlePaintSave}
+                    onAutoSave={(img, svg, name, id) => handlers.handlePaintSave(img, svg, name, id, false)}
                     onDeleteSound={handlers.handleDeleteCostume}
                     onDuplicateSound={handlers.handleDuplicateCostume}
                     initialImage={paintEditor.initialImage}
