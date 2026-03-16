@@ -35,7 +35,7 @@ export function useJuniorUIHandlers({
 
         // Map costume IDs to display names
         const costumeNameMap = {
-            default: 'Idle',
+            default: 'default',
             wave1: 'Wave 1',
             wave2: 'Wave 2',
             talk: 'Talk',

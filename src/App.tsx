@@ -7,8 +7,10 @@ const IntermediateApp = lazy(() => import('./IntermediateApp'));
 const JuniorApp = lazy(() => import('./junior/JuniorApp'));
 // @ts-ignore
 const PythonApp = lazy(() => import('./python/PythonApp'));
+// @ts-ignore
+const AppDevApp = lazy(() => import('./app-dev/AppDevApp'));
 
-type AppMode = 'home' | 'intermediate' | 'junior' | 'python';
+type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'app-dev';
 
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
@@ -45,6 +47,7 @@ export default function App() {
                 {mode === 'intermediate' && <IntermediateApp onBack={() => setMode('home')} onOpenPython={() => setMode('python')} />}
                 {mode === 'junior' && <JuniorApp onBack={() => setMode('home')} />}
                 {mode === 'python' && <PythonApp onBack={() => setMode('home')} />}
+                {mode === 'app-dev' && <AppDevApp onBack={() => setMode('home')} />}
                 {mode === 'home' && <LandingPage onSelect={setMode} />}
             </Suspense>
         </ErrorBoundary>

@@ -699,6 +699,7 @@ function PaintEditor({
                                             autoSave();
                                         }
                                         setActiveCostumeIndex(i);
+                                        setCostumeName(costumes[i].name);
                                         setZoom(1); // Reset zoom on costume switch
                                         console.log(`[DEBUG_BREAKPOINT] Resetting zoom for costume switch: ${i}`);
                                     }}
