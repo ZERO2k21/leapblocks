@@ -111,17 +111,112 @@ export function useJuniorUIHandlers({
         });
     };
 
+    const handleDeleteCostume = (index) => {
+        console.log(`[DEBUG_BREAKPOINT] handleDeleteCostume triggered for index: ${index}`);
+        const spriteId = paintEditor.targetId;
+        const costumeToDelete = paintEditor.costumes[index];
+        
+        if (!costumeToDelete) {
+            console.error('[DEBUG_BREAKPOINT] Costume not found at index:', index);
+            return;
+        }
+
+        console.log(`[DEBUG_BREAKPOINT] Deleting costume: ${costumeToDelete.name} (${costumeToDelete.id}) from sprite: ${spriteId}`);
+
+        setScenes(prev => prev.map(scene => {
+            if (scene.id !== currentSceneId) return scene;
+            return {
+                ...scene,
+                sprites: scene.sprites.map(sprite => {
+                    if (sprite.id !== spriteId) return sprite;
+                    const newCostumes = { ...sprite.costumes };
+                    delete newCostumes[costumeToDelete.id];
+                    
+                    // If we deleted the current costume, pick another one
+                    let nextCurrent = sprite.currentCostume;
+                    if (sprite.currentCostume === costumeToDelete.id) {
+                        const remainingKeys = Object.keys(newCostumes);
+                        nextCurrent = remainingKeys.length > 0 ? remainingKeys[0] : null;
+                    }
+
+                    return {
+                        ...sprite,
+                        costumes: newCostumes,
+                        currentCostume: nextCurrent
+                    };
+                })
+            };
+        }));
+
+        // Update paint editor state
+        const newCostumes = paintEditor.costumes.filter((_, i) => i !== index);
+        setPaintEditor(prev => ({
+            ...prev,
+            costumes: newCostumes
+        }));
+        console.log('[DEBUG_BREAKPOINT] handleDeleteCostume: State updates dispatched');
+    };
+
+    const handleDuplicateCostume = (index) => {
+        console.log(`[DEBUG_BREAKPOINT] handleDuplicateCostume triggered for index: ${index}`);
+        const spriteId = paintEditor.targetId;
+        const costumeToDuplicate = paintEditor.costumes[index];
+        
+        if (!costumeToDuplicate) return;
+
+        const newId = `costume_${Date.now()}`;
+        const newName = `${costumeToDuplicate.name} Copy`;
+        
+        console.log(`[DEBUG_BREAKPOINT] Duplicating costume to: ${newName} (${newId})`);
+
+        setScenes(prev => prev.map(scene => {
+            if (scene.id !== currentSceneId) return scene;
+            return {
+                ...scene,
+                sprites: scene.sprites.map(sprite => {
+                    if (sprite.id !== spriteId) return sprite;
+                    return {
+                        ...sprite,
+                        costumes: {
+                            ...sprite.costumes,
+                            [newId]: costumeToDuplicate.image
+                        }
+                    };
+                })
+            };
+        }));
+
+        // Update paint editor state
+        const newCostumes = [...paintEditor.costumes];
+        newCostumes.splice(index + 1, 0, {
+            id: newId,
+            name: newName,
+            image: costumeToDuplicate.image
+        });
+        
+        setPaintEditor(prev => ({
+            ...prev,
+            costumes: newCostumes
+        }));
+        console.log('[DEBUG_BREAKPOINT] handleDuplicateCostume: State updates dispatched');
+    };
+
     const handlePaintSave = (imageData, svgData, name) => {
         const savedData = svgData || imageData;
         const costumeKey = name ? name.toLowerCase().replace(/\s+/g, '_') : 'custom';
 
+        console.log(`[DEBUG_BREAKPOINT][JuniorApp] handlePaintSave triggered for costume: ${costumeKey}`);
+
         if (paintEditor.type === 'sprite') {
+            const targetSpriteId = paintEditor.targetId;
+            console.log(`[DEBUG_BREAKPOINT][JuniorApp] Updating sprite: ${targetSpriteId} with new/edited costume`);
             setScenes(prev => prev.map(scene => {
                 if (scene.id !== currentSceneId) return scene;
                 return {
                     ...scene,
                     sprites: scene.sprites.map(sprite => {
-                        if (sprite.id !== paintEditor.targetId) return sprite;
+                        if (sprite.id !== targetSpriteId) return sprite;
+                        console.log(`[DEBUG_BREAKPOINT][JuniorApp] State update: Adding costume key "${costumeKey}" to sprite "${sprite.name}"`);
                         return {
                             ...sprite,
                             costumes: {
@@ -134,12 +229,14 @@ export function useJuniorUIHandlers({
                 };
             }));
         } else if (paintEditor.type === 'backdrop') {
+            console.log(`[DEBUG_BREAKPOINT][JuniorApp] Updating backdrop for scene: ${paintEditor.targetId}`);
             setScenes(prev => prev.map(scene => {
                 if (scene.id !== paintEditor.targetId) return scene;
                 return { ...scene, background: `url(${imageData})`, backgroundImage: imageData };
             }));
         }
         setPaintEditor({ ...paintEditor, isOpen: false });
+        console.log(`[DEBUG_BREAKPOINT][JuniorApp] handlePaintSave completed`);
     };
 
     const addSprite = (spriteData = null) => {
@@ -449,6 +546,8 @@ export function useJuniorUIHandlers({
         handleBackdropSelect,
         handleBackdropPaint,
         handlePaintSave,
+        handleDeleteCostume,
+        handleDuplicateCostume,
         addSprite,
         addScene,
         deleteSprite,

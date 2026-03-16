@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import * as fabric from 'fabric';
 import {
     Undo, Redo, Copy, Clipboard, Trash2, Square, Circle, Pen, Eraser,
@@ -38,6 +38,7 @@ interface PaintEditorProps {
     onDeleteSound?: (index: number) => void;
     onDuplicateSound?: (index: number) => void;
     onOpenLibrary?: () => void;
+    onAutoSave?: (imageData: string, svgData?: string, name?: string) => void; // Auto-save callback
 }
 
 function PaintEditor({
@@ -50,7 +51,8 @@ function PaintEditor({
     mode = 'intermediate',
     onDeleteSound,
     onDuplicateSound,
-    onOpenLibrary
+    onOpenLibrary,
+    onAutoSave
 }: PaintEditorProps) {
     const canvasRef = useRef<fabric.Canvas | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,6 +82,8 @@ function PaintEditor({
     const [activeColorPicker, setActiveColorPicker] = useState<'fill' | 'outline' | null>(null);
     const [isRemovingBg, setIsRemovingBg] = useState(false);
     const [activeCostumeIndex, setActiveCostumeIndex] = useState(0);
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+    const hasUnsavedChanges = useRef(false);
 
     // Auto BG Removal handler
     const handleAutoRemoveBG = async () => {
@@ -98,7 +102,7 @@ function PaintEditor({
                 const result = await window.electronAPI.removeBackground(dataUrl);
                 if (result.success && (result as any).base64) {
                     canvas.clear();
-                    
+
                     fabric.Image.fromURL((result as any).base64, { crossOrigin: 'anonymous' }).then((img: fabric.FabricImage) => {
                         img.set({
                             left: canvas.width! / 2,
@@ -178,27 +182,25 @@ function PaintEditor({
                     if (!isActive) return;
                     const validObjects = objects.filter((o: any) => o !== null);
                     const group = fabric.util.groupSVGElements(validObjects, options);
-                    group.set({
-                        left: canvas.width! / 2,
-                        top: canvas.height! / 2,
-                        originX: 'center',
-                        originY: 'center',
-                    });
+
+                    // Calculate scale to fit canvas
                     const pad = isBackdropMode ? 0 : 60;
                     const scale = Math.min(
-                        (canvas.width! - pad) / (group.width! || 1),
-                        (canvas.height! - pad) / (group.height! || 1)
+                        (canvasW - pad) / (group.width || 1),
+                        (canvasH - pad) / (group.height || 1)
                     );
-                    if (scale < 1) group.scale(scale);
 
-                    if (group.type === 'group') {
-                        const items = (group as fabric.Group).getObjects();
-                        (group as any)._restoreObjectsState();
-                        canvas.remove(group);
-                        items.forEach((item: fabric.FabricObject) => canvas.add(item));
-                    } else {
-                        canvas.add(group);
-                    }
+                    // In Fabric.js v7, add the group directly to canvas
+                    group.set({
+                        left: canvasW / 2,
+                        top: canvasH / 2,
+                        originX: 'center',
+                        originY: 'center',
+                        scaleX: scale < 1 ? scale : 1,
+                        scaleY: scale < 1 ? scale : 1,
+                    });
+
+                    canvas.add(group);
                     canvas.renderAll();
                     saveState();
                 };
@@ -289,7 +291,9 @@ function PaintEditor({
         if (isRestoring.current) return;
         const canvas = canvasRef.current;
         if (!canvas) return;
+        hasUnsavedChanges.current = true;
         const json = JSON.stringify(canvas.toJSON());
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Edit recorded to history (Objects: ${canvas.getObjects().length})`);
         setHistory(prev => {
             const currentIdx = historyIndexRef.current;
             const next = [...prev.slice(0, currentIdx + 1), json];
@@ -297,10 +301,51 @@ function PaintEditor({
         });
         setHistoryIndex(prev => {
             const newIndex = Math.min(prev + 1, 49);
-            historyIndexRef.current = newIndex; // update sync to avoid multiple state calls using stale index
+            historyIndexRef.current = newIndex;
             return newIndex;
         });
     };
+
+    // Auto-save function (saves without closing)
+    const autoSave = useCallback(() => {
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] autoSave triggered`);
+        const canvas = canvasRef.current;
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] hasUnsavedChanges: ${hasUnsavedChanges.current}`);
+
+        if (!canvas || !hasUnsavedChanges.current) {
+            console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Skipping autoSave (nothing to save)`);
+            return;
+        }
+
+        setSaveStatus('saving');
+
+        const svgString = canvas.toSVG();
+        const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+        const imageData = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 1 });
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Exported SVG and PNG for autoSave`);
+
+        if (onAutoSave) {
+            console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Calling onAutoSave callback`);
+            onAutoSave(imageData, svgDataUrl, costumeName);
+        }
+
+        hasUnsavedChanges.current = false;
+        setSaveStatus('saved');
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] autoSave completed`);
+
+        // Reset status after 2 seconds
+        setTimeout(() => setSaveStatus('idle'), 2000);
+    }, [activeCostumeIndex, costumeName, onAutoSave]);
+
+    // Auto-save when costume index changes (switching costumes)
+    useEffect(() => {
+        return () => {
+            // Cleanup: auto-save when leaving
+            if (hasUnsavedChanges.current) {
+                autoSave();
+            }
+        };
+    }, [activeCostumeIndex, autoSave]);
 
     const undo = () => {
         if (historyIndex > 0) {
@@ -365,12 +410,21 @@ function PaintEditor({
     };
 
     const deleteActive = () => {
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] deleteActive triggered`);
         const canvas = canvasRef.current;
         const activeObjects = canvas?.getActiveObjects();
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] activeObjects count: ${activeObjects?.length || 0}`);
+
         if (activeObjects?.length) {
             canvas?.discardActiveObject();
-            activeObjects.forEach((obj: fabric.FabricObject) => canvas?.remove(obj));
+            activeObjects.forEach((obj: fabric.FabricObject) => {
+                console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] deleting object type: ${obj.type}`);
+                canvas?.remove(obj);
+            });
             canvas?.renderAll();
+            console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] deleteActive completed`);
+        } else {
+            console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] No objects selected to delete`);
         }
     };
 
@@ -402,6 +456,7 @@ function PaintEditor({
     };
 
     const addShape = (type: string) => {
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] addShape triggered: ${type}`);
         const canvas = canvasRef.current;
         if (!canvas) return;
         const common = {
@@ -420,6 +475,7 @@ function PaintEditor({
         else if (type === 'text') shape = new fabric.IText('Text', { ...common, fill: outlineColor, fontSize: 40 });
 
         if (shape) {
+            console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Finalizing shape addition`);
             canvas.add(shape);
             canvas.setActiveObject(shape);
             canvas.renderAll();
@@ -450,12 +506,19 @@ function PaintEditor({
     };
 
     const handleSave = () => {
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] handleSave manual triggered`);
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        if (!canvas) {
+            console.error(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Canvas not found in handleSave`);
+            return;
+        }
+
+        setSaveStatus('saving');
 
         // Export as SVG data URL (vibrant and sharp)
         const svgString = canvas.toSVG();
         const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] SVG data generated`);
 
         // Export as PNG (backup/preview)
         const imageData = canvas.toDataURL({
@@ -463,9 +526,18 @@ function PaintEditor({
             quality: 1,
             multiplier: 1
         });
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] PNG preview generated`);
 
+        hasUnsavedChanges.current = false;
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] Calling onSave for costume: ${costumeName}`);
         onSave(imageData, svgDataUrl, costumeName);
-        onClose();
+
+        // Show saved status briefly before closing
+        setSaveStatus('saved');
+        console.log(`[DEBUG_BREAKPOINT][Costume: ${activeCostumeIndex}] handleSave completed, closing editor...`);
+        setTimeout(() => {
+            onClose();
+        }, 300);
     };
 
     const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -557,7 +629,26 @@ function PaintEditor({
                                         title="Delete"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            if (onDeleteSound) onDeleteSound(i);
+                                            console.log(`[DEBUG_BREAKPOINT] Delete costume clicked: "${c.name}", index: ${i}`);
+                                            if (onDeleteSound && costumes.length > 1) {
+                                                if (window.confirm(`Delete costume "${c.name}"?`)) {
+                                                    console.log(`[DEBUG_BREAKPOINT] Confirming deletion for "${c.name}"`);
+                                                    onDeleteSound(i);
+                                                    let newIndex = activeCostumeIndex;
+                                                    if (i === activeCostumeIndex) {
+                                                        newIndex = Math.max(0, i - 1);
+                                                    } else if (i < activeCostumeIndex) {
+                                                        newIndex = activeCostumeIndex - 1;
+                                                    }
+                                                    console.log(`[DEBUG_BREAKPOINT] Deletion successful. Updated activeCostumeIndex: ${newIndex}`);
+                                                    setActiveCostumeIndex(newIndex);
+                                                } else {
+                                                    console.log('[DEBUG_BREAKPOINT] User cancelled costume deletion');
+                                                }
+                                            } else if (costumes.length <= 1) {
+                                                console.warn('[DEBUG_BREAKPOINT] Deletion blocked: cannot delete last costume');
+                                                alert('Cannot delete the last costume!');
+                                            }
                                         }}
                                     >
                                         <Trash2 size={12} />
@@ -810,6 +901,15 @@ function PaintEditor({
                             </div>
 
                             <div className="absolute bottom-6 right-6 flex items-center gap-4">
+                                {/* Save Status Indicator */}
+                                {saveStatus !== 'idle' && (
+                                    <div className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${saveStatus === 'saving'
+                                            ? 'bg-yellow-500 text-white animate-pulse'
+                                            : 'bg-green-500 text-white'
+                                        }`}>
+                                        {saveStatus === 'saving' ? '💾 Saving...' : '✓ Saved!'}
+                                    </div>
+                                )}
                                 <button
                                     onClick={handleSave}
                                     className="px-8 py-3 bg-[#22c55e] text-white rounded-2xl font-black text-xl flex items-center gap-3 shadow-xl hover:bg-green-600 transition-all hover:scale-105 active:scale-95"

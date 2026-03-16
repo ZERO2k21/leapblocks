@@ -209,6 +209,20 @@ export class Sprite {
         }
     }
 
+    updateCostumeImage(index: number, imageData: string): void {
+        if (index >= 0 && index < this.state.costumes.length) {
+            const img = new Image();
+            img.onload = () => {
+                this.state.costumes[index].image = img;
+                this.onUpdate();
+            };
+            img.onerror = () => {
+                console.warn(`[Sprite] Failed to update costume image at index ${index}`);
+            };
+            img.src = imageData;
+        }
+    }
+
     setScripts(scripts: any[]) {
         this.state.scripts = scripts;
         this.onUpdate();

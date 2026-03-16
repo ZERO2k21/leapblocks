@@ -841,6 +841,8 @@ export default function JuniorApp({ onBack }) {
                     isOpen={paintEditor.isOpen}
                     onClose={() => setPaintEditor({ ...paintEditor, isOpen: false })}
                     onSave={handlers.handlePaintSave}
+                    onDeleteSound={handlers.handleDeleteCostume}
+                    onDuplicateSound={handlers.handleDuplicateCostume}
                     initialImage={paintEditor.initialImage}
                     costumes={paintEditor.costumes}
                     spriteName={paintEditor.spriteName}

@@ -87,6 +87,15 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                         selectedSprite.switchCostume(selectedSprite.costumes.length - 1);
                         addLog(`Saved costume for ${selectedSprite.name}: ${costumeName}`);
                     }}
+                    onAutoSave={(imageData: string, svgData?: string, name?: string) => {
+                        // Auto-save updates the current costume without adding a new one
+                        const costumeIndex = selectedSprite.currentCostumeIndex;
+                        if (costumeIndex >= 0 && costumeIndex < selectedSprite.costumes.length) {
+                            // Update existing costume image
+                            selectedSprite.updateCostumeImage(costumeIndex, imageData);
+                            addLog(`Auto-saved costume for ${selectedSprite.name}`);
+                        }
+                    }}
                     onDeleteSound={(index: number) => {
                         selectedSprite.deleteCostume(index);
                         addLog(`Deleted costume from ${selectedSprite.name}`);
