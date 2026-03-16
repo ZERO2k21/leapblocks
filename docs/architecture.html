@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeapBlocks Python System Architecture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'leap': {
+                            'purple': '#8B5CF6',
+                            'dark': '#7C3AED',
+                            'light': '#EDE9FE',
+                            'bg': '#F8FAFC',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .diagram-box {
+            transition: all 0.3s ease;
+        }
+        .diagram-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.3);
+        }
+        .flow-arrow {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        pre {
+            background: #1e293b;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Fira Code', 'Consolas', monospace;
+        }
+    </style>
+</head>
+<body class="bg-leap-bg min-h-screen">
+    <!-- Header -->
+    <header class="bg-leap-purple text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="text-3xl font-bold">🧩 LeapBlocks</div>
+                    <span class="text-leap-light text-sm">Python System Architecture</span>
+                </div>
+                <nav class="flex gap-6 text-sm">
+                    <a href="#overview" class="hover:text-leap-light transition">Overview</a>
+                    <a href="#modules" class="hover:text-leap-light transition">Modules</a>
+                    <a href="#workflow" class="hover:text-leap-light transition">Workflow</a>
+                    <a href="#api" class="hover:text-leap-light transition">API</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Overview Section -->
+        <section id="overview" class="mb-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">System Overview</h2>
+            
+            <!-- Architecture Diagram -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+                <h3 class="text-xl font-semibold text-leap-purple mb-6">Core Architecture</h3>
+                
+                <!-- Electron App Container -->
+                <div class="border-2 border-leap-purple rounded-xl p-6 bg-leap-light/20">
+                    <div class="text-center text-leap-dark font-bold mb-4">Electron App</div>
+                    
+                    <!-- UI Layer -->
+                    <div class="border-2 border-blue-400 rounded-lg p-4 mb-4 bg-blue-50">
+                        <div class="text-center text-blue-600 font-semibold mb-3">UI Layer (React + Tailwind CSS)</div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="diagram-box bg-white p-3 rounded-lg shadow text-center">
+                                <div class="text-2xl mb-1">🧱</div>
+                                <div class="text-sm font-medium">Blockly Workspace</div>
+                            </div>
+                            <div class="diagram-box bg-white p-3 rounded-lg shadow text-center border-2 border-leap-purple">
+                                <div class="text-2xl mb-1">🐍</div>
+                                <div class="text-sm font-medium">Python IDE Editor</div>
+                            </div>
+                            <div class="diagram-box bg-white p-3 rounded-lg shadow text-center">
+                                <div class="text-2xl mb-1">📓</div>
+                                <div class="text-sm font-medium">Python Notebook UI</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Flow Arrow -->
+                    <div class="flex justify-center my-4">
+                        <div class="flow-arrow text-leap-purple text-4xl">⬇</div>
+                    </div>
+                    
+                    <!-- Execution Controller -->
+                    <div class="border-2 border-green-400 rounded-lg p-4 mb-4 bg-green-50">
+                        <div class="text-center text-green-600 font-semibold mb-2">Execution Controller</div>
+                        <div class="flex justify-center gap-4 text-sm">
+                            <span class="bg-white px-3 py-1 rounded-full shadow">▶ Run</span>
+                            <span class="bg-white px-3 py-1 rounded-full shadow">⏹ Stop</span>
+                            <span class="bg-white px-3 py-1 rounded-full shadow">📤 Upload</span>
+                            <span class="bg-white px-3 py-1 rounded-full shadow">🐛 Debug</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Flow Arrow -->
+                    <div class="flex justify-center my-4">
+                        <div class="flow-arrow text-leap-purple text-4xl">⬇</div>
+                    </div>
+                    
+                    <!-- Python Runtime -->
+                    <div class="border-2 border-yellow-400 rounded-lg p-4 mb-4 bg-yellow-50">
+                        <div class="text-center text-yellow-600 font-semibold mb-2">Python Runtime Manager</div>
+                        <div class="text-center text-sm text-gray-600">Skulpt - In-browser Python 3 Interpreter</div>
+                    </div>
+                    
+                    <!-- Flow Arrow -->
+                    <div class="flex justify-center my-4">
+                        <div class="flow-arrow text-leap-purple text-4xl">⬇</div>
+                    </div>
+                    
+                    <!-- Output Layer -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="border-2 border-orange-400 rounded-lg p-4 bg-orange-50">
+                            <div class="text-center text-orange-600 font-semibold mb-2">Hardware Interface</div>
+                            <div class="text-center text-sm text-gray-600">Serial / WebSocket</div>
+                        </div>
+                        <div class="border-2 border-purple-400 rounded-lg p-4 bg-purple-50">
+                            <div class="text-center text-purple-600 font-semibold mb-2">Output Console</div>
+                            <div class="text-center text-sm text-gray-600">Stdout / Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modules Section -->
+        <section id="modules" class="mb-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Core Modules</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Module Card -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden diagram-box">
+                    <div class="bg-leap-purple p-4">
+                        <h3 class="text-white font-bold text-lg">Editor Engine</h3>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-gray-600 text-sm mb-3">Code editing with Monaco Editor, providing VS Code-like experience.</p>
+                        <div class="text-xs text-gray-500">
+                            <span class="bg-leap-light text-leap-dark px-2 py-1 rounded">Monaco Editor</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden diagram-box">
+                    <div class="bg-green-500 p-4">
+                        <h3 class="text-white font-bold text-lg">Execution Controller</h3>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-gray-600 text-sm mb-3">Manages code execution lifecycle: Run, Stop, Upload, Debug.</p>
+                        <div class="text-xs text-gray-500">
+                            <span class="bg-green-100 text-green-700 px-2 py-1 rounded">React State</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden diagram-box">
+                    <div class="bg-yellow-500 p-4">
+                        <h3 class="text-white font-bold text-lg">Python Runtime</h3>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-gray-600 text-sm mb-3">Skulpt-based Python 3 interpreter running entirely in the browser.</p>
+                        <div class="text-xs text-gray-500">
+                            <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Skulpt</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden diagram-box">
+                    <div class="bg-orange-500 p-4">
+                        <h3 class="text-white font-bold text-lg">Hardware Bridge</h3>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-gray-600 text-sm mb-3">Serial communication with Arduino, ESP32, and other microcontrollers.</p>
+                        <div class="text-xs text-gray-500">
+                            <span class="bg-orange-100 text-orange-700 px-2 py-1 rounded">SerialPort</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden diagram-box">
+                    <div class="bg-purple-500 p-4">
+                        <h3 class="text-white font-bold text-lg">Output Console</h3>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-gray-600 text-sm mb-3">Displays program output, errors, and provides REPL interface.</p>
+                        <div class="text-xs text-gray-500">
+                            <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded">Terminal</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden diagram-box">
+                    <div class="bg-blue-500 p-4">
+                        <h3 class="text-white font-bold text-lg">Sprite System</h3>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-gray-600 text-sm mb-3">Interactive sprite control with PictoBlox-compatible API.</p>
+                        <div class="text-xs text-gray-500">
+                            <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded">Canvas</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Workflow Section -->
+        <section id="workflow" class="mb-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Python IDE Workflow</h2>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="diagram-box bg-leap-light p-4 rounded-xl text-center flex-1">
+                        <div class="text-3xl mb-2">✍️</div>
+                        <div class="font-semibold text-leap-dark">Write Code</div>
+                        <div class="text-xs text-gray-500 mt-1">Monaco Editor</div>
+                    </div>
+                    
+                    <div class="text-leap-purple text-3xl flow-arrow">→</div>
+                    
+                    <div class="diagram-box bg-green-100 p-4 rounded-xl text-center flex-1">
+                        <div class="text-3xl mb-2">▶️</div>
+                        <div class="font-semibold text-green-700">Click Run</div>
+                        <div class="text-xs text-gray-500 mt-1">Execution Controller</div>
+                    </div>
+                    
+                    <div class="text-leap-purple text-3xl flow-arrow">→</div>
+                    
+                    <div class="diagram-box bg-yellow-100 p-4 rounded-xl text-center flex-1">
+                        <div class="text-3xl mb-2">⚙️</div>
+                        <div class="font-semibold text-yellow-700">Execute</div>
+                        <div class="text-xs text-gray-500 mt-1">Skulpt Runtime</div>
+                    </div>
+                    
+                    <div class="text-leap-purple text-3xl flow-arrow">→</div>
+                    
+                    <div class="diagram-box bg-purple-100 p-4 rounded-xl text-center flex-1">
+                        <div class="text-3xl mb-2">📺</div>
+                        <div class="font-semibold text-purple-700">Display Output</div>
+                        <div class="text-xs text-gray-500 mt-1">Console + Stage</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- API Section -->
+        <section id="api" class="mb-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Sprite API Reference</h2>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Movement API -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-leap-purple mb-4 flex items-center gap-2">
+                            <span>🏃</span> Movement
+                        </h3>
+                        <pre class="p-4 text-sm"><code class="text-green-400">sprite = Sprite('Robot')
+sprite.move(50)        # Forward
+sprite.move_right(20)  # Right
+sprite.move_left(20)   # Left
+sprite.move_up(20)     # Up
+sprite.move_down(20)   # Down
+sprite.go_to(100, 50)  # Position</code></pre>
+                    </div>
+                    
+                    <!-- Rotation API -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-leap-purple mb-4 flex items-center gap-2">
+                            <span>🔄</span> Rotation
+                        </h3>
+                        <pre class="p-4 text-sm"><code class="text-blue-400">sprite.turn_right()    # +15°
+sprite.turn_left()     # -15°
+sprite.point_in_direction(90)  # Set angle</code></pre>
+                    </div>
+                    
+                    <!-- Appearance API -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-leap-purple mb-4 flex items-center gap-2">
+                            <span>✨</span> Appearance
+                        </h3>
+                        <pre class="p-4 text-sm"><code class="text-yellow-400">sprite.say("Hello!")   # Speech
+sprite.think("Hmm...") # Thought
+sprite.hide()          # Hide
+sprite.show()          # Show
+sprite.set_size(150)   # Scale %</code></pre>
+                    </div>
+                    
+                    <!-- Costume API -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-leap-purple mb-4 flex items-center gap-2">
+                            <span>👕</span> Costumes
+                        </h3>
+                        <pre class="p-4 text-sm"><code class="text-purple-400">sprite.next_costume()
+sprite.switch_costume('wave1')</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Stack Section -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Technology Stack</h2>
+            
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-leap-purple text-white">
+                        <tr>
+                            <th class="px-6 py-4 text-left">Layer</th>
+                            <th class="px-6 py-4 text-left">Technology</th>
+                            <th class="px-6 py-4 text-left">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 font-medium">Desktop</td>
+                            <td class="px-6 py-4"><span class="bg-gray-100 px-2 py-1 rounded text-sm">Electron 39</span></td>
+                            <td class="px-6 py-4 text-gray-600">Cross-platform desktop app</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 font-medium">UI Framework</td>
+                            <td class="px-6 py-4"><span class="bg-blue-100 px-2 py-1 rounded text-sm">React 19</span></td>
+                            <td class="px-6 py-4 text-gray-600">Component-based UI</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 font-medium">Styling</td>
+                            <td class="px-6 py-4"><span class="bg-cyan-100 px-2 py-1 rounded text-sm">Tailwind CSS 4</span></td>
+                            <td class="px-6 py-4 text-gray-600">Utility-first CSS</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 font-medium">Code Editor</td>
+                            <td class="px-6 py-4"><span class="bg-purple-100 px-2 py-1 rounded text-sm">Monaco Editor</span></td>
+                            <td class="px-6 py-4 text-gray-600">VS Code-like editing</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 font-medium">Python Runtime</td>
+                            <td class="px-6 py-4"><span class="bg-yellow-100 px-2 py-1 rounded text-sm">Skulpt</span></td>
+                            <td class="px-6 py-4 text-gray-600">In-browser Python 3</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 font-medium">Hardware</td>
+                            <td class="px-6 py-4"><span class="bg-orange-100 px-2 py-1 rounded text-sm">SerialPort</span></td>
+                            <td class="px-6 py-4 text-gray-600">Arduino/ESP32 communication</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- File Structure Section -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Project Structure</h2>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+                <pre class="text-sm"><code class="text-gray-700">
+src/
+├── python/
+│   ├── PythonApp.jsx          <span class="text-gray-400"># Main Python IDE component</span>
+│   └── PythonIDEGuide.jsx     <span class="text-gray-400"># Help documentation</span>
+├── junior/
+│   └── engine/
+│       └── SkulptEngine.js    <span class="text-gray-400"># Python runtime manager</span>
+├── hardware/
+│   └── HardwareAdapter.ts     <span class="text-gray-400"># High-level hardware API</span>
+├── serial/
+│   └── SerialManager.ts       <span class="text-gray-400"># Serial port management</span>
+├── components/
+│   ├── SpriteLibrary.tsx      <span class="text-gray-400"># Sprite catalog</span>
+│   └── BackdropLibrary.tsx    <span class="text-gray-400"># Backdrop catalog</span>
+├── blockly/                   <span class="text-gray-400"># Blockly workspace</span>
+├── firmware/                  <span class="text-gray-400"># Firmware protocol</span>
+└── services/                  <span class="text-gray-400"># Shared services</span>
+                </code></pre>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-gray-400">LeapBlocks Python System Architecture Documentation</p>
+            <p class="text-sm text-gray-500 mt-2">Built with Tailwind CSS</p>
+        </div>
+    </footer>
+</body>
+</html>

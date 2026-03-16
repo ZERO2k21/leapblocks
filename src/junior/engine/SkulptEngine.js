@@ -34,8 +34,8 @@ class Sprite:
         self._name = str(name)
 
     def _action(self, action, *args):
-        import __leap__
-        __leap__._dispatch(self._name, action, list(args))
+        # Use the global _leap_dispatch function injected by SkulptEngine
+        _leap_dispatch(self._name, action, list(args))
 
     # ─── Movement and Positioning ───
     def move(self, steps=20):
@@ -164,11 +164,11 @@ export class SkulptEngine {
                 case 'UP':         bridge.moveRelative(n, 'UP',     args[0] ?? 20); break;
                 case 'DOWN':       bridge.moveRelative(n, 'DOWN',   args[0] ?? 20); break;
                 case 'FORWARD':    bridge.moveSteps(n,              args[0] ?? 20); break;
-                case 'GOTO':       bridge.update(n, { x: args[0] ?? 0, y: args[1] ?? 0 }); break;
-                case 'SETX':       bridge.update(n, { x: args[0] ?? 0 }); break;
-                case 'SETY':       bridge.update(n, { y: args[0] ?? 0 }); break;
-                case 'TURN_RIGHT': bridge.update(n, { angle: (old) => (old || 90) + (15 * (args[0] ?? 1)) }); break;
-                case 'TURN_LEFT':  bridge.update(n, { angle: (old) => (old || 90) - (15 * (args[0] ?? 1)) }); break;
+                case 'GOTO':       bridge.update(n, { x: args[0] ?? 0, y: args[1] ?? 0, position: { x: args[0] ?? 0, y: args[1] ?? 0 } }); break;
+                case 'SETX':       bridge.update(n, { x: args[0] ?? 0, position: { x: args[0] ?? 0 } }); break;
+                case 'SETY':       bridge.update(n, { y: args[0] ?? 0, position: { y: args[0] ?? 0 } }); break;
+                case 'TURN_RIGHT': bridge.update(n, { angle: (old) => (old ?? 0) + (15 * (args[0] ?? 1)), direction: (old) => (old ?? 0) + (15 * (args[0] ?? 1)) }); break;
+                case 'TURN_LEFT':  bridge.update(n, { angle: (old) => (old ?? 0) - (15 * (args[0] ?? 1)), direction: (old) => (old ?? 0) - (15 * (args[0] ?? 1)) }); break;
                 
                 // Appearance
                 case 'SAY':     bridge.update(n, { speech: args[0] ?? '' }); break;
@@ -177,7 +177,7 @@ export class SkulptEngine {
                 case 'SHOW':    bridge.update(n, { visible: true  }); break;
                 case 'SIZE':    bridge.update(n, { size:  args[0] ?? 100 }); break;
                 case 'CHANGE_SIZE': bridge.update(n, { size: (old) => (old || 100) + (args[0] ?? 10) }); break;
-                case 'ANGLE':   bridge.update(n, { angle: args[0] ?? 90  }); break;
+                case 'ANGLE':   bridge.update(n, { angle: args[0] ?? 0  }); break;
                 case 'COSTUME': bridge.update(n, { currentCostume: args[0] }); break;
                 case 'NEXT_COSTUME': 
                     bridge.update(n, { nextCostume: true }); 
@@ -187,26 +187,37 @@ export class SkulptEngine {
             return sk.builtin.none.none$;
         };
 
+        // Store dispatch function globally for the preamble to use
+        this._dispatchFunc = dispatch;
+        
+        // Create the __leap__ module
         const mod = new sk.builtin.module();
         mod.$d = { _dispatch: new sk.builtin.func(dispatch) };
+        
+        // Register in sysmodules
         sk.sysmodules.mp$ass_subscript(new sk.builtin.str('__leap__'), mod);
+        
+        // Also add to builtins for direct access
+        if (sk.builtins) {
+            sk.builtins.__leap__ = mod;
+            // Add global dispatch function for preamble
+            sk.builtins._leap_dispatch = new sk.builtin.func(dispatch);
+        }
     }
 
     _configureSkulpt(sk) {
+        // Build the __leap__ module first to set up builtins
+        this._buildLeapModule(sk);
+        
         sk.configure({
             output: (text) => this.callbacks.onOut(text),
             read: (x) => {
-                if (x === "__leap__" || x === "__leap__.py") {
-                    return "def _dispatch(name, action, args): pass";
-                }
                 if (sk.builtinFiles?.files?.[x]) return sk.builtinFiles.files[x];
                 throw new Error("Module not found: '" + x + "'");
             },
             __future__: sk.python3,
             execLimit: 30000,
         });
-
-        this._buildLeapModule(sk);
     }
 
     _errStr(e) {

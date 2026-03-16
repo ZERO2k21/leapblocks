@@ -7,8 +7,10 @@ const IntermediateApp = lazy(() => import('./IntermediateApp'));
 const JuniorApp = lazy(() => import('./junior/JuniorApp'));
 // @ts-ignore
 const PythonApp = lazy(() => import('./python/PythonApp'));
+// @ts-ignore
+const PythonNotebook = lazy(() => import('./python/PythonNotebook'));
 
-type AppMode = 'home' | 'intermediate' | 'junior' | 'python';
+type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook';
 
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
@@ -44,7 +46,8 @@ export default function App() {
             <Suspense fallback={<div style={{ padding: 20, color: '#673AB7', fontWeight: 'bold' }}>Loading LeapBlocks...</div>}>
                 {mode === 'intermediate' && <IntermediateApp onBack={() => setMode('home')} onOpenPython={() => setMode('python')} />}
                 {mode === 'junior' && <JuniorApp onBack={() => setMode('home')} />}
-                {mode === 'python' && <PythonApp onBack={() => setMode('home')} />}
+                {mode === 'python' && <PythonApp onBack={() => setMode('home')} onSwitchToNotebook={() => setMode('notebook')} />}
+                {mode === 'notebook' && <PythonNotebook onBack={() => setMode('home')} onSwitchToIDE={() => setMode('python')} />}
                 {mode === 'home' && <LandingPage onSelect={setMode} />}
             </Suspense>
         </ErrorBoundary>

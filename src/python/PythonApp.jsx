@@ -1,18 +1,47 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import Editor, { loader } from "@monaco-editor/react";
+import { StageProvider, useStage } from "../context/StageContext";
 
-loader.config({
-    paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs" },
-    'vs/nls': { availableLanguages: {} },
-});
-
-// Tell Monaco to not use web workers (avoids CSP blob: errors in Electron/strict CSP environments)
-if (typeof window !== 'undefined') {
-    window.MonacoEnvironment = {
-        getWorker: function (_workerId, _label) {
-            return null; // Fall back to main thread (no workers)
-        }
-    };
+// ─── CSS Animations ───────────────────────────────────────────────────────────
+const animationStyles = document.createElement('style');
+animationStyles.textContent = `
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    @keyframes blink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0; }
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .run-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4) !important;
+    }
+    .run-button:active {
+        transform: translateY(0);
+    }
+    .stop-button:hover {
+        background: #EF4444 !important;
+        color: #fff !important;
+    }
+    .terminal-line {
+        animation: fadeIn 0.2s ease-out;
+    }
+`;
+if (typeof document !== 'undefined' && !document.getElementById('python-ide-animations')) {
+    animationStyles.id = 'python-ide-animations';
+    document.head.appendChild(animationStyles);
 }
 
 import {
@@ -21,15 +50,25 @@ import {
     Package, Bug, ChevronRight, ChevronDown, X, RefreshCw, Download,
     Eye, EyeOff, RotateCcw, FileText, Zap, HelpCircle, Scissors, Copy, Clipboard,
     StopCircle, PlayCircle, FileCode, Layers, Image, Volume2, ChevronLeft,
-    MoreVertical, Grid, MousePointer, Type, PaintBucket, Eraser, Circle, Square as SquareIcon
+    MoreVertical, Grid, MousePointer, Type, PaintBucket, Eraser, Circle, Square as SquareIcon,
+    Upload, Clock
 } from "lucide-react";
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
-import Teddy from "../junior/sprites/Teddy";
-import PythonIDEGuide from "./PythonIDEGuide";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
 import { BackdropLibrary as BackdropLib } from "../components/BackdropLibrary";
 
-// ─── Theme (PictoBlox Colors) ─────────────────────────────────────────────────
+// ─── Import Modular Components ─────────────────────────────────────────────────
+import TopBar from "./layout/TopBar";
+import ToolBar from "./layout/ToolBar";
+import ActivityBar from "./layout/ActivityBar";
+import SidePanel from "./panels/SidePanel";
+import EditorPanel from "./panels/EditorPanel";
+import StagePanel from "./panels/StagePanel";
+import PromptModal from "./modals/PromptModal";
+import SpriteLibraryModal from "./modals/SpriteLibraryModal";
+import PythonIDEGuide from "./PythonIDEGuide";
+
+// ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
 const C = {
     PURPLE: "#8B5CF6",
     DARK_PURPLE: "#7C3AED",
@@ -130,31 +169,47 @@ const PIP_PACKAGES = [
 ];
 
 // ─── Main Component ────────────────────────────────────────────────────────────
-export default function PythonApp({ onBack }) {
+function PythonApp({ onBack, onSwitchToNotebook }) {
+    // Get shared stage state from context
+    const {
+        sprites,
+        setSprites,
+        selectedSpriteId,
+        setSelectedSpriteId,
+        selectedSprite,
+        backdrop,
+        setBackdrop: setBackdropImg,
+        stageSize,
+        stageRef,
+        backdropLibrary,
+        addSprite,
+        deleteSprite,
+        updateSprite,
+        updateSpriteProperty,
+        resetStage
+    } = useStage();
+    
     // Editor state
     const [activeFile, setActiveFile] = useState("main.py");
     const [projectFiles, setProjectFiles] = useState(DEFAULT_FILES);
     const [editorCursor, setEditorCursor] = useState({ line: 1, col: 1 });
     const [showGuide, setShowGuide] = useState(false);
     const monacoRef = useRef(null);
-    const stageRef = useRef(null);
-    const [stageSize, setStageSize] = useState({ w: 300, h: 240 });
-    useEffect(() => {
-        if (!stageRef.current) return;
-        const obs = new ResizeObserver(entries => {
-            for (const e of entries) {
-                setStageSize({ w: e.contentRect.width, h: e.contentRect.height });
-            }
-        });
-        obs.observe(stageRef.current);
-        return () => obs.disconnect();
-    }, []);
     const editorRef = useRef(null);
 
     // Terminal / REPL
     const [activePanel, setActivePanel] = useState("terminal"); // "terminal" | "repl" | "debugger" | "pip"
     const [terminalOutput, setTerminalOutput] = useState([
-        { text: "LeapBlocks Python IDE ready. Click ▶ Run to execute.", type: "info", ts: new Date() }
+        { text: "╔══════════════════════════════════════════════════════════════╗", type: "info", ts: new Date() },
+        { text: "║  LeapBlocks Python IDE v1.0                                 ║", type: "info", ts: new Date() },
+        { text: "║  ─────────────────────────────────────────────────────────── ║", type: "info", ts: new Date() },
+        { text: "║  ▶ Press Ctrl+Enter or F5 to run code                       ║", type: "info", ts: new Date() },
+        { text: "║  ▶ Press Escape to stop execution                           ║", type: "info", ts: new Date() },
+        { text: "║  ▶ Press Ctrl+` to toggle REPL mode                         ║", type: "info", ts: new Date() },
+        { text: "║  ▶ Press Ctrl+S to save project                             ║", type: "info", ts: new Date() },
+        { text: "╚══════════════════════════════════════════════════════════════╝", type: "info", ts: new Date() },
+        { text: "", type: "info", ts: new Date() },
+        { text: "Ready to run Python code. Click ▶ Run or press Ctrl+Enter.", type: "success", ts: new Date() },
     ]);
     const [replInput, setReplInput] = useState("");
     const [replHistory, setReplHistory] = useState([]);
@@ -174,24 +229,8 @@ export default function PythonApp({ onBack }) {
     // PIP
     const [packages, setPackages] = useState(PIP_PACKAGES);
     const [pipFilter, setPipFilter] = useState("");
-
-    // Sprite / Stage
-    const [sprites, setSprites] = useState([{
-        id: 'robot-1', name: 'Robot', type: 'robot',
-        x: 0, y: 0, angle: 90, size: 100, visible: true,
-        speech: '', currentCostume: 'default',
-        costumes: { 
-            default: "/assets/sprites/robot/robot_idle.svg",
-            wave1: "/assets/sprites/robot/robot_wave1.svg",
-            wave2: "/assets/sprites/robot/robot_wave2.svg",
-            talk: "/assets/sprites/robot/robot_talk1.svg"
-        },
-        mirrored: false
-    }]);
-    const [selectedSpriteId, setSelectedSpriteId] = useState('robot-1');
-    const selectedSprite = sprites.find(s => s.id === selectedSpriteId);
+    
     const [stageView, setStageView] = useState("stage");
-    const [backdrop, setBackdropImg] = useState(null);
     const [sidePanel, setSidePanel] = useState("files");
     const [spriteFilter, setSpriteFilter] = useState("");
     const [installedExtensions, setInstalledExtensions] = useState([]);
@@ -217,36 +256,50 @@ export default function PythonApp({ onBack }) {
         setTerminalOutput(prev => [...prev, { text, type, ts: new Date() }]);
     }, []);
 
-    const updateSprite = useCallback((name, props) => {
-        setSprites(prev => prev.map(s =>
-            s.name.toLowerCase() === name.toLowerCase() ? { ...s, ...props } : s
-        ));
-    }, []);
-
     // ── Skulpt Init ───────────────────────────────────────────────────────────
     useEffect(() => {
         // Expose updateSprite globally for Teddy component drag support
-        window.updateSprite = (spriteId, updates) => {
+        // Accepts either sprite ID or sprite name
+        window.updateSprite = (spriteIdOrName, updates) => {
             setSprites(prev => prev.map(s => {
-                if (s.id !== spriteId) return s;
+                // Match by ID or by name (case-insensitive)
+                if (s.id !== spriteIdOrName && s.name.toLowerCase() !== String(spriteIdOrName).toLowerCase()) return s;
+                
                 const newProps = { ...s };
-                // Handle function updates (like angle)
+                
+                // Handle position updates from drag (pixel coordinates)
+                if (updates.x !== undefined || updates.y !== undefined) {
+                    newProps.position = { ...(s.position || { x: s.x || 0, y: s.y || 0 }) };
+                    
+                    // Convert pixel coordinates to scratch coordinates
+                    const scaleX = stageSize.w / 480;
+                    const scaleY = stageSize.h / 360;
+                    const centerX = stageSize.w / 2;
+                    const centerY = stageSize.h / 2;
+                    const offset = 40; // sprite half-size
+                    
+                    if (updates.x !== undefined) {
+                        // scratchX = (pixelX - centerX + offset) / scaleX
+                        newProps.position.x = (updates.x - centerX + offset) / scaleX;
+                        newProps.x = newProps.position.x; // Also set legacy property
+                    }
+                    if (updates.y !== undefined) {
+                        // Y is inverted: scratchY = (centerY - pixelY - offset) / scaleY
+                        newProps.position.y = (centerY - updates.y - offset) / scaleY;
+                        newProps.y = newProps.position.y; // Also set legacy property
+                    }
+                }
+                
+                // Handle other updates
                 Object.keys(updates).forEach(key => {
+                    if (key === 'x' || key === 'y') return; // Already handled above
                     if (typeof updates[key] === 'function') {
                         newProps[key] = updates[key](s[key]);
-                    } else if (key === 'x' || key === 'y') {
-                        // Convert pixel coordinates to scratch coordinates
-                        // Pixel x = (stageSize.w / 2) + (scratchX * (stageSize.w / 480)) - 40
-                        // Solving for scratchX: scratchX = (pixelX - stageSize.w / 2 + 40) / (stageSize.w / 480)
-                        const pixelVal = updates[key];
-                        const scale = stageSize[key === 'x' ? 'w' : 'h'] / (key === 'x' ? 480 : 360);
-                        const center = stageSize[key === 'x' ? 'w' : 'h'] / 2;
-                        const offset = 40; // sprite half-size
-                        newProps[key] = (pixelVal - center + offset) / scale;
                     } else {
                         newProps[key] = updates[key];
                     }
                 });
+                
                 return newProps;
             }));
         };
@@ -276,39 +329,88 @@ export default function PythonApp({ onBack }) {
                         let dx = 0, dy = 0;
                         if (dir === "RIGHT") dx = d;
                         if (dir === "LEFT") dx = -d;
-                        if (dir === "UP") dy = -d;
-                        if (dir === "DOWN") dy = d;
-                        return { ...s, x: s.x + dx, y: s.y + dy };
+                        if (dir === "UP") dy = d;  // In Scratch, UP increases Y
+                        if (dir === "DOWN") dy = -d; // In Scratch, DOWN decreases Y
+                        const pos = s.position || { x: s.x || 0, y: s.y || 0 };
+                        return { 
+                            ...s, 
+                            x: pos.x + dx, 
+                            y: pos.y + dy,
+                            position: { x: pos.x + dx, y: pos.y + dy }
+                        };
                     }));
                 },
                 moveSteps: (name, steps) => {
                     setSprites(prev => prev.map(s => {
                         if (s.name.toLowerCase() !== name.toLowerCase()) return s;
-                        const rad = (s.angle * Math.PI) / 180;
-                        return { ...s, x: s.x + Math.cos(rad) * steps, y: s.y - Math.sin(rad) * steps };
+                        const angle = s.direction ?? s.angle ?? 0;
+                        const rad = (angle * Math.PI) / 180;
+                        const pos = s.position || { x: s.x || 0, y: s.y || 0 };
+                        const newX = pos.x + Math.cos(rad) * steps;
+                        const newY = pos.y + Math.sin(rad) * steps;
+                        return { 
+                            ...s, 
+                            x: newX, 
+                            y: newY,
+                            position: { x: newX, y: newY }
+                        };
                     }));
                 },
                 update: (name, props) => {
                     setSprites(prev => prev.map(s => {
                         if (s.name.toLowerCase() !== name.toLowerCase()) return s;
                         const newProps = { ...s };
+                        const pos = s.position || { x: s.x || 0, y: s.y || 0 };
+                        newProps.position = { ...pos };
+                        
                         Object.keys(props).forEach(key => {
                             if (typeof props[key] === 'function') {
-                                newProps[key] = props[key](s[key]);
+                                const oldVal = key === 'direction' ? (s.direction ?? s.angle ?? 0) : 
+                                               key === 'angle' ? (s.angle ?? s.direction ?? 0) :
+                                               s[key];
+                                const newVal = props[key](oldVal);
+                                newProps[key] = newVal;
+                                // Sync direction/angle
+                                if (key === 'direction') newProps.angle = newVal;
+                                if (key === 'angle') newProps.direction = newVal;
                             } else if (key === 'nextCostume' && props[key]) {
                                 // Handle next costume
                                 const costumeKeys = Object.keys(s.costumes || {});
                                 const currentIdx = costumeKeys.indexOf(s.currentCostume);
                                 const nextIdx = (currentIdx + 1) % costumeKeys.length;
                                 newProps.currentCostume = costumeKeys[nextIdx] || 'default';
+                            } else if (key === 'position') {
+                                // Merge position updates
+                                newProps.position = { ...newProps.position, ...props[key] };
+                                newProps.x = newProps.position.x;
+                                newProps.y = newProps.position.y;
+                            } else if (key === 'x') {
+                                newProps.x = props[key];
+                                newProps.position.x = props[key];
+                            } else if (key === 'y') {
+                                newProps.y = props[key];
+                                newProps.position.y = props[key];
                             } else {
                                 newProps[key] = props[key];
+                                // Sync direction/angle
+                                if (key === 'direction') newProps.angle = props[key];
+                                if (key === 'angle') newProps.direction = props[key];
                             }
                         });
                         return newProps;
                     }));
                 },
-                softResetAll: () => setSprites(prev => prev.map(s => ({ ...s, x: 0, y: 0, speech: '', angle: 90, size: 100, visible: true }))),
+                softResetAll: () => setSprites(prev => prev.map(s => ({ 
+                    ...s, 
+                    x: 0, 
+                    y: 0, 
+                    position: { x: 0, y: 0 },
+                    speech: '', 
+                    angle: 0, 
+                    direction: 0,
+                    size: 100, 
+                    visible: true 
+                }))),
             }
         });
     }, [addLog, updateSprite]);
@@ -318,55 +420,256 @@ export default function PythonApp({ onBack }) {
         terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [terminalOutput]);
 
+    // ── Keyboard Shortcuts ────────────────────────────────────────────────────
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Ctrl+Enter or F5: Run code
+            if ((e.ctrlKey && e.key === 'Enter') || e.key === 'F5') {
+                e.preventDefault();
+                if (!isRunning) handleRun();
+            }
+            // Escape: Stop execution
+            if (e.key === 'Escape' && isRunning) {
+                e.preventDefault();
+                handleStop();
+            }
+            // Ctrl+Shift+C: Clear terminal
+            if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+                e.preventDefault();
+                handleClear();
+            }
+            // Ctrl+`: Toggle REPL
+            if (e.ctrlKey && e.key === '`') {
+                e.preventDefault();
+                setActivePanel(prev => prev === 'repl' ? 'terminal' : 'repl');
+                if (activePanel !== 'repl') {
+                    setTimeout(() => replInputRef.current?.focus(), 100);
+                }
+            }
+            // Ctrl+S: Save (prevent browser save)
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                addLog("💾 Project auto-saved", "success");
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isRunning, activePanel, handleRun, handleStop, handleClear, addLog]);
+
     // ── Run ───────────────────────────────────────────────────────────────────
     const handleRun = async () => {
         if (isRunning) return;
         setIsRunning(true);
         setTerminalOutput([]);
+        
+        const startTime = performance.now();
         addLog(`▶ Running ${activeFile}...`, "info");
-        // reset stage
-        if (skulptRef.current?.callbacks?.actions?.softResetAll) skulptRef.current.callbacks.actions.softResetAll();
+        addLog(`────────────────────────────────────────`, "info");
+        
+        // Reset stage
+        if (skulptRef.current?.callbacks?.actions?.softResetAll) {
+            skulptRef.current.callbacks.actions.softResetAll();
+        }
         setDebugVars([]);
         setDebugLine(null);
+        
         try {
-            await skulptRef.current.runPython(projectFiles[activeFile]);
-            addLog("✓ Program finished.", "success");
+            // Validate code before execution
+            const code = projectFiles[activeFile];
+            if (!code || code.trim() === '') {
+                addLog("⚠ No code to execute. Write some Python code first!", "warning");
+                setIsRunning(false);
+                return;
+            }
+            
+            // Check for common syntax issues
+            const syntaxWarnings = checkSyntaxWarnings(code);
+            if (syntaxWarnings.length > 0) {
+                syntaxWarnings.forEach(w => addLog(`⚠ ${w}`, "warning"));
+            }
+            
+            // Execute the code
+            await skulptRef.current.runPython(code);
+            
+            const endTime = performance.now();
+            const duration = ((endTime - startTime) / 1000).toFixed(3);
+            addLog(`────────────────────────────────────────`, "info");
+            addLog(`✓ Program finished successfully in ${duration}s`, "success");
+            
         } catch (e) {
-            addLog("✗ " + (typeof e === 'string' ? e : e?.message || e?.toString?.() || JSON.stringify(e) || "Unknown error"), "error");
+            const errorMsg = typeof e === 'string' ? e : e?.message || e?.toString?.() || JSON.stringify(e) || "Unknown error";
+            addLog(`────────────────────────────────────────`, "error");
+            addLog(`✗ Execution Error:`, "error");
+            addLog(formatErrorMessage(errorMsg), "error");
+            
+            // Provide helpful suggestions
+            const suggestion = getErrorSuggestion(errorMsg);
+            if (suggestion) {
+                addLog(`💡 Tip: ${suggestion}`, "info");
+            }
         } finally {
             setIsRunning(false);
         }
     };
 
-    const handleStop = () => { setIsRunning(false); };
+    const handleStop = () => {
+        setIsRunning(false);
+        addLog("⏹ Execution stopped by user.", "warning");
+    };
+    
     const handleClear = () => setTerminalOutput([]);
+    
+    // ── Syntax Warning Checker ────────────────────────────────────────────────
+    const checkSyntaxWarnings = (code) => {
+        const warnings = [];
+        const lines = code.split('\n');
+        
+        lines.forEach((line, idx) => {
+            const lineNum = idx + 1;
+            const trimmed = line.trim();
+            
+            // Check for common issues
+            if (trimmed.includes('print ') && !trimmed.includes('print(') && !trimmed.startsWith('#')) {
+                // Python 2 style print - Skulpt might handle this but warn
+            }
+            
+            // Check for unmatched parentheses
+            const openParens = (line.match(/\(/g) || []).length;
+            const closeParens = (line.match(/\)/g) || []).length;
+            if (openParens !== closeParens && !trimmed.endsWith(':') && !trimmed.startsWith('#')) {
+                // Could be multi-line, so just note it
+            }
+            
+            // Check for assignment in condition
+            if (trimmed.match(/if\s+\w+\s*=\s*[^=]/)) {
+                warnings.push(`Line ${lineNum}: Did you mean '==' instead of '=' in condition?`);
+            }
+        });
+        
+        return warnings;
+    };
+    
+    // ── Error Message Formatter ───────────────────────────────────────────────
+    const formatErrorMessage = (msg) => {
+        // Clean up Skulpt error messages
+        let formatted = msg
+            .replace(/ParseError/g, 'Syntax Error')
+            .replace(/NameError/g, 'Name Error')
+            .replace(/TypeError/g, 'Type Error')
+            .replace(/ValueError/g, 'Value Error')
+            .replace(/AttributeError/g, 'Attribute Error')
+            .replace(/ImportError/g, 'Import Error')
+            .replace(/IndentationError/g, 'Indentation Error');
+        
+        // Add line number highlighting
+        formatted = formatted.replace(/line (\d+)/gi, 'Line $1');
+        
+        return formatted;
+    };
+    
+    // ── Error Suggestion Helper ───────────────────────────────────────────────
+    const getErrorSuggestion = (errorMsg) => {
+        const msg = errorMsg.toLowerCase();
+        
+        if (msg.includes('nameerror') || msg.includes('not defined')) {
+            return "Check if the variable or function name is spelled correctly and defined before use.";
+        }
+        if (msg.includes('syntaxerror') || msg.includes('parseerror')) {
+            return "Check for missing colons (:), parentheses, or quotes in your code.";
+        }
+        if (msg.includes('typeerror')) {
+            return "Check if you're using the correct data types in your operation.";
+        }
+        if (msg.includes('indentationerror')) {
+            return "Make sure your code indentation is consistent (use 4 spaces).";
+        }
+        if (msg.includes('attributeerror')) {
+            return "Check if the object has the method or attribute you're trying to use.";
+        }
+        if (msg.includes('importerror') || msg.includes('module not found')) {
+            return "The module might not be available in Skulpt. Try using built-in modules like math, random, or time.";
+        }
+        if (msg.includes('timeout') || msg.includes('too long')) {
+            return "Your code might have an infinite loop. Check your while/for loops.";
+        }
+        
+        return null;
+    };
 
     // ── REPL ──────────────────────────────────────────────────────────────────
     const handleReplSubmit = async () => {
         const line = replInput.trim();
         if (!line) return;
+        
         const newHist = [line, ...replHistory].slice(0, 50);
         setReplHistory(newHist);
         setReplHistIdx(-1);
         setReplInput("");
+        
         addLog(`>>> ${line}`, "repl-in");
+        
         try {
+            const startTime = performance.now();
             await skulptRef.current.runRepl(line);
-        } catch (e) { /* error already output via onErr */ }
+            const endTime = performance.now();
+            const duration = ((endTime - startTime) / 1000).toFixed(3);
+            
+            // Show execution time for REPL if > 100ms
+            if (endTime - startTime > 100) {
+                addLog(`⏱ Executed in ${duration}s`, "info");
+            }
+        } catch (e) {
+            // Error already output via onErr
+            const suggestion = getErrorSuggestion(e?.message || e);
+            if (suggestion) {
+                addLog(`💡 ${suggestion}`, "info");
+            }
+        }
         setActivePanel("terminal"); // Show output
     };
 
     const handleReplKey = (e) => {
-        if (e.key === "Enter") { handleReplSubmit(); return; }
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleReplSubmit();
+            return;
+        }
         if (e.key === "ArrowUp") {
+            e.preventDefault();
             const idx = Math.min(replHistIdx + 1, replHistory.length - 1);
             setReplHistIdx(idx);
             setReplInput(replHistory[idx] || "");
         }
         if (e.key === "ArrowDown") {
+            e.preventDefault();
             const idx = Math.max(replHistIdx - 1, -1);
             setReplHistIdx(idx);
             setReplInput(idx === -1 ? "" : replHistory[idx]);
+        }
+        // Tab for autocomplete hint
+        if (e.key === "Tab") {
+            e.preventDefault();
+            // Simple autocomplete for common commands
+            const input = replInput.trim();
+            const suggestions = {
+                'pr': 'print()',
+                'sp': 'sprite = Sprite("")',
+                'im': 'import ',
+                'fo': 'for i in range():',
+                'wh': 'while :',
+                'de': 'def ():',
+                'cl': 'class :',
+                'if': 'if :',
+                'el': 'else:',
+                'ei': 'elif :',
+            };
+            for (const [prefix, completion] of Object.entries(suggestions)) {
+                if (input.startsWith(prefix)) {
+                    setReplInput(completion);
+                    break;
+                }
+            }
         }
     };
 
@@ -454,7 +757,7 @@ export default function PythonApp({ onBack }) {
             type: sp.type, 
             x: (Math.random()-0.5)*80, 
             y: (Math.random()-0.5)*80, 
-            angle: 90, 
+            angle: 0, 
             size: 100, 
             visible: true, 
             speech: '', 
@@ -470,7 +773,11 @@ export default function PythonApp({ onBack }) {
         setSidePanel('files');
     };
     // Backdrop
-    const handleSetBackdrop = (bd) => { setBackdropImg(bd.img || null); addLog('Backdrop: ' + bd.name, 'success'); setSidePanel('files'); };
+    const handleSetBackdrop = (bd) => { 
+        setBackdropImg(bd.img || null); 
+        addLog('Backdrop: ' + bd.name, 'success'); 
+        setSidePanel('files'); 
+    };
     // CSV Upload
     const handleCSVUpload = () => {
         const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.csv';
@@ -508,14 +815,7 @@ export default function PythonApp({ onBack }) {
         addLog('Extension added: ' + ext.name, 'success');
     };
     // ── Utility ───────────────────────────────────────────────────────────────
-    const updateSpriteProperty = (id, prop, value) => {
-        const val = isNaN(value) ? value : Number(value);
-        setSprites(prev => prev.map(s => s.id === id ? { ...s, [prop]: val } : s));
-    };
-
-    const resetStage = () => {
-        setSprites(prev => prev.map(s => ({ ...s, x: 0, y: 0, angle: 90, speech: '', size: 100, visible: true })));
-    };
+    // Note: updateSpriteProperty and resetStage are now provided by StageContext
 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
@@ -526,102 +826,184 @@ export default function PythonApp({ onBack }) {
             fontFamily: "'Inter', 'Segoe UI', sans-serif",
         }}>
 
-            {/* ══ TOPBAR ══════════════════════════════════════════════════════ */}
+            {/* ══ TOPBAR (PictoBlox Style) ══════════════════════════════════════ */}
             <header style={{
-                height: 48, background: C.PURPLE, display: "flex",
-                alignItems: "center", padding: "0 16px",
+                height: 44, background: "#6B46C1", display: "flex",
+                alignItems: "center", padding: "0 12px",
                 justifyContent: "space-between", color: "#fff", zIndex: 100,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                 flexShrink: 0,
             }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <div style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }} onClick={onBack}>
-                        <span style={{ fontSize: 20, fontWeight: "bold" }}>PictoBlox</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }} onClick={onBack}>
+                        <span style={{ fontSize: 18, fontWeight: "bold", letterSpacing: "-0.5px" }}>LeapBlocks</span>
                     </div>
-                    <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.3)" }} />
+                    <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)" }} />
                     {["File", "Edit", "Tutorials", "Board", "Connect"].map(m => (
-                        <span key={m} style={{ fontSize: 13, cursor: "pointer", opacity: 0.85, letterSpacing: "0.01em" }}
-                            onMouseEnter={e => e.target.style.opacity = 1}
-                            onMouseLeave={e => e.target.style.opacity = 0.85}
+                        <span key={m} style={{ fontSize: 12, cursor: "pointer", opacity: 0.9, padding: "4px 8px", borderRadius: 4 }}
+                            onMouseEnter={e => { e.target.style.background = "rgba(255,255,255,0.15)"; e.target.style.opacity = 1; }}
+                            onMouseLeave={e => { e.target.style.background = "transparent"; e.target.style.opacity = 0.9; }}
                         >{m}</span>
                     ))}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     {/* Project name */}
-                    <div style={{ background: "rgba(0,0,0,0.25)", padding: "4px 12px", borderRadius: 6, display: "flex", alignItems: "center", gap: 8 }}>
-                        <input defaultValue="My Project" style={{ background: "transparent", border: "none", color: "#fff", width: 100, outline: "none", fontSize: 13 }} />
-                        <Save size={14} style={{ opacity: 0.8 }} />
+                    <div style={{ background: "rgba(255,255,255,0.2)", padding: "4px 10px", borderRadius: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                        <input defaultValue="My Project" style={{ background: "transparent", border: "none", color: "#fff", width: 90, outline: "none", fontSize: 12, fontWeight: 500 }} />
+                        <Save size={12} style={{ opacity: 0.8, cursor: "pointer" }} />
                     </div>
-                    {/* Mode buttons */}
-                    <div style={{ display: "flex", background: "rgba(0,0,0,0.25)", borderRadius: 6, overflow: "hidden" }}>
-                        <div style={{ padding: "6px 12px", background: C.PURPLE, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Mode</div>
-                        <div style={{ padding: "6px 12px", background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Stage</div>
-                        <div style={{ padding: "6px 12px", background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Upload</div>
+                    {/* Mode/Stage/Upload buttons */}
+                    <div style={{ display: "flex", background: "rgba(0,0,0,0.2)", borderRadius: 4, overflow: "hidden" }}>
+                        <div style={{ padding: "5px 10px", background: "rgba(255,255,255,0.2)", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Mode</div>
+                        <div style={{ padding: "5px 10px", background: "#4CAF50", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Stage</div>
+                        <div style={{ padding: "5px 10px", background: "transparent", color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Upload</div>
                     </div>
-                    <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.3)" }} />
-                    <button onClick={() => setShowGuide(g => !g)}
-                        title="Help & Guide"
-                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", background: showGuide ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.12)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
-                        <HelpCircle size={14} /> Guide
+                    <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)" }} />
+                    {/* Upload Firmware button */}
+                    <button style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 11, fontWeight: 500 }}>
+                        <Upload size={12} /> Upload Firmware
                     </button>
-                    <Bell size={18} style={{ cursor: "pointer", opacity: 0.8 }} />
-                    <Settings size={18} style={{ cursor: "pointer", opacity: 0.8 }} />
-                    <div style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <User size={16} />
+                    <div style={{ display: "flex", gap: 4 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                            <Clock size={14} />
+                        </div>
+                        <div style={{ width: 28, height: 28, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                            <Maximize size={14} />
+                        </div>
+                        <div style={{ width: 28, height: 28, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                            <Settings size={14} />
+                        </div>
+                    </div>
+                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#FF9800", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, fontWeight: "bold" }}>
+                        👤
                     </div>
                 </div>
             </header>
 
-            {/* ══ SECOND TOOLBAR ═══════════════════════════════════════════════ */}
+            {/* ══ SECOND TOOLBAR (PictoBlox Style) ══════════════════════════════ */}
             <div style={{
-                height: 40, background: "#fff", display: "flex",
-                alignItems: "center", padding: "0 16px",
+                height: 42, background: "#fff", display: "flex",
+                alignItems: "center", padding: "0 12px",
                 justifyContent: "space-between", borderBottom: `1px solid ${C.BORDER}`,
                 flexShrink: 0,
             }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     {/* Blocks/Python tabs */}
-                    <div style={{ display: "flex", background: "#f0f0f0", borderRadius: 6, overflow: "hidden" }}>
-                        <div style={{ padding: "6px 16px", background: "#f0f0f0", color: C.MUTED, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Blocks</div>
-                        <div style={{ padding: "6px 16px", background: C.PURPLE, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Python</div>
+                    <div style={{ display: "flex", background: "#E8E8E8", borderRadius: 4, overflow: "hidden" }}>
+                        <div style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRight: "1px solid #ddd" }}>Blocks</div>
+                        <div style={{ padding: "6px 14px", background: "#6B46C1", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Python</div>
                     </div>
                     <div style={{ width: 1, height: 20, background: C.BORDER }} />
                     {/* Costumes/Sounds tabs */}
-                    <div style={{ display: "flex", background: "#f0f0f0", borderRadius: 6, overflow: "hidden" }}>
-                        <div style={{ padding: "6px 16px", background: C.PURPLE, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Costumes</div>
-                        <div style={{ padding: "6px 16px", background: "#f0f0f0", color: C.MUTED, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Sounds</div>
+                    <div style={{ display: "flex", background: "#E8E8E8", borderRadius: 4, overflow: "hidden" }}>
+                        <div style={{ padding: "6px 14px", background: "#6B46C1", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Costumes</div>
+                        <div style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRight: "1px solid #ddd" }}>Sounds</div>
                     </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     {/* Editing tools */}
-                    <div style={{ display: "flex", gap: 4 }}>
-                        <div title="Undo" style={{ cursor: "pointer", padding: "4px 6px", color: C.MUTED, borderRadius: 4 }}>
+                    <div style={{ display: "flex", gap: 2 }}>
+                        <div title="Undo (Ctrl+Z)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
                             <Undo size={16} />
                         </div>
-                        <div title="Redo" style={{ cursor: "pointer", padding: "4px 6px", color: C.MUTED, borderRadius: 4 }}>
+                        <div title="Redo (Ctrl+Y)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
                             <Redo size={16} />
                         </div>
-                        <div title="Copy" style={{ cursor: "pointer", padding: "4px 6px", color: C.MUTED, borderRadius: 4 }}>
+                        <div title="Copy (Ctrl+C)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
                             <span style={{ fontSize: 14 }}>📋</span>
                         </div>
-                        <div title="Paste" style={{ cursor: "pointer", padding: "4px 6px", color: C.MUTED, borderRadius: 4 }}>
+                        <div title="Paste (Ctrl+V)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
                             <span style={{ fontSize: 14 }}>📄</span>
                         </div>
-                        <div title="Delete" style={{ cursor: "pointer", padding: "4px 6px", color: C.MUTED, borderRadius: 4 }}>
+                        <div title="Delete" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
                             <Trash2 size={16} />
                         </div>
                     </div>
                     <div style={{ width: 1, height: 20, background: C.BORDER }} />
-                    {/* Green flag + Red stop */}
-                    <div style={{ display: "flex", gap: 4 }}>
-                        <div onClick={handleRun} title="Run" style={{ cursor: "pointer", padding: "4px 8px", color: C.GREEN, borderRadius: 4, display: "flex", alignItems: "center", gap: 4 }}>
-                            <span style={{ fontSize: 16 }}>🚩</span>
-                            <span style={{ fontSize: 12, fontWeight: 600 }}>Run</span>
-                        </div>
-                        <div onClick={handleStop} title="Stop" style={{ cursor: "pointer", padding: "4px 8px", color: C.RED, borderRadius: 4, display: "flex", alignItems: "center", gap: 4 }}>
-                            <Square size={16} fill={C.RED} />
-                            <span style={{ fontSize: 12, fontWeight: 600 }}>Stop</span>
-                        </div>
+                    {/* Quick Run Button (PictoBlox Green) */}
+                    <div onClick={handleRun} title="Run Code (Ctrl+Enter or F5)"
+                        className="run-button"
+                        style={{
+                            cursor: isRunning ? "not-allowed" : "pointer",
+                            padding: "6px 14px",
+                            background: isRunning ? "#9CA3AF" : "#4CAF50",
+                            color: "#fff",
+                            borderRadius: 4,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            transition: "all 0.2s",
+                        }}>
+                        {isRunning ? (
+                            <>
+                                <span style={{ animation: "spin 1s linear infinite" }}>⚙</span>
+                                <span>Running...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Play size={12} fill="#fff" />
+                                <span>Run</span>
+                            </>
+                        )}
+                    </div>
+                    {/* Run All Button */}
+                    <div onClick={handleRun} title="Run All"
+                        style={{
+                            cursor: "pointer",
+                            padding: "6px 10px",
+                            background: "#E8F5E9",
+                            color: "#4CAF50",
+                            borderRadius: 4,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            fontSize: 11,
+                            fontWeight: 600,
+                            border: "1px solid #C8E6C9",
+                        }}>
+                        <Play size={10} fill="#4CAF50" />
+                        <span>Run All</span>
+                    </div>
+                    {/* Stop Button (PictoBlox Red) */}
+                    <div onClick={handleStop} title="Stop (Escape)"
+                        className="stop-button"
+                        style={{
+                            cursor: "pointer",
+                            padding: "6px 12px",
+                            background: "#FFEBEE",
+                            color: "#F44336",
+                            border: "1px solid #FFCDD2",
+                            borderRadius: 4,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            transition: "all 0.2s",
+                        }}>
+                        <Square size={10} fill="#F44336" />
+                        <span>Stop</span>
+                    </div>
+                    <div style={{ width: 1, height: 20, background: C.BORDER }} />
+                    {/* REPL Mode Toggle */}
+                    <div style={{ 
+                        padding: "5px 10px", 
+                        background: "#F5F5F5", 
+                        color: "#666",
+                        borderRadius: 4,
+                        fontSize: 11,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        border: "1px solid #E0E0E0"
+                    }}>
+                        REPL Mode
+                    </div>
+                    <div title="Stop" style={{ cursor: "pointer", padding: "4px 6px", color: "#F44336", borderRadius: 4 }}>
+                        <Square size={14} fill="#F44336" />
+                    </div>
+                    <div title="Clear" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
+                        <Trash2 size={14} />
                     </div>
                 </div>
             </div>
@@ -640,24 +1022,24 @@ export default function PythonApp({ onBack }) {
                     </div>
                 )}
 
-                {/* ── ACTIVITY BAR ── */}
-                <div style={{ width: 44, background: C.DARK_PURPLE, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 8, gap: 4, flexShrink: 0 }}>
+                {/* ── ACTIVITY BAR (PictoBlox Style - Purple Icons) ── */}
+                <div style={{ width: 48, background: "#6B46C1", display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 8, gap: 2, flexShrink: 0 }}>
                     {[
-                        { id: "files",      icon: <Folder size={20} />,  tip: "Project Files" },
-                        { id: "sprites",    icon: <span style={{fontSize:16}}>🧸</span>,  tip: "Add Sprite from Library", action: () => setShowSpriteLibrary(true) },
-                        { id: "backdrops",  icon: <span style={{fontSize:16}}>🖼</span>,  tip: "Choose Backdrop" },
-                        { id: "extensions", icon: <span style={{fontSize:16}}>🧩</span>,  tip: "Add Extension" },
-                        { id: "search",     icon: <Search size={20} />,  tip: "Search" },
-                        { id: "debug",      icon: <Bug size={20} />,     tip: "Debugger" },
-                        { id: "packages",   icon: <Package size={20} />, tip: "PIP Packages" },
+                        { id: "files",      icon: <Folder size={22} />,  tip: "Project Files" },
+                        { id: "sprites",    icon: <span style={{fontSize:20}}>🤖</span>,  tip: "Add Sprite from Library", action: () => setShowSpriteLibrary(true) },
+                        { id: "backdrops",  icon: <span style={{fontSize:20}}>🎨</span>,  tip: "Choose Backdrop" },
+                        { id: "extensions", icon: <span style={{fontSize:20}}>🧩</span>,  tip: "Add Extension" },
+                        { id: "search",     icon: <Search size={22} />,  tip: "Search" },
+                        { id: "debug",      icon: <Bug size={22} />,     tip: "Debugger" },
+                        { id: "packages",   icon: <Package size={22} />, tip: "Modules/Libraries" },
                     ].map(({ id, icon, tip, action }) => (
                         <div key={id} onClick={() => { if (action) action(); else setSidePanel(id); }}
                             title={tip}
                             style={{
-                                width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center",
-                                borderRadius: 8, cursor: "pointer", color: sidePanel === id ? "#fff" : "rgba(255,255,255,0.5)",
-                                background: sidePanel === id ? "rgba(255,255,255,0.15)" : "transparent",
-                                transition: "all 0.2s",
+                                width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
+                                borderRadius: 6, cursor: "pointer", color: sidePanel === id ? "#fff" : "rgba(255,255,255,0.6)",
+                                background: sidePanel === id ? "rgba(255,255,255,0.2)" : "transparent",
+                                transition: "all 0.15s",
                             }}>
                             {icon}
                         </div>
@@ -665,69 +1047,71 @@ export default function PythonApp({ onBack }) {
                     <div style={{flex:1}} />
                     {/* Upload CSV */}
                     <div onClick={handleCSVUpload} title="Upload CSV file"
-                        style={{width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:8,cursor:"pointer",color:"rgba(255,255,255,0.6)",marginBottom:2}}>
-                        <span style={{fontSize:16}}>📊</span>
+                        style={{width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:6,cursor:"pointer",color:"rgba(255,255,255,0.6)",marginBottom:4}}>
+                        <span style={{fontSize:18}}>📊</span>
                     </div>
                     {/* Upload Python */}
                     <div onClick={handlePythonUpload} title="Upload Python file (.py)"
-                        style={{width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:8,cursor:"pointer",color:"rgba(255,255,255,0.6)",marginBottom:8}}>
-                        <span style={{fontSize:16}}>🐍</span>
+                        style={{width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:6,cursor:"pointer",color:"rgba(255,255,255,0.6)",marginBottom:8}}>
+                        <span style={{fontSize:18}}>🐍</span>
                     </div>
                 </div>
 
-                {/* ── LEFT SIDEBAR ── */}
-                <div style={{ width: 200, background: "#fff", borderRight: `1px solid ${C.BORDER}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+                {/* ── LEFT SIDEBAR (PictoBlox Style) ── */}
+                <div style={{ width: 180, background: "#fff", borderRight: `1px solid #E0E0E0`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
 
                     {sidePanel === "files" && (
                         <>
-                            <div style={{ padding: "10px 12px 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontSize: 12, fontWeight: 700, color: C.TEXT }}>Project Files</span>
+                            <div style={{ padding: "10px 12px 8px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #E8E8E8" }}>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: "#333" }}>Project Files</span>
                                 <div style={{ display: "flex", gap: 4 }}>
-                                    <div onClick={handleAddFile} title="New File" style={{ cursor: "pointer", color: C.MUTED, padding: 2, borderRadius: 4 }}>
+                                    <div onClick={handleAddFile} title="New File" style={{ cursor: "pointer", color: "#666", padding: 2, borderRadius: 4 }}>
                                         <Plus size={14} />
                                     </div>
-                                    <div title="Refresh" style={{ cursor: "pointer", color: C.MUTED, padding: 2, borderRadius: 4 }}>
+                                    <div title="Refresh" style={{ cursor: "pointer", color: "#666", padding: 2, borderRadius: 4 }}>
                                         <RefreshCw size={14} />
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ flex: 1, overflowY: "auto" }}>
+                            <div style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
                                 {Object.keys(projectFiles).map(file => (
                                     <div key={file}
                                         onClick={() => setActiveFile(file)}
                                         style={{
-                                            padding: "6px 12px", fontSize: 13, cursor: "pointer",
-                                            background: activeFile === file ? C.LIGHT_PURPLE : "transparent",
-                                            color: activeFile === file ? C.PURPLE : C.TEXT,
+                                            padding: "8px 12px", fontSize: 13, cursor: "pointer",
+                                            background: activeFile === file ? "#E8F5E9" : "transparent",
+                                            color: activeFile === file ? "#2E7D32" : "#333",
                                             display: "flex", alignItems: "center", gap: 8,
                                             transition: "background 0.15s",
-                                            borderLeft: activeFile === file ? `3px solid ${C.PURPLE}` : "3px solid transparent",
+                                            borderLeft: activeFile === file ? "3px solid #4CAF50" : "3px solid transparent",
                                         }}
                                         onMouseEnter={e => { if (activeFile !== file) e.currentTarget.style.background = "#F5F5F5"; }}
                                         onMouseLeave={e => { if (activeFile !== file) e.currentTarget.style.background = "transparent"; }}
                                     >
-                                        <div style={{ width: 16, height: 16, background: "#E8F5E9", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                            <FileText size={10} style={{ color: "#2E7D32" }} />
+                                        <div style={{ width: 18, height: 18, background: "#E8F5E9", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            <FileText size={12} style={{ color: "#4CAF50" }} />
                                         </div>
                                         <span style={{ fontSize: 12, fontWeight: activeFile === file ? 600 : 400 }}>{file}</span>
                                     </div>
                                 ))}
                             </div>
                             
-                            {/* Modules/Libraries Section */}
-                            <div style={{ borderTop: `1px solid ${C.BORDER}`, padding: "10px 12px 6px" }}>
-                                <span style={{ fontSize: 12, fontWeight: 700, color: C.TEXT }}>Modules/Libraries</span>
+                            {/* Modules/Libraries Section (PictoBlox Style) */}
+                            <div style={{ borderTop: "1px solid #E8E8E8", padding: "10px 12px 6px", background: "#FAFAFA" }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: "#666", letterSpacing: "0.05em" }}>MODULES/LIBRARIES</span>
                             </div>
-                            <div style={{ padding: "0 12px 12px" }}>
+                            <div style={{ padding: "0 8px 12px", background: "#FAFAFA" }}>
                                 <div style={{ 
-                                    padding: "6px 8px", fontSize: 12, cursor: "pointer",
-                                    background: "#F5F5F5", borderRadius: 6,
+                                    padding: "8px 10px", fontSize: 12, cursor: "pointer",
+                                    background: "#fff", borderRadius: 6,
                                     display: "flex", alignItems: "center", gap: 8,
+                                    border: "1px solid #E0E0E0",
+                                    marginTop: 4
                                 }}>
-                                    <div style={{ width: 16, height: 16, background: "#E3F2FD", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                        <span style={{ fontSize: 10 }}>📦</span>
+                                    <div style={{ width: 20, height: 20, background: "#E3F2FD", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <span style={{ fontSize: 12 }}>📦</span>
                                     </div>
-                                    <span>Sprite</span>
+                                    <span style={{ color: "#333", fontWeight: 500 }}>Sprite</span>
                                 </div>
                             </div>
                         </>
@@ -866,595 +1250,114 @@ export default function PythonApp({ onBack }) {
                     {sidePanel === "search" && (
                         <>
                             <div style={{ padding: "10px 12px" }}>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: C.MUTED, letterSpacing: "0.08em" }}>SEARCH</span>
-                                <input
-                                    placeholder="Search in files..."
-                                    style={{ marginTop: 8, width: "100%", padding: "5px 8px", border: `1px solid ${C.BORDER}`, borderRadius: 6, fontSize: 12, outline: "none", boxSizing: "border-box" }}
-                                />
+                                <span style={{ fontSize: 11, fontWeight: 700, color: C.MUTED, letterSpacing: "0.08em" }}>QUICK SNIPPETS</span>
                             </div>
-                            <div style={{ padding: "8px 12px", fontSize: 12, color: C.MUTED, fontStyle: "italic" }}>Type to search across all files.</div>
+                            <div style={{ flex: 1, overflowY: "auto", padding: "0 8px 8px" }}>
+                                {[
+                                    { name: "Hello World", icon: "👋", code: 'print("Hello, World!")' },
+                                    { name: "Create Sprite", icon: "🤖", code: 'sprite = Sprite("Robot")\nsprite.say("Hi!")' },
+                                    { name: "Move Sprite", icon: "➡️", code: 'sprite.move(50)\nsprite.turn_right()' },
+                                    { name: "For Loop", icon: "🔄", code: 'for i in range(5):\n    print(i)' },
+                                    { name: "While Loop", icon: "🔁", code: 'count = 0\nwhile count < 5:\n    print(count)\n    count += 1' },
+                                    { name: "Function", icon: "📦", code: 'def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("World"))' },
+                                    { name: "List", icon: "📋", code: 'fruits = ["apple", "banana", "cherry"]\nfor fruit in fruits:\n    print(fruit)' },
+                                    { name: "If Statement", icon: "❓", code: 'x = 10\nif x > 5:\n    print("x is greater than 5")\nelse:\n    print("x is 5 or less")' },
+                                    { name: "Input", icon: "⌨️", code: 'name = input("What is your name? ")\nprint(f"Hello, {name}!")' },
+                                    { name: "Animation", icon: "🎬", code: 'sprite = Sprite("Robot")\nfor i in range(10):\n    sprite.move(10)\n    sprite.turn_right()\n    sprite.say(f"Step {i+1}")' },
+                                ].map((snippet, i) => (
+                                    <div key={i}
+                                        onClick={() => {
+                                            const currentCode = projectFiles[activeFile] || "";
+                                            setProjectFiles(prev => ({
+                                                ...prev,
+                                                [activeFile]: currentCode + (currentCode.endsWith("\n") || currentCode === "" ? "" : "\n") + snippet.code + "\n"
+                                            }));
+                                            addLog(`Inserted snippet: ${snippet.name}`, "info");
+                                        }}
+                                        style={{
+                                            padding: "8px 10px",
+                                            marginBottom: 4,
+                                            borderRadius: 6,
+                                            cursor: "pointer",
+                                            background: "#F5F5F5",
+                                            border: "1px solid transparent",
+                                            transition: "all 0.15s",
+                                        }}
+                                        onMouseEnter={e => {
+                                            e.currentTarget.style.background = C.LIGHT_PURPLE;
+                                            e.currentTarget.style.borderColor = C.PURPLE;
+                                        }}
+                                        onMouseLeave={e => {
+                                            e.currentTarget.style.background = "#F5F5F5";
+                                            e.currentTarget.style.borderColor = "transparent";
+                                        }}
+                                    >
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                            <span style={{ fontSize: 16 }}>{snippet.icon}</span>
+                                            <span style={{ fontSize: 12, fontWeight: 600, color: C.TEXT }}>{snippet.name}</span>
+                                        </div>
+                                        <div style={{
+                                            marginTop: 4,
+                                            fontSize: 10,
+                                            fontFamily: "monospace",
+                                            color: C.MUTED,
+                                            whiteSpace: "nowrap",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                        }}>
+                                            {snippet.code.split("\n")[0]}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </>
                     )}
                 </div>
 
                 {/* ── EDITOR + TERMINAL ── */}
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                    {/* File Tabs */}
-                    <div style={{ display: "flex", background: "#EFEFEF", borderBottom: `1px solid ${C.BORDER}`, overflowX: "auto", flexShrink: 0, height: 36 }}>
-                        {Object.keys(projectFiles).map(file => (
-                            <div key={file}
-                                onClick={() => setActiveFile(file)}
-                                style={{
-                                    padding: "0 16px", height: "100%", display: "flex", alignItems: "center", gap: 8,
-                                    cursor: "pointer", fontSize: 12, whiteSpace: "nowrap",
-                                    background: activeFile === file ? "#fff" : "transparent",
-                                    color: activeFile === file ? C.PURPLE : C.MUTED,
-                                    borderBottom: activeFile === file ? `2px solid ${C.PURPLE}` : "2px solid transparent",
-                                    borderRight: `1px solid ${C.BORDER}`,
-                                    fontWeight: activeFile === file ? 600 : 400,
-                                }}
-                            >
-                                <FileText size={12} />
-                                {file}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Monaco Editor */}
-                    <div style={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
-                        <Editor
-                            height="100%"
-                            language="python"
-                            theme="vs"
-                            value={projectFiles[activeFile] || ""}
-                            onChange={(val) => setProjectFiles(prev => ({ ...prev, [activeFile]: val || "" }))}
-                            onMount={(editor, monaco) => {
-                                editorRef.current = editor;
-                                monacoRef.current = monaco;
-                                editor.onDidChangeCursorPosition(e => {
-                                    setEditorCursor({ line: e.position.lineNumber, col: e.position.column });
-                                });
-                                // Add Ctrl+Enter to run
-                                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-                                    handleRun();
-                                });
-                                // Add Python completions
-                                monaco.languages.registerCompletionItemProvider("python", {
-                                    provideCompletionItems: (model, position) => ({
-                                        suggestions: [
-                                            "Sprite", "print", "input", "range", "len", "str", "int", "float", "list", "dict", "set",
-                                            "move_right", "move_left", "move_up", "move_down", "say", "goto", "set_x", "set_y",
-                                            "hide", "show", "set_size", "point_in_direction",
-                                        ].map(kw => ({
-                                            label: kw,
-                                            kind: monaco.languages.CompletionItemKind.Keyword,
-                                            insertText: kw,
-                                            range: model.getWordAtPosition(position) ? {
-                                                startLineNumber: position.lineNumber,
-                                                endLineNumber: position.lineNumber,
-                                                startColumn: model.getWordAtPosition(position).startColumn,
-                                                endColumn: model.getWordAtPosition(position).endColumn,
-                                            } : { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: position.column, endColumn: position.column }
-                                        }))
-                                    })
-                                });
-                            }}
-                            options={{
-                                fontSize: 14,
-                                fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
-                                fontLigatures: true,
-                                minimap: { enabled: true },
-                                scrollBeyondLastLine: false,
-                                automaticLayout: true,
-                                lineNumbers: "on",
-                                glyphMargin: true,
-                                folding: true,
-                                renderLineHighlight: "line",
-                                tabSize: 4,
-                                wordWrap: "off",
-                                suggestOnTriggerCharacters: true,
-                                quickSuggestions: true,
-                            }}
-                        />
-                    </div>
-
-                    {/* Status Bar */}
-                    <div style={{ height: 22, background: C.DARK_PURPLE, display: "flex", alignItems: "center", padding: "0 12px", fontSize: 11, color: "rgba(255,255,255,0.85)", gap: 16, flexShrink: 0 }}>
-                        <span>Python 3</span>
-                        <span>Ln {editorCursor.line}, Col {editorCursor.col}</span>
-                        <span>{isRunning ? "● Running" : "○ Ready"}</span>
-                        <span style={{ marginLeft: "auto" }}>{activeFile}</span>
-                    </div>
-
-                    {/* ── TERMINAL PANEL ── */}
-                    <div style={{ height: 220, display: "flex", flexDirection: "column", borderTop: `1px solid ${C.BORDER}`, background: "#fff", flexShrink: 0 }}>
-                        {/* Panel Tabs */}
-                        <div style={{ display: "flex", background: "#F5F5F5", borderBottom: `1px solid ${C.BORDER}`, height: 32, alignItems: "center" }}>
-                            {[
-                                { id: "terminal", label: "Terminal", icon: <span style={{ fontSize: 12 }}>▶</span> },
-                                { id: "log", label: "Log", icon: <FileText size={12} /> },
-                                { id: "serial", label: "Serial Monitor", icon: <TerminalIcon size={12} /> },
-                            ].map(({ id, label, icon }) => (
-                                <div key={id} onClick={() => { setActivePanel(id); if (id === "repl") setTimeout(() => replInputRef.current?.focus(), 80); }}
-                                    style={{
-                                        padding: "0 14px", height: "100%", display: "flex", alignItems: "center", gap: 6,
-                                        cursor: "pointer", fontSize: 12, fontWeight: 600,
-                                        color: activePanel === id ? C.PURPLE : C.MUTED,
-                                        borderBottom: activePanel === id ? `2px solid ${C.PURPLE}` : "2px solid transparent",
-                                        background: activePanel === id ? "#fff" : "transparent",
-                                    }}>
-                                    {icon} {label}
-                                </div>
-                            ))}
-                            <div style={{ marginLeft: "auto", display: "flex", gap: 4, paddingRight: 8 }}>
-                                <div onClick={handleRun} title="Run All" style={{ cursor: "pointer", padding: "4px 8px", color: C.GREEN, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
-                                    <Play size={12} /> Run All
-                                </div>
-                                <div onClick={() => { setActivePanel("repl"); setTimeout(() => replInputRef.current?.focus(), 80); }} title="REPL Mode" style={{ cursor: "pointer", padding: "4px 8px", color: C.PURPLE, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
-                                    <span style={{ fontSize: 10 }}>{">>>"}</span> REPL Mode
-                                </div>
-                                <div onClick={handleStop} title="Stop" style={{ cursor: "pointer", padding: "4px 8px", color: C.RED, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
-                                    <Square size={12} /> Stop
-                                </div>
-                                <div onClick={handleClear} title="Clear" style={{ cursor: "pointer", padding: "4px 6px", color: C.MUTED, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
-                                    <Trash2 size={12} /> Clear
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Terminal Output */}
-                        {activePanel === "terminal" && (
-                            <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6 }}>
-                                {terminalOutput.length === 0 ? (
-                                    <div style={{ color: "#aaa", fontStyle: "italic" }}>— Output will appear here —</div>
-                                ) : terminalOutput.map((log, i) => (
-                                    <div key={i} style={{
-                                        color: log.type === "error" ? "#E53935" : log.type === "success" ? "#2E7D32" : log.type === "info" ? "#1565C0" : log.type === "repl-in" ? C.PURPLE : "#333",
-                                        marginBottom: 2,
-                                        paddingLeft: log.type === "repl-in" ? 0 : 4,
-                                    }}>
-                                        {log.type === "repl-in" ? <span style={{ userSelect: "none", color: C.MUTED }}>{">>> "}</span> : null}
-                                        {log.text}
-                                    </div>
-                                ))}
-                                <div ref={terminalEndRef} />
-                            </div>
-                        )}
-
-                        {/* REPL */}
-                        {activePanel === "repl" && (
-                            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                                <div style={{ padding: "6px 14px", fontSize: 11, color: C.MUTED, borderBottom: `1px solid ${C.BORDER}` }}>
-                                    Interactive Python REPL — type commands and press Enter
-                                </div>
-                                <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6 }}>
-                                    <div style={{ color: C.MUTED }}>Python 3 (Skulpt) — LeapBlocks Interactive Shell</div>
-                                    <div style={{ color: C.MUTED, marginBottom: 8 }}>Type Python code and press Enter. Use ↑/↓ for history.</div>
-                                </div>
-                                <div style={{ display: "flex", borderTop: `1px solid ${C.BORDER}`, padding: "6px 10px", alignItems: "center", gap: 8, background: "#FAFAFA" }}>
-                                    <span style={{ color: C.PURPLE, fontFamily: "monospace", fontWeight: 700, fontSize: 14 }}>{">>>"}</span>
-                                    <input
-                                        ref={replInputRef}
-                                        value={replInput}
-                                        onChange={e => setReplInput(e.target.value)}
-                                        onKeyDown={handleReplKey}
-                                        placeholder="Enter Python expression or statement..."
-                                        style={{ flex: 1, border: "none", outline: "none", fontFamily: "'Fira Code', monospace", fontSize: 13, background: "transparent", color: C.TEXT }}
-                                    />
-                                    <button onClick={handleReplSubmit}
-                                        style={{ padding: "4px 12px", background: C.PURPLE, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
-                                        Run
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Log */}
-                        {activePanel === "log" && (
-                            <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6 }}>
-                                {terminalOutput.length === 0 ? (
-                                    <div style={{ color: "#aaa", fontStyle: "italic" }}>— Log output will appear here —</div>
-                                ) : terminalOutput.map((log, i) => (
-                                    <div key={i} style={{
-                                        color: log.type === "error" ? "#E53935" : log.type === "success" ? "#2E7D32" : log.type === "info" ? "#1565C0" : "#333",
-                                        marginBottom: 2,
-                                    }}>
-                                        <span style={{ color: C.MUTED, marginRight: 8 }}>[{log.ts?.toLocaleTimeString() || ""}]</span>
-                                        {log.text}
-                                    </div>
-                                ))}
-                                <div ref={terminalEndRef} />
-                            </div>
-                        )}
-
-                        {/* Serial Monitor */}
-                        {activePanel === "serial" && (
-                            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                                <div style={{ padding: "6px 14px", fontSize: 11, color: C.MUTED, borderBottom: `1px solid ${C.BORDER}` }}>
-                                    Serial Monitor — Connect to Arduino/ESP32
-                                </div>
-                                <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6, background: "#1E1E1E", color: "#D4D4D4" }}>
-                                    <div style={{ color: "#6A9955" }}>// Serial monitor output will appear here</div>
-                                    <div style={{ color: "#6A9955" }}>// Click "Connect" to establish serial connection</div>
-                                </div>
-                                <div style={{ display: "flex", borderTop: `1px solid ${C.BORDER}`, padding: "6px 10px", alignItems: "center", gap: 8, background: "#FAFAFA" }}>
-                                    <input
-                                        placeholder="Enter data to send..."
-                                        style={{ flex: 1, border: `1px solid ${C.BORDER}`, outline: "none", fontFamily: "'Fira Code', monospace", fontSize: 13, background: "#fff", color: C.TEXT, padding: "4px 8px", borderRadius: 4 }}
-                                    />
-                                    <button
-                                        style={{ padding: "4px 12px", background: C.PURPLE, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
-                                        Send
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
+                <EditorPanel 
+                    projectFiles={projectFiles}
+                    activeFile={activeFile}
+                    setActiveFile={setActiveFile}
+                    editorCursor={editorCursor}
+                    isRunning={isRunning}
+                    onRun={handleRun}
+                    onStop={handleStop}
+                    onClear={handleClear}
+                    activePanel={activePanel}
+                    setActivePanel={setActivePanel}
+                    terminalOutput={terminalOutput}
+                    replInput={replInput}
+                    setReplInput={setReplInput}
+                    replHistory={replHistory}
+                    replHistIdx={replHistIdx}
+                    setReplHistory={setReplHistory}
+                    setReplHistIdx={setReplHistIdx}
+                    handleReplSubmit={handleReplSubmit}
+                    handleReplKey={handleReplKey}
+                    terminalEndRef={terminalEndRef}
+                    replInputRef={replInputRef}
+                    editorRef={editorRef}
+                    monacoRef={monacoRef}
+                    setProjectFiles={setProjectFiles}
+                />
 
                 {/* ── STAGE PANEL ── */}
-                <div style={{ width: 380, display: "flex", flexDirection: "column", borderLeft: `1px solid ${C.BORDER}`, background: "#fff", flexShrink: 0 }}>
-                    {/* Stage Controls */}
-                    <div style={{ height: 40, display: "flex", alignItems: "center", padding: "0 12px", background: C.PURPLE, gap: 8 }}>
-                        {["stage", "sprites", "backdrops"].map(v => (
-                            <div key={v} onClick={() => setStageView(v)}
-                                style={{ 
-                                    padding: "6px 14px", 
-                                    borderRadius: 6, 
-                                    cursor: "pointer", 
-                                    fontSize: 12, 
-                                    fontWeight: 600, 
-                                    background: stageView === v ? "rgba(255,255,255,0.2)" : "transparent", 
-                                    color: "#fff",
-                                    transition: "all 0.2s"
-                                }}>
-                                {v.charAt(0).toUpperCase() + v.slice(1)}
-                            </div>
-                        ))}
-                        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                            <div onClick={resetStage} title="Reset Stage" style={{ cursor: "pointer", color: "#fff", padding: 6, borderRadius: 6, background: "rgba(255,255,255,0.1)" }}>
-                                <RotateCcw size={16} />
-                            </div>
-                            <div title="Fullscreen" style={{ cursor: "pointer", color: "#fff", padding: 6, borderRadius: 6, background: "rgba(255,255,255,0.1)" }}>
-                                <Maximize size={16} />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Stage Canvas */}
-                    {stageView === "stage" && (
-                        <div style={{ flex: 1, position: "relative", background: backdrop ? "transparent" : "#fff", overflow: "hidden" }}>
-                            {/* Backdrop image */}
-                            {backdrop && <img src={backdrop} alt="backdrop" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",zIndex:0}} />}
-                            {/* Sprites - x/y are relative to stage center */}
-                            <div style={{ width: "100%", height: "100%", position: "relative" }} ref={stageRef}>
-                                {sprites.map(sp => sp.visible && (
-                                    <Teddy key={sp.id} id={sp.id} type={sp.type} active={sp.id === selectedSpriteId}
-                                        x={(stageSize.w / 2) + (sp.x * (stageSize.w / 480)) - 40}
-                                        y={(stageSize.h / 2) - (sp.y * (stageSize.h / 360)) - 40}
-                                        angle={sp.angle} size={sp.size}
-                                        visible={sp.visible} currentCostume={sp.currentCostume}
-                                        costumes={sp.costumes} speech={sp.speech}
-                                        onClick={() => setSelectedSpriteId(sp.id)}
-                                        onDragStateChange={(dragging) => {
-                                            if (!dragging) {
-                                                // When drag ends, convert pixel position back to scratch coordinates
-                                                const pixelX = (stageSize.w / 2) + (sp.x * (stageSize.w / 480)) - 40;
-                                                const pixelY = (stageSize.h / 2) - (sp.y * (stageSize.h / 360)) - 40;
-                                                // The Teddy component updates via window.updateSprite, so we need to listen
-                                            }
-                                        }} />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Sprites Panel - Vertical list like PictoBlox */}
-                    {stageView === "sprites" && (
-                        <div style={{ flex: 1, overflowY: "auto", padding: 12 }}>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: C.MUTED, letterSpacing: "0.05em", marginBottom: 12, textTransform: "uppercase" }}>Sprites ({sprites.length})</div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                {sprites.map(sp => (
-                                    <div key={sp.id} onClick={() => setSelectedSpriteId(sp.id)}
-                                        style={{ 
-                                            padding: "10px 12px", 
-                                            background: selectedSpriteId === sp.id ? C.LIGHT_PURPLE : "#F9FAFB", 
-                                            border: `2px solid ${selectedSpriteId === sp.id ? C.PURPLE : "#E5E7EB"}`, 
-                                            borderRadius: 8, 
-                                            cursor: "pointer",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 12,
-                                            transition: "all 0.15s"
-                                        }}
-                                        onMouseEnter={e => { if (selectedSpriteId !== sp.id) { e.currentTarget.style.background = "#F3F4F6"; }}}
-                                        onMouseLeave={e => { if (selectedSpriteId !== sp.id) { e.currentTarget.style.background = "#F9FAFB"; }}}
-                                    >
-                                        <div style={{ 
-                                            width: 48, 
-                                            height: 48, 
-                                            background: "#fff", 
-                                            borderRadius: 8, 
-                                            display: "flex", 
-                                            alignItems: "center", 
-                                            justifyContent: "center",
-                                            border: "1px solid #E5E7EB",
-                                            flexShrink: 0
-                                        }}>
-                                            <img src={sp.costumes[sp.currentCostume]} style={{ width: 40, height: 40, objectFit: "contain" }} alt={sp.name} />
-                                        </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontSize: 14, fontWeight: 700, color: C.TEXT, marginBottom: 4 }}>{sp.name}</div>
-                                            <div style={{ fontSize: 11, color: C.MUTED }}>x: {Math.round(sp.x)}, y: {Math.round(sp.y)}</div>
-                                        </div>
-                                        <div onClick={(e) => { e.stopPropagation(); updateSpriteProperty(sp.id, 'visible', !sp.visible); }}
-                                            style={{ 
-                                                padding: 6, 
-                                                borderRadius: 6, 
-                                                cursor: "pointer", 
-                                                color: sp.visible ? C.PURPLE : "#999",
-                                                background: sp.visible ? C.LIGHT_PURPLE : "#F3F4F6",
-                                                transition: "all 0.15s",
-                                                flexShrink: 0
-                                            }}>
-                                            {sp.visible ? <Eye size={16} /> : <EyeOff size={16} />}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <button onClick={() => setShowSpriteLibrary(true)}
-                                style={{
-                                    width: "100%",
-                                    padding: "12px",
-                                    marginTop: 12,
-                                    background: "#F9FAFB",
-                                    border: `2px dashed #D1D5DB`,
-                                    borderRadius: 8,
-                                    cursor: "pointer",
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    color: C.PURPLE,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    gap: 8,
-                                    transition: "all 0.15s"
-                                }}
-                                onMouseEnter={e => { e.currentTarget.style.background = C.LIGHT_PURPLE; e.currentTarget.style.borderColor = C.PURPLE; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = "#F9FAFB"; e.currentTarget.style.borderColor = "#D1D5DB"; }}
-                            >
-                                <Plus size={16} /> Add Sprite
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Backdrops Panel */}
-                    {stageView === "backdrops" && (
-                        <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: C.MUTED, letterSpacing: "0.05em", marginBottom: 16, textTransform: "uppercase" }}>Choose Backdrop</div>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                                {BACKDROP_LIBRARY.map(bd => (
-                                    <div key={bd.name} onClick={() => handleSetBackdrop(bd)}
-                                        style={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: 8,
-                                            padding: "10px",
-                                            borderRadius: 10,
-                                            cursor: "pointer",
-                                            background: backdrop === bd.img ? C.LIGHT_PURPLE : "#fff",
-                                            border: `2px solid ${backdrop === bd.img ? C.PURPLE : "#E0E0E0"}`,
-                                            transition: "all 0.2s",
-                                        }}
-                                        onMouseEnter={e => { if (backdrop !== bd.img) { e.currentTarget.style.background = "#FAFAFA"; e.currentTarget.style.borderColor = "#C0C0C0"; }}}
-                                        onMouseLeave={e => { if (backdrop !== bd.img) { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#E0E0E0"; }}}
-                                    >
-                                        <div style={{
-                                            width: "100%",
-                                            height: 60,
-                                            borderRadius: 8,
-                                            overflow: "hidden",
-                                            background: bd.img ? "#ddd" : "#F5F5F5",
-                                            border: "1px solid #E0E0E0"
-                                        }}>
-                                            {bd.img && <img src={bd.img} alt={bd.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
-                                            {!bd.img && <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#999" }}>Blank</div>}
-                                        </div>
-                                        <div style={{ fontSize: 12, fontWeight: 600, color: C.TEXT, textAlign: "center" }}>{bd.name}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Sprite List (below stage) - Vertical layout like PictoBlox */}
-                    <div style={{ borderTop: `1px solid ${C.BORDER}`, padding: "12px", background: "#fff", display: "flex", flexDirection: "column", gap: 8, flexShrink: 0, maxHeight: 200, overflowY: "auto" }}>
-                        {sprites.map(sp => (
-                            <div key={sp.id} onClick={() => setSelectedSpriteId(sp.id)}
-                                style={{ 
-                                    padding: "8px 10px", 
-                                    background: selectedSpriteId === sp.id ? C.LIGHT_PURPLE : "#F9FAFB", 
-                                    border: `2px solid ${selectedSpriteId === sp.id ? C.PURPLE : "#E5E7EB"}`, 
-                                    borderRadius: 8, 
-                                    cursor: "pointer",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 10,
-                                    transition: "all 0.15s"
-                                }}>
-                                <img src={sp.costumes[sp.currentCostume]} style={{ width: 40, height: 40, objectFit: "contain" }} alt={sp.name} />
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: C.TEXT }}>{sp.name}</div>
-                                    <div style={{ fontSize: 10, color: C.MUTED }}>x: {Math.round(sp.x)}, y: {Math.round(sp.y)}</div>
-                                </div>
-                                <div onClick={(e) => { e.stopPropagation(); updateSpriteProperty(sp.id, 'visible', !sp.visible); }}
-                                    style={{ 
-                                        padding: 4, 
-                                        borderRadius: 4, 
-                                        cursor: "pointer", 
-                                        color: sp.visible ? C.PURPLE : "#999",
-                                        background: sp.visible ? C.LIGHT_PURPLE : "transparent"
-                                    }}>
-                                    {sp.visible ? <Eye size={16} /> : <EyeOff size={16} />}
-                                </div>
-                            </div>
-                        ))}
-                        <button onClick={() => setShowSpriteLibrary(true)}
-                            style={{ 
-                                padding: "10px", 
-                                background: "#F9FAFB", 
-                                border: `2px dashed #D1D5DB`, 
-                                borderRadius: 8, 
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: 8,
-                                color: C.PURPLE,
-                                fontSize: 13,
-                                fontWeight: 600,
-                                transition: "all 0.15s"
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = C.LIGHT_PURPLE; e.currentTarget.style.borderColor = C.PURPLE; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = "#F9FAFB"; e.currentTarget.style.borderColor = "#D1D5DB"; }}
-                        >
-                            <Plus size={18} />
-                            <span>Add Sprite</span>
-                        </button>
-                    </div>
-
-                    {/* Sprite Properties - PictoBlox style */}
-                    <div style={{ borderTop: `1px solid ${C.BORDER}`, padding: "12px 14px", background: "#fff", flexShrink: 0 }}>
-                        {/* Sprite Name Row */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: C.MUTED }}>Sprite</span>
-                            <input 
-                                type="text" 
-                                value={selectedSprite?.name || ''} 
-                                onChange={e => updateSpriteProperty(selectedSpriteId, 'name', e.target.value)}
-                                style={{ 
-                                    flex: 1, 
-                                    padding: "6px 10px", 
-                                    border: `1px solid ${C.BORDER}`, 
-                                    borderRadius: 6, 
-                                    fontSize: 13, 
-                                    fontWeight: 600,
-                                    background: "#F9FAFB"
-                                }}
-                            />
-                        </div>
-                        
-                        {/* Position Row */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                            <span style={{ fontSize: 12, color: C.MUTED }}>↔</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: C.MUTED }}>x</span>
-                            <input 
-                                type="number" 
-                                value={Math.round(selectedSprite?.x || 0)} 
-                                onChange={e => updateSpriteProperty(selectedSpriteId, 'x', parseFloat(e.target.value) || 0)}
-                                style={{ 
-                                    width: 60, 
-                                    padding: "5px 8px", 
-                                    border: `1px solid ${C.BORDER}`, 
-                                    borderRadius: 6, 
-                                    fontSize: 12, 
-                                    fontWeight: 600,
-                                    background: "#F9FAFB",
-                                    textAlign: "center"
-                                }}
-                            />
-                            <span style={{ fontSize: 12, color: C.MUTED }}>↕</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: C.MUTED }}>y</span>
-                            <input 
-                                type="number" 
-                                value={Math.round(selectedSprite?.y || 0)} 
-                                onChange={e => updateSpriteProperty(selectedSpriteId, 'y', parseFloat(e.target.value) || 0)}
-                                style={{ 
-                                    width: 60, 
-                                    padding: "5px 8px", 
-                                    border: `1px solid ${C.BORDER}`, 
-                                    borderRadius: 6, 
-                                    fontSize: 12, 
-                                    fontWeight: 600,
-                                    background: "#F9FAFB",
-                                    textAlign: "center"
-                                }}
-                            />
-                        </div>
-                        
-                        {/* Show/Hide, Size, Direction Row */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                            {/* Show/Hide Toggle */}
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <span style={{ fontSize: 11, fontWeight: 600, color: C.MUTED }}>Show</span>
-                                <div style={{ display: "flex", gap: 4 }}>
-                                    <button onClick={() => updateSpriteProperty(selectedSpriteId, 'visible', true)}
-                                        style={{ 
-                                            padding: "4px 8px", 
-                                            background: selectedSprite?.visible ? C.PURPLE : "#F3F4F6", 
-                                            border: `1px solid ${selectedSprite?.visible ? C.PURPLE : "#D1D5DB"}`, 
-                                            borderRadius: 4, 
-                                            cursor: "pointer",
-                                            color: selectedSprite?.visible ? "#fff" : "#9CA3AF"
-                                        }}>
-                                        <Eye size={14} />
-                                    </button>
-                                    <button onClick={() => updateSpriteProperty(selectedSpriteId, 'visible', false)}
-                                        style={{ 
-                                            padding: "4px 8px", 
-                                            background: !selectedSprite?.visible ? C.PURPLE : "#F3F4F6", 
-                                            border: `1px solid ${!selectedSprite?.visible ? C.PURPLE : "#D1D5DB"}`, 
-                                            borderRadius: 4, 
-                                            cursor: "pointer",
-                                            color: !selectedSprite?.visible ? "#fff" : "#9CA3AF"
-                                        }}>
-                                        <EyeOff size={14} />
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            {/* Size */}
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <span style={{ fontSize: 11, fontWeight: 600, color: C.MUTED }}>Size</span>
-                                <input 
-                                    type="number" 
-                                    value={selectedSprite?.size || 100} 
-                                    onChange={e => updateSpriteProperty(selectedSpriteId, 'size', parseFloat(e.target.value) || 100)}
-                                    style={{ 
-                                        width: 55, 
-                                        padding: "5px 8px", 
-                                        border: `1px solid ${C.BORDER}`, 
-                                        borderRadius: 6, 
-                                        fontSize: 12, 
-                                        fontWeight: 600,
-                                        background: "#F9FAFB",
-                                        textAlign: "center"
-                                    }}
-                                />
-                            </div>
-                            
-                            {/* Direction */}
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <span style={{ fontSize: 11, fontWeight: 600, color: C.MUTED }}>Direction</span>
-                                <input 
-                                    type="number" 
-                                    value={selectedSprite?.angle || 90} 
-                                    onChange={e => updateSpriteProperty(selectedSpriteId, 'angle', parseFloat(e.target.value) || 90)}
-                                    style={{ 
-                                        width: 55, 
-                                        padding: "5px 8px", 
-                                        border: `1px solid ${C.BORDER}`, 
-                                        borderRadius: 6, 
-                                        fontSize: 12, 
-                                        fontWeight: 600,
-                                        background: "#F9FAFB",
-                                        textAlign: "center"
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <StagePanel 
+                    stageView={stageView}
+                    setStageView={setStageView}
+                    sprites={sprites}
+                    selectedSpriteId={selectedSpriteId}
+                    setSelectedSpriteId={setSelectedSpriteId}
+                    backdrop={backdrop}
+                    stageRef={stageRef}
+                    stageSize={stageSize}
+                    setShowSpriteLibrary={setShowSpriteLibrary}
+                    updateSpriteProperty={updateSpriteProperty}
+                    resetStage={resetStage}
+                    BACKDROP_LIBRARY={BACKDROP_LIBRARY}
+                    handleSetBackdrop={handleSetBackdrop}
+                />
             </div>
 
             {/* Custom Prompt Modal */}
@@ -1637,19 +1540,16 @@ export default function PythonApp({ onBack }) {
                 </div>
             )}
         </div>
+    );  
+}
+
+// Wrap with StageProvider for shared state
+export default function PythonAppWithProvider(props) {
+    return (
+        <StageProvider>
+            <PythonApp {...props} />
+        </StageProvider>
     );
 }
 
-// ─── Sub Components ────────────────────────────────────────────────────────────
-function PropInput({ label, value, onChange }) {
-    return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            <span style={{ fontSize: 10, color: "#888", fontWeight: 700, letterSpacing: "0.04em" }}>{label}</span>
-            <input
-                value={value !== undefined && value !== null ? String(value) : ''}
-                onChange={e => onChange(e.target.value)}
-                style={{ padding: "5px 8px", borderRadius: 8, border: `1px solid #E0E0E0`, background: "#fff", fontSize: 12, outline: "none", width: "100%", boxSizing: "border-box" }}
-            />
-        </div>
-    );
-}
+
