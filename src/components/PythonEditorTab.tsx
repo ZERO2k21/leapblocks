@@ -3,9 +3,10 @@ import * as Blockly from 'blockly';
 
 interface PythonEditorTabProps {
     workspace: Blockly.WorkspaceSvg | null;
+    onOpenFullIDE?: () => void;
 }
 
-export const PythonEditorTab: React.FC<PythonEditorTabProps> = ({ workspace }) => {
+export const PythonEditorTab: React.FC<PythonEditorTabProps> = ({ workspace, onOpenFullIDE }) => {
     const [code, setCode] = useState<string>('# Generated Python code will appear here\n');
     const [renderError, setRenderError] = useState<string | null>(null);
 
@@ -53,21 +54,43 @@ export const PythonEditorTab: React.FC<PythonEditorTabProps> = ({ workspace }) =
                 color: '#cccccc'
             }}>
                 <span style={{ fontSize: '12px', fontWeight: 'bold' }}>PYTHON CODE</span>
-                <button
-                    onClick={() => navigator.clipboard.writeText(code)}
-                    style={{
-                        padding: '4px 10px',
-                        fontSize: '11px',
-                        backgroundColor: '#22c55e',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontWeight: 'bold'
-                    }}
-                >
-                    📋 Copy Python
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    {onOpenFullIDE && (
+                        <button
+                            onClick={onOpenFullIDE}
+                            style={{
+                                padding: '4px 10px',
+                                fontSize: '11px',
+                                background: 'linear-gradient(135deg, #3776ab, #ffd343)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                            }}
+                        >
+                            🐍 Open in Python IDE
+                        </button>
+                    )}
+                    <button
+                        onClick={() => navigator.clipboard.writeText(code)}
+                        style={{
+                            padding: '4px 10px',
+                            fontSize: '11px',
+                            backgroundColor: '#22c55e',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        📋 Copy Python
+                    </button>
+                </div>
             </div>
             <div style={{ flex: 1, overflow: 'hidden', padding: '10px' }}>
                 {renderError ? (
