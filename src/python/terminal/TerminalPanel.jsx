@@ -1,102 +1,114 @@
 import React from "react";
-import { Play, Square, Trash2, FileText, Terminal as TerminalIcon } from "lucide-react";
+import { Play, Square, Trash2, Package } from "lucide-react";
+import PipPanel from "../panels/PipPanel";
 
-// ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
 const C = {
     PURPLE: "#8B5CF6",
-    DARK_PURPLE: "#7C3AED",
-    LIGHT_PURPLE: "#EDE9FE",
-    PURPLE_BG: "#F5F3FF",
     BORDER: "#E5E7EB",
-    BG: "#F9FAFB",
-    BG2: "#F3F4F6",
     TEXT: "#1F2937",
     MUTED: "#6B7280",
-    GREEN: "#10B981",
-    RED: "#EF4444",
-    BLUE: "#3B82F6",
-    ORANGE: "#F59E0B",
-    ACCENT: "#8B5CF6",
-    HEADER_BG: "#8B5CF6",
 };
 
-export default function TerminalPanel({ 
-    activePanel, 
-    setActivePanel, 
-    terminalOutput, 
-    replInput, 
-    setReplInput, 
-    replHistory, 
-    replHistIdx, 
-    setReplHistory, 
-    setReplHistIdx, 
-    handleReplSubmit, 
-    handleReplKey, 
-    terminalEndRef, 
-    replInputRef, 
-    isRunning, 
-    onRun, 
-    onStop, 
-    onClear 
+export default function TerminalPanel({
+    activePanel,
+    setActivePanel,
+    terminalOutput,
+    replInput,
+    setReplInput,
+    handleReplSubmit,
+    handleReplKey,
+    terminalEndRef,
+    replInputRef,
+    isRunning,
+    onRun,
+    onStop,
+    onClear,
+    packages,
+    pipFilter,
+    setPipFilter,
+    handleInstall,
 }) {
+    const tabs = [
+        { id: "terminal", label: "Terminal", icon: <span style={{ fontSize: 12 }}>▶</span> },
+        { id: "repl", label: "REPL", icon: <span style={{ fontSize: 11 }}>{">>>"}</span> },
+        { id: "pip", label: "PIP", icon: <Package size={12} /> },
+    ];
+
     return (
         <div style={{ height: 220, display: "flex", flexDirection: "column", borderTop: `1px solid ${C.BORDER}`, background: "#fff", flexShrink: 0 }}>
-            {/* Panel Tabs */}
             <div style={{ display: "flex", background: "#F5F5F5", borderBottom: `1px solid ${C.BORDER}`, height: 32, alignItems: "center" }}>
-                {[
-                    { id: "terminal", label: "Terminal", icon: <span style={{ fontSize: 12 }}>▶</span> },
-                    { id: "log", label: "Log", icon: <FileText size={12} /> },
-                    { id: "serial", label: "Serial Monitor", icon: <TerminalIcon size={12} /> },
-                ].map(({ id, label, icon }) => (
-                    <div key={id} onClick={() => { setActivePanel(id); if (id === "repl") setTimeout(() => replInputRef.current?.focus(), 80); }}
+                {tabs.map(({ id, label, icon }) => (
+                    <div
+                        key={id}
+                        onClick={() => {
+                            setActivePanel(id);
+                            if (id === "repl") {
+                                setTimeout(() => replInputRef.current?.focus(), 80);
+                            }
+                        }}
                         style={{
-                            padding: "0 14px", height: "100%", display: "flex", alignItems: "center", gap: 6,
-                            cursor: "pointer", fontSize: 12, fontWeight: 600,
+                            padding: "0 14px",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
                             color: activePanel === id ? C.PURPLE : C.MUTED,
                             borderBottom: activePanel === id ? `2px solid ${C.PURPLE}` : "2px solid transparent",
                             background: activePanel === id ? "#fff" : "transparent",
-                        }}>
+                        }}
+                    >
                         {icon} {label}
                     </div>
                 ))}
-                <div style={{ marginLeft: "auto", display: "flex", gap: 4, paddingRight: 8 }}>
-                    <div onClick={onRun} title="Run All" style={{ cursor: "pointer", padding: "4px 8px", color: C.GREEN, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
-                        <Play size={12} /> Run All
+
+                <div style={{ marginLeft: "auto", display: "flex", gap: 4, paddingRight: 8, alignItems: "center" }}>
+                    <div onClick={onRun} title="Run" style={{ cursor: "pointer", padding: "4px 10px", color: C.PURPLE, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
+                        <Play size={12} /> Run
                     </div>
-                    <div onClick={() => { setActivePanel("repl"); setTimeout(() => replInputRef.current?.focus(), 80); }} title="REPL Mode" style={{ cursor: "pointer", padding: "4px 8px", color: C.PURPLE, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
-                        <span style={{ fontSize: 10 }}>{">>>"}</span> REPL Mode
+                    <div onClick={onRun} title="Run All" style={{ cursor: "pointer", padding: "4px 10px", color: C.PURPLE, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
+                        <Play size={12} />
+                        <Play size={12} />
+                        Run All
                     </div>
-                    <div onClick={onStop} title="Stop" style={{ cursor: "pointer", padding: "4px 8px", color: C.RED, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
+                    <div onClick={onStop} title="Stop" style={{ cursor: "pointer", padding: "4px 10px", color: C.PURPLE, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
                         <Square size={12} /> Stop
                     </div>
-                    <div onClick={onClear} title="Clear" style={{ cursor: "pointer", padding: "4px 6px", color: C.MUTED, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
-                        <Trash2 size={12} /> Clear
+                    <div style={{ width: 1, height: 18, background: C.BORDER, margin: "0 4px" }} />
+                    <div onClick={onClear} title="Clear" style={{ cursor: "pointer", padding: "4px 6px", color: C.MUTED, borderRadius: 4, display: "flex", alignItems: "center" }}>
+                        <Trash2 size={14} />
                     </div>
                 </div>
             </div>
 
-            {/* Terminal Output */}
             {activePanel === "terminal" && (
                 <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6, background: "#1E1E1E" }}>
                     {terminalOutput.length === 0 ? (
                         <div style={{ color: "#6A9955", fontStyle: "italic" }}>
                             <div>// LeapBlocks Python Terminal</div>
-                            <div>// Click ▶ Run or press Ctrl+Enter to execute</div>
-                            <div>// Press Ctrl+` to toggle REPL mode</div>
+                            <div>// Click Run or Run All to execute</div>
+                            <div>// Open the REPL tab for interactive commands</div>
                         </div>
                     ) : terminalOutput.map((log, i) => (
-                        <div key={i} style={{
-                            color: log.type === "error" ? "#F44747" 
-                                : log.type === "success" ? "#6A9955" 
-                                : log.type === "info" ? "#569CD6" 
-                                : log.type === "warning" ? "#FFD700"
-                                : log.type === "repl-in" ? "#C586C0" 
-                                : "#D4D4D4",
-                            marginBottom: 2,
-                            paddingLeft: log.type === "repl-in" ? 0 : 4,
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                        }}>
+                        <div
+                            key={i}
+                            style={{
+                                color: log.type === "error" ? "#F44747"
+                                    : log.type === "success" ? "#6A9955"
+                                    : log.type === "info" ? (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "#9CDCFE" : "#569CD6"
+                                    : log.type === "warning" ? "#FFD700"
+                                    : log.type === "repl-in" ? "#C586C0"
+                                    : "#D4D4D4",
+                                marginBottom: 2,
+                                paddingLeft: log.type === "repl-in" ? 0 : 4,
+                                whiteSpace: "pre-wrap",
+                                wordBreak: "break-word",
+                                borderLeft: (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "2px solid #9CDCFE" : "none",
+                                paddingLeft: (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "8px" : (log.type === "repl-in" ? 0 : 4),
+                            }}
+                        >
                             {log.type === "repl-in" ? <span style={{ userSelect: "none", color: "#6A9955" }}>{">>> "}</span> : null}
                             {log.type === "error" && !log.text.startsWith("✗") ? <span style={{ color: "#F44747" }}>✗ </span> : null}
                             {log.text}
@@ -104,79 +116,50 @@ export default function TerminalPanel({
                     ))}
                     {isRunning && (
                         <div style={{ color: "#569CD6", marginTop: 4 }}>
-                            <span style={{ animation: "blink 1s infinite" }}>▊</span> Running...
+                            <span style={{ animation: "blink 1s infinite" }}>▋</span> Running...
                         </div>
                     )}
                     <div ref={terminalEndRef} />
                 </div>
             )}
 
-            {/* REPL */}
             {activePanel === "repl" && (
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                     <div style={{ padding: "6px 14px", fontSize: 11, color: C.MUTED, borderBottom: `1px solid ${C.BORDER}` }}>
-                        Interactive Python REPL — type commands and press Enter
+                        Interactive Python REPL - type commands and press Enter
                     </div>
                     <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6 }}>
-                        <div style={{ color: C.MUTED }}>Python 3 (Skulpt) — LeapBlocks Interactive Shell</div>
-                        <div style={{ color: C.MUTED, marginBottom: 8 }}>Type Python code and press Enter. Use ↑/↓ for history.</div>
+                        <div style={{ color: C.MUTED }}>Python 3 (Skulpt) - LeapBlocks Interactive Shell</div>
+                        <div style={{ color: C.MUTED, marginBottom: 8 }}>Type Python code and press Enter. Use up/down arrows for history.</div>
                     </div>
                     <div style={{ display: "flex", borderTop: `1px solid ${C.BORDER}`, padding: "6px 10px", alignItems: "center", gap: 8, background: "#FAFAFA" }}>
                         <span style={{ color: C.PURPLE, fontFamily: "monospace", fontWeight: 700, fontSize: 14 }}>{">>>"}</span>
                         <input
                             ref={replInputRef}
                             value={replInput}
-                            onChange={e => setReplInput(e.target.value)}
+                            onChange={(e) => setReplInput(e.target.value)}
                             onKeyDown={handleReplKey}
                             placeholder="Enter Python expression or statement..."
                             style={{ flex: 1, border: "none", outline: "none", fontFamily: "'Fira Code', monospace", fontSize: 13, background: "transparent", color: C.TEXT }}
                         />
-                        <button onClick={handleReplSubmit}
-                            style={{ padding: "4px 12px", background: C.PURPLE, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+                        <button
+                            onClick={handleReplSubmit}
+                            style={{ padding: "4px 12px", background: C.PURPLE, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 700 }}
+                        >
                             Run
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* Log */}
-            {activePanel === "log" && (
-                <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6 }}>
-                    {terminalOutput.length === 0 ? (
-                        <div style={{ color: "#aaa", fontStyle: "italic" }}>— Log output will appear here —</div>
-                    ) : terminalOutput.map((log, i) => (
-                        <div key={i} style={{
-                            color: log.type === "error" ? "#E53935" : log.type === "success" ? "#2E7D32" : log.type === "info" ? "#1565C0" : "#333",
-                            marginBottom: 2,
-                        }}>
-                            <span style={{ color: C.MUTED, marginRight: 8 }}>[{log.ts?.toLocaleTimeString() || ""}]</span>
-                            {log.text}
-                        </div>
-                    ))}
-                    <div ref={terminalEndRef} />
-                </div>
-            )}
-
-            {/* Serial Monitor */}
-            {activePanel === "serial" && (
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                    <div style={{ padding: "6px 14px", fontSize: 11, color: C.MUTED, borderBottom: `1px solid ${C.BORDER}` }}>
-                        Serial Monitor — Connect to Arduino/ESP32
-                    </div>
-                    <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6, background: "#1E1E1E", color: "#D4D4D4" }}>
-                        <div style={{ color: "#6A9955" }}>// Serial monitor output will appear here</div>
-                        <div style={{ color: "#6A9955" }}>// Click "Connect" to establish serial connection</div>
-                    </div>
-                    <div style={{ display: "flex", borderTop: `1px solid ${C.BORDER}`, padding: "6px 10px", alignItems: "center", gap: 8, background: "#FAFAFA" }}>
-                        <input
-                            placeholder="Enter data to send..."
-                            style={{ flex: 1, border: `1px solid ${C.BORDER}`, outline: "none", fontFamily: "'Fira Code', monospace", fontSize: 13, background: "#fff", color: C.TEXT, padding: "4px 8px", borderRadius: 4 }}
-                        />
-                        <button
-                            style={{ padding: "4px 12px", background: C.PURPLE, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
-                            Send
-                        </button>
-                    </div>
+            {activePanel === "pip" && (
+                <div style={{ flex: 1, minHeight: 0 }}>
+                    <PipPanel
+                        packages={packages}
+                        pipFilter={pipFilter}
+                        setPipFilter={setPipFilter}
+                        handleInstall={handleInstall}
+                    />
                 </div>
             )}
         </div>

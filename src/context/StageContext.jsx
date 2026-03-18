@@ -56,6 +56,53 @@ const DEFAULT_SPRITES = [
     }
 ];
 
+// ─── Sprite Library Presets ────────────────────────────────────────────────
+export const SPRITE_PRESETS = {
+    robot: {
+        name: 'Robot',
+        type: 'robot',
+        costumes: {
+            default: "/assets/sprites/robot/robot_idle.svg",
+            wave1: "/assets/sprites/robot/robot_wave1.svg",
+            wave2: "/assets/sprites/robot/robot_wave2.svg",
+            talk: "/assets/sprites/robot/robot_talk1.svg"
+        }
+    },
+    cat: {
+        name: 'Cat',
+        type: 'cat',
+        costumes: {
+            default: "/assets/sprites/cat/cat_idle.svg",
+            walk1: "/assets/sprites/cat/cat_walk1.svg",
+            walk2: "/assets/sprites/cat/cat_walk2.svg"
+        }
+    },
+    ball: {
+        name: 'Ball',
+        type: 'ball',
+        costumes: {
+            default: "/assets/sprites/ball/ball.svg"
+        }
+    },
+    abby: {
+        name: 'Abby',
+        type: 'people',
+        costumes: {
+            default: "👩",
+            walking: "🚶‍♀️"
+        }
+    },
+    dog: {
+        name: 'Dog',
+        type: 'dog',
+        costumes: {
+            default: "🐶",
+            walk1: "🐕",
+            walk2: "🐕‍🦺"
+        }
+    }
+};
+
 // ─── Stage Context ─────────────────────────────────────────────────────────
 const StageContext = createContext(null);
 

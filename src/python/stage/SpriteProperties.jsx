@@ -1,5 +1,5 @@
 import React from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ChevronLeft, ChevronRight } from "lucide-react";
 
 // ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
 const C = {
@@ -25,6 +25,22 @@ export default function SpriteProperties({ selectedSprite, selectedSpriteId, upd
     const spriteX = selectedSprite?.position?.x ?? selectedSprite?.x ?? 0;
     const spriteY = selectedSprite?.position?.y ?? selectedSprite?.y ?? 0;
     const spriteDirection = selectedSprite?.direction ?? selectedSprite?.angle ?? 0;
+    
+    // Get costume list for switching
+    const costumeKeys = Object.keys(selectedSprite?.costumes || {});
+    const currentCostumeIndex = costumeKeys.indexOf(selectedSprite?.currentCostume);
+    
+    const handlePrevCostume = () => {
+        if (costumeKeys.length <= 1) return;
+        const newIndex = currentCostumeIndex <= 0 ? costumeKeys.length - 1 : currentCostumeIndex - 1;
+        updateSpriteProperty(selectedSpriteId, 'currentCostume', costumeKeys[newIndex]);
+    };
+    
+    const handleNextCostume = () => {
+        if (costumeKeys.length <= 1) return;
+        const newIndex = (currentCostumeIndex + 1) % costumeKeys.length;
+        updateSpriteProperty(selectedSpriteId, 'currentCostume', costumeKeys[newIndex]);
+    };
     
     return (
         <div style={{ borderTop: "1px solid #E0E0E0", padding: "10px 12px", background: "#fff", flexShrink: 0 }}>
@@ -89,7 +105,7 @@ export default function SpriteProperties({ selectedSprite, selectedSpriteId, upd
             </div>
             
             {/* Show/Hide, Size, Direction Row (PictoBlox Style) */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
                 {/* Show/Hide Toggle */}
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <span style={{ fontSize: 10, fontWeight: 600, color: "#666" }}>Show</span>
@@ -161,6 +177,54 @@ export default function SpriteProperties({ selectedSprite, selectedSpriteId, upd
                     />
                 </div>
             </div>
+            
+            {/* Costume Switcher Row */}
+            {costumeKeys.length > 1 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, paddingTop: 8, borderTop: "1px solid #E0E0E0" }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "#666", minWidth: 50 }}>Costume</span>
+                    <button 
+                        onClick={handlePrevCostume}
+                        style={{ 
+                            padding: "4px 6px", 
+                            background: "#F5F5F5", 
+                            border: "1px solid #E0E0E0", 
+                            borderRadius: 4, 
+                            cursor: "pointer",
+                            color: "#666",
+                            display: "flex",
+                            alignItems: "center"
+                        }}>
+                        <ChevronLeft size={14} />
+                    </button>
+                    <span style={{ 
+                        fontSize: 11, 
+                        fontWeight: 600, 
+                        color: "#333",
+                        flex: 1,
+                        textAlign: "center",
+                        background: "#F5F5F5",
+                        padding: "4px 8px",
+                        borderRadius: 4,
+                        border: "1px solid #E0E0E0"
+                    }}>
+                        {selectedSprite?.currentCostume || 'default'} ({currentCostumeIndex + 1}/{costumeKeys.length})
+                    </span>
+                    <button 
+                        onClick={handleNextCostume}
+                        style={{ 
+                            padding: "4px 6px", 
+                            background: "#F5F5F5", 
+                            border: "1px solid #E0E0E0", 
+                            borderRadius: 4, 
+                            cursor: "pointer",
+                            color: "#666",
+                            display: "flex",
+                            alignItems: "center"
+                        }}>
+                        <ChevronRight size={14} />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

@@ -1,77 +1,213 @@
 import React from "react";
-import { Save, Bell, Settings, User, BookOpen, HelpCircle } from "lucide-react";
+import { Save, Settings, User, HelpCircle, Upload, Scissors, Copy, Clipboard, Undo, Redo, Hash, Wand2, Search } from "lucide-react";
 
-// ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
+// ─── Theme (PictoBlox Colors) ─────────────────────────────────────────────────
 const C = {
-    PURPLE: "#8B5CF6",
-    DARK_PURPLE: "#7C3AED",
+    PURPLE: "#5A2D82",  // PictoBlox header purple
+    DARK_PURPLE: "#4A1D72",
     LIGHT_PURPLE: "#EDE9FE",
-    PURPLE_BG: "#F5F3FF",
     BORDER: "#E5E7EB",
-    BG: "#F9FAFB",
-    BG2: "#F3F4F6",
     TEXT: "#1F2937",
     MUTED: "#6B7280",
-    GREEN: "#10B981",
-    RED: "#EF4444",
-    BLUE: "#3B82F6",
-    ORANGE: "#F59E0B",
-    ACCENT: "#8B5CF6",
-    HEADER_BG: "#8B5CF6",
 };
 
-export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowGuide }) {
+export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowGuide, mode, setMode }) {
     return (
         <header style={{
-            height: 48, background: C.PURPLE, display: "flex",
-            alignItems: "center", padding: "0 16px",
+            height: 44, background: C.PURPLE, display: "flex",
+            alignItems: "center", padding: "0 12px",
             justifyContent: "space-between", color: "#fff", zIndex: 100,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
             flexShrink: 0,
         }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <div style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }} onClick={onBack}>
-                    <span style={{ fontSize: 20, fontWeight: "bold" }}>Leapblocks</span>
+            {/* Left Side: Blocks/Python Tabs + Costumes/Sounds Tabs */}
+            <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+                {/* Blocks/Python Mode Tabs */}
+                <div style={{ display: "flex", background: "rgba(0,0,0,0.2)", borderRadius: 6, overflow: "hidden", marginRight: 12 }}>
+                    <div 
+                        onClick={() => setMode && setMode("blocks")}
+                        style={{ 
+                            padding: "6px 14px", 
+                            background: mode === "blocks" ? "rgba(255,255,255,0.2)" : "transparent", 
+                            color: "#fff", 
+                            fontSize: 12, 
+                            fontWeight: 600, 
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6
+                        }}>
+                        <span style={{ fontSize: 14 }}>🧩</span> Blocks
+                    </div>
+                    <div 
+                        onClick={() => setMode && setMode("python")}
+                        style={{ 
+                            padding: "6px 14px", 
+                            background: mode === "python" ? "rgba(255,255,255,0.2)" : "transparent", 
+                            color: "#fff", 
+                            fontSize: 12, 
+                            fontWeight: 600, 
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6
+                        }}>
+                        <span style={{ fontSize: 14 }}>🐍</span> Python
+                    </div>
                 </div>
-                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.3)" }} />
-                {["File", "Edit", "Tutorials", "Board", "Connect"].map(m => (
-                    <span key={m} style={{ fontSize: 13, cursor: "pointer", opacity: 0.85, letterSpacing: "0.01em" }}
-                        onMouseEnter={e => e.target.style.opacity = 1}
-                        onMouseLeave={e => e.target.style.opacity = 0.85}
-                    >{m}</span>
-                ))}
+                
+                {/* Costumes/Sounds Tabs */}
+                <div style={{ display: "flex", gap: 4 }}>
+                    <div style={{ 
+                        padding: "6px 12px", 
+                        background: "transparent", 
+                        color: "rgba(255,255,255,0.8)", 
+                        fontSize: 12, 
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        borderRadius: 4
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        <span style={{ fontSize: 14 }}>🎨</span> Costumes
+                    </div>
+                    <div style={{ 
+                        padding: "6px 12px", 
+                        background: "transparent", 
+                        color: "rgba(255,255,255,0.8)", 
+                        fontSize: 12, 
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        borderRadius: 4
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        <span style={{ fontSize: 14 }}>🔊</span> Sounds
+                    </div>
+                </div>
             </div>
+            
+            {/* Middle: Toolbar Icons */}
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <Scissors size={16} />
+                </div>
+                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <Copy size={16} />
+                </div>
+                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <Clipboard size={16} />
+                </div>
+                <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)", margin: "0 4px" }} />
+                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <Undo size={16} />
+                </div>
+                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <Redo size={16} />
+                </div>
+                <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)", margin: "0 4px" }} />
+                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <Hash size={16} />
+                </div>
+                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <Wand2 size={16} />
+                </div>
+                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <span style={{ fontSize: 14, fontWeight: "bold" }}>A+</span>
+                </div>
+                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <Search size={16} />
+                </div>
+            </div>
+            
+            {/* Right Side: Run/Stop + Upload Firmware */}
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {/* Project name */}
-                <div style={{ background: "rgba(0,0,0,0.25)", padding: "4px 12px", borderRadius: 6, display: "flex", alignItems: "center", gap: 8 }}>
-                    <input defaultValue="My Project" style={{ background: "transparent", border: "none", color: "#fff", width: 100, outline: "none", fontSize: 13 }} />
-                    <Save size={14} style={{ opacity: 0.8 }} />
+                {/* Green Flag (Run) */}
+                <div style={{ 
+                    padding: "6px 10px", 
+                    cursor: "pointer", 
+                    borderRadius: 4, 
+                    color: "#4CAF50",
+                    fontSize: 18
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    ▶
                 </div>
-                {/* Mode buttons */}
-                <div style={{ display: "flex", background: "rgba(0,0,0,0.25)", borderRadius: 6, overflow: "hidden" }}>
-                    <div style={{ padding: "6px 12px", background: C.PURPLE, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Mode</div>
-                    <div style={{ padding: "6px 12px", background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Stage</div>
-                    <div style={{ padding: "6px 12px", background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Upload</div>
+                {/* Red Circle (Stop) */}
+                <div style={{ 
+                    padding: "6px 10px", 
+                    cursor: "pointer", 
+                    borderRadius: 4, 
+                    color: "#F44336",
+                    fontSize: 18
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    ●
                 </div>
-                {/* Switch to Notebook button */}
-                <button onClick={onSwitchToNotebook}
-                    title="Switch to Python Notebook"
-                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", background: "rgba(255,255,255,0.2)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, transition: "all 0.2s" }}
-                    onMouseEnter={e => e.target.style.background = "rgba(255,255,255,0.35)"}
-                    onMouseLeave={e => e.target.style.background = "rgba(255,255,255,0.2)"}
+                
+                <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)", margin: "0 4px" }} />
+                
+                {/* Upload Firmware Button */}
+                <button 
+                    style={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: 6, 
+                        padding: "6px 12px", 
+                        background: "rgba(255,255,255,0.2)", 
+                        color: "#fff", 
+                        border: "1px solid rgba(255,255,255,0.3)", 
+                        borderRadius: 6, 
+                        cursor: "pointer", 
+                        fontSize: 12, 
+                        fontWeight: 600 
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
                 >
-                    <BookOpen size={14} /> Notebook
+                    <Upload size={14} /> Upload Firmware
                 </button>
-                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.3)" }} />
-                <button onClick={() => setShowGuide(g => !g)}
-                    title="Help & Guide"
-                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", background: showGuide ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.12)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
-                    <HelpCircle size={14} /> Guide
-                </button>
-                <Bell size={18} style={{ cursor: "pointer", opacity: 0.8 }} />
-                <Settings size={18} style={{ cursor: "pointer", opacity: 0.8 }} />
-                <div style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <User size={16} />
+                
+                {/* Camera, Window, Fullscreen icons */}
+                <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
+                    <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        📷
+                    </div>
+                    <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        ⬜
+                    </div>
+                    <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        ⛶
+                    </div>
                 </div>
             </div>
         </header>

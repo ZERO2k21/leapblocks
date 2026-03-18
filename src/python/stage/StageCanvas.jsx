@@ -1,5 +1,4 @@
 import React from "react";
-import Teddy from "../../junior/sprites/Teddy";
 
 // ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
 const C = {
@@ -24,7 +23,7 @@ const C = {
 // Scratch coordinates: center is (0,0), X ranges -240 to 240, Y ranges -180 to 180
 // Pixel coordinates: top-left is (0,0), Y increases downward
 
-const scratchToPixel = (scratchX, scratchY, stageW, stageH, spriteSize = 80) => {
+const scratchToPixel = (scratchX, scratchY, stageW, stageH, spriteSize = 60) => {
     // Scale factor: 480 Scratch units = stageW pixels
     const scaleX = stageW / 480;
     const scaleY = stageH / 360;
@@ -37,7 +36,7 @@ const scratchToPixel = (scratchX, scratchY, stageW, stageH, spriteSize = 80) => 
     return { pixelX, pixelY };
 };
 
-const pixelToScratch = (pixelX, pixelY, stageW, stageH, spriteSize = 80) => {
+const pixelToScratch = (pixelX, pixelY, stageW, stageH, spriteSize = 60) => {
     const scaleX = stageW / 480;
     const scaleY = stageH / 360;
     
@@ -49,53 +48,158 @@ const pixelToScratch = (pixelX, pixelY, stageW, stageH, spriteSize = 80) => {
     return { scratchX, scratchY };
 };
 
-export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpriteId, backdrop, stageRef, stageSize }) {
+// Simple sprite renderer for Python IDE
+const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight }) => {
+    const scratchX = sprite.position?.x ?? sprite.x ?? 0;
+    const scratchY = sprite.position?.y ?? sprite.y ?? 0;
+    const angle = sprite.direction ?? sprite.angle ?? 0;
+    const size = sprite.size ?? 100;
+    const isVisible = sprite.visible !== false;
+    
+    // Convert Scratch coords to pixel coords
+    const { pixelX, pixelY } = scratchToPixel(scratchX, scratchY, stageWidth, stageHeight);
+    
+    // Get current costume
+    const costumes = sprite.costumes || {};
+    const currentCostume = sprite.currentCostume || 'default';
+    const costumeValue = costumes[currentCostume] || costumes.default || '/assets/sprites/robot/robot_idle.svg';
+    
+    // Determine if it's an image path or emoji
+    const isImage = costumeValue.includes('/') || costumeValue.endsWith('.png') || costumeValue.endsWith('.svg') || costumeValue.endsWith('.jpg');
+    
+    if (!isVisible) return null;
+    
     return (
-        <div style={{ flex: 1, position: "relative", background: backdrop ? "transparent" : "#fff", overflow: "hidden" }}>
+        <div
+            onClick={onClick}
+            style={{
+                position: 'absolute',
+                left: pixelX,
+                top: pixelY,
+                width: 60,
+                height: 60,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transform: `rotate(${angle}deg) scale(${size / 100})`,
+                zIndex: isSelected ? 20 : 10,
+                filter: isSelected ? 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.8))' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
+                transition: 'all 0.2s ease',
+            }}
+        >
+            {isImage ? (
+                <img 
+                    src={costumeValue} 
+                    alt={sprite.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                />
+            ) : (
+                <span style={{ fontSize: 40, lineHeight: 1 }}>{costumeValue}</span>
+            )}
+            {sprite.speech && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: '100%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'white',
+                    border: '2px solid #333',
+                    borderRadius: '10px',
+                    padding: '4px 8px',
+                    marginBottom: '8px',
+                    whiteSpace: 'nowrap',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    zIndex: 30
+                }}>
+                    {sprite.speech}
+                </div>
+            )}
+            {isSelected && (
+                <div style={{
+                    position: 'absolute',
+                    inset: -4,
+                    border: '2px dashed #8B5CF6',
+                    borderRadius: 8,
+                    pointerEvents: 'none'
+                }} />
+            )}
+        </div>
+    );
+};
+
+export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpriteId, backdrop, stageRef, stageSize }) {
+    // Use stageSize from props or default to 356x240
+    const stageWidth = stageSize?.w || 356;
+    const stageHeight = stageSize?.h || 240;
+    
+    return (
+        <div 
+            style={{ 
+                width: '100%', 
+                height: '100%', 
+                position: "relative", 
+                background: backdrop ? "transparent" : "#F5F5F5", 
+                overflow: "hidden",
+                borderRadius: 8
+            }}
+            ref={stageRef}
+        >
             {/* Backdrop image */}
-            {backdrop && <img src={backdrop} alt="backdrop" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",zIndex:0}} />}
+            {backdrop && (
+                <img 
+                    src={backdrop} 
+                    alt="backdrop" 
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        zIndex: 0
+                    }} 
+                />
+            )}
             
-            {/* Stage coordinate grid (for debugging) */}
-            {/* <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1 }}>
-                <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: 1, background: "rgba(0,0,0,0.1)" }} />
-                <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: "rgba(0,0,0,0.1)" }} />
-            </div> */}
+            {/* Stage coordinate grid (subtle) */}
+            <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1, opacity: 0.2 }}>
+                <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: 1, background: "#999" }} />
+                <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: "#999" }} />
+            </div>
             
-            {/* Sprites - using position object with x/y */}
-            <div style={{ width: "100%", height: "100%", position: "relative" }} ref={stageRef}>
-                {sprites.map(sp => {
-                    if (!sp.visible) return null;
-                    
-                    // Get position from either position object or direct x/y
-                    const scratchX = sp.position?.x ?? sp.x ?? 0;
-                    const scratchY = sp.position?.y ?? sp.y ?? 0;
-                    const angle = sp.direction ?? sp.angle ?? 0;
-                    const size = sp.size ?? 100;
-                    
-                    // Convert Scratch coords to pixel coords
-                    const { pixelX, pixelY } = scratchToPixel(scratchX, scratchY, stageSize.w, stageSize.h);
-                    
-                    return (
-                        <Teddy 
-                            key={sp.id} 
-                            id={sp.id} 
-                            type={sp.type} 
-                            active={sp.id === selectedSpriteId}
-                            x={pixelX}
-                            y={pixelY}
-                            angle={angle} 
-                            size={size}
-                            visible={sp.visible} 
-                            currentCostume={sp.currentCostume}
-                            costumes={sp.costumes} 
-                            speech={sp.speech}
-                            onClick={() => setSelectedSpriteId(sp.id)}
-                            onDragStateChange={(dragging) => {
-                                // Drag updates are handled by Teddy via window.updateSprite
-                            }} 
-                        />
-                    );
-                })}
+            {/* Sprites */}
+            <div style={{ position: "absolute", inset: 0, zIndex: 2 }}>
+                {sprites.map(sp => (
+                    <SpriteRenderer
+                        key={sp.id}
+                        sprite={sp}
+                        isSelected={sp.id === selectedSpriteId}
+                        onClick={() => setSelectedSpriteId(sp.id)}
+                        stageWidth={stageWidth}
+                        stageHeight={stageHeight}
+                    />
+                ))}
+                
+                {/* Empty state message when no sprites */}
+                {sprites.length === 0 && (
+                    <div style={{ 
+                        position: "absolute", 
+                        inset: 0, 
+                        display: "flex", 
+                        flexDirection: "column",
+                        alignItems: "center", 
+                        justifyContent: "center",
+                        color: "#999",
+                        fontSize: 12
+                    }}>
+                        <img src="/assets/sprites/robot/robot_idle.svg" alt="Empty stage" style={{ width: 64, height: 64, opacity: 0.5, marginBottom: 8 }} />
+                        <span>No sprites yet</span>
+                        <span style={{ fontSize: 10 }}>Click "Add Sprite" to get started</span>
+                    </div>
+                )}
             </div>
         </div>
     );

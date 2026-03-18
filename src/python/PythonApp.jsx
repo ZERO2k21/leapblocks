@@ -44,28 +44,15 @@ if (typeof document !== 'undefined' && !document.getElementById('python-ide-anim
     document.head.appendChild(animationStyles);
 }
 
-import {
-    Folder, Play, Square, Undo, Redo, Search, Save, Bell, Settings, User,
-    Plus, Maximize, Hash, Terminal as TerminalIcon, BookOpen, Trash2,
-    Package, Bug, ChevronRight, ChevronDown, X, RefreshCw, Download,
-    Eye, EyeOff, RotateCcw, FileText, Zap, HelpCircle, Scissors, Copy, Clipboard,
-    StopCircle, PlayCircle, FileCode, Layers, Image, Volume2, ChevronLeft,
-    MoreVertical, Grid, MousePointer, Type, PaintBucket, Eraser, Circle, Square as SquareIcon,
-    Upload, Clock
-} from "lucide-react";
+import { Play, Square, Undo, Redo, Save, Settings, Trash2, Maximize, Upload, Clock } from "lucide-react";
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
-import { BackdropLibrary as BackdropLib } from "../components/BackdropLibrary";
+import { createIntermediateBlocksBridge, useSpriteBridge, DEFAULT_SPRITE_PRESETS } from "./SpriteBridge";
 
 // ─── Import Modular Components ─────────────────────────────────────────────────
-import TopBar from "./layout/TopBar";
-import ToolBar from "./layout/ToolBar";
-import ActivityBar from "./layout/ActivityBar";
 import SidePanel from "./panels/SidePanel";
 import EditorPanel from "./panels/EditorPanel";
 import StagePanel from "./panels/StagePanel";
-import PromptModal from "./modals/PromptModal";
-import SpriteLibraryModal from "./modals/SpriteLibraryModal";
 import PythonIDEGuide from "./PythonIDEGuide";
 
 // ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
@@ -92,17 +79,110 @@ const DEFAULT_FILES = {
     "main.py": `# LeapBlocks Python IDE
 # Welcome! Control sprites with Python commands.
 
-sprite = Sprite('Robot')
-sprite.say("Hello, World!")
-sprite.move(50)
-sprite.turn_right()
-sprite.go_to(100, 50)
+# Create and control the Robot sprite
+robot = Sprite('Robot')
+robot.say("Hello, World!")
+robot.move(50)
+robot.turn_right()
+robot.go_to(100, 50)
 
+# Create a Cat sprite
+cat = Sprite('Cat')
+cat.say("Meow!", 3)
+cat.move(30)
+cat.turn_left()
+
+# Create a Ball sprite
+ball = Sprite('Ball')
+ball.go_to(-100, -50)
+ball.say("I'm a ball!", 2)
+
+# Animate the robot
 for i in range(5):
-    print(f"Step {i + 1}: moving sprite")
-    sprite.move(20)
+    print(f"Step {i + 1}: moving robot")
+    robot.move(20)
+    robot.turn_right(15)
 
 print("Program complete!")
+`,
+    "sprite_test.py": `# Sprite Bridge Test - Demonstrates sprite panel functions
+# These functions work with intermediate blocks and Python IDE
+
+print("=== Sprite Bridge Test ===")
+
+# Create sprites
+robot = Sprite('Robot')
+cat = Sprite('Cat')
+ball = Sprite('Ball')
+
+# Test movement
+robot.say("Hello from Python!")
+robot.move(50)
+robot.turn_right()
+robot.go_to(100, 50)
+
+# Test appearance
+cat.say("Meow!", 3)
+cat.set_size(150)
+cat.next_costume()
+
+# Test direction
+ball.point_in_direction(90)
+ball.move(30)
+
+# Test visibility
+robot.hide()
+print("Robot hidden")
+robot.show()
+print("Robot shown")
+
+# Test multiple movements
+for i in range(3):
+    robot.move(20)
+    robot.turn_right(45)
+
+print("=== Test Complete ===")
+print("Check terminal for sprite action logs!")
+`,
+    "animation_demo.py": `# Animation Demo - Shows multiple sprites interacting
+
+print("=== Animation Demo ===")
+
+# Create characters
+robot = Sprite('Robot')
+cat = Sprite('Cat')
+ball = Sprite('Ball')
+
+# Position them
+robot.go_to(0, 0)
+cat.go_to(-100, 50)
+ball.go_to(100, -50)
+
+# Make them talk
+robot.say("Let's dance!", 2)
+cat.say("Meow! 🐱", 2)
+ball.say("Wheee! ⚽", 2)
+
+# Robot dance
+for i in range(4):
+    robot.move(30)
+    robot.turn_right(90)
+    robot.next_costume()
+
+# Cat dance
+cat.move(50)
+cat.turn_left(180)
+cat.move(50)
+cat.turn_left(180)
+
+# Ball bounce
+for i in range(3):
+    ball.move(40)
+    ball.turn_right(180)
+    ball.move(40)
+    ball.turn_right(180)
+
+print("Dance complete! 💃🕺")
 `,
     "utils.py": `# Utility functions
 def greet(name):
@@ -230,7 +310,6 @@ function PythonApp({ onBack, onSwitchToNotebook }) {
     const [packages, setPackages] = useState(PIP_PACKAGES);
     const [pipFilter, setPipFilter] = useState("");
     
-    const [stageView, setStageView] = useState("stage");
     const [sidePanel, setSidePanel] = useState("files");
     const [spriteFilter, setSpriteFilter] = useState("");
     const [installedExtensions, setInstalledExtensions] = useState([]);
@@ -322,6 +401,36 @@ function PythonApp({ onBack, onSwitchToNotebook }) {
             onOut: (text) => addLog(text.replace(/\n$/, ""), "log"),
             onErr: (text) => addLog(text, "error"),
             actions: {
+                initSprite: (name) => {
+                    setSprites(prev => {
+                        if (prev.find(s => s.name.toLowerCase() === name.toLowerCase())) return prev;
+                        
+                        // Add default sprite from library if found, else generic
+                        const preset = DEFAULT_SPRITE_PRESETS[name.toLowerCase()] || { 
+                            name, 
+                            type: 'robot', // Default to robot type for initialization
+                            costumes: { default: "/assets/sprites/robot/robot_idle.svg" }
+                        };
+                        
+                        const id = name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now();
+                        const newSprite = { 
+                            id, 
+                            name: preset.name || name, 
+                            type: preset.type || 'robot',
+                            position: { x: (Math.random()-0.5)*40, y: (Math.random()-0.5)*40 },
+                            direction: 0, 
+                            size: 100, 
+                            visible: true, 
+                            speech: '', 
+                            currentCostume: 'default', 
+                            costumes: preset.costumes || { default: "/assets/sprites/robot/robot_idle.svg" },
+                            mirrored: false
+                        };
+                        
+                        addLog('Initialized sprite: ' + name, 'success');
+                        return [...prev, newSprite];
+                    });
+                },
                 moveRelative: (name, dir, steps) => {
                     setSprites(prev => prev.map(s => {
                         if (s.name.toLowerCase() !== name.toLowerCase()) return s;
@@ -332,6 +441,7 @@ function PythonApp({ onBack, onSwitchToNotebook }) {
                         if (dir === "UP") dy = d;  // In Scratch, UP increases Y
                         if (dir === "DOWN") dy = -d; // In Scratch, DOWN decreases Y
                         const pos = s.position || { x: s.x || 0, y: s.y || 0 };
+                        addLog(`➡️ ${name}: Move ${dir} ${d} steps`, 'info');
                         return { 
                             ...s, 
                             x: pos.x + dx, 
@@ -348,6 +458,7 @@ function PythonApp({ onBack, onSwitchToNotebook }) {
                         const pos = s.position || { x: s.x || 0, y: s.y || 0 };
                         const newX = pos.x + Math.cos(rad) * steps;
                         const newY = pos.y + Math.sin(rad) * steps;
+                        addLog(`🏃 ${name}: Move ${steps} steps (direction: ${angle}°)`, 'info');
                         return { 
                             ...s, 
                             x: newX, 
@@ -362,6 +473,10 @@ function PythonApp({ onBack, onSwitchToNotebook }) {
                         const newProps = { ...s };
                         const pos = s.position || { x: s.x || 0, y: s.y || 0 };
                         newProps.position = { ...pos };
+                        
+                        // Log sprite action to terminal
+                        const actionType = Object.keys(props).join(', ');
+                        addLog(`🤖 ${name}: ${actionType}`, 'info');
                         
                         Object.keys(props).forEach(key => {
                             if (typeof props[key] === 'function') {
@@ -379,6 +494,7 @@ function PythonApp({ onBack, onSwitchToNotebook }) {
                                 const currentIdx = costumeKeys.indexOf(s.currentCostume);
                                 const nextIdx = (currentIdx + 1) % costumeKeys.length;
                                 newProps.currentCostume = costumeKeys[nextIdx] || 'default';
+                                addLog(`🎭 ${name}: Changed costume to ${newProps.currentCostume}`, 'info');
                             } else if (key === 'position') {
                                 // Merge position updates
                                 newProps.position = { ...newProps.position, ...props[key] };
@@ -413,7 +529,37 @@ function PythonApp({ onBack, onSwitchToNotebook }) {
                 }))),
             }
         });
-    }, [addLog, updateSprite]);
+
+        // Create intermediate blocks bridge for sprite panel functions
+        const spriteBridge = createIntermediateBlocksBridge(sprites, setSprites, selectedSpriteId, addLog);
+        window.spriteBridge = spriteBridge;
+        
+        // Expose sprite panel functions globally for intermediate blocks
+        window.spritePanelFunctions = {
+            move: spriteBridge.move,
+            moveRelative: spriteBridge.moveRelative,
+            turn: spriteBridge.turn,
+            goTo: spriteBridge.goTo,
+            say: spriteBridge.say,
+            think: spriteBridge.think,
+            show: spriteBridge.show,
+            hide: spriteBridge.hide,
+            setSize: spriteBridge.setSize,
+            changeSize: spriteBridge.changeSize,
+            nextCostume: spriteBridge.nextCostume,
+            switchCostume: spriteBridge.switchCostume,
+            pointInDirection: spriteBridge.pointInDirection,
+            getPosition: spriteBridge.getPosition,
+            getDirection: spriteBridge.getDirection,
+            getSize: spriteBridge.getSize,
+            isVisible: spriteBridge.isVisible
+        };
+
+        return () => {
+            delete window.spriteBridge;
+            delete window.spritePanelFunctions;
+        };
+    }, [addLog, updateSprite, sprites, setSprites, selectedSpriteId]);
 
     // Auto-scroll terminal
     useEffect(() => {
@@ -745,29 +891,29 @@ function PythonApp({ onBack, onSwitchToNotebook }) {
 
     // Sprite Library - add from library
     const addSpriteFromLibrary = (sp) => {
-        const id = sp.name.toLowerCase() + '-' + Date.now();
+        const id = sp.name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now();
         // Handle both formats: sp.img (old) or sp.image/sp.costumes (new from shared catalog)
-        const spriteImage = sp.img || sp.image || sp.emoji || '🤖';
+        const spriteImage = sp.img || sp.image || sp.emoji || '/assets/sprites/robot/robot_idle.svg';
         const spriteCostumes = sp.costumes && sp.costumes.length > 0 
             ? sp.costumes.reduce((acc, c, i) => ({ ...acc, [`costume_${i}`]: c }), { default: spriteImage })
             : { default: spriteImage };
         const newSprite = { 
             id, 
             name: sp.name, 
-            type: sp.type, 
-            x: (Math.random()-0.5)*80, 
-            y: (Math.random()-0.5)*80, 
-            angle: 0, 
+            type: sp.type || 'sprite',
+            position: { x: (Math.random()-0.5)*80, y: (Math.random()-0.5)*80 },
+            direction: 0, 
             size: 100, 
             visible: true, 
             speech: '', 
             currentCostume: 'default', 
-            costumes: spriteCostumes 
+            costumes: spriteCostumes,
+            mirrored: false
         };
         setSprites(prev => [...prev, newSprite]);
         setSelectedSpriteId(id);
-        const fname = sp.name + '.py';
-        setProjectFiles(prev => prev[fname] ? prev : { ...prev, [fname]: "# " + sp.name + " sprite" + "\nsprite = Sprite('" + sp.name + "')" + "\nsprite.say('Hi! I am " + sp.name + "')" + "\nsprite.move_right(50)\n" });
+        const fname = sp.name.replace(/\s+/g, '_') + '.py';
+        setProjectFiles(prev => prev[fname] ? prev : { ...prev, [fname]: `# ${sp.name} sprite\n${sp.name.toLowerCase().replace(/\s+/g, '_')} = Sprite('${sp.name}')\n${sp.name.toLowerCase().replace(/\s+/g, '_')}.say('Hi! I am ${sp.name}')\n${sp.name.toLowerCase().replace(/\s+/g, '_')}.move(50)\n` });
         setActiveFile(fname);
         addLog('Added sprite: ' + sp.name, 'success');
         setSidePanel('files');
@@ -778,34 +924,7 @@ function PythonApp({ onBack, onSwitchToNotebook }) {
         addLog('Backdrop: ' + bd.name, 'success'); 
         setSidePanel('files'); 
     };
-    // CSV Upload
-    const handleCSVUpload = () => {
-        const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.csv';
-        inp.onchange = (e) => {
-            const file = e.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                const fname = file.name.replace('.csv', '') + '_reader.py';
-                const snippet = "import csv\n\n# Auto-generated reader for: " + file.name + "\nrows = []\nfor row in '" + file.name + "'.split(','):\n    rows.append(row)\nprint('Loaded', len(rows), 'items')\n";
-                setProjectFiles(prev => ({ ...prev, [fname]: snippet }));
-                setActiveFile(fname);
-                addLog('CSV uploaded: ' + file.name, 'success');
-            };
-            reader.readAsText(file);
-        };
-        inp.click();
-    };
-    // Python Upload
-    const handlePythonUpload = () => {
-        const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.py';
-        inp.onchange = (e) => {
-            const file = e.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => { setProjectFiles(prev => ({ ...prev, [file.name]: ev.target.result })); setActiveFile(file.name); addLog('Imported: ' + file.name, 'success'); };
-            reader.readAsText(file);
-        };
-        inp.click();
-    };
+
     // Extension install
     const installExtension = (ext) => {
         if (installedExtensions.find(e => e.id === ext.id)) { addLog(ext.name + ' already installed', 'info'); return; }
@@ -1022,297 +1141,15 @@ function PythonApp({ onBack, onSwitchToNotebook }) {
                     </div>
                 )}
 
-                {/* ── ACTIVITY BAR (PictoBlox Style - Purple Icons) ── */}
-                <div style={{ width: 48, background: "#6B46C1", display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 8, gap: 2, flexShrink: 0 }}>
-                    {[
-                        { id: "files",      icon: <Folder size={22} />,  tip: "Project Files" },
-                        { id: "sprites",    icon: <span style={{fontSize:20}}>🤖</span>,  tip: "Add Sprite from Library", action: () => setShowSpriteLibrary(true) },
-                        { id: "backdrops",  icon: <span style={{fontSize:20}}>🎨</span>,  tip: "Choose Backdrop" },
-                        { id: "extensions", icon: <span style={{fontSize:20}}>🧩</span>,  tip: "Add Extension" },
-                        { id: "search",     icon: <Search size={22} />,  tip: "Search" },
-                        { id: "debug",      icon: <Bug size={22} />,     tip: "Debugger" },
-                        { id: "packages",   icon: <Package size={22} />, tip: "Modules/Libraries" },
-                    ].map(({ id, icon, tip, action }) => (
-                        <div key={id} onClick={() => { if (action) action(); else setSidePanel(id); }}
-                            title={tip}
-                            style={{
-                                width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
-                                borderRadius: 6, cursor: "pointer", color: sidePanel === id ? "#fff" : "rgba(255,255,255,0.6)",
-                                background: sidePanel === id ? "rgba(255,255,255,0.2)" : "transparent",
-                                transition: "all 0.15s",
-                            }}>
-                            {icon}
-                        </div>
-                    ))}
-                    <div style={{flex:1}} />
-                    {/* Upload CSV */}
-                    <div onClick={handleCSVUpload} title="Upload CSV file"
-                        style={{width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:6,cursor:"pointer",color:"rgba(255,255,255,0.6)",marginBottom:4}}>
-                        <span style={{fontSize:18}}>📊</span>
-                    </div>
-                    {/* Upload Python */}
-                    <div onClick={handlePythonUpload} title="Upload Python file (.py)"
-                        style={{width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:6,cursor:"pointer",color:"rgba(255,255,255,0.6)",marginBottom:8}}>
-                        <span style={{fontSize:18}}>🐍</span>
-                    </div>
-                </div>
+
 
                 {/* ── LEFT SIDEBAR (PictoBlox Style) ── */}
-                <div style={{ width: 180, background: "#fff", borderRight: `1px solid #E0E0E0`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
-
-                    {sidePanel === "files" && (
-                        <>
-                            <div style={{ padding: "10px 12px 8px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #E8E8E8" }}>
-                                <span style={{ fontSize: 12, fontWeight: 700, color: "#333" }}>Project Files</span>
-                                <div style={{ display: "flex", gap: 4 }}>
-                                    <div onClick={handleAddFile} title="New File" style={{ cursor: "pointer", color: "#666", padding: 2, borderRadius: 4 }}>
-                                        <Plus size={14} />
-                                    </div>
-                                    <div title="Refresh" style={{ cursor: "pointer", color: "#666", padding: 2, borderRadius: 4 }}>
-                                        <RefreshCw size={14} />
-                                    </div>
-                                </div>
-                            </div>
-                            <div style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
-                                {Object.keys(projectFiles).map(file => (
-                                    <div key={file}
-                                        onClick={() => setActiveFile(file)}
-                                        style={{
-                                            padding: "8px 12px", fontSize: 13, cursor: "pointer",
-                                            background: activeFile === file ? "#E8F5E9" : "transparent",
-                                            color: activeFile === file ? "#2E7D32" : "#333",
-                                            display: "flex", alignItems: "center", gap: 8,
-                                            transition: "background 0.15s",
-                                            borderLeft: activeFile === file ? "3px solid #4CAF50" : "3px solid transparent",
-                                        }}
-                                        onMouseEnter={e => { if (activeFile !== file) e.currentTarget.style.background = "#F5F5F5"; }}
-                                        onMouseLeave={e => { if (activeFile !== file) e.currentTarget.style.background = "transparent"; }}
-                                    >
-                                        <div style={{ width: 18, height: 18, background: "#E8F5E9", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                            <FileText size={12} style={{ color: "#4CAF50" }} />
-                                        </div>
-                                        <span style={{ fontSize: 12, fontWeight: activeFile === file ? 600 : 400 }}>{file}</span>
-                                    </div>
-                                ))}
-                            </div>
-                            
-                            {/* Modules/Libraries Section (PictoBlox Style) */}
-                            <div style={{ borderTop: "1px solid #E8E8E8", padding: "10px 12px 6px", background: "#FAFAFA" }}>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: "#666", letterSpacing: "0.05em" }}>MODULES/LIBRARIES</span>
-                            </div>
-                            <div style={{ padding: "0 8px 12px", background: "#FAFAFA" }}>
-                                <div style={{ 
-                                    padding: "8px 10px", fontSize: 12, cursor: "pointer",
-                                    background: "#fff", borderRadius: 6,
-                                    display: "flex", alignItems: "center", gap: 8,
-                                    border: "1px solid #E0E0E0",
-                                    marginTop: 4
-                                }}>
-                                    <div style={{ width: 20, height: 20, background: "#E3F2FD", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                        <span style={{ fontSize: 12 }}>📦</span>
-                                    </div>
-                                    <span style={{ color: "#333", fontWeight: 500 }}>Sprite</span>
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                    
-                    {sidePanel === "sprites" && (
-                        <>
-                        <div style={{padding:"10px 12px 6px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                            <span style={{fontSize:11,fontWeight:700,color:C.MUTED,letterSpacing:"0.08em"}}>SPRITE LIBRARY</span>
-                        </div>
-                        <input value={spriteFilter} onChange={e=>setSpriteFilter(e.target.value)}
-                            placeholder="Search sprites..."
-                            style={{margin:"0 8px 8px",padding:"5px 8px",fontSize:12,border:`1px solid ${C.BORDER}`,borderRadius:6,outline:"none",width:"calc(100% - 16px)"}} />
-                        <div style={{flex:1,overflowY:"auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,padding:"0 8px 8px"}}>
-                            {SPRITE_LIBRARY.filter(s=>s.name.toLowerCase().includes(spriteFilter.toLowerCase())).map(sp=>(
-                                <div key={sp.name} onClick={()=>addSpriteFromLibrary(sp)}
-                                    style={{background:"#F5F0FF",border:"2px solid transparent",borderRadius:10,padding:8,cursor:"pointer",textAlign:"center",transition:"all 0.2s"}}
-                                    onMouseEnter={e=>{e.currentTarget.style.borderColor=C.PURPLE;e.currentTarget.style.background=C.LIGHT_PURPLE;}}
-                                    onMouseLeave={e=>{e.currentTarget.style.borderColor="transparent";e.currentTarget.style.background="#F5F0FF";}}>
-                                    <img src={sp.img} alt={sp.name} style={{width:44,height:44,objectFit:"contain"}} onError={e=>{e.target.style.display="none";}} />
-                                    <div style={{fontSize:10,fontWeight:600,color:C.TEXT,marginTop:4}}>{sp.name}</div>
-                                </div>
-                            ))}
-                        </div>
-                        </>
-                    )}
-
-                    {sidePanel === "backdrops" && (
-                        <>
-                        <div style={{padding:"10px 12px 6px"}}>
-                            <span style={{fontSize:11,fontWeight:700,color:C.MUTED,letterSpacing:"0.08em"}}>BACKDROPS</span>
-                        </div>
-                        <div style={{flex:1,overflowY:"auto",padding:"0 8px 8px"}}>
-                            {BACKDROP_LIBRARY.map(bd=>(
-                                <div key={bd.name} onClick={()=>handleSetBackdrop(bd)}
-                                    style={{display:"flex",alignItems:"center",gap:8,padding:"7px 8px",borderRadius:8,cursor:"pointer",marginBottom:4,background:backdrop===bd.img?"#EDE7F6":"transparent",border:backdrop===bd.img?`1px solid ${C.PURPLE}`:"1px solid transparent",transition:"all 0.2s"}}
-                                    onMouseEnter={e=>e.currentTarget.style.background="#F5F0FF"}
-                                    onMouseLeave={e=>e.currentTarget.style.background=backdrop===bd.img?"#EDE7F6":"transparent"}>
-                                    <div style={{width:36,height:24,borderRadius:4,overflow:"hidden",flexShrink:0,background:bd.img?"#ddd":"#fff",border:"1px solid #ddd"}}>
-                                        {bd.img && <img src={bd.img} alt={bd.name} style={{width:"100%",height:"100%",objectFit:"cover"}} />}
-                                        {!bd.img && <div style={{width:"100%",height:"100%",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#999"}}>Blank</div>}
-                                    </div>
-                                    <span style={{fontSize:12,color:C.TEXT}}>{bd.name}</span>
-                                    {backdrop===bd.img && <span style={{marginLeft:"auto",fontSize:10,color:C.PURPLE}}>✓</span>}
-                                </div>
-                            ))}
-                        </div>
-                        </>
-                    )}
-
-                    {sidePanel === "extensions" && (
-                        <>
-                        <div style={{padding:"10px 12px 6px"}}>
-                            <span style={{fontSize:11,fontWeight:700,color:C.MUTED,letterSpacing:"0.08em"}}>EXTENSIONS</span>
-                        </div>
-                        <div style={{flex:1,overflowY:"auto",padding:"0 8px 8px"}}>
-                            {EXTENSIONS.map(ext=>{
-                                const isIn = !!installedExtensions.find(e=>e.id===ext.id);
-                                return (
-                                <div key={ext.id} style={{background:"#F9F6FF",border:`1px solid ${isIn?C.PURPLE:C.BORDER}`,borderRadius:8,padding:"8px 10px",marginBottom:6,cursor:"pointer"}} onClick={()=>installExtension(ext)}>
-                                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                                        <span style={{fontSize:18}}>{ext.icon}</span>
-                                        <span style={{fontSize:12,fontWeight:700,color:C.TEXT}}>{ext.name}</span>
-                                        {isIn && <span style={{marginLeft:"auto",fontSize:10,color:C.GREEN,fontWeight:700}}>✓ Added</span>}
-                                    </div>
-                                    <div style={{fontSize:11,color:C.MUTED,lineHeight:1.4}}>{ext.desc}</div>
-                                    {!isIn && <div style={{marginTop:6,fontSize:10,color:C.PURPLE,fontWeight:700}}>+ Click to Add</div>}
-                                </div>);
-                            })}
-                        </div>
-                        </>
-                    )}
-
-                    {sidePanel === "packages" && (
-                        <>
-                            <div style={{ padding: "10px 12px 8px" }}>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: C.MUTED, letterSpacing: "0.08em" }}>PIP PACKAGES</span>
-                                <input
-                                    value={pipFilter} onChange={e => setPipFilter(e.target.value)}
-                                    placeholder="Search packages..."
-                                    style={{ marginTop: 8, width: "100%", padding: "5px 8px", border: `1px solid ${C.BORDER}`, borderRadius: 6, fontSize: 12, outline: "none", boxSizing: "border-box" }}
-                                />
-                            </div>
-                            <div style={{ flex: 1, overflowY: "auto" }}>
-                                {packages.filter(p => p.name.includes(pipFilter.toLowerCase())).map(pkg => (
-                                    <div key={pkg.name} style={{ padding: "8px 12px", borderBottom: `1px solid ${C.BORDER}` }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                            <span style={{ fontSize: 12, fontWeight: 600, color: C.TEXT }}>{pkg.name}</span>
-                                            {pkg.installed ? (
-                                                <span style={{ fontSize: 10, color: C.GREEN, fontWeight: 700 }}>● READY</span>
-                                            ) : (
-                                                <button onClick={() => handleInstall(pkg.name)}
-                                                    style={{ fontSize: 10, padding: "2px 8px", background: C.PURPLE, color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: 700 }}>
-                                                    <Download size={10} style={{ marginRight: 3, verticalAlign: "middle" }} />INSTALL
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div style={{ fontSize: 11, color: C.MUTED, marginTop: 2 }}>{pkg.desc}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </>
-                    )}
-
-                    {sidePanel === "debug" && (
-                        <>
-                            <div style={{ padding: "10px 12px" }}>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: C.MUTED, letterSpacing: "0.08em" }}>DEBUGGER</span>
-                            </div>
-                            <div style={{ padding: "0 12px", flex: 1, overflowY: "auto" }}>
-                                {debugLine && (
-                                    <div style={{ padding: "6px 10px", background: "#FFF3E0", borderRadius: 6, marginBottom: 8, fontSize: 12, border: "1px solid #FFB74D" }}>
-                                        ⚡ Paused at line {debugLine}
-                                    </div>
-                                )}
-                                <div style={{ fontSize: 11, fontWeight: 700, color: C.MUTED, marginBottom: 6 }}>VARIABLES</div>
-                                {debugVars.length === 0 ? (
-                                    <div style={{ fontSize: 12, color: C.MUTED, fontStyle: "italic" }}>Run code to watch variables</div>
-                                ) : (
-                                    debugVars.map((v, i) => (
-                                        <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: `1px solid ${C.BORDER}`, fontSize: 12 }}>
-                                            <span style={{ color: C.BLUE, fontFamily: "monospace" }}>{v.name}</span>
-                                            <span style={{ color: C.ORANGE, fontFamily: "monospace" }}>{v.value}</span>
-                                        </div>
-                                    ))
-                                )}
-                                <div style={{ marginTop: 12 }}>
-                                    <div style={{ fontSize: 11, fontWeight: 700, color: C.MUTED, marginBottom: 6 }}>CALL STACK</div>
-                                    <div style={{ fontSize: 12, color: C.MUTED, fontStyle: "italic" }}>No active debug session</div>
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                    {sidePanel === "search" && (
-                        <>
-                            <div style={{ padding: "10px 12px" }}>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: C.MUTED, letterSpacing: "0.08em" }}>QUICK SNIPPETS</span>
-                            </div>
-                            <div style={{ flex: 1, overflowY: "auto", padding: "0 8px 8px" }}>
-                                {[
-                                    { name: "Hello World", icon: "👋", code: 'print("Hello, World!")' },
-                                    { name: "Create Sprite", icon: "🤖", code: 'sprite = Sprite("Robot")\nsprite.say("Hi!")' },
-                                    { name: "Move Sprite", icon: "➡️", code: 'sprite.move(50)\nsprite.turn_right()' },
-                                    { name: "For Loop", icon: "🔄", code: 'for i in range(5):\n    print(i)' },
-                                    { name: "While Loop", icon: "🔁", code: 'count = 0\nwhile count < 5:\n    print(count)\n    count += 1' },
-                                    { name: "Function", icon: "📦", code: 'def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("World"))' },
-                                    { name: "List", icon: "📋", code: 'fruits = ["apple", "banana", "cherry"]\nfor fruit in fruits:\n    print(fruit)' },
-                                    { name: "If Statement", icon: "❓", code: 'x = 10\nif x > 5:\n    print("x is greater than 5")\nelse:\n    print("x is 5 or less")' },
-                                    { name: "Input", icon: "⌨️", code: 'name = input("What is your name? ")\nprint(f"Hello, {name}!")' },
-                                    { name: "Animation", icon: "🎬", code: 'sprite = Sprite("Robot")\nfor i in range(10):\n    sprite.move(10)\n    sprite.turn_right()\n    sprite.say(f"Step {i+1}")' },
-                                ].map((snippet, i) => (
-                                    <div key={i}
-                                        onClick={() => {
-                                            const currentCode = projectFiles[activeFile] || "";
-                                            setProjectFiles(prev => ({
-                                                ...prev,
-                                                [activeFile]: currentCode + (currentCode.endsWith("\n") || currentCode === "" ? "" : "\n") + snippet.code + "\n"
-                                            }));
-                                            addLog(`Inserted snippet: ${snippet.name}`, "info");
-                                        }}
-                                        style={{
-                                            padding: "8px 10px",
-                                            marginBottom: 4,
-                                            borderRadius: 6,
-                                            cursor: "pointer",
-                                            background: "#F5F5F5",
-                                            border: "1px solid transparent",
-                                            transition: "all 0.15s",
-                                        }}
-                                        onMouseEnter={e => {
-                                            e.currentTarget.style.background = C.LIGHT_PURPLE;
-                                            e.currentTarget.style.borderColor = C.PURPLE;
-                                        }}
-                                        onMouseLeave={e => {
-                                            e.currentTarget.style.background = "#F5F5F5";
-                                            e.currentTarget.style.borderColor = "transparent";
-                                        }}
-                                    >
-                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                            <span style={{ fontSize: 16 }}>{snippet.icon}</span>
-                                            <span style={{ fontSize: 12, fontWeight: 600, color: C.TEXT }}>{snippet.name}</span>
-                                        </div>
-                                        <div style={{
-                                            marginTop: 4,
-                                            fontSize: 10,
-                                            fontFamily: "monospace",
-                                            color: C.MUTED,
-                                            whiteSpace: "nowrap",
-                                            overflow: "hidden",
-                                            textOverflow: "ellipsis",
-                                        }}>
-                                            {snippet.code.split("\n")[0]}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </div>
+                <SidePanel 
+                    projectFiles={projectFiles}
+                    activeFile={activeFile}
+                    setActiveFile={setActiveFile}
+                    handleAddFile={handleAddFile}
+                />
 
                 {/* ── EDITOR + TERMINAL ── */}
                 <EditorPanel 
@@ -1329,10 +1166,6 @@ function PythonApp({ onBack, onSwitchToNotebook }) {
                     terminalOutput={terminalOutput}
                     replInput={replInput}
                     setReplInput={setReplInput}
-                    replHistory={replHistory}
-                    replHistIdx={replHistIdx}
-                    setReplHistory={setReplHistory}
-                    setReplHistIdx={setReplHistIdx}
                     handleReplSubmit={handleReplSubmit}
                     handleReplKey={handleReplKey}
                     terminalEndRef={terminalEndRef}
@@ -1340,12 +1173,14 @@ function PythonApp({ onBack, onSwitchToNotebook }) {
                     editorRef={editorRef}
                     monacoRef={monacoRef}
                     setProjectFiles={setProjectFiles}
+                    packages={packages}
+                    pipFilter={pipFilter}
+                    setPipFilter={setPipFilter}
+                    handleInstall={handleInstall}
                 />
 
                 {/* ── STAGE PANEL ── */}
                 <StagePanel 
-                    stageView={stageView}
-                    setStageView={setStageView}
                     sprites={sprites}
                     selectedSpriteId={selectedSpriteId}
                     setSelectedSpriteId={setSelectedSpriteId}
@@ -1354,9 +1189,9 @@ function PythonApp({ onBack, onSwitchToNotebook }) {
                     stageSize={stageSize}
                     setShowSpriteLibrary={setShowSpriteLibrary}
                     updateSpriteProperty={updateSpriteProperty}
-                    resetStage={resetStage}
                     BACKDROP_LIBRARY={BACKDROP_LIBRARY}
                     handleSetBackdrop={handleSetBackdrop}
+                    deleteSprite={deleteSprite}
                 />
             </div>
 

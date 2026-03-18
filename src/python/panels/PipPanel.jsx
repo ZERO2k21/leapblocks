@@ -32,7 +32,7 @@ export default function PipPanel({ packages, pipFilter, setPipFilter, handleInst
                 />
             </div>
             <div style={{ flex: 1, overflowY: "auto" }}>
-                {packages.filter(p => p.name.includes(pipFilter.toLowerCase())).map(pkg => (
+                {packages.filter(p => p.name.toLowerCase().includes(pipFilter.toLowerCase())).map(pkg => (
                     <div key={pkg.name} style={{ padding: "8px 12px", borderBottom: `1px solid ${C.BORDER}` }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <span style={{ fontSize: 12, fontWeight: 600, color: C.TEXT }}>{pkg.name}</span>

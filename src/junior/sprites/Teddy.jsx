@@ -128,29 +128,6 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             },
             symmetry: () => setScaleX(s => s * -1),
             switchCostume: (name) => updateStore({ currentCostume: name }),
-            penDown: () => {
-                setIsPenDown(true);
-                // Show visual feedback for pen-type sprites
-                if (['pencil', 'pen', 'drawing_pen'].includes(type) ||
-                    ['pencil', 'pen', 'drawing_pen'].includes(id?.toLowerCase?.())) {
-                    window.say && window.say(id, "✏️ Drawing!");
-                }
-            },
-            penUp: () => {
-                setIsPenDown(false);
-                if (['pencil', 'pen', 'drawing_pen'].includes(type) ||
-                    ['pencil', 'pen', 'drawing_pen'].includes(id?.toLowerCase?.())) {
-                    window.say && window.say(id, "✒️ Pen Up");
-                }
-            },
-            stamp: () => {
-                // Draw this sprite's current appearance onto the pen canvas
-                if (window.stampSpriteOnCanvas) {
-                    const costumeVal = costumes?.[currentCostume] || currentCostume;
-                    window.stampSpriteOnCanvas(id, xRef.current, yRef.current, costumeVal, size);
-                }
-            },
-            jiggle: () => setJiggleKey(k => k + 1),
         };
 
         // ---- GLOBAL DISPATCH FUNCTIONS ----
@@ -267,29 +244,46 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             );
         }
 
-        // 3. If it is an emoji string
-        if (typeof costumeValue === 'string' && costumeValue !== "default" && costumeValue !== "wave") {
-            const isLetterOrNumber = type?.startsWith('letter_') || type?.startsWith('number_') || id?.startsWith('letter_') || id?.startsWith('number_');
+        // 3. If it is an emoji string (check for emoji characters)
+        if (typeof costumeValue === 'string') {
+            // Check if it's an emoji (contains emoji unicode or is a single emoji character)
+            const emojiRegex = /[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]|[\u{FE00}-\u{FEFF}]|[\u{200D}]|[\u{20E3}]|[\u{E0020}-\u{E007F}]/u;
+            const isEmoji = emojiRegex.test(costumeValue) || costumeValue.length <= 4;
+            
+            if (isEmoji) {
+                const isLetterOrNumber = type?.startsWith('letter_') || type?.startsWith('number_') || id?.startsWith('letter_') || id?.startsWith('number_');
 
-            if (isLetterOrNumber) {
+                if (isLetterOrNumber) {
+                    return (
+                        <div style={{
+                            color: textColor || '#FF8C1A',
+                            fontSize: '90px',
+                            fontWeight: '900',
+                            fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif',
+                            WebkitTextStroke: '4px black',
+                            textShadow: '8px 8px 0px rgba(0,0,0,1)',
+                            lineHeight: 1,
+                            display: 'inline-block',
+                            userSelect: 'none',
+                            transform: 'scale(1.1)',
+                        }}>
+                            {costumeValue}
+                        </div>
+                    );
+                }
+                // Render emoji with proper styling
                 return (
-                    <div style={{
-                        color: textColor || '#FF8C1A',
-                        fontSize: '90px',
-                        fontWeight: '900',
-                        fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif',
-                        WebkitTextStroke: '4px black',
-                        textShadow: '8px 8px 0px rgba(0,0,0,1)',
+                    <span style={{ 
+                        fontSize: '60px', 
                         lineHeight: 1,
-                        display: 'inline-block',
-                        userSelect: 'none',
-                        transform: 'scale(1.1)', // Slightly larger to match the premium feel
+                        display: 'block',
+                        textAlign: 'center',
+                        filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.15))'
                     }}>
                         {costumeValue}
-                    </div>
+                    </span>
                 );
             }
-            return costumeValue;
         }
 
         // 4. Fallback to emoji logic for legacy string-based states

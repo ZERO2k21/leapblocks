@@ -32,6 +32,7 @@ class Sprite:
     """
     def __init__(self, name):
         self._name = str(name)
+        _leap_dispatch(self._name, "INIT", [])
 
     def _action(self, action, *args):
         # Use the global _leap_dispatch function injected by SkulptEngine
@@ -158,6 +159,9 @@ export class SkulptEngine {
             const act = toJS(skAction);
             const args = (skArgs?.v ?? []).map(toJS);
             switch (act) {
+                // Initialization
+                case 'INIT':       bridge.initSprite(n); break;
+
                 // Movement
                 case 'RIGHT':      bridge.moveRelative(n, 'RIGHT',  args[0] ?? 20); break;
                 case 'LEFT':       bridge.moveRelative(n, 'LEFT',   args[0] ?? 20); break;
