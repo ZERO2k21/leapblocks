@@ -109,9 +109,9 @@ export default function JuniorMenuBar({
             </button>
 
             {/* Logo */}
-            <div className="flex items-end gap-2 mr-5">
+            <div className="flex items-center gap-2 mr-5">
                 <Logo height={44} />
-                <span className="text-[#FFD500] text-xs font-extrabold uppercase tracking-wider mb-[15px]">
+                <span className="text-[#FFD500] text-xs font-extrabold uppercase tracking-wider">
                     JUNIOR
                 </span>
             </div>
@@ -180,7 +180,7 @@ export default function JuniorMenuBar({
                 {/* Sign In Button / Profile */}
                 <button className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer text-white font-semibold text-sm p-0">
                     <div className="w-7 h-7 bg-[#FFD166] rounded-full flex items-center justify-center text-base border-2 border-white">
-                        🐻
+                        <span style={{ color: '#5A2D82' }}></span>
                     </div>
                     Sign In
                 </button>

@@ -119,7 +119,7 @@ type AppMode = 'home' | 'blocks' | 'python' | 'notebook' | 'ml' | 'xr';
 // Editor sub-mode for blocks: stage (animation) or upload (hardware)
 type EditorMode = 'stage' | 'upload';
 
-const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void }> = ({ onBack, onOpenPython }) => {
+const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void; openTab?: 'blocks' | 'python' | 'costumes' | 'sounds' }> = ({ onBack, onOpenPython, openTab = 'blocks' }) => {
     // ═══════════════════════════════════════════════════════════════════════
     // STATE
     // ═══════════════════════════════════════════════════════════════════════
@@ -131,9 +131,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
     const [projectName, setProjectName] = useState('My Project');
     const [generatedCode, setGeneratedCode] = useState<string>('// Select blocks to generate code');
     const [activeTab, setActiveTab] = useState<'log' | 'serial'>('log');
-    const [workspaceTab, setWorkspaceTab] = useState<'blocks' | 'python' | 'costumes' | 'sounds'>('blocks');
+    const [workspaceTab, setWorkspaceTab] = useState<'blocks' | 'python' | 'costumes' | 'sounds'>(openTab);
     const [logMessages, setLogMessages] = useState<string[]>(['Ready']);
     const [isRunning, setIsRunning] = useState(false);
+
+    useEffect(() => {
+        if (openTab && openTab !== workspaceTab) {
+            setWorkspaceTab(openTab);
+        }
+    }, [openTab]);
 
     // Sprites
     const [sprites, setSprites] = useState<Sprite[]>([]);
@@ -2121,36 +2127,16 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void 
                         </button>
                         <button
                             style={workspaceTab === 'python' ? styles.tabActive : styles.tab}
-                            onClick={() => handleWorkspaceTabChange('python')}
+                            onClick={() => {
+                                if (onOpenPython) {
+                                    onOpenPython();
+                                } else {
+                                    handleWorkspaceTabChange('python');
+                                }
+                            }}
                         >
                             <Terminal size={18} color={workspaceTab === 'python' ? '#855CD6' : '#999'} /> Python
                         </button>
-                        <button
-                            onClick={() => setAppMode('python')}
-                            style={{
-                                padding: '8px 14px',
-                                background: 'linear-gradient(135deg, #3776ab, #ffd343)',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                fontWeight: 600,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                marginLeft: '8px',
-                                marginBottom: '10px',
-                                boxShadow: '0 2px 4px rgba(55, 118, 171, 0.3)',
-                                transition: 'all 0.15s',
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-                            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-                            title="Open Full Python IDE"
-                        >
-                            🐍 Open Python IDE
-                        </button>
-                        <div style={{ width: '1px', height: '20px', background: '#ddd', margin: '0 8px 10px 8px' }} />
                         <button
                             style={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
                             onClick={() => handleWorkspaceTabChange('costumes')}

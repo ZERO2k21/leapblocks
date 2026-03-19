@@ -324,7 +324,7 @@ const PIP_PACKAGES = [
 ];
 
 // ─── Main Component ────────────────────────────────────────────────────────────
-function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks }) {
+function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCostumes }) {
     // Get shared stage state from context
     const {
         sprites,
@@ -1076,31 +1076,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks }) {
                         <span style={{ fontSize: 18, fontWeight: "bold", letterSpacing: "-0.5px" }}>LeapBlocks</span>
                     </div>
                     <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)" }} />
-                    {/* Switch to Blocks Button */}
-                    {onSwitchToBlocks && (
-                        <button
-                            onClick={onSwitchToBlocks}
-                            title="Switch to Blocks Editor"
-                            style={{
-                                padding: "5px 12px",
-                                background: "linear-gradient(135deg, #855CD6, #5A2D82)",
-                                color: "#fff",
-                                border: "1px solid rgba(255,255,255,0.3)",
-                                borderRadius: 6,
-                                cursor: "pointer",
-                                fontSize: 11,
-                                fontWeight: 600,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                                transition: "all 0.15s",
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-                            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-                        >
-                            🧩 Switch to Blocks
-                        </button>
-                    )}
+                
                     {["File", "Edit", "Tutorials", "Board", "Connect"].map(m => (
                         <span key={m} style={{ fontSize: 12, cursor: "pointer", opacity: 0.9, padding: "4px 8px", borderRadius: 4 }}
                             onMouseEnter={e => { e.target.style.background = "rgba(255,255,255,0.15)"; e.target.style.opacity = 1; }}
@@ -1152,15 +1128,29 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     {/* Blocks/Python tabs */}
                     <div style={{ display: "flex", background: "#E8E8E8", borderRadius: 4, overflow: "hidden" }}>
-                        <div style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRight: "1px solid #ddd" }}>Blocks</div>
+                        <div
+                            onClick={() => {
+                                if (onSwitchToBlocks) {
+                                    onSwitchToBlocks();
+                                }
+                            }}
+                            style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRight: "1px solid #ddd" }}
+                        >Blocks</div>
                         <div style={{ padding: "6px 14px", background: "#6B46C1", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Python</div>
                     </div>
                     <div style={{ width: 1, height: 20, background: C.BORDER }} />
-                    {/* Costumes/Sounds tabs */}
                     <div style={{ display: "flex", background: "#E8E8E8", borderRadius: 4, overflow: "hidden" }}>
-                        <div style={{ padding: "6px 14px", background: "#6B46C1", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Costumes</div>
-                        <div style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRight: "1px solid #ddd" }}>Sounds</div>
+                        <div
+                            onClick={() => {
+                                if (onSwitchToCostumes) {
+                                    onSwitchToCostumes();
+                                }
+                            }}
+                            style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRight: "1px solid #ddd" }}
+                        >Costumes</div>
+                        <div style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Sounds</div>
                     </div>
+                    <div style={{ width: 1, height: 20, background: C.BORDER }} />
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     {/* Editing tools */}
