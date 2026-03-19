@@ -19,8 +19,16 @@ const C = {
     HEADER_BG: "#8B5CF6",
 };
 
-export default function SpriteLibraryModal({ showSpriteLibrary, setShowSpriteLibrary, SPRITE_LIBRARY, addSpriteFromLibrary }) {
+export default function SpriteLibraryModal({
+    showSpriteLibrary,
+    setShowSpriteLibrary,
+    SPRITE_LIBRARY,
+    onSelectEntry,
+    libraryMode = "sprite",
+}) {
     if (!showSpriteLibrary) return null;
+
+    const title = libraryMode === "costume" ? "Choose a Costume" : "Choose a Sprite";
 
     return (
         <div style={{
@@ -55,7 +63,7 @@ export default function SpriteLibraryModal({ showSpriteLibrary, setShowSpriteLib
                     justifyContent: 'space-between',
                     alignItems: 'center',
                 }}>
-                    Choose a Sprite
+                    {title}
                     <div
                         onClick={() => setShowSpriteLibrary(false)}
                         style={{ cursor: 'pointer', fontSize: '20px', fontWeight: 'bold' }}
@@ -71,7 +79,7 @@ export default function SpriteLibraryModal({ showSpriteLibrary, setShowSpriteLib
                             <div 
                                 key={sp.name} 
                                 onClick={() => {
-                                    addSpriteFromLibrary(sp);
+                                    onSelectEntry?.(sp);
                                     setShowSpriteLibrary(false);
                                 }}
                                 style={{

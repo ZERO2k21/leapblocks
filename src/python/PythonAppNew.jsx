@@ -119,6 +119,35 @@ const BACKDROP_LIBRARY = [
     { name: 'Castle', img: '/assets/backdrops/Castle.png', id: 'castle' },
     { name: 'Galaxy', img: '/assets/backdrops/Space.png', id: 'galaxy' },
 ];
+
+const getFileBaseName = (fileName = "") => fileName.replace(/\.[^/.]+$/, "").toLowerCase();
+
+const resolveWorkflowMode = (fileName, spriteList = []) => {
+    const baseName = getFileBaseName(fileName);
+    if (!baseName) return "mixed";
+    if (baseName === "stage") return "stage";
+
+    const matchesSpriteFile = spriteList.some((sprite) => sprite?.name?.toLowerCase() === baseName);
+    if (matchesSpriteFile || baseName.includes("robot") || baseName.includes("tobi")) {
+        return "sprite";
+    }
+
+    return "mixed";
+};
+
+const getLibraryEntrySources = (entry) => {
+    if (Array.isArray(entry?.costumes) && entry.costumes.length > 0) {
+        return entry.costumes;
+    }
+
+    return [entry?.img || entry?.image || entry?.emoji].filter(Boolean);
+};
+
+const toCostumeKey = (label = "costume") => {
+    const sanitized = label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    return sanitized || "costume";
+};
+
 const EXTENSIONS = [
     { id: 'music',   name: 'Music',            icon: '🎵', desc: 'Play notes and instruments', code: '# Music\nfrom music import play_note' },
     { id: 'pen',     name: 'Pen',              icon: '✏', desc: 'Draw lines on stage canvas',  code: '# Pen\nfrom pen import pen_down, pen_up' },
@@ -308,6 +337,21 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
     const [sidePanel, setSidePanel] = useState("files");
     const [spriteFilter, setSpriteFilter] = useState("");
     const [installedExtensions, setInstalledExtensions] = useState([]);
+    const activeWorkflowMode = resolveWorkflowMode(activeFile, sprites);
+
+    // Switch side panel based on the selected project file.
+    useEffect(() => {
+        if (activeWorkflowMode === "stage") {
+            setSidePanel("backdrops");
+            setStageView("stage");
+        } else if (activeWorkflowMode === "sprite") {
+            setSidePanel("sprites");
+            setStageView("sprites");
+        } else {
+            setSidePanel("files");
+            setStageView("stage");
+        }
+    }, [activeWorkflowMode]);
 
     // Modal state
     const [modalState, setModalState] = useState({
@@ -321,9 +365,22 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
     
     // Sprite Library Modal state
     const [showSpriteLibrary, setShowSpriteLibrary] = useState(false);
+    const [showBackdropLibrary, setShowBackdropLibrary] = useState(false);
 
     // Engine ref
     const skulptRef = useRef(null);
+
+    useEffect(() => {
+        if (activeWorkflowMode !== "sprite") return;
+
+        const matchingSprite = sprites.find(
+            (sprite) => sprite?.name?.toLowerCase() === getFileBaseName(activeFile)
+        );
+
+        if (matchingSprite && matchingSprite.id !== selectedSpriteId) {
+            setSelectedSpriteId(matchingSprite.id);
+        }
+    }, [activeFile, activeWorkflowMode, selectedSpriteId, sprites]);
 
     // ── Helpers ──────────────────────────────────────────────────────────────
     const addLog = useCallback((text, type = "log") => {
@@ -826,35 +883,201 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
         addLog('Added sprite: ' + sp.name, 'success');
         setSidePanel('files');
     };
+
+    const getTargetSpriteForCostume = useCallback(() => {
+        const spriteFromFile = sprites.find(
+            (sprite) => sprite?.name?.toLowerCase() === getFileBaseName(activeFile)
+        );
+
+        if (spriteFromFile) return spriteFromFile;
+        if (selectedSpriteId) {
+            const selected = sprites.find((sprite) => sprite.id === selectedSpriteId);
+            if (selected) return selected;
+        }
+
+        return sprites[0] || null;
+    }, [activeFile, selectedSpriteId, sprites]);
+
+    const addCostumeFromLibrary = useCallback((entry) => {
+        const targetSprite = getTargetSpriteForCostume();
+        if (!targetSprite) {
+            addLog("Select a sprite file before adding a costume.", "error");
+            return;
+        }
+
+        const costumeSources = getLibraryEntrySources(entry);
+        if (costumeSources.length === 0) {
+            addLog("Selected costume has no usable preview.", "error");
+            return;
+        }
+
+        const costumeBaseKey = toCostumeKey(entry.name);
+        let nextCurrentCostume = targetSprite.currentCostume || "default";
+
+        setSprites((prev) =>
+            prev.map((sprite) => {
+                if (sprite.id !== targetSprite.id) return sprite;
+
+                const nextCostumes = { ...(sprite.costumes || {}) };
+                costumeSources.forEach((source, index) => {
+                    const rawKey = index === 0 ? costumeBaseKey : `${costumeBaseKey}_${index + 1}`;
+                    let candidateKey = rawKey;
+                    let duplicateIndex = 2;
+
+                    while (nextCostumes[candidateKey]) {
+                        candidateKey = `${rawKey}_${duplicateIndex}`;
+                        duplicateIndex += 1;
+                    }
+
+                    nextCostumes[candidateKey] = source;
+                    nextCurrentCostume = candidateKey;
+                });
+
+                return {
+                    ...sprite,
+                    costumes: nextCostumes,
+                    currentCostume: nextCurrentCostume,
+                };
+            })
+        );
+
+        setSelectedSpriteId(targetSprite.id);
+        addLog(`Added costume to ${targetSprite.name}: ${entry.name}`, "success");
+    }, [addLog, getTargetSpriteForCostume]);
+
+    const openAssetLibrary = useCallback((mode) => {
+        if (mode === "backdrop") {
+            setShowSpriteLibrary(false);
+            setShowBackdropLibrary(true);
+            setSidePanel("backdrops");
+            return;
+        }
+
+        setShowBackdropLibrary(false);
+
+        if (mode === "costume") {
+            const targetSprite = getTargetSpriteForCostume();
+            if (!targetSprite) {
+                addLog("Select a sprite file before adding a costume.", "error");
+                return;
+            }
+
+            setSelectedSpriteId(targetSprite.id);
+            setSidePanel("sprites");
+        }
+
+        setShowSpriteLibrary(true);
+    }, [addLog, getTargetSpriteForCostume]);
+
+    const handleSpriteLibrarySelect = useCallback((entry) => {
+        if (activeWorkflowMode === "sprite") {
+            addCostumeFromLibrary(entry);
+            return;
+        }
+
+        addSpriteFromLibrary(entry);
+    }, [activeWorkflowMode, addCostumeFromLibrary, addSpriteFromLibrary]);
+
     // Backdrop
-    const handleSetBackdrop = (bd) => { setBackdropImg(bd.img || null); addLog('Backdrop: ' + bd.name, 'success'); setSidePanel('files'); };
+    const handleSetBackdrop = (bd) => {
+        setBackdropImg(bd.img || bd.image || null);
+        setShowBackdropLibrary(false);
+        addLog('Backdrop: ' + bd.name, 'success');
+        setSidePanel(activeWorkflowMode === "stage" ? 'backdrops' : 'files');
+    };
+
+    const openFilePicker = (accept, onSelect) => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = accept;
+        input.onchange = (event) => {
+            const file = event.target.files?.[0];
+            if (file) onSelect(file);
+        };
+        input.click();
+    };
+
+    const readTextFile = (file, onLoad) => {
+        const reader = new FileReader();
+        reader.onload = (event) => onLoad(String(event.target?.result || ""));
+        reader.readAsText(file);
+    };
+
+    const buildAssetPlaceholder = (file, kind) => [
+        `# Imported ${kind} asset`,
+        `name = "${file.name}"`,
+        `mime_type = "${file.type || "unknown"}"`,
+        `size_bytes = ${file.size}`,
+        "",
+        `# Uploaded from the LeapBlocks Python IDE upload menu.`,
+        `# Replace this placeholder with the asset loading code you need.`,
+    ].join("\n");
+
+    const importPlainTextFile = (accept, successLabel) => {
+        openFilePicker(accept, (file) => {
+            readTextFile(file, (content) => {
+                setProjectFiles((prev) => ({ ...prev, [file.name]: content }));
+                setActiveFile(file.name);
+                setSidePanel("files");
+                addLog(`${successLabel}: ${file.name}`, "success");
+            });
+        });
+    };
+
+    const importBinaryAsset = (accept, kind) => {
+        openFilePicker(accept, (file) => {
+            setProjectFiles((prev) => ({
+                ...prev,
+                [file.name]: buildAssetPlaceholder(file, kind),
+            }));
+            setActiveFile(file.name);
+            setSidePanel("files");
+            addLog(`${kind} uploaded: ${file.name}`, "success");
+        });
+    };
+
     // CSV Upload
     const handleCSVUpload = () => {
-        const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.csv';
-        inp.onchange = (e) => {
-            const file = e.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                const fname = file.name.replace('.csv', '') + '_reader.py';
-                const snippet = "import csv\n\n# Auto-generated reader for: " + file.name + "\nrows = []\nfor row in '" + file.name + "'.split(','):\n    rows.append(row)\nprint('Loaded', len(rows), 'items')\n";
-                setProjectFiles(prev => ({ ...prev, [fname]: snippet }));
-                setActiveFile(fname);
-                addLog('CSV uploaded: ' + file.name, 'success');
-            };
-            reader.readAsText(file);
-        };
-        inp.click();
+        openFilePicker(".csv", (file) => {
+            readTextFile(file, (content) => {
+                const helperName = file.name.replace(/\.csv$/i, "") + "_reader.py";
+                const snippet =
+                    `import csv\n\n` +
+                    `CSV_FILE = "${file.name}"\n\n` +
+                    `print("CSV uploaded:", CSV_FILE)\n` +
+                    `print("Open ${file.name} in the file list to inspect the raw data.")\n`;
+
+                setProjectFiles((prev) => ({
+                    ...prev,
+                    [file.name]: content,
+                    [helperName]: snippet,
+                }));
+                setActiveFile(helperName);
+                setSidePanel("files");
+                addLog("CSV uploaded: " + file.name, "success");
+            });
+        });
     };
+
+    const handleTextUpload = () => {
+        importPlainTextFile(".txt,text/plain", "Text uploaded");
+    };
+
+    const handleImageUpload = () => {
+        importBinaryAsset("image/*,.svg", "Photo");
+    };
+
+    const handleVideoUpload = () => {
+        importBinaryAsset("video/*,.mp4,.mov,.avi,.mkv,.webm", "Video");
+    };
+
+    const handleAudioUpload = () => {
+        importBinaryAsset("audio/*,.mp3,.wav,.ogg,.m4a", "Audio");
+    };
+
     // Python Upload
     const handlePythonUpload = () => {
-        const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.py';
-        inp.onchange = (e) => {
-            const file = e.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => { setProjectFiles(prev => ({ ...prev, [file.name]: ev.target.result })); setActiveFile(file.name); addLog('Imported: ' + file.name, 'success'); };
-            reader.readAsText(file);
-        };
-        inp.click();
+        importPlainTextFile(".py", "Python imported");
     };
     // Extension install
     const installExtension = (ext) => {
@@ -923,8 +1146,11 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
                 <ActivityBar 
                     sidePanel={sidePanel}
                     setSidePanel={setSidePanel}
-                    setShowSpriteLibrary={setShowSpriteLibrary}
                     onCSVUpload={handleCSVUpload}
+                    onTextUpload={handleTextUpload}
+                    onImageUpload={handleImageUpload}
+                    onVideoUpload={handleVideoUpload}
+                    onAudioUpload={handleAudioUpload}
                     onPythonUpload={handlePythonUpload}
                 />
 
@@ -933,16 +1159,19 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
                     sidePanel={sidePanel}
                     projectFiles={projectFiles}
                     activeFile={activeFile}
+                    assetMode={activeWorkflowMode === "sprite" ? "costume" : "sprite"}
                     setActiveFile={setActiveFile}
                     handleAddFile={handleAddFile}
                     handleDeleteFile={handleDeleteFile}
                     spriteFilter={spriteFilter}
                     setSpriteFilter={setSpriteFilter}
                     addSpriteFromLibrary={addSpriteFromLibrary}
+                    handleSpriteAssetSelect={handleSpriteLibrarySelect}
                     SPRITE_LIBRARY={SPRITE_LIBRARY}
                     BACKDROP_LIBRARY={BACKDROP_LIBRARY}
                     backdrop={backdrop}
                     handleSetBackdrop={handleSetBackdrop}
+                    onOpenAssetLibrary={openAssetLibrary}
                     EXTENSIONS={EXTENSIONS}
                     installedExtensions={installedExtensions}
                     installExtension={installExtension}
@@ -984,6 +1213,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
 
                 {/* ── STAGE PANEL ── */}
                 <StagePanel 
+                    activeFile={activeFile}
                     stageView={stageView}
                     setStageView={setStageView}
                     sprites={sprites}
@@ -992,7 +1222,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
                     backdrop={backdrop}
                     stageRef={stageRef}
                     stageSize={stageSize}
-                    setShowSpriteLibrary={setShowSpriteLibrary}
+                    onOpenAssetLibrary={openAssetLibrary}
                     updateSpriteProperty={updateSpriteProperty}
                     resetStage={resetStage}
                     BACKDROP_LIBRARY={BACKDROP_LIBRARY}
@@ -1014,7 +1244,14 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
                 showSpriteLibrary={showSpriteLibrary}
                 setShowSpriteLibrary={setShowSpriteLibrary}
                 SPRITE_LIBRARY={SPRITE_LIBRARY}
-                addSpriteFromLibrary={addSpriteFromLibrary}
+                libraryMode={activeWorkflowMode === "sprite" ? "costume" : "sprite"}
+                onSelectEntry={handleSpriteLibrarySelect}
+            />
+
+            <BackdropLib
+                isOpen={showBackdropLibrary}
+                onClose={() => setShowBackdropLibrary(false)}
+                onSelectBackdrop={handleSetBackdrop}
             />
         </div>
     );

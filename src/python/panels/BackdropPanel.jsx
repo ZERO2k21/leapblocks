@@ -1,4 +1,5 @@
 import React from "react";
+import { Plus } from "lucide-react";
 
 // ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
 const C = {
@@ -19,11 +20,29 @@ const C = {
     HEADER_BG: "#8B5CF6",
 };
 
-export default function BackdropPanel({ BACKDROP_LIBRARY, backdrop, handleSetBackdrop }) {
+export default function BackdropPanel({ BACKDROP_LIBRARY, backdrop, handleSetBackdrop, onBrowseBackdrops }) {
     return (
         <>
-            <div style={{padding:"10px 12px 6px"}}>
+            <div style={{padding:"10px 12px 6px", display: "flex", alignItems: "center", justifyContent: "space-between"}}>
                 <span style={{fontSize:11,fontWeight:700,color:C.MUTED,letterSpacing:"0.08em"}}>BACKDROPS</span>
+                <button
+                    onClick={onBrowseBackdrops}
+                    title="Browse Backdrops"
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: C.PURPLE,
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "2px 4px",
+                    }}
+                >
+                    <Plus size={12} /> Add
+                </button>
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"0 8px 8px"}}>
                 {BACKDROP_LIBRARY.map(bd=>(
