@@ -29,10 +29,12 @@ export default function StagePanel({
     handleSetBackdrop,
     deleteSprite,
 }) {
+    const [showSprites, setShowSprites] = React.useState(true);
+    const [showBackdrops, setShowBackdrops] = React.useState(true);
     const selectedSprite = sprites.find((sprite) => sprite.id === selectedSpriteId) || sprites[0] || null;
 
     return (
-        <div style={{ width: 380, display: "flex", flexDirection: "column", borderLeft: `1px solid ${C.BORDER}`, background: "#fff", flexShrink: 0 }}>
+        <div style={{ width: 380, display: "flex", flexDirection: "column", borderLeft: `1px solid ${C.BORDER}`, background: "#fff", flexShrink: 0, minHeight: 0, overflowY: "auto" }}>
             <div style={{ padding: "12px", borderBottom: `1px solid ${C.BORDER}` }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.MUTED, marginBottom: 8, letterSpacing: "0.04em", textTransform: "uppercase" }}>
                     Stage
@@ -56,32 +58,39 @@ export default function StagePanel({
             />
 
             <div style={{ borderTop: `1px solid ${C.BORDER}`, padding: "12px", display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }} onClick={() => setShowSprites(prev => !prev)}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: C.MUTED, letterSpacing: "0.04em", textTransform: "uppercase" }}>
                         Sprites
                     </span>
-                    <button
-                        onClick={() => setShowSpriteLibrary(true)}
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            padding: "6px 10px",
-                            border: "none",
-                            borderRadius: 6,
-                            background: C.PURPLE,
-                            color: "#fff",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                        }}
-                    >
-                        <Plus size={12} />
-                        Add Sprite
-                    </button>
+                    <span style={{ fontSize: 11, color: C.MUTED }}>{showSprites ? "▼" : "►"}</span>
                 </div>
 
-                <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+                {showSprites && (
+                    <>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 11, color: C.MUTED }}>&nbsp;</span>
+                            <button
+                                onClick={() => setShowSpriteLibrary(true)}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    padding: "6px 10px",
+                                    border: "none",
+                                    borderRadius: 6,
+                                    background: C.PURPLE,
+                                    color: "#fff",
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                }}
+                            >
+                                <Plus size={12} />
+                                Add Sprite
+                            </button>
+                        </div>
+
+                        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
                     {sprites.map((sprite) => {
                         const preview = getSpritePreview(sprite);
                         const isSelected = sprite.id === selectedSpriteId;
@@ -137,12 +146,13 @@ export default function StagePanel({
                                     height: 56, 
                                     borderRadius: 8, 
                                     background: isSelected ? "#EDE9FE" : "#fff", 
-                                    border: `2px solid ${isSelected ? C.PURPLE : C.BORDER}`, 
+                                    border: isSelected ? `2px solid ${C.PURPLE}` : "2px solid transparent", 
                                     display: "flex", 
                                     alignItems: "center", 
                                     justifyContent: "center", 
                                     overflow: "hidden",
-                                    boxShadow: isSelected ? `0 0 0 2px ${C.PURPLE}40` : "none"
+                                    boxShadow: isSelected ? `0 0 0 2px ${C.PURPLE}40` : "none",
+                                    transition: "box-shadow 0.2s ease, border 0.2s ease",
                                 }}>
                                     {preview ? (
                                         <img src={preview} alt={sprite.name} style={{ width: "90%", height: "90%", objectFit: "contain" }} />
@@ -173,17 +183,23 @@ export default function StagePanel({
                         );
                     })}
                 </div>
+                    </>
+                )}
             </div>
 
             <div style={{ borderTop: `1px solid ${C.BORDER}`, padding: "12px", display: "flex", flexDirection: "column", gap: 8, minHeight: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div
+                    onClick={() => setShowBackdrops(prev => !prev)}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
+                >
                     <span style={{ fontSize: 12, fontWeight: 700, color: C.MUTED, letterSpacing: "0.04em", textTransform: "uppercase" }}>
                         Backdrops
                     </span>
-                    <span style={{ fontSize: 11, color: C.MUTED }}>{BACKDROP_LIBRARY.length}</span>
+                    <span style={{ fontSize: 11, color: C.MUTED }}>{showBackdrops ? "▼" : "►"}</span>
                 </div>
 
-                <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+                {showBackdrops && (
+                    <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
                     {BACKDROP_LIBRARY.map((backdropEntry) => {
                         const isSelected = backdrop === (backdropEntry.img || null);
 
@@ -215,6 +231,7 @@ export default function StagePanel({
                         );
                     })}
                 </div>
+                )}
             </div>
         </div>
     );

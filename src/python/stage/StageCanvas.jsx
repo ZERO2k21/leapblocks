@@ -49,7 +49,7 @@ const pixelToScratch = (pixelX, pixelY, stageW, stageH, spriteSize = 60) => {
 };
 
 // Simple sprite renderer for Python IDE
-const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight }) => {
+const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight, isDragging, setIsDragging, setDraggingSpriteId, draggingSpriteId }) => {
     const scratchX = sprite.position?.x ?? sprite.x ?? 0;
     const scratchY = sprite.position?.y ?? sprite.y ?? 0;
     const angle = sprite.direction ?? sprite.angle ?? 0;
@@ -69,9 +69,16 @@ const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight }
     
     if (!isVisible) return null;
     
+    const handleMouseDown = (e) => {
+        e.stopPropagation();
+        setIsDragging(true);
+        setDraggingSpriteId(sprite.id);
+    };
+
     return (
         <div
             onClick={onClick}
+            onMouseDown={handleMouseDown}
             style={{
                 position: 'absolute',
                 left: pixelX,
@@ -83,8 +90,10 @@ const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight }
                 justifyContent: 'center',
                 cursor: 'pointer',
                 transform: `rotate(${angle}deg) scale(${size / 100})`,
-                zIndex: isSelected ? 20 : 10,
-                filter: isSelected ? 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.8))' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
+                zIndex: isSelected || (isDragging && draggingSpriteId === sprite.id) ? 20 : 10,
+                filter: isSelected || (isDragging && draggingSpriteId === sprite.id)
+                    ? 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.8))'
+                    : 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
                 transition: 'all 0.2s ease',
             }}
         >
@@ -132,9 +141,18 @@ const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight }
 };
 
 export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpriteId, backdrop, stageRef, stageSize }) {
+    // Dragging state for sprite highlight on drag
+    const [draggingSpriteId, setDraggingSpriteId] = React.useState(null);
+    const [isDragging, setIsDragging] = React.useState(false);
+
     // Use stageSize from props or default to 356x240
     const stageWidth = stageSize?.w || 356;
     const stageHeight = stageSize?.h || 240;
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+        setDraggingSpriteId(null);
+    };
     
     return (
         <div 
@@ -147,6 +165,8 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
                 borderRadius: 8
             }}
             ref={stageRef}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
         >
             {/* Backdrop image */}
             {backdrop && (
@@ -180,6 +200,10 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
                         onClick={() => setSelectedSpriteId(sp.id)}
                         stageWidth={stageWidth}
                         stageHeight={stageHeight}
+                        isDragging={isDragging}
+                        setIsDragging={setIsDragging}
+                        setDraggingSpriteId={setDraggingSpriteId}
+                        draggingSpriteId={draggingSpriteId}
                     />
                 ))}
                 

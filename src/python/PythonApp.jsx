@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StageProvider, useStage } from "../context/StageContext";
+import Logo from "../components/Logo";
 
 // ─── CSS Animations ───────────────────────────────────────────────────────────
 const animationStyles = document.createElement('style');
@@ -1064,16 +1065,24 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             fontFamily: "'Inter', 'Segoe UI', sans-serif",
         }}>
 
-            {/* ══ TOPBAR (PictoBlox Style) ══════════════════════════════════════ */}
+            {/* ══ TOPBAR (Junior/Intermediate style) ══════════════════════════════════════ */}
             <header style={{
-                height: 44, background: "#6B46C1", display: "flex",
-                alignItems: "center", padding: "0 12px",
-                justifyContent: "space-between", color: "#fff", zIndex: 100,
+                position: "sticky",
+                top: 0,
+                height: 44,
+                background: "linear-gradient(180deg, #7B4FC4 0%, #5A2D82 100%)",
+                display: "flex",
+                alignItems: "center",
+                padding: "0 12px",
+                justifyContent: "space-between",
+                color: "#fff",
+                zIndex: 100,
                 flexShrink: 0,
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }} onClick={onBack}>
-                        <span style={{ fontSize: 18, fontWeight: "bold", letterSpacing: "-0.5px" }}>LeapBlocks</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={onBack}>
+                        <Logo height={34} />
+                        <span style={{ color: "#FFD500", fontSize: 14, fontWeight: 800, letterSpacing: "0.08em" }}>PYTHON</span>
                     </div>
                     <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)" }} />
                 
@@ -1120,9 +1129,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
             {/* ══ SECOND TOOLBAR (PictoBlox Style) ══════════════════════════════ */}
             <div style={{
+                position: "sticky",
+                top: 44,
                 height: 42, background: "#fff", display: "flex",
                 alignItems: "center", padding: "0 12px",
                 justifyContent: "space-between", borderBottom: `1px solid ${C.BORDER}`,
+                zIndex: 90,
                 flexShrink: 0,
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -1262,7 +1274,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             </div>
 
             {/* ══ MAIN WORKSPACE ═══════════════════════════════════════════════ */}
-            <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+            <div style={{ flex: 1, display: "flex", overflow: "auto", minHeight: 0 }}>
 
                 {/* ── GUIDE PANEL (slide in from right) ── */}
                 {showGuide && (
