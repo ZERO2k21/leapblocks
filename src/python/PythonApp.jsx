@@ -1361,6 +1361,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
                 {/* ── LEFT SIDEBAR (PictoBlox Style) ── */}
                 <SidePanel 
+                    sidePanel={sidePanel}
+                    setSidePanel={setSidePanel}
                     projectFiles={projectFiles}
                     activeFile={activeFile}
                     setActiveFile={setActiveFile}
@@ -1369,6 +1371,20 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     handleAddTextFiles={handleAddTextFiles}
                     handleAddCsvFiles={handleAddCsvFiles}
                     handleDeleteFile={handleDeleteFile}
+                    spriteFilter={spriteFilter}
+                    setSpriteFilter={setSpriteFilter}
+                    addSpriteFromLibrary={addSpriteFromLibrary}
+                    SPRITE_LIBRARY={SPRITE_LIBRARY}
+                    BACKDROP_LIBRARY={BACKDROP_LIBRARY}
+                    backdrop={backdrop}
+                    handleSetBackdrop={handleSetBackdrop}
+                    EXTENSIONS={EXTENSIONS}
+                    installedExtensions={installedExtensions}
+                    installExtension={installExtension}
+                    packages={packages}
+                    pipFilter={pipFilter}
+                    setPipFilter={setPipFilter}
+                    handleInstall={handleInstall}
                 />
 
                 {/* ── EDITOR + TERMINAL ── */}

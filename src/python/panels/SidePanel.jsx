@@ -12,9 +12,10 @@ import {
     Cpu,
     Wifi,
     Wrench,
+    ArrowLeft,
 } from "lucide-react";
 import BackdropPanel from "./BackdropPanel";
-import FileAddMenu from "./FileAddMenu";
+import FileAddMenu, { PythonSessionActionMenu } from "./FileAddMenu";
 
 const C = {
     PURPLE: "#8B5CF6",
@@ -36,6 +37,8 @@ function FilesPanel({
     handleAddTextFiles,
     handleAddCsvFiles,
     handleDeleteFile,
+    onOpenPipPanel,
+    onOpenExtensionsPanel,
 }) {
     return (
         <>
@@ -111,6 +114,10 @@ function FilesPanel({
                     ))}
                 </div>
 
+                <PythonSessionActionMenu
+                    onOpenPipPanel={onOpenPipPanel}
+                    onOpenExtensionsPanel={onOpenExtensionsPanel}
+                />
                 <FileAddMenu
                     onAddPythonFiles={handleAddPythonFiles}
                     onAddImageFiles={handleAddImageFiles}
@@ -305,10 +312,39 @@ function SpritesPanel({
     );
 }
 
-function ExtensionsPanel({ EXTENSIONS, installedExtensions, installExtension }) {
+function PanelBackButton({ onClick }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                marginBottom: 8,
+                padding: "4px 8px",
+                borderRadius: 999,
+                border: `1px solid ${C.BORDER}`,
+                background: "#fff",
+                color: C.MUTED,
+                cursor: "pointer",
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+            }}
+        >
+            <ArrowLeft size={12} />
+            Files
+        </button>
+    );
+}
+
+function ExtensionsPanel({ EXTENSIONS, installedExtensions, installExtension, onBackToFiles }) {
     return (
         <>
             <div style={{ padding: "10px 12px 8px", borderBottom: `1px solid ${C.BORDER}` }}>
+                <PanelBackButton onClick={onBackToFiles} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: C.TEXT }}>Extensions</span>
                 <div style={{ fontSize: 11, color: C.MUTED, marginTop: 4 }}>Add capabilities to your project</div>
             </div>
@@ -443,7 +479,7 @@ function PipPackageItem({ pkg, handleInstall }) {
     );
 }
 
-function PipPanel({ packages, pipFilter, setPipFilter, handleInstall }) {
+function PipPanel({ packages, pipFilter, setPipFilter, handleInstall, onBackToFiles }) {
     const filteredPackages = packages.filter(
         (pkg) =>
             pkg.name.toLowerCase().includes(pipFilter.toLowerCase()) ||
@@ -456,6 +492,7 @@ function PipPanel({ packages, pipFilter, setPipFilter, handleInstall }) {
     return (
         <>
             <div style={{ padding: "10px 12px 8px", borderBottom: `1px solid ${C.BORDER}` }}>
+                <PanelBackButton onClick={onBackToFiles} />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: C.TEXT }}>PIP Packages</span>
                     <span style={{ fontSize: 10, color: C.MUTED }}>
@@ -529,6 +566,7 @@ function PipPanel({ packages, pipFilter, setPipFilter, handleInstall }) {
 
 export default function SidePanel({
     sidePanel = "files",
+    setSidePanel,
     projectFiles,
     activeFile,
     assetMode = "sprite",
@@ -577,6 +615,8 @@ export default function SidePanel({
                     handleAddTextFiles={handleAddTextFiles}
                     handleAddCsvFiles={handleAddCsvFiles}
                     handleDeleteFile={handleDeleteFile}
+                    onOpenPipPanel={() => setSidePanel?.("pip")}
+                    onOpenExtensionsPanel={() => setSidePanel?.("extensions")}
                 />
             )}
 
@@ -608,6 +648,7 @@ export default function SidePanel({
                     EXTENSIONS={EXTENSIONS}
                     installedExtensions={installedExtensions}
                     installExtension={installExtension}
+                    onBackToFiles={() => setSidePanel?.("files")}
                 />
             )}
 
@@ -617,6 +658,7 @@ export default function SidePanel({
                     pipFilter={pipFilter}
                     setPipFilter={setPipFilter}
                     handleInstall={handleInstall}
+                    onBackToFiles={() => setSidePanel?.("files")}
                 />
             )}
         </div>

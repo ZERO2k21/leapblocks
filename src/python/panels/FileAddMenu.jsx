@@ -3,6 +3,7 @@ import React, { useEffect, useId, useRef, useState } from "react";
 const MENU_COLOR = "#855CD6";
 const TOOLTIP_COLOR = "#222";
 const BUTTON_SHADOW = "0 10px 22px rgba(91, 63, 168, 0.28), 0 4px 10px rgba(15, 23, 42, 0.14)";
+const CLOSE_DELAY_MS = 1000;
 
 function MainAddIcon() {
     return (
@@ -66,16 +67,44 @@ function CsvFileIcon() {
     );
 }
 
-function Tooltip({ label, visible, style }) {
+function SessionActionIcon() {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 40 40" style={{ width: 24, height: 24, fill: "currentColor" }}>
+            <path d="M11 10.2c0-1.2 1-2.2 2.2-2.2h4.1c1.2 0 2.2 1 2.2 2.2v4.1c0 1.2-1 2.2-2.2 2.2h-4.1c-1.2 0-2.2-1-2.2-2.2v-4.1Zm0 15.5c0-1.2 1-2.2 2.2-2.2h4.1c1.2 0 2.2 1 2.2 2.2v4.1c0 1.2-1 2.2-2.2 2.2h-4.1c-1.2 0-2.2-1-2.2-2.2v-4.1Zm9.6-11.7c0-1.1.9-2 2-2h6.4c1.1 0 2 .9 2 2s-.9 2-2 2h-6.4c-1.1 0-2-.9-2-2Zm0 11.7c0-1.1.9-2 2-2h6.4c1.1 0 2 .9 2 2s-.9 2-2 2h-6.4c-1.1 0-2-.9-2-2Z" />
+        </svg>
+    );
+}
+
+function PipPackageIcon() {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 40 40" style={{ width: 18, height: 18, fill: "currentColor" }}>
+            <path d="M28.3 35.2H11.7c-3 0-5.4-2.4-5.4-5.4V14.7c0-2.1 1.2-3.9 3.1-4.8l8.3-3.7c1.5-.7 3.2-.7 4.7 0l8.3 3.7c1.9.9 3.1 2.7 3.1 4.8v15.1c0 3-2.5 5.4-5.5 5.4Zm-8.3-26c-.4 0-.7.1-1 .2l-8.3 3.7c-.7.3-1.1 1-1.1 1.7v15.1c0 1.2.9 2.1 2.1 2.1h16.6c1.2 0 2.1-.9 2.1-2.1V14.7c0-.7-.4-1.4-1.1-1.7L21 9.4c-.3-.1-.6-.2-1-.2Z" />
+            <path d="M20 28.5c-1 0-1.7-.7-1.7-1.7v-8.2c0-1 .7-1.7 1.7-1.7.9 0 1.6.7 1.6 1.7v8.2c0 1-.7 1.7-1.6 1.7Z" />
+            <path d="M15.5 22.9c0-.9.7-1.6 1.6-1.6h5.8c.9 0 1.6.7 1.6 1.6 0 1-.7 1.7-1.6 1.7h-5.8c-.9 0-1.6-.7-1.6-1.7Z" />
+        </svg>
+    );
+}
+
+function ExtensionIcon() {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 40 40" style={{ width: 18, height: 18, fill: "currentColor" }}>
+            <path d="M24.8 35h-9.6c-2.3 0-4.2-1.9-4.2-4.2v-4.3c0-.8.6-1.4 1.4-1.4h2c1.3 0 2.3-1 2.3-2.3s-1-2.3-2.3-2.3h-2c-.8 0-1.4-.6-1.4-1.4v-4c0-2.3 1.9-4.2 4.2-4.2h4.5c.8 0 1.4.6 1.4 1.4v2c0 1.3 1 2.3 2.3 2.3s2.3-1 2.3-2.3v-2c0-.8.6-1.4 1.4-1.4h4c2.3 0 4.2 1.9 4.2 4.2v9.6c0 2.3-1.9 4.2-4.2 4.2h-4.3c-.8 0-1.4-.6-1.4-1.4v-2c0-1.3-1-2.3-2.3-2.3s-2.3 1-2.3 2.3v2c0 .8-.6 1.4-1.4 1.4Zm-10.6-7.1v2.9c0 .5.4.9.9.9H23v-.8c0-3.1 2.5-5.6 5.6-5.6s5.6 2.5 5.6 5.6v.8h.9c.5 0 .9-.4.9-.9v-9.6c0-.5-.4-.9-.9-.9h-2.6v.6c0 3.1-2.5 5.6-5.6 5.6s-5.6-2.5-5.6-5.6v-.6h-3.1c-.5 0-.9.4-.9.9v2.6h.6c3.1 0 5.6 2.5 5.6 5.6s-2.5 5.6-5.6 5.6h-.6Z" />
+        </svg>
+    );
+}
+
+function Tooltip({ label, visible, placement = "right", style }) {
     if (!visible) {
         return null;
     }
+
+    const isLeft = placement === "left";
 
     return (
         <div
             style={{
                 position: "absolute",
-                left: "calc(100% + 10px)",
+                [isLeft ? "right" : "left"]: "calc(100% + 10px)",
                 top: "50%",
                 transform: "translateY(-50%)",
                 background: TOOLTIP_COLOR,
@@ -94,14 +123,23 @@ function Tooltip({ label, visible, style }) {
             <span
                 style={{
                     position: "absolute",
-                    left: -6,
                     top: "50%",
                     width: 0,
                     height: 0,
                     marginTop: -5,
-                    borderTop: "5px solid transparent",
-                    borderBottom: "5px solid transparent",
-                    borderRight: `6px solid ${TOOLTIP_COLOR}`,
+                    ...(isLeft
+                        ? {
+                              right: -6,
+                              borderTop: "5px solid transparent",
+                              borderBottom: "5px solid transparent",
+                              borderLeft: `6px solid ${TOOLTIP_COLOR}`,
+                          }
+                        : {
+                              left: -6,
+                              borderTop: "5px solid transparent",
+                              borderBottom: "5px solid transparent",
+                              borderRight: `6px solid ${TOOLTIP_COLOR}`,
+                          }),
                 }}
             />
             {label}
@@ -109,28 +147,41 @@ function Tooltip({ label, visible, style }) {
     );
 }
 
-export default function FileAddMenu({
-    onAddPythonFiles,
-    onAddImageFiles,
-    onAddTextFiles,
-    onAddCsvFiles,
+function FloatingActionMenu({
+    mainLabel,
+    mainIcon,
+    actions,
+    positionStyle,
+    tooltipPlacement = "right",
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [hoveredItem, setHoveredItem] = useState(null);
     const rootRef = useRef(null);
+    const closeTimerRef = useRef(null);
     const menuId = useId();
 
-    const actions = [
-        { id: "python", label: "Add a new python file", icon: <PythonFileIcon />, onClick: onAddPythonFiles },
-        { id: "image", label: "Add a new image file", icon: <ImageFileIcon />, onClick: onAddImageFiles },
-        { id: "text", label: "Add a new text file", icon: <TextFileIcon />, onClick: onAddTextFiles },
-        { id: "csv", label: "Add a new CSV file", icon: <CsvFileIcon />, onClick: onAddCsvFiles },
-    ];
+    const clearCloseTimer = () => {
+        if (closeTimerRef.current) {
+            clearTimeout(closeTimerRef.current);
+            closeTimerRef.current = null;
+        }
+    };
 
     const closeMenu = () => {
+        clearCloseTimer();
         setIsOpen(false);
         setHoveredItem(null);
     };
+
+    const scheduleClose = (delay = CLOSE_DELAY_MS) => {
+        clearCloseTimer();
+        closeTimerRef.current = window.setTimeout(() => {
+            setIsOpen(false);
+            setHoveredItem(null);
+        }, delay);
+    };
+
+    useEffect(() => () => clearCloseTimer(), []);
 
     useEffect(() => {
         if (!isOpen) {
@@ -139,7 +190,7 @@ export default function FileAddMenu({
 
         const handlePointerDown = (event) => {
             if (!rootRef.current?.contains(event.target)) {
-                closeMenu();
+                scheduleClose();
             }
         };
 
@@ -156,17 +207,20 @@ export default function FileAddMenu({
         <div
             ref={rootRef}
             style={{
-                position: "absolute",
-                right: 12,
-                bottom: 12,
-                zIndex: 40,
+                    position: "absolute",
+                    ...positionStyle,
+                    zIndex: 40,
+                }}
+            onMouseEnter={clearCloseTimer}
+            onMouseLeave={() => {
+                if (isOpen) {
+                    scheduleClose();
+                }
             }}
-            onMouseEnter={() => setIsOpen(true)}
-            onMouseLeave={closeMenu}
-            onFocusCapture={() => setIsOpen(true)}
+            onFocusCapture={clearCloseTimer}
             onBlurCapture={(event) => {
                 if (!event.currentTarget.contains(event.relatedTarget)) {
-                    closeMenu();
+                    scheduleClose();
                 }
             }}
             onKeyDown={(event) => {
@@ -179,7 +233,7 @@ export default function FileAddMenu({
             <div
                 id={menuId}
                 role="menu"
-                aria-label="Add a new file"
+                aria-label={mainLabel}
                 aria-hidden={!isOpen}
                 style={{
                     position: "absolute",
@@ -187,9 +241,9 @@ export default function FileAddMenu({
                     bottom: 48,
                     display: "flex",
                     flexDirection: "column",
-                    alignItems: "center",
-                    gap: 8,
-                    opacity: isOpen ? 1 : 0,
+                        alignItems: "center",
+                        gap: 8,
+                        opacity: isOpen ? 1 : 0,
                     transform: isOpen ? "translateY(0)" : "translateY(8px)",
                     pointerEvents: isOpen ? "auto" : "none",
                     transition: "opacity 160ms ease, transform 160ms ease",
@@ -197,7 +251,11 @@ export default function FileAddMenu({
             >
                 {actions.map((action, index) => (
                     <div key={action.id} style={{ position: "relative" }}>
-                        <Tooltip label={action.label} visible={hoveredItem === action.id} />
+                        <Tooltip
+                            label={action.label}
+                            visible={hoveredItem === action.id}
+                            placement={tooltipPlacement}
+                        />
                         <button
                             type="button"
                             role="menuitem"
@@ -209,8 +267,9 @@ export default function FileAddMenu({
                             onClick={(event) => {
                                 event.preventDefault();
                                 event.stopPropagation();
+                                clearCloseTimer();
                                 action.onClick?.();
-                                closeMenu();
+                                scheduleClose();
                             }}
                             style={{
                                 width: 34,
@@ -237,10 +296,10 @@ export default function FileAddMenu({
             </div>
 
             <div style={{ position: "relative" }}>
-                <Tooltip label="Add a new file" visible={hoveredItem === "main"} />
+                <Tooltip label={mainLabel} visible={hoveredItem === "main"} placement={tooltipPlacement} />
                 <button
                     type="button"
-                    aria-label="Add a new file"
+                    aria-label={mainLabel}
                     aria-expanded={isOpen}
                     aria-controls={menuId}
                     aria-haspopup="menu"
@@ -251,7 +310,14 @@ export default function FileAddMenu({
                     onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
-                        setIsOpen((prev) => !prev);
+                        clearCloseTimer();
+                        setIsOpen((prev) => {
+                            const next = !prev;
+                            if (!next) {
+                                setHoveredItem(null);
+                            }
+                            return next;
+                        });
                     }}
                     style={{
                         width: 38,
@@ -269,9 +335,50 @@ export default function FileAddMenu({
                         transform: isOpen ? "scale(1.04)" : "scale(1)",
                     }}
                 >
-                    <MainAddIcon />
+                    {mainIcon}
                 </button>
             </div>
         </div>
+    );
+}
+
+export function PythonSessionActionMenu({ onOpenPipPanel, onOpenExtensionsPanel }) {
+    const actions = [
+        { id: "pip", label: "Install PIP package", icon: <PipPackageIcon />, onClick: onOpenPipPanel },
+        { id: "extensions", label: "Add Extension", icon: <ExtensionIcon />, onClick: onOpenExtensionsPanel },
+    ];
+
+    return (
+        <FloatingActionMenu
+            mainLabel="Python session actions"
+            mainIcon={<SessionActionIcon />}
+            actions={actions}
+            positionStyle={{ left: 12, bottom: 12 }}
+            tooltipPlacement="right"
+        />
+    );
+}
+
+export default function FileAddMenu({
+    onAddPythonFiles,
+    onAddImageFiles,
+    onAddTextFiles,
+    onAddCsvFiles,
+}) {
+    const actions = [
+        { id: "python", label: "Add a new python file", icon: <PythonFileIcon />, onClick: onAddPythonFiles },
+        { id: "image", label: "Add a new image file", icon: <ImageFileIcon />, onClick: onAddImageFiles },
+        { id: "text", label: "Add a new text file", icon: <TextFileIcon />, onClick: onAddTextFiles },
+        { id: "csv", label: "Add a new CSV file", icon: <CsvFileIcon />, onClick: onAddCsvFiles },
+    ];
+
+    return (
+        <FloatingActionMenu
+            mainLabel="Add a new file"
+            mainIcon={<MainAddIcon />}
+            actions={actions}
+            positionStyle={{ right: 12, bottom: 12 }}
+            tooltipPlacement="left"
+        />
     );
 }
