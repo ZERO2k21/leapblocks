@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -o \".{0,50}rowDiv_.*addEventListener\" \"D:/Creoleap Company/Leapcode/leapblocks/leapblocks/node_modules/blockly/blockly_compressed.js\" | head -5)",
+      "Bash(find \"D:/Creoleap Company/Leapcode/leapblocks/leapblocks/node_modules/blockly\" -name \"*category*\" -type f | grep -E \"\\\\.\\(ts|js\\)$\" | head -10)",
+      "Bash(grep -o \".{0,50}this\\\\.rowDiv_\\\\.id\" \"D:/Creoleap Company/Leapcode/leapblocks/leapblocks/node_modules/blockly/blockly_compressed.js\" | head -10)"
+    ]
+  }
+}

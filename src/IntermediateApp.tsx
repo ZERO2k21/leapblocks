@@ -1334,7 +1334,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         if (!selectedPort) {
             addLog('No port selected! Please connect your board and select a COM port first.');
-            setUploadProgress('No port selected');
+            alert('⚠️ No port selected!\n\nPlease:\n1. Connect your Arduino/ESP32 board via USB\n2. Click the refresh (↻) button in the toolbar\n3. Select a COM port from the dropdown\n4. Then click Upload again');
             return;
         }
 
@@ -1621,7 +1621,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     if (blocksWorkspace) {
                         const flyout = blocksWorkspace.getFlyout() as any;
                         const toolbox = (blocksWorkspace as any).getToolbox() as any;
-                        let isInternalSync = false;
 
                         if (flyout) {
                             flyout.autoClose = false;
@@ -1641,65 +1640,99 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         }
 
                         // 2. TOOLBOX -> FLYOUT (Click to Scroll)
-                        if (toolbox) {
-                            const originalSelectItem = toolbox.selectItemByPosition.bind(toolbox);
-                            toolbox.selectItemByPosition = (position: number) => {
-                                const items = toolbox.getToolboxItems();
-                                if (items[position] && typeof items[position].getName === 'function') {
-                                    const categoryName = items[position].getName();
-                                    originalSelectItem(position);
+                        if (toolbox && flyout) {
+                            const scrollFlyoutToCategory = (categoryName: string) => {
+                                const flyoutWs = flyout.getWorkspace();
+                                if (!flyoutWs) {
+                                    log.blockly('[ToolboxSync] Flyout workspace unavailable', { categoryName });
+                                    return;
+                                }
 
-                                    // Only scroll flyout if NOT triggered by the scroll sync itself
-                                    if (!isInternalSync) {
-                                        isInternalSync = true; // Block back-sync
-                                        const flyoutWs = flyout.getWorkspace();
-                                        if (flyoutWs) {
-                                            // Force reflow to ensure positions are updated
-                                            if (flyout.reflowInternal_) flyout.reflowInternal_();
-                                            // Find the label matching the category name
-                                            const blocks = flyoutWs.getTopBlocks(false); // false = all blocks including labels
-                                            const targetLabel = blocks.find((b: any) => {
-                                                return b.getField && b.getField('TEXT') && b.getFieldValue('TEXT') === categoryName;
-                                            });
+                                window.requestAnimationFrame(() => {
+                                    log.blockly('[ToolboxSync] Resolving category scroll target', {
+                                        categoryName,
+                                        flyoutItemCount: typeof flyout.getContents === 'function' ? flyout.getContents().length : 0
+                                    });
 
-                                            if (targetLabel) {
-                                                // Delay scrolling to ensure blocks are positioned after flyout.show()
-                                                setTimeout(() => {
-                                                    const y = targetLabel.getRelativeToSurfaceXY().y;
-                                                    if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
-                                                    else flyoutWs.translate(0, -y);
-                                                }, 300);
-                                            } else {
-                                                // Fallback to original block prefix logic if label not found
-                                                const targetBlock = blocks.find((b: any) => {
-                                                    const type = b.type;
-                                                    const matches = (cat: string) => {
-                                                        if (cat === 'Motion') return type.startsWith('motion_');
-                                                        if (cat === 'Looks') return type.startsWith('looks_');
-                                                        if (cat === 'Sound') return type.startsWith('sound_');
-                                                        if (cat === 'Events') return type.startsWith('event_');
-                                                        if (cat === 'Control') return type.startsWith('control_');
-                                                        if (cat === 'Sensing') return type.startsWith('sensing_');
-                                                        if (cat === 'Operators') return type.startsWith('operator_') || type.startsWith('arduino_math_');
-                                                        if (cat === 'Variables') return type.startsWith('data_') || type.startsWith('variables_');
-                                                        if (cat === 'My Blocks') return type.startsWith('procedures_');
-                                                        if (cat === 'Arduino' || cat === 'ESP32') return type.startsWith('arduino_') || type.startsWith('esp32_');
-                                                        return false;
-                                                    };
-                                                    return matches(categoryName);
-                                                });
-                                                if (targetBlock) {
-                                                    // Delay scrolling to ensure blocks are positioned
-                                                    setTimeout(() => {
-                                                        const y = targetBlock.getRelativeToSurfaceXY().y;
-                                                        if (flyoutWs.scrollbar) flyoutWs.scrollbar.set(0, y);
-                                                        else flyoutWs.translate(0, -y);
-                                                    }, 300);
-                                                }
-                                            }
+                                    if (flyout.reflowInternal_) flyout.reflowInternal_();
+
+                                    const flyoutContents = typeof flyout.getContents === 'function'
+                                        ? flyout.getContents()
+                                        : [];
+
+                                    const categoryHeader = flyoutContents.find((item: any) => {
+                                        if (typeof item?.getType !== 'function' || item.getType() !== 'label') return false;
+                                        const element = item.getElement?.();
+                                        return element &&
+                                            typeof element.getButtonText === 'function' &&
+                                            element.getButtonText() === categoryName &&
+                                            element.info?.['web-class'] === 'category-header';
+                                    });
+
+                                    const headerElement = categoryHeader?.getElement?.();
+                                    if (headerElement && typeof headerElement.getBoundingRectangle === 'function') {
+                                        const y = Math.max(headerElement.getBoundingRectangle().top - flyout.MARGIN, 0);
+                                        log.blockly('[ToolboxSync] Scrolling to category header', { categoryName, y });
+                                        if (flyoutWs.scrollbar?.setY) {
+                                            flyoutWs.scrollbar.setY(y);
+                                        } else {
+                                            log.blockly('[ToolboxSync] Flyout scrollbar unavailable for header scroll', { categoryName, y });
                                         }
-                                        setTimeout(() => { isInternalSync = false; }, 100);
+                                        return;
                                     }
+
+                                    log.blockly('[ToolboxSync] Category header not found, using block fallback', { categoryName });
+
+                                    const blocks = flyoutWs.getTopBlocks(false);
+                                    const targetBlock = blocks.find((b: any) => {
+                                        const type = b.type;
+                                        const matches = (cat: string) => {
+                                            if (cat === 'Motion') return type.startsWith('motion_');
+                                            if (cat === 'Looks') return type.startsWith('looks_');
+                                            if (cat === 'Sound') return type.startsWith('sound_');
+                                            if (cat === 'Events') return type.startsWith('event_');
+                                            if (cat === 'Control') return type.startsWith('control_');
+                                            if (cat === 'Sensing') return type.startsWith('sensing_');
+                                            if (cat === 'Operators') return type.startsWith('operator_') || type.startsWith('arduino_math_');
+                                            if (cat === 'Variables') return type.startsWith('data_') || type.startsWith('variables_');
+                                            if (cat === 'My Blocks') return type.startsWith('procedures_');
+                                            if (cat === 'Arduino' || cat === 'ESP32') return type.startsWith('arduino_') || type.startsWith('esp32_');
+                                            return false;
+                                        };
+                                        return matches(categoryName);
+                                    });
+
+                                    if (!targetBlock) {
+                                        log.blockly('[ToolboxSync] No fallback block found for category', { categoryName });
+                                        return;
+                                    }
+
+                                    const y = Math.max(targetBlock.getRelativeToSurfaceXY().y - flyout.MARGIN, 0);
+                                    log.blockly('[ToolboxSync] Scrolling to fallback block', {
+                                        categoryName,
+                                        blockType: targetBlock.type,
+                                        y
+                                    });
+                                    if (flyoutWs.scrollbar?.setY) {
+                                        flyoutWs.scrollbar.setY(y);
+                                    } else {
+                                        log.blockly('[ToolboxSync] Flyout scrollbar unavailable for fallback scroll', {
+                                            categoryName,
+                                            blockType: targetBlock.type,
+                                            y
+                                        });
+                                    }
+                                });
+                            };
+
+                            const originalSetSelectedItem = toolbox.setSelectedItem.bind(toolbox);
+                            toolbox.setSelectedItem = (newItem: any) => {
+                                originalSetSelectedItem(newItem);
+
+                                if (newItem && typeof newItem.getName === 'function') {
+                                    const categoryName = newItem.getName();
+                                    log.blockly('[ToolboxSync] Toolbox category selected', { categoryName });
+                                    scrollFlyoutToCategory(categoryName);
                                 }
                             };
                         }
@@ -2241,8 +2274,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {/* Other Tabs - Only relevant in Stage Mode */}
                     {editorMode === 'stage' && workspaceTab === 'python' && (
                         <div style={styles.pythonEditor}>
-                            <PythonEditorTab 
-                                workspace={workspaceRef.current} 
+                            <PythonEditorTab
+                                workspace={workspaceRef.current}
                                 onOpenFullIDE={() => setAppMode('python')}
                             />
                         </div>
