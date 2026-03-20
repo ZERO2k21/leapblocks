@@ -6,49 +6,143 @@ import {
 } from 'lucide-react';
 import Logo from '../../components/Logo';
 
-// Dropdown Menu Component
+// ═══════════════════════════════════════════════════════════════════════════
+// DROPDOWN MENU — Glassmorphism + slide-in animation (same design as Intermediate)
+// ═══════════════════════════════════════════════════════════════════════════
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     const menuRef = useRef(null);
+    const onCloseRef = useRef(onClose);
+    onCloseRef.current = onClose;
 
     useEffect(() => {
+        if (!isOpen) return;
         const handleClickOutside = (e) => {
             if (menuRef.current && !menuRef.current.contains(e.target)) {
-                onClose();
+                onCloseRef.current();
             }
         };
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen, onClose]);
+        const timer = setTimeout(() => {
+            document.addEventListener('mousedown', handleClickOutside, true);
+        }, 0);
+        return () => {
+            clearTimeout(timer);
+            document.removeEventListener('mousedown', handleClickOutside, true);
+        };
+    }, [isOpen]);
 
     return (
-        <div ref={menuRef} className="relative">
+        <div ref={menuRef} style={{ position: 'relative' }}>
             <button
                 onClick={onToggle}
-                className={`flex items-center gap-1 px-3 py-2 border-none text-white text-[13px] font-medium cursor-pointer rounded transition-colors duration-150 ${isOpen ? 'bg-black/20' : 'bg-transparent hover:bg-white/15'}`}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '6px 12px',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                    cursor: 'pointer',
+                    borderRadius: 20,
+                    transition: 'all 0.2s ease',
+                    background: isOpen ? 'rgba(255,255,255,0.18)' : 'transparent',
+                    backdropFilter: isOpen ? 'blur(4px)' : 'none',
+                    letterSpacing: '0.02em',
+                }}
+                onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = isOpen ? 'rgba(255,255,255,0.18)' : 'transparent'; }}
             >
-                {Icon && <Icon size={16} />}
+                {Icon && <Icon size={14} strokeWidth={2.2} style={{ opacity: 0.9 }} />}
                 {label}
-                <ChevronDown size={14} className="opacity-70" />
+                <ChevronDown
+                    size={12}
+                    strokeWidth={2.5}
+                    style={{
+                        opacity: 0.5,
+                        transition: 'transform 0.2s ease',
+                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}
+                />
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] min-w-[180px] overflow-hidden z-[1000]">
+                <div style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 6px)',
+                    left: 0,
+                    background: 'rgba(255,255,255,0.92)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    borderRadius: 12,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)',
+                    border: '1px solid rgba(255,255,255,0.6)',
+                    minWidth: 200,
+                    overflow: 'hidden',
+                    zIndex: 1000,
+                    padding: '6px 0',
+                    animation: 'jrMenuSlideIn 0.18s ease-out',
+                }}>
+                    <style>{`
+                        @keyframes jrMenuSlideIn {
+                            from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+                            to { opacity: 1; transform: translateY(0) scale(1); }
+                        }
+                    `}</style>
                     {items.map((item, idx) => (
                         item.divider ? (
-                            <div key={idx} className="h-px bg-gray-200 my-1" />
+                            <div key={idx} style={{
+                                height: 1,
+                                background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.08), transparent)',
+                                margin: '5px 12px',
+                            }} />
                         ) : (
                             <button
                                 key={idx}
                                 onClick={() => { item.onClick?.(); onClose(); }}
                                 disabled={item.disabled}
-                                className={`flex items-center gap-2.5 w-full px-3.5 py-2.5 border-none bg-transparent text-[13px] text-left transition-colors duration-100 ${item.disabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 cursor-pointer hover:bg-gray-100'}`}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    width: '100%',
+                                    padding: '9px 14px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    fontSize: 13,
+                                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                                    fontWeight: 500,
+                                    textAlign: 'left',
+                                    cursor: item.disabled ? 'not-allowed' : 'pointer',
+                                    color: item.disabled ? '#bbb' : '#374151',
+                                    transition: 'all 0.12s ease',
+                                    borderRadius: 0,
+                                    letterSpacing: '0.01em',
+                                }}
+                                onMouseEnter={e => {
+                                    if (!item.disabled) {
+                                        e.currentTarget.style.background = 'rgba(107,70,193,0.08)';
+                                        e.currentTarget.style.color = '#6B46C1';
+                                    }
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = item.disabled ? '#bbb' : '#374151';
+                                }}
                             >
-                                {item.icon && <item.icon size={16} color="#7B4FC4" />}
-                                <span className="flex-1">{item.label}</span>
+                                {item.icon && <item.icon size={16} color="#7C3AED" strokeWidth={2} style={{ opacity: 0.85, flexShrink: 0 }} />}
+                                <span style={{ flex: 1 }}>{item.label}</span>
                                 {item.shortcut && (
-                                    <span className="text-[11px] text-gray-400">{item.shortcut}</span>
+                                    <span style={{
+                                        fontSize: 11,
+                                        color: '#aaa',
+                                        fontWeight: 500,
+                                        background: 'rgba(0,0,0,0.04)',
+                                        padding: '2px 6px',
+                                        borderRadius: 4,
+                                        fontFamily: "'Segoe UI', monospace",
+                                    }}>{item.shortcut}</span>
                                 )}
                             </button>
                         )
@@ -59,7 +153,9 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     );
 }
 
-// Junior MenuBar Component - Simplified for young children (no hardware)
+// ═══════════════════════════════════════════════════════════════════════════
+// JUNIOR MENUBAR — Simplified for young children (no hardware)
+// ═══════════════════════════════════════════════════════════════════════════
 export default function JuniorMenuBar({
     projectName = "My Project",
     onProjectNameChange,
@@ -75,7 +171,6 @@ export default function JuniorMenuBar({
 
     const closeMenu = () => setOpenMenu(null);
 
-    // Menu definitions - simplified for Junior
     const fileMenuItems = [
         { label: 'New Project', icon: File, onClick: () => onFileAction?.('new') },
         { label: 'Open Project', icon: FolderOpen, onClick: () => onFileAction?.('open') },
@@ -96,91 +191,255 @@ export default function JuniorMenuBar({
     ];
 
     return (
-        <div className="flex items-center h-14 gap-2 shadow-[0_2px_8px_rgba(0,0,0,0.15)] z-[100]"
-            style={{ background: 'linear-gradient(180deg, #7B4FC4 0%, #5A2D82 100%)' }}>
+        <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 60,
+            padding: '0 16px',
+            background: 'linear-gradient(135deg, #7B4FC4 0%, #6236A0 50%, #4E2A84 100%)',
+            boxShadow: '0 2px 15px rgba(78,42,132,0.35)',
+            zIndex: 100,
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+        }}>
 
-            {/* Home Button */}
-            <button
-                onClick={onBack}
-                className="flex items-center justify-center w-8 h-8 bg-white/15 border-none rounded-full cursor-pointer text-white mr-2"
-                title="Back to Home"
-            >
-                <Home size={18} />
-            </button>
-
-            {/* Logo */}
-            <div className="flex items-center gap-2 mr-5">
-                <Logo height={44} />
-                <span className="text-[#FFD500] text-xs font-extrabold uppercase tracking-wider">
-                    JUNIOR
-                </span>
-            </div>
-
-            {/* Menus - Only File, Edit, Tutorials for Junior */}
-            <DropdownMenu
-                label="File"
-                items={fileMenuItems}
-                isOpen={openMenu === 'file'}
-                onToggle={() => toggleMenu('file')}
-                onClose={closeMenu}
-            />
-            <DropdownMenu
-                label="Edit"
-                items={editMenuItems}
-                isOpen={openMenu === 'edit'}
-                onToggle={() => toggleMenu('edit')}
-                onClose={closeMenu}
-            />
-            <DropdownMenu
-                label="Tutorials"
-                icon={BookOpen}
-                items={tutorialsMenuItems}
-                isOpen={openMenu === 'tutorials'}
-                onToggle={() => toggleMenu('tutorials')}
-                onClose={closeMenu}
-            />
-
-            {/* Spacer */}
-            <div className="flex-1" />
-
-            {/* Project Name and Save */}
-            <div className="flex items-center gap-3 mr-4">
-                <input
-                    type="text"
-                    value={projectName}
-                    onChange={(e) => onProjectNameChange?.(e.target.value)}
-                    className="bg-white/15 border border-white/10 text-white text-sm font-semibold w-[180px] outline-none px-3 py-1.5 rounded"
-                    placeholder="My Project"
-                />
+            {/* LEFT SECTION: Home, Logo, Menus */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                 <button
-                    onClick={() => onFileAction?.('save')}
-                    className="bg-transparent border-none text-white cursor-pointer p-1 flex items-center justify-center opacity-90 hover:opacity-100"
-                    title="Save Project"
+                    onClick={onBack}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 40,
+                        height: 40,
+                        background: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: 12,
+                        color: '#fff',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        flexShrink: 0,
+                    }}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                        e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    title="Back to Home"
                 >
-                    <Save size={20} strokeWidth={2.5} />
+                    <Home size={20} strokeWidth={2.2} />
                 </button>
+
+                <div style={{ height: 32, width: 1, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 12, flexShrink: 0 }}>
+                    <Logo height={34} />
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        borderLeft: '1px solid rgba(255,255,255,0.15)',
+                        paddingLeft: 10,
+                    }}>
+                        <span style={{
+                            color: '#FFD500',
+                            fontSize: 9,
+                            fontWeight: 800,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.15em',
+                            lineHeight: 1.2,
+                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                        }}>
+                            LEAPBLOCKS
+                        </span>
+                        <span style={{
+                            color: 'rgba(255,255,255,0.8)',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            letterSpacing: '0.02em',
+                            lineHeight: 1.2,
+                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                        }}>
+                            Junior
+                        </span>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <DropdownMenu
+                        label="File"
+                        items={fileMenuItems}
+                        isOpen={openMenu === 'file'}
+                        onToggle={() => toggleMenu('file')}
+                        onClose={closeMenu}
+                    />
+                    <DropdownMenu
+                        label="Edit"
+                        items={editMenuItems}
+                        isOpen={openMenu === 'edit'}
+                        onToggle={() => toggleMenu('edit')}
+                        onClose={closeMenu}
+                    />
+                    <DropdownMenu
+                        label="Tutorials"
+                        icon={BookOpen}
+                        items={tutorialsMenuItems}
+                        isOpen={openMenu === 'tutorials'}
+                        onToggle={() => toggleMenu('tutorials')}
+                        onClose={closeMenu}
+                    />
+                </div>
             </div>
 
-            {/* Right Side Utility Icons */}
-            <div className="flex items-center gap-[18px] pl-4 border-l border-white/20">
-                <button className="bg-transparent border-none text-white cursor-pointer p-0" title="Feedback">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        <line x1="12" y1="8" x2="12" y2="12"></line>
-                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                    </svg>
-                </button>
-                <button className="bg-transparent border-none text-white cursor-pointer p-0" title="Achievements">
-                    <Trophy size={20} strokeWidth={2.5} />
-                </button>
-                <button className="bg-transparent border-none text-white cursor-pointer p-0" title="Settings">
-                    <Settings size={20} strokeWidth={2.5} />
-                </button>
+            {/* CENTER SECTION: Project Name + Save */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    height: 40,
+                    background: 'rgba(0,0,0,0.25)',
+                    borderRadius: 20,
+                    paddingLeft: 18,
+                    paddingRight: 5,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    gap: 8,
+                    transition: 'all 0.2s ease',
+                }}>
+                    <span style={{ fontSize: 14, opacity: 0.45 }}>📁</span>
+                    <input
+                        type="text"
+                        value={projectName}
+                        onChange={(e) => onProjectNameChange?.(e.target.value)}
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#fff',
+                            fontSize: 14,
+                            fontWeight: 700,
+                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                            width: 170,
+                            textAlign: 'center',
+                            outline: 'none',
+                            letterSpacing: '0.01em',
+                        }}
+                        placeholder="My Project"
+                    />
+                    <button
+                        onClick={() => onFileAction?.('save')}
+                        style={{
+                            background: 'linear-gradient(135deg, #10B981, #059669)',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: 30,
+                            height: 30,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: '#fff',
+                            boxShadow: '0 2px 6px rgba(16,185,129,0.3)',
+                            transition: 'all 0.15s ease',
+                            flexShrink: 0,
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                        title="Save Project"
+                    >
+                        <Save size={15} strokeWidth={2.8} />
+                    </button>
+                </div>
+            </div>
 
-                {/* Sign In Button / Profile */}
-                <button className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer text-white font-semibold text-sm p-0">
-                    <div className="w-7 h-7 bg-[#FFD166] rounded-full flex items-center justify-center text-base border-2 border-white">
-                        <span style={{ color: '#5A2D82' }}></span>
+            {/* RIGHT SECTION: Utilities and Profile */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 20, flex: 1, minWidth: 0 }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 14,
+                    paddingRight: 16,
+                    borderRight: '1px solid rgba(255,255,255,0.1)',
+                    height: 32,
+                    flexShrink: 0,
+                }}>
+                    {[
+                        { Icon: MessageSquareWarning, title: 'Feedback' },
+                        { Icon: Trophy, title: 'Achievements' },
+                        { Icon: Settings, title: 'Settings' },
+                        { Icon: HelpCircle, title: 'Help' },
+                    ].map(({ Icon, title }) => (
+                        <button
+                            key={title}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'rgba(255,255,255,0.55)',
+                                cursor: 'pointer',
+                                padding: 0,
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.color = '#fff';
+                                e.currentTarget.style.transform = 'scale(1.15)';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.color = 'rgba(255,255,255,0.55)';
+                                e.currentTarget.style.transform = 'scale(1)';
+                            }}
+                            title={title}
+                        >
+                            <Icon size={20} strokeWidth={2.2} />
+                        </button>
+                    ))}
+                </div>
+
+                {/* Sign In Button */}
+                <button
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        height: 38,
+                        gap: 10,
+                        background: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: 20,
+                        cursor: 'pointer',
+                        color: '#fff',
+                        fontWeight: 700,
+                        fontSize: 13,
+                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                        paddingLeft: 5,
+                        paddingRight: 18,
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                        flexShrink: 0,
+                    }}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.18)';
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                        e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                >
+                    <div style={{
+                        width: 28,
+                        height: 28,
+                        background: 'linear-gradient(135deg, #FFD166, #F59E0B)',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '2px solid rgba(255,255,255,0.25)',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                    }}>
+                        <span style={{ color: '#5A2D82', fontWeight: 900, fontSize: 11 }}>LB</span>
                     </div>
                     Sign In
                 </button>

@@ -32,13 +32,19 @@ export class ArduinoUploader {
             };
         }
         try {
-            this.sendProgress(5, 'Checking for arduino-cli...');
+            // ── Phase 1: Initialization (0–10%) ──
+            this.sendProgress(0, 'Initializing upload...');
+
+            this.sendProgress(2, 'Preparing environment...');
             let arduinoCliPath = 'arduino-cli';
 
-            // Check if arduino-cli is in PATH
+            this.sendProgress(5, 'Checking for arduino-cli...');
+
             try {
                 await execAsync('arduino-cli version');
+                this.sendProgress(8, 'Arduino CLI found in PATH');
             } catch {
+                this.sendProgress(6, 'Searching for arduino-cli...');
                 const possiblePaths = [
                     path.join(process.cwd(), 'arduino-cli', 'arduino-cli.exe'),
                     path.join(os.homedir(), 'AppData', 'Local', 'Arduino15', 'arduino-cli.exe'),
@@ -61,21 +67,28 @@ export class ArduinoUploader {
                         error: 'arduino-cli not found. Please install it.',
                     };
                 }
+                this.sendProgress(8, 'Arduino CLI located');
             }
 
-            this.sendProgress(15, 'Saving sketch...');
-            // Use a local directory instead of system temp to improve library discovery
+            // ── Phase 2: Saving sketch (10–25%) ──
+            this.sendProgress(10, 'Preparing sketch directory...');
             const sketchDir = path.join(process.cwd(), 'leapblocks_sketch');
             const sketchFile = path.join(sketchDir, 'leapblocks_sketch.ino');
 
             if (!fs.existsSync(sketchDir)) {
                 fs.mkdirSync(sketchDir, { recursive: true });
             }
-            fs.writeFileSync(sketchFile, code, 'utf-8');
 
-            this.sendProgress(40, 'Compiling...');
+            this.sendProgress(15, 'Writing sketch file...');
+            fs.writeFileSync(sketchFile, code, 'utf-8');
+            this.sendProgress(20, 'Sketch saved successfully');
+
+            // ── Phase 3: Compiling (25–65%) ──
+            this.sendProgress(25, 'Starting compilation...');
+            this.sendProgress(30, 'Compiling code...');
             try {
                 await execAsync(`"${arduinoCliPath}" compile --fqbn ${fqbn} "${sketchDir}"`, { timeout: 120000 });
+                this.sendProgress(60, 'Compilation successful');
             } catch (compileError: any) {
                 return {
                     success: false,
@@ -83,9 +96,13 @@ export class ArduinoUploader {
                 };
             }
 
+            // ── Phase 4: Uploading (65–95%) ──
+            this.sendProgress(65, 'Preparing upload...');
             this.sendProgress(70, 'Uploading to board...');
             try {
+                this.sendProgress(75, 'Flashing firmware...');
                 await execAsync(`"${arduinoCliPath}" upload -p "${port}" --fqbn ${fqbn} "${sketchDir}"`, { timeout: 120000 });
+                this.sendProgress(95, 'Finalizing...');
             } catch (uploadError: any) {
                 return {
                     success: false,
@@ -93,6 +110,7 @@ export class ArduinoUploader {
                 };
             }
 
+            // ── Phase 5: Complete (100%) ──
             this.sendProgress(100, 'Upload complete!');
             return { success: true };
         } catch (error) {

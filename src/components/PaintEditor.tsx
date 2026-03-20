@@ -192,10 +192,8 @@ function PaintEditor({
                     if (scale < 1) group.scale(scale);
 
                     if (group.type === 'group') {
-                        const items = (group as fabric.Group).getObjects();
-                        (group as any)._restoreObjectsState();
-                        canvas.remove(group);
-                        items.forEach((item: fabric.FabricObject) => canvas.add(item));
+                        const items = (group as fabric.Group).removeAll();
+                        canvas.add(...items);
                     } else {
                         canvas.add(group);
                     }

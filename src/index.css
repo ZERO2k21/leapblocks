@@ -63,9 +63,17 @@ body,
   cursor: pointer !important;
   transition: background-color 0.15s ease !important;
   border-left: none !important;
+  pointer-events: none !important;
 }
 
-.blocklyToolboxCategory:hover {
+/* Make the container the interactive element */
+.blocklyToolboxCategoryContainer {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  border-radius: 8px !important;
+  transition: background-color 0.15s ease !important;
+}
+.blocklyToolboxCategoryContainer:hover .blocklyToolboxCategory {
   background-color: rgba(0, 0, 0, 0.05) !important;
 }
 
