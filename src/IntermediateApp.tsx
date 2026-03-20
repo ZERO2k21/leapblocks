@@ -1649,9 +1649,14 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 }
 
                                 window.requestAnimationFrame(() => {
+                                    const flyoutScale = typeof flyoutWs.getScale === 'function'
+                                        ? flyoutWs.getScale()
+                                        : (flyoutWs.scale || 1);
+
                                     log.blockly('[ToolboxSync] Resolving category scroll target', {
                                         categoryName,
-                                        flyoutItemCount: typeof flyout.getContents === 'function' ? flyout.getContents().length : 0
+                                        flyoutItemCount: typeof flyout.getContents === 'function' ? flyout.getContents().length : 0,
+                                        flyoutScale
                                     });
 
                                     if (flyout.reflowInternal_) flyout.reflowInternal_();
@@ -1671,12 +1676,19 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                     const headerElement = categoryHeader?.getElement?.();
                                     if (headerElement && typeof headerElement.getBoundingRectangle === 'function') {
-                                        const y = Math.max(headerElement.getBoundingRectangle().top - flyout.MARGIN, 0);
-                                        log.blockly('[ToolboxSync] Scrolling to category header', { categoryName, y });
+                                        const y = Math.max(
+                                            (headerElement.getBoundingRectangle().top - flyout.MARGIN) * flyoutScale,
+                                            0
+                                        );
+                                        log.blockly('[ToolboxSync] Scrolling to category header', { categoryName, y, flyoutScale });
                                         if (flyoutWs.scrollbar?.setY) {
                                             flyoutWs.scrollbar.setY(y);
                                         } else {
-                                            log.blockly('[ToolboxSync] Flyout scrollbar unavailable for header scroll', { categoryName, y });
+                                            log.blockly('[ToolboxSync] Flyout scrollbar unavailable for header scroll', {
+                                                categoryName,
+                                                y,
+                                                flyoutScale
+                                            });
                                         }
                                         return;
                                     }
@@ -1707,11 +1719,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                         return;
                                     }
 
-                                    const y = Math.max(targetBlock.getRelativeToSurfaceXY().y - flyout.MARGIN, 0);
+                                    const y = Math.max(
+                                        (targetBlock.getRelativeToSurfaceXY().y - flyout.MARGIN) * flyoutScale,
+                                        0
+                                    );
                                     log.blockly('[ToolboxSync] Scrolling to fallback block', {
                                         categoryName,
                                         blockType: targetBlock.type,
-                                        y
+                                        y,
+                                        flyoutScale
                                     });
                                     if (flyoutWs.scrollbar?.setY) {
                                         flyoutWs.scrollbar.setY(y);
@@ -1719,7 +1735,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                         log.blockly('[ToolboxSync] Flyout scrollbar unavailable for fallback scroll', {
                                             categoryName,
                                             blockType: targetBlock.type,
-                                            y
+                                            y,
+                                            flyoutScale
                                         });
                                     }
                                 });
