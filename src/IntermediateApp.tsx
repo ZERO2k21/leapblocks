@@ -1649,17 +1649,72 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 }
 
                                 window.requestAnimationFrame(() => {
-                                    const flyoutScale = typeof flyoutWs.getScale === 'function'
-                                        ? flyoutWs.getScale()
-                                        : (flyoutWs.scale || 1);
+                                    if (flyout.reflowInternal_) flyout.reflowInternal_();
+
+                                    const metricsManager = typeof flyoutWs.getMetricsManager === 'function'
+                                        ? flyoutWs.getMetricsManager()
+                                        : null;
+                                    const scrollMetrics = metricsManager?.getScrollMetrics?.();
+                                    const viewMetrics = metricsManager?.getViewMetrics?.();
+                                    const currentScrollY = scrollMetrics && viewMetrics
+                                        ? viewMetrics.top - scrollMetrics.top
+                                        : 0;
+                                    const maxScrollY = scrollMetrics && viewMetrics
+                                        ? Math.max(scrollMetrics.height - viewMetrics.height, 0)
+                                        : Number.POSITIVE_INFINITY;
+                                    const flyoutSvg = typeof flyoutWs.getParentSvg === 'function'
+                                        ? flyoutWs.getParentSvg()
+                                        : null;
+                                    const flyoutSvgRect = flyoutSvg?.getBoundingClientRect?.();
+                                    const desiredTopOffsetPx = 12;
 
                                     log.blockly('[ToolboxSync] Resolving category scroll target', {
                                         categoryName,
-                                        flyoutItemCount: typeof flyout.getContents === 'function' ? flyout.getContents().length : 0,
-                                        flyoutScale
+                                        currentScrollY,
+                                        maxScrollY,
+                                        flyoutItemCount: typeof flyout.getContents === 'function' ? flyout.getContents().length : 0
                                     });
 
-                                    if (flyout.reflowInternal_) flyout.reflowInternal_();
+                                    const scrollTargetIntoView = (targetSvg: SVGElement | null, targetInfo: Record<string, any>) => {
+                                        if (!targetSvg || !flyoutSvgRect) {
+                                            log.blockly('[ToolboxSync] Target or flyout SVG unavailable', {
+                                                categoryName,
+                                                ...targetInfo
+                                            });
+                                            return;
+                                        }
+
+                                        const targetRect = targetSvg.getBoundingClientRect();
+                                        const deltaY = targetRect.top - (flyoutSvgRect.top + desiredTopOffsetPx);
+                                        const nextScrollY = Math.min(
+                                            Math.max(currentScrollY + deltaY, 0),
+                                            maxScrollY
+                                        );
+
+                                        log.blockly('[ToolboxSync] Applying flyout scroll', {
+                                            categoryName,
+                                            deltaY,
+                                            currentScrollY,
+                                            nextScrollY,
+                                            ...targetInfo
+                                        });
+
+                                        if (flyoutWs.scrollbar?.setY) {
+                                            flyoutWs.scrollbar.setY(nextScrollY);
+                                            return;
+                                        }
+
+                                        if (flyoutWs.scrollbar?.set) {
+                                            flyoutWs.scrollbar.set(0, nextScrollY);
+                                            return;
+                                        }
+
+                                        log.blockly('[ToolboxSync] Flyout scrollbar unavailable for target scroll', {
+                                            categoryName,
+                                            nextScrollY,
+                                            ...targetInfo
+                                        });
+                                    };
 
                                     const flyoutContents = typeof flyout.getContents === 'function'
                                         ? flyout.getContents()
@@ -1675,21 +1730,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     });
 
                                     const headerElement = categoryHeader?.getElement?.();
-                                    if (headerElement && typeof headerElement.getBoundingRectangle === 'function') {
-                                        const y = Math.max(
-                                            (headerElement.getBoundingRectangle().top - flyout.MARGIN) * flyoutScale,
-                                            0
-                                        );
-                                        log.blockly('[ToolboxSync] Scrolling to category header', { categoryName, y, flyoutScale });
-                                        if (flyoutWs.scrollbar?.setY) {
-                                            flyoutWs.scrollbar.setY(y);
-                                        } else {
-                                            log.blockly('[ToolboxSync] Flyout scrollbar unavailable for header scroll', {
-                                                categoryName,
-                                                y,
-                                                flyoutScale
-                                            });
-                                        }
+                                    const headerSvg = headerElement?.getSvgRoot?.() || null;
+                                    if (headerSvg) {
+                                        log.blockly('[ToolboxSync] Scrolling to category header', { categoryName });
+                                        scrollTargetIntoView(headerSvg, { targetType: 'category-header' });
                                         return;
                                     }
 
@@ -1719,26 +1763,14 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                         return;
                                     }
 
-                                    const y = Math.max(
-                                        (targetBlock.getRelativeToSurfaceXY().y - flyout.MARGIN) * flyoutScale,
-                                        0
-                                    );
                                     log.blockly('[ToolboxSync] Scrolling to fallback block', {
                                         categoryName,
-                                        blockType: targetBlock.type,
-                                        y,
-                                        flyoutScale
+                                        blockType: targetBlock.type
                                     });
-                                    if (flyoutWs.scrollbar?.setY) {
-                                        flyoutWs.scrollbar.setY(y);
-                                    } else {
-                                        log.blockly('[ToolboxSync] Flyout scrollbar unavailable for fallback scroll', {
-                                            categoryName,
-                                            blockType: targetBlock.type,
-                                            y,
-                                            flyoutScale
-                                        });
-                                    }
+                                    scrollTargetIntoView(targetBlock.getSvgRoot?.() || null, {
+                                        targetType: 'fallback-block',
+                                        blockType: targetBlock.type
+                                    });
                                 });
                             };
 
