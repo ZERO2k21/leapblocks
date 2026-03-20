@@ -1,6 +1,5 @@
 import React from "react";
 import {
-    Plus,
     FileText,
     Package,
     Download,
@@ -15,6 +14,7 @@ import {
     Wrench,
 } from "lucide-react";
 import BackdropPanel from "./BackdropPanel";
+import FileAddMenu from "./FileAddMenu";
 
 const C = {
     PURPLE: "#8B5CF6",
@@ -31,94 +31,92 @@ function FilesPanel({
     projectFiles,
     activeFile,
     setActiveFile,
-    handleAddFile,
+    handleAddPythonFiles,
+    handleAddImageFiles,
+    handleAddTextFiles,
+    handleAddCsvFiles,
     handleDeleteFile,
 }) {
     return (
         <>
-            <div
-                style={{
-                    padding: "10px 12px 8px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    borderBottom: `1px solid ${C.BORDER}`,
-                }}
-            >
-                <span style={{ fontSize: 12, fontWeight: 700, color: C.TEXT }}>Project Files</span>
-                <button
-                    onClick={handleAddFile}
-                    title="New File"
+            <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative" }}>
+                <div
                     style={{
-                        cursor: "pointer",
-                        color: C.MUTED,
-                        padding: 2,
-                        borderRadius: 4,
-                        border: "none",
-                        background: "transparent",
+                        padding: "10px 12px 8px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        borderBottom: `1px solid ${C.BORDER}`,
                     }}
                 >
-                    <Plus size={14} />
-                </button>
-            </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: C.TEXT }}>Project Files</span>
+                </div>
 
-            <div style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
-                {Object.keys(projectFiles).map((file) => (
-                    <div
-                        key={file}
-                        onClick={() => setActiveFile(file)}
-                        style={{
-                            padding: "8px 12px",
-                            cursor: "pointer",
-                            background: activeFile === file ? "#E8F5E9" : "transparent",
-                            color: activeFile === file ? "#2E7D32" : C.TEXT,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            gap: 8,
-                            borderLeft: activeFile === file ? "3px solid #4CAF50" : "3px solid transparent",
-                        }}
-                    >
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div
-                                style={{
-                                    width: 18,
-                                    height: 18,
-                                    background: "#E8F5E9",
-                                    borderRadius: 3,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <FileText size={12} style={{ color: "#4CAF50" }} />
+                <div style={{ flex: 1, overflowY: "auto", padding: "4px 0 64px" }}>
+                    {Object.keys(projectFiles).map((file) => (
+                        <div
+                            key={file}
+                            onClick={() => setActiveFile(file)}
+                            style={{
+                                padding: "8px 12px",
+                                cursor: "pointer",
+                                background: activeFile === file ? "#E8F5E9" : "transparent",
+                                color: activeFile === file ? "#2E7D32" : C.TEXT,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: 8,
+                                borderLeft: activeFile === file ? "3px solid #4CAF50" : "3px solid transparent",
+                            }}
+                        >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <div
+                                    style={{
+                                        width: 18,
+                                        height: 18,
+                                        background: "#E8F5E9",
+                                        borderRadius: 3,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <FileText size={12} style={{ color: "#4CAF50" }} />
+                                </div>
+                                <span style={{ fontSize: 12, fontWeight: activeFile === file ? 600 : 400 }}>
+                                    {file}
+                                </span>
                             </div>
-                            <span style={{ fontSize: 12, fontWeight: activeFile === file ? 600 : 400 }}>
-                                {file}
-                            </span>
+                            {handleDeleteFile && Object.keys(projectFiles).length > 1 && (
+                                <button
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        handleDeleteFile(file);
+                                    }}
+                                    style={{
+                                        cursor: "pointer",
+                                        color: C.MUTED,
+                                        padding: 2,
+                                        borderRadius: 4,
+                                        border: "none",
+                                        background: "transparent",
+                                        opacity: 0.5,
+                                    }}
+                                    title="Delete file"
+                                >
+                                    <Trash2 size={12} />
+                                </button>
+                            )}
                         </div>
-                        {handleDeleteFile && Object.keys(projectFiles).length > 1 && (
-                            <button
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    handleDeleteFile(file);
-                                }}
-                                style={{
-                                    cursor: "pointer",
-                                    color: C.MUTED,
-                                    padding: 2,
-                                    borderRadius: 4,
-                                    border: "none",
-                                    background: "transparent",
-                                    opacity: 0.5,
-                                }}
-                                title="Delete file"
-                            >
-                                <Trash2 size={12} />
-                            </button>
-                        )}
-                    </div>
-                ))}
+                    ))}
+                </div>
+
+                <FileAddMenu
+                    onAddPythonFiles={handleAddPythonFiles}
+                    onAddImageFiles={handleAddImageFiles}
+                    onAddTextFiles={handleAddTextFiles}
+                    onAddCsvFiles={handleAddCsvFiles}
+                />
             </div>
 
             <div style={{ borderTop: `1px solid ${C.BORDER}`, padding: "10px 12px 6px", background: "#FAFAFA" }}>
@@ -535,7 +533,10 @@ export default function SidePanel({
     activeFile,
     assetMode = "sprite",
     setActiveFile,
-    handleAddFile,
+    handleAddPythonFiles,
+    handleAddImageFiles,
+    handleAddTextFiles,
+    handleAddCsvFiles,
     handleDeleteFile,
     spriteFilter,
     setSpriteFilter,
@@ -571,7 +572,10 @@ export default function SidePanel({
                     projectFiles={projectFiles}
                     activeFile={activeFile}
                     setActiveFile={setActiveFile}
-                    handleAddFile={handleAddFile}
+                    handleAddPythonFiles={handleAddPythonFiles}
+                    handleAddImageFiles={handleAddImageFiles}
+                    handleAddTextFiles={handleAddTextFiles}
+                    handleAddCsvFiles={handleAddCsvFiles}
                     handleDeleteFile={handleDeleteFile}
                 />
             )}

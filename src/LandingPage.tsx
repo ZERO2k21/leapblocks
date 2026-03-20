@@ -823,6 +823,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
             {/* Toast notification for "Coming Soon" */}
             <Toast message={toast.message} visible={toast.visible} />
+
         </div>
     );
 };

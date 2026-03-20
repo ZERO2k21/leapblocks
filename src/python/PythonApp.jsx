@@ -221,6 +221,35 @@ const BACKDROP_LIBRARY = [
     { name: 'Castle', img: '/assets/backdrops/Castle.png', id: 'castle' },
     { name: 'Galaxy', img: '/assets/backdrops/Space.png', id: 'galaxy' },
 ];
+
+const getUniqueFileName = (desiredName, existingFiles) => {
+    const files = existingFiles || {};
+    const hasExtension = /\.[^./\\]+$/.test(desiredName);
+    const fallbackName = hasExtension ? desiredName : `${desiredName}.py`;
+    const dotIndex = fallbackName.lastIndexOf(".");
+    const base = dotIndex > 0 ? fallbackName.slice(0, dotIndex) : fallbackName;
+    const extension = dotIndex > 0 ? fallbackName.slice(dotIndex) : "";
+
+    let candidate = fallbackName;
+    let suffix = 2;
+
+    while (files[candidate]) {
+        candidate = `${base}_${suffix}${extension}`;
+        suffix += 1;
+    }
+
+    return candidate;
+};
+
+const buildAssetPlaceholder = (file, kind) => [
+    `# Imported ${kind} asset`,
+    `name = "${file.name}"`,
+    `mime_type = "${file.type || "unknown"}"`,
+    `size_bytes = ${file.size}`,
+    "",
+    "# Added from the Python file explorer.",
+    "# Replace this placeholder with your own loading or processing code.",
+].join("\n");
 const EXTENSIONS = [
     { id: 'music',   name: 'Music',            icon: '🎵', desc: 'Play notes and instruments', code: '# Music\nfrom music import play_note' },
     { id: 'pen',     name: 'Pen',              icon: '✏', desc: 'Draw lines on stage canvas',  code: '# Pen\nfrom pen import pen_down, pen_up' },
@@ -390,16 +419,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const [spriteFilter, setSpriteFilter] = useState("");
     const [installedExtensions, setInstalledExtensions] = useState([]);
 
-    // Modal state
-    const [modalState, setModalState] = useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        defaultValue: '',
-        callback: null
-    });
-    const [modalInput, setModalInput] = useState('');
-    
+    const modalState = { isOpen: false, title: "", message: "" };
+    const modalInput = "";
+    const setModalInput = () => undefined;
+    const handleModalSubmit = () => undefined;
+    const handleModalCancel = () => undefined;
+
     // Sprite Library Modal state
     const [showSpriteLibrary, setShowSpriteLibrary] = useState(false);
 
@@ -896,57 +921,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     };
 
     // ── Modal Handlers ────────────────────────────────────────────────────────
-    const openModal = (title, message, defaultValue, callback) => {
-        setModalState({
-            isOpen: true,
-            title,
-            message,
-            defaultValue,
-            callback
-        });
-        setModalInput(defaultValue);
-    };
-
-    const closeModal = () => {
-        setModalState({
-            isOpen: false,
-            title: '',
-            message: '',
-            defaultValue: '',
-            callback: null
-        });
-        setModalInput('');
-    };
-
-    const handleModalSubmit = () => {
-        if (modalState.callback) {
-            modalState.callback(modalInput);
-        }
-        closeModal();
-    };
-
-    const handleModalCancel = () => {
-        if (modalState.callback) {
-            modalState.callback(null);
-        }
-        closeModal();
-    };
 
     // ── File Management ────────────────────────────────────────────────────────
-    const handleAddFile = () => {
-        openModal(
-            "New File",
-            "Enter file name (e.g. helpers.py):",
-            "",
-            (name) => {
-                if (!name) return;
-                const fname = name.endsWith(".py") ? name : name + ".py";
-                setProjectFiles(prev => ({ ...prev, [fname]: `# ${fname}\n` }));
-                setActiveFile(fname);
-            }
-        );
-    };
-
     const handleDeleteFile = (file) => {
         if (Object.keys(projectFiles).length <= 1) return;
         if (!confirm(`Delete ${file}?`)) return;
@@ -956,6 +932,100 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             return next;
         });
         if (activeFile === file) setActiveFile(Object.keys(projectFiles).find(f => f !== file));
+    };
+
+    const openFilePicker = (accept, onSelect, options = {}) => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = accept;
+        input.multiple = Boolean(options.multiple);
+        if (options.capture) {
+            input.setAttribute("capture", options.capture);
+        }
+        input.onchange = (event) => {
+            const files = Array.from(event.target.files || []);
+            if (!files.length) return;
+            onSelect(options.multiple ? files : files[0]);
+        };
+        input.click();
+    };
+
+    const readTextFile = (file) =>
+        new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => resolve(String(event.target?.result || ""));
+            reader.onerror = () => reject(reader.error || new Error(`Unable to read ${file.name}`));
+            reader.readAsText(file);
+        });
+
+    const addPreparedFilesToProject = (preparedFiles, successLabel) => {
+        if (!preparedFiles.length) return;
+
+        const importedNames = [];
+        setProjectFiles((prev) => {
+            const next = { ...prev };
+            preparedFiles.forEach(({ name, content }) => {
+                const nextFileName = getUniqueFileName(name, next);
+                next[nextFileName] = content;
+                importedNames.push(nextFileName);
+            });
+            return next;
+        });
+
+        const lastImported = importedNames[importedNames.length - 1];
+        if (lastImported) {
+            setActiveFile(lastImported);
+        }
+        setSidePanel("files");
+        addLog(
+            `${successLabel}: ${importedNames.join(", ")}`,
+            "success"
+        );
+    };
+
+    const importTextFiles = (accept, successLabel) => {
+        openFilePicker(accept, async (files) => {
+            try {
+                const preparedFiles = await Promise.all(
+                    files.map(async (file) => ({
+                        name: file.name,
+                        content: await readTextFile(file),
+                    }))
+                );
+
+                addPreparedFilesToProject(preparedFiles, successLabel);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Unable to import selected files.";
+                addLog(message, "error");
+            }
+        }, { multiple: true });
+    };
+
+    const importAssetFiles = (accept, kind, successLabel) => {
+        openFilePicker(accept, (files) => {
+            const preparedFiles = files.map((file) => ({
+                name: file.name,
+                content: buildAssetPlaceholder(file, kind),
+            }));
+
+            addPreparedFilesToProject(preparedFiles, successLabel);
+        }, { multiple: true });
+    };
+
+    const handleAddPythonFiles = () => {
+        importTextFiles(".py", "Added python file");
+    };
+
+    const handleAddImageFiles = () => {
+        importAssetFiles("image/*", "image", "Added image file");
+    };
+
+    const handleAddTextFiles = () => {
+        importTextFiles(".txt,text/plain,.md,.json", "Added text file");
+    };
+
+    const handleAddCsvFiles = () => {
+        importTextFiles(".csv,text/csv", "Added CSV file");
     };
 
     // ── PIP ───────────────────────────────────────────────────────────────────
@@ -1294,7 +1364,11 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     projectFiles={projectFiles}
                     activeFile={activeFile}
                     setActiveFile={setActiveFile}
-                    handleAddFile={handleAddFile}
+                    handleAddPythonFiles={handleAddPythonFiles}
+                    handleAddImageFiles={handleAddImageFiles}
+                    handleAddTextFiles={handleAddTextFiles}
+                    handleAddCsvFiles={handleAddCsvFiles}
+                    handleDeleteFile={handleDeleteFile}
                 />
 
                 {/* ── EDITOR + TERMINAL ── */}
@@ -1520,6 +1594,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     </div>
                 </div>
             )}
+
         </div>
     );  
 }

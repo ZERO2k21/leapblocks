@@ -28,7 +28,7 @@ const config: ForgeConfig = {
     new AutoUnpackNativesPlugin({}),
     new WebpackPlugin({
       mainConfig,
-      devContentSecurityPolicy: "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: http:; img-src * 'self' data: blob: https: http:; media-src * 'self' data: blob: https: http:; script-src * 'self' 'unsafe-inline' 'unsafe-eval'; connect-src * 'self' https: http: wss: ws:; font-src * 'self' data:;",
+      devContentSecurityPolicy: "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: http:; img-src * 'self' data: blob: https: http:; media-src * 'self' data: blob: https: http:; script-src * 'self' 'unsafe-inline' 'unsafe-eval' blob:; worker-src 'self' blob:; connect-src * 'self' https: http: wss: ws:; font-src * 'self' data:;",
       renderer: {
         config: rendererConfig,
         entryPoints: [
