@@ -34,6 +34,36 @@ const C = {
     HEADER_BG: "#8B5CF6",
 };
 
+const getLanguageForFile = (fileName = "") => {
+    const lowerFileName = fileName.toLowerCase();
+
+    if (lowerFileName.endsWith(".ino") || lowerFileName.endsWith(".cpp") || lowerFileName.endsWith(".cc") || lowerFileName.endsWith(".c")) {
+        return "cpp";
+    }
+
+    if (lowerFileName.endsWith(".h") || lowerFileName.endsWith(".hpp")) {
+        return "cpp";
+    }
+
+    if (lowerFileName.endsWith(".json")) {
+        return "json";
+    }
+
+    if (lowerFileName.endsWith(".md")) {
+        return "markdown";
+    }
+
+    if (lowerFileName.endsWith(".csv")) {
+        return "plaintext";
+    }
+
+    if (lowerFileName.endsWith(".txt")) {
+        return "plaintext";
+    }
+
+    return "python";
+};
+
 export default function MonacoEditor({ 
     projectFiles, 
     activeFile, 
@@ -42,13 +72,38 @@ export default function MonacoEditor({
     monacoRef, 
     editorCursor, 
     isRunning, 
-    onRun 
+    onRun,
+    onCursorChange,
+    editorOptions = {}
 }) {
+    const editorLanguage = getLanguageForFile(activeFile);
+    const mergedOptions = {
+        fontSize: 14,
+        fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
+        fontLigatures: true,
+        minimap: { enabled: true },
+        scrollBeyondLastLine: false,
+        automaticLayout: true,
+        lineNumbers: "on",
+        glyphMargin: true,
+        folding: true,
+        renderLineHighlight: "line",
+        tabSize: 4,
+        wordWrap: "off",
+        suggestOnTriggerCharacters: true,
+        quickSuggestions: true,
+        ...editorOptions,
+        minimap: {
+            enabled: true,
+            ...(editorOptions.minimap || {}),
+        },
+    };
+
     return (
-        <div style={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
+        <div style={{ flex: 1, height: "100%", overflow: "hidden", minHeight: 0, display: "flex" }}>
             <Editor
                 height="100%"
-                language="python"
+                language={editorLanguage}
                 theme="vs"
                 value={projectFiles[activeFile] || ""}
                 onChange={(val) => setProjectFiles(prev => ({ ...prev, [activeFile]: val || "" }))}
@@ -56,13 +111,14 @@ export default function MonacoEditor({
                     editorRef.current = editor;
                     monacoRef.current = monaco;
                     editor.onDidChangeCursorPosition(e => {
-                        // This would need to be passed down as a prop
-                        // For now, we'll just log it
-                        console.log(`Cursor position: ${e.position.lineNumber}, ${e.position.column}`);
+                        onCursorChange?.({
+                            line: e.position.lineNumber,
+                            col: e.position.column,
+                        });
                     });
                     // Add Ctrl+Enter to run
                     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-                        onRun();
+                        onRun?.();
                     });
                     // Add Python completions
                     monaco.languages.registerCompletionItemProvider("python", {
@@ -86,22 +142,7 @@ export default function MonacoEditor({
                         }
                     });
                 }}
-                options={{
-                    fontSize: 14,
-                    fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
-                    fontLigatures: true,
-                    minimap: { enabled: true },
-                    scrollBeyondLastLine: false,
-                    automaticLayout: true,
-                    lineNumbers: "on",
-                    glyphMargin: true,
-                    folding: true,
-                    renderLineHighlight: "line",
-                    tabSize: 4,
-                    wordWrap: "off",
-                    suggestOnTriggerCharacters: true,
-                    quickSuggestions: true,
-                }}
+                options={mergedOptions}
             />
         </div>
     );

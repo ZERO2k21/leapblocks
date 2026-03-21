@@ -25,6 +25,7 @@ export default function EditorPanel({
     editorRef,
     monacoRef,
     setProjectFiles,
+    onCursorChange,
     packages,
     pipFilter,
     setPipFilter,
@@ -47,6 +48,7 @@ export default function EditorPanel({
                 editorCursor={editorCursor}
                 isRunning={isRunning}
                 onRun={onRun}
+                onCursorChange={onCursorChange}
             />
 
             <StatusBar
