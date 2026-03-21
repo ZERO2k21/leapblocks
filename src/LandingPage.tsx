@@ -16,13 +16,13 @@ function injectCSS() {
         @keyframes lp-fadein    { from { opacity:0 } to { opacity:1 } }
         @keyframes lp-fadeup    { from { opacity:0; transform:translateY(30px) } to { opacity:1; transform:translateY(0) } }
 
-        /* Robot intro: falls from top, bounces, settles */
-        @keyframes lp-robot-drop {
-            0%   { transform:translateY(-300px) rotate(-8deg) scale(.6); opacity:0 }
-            55%  { transform:translateY(14px)   rotate(2deg)  scale(1.03); opacity:1 }
-            70%  { transform:translateY(-8px)   rotate(-1deg) scale(.98) }
-            85%  { transform:translateY(4px)    rotate(0deg)  scale(1.01) }
-            100% { transform:translateY(0)      rotate(0deg)  scale(1);   opacity:1 }
+        /* Robot intro: launches from bottom, bounces, settles */
+        @keyframes lp-robot-launch {
+            0%   { transform:translateY(300px) rotate(-8deg) scale(.6); opacity:0 }
+            55%  { transform:translateY(-14px) rotate(2deg)  scale(1.03); opacity:1 }
+            70%  { transform:translateY(8px)   rotate(-1deg) scale(.98) }
+            85%  { transform:translateY(-4px)  rotate(0deg)  scale(1.01) }
+            100% { transform:translateY(0)     rotate(0deg)  scale(1);   opacity:1 }
         }
 
         /* Robot hover float after landing */
@@ -44,6 +44,20 @@ function injectCSS() {
         @keyframes lp-float-shape {
             0%,100% { transform: translateY(0) rotate(0deg) }
             50%     { transform: translateY(-20px) rotate(5deg) }
+        }
+
+        /* Spotlight strip */
+        @keyframes lp-spotlight {
+            0% { transform: translateX(-200%) skewX(-45deg); opacity: 0; }
+            10% { opacity: 0.2; }
+            90% { opacity: 0.2; }
+            100% { transform: translateX(300%) skewX(-45deg); opacity: 0; }
+        }
+
+        /* Ambient grid flow */
+        @keyframes lp-grid-flow {
+            0% { background-position: 0 0, 0 0; }
+            100% { background-position: 40px 40px, 0 0; }
         }
 
         /* Card hover glow */
@@ -75,6 +89,27 @@ function injectCSS() {
             0%,100% { transform: scaleX(1); opacity:0.15 }
             50%     { transform: scaleX(1.1); opacity:0.25 }
         }
+
+        @keyframes lp-orbit-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes lp-card-float {
+            0%,100% { transform: translateY(0); }
+            50%     { transform: translateY(-6px); }
+        }
+
+        @keyframes lp-card-shimmer {
+            0%   { transform: translateX(-160%) skewX(-18deg); opacity: 0; }
+            16%  { opacity: 0.35; }
+            100% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+        }
+
+        @keyframes lp-card-wave {
+            0%,100% { transform: translateY(0) scaleY(1); }
+            50%     { transform: translateY(-6px) scaleY(1.08); }
+        }
     `;
     document.head.appendChild(s);
 }
@@ -88,117 +123,307 @@ interface ModeCardProps {
     gradient: string;
     delay: number;
     available: boolean;
+    patternType?: string;
+    tag?: string;
+    chips?: string[];
+    cta?: string;
     onClick: () => void;
 }
 
-const ModeCard: React.FC<ModeCardProps> = ({ icon, title, subtitle, color, gradient, delay, available, onClick }) => {
+const renderCardDecorations = (patternType: string, color: string, gradient: string, hovered: boolean) => {
+    if (patternType === 'grid') {
+        return (
+            <>
+                <div style={{
+                    position: 'absolute',
+                    top: 18,
+                    right: 18,
+                    width: 96,
+                    height: 96,
+                    borderRadius: 22,
+                    opacity: hovered ? 0.2 : 0.12,
+                    backgroundImage: 'linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)',
+                    backgroundSize: '16px 16px',
+                    color,
+                    transform: hovered ? 'rotate(8deg) scale(1.04)' : 'rotate(4deg)',
+                    transition: 'all .45s ease',
+                }} />
+                <div style={{
+                    position: 'absolute',
+                    top: 34,
+                    left: 18,
+                    fontSize: 34,
+                    fontWeight: 700,
+                    fontFamily: '"Orbitron", sans-serif',
+                    color: `${color}55`,
+                }}>{'{'}</div>
+            </>
+        );
+    }
+
+    if (patternType === 'lines') {
+        return (
+            <>
+                <div style={{
+                    position: 'absolute',
+                    inset: 'auto -24px 46px auto',
+                    width: 160,
+                    height: 160,
+                    borderRadius: '50%',
+                    border: `1px solid ${color}33`,
+                    animation: 'lp-orbit-slow 14s linear infinite',
+                }}>
+                    <div style={{
+                        position: 'absolute',
+                        top: -5,
+                        left: '50%',
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        background: color,
+                        boxShadow: `0 0 14px ${color}88`,
+                    }} />
+                </div>
+                <div style={{
+                    position: 'absolute',
+                    bottom: 26,
+                    left: 22,
+                    right: 22,
+                    display: 'flex',
+                    gap: 6,
+                    opacity: hovered ? 0.35 : 0.2,
+                    transition: 'opacity .35s ease',
+                }}>
+                    {[22, 34, 18, 42, 28, 38].map((height, index) => (
+                        <div
+                            key={height}
+                            style={{
+                                flex: 1,
+                                height,
+                                borderRadius: 999,
+                                background: gradient,
+                                transformOrigin: 'bottom center',
+                                animation: `lp-card-wave 1.6s ${index * 0.14}s ease-in-out infinite`,
+                            }}
+                        />
+                    ))}
+                </div>
+            </>
+        );
+    }
+
+    if (patternType === 'waves') {
+        return (
+            <>
+                <div style={{
+                    position: 'absolute',
+                    top: 22,
+                    right: -14,
+                    width: 150,
+                    height: 150,
+                    borderRadius: '50%',
+                    background: `radial-gradient(circle at 30% 30%, ${color}44 0%, transparent 65%)`,
+                    transform: hovered ? 'scale(1.08)' : 'scale(1)',
+                    transition: 'transform .45s ease',
+                }} />
+                <div style={{
+                    position: 'absolute',
+                    inset: 'auto 18px 20px 18px',
+                    height: 52,
+                    borderRadius: 30,
+                    opacity: hovered ? 0.25 : 0.14,
+                    background: `repeating-radial-gradient(circle at 0 100%, ${color} 0 6px, transparent 6px 20px)`,
+                }} />
+            </>
+        );
+    }
+
+    return (
+        <>
+            <div style={{
+                position: 'absolute',
+                inset: 0,
+                opacity: hovered ? 0.1 : 0.05,
+                transition: 'opacity .4s ease, transform .4s ease',
+                backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 2px, transparent 0)',
+                backgroundSize: '16px 16px',
+                color,
+                transform: hovered ? 'scale(1.05)' : 'scale(1)',
+            }} />
+            <div style={{
+                position: 'absolute',
+                top: 16,
+                right: 18,
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                background: `${color}22`,
+                boxShadow: `0 0 0 12px ${color}12`,
+                animation: 'lp-card-float 4s ease-in-out infinite',
+            }} />
+        </>
+    );
+};
+
+const ModeCard: React.FC<ModeCardProps> = ({
+    icon,
+    title,
+    subtitle,
+    color,
+    gradient,
+    delay,
+    available,
+    patternType = 'dots',
+    tag = 'Studio',
+    chips = [],
+    cta = 'Open',
+    onClick,
+}) => {
     const [hovered, setHovered] = useState(false);
+    const [pointer, setPointer] = useState({ x: 50, y: 50 });
+
+    const rotateX = hovered ? (50 - pointer.y) / 10 : 0;
+    const rotateY = hovered ? (pointer.x - 50) / 10 : 0;
 
     return (
         <div
             onClick={onClick}
             onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
+            onMouseLeave={() => {
+                setHovered(false);
+                setPointer({ x: 50, y: 50 });
+            }}
+            onMouseMove={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect();
+                const x = ((event.clientX - rect.left) / rect.width) * 100;
+                const y = ((event.clientY - rect.top) / rect.height) * 100;
+                setPointer({ x, y });
+            }}
             style={{
                 position: 'relative',
-                width: 200,
-                height: 260, // Fixed height for consistency
-                background: hovered ? '#FFFFFF' : '#FFFFFF', // Maintain light theme
-                border: `2.5px solid ${hovered ? color : '#F1F5F9'}`,
-                borderRadius: 24,
-                padding: '32px 20px 24px',
+                width: 196,
+                height: 240,
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.72))',
+                border: `1px solid ${hovered ? `${color}33` : 'rgba(255,255,255,0.75)'}`,
+                borderRadius: 28,
+                padding: '14px 16px 16px',
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'flex-start',
                 cursor: 'pointer',
-                transition: 'all .4s cubic-bezier(.34,1.56,.64,1)',
-                transform: hovered ? 'translateY(-10px)' : 'translateY(0)',
+                transition: 'transform .35s ease, box-shadow .35s ease, border-color .35s ease',
+                transform: `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(${hovered ? -10 : 0}px)`,
                 boxShadow: hovered
-                    ? `0 20px 40px ${color}25, 0 0 0 1px ${color}15`
-                    : '0 4px 20px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.02)',
+                    ? `0 28px 60px ${color}24, 0 10px 24px rgba(15,23,42,0.12)`
+                    : '0 12px 30px rgba(15,23,42,0.08)',
                 animation: `lp-fadeup .5s ${delay}s both`,
                 overflow: 'hidden',
+                backdropFilter: 'blur(14px)',
+                WebkitBackdropFilter: 'blur(14px)',
             }}
         >
-            {/* Hover Gradient Overlay */}
             <div style={{
                 position: 'absolute',
                 inset: 0,
                 background: gradient,
-                opacity: hovered ? 0.03 : 0,
-                transition: 'opacity .4s',
+                opacity: hovered ? 0.12 : 0.08,
+                transition: 'opacity .35s ease',
                 pointerEvents: 'none',
             }} />
-
-            {/* Icon circle */}
             <div style={{
-                width: 72, height: 72,
-                borderRadius: '50%',
-                background: hovered ? gradient : '#F8FAFC',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 34,
-                marginBottom: 20,
-                boxShadow: hovered ? `0 8px 24px ${color}44` : 'none',
-                transition: 'all .4s ease',
-                transform: hovered ? 'scale(1.1) rotate(5deg)' : 'scale(1) rotate(0deg)',
-                border: hovered ? 'none' : '1px solid #E2E8F0',
+                position: 'absolute',
+                inset: 0,
+                background: `radial-gradient(circle at ${pointer.x}% ${pointer.y}%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.15) 34%, transparent 60%)`,
+                pointerEvents: 'none',
+            }} />
+            <div style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: '-45%',
+                width: '40%',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)',
+                opacity: hovered ? 1 : 0,
+                animation: hovered ? 'lp-card-shimmer 1.3s ease-out' : 'none',
+                pointerEvents: 'none',
+            }} />
+            {renderCardDecorations(patternType, color, gradient, hovered)}
+
+
+
+            <div style={{
+                position: 'relative',
+                zIndex: 1,
+                width: 64,
+                height: 64,
+                borderRadius: 20,
+                background: hovered ? gradient : 'rgba(255,255,255,0.78)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 18,
+                boxShadow: hovered ? `0 16px 28px ${color}33` : '0 8px 20px rgba(15,23,42,0.08)',
+                transition: 'all .35s ease',
+                transform: hovered ? 'scale(1.06) rotate(4deg)' : 'scale(1)',
+                border: '1px solid rgba(255,255,255,0.84)',
             }}>
-                <div style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {icon}
                 </div>
             </div>
 
-            {/* Title */}
             <div style={{
+                position: 'relative',
+                zIndex: 1,
                 fontSize: 16,
-                fontWeight: 700,
-                color: '#1E293B',
-                marginBottom: 8,
+                fontWeight: 800,
+                color: '#0F172A',
+                marginBottom: 6,
                 fontFamily: '"Poppins", sans-serif',
-                textAlign: 'center',
-                transition: 'color .3s',
+                lineHeight: 1.1,
             }}>
                 {title}
             </div>
 
-            {/* Subtitle */}
             <div style={{
-                fontSize: 12,
-                color: '#64748B',
-                textAlign: 'center',
-                lineHeight: 1.6,
-                padding: '0 4px',
-                fontFamily: '"Inter", sans-serif',
-                transition: 'color .3s',
-                fontWeight: 400,
+                position: 'relative',
+                zIndex: 1,
+                fontSize: 11.5,
+                color: '#526176',
+                lineHeight: 1.5,
+                fontFamily: '\"Inter\", sans-serif',
+                marginBottom: 10,
+                minHeight: 48,
             }}>
                 {subtitle}
             </div>
 
-            {/* Bottom Glow */}
             <div style={{
-                position: 'absolute',
-                bottom: 0, left: '10%', right: '10%',
-                height: 4,
-                background: gradient,
-                borderRadius: '4px 4px 0 0',
-                opacity: hovered ? 1 : 0,
-                transition: 'opacity .3s',
-            }} />
+                position: 'relative',
+                zIndex: 1,
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 6,
+                marginTop: 'auto',
+            }}>
+                {chips.map((chip, index) => (
+                    <div
+                        key={`${title}-${chip}`}
+                        style={{
+                            padding: '6px 8px',
+                            borderRadius: 999,
+                            background: 'rgba(255,255,255,0.72)',
+                            border: '1px solid rgba(255,255,255,0.85)',
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: '#334155',
+                            animation: `lp-card-float 4s ${index * 0.18}s ease-in-out infinite`,
+                        }}
+                    >
+                        {chip}
+                    </div>
+                ))}
+            </div>
 
-            {/* Available indicator */}
-            {available && (
-                <div style={{
-                    position: 'absolute',
-                    top: 14, right: 14,
-                    width: 10, height: 10,
-                    borderRadius: '50%',
-                    backgroundColor: '#22C55E',
-                    boxShadow: '0 0 10px rgba(34,197,94,0.4)',
-                    border: '2px solid white',
-                }} />
-            )}
         </div>
     );
 };
@@ -209,30 +434,164 @@ const Toast: React.FC<{ message: string; visible: boolean }> = ({ message, visib
     return (
         <div style={{
             position: 'fixed',
-            bottom: 40,
+            bottom: 32,
             left: '50%',
             transform: 'translateX(-50%)',
-            padding: '14px 28px',
-            borderRadius: 14,
-            background: 'linear-gradient(135deg, #855CD6, #6D28D9)',
+            padding: '14px 20px',
+            borderRadius: 18,
+            background: 'rgba(15,23,42,0.94)',
             color: 'white',
-            fontSize: 14,
-            fontWeight: 600,
+            fontSize: 13,
+            fontWeight: 700,
             fontFamily: '"Poppins", sans-serif',
-            boxShadow: '0 8px 32px rgba(133,92,214,0.35)',
+            boxShadow: '0 18px 34px rgba(15,23,42,0.22)',
             animation: 'lp-toast-in .3s ease-out',
             zIndex: 100,
             display: 'flex',
             alignItems: 'center',
             gap: 10,
         }}>
-            <span style={{ fontSize: 20 }}>🚧</span>
+            <span style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #f59e0b, #38bdf8)',
+                boxShadow: '0 0 14px rgba(56,189,248,0.45)',
+            }} />
             {message}
         </div>
     );
 };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
+
+// ─── Network Background ──────────────────────────────────────────────────────
+const NetworkBackground: React.FC = () => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const mouse = useRef({ x: -1000, y: -1000, isDragging: false });
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let particles: Particle[] = [];
+        let animationFrameId: number;
+
+        const resize = () => {
+            canvas!.width = window.innerWidth;
+            canvas!.height = window.innerHeight;
+            initParticles();
+        };
+
+        class Particle {
+            x: number;
+            y: number;
+            vx: number;
+            vy: number;
+            radius: number;
+            color: string;
+
+            constructor() {
+                this.x = Math.random() * canvas!.width;
+                this.y = Math.random() * canvas!.height;
+                this.vx = (Math.random() - 0.5) * 0.8;
+                this.vy = (Math.random() - 0.5) * 0.8;
+                this.radius = Math.random() * 2 + 1;
+                const colors = ['#855CD6', '#3B82F6', '#94a3b8', '#cbd5e1'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > canvas!.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas!.height) this.vy *= -1;
+
+                const dx = mouse.current.x - this.x;
+                const dy = mouse.current.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const interactionDist = mouse.current.isDragging ? 220 : 120;
+
+                if (distance < interactionDist) {
+                    const force = (interactionDist - distance) / interactionDist;
+                    // Attract slightly on normal hover, pull strongly on drag
+                    const pull = mouse.current.isDragging ? 2.5 : -1.2; 
+                    this.x -= (dx / distance) * force * pull;
+                    this.y -= (dy / distance) * force * pull;
+                }
+            }
+
+            draw() {
+                if (!ctx) return;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        const initParticles = () => {
+            particles = [];
+            const numParticles = Math.min(Math.floor((canvas!.width * canvas!.height) / 11000), 120);
+            for (let i = 0; i < numParticles; i++) {
+                particles.push(new Particle());
+            }
+        };
+
+        const animate = () => {
+            ctx.clearRect(0, 0, canvas!.width, canvas!.height);
+
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 140) {
+                        ctx.beginPath();
+                        const opacity = 0.2 * (1 - distance / 140);
+                        ctx.strokeStyle = `rgba(133, 92, 214, ${opacity})`;
+                        ctx.lineWidth = 1;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            animationFrameId = requestAnimationFrame(animate);
+        };
+
+        window.addEventListener('resize', resize);
+        window.addEventListener('mousemove', (e) => {
+            mouse.current.x = e.clientX;
+            mouse.current.y = e.clientY;
+        });
+        window.addEventListener('mousedown', () => mouse.current.isDragging = true);
+        window.addEventListener('mouseup', () => mouse.current.isDragging = false);
+        window.addEventListener('mouseout', () => {
+            mouse.current.x = -1000;
+            mouse.current.y = -1000;
+        });
+
+        resize();
+        animate();
+
+        return () => {
+            window.removeEventListener('resize', resize);
+            cancelAnimationFrame(animationFrameId);
+        };
+    }, []);
+
+    return <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }} />;
+};
+
+
 interface LandingPageProps {
     onSelect: (mode: 'intermediate' | 'junior' | 'python') => void;
 }
@@ -254,33 +613,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     const extraCardsContainerRef = useRef<HTMLDivElement>(null);
     const logoRef = useRef<HTMLDivElement>(null);
     const robotRef = useRef<HTMLImageElement>(null);
-    const bgShapesRef = useRef<(HTMLDivElement | null)[]>([]);
-
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-
-    const shapes = useMemo(() => {
-        const shapeTypes = ['square', 'circle', 'plus', 'puzzle', 'triangle'];
-        return Array.from({ length: 45 }).map((_, i) => ({
-            id: i,
-            type: shapeTypes[i % shapeTypes.length],
-            size: random(20, 70), // Slightly smaller but more of them
-            x: random(-5, 105), // Spread slightly beyond bounds to avoid edges
-            y: random(-5, 105),
-            rotation: random(0, 360),
-            opacity: random(0.03, 0.07),
-            color: ['#855CD6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'][i % 5]
-        }));
-    }, []);
-
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            const x = (e.clientX / window.innerWidth - 0.5) * 2;
-            const y = (e.clientY / window.innerHeight - 0.5) * 2;
-            setMousePos({ x, y });
-        };
-        window.addEventListener('mousemove', handleMouseMove);
-        return () => window.removeEventListener('mousemove', handleMouseMove);
-    }, []);
 
     const FULL_TEXT = 'Welcome to LeapBlocks';
 
@@ -318,64 +650,87 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     useEffect(() => {
         if (phase !== 'main') return;
 
-        // Sequence: Robot -> Logo/Subtitle -> Cards
-        
-        // 1. Robot Entrance (First)
-        if (robotRef.current) {
-            animate(robotRef.current, {
-                translateY: [100, 0],
+        const isReturning = hasSeenIntro; // If true, skip the header sequence
+
+        if (isReturning) {
+            // Instant header, smooth cards
+            if (robotRef.current) {
+                robotRef.current.style.opacity = '1';
+                animate(robotRef.current, {
+                    translateY: [-15, 0],
+                    rotate: [-3, 3],
+                    duration: 2000,
+                    direction: 'alternate',
+                    loop: true,
+                    ease: 'inOutQuad'
+                });
+            }
+            if (logoRef.current) {
+                logoRef.current.style.opacity = '1';
+            }
+            const subtitleEl = document.querySelector('.lp-subtitle') as HTMLElement;
+            if (subtitleEl) subtitleEl.style.opacity = '1';
+
+            // Cards stagger quickly
+            animate('.lp-main-card', {
+                translateY: [80, 0],
                 opacity: [0, 1],
-                scale: [0.5, 1],
-                rotate: [20, 0],
-                duration: 1200,
-                ease: 'outElastic(1, .6)',
+                scale: [0.8, 1],
+                delay: stagger(60, { start: 100 }),
+                duration: 800,
+                ease: 'outElastic(1, .7)'
+            });
+            animate('.lp-extra-card', {
+                translateY: [60, 0],
+                opacity: [0, 1],
+                scale: [0.8, 1],
+                delay: stagger(60, { start: 400 }),
+                duration: 800,
+                ease: 'outElastic(1, .7)'
+            });
+        } else {
+            // Sequence: Logo/Subtitle -> Cards
+            
+            // 2. Logo / Branding (Offset slightly)
+            if (logoRef.current) {
+                animate(logoRef.current, {
+                    translateY: [40, 0],
+                    opacity: [0, 1],
+                    scale: [0.9, 1],
+                    duration: 1000,
+                    ease: 'outQuad',
+                    delay: 400
+                });
+            }
+
+            // 3. Subtitle
+            animate('.lp-subtitle', {
+                opacity: [0, 1],
+                translateY: [20, 0],
+                duration: 800,
+                delay: 800,
+                ease: 'outQuad'
             });
 
-            // Start hover float after entrance
-            setTimeout(() => {
-                if (robotRef.current) {
-                    animate(robotRef.current, {
-                        translateY: [-15, 0],
-                        rotate: [-3, 3],
-                        duration: 2000,
-                        direction: 'alternate',
-                        loop: true,
-                        ease: 'inOutQuad'
-                    });
-                }
-            }, 1200);
-        }
-
-        // 2. Logo / Branding (Offset slightly)
-        if (logoRef.current) {
-            animate(logoRef.current, {
-                translateY: [40, 0],
+            // 4. Mode Cards (Staggered last)
+            animate('.lp-main-card', {
+                translateY: [80, 0],
                 opacity: [0, 1],
-                scale: [0.9, 1],
+                scale: [0.8, 1],
+                delay: stagger(100, { start: 1200 }),
                 duration: 1000,
-                ease: 'outQuad',
-                delay: 400
+                ease: 'outElastic(1, .7)'
+            });
+
+            animate('.lp-extra-card', {
+                translateY: [60, 0],
+                opacity: [0, 1],
+                scale: [0.8, 1],
+                delay: stagger(100, { start: 1600 }),
+                duration: 800,
+                ease: 'outElastic(1, .7)'
             });
         }
-
-        // 3. Subtitle
-        animate('.lp-subtitle', {
-            opacity: [0, 1],
-            translateY: [20, 0],
-            duration: 800,
-            delay: 800,
-            ease: 'outQuad'
-        });
-
-        // 4. Mode Cards (Staggered last)
-        animate('.lp-main-card', {
-            translateY: [80, 0],
-            opacity: [0, 1],
-            scale: [0.8, 1],
-            delay: stagger(100, { start: 1200 }),
-            duration: 1000,
-            ease: 'outElastic(1, .7)'
-        });
 
         animate('.lp-extra-card', {
             translateY: [60, 0],
@@ -386,27 +741,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             ease: 'outElastic(1, .7)'
         });
 
-        // Background shapes floating
-        bgShapesRef.current.forEach((shape, i) => {
-            if (!shape) return;
-            animate(shape, {
-                translateX: () => random(-50, 50),
-                translateY: () => random(-50, 50),
-                rotate: () => random(-30, 30),
-                duration: () => random(6000, 10000),
-                delay: i * 50,
-                direction: 'alternate',
-                loop: true,
-                ease: 'inOutSine'
-            });
-        });
-
         return () => scope.revert();
     }, [phase, scope]);
 
     // Show toast for coming soon
     const showComingSoon = (name: string) => {
-        setToast({ message: `${name} — Coming Soon! 🚀`, visible: true });
+        setToast({ message: `${name} is coming soon.`, visible: true });
         setTimeout(() => setToast({ message: '', visible: false }), 2500);
     };
 
@@ -421,9 +761,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
             ),
-            title: 'Junior Blocks', subtitle: 'Icon blocks & visual stories for Classes 1 to 5',
+            title: 'Junior Blocks', subtitle: 'Picture-first coding for stories, characters, and quick wins.',
             color: '#c77e00ff', gradient: 'linear-gradient(135deg, #ffbb44ff, #fe8b08ff)',
-            available: true, onClick: () => onSelect('junior'),
+            available: true, patternType: 'dots', tag: 'Play first', chips: ['Big icons', 'Easy stories'], cta: 'Start studio', onClick: () => onSelect('junior'),
         },
         {
             icon: (
@@ -433,9 +773,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
             ),
-            title: 'Intermediate Blocks', subtitle: 'Blockly + Arduino hardware coding for Classes 6 to 8',
+            title: 'Intermediate Blocks', subtitle: 'Blockly plus Arduino for robotics, sensors, and logic flows.',
             color: '#5a29bdff', gradient: 'linear-gradient(135deg, #855CD6, #370091ff)',
-            available: true, onClick: () => onSelect('intermediate'),
+            available: true, patternType: 'lines', tag: 'Build robots', chips: ['Sensors', 'Logic flow'], cta: 'Open hardware', onClick: () => onSelect('intermediate'),
         },
         {
             icon: (
@@ -445,9 +785,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
             ),
-            title: 'Python IDE', subtitle: 'Step into the world of text-based coding',
+            title: 'Python IDE', subtitle: 'Move into text coding with scripts, editor tools, and sprite control.',
             color: '#3776ab', gradient: 'linear-gradient(135deg, #3776ab, #ffd343)',
-            available: true, onClick: () => onSelect('python'),
+            available: true, patternType: 'grid', tag: 'Code deeper', chips: ['Text editor', 'Sprite APIs'], cta: 'Write code', onClick: () => onSelect('python'),
         },
         {
             icon: (
@@ -457,9 +797,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
             ),
-            title: 'Advanced Blocks', subtitle: 'AI/ML Coding with intelligent blocks',
+            title: 'Advanced Blocks', subtitle: 'A future lane for AI, machine vision, and richer block systems.',
             color: '#2c5fb3ff', gradient: 'linear-gradient(135deg, #5a99ffff, #033cd7ff)',
-            available: false, onClick: () => showComingSoon('Advanced'),
+            available: false, patternType: 'waves', tag: 'AI lab', chips: ['Vision tools', 'Smart blocks'], cta: 'Preview lane', onClick: () => showComingSoon('Advanced'),
         },
     ];
 
@@ -472,9 +812,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
             ),
-            title: 'Creocad', subtitle: 'Online simulation for 3D printing',
+            title: 'Creocad', subtitle: '3D simulation and prototyping before ideas become physical builds.',
             color: '#51c1bdff', gradient: 'linear-gradient(135deg, #51c1bdff, #00fefaff)',
-            available: false, onClick: () => showComingSoon('Creocad')
+            available: false, patternType: 'grid', tag: '3D build', chips: ['Model space', 'Prototype'], cta: 'See preview', onClick: () => showComingSoon('Creocad')
         },
         {
             icon: (
@@ -484,9 +824,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
             ),
-            title: 'App & Game Development', subtitle: 'Build interactive games',
+            title: 'App & Game Development', subtitle: 'A future studio for scenes, interactions, and game logic.',
             color: '#EF4444', gradient: 'linear-gradient(135deg, #ff6a6aff, #b70000ff)',
-            available: false, onClick: () => showComingSoon('App & Game Development'),
+            available: false, patternType: 'lines', tag: 'Game lab', chips: ['Scenes', 'Interactions'], cta: 'Track update', onClick: () => showComingSoon('App & Game Development'),
         },
         {
             icon: (
@@ -496,23 +836,25 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
             ),
-            title: 'Quiz', subtitle: 'Create fun learning quizzes',
+            title: 'Quiz', subtitle: 'A focused path for fast classroom checks and fun learning challenges.',
             color: '#10B981', gradient: 'linear-gradient(135deg, #10B981, #00faabff)',
-            available: false, onClick: () => showComingSoon('Quiz'),
+            available: false, patternType: 'dots', tag: 'Fast checks', chips: ['Questions', 'Scoreboards'], cta: 'Join queue', onClick: () => showComingSoon('Quiz'),
         },
     ];
 
     return (
         <div style={{
             position: 'fixed', inset: 0, overflow: 'auto',
-            background: 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)', // Cleaner light theme
+            background: 'radial-gradient(rgba(133,92,214,0.06) 1px, transparent 1px), linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)', // Flowing animated background
+            backgroundSize: '40px 40px, 100% 100%',
+            animation: phase === 'main' ? 'lp-grid-flow 30s linear infinite' : 'none',
             fontFamily: '"Inter", "Segoe UI", sans-serif',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
             minHeight: '100vh',
         }}>
             {/* Topbar */}
             <div style={{
-                position: 'absolute',
+                position: 'fixed',
                 top: 0, left: 0, right: 0,
                 height: '56px',
                 display: 'flex',
@@ -579,69 +921,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     }} />
                 </div>
             </div>
-
-            {/* Interactive Decorative Shapes Layer */}
-            <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
-                {shapes.map((shape, i) => (
-                    <div
-                        key={shape.id}
-                        style={{
-                            position: 'absolute',
-                            left: `${shape.x}%`,
-                            top: `${shape.y}%`,
-                            width: shape.size,
-                            height: shape.size,
-                            transform: `translate(${mousePos.x * shape.size * 0.4}px, ${mousePos.y * shape.size * 0.4}px)`,
-                            transition: 'transform 0.15s ease-out', 
-                        }}
-                    >
-                        <div
-                            ref={el => { bgShapesRef.current[i] = el; }}
-                            style={{
-                                width: '100%',
-                                height: '100%',
-                                opacity: shape.opacity,
-                                transform: `rotate(${shape.rotation}deg)`,
-                            }}
-                        >
-                            {shape.type === 'square' && (
-                                <svg viewBox="0 0 100 100" fill={shape.color}>
-                                    <rect x="10" y="10" width="80" height="80" rx="16" />
-                                </svg>
-                            )}
-                            {shape.type === 'circle' && (
-                                <svg viewBox="0 0 100 100" fill={shape.color}>
-                                    <circle cx="50" cy="50" r="40" />
-                                </svg>
-                            )}
-                            {shape.type === 'plus' && (
-                                <svg viewBox="0 0 100 100" fill={shape.color}>
-                                    <path d="M40 10h20v30h30v20h-30v30h-20v-30h-30v-20h30z" />
-                                </svg>
-                            )}
-                            {shape.type === 'puzzle' && (
-                                <svg viewBox="0 0 100 100" fill={shape.color}>
-                                    <path d="M85 40c0-8.3-6.7-15-15-15h-5.2c-2.4-5.8-8.1-10-14.8-10s-12.4 4.2-14.8 10H30c-8.3 0-15 6.7-15 15v5.2c5.8 2.4 10 8.1 10 14.8s-4.2 12.4-10 14.8V80c0 8.3 6.7 15 15 15h35c8.3 0 15-6.7 15-15v-5.2c-5.8-2.4-10-8.1-10-14.8s4.2-12.4 10-14.8V40z" />
-                                </svg>
-                            )}
-                            {shape.type === 'triangle' && (
-                                <svg viewBox="0 0 100 100" fill={shape.color}>
-                                    <path d="M50 15L85 85H15L50 15Z" />
-                                </svg>
-                            )}
-                        </div>
-                    </div>
-                ))}
-            </div>
+            {/* 3D Network Background Interactive Layer */}
+            <NetworkBackground />
 
             {/* ══════════ INTRO PHASE ══════════ */}
             {(phase === 'intro' || phase === 'welcome') && (
-                <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', margin: 'auto' }}>
 
                     {/* Robot with drop animation */}
                     <div style={{
                         position: 'relative',
-                        animation: 'lp-robot-drop 1.4s cubic-bezier(.36,.07,.19,.97) both',
+                        animation: 'lp-robot-launch 1.4s cubic-bezier(.36,.07,.19,.97) both',
                     }}>
                         {/* Robot mascot image */}
                         <img
@@ -697,8 +987,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <div style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0,
                     animation: 'lp-fadein .5s ease-out',
-                    padding: '20px',
+                    padding: '84px 20px 40px 20px', width: '100%',
                 }}>
+
+                    {/* ── Spotlight Strip ── */}
+                    <div style={{
+                        position: 'absolute',
+                        top: 0, bottom: 0, left: '-20%',
+                        width: '40%',
+                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent)',
+                        animation: 'lp-spotlight 6s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+                        pointerEvents: 'none',
+                        zIndex: 1,
+                    }} />
 
                     {/* ── Logo / Brand ── */}
                     <div 
@@ -709,27 +1010,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
                         zIndex: 2, // Above background
                     }}>
-                        {/* Floating robot mascot container */}
-                        <div style={{
-                            marginBottom: 20, // More space to avoid clipping
-                            height: 100, // Explicit height to prevent layout shift
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <img
-                                ref={robotRef}
-                                src="/assets/sprites/robot/robot_idle.svg"
-                                alt="LeapBlocks Robot"
-                                style={{
-                                    width: 90,
-                                    height: 90,
-                                    filter: 'drop-shadow(0 8px 20px rgba(133,92,214,0.3))',
-                                    opacity: 0, // Starts invisible for Anime.js
-                                }}
-                            />
-                        </div>
-
                         {/* Brand name */}
                         <div style={{
                             fontSize: 36,
@@ -758,7 +1038,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     <div 
                         className="lp-subtitle"
                         style={{
-                        fontSize: 15, color: '#1f242cff', marginBottom: 28,
+                        fontSize: 15, color: '#1f242cff', marginBottom: 16,
                         fontFamily: '"Poppins", sans-serif',
                         fontWeight: 500,
                         // animation: 'lp-fadeup .5s .2s both',
@@ -781,6 +1061,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                                     gradient={card.gradient}
                                     delay={0} // Anime handles delay now
                                     available={card.available}
+                                    patternType={(card as any).patternType}
                                     onClick={card.onClick}
                                 />
                             </div>
@@ -801,6 +1082,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                                     gradient={card.gradient}
                                     delay={0} // Anime handles delay now
                                     available={card.available}
+                                    patternType={(card as any).patternType}
                                     onClick={card.onClick}
                                 />
                             </div>
