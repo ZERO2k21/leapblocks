@@ -95,3 +95,5 @@ everything-claude-code
 # Build outputs
 dist/
 dist-electron/
+build/main.*.js
+build/main.*.js.LICENSE.txt
