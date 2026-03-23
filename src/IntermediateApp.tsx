@@ -170,6 +170,49 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const [isDraggingSprite, setIsDraggingSprite] = useState(false);
     const [stageLayout, setStageLayout] = useState<'normal' | 'small' | 'large'>('normal');
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [fullscreenScale, setFullscreenScale] = useState(1);
+    const stageContainerRef = useRef<HTMLDivElement>(null);
+
+    const handleFullscreen = async () => {
+        if (!document.fullscreenElement) {
+            if (stageContainerRef.current) {
+                try {
+                    await stageContainerRef.current.requestFullscreen();
+                } catch (err) {
+                    console.error("Error attempting to enable fullscreen:", err);
+                }
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    };
+
+    useEffect(() => {
+        const updateScale = () => {
+            if (document.fullscreenElement) {
+                const scaleX = window.innerWidth / 480;
+                const scaleY = window.innerHeight / 360;
+                setFullscreenScale(Math.min(scaleX, scaleY));
+            } else {
+                setFullscreenScale(1);
+            }
+        };
+
+        const onFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+            updateScale();
+        };
+
+        document.addEventListener('fullscreenchange', onFullscreenChange);
+        window.addEventListener('resize', updateScale);
+
+        return () => {
+            document.removeEventListener('fullscreenchange', onFullscreenChange);
+            window.removeEventListener('resize', updateScale);
+        };
+    }, []);
 
     // Backdrop state
     const [showBackdropLibrary, setShowBackdropLibrary] = useState(false);
@@ -2270,7 +2313,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         <button style={{ ...styles.iconBtn, ...(stageLayout === 'large' ? styles.iconBtnActive : {}) }} onClick={() => setStageLayout('large')} title="Large Stage">
                             <LayoutPanelLeft size={18} />
                         </button>
-                        <button style={{ ...styles.iconBtn, ...(isFullscreen ? styles.iconBtnActive : {}) }} onClick={() => setIsFullscreen(!isFullscreen)} title="Fullscreen">
+                        <button style={{ ...styles.iconBtn, ...(isFullscreen ? styles.iconBtnActive : {}) }} onClick={handleFullscreen} title="Fullscreen">
                             {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
                         </button>
                     </div>
@@ -2363,19 +2406,19 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {editorMode === 'stage' ? (
                         <>
                             {/* Stage */}
-                            <div style={{
+                            <div ref={stageContainerRef} style={{
                                 ...styles.stageContainer,
-                                width: stageLayout === 'small' ? '240px' : '480px',
-                                height: stageLayout === 'small' ? '180px' : '360px',
+                                width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '240px' : '480px'),
+                                height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '180px' : '360px'),
                                 transition: 'all 0.2s ease-in-out',
                                 position: 'relative',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                background: '#fff',
+                                background: isFullscreen ? '#000' : '#fff',
                             }}>
                                 <div style={{
-                                    transform: stageLayout === 'small' ? 'scale(0.5)' : 'scale(1)',
+                                    transform: isFullscreen ? `scale(${fullscreenScale})` : (stageLayout === 'small' ? 'scale(0.5)' : 'scale(1)'),
                                     transformOrigin: 'center',
                                     width: '480px',
                                     height: '360px',

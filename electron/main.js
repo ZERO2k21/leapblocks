@@ -1,10 +1,54 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { spawn } = require('child_process');
 const buildApk = require('./buildApk');
 
 const isDev = !app.isPackaged;
 const APP_ROOT = app.getAppPath(); // Base path for resources
+
+// ── Local Build Server Management ─────────
+let buildServerProcess = null;
+
+function startBuildServer() {
+  const serverPath = isDev
+    ? path.join(__dirname, '..', 'local-build-server', 'server.js')
+    : path.join(process.resourcesPath, 'local-build-server', 'server.js');
+
+  if (!fs.existsSync(serverPath)) {
+    console.log('[BUILD-SERVER] Server file not found at:', serverPath);
+    return;
+  }
+
+  buildServerProcess = spawn('node', [serverPath], {
+    env: { ...process.env, BUILD_PORT: '3001' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    detached: false,
+  });
+
+  buildServerProcess.stdout.on('data', (data) => {
+    console.log(`[BUILD-SERVER] ${data.toString().trim()}`);
+  });
+
+  buildServerProcess.stderr.on('data', (data) => {
+    console.error(`[BUILD-SERVER ERROR] ${data.toString().trim()}`);
+  });
+
+  buildServerProcess.on('close', (code) => {
+    console.log(`[BUILD-SERVER] Exited with code ${code}`);
+    buildServerProcess = null;
+  });
+
+  console.log('[BUILD-SERVER] Started on http://localhost:3001');
+}
+
+function stopBuildServer() {
+  if (buildServerProcess) {
+    buildServerProcess.kill();
+    buildServerProcess = null;
+    console.log('[BUILD-SERVER] Stopped');
+  }
+}
 
 let mainWindow;
 
@@ -33,6 +77,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  startBuildServer();
   createWindow();
 
   app.on('activate', function () {
@@ -41,7 +86,12 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', function () {
+  stopBuildServer();
   if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('before-quit', () => {
+  stopBuildServer();
 });
 
 // IPC Handlers
