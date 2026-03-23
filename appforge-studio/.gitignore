@@ -1,0 +1,13 @@
+# AppForge Studio
+
+node_modules/
+dist/
+build/
+output/
+local-build-server/workspace/
+local-build-server/output/
+local-build-server/logs/
+*.log
+.env
+.DS_Store
+keys/appforge.keystore

@@ -28,7 +28,18 @@ export const rendererConfig: Configuration = {
   },
   plugins,
   resolve: {
-    extensions: ['.js', '.ts', '.jsx', '.tsx', '.css'],
+    extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
+  },
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        blockly: {
+          test: /[\\/]node_modules[\\/]blockly[\\/]/,
+          name: 'blockly',
+          chunks: 'all',
+        },
+      },
+    },
   },
   devServer: {
     static: {

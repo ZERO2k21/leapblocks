@@ -2,49 +2,6 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StageProvider, useStage } from "../context/StageContext";
 import Logo from "../components/Logo";
 
-// ─── CSS Animations ───────────────────────────────────────────────────────────
-const animationStyles = document.createElement('style');
-animationStyles.textContent = `
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-    @keyframes blink {
-        0%, 50% { opacity: 1; }
-        51%, 100% { opacity: 0; }
-    }
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    .run-button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4) !important;
-    }
-    .run-button:active {
-        transform: translateY(0);
-    }
-    .stop-button:hover {
-        background: #EF4444 !important;
-        color: #fff !important;
-    }
-    .terminal-line {
-        animation: fadeIn 0.2s ease-out;
-    }
-`;
-if (typeof document !== 'undefined' && !document.getElementById('python-ide-animations')) {
-    animationStyles.id = 'python-ide-animations';
-    document.head.appendChild(animationStyles);
-}
-
 import {
     Play,
     Square,
@@ -71,18 +28,63 @@ import {
     FileCode2,
     AlertCircle
 } from "lucide-react";
+
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
 import SerialMonitor from "../components/SerialMonitor";
 import { createIntermediateBlocksBridge, useSpriteBridge, DEFAULT_SPRITE_PRESETS } from "./SpriteBridge";
 import BoardSelectionModal, { BOARDS } from "../junior/components/BoardSelectionModal";
-
-// ─── Import Modular Components ─────────────────────────────────────────────────
 import SidePanel from "./panels/SidePanel";
 import EditorPanel from "./panels/EditorPanel";
 import StagePanel from "./panels/StagePanel";
 import PythonIDEGuide from "./PythonIDEGuide";
 import MonacoEditor from "./editor/MonacoEditor";
+
+// ─── CSS Animations ───────────────────────────────────────────────────────────
+function injectPythonIDEAnimations() {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('python-ide-animations')) return;
+    const style = document.createElement('style');
+    style.id = 'python-ide-animations';
+    style.textContent = `
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .run-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4) !important;
+        }
+        .run-button:active {
+            transform: translateY(0);
+        }
+        .stop-button:hover {
+            background: #EF4444 !important;
+            color: #fff !important;
+        }
+        .terminal-line {
+            animation: fadeIn 0.2s ease-out;
+        }
+    `;
+    document.head.appendChild(style);
+}
+injectPythonIDEAnimations();
 
 // ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
 const C = {
@@ -102,6 +104,14 @@ const C = {
     ACCENT: "#8B5CF6",
     HEADER_BG: "#8B5CF6",
 };
+
+// Map board IDs to names for template generation
+// We define this here at top level so helper functions can access it
+const BOARD_NAME_BY_ID = BOARDS.reduce((acc, b) => {
+    acc[b.id] = b.name;
+    return acc;
+}, {});
+
 
 // ─── Default Files ─────────────────────────────────────────────────────────────
 const DEFAULT_FILES = {
@@ -522,12 +532,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         resetStage
     } = useStage();
 
-    const BOARD_NAME_BY_ID = React.useMemo(() => {
-        return BOARDS.reduce((acc, b) => {
-            acc[b.id] = b.name;
-            return acc;
-        }, {});
-    }, []);
     
     // Editor state
     const [projectName, setProjectName] = useState("My Project");

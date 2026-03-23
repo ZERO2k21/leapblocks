@@ -212,9 +212,29 @@ export class SoundBank {
             osc.start(t);
             osc.stop(t + dur);
 
+        } else if (name === "laugh") {
+            dur = 0.5;
+            const osc = renderContext.createOscillator();
+            const gain = renderContext.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(440, t);
+            osc.frequency.exponentialRampToValueAtTime(880, t + 0.1);
+            osc.frequency.exponentialRampToValueAtTime(440, t + 0.2);
+            osc.frequency.exponentialRampToValueAtTime(880, t + 0.3);
+            osc.frequency.exponentialRampToValueAtTime(440, t + 0.4);
+            osc.frequency.exponentialRampToValueAtTime(880, t + 0.5);
+            gain.gain.setValueAtTime(0.3, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + dur);
+            osc.connect(gain);
+            gain.connect(renderContext.destination);
+            osc.start(t);
+            osc.stop(t + dur);
+
         } else {
-            console.warn("Sound synthesis definition not found for:", name);
-            return null;
+            console.warn("Sound synthesis definition not found for:", name, ". Returning silent buffer.");
+            // Create a very short silent buffer as absolute fallback
+            const silentBuffer = renderContext.createBuffer(1, 1, renderContext.sampleRate);
+            return Promise.resolve(silentBuffer);
         }
 
         // We can't immediately wait for OfflineRender in a sync return format,
