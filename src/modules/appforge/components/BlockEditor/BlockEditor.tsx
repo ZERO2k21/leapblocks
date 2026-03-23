@@ -2,11 +2,10 @@
 // AppForge — Block Editor (Blockly)
 // Visual block-based programming
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import React, { useEffect, useRef, useCallback, useMemo } from 'react';
-import * as Blockly from 'blockly';
+import React, { useEffect, useRef, useMemo } from 'react';
+import type * as Blockly from 'blockly';
 import type { AFProject } from '../../AppForgeStudio';
 import componentsData from '../../data/components.json';
-import { registerCustomBlocks } from './CustomBlocks';
 import { getToolboxConfig } from './BlockToolbox';
 
 interface BlockEditorProps {
@@ -27,65 +26,80 @@ export default function BlockEditor({ project, updateProject }: BlockEditorProps
   useEffect(() => {
     if (!blocklyDiv.current) return;
 
-    // Register all custom blocks once
-    registerCustomBlocks(componentsData as any[]);
+    let workspace: Blockly.WorkspaceSvg | null = null;
 
-    const workspace = Blockly.inject(blocklyDiv.current, {
-      toolbox,
-      theme: Blockly.Theme.defineTheme('appforge_dark', {
-        name: 'appforge_dark',
-        base: Blockly.Themes.Classic,
-        blockStyles: {},
-        categoryStyles: {},
-        componentStyles: {
-          workspaceBackgroundColour: '#0f0f13',
-          toolboxBackgroundColour: '#16161d',
-          toolboxForegroundColour: '#e4e4e7',
-          flyoutBackgroundColour: '#1e1e28',
-          flyoutForegroundColour: '#e4e4e7',
-          flyoutOpacity: 0.95,
-          scrollbarColour: '#3b3b5a',
-          scrollbarOpacity: 0.6,
-        },
-        fontStyle: {
-          family: 'Inter, sans-serif',
-          size: 11,
-          weight: '500',
-        },
-      }),
-      grid: { spacing: 20, length: 3, colour: '#2a2a3a', snap: true },
-      zoom: { controls: true, wheel: true, startScale: 0.9, maxScale: 2, minScale: 0.3 },
-      move: { scrollbars: true, drag: true, wheel: true },
-      sounds: false,
-      renderer: 'zelos',
-      trashcan: true,
-    });
-
-    workspaceRef.current = workspace;
-
-    // Restore saved blocks
-    if (project.blocks) {
+    const initBlockly = async () => {
       try {
-        Blockly.serialization.workspaces.load(project.blocks, workspace);
-      } catch (e) {
-        console.warn('Failed to restore blocks:', e);
-      }
-    }
+        // Dynamic imports to prevent circular dependencies in production
+        const Blockly = await import('blockly');
+        const { registerCustomBlocks } = await import('./CustomBlocks');
 
-    // Auto-save on workspace change
-    const onChange = () => {
-      try {
-        const json = Blockly.serialization.workspaces.save(workspace);
-        updateProject({ blocks: json });
-      } catch (e) {
-        // Ignore serialization errors during drag
+        // Register all custom blocks
+        registerCustomBlocks(Blockly, componentsData as any[]);
+
+        workspace = Blockly.inject(blocklyDiv.current!, {
+          toolbox,
+          theme: Blockly.Theme.defineTheme('appforge_dark', {
+            name: 'appforge_dark',
+            base: Blockly.Themes.Classic,
+            blockStyles: {},
+            categoryStyles: {},
+            componentStyles: {
+              workspaceBackgroundColour: '#0f0f13',
+              toolboxBackgroundColour: '#16161d',
+              toolboxForegroundColour: '#e4e4e7',
+              flyoutBackgroundColour: '#1e1e28',
+              flyoutForegroundColour: '#e4e4e7',
+              flyoutOpacity: 0.95,
+              scrollbarColour: '#3b3b5a',
+              scrollbarOpacity: 0.6,
+            },
+            fontStyle: {
+              family: 'Inter, sans-serif',
+              size: 11,
+              weight: '500',
+            },
+          }),
+          grid: { spacing: 20, length: 3, colour: '#2a2a3a', snap: true },
+          zoom: { controls: true, wheel: true, startScale: 0.9, maxScale: 2, minScale: 0.3 },
+          move: { scrollbars: true, drag: true, wheel: true },
+          sounds: false,
+          renderer: 'zelos',
+          trashcan: true,
+        });
+
+        workspaceRef.current = workspace;
+
+        // Restore saved blocks
+        if (project.blocks) {
+          try {
+            Blockly.serialization.workspaces.load(project.blocks, workspace);
+          } catch (e) {
+            console.warn('Failed to restore blocks:', e);
+          }
+        }
+
+        // Auto-save on workspace change
+        const onChange = () => {
+          try {
+            const json = Blockly.serialization.workspaces.save(workspace!);
+            updateProject({ blocks: json });
+          } catch (e) {
+            // Ignore serialization errors during drag
+          }
+        };
+        workspace.addChangeListener(onChange);
+      } catch (err) {
+        console.error('Blockly init error:', err);
       }
     };
-    workspace.addChangeListener(onChange);
+
+    initBlockly();
 
     return () => {
-      workspace.removeChangeListener(onChange);
-      workspace.dispose();
+      if (workspace) {
+        workspace.dispose();
+      }
       workspaceRef.current = null;
     };
   }, []); // Initialize once

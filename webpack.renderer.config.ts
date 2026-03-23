@@ -30,6 +30,17 @@ export const rendererConfig: Configuration = {
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
   },
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        blockly: {
+          test: /[\\/]node_modules[\\/]blockly[\\/]/,
+          name: 'blockly',
+          chunks: 'all',
+        },
+      },
+    },
+  },
   devServer: {
     static: {
       directory: require('path').join(__dirname, 'public'),

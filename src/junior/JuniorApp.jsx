@@ -378,6 +378,7 @@ export default function JuniorApp({ onBack }) {
         handleSpriteSelect,
         timeoutRefs,
         canvasRef,
+        audioEngine,
         soundBlocksExt,
         musicBlocksExt,
         setWinMessage

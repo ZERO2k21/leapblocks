@@ -13,6 +13,7 @@ export function useJuniorWindowActions({
     handleSpriteSelect,
     timeoutRefs,
     canvasRef,
+    audioEngine,
     soundBlocksExt,
     musicBlocksExt,
     setWinMessage
@@ -203,24 +204,48 @@ export function useJuniorWindowActions({
         };
 
         window.playSound = (name) => {
-            soundBlocksExt.playSound({ SOUND_MENU: name }, { target: { id: window.activeSpriteId || activeSpriteId } });
+            if (audioEngine) {
+                audioEngine.playSound(name, window.activeSpriteId || activeSpriteId);
+            } else {
+                soundBlocksExt.playSound({ SOUND_MENU: name }, { target: { id: window.activeSpriteId || activeSpriteId } });
+            }
         };
         window.playNote = (note, octave) => {
-            musicBlocksExt.playNoteForDuration({ NOTE: note, OCTAVE: octave, DURATION: 0.5 });
+            if (audioEngine && audioEngine.instrumentPlayer) {
+                audioEngine.instrumentPlayer.playNoteForDuration(note, octave, 0.5);
+            } else {
+                musicBlocksExt.playNoteForDuration({ NOTE: note, OCTAVE: octave, DURATION: 0.5 });
+            }
         };
         window.setInstrument = (inst) => {
-            musicBlocksExt.setInstrument({ INSTRUMENT: inst });
+            if (audioEngine && audioEngine.instrumentPlayer) {
+                audioEngine.instrumentPlayer.setInstrument(inst);
+            } else {
+                musicBlocksExt.setInstrument({ INSTRUMENT: inst });
+            }
         };
         window.stopAllSounds = () => {
             window.speechSynthesis.cancel();
-            soundBlocksExt.stopAllSounds();
+            if (audioEngine) {
+                audioEngine.stopAllSounds();
+            } else {
+                soundBlocksExt.stopAllSounds();
+            }
         };
 
         window.playMusic = (name) => {
-            musicBlocksExt.playMusic({ MUSIC: name });
+            if (audioEngine && audioEngine.soundBank) {
+                audioEngine.soundBank.playMusic(name);
+            } else {
+                musicBlocksExt.playMusic({ MUSIC: name });
+            }
         };
         window.stopMusic = () => {
-            musicBlocksExt.stopMusic();
+            if (audioEngine && audioEngine.soundBank) {
+                audioEngine.soundBank.stopMusic();
+            } else {
+                musicBlocksExt.stopMusic();
+            }
         };
 
         window.stopExecution = () => {
@@ -233,5 +258,5 @@ export function useJuniorWindowActions({
             });
         };
 
-    }, [spriteActions, activeSpriteId, currentSceneId, sprites, handleSceneSelect, handleNextScene, handleSpriteSelect, timeoutRefs, canvasRef, soundBlocksExt, musicBlocksExt, setWinMessage]);
+    }, [spriteActions, activeSpriteId, currentSceneId, sprites, handleSceneSelect, handleNextScene, handleSpriteSelect, timeoutRefs, canvasRef, audioEngine, soundBlocksExt, musicBlocksExt, setWinMessage]);
 }

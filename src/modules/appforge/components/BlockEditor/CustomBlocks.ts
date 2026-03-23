@@ -2,11 +2,10 @@
 // AppForge — Custom Blockly Blocks
 // WiFi, Bluetooth, Sensor blocks
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import * as Blockly from 'blockly';
 
 let registered = false;
 
-export function registerCustomBlocks(componentDefs: any[]) {
+export function registerCustomBlocks(Blockly: any, componentDefs: any[]) {
   if (registered) return;
   registered = true;
 
@@ -86,53 +85,50 @@ export function registerCustomBlocks(componentDefs: any[]) {
   });
 
   // ── WiFi Blocks (8) ─────────────────────
-  registerBlock('wifi_scan', 210, 'WiFi Scan', { statement: true, tooltip: 'Scan for available WiFi networks' });
-  registerBlock('wifi_connect', 210, 'WiFi Connect', { valueInputs: [['SSID', 'SSID'], ['PASSWORD', 'password']], statement: true });
-  registerBlock('wifi_disconnect', 210, 'WiFi Disconnect', { statement: true });
-  registerBlock('wifi_is_connected', 210, 'WiFi is connected?', { output: 'Boolean' });
-  registerBlock('wifi_get_ssid', 210, 'WiFi current SSID', { output: 'String' });
-  registerBlock('wifi_get_ip', 210, 'WiFi IP address', { output: 'String' });
-  registerBlock('wifi_get_signal', 210, 'WiFi signal strength', { output: 'Number' });
-  registerBlock('wifi_on_connected', 210, 'when WiFi connected', { hat: true });
+  registerBlock(Blockly, 'wifi_scan', 210, 'WiFi Scan', { statement: true, tooltip: 'Scan for available WiFi networks' });
+  registerBlock(Blockly, 'wifi_connect', 210, 'WiFi Connect', { valueInputs: [['SSID', 'SSID'], ['PASSWORD', 'password']], statement: true });
+  registerBlock(Blockly, 'wifi_disconnect', 210, 'WiFi Disconnect', { statement: true });
+  registerBlock(Blockly, 'wifi_is_connected', 210, 'WiFi is connected?', { output: 'Boolean' });
+  registerBlock(Blockly, 'wifi_get_ssid', 210, 'WiFi current SSID', { output: 'String' });
+  registerBlock(Blockly, 'wifi_get_ip', 210, 'WiFi IP address', { output: 'String' });
+  registerBlock(Blockly, 'wifi_get_signal', 210, 'WiFi signal strength', { output: 'Number' });
+  registerBlock(Blockly, 'wifi_on_connected', 210, 'when WiFi connected', { hat: true });
 
   // ── Bluetooth Blocks (14) ──────────────
-  registerBlock('bt_enable', 280, 'Bluetooth enable', { statement: true });
-  registerBlock('bt_disable', 280, 'Bluetooth disable', { statement: true });
-  registerBlock('bt_is_enabled', 280, 'Bluetooth is enabled?', { output: 'Boolean' });
-  registerBlock('bt_scan', 280, 'Bluetooth scan devices', { statement: true });
-  registerBlock('bt_connect', 280, 'Bluetooth connect', { valueInputs: [['ADDRESS', 'address']], statement: true });
-  registerBlock('bt_disconnect', 280, 'Bluetooth disconnect', { statement: true });
-  registerBlock('bt_is_connected', 280, 'Bluetooth is connected?', { output: 'Boolean' });
-  registerBlock('bt_send_text', 280, 'Bluetooth send text', { valueInputs: [['DATA', 'text']], statement: true });
-  registerBlock('bt_send_bytes', 280, 'Bluetooth send bytes', { valueInputs: [['DATA', 'bytes']], statement: true });
-  registerBlock('bt_on_data', 280, 'when Bluetooth data received', { hat: true });
-  registerBlock('bt_on_connected', 280, 'when Bluetooth connected', { hat: true });
-  registerBlock('bt_on_disconnected', 280, 'when Bluetooth disconnected', { hat: true });
-  registerBlock('bt_get_devices', 280, 'Bluetooth paired devices', { output: 'Array' });
-  registerBlock('bt_get_name', 280, 'Bluetooth device name', { output: 'String' });
+  registerBlock(Blockly, 'bt_enable', 280, 'Bluetooth enable', { statement: true });
+  registerBlock(Blockly, 'bt_disable', 280, 'Bluetooth disable', { statement: true });
+  registerBlock(Blockly, 'bt_is_enabled', 280, 'Bluetooth is enabled?', { output: 'Boolean' });
+  registerBlock(Blockly, 'bt_scan', 280, 'Bluetooth scan devices', { statement: true });
+  registerBlock(Blockly, 'bt_connect', 280, 'Bluetooth connect', { valueInputs: [['ADDRESS', 'address']], statement: true });
+  registerBlock(Blockly, 'bt_disconnect', 280, 'Bluetooth disconnect', { statement: true });
+  registerBlock(Blockly, 'bt_is_connected', 280, 'Bluetooth is connected?', { output: 'Boolean' });
+  registerBlock(Blockly, 'bt_send_text', 280, 'Bluetooth send text', { valueInputs: [['DATA', 'text']], statement: true });
+  registerBlock(Blockly, 'bt_send_bytes', 280, 'Bluetooth send bytes', { valueInputs: [['DATA', 'bytes']], statement: true });
+  registerBlock(Blockly, 'bt_on_data', 280, 'when Bluetooth data received', { hat: true });
+  registerBlock(Blockly, 'bt_on_connected', 280, 'when Bluetooth connected', { hat: true });
+  registerBlock(Blockly, 'bt_on_disconnected', 280, 'when Bluetooth disconnected', { hat: true });
+  registerBlock(Blockly, 'bt_get_devices', 280, 'Bluetooth paired devices', { output: 'Array' });
+  registerBlock(Blockly, 'bt_get_name', 280, 'Bluetooth device name', { output: 'String' });
 
   // ── Sensor Blocks (7) ──────────────────
-  registerBlock('sensor_accelerometer', 60, 'Accelerometer [x y z]', { output: 'Array' });
-  registerBlock('sensor_gyroscope', 60, 'Gyroscope [x y z]', { output: 'Array' });
-  registerBlock('sensor_compass', 60, 'Compass heading', { output: 'Number' });
-  registerBlock('sensor_light', 60, 'Light level', { output: 'Number' });
-  registerBlock('sensor_proximity', 60, 'Proximity distance', { output: 'Number' });
-  registerBlock('sensor_pressure', 60, 'Barometer pressure', { output: 'Number' });
-  registerBlock('sensor_steps', 60, 'Step count', { output: 'Number' });
-
-  // ── Control Flow ────────────────────────
-  // (Built-in Blockly blocks: controls_if, controls_repeat_ext, etc. are already available)
+  registerBlock(Blockly, 'sensor_accelerometer', 60, 'Accelerometer [x y z]', { output: 'Array' });
+  registerBlock(Blockly, 'sensor_gyroscope', 60, 'Gyroscope [x y z]', { output: 'Array' });
+  registerBlock(Blockly, 'sensor_compass', 60, 'Compass heading', { output: 'Number' });
+  registerBlock(Blockly, 'sensor_light', 60, 'Light level', { output: 'Number' });
+  registerBlock(Blockly, 'sensor_proximity', 60, 'Proximity distance', { output: 'Number' });
+  registerBlock(Blockly, 'sensor_pressure', 60, 'Barometer pressure', { output: 'Number' });
+  registerBlock(Blockly, 'sensor_steps', 60, 'Step count', { output: 'Number' });
 
   // ── Screen Blocks ────────────────────────
-  registerBlock('screen_set_title', 0, 'set Screen title', { valueInputs: [['TITLE', 'title']], statement: true });
-  registerBlock('screen_set_bg_color', 0, 'set Screen background color', { valueInputs: [['COLOR', 'color']], statement: true });
-  registerBlock('screen_open', 0, 'open screen', { valueInputs: [['SCREEN', 'screenName']], statement: true });
-  registerBlock('screen_close', 0, 'close current screen', { statement: true });
-  registerBlock('screen_get_width', 0, 'Screen width', { output: 'Number' });
-  registerBlock('screen_get_height', 0, 'Screen height', { output: 'Number' });
+  registerBlock(Blockly, 'screen_set_title', 0, 'set Screen title', { valueInputs: [['TITLE', 'title']], statement: true });
+  registerBlock(Blockly, 'screen_set_bg_color', 0, 'set Screen background color', { valueInputs: [['COLOR', 'color']], statement: true });
+  registerBlock(Blockly, 'screen_open', 0, 'open screen', { valueInputs: [['SCREEN', 'screenName']], statement: true });
+  registerBlock(Blockly, 'screen_close', 0, 'close current screen', { statement: true });
+  registerBlock(Blockly, 'screen_get_width', 0, 'Screen width', { output: 'Number' });
+  registerBlock(Blockly, 'screen_get_height', 0, 'Screen height', { output: 'Number' });
 }
 
-function registerBlock(type: string, color: number, label: string, opts: {
+function registerBlock(Blockly: any, type: string, color: number, label: string, opts: {
   statement?: boolean;
   output?: string;
   hat?: boolean;
