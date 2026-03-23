@@ -1,7 +1,8 @@
 import React from 'react';
 import SpriteCard from './SpriteCard';
 import SceneCard from './SceneCard';
-import { Flag, RotateCw, Camera, CameraOff, Grid3X3, Maximize, Minimize, Square } from 'lucide-react';
+import { Flag, RotateCw, Camera, CameraOff, Grid3X3, Maximize, Minimize, Square, Circle, ScanFace, Image as ImageIcon, MicOff, Shrink } from 'lucide-react';
+import Logo from '../../components/Logo';
 
 export default function RightPanel({
     children,
@@ -82,6 +83,57 @@ export default function RightPanel({
                                 zIndex: 2,
                             }} />
                         )}
+
+                        {/* Fullscreen Topbar Overlay */}
+                        {isFullscreen && (
+                            <div style={{
+                                position: 'absolute', top: 0, left: 0, width: '100%', height: '64px',
+                                background: '#6400a1ff', borderBottom: '1px solid #d1d5db',
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                padding: '0 16px', zIndex: 100,
+                            }}>
+                                {/* Left Section: Exit & Logo */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                    <button onClick={onFullscreen} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
+                                        <div style={{ width: '42px', height: '42px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                                            <Minimize size={22} color="#313848ff" strokeWidth={2.5} />
+                                        </div>
+                                    </button>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <Logo height={32} />
+                                        <div style={{ display: 'flex', flexDirection: 'column', borderLeft: '1.5px solid #cbd5e1', paddingLeft: '12px' }}>
+                                            <span style={{ color: '#e8cd00ff', fontSize: '12px', fontWeight: 800, letterSpacing: '0.1em' }}>LEAPBLOCKS</span>
+                                            <span style={{ color: '#c9c9c9ff', fontSize: '13px', fontWeight: 700, lineHeight: 1 }}>Junior</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Center Section: Action Icons */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    {isRunning ? (
+                                        <ActionIcon icon={<Square size={20} fill="#fff" stroke="#fff" />} label="Stop" bgColor="#ef4444" hoverBg="#dc2626" onClick={onStop} active activeBg="#ef4444" size={42} />
+                                    ) : (
+                                        <ActionIcon icon={<Flag size={20} fill="#fff" stroke="#fff" />} label="Run" bgColor="#22c55e" hoverBg="#16a34a" onClick={onGreenFlag} size={42} />
+                                    )}
+                                    <ActionIcon icon={<Square size={20} fill="#f90000ff" stroke="#e7e7e7ff" />} label="Stop Layout" onClick={onStop} outlineColor="transparent" size={42} bgColor="#fecaca" hoverBg="#fca5a5" />
+                                    <ActionIcon icon={<RotateCw size={20} color="#e7e7e7ff" strokeWidth={2.5} />} label="Reset" onClick={onReset} outlineColor="transparent" size={42} />
+                                    <ActionIcon icon={<CameraOff size={20} color={isCameraOn ? "#fff" : "#e0e0e0ff"} strokeWidth={2} />} label="Camera" onClick={onCamera} outlineColor="transparent" active={isCameraOn} activeBg="#8b5cf6" size={42} />
+                                    <ActionIcon icon={<Grid3X3 size={20} color={showGrid ? "#fff" : "#e0e0e0ff"} strokeWidth={2} />} label="Grid" onClick={onToggleGrid} outlineColor="transparent" active={showGrid} activeBg="#8b5cf6" size={42} />
+                                </div>
+
+                                {/* Right Section: Record, Face, Image, Mic, Timer */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <ActionIcon icon={<Circle size={22} fill="#c9c9c9ff" color="#c9c9c9ff" />} label="Record" onClick={() => alert('Record feature coming soon')} outlineColor="transparent" size={42} />
+                                    <ActionIcon icon={<ScanFace size={22} color="#c9c9c9ff" />} label="Face Tracking" onClick={() => alert('Face tracking coming soon')} outlineColor="#c9c9c9ff" size={42} />
+                                    <ActionIcon icon={<ImageIcon size={22} color="#c9c9c9ff" />} label="Add Image/Backdrop" onClick={() => alert('Images coming soon')} outlineColor="#c9c9c9ff" size={42} />
+                                    <ActionIcon icon={<MicOff size={20} color="#c9c9c9ff" strokeWidth={2.5} />} label="Mic Off" onClick={() => alert('Mic toggle coming soon')} outlineColor="transparent" size={42} />
+                                    <div style={{ background: '#c9c9c9ff', color: 'white', fontWeight: 600, fontSize: '15px', padding: '6px 18px', borderRadius: '25px', letterSpacing: '1px', marginLeft: '4px' }}>
+                                        0 : 00
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {children}
 
                         {/* Crosshair Guide Lines */}
@@ -347,7 +399,7 @@ export default function RightPanel({
 }
 
 /* ─────────────── Action Icon Button ─────────────── */
-function ActionIcon({ icon, label, onClick, bgColor, hoverBg, outlineColor, active, activeBg }) {
+function ActionIcon({ icon, label, onClick, bgColor, hoverBg, outlineColor, active, activeBg, size = 48 }) {
     const [hovered, setHovered] = React.useState(false);
 
     const isFilled = !!bgColor || active;
@@ -366,10 +418,10 @@ function ActionIcon({ icon, label, onClick, bgColor, hoverBg, outlineColor, acti
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             style={{
-                width: "48px",
-                height: "48px",
+                width: `${size}px`,
+                height: `${size}px`,
                 borderRadius: "12px",
-                border: outlineColor && !isFilled ? `2.5px solid ${outlineColor}` : "none",
+                border: outlineColor && !isFilled && outlineColor !== "transparent" ? `2.5px solid ${outlineColor}` : "none",
                 background: bg,
                 cursor: "pointer",
                 display: "flex",

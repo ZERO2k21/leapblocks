@@ -119,6 +119,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.removeAllListeners('serial-data');
         ipcRenderer.removeAllListeners('connection-change');
         ipcRenderer.removeAllListeners('upload-progress');
+        ['python-output','python-error','python-exit','python-repl-output','python-repl-error','python-repl-exit','python-pip-output','python-pip-error','python-pip-exit'].forEach(e => ipcRenderer.removeAllListeners(e));
     },
 
     removeBackground: (imagePath: string): Promise<{ success: boolean; error?: string; stdout?: string; stderr?: string, base64?: string }> => {
@@ -135,7 +136,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
     showInFolder: (p: string) => ipcRenderer.invoke("show-in-folder", p),
     saveProject: (d: any) => ipcRenderer.invoke("save-project", d),
     openProject: () => ipcRenderer.invoke("open-project"),
-    isElectron: true
+    isElectron: true,
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PYTHON NATIVE APIS
+    // ═══════════════════════════════════════════════════════════════════════
+    pythonRun: (code: string) => ipcRenderer.invoke('python-run', code),
+    pythonReplStart: () => ipcRenderer.invoke('python-repl-start'),
+    pythonReplSend: (input: string) => ipcRenderer.invoke('python-repl-send', input),
+    pythonStop: () => ipcRenderer.invoke('python-stop'),
+    pythonPipInstall: (pkg: string) => ipcRenderer.invoke('python-pip-install', pkg),
+
+    onPythonOutput: (callback: (data: string) => void) => ipcRenderer.on('python-output', (_, msg) => callback(msg)),
+    onPythonError: (callback: (data: string) => void) => ipcRenderer.on('python-error', (_, msg) => callback(msg)),
+    onPythonExit: (callback: (code: number) => void) => ipcRenderer.on('python-exit', (_, code) => callback(code)),
+    onPythonReplOutput: (callback: (data: string) => void) => ipcRenderer.on('python-repl-output', (_, msg) => callback(msg)),
+    onPythonReplError: (callback: (data: string) => void) => ipcRenderer.on('python-repl-error', (_, msg) => callback(msg)),
+    onPythonReplExit: (callback: (code: number) => void) => ipcRenderer.on('python-repl-exit', (_, code) => callback(code)),
+    onPythonPipOutput: (callback: (data: string) => void) => ipcRenderer.on('python-pip-output', (_, msg) => callback(msg)),
+    onPythonPipError: (callback: (data: string) => void) => ipcRenderer.on('python-pip-error', (_, msg) => callback(msg)),
+    onPythonPipExit: (callback: (code: number) => void) => ipcRenderer.on('python-pip-exit', (_, code) => callback(code)),
 });
 
 // Declare global type for TypeScript
@@ -160,6 +180,22 @@ declare global {
             saveProject: (d: any) => Promise<boolean>;
             openProject: () => Promise<any>;
             isElectron: boolean;
+            
+            pythonRun: (code: string) => Promise<void>;
+            pythonReplStart: () => Promise<void>;
+            pythonReplSend: (input: string) => Promise<void>;
+            pythonStop: () => Promise<void>;
+            pythonPipInstall: (pkg: string) => Promise<void>;
+            
+            onPythonOutput: (callback: (data: string) => void) => void;
+            onPythonError: (callback: (data: string) => void) => void;
+            onPythonExit: (callback: (code: number) => void) => void;
+            onPythonReplOutput: (callback: (data: string) => void) => void;
+            onPythonReplError: (callback: (data: string) => void) => void;
+            onPythonReplExit: (callback: (code: number) => void) => void;
+            onPythonPipOutput: (callback: (data: string) => void) => void;
+            onPythonPipError: (callback: (data: string) => void) => void;
+            onPythonPipExit: (callback: (code: number) => void) => void;
         };
     }
 }

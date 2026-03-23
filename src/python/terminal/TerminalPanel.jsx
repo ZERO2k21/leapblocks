@@ -31,7 +31,6 @@ export default function TerminalPanel({
     const tabs = [
         { id: "terminal", label: "Terminal", icon: <span style={{ fontSize: 12 }}>▶</span> },
         { id: "repl", label: "REPL", icon: <span style={{ fontSize: 11 }}>{">>>"}</span> },
-        { id: "pip", label: "PIP", icon: <Package size={12} /> },
     ];
 
     return (
@@ -63,24 +62,6 @@ export default function TerminalPanel({
                         {icon} {label}
                     </div>
                 ))}
-
-                <div style={{ marginLeft: "auto", display: "flex", gap: 4, paddingRight: 8, alignItems: "center" }}>
-                    <div onClick={onRun} title="Run" style={{ cursor: "pointer", padding: "4px 10px", color: C.PURPLE, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
-                        <Play size={12} /> Run
-                    </div>
-                    <div onClick={onRun} title="Run All" style={{ cursor: "pointer", padding: "4px 10px", color: C.PURPLE, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
-                        <Play size={12} />
-                        <Play size={12} />
-                        Run All
-                    </div>
-                    <div onClick={onStop} title="Stop" style={{ cursor: "pointer", padding: "4px 10px", color: C.PURPLE, borderRadius: 4, fontSize: 11, display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
-                        <Square size={12} /> Stop
-                    </div>
-                    <div style={{ width: 1, height: 18, background: C.BORDER, margin: "0 4px" }} />
-                    <div onClick={onClear} title="Clear" style={{ cursor: "pointer", padding: "4px 6px", color: C.MUTED, borderRadius: 4, display: "flex", alignItems: "center" }}>
-                        <Trash2 size={14} />
-                    </div>
-                </div>
             </div>
 
             {activePanel === "terminal" && (

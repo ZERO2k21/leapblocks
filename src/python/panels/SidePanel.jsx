@@ -13,6 +13,7 @@ import {
     Wifi,
     Wrench,
     ArrowLeft,
+    FilePlus,
 } from "lucide-react";
 import BackdropPanel from "./BackdropPanel";
 import FileAddMenu, { PythonSessionActionMenu } from "./FileAddMenu";
@@ -39,6 +40,7 @@ function FilesPanel({
     handleDeleteFile,
     onOpenPipPanel,
     onOpenExtensionsPanel,
+    onAddNewFile,
 }) {
     return (
         <>
@@ -53,6 +55,22 @@ function FilesPanel({
                     }}
                 >
                     <span style={{ fontSize: 12, fontWeight: 700, color: C.TEXT }}>Project Files</span>
+                    {onAddNewFile && (
+                        <button
+                            onClick={onAddNewFile}
+                            style={{
+                                cursor: "pointer",
+                                color: C.PURPLE,
+                                padding: 2,
+                                borderRadius: 4,
+                                border: "none",
+                                background: "transparent",
+                            }}
+                            title="New Python File"
+                        >
+                            <FilePlus size={14} />
+                        </button>
+                    )}
                 </div>
 
                 <div style={{ flex: 1, overflowY: "auto", padding: "4px 0 64px" }}>
@@ -576,6 +594,7 @@ export default function SidePanel({
     handleAddTextFiles,
     handleAddCsvFiles,
     handleDeleteFile,
+    onAddNewFile,
     spriteFilter,
     setSpriteFilter,
     addSpriteFromLibrary,
@@ -615,6 +634,7 @@ export default function SidePanel({
                     handleAddTextFiles={handleAddTextFiles}
                     handleAddCsvFiles={handleAddCsvFiles}
                     handleDeleteFile={handleDeleteFile}
+                    onAddNewFile={onAddNewFile}
                     onOpenPipPanel={() => setSidePanel?.("pip")}
                     onOpenExtensionsPanel={() => setSidePanel?.("extensions")}
                 />

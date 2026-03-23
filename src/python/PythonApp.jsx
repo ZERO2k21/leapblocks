@@ -80,124 +80,8 @@ const C = {
 
 // ─── Default Files ─────────────────────────────────────────────────────────────
 const DEFAULT_FILES = {
-    "main.py": `# LeapBlocks Python IDE
-# Welcome! Control sprites with Python commands.
-
-# Create and control the Robot sprite
-robot = Sprite('Robot')
-robot.say("Hello, World!")
-robot.move(50)
-robot.turn_right()
-robot.go_to(100, 50)
-
-# Create a Cat sprite
-cat = Sprite('Cat')
-cat.say("Meow!", 3)
-cat.move(30)
-cat.turn_left()
-
-# Create a Ball sprite
-ball = Sprite('Ball')
-ball.go_to(-100, -50)
-ball.say("I'm a ball!", 2)
-
-# Animate the robot
-for i in range(5):
-    print(f"Step {i + 1}: moving robot")
-    robot.move(20)
-    robot.turn_right(15)
-
-print("Program complete!")
-`,
-    "sprite_test.py": `# Sprite Bridge Test - Demonstrates sprite panel functions
-# These functions work with intermediate blocks and Python IDE
-
-print("=== Sprite Bridge Test ===")
-
-# Create sprites
-robot = Sprite('Robot')
-cat = Sprite('Cat')
-ball = Sprite('Ball')
-
-# Test movement
-robot.say("Hello from Python!")
-robot.move(50)
-robot.turn_right()
-robot.go_to(100, 50)
-
-# Test appearance
-cat.say("Meow!", 3)
-cat.set_size(150)
-cat.next_costume()
-
-# Test direction
-ball.point_in_direction(90)
-ball.move(30)
-
-# Test visibility
-robot.hide()
-print("Robot hidden")
-robot.show()
-print("Robot shown")
-
-# Test multiple movements
-for i in range(3):
-    robot.move(20)
-    robot.turn_right(45)
-
-print("=== Test Complete ===")
-print("Check terminal for sprite action logs!")
-`,
-    "animation_demo.py": `# Animation Demo - Shows multiple sprites interacting
-
-print("=== Animation Demo ===")
-
-# Create characters
-robot = Sprite('Robot')
-cat = Sprite('Cat')
-ball = Sprite('Ball')
-
-# Position them
-robot.go_to(0, 0)
-cat.go_to(-100, 50)
-ball.go_to(100, -50)
-
-# Make them talk
-robot.say("Let's dance!", 2)
-cat.say("Meow! 🐱", 2)
-ball.say("Wheee! ⚽", 2)
-
-# Robot dance
-for i in range(4):
-    robot.move(30)
-    robot.turn_right(90)
-    robot.next_costume()
-
-# Cat dance
-cat.move(50)
-cat.turn_left(180)
-cat.move(50)
-cat.turn_left(180)
-
-# Ball bounce
-for i in range(3):
-    ball.move(40)
-    ball.turn_right(180)
-    ball.move(40)
-    ball.turn_right(180)
-
-print("Dance complete! 💃🕺")
-`,
-    "utils.py": `# Utility functions
-def greet(name):
-    return f"Hello, {name}!"
-
-def add(a, b):
-    return a + b
-
-print(greet("LeapBlocks"))
-print("2 + 3 =", add(2, 3))
-`,
+    "sprite.py": ``,
+    "stage.py": ``
 };
 
 const BOARD_NAME_BY_ID = BOARDS.reduce((acc, board) => {
@@ -621,7 +505,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     // Editor state
     const [projectName, setProjectName] = useState("My Project");
     const [workflowMode, setWorkflowMode] = useState("stage");
-    const [activeFile, setActiveFile] = useState("main.py");
+    const [activeFile, setActiveFile] = useState("sprite.py");
     const [projectFiles, setProjectFiles] = useState(DEFAULT_FILES);
     const [editorCursor, setEditorCursor] = useState({ line: 1, col: 1 });
     const [showGuide, setShowGuide] = useState(false);
@@ -1024,6 +908,45 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isRunning, activePanel, handleRun, handleStop, handleClear, addLog]);
 
+    // ── NATIVE PYTHON IPC LISTENERS ──────────────────────────────────────────
+    useEffect(() => {
+        if (!window.electronAPI?.isElectron) return;
+        
+        window.electronAPI.onPythonOutput((data) => {
+            addLog(data.replace(/\n$/, ""), "log");
+        });
+        window.electronAPI.onPythonError((data) => {
+            addLog(data, "error");
+        });
+        window.electronAPI.onPythonExit((code) => {
+            if (code === 0) {
+                addLog(`✓ Program finished successfully`, "success");
+            } else if (code !== null) {
+                addLog(`✗ Program exited with code ${code}`, "warning");
+            }
+            setIsRunning(false);
+        });
+        window.electronAPI.onPythonReplOutput((data) => {
+            addLog(data.replace(/\n$/, ""), "log");
+        });
+        window.electronAPI.onPythonReplError((data) => {
+            addLog(data, "error");
+        });
+        window.electronAPI.onPythonPipOutput((data) => {
+            addLog(data.replace(/\n$/, ""), "log");
+        });
+        window.electronAPI.onPythonPipError((data) => {
+            addLog(data, "error");
+        });
+    }, [addLog]);
+
+    useEffect(() => {
+        if (activePanel === "repl" && window.electronAPI?.isElectron) {
+            window.electronAPI.pythonReplStart();
+            addLog(`>>> Native Python REPL Connected.`, "success");
+        }
+    }, [activePanel, addLog]);
+
     // ── Run ───────────────────────────────────────────────────────────────────
     const handleRun = async () => {
         if (isRunning) return;
@@ -1057,12 +980,16 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             }
             
             // Execute the code
-            await skulptRef.current.runPython(code);
-            
-            const endTime = performance.now();
-            const duration = ((endTime - startTime) / 1000).toFixed(3);
-            addLog(`────────────────────────────────────────`, "info");
-            addLog(`✓ Program finished successfully in ${duration}s`, "success");
+            if (window.electronAPI?.isElectron) {
+                await window.electronAPI.pythonRun(code);
+            } else {
+                await skulptRef.current.runPython(code);
+                
+                const endTime = performance.now();
+                const duration = ((endTime - startTime) / 1000).toFixed(3);
+                addLog(`────────────────────────────────────────`, "info");
+                addLog(`✓ Program finished successfully in ${duration}s`, "success");
+            }
             
         } catch (e) {
             const errorMsg = typeof e === 'string' ? e : e?.message || e?.toString?.() || JSON.stringify(e) || "Unknown error";
@@ -1076,13 +1003,18 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 addLog(`💡 Tip: ${suggestion}`, "info");
             }
         } finally {
-            setIsRunning(false);
+            if (!window.electronAPI?.isElectron) {
+                setIsRunning(false);
+            }
         }
     };
 
     const handleStop = () => {
         setIsRunning(false);
         addLog("⏹ Execution stopped by user.", "warning");
+        if (window.electronAPI?.isElectron) {
+            window.electronAPI.pythonStop();
+        }
     };
     
     const handleClear = () => setTerminalOutput([]);
@@ -1177,14 +1109,18 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         addLog(`>>> ${line}`, "repl-in");
         
         try {
-            const startTime = performance.now();
-            await skulptRef.current.runRepl(line);
-            const endTime = performance.now();
-            const duration = ((endTime - startTime) / 1000).toFixed(3);
-            
-            // Show execution time for REPL if > 100ms
-            if (endTime - startTime > 100) {
-                addLog(`⏱ Executed in ${duration}s`, "info");
+            if (window.electronAPI?.isElectron) {
+                await window.electronAPI.pythonReplSend(line);
+            } else {
+                const startTime = performance.now();
+                await skulptRef.current.runRepl(line);
+                const endTime = performance.now();
+                const duration = ((endTime - startTime) / 1000).toFixed(3);
+                
+                // Show execution time for REPL if > 100ms
+                if (endTime - startTime > 100) {
+                    addLog(`⏱ Executed in ${duration}s`, "info");
+                }
             }
         } catch (e) {
             // Error already output via onErr
@@ -1330,6 +1266,23 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
             addPreparedFilesToProject(preparedFiles, successLabel);
         }, { multiple: true });
+    };
+
+    const handleCreateNewFile = () => {
+        let baseName = "new_file";
+        let ext = ".py";
+        let fileName = `${baseName}${ext}`;
+        let counter = 1;
+        while (projectFiles[fileName]) {
+            fileName = `${baseName}${counter}${ext}`;
+            counter++;
+        }
+        setProjectFiles((prev) => ({
+            ...prev,
+            [fileName]: "",
+        }));
+        setActiveFile(fileName);
+        addLog(`Created new file: ${fileName}`, "success");
     };
 
     const handleAddPythonFiles = () => {
@@ -1593,7 +1546,11 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             addLog(`✓ ${pkgName} enabled (built-in module)`, "success");
             addLog(`  → Ready to import in your Python scripts`, "info");
         } else {
-            addLog(`✓ ${pkgName} v${pkg.version || 'latest'} installed`, "success");
+            addLog(`⏳ Installing ${pkgName} via pip...`, "info");
+            setActivePanel("terminal");
+            if (window.electronAPI?.isElectron) {
+                window.electronAPI.pythonPipInstall(pkgName);
+            }
             
             // Add helpful import examples for popular libraries
             const importExamples = {
@@ -2847,6 +2804,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     handleAddTextFiles={handleAddTextFiles}
                     handleAddCsvFiles={handleAddCsvFiles}
                     handleDeleteFile={handleDeleteFile}
+                    onAddNewFile={handleCreateNewFile}
                     spriteFilter={spriteFilter}
                     setSpriteFilter={setSpriteFilter}
                     addSpriteFromLibrary={addSpriteFromLibrary}
