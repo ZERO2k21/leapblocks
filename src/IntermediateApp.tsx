@@ -170,6 +170,49 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const [isDraggingSprite, setIsDraggingSprite] = useState(false);
     const [stageLayout, setStageLayout] = useState<'normal' | 'small' | 'large'>('normal');
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [fullscreenScale, setFullscreenScale] = useState(1);
+    const stageContainerRef = useRef<HTMLDivElement>(null);
+
+    const handleFullscreen = async () => {
+        if (!document.fullscreenElement) {
+            if (stageContainerRef.current) {
+                try {
+                    await stageContainerRef.current.requestFullscreen();
+                } catch (err) {
+                    console.error("Error attempting to enable fullscreen:", err);
+                }
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    };
+
+    useEffect(() => {
+        const updateScale = () => {
+            if (document.fullscreenElement) {
+                const scaleX = window.innerWidth / 480;
+                const scaleY = window.innerHeight / 360;
+                setFullscreenScale(Math.min(scaleX, scaleY));
+            } else {
+                setFullscreenScale(1);
+            }
+        };
+
+        const onFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+            updateScale();
+        };
+
+        document.addEventListener('fullscreenchange', onFullscreenChange);
+        window.addEventListener('resize', updateScale);
+
+        return () => {
+            document.removeEventListener('fullscreenchange', onFullscreenChange);
+            window.removeEventListener('resize', updateScale);
+        };
+    }, []);
 
     // Backdrop state
     const [showBackdropLibrary, setShowBackdropLibrary] = useState(false);
@@ -2270,7 +2313,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         <button style={{ ...styles.iconBtn, ...(stageLayout === 'large' ? styles.iconBtnActive : {}) }} onClick={() => setStageLayout('large')} title="Large Stage">
                             <LayoutPanelLeft size={18} />
                         </button>
-                        <button style={{ ...styles.iconBtn, ...(isFullscreen ? styles.iconBtnActive : {}) }} onClick={() => setIsFullscreen(!isFullscreen)} title="Fullscreen">
+                        <button style={{ ...styles.iconBtn, ...(isFullscreen ? styles.iconBtnActive : {}) }} onClick={handleFullscreen} title="Fullscreen">
                             {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
                         </button>
                     </div>
@@ -2363,32 +2406,104 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {editorMode === 'stage' ? (
                         <>
                             {/* Stage */}
-                            <div style={{
-                                ...styles.stageContainer,
-                                width: stageLayout === 'small' ? '240px' : '480px',
-                                height: stageLayout === 'small' ? '180px' : '360px',
+                            <div ref={stageContainerRef} style={{
+                                ...(!isFullscreen ? styles.stageContainer : {}),
+                                width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '240px' : '480px'),
+                                height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '180px' : '360px'),
                                 transition: 'all 0.2s ease-in-out',
                                 position: 'relative',
                                 display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: '#fff',
+                                flexDirection: 'column',
+                                background: isFullscreen ? '#09090b' : '#fff', // Premium dark mode background in fullscreen
+                                overflow: 'hidden'
                             }}>
+                                {/* Fullscreen Toolbar - Premium Dark/Glass */}
+                                {isFullscreen && (
+                                    <div style={{
+                                        width: '100%',
+                                        height: '54px',
+                                        backgroundColor: 'rgba(9, 9, 11, 0.7)',
+                                        backdropFilter: 'blur(12px)',
+                                        WebkitBackdropFilter: 'blur(12px)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '0 24px',
+                                        boxSizing: 'border-box',
+                                        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                                        zIndex: 10
+                                    }}>
+                                        {/* Left: Run and Stop */}
+                                        <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                                            <button style={{...styles.runButtonTop, background: 'rgba(76, 187, 23, 0.15)', border: '1px solid rgba(76, 187, 23, 0.3)', borderRadius: '8px', padding: '6px 12px', transition: 'all 0.2s'}} onClick={handleRunClick} title="Run" onMouseOver={(e) => e.currentTarget.style.background = 'rgba(76, 187, 23, 0.25)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(76, 187, 23, 0.15)'}>
+                                                <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4ce01b" d="M5 3v18M19 8l-14-5v10l14 5V8z" stroke="#4ce01b" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+                                            </button>
+                                            <button style={{...styles.stopButtonTop, background: 'rgba(236, 89, 89, 0.15)', border: '1px solid rgba(236, 89, 89, 0.3)', borderRadius: '8px', padding: '6px 12px', transition: 'all 0.2s'}} onClick={handleStopClick} title="Stop" onMouseOver={(e) => e.currentTarget.style.background = 'rgba(236, 89, 89, 0.25)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(236, 89, 89, 0.15)'}>
+                                                <svg viewBox="0 0 24 24" width="20" height="20"><polygon fill="#ff6b6b" points="7.3,2 16.7,2 22,7.3 22,16.7 16.7,22 7.3,22 2,16.7 2,7.3" /></svg>
+                                            </button>
+                                        </div>
+
+                                        {/* Middle: Custom Tools */}
+                                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                                            <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#a855f7', boxShadow: '0 0 8px #a855f7' }} title="Status"></div>
+                                            <button style={{ ...styles.iconBtn, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px' }} onClick={() => setIsCameraOn(!isCameraOn)} title="Toggle Camera">
+                                                {isCameraOn ? <Camera size={18} color="#e9d5ff" /> : <CameraOff size={18} color="#94a3b8" />}
+                                            </button>
+                                            <div style={{ 
+                                                backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                                                border: '1px solid rgba(168, 85, 247, 0.4)',
+                                                color: '#f3e8ff', 
+                                                padding: '4px 12px', 
+                                                borderRadius: '16px', 
+                                                fontSize: '13px', 
+                                                fontWeight: '600',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                letterSpacing: '0.5px'
+                                            }}>
+                                                <Volume2 size={14} color="#d8b4fe" />
+                                                <span>0 : 00</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Right: Exit Fullscreen */}
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', flex: 1 }}>
+                                            <button style={{ ...styles.iconBtn, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px', color: '#e2e8f0', transition: 'all 0.2s' }} onClick={handleFullscreen} title="Exit Fullscreen" onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}>
+                                                <Minimize size={18} strokeWidth={2.5} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div style={{
-                                    transform: stageLayout === 'small' ? 'scale(0.5)' : 'scale(1)',
-                                    transformOrigin: 'center',
-                                    width: '480px',
-                                    height: '360px',
+                                    flex: 1,
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    position: 'relative'
                                 }}>
-                                    <Stage
-                                        width={480}
-                                        height={360}
-                                        sprites={sprites}
-                                        isRunning={isRunning}
-                                        showGridNumbers={showGrid}
-                                        onSpriteSelect={handleSpriteSelect}
-                                        isCameraOn={isCameraOn}
-                                    />
+                                    <div style={{
+                                        transform: isFullscreen ? `scale(${fullscreenScale})` : (stageLayout === 'small' ? 'scale(0.5)' : 'scale(1)'),
+                                        transformOrigin: 'center',
+                                        width: '480px',
+                                        height: '360px',
+                                        background: 'transparent', // User requested empty screen by default
+                                        boxShadow: isFullscreen ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' : 'none',
+                                        borderRadius: isFullscreen ? '8px' : '0',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <Stage
+                                            width={480}
+                                            height={360}
+                                            sprites={sprites}
+                                            isRunning={isRunning}
+                                            showGridNumbers={showGrid}
+                                            onSpriteSelect={handleSpriteSelect}
+                                            isCameraOn={isCameraOn}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
