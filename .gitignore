@@ -91,3 +91,7 @@ typings/
 # Electron-Forge
 out/
 everything-claude-code
+
+# Build outputs
+dist/
+dist-electron/
