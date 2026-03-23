@@ -431,6 +431,7 @@ export function useJuniorUIHandlers({
         if (action === "save" || action === "save_as") project.handleSaveProject();
         if (action === "open" || action === "load") project.handleOpenProject();
         if (action === "new_project" || action === "new" || action === "new_workspace") project.handleNewProject();
+        if (action === "share to") project.handleShareProject();
 
         if (["qr", "examples", "guide", "record"].includes(action)) {
             alert(`Feature '${action}' coming soon!`);

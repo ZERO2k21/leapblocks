@@ -1,7 +1,20 @@
 import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 
-export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }) {
+export default function SpriteCard({ 
+    sprite, active, onClick, onDelete, onEdit, 
+    isDraggingBlock, onBlocksDropped,
+    isSuccess
+}) {
+    const [isHoveredWhileDragging, setIsHoveredWhileDragging] = React.useState(false);
+
+    const handleMouseUp = () => {
+        if (isDraggingBlock && onBlocksDropped) {
+            console.log(`[SpriteCard] Dropped blocks onto: ${sprite.name}`);
+            onBlocksDropped(sprite.id);
+        }
+        setIsHoveredWhileDragging(false);
+    };
     const label = sprite.name;
 
     // Use actual sprite image if available, otherwise emoji
@@ -11,23 +24,49 @@ export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }
     return (
         <div
             onClick={onClick}
+            onMouseUp={handleMouseUp}
+            onMouseEnter={() => isDraggingBlock && setIsHoveredWhileDragging(true)}
+            onMouseLeave={() => setIsHoveredWhileDragging(false)}
+            data-sprite-id={sprite.id}
             style={{
                 position: "relative",
                 width: "110px",
-                background: "rgba(255, 255, 255, 0.7)",
+                background: isHoveredWhileDragging ? "rgba(255, 191, 0, 0.1)" : "rgba(255, 255, 255, 0.7)",
                 backdropFilter: "blur(8px)",
                 borderRadius: "10px",
-                border: active ? "3px solid #7B4FC4" : "2px solid rgba(224, 224, 224, 0.5)",
+                border: isHoveredWhileDragging 
+                    ? "3px solid #FFBF00" 
+                    : (active ? "3px solid #7B4FC4" : "2px solid rgba(224, 224, 224, 0.5)"),
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 cursor: "pointer",
                 overflow: "hidden",
-                boxShadow: active ? "0 3px 12px rgba(123, 79, 196, 0.3)" : "0 1px 4px rgba(0,0,0,0.06)",
+                boxShadow: isSuccess 
+                    ? "0 0 25px #22c55e"
+                    : (isHoveredWhileDragging 
+                        ? "0 4px 15px rgba(255, 191, 0, 0.4)" 
+                        : (active ? "0 3px 12px rgba(123, 79, 196, 0.3)" : "0 1px 4px rgba(0,0,0,0.06)")),
                 transition: "all 0.2s ease",
                 flexShrink: 0,
+                transform: isSuccess ? "scale(1.1)" : (isHoveredWhileDragging ? "scale(1.05)" : "scale(1)"),
+                zIndex: (isHoveredWhileDragging || isSuccess) ? 10 : 1,
             }}
         >
+            {/* Success Overlay */}
+            {isSuccess && (
+                <div style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    background: "rgba(34, 197, 94, 0.15)",
+                    zIndex: 5,
+                    pointerEvents: "none",
+                    animation: "pulse 0.5s infinite alternate",
+                }} />
+            )}
             {/* Sprite Image Area */}
             <div style={{
                 width: "100%",
@@ -90,7 +129,7 @@ export default function SpriteCard({ sprite, active, onClick, onDelete, onEdit }
                 >
                     <Trash2 size={11} color="white" />
                 </div>
-
+                
                 {/* Sprite Image */}
                 {spriteImage || (typeof displayIcon === 'string' && displayIcon.includes('/')) ? (
                     <img src={spriteImage || displayIcon} alt={label} style={{ maxWidth: "76px", maxHeight: "76px", objectFit: "contain" }} />

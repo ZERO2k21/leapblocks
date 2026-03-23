@@ -31,6 +31,9 @@ export default function RightPanel({
     spriteGridX = null,
     spriteGridY = null,
     isDraggingSprite = false,
+    isDraggingBlock = false,
+    onBlocksDropped = null,
+    successSpriteId = null,
 }) {
 
     return (
@@ -262,6 +265,9 @@ export default function RightPanel({
                         onClick={() => onSelectSprite(sprite.id)}
                         onDelete={() => onDeleteSprite && onDeleteSprite(sprite.id)}
                         onEdit={() => onEditSprite && onEditSprite(sprite.id)}
+                        isDraggingBlock={isDraggingBlock}
+                        onBlocksDropped={onBlocksDropped}
+                        isSuccess={sprite.id === successSpriteId}
                     />
                 ))}
             </div>

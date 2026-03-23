@@ -38,6 +38,39 @@ class FileService {
         URL.revokeObjectURL(url);
     }
 
+    async shareProject(projectName: string, mode: SessionMode, payload: any): Promise<void> {
+        const projectData: ProjectData = {
+            version: '1.0',
+            projectName,
+            mode,
+            timestamp: Date.now(),
+            ...payload
+        };
+
+        const jsonStr = JSON.stringify(projectData, null, 2);
+        const fileName = `${projectName.replace(/\s+/g, '_')}.leap`;
+        const file = new File([jsonStr], fileName, { type: 'application/json' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    title: `${projectName} — LeapBlocks Project`,
+                    text: `Check out my LeapBlocks project "${projectName}"!`,
+                    files: [file]
+                });
+                console.log('[FileService] Project shared successfully');
+            } catch (err: any) {
+                if (err.name !== 'AbortError') {
+                    console.warn('[FileService] Share failed, falling back to download:', err);
+                    this.saveProject(projectName, mode, payload);
+                }
+            }
+        } else {
+            console.log('[FileService] Web Share API not supported, falling back to download');
+            this.saveProject(projectName, mode, payload);
+        }
+    }
+
     async loadProject(file: File): Promise<any> {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();

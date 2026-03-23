@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StageProvider, useStage } from "../context/StageContext";
 import Logo from "../components/Logo";
-
 import {
     Play,
     Square,
@@ -22,11 +21,13 @@ import {
     Loader,
     CheckCircle,
     Library,
+    LibraryBig,
     FileUp,
     Zap,
     Plug,
     FileCode2,
-    AlertCircle
+    AlertCircle,
+    TerminalSquare
 } from "lucide-react";
 
 import { SkulptEngine } from "../junior/engine/SkulptEngine";

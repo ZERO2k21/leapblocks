@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-    ChevronDown, File, FolderOpen, Save, Download,
+    ChevronDown, File, FolderOpen, Save, Share,
     Undo, Redo, Cpu, Bluetooth, Usb, Wifi,
     Play, Upload, Settings, HelpCircle, Home, RotateCcw,
     Monitor, Rocket
@@ -270,7 +270,7 @@ export default function MenuBar({
         { label: 'Open Project', icon: FolderOpen, shortcut: 'Ctrl+O', onClick: () => onFileAction?.('open') },
         { divider: true },
         { label: 'Save', icon: Save, shortcut: 'Ctrl+S', onClick: () => onFileAction?.('save') },
-        { label: 'Save As...', icon: Download, onClick: () => onFileAction?.('save_as') },
+        { label: 'Share', icon: Share, onClick: () => onFileAction?.('share to') },
     ];
 
     const editMenuItems = [
