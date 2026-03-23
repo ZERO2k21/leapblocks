@@ -45,7 +45,32 @@ if (typeof document !== 'undefined' && !document.getElementById('python-ide-anim
     document.head.appendChild(animationStyles);
 }
 
-import { Play, Square, Undo, Redo, Save, Settings, Trash2, Maximize, Upload, Clock, Cpu, RefreshCw, Plug, FileCode2, FileText, TerminalSquare, ClipboardList, LoaderCircle, CheckCircle2, AlertCircle, LibraryBig, FileUp, Plus } from "lucide-react";
+import {
+    Play,
+    Square,
+    Undo,
+    Redo,
+    Save,
+    Settings,
+    Trash2,
+    Maximize,
+    Upload,
+    Clock,
+    Cpu,
+    RefreshCw,
+    Plus,
+    FileText,
+    Terminal,
+    ClipboardList,
+    Loader,
+    CheckCircle,
+    Library,
+    FileUp,
+    Zap,
+    Plug,
+    FileCode2,
+    AlertCircle
+} from "lucide-react";
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
 import SerialMonitor from "../components/SerialMonitor";
@@ -84,10 +109,6 @@ const DEFAULT_FILES = {
     "stage.py": ``
 };
 
-const BOARD_NAME_BY_ID = BOARDS.reduce((acc, board) => {
-    acc[board.id] = board.name;
-    return acc;
-}, {});
 
 const BOARD_UPLOAD_CONFIG = {
     arduino_uno: {
@@ -483,7 +504,6 @@ const PIP_PACKAGES = [
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCostumes }) {
-    // Get shared stage state from context
     const {
         sprites,
         setSprites,
@@ -501,6 +521,13 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         updateSpriteProperty,
         resetStage
     } = useStage();
+
+    const BOARD_NAME_BY_ID = React.useMemo(() => {
+        return BOARDS.reduce((acc, b) => {
+            acc[b.id] = b.name;
+            return acc;
+        }, {});
+    }, []);
     
     // Editor state
     const [projectName, setProjectName] = useState("My Project");
@@ -2335,7 +2362,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                     cursor: isUploadingFirmware ? "not-allowed" : "pointer",
                                 }}
                             >
-                                {isUploadingFirmware ? <LoaderCircle size={15} style={{ animation: "spin 1s linear infinite" }} /> : <Upload size={15} />}
+                                {isUploadingFirmware ? <Loader size={15} style={{ animation: "spin 1s linear infinite" }} /> : <Upload size={15} />}
                                 {isUploadingFirmware ? "Uploading..." : "Upload Code"}
                             </button>
                         </div>
@@ -2765,7 +2792,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         <div style={{ width: 1, height: 22, background: C.BORDER }} />
                         <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: uploadProgressMessage ? C.TEXT : C.MUTED }}>
                             {uploadProgressMessage ? (
-                                isUploadingFirmware ? <LoaderCircle size={15} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle2 size={15} color={C.GREEN} />
+                                isUploadingFirmware ? <Loader size={15} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle size={15} color={C.GREEN} />
                             ) : (
                                 <AlertCircle size={15} color={C.MUTED} />
                             )}

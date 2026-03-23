@@ -1,4 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { SkulptEngine } from "../junior/engine/SkulptEngine";
+import { FULL_CATALOG } from "../components/SpriteLibrary";
+import { BackdropLibrary as BackdropLib } from "../components/BackdropLibrary";
 
 // ─── CSS Animations ───────────────────────────────────────────────────────────
 const animationStyles = document.createElement('style');
@@ -42,10 +45,6 @@ if (typeof document !== 'undefined' && !document.getElementById('python-ide-anim
     animationStyles.id = 'python-ide-animations';
     document.head.appendChild(animationStyles);
 }
-
-import { SkulptEngine } from "../junior/engine/SkulptEngine";
-import { FULL_CATALOG } from "../components/SpriteLibrary";
-import { BackdropLibrary as BackdropLib } from "../components/BackdropLibrary";
 
 // ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
 const C = {
