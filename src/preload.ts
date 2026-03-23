@@ -125,6 +125,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
         console.log('[PRELOAD] removeBackground called', { imagePath });
         return ipcRenderer.invoke('remove-background', imagePath);
     },
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // APP INVENTOR APIS
+    // ═══════════════════════════════════════════════════════════════════════
+    buildApk: (appState: any) => ipcRenderer.invoke("build-apk", appState),
+    onBuildLog: (cb: (msg: string) => void) => ipcRenderer.on("build-log", (_, m) => cb(m)),
+    removeBuildLogListener: () => ipcRenderer.removeAllListeners("build-log"),
+    showInFolder: (p: string) => ipcRenderer.invoke("show-in-folder", p),
+    saveProject: (d: any) => ipcRenderer.invoke("save-project", d),
+    openProject: () => ipcRenderer.invoke("open-project"),
+    isElectron: true
 });
 
 // Declare global type for TypeScript
@@ -141,6 +152,14 @@ declare global {
             onUploadProgress: (callback: (progress: number, message: string) => void) => void;
             removeAllListeners: () => void;
             removeBackground: (imagePath: string) => Promise<{ success: boolean; error?: string; stdout?: string; stderr?: string; base64?: string }>;
+            
+            buildApk: (appState: any) => Promise<{success: boolean, outputPath?: string, error?: string}>;
+            onBuildLog: (cb: (msg: string) => void) => void;
+            removeBuildLogListener: () => void;
+            showInFolder: (p: string) => void;
+            saveProject: (d: any) => Promise<boolean>;
+            openProject: () => Promise<any>;
+            isElectron: boolean;
         };
     }
 }

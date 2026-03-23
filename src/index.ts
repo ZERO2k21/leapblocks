@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as path from 'path';
 import { SerialManager } from './serial/SerialManager';
 import { ArduinoUploader } from './upload/ArduinoUploader';
@@ -168,4 +168,79 @@ ipcMain.handle('remove-background', async (event, imagePath: string) => {
       resolve({ success: true, stdout, stderr, base64: resultBase64 });
     });
   });
+});
+
+// App Inventor Handlers
+ipcMain.handle('build-apk', async (event, appState) => {
+  // Resolve at runtime relative to the app root, not the webpack bundle
+  const buildApkPath = path.resolve(app.getAppPath(), '..', '..', 'electron', 'buildApk.js');
+  let buildApk: any;
+  try {
+    buildApk = require(buildApkPath);
+  } catch (e) {
+    console.error('Could not load buildApk from', buildApkPath, e);
+    return { success: false, error: `Build script not found at ${buildApkPath}` };
+  }
+  
+  const logCallback = (msg: string) => {
+    try {
+      if (!event.sender.isDestroyed()) {
+        event.sender.send('build-log', msg);
+      }
+    } catch (err) {
+      console.error("Failed to send log:", err);
+    }
+  };
+
+  try {
+    const outputPath = await buildApk(appState, app.getAppPath(), logCallback);
+    return { success: true, outputPath };
+  } catch (error: any) {
+    return { success: false, error: error.message || error.toString() };
+  }
+});
+
+ipcMain.handle('show-in-folder', (_, filePath) => {
+  shell.showItemInFolder(filePath);
+});
+
+ipcMain.handle('save-project', async (_, data) => {
+  if (!mainWindow) return false;
+  const { filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: 'Save LeapBlocks Project',
+    defaultPath: 'project.lbp',
+    filters: [
+      { name: 'LeapBlocks Project', extensions: ['lbp'] }
+    ]
+  });
+
+  if (filePath) {
+    const fsMod = require('fs');
+    fsMod.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('open-project', async () => {
+  if (!mainWindow) return null;
+  const { filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Open LeapBlocks Project',
+    properties: ['openFile'],
+    filters: [
+      { name: 'LeapBlocks Project', extensions: ['lbp'] }
+    ]
+  });
+
+  if (filePaths && filePaths.length > 0) {
+    const fsMod = require('fs');
+    const content = fsMod.readFileSync(filePaths[0], 'utf-8');
+    try {
+      return JSON.parse(content);
+    } catch(e) {
+      console.error("Invalid project file", e);
+      return null;
+    }
+  }
+  return null;
 });

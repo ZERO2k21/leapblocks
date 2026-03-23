@@ -9,8 +9,10 @@ const JuniorApp = lazy(() => import('./junior/JuniorApp'));
 const PythonApp = lazy(() => import('./python/PythonApp'));
 // @ts-ignore
 const PythonNotebook = lazy(() => import('./python/PythonNotebook'));
+// @ts-ignore
+const AppInventor = lazy(() => import('./modules/AppInventor'));
 
-type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook';
+type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'appinventor';
 
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
@@ -74,6 +76,7 @@ export default function App() {
                     onSwitchToCostumes={() => requestSwitch('python', 'intermediate', 'costumes')}
                 />}
                 {mode === 'notebook' && <PythonNotebook onBack={() => setMode('home')} onSwitchToIDE={() => setMode('python')} />}
+                {mode === 'appinventor' && <AppInventor {...({ onBack: () => setMode('home') } as any)} />}
                 {mode === 'home' && <LandingPage onSelect={setMode} />}
             </Suspense>
 

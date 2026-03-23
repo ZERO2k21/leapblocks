@@ -593,7 +593,7 @@ const NetworkBackground: React.FC = () => {
 
 
 interface LandingPageProps {
-    onSelect: (mode: 'intermediate' | 'junior' | 'python') => void;
+    onSelect: (mode: 'intermediate' | 'junior' | 'python' | 'appinventor' | any) => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
@@ -826,7 +826,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             ),
             title: 'App & Game Development', subtitle: 'A future studio for scenes, interactions, and game logic.',
             color: '#EF4444', gradient: 'linear-gradient(135deg, #ff6a6aff, #b70000ff)',
-            available: false, patternType: 'lines', tag: 'Game lab', chips: ['Scenes', 'Interactions'], cta: 'Track update', onClick: () => showComingSoon('App & Game Development'),
+            available: true, patternType: 'lines', tag: 'Game lab', chips: ['Scenes', 'Interactions'], cta: 'Start studio', onClick: () => onSelect('appinventor'),
         },
         {
             icon: (
