@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as path from 'path';
 import { SerialManager } from './serial/SerialManager';
 import { ArduinoUploader } from './upload/ArduinoUploader';
+import { PythonManager } from './pythonBackend/PythonManager';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL STATE & SERVICES
@@ -9,6 +10,7 @@ import { ArduinoUploader } from './upload/ArduinoUploader';
 let mainWindow: BrowserWindow | null = null;
 let serialManager: SerialManager;
 let arduinoUploader: ArduinoUploader;
+let pythonManager: PythonManager;
 
 const log = (category: string, msg: string, data?: any) => {
   const timestamp = new Date().toISOString();
@@ -45,11 +47,13 @@ const createWindow = (): void => {
   // Initialize service instances with current window
   serialManager = new SerialManager(mainWindow);
   arduinoUploader = new ArduinoUploader(mainWindow);
+  pythonManager = new PythonManager(mainWindow);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
     serialManager.setWindow(null);
     arduinoUploader.setWindow(null);
+    if (pythonManager) pythonManager.setWindow(null);
   });
 };
 
@@ -70,6 +74,9 @@ app.on('activate', () => {
 app.on('before-quit', () => {
   if (serialManager) {
     serialManager.disconnect();
+  }
+  if (pythonManager) {
+    pythonManager.stopAll();
   }
 });
 
@@ -112,6 +119,23 @@ ipcMain.handle('upload-code', async (event, code: string, selectedPort: string, 
   const result = await arduinoUploader.upload(code, selectedPort, fqbn);
 
   return result;
+});
+
+// Python Handlers
+ipcMain.handle('python-run', async (event, code: string) => {
+  await pythonManager.runCode(code);
+});
+ipcMain.handle('python-repl-start', async () => {
+  await pythonManager.startRepl();
+});
+ipcMain.handle('python-repl-send', async (event, input: string) => {
+  pythonManager.sendRepl(input);
+});
+ipcMain.handle('python-stop', async () => {
+  pythonManager.stopAll();
+});
+ipcMain.handle('python-pip-install', async (event, pkg: string) => {
+  await pythonManager.installPipPackage(pkg);
 });
 
 ipcMain.handle('remove-background', async (event, imagePath: string) => {
