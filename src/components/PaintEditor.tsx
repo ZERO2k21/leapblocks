@@ -784,10 +784,12 @@ function PaintEditor({
 
                         {/* CANVAS AREA */}
                         <div className="flex-1 flex items-center justify-center p-8 overflow-hidden relative" style={{ cursor: activeTool === 'fill' ? 'crosshair' : 'default' }}>
-                            <div className="relative shadow-md border-2 border-[#d9e1e8] bg-white rounded-lg overflow-hidden"
+                            <div className="relative shadow-md border-2 border-[#d9e1e8] rounded-lg overflow-hidden"
                                 style={{
-                                    backgroundImage: `url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZjhmOGY4Ii8+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNmOGY4ZjgiLz48L3N2Zz4=')`,
+                                    backgroundColor: '#ffffff',
+                                    backgroundImage: `linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb)`,
                                     backgroundSize: '20px 20px',
+                                    backgroundPosition: '0 0, 10px 10px',
                                     width: `${canvasW}px`, height: `${canvasH}px`,
                                     transform: `scale(${zoom})`,
                                     transformOrigin: 'center center'
