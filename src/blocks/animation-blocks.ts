@@ -5,18 +5,18 @@ import * as Blockly from 'blockly';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const COLORS = {
-    motion: '#4A90E2',       // Blue - Motion blocks
-    looks: '#8B5CF6',        // Purple - Looks blocks
-    sound: '#D946EF',        // Fuchsia - Sound blocks
-    events: '#FACC15',       // Yellow - Events
-    control: '#F59E0B',      // Amber - Control blocks
-    sensing: '#06B6D4',      // Cyan - Sensing
-    operators: '#22C55E',    // Green - Operators
-    data: '#F97316',         // Orange - Variables
-    variables: '#F97316',    // Alias
-    list: '#F97316',         // Unified orange
-    myblocks: '#EC4899',     // Pink - My Blocks
-    pen: '#00B1B0',          // Teal - Pen blocks (PictoBlox style)
+    motion: '#4C97FF',       // Scratch Blue - Motion blocks
+    looks: '#9966FF',        // Scratch Purple - Looks blocks
+    sound: '#CF63CF',        // Scratch Magenta - Sound blocks
+    events: '#FFBF00',       // Scratch Yellow - Events
+    control: '#FFAB19',      // Scratch Orange - Control blocks
+    sensing: '#5CB1D6',      // Scratch Cyan - Sensing
+    operators: '#59C059',    // Scratch Green - Operators
+    data: '#FF8C1A',         // Scratch Orange - Variables
+    variables: '#FF8C1A',    // Alias
+    list: '#FF8C1A',         // Unified orange
+    myblocks: '#FF6680',     // Scratch Pink - My Blocks
+    pen: '#0FBD8C',          // Scratch Green - Pen blocks
 };
 
 export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
@@ -260,6 +260,43 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         output: 'Number',
         colour: COLORS.motion,
         tooltip: 'Get direction of sprite',
+        helpUrl: '',
+    },
+
+    // Additional Scratch-style motion blocks
+    {
+        type: 'motion_point_towards',
+        message0: '👉 point towards %1',
+        args0: [{
+            type: 'field_dropdown',
+            name: 'TOWARDS',
+            options: [
+                ['mouse-pointer', 'mouse'],
+                // Sprite options will be populated dynamically at runtime
+            ],
+        }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.motion,
+        tooltip: 'Point towards mouse-pointer or another sprite',
+        helpUrl: '',
+    },
+    {
+        type: 'motion_change_rotation_style',
+        message0: '🔄 set rotation style %1',
+        args0: [{
+            type: 'field_dropdown',
+            name: 'STYLE',
+            options: [
+                ['left-right', 'left-right'],
+                ['don\'t rotate', 'none'],
+                ['all around', 'all-around'],
+            ],
+        }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.motion,
+        tooltip: 'Set how sprite rotates',
         helpUrl: '',
     },
 
@@ -623,6 +660,48 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         helpUrl: '',
     },
 
+    // Additional Scratch-style looks blocks
+    {
+        type: 'looks_set_brightness',
+        message0: '💡 set brightness to %1',
+        args0: [{ type: 'field_number', name: 'BRIGHTNESS', value: 100, min: 0, max: 100 }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.looks,
+        tooltip: 'Set sprite brightness',
+        helpUrl: '',
+    },
+    {
+        type: 'looks_change_brightness',
+        message0: '💡 change brightness by %1',
+        args0: [{ type: 'field_number', name: 'CHANGE', value: 10, min: -100, max: 100 }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.looks,
+        tooltip: 'Change sprite brightness',
+        helpUrl: '',
+    },
+    {
+        type: 'looks_set_transparency',
+        message0: '👻 set transparency to %1',
+        args0: [{ type: 'field_number', name: 'TRANSPARENCY', value: 0, min: 0, max: 100 }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.looks,
+        tooltip: 'Set sprite transparency',
+        helpUrl: '',
+    },
+    {
+        type: 'looks_change_transparency',
+        message0: '👻 change transparency by %1',
+        args0: [{ type: 'field_number', name: 'CHANGE', value: 10, min: -100, max: 100 }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.looks,
+        tooltip: 'Change sprite transparency',
+        helpUrl: '',
+    },
+
     // ═══════════════════════════════════════════════════════════════════════════
     // CONTROL (Animation)
     // ═══════════════════════════════════════════════════════════════════════════
@@ -868,30 +947,73 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         tooltip: 'Check if mouse button is pressed',
         helpUrl: '',
     },
+
+    // Additional Scratch-style sensing blocks
     {
         type: 'sensing_loudness',
         message0: 'loudness',
         output: 'Number',
         colour: COLORS.sensing,
-        tooltip: 'Microphone loudness (0-100)',
+        tooltip: 'Loudness level from microphone',
         helpUrl: '',
     },
     {
-        type: 'sensing_current',
-        message0: 'current %1',
-        args0: [{
-            type: 'field_dropdown',
-            name: 'CURRENTMENU',
-            options: [
-                ['year', 'year'], ['month', 'month'], ['date', 'date'],
-                ['day of week', 'dayofweek'], ['hour', 'hour'], ['minute', 'minute'], ['second', 'second'],
-            ],
-        }],
+        type: 'sensing_current_year',
+        message0: 'current year',
         output: 'Number',
         colour: COLORS.sensing,
-        tooltip: 'Current date/time value',
+        tooltip: 'Current year',
         helpUrl: '',
     },
+    {
+        type: 'sensing_current_month',
+        message0: 'current month',
+        output: 'Number',
+        colour: COLORS.sensing,
+        tooltip: 'Current month (1-12)',
+        helpUrl: '',
+    },
+    {
+        type: 'sensing_current_date',
+        message0: 'current date',
+        output: 'Number',
+        colour: COLORS.sensing,
+        tooltip: 'Current date of month',
+        helpUrl: '',
+    },
+    {
+        type: 'sensing_current_day_of_week',
+        message0: 'day of week',
+        output: 'String',
+        colour: COLORS.sensing,
+        tooltip: 'Current day of week',
+        helpUrl: '',
+    },
+    {
+        type: 'sensing_current_hour',
+        message0: 'current hour',
+        output: 'Number',
+        colour: COLORS.sensing,
+        tooltip: 'Current hour (0-23)',
+        helpUrl: '',
+    },
+    {
+        type: 'sensing_current_minute',
+        message0: 'current minute',
+        output: 'Number',
+        colour: COLORS.sensing,
+        tooltip: 'Current minute (0-59)',
+        helpUrl: '',
+    },
+    {
+        type: 'sensing_current_second',
+        message0: 'current second',
+        output: 'Number',
+        colour: COLORS.sensing,
+        tooltip: 'Current second (0-59)',
+        helpUrl: '',
+    },
+
     {
         type: 'sensing_days_since_2000',
         message0: 'days since 2000',
@@ -908,6 +1030,7 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         tooltip: 'Current username',
         helpUrl: '',
     },
+
     // ═══════════════════════════════════════════════════════════════════════════
     // DATA / VARIABLES
     // ═══════════════════════════════════════════════════════════════════════════
@@ -977,38 +1100,220 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         tooltip: 'Hide variable monitor',
         helpUrl: '',
     },
+
+    // Variable Reporter block (Scratch style)
     {
-        type: 'variables_get',
+        type: 'data_variable',
         message0: '%1',
-        args0: [
-            {
-                type: 'field_variable',
-                name: 'VAR',
-                variable: 'my variable',
-                variableTypes: ['Number', 'String', '']
-            }
-        ],
+        args0: [{
+            type: 'field_variable',
+            name: 'VARIABLE',
+            variable: 'my variable',
+            variableTypes: ['Number', 'String', '']
+        }],
         output: null,
         colour: COLORS.data,
-        tooltip: 'Get variable value',
+        tooltip: 'Variable value',
         helpUrl: '',
     },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // LISTS
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    // List Stack blocks (7 blocks)
     {
-        type: 'variables_set',
-        message0: 'set %1 to %2',
+        type: 'data_addtolist',
+        message0: 'add %1 to %2',
         args0: [
-            {
-                type: 'field_variable',
-                name: 'VAR',
-                variable: 'my variable',
-                variableTypes: ['Number', 'String', '']
-            },
-            { type: 'input_value', name: 'VALUE' },
+            { type: 'input_value', name: 'ITEM' },
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.data,
-        tooltip: 'Set variable to value',
+        colour: COLORS.list,
+        tooltip: 'Add item to list',
+        helpUrl: '',
+    },
+    {
+        type: 'data_deleteoflist',
+        message0: 'delete %1 of %2',
+        args0: [
+            { type: 'input_value', name: 'INDEX', check: 'Number' },
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Delete item from list',
+        helpUrl: '',
+    },
+    {
+        type: 'data_deletealloflist',
+        message0: 'delete all of %1',
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Delete all items from list',
+        helpUrl: '',
+    },
+    {
+        type: 'data_insertatlist',
+        message0: 'insert %1 at %2 of %3',
+        args0: [
+            { type: 'input_value', name: 'ITEM' },
+            { type: 'input_value', name: 'INDEX', check: 'Number' },
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Insert item at position in list',
+        helpUrl: '',
+    },
+    {
+        type: 'data_replaceitemoflist',
+        message0: 'replace item %1 of %2 with %3',
+        args0: [
+            { type: 'input_value', name: 'INDEX', check: 'Number' },
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+            { type: 'input_value', name: 'ITEM' }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Replace item in list',
+        helpUrl: '',
+    },
+    {
+        type: 'data_showlist',
+        message0: 'show list %1',
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Show list monitor',
+        helpUrl: '',
+    },
+    {
+        type: 'data_hidelist',
+        message0: 'hide list %1',
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Hide list monitor',
+        helpUrl: '',
+    },
+
+    // List Reporter blocks (4 blocks)
+    {
+        type: 'data_list',
+        message0: '%1',
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        output: 'String',
+        colour: COLORS.list,
+        tooltip: 'List contents',
+        helpUrl: '',
+    },
+    {
+        type: 'data_itemoflist',
+        message0: 'item %1 of %2',
+        args0: [
+            { type: 'input_value', name: 'INDEX', check: 'Number' },
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }
+        ],
+        output: null,
+        colour: COLORS.list,
+        tooltip: 'Get item from list',
+        helpUrl: '',
+    },
+    {
+        type: 'data_itemnumoflist',
+        message0: 'item # of %1 in %2',
+        args0: [
+            { type: 'input_value', name: 'ITEM' },
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }
+        ],
+        output: 'Number',
+        colour: COLORS.list,
+        tooltip: 'Get item number in list',
+        helpUrl: '',
+    },
+    {
+        type: 'data_lengthoflist',
+        message0: 'length of %1',
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        output: 'Number',
+        colour: COLORS.list,
+        tooltip: 'Length of list',
+        helpUrl: '',
+    },
+
+    // List Boolean block (1 block)
+    {
+        type: 'data_listcontainsitem',
+        message0: '%1 contains %2 ?',
+        args0: [
+            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+            { type: 'input_value', name: 'ITEM' }
+        ],
+        output: 'Boolean',
+        colour: COLORS.list,
+        tooltip: 'Check if list contains item',
+        helpUrl: '',
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TABLES
+    // ═══════════════════════════════════════════════════════════════════════════
+    {
+        type: 'data_set_table_cell',
+        message0: 'set row %1 col %2 of %3 to %4',
+        args0: [
+            { type: 'input_value', name: 'ROW', check: 'Number' },
+            { type: 'input_value', name: 'COL', check: 'Number' },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+            { type: 'input_value', name: 'VALUE' }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Set item in table',
+        helpUrl: '',
+    },
+    {
+        type: 'data_get_table_cell',
+        message0: 'item at row %1 col %2 of %3',
+        args0: [
+            { type: 'input_value', name: 'ROW', check: 'Number' },
+            { type: 'input_value', name: 'COL', check: 'Number' },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }
+        ],
+        output: null,
+        colour: COLORS.list,
+        tooltip: 'Get item from table',
+        helpUrl: '',
+    },
+    {
+        type: 'data_showtable',
+        message0: 'show table %1',
+        args0: [{ type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Show table monitor',
+        helpUrl: '',
+    },
+    {
+        type: 'data_hidetable',
+        message0: 'hide table %1',
+        args0: [{ type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.list,
+        tooltip: 'Hide table monitor',
         helpUrl: '',
     },
 
@@ -1349,54 +1654,6 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
     // ═══════════════════════════════════════════════════════════════════════════
     // VARIABLES
     // ═══════════════════════════════════════════════════════════════════════════
-    {
-        type: 'data_setvariableto',
-        message0: 'set %1 to %2',
-        args0: [
-            { type: 'field_variable', name: 'VARIABLE', variable: 'my variable' },
-            { type: 'field_number', name: 'VALUE', value: 0 },
-        ],
-        previousStatement: null,
-        nextStatement: null,
-        colour: COLORS.variables,
-        tooltip: 'Set variable value',
-        helpUrl: '',
-    },
-    {
-        type: 'data_changevariableby',
-        message0: 'change %1 by %2',
-        args0: [
-            { type: 'field_variable', name: 'VARIABLE', variable: 'my variable' },
-            { type: 'field_number', name: 'VALUE', value: 1 },
-        ],
-        previousStatement: null,
-        nextStatement: null,
-        colour: COLORS.variables,
-        tooltip: 'Change variable by amount',
-        helpUrl: '',
-    },
-    {
-        type: 'data_showvariable',
-        message0: 'show variable %1',
-        args0: [{ type: 'field_variable', name: 'VARIABLE', variable: 'my variable' }],
-        previousStatement: null,
-        nextStatement: null,
-        colour: COLORS.variables,
-        tooltip: 'Show variable on stage',
-        helpUrl: '',
-    },
-    {
-        type: 'data_hidevariable',
-        message0: 'hide variable %1',
-        args0: [{ type: 'field_variable', name: 'VARIABLE', variable: 'my variable' }],
-        previousStatement: null,
-        nextStatement: null,
-        colour: COLORS.variables,
-        tooltip: 'Hide variable from stage',
-        helpUrl: '',
-    },
-
-    // ═══════════════════════════════════════════════════════════════════════════
     // LISTS
     // ═══════════════════════════════════════════════════════════════════════════
     {
@@ -1535,6 +1792,157 @@ export const animationBlocks = Blockly.common.createBlockDefinitionsFromJsonArra
         nextStatement: null,
         colour: COLORS.list,
         tooltip: 'Hide list monitor',
+        helpUrl: '',
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TABLES
+    // ═══════════════════════════════════════════════════════════════════════════
+    {
+        type: 'data_tablecontents',
+        message0: 'table %1',
+        args0: [{ type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }],
+        output: 'String',
+        colour: COLORS.data,
+        tooltip: 'Table contents',
+        helpUrl: '',
+    },
+    {
+        type: 'data_setintable',
+        message0: 'set in table %1 column %2 row %3 value %4',
+        args0: [
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+            { type: 'input_value', name: 'COLUMN' },
+            { type: 'input_value', name: 'ROW' },
+            { type: 'input_value', name: 'VALUE' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.data,
+        tooltip: 'Set value in table cell',
+        helpUrl: '',
+    },
+    {
+        type: 'data_addcolumn',
+        message0: 'add column %1 to table %2',
+        args0: [
+            { type: 'input_value', name: 'COLUMN' },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.data,
+        tooltip: 'Add column to table',
+        helpUrl: '',
+    },
+    {
+        type: 'data_deletecolumn',
+        message0: 'delete column %1 from table %2',
+        args0: [
+            { type: 'input_value', name: 'COLUMN' },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.data,
+        tooltip: 'Delete column from table',
+        helpUrl: '',
+    },
+    {
+        type: 'data_showtable',
+        message0: 'show table %1 as %2',
+        args0: [
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+            {
+                type: 'field_dropdown',
+                name: 'FORMAT',
+                options: [['stage', 'stage'], ['bar chart', 'bar'], ['line chart', 'line']]
+            },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.data,
+        tooltip: 'Show table on stage',
+        helpUrl: '',
+    },
+    {
+        type: 'data_hidetable',
+        message0: 'hide table %1',
+        args0: [{ type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.data,
+        tooltip: 'Hide table',
+        helpUrl: '',
+    },
+    {
+        type: 'data_deleterow',
+        message0: 'delete row %1 from table %2',
+        args0: [
+            { type: 'input_value', name: 'ROW' },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.data,
+        tooltip: 'Delete row from table',
+        helpUrl: '',
+    },
+    {
+        type: 'data_cleartable',
+        message0: 'clear table %1',
+        args0: [{ type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.data,
+        tooltip: 'Clear all data from table',
+        helpUrl: '',
+    },
+    {
+        type: 'data_getvalueattable',
+        message0: 'get value at column %1 row %2 from %3',
+        args0: [
+            { type: 'input_value', name: 'COLUMN' },
+            { type: 'input_value', name: 'ROW' },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+        ],
+        output: null,
+        colour: COLORS.data,
+        tooltip: 'Get value from table cell',
+        helpUrl: '',
+    },
+    {
+        type: 'data_gettablecount',
+        message0: 'get %1 count of table %2',
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'TYPE',
+                options: [['row', 'row'], ['column', 'column']]
+            },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+        ],
+        output: 'Number',
+        colour: COLORS.data,
+        tooltip: 'Get number of rows or columns',
+        helpUrl: '',
+    },
+    {
+        type: 'data_gettimestamp',
+        message0: 'get timestamp',
+        output: 'String',
+        colour: COLORS.data,
+        tooltip: 'Get current timestamp',
+        helpUrl: '',
+    },
+    {
+        type: 'data_exporttable',
+        message0: 'export %1 as csv file',
+        args0: [{ type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.data,
+        tooltip: 'Download table data as CSV',
         helpUrl: '',
     },
 
@@ -1857,7 +2265,13 @@ export const animationToolbox = {
                 { kind: 'block', type: 'sensing_timer' },
                 { kind: 'block', type: 'sensing_reset_timer' },
                 { kind: 'label', text: '── Date/Time ──' },
-                { kind: 'block', type: 'sensing_current' },
+                { kind: 'block', type: 'sensing_current_year' },
+                { kind: 'block', type: 'sensing_current_month' },
+                { kind: 'block', type: 'sensing_current_date' },
+                { kind: 'block', type: 'sensing_current_day_of_week' },
+                { kind: 'block', type: 'sensing_current_hour' },
+                { kind: 'block', type: 'sensing_current_minute' },
+                { kind: 'block', type: 'sensing_current_second' },
                 { kind: 'block', type: 'sensing_days_since_2000' },
                 { kind: 'block', type: 'sensing_username' },
                 { kind: 'label', text: '── Attributes ──' },
@@ -1898,18 +2312,13 @@ export const animationToolbox = {
             kind: 'pictobloxCategory',
             name: 'Variables',
             colour: COLORS.data,
-            custom: 'LEAP_VARIABLES',
-            contents: [], // Ignored, handled by callback
+            custom: 'LEAP_VARIABLES'
         },
         {
             kind: 'pictobloxCategory',
             name: 'My Blocks',
             colour: COLORS.myblocks,
-            contents: [
-                { kind: 'button', text: 'Make a Block', callbackKey: 'CREATE_PROCEDURE' },
-                { kind: 'block', type: 'procedures_definition' },
-                { kind: 'block', type: 'procedures_call' },
-            ],
+            custom: 'LEAP_MYBLOCKS'
         },
         {
             kind: 'pictobloxCategory',

@@ -37,6 +37,8 @@ interface PaintEditorProps {
     mode?: 'junior' | 'intermediate';
     onDeleteSound?: (index: number) => void;
     onDuplicateSound?: (index: number) => void;
+    onSwitchCostume?: (index: number) => void;
+    onRenameCostume?: (index: number, newName: string) => void;
     onOpenLibrary?: () => void;
 }
 
@@ -50,6 +52,8 @@ function PaintEditor({
     mode = 'intermediate',
     onDeleteSound,
     onDuplicateSound,
+    onSwitchCostume,
+    onRenameCostume,
     onOpenLibrary
 }: PaintEditorProps) {
     const canvasRef = useRef<fabric.Canvas | null>(null);
@@ -98,7 +102,7 @@ function PaintEditor({
                 const result = await window.electronAPI.removeBackground(dataUrl);
                 if (result.success && (result as any).base64) {
                     canvas.clear();
-                    
+
                     fabric.Image.fromURL((result as any).base64, { crossOrigin: 'anonymous' }).then((img: fabric.FabricImage) => {
                         img.set({
                             left: canvas.width! / 2,
@@ -538,7 +542,10 @@ function PaintEditor({
                         {costumes.map((c, i) => (
                             <div key={c.id || i} className="relative group">
                                 <div
-                                    onClick={() => setActiveCostumeIndex(i)}
+                                    onClick={() => {
+                                        setActiveCostumeIndex(i);
+                                        if (onSwitchCostume) onSwitchCostume(i);
+                                    }}
                                     className={`w-[80px] h-[80px] rounded-lg border-2 flex flex-col items-center justify-center p-1 bg-white cursor-pointer relative ${activeCostumeIndex === i ? 'border-[#855CD6] shadow-sm' : 'border-gray-200'}`}
                                 >
                                     <span className="absolute top-1 left-1.5 text-[10px] text-gray-500 font-bold">{i + 1}</span>
@@ -608,7 +615,11 @@ function PaintEditor({
                                 <input
                                     type="text"
                                     value={costumeName}
-                                    onChange={(e) => setCostumeName(e.target.value)}
+                                    onChange={(e) => {
+                                        const newName = e.target.value;
+                                        setCostumeName(newName);
+                                        if (onRenameCostume) onRenameCostume(activeCostumeIndex, newName);
+                                    }}
                                     className="bg-white border rounded-full px-4 py-1.5 text-sm font-semibold text-gray-600 outline-none focus:border-[#855CD6] focus:ring-2 focus:ring-purple-100 w-32 shadow-sm transition-all"
                                 />
                             </div>

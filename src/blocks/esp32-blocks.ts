@@ -307,7 +307,158 @@ export const esp32Blocks = Blockly.common.createBlockDefinitionsFromJsonArray([
         colour: COLORS.sensors,
         tooltip: 'Read status from various digital sensors on ESP32',
         helpUrl: '',
-    }
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TABLES
+    // ═══════════════════════════════════════════════════════════════════════════
+    {
+        type: 'data_tablecontents',
+        message0: 'table %1',
+        args0: [{ type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }],
+        output: 'String',
+        colour: COLORS.variables,
+        tooltip: 'Table contents',
+        helpUrl: '',
+    },
+    {
+        type: 'data_setintable',
+        message0: 'set in table %1 column %2 row %3 value %4',
+        args0: [
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+            { type: 'input_value', name: 'COLUMN' },
+            { type: 'input_value', name: 'ROW' },
+            { type: 'input_value', name: 'VALUE' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.variables,
+        tooltip: 'Set value in table cell',
+        helpUrl: '',
+    },
+    {
+        type: 'data_addcolumn',
+        message0: 'add column %1 to table %2',
+        args0: [
+            { type: 'input_value', name: 'COLUMN' },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.variables,
+        tooltip: 'Add column to table',
+        helpUrl: '',
+    },
+    {
+        type: 'data_deletecolumn',
+        message0: 'delete column %1 from table %2',
+        args0: [
+            { type: 'input_value', name: 'COLUMN' },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.variables,
+        tooltip: 'Delete column from table',
+        helpUrl: '',
+    },
+    {
+        type: 'data_showtable',
+        message0: 'show table %1 as %2',
+        args0: [
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+            {
+                type: 'field_dropdown',
+                name: 'FORMAT',
+                options: [['stage', 'stage'], ['bar chart', 'bar'], ['line chart', 'line']]
+            },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.variables,
+        tooltip: 'Show table on stage',
+        helpUrl: '',
+    },
+    {
+        type: 'data_hidetable',
+        message0: 'hide table %1',
+        args0: [{ type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.variables,
+        tooltip: 'Hide table',
+        helpUrl: '',
+    },
+    {
+        type: 'data_deleterow',
+        message0: 'delete row %1 from table %2',
+        args0: [
+            { type: 'input_value', name: 'ROW' },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.variables,
+        tooltip: 'Delete row from table',
+        helpUrl: '',
+    },
+    {
+        type: 'data_cleartable',
+        message0: 'clear table %1',
+        args0: [{ type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.variables,
+        tooltip: 'Clear all data from table',
+        helpUrl: '',
+    },
+    {
+        type: 'data_getvalueattable',
+        message0: 'get value at column %1 row %2 from %3',
+        args0: [
+            { type: 'input_value', name: 'COLUMN' },
+            { type: 'input_value', name: 'ROW' },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+        ],
+        output: null,
+        colour: COLORS.variables,
+        tooltip: 'Get value from table cell',
+        helpUrl: '',
+    },
+    {
+        type: 'data_gettablecount',
+        message0: 'get %1 count of table %2',
+        args0: [
+            {
+                type: 'field_dropdown',
+                name: 'TYPE',
+                options: [['row', 'row'], ['column', 'column']]
+            },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+        ],
+        output: 'Number',
+        colour: COLORS.variables,
+        tooltip: 'Get number of rows or columns',
+        helpUrl: '',
+    },
+    {
+        type: 'data_gettimestamp',
+        message0: 'get timestamp',
+        output: 'String',
+        colour: COLORS.variables,
+        tooltip: 'Get current timestamp',
+        helpUrl: '',
+    },
+    {
+        type: 'data_exporttable',
+        message0: 'export %1 as csv file',
+        args0: [{ type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }],
+        previousStatement: null,
+        nextStatement: null,
+        colour: COLORS.variables,
+        tooltip: 'Download table data as CSV',
+        helpUrl: '',
+    },
 ]);
 
 export const esp32Toolbox = {

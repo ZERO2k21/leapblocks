@@ -3,6 +3,56 @@ import { Sprite } from './Sprite';
 import { gameLoop } from '../engine/GameLoop';
 import { stageManager } from '../engine/StageManager';
 import { penManager } from '../engine/PenManager';
+import VariableMonitor from '../components/VariableMonitor';
+import ListMonitor from '../components/ListMonitor';
+import TableMonitor from '../components/TableMonitor';
+
+// Monitor interfaces (matching IntermediateApp)
+interface VariableMonitorState {
+    id: string;
+    name: string;
+    type: 'Number' | 'String';
+    scope: 'all_sprites' | 'this_sprite';
+    spriteId?: string;
+    visible: boolean;
+    value: number | string;
+    x: number;
+    y: number;
+    zIndex?: number;
+    mode?: 'normal' | 'large' | 'slider';
+    sliderMin?: number;
+    sliderMax?: number;
+}
+
+export interface ListMonitorState {
+    id: string;
+    name: string;
+    scope: 'all_sprites' | 'this_sprite';
+    spriteId?: string;
+    visible: boolean;
+    items: (string | number)[];
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    zIndex?: number;
+}
+
+export interface TableMonitorState {
+    id: string;
+    name: string;
+    rows: number;
+    cols: number;
+    scope: 'all_sprites' | 'this_sprite';
+    spriteId?: string;
+    visible: boolean;
+    data: (string | number)[][];
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    zIndex?: number;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STAGE component
@@ -17,6 +67,16 @@ interface StageProps {
     showGridNumbers?: boolean;
     onSpriteSelect?: (id: string) => void;
     isCameraOn?: boolean;
+    variableMonitors?: VariableMonitorState[];
+    listMonitors?: ListMonitorState[];
+    tableMonitors?: TableMonitorState[];
+    selectedSpriteId?: string | null;
+    onMonitorPositionChange?: (type: 'variable'|'list'|'table', id: string, x: number, y: number) => void;
+    onMonitorResize?: (type: 'list'|'table', id: string, width: number, height: number) => void;
+    onMonitorBringToFront?: (type: 'variable'|'list'|'table', id: string) => void;
+    onVariableModeChange?: (id: string, mode: 'normal' | 'large' | 'slider') => void;
+    onVariableValueChange?: (id: string, value: number) => void;
+    onVariableSliderRangeChange?: (id: string, min: number, max: number) => void;
 }
 
 export const Stage: React.FC<StageProps> = ({
@@ -28,6 +88,16 @@ export const Stage: React.FC<StageProps> = ({
     showGridNumbers = false,
     onSpriteSelect,
     isCameraOn = false,
+    variableMonitors = [],
+    listMonitors = [],
+    tableMonitors = [],
+    selectedSpriteId = null,
+    onMonitorPositionChange,
+    onMonitorResize,
+    onMonitorBringToFront,
+    onVariableModeChange,
+    onVariableValueChange,
+    onVariableSliderRangeChange
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const penCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -360,6 +430,79 @@ export const Stage: React.FC<StageProps> = ({
                     pointerEvents: 'none', // Let clicks pass through to main canvas
                 }}
             />
+            
+            {/* Render monitors */}
+            {variableMonitors
+                .filter(monitor => 
+                    monitor.visible && 
+                    (monitor.scope === 'all_sprites' || 
+                     (monitor.scope === 'this_sprite' && monitor.spriteId === selectedSpriteId))
+                )
+                .map(monitor => (
+                    <VariableMonitor
+                        key={monitor.id}
+                        name={monitor.name}
+                        value={monitor.value}
+                        visible={monitor.visible}
+                        x={monitor.x}
+                        y={monitor.y}
+                        zIndex={monitor.zIndex}
+                        mode={monitor.mode}
+                        sliderMin={monitor.sliderMin}
+                        sliderMax={monitor.sliderMax}
+                        onPositionChange={(x, y) => onMonitorPositionChange?.('variable', monitor.id, x, y)}
+                        onPointerDown={() => onMonitorBringToFront?.('variable', monitor.id)}
+                        onModeChange={(mode) => onVariableModeChange?.(monitor.id, mode)}
+                        onValueChange={(value) => onVariableValueChange?.(monitor.id, value)}
+                        onSliderRangeChange={(min, max) => onVariableSliderRangeChange?.(monitor.id, min, max)}
+                    />
+                ))}
+            
+            {listMonitors
+                .filter(monitor => 
+                    monitor.visible && 
+                    (monitor.scope === 'all_sprites' || 
+                     (monitor.scope === 'this_sprite' && monitor.spriteId === selectedSpriteId))
+                )
+                .map(monitor => (
+                    <ListMonitor
+                        key={monitor.id}
+                        name={monitor.name}
+                        items={monitor.items}
+                        visible={monitor.visible}
+                        x={monitor.x}
+                        y={monitor.y}
+                        width={monitor.width}
+                        height={monitor.height}
+                        zIndex={monitor.zIndex}
+                        onPositionChange={(x, y) => onMonitorPositionChange?.('list', monitor.id, x, y)}
+                        onResize={(w, h) => onMonitorResize?.('list', monitor.id, w, h)}
+                        onPointerDown={() => onMonitorBringToFront?.('list', monitor.id)}
+                    />
+                ))}
+            
+            {tableMonitors
+                .filter(monitor => 
+                    monitor.visible && 
+                    (monitor.scope === 'all_sprites' || 
+                     (monitor.scope === 'this_sprite' && monitor.spriteId === selectedSpriteId))
+                )
+                .map(monitor => (
+                    <TableMonitor
+                        key={monitor.id}
+                        name={monitor.name}
+                        data={monitor.data}
+                        visible={monitor.visible}
+                        x={monitor.x}
+                        y={monitor.y}
+                        width={monitor.width}
+                        height={monitor.height}
+                        zIndex={monitor.zIndex}
+                        onPositionChange={(x, y) => onMonitorPositionChange?.('table', monitor.id, x, y)}
+                        onResize={(w, h) => onMonitorResize?.('table', monitor.id, w, h)}
+                        onPointerDown={() => onMonitorBringToFront?.('table', monitor.id)}
+                    />
+                ))}
         </div>
     );
 };

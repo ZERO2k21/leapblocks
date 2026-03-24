@@ -105,9 +105,12 @@ export function useJuniorUIHandlers({
             type: 'backdrop',
             targetId: targetId,
             initialImage: null,
-            costumes: [],
-            spriteName: scene?.name || `Scene`,
-            mode: 'junior'
+            mode: 'junior',
+            costumes: scenes.map(s => ({
+                id: s.id,
+                name: s.backdropName || s.name,
+                image: s.backgroundImage || s.background
+            }))
         });
     };
 
@@ -140,6 +143,163 @@ export function useJuniorUIHandlers({
             }));
         }
         setPaintEditor({ ...paintEditor, isOpen: false });
+    };
+
+    const handleDeleteCostume = (index) => {
+        if (paintEditor.type !== 'sprite' || !paintEditor.targetId) return;
+        
+        const sprite = sprites.find(s => s.id === paintEditor.targetId);
+        if (!sprite) return;
+        
+        const costumeKeys = Object.keys(sprite.costumes);
+        if (costumeKeys.length <= 1) {
+            alert("Cannot delete the last costume!");
+            return;
+        }
+
+        const keyToDelete = costumeKeys[index];
+        if (!confirm(`Delete costume?`)) return;
+
+        setScenes(prev => prev.map(scene => {
+            if (scene.id !== currentSceneId) return scene;
+            return {
+                ...scene,
+                sprites: scene.sprites.map(s => {
+                    if (s.id !== paintEditor.targetId) return s;
+                    const newCostumes = { ...s.costumes };
+                    delete newCostumes[keyToDelete];
+                    
+                    let nextCostume = s.currentCostume;
+                    if (s.currentCostume === keyToDelete) {
+                        nextCostume = Object.keys(newCostumes)[0];
+                    }
+                    
+                    return { ...s, costumes: newCostumes, currentCostume: nextCostume };
+                })
+            };
+        }));
+
+        // Update paint editor state to reflect deletion
+        setPaintEditor(prev => ({
+            ...prev,
+            costumes: prev.costumes.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleDuplicateCostume = (index) => {
+        if (paintEditor.type !== 'sprite' || !paintEditor.targetId) return;
+        
+        const sprite = sprites.find(s => s.id === paintEditor.targetId);
+        if (!sprite) return;
+        
+        const costumeKeys = Object.keys(sprite.costumes);
+        const keyToCopy = costumeKeys[index];
+        const dataToCopy = sprite.costumes[keyToCopy];
+        
+        const newKey = `${keyToCopy}_copy_${Date.now()}`;
+
+        setScenes(prev => prev.map(scene => {
+            if (scene.id !== currentSceneId) return scene;
+            return {
+                ...scene,
+                sprites: scene.sprites.map(s => {
+                    if (s.id !== paintEditor.targetId) return s;
+                    return {
+                        ...s,
+                        costumes: { ...s.costumes, [newKey]: dataToCopy },
+                        currentCostume: newKey
+                    };
+                })
+            };
+        }));
+
+        // Update paint editor state to reflect duplication
+        setPaintEditor(prev => ({
+            ...prev,
+            costumes: [
+                ...prev.costumes, 
+                { id: newKey, name: `${newKey}`, image: dataToCopy }
+            ]
+        }));
+    };
+
+    const handleSwitchCostume = (index) => {
+        if (!paintEditor.targetId) return;
+        
+        if (paintEditor.type === 'sprite') {
+            const sprite = sprites.find(s => s.id === paintEditor.targetId);
+            if (!sprite) return;
+            const costumeKeys = Object.keys(sprite.costumes);
+            const costumeKey = costumeKeys[index];
+            setScenes(prev => prev.map(scene => {
+                if (scene.id !== currentSceneId) return scene;
+                return {
+                    ...scene,
+                    sprites: scene.sprites.map(s => {
+                        if (s.id !== paintEditor.targetId) return s;
+                        return { ...s, currentCostume: costumeKey };
+                    })
+                };
+            }));
+            // Update editor initial image to the switched costume
+            setPaintEditor(prev => ({
+                ...prev,
+                initialImage: sprite.costumes[costumeKey]
+            }));
+        } else if (paintEditor.type === 'backdrop') {
+            const sceneToSwitchTo = scenes[index];
+            if (!sceneToSwitchTo) return;
+            setCurrentSceneId(sceneToSwitchTo.id);
+            setPaintEditor(prev => ({
+                ...prev,
+                targetId: sceneToSwitchTo.id,
+                initialImage: sceneToSwitchTo.backgroundImage || sceneToSwitchTo.background,
+                spriteName: sceneToSwitchTo.backdropName || sceneToSwitchTo.name
+            }));
+        }
+    };
+
+    const handleRenameCostume = (index, newName) => {
+        if (!paintEditor.targetId) return;
+        
+        if (paintEditor.type === 'sprite') {
+            const sprite = sprites.find(s => s.id === paintEditor.targetId);
+            if (!sprite) return;
+            const oldKey = Object.keys(sprite.costumes)[index];
+            const newKey = newName.toLowerCase().replace(/\s+/g, '_');
+            
+            setScenes(prev => prev.map(scene => {
+                if (scene.id !== currentSceneId) return scene;
+                return {
+                    ...scene,
+                    sprites: scene.sprites.map(s => {
+                        if (s.id !== paintEditor.targetId) return s;
+                        const newCostumes = {};
+                        Object.entries(s.costumes).forEach(([k, v]) => {
+                            if (k === oldKey) newCostumes[newKey] = v;
+                            else newCostumes[k] = v;
+                        });
+                        return { 
+                            ...s, 
+                            costumes: newCostumes, 
+                            currentCostume: s.currentCostume === oldKey ? newKey : s.currentCostume 
+                        };
+                    })
+                };
+            }));
+        } else if (paintEditor.type === 'backdrop') {
+            const sceneToRename = scenes[index];
+            if (!sceneToRename) return;
+            setScenes(prev => prev.map((s, i) => {
+                if (i !== index) return s;
+                return { ...s, backdropName: newName };
+            }));
+        }
+        
+        setPaintEditor(prev => ({
+            ...prev,
+            costumes: prev.costumes.map((c, i) => i === index ? { ...c, name: newName } : c)
+        }));
     };
 
     const addSprite = (spriteData = null) => {
@@ -457,6 +617,10 @@ export function useJuniorUIHandlers({
         handleSaveRecording,
         toggleFullscreen,
         handleFileMenu,
-        handleEditMenu
+        handleEditMenu,
+        handleDeleteCostume,
+        handleDuplicateCostume,
+        handleSwitchCostume,
+        handleRenameCostume
     };
 }

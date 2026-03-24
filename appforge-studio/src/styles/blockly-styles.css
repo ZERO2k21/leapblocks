@@ -1,0 +1,146 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Blockly Custom Styling
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Import Google Fonts for block text */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+/* Variables category specific coloring */
+.blocklyToolboxCategory[category="VARIABLES"] {
+  background-color: #FFBF00 !important;
+  color: #333 !important;
+}
+
+/* Variable reporter blocks (get) - oval shape */
+.blocklyType.variable_get {
+  border-radius: 20px !important;
+  background-color: #FFBF00 !important;
+  color: #333 !important;
+  font-weight: 500 !important;
+}
+
+/* Variable setter blocks */
+.blocklyType.variable_set {
+  border-radius: 8px !important;
+  background-color: #FFBF00 !important;
+  color: #333 !important;
+  font-weight: 500 !important;
+}
+
+/* Variable change blocks */
+.blocklyType.variable_change {
+  border-radius: 8px !important;
+  background-color: #FFBF00 !important;
+  color: #333 !important;
+  font-weight: 500 !important;
+}
+
+/* Custom show/hide variable blocks */
+.blocklyType.variable_show,
+.blocklyType.variable_hide {
+  border-radius: 8px !important;
+  background-color: #FFBF00 !important;
+  color: #333 !important;
+  font-weight: 500 !important;
+}
+
+/* Workspace background */
+.injectionDiv {
+  background-color: #f5f5f5 !important;
+}
+
+/* Block shadows */
+.blocklyBlock {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Selected block highlight */
+.blocklySelected>.blocklyBlockBackground {
+  stroke: #4C97FF !important;
+  stroke-width: 3px !important;
+}
+
+/* Drag preview */
+.blocklyDraggable:active {
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+  transition: filter 0.2s;
+}
+
+/* Toolbox styling */
+.blocklyToolboxDiv {
+  width: 200px !important;
+  background: #fff !important;
+  border-right: 1px solid #ddd !important;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.blocklyTreeLabel {
+  font-family: 'Roboto', sans-serif !important;
+  font-size: 13px !important;
+}
+
+/* Trashcan */
+.blocklyTrashCan {
+  background: #fff !important;
+  border: 2px dashed #ccc !important;
+}
+
+.blocklyTrashCanFull {
+  background: #ff6b6b !important;
+  border-color: #ff5252 !important;
+}
+
+/* Scrollbar styling */
+.blocklyScrollbar {
+  background: #e0e0e0 !important;
+}
+
+/* Tooltip styling */
+.blocklyTooltipDiv {
+  background: rgba(0, 0, 0, 0.85) !important;
+  color: white !important;
+  font-family: 'Roboto', sans-serif !important;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+}
+
+/* Context menu */
+.blocklyMenu {
+  background: white !important;
+  border: 1px solid #ccc !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  padding: 4px 0 !important;
+}
+
+.blocklyMenuItem {
+  padding: 8px 20px !important;
+  font-family: 'Roboto', sans-serif !important;
+  font-size: 13px !important;
+}
+
+.blocklyMenuItemHighlight {
+  background: #4C97FF !important;
+  color: white !important;
+}
+
+/* Connection path styling */
+.blocklyPath {
+  stroke-width: 3px !important;
+}
+
+/* Input fields */
+.blocklyHtmlInput {
+  font-family: 'Roboto', sans-serif !important;
+  font-size: 13px !important;
+  border: 2px solid #4C97FF !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+}
+
+/* Dropdown fields */
+.blocklyDropdownText {
+  font-family: 'Roboto', sans-serif !important;
+  font-size: 13px !important;
+}

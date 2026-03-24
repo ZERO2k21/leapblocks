@@ -3,6 +3,8 @@
 // Three-tab layout: Designer | Blocks | Build
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import React, { useState, useCallback } from 'react';
+import { VariablesProvider } from './context/VariablesContext';
+import BlocksEditor from './components/BlockEditor/BlockEditor';
 
 // Placeholder components — replaced in later phases
 function DesignerPlaceholder() {
@@ -40,7 +42,7 @@ function BuildPlaceholder() {
 
 const TABS = [
   { id: 'designer', label: 'Designer', icon: '🎨', component: DesignerPlaceholder },
-  { id: 'blocks',   label: 'Blocks',   icon: '🧩', component: BlocksPlaceholder },
+  { id: 'blocks',   label: 'Blocks',   icon: '🧩', component: BlocksEditor },
   { id: 'build',    label: 'Build',    icon: '📦', component: BuildPlaceholder },
 ];
 
@@ -57,7 +59,8 @@ export default function App() {
   }, []);
 
   return (
-    <div className="app-root">
+    <VariablesProvider>
+      <div className="app-root">
       {/* ── Top Navigation Bar ─────────────────── */}
       <header className="app-navbar">
         <div className="navbar-left">
@@ -130,5 +133,6 @@ export default function App() {
         </span>
       </footer>
     </div>
+      </VariablesProvider>
   );
 }

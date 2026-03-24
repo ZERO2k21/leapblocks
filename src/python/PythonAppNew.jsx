@@ -1,5 +1,16 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 
+// ─── Import Components ─────────────────────────────────────────────────────────
+import TopBar from "./layout/TopBar";
+import ToolBar from "./layout/ToolBar";
+import ActivityBar from "./layout/ActivityBar";
+import SidePanel from "./panels/SidePanel";
+import EditorPanel from "./panels/EditorPanel";
+import StagePanel from "./panels/StagePanel";
+import PromptModal from "./modals/PromptModal";
+import SpriteLibraryModal from "./modals/SpriteLibraryModal";
+import PythonIDEGuide from "./PythonIDEGuide";
+
 // ─── CSS Animations ───────────────────────────────────────────────────────────
 const animationStyles = document.createElement('style');
 animationStyles.textContent = `
@@ -149,13 +160,13 @@ const toCostumeKey = (label = "costume") => {
 };
 
 const EXTENSIONS = [
-    { id: 'music',   name: 'Music',            icon: '🎵', desc: 'Play notes and instruments', code: '# Music\nfrom music import play_note' },
-    { id: 'pen',     name: 'Pen',              icon: '✏', desc: 'Draw lines on stage canvas',  code: '# Pen\nfrom pen import pen_down, pen_up' },
-    { id: 'ml',      name: 'Machine Learning', icon: '🧠', desc: 'KNN classifier, image AI',    code: '# ML\nfrom ml import KNNClassifier' },
-    { id: 'face',    name: 'Face Detection',   icon: '👁', desc: 'Detect faces via camera',      code: '# Face\nfrom face import FaceDetection' },
-    { id: 'speech',  name: 'Speech',           icon: '🗣', desc: 'TTS and speech recognition',   code: '# Speech\nfrom speech import say, listen' },
-    { id: 'iot',     name: 'IoT / Quarky',     icon: '⚡', desc: 'Control LEDs, sensors',        code: '# Quarky\nfrom quarky import Quarky' },
-    { id: 'arduino', name: 'Arduino',          icon: '🔌', desc: 'Digital and analog pins',      code: '# Arduino\nfrom arduino import Arduino' },
+    { id: 'music', name: 'Music', icon: '🎵', desc: 'Play notes and instruments', code: '# Music\nfrom music import play_note' },
+    { id: 'pen', name: 'Pen', icon: '✏', desc: 'Draw lines on stage canvas', code: '# Pen\nfrom pen import pen_down, pen_up' },
+    { id: 'ml', name: 'Machine Learning', icon: '🧠', desc: 'KNN classifier, image AI', code: '# ML\nfrom ml import KNNClassifier' },
+    { id: 'face', name: 'Face Detection', icon: '👁', desc: 'Detect faces via camera', code: '# Face\nfrom face import FaceDetection' },
+    { id: 'speech', name: 'Speech', icon: '🗣', desc: 'TTS and speech recognition', code: '# Speech\nfrom speech import say, listen' },
+    { id: 'iot', name: 'IoT / Quarky', icon: '⚡', desc: 'Control LEDs, sensors', code: '# Quarky\nfrom quarky import Quarky' },
+    { id: 'arduino', name: 'Arduino', icon: '🔌', desc: 'Digital and analog pins', code: '# Arduino\nfrom arduino import Arduino' },
 ];
 
 // ─── Pip Package Registry (Skulpt-compatible stdlib modules + Advanced Libraries) ──
@@ -251,17 +262,6 @@ const PIP_PACKAGES = [
     { name: "pillow-simd", desc: "Pillow with SIMD optimizations", installed: false, builtin: false, category: "computer-vision", version: "10.2.0", tags: ["image", "fast"] },
 ];
 
-// ─── Import Components ─────────────────────────────────────────────────────────
-import TopBar from "./layout/TopBar";
-import ToolBar from "./layout/ToolBar";
-import ActivityBar from "./layout/ActivityBar";
-import SidePanel from "./panels/SidePanel";
-import EditorPanel from "./panels/EditorPanel";
-import StagePanel from "./panels/StagePanel";
-import PromptModal from "./modals/PromptModal";
-import SpriteLibraryModal from "./modals/SpriteLibraryModal";
-import PythonIDEGuide from "./PythonIDEGuide";
-
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks }) {
     // Editor state
@@ -322,7 +322,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
         id: 'robot-1', name: 'Robot', type: 'robot',
         x: 0, y: 0, angle: 90, size: 100, visible: true,
         speech: '', currentCostume: 'default',
-        costumes: { 
+        costumes: {
             default: "/assets/sprites/robot/robot_idle.svg",
             wave1: "/assets/sprites/robot/robot_wave1.svg",
             wave2: "/assets/sprites/robot/robot_wave2.svg",
@@ -362,7 +362,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
         callback: null
     });
     const [modalInput, setModalInput] = useState('');
-    
+
     // Sprite Library Modal state
     const [showSpriteLibrary, setShowSpriteLibrary] = useState(false);
     const [showBackdropLibrary, setShowBackdropLibrary] = useState(false);
@@ -530,18 +530,18 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
         if (isRunning) return;
         setIsRunning(true);
         setTerminalOutput([]);
-        
+
         const startTime = performance.now();
         addLog(`▶ Running ${activeFile}...`, "info");
         addLog(`────────────────────────────────────────`, "info");
-        
+
         // Reset stage
         if (skulptRef.current?.callbacks?.actions?.softResetAll) {
             skulptRef.current.callbacks.actions.softResetAll();
         }
         setDebugVars([]);
         setDebugLine(null);
-        
+
         try {
             // Validate code before execution
             const code = projectFiles[activeFile];
@@ -550,27 +550,27 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
                 setIsRunning(false);
                 return;
             }
-            
+
             // Check for common syntax issues
             const syntaxWarnings = checkSyntaxWarnings(code);
             if (syntaxWarnings.length > 0) {
                 syntaxWarnings.forEach(w => addLog(`⚠ ${w}`, "warning"));
             }
-            
+
             // Execute the code
             await skulptRef.current.runPython(code);
-            
+
             const endTime = performance.now();
             const duration = ((endTime - startTime) / 1000).toFixed(3);
             addLog(`────────────────────────────────────────`, "info");
             addLog(`✓ Program finished successfully in ${duration}s`, "success");
-            
+
         } catch (e) {
             const errorMsg = typeof e === 'string' ? e : e?.message || e?.toString?.() || JSON.stringify(e) || "Unknown error";
             addLog(`────────────────────────────────────────`, "error");
             addLog(`✗ Execution Error:`, "error");
             addLog(formatErrorMessage(errorMsg), "error");
-            
+
             // Provide helpful suggestions
             const suggestion = getErrorSuggestion(errorMsg);
             if (suggestion) {
@@ -585,39 +585,39 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
         setIsRunning(false);
         addLog("⏹ Execution stopped by user.", "warning");
     };
-    
+
     const handleClear = () => setTerminalOutput([]);
-    
+
     // ── Syntax Warning Checker ────────────────────────────────────────────────
     const checkSyntaxWarnings = (code) => {
         const warnings = [];
         const lines = code.split('\n');
-        
+
         lines.forEach((line, idx) => {
             const lineNum = idx + 1;
             const trimmed = line.trim();
-            
+
             // Check for common issues
             if (trimmed.includes('print ') && !trimmed.includes('print(') && !trimmed.startsWith('#')) {
                 // Python 2 style print - Skulpt might handle this but warn
             }
-            
+
             // Check for unmatched parentheses
             const openParens = (line.match(/\(/g) || []).length;
             const closeParens = (line.match(/\)/g) || []).length;
             if (openParens !== closeParens && !trimmed.endsWith(':') && !trimmed.startsWith('#')) {
                 // Could be multi-line, so just note it
             }
-            
+
             // Check for assignment in condition
             if (trimmed.match(/if\s+\w+\s*=\s*[^=]/)) {
                 warnings.push(`Line ${lineNum}: Did you mean '==' instead of '=' in condition?`);
             }
         });
-        
+
         return warnings;
     };
-    
+
     // ── Error Message Formatter ───────────────────────────────────────────────
     const formatErrorMessage = (msg) => {
         // Clean up Skulpt error messages
@@ -629,17 +629,17 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
             .replace(/AttributeError/g, 'Attribute Error')
             .replace(/ImportError/g, 'Import Error')
             .replace(/IndentationError/g, 'Indentation Error');
-        
+
         // Add line number highlighting
         formatted = formatted.replace(/line (\d+)/gi, 'Line $1');
-        
+
         return formatted;
     };
-    
+
     // ── Error Suggestion Helper ───────────────────────────────────────────────
     const getErrorSuggestion = (errorMsg) => {
         const msg = errorMsg.toLowerCase();
-        
+
         if (msg.includes('nameerror') || msg.includes('not defined')) {
             return "Check if the variable or function name is spelled correctly and defined before use.";
         }
@@ -661,7 +661,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
         if (msg.includes('timeout') || msg.includes('too long')) {
             return "Your code might have an infinite loop. Check your while/for loops.";
         }
-        
+
         return null;
     };
 
@@ -669,20 +669,20 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
     const handleReplSubmit = async () => {
         const line = replInput.trim();
         if (!line) return;
-        
+
         const newHist = [line, ...replHistory].slice(0, 50);
         setReplHistory(newHist);
         setReplHistIdx(-1);
         setReplInput("");
-        
+
         addLog(`>>> ${line}`, "repl-in");
-        
+
         try {
             const startTime = performance.now();
             await skulptRef.current.runRepl(line);
             const endTime = performance.now();
             const duration = ((endTime - startTime) / 1000).toFixed(3);
-            
+
             // Show execution time for REPL if > 100ms
             if (endTime - startTime > 100) {
                 addLog(`⏱ Executed in ${duration}s`, "info");
@@ -818,7 +818,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
             addLog(`  → Ready to import in your Python scripts`, "info");
         } else {
             addLog(`✓ ${pkgName} v${pkg.version || 'latest'} installed`, "success");
-            
+
             // Add helpful import examples for popular libraries
             const importExamples = {
                 "opencv-python": "import cv2  # OpenCV",
@@ -859,21 +859,21 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
         const id = sp.name.toLowerCase() + '-' + Date.now();
         // Handle both formats: sp.img (old) or sp.image/sp.costumes (new from shared catalog)
         const spriteImage = sp.img || sp.image || sp.emoji || '🤖';
-        const spriteCostumes = sp.costumes && sp.costumes.length > 0 
+        const spriteCostumes = sp.costumes && sp.costumes.length > 0
             ? sp.costumes.reduce((acc, c, i) => ({ ...acc, [`costume_${i}`]: c }), { default: spriteImage })
             : { default: spriteImage };
-        const newSprite = { 
-            id, 
-            name: sp.name, 
-            type: sp.type, 
-            x: (Math.random()-0.5)*80, 
-            y: (Math.random()-0.5)*80, 
-            angle: 90, 
-            size: 100, 
-            visible: true, 
-            speech: '', 
-            currentCostume: 'default', 
-            costumes: spriteCostumes 
+        const newSprite = {
+            id,
+            name: sp.name,
+            type: sp.type,
+            x: (Math.random() - 0.5) * 80,
+            y: (Math.random() - 0.5) * 80,
+            angle: 90,
+            size: 100,
+            visible: true,
+            speech: '',
+            currentCostume: 'default',
+            costumes: spriteCostumes
         };
         setSprites(prev => [...prev, newSprite]);
         setSelectedSpriteId(id);
@@ -1107,7 +1107,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
         }}>
 
             {/* ══ TOPBAR ══════════════════════════════════════════════════════ */}
-            <TopBar 
+            <TopBar
                 onBack={onBack}
                 onSwitchToNotebook={onSwitchToNotebook}
                 onSwitchToBlocks={onSwitchToBlocks}
@@ -1122,7 +1122,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
             />
 
             {/* ══ SECOND TOOLBAR ═══════════════════════════════════════════════ */}
-            <ToolBar 
+            <ToolBar
                 isRunning={isRunning}
                 onRun={handleRun}
                 onStop={handleStop}
@@ -1143,7 +1143,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
                 )}
 
                 {/* ── ACTIVITY BAR ── */}
-                <ActivityBar 
+                <ActivityBar
                     sidePanel={sidePanel}
                     setSidePanel={setSidePanel}
                     onCSVUpload={handleCSVUpload}
@@ -1155,7 +1155,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
                 />
 
                 {/* ── LEFT SIDEBAR ── */}
-                <SidePanel 
+                <SidePanel
                     sidePanel={sidePanel}
                     projectFiles={projectFiles}
                     activeFile={activeFile}
@@ -1184,7 +1184,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
                 />
 
                 {/* ── EDITOR + TERMINAL ── */}
-                <EditorPanel 
+                <EditorPanel
                     projectFiles={projectFiles}
                     activeFile={activeFile}
                     setActiveFile={setActiveFile}
@@ -1212,7 +1212,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
                 />
 
                 {/* ── STAGE PANEL ── */}
-                <StagePanel 
+                <StagePanel
                     activeFile={activeFile}
                     stageView={stageView}
                     setStageView={setStageView}
@@ -1231,7 +1231,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
             </div>
 
             {/* Custom Prompt Modal */}
-            <PromptModal 
+            <PromptModal
                 modalState={modalState}
                 modalInput={modalInput}
                 setModalInput={setModalInput}
@@ -1240,7 +1240,7 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
             />
 
             {/* Sprite Library Modal */}
-            <SpriteLibraryModal 
+            <SpriteLibraryModal
                 showSpriteLibrary={showSpriteLibrary}
                 setShowSpriteLibrary={setShowSpriteLibrary}
                 SPRITE_LIBRARY={SPRITE_LIBRARY}

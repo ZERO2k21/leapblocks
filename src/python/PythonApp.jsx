@@ -1,6 +1,19 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StageProvider, useStage } from "../context/StageContext";
 import Logo from "../components/Logo";
+import { Play, Square, Undo, Redo, Save, Settings, Trash2, Maximize, Upload, Clock, Cpu, RefreshCw, Plug, FileCode2, FileText, TerminalSquare, ClipboardList, LoaderCircle, CheckCircle2, AlertCircle, LibraryBig, FileUp, Plus } from "lucide-react";
+import { SkulptEngine } from "../junior/engine/SkulptEngine";
+import { FULL_CATALOG } from "../components/SpriteLibrary";
+import SerialMonitor from "../components/SerialMonitor";
+import { createIntermediateBlocksBridge, useSpriteBridge, DEFAULT_SPRITE_PRESETS } from "./SpriteBridge";
+import BoardSelectionModal, { BOARDS } from "../junior/components/BoardSelectionModal";
+
+// ─── Import Modular Components ─────────────────────────────────────────────────
+import SidePanel from "./panels/SidePanel";
+import EditorPanel from "./panels/EditorPanel";
+import StagePanel from "./panels/StagePanel";
+import PythonIDEGuide from "./PythonIDEGuide";
+import MonacoEditor from "./editor/MonacoEditor";
 
 // ─── CSS Animations ───────────────────────────────────────────────────────────
 const animationStyles = document.createElement('style');
@@ -45,19 +58,6 @@ if (typeof document !== 'undefined' && !document.getElementById('python-ide-anim
     document.head.appendChild(animationStyles);
 }
 
-import { Play, Square, Undo, Redo, Save, Settings, Trash2, Maximize, Upload, Clock, Cpu, RefreshCw, Plug, FileCode2, FileText, TerminalSquare, ClipboardList, LoaderCircle, CheckCircle2, AlertCircle, LibraryBig, FileUp, Plus } from "lucide-react";
-import { SkulptEngine } from "../junior/engine/SkulptEngine";
-import { FULL_CATALOG } from "../components/SpriteLibrary";
-import SerialMonitor from "../components/SerialMonitor";
-import { createIntermediateBlocksBridge, useSpriteBridge, DEFAULT_SPRITE_PRESETS } from "./SpriteBridge";
-import BoardSelectionModal, { BOARDS } from "../junior/components/BoardSelectionModal";
-
-// ─── Import Modular Components ─────────────────────────────────────────────────
-import SidePanel from "./panels/SidePanel";
-import EditorPanel from "./panels/EditorPanel";
-import StagePanel from "./panels/StagePanel";
-import PythonIDEGuide from "./PythonIDEGuide";
-import MonacoEditor from "./editor/MonacoEditor";
 
 // ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
 const C = {
@@ -379,13 +379,13 @@ const buildAssetPlaceholder = (file, kind) => [
     "# Replace this placeholder with your own loading or processing code.",
 ].join("\n");
 const EXTENSIONS = [
-    { id: 'music',   name: 'Music',            icon: '🎵', desc: 'Play notes and instruments', code: '# Music\nfrom music import play_note' },
-    { id: 'pen',     name: 'Pen',              icon: '✏', desc: 'Draw lines on stage canvas',  code: '# Pen\nfrom pen import pen_down, pen_up' },
-    { id: 'ml',      name: 'Machine Learning', icon: '🧠', desc: 'KNN classifier, image AI',    code: '# ML\nfrom ml import KNNClassifier' },
-    { id: 'face',    name: 'Face Detection',   icon: '👁', desc: 'Detect faces via camera',      code: '# Face\nfrom face import FaceDetection' },
-    { id: 'speech',  name: 'Speech',           icon: '🗣', desc: 'TTS and speech recognition',   code: '# Speech\nfrom speech import say, listen' },
-    { id: 'iot',     name: 'IoT / Quarky',     icon: '⚡', desc: 'Control LEDs, sensors',        code: '# Quarky\nfrom quarky import Quarky' },
-    { id: 'arduino', name: 'Arduino',          icon: '🔌', desc: 'Digital and analog pins',      code: '# Arduino\nfrom arduino import Arduino' },
+    { id: 'music', name: 'Music', icon: '🎵', desc: 'Play notes and instruments', code: '# Music\nfrom music import play_note' },
+    { id: 'pen', name: 'Pen', icon: '✏', desc: 'Draw lines on stage canvas', code: '# Pen\nfrom pen import pen_down, pen_up' },
+    { id: 'ml', name: 'Machine Learning', icon: '🧠', desc: 'KNN classifier, image AI', code: '# ML\nfrom ml import KNNClassifier' },
+    { id: 'face', name: 'Face Detection', icon: '👁', desc: 'Detect faces via camera', code: '# Face\nfrom face import FaceDetection' },
+    { id: 'speech', name: 'Speech', icon: '🗣', desc: 'TTS and speech recognition', code: '# Speech\nfrom speech import say, listen' },
+    { id: 'iot', name: 'IoT / Quarky', icon: '⚡', desc: 'Control LEDs, sensors', code: '# Quarky\nfrom quarky import Quarky' },
+    { id: 'arduino', name: 'Arduino', icon: '🔌', desc: 'Digital and analog pins', code: '# Arduino\nfrom arduino import Arduino' },
 ];
 
 // ─── Pip Package Registry (Skulpt-compatible stdlib modules + Advanced Libraries) ──
@@ -501,7 +501,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         updateSpriteProperty,
         resetStage
     } = useStage();
-    
+
     // Editor state
     const [projectName, setProjectName] = useState("My Project");
     const [workflowMode, setWorkflowMode] = useState("stage");
@@ -565,7 +565,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     // PIP
     const [packages, setPackages] = useState(PIP_PACKAGES);
     const [pipFilter, setPipFilter] = useState("");
-    
+
     const [sidePanel, setSidePanel] = useState("files");
     const [spriteFilter, setSpriteFilter] = useState("");
     const [installedExtensions, setInstalledExtensions] = useState([]);
@@ -648,20 +648,20 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             setSprites(prev => prev.map(s => {
                 // Match by ID or by name (case-insensitive)
                 if (s.id !== spriteIdOrName && s.name.toLowerCase() !== String(spriteIdOrName).toLowerCase()) return s;
-                
+
                 const newProps = { ...s };
-                
+
                 // Handle position updates from drag (pixel coordinates)
                 if (updates.x !== undefined || updates.y !== undefined) {
                     newProps.position = { ...(s.position || { x: s.x || 0, y: s.y || 0 }) };
-                    
+
                     // Convert pixel coordinates to scratch coordinates
                     const scaleX = stageSize.w / 480;
                     const scaleY = stageSize.h / 360;
                     const centerX = stageSize.w / 2;
                     const centerY = stageSize.h / 2;
                     const offset = 40; // sprite half-size
-                    
+
                     if (updates.x !== undefined) {
                         // scratchX = (pixelX - centerX + offset) / scaleX
                         newProps.position.x = (updates.x - centerX + offset) / scaleX;
@@ -673,7 +673,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         newProps.y = newProps.position.y; // Also set legacy property
                     }
                 }
-                
+
                 // Handle other updates
                 Object.keys(updates).forEach(key => {
                     if (key === 'x' || key === 'y') return; // Already handled above
@@ -683,7 +683,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         newProps[key] = updates[key];
                     }
                 });
-                
+
                 return newProps;
             }));
         };
@@ -709,29 +709,29 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 initSprite: (name) => {
                     setSprites(prev => {
                         if (prev.find(s => s.name.toLowerCase() === name.toLowerCase())) return prev;
-                        
+
                         // Add default sprite from library if found, else generic
-                        const preset = DEFAULT_SPRITE_PRESETS[name.toLowerCase()] || { 
-                            name, 
+                        const preset = DEFAULT_SPRITE_PRESETS[name.toLowerCase()] || {
+                            name,
                             type: 'robot', // Default to robot type for initialization
                             costumes: { default: "/assets/sprites/robot/robot_idle.svg" }
                         };
-                        
+
                         const id = name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now();
-                        const newSprite = { 
-                            id, 
-                            name: preset.name || name, 
+                        const newSprite = {
+                            id,
+                            name: preset.name || name,
                             type: preset.type || 'robot',
-                            position: { x: (Math.random()-0.5)*40, y: (Math.random()-0.5)*40 },
-                            direction: 0, 
-                            size: 100, 
-                            visible: true, 
-                            speech: '', 
-                            currentCostume: 'default', 
+                            position: { x: (Math.random() - 0.5) * 40, y: (Math.random() - 0.5) * 40 },
+                            direction: 0,
+                            size: 100,
+                            visible: true,
+                            speech: '',
+                            currentCostume: 'default',
                             costumes: preset.costumes || { default: "/assets/sprites/robot/robot_idle.svg" },
                             mirrored: false
                         };
-                        
+
                         addLog('Initialized sprite: ' + name, 'success');
                         return [...prev, newSprite];
                     });
@@ -747,9 +747,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         if (dir === "DOWN") dy = -d; // In Scratch, DOWN decreases Y
                         const pos = s.position || { x: s.x || 0, y: s.y || 0 };
                         addLog(`➡️ ${name}: Move ${dir} ${d} steps`, 'info');
-                        return { 
-                            ...s, 
-                            x: pos.x + dx, 
+                        return {
+                            ...s,
+                            x: pos.x + dx,
                             y: pos.y + dy,
                             position: { x: pos.x + dx, y: pos.y + dy }
                         };
@@ -764,9 +764,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         const newX = pos.x + Math.cos(rad) * steps;
                         const newY = pos.y + Math.sin(rad) * steps;
                         addLog(`🏃 ${name}: Move ${steps} steps (direction: ${angle}°)`, 'info');
-                        return { 
-                            ...s, 
-                            x: newX, 
+                        return {
+                            ...s,
+                            x: newX,
                             y: newY,
                             position: { x: newX, y: newY }
                         };
@@ -778,16 +778,16 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         const newProps = { ...s };
                         const pos = s.position || { x: s.x || 0, y: s.y || 0 };
                         newProps.position = { ...pos };
-                        
+
                         // Log sprite action to terminal
                         const actionType = Object.keys(props).join(', ');
                         addLog(`🤖 ${name}: ${actionType}`, 'info');
-                        
+
                         Object.keys(props).forEach(key => {
                             if (typeof props[key] === 'function') {
-                                const oldVal = key === 'direction' ? (s.direction ?? s.angle ?? 0) : 
-                                               key === 'angle' ? (s.angle ?? s.direction ?? 0) :
-                                               s[key];
+                                const oldVal = key === 'direction' ? (s.direction ?? s.angle ?? 0) :
+                                    key === 'angle' ? (s.angle ?? s.direction ?? 0) :
+                                        s[key];
                                 const newVal = props[key](oldVal);
                                 newProps[key] = newVal;
                                 // Sync direction/angle
@@ -821,16 +821,16 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         return newProps;
                     }));
                 },
-                softResetAll: () => setSprites(prev => prev.map(s => ({ 
-                    ...s, 
-                    x: 0, 
-                    y: 0, 
+                softResetAll: () => setSprites(prev => prev.map(s => ({
+                    ...s,
+                    x: 0,
+                    y: 0,
                     position: { x: 0, y: 0 },
-                    speech: '', 
-                    angle: 0, 
+                    speech: '',
+                    angle: 0,
                     direction: 0,
-                    size: 100, 
-                    visible: true 
+                    size: 100,
+                    visible: true
                 }))),
             }
         });
@@ -838,7 +838,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         // Create intermediate blocks bridge for sprite panel functions
         const spriteBridge = createIntermediateBlocksBridge(sprites, setSprites, selectedSpriteId, addLog);
         window.spriteBridge = spriteBridge;
-        
+
         // Expose sprite panel functions globally for intermediate blocks
         window.spritePanelFunctions = {
             move: spriteBridge.move,
@@ -911,7 +911,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     // ── NATIVE PYTHON IPC LISTENERS ──────────────────────────────────────────
     useEffect(() => {
         if (!window.electronAPI?.isElectron) return;
-        
+
         window.electronAPI.onPythonOutput((data) => {
             addLog(data.replace(/\n$/, ""), "log");
         });
@@ -952,18 +952,18 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         if (isRunning) return;
         setIsRunning(true);
         setTerminalOutput([]);
-        
+
         const startTime = performance.now();
         addLog(`▶ Running ${activeFile}...`, "info");
         addLog(`────────────────────────────────────────`, "info");
-        
+
         // Reset stage
         if (skulptRef.current?.callbacks?.actions?.softResetAll) {
             skulptRef.current.callbacks.actions.softResetAll();
         }
         setDebugVars([]);
         setDebugLine(null);
-        
+
         try {
             // Validate code before execution
             const code = projectFiles[activeFile];
@@ -972,31 +972,31 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 setIsRunning(false);
                 return;
             }
-            
+
             // Check for common syntax issues
             const syntaxWarnings = checkSyntaxWarnings(code);
             if (syntaxWarnings.length > 0) {
                 syntaxWarnings.forEach(w => addLog(`⚠ ${w}`, "warning"));
             }
-            
+
             // Execute the code
             if (window.electronAPI?.isElectron) {
                 await window.electronAPI.pythonRun(code);
             } else {
                 await skulptRef.current.runPython(code);
-                
+
                 const endTime = performance.now();
                 const duration = ((endTime - startTime) / 1000).toFixed(3);
                 addLog(`────────────────────────────────────────`, "info");
                 addLog(`✓ Program finished successfully in ${duration}s`, "success");
             }
-            
+
         } catch (e) {
             const errorMsg = typeof e === 'string' ? e : e?.message || e?.toString?.() || JSON.stringify(e) || "Unknown error";
             addLog(`────────────────────────────────────────`, "error");
             addLog(`✗ Execution Error:`, "error");
             addLog(formatErrorMessage(errorMsg), "error");
-            
+
             // Provide helpful suggestions
             const suggestion = getErrorSuggestion(errorMsg);
             if (suggestion) {
@@ -1016,39 +1016,39 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             window.electronAPI.pythonStop();
         }
     };
-    
+
     const handleClear = () => setTerminalOutput([]);
-    
+
     // ── Syntax Warning Checker ────────────────────────────────────────────────
     const checkSyntaxWarnings = (code) => {
         const warnings = [];
         const lines = code.split('\n');
-        
+
         lines.forEach((line, idx) => {
             const lineNum = idx + 1;
             const trimmed = line.trim();
-            
+
             // Check for common issues
             if (trimmed.includes('print ') && !trimmed.includes('print(') && !trimmed.startsWith('#')) {
                 // Python 2 style print - Skulpt might handle this but warn
             }
-            
+
             // Check for unmatched parentheses
             const openParens = (line.match(/\(/g) || []).length;
             const closeParens = (line.match(/\)/g) || []).length;
             if (openParens !== closeParens && !trimmed.endsWith(':') && !trimmed.startsWith('#')) {
                 // Could be multi-line, so just note it
             }
-            
+
             // Check for assignment in condition
             if (trimmed.match(/if\s+\w+\s*=\s*[^=]/)) {
                 warnings.push(`Line ${lineNum}: Did you mean '==' instead of '=' in condition?`);
             }
         });
-        
+
         return warnings;
     };
-    
+
     // ── Error Message Formatter ───────────────────────────────────────────────
     const formatErrorMessage = (msg) => {
         // Clean up Skulpt error messages
@@ -1060,17 +1060,17 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             .replace(/AttributeError/g, 'Attribute Error')
             .replace(/ImportError/g, 'Import Error')
             .replace(/IndentationError/g, 'Indentation Error');
-        
+
         // Add line number highlighting
         formatted = formatted.replace(/line (\d+)/gi, 'Line $1');
-        
+
         return formatted;
     };
-    
+
     // ── Error Suggestion Helper ───────────────────────────────────────────────
     const getErrorSuggestion = (errorMsg) => {
         const msg = errorMsg.toLowerCase();
-        
+
         if (msg.includes('nameerror') || msg.includes('not defined')) {
             return "Check if the variable or function name is spelled correctly and defined before use.";
         }
@@ -1092,7 +1092,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         if (msg.includes('timeout') || msg.includes('too long')) {
             return "Your code might have an infinite loop. Check your while/for loops.";
         }
-        
+
         return null;
     };
 
@@ -1100,14 +1100,14 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const handleReplSubmit = async () => {
         const line = replInput.trim();
         if (!line) return;
-        
+
         const newHist = [line, ...replHistory].slice(0, 50);
         setReplHistory(newHist);
         setReplHistIdx(-1);
         setReplInput("");
-        
+
         addLog(`>>> ${line}`, "repl-in");
-        
+
         try {
             if (window.electronAPI?.isElectron) {
                 await window.electronAPI.pythonReplSend(line);
@@ -1116,7 +1116,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 await skulptRef.current.runRepl(line);
                 const endTime = performance.now();
                 const duration = ((endTime - startTime) / 1000).toFixed(3);
-                
+
                 // Show execution time for REPL if > 100ms
                 if (endTime - startTime > 100) {
                     addLog(`⏱ Executed in ${duration}s`, "info");
@@ -1551,7 +1551,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             if (window.electronAPI?.isElectron) {
                 window.electronAPI.pythonPipInstall(pkgName);
             }
-            
+
             // Add helpful import examples for popular libraries
             const importExamples = {
                 "opencv-python": "import cv2  # OpenCV",
@@ -1592,19 +1592,19 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         const id = sp.name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now();
         // Handle both formats: sp.img (old) or sp.image/sp.costumes (new from shared catalog)
         const spriteImage = sp.img || sp.image || sp.emoji || '/assets/sprites/robot/robot_idle.svg';
-        const spriteCostumes = sp.costumes && sp.costumes.length > 0 
+        const spriteCostumes = sp.costumes && sp.costumes.length > 0
             ? sp.costumes.reduce((acc, c, i) => ({ ...acc, [`costume_${i}`]: c }), { default: spriteImage })
             : { default: spriteImage };
-        const newSprite = { 
-            id, 
-            name: sp.name, 
+        const newSprite = {
+            id,
+            name: sp.name,
             type: sp.type || 'sprite',
-            position: { x: (Math.random()-0.5)*80, y: (Math.random()-0.5)*80 },
-            direction: 0, 
-            size: 100, 
-            visible: true, 
-            speech: '', 
-            currentCostume: 'default', 
+            position: { x: (Math.random() - 0.5) * 80, y: (Math.random() - 0.5) * 80 },
+            direction: 0,
+            size: 100,
+            visible: true,
+            speech: '',
+            currentCostume: 'default',
             costumes: spriteCostumes,
             mirrored: false
         };
@@ -1617,10 +1617,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         setSidePanel('files');
     };
     // Backdrop
-    const handleSetBackdrop = (bd) => { 
-        setBackdropImg(bd.img || null); 
-        addLog('Backdrop: ' + bd.name, 'success'); 
-        setSidePanel('files'); 
+    const handleSetBackdrop = (bd) => {
+        setBackdropImg(bd.img || null);
+        addLog('Backdrop: ' + bd.name, 'success');
+        setSidePanel('files');
     };
 
     // Extension install
@@ -2098,8 +2098,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             bottom: 12,
                             zIndex: 2,
                         }}
-                        ref={boardCppMenuRef}
-                    >
+                            ref={boardCppMenuRef}
+                        >
                             {showBoardCppMenu && (
                                 <div style={{
                                     position: "absolute",
@@ -2382,7 +2382,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         <span style={{ color: "#FFD500", fontSize: 14, fontWeight: 800, letterSpacing: "0.08em" }}>PYTHON</span>
                     </div>
                     <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)" }} />
-                
+
                     {["File", "Edit", "Tutorials", "Board", "Connect"].map((menuLabel) => (
                         <span
                             key={menuLabel}
@@ -2477,150 +2477,150 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
             {/* ══ SECOND TOOLBAR (PictoBlox Style) ══════════════════════════════ */}
             {workflowMode === "stage" ? (
-            <div style={{
-                position: "sticky",
-                top: 44,
-                height: 42, background: "#fff", display: "flex",
-                alignItems: "center", padding: "0 12px",
-                justifyContent: "space-between", borderBottom: `1px solid ${C.BORDER}`,
-                zIndex: 90,
-                flexShrink: 0,
-            }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    {/* Blocks/Python tabs */}
-                    <div style={{ display: "flex", background: "#E8E8E8", borderRadius: 4, overflow: "hidden" }}>
-                        <div
-                            onClick={() => {
-                                if (onSwitchToBlocks) {
-                                    onSwitchToBlocks();
-                                }
-                            }}
-                            style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRight: "1px solid #ddd" }}
-                        >Blocks</div>
-                        <div style={{ padding: "6px 14px", background: "#6B46C1", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Python</div>
+                <div style={{
+                    position: "sticky",
+                    top: 44,
+                    height: 42, background: "#fff", display: "flex",
+                    alignItems: "center", padding: "0 12px",
+                    justifyContent: "space-between", borderBottom: `1px solid ${C.BORDER}`,
+                    zIndex: 90,
+                    flexShrink: 0,
+                }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {/* Blocks/Python tabs */}
+                        <div style={{ display: "flex", background: "#E8E8E8", borderRadius: 4, overflow: "hidden" }}>
+                            <div
+                                onClick={() => {
+                                    if (onSwitchToBlocks) {
+                                        onSwitchToBlocks();
+                                    }
+                                }}
+                                style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRight: "1px solid #ddd" }}
+                            >Blocks</div>
+                            <div style={{ padding: "6px 14px", background: "#6B46C1", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Python</div>
+                        </div>
+                        <div style={{ width: 1, height: 20, background: C.BORDER }} />
+                        <div style={{ display: "flex", background: "#E8E8E8", borderRadius: 4, overflow: "hidden" }}>
+                            <div
+                                onClick={() => {
+                                    if (onSwitchToCostumes) {
+                                        onSwitchToCostumes();
+                                    }
+                                }}
+                                style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRight: "1px solid #ddd" }}
+                            >Costumes</div>
+                            <div style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Sounds</div>
+                        </div>
+                        <div style={{ width: 1, height: 20, background: C.BORDER }} />
                     </div>
-                    <div style={{ width: 1, height: 20, background: C.BORDER }} />
-                    <div style={{ display: "flex", background: "#E8E8E8", borderRadius: 4, overflow: "hidden" }}>
-                        <div
-                            onClick={() => {
-                                if (onSwitchToCostumes) {
-                                    onSwitchToCostumes();
-                                }
-                            }}
-                            style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRight: "1px solid #ddd" }}
-                        >Costumes</div>
-                        <div style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Sounds</div>
-                    </div>
-                    <div style={{ width: 1, height: 20, background: C.BORDER }} />
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    {/* Editing tools */}
-                    <div style={{ display: "flex", gap: 2 }}>
-                        <div title="Undo (Ctrl+Z)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
-                            <Undo size={16} />
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {/* Editing tools */}
+                        <div style={{ display: "flex", gap: 2 }}>
+                            <div title="Undo (Ctrl+Z)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
+                                <Undo size={16} />
+                            </div>
+                            <div title="Redo (Ctrl+Y)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
+                                <Redo size={16} />
+                            </div>
+                            <div title="Copy (Ctrl+C)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
+                                <span style={{ fontSize: 14 }}>📋</span>
+                            </div>
+                            <div title="Paste (Ctrl+V)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
+                                <span style={{ fontSize: 14 }}>📄</span>
+                            </div>
+                            <div title="Delete" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
+                                <Trash2 size={16} />
+                            </div>
                         </div>
-                        <div title="Redo (Ctrl+Y)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
-                            <Redo size={16} />
+                        <div style={{ width: 1, height: 20, background: C.BORDER }} />
+                        {/* Quick Run Button (PictoBlox Green) */}
+                        <div onClick={handleRun} title="Run Code (Ctrl+Enter or F5)"
+                            className="run-button"
+                            style={{
+                                cursor: isRunning ? "not-allowed" : "pointer",
+                                padding: "6px 14px",
+                                background: isRunning ? "#9CA3AF" : "#4CAF50",
+                                color: "#fff",
+                                borderRadius: 4,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                fontSize: 12,
+                                fontWeight: 600,
+                                transition: "all 0.2s",
+                            }}>
+                            {isRunning ? (
+                                <>
+                                    <span style={{ animation: "spin 1s linear infinite" }}>⚙</span>
+                                    <span>Running...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Play size={12} fill="#fff" />
+                                    <span>Run</span>
+                                </>
+                            )}
                         </div>
-                        <div title="Copy (Ctrl+C)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
-                            <span style={{ fontSize: 14 }}>📋</span>
+                        {/* Run All Button */}
+                        <div onClick={handleRun} title="Run All"
+                            style={{
+                                cursor: "pointer",
+                                padding: "6px 10px",
+                                background: "#E8F5E9",
+                                color: "#4CAF50",
+                                borderRadius: 4,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                border: "1px solid #C8E6C9",
+                            }}>
+                            <Play size={10} fill="#4CAF50" />
+                            <span>Run All</span>
                         </div>
-                        <div title="Paste (Ctrl+V)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
-                            <span style={{ fontSize: 14 }}>📄</span>
+                        {/* Stop Button (PictoBlox Red) */}
+                        <div onClick={handleStop} title="Stop (Escape)"
+                            className="stop-button"
+                            style={{
+                                cursor: "pointer",
+                                padding: "6px 12px",
+                                background: "#FFEBEE",
+                                color: "#F44336",
+                                border: "1px solid #FFCDD2",
+                                borderRadius: 4,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                fontSize: 12,
+                                fontWeight: 600,
+                                transition: "all 0.2s",
+                            }}>
+                            <Square size={10} fill="#F44336" />
+                            <span>Stop</span>
                         </div>
-                        <div title="Delete" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
-                            <Trash2 size={16} />
-                        </div>
-                    </div>
-                    <div style={{ width: 1, height: 20, background: C.BORDER }} />
-                    {/* Quick Run Button (PictoBlox Green) */}
-                    <div onClick={handleRun} title="Run Code (Ctrl+Enter or F5)"
-                        className="run-button"
-                        style={{
-                            cursor: isRunning ? "not-allowed" : "pointer",
-                            padding: "6px 14px",
-                            background: isRunning ? "#9CA3AF" : "#4CAF50",
-                            color: "#fff",
+                        <div style={{ width: 1, height: 20, background: C.BORDER }} />
+                        {/* REPL Mode Toggle */}
+                        <div style={{
+                            padding: "5px 10px",
+                            background: "#F5F5F5",
+                            color: "#666",
                             borderRadius: 4,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            fontSize: 12,
-                            fontWeight: 600,
-                            transition: "all 0.2s",
-                        }}>
-                        {isRunning ? (
-                            <>
-                                <span style={{ animation: "spin 1s linear infinite" }}>⚙</span>
-                                <span>Running...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Play size={12} fill="#fff" />
-                                <span>Run</span>
-                            </>
-                        )}
-                    </div>
-                    {/* Run All Button */}
-                    <div onClick={handleRun} title="Run All"
-                        style={{
-                            cursor: "pointer",
-                            padding: "6px 10px",
-                            background: "#E8F5E9",
-                            color: "#4CAF50",
-                            borderRadius: 4,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
                             fontSize: 11,
-                            fontWeight: 600,
-                            border: "1px solid #C8E6C9",
-                        }}>
-                        <Play size={10} fill="#4CAF50" />
-                        <span>Run All</span>
-                    </div>
-                    {/* Stop Button (PictoBlox Red) */}
-                    <div onClick={handleStop} title="Stop (Escape)"
-                        className="stop-button"
-                        style={{
+                            fontWeight: 500,
                             cursor: "pointer",
-                            padding: "6px 12px",
-                            background: "#FFEBEE",
-                            color: "#F44336",
-                            border: "1px solid #FFCDD2",
-                            borderRadius: 4,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            fontSize: 12,
-                            fontWeight: 600,
-                            transition: "all 0.2s",
+                            border: "1px solid #E0E0E0"
                         }}>
-                        <Square size={10} fill="#F44336" />
-                        <span>Stop</span>
-                    </div>
-                    <div style={{ width: 1, height: 20, background: C.BORDER }} />
-                    {/* REPL Mode Toggle */}
-                    <div style={{ 
-                        padding: "5px 10px", 
-                        background: "#F5F5F5", 
-                        color: "#666",
-                        borderRadius: 4,
-                        fontSize: 11,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        border: "1px solid #E0E0E0"
-                    }}>
-                        REPL Mode
-                    </div>
-                    <div title="Stop" style={{ cursor: "pointer", padding: "4px 6px", color: "#F44336", borderRadius: 4 }}>
-                        <Square size={14} fill="#F44336" />
-                    </div>
-                    <div title="Clear" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
-                        <Trash2 size={14} />
+                            REPL Mode
+                        </div>
+                        <div title="Stop" style={{ cursor: "pointer", padding: "4px 6px", color: "#F44336", borderRadius: 4 }}>
+                            <Square size={14} fill="#F44336" />
+                        </div>
+                        <div title="Clear" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
+                            <Trash2 size={14} />
+                        </div>
                     </div>
                 </div>
-            </div>
             ) : (
                 <div style={{
                     position: "sticky",
@@ -2777,94 +2777,94 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
             {/* ══ MAIN WORKSPACE ═══════════════════════════════════════════════ */}
             {workflowMode === "stage" ? (
-            <div style={{ flex: 1, display: "flex", overflow: "auto", minHeight: 0 }}>
+                <div style={{ flex: 1, display: "flex", overflow: "auto", minHeight: 0 }}>
 
-                {/* ── GUIDE PANEL (slide in from right) ── */}
-                {showGuide && (
-                    <div style={{
-                        position: "absolute", top: 48, right: 0, bottom: 0,
-                        width: 440, zIndex: 200, boxShadow: "-4px 0 24px rgba(0,0,0,0.25)",
-                        borderLeft: "1px solid #312e5a",
-                    }}>
-                        <PythonIDEGuide onClose={() => setShowGuide(false)} />
-                    </div>
-                )}
+                    {/* ── GUIDE PANEL (slide in from right) ── */}
+                    {showGuide && (
+                        <div style={{
+                            position: "absolute", top: 48, right: 0, bottom: 0,
+                            width: 440, zIndex: 200, boxShadow: "-4px 0 24px rgba(0,0,0,0.25)",
+                            borderLeft: "1px solid #312e5a",
+                        }}>
+                            <PythonIDEGuide onClose={() => setShowGuide(false)} />
+                        </div>
+                    )}
 
 
 
-                {/* ── LEFT SIDEBAR (PictoBlox Style) ── */}
-                <SidePanel 
-                    sidePanel={sidePanel}
-                    setSidePanel={setSidePanel}
-                    projectFiles={projectFiles}
-                    activeFile={activeFile}
-                    setActiveFile={setActiveFile}
-                    handleAddPythonFiles={handleAddPythonFiles}
-                    handleAddImageFiles={handleAddImageFiles}
-                    handleAddTextFiles={handleAddTextFiles}
-                    handleAddCsvFiles={handleAddCsvFiles}
-                    handleDeleteFile={handleDeleteFile}
-                    onAddNewFile={handleCreateNewFile}
-                    spriteFilter={spriteFilter}
-                    setSpriteFilter={setSpriteFilter}
-                    addSpriteFromLibrary={addSpriteFromLibrary}
-                    SPRITE_LIBRARY={SPRITE_LIBRARY}
-                    BACKDROP_LIBRARY={BACKDROP_LIBRARY}
-                    backdrop={backdrop}
-                    handleSetBackdrop={handleSetBackdrop}
-                    EXTENSIONS={EXTENSIONS}
-                    installedExtensions={installedExtensions}
-                    installExtension={installExtension}
-                    packages={packages}
-                    pipFilter={pipFilter}
-                    setPipFilter={setPipFilter}
-                    handleInstall={handleInstall}
-                />
+                    {/* ── LEFT SIDEBAR (PictoBlox Style) ── */}
+                    <SidePanel
+                        sidePanel={sidePanel}
+                        setSidePanel={setSidePanel}
+                        projectFiles={projectFiles}
+                        activeFile={activeFile}
+                        setActiveFile={setActiveFile}
+                        handleAddPythonFiles={handleAddPythonFiles}
+                        handleAddImageFiles={handleAddImageFiles}
+                        handleAddTextFiles={handleAddTextFiles}
+                        handleAddCsvFiles={handleAddCsvFiles}
+                        handleDeleteFile={handleDeleteFile}
+                        onAddNewFile={handleCreateNewFile}
+                        spriteFilter={spriteFilter}
+                        setSpriteFilter={setSpriteFilter}
+                        addSpriteFromLibrary={addSpriteFromLibrary}
+                        SPRITE_LIBRARY={SPRITE_LIBRARY}
+                        BACKDROP_LIBRARY={BACKDROP_LIBRARY}
+                        backdrop={backdrop}
+                        handleSetBackdrop={handleSetBackdrop}
+                        EXTENSIONS={EXTENSIONS}
+                        installedExtensions={installedExtensions}
+                        installExtension={installExtension}
+                        packages={packages}
+                        pipFilter={pipFilter}
+                        setPipFilter={setPipFilter}
+                        handleInstall={handleInstall}
+                    />
 
-                {/* ── EDITOR + TERMINAL ── */}
-                <EditorPanel 
-                    projectFiles={projectFiles}
-                    activeFile={activeFile}
-                    setActiveFile={setActiveFile}
-                    editorCursor={editorCursor}
-                    isRunning={isRunning}
-                    onRun={handleRun}
-                    onStop={handleStop}
-                    onClear={handleClear}
-                    activePanel={activePanel}
-                    setActivePanel={setActivePanel}
-                    terminalOutput={terminalOutput}
-                    replInput={replInput}
-                    setReplInput={setReplInput}
-                    handleReplSubmit={handleReplSubmit}
-                    handleReplKey={handleReplKey}
-                    terminalEndRef={terminalEndRef}
-                    replInputRef={replInputRef}
-                    editorRef={editorRef}
-                    monacoRef={monacoRef}
-                    setProjectFiles={setProjectFiles}
-                    onCursorChange={setEditorCursor}
-                    packages={packages}
-                    pipFilter={pipFilter}
-                    setPipFilter={setPipFilter}
-                    handleInstall={handleInstall}
-                />
+                    {/* ── EDITOR + TERMINAL ── */}
+                    <EditorPanel
+                        projectFiles={projectFiles}
+                        activeFile={activeFile}
+                        setActiveFile={setActiveFile}
+                        editorCursor={editorCursor}
+                        isRunning={isRunning}
+                        onRun={handleRun}
+                        onStop={handleStop}
+                        onClear={handleClear}
+                        activePanel={activePanel}
+                        setActivePanel={setActivePanel}
+                        terminalOutput={terminalOutput}
+                        replInput={replInput}
+                        setReplInput={setReplInput}
+                        handleReplSubmit={handleReplSubmit}
+                        handleReplKey={handleReplKey}
+                        terminalEndRef={terminalEndRef}
+                        replInputRef={replInputRef}
+                        editorRef={editorRef}
+                        monacoRef={monacoRef}
+                        setProjectFiles={setProjectFiles}
+                        onCursorChange={setEditorCursor}
+                        packages={packages}
+                        pipFilter={pipFilter}
+                        setPipFilter={setPipFilter}
+                        handleInstall={handleInstall}
+                    />
 
-                {/* ── STAGE PANEL ── */}
-                <StagePanel 
-                    sprites={sprites}
-                    selectedSpriteId={selectedSpriteId}
-                    setSelectedSpriteId={setSelectedSpriteId}
-                    backdrop={backdrop}
-                    stageRef={stageRef}
-                    stageSize={stageSize}
-                    setShowSpriteLibrary={setShowSpriteLibrary}
-                    updateSpriteProperty={updateSpriteProperty}
-                    BACKDROP_LIBRARY={BACKDROP_LIBRARY}
-                    handleSetBackdrop={handleSetBackdrop}
-                    deleteSprite={deleteSprite}
-                />
-            </div>
+                    {/* ── STAGE PANEL ── */}
+                    <StagePanel
+                        sprites={sprites}
+                        selectedSpriteId={selectedSpriteId}
+                        setSelectedSpriteId={setSelectedSpriteId}
+                        backdrop={backdrop}
+                        stageRef={stageRef}
+                        stageSize={stageSize}
+                        setShowSpriteLibrary={setShowSpriteLibrary}
+                        updateSpriteProperty={updateSpriteProperty}
+                        BACKDROP_LIBRARY={BACKDROP_LIBRARY}
+                        handleSetBackdrop={handleSetBackdrop}
+                        deleteSprite={deleteSprite}
+                    />
+                </div>
             ) : (
                 renderUploadWorkspace()
             )}
@@ -3015,14 +3015,14 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             >×</div>
                         </div>
                         <div style={{ padding: '16px', flex: 1, overflowY: 'auto' }}>
-                            <div style={{ 
-                                display: 'grid', 
-                                gridTemplateColumns: 'repeat(5, 1fr)', 
-                                gap: '12px' 
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(5, 1fr)',
+                                gap: '12px'
                             }}>
                                 {SPRITE_LIBRARY.map(sp => (
-                                    <div 
-                                        key={sp.name} 
+                                    <div
+                                        key={sp.name}
                                         onClick={() => {
                                             addSpriteFromLibrary(sp);
                                             setShowSpriteLibrary(false);
@@ -3045,11 +3045,11 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                             e.currentTarget.style.background = '#F5F0FF';
                                         }}
                                     >
-                                        <img 
-                                            src={sp.img} 
-                                            alt={sp.name} 
-                                            style={{ width: 48, height: 48, objectFit: 'contain' }} 
-                                            onError={e => { e.target.style.display = 'none'; }} 
+                                        <img
+                                            src={sp.img}
+                                            alt={sp.name}
+                                            style={{ width: 48, height: 48, objectFit: 'contain' }}
+                                            onError={e => { e.target.style.display = 'none'; }}
                                         />
                                         <div style={{ fontSize: 11, fontWeight: 600, color: C.TEXT, marginTop: 6 }}>
                                             {sp.name}
@@ -3063,7 +3063,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             )}
 
         </div>
-    );  
+    );
 }
 
 // Wrap with StageProvider for shared state

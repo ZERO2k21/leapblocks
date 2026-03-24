@@ -138,6 +138,31 @@ export class AnimationCompiler {
                 const list = this.getVariableName(valueBlock);
                 return () => animationVM.getListContents(list);
             }
+            case 'data_tablecontents': {
+                const table = this.getVariableName(valueBlock);
+                // For tablecontents, we'll return a string representation for now
+                return () => JSON.stringify(animationVM.getTable(table));
+            }
+            case 'data_getvalueattable': {
+                const table = this.getVariableName(valueBlock);
+                const colFunc = this.compileStringValue(valueBlock, 'COLUMN');
+                const rowFunc = this.compileNumberValue(valueBlock, 'ROW');
+                return () => {
+                    const col = colFunc();
+                    const row = rowFunc();
+                    // col could be a name or a number string
+                    const colNum = Number(col);
+                    return String(animationVM.getValueAtTable(table, isNaN(colNum) ? col : colNum, row));
+                };
+            }
+            case 'data_gettablecount': {
+                const table = this.getVariableName(valueBlock);
+                const type = valueBlock.getFieldValue('TYPE') as 'row' | 'column';
+                return () => String(animationVM.getTableCount(table, type));
+            }
+            case 'data_gettimestamp': {
+                return () => new Date().toLocaleString();
+            }
             case 'data_itemoflist': {
                 const list = this.getVariableName(valueBlock);
                 const idxFunc = this.compileNumberValue(valueBlock, 'INDEX');
@@ -323,7 +348,7 @@ export class AnimationCompiler {
     }
 
     private compileTopBlock(block: Blockly.Block): CompiledScript | null {
-        let trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than';
+        let trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than' | 'procedure';
         let triggerKey: string | undefined;
 
         compilerLog.block(block.type, 'checking trigger type...');
@@ -362,6 +387,11 @@ export class AnimationCompiler {
                 trigger = 'greater_than';
                 triggerKey = block.getFieldValue('SENSOR') + ':' + block.getFieldValue('VALUE');
                 compilerLog.info(`  Trigger: greater than (${triggerKey})`);
+                break;
+            case 'procedures_defnoreturn':
+                trigger = 'procedure';
+                triggerKey = block.getFieldValue('NAME');
+                compilerLog.info(`  Trigger: custom procedure (${triggerKey})`);
                 break;
             default:
                 compilerLog.info(`  Not an event block, returning null`);
@@ -609,6 +639,14 @@ export class AnimationCompiler {
             case 'sensing_reset_timer':
                 step = { type: 'reset_timer' };
                 break;
+            
+            // Procedures
+            case 'procedures_callnoreturn': {
+                // Determine procedure name
+                const proccode = block.getFieldValue('NAME') || (block as any).getMutation?.name || 'unknown';
+                step = { type: 'procedures_call', proccode };
+                break;
+            }
 
             // Hardware blocks & Arduino Blocks
             case 'hw_set_digital':
@@ -725,6 +763,63 @@ export class AnimationCompiler {
                 break;
             case 'data_hidelist':
                 step = { type: 'list_hide', list: this.getVariableName(block) };
+                break;
+
+            // Table blocks
+            case 'data_setintable':
+                step = {
+                    type: 'table_set',
+                    table: this.getVariableName(block),
+                    col: this.compileStringValue(block, 'COLUMN'),
+                    row: this.compileNumberValue(block, 'ROW'),
+                    value: this.compileStringValue(block, 'VALUE')
+                };
+                break;
+            case 'data_addcolumn':
+                step = {
+                    type: 'table_add_column',
+                    table: this.getVariableName(block),
+                    col: this.compileStringValue(block, 'COLUMN')
+                };
+                break;
+            case 'data_deletecolumn':
+                step = {
+                    type: 'table_delete_column',
+                    table: this.getVariableName(block),
+                    col: this.compileStringValue(block, 'COLUMN')
+                };
+                break;
+            case 'data_showtable':
+                step = {
+                    type: 'table_show',
+                    table: this.getVariableName(block),
+                    format: block.getFieldValue('FORMAT')
+                };
+                break;
+            case 'data_hidetable':
+                step = {
+                    type: 'table_hide',
+                    table: this.getVariableName(block)
+                };
+                break;
+            case 'data_deleterow':
+                step = {
+                    type: 'table_delete_row',
+                    table: this.getVariableName(block),
+                    row: this.compileNumberValue(block, 'ROW')
+                };
+                break;
+            case 'data_cleartable':
+                step = {
+                    type: 'table_clear',
+                    table: this.getVariableName(block)
+                };
+                break;
+            case 'data_exporttable':
+                step = {
+                    type: 'table_export',
+                    table: this.getVariableName(block)
+                };
                 break;
 
             default:

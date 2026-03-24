@@ -19,10 +19,16 @@ export interface VMContext {
     mouseX: number;
     mouseY: number;
     stopAll: () => void;
+    onShowVariable?: (name: string) => void;
+    onHideVariable?: (name: string) => void;
+    onShowList?: (name: string) => void;
+    onHideList?: (name: string) => void;
+    onShowTable?: (name: string) => void;
+    onHideTable?: (name: string) => void;
 }
 
 export interface CompiledScript {
-    trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than';
+    trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than' | 'procedure';
     triggerKey?: string;
     spriteId: string;
     steps: ScriptStep[];
@@ -117,6 +123,15 @@ export type ScriptStep = (
     | { type: 'list_replace'; list: string; index: () => number; item: () => string }
     | { type: 'list_show'; list: string }
     | { type: 'list_hide'; list: string }
+    // Table
+    | { type: 'table_set'; table: string; col: () => number | string; row: () => number; value: () => string | number }
+    | { type: 'table_add_column'; table: string; col: () => string }
+    | { type: 'table_delete_column'; table: string; col: () => number | string }
+    | { type: 'table_show'; table: string; format: string }
+    | { type: 'table_hide'; table: string }
+    | { type: 'table_delete_row'; table: string; row: () => number }
+    | { type: 'table_clear'; table: string }
+    | { type: 'table_export'; table: string }
     // Pen
     | { type: 'pen_clear' }
     | { type: 'pen_stamp' }
@@ -128,6 +143,8 @@ export type ScriptStep = (
     // Pen color params
     | { type: 'pen_changePenColorParamBy'; param: string; change: number }
     | { type: 'pen_setPenColorParamTo'; param: string; value: number }
+    // Procedures / My Blocks
+    | { type: 'procedures_call'; proccode: string; args?: Record<string, any> }
 ) & { blockId?: string };
 
 // Logging utility for AnimationVM
@@ -151,6 +168,14 @@ export class AnimationVM {
     // Callbacks for UI sync
     public onHighlightBlock?: (blockId: string | null, spriteId: string) => void;
     public onRunningChange?: (isRunning: boolean) => void;
+    
+    // Monitor callbacks
+    public onShowVariable?: (name: string) => void;
+    public onHideVariable?: (name: string) => void;
+    public onShowList?: (name: string) => void;
+    public onHideList?: (name: string) => void;
+    public onShowTable?: (name: string) => void;
+    public onHideTable?: (name: string) => void;
 
     // Timer
     private timerStart: number = Date.now();
@@ -282,11 +307,108 @@ export class AnimationVM {
 
     getListContents(name: string): string {
         const list = this.getList(name);
-        // Scratch returns space-separated (if single chars) or nothing?
-        // Actually for debug reporters it usually shows the list content.
-        // For 'list' block reporter, it returns the stringified list.
-        // Scratch standard: Join with spaces.
         return list.join(' ');
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // TABLES
+    // ═══════════════════════════════════════════════════════════════════════
+    private tables: Map<string, (string | number)[][]> = new Map();
+    private tableColumns: Map<string, string[]> = new Map();
+
+    getTable(name: string): (string | number)[][] {
+        if (!this.tables.has(name)) {
+            this.tables.set(name, []);
+            this.tableColumns.set(name, ['Column 1']); // Initial column
+        }
+        return this.tables.get(name)!;
+    }
+
+    getColumns(name: string): string[] {
+        if (!this.tableColumns.has(name)) {
+            this.tableColumns.set(name, ['Column 1']);
+        }
+        return this.tableColumns.get(name)!;
+    }
+
+    setInTable(name: string, column: number | string, row: number, value: string | number): void {
+        const table = this.getTable(name);
+        const columns = this.getColumns(name);
+        
+        let colIdx = -1;
+        if (typeof column === 'string') {
+            colIdx = columns.indexOf(column);
+        } else {
+            colIdx = column - 1;
+        }
+
+        if (colIdx >= 0 && colIdx < columns.length && row >= 1) {
+            // Ensure row exists
+            while (table.length < row) {
+                table.push(new Array(columns.length).fill(''));
+            }
+            table[row - 1][colIdx] = value;
+            vmLog.step('table_set', { name, column, row, value });
+        }
+    }
+
+    addColumn(name: string, colName: string): void {
+        const columns = this.getColumns(name);
+        const table = this.getTable(name);
+        columns.push(colName);
+        table.forEach(row => row.push(''));
+        vmLog.step('table_add_column', { name, colName });
+    }
+
+    deleteColumn(name: string, column: number | string): void {
+        const columns = this.getColumns(name);
+        const table = this.getTable(name);
+        let colIdx = -1;
+        if (typeof column === 'string') {
+            colIdx = columns.indexOf(column);
+        } else {
+            colIdx = column - 1;
+        }
+
+        if (colIdx >= 0 && colIdx < columns.length) {
+            columns.splice(colIdx, 1);
+            table.forEach(row => row.splice(colIdx, 1));
+            vmLog.step('table_delete_column', { name, column });
+        }
+    }
+
+    deleteRow(name: string, rowIdx: number): void {
+        const table = this.getTable(name);
+        if (rowIdx >= 1 && rowIdx <= table.length) {
+            table.splice(rowIdx - 1, 1);
+            vmLog.step('table_delete_row', { name, rowIdx });
+        }
+    }
+
+    clearTable(name: string): void {
+        this.tables.set(name, []);
+        vmLog.step('table_clear', { name });
+    }
+
+    getValueAtTable(name: string, column: number | string, row: number): string | number {
+        const table = this.getTable(name);
+        const columns = this.getColumns(name);
+        let colIdx = -1;
+        if (typeof column === 'string') {
+            colIdx = columns.indexOf(column);
+        } else {
+            colIdx = column - 1;
+        }
+
+        if (colIdx >= 0 && colIdx < columns.length && row >= 1 && row <= table.length) {
+            return table[row - 1][colIdx];
+        }
+        return '';
+    }
+
+    getTableCount(name: string, type: 'row' | 'column'): number {
+        if (type === 'row') return this.getTable(name).length;
+        return this.getColumns(name).length;
     }
 
 
@@ -454,6 +576,12 @@ export class AnimationVM {
             mouseX: this.mouseX,
             mouseY: this.mouseY,
             stopAll: () => this.stopAll(),
+            onShowVariable: this.onShowVariable,
+            onHideVariable: this.onHideVariable,
+            onShowList: this.onShowList,
+            onHideList: this.onHideList,
+            onShowTable: this.onShowTable,
+            onHideTable: this.onHideTable,
         };
 
         let isAborted = false;
@@ -995,12 +1123,18 @@ export class AnimationVM {
                 break;
 
             case 'data_showvariable':
-                // TODO: Show variable monitor on stage
+                // Show variable monitor on stage
+                if (ctx.onShowVariable) {
+                    ctx.onShowVariable(step.variable);
+                }
                 console.log(`[AnimationVM] Show variable: ${step.variable} = ${this.getVariable(step.variable)}`);
                 break;
 
             case 'data_hidevariable':
-                // TODO: Hide variable monitor on stage
+                // Hide variable monitor on stage
+                if (ctx.onHideVariable) {
+                    ctx.onHideVariable(step.variable);
+                }
                 console.log(`[AnimationVM] Hide variable: ${step.variable}`);
                 break;
 
@@ -1046,13 +1180,93 @@ export class AnimationVM {
                 break;
             }
             case 'list_show':
-                // TODO: Monitor UI
+                // Show list monitor on stage
+                if (ctx.onShowList) {
+                    ctx.onShowList(step.list);
+                }
                 console.log(`[AnimationVM] Show list: ${step.list}`);
                 break;
             case 'list_hide':
-                // TODO: Monitor UI
+                // Hide list monitor on stage
+                if (ctx.onHideList) {
+                    ctx.onHideList(step.list);
+                }
                 console.log(`[AnimationVM] Hide list: ${step.list}`);
                 break;
+
+            // Table blocks
+            case 'table_set':
+                this.setInTable(step.table, step.col(), step.row(), step.value());
+                break;
+            case 'table_add_column':
+                this.addColumn(step.table, step.col());
+                break;
+            case 'table_delete_column':
+                this.deleteColumn(step.table, step.col());
+                break;
+            case 'table_show':
+                // Show table monitor on stage
+                if (ctx.onShowTable) {
+                    ctx.onShowTable(step.table);
+                }
+                console.log(`[AnimationVM] Show table: ${step.table} as ${step.format}`);
+                break;
+            case 'table_hide':
+                // Hide table monitor on stage
+                if (ctx.onHideTable) {
+                    ctx.onHideTable(step.table);
+                }
+                console.log(`[AnimationVM] Hide table: ${step.table}`);
+                break;
+            case 'table_delete_row':
+                this.deleteRow(step.table, step.row());
+                break;
+            case 'table_clear':
+                this.clearTable(step.table);
+                break;
+            case 'table_export':
+                console.log(`[AnimationVM] Export table: ${step.table}`);
+                // TODO: Implement actual CSV download if running in browser
+                break;
+                
+            case 'procedures_call': {
+                // To support "Run without screen refresh", we need to execute the procedure stack inline
+                // but with a safety budget (e.g., max 10,000 steps or 500ms).
+                
+                // 1. Find the procedure script definition for this sprite
+                const scripts = sprite.scripts as CompiledScript[] || [];
+                const procScript = scripts.find(s => s.trigger === 'procedure' && s.triggerKey === step.proccode);
+                
+                if (procScript) {
+                    const startTime = performance.now();
+                    let stepsCount = 0;
+                    
+                    const executeBudgetedSteps = async (stepsToRun: ScriptStep[]) => {
+                        for (let i = 0; i < stepsToRun.length; i++) {
+                            await this.checkPause();
+                            
+                            if (signal.aborted || !this.isRunning) {
+                                throw new DOMException('Aborted', 'AbortError');
+                            }
+                            
+                            // Recursively execute
+                            await this.executeStep(stepsToRun[i], ctx, signal);
+                            
+                            stepsCount++;
+                            // Yield if we exceed budget (auto-yield safety)
+                            if (stepsCount > 10000 || (performance.now() - startTime) > 500) {
+                                await new Promise(resolve => setTimeout(resolve, 0));
+                                stepsCount = 0; // reset budget for next chunk
+                            }
+                        }
+                    };
+                    
+                    await executeBudgetedSteps(procScript.steps);
+                } else {
+                    console.warn(`[AnimationVM] Procedure '${step.proccode}' not found for sprite ${sprite.id}`);
+                }
+                break;
+            }
         }
     }
 

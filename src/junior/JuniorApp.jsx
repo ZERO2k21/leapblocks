@@ -101,8 +101,8 @@ export default function JuniorApp({ onBack }) {
             id: "scene1",
             name: "Scene 1",
             background: "white",
-            backgroundImage: "/assets/backdrops/WhatsApp Image 2026-03-13 at 12.05.21.jpeg",
-            backdropName: "WhatsApp Image",
+            backgroundImage: "/assets/backdrops/default.jpg",
+            backdropName: "Default",
             sprites: [
                 {
                     id: "robot_default", name: "Robot", type: "robot",
@@ -842,6 +842,10 @@ export default function JuniorApp({ onBack }) {
                     isOpen={paintEditor.isOpen}
                     onClose={() => setPaintEditor({ ...paintEditor, isOpen: false })}
                     onSave={handlers.handlePaintSave}
+                    onDeleteSound={handlers.handleDeleteCostume}
+                    onDuplicateSound={handlers.handleDuplicateCostume}
+                    onSwitchCostume={handlers.handleSwitchCostume}
+                    onRenameCostume={handlers.handleRenameCostume}
                     initialImage={paintEditor.initialImage}
                     costumes={paintEditor.costumes}
                     spriteName={paintEditor.spriteName}

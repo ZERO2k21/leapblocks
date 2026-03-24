@@ -40,7 +40,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                     onSave={async (imageData: string, svgData?: string, name?: string) => {
                         // Use imageData (PNG) for the thumbnail `src` string, and keep the svg logic if needed somewhere else
                         // But StageManager expects an Image capable of being drawn to a Canvas, so PNG `imageData` is much safer and more reliable.
-                        const savedData = imageData; 
+                        const savedData = imageData;
                         const backdropName = name || 'custom';
                         await stageManager.addBackdrop(backdropName, savedData);
                         stageManager.setBackdrop(backdropName);

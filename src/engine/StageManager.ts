@@ -19,7 +19,7 @@ export class StageManager {
 
     private initDefaultBackdrop(): void {
         // Default backdrop from user image
-        this.addBackdrop('default', '/assets/backdrops/WhatsApp Image 2026-03-13 at 12.05.21.jpeg');
+        this.addBackdrop('Default', '/assets/backdrops/default.jpg');
     }
 
     // Reset stage manager to initial state (for new projects)
