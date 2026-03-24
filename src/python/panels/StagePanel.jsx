@@ -102,7 +102,7 @@ export default function StagePanel({
         spriteList[0] ||
         null;
     const costumeEntries = Object.entries(selectedSprite?.costumes || {});
-    const showSpritesPanel = activeMode !== "stage";
+    const showSpritesPanel = true; // Always allow showing sprites/costumes panel
     const showBackdropsPanel = activeMode !== "sprite";
 
     const [showSprites, setShowSprites] = React.useState(true);
@@ -193,13 +193,12 @@ export default function StagePanel({
                         {activeMode === "sprite" ? "Costumes" : "Sprites"}
                     </span>
                     <span style={{ fontSize: 11, color: C.MUTED }}>
-                        {showSpritesPanel ? (showSprites ? "\u25BC" : "\u25B6") : "\u{1F6AB}"}
+                        {showSprites ? "\u25BC" : "\u25B6"}
                     </span>
                 </div>
 
-                {showSpritesPanel ? (
-                    showSprites && (
-                        <>
+                {showSprites && (
+                    <>
                             <div style={{ display: "flex", justifyContent: "flex-end" }}>
                                 <ActionButton
                                     label={activeMode === "sprite" ? "Add Costume" : "Add Sprite"}
@@ -403,12 +402,7 @@ export default function StagePanel({
                                 </div>
                             )}
                         </>
-                    )
-                ) : (
-                    <div style={{ fontSize: 12, color: C.MUTED, padding: "6px 0" }}>
-                        Stage file selected. Switch to a sprite file to edit costumes.
-                    </div>
-                )}
+                    )}
             </div>
 
             <div

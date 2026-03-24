@@ -249,7 +249,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             // Check if it's an emoji (contains emoji unicode or is a single emoji character)
             const emojiRegex = /[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]|[\u{FE00}-\u{FEFF}]|[\u{200D}]|[\u{20E3}]|[\u{E0020}-\u{E007F}]/u;
             const isEmoji = emojiRegex.test(costumeValue) || costumeValue.length <= 4;
-            
+
             if (isEmoji) {
                 const isLetterOrNumber = type?.startsWith('letter_') || type?.startsWith('number_') || id?.startsWith('letter_') || id?.startsWith('number_');
 
@@ -273,8 +273,8 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                 }
                 // Render emoji with proper styling
                 return (
-                    <span style={{ 
-                        fontSize: '60px', 
+                    <span style={{
+                        fontSize: '60px',
                         lineHeight: 1,
                         display: 'block',
                         textAlign: 'center',

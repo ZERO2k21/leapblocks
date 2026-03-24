@@ -156,12 +156,12 @@ export function useJuniorWorkspace({
         if (workspaceRef.current) {
             const toolboxXml = getToolboxXml(catId, categoryBlocks);
             workspaceRef.current.updateToolbox(toolboxXml);
-            
+
             // Store toolbox contents for flyout restoration after workspace switches
             if (currentToolboxContentsRef) {
                 currentToolboxContentsRef.current = categoryBlocks[catId] || [];
             }
-            
+
             resetFlyoutScale();
             setTimeout(() => workspaceRef.current?.resize(), 50);
         }
@@ -203,7 +203,7 @@ export function useJuniorWorkspace({
             const nextCategoryBlocks = { ...categoryBlocks, [extId]: newBlocks };
             setCategories(nextCategories);
             setCategoryBlocks(nextCategoryBlocks);
-            
+
             setTimeout(() => {
                 setActiveCategory(extId);
                 if (workspaceRef.current) {
@@ -474,7 +474,7 @@ export function useJuniorWorkspace({
 
             const handleWorkspaceChange = (e) => {
                 if (e.type === Blockly.Events.UI) return;
-                
+
                 // Ignore changes during workspace loading to prevent saving empty/intermediate states
                 if (isLoadingWorkspaceRef && isLoadingWorkspaceRef.current) {
                     console.log('[JuniorWorkspace] Ignoring workspace change during load phase');
@@ -511,7 +511,7 @@ export function useJuniorWorkspace({
                         const mainWs = workspaceRef.current;
                         const flyoutWs = mainWs.getFlyout()?.getWorkspace();
                         const block = mainWs.getBlockById(e.blockId) || flyoutWs?.getBlockById(e.blockId);
-                        
+
                         if (block && draggedBlockRef) {
                             console.log(`[JuniorWorkspace] Started dragging block: ${block.type}`);
                             const json = Blockly.serialization.blocks.save(block);
@@ -520,7 +520,7 @@ export function useJuniorWorkspace({
                         }
                     } else {
                         console.log(`[JuniorWorkspace] Finished dragging block`);
-                        
+
                         // Reliability Check: See if we dropped on a sprite card
                         if (lastMousePosRef?.current) {
                             const { x, y } = lastMousePosRef.current;

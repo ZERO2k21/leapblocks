@@ -240,11 +240,11 @@ export default function JuniorApp({ onBack }) {
         }
 
         if (!targetWorkspace || !targetWorkspace.blocks) {
-            targetWorkspace = { 
-                blocks: { 
+            targetWorkspace = {
+                blocks: {
                     languageVersion: 0,
-                    blocks: [] 
-                } 
+                    blocks: []
+                }
             };
         }
 
@@ -252,7 +252,7 @@ export default function JuniorApp({ onBack }) {
         // Ensure the block has a visible position on the workspace
         if (newBlocks.x === undefined) newBlocks.x = 100;
         if (newBlocks.y === undefined) newBlocks.y = 100;
-        
+
         // Offset so it doesn't overlap exactly if dragged multiple times
         newBlocks.x += (Math.random() * 40);
         newBlocks.y += (Math.random() * 40);

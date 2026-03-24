@@ -613,6 +613,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
     // Sprite Library Modal state
     const [showSpriteLibrary, setShowSpriteLibrary] = useState(false);
+    const [libraryMode, setLibraryMode] = useState("sprite"); // "sprite" or "costume"
 
     // Engine ref
     const skulptRef = useRef(null);
@@ -652,6 +653,13 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             onSubmit,
         });
     }, []);
+
+    const onOpenAssetLibrary = useCallback((mode) => {
+        setLibraryMode(mode || "sprite");
+        setShowSpriteLibrary(true);
+    }, []);
+
+    const activeMode = activeFile === "stage.py" ? "stage" : (sprites.some(s => s.name.toLowerCase().replace(/\s+/g, '_') + '.py' === activeFile || s.id === activeFile) ? "sprite" : "mixed");
 
     const handleModalCancel = useCallback(() => {
         setModalState({
@@ -2895,6 +2903,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     BACKDROP_LIBRARY={BACKDROP_LIBRARY}
                     handleSetBackdrop={handleSetBackdrop}
                     deleteSprite={deleteSprite}
+                    activeMode={activeMode}
+                    onOpenAssetLibrary={onOpenAssetLibrary}
                 />
             </div>
             ) : (
@@ -3040,7 +3050,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             justifyContent: 'space-between',
                             alignItems: 'center',
                         }}>
-                            Choose a Sprite
+                            {libraryMode === "costume" ? "Choose a Costume" : "Choose a Sprite"}
                             <div
                                 onClick={() => setShowSpriteLibrary(false)}
                                 style={{ cursor: 'pointer', fontSize: '20px', fontWeight: 'bold' }}
@@ -3056,7 +3066,18 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                     <div 
                                         key={sp.name} 
                                         onClick={() => {
-                                            addSpriteFromLibrary(sp);
+                                            if (libraryMode === "costume" && selectedSpriteId) {
+                                                const costumeId = `costume_${Date.now()}`;
+                                                const img = sp.img || sp.image || sp.emoji;
+                                                updateSpriteProperty(selectedSpriteId, 'costumes', {
+                                                    ...sprites.find(s => s.id === selectedSpriteId).costumes,
+                                                    [costumeId]: img
+                                                });
+                                                updateSpriteProperty(selectedSpriteId, 'currentCostume', costumeId);
+                                                addLog(`Added costume to ${sprites.find(s => s.id === selectedSpriteId).name}`, 'success');
+                                            } else {
+                                                addSpriteFromLibrary(sp);
+                                            }
                                             setShowSpriteLibrary(false);
                                         }}
                                         style={{
