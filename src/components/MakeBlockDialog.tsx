@@ -273,6 +273,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 10000,
+        animation: 'fadeIn 0.2s ease-out',
     },
     dialog: {
         backgroundColor: 'white',
@@ -285,7 +286,11 @@ const styles: { [key: string]: React.CSSProperties } = {
         maxHeight: '90vh',
         display: 'flex',
         flexDirection: 'column',
+        animation: 'slideUp 0.3s ease-out',
     },
+    // Adding CSS for animations via a style tag or external CSS is better, 
+    // but for this component we can inject a style tag in useEffect or assume global CSS.
+    // I'll add the header and other styles below.
     header: {
         backgroundColor: '#FF6680',
         padding: '16px 20px',
@@ -296,6 +301,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderTopRightRadius: '12px',
         flexShrink: 0,
     },
+    // ... rest of the styles remain the same but I'll add the @keyframes logic in the component
     headerText: {
         color: 'white',
         fontSize: '18px',

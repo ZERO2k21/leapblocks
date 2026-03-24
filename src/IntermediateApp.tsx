@@ -99,17 +99,31 @@ const log = {
 
 // Register all blocks
 
-log.app('Registering blocks...');
+const registerBlocks = () => {
+    const blocksToRegister = [
+        ...(Array.isArray(arduinoBlocks) ? arduinoBlocks : []),
+        ...(Array.isArray(esp32Blocks) ? esp32Blocks : []),
+        ...(Array.isArray(animationBlocks) ? animationBlocks : []),
+        ...(Array.isArray(hardwareBlocks) ? hardwareBlocks : [])
+    ];
+    
+    // Filter out blocks that are already registered in Blockly.Blocks
+    const newBlocks = blocksToRegister.filter(block => block && block.type && !Blockly.Blocks[block.type]);
+    
+    if (newBlocks.length > 0) {
+        try {
+            Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newBlocks));
+            log.app(`Registered ${newBlocks.length} new blocks.`);
+        } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            log.app(`Error registering blocks: ${errorMessage}`);
+        }
+    } else {
+        log.app('No new blocks to register.');
+    }
+};
 
-Blockly.common.defineBlocks(arduinoBlocks);
-
-Blockly.common.defineBlocks(esp32Blocks);
-
-Blockly.common.defineBlocks(animationBlocks);
-
-Blockly.common.defineBlocks(hardwareBlocks);
-
-log.app('All blocks registered successfully');
+registerBlocks();
 
 
 

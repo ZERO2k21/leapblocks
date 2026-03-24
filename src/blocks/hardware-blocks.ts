@@ -9,7 +9,7 @@ const COLORS = {
     sensor: '#5CB1D6',       // Light blue
 };
 
-export const hardwareBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
+export const hardwareBlocks = [
     // ═══════════════════════════════════════════════════════════════════════
     // DIGITAL OUTPUT
     // ═══════════════════════════════════════════════════════════════════════
@@ -175,7 +175,7 @@ export const hardwareBlocks = Blockly.common.createBlockDefinitionsFromJsonArray
         tooltip: 'Read analog value (0-1023)',
         helpUrl: '',
     },
-]);
+];
 
 // Hardware Toolbox for Stage Mode
 export const hardwareToolbox = {

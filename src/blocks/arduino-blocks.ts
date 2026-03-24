@@ -60,7 +60,7 @@ const ALL_PINS = [...DIGITAL_PINS, ...ANALOG_PINS];
 
 // Define Arduino blocks with better styling
 
-export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
+export const arduinoBlocks = [
 
     // Arduino-specific blocks (excluding standard Blockly variables which are already defined)
     
@@ -1570,7 +1570,7 @@ export const arduinoBlocks = Blockly.common.createBlockDefinitionsFromJsonArray(
 
     },
 
-]);
+];
 
 // Define toolbox with improved categories
 
