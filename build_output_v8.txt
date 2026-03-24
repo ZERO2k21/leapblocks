@@ -1,0 +1,41 @@
+﻿
+> leapblocks@1.0.0 build:web
+> webpack --config webpack.web.config.js
+
+assets by status 80.5 MiB [1m[32m[cached][39m[22m 1421 assets
+orphan modules 1.22 MiB [1m[33m[orphan][39m[22m 1682 modules
+runtime modules 1.61 KiB 7 modules
+cacheable modules 6.96 MiB
+  modules by path [1m./src/[39m[22m 2.05 MiB
+    javascript modules 1.97 MiB 151 modules
+    json modules 87 KiB
+      [1m./src/modules/appforge/data/components.json[39m[22m 18.5 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+      [1m./src/lib/libraries/sounds.json[39m[22m 68.5 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  modules by path [1m./node_modules/[39m[22m 4.91 MiB 85 modules
+  [1mdata:image/svg+xml;base64,PHN2ZyB4bWxucz0i..[39m[22m 260 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+
+[1m[31mERROR[39m[22m in [1mC:\Users\ruthr\OneDrive\Desktop\leapblocks\src\python\PythonApp.jsx[39m[22m
+[1m./src/python/PythonApp.jsx[39m[22m [1m[32m4:0-7[39m[22m
+[1m[tsl] [1m[31mERROR[39m[22m[1m in C:\Users\ruthr\OneDrive\Desktop\leapblocks\src\python\PythonApp.jsx(4,1)
+      TS1185: Merge [1m[31mconflict[39m[22m[1m marker encountered.[39m[22m
+ @ ./src/App.tsx 48:84-113
+ @ ./src/renderer.tsx 9:30-46
+
+[1m[31mERROR[39m[22m in [1mC:\Users\ruthr\OneDrive\Desktop\leapblocks\src\python\PythonApp.jsx[39m[22m
+[1m./src/python/PythonApp.jsx[39m[22m [1m[32m75:0-7[39m[22m
+[1m[tsl] [1m[31mERROR[39m[22m[1m in C:\Users\ruthr\OneDrive\Desktop\leapblocks\src\python\PythonApp.jsx(75,1)
+      TS1185: Merge [1m[31mconflict[39m[22m[1m marker encountered.[39m[22m
+ @ ./src/App.tsx 48:84-113
+ @ ./src/renderer.tsx 9:30-46
+
+[1m[31mERROR[39m[22m in [1mC:\Users\ruthr\OneDrive\Desktop\leapblocks\src\python\PythonApp.jsx[39m[22m
+[1m./src/python/PythonApp.jsx[39m[22m [1m[32m77:0-7[39m[22m
+[1m[tsl] [1m[31mERROR[39m[22m[1m in C:\Users\ruthr\OneDrive\Desktop\leapblocks\src\python\PythonApp.jsx(77,1)
+      TS1185: Merge [1m[31mconflict[39m[22m[1m marker encountered.[39m[22m
+ @ ./src/App.tsx 48:84-113
+ @ ./src/renderer.tsx 9:30-46
+
+[1m[33m3 errors have detailed information that is not shown.
+Use 'stats.errorDetails: true' resp. '--stats-error-details' to show it.[39m[22m
+
+webpack 5.105.4 compiled with [1m[31m3 errors[39m[22m in 44677 ms

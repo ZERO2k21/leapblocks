@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StageProvider, useStage } from "../context/StageContext";
 import Logo from "../components/Logo";
+<<<<<<< HEAD
 import { Play, Square, Undo, Redo, Save, Settings, Trash2, Maximize, Upload, Clock, Cpu, RefreshCw, Plug, FileCode2, FileText, TerminalSquare, ClipboardList, LoaderCircle, CheckCircle2, AlertCircle, LibraryBig, FileUp, Plus } from "lucide-react";
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
@@ -58,6 +59,93 @@ if (typeof document !== 'undefined' && !document.getElementById('python-ide-anim
     document.head.appendChild(animationStyles);
 }
 
+=======
+import {
+    Play,
+    Square,
+    Undo,
+    Redo,
+    Save,
+    Settings,
+    Trash2,
+    Maximize,
+    Upload,
+    Clock,
+    Cpu,
+    RefreshCw,
+    Plus,
+    FileText,
+    Terminal,
+    ClipboardList,
+    Loader,
+    CheckCircle,
+    Library,
+    LibraryBig,
+    FileUp,
+    Zap,
+    Plug,
+    FileCode2,
+    AlertCircle,
+    TerminalSquare
+} from "lucide-react";
+
+import { SkulptEngine } from "../junior/engine/SkulptEngine";
+import { FULL_CATALOG } from "../components/SpriteLibrary";
+import SerialMonitor from "../components/SerialMonitor";
+import { createIntermediateBlocksBridge, useSpriteBridge, DEFAULT_SPRITE_PRESETS } from "./SpriteBridge";
+import BoardSelectionModal, { BOARDS } from "../junior/components/BoardSelectionModal";
+import SidePanel from "./panels/SidePanel";
+import EditorPanel from "./panels/EditorPanel";
+import StagePanel from "./panels/StagePanel";
+import PythonIDEGuide from "./PythonIDEGuide";
+import MonacoEditor from "./editor/MonacoEditor";
+>>>>>>> c5a94f0cebe993cee3c514b06f7be51515b2b2fc
+
+// ─── CSS Animations ───────────────────────────────────────────────────────────
+function injectPythonIDEAnimations() {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('python-ide-animations')) return;
+    const style = document.createElement('style');
+    style.id = 'python-ide-animations';
+    style.textContent = `
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .run-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4) !important;
+        }
+        .run-button:active {
+            transform: translateY(0);
+        }
+        .stop-button:hover {
+            background: #EF4444 !important;
+            color: #fff !important;
+        }
+        .terminal-line {
+            animation: fadeIn 0.2s ease-out;
+        }
+    `;
+    document.head.appendChild(style);
+}
+injectPythonIDEAnimations();
 
 // ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
 const C = {
@@ -78,16 +166,20 @@ const C = {
     HEADER_BG: "#8B5CF6",
 };
 
+// Map board IDs to names for template generation
+// We define this here at top level so helper functions can access it
+const BOARD_NAME_BY_ID = BOARDS.reduce((acc, b) => {
+    acc[b.id] = b.name;
+    return acc;
+}, {});
+
+
 // ─── Default Files ─────────────────────────────────────────────────────────────
 const DEFAULT_FILES = {
     "sprite.py": ``,
     "stage.py": ``
 };
 
-const BOARD_NAME_BY_ID = BOARDS.reduce((acc, board) => {
-    acc[board.id] = board.name;
-    return acc;
-}, {});
 
 const BOARD_UPLOAD_CONFIG = {
     arduino_uno: {
@@ -483,7 +575,6 @@ const PIP_PACKAGES = [
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCostumes }) {
-    // Get shared stage state from context
     const {
         sprites,
         setSprites,
@@ -502,6 +593,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         resetStage
     } = useStage();
 
+<<<<<<< HEAD
+=======
+    
+>>>>>>> c5a94f0cebe993cee3c514b06f7be51515b2b2fc
     // Editor state
     const [projectName, setProjectName] = useState("My Project");
     const [workflowMode, setWorkflowMode] = useState("stage");
@@ -581,6 +676,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
     // Sprite Library Modal state
     const [showSpriteLibrary, setShowSpriteLibrary] = useState(false);
+    const [libraryMode, setLibraryMode] = useState("sprite"); // "sprite" or "costume"
 
     // Engine ref
     const skulptRef = useRef(null);
@@ -620,6 +716,13 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             onSubmit,
         });
     }, []);
+
+    const onOpenAssetLibrary = useCallback((mode) => {
+        setLibraryMode(mode || "sprite");
+        setShowSpriteLibrary(true);
+    }, []);
+
+    const activeMode = activeFile === "stage.py" ? "stage" : (sprites.some(s => s.name.toLowerCase().replace(/\s+/g, '_') + '.py' === activeFile || s.id === activeFile) ? "sprite" : "mixed");
 
     const handleModalCancel = useCallback(() => {
         setModalState({
@@ -2335,7 +2438,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                     cursor: isUploadingFirmware ? "not-allowed" : "pointer",
                                 }}
                             >
-                                {isUploadingFirmware ? <LoaderCircle size={15} style={{ animation: "spin 1s linear infinite" }} /> : <Upload size={15} />}
+                                {isUploadingFirmware ? <Loader size={15} style={{ animation: "spin 1s linear infinite" }} /> : <Upload size={15} />}
                                 {isUploadingFirmware ? "Uploading..." : "Upload Code"}
                             </button>
                         </div>
@@ -2765,7 +2868,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         <div style={{ width: 1, height: 22, background: C.BORDER }} />
                         <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: uploadProgressMessage ? C.TEXT : C.MUTED }}>
                             {uploadProgressMessage ? (
-                                isUploadingFirmware ? <LoaderCircle size={15} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle2 size={15} color={C.GREEN} />
+                                isUploadingFirmware ? <Loader size={15} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle size={15} color={C.GREEN} />
                             ) : (
                                 <AlertCircle size={15} color={C.MUTED} />
                             )}
@@ -2850,6 +2953,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         handleInstall={handleInstall}
                     />
 
+<<<<<<< HEAD
                     {/* ── STAGE PANEL ── */}
                     <StagePanel
                         sprites={sprites}
@@ -2865,6 +2969,25 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         deleteSprite={deleteSprite}
                     />
                 </div>
+=======
+                {/* ── STAGE PANEL ── */}
+                <StagePanel 
+                    sprites={sprites}
+                    selectedSpriteId={selectedSpriteId}
+                    setSelectedSpriteId={setSelectedSpriteId}
+                    backdrop={backdrop}
+                    stageRef={stageRef}
+                    stageSize={stageSize}
+                    setShowSpriteLibrary={setShowSpriteLibrary}
+                    updateSpriteProperty={updateSpriteProperty}
+                    BACKDROP_LIBRARY={BACKDROP_LIBRARY}
+                    handleSetBackdrop={handleSetBackdrop}
+                    deleteSprite={deleteSprite}
+                    activeMode={activeMode}
+                    onOpenAssetLibrary={onOpenAssetLibrary}
+                />
+            </div>
+>>>>>>> c5a94f0cebe993cee3c514b06f7be51515b2b2fc
             ) : (
                 renderUploadWorkspace()
             )}
@@ -3008,7 +3131,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             justifyContent: 'space-between',
                             alignItems: 'center',
                         }}>
-                            Choose a Sprite
+                            {libraryMode === "costume" ? "Choose a Costume" : "Choose a Sprite"}
                             <div
                                 onClick={() => setShowSpriteLibrary(false)}
                                 style={{ cursor: 'pointer', fontSize: '20px', fontWeight: 'bold' }}
@@ -3024,7 +3147,18 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                     <div
                                         key={sp.name}
                                         onClick={() => {
-                                            addSpriteFromLibrary(sp);
+                                            if (libraryMode === "costume" && selectedSpriteId) {
+                                                const costumeId = `costume_${Date.now()}`;
+                                                const img = sp.img || sp.image || sp.emoji;
+                                                updateSpriteProperty(selectedSpriteId, 'costumes', {
+                                                    ...sprites.find(s => s.id === selectedSpriteId).costumes,
+                                                    [costumeId]: img
+                                                });
+                                                updateSpriteProperty(selectedSpriteId, 'currentCostume', costumeId);
+                                                addLog(`Added costume to ${sprites.find(s => s.id === selectedSpriteId).name}`, 'success');
+                                            } else {
+                                                addSpriteFromLibrary(sp);
+                                            }
                                             setShowSpriteLibrary(false);
                                         }}
                                         style={{

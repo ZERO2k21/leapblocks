@@ -78,6 +78,18 @@ export default function JuniorApp({ onBack }) {
     const [recordingCount, setRecordingCount] = useState(1);
     const [showGrid, setShowGrid] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const draggedBlockRef = useRef(null);
+    const [isDraggingBlock, setIsDraggingBlock] = useState(false);
+    const [successSpriteId, setSuccessSpriteId] = useState(null);
+    const lastMousePosRef = useRef({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            lastMousePosRef.current = { x: e.clientX, y: e.clientY };
+        };
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, []);
 
     // Modals state
     const [isSpriteModalOpen, setIsSpriteModalOpen] = useState(false);
@@ -210,6 +222,67 @@ export default function JuniorApp({ onBack }) {
         });
     }, [currentSceneId]);
 
+    const handleBlocksDropped = useCallback((targetSpriteId, blockData) => {
+        const blocks = blockData || draggedBlockRef.current;
+        if (!blocks || targetSpriteId === activeSpriteIdRef.current) return;
+
+        console.log(`[JuniorApp] Dropped blocks onto sprite: ${targetSpriteId}`);
+
+        let targetWorkspace = spriteWorkspacesRef.current.get(targetSpriteId);
+        if (!targetWorkspace) {
+            for (const scene of scenesRef.current || []) {
+                const sprite = scene.sprites.find(s => s.id === targetSpriteId);
+                if (sprite && sprite.blocks) {
+                    targetWorkspace = sprite.blocks;
+                    break;
+                }
+            }
+        }
+
+        if (!targetWorkspace || !targetWorkspace.blocks) {
+            targetWorkspace = {
+                blocks: {
+                    languageVersion: 0,
+                    blocks: []
+                }
+            };
+        }
+
+        const newBlocks = JSON.parse(JSON.stringify(blocks));
+        // Ensure the block has a visible position on the workspace
+        if (newBlocks.x === undefined) newBlocks.x = 100;
+        if (newBlocks.y === undefined) newBlocks.y = 100;
+
+        // Offset so it doesn't overlap exactly if dragged multiple times
+        newBlocks.x += (Math.random() * 40);
+        newBlocks.y += (Math.random() * 40);
+
+        const updatedWorkspace = {
+            ...targetWorkspace,
+            blocks: {
+                languageVersion: targetWorkspace.blocks.languageVersion || 0,
+                blocks: [...(targetWorkspace.blocks.blocks || []), newBlocks]
+            }
+        };
+
+        spriteWorkspacesRef.current.set(targetSpriteId, updatedWorkspace);
+        setScenes(prev => prev.map(scene => ({
+            ...scene,
+            sprites: scene.sprites.map(s => s.id === targetSpriteId ? { ...s, blocks: updatedWorkspace } : s)
+        })));
+
+        if (window.jiggle) window.jiggle(targetSpriteId);
+
+        // Flash success
+        setSuccessSpriteId(targetSpriteId);
+        setTimeout(() => setSuccessSpriteId(null), 1000);
+
+        // Auto-switch to the target sprite so the user can see the blocks immediately
+        setTimeout(() => {
+            handleSpriteSelect(targetSpriteId);
+        }, 300);
+    }, [handleSpriteSelect]);
+
     // Load workspace blocks from the per-sprite map
     const loadSpriteWorkspace = useCallback((spriteId) => {
         if (!workspaceRef.current) {
@@ -236,6 +309,7 @@ export default function JuniorApp({ onBack }) {
         Blockly.Events.disable();
         try {
             if (json && Object.keys(json).length > 0) {
+                console.log(`[JuniorApp] Loading workspace for ${spriteId}:`, json);
                 workspaceRef.current.clear();
                 Blockly.serialization.workspaces.load(json, workspaceRef.current);
                 console.log('[JuniorApp] Successfully loaded workspace for sprite:', spriteId);
@@ -277,7 +351,11 @@ export default function JuniorApp({ onBack }) {
         saveCurrentWorkspace,
         spriteActions,
         currentToolboxContentsRef,
-        isLoadingWorkspaceRef
+        isLoadingWorkspaceRef,
+        draggedBlockRef,
+        setIsDraggingBlock,
+        lastMousePosRef,
+        onBlocksDropped: handleBlocksDropped
     });
 
     const exec = useJuniorExecution({
@@ -518,6 +596,14 @@ export default function JuniorApp({ onBack }) {
 
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100vh", fontFamily: "'Segoe UI', sans-serif" }}>
+            <style>
+                {`
+                    @keyframes pulse {
+                        from { opacity: 0.5; transform: scale(1); }
+                        to { opacity: 0.8; transform: scale(1.05); }
+                    }
+                `}
+            </style>
             <input type="file" ref={project.fileInputRef} style={{ display: "none" }} accept=".json" onChange={project.handleFileLoad} />
 
             <JuniorMenuBar
@@ -572,8 +658,8 @@ export default function JuniorApp({ onBack }) {
                 />
             )}
 
-            <div style={{ flex: 1, display: "flex", overflow: 'hidden' }}>
-                <div id="wrapper" style={{ width: "60%", height: "100%", position: "relative" }}>
+            <div style={{ flex: 1, display: "flex", overflow: 'visible' }}>
+                <div id="wrapper" style={{ width: "60%", height: "100%", position: "relative", zIndex: 20, overflow: 'visible' }}>
                     {(() => {
                         const activeSprite = sprites.find(s => s.id === activeSpriteId);
                         if (activeSprite && activeSprite.currentCostume) {
@@ -709,6 +795,9 @@ export default function JuniorApp({ onBack }) {
                     isCameraOn={isCameraOn}
                     isFullscreen={isFullscreen}
                     isDraggingSprite={isDraggingSpriteOnStage}
+                    isDraggingBlock={isDraggingBlock}
+                    onBlocksDropped={handleBlocksDropped}
+                    successSpriteId={successSpriteId}
                     spriteGridX={(() => {
                         const activeSprite = sprites.find(s => s.id === activeSpriteId);
                         if (!activeSprite || !stageContainerRef.current) return null;

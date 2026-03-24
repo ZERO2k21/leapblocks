@@ -148,7 +148,7 @@ ipcMain.handle('open-project', async () => {
     const content = fs.readFileSync(filePaths[0], 'utf-8');
     try {
       return JSON.parse(content);
-    } catch(e) {
+    } catch (e) {
       console.error("Invalid project file", e);
       return null;
     }

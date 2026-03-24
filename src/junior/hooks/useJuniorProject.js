@@ -94,6 +94,15 @@ export function useJuniorProject({
         }, 50);
     };
 
+    const handleShareProject = () => {
+        saveCurrentWorkspace();
+        setTimeout(() => {
+            const payload = { scenes };
+            fileService.shareProject(projectName, 'junior', payload);
+            console.log(`[JuniorApp] Project shared: ${projectName}`);
+        }, 50);
+    };
+
     const executeOpenProject = () => {
         if (fileInputRef.current) {
             fileInputRef.current.accept = '.leap,.lbproject,application/json';
@@ -223,6 +232,7 @@ export function useJuniorProject({
         setShowUnsavedModal,
         handleNewProject,
         handleSaveProject,
+        handleShareProject,
         handleOpenProject,
         confirmUnsavedAction,
         handleFileLoad,

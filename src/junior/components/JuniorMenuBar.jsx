@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
     ChevronDown, File, FolderOpen, Save, Download,
     Undo, Redo, BookOpen, HelpCircle, Home,
-    MessageSquareWarning, Trophy, Settings
+    MessageSquareWarning, Trophy, Settings,
+    Share
 } from 'lucide-react';
 import Logo from '../../components/Logo';
 
@@ -176,7 +177,7 @@ export default function JuniorMenuBar({
         { label: 'Open Project', icon: FolderOpen, onClick: () => onFileAction?.('open') },
         { divider: true },
         { label: 'Save', icon: Save, onClick: () => onFileAction?.('save') },
-        { label: 'Save As...', icon: Download, onClick: () => onFileAction?.('save_as') },
+        { label: 'Share', icon: Share, onClick: () => onFileAction?.('share to') },
     ];
 
     const editMenuItems = [

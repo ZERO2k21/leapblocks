@@ -36,6 +36,7 @@ export function useJuniorWindowActions({
             "hideSprite",
             "say",
             "goToRandom",
+            "moveRandom",
             "animationSpeed",
             "setSpriteColor",
             "resetSize",
@@ -113,6 +114,14 @@ export function useJuniorWindowActions({
             const randomX = Math.floor(Math.random() * 15) + 1;
             const randomY = Math.floor(Math.random() * 10) + 1;
             spriteActions.goToGrid(tid, randomX, randomY);
+        };
+
+        window.moveRandom = (spriteId, xMin, xMax, yMin, yMax) => {
+            const id = spriteId || window.activeSpriteId || "robot_default";
+            // Pick a random integer grid position within the zone bounds
+            const randomX = Math.floor(Math.random() * (xMax - xMin + 1)) + xMin;
+            const randomY = Math.floor(Math.random() * (yMax - yMin + 1)) + yMin;
+            spriteActions.goToGrid(id, randomX, randomY);
         };
 
         window.animationSpeed = 500;

@@ -97,7 +97,11 @@ export function useJuniorWorkspace({
     saveCurrentWorkspace,
     spriteActions,
     currentToolboxContentsRef,
-    isLoadingWorkspaceRef
+    isLoadingWorkspaceRef,
+    draggedBlockRef,
+    setIsDraggingBlock,
+    lastMousePosRef,
+    onBlocksDropped
 }) {
     const [activeCategory, setActiveCategory] = useState("events");
     const [categories, setCategories] = useState(CATEGORIES);
@@ -498,6 +502,42 @@ export function useJuniorWorkspace({
                                 setTimeout(() => validation.victim.dispose(), 0);
                             }
                         }
+                    }
+                }
+
+                // --- BLOCK DRAG TRACKING ---
+                if (e.type === Blockly.Events.BLOCK_DRAG) {
+                    if (e.isStart) {
+                        const mainWs = workspaceRef.current;
+                        const flyoutWs = mainWs.getFlyout()?.getWorkspace();
+                        const block = mainWs.getBlockById(e.blockId) || flyoutWs?.getBlockById(e.blockId);
+
+                        if (block && draggedBlockRef) {
+                            console.log(`[JuniorWorkspace] Started dragging block: ${block.type}`);
+                            const json = Blockly.serialization.blocks.save(block);
+                            draggedBlockRef.current = json;
+                            if (setIsDraggingBlock) setIsDraggingBlock(true);
+                        }
+                    } else {
+                        console.log(`[JuniorWorkspace] Finished dragging block`);
+
+                        // Reliability Check: See if we dropped on a sprite card
+                        if (lastMousePosRef?.current) {
+                            const { x, y } = lastMousePosRef.current;
+                            const element = document.elementFromPoint(x, y);
+                            const card = element?.closest('[data-sprite-id]');
+                            if (card) {
+                                const targetId = card.getAttribute('data-sprite-id');
+                                console.log(`[JuniorWorkspace] Robust drop detected on: ${targetId}`);
+                                onBlocksDropped(targetId);
+                            }
+                        }
+
+                        // Delay clearing so the drop target has a chance to catch it
+                        setTimeout(() => {
+                            if (draggedBlockRef) draggedBlockRef.current = null;
+                            if (setIsDraggingBlock) setIsDraggingBlock(false);
+                        }, 100);
                     }
                 }
             };

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+<<<<<<< HEAD
 
 // ─── Import Components ─────────────────────────────────────────────────────────
 import TopBar from "./layout/TopBar";
@@ -54,9 +55,67 @@ if (typeof document !== 'undefined' && !document.getElementById('python-ide-anim
     document.head.appendChild(animationStyles);
 }
 
+=======
+>>>>>>> c5a94f0cebe993cee3c514b06f7be51515b2b2fc
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
 import { BackdropLibrary as BackdropLib } from "../components/BackdropLibrary";
+
+import TopBar from "./layout/TopBar";
+import ToolBar from "./layout/ToolBar";
+import ActivityBar from "./layout/ActivityBar";
+import SidePanel from "./panels/SidePanel";
+import EditorPanel from "./panels/EditorPanel";
+import StagePanel from "./panels/StagePanel";
+import PromptModal from "./modals/PromptModal";
+import SpriteLibraryModal from "./modals/SpriteLibraryModal";
+import PythonIDEGuide from "./PythonIDEGuide";
+
+// ─── CSS Animations ───────────────────────────────────────────────────────────
+function injectPythonIDEAnimations() {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('python-ide-animations')) return;
+    const style = document.createElement('style');
+    style.id = 'python-ide-animations';
+    style.textContent = `
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .run-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4) !important;
+        }
+        .run-button:active {
+            transform: translateY(0);
+        }
+        .stop-button:hover {
+            background: #EF4444 !important;
+            color: #fff !important;
+        }
+        .terminal-line {
+            animation: fadeIn 0.2s ease-out;
+        }
+    `;
+    document.head.appendChild(style);
+}
+injectPythonIDEAnimations();
 
 // ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
 const C = {
