@@ -9,6 +9,9 @@ import { arduinoBlocks, arduinoToolbox } from './blocks/arduino-blocks';
 import { esp32Blocks, esp32Toolbox } from './blocks/esp32-blocks';
 
 import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
+import { COLORS } from './blocks/blockDefinitions';
+import { getScratchBlocks } from './blocks/scratchBlocks';
+import { registerScratchBlocks } from './blocks/scratchBlocks';
 
 import { hardwareBlocks } from './blocks/hardware-blocks';
 
@@ -43,7 +46,7 @@ import BackdropLibrary from './components/BackdropLibrary';
 // import BackdropEditor from './components/BackdropEditor'; // Temporarily disabled
 
 import { stageManager } from './engine/StageManager';
-
+import { scratchRuntime } from './runtime/scratchRuntime';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
 
 import SerialMonitor from './components/SerialMonitor';
@@ -100,26 +103,36 @@ const log = {
 // Register all blocks
 
 const registerBlocks = () => {
+    // 1. Register Scratch 3.0 compatible blocks (100+ blocks)
+    try {
+        registerScratchBlocks();
+        log.app('Registered Scratch 3.0 blocks (100+ blocks)');
+    } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        log.app(`Error registering Scratch blocks: ${errorMessage}`);
+    }
+
+    // 2. Register other platform-specific blocks (Arduino, ESP32, Hardware, Animation)
     const blocksToRegister = [
         ...(Array.isArray(arduinoBlocks) ? arduinoBlocks : []),
         ...(Array.isArray(esp32Blocks) ? esp32Blocks : []),
         ...(Array.isArray(animationBlocks) ? animationBlocks : []),
         ...(Array.isArray(hardwareBlocks) ? hardwareBlocks : [])
     ];
-    
+
     // Filter out blocks that are already registered in Blockly.Blocks
     const newBlocks = blocksToRegister.filter(block => block && block.type && !Blockly.Blocks[block.type]);
-    
+
     if (newBlocks.length > 0) {
         try {
             Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newBlocks));
-            log.app(`Registered ${newBlocks.length} new blocks.`);
+            log.app(`Registered ${newBlocks.length} additional blocks (Arduino/ESP32/Hardware).`);
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : String(e);
-            log.app(`Error registering blocks: ${errorMessage}`);
+            log.app(`Error registering additional blocks: ${errorMessage}`);
         }
     } else {
-        log.app('No new blocks to register.');
+        log.app('No additional blocks to register.');
     }
 };
 
@@ -1537,33 +1550,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         // Animation block interaction on click
 
         if (event.type === Blockly.Events.CLICK) {
-
-            // Try to compile and run the whole stack if it's an animation/event block
-
+            // Use ScratchRuntime for Scratch blocks
             if (!block.type.startsWith('arduino_')) {
-
-                const compiler = new AnimationCompiler(selectedSpriteId || '');
-
-                const stackScript = compiler.compileStack(block);
-
-
-
-                if (stackScript && stackScript.steps.length > 0) {
-
-                    console.log(`[APP] Running stack for sprite ${selectedSpriteId}`);
-
-                    setIsRunning(true);
-
-                    // Stop previous scripts for THIS sprite specifically to allow restart
-
-                    if (selectedSpriteId) animationVM.stopSpriteScripts(selectedSpriteId);
-
-                    animationVM.runScript(stackScript);
-
+                console.log(`[APP] Running stack with ScratchRuntime for sprite ${selectedSpriteId}`);
+                setIsRunning(true);
+                
+                // Convert Blockly block to Scratch-like structure
+                const scratchBlock = (scratchRuntime as any).flattenBlock(Blockly.serialization.blocks.save(block));
+                if (scratchBlock) {
+                    scratchRuntime.stopAll(); // Optional: stop others?
+                    scratchRuntime.executeBlock(scratchBlock, selectedSpriteId || '');
                     return;
-
                 }
-
             }
 
 
@@ -1988,8 +1986,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             // Trigger click event even if already selected (Scratch behavior)
 
-            animationVM.triggerSpriteClick(newId, compiledScripts);
-
+            scratchRuntime.triggerClick(newId);
             return;
 
         }
@@ -2795,16 +2792,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-            if (allScripts.length > 0) {
-
+            if (allScripts.length > 0 || spriteWorkspacesRef.current.size > 0) {
                 setCompiledScripts(allScripts);
-
                 setIsRunning(true);
-
+                
+                // Start Scratch Runtime
+                scratchRuntime.loadProject(spriteWorkspacesRef.current);
+                scratchRuntime.triggerFlag();
+                
+                // Legacy AnimationVM support
                 animationVM.triggerFlag(allScripts);
-
-                addLog(`Started animation for ${sprites.length} sprites`);
-
+                
+                addLog(`Started animation with ScratchRuntime`);
             } else {
 
                 console.log('[APP] No sprites have blocks to run');
@@ -2824,9 +2823,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
     const handleStopClick = useCallback(() => {
-
         setIsRunning(false);
-
+        scratchRuntime.stopAll();
         animationVM.stopAll();
 
 
