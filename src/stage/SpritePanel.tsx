@@ -313,7 +313,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 }}
                 onClick={() => onSelectSprite('stage')}
               >
-                <div style={{ ...styles.spriteThumbnail, height: '48px', backgroundColor: '#f0f0f0', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ ...styles.spriteThumbnail, height: '48px', backgroundColor: 'transparent', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {stageManager.getCurrentBackdrop()?.src ? (
                     <img
                       src={stageManager.getCurrentBackdrop()?.src}
@@ -321,7 +321,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                       style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "cover" }}
                     />
                   ) : (
-                    <div style={{ width: '100%', height: '100%', backgroundColor: '#FFFFFF' }} />
+                    <div style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }} />
                   )}
                 </div>
                 <div style={{

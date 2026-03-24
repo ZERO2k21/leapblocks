@@ -42,8 +42,16 @@ class SpriteManager {
         }
     }
 
+    setRotationStyle(sprite: Sprite, style: 'left-right' | 'all around' | 'none') {
+        sprite.setRotationStyle(style);
+    }
+
     getSprite(id: string): Sprite | undefined {
         return this.sprites.get(id);
+    }
+
+    getSpriteByName(name: string): Sprite | undefined {
+        return Array.from(this.sprites.values()).find(s => s.name === name);
     }
 
     getSelectedSprite(): Sprite | null {

@@ -5259,7 +5259,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                 onClose={() => handleWorkspaceTabChange('blocks')}
 
-                                onOpenLibrary={() => setShowBackdropLibrary(true)}
+                                onOpenLibrary={selectedSpriteId === 'stage' ? () => setShowBackdropLibrary(true) : undefined}
 
                             />
 

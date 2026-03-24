@@ -1,7 +1,7 @@
 /**
  * Block Definition Registry for LeapBlocks Intermediate
  * Full parity with Scratch 3.0 blocks
- * 
+ *
  * Each block is defined with:
  * - opcode: The unique identifier (Scratch VM compatible)
  * - category: The category name
@@ -9,6 +9,10 @@
  * - shape: hat | stack | reporter | boolean | cap | c-block
  * - message: The display text (with %1, %2 placeholders for inputs)
  * - inputs: Array of input definitions (type, name, default)
+ *
+ * This file exports both:
+ * - blockDefinitions: Simple format for React components
+ * - getBlocklyBlockDefinitions(): Converts to Blockly JSON format
  */
 
 export const COLORS = {
@@ -24,6 +28,125 @@ export const COLORS = {
     myblocks: '#FF6680',
     extensions: '#0FBD8C'
 };
+
+// Helper to convert our simple format to Blockly JSON
+const convertToBlocklyFormat = (def, opcode) => {
+    const blocklyDef = {
+        type: opcode,
+        message0: def.message,
+        previousStatement: def.shape === 'hat' ? null : (def.shape === 'cap' ? null : 'any'),
+        nextStatement: def.shape === 'hat' || def.shape === 'reporter' || def.shape === 'boolean' ? null : 'any',
+        colour: def.color,
+        tooltip: def.tooltip || '',
+        helpUrl: def.helpUrl || ''
+    };
+
+    // Add output for reporter/boolean blocks
+    if (def.shape === 'reporter') {
+        blocklyDef.output = 'Number';
+    } else if (def.shape === 'boolean') {
+        blocklyDef.output = 'Boolean';
+    }
+
+    // Build args/inputs based on shape and inputs
+    if (def.inputs && def.inputs.length > 0) {
+        const args0 = [];
+        const hasCBlockMouth = def.shape === 'c-block' && def.message2;
+
+        def.inputs.forEach((input, index) => {
+            let argType;
+            switch (input.type) {
+                case 'number':
+                    argType = 'field_number';
+                    break;
+                case 'string':
+                    argType = 'field_input';
+                    break;
+                case 'dropdown':
+                    argType = 'field_dropdown';
+                    break;
+                case 'boolean':
+                    argType = 'input_value'; // Boolean input slot
+                    break;
+                case 'variable':
+                    argType = 'field_variable';
+                    break;
+                case 'list':
+                    argType = 'field_variable';
+                    break;
+                case 'color':
+                    argType = 'field_colour';
+                    break;
+                case 'angle':
+                    argType = 'field_angle';
+                    break;
+                default:
+                    argType = 'field_input';
+            }
+
+            const arg = {
+                type: argType,
+                name: input.name
+            };
+
+            // Add value for field types
+            if (argType.startsWith('field_')) {
+                if (input.default !== undefined) {
+                    arg.value = input.default;
+                }
+                if (input.options) {
+                    arg.options = input.options;
+                }
+                if (input.min !== undefined) arg.min = input.min;
+                if (input.max !== undefined) arg.max = input.max;
+            }
+
+            args0.push(arg);
+        });
+
+        blocklyDef.args0 = args0;
+
+        // Add second message and inputs for c-blocks with else
+        if (hasCBlockMouth) {
+            blocklyDef.message1 = def.message2;
+            blocklyDef.args1 = [{ type: 'input_statement', name: 'ELSE' }];
+        }
+
+        // Add substack input for c-blocks
+        if (def.shape === 'c-block') {
+            // Add the DO input after condition
+            blocklyDef.args1 = [{ type: 'input_statement', name: 'DO' }];
+        }
+    }
+
+    return blocklyDef;
+};
+
+// Export function to get Blockly-compatible definitions
+export const getBlocklyBlockDefinitions = () => {
+    const blocks = [];
+    for (const [opcode, def] of Object.entries(blockDefinitions)) {
+        blocks.push(convertToBlocklyFormat(def, opcode));
+    }
+    return blocks;
+};
+
+// Export variable/list block factories (dynamic)
+export const createVariableBlock = (variableName, variableType = 'Number') => ({
+    type: 'data_variable',
+    message0: variableName,
+    output: 'Number',
+    colour: COLORS.variables,
+    tooltip: `Variable: ${variableName}`
+});
+
+export const createListBlock = (listName) => ({
+    type: 'data_list',
+    message0: listName,
+    output: 'String',
+    colour: COLORS.list,
+    tooltip: `List: ${listName}`
+});
 
 const blockDefinitions = {
     // ═══════════════════════════════════════════════════════════════════════════

@@ -18,8 +18,8 @@ export class StageManager {
     }
 
     private initDefaultBackdrop(): void {
-        // Default backdrop from user image
-        this.addBackdrop('Default', '/assets/backdrops/default.jpg');
+        // Keep default stage transparent until user chooses a backdrop.
+        this.addBackdrop('Default', '');
     }
 
     // Reset stage manager to initial state (for new projects)
