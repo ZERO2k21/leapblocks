@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 UI/UX Pro Max Core - BM25 search engine for UI/UX style guides
-"""
-
+""" 
 import csv
 import re
 from pathlib import Path

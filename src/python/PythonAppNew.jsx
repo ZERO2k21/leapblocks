@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
 import { BackdropLibrary as BackdropLib } from "../components/BackdropLibrary";
-
 import TopBar from "./layout/TopBar";
 import ToolBar from "./layout/ToolBar";
 import ActivityBar from "./layout/ActivityBar";

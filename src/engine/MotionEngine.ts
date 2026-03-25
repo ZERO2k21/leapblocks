@@ -1,4 +1,5 @@
 import { Sprite } from '../stage/Sprite';
+import { spriteManager } from './SpriteManager';
 
 class MotionEngine {
     move(sprite: Sprite, steps: number) {
@@ -87,7 +88,5 @@ class MotionEngine {
         sprite.pointInDirection(angle);
     }
 }
-
-import { spriteManager } from './SpriteManager';
 export const motionEngine = new MotionEngine();
 export default motionEngine;

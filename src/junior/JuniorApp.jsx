@@ -18,18 +18,15 @@ import UnsavedWarningModal from "./components/UnsavedWarningModal";
 import JuniorSoundRecorder from "./components/JuniorSoundRecorder";
 import JuniorExtensionLibrary from "./components/JuniorExtensionLibrary";
 import { juniorBlocks } from "../blocks/junior-blocks";
-
 import { useSpriteSystem } from "./hooks/useSpriteSystem";
 import { useJuniorWorkspace } from "./hooks/useJuniorWorkspace";
 import { useJuniorExecution } from "./hooks/useJuniorExecution";
 import { useJuniorProject } from "./hooks/useJuniorProject";
 import { useJuniorWindowActions } from "./hooks/useJuniorWindowActions";
 import { useJuniorUIHandlers } from "./hooks/useJuniorUIHandlers";
-
 import { getLessonConfig } from "./engine/LessonConfig";
 import { GoalManager } from "./engine/GoalManager";
 import { HintManager } from "./engine/HintManager";
-
 import { AudioEngine } from "../scratch-audio/src/AudioEngine";
 import { Scratch3SoundBlocks } from "../scratch-vm/src/extensions/scratch3_sound/index.js";
 import { Scratch3MusicBlocks } from "../scratch-vm/src/extensions/scratch3_music/index.js";

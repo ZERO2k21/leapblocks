@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { scratchSprites } from './generated_scratch_sprites';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SPRITE CATALOG — All available sprites organized by category
@@ -11,9 +12,6 @@ export interface SpriteEntry {
     costumes?: string[];   // multiple costumes for slideshow
     category: string;
 }
-
-import { scratchSprites } from './generated_scratch_sprites';
-
 
 const LEAPBLOCKS_SPRITES: SpriteEntry[] = [
     {

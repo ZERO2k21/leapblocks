@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as Blockly from "@blockly-runtime";
 import { javascriptGenerator } from "@blockly-runtime";
-
 import defineLeapBlocks from "../blocks/blocks";
 import defineLooksBlocks from "../blocks/looksBlocks";
 import defineSoundBlocks from "../blocks/soundBlocks";
 import defineExtensionBlocks from "../blocks/extensionBlocks";
 import { registerLeapRenderer } from "../blocks/LeapRenderer";
-
 import { getLessonConfig } from "../engine/LessonConfig";
 import { WorkspaceValidator } from "../engine/WorkspaceValidator";
 import { previewActions } from "../engine/previewActions";

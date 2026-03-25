@@ -1,7 +1,4 @@
-
 import * as Blockly from '@blockly-runtime';
-
-
 
 const BaseConstantProvider = Blockly.zelos ? Blockly.zelos.ConstantProvider : Blockly.blockRendering.ConstantProvider;
 const BaseRenderer = Blockly.zelos ? Blockly.zelos.Renderer : Blockly.blockRendering.Renderer;

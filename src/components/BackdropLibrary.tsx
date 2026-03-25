@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { scratchBackdrops } from './generated_scratch_backdrops';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // BACKDROP CATALOG
@@ -9,8 +10,6 @@ export interface BackdropEntry {
     image: string;
     category: string;
 }
-
-import { scratchBackdrops } from './generated_scratch_backdrops';
 
 const CATEGORIES = [
     { id: 'All', color: '#FF4C4C' },
