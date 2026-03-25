@@ -40,6 +40,7 @@ interface PaintEditorProps {
     onSwitchCostume?: (index: number) => void;
     onRenameCostume?: (index: number, newName: string) => void;
     onOpenLibrary?: () => void;
+    hideCostumeSidebar?: boolean;
 }
 
 function PaintEditor({
@@ -54,7 +55,8 @@ function PaintEditor({
     onDuplicateSound,
     onSwitchCostume,
     onRenameCostume,
-    onOpenLibrary
+    onOpenLibrary,
+    hideCostumeSidebar = false
 }: PaintEditorProps) {
     const canvasRef = useRef<fabric.Canvas | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -537,6 +539,7 @@ function PaintEditor({
 
             <div className="flex flex-1 overflow-hidden w-full h-full">
                 {/* 1. LEFT SIDEBAR (Costumes/Backdrops) */}
+                {!hideCostumeSidebar && (
                 <div className="w-[100px] border-r border-gray-200 flex flex-col bg-[#EDF1F7] overflow-hidden">
                     <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-3 no-scrollbar relative pb-20">
                         {costumes.map((c, i) => (
@@ -604,6 +607,7 @@ function PaintEditor({
                         />
                     </div>
                 </div>
+                )}
 
                 {/* 2. MAIN EDITOR AREA */}
                 <div className="flex-1 flex flex-col overflow-hidden">

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StageProvider, useStage } from "../context/StageContext";
 import Logo from "../components/Logo";
+<<<<<<< HEAD
 import { Play, Square, Undo, Redo, Save, Settings, Trash2, Maximize, Upload, Clock, Cpu, RefreshCw, Plug, FileCode2, FileText, TerminalSquare, ClipboardList, LoaderCircle, CheckCircle2, AlertCircle, LibraryBig, FileUp, Plus } from "lucide-react";
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
@@ -59,6 +60,8 @@ if (typeof document !== 'undefined' && !document.getElementById('python-ide-anim
 }
 
 
+=======
+>>>>>>> fb84f49102aedfa11a1d7b7e91dee4b995c8804d
 import {
     Play,
     Square,
@@ -2946,6 +2949,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         handleInstall={handleInstall}
                     />
 
+<<<<<<< HEAD
                     {/* ── STAGE PANEL ── */}
                     <StagePanel
                         sprites={sprites}
@@ -2963,6 +2967,25 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         onOpenAssetLibrary={onOpenAssetLibrary}
                     />
                 </div>
+=======
+                {/* ── STAGE PANEL ── */}
+                <StagePanel 
+                    sprites={sprites}
+                    selectedSpriteId={selectedSpriteId}
+                    setSelectedSpriteId={setSelectedSpriteId}
+                    backdrop={backdrop}
+                    stageRef={stageRef}
+                    stageSize={stageSize}
+                    setShowSpriteLibrary={setShowSpriteLibrary}
+                    updateSpriteProperty={updateSpriteProperty}
+                    BACKDROP_LIBRARY={BACKDROP_LIBRARY}
+                    handleSetBackdrop={handleSetBackdrop}
+                    deleteSprite={deleteSprite}
+                    activeMode={activeMode}
+                    onOpenAssetLibrary={onOpenAssetLibrary}
+                />
+            </div>
+>>>>>>> fb84f49102aedfa11a1d7b7e91dee4b995c8804d
             ) : (
                 renderUploadWorkspace()
             )}
