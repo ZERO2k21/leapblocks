@@ -362,9 +362,11 @@ export default function JuniorApp({ onBack }) {
         workspaceRef,
         scenes,
         currentSceneId,
+        activeSpriteIdRef,
         activeSpriteId,
-        setActiveSpriteId,
-        spriteActions
+        spriteActions,
+        spriteWorkspacesRef,
+        saveCurrentWorkspace
     });
 
     const project = useJuniorProject({
@@ -850,7 +852,7 @@ export default function JuniorApp({ onBack }) {
                                 speech={sprite.speech}
                                 mirrored={sprite.mirrored}
                                 textColor={sprite.textColor}
-                                onClick={() => exec.handleSpriteClick(sprite.id, saveCurrentWorkspace)}
+                                onClick={() => exec.handleSpriteClick(sprite.id)}
                                 onDragStateChange={(dragging) => setIsDraggingSpriteOnStage(dragging)}
                             />
                         ))}

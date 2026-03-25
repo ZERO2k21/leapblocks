@@ -11,8 +11,9 @@ export function useJuniorExecution({
     currentSceneId,
     activeSpriteIdRef,
     activeSpriteId,
-    setActiveSpriteId,
-    spriteActions
+    spriteActions,
+    spriteWorkspacesRef,
+    saveCurrentWorkspace
 }) {
     const interpreterRef = useRef(null);
     const isRunning = useRef(false);
@@ -87,22 +88,29 @@ export function useJuniorExecution({
         }
     };
 
-    const handleSpriteClick = async (clickedId, saveCurrentWorkspace) => {
-        if (clickedId !== activeSpriteId) {
-            saveCurrentWorkspace();
-            setActiveSpriteId(clickedId);
-            await new Promise(r => setTimeout(r, 100));
+    const handleSpriteClick = async (clickedId) => {
+        const currentActiveSpriteId = activeSpriteIdRef?.current || activeSpriteId;
+        if (clickedId !== currentActiveSpriteId) {
+            saveCurrentWorkspace?.();
         }
 
         const currentScene = scenes.find(s => s.id === currentSceneId);
         if (!currentScene) return;
 
         const sprite = currentScene.sprites.find(s => s.id === clickedId);
-        if (sprite && sprite.blocks && Object.keys(sprite.blocks).length > 0) {
-            const spriteEntries = [{ spriteId: clickedId, blocks: sprite.blocks }];
-            interpreterRef.current?.runAllSpritesStacks(['event_press', 'event_sprite_clicked'], spriteEntries, Blockly);
-        } else if (clickedId === activeSpriteId) {
-            interpreterRef.current?.runStacks(['event_press', 'event_sprite_clicked']);
+        const activeWorkspaceSnapshot =
+            clickedId === currentActiveSpriteId && workspaceRef.current
+                ? Blockly.serialization.workspaces.save(workspaceRef.current)
+                : null;
+        const savedBlocks =
+            activeWorkspaceSnapshot ||
+            spriteWorkspacesRef?.current?.get(clickedId) ||
+            sprite?.blocks ||
+            null;
+
+        if (savedBlocks && Object.keys(savedBlocks).length > 0) {
+            const spriteEntries = [{ spriteId: clickedId, blocks: savedBlocks }];
+            await interpreterRef.current?.runAllSpritesStacks(['event_press', 'event_sprite_clicked'], spriteEntries, Blockly);
         }
     };
 
