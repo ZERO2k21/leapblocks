@@ -1,67 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StageProvider, useStage } from "../context/StageContext";
 import Logo from "../components/Logo";
-<<<<<<< HEAD
-import { Play, Square, Undo, Redo, Save, Settings, Trash2, Maximize, Upload, Clock, Cpu, RefreshCw, Plug, FileCode2, FileText, TerminalSquare, ClipboardList, LoaderCircle, CheckCircle2, AlertCircle, LibraryBig, FileUp, Plus } from "lucide-react";
-import { SkulptEngine } from "../junior/engine/SkulptEngine";
-import { FULL_CATALOG } from "../components/SpriteLibrary";
-import SerialMonitor from "../components/SerialMonitor";
-import { createIntermediateBlocksBridge, useSpriteBridge, DEFAULT_SPRITE_PRESETS } from "./SpriteBridge";
-import BoardSelectionModal, { BOARDS } from "../junior/components/BoardSelectionModal";
-
-// ─── Import Modular Components ─────────────────────────────────────────────────
-import SidePanel from "./panels/SidePanel";
-import EditorPanel from "./panels/EditorPanel";
-import StagePanel from "./panels/StagePanel";
-import PythonIDEGuide from "./PythonIDEGuide";
-import MonacoEditor from "./editor/MonacoEditor";
-
-// ─── CSS Animations ───────────────────────────────────────────────────────────
-const animationStyles = document.createElement('style');
-animationStyles.textContent = `
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-    @keyframes blink {
-        0%, 50% { opacity: 1; }
-        51%, 100% { opacity: 0; }
-    }
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    .run-button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4) !important;
-    }
-    .run-button:active {
-        transform: translateY(0);
-    }
-    .stop-button:hover {
-        background: #EF4444 !important;
-        color: #fff !important;
-    }
-    .terminal-line {
-        animation: fadeIn 0.2s ease-out;
-    }
-`;
-if (typeof document !== 'undefined' && !document.getElementById('python-ide-animations')) {
-    animationStyles.id = 'python-ide-animations';
-    document.head.appendChild(animationStyles);
-}
-
-
-=======
->>>>>>> fb84f49102aedfa11a1d7b7e91dee4b995c8804d
 import {
     Play,
     Square,
@@ -78,9 +17,12 @@ import {
     Plus,
     FileText,
     Terminal,
+    TerminalSquare,
     ClipboardList,
     Loader,
+    LoaderCircle,
     CheckCircle,
+    CheckCircle2,
     Library,
     LibraryBig,
     FileUp,
@@ -95,6 +37,8 @@ import { FULL_CATALOG } from "../components/SpriteLibrary";
 import SerialMonitor from "../components/SerialMonitor";
 import { createIntermediateBlocksBridge, useSpriteBridge, DEFAULT_SPRITE_PRESETS } from "./SpriteBridge";
 import BoardSelectionModal, { BOARDS } from "../junior/components/BoardSelectionModal";
+
+// ─── Import Modular Components ─────────────────────────────────────────────────
 import SidePanel from "./panels/SidePanel";
 import EditorPanel from "./panels/EditorPanel";
 import StagePanel from "./panels/StagePanel";
@@ -2949,7 +2893,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         handleInstall={handleInstall}
                     />
 
-<<<<<<< HEAD
                     {/* ── STAGE PANEL ── */}
                     <StagePanel
                         sprites={sprites}
@@ -2967,25 +2910,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         onOpenAssetLibrary={onOpenAssetLibrary}
                     />
                 </div>
-=======
-                {/* ── STAGE PANEL ── */}
-                <StagePanel 
-                    sprites={sprites}
-                    selectedSpriteId={selectedSpriteId}
-                    setSelectedSpriteId={setSelectedSpriteId}
-                    backdrop={backdrop}
-                    stageRef={stageRef}
-                    stageSize={stageSize}
-                    setShowSpriteLibrary={setShowSpriteLibrary}
-                    updateSpriteProperty={updateSpriteProperty}
-                    BACKDROP_LIBRARY={BACKDROP_LIBRARY}
-                    handleSetBackdrop={handleSetBackdrop}
-                    deleteSprite={deleteSprite}
-                    activeMode={activeMode}
-                    onOpenAssetLibrary={onOpenAssetLibrary}
-                />
-            </div>
->>>>>>> fb84f49102aedfa11a1d7b7e91dee4b995c8804d
             ) : (
                 renderUploadWorkspace()
             )}
