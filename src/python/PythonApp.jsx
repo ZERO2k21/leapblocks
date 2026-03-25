@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StageProvider, useStage } from "../context/StageContext";
 import Logo from "../components/Logo";
-<<<<<<< HEAD
 import { Play, Square, Undo, Redo, Save, Settings, Trash2, Maximize, Upload, Clock, Cpu, RefreshCw, Plug, FileCode2, FileText, TerminalSquare, ClipboardList, LoaderCircle, CheckCircle2, AlertCircle, LibraryBig, FileUp, Plus } from "lucide-react";
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
@@ -59,7 +58,7 @@ if (typeof document !== 'undefined' && !document.getElementById('python-ide-anim
     document.head.appendChild(animationStyles);
 }
 
-=======
+
 import {
     Play,
     Square,
@@ -86,7 +85,6 @@ import {
     Plug,
     FileCode2,
     AlertCircle,
-    TerminalSquare
 } from "lucide-react";
 
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
@@ -99,7 +97,6 @@ import EditorPanel from "./panels/EditorPanel";
 import StagePanel from "./panels/StagePanel";
 import PythonIDEGuide from "./PythonIDEGuide";
 import MonacoEditor from "./editor/MonacoEditor";
->>>>>>> c5a94f0cebe993cee3c514b06f7be51515b2b2fc
 
 // ─── CSS Animations ───────────────────────────────────────────────────────────
 function injectPythonIDEAnimations() {
@@ -593,10 +590,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         resetStage
     } = useStage();
 
-<<<<<<< HEAD
-=======
-    
->>>>>>> c5a94f0cebe993cee3c514b06f7be51515b2b2fc
     // Editor state
     const [projectName, setProjectName] = useState("My Project");
     const [workflowMode, setWorkflowMode] = useState("stage");
@@ -2953,7 +2946,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         handleInstall={handleInstall}
                     />
 
-<<<<<<< HEAD
                     {/* ── STAGE PANEL ── */}
                     <StagePanel
                         sprites={sprites}
@@ -2967,27 +2959,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         BACKDROP_LIBRARY={BACKDROP_LIBRARY}
                         handleSetBackdrop={handleSetBackdrop}
                         deleteSprite={deleteSprite}
+                        activeMode={activeMode}
+                        onOpenAssetLibrary={onOpenAssetLibrary}
                     />
                 </div>
-=======
-                {/* ── STAGE PANEL ── */}
-                <StagePanel 
-                    sprites={sprites}
-                    selectedSpriteId={selectedSpriteId}
-                    setSelectedSpriteId={setSelectedSpriteId}
-                    backdrop={backdrop}
-                    stageRef={stageRef}
-                    stageSize={stageSize}
-                    setShowSpriteLibrary={setShowSpriteLibrary}
-                    updateSpriteProperty={updateSpriteProperty}
-                    BACKDROP_LIBRARY={BACKDROP_LIBRARY}
-                    handleSetBackdrop={handleSetBackdrop}
-                    deleteSprite={deleteSprite}
-                    activeMode={activeMode}
-                    onOpenAssetLibrary={onOpenAssetLibrary}
-                />
-            </div>
->>>>>>> c5a94f0cebe993cee3c514b06f7be51515b2b2fc
             ) : (
                 renderUploadWorkspace()
             )}
