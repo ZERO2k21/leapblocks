@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Bell } from 'lucide-react';
-import { animate, stagger, random, createScope } from 'animejs';
 
 // ─── inject keyframes once ───────────────────────────────────────────────────
 function injectCSS() {
@@ -597,9 +596,9 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
-    injectCSS();
-
-    const scope = useMemo(() => createScope(), []);
+    useEffect(() => {
+        injectCSS();
+    }, []);
 
     // Phases: 'intro' → robot drops, 'welcome' → text types, 'main' → full UI
     const hasSeenIntro = sessionStorage.getItem('leapblocks_intro_seen') === 'true';
@@ -607,12 +606,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     const [typedText, setTypedText] = useState('');
     const [showCursor, setShowCursor] = useState(true);
     const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
-
-    // Refs for anime.js
-    const cardsContainerRef = useRef<HTMLDivElement>(null);
-    const extraCardsContainerRef = useRef<HTMLDivElement>(null);
-    const logoRef = useRef<HTMLDivElement>(null);
-    const robotRef = useRef<HTMLImageElement>(null);
 
     const FULL_TEXT = 'Welcome to LeapBlocks';
 
@@ -645,104 +638,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         const iv = setInterval(() => setShowCursor(c => !c), 500);
         return () => clearInterval(iv);
     }, [phase]);
-
-    // Anime.js Main Entrance
-    useEffect(() => {
-        if (phase !== 'main') return;
-
-        const isReturning = hasSeenIntro; // If true, skip the header sequence
-
-        if (isReturning) {
-            // Instant header, smooth cards
-            if (robotRef.current) {
-                robotRef.current.style.opacity = '1';
-                animate(robotRef.current, {
-                    translateY: [-15, 0],
-                    rotate: [-3, 3],
-                    duration: 2000,
-                    direction: 'alternate',
-                    loop: true,
-                    ease: 'inOutQuad'
-                });
-            }
-            if (logoRef.current) {
-                logoRef.current.style.opacity = '1';
-            }
-            const subtitleEl = document.querySelector('.lp-subtitle') as HTMLElement;
-            if (subtitleEl) subtitleEl.style.opacity = '1';
-
-            // Cards stagger quickly
-            animate('.lp-main-card', {
-                translateY: [80, 0],
-                opacity: [0, 1],
-                scale: [0.8, 1],
-                delay: stagger(60, { start: 100 }),
-                duration: 800,
-                ease: 'outElastic(1, .7)'
-            });
-            animate('.lp-extra-card', {
-                translateY: [60, 0],
-                opacity: [0, 1],
-                scale: [0.8, 1],
-                delay: stagger(60, { start: 400 }),
-                duration: 800,
-                ease: 'outElastic(1, .7)'
-            });
-        } else {
-            // Sequence: Logo/Subtitle -> Cards
-            
-            // 2. Logo / Branding (Offset slightly)
-            if (logoRef.current) {
-                animate(logoRef.current, {
-                    translateY: [40, 0],
-                    opacity: [0, 1],
-                    scale: [0.9, 1],
-                    duration: 1000,
-                    ease: 'outQuad',
-                    delay: 400
-                });
-            }
-
-            // 3. Subtitle
-            animate('.lp-subtitle', {
-                opacity: [0, 1],
-                translateY: [20, 0],
-                duration: 800,
-                delay: 800,
-                ease: 'outQuad'
-            });
-
-            // 4. Mode Cards (Staggered last)
-            animate('.lp-main-card', {
-                translateY: [80, 0],
-                opacity: [0, 1],
-                scale: [0.8, 1],
-                delay: stagger(100, { start: 1200 }),
-                duration: 1000,
-                ease: 'outElastic(1, .7)'
-            });
-
-            animate('.lp-extra-card', {
-                translateY: [60, 0],
-                opacity: [0, 1],
-                scale: [0.8, 1],
-                delay: stagger(100, { start: 1600 }),
-                duration: 800,
-                ease: 'outElastic(1, .7)'
-            });
-        }
-
-        animate('.lp-extra-card', {
-            translateY: [60, 0],
-            opacity: [0, 1],
-            scale: [0.8, 1],
-            delay: stagger(100, { start: 1600 }),
-            duration: 800,
-            ease: 'outElastic(1, .7)'
-        });
-
-        return () => scope.revert();
-    }, [phase, scope]);
 
     // Show toast for coming soon
     const showComingSoon = (name: string) => {
@@ -841,6 +736,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             available: false, patternType: 'dots', tag: 'Fast checks', chips: ['Questions', 'Scoreboards'], cta: 'Join queue', onClick: () => showComingSoon('Quiz'),
         },
     ];
+
+    const logoAnimationDelay = hasSeenIntro ? 0 : 0.4;
+    const subtitleAnimationDelay = hasSeenIntro ? 0.08 : 0.8;
+    const getCardAnimation = (index: number, isExtra = false) => {
+        const start = hasSeenIntro
+            ? (isExtra ? 0.35 : 0.1)
+            : (isExtra ? 1.6 : 1.2);
+        const step = hasSeenIntro ? 0.06 : 0.1;
+        return `lp-fadeup .7s ${start + index * step}s both`;
+    };
 
     return (
         <div style={{
@@ -1003,12 +908,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
                     {/* ── Logo / Brand ── */}
                     <div 
-                        ref={logoRef}
                         style={{
                         position: 'relative',
                         marginBottom: 12,
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
                         zIndex: 2, // Above background
+                        animation: `lp-fadeup .8s ${logoAnimationDelay}s both`,
                     }}>
                         {/* Brand name */}
                         <div style={{
@@ -1041,7 +946,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                         fontSize: 15, color: '#1f242cff', marginBottom: 16,
                         fontFamily: '"Poppins", sans-serif',
                         fontWeight: 500,
-                        // animation: 'lp-fadeup .5s .2s both',
+                        animation: `lp-fadeup .7s ${subtitleAnimationDelay}s both`,
                     }}>
                         Choose your coding adventure ✨
                     </div>
@@ -1052,14 +957,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                         marginBottom: 16,
                     }}>
                         {mainCards.map((card, i) => (
-                            <div key={card.title} className="lp-main-card">
+                            <div key={card.title} className="lp-main-card" style={{ animation: getCardAnimation(i) }}>
                                 <ModeCard
                                     icon={card.icon}
                                     title={card.title}
                                     subtitle={card.subtitle}
                                     color={card.color}
                                     gradient={card.gradient}
-                                    delay={0} // Anime handles delay now
+                                    delay={0}
                                     available={card.available}
                                     patternType={(card as any).patternType}
                                     onClick={card.onClick}
@@ -1073,14 +978,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                         display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center',
                     }}>
                         {extraCards.map((card, i) => (
-                            <div key={card.title} className="lp-extra-card">
+                            <div key={card.title} className="lp-extra-card" style={{ animation: getCardAnimation(i, true) }}>
                                 <ModeCard
                                     icon={card.icon}
                                     title={card.title}
                                     subtitle={card.subtitle}
                                     color={card.color}
                                     gradient={card.gradient}
-                                    delay={0} // Anime handles delay now
+                                    delay={0}
                                     available={card.available}
                                     patternType={(card as any).patternType}
                                     onClick={card.onClick}
