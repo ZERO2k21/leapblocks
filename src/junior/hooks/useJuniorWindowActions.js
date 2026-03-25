@@ -45,10 +45,15 @@ export function useJuniorWindowActions({
             "mirrorSprite",
             "stampSprite",
             "stampSpriteOnCanvas",
+            "showFeedback",
+            "stopAll",
+            "broadcastMessage",
             "penColor",
             "setPenColor",
             "penSize",
             "setPenSize",
+            "setSpeed",
+            "getAnimationDelay",
             "playSound",
             "playNote",
             "setInstrument",
@@ -62,19 +67,41 @@ export function useJuniorWindowActions({
 
         window.updateSprite = (id, updates) => spriteActions.update(id, updates);
 
-        window.moveRelative = (dir) => {
-            const id = window.activeSpriteId || activeSpriteId;
-            spriteActions.moveRelative(id, dir);
+        window.moveRelative = (targetOrDirection, directionOrSteps, maybeSteps) => {
+            let id = window.activeSpriteId || activeSpriteId;
+            let direction = targetOrDirection;
+            let steps = 1;
+
+            if (typeof directionOrSteps === "string") {
+                id = targetOrDirection || id;
+                direction = directionOrSteps;
+                steps = Number(maybeSteps) || 1;
+            } else if (directionOrSteps !== undefined) {
+                steps = Number(directionOrSteps) || 1;
+            }
+
+            if (!["UP", "DOWN", "LEFT", "RIGHT"].includes(direction)) return;
+            spriteActions.moveRelative(id, direction, steps);
         };
 
-        window.goToLocation = (x, y) => {
-            const id = window.activeSpriteId || activeSpriteId;
+        window.goToLocation = (targetOrX, xOrY, maybeY) => {
+            let id = window.activeSpriteId || activeSpriteId;
+            let x = targetOrX;
+            let y = xOrY;
+
+            if (maybeY !== undefined) {
+                id = targetOrX || id;
+                x = xOrY;
+                y = maybeY;
+            }
+
             spriteActions.goToGrid(id, x, y);
         };
 
         window.resetBear = () => {
             setWinMessage(null);
             spriteActions.resetAll();
+            if (window.clearPen) window.clearPen();
         };
 
         window.changeSize = (id, delta) => {
@@ -108,11 +135,14 @@ export function useJuniorWindowActions({
                 delete timeoutRefs.current[tid];
             }, 3000);
         };
+        window.showFeedback = (text, spriteId) => {
+            window.say(spriteId || window.activeSpriteId || activeSpriteId, text);
+        };
 
         window.goToRandom = (id) => {
             const tid = id || window.activeSpriteId || "robot_default";
-            const randomX = Math.floor(Math.random() * 15) + 1;
-            const randomY = Math.floor(Math.random() * 10) + 1;
+            const randomX = Math.floor(Math.random() * 20) + 1;
+            const randomY = Math.floor(Math.random() * 15) + 1;
             spriteActions.goToGrid(tid, randomX, randomY);
         };
 
@@ -124,7 +154,16 @@ export function useJuniorWindowActions({
             spriteActions.goToGrid(id, randomX, randomY);
         };
 
-        window.animationSpeed = 500;
+        window.animationSpeed = 0.5;
+        window.setSpeed = (speed) => {
+            const speedMap = {
+                slow: 0.8,
+                normal: 0.5,
+                fast: 0.2
+            };
+            window.animationSpeed = speedMap[speed] ?? speedMap.normal;
+        };
+        window.getAnimationDelay = () => window.animationSpeed || 0.5;
 
         window.setSpriteColor = (id, color) => {
             const tid = id || window.activeSpriteId || "robot_default";
@@ -255,6 +294,15 @@ export function useJuniorWindowActions({
             } else {
                 musicBlocksExt.stopMusic();
             }
+        };
+        window.broadcastMessage = (message) => {
+            window.dispatchEvent(new CustomEvent('leap-broadcast', {
+                detail: { message }
+            }));
+            window.showFeedback?.(`📨 ${message}`);
+        };
+        window.stopAll = () => {
+            window.showFeedback?.("STOPPED");
         };
 
         window.stopExecution = () => {

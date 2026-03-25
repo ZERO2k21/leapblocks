@@ -2,7 +2,7 @@
 export default function defineLooksBlocks(Blockly, javascriptGenerator) {
     // Helper to get target code
     const getTarget = () => 'window.activeSpriteId || "robot_default"';
-    const wait = () => 'await window.wait(0.5);\n';
+    const wait = () => 'await window.wait(window.getAnimationDelay ? window.getAnimationDelay() : 0.5);\n';
 
     // Helper for Vertical Junior Blocks (Icon Top, Input Bottom)
     function juniorLooksBase(block, iconChar, inputField, inputName) {

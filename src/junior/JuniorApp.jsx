@@ -890,8 +890,8 @@ export default function JuniorApp({ onBack }) {
                 <DirectionPicker
                     onPick={(dir) => {
                         if (wp.activeBlock) {
-                            if (wp.activeBlock.setFieldValue) {
-                                wp.activeBlock.setFieldValue(dir, 'DIR');
+                            if (typeof wp.activeBlock.setDirection === "function") {
+                                wp.activeBlock.setDirection(dir);
                             } else {
                                 try { wp.activeBlock.direction = dir; } catch (e) { /* ignore */ }
                             }

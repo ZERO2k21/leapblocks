@@ -22,12 +22,18 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
     const angleRef = useRef(angle);
     const penRef = useRef(isPenDown);
     const activeRef = useRef(active);
+    const sizeRef = useRef(size);
+    const currentCostumeRef = useRef(currentCostume);
+    const costumesRef = useRef(costumes);
 
     useEffect(() => { xRef.current = x; }, [x]);
     useEffect(() => { yRef.current = y; }, [y]);
     useEffect(() => { angleRef.current = angle; }, [angle]);
     useEffect(() => { penRef.current = isPenDown; }, [isPenDown]);
     useEffect(() => { activeRef.current = active; }, [active]);
+    useEffect(() => { sizeRef.current = size; }, [size]);
+    useEffect(() => { currentCostumeRef.current = currentCostume; }, [currentCostume]);
+    useEffect(() => { costumesRef.current = costumes; }, [costumes]);
 
     // Helpers to dispatch updates to App.jsx Store
     const updateStore = (updates) => {
@@ -128,6 +134,24 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             },
             symmetry: () => setScaleX(s => s * -1),
             switchCostume: (name) => updateStore({ currentCostume: name }),
+            penDown: () => setIsPenDown(true),
+            penUp: () => setIsPenDown(false),
+            jiggle: () => setJiggleKey(key => key + 1),
+            stamp: () => {
+                const costumeValue = Array.isArray(costumesRef.current)
+                    ? costumesRef.current[Number(currentCostumeRef.current) || 0]
+                    : costumesRef.current?.[currentCostumeRef.current] || currentCostumeRef.current;
+
+                if (window.stampSpriteOnCanvas) {
+                    window.stampSpriteOnCanvas(
+                        id,
+                        xRef.current,
+                        yRef.current,
+                        costumeValue,
+                        sizeRef.current
+                    );
+                }
+            },
         };
 
         // ---- GLOBAL DISPATCH FUNCTIONS ----
@@ -154,35 +178,6 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
         window.penDown = (tid) => dispatch('penDown', tid);
         window.penUp = (tid) => dispatch('penUp', tid);
         window.jiggle = (tid) => dispatch('jiggle', tid);
-
-        window.resetBear = () => {
-            // Soft reset: keep position, reset visual state only
-            // Lets sprites start from where user dragged them
-            updateStore({ angle: 0, size: 100, visible: true, currentCostume: "default", speech: null });
-            setScaleX(1);
-            setFeedback(null);
-            setIsPenDown(false);
-        };
-
-        window.hardResetBear = () => {
-            // Full reset: also resets position with per-sprite offset
-            const spriteIndex = Object.keys(window._spriteActions || {}).indexOf(id);
-            const offsetX = spriteIndex * 100;
-            updateStore({ x: 120 + offsetX, y: 150, angle: 0, size: 100, visible: true, currentCostume: "default", speech: null });
-            setScaleX(1);
-            setFeedback(null);
-            setIsPenDown(false);
-        };
-
-        // Global Feedback handler
-        if (id === 'teddy' || id === 'robot_default') {
-            window.showFeedback = (msg) => {
-                setFeedback(msg);
-                setTimeout(() => setFeedback(null), 1000);
-            };
-            window.changeScene = () => window.showFeedback("Scene Changed! \u{1F5BC}\u{FE0F}");
-            window.stopAll = () => window.showFeedback("STOPPED \u{1F6D1}");
-        }
 
         // Cleanup: unregister this sprite when it unmounts
         return () => {

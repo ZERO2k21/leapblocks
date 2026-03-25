@@ -4,8 +4,19 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     // Helper to get target code
     const getTarget = () => 'window.activeSpriteId || "robot_default"';
     // Helper to inject wait and check execution state for immediate stop
-    const wait = () => 'if(!window.isActive()) return;\nawait window.wait(0.5);\nif(window.checkPause) await window.checkPause();\nif(!window.isActive()) return;\n';
+    const wait = () => 'if(!window.isActive()) return;\nawait window.wait(window.getAnimationDelay ? window.getAnimationDelay() : 0.5);\nif(window.checkPause) await window.checkPause();\nif(!window.isActive()) return;\n';
     const yieldLoop = () => 'if(!window.isActive()) return;\nawait window.wait(0.01);\nif(window.checkPause) await window.checkPause();\n'; // Faster wait for loop cycles
+    const GRID_DEFAULT_X = 10;
+    const GRID_DEFAULT_Y = 8;
+    const DIRECTION_SYMBOLS = {
+        UP: "↑",
+        DOWN: "↓",
+        LEFT: "←",
+        RIGHT: "→",
+        CENTER: "•"
+    };
+    const formatGridLabel = (x, y) => `${x},${y}`;
+    const normalizeDirection = (direction) => DIRECTION_SYMBOLS[direction] ? direction : "RIGHT";
 
     // --- MOTION (Blue #4C97FF) ---
 
@@ -32,7 +43,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     };
     javascriptGenerator.forBlock['move_right'] = (block) => {
         const steps = block.getFieldValue("STEPS");
-        return `moveForward(${getTarget()}, ${steps});\n${wait()}`;
+        return `moveRelative(${getTarget()}, "RIGHT", ${steps});\n${wait()}`;
     };
 
     Blockly.Blocks['move_left'] = {
@@ -42,7 +53,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     };
     javascriptGenerator.forBlock['move_left'] = (block) => {
         const steps = block.getFieldValue("STEPS");
-        return `moveBackward(${getTarget()}, ${steps});\n${wait()}`;
+        return `moveRelative(${getTarget()}, "LEFT", ${steps});\n${wait()}`;
     };
 
     Blockly.Blocks['move_up'] = {
@@ -52,7 +63,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     };
     javascriptGenerator.forBlock['move_up'] = (block) => {
         const steps = block.getFieldValue("STEPS");
-        return `moveUp(${getTarget()}, ${steps});\n${wait()}`;
+        return `moveRelative(${getTarget()}, "UP", ${steps});\n${wait()}`;
     };
 
     Blockly.Blocks['move_down'] = {
@@ -62,7 +73,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     };
     javascriptGenerator.forBlock['move_down'] = (block) => {
         const steps = block.getFieldValue("STEPS");
-        return `moveDown(${getTarget()}, ${steps});\n${wait()}`;
+        return `moveRelative(${getTarget()}, "DOWN", ${steps});\n${wait()}`;
     };
 
     Blockly.Blocks['turn_right'] = {
@@ -105,16 +116,32 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
         init: function () {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("📍", "junior-icon-large"))
-                .appendField("Go to");
+                .appendField("Go to")
+                .appendField(new Blockly.FieldLabel(formatGridLabel(GRID_DEFAULT_X, GRID_DEFAULT_Y), "junior-inline-pill"), "POSITION");
             this.setPreviousStatement(true);
             this.setNextStatement(true);
             this.setColour("#4C97FF"); // Motion Color
+
+            this.posX = GRID_DEFAULT_X;
+            this.posY = GRID_DEFAULT_Y;
+            this.setGridPosition = (x, y) => {
+                this.posX = Number.isFinite(Number(x)) ? Number(x) : GRID_DEFAULT_X;
+                this.posY = Number.isFinite(Number(y)) ? Number(y) : GRID_DEFAULT_Y;
+                this.setFieldValue(formatGridLabel(this.posX, this.posY), "POSITION");
+            };
+            this.saveExtraState = () => ({
+                posX: this.posX,
+                posY: this.posY
+            });
+            this.loadExtraState = (state) => {
+                this.setGridPosition(state?.posX ?? GRID_DEFAULT_X, state?.posY ?? GRID_DEFAULT_Y);
+            };
         }
     };
     javascriptGenerator.forBlock['go_to_location'] = (block) => {
         // Use stored positions or default
-        const x = block.posX || 10;
-        const y = block.posY || 8;
+        const x = Number.isFinite(Number(block.posX)) ? Number(block.posX) : GRID_DEFAULT_X;
+        const y = Number.isFinite(Number(block.posY)) ? Number(block.posY) : GRID_DEFAULT_Y;
         return `goToLocation(${x}, ${y});\n${wait()}`;
     };
 
@@ -122,19 +149,31 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
         init: function () {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("📍", "junior-icon-large"))
-                .appendField("Move relative");
+                .appendField("Move")
+                .appendField(new Blockly.FieldLabel(DIRECTION_SYMBOLS.RIGHT, "junior-inline-pill"), "DIR_DISPLAY");
 
             this.setPreviousStatement(true);
             this.setNextStatement(true);
             this.setColour("#4C97FF");
 
-            // store direction
-            this.direction = "CENTER"; // UP | DOWN | LEFT | RIGHT | CENTER
+            this.direction = "RIGHT";
+            this.setDirection = (direction) => {
+                this.direction = normalizeDirection(direction);
+                this.setFieldValue(DIRECTION_SYMBOLS[this.direction], "DIR_DISPLAY");
+            };
+            this.getDirection = () => normalizeDirection(this.direction);
+            this.saveExtraState = () => ({
+                direction: this.direction
+            });
+            this.loadExtraState = (state) => {
+                this.setDirection(state?.direction ?? "RIGHT");
+            };
         },
     };
 
     javascriptGenerator.forBlock["move_relative"] = function (block) {
-        return `moveRelative("${block.direction}");\n${wait()}`;
+        const direction = block.getDirection ? block.getDirection() : normalizeDirection(block.direction);
+        return `moveRelative(${getTarget()}, "${direction}");\n${wait()}`;
     };
 
 
@@ -463,11 +502,11 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
         const dir = block.getFieldValue('DIRECTION') || 'CENTER';
         // Grid bounds: x 1-20, y 1-15 (y=15 is topmost, y=1 is bottommost)
         const zones = {
-            TOP:    [1, 28, 25, 20],  // top 2 rows
-            LEFT:   [1,  2,  1, 25],  // left 2 columns
-            CENTER: [1, 28, 1, 25],  // full stage
-            RIGHT:  [26, 28, 1, 25],  // right 2 columns
-            BOTTOM: [1,  28, 1,  2],  // bottom 2 rows
+            TOP:    [1, 20, 11, 15],
+            LEFT:   [1, 6, 1, 15],
+            CENTER: [7, 14, 5, 11],
+            RIGHT:  [15, 20, 1, 15],
+            BOTTOM: [1, 20, 1, 5],
         };
         const [xMin, xMax, yMin, yMax] = zones[dir];
         return (

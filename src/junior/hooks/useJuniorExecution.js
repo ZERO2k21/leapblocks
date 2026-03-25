@@ -37,6 +37,25 @@ export function useJuniorExecution({
         });
     }, [workspaceRef, activeSpriteIdRef]);
 
+    useEffect(() => {
+        if (!interpreterRef.current) return;
+
+        interpreterRef.current.setupBroadcastListener(() => {
+            const currentScene = scenes.find(scene => scene.id === currentSceneId);
+            if (!currentScene) return [];
+
+            const currentActiveId = activeSpriteIdRef?.current || activeSpriteId;
+
+            return currentScene.sprites.map(sprite => ({
+                spriteId: sprite.id,
+                blocks:
+                    sprite.id === currentActiveId && workspaceRef.current
+                        ? Blockly.serialization.workspaces.save(workspaceRef.current)
+                        : spriteWorkspacesRef?.current?.get(sprite.id) || sprite.blocks || {}
+            }));
+        }, Blockly);
+    }, [scenes, currentSceneId, activeSpriteIdRef, activeSpriteId, spriteWorkspacesRef, workspaceRef]);
+
     const runBlocks = async () => {
         const validation = WorkspaceValidator.validateWorkspace(workspaceRef.current);
         if (!validation.isValid) {
@@ -124,7 +143,8 @@ export function useJuniorExecution({
 
     const handleReset = () => {
         stopBlocks();
-        if (window.hardResetBear) window.hardResetBear();
+        spriteActions.resetAll();
+        if (window.clearPen) window.clearPen();
     };
 
     return {

@@ -1,8 +1,8 @@
 export const previewActions = {
-    move_right: (b) => window.moveForward(window.activeSpriteId || "robot_default", Number(b?.getFieldValue("STEPS") || 1)),
-    move_left: (b) => window.moveBackward(window.activeSpriteId || "robot_default", Number(b?.getFieldValue("STEPS") || 1)),
-    move_up: (b) => window.moveUp(window.activeSpriteId || "robot_default", Number(b?.getFieldValue("STEPS") || 1)),
-    move_down: (b) => window.moveDown(window.activeSpriteId || "robot_default", Number(b?.getFieldValue("STEPS") || 1)),
+    move_right: (b) => window.moveRelative(window.activeSpriteId || "robot_default", "RIGHT", Number(b?.getFieldValue("STEPS") || 1)),
+    move_left: (b) => window.moveRelative(window.activeSpriteId || "robot_default", "LEFT", Number(b?.getFieldValue("STEPS") || 1)),
+    move_up: (b) => window.moveRelative(window.activeSpriteId || "robot_default", "UP", Number(b?.getFieldValue("STEPS") || 1)),
+    move_down: (b) => window.moveRelative(window.activeSpriteId || "robot_default", "DOWN", Number(b?.getFieldValue("STEPS") || 1)),
 
     turn_right: (b) => window.turnRight(window.activeSpriteId || "robot_default", Number(b?.getFieldValue("TIMES") || 1)),
     turn_left: (b) => window.turnLeft(window.activeSpriteId || "robot_default", Number(b?.getFieldValue("TIMES") || 1)),

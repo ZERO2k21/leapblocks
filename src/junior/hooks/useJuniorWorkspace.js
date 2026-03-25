@@ -48,8 +48,6 @@ const categoryContents = {
         { kind: "block", type: "hide_sprite" },
         { kind: "block", type: "junior_change_costume" },
         { kind: "block", type: "change_size" },
-        { kind: "block", type: "looks_reset_size" },
-        { kind: "block", type: "looks_next_costume" },
         { kind: "block", type: "looks_change_costume" },
         { kind: "block", type: "looks_mirror" },
         { kind: "block", type: "select_sprite" },
@@ -326,8 +324,12 @@ export function useJuniorWorkspace({
 
                     if (block.type === "go_to_location") {
                         setPickerCallback(() => (x, y) => {
-                            block.posX = x;
-                            block.posY = y;
+                            if (typeof block.setGridPosition === "function") {
+                                block.setGridPosition(x, y);
+                            } else {
+                                block.posX = x;
+                                block.posY = y;
+                            }
                             if (window.goToLocation) window.goToLocation(x, y);
                         });
                         setShowPicker(true);

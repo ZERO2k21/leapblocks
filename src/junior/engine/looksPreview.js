@@ -20,7 +20,13 @@ export const looksPreview = {
     },
 
     change_size: (block) => {
-        const amt = Number(block.getFieldValue("AMOUNT"));
+        const rawAmount = block.getFieldValue("AMOUNT");
+        if (rawAmount === "reset") {
+            if (window.resetSize) window.resetSize(window.activeSpriteId || "robot_default");
+            return;
+        }
+
+        const amt = Number(rawAmount);
         if (window.changeSize) window.changeSize(window.activeSpriteId || "robot_default", amt);
     },
 

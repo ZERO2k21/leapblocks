@@ -77,18 +77,15 @@ export function useSpriteSystem(initialScenes) {
     // Actions exposed to Interpreter
     const actions = {
         // Move with Clamping
-        moveRelative: (spriteId, direction) => {
+        moveRelative: (spriteId, direction, steps = 1) => {
             updateSprite(spriteId, (prev) => {
                 let { x, y } = prev;
+                const distance = CELL_SIZE * Math.max(1, Number(steps) || 1);
                 switch (direction) {
-                    case "UP": y -= CELL_SIZE; break;
-                    case "DOWN": y += CELL_SIZE; break;
-                    case "LEFT": x -= CELL_SIZE; break; // Inverted? No, 0 is left.
-                    // Wait, Junior Grid: 1 is Left, 20 is Right.
-                    // Pixels: 0 is Left.
-                    // "Move Right" -> Increase X.
-                    // "Move Left" -> Decrease X.
-                    case "RIGHT": x += CELL_SIZE; break;
+                    case "UP": y -= distance; break;
+                    case "DOWN": y += distance; break;
+                    case "LEFT": x -= distance; break;
+                    case "RIGHT": x += distance; break;
                 }
                 return { x, y };
             });
@@ -96,8 +93,10 @@ export function useSpriteSystem(initialScenes) {
 
         // Go To Grid Location (1-20, 1-15)
         goToGrid: (spriteId, gridX, gridY) => {
-            const px = (gridX - 1) * CELL_SIZE;
-            const py = STAGE_HEIGHT - (gridY * CELL_SIZE); // Junior Y=1 is Bottom
+            const safeX = Math.max(1, Math.min(GRID_W, Number(gridX) || 1));
+            const safeY = Math.max(1, Math.min(GRID_H, Number(gridY) || 1));
+            const px = (safeX - 1) * CELL_SIZE;
+            const py = STAGE_HEIGHT - (safeY * CELL_SIZE); // Junior Y=1 is Bottom
             updateSprite(spriteId, { x: px, y: py });
         },
 
