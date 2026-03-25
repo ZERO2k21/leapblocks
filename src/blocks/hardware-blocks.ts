@@ -1,4 +1,4 @@
-import * as Blockly from 'blockly';
+import * as Blockly from '@blockly-runtime';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HARDWARE BLOCKS - Blocks for real-time hardware control in Stage mode

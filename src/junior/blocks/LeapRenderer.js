@@ -1,5 +1,5 @@
 
-import * as Blockly from 'blockly';
+import * as Blockly from '@blockly-runtime';
 
 
 

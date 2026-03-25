@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import * as Blockly from "blockly";
-import { javascriptGenerator } from "blockly/javascript";
+import * as Blockly from "@blockly-runtime";
+import { javascriptGenerator } from "@blockly-runtime";
 
 import defineLeapBlocks from "../blocks/blocks";
 import defineLooksBlocks from "../blocks/looksBlocks";

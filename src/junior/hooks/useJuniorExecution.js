@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import * as Blockly from "blockly";
-import { javascriptGenerator } from "blockly/javascript";
+import * as Blockly from "@blockly-runtime";
+import { javascriptGenerator } from "@blockly-runtime";
 import { Interpreter as LeapInterpreter, ExecutionStop } from "../engine/Interpreter";
 import { executionEngine } from "../../engine/ExecutionEngine";
 import { WorkspaceValidator } from "../engine/WorkspaceValidator";

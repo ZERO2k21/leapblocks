@@ -1,3 +1,4 @@
+import path from 'path';
 import type { Configuration } from 'webpack';
 
 import { rules } from './webpack.rules';
@@ -29,6 +30,9 @@ export const rendererConfig: Configuration = {
   plugins,
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
+    alias: {
+      '@blockly-runtime': path.resolve(__dirname, 'src/blockly/runtime.ts'),
+    },
   },
   optimization: {
     splitChunks: {

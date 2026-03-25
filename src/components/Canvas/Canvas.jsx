@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import * as Blockly from 'blockly';
+import * as Blockly from '@blockly-runtime';
 import { scratchRuntime } from '../../runtime/scratchRuntime';
 import './Canvas.css';
 

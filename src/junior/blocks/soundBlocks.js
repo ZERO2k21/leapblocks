@@ -1,5 +1,5 @@
-import * as Blockly from "blockly";
-import { javascriptGenerator } from "blockly/javascript";
+import * as Blockly from "@blockly-runtime";
+import { javascriptGenerator } from "@blockly-runtime";
 
 export default function defineSoundBlocks() {
     const defaultSoundOptions = [["Pop", "pop"], ["Boing", "boing"], ["Clap", "clap"]];

@@ -1,4 +1,4 @@
-import * as Blockly from 'blockly';
+import * as Blockly from '@blockly-runtime';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ANIMATION BLOCKS - For Stage Mode (sprites and animation)

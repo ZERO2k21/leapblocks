@@ -3,7 +3,7 @@
 // Visual block-based programming
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import React, { useEffect, useRef, useMemo } from 'react';
-import type * as Blockly from 'blockly';
+import type * as Blockly from '@blockly-runtime';
 import type { AFProject } from '../../AppForgeStudio';
 import componentsData from '../../data/components.json';
 import { getToolboxConfig } from './BlockToolbox';
@@ -31,7 +31,7 @@ export default function BlockEditor({ project, updateProject }: BlockEditorProps
     const initBlockly = async () => {
       try {
         // Dynamic imports to prevent circular dependencies in production
-        const Blockly = await import('blockly');
+        const Blockly = await import('@blockly-runtime');
         const { registerCustomBlocks } = await import('./CustomBlocks');
 
         // Register all custom blocks

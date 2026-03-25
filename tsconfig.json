@@ -19,6 +19,9 @@
     "jsx": "react-jsx",
     "strict": true,
     "paths": {
+      "@blockly-runtime": [
+        "src/blockly/runtime.ts"
+      ],
       "*": [
         "node_modules/*"
       ]

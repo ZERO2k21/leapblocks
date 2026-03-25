@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import * as Blockly from "blockly";
+import * as Blockly from "@blockly-runtime";
 import { fileService } from "../../services/FileService";
 
 export function useJuniorProject({

@@ -23,6 +23,7 @@ module.exports = {
             "events": require.resolve("events/") // occasionally needed
         },
         alias: {
+            '@blockly-runtime': path.resolve(__dirname, 'src/blockly/runtime.ts'),
             // Stub serialport if used
             serialport: false,
             electron: false

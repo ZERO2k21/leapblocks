@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 
-import * as Blockly from 'blockly';
+import * as Blockly from '@blockly-runtime';
 
 import './styles/scratch-blocks.css'; // Import Scratch-style blocks CSS
 
@@ -66,8 +66,6 @@ import { fileService } from './services/FileService';
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
 
 import './custom-toolbox';
-
-import { block } from 'blockly/core/tooltip';
 
 // Import dialog components
 import MakeVariableDialog from './components/MakeVariableDialog';

@@ -1,4 +1,4 @@
-import * as Blockly from 'blockly';
+import * as Blockly from '@blockly-runtime';
 
 /**
  * PictoBlox-style Category with circular icons and vertical layout
