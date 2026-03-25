@@ -1,5 +1,18 @@
 import * as Blockly from "@blockly-runtime";
 
+const normalizeJuniorSpriteType = (rawType) => {
+    const normalized = String(rawType || "").trim().toLowerCase();
+
+    if (!normalized) return "custom";
+    if (normalized === "pen" || normalized === "drawing_pen") return "pen";
+    if (normalized.includes("pencil")) return "pencil";
+    if (normalized.includes("drawing_pen")) return "pen";
+
+    return normalized;
+};
+
+const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspaceJson || {}));
+
 export function useJuniorUIHandlers({
     sprites,
     scenes,
@@ -307,8 +320,8 @@ export function useJuniorUIHandlers({
         // Save current workspace to ref immediately before clearing
         if (workspaceRef && workspaceRef.current && spriteWorkspacesRef && spriteWorkspacesRef.current && activeSpriteIdRef && activeSpriteIdRef.current) {
             const activeId = activeSpriteIdRef.current;
-            const json = Blockly.serialization.workspaces.save(workspaceRef.current);
-            spriteWorkspacesRef.current.set(activeId, json);
+            const json = cloneWorkspaceData(Blockly.serialization.workspaces.save(workspaceRef.current));
+            spriteWorkspacesRef.current.set(activeId, cloneWorkspaceData(json));
             console.log(`[useJuniorUIHandlers] Saved workspace to ref for sprite: ${activeId}`);
         }
         
@@ -321,7 +334,7 @@ export function useJuniorUIHandlers({
 
         if (spriteData && typeof spriteData === 'object') {
             spriteName = spriteData.name || 'Sprite';
-            spriteType = spriteData.id || spriteData.name?.toLowerCase() || 'custom';
+            spriteType = normalizeJuniorSpriteType(spriteData.id || spriteData.name || 'custom');
 
             if (spriteData.costumes && spriteData.costumes.length > 0) {
                 costumes = {};
@@ -336,7 +349,7 @@ export function useJuniorUIHandlers({
             }
         } else {
             const type = spriteData || 'robot';
-            spriteType = type;
+            spriteType = normalizeJuniorSpriteType(type);
             spriteName = type.charAt(0).toUpperCase() + type.slice(1);
 
             if (type === "robot") {
@@ -480,9 +493,9 @@ export function useJuniorUIHandlers({
 
         // Save current workspace before deletion
         if (workspaceRef && workspaceRef.current && activeSpriteIdRef && activeSpriteIdRef.current && !isLoadingWorkspaceRef?.current) {
-            const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+            const json = cloneWorkspaceData(Blockly.serialization.workspaces.save(workspaceRef.current));
             if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
-                spriteWorkspacesRef.current.set(activeSpriteIdRef.current, json);
+                spriteWorkspacesRef.current.set(activeSpriteIdRef.current, cloneWorkspaceData(json));
             }
         }
 
@@ -511,7 +524,7 @@ export function useJuniorUIHandlers({
                     const json = spriteWorkspacesRef.current.get(newActiveId);
                     workspaceRef.current.clear();
                     if (json && Object.keys(json).length > 0) {
-                        Blockly.serialization.workspaces.load(json, workspaceRef.current);
+                        Blockly.serialization.workspaces.load(cloneWorkspaceData(json), workspaceRef.current);
                         console.log(`[useJuniorUIHandlers] Loaded workspace for new active sprite: ${newActiveId}`);
                     }
                 } catch (err) {

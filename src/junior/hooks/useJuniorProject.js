@@ -2,6 +2,8 @@ import { useState, useRef } from "react";
 import * as Blockly from "@blockly-runtime";
 import { fileService } from "../../services/FileService";
 
+const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspaceJson || {}));
+
 export function useJuniorProject({
     workspaceRef,
     scenes,
@@ -157,7 +159,7 @@ export function useJuniorProject({
                 data.scenes.forEach(scene => {
                     scene.sprites.forEach(sprite => {
                         if (sprite.blocks && Object.keys(sprite.blocks).length > 0) {
-                            spriteWorkspacesRef.current.set(sprite.id, sprite.blocks);
+                            spriteWorkspacesRef.current.set(sprite.id, cloneWorkspaceData(sprite.blocks));
                             console.log(`[JuniorProject] Pre-loaded workspace for sprite: ${sprite.id}`);
                         }
                     });
@@ -195,9 +197,9 @@ export function useJuniorProject({
                             isLoadingWorkspaceRef.current = true;
                             Blockly.Events.disable();
                             try {
-                                const json = spriteWorkspacesRef?.current?.get(newId) || firstSprite.blocks;
+                                const json = spriteWorkspacesRef?.current?.get(newId) || cloneWorkspaceData(firstSprite.blocks);
                                 if (json && Object.keys(json).length > 0) {
-                                    Blockly.serialization.workspaces.load(json, workspaceRef.current);
+                                    Blockly.serialization.workspaces.load(cloneWorkspaceData(json), workspaceRef.current);
                                     console.log(`[JuniorProject] Loaded workspace for first sprite: ${newId}`);
                                 }
                             } catch (err) {

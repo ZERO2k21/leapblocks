@@ -1,5 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+const normalizeSpriteKey = (value) => String(value || '').trim().toLowerCase();
+const SPRITE_BOX_SIZE = 80;
+const SPRITE_CENTER = SPRITE_BOX_SIZE / 2;
+const PEN_TIP_LOCAL = { x: 7, y: 79 };
+
+const isJuniorPenSprite = (...values) => values.some((value) => {
+    const normalized = normalizeSpriteKey(value);
+
+    return normalized === 'pencil' ||
+        normalized === 'pen' ||
+        normalized === 'drawing_pen' ||
+        normalized.includes('pencil') ||
+        normalized.includes('drawing_pen');
+});
+
 export default function Sprite({ id, type, active, x, y, angle, size, visible, speech, currentCostume, costumes, mirrored, textColor, onClick, onDragStateChange }) {
     // Local ephemeral state (speech bubbles, feedback)
     // Speech is now propped from App.jsx store
@@ -11,8 +26,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
     const [penColor, setPenColor] = useState("#000000");
 
     // Helper: detect if this is a pen-type sprite
-    const isPenSprite = ['pencil', 'pen', 'drawing_pen'].includes(type) ||
-        ['pencil', 'pen', 'drawing_pen'].includes(id?.toLowerCase?.());
+    const isPenSprite = isJuniorPenSprite(type, id);
 
     // Offset calculated dynamically now
 
@@ -23,6 +37,8 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
     const penRef = useRef(isPenDown);
     const activeRef = useRef(active);
     const sizeRef = useRef(size);
+    const scaleXRef = useRef(scaleX);
+    const mirroredRef = useRef(mirrored);
     const currentCostumeRef = useRef(currentCostume);
     const costumesRef = useRef(costumes);
 
@@ -32,6 +48,8 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
     useEffect(() => { penRef.current = isPenDown; }, [isPenDown]);
     useEffect(() => { activeRef.current = active; }, [active]);
     useEffect(() => { sizeRef.current = size; }, [size]);
+    useEffect(() => { scaleXRef.current = scaleX; }, [scaleX]);
+    useEffect(() => { mirroredRef.current = mirrored; }, [mirrored]);
     useEffect(() => { currentCostumeRef.current = currentCostume; }, [currentCostume]);
     useEffect(() => { costumesRef.current = costumes; }, [costumes]);
 
@@ -42,31 +60,42 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
         }
     };
 
+    const getPenTipOffset = (
+        currentAngle = 0,
+        currentSize = 100,
+        currentScaleX = scaleXRef.current,
+        currentMirrored = mirroredRef.current
+    ) => {
+        const angleRad = (Number(currentAngle) || 0) * Math.PI / 180;
+        const sizeScale = Math.max(0.1, (Number(currentSize) || 100) / 100);
+        const horizontalDirection = (currentMirrored ? -currentScaleX : currentScaleX) < 0 ? -1 : 1;
+
+        const baseX = (PEN_TIP_LOCAL.x - SPRITE_CENTER) * horizontalDirection * sizeScale;
+        const baseY = (PEN_TIP_LOCAL.y - SPRITE_CENTER) * sizeScale;
+
+        const rotatedX = (Math.cos(angleRad) * baseX) - (Math.sin(angleRad) * baseY);
+        const rotatedY = (Math.sin(angleRad) * baseX) + (Math.cos(angleRad) * baseY);
+
+        return {
+            x: SPRITE_CENTER + rotatedX,
+            y: SPRITE_CENTER + rotatedY
+        };
+    };
+
     // Get Pencil Tip precisely based on sprite direction and size
     const getPencilTip = (currentX, currentY, currentAngle, currentSize) => {
-        // Sprite Center is at +40, +40 inside the 80x80 bounding box
-        const centerX = currentX + 40;
-        const centerY = currentY + 40;
-
         if (isPenSprite) {
-            const angleRad = currentAngle * Math.PI / 180;
-            const offsetX = 28;
-            const offsetY = 18;
-
-            const tipX =
-                centerX +
-                Math.cos(angleRad) * offsetX -
-                Math.sin(angleRad) * offsetY;
-
-            const tipY =
-                centerY +
-                Math.sin(angleRad) * offsetX +
-                Math.cos(angleRad) * offsetY;
-
-            return { x: tipX, y: tipY };
+            const offset = getPenTipOffset(currentAngle, currentSize);
+            return {
+                x: currentX + offset.x,
+                y: currentY + offset.y
+            };
         }
 
-        return { x: centerX, y: centerY };
+        return {
+            x: currentX + SPRITE_CENTER,
+            y: currentY + SPRITE_CENTER
+        };
     };
 
     // Calculate new position based on angle
@@ -88,7 +117,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
         // Draw if pen is down
         if (penRef.current && window.drawSegment) {
             const currentAngle = angleRef.current;
-            const currentSize = size;
+            const currentSize = sizeRef.current;
             const oldTip = getPencilTip(oldX, oldY, currentAngle, currentSize);
             const newTip = getPencilTip(newX, newY, currentAngle, currentSize);
 
@@ -301,6 +330,11 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
         e.preventDefault();
         e.stopPropagation();
         const rect = e.currentTarget.parentElement?.getBoundingClientRect();
+        const stageLeft = rect?.left || 0;
+        const stageTop = rect?.top || 0;
+        const pointerX = e.clientX - stageLeft;
+        const pointerY = e.clientY - stageTop;
+        const tipOffset = getPenTipOffset(angleRef.current, sizeRef.current, scaleX, mirrored);
 
         dragRef.current = {
             startX: e.clientX,
@@ -308,13 +342,12 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             origX: x,
             origY: y,
             didDrag: false,
-            parentLeft: rect?.left || 0,
-            parentTop: rect?.top || 0,
-            prevTip: null,
+            parentLeft: stageLeft,
+            parentTop: stageTop,
+            prevDrawPoint: isPenSprite ? { x: pointerX, y: pointerY } : null,
+            tipOffsetX: tipOffset.x,
+            tipOffsetY: tipOffset.y,
         };
-
-        // Drawing While Dragging - Store initial tip
-        dragRef.current.prevTip = getPencilTip(x, y, angleRef.current, size);
 
         setIsDragging(true);
         if (onDragStateChange) onDragStateChange(true);
@@ -325,28 +358,34 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
                 dragRef.current.didDrag = true;
             }
-            const newX = dragRef.current.origX + dx;
-            const newY = dragRef.current.origY + dy;
+            const pointerPoint = {
+                x: me.clientX - dragRef.current.parentLeft,
+                y: me.clientY - dragRef.current.parentTop
+            };
+            const newX = isPenSprite
+                ? (pointerPoint.x - dragRef.current.tipOffsetX)
+                : (dragRef.current.origX + dx);
+            const newY = isPenSprite
+                ? (pointerPoint.y - dragRef.current.tipOffsetY)
+                : (dragRef.current.origY + dy);
 
             // If it's a pen sprite, draw while dragging!
             if (isPenSprite && window.drawSegment) {
-                const tip = getPencilTip(newX, newY, angleRef.current, size);
-
-                if (dragRef.current.prevTip) {
+                if (dragRef.current.prevDrawPoint) {
                     const activeColor = window.penColor || penColor;
                     const activeSize = window.penSize || 4;
 
                     window.drawSegment(
-                        dragRef.current.prevTip.x,
-                        dragRef.current.prevTip.y,
-                        tip.x,
-                        tip.y,
+                        dragRef.current.prevDrawPoint.x,
+                        dragRef.current.prevDrawPoint.y,
+                        pointerPoint.x,
+                        pointerPoint.y,
                         activeColor,
                         activeSize
                     );
                 }
 
-                dragRef.current.prevTip = tip;
+                dragRef.current.prevDrawPoint = pointerPoint;
             }
 
             updateStore({ x: newX, y: newY });
@@ -369,11 +408,16 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
 
     // Determine pen-down indicator color
     const penIndicatorColor = window.penColor || penColor || '#FF0000';
-    const isPenType = ['pencil', 'pen', 'drawing_pen'].includes(type) ||
-        ['pencil', 'pen', 'drawing_pen'].includes(id?.toLowerCase?.());
+    const isPenType = isPenSprite;
 
     // Calculate current tip dynamically for render positions
-    const renderTip = getPencilTip(x, y, angle, size);
+    const renderTipOffset = isPenSprite
+        ? getPenTipOffset(angle, size, scaleX, mirrored)
+        : { x: SPRITE_CENTER, y: SPRITE_CENTER };
+    const renderTip = {
+        x: x + renderTipOffset.x,
+        y: y + renderTipOffset.y
+    };
 
     // Relative tip coordinates (for CSS transform origin within bounding box)
     const relativeTipX = renderTip.x - x;
@@ -411,7 +455,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                     position: 'absolute',
                     left: x,
                     top: y,
-                    transform: `rotate(${angle}deg) scale(${(size / 100) * (isDragging ? 1.15 : 1)}) scaleX(${mirrored ? -scaleX : scaleX})`,
+                    transform: `rotate(${angle}deg) scale(${(size / 100) * (isDragging && !isPenSprite ? 1.15 : 1)}) scaleX(${mirrored ? -scaleX : scaleX})`,
                     transition: isDragging ? 'transform 0.1s ease-out' : 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), top 0.2s, left 0.2s',
                     opacity: visible ? 1 : 0.5,
                     display: visible ? 'block' : 'none',

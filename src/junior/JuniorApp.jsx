@@ -51,6 +51,8 @@ const runtimeShim = { audioEngine };
 export const soundBlocksExt = new Scratch3SoundBlocks(runtimeShim);
 export const musicBlocksExt = new Scratch3MusicBlocks(runtimeShim);
 
+const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspaceJson || {}));
+
 // Register junior blocks
 Blockly.common.defineBlocks(juniorBlocks);
 
@@ -81,6 +83,7 @@ export default function JuniorApp({ onBack }) {
     const draggedBlockRef = useRef(null);
     const [isDraggingBlock, setIsDraggingBlock] = useState(false);
     const [successSpriteId, setSuccessSpriteId] = useState(null);
+    const [stageSize, setStageSize] = useState({ width: 480, height: 360 });
     const lastMousePosRef = useRef({ x: 0, y: 0 });
 
     useEffect(() => {
@@ -89,6 +92,37 @@ export default function JuniorApp({ onBack }) {
         };
         window.addEventListener('mousemove', handleMouseMove);
         return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, []);
+
+    useEffect(() => {
+        const updateStageSize = () => {
+            const rect = stageContainerRef.current?.getBoundingClientRect();
+            if (!rect) return;
+
+            const nextWidth = Math.max(1, Math.round(rect.width));
+            const nextHeight = Math.max(1, Math.round(rect.height));
+
+            setStageSize((prev) => (
+                prev.width === nextWidth && prev.height === nextHeight
+                    ? prev
+                    : { width: nextWidth, height: nextHeight }
+            ));
+        };
+
+        updateStageSize();
+
+        const stageNode = stageContainerRef.current;
+        const resizeObserver = stageNode && typeof ResizeObserver !== "undefined"
+            ? new ResizeObserver(updateStageSize)
+            : null;
+
+        resizeObserver?.observe(stageNode);
+        window.addEventListener("resize", updateStageSize);
+
+        return () => {
+            resizeObserver?.disconnect();
+            window.removeEventListener("resize", updateStageSize);
+        };
     }, []);
 
     // Modals state
@@ -134,7 +168,7 @@ export default function JuniorApp({ onBack }) {
     const [activeSpriteId, setActiveSpriteId] = useState("robot_default");
     const [winMessage, setWinMessage] = useState(null);
 
-    // Sync refs
+    // Sync globals used by dropdowns and runtime helpers.
     useEffect(() => {
         const getJuniorSoundOptions = () => {
             const assets = audioEngine.soundBank?.assets || {};
@@ -150,17 +184,11 @@ export default function JuniorApp({ onBack }) {
         };
 
         scenesRef.current = scenes;
-        activeSpriteIdRef.current = activeSpriteId;
         window.activeSpriteId = activeSpriteId;
 
         // Override any stale global from other editors before Blockly builds dropdowns.
         window.getActiveSpriteSounds = getJuniorSoundOptions;
         window.getActiveSpriteCostumes = getActiveSpriteCostumes;
-        window.nextCostume = () => spriteActions.nextCostume(activeSpriteId);
-        window.selectSprite = (id) => {
-            setActiveSpriteId(id);
-            if (activeSpriteIdRef) activeSpriteIdRef.current = id;
-        };
 
         return () => {
             delete window.activeSpriteId;
@@ -169,12 +197,6 @@ export default function JuniorApp({ onBack }) {
             }
             if (window.getActiveSpriteCostumes === getActiveSpriteCostumes) {
                 delete window.getActiveSpriteCostumes;
-            }
-            if (window.nextCostume) {
-                delete window.nextCostume;
-            }
-            if (window.selectSprite) {
-                delete window.selectSprite;
             }
         };
     }, [scenes, activeSpriteId]);
@@ -195,10 +217,10 @@ export default function JuniorApp({ onBack }) {
         const activeId = activeSpriteIdRef.current;
         if (!workspaceRef.current || !activeId || isLoadingWorkspaceRef.current) return;
 
-        const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+        const json = cloneWorkspaceData(Blockly.serialization.workspaces.save(workspaceRef.current));
 
         // Save to ref for immediate access
-        spriteWorkspacesRef.current.set(activeId, json);
+        spriteWorkspacesRef.current.set(activeId, cloneWorkspaceData(json));
         console.log(`[JuniorApp] Saved workspace for sprite: ${activeId}`);
 
         // Also update state for persistence
@@ -213,7 +235,7 @@ export default function JuniorApp({ onBack }) {
 
                         if (JSON.stringify(sprite.blocks) !== JSON.stringify(json)) {
                             console.log(`[JuniorApp] Saved workspace blocks to sprite: ${sprite.name}`);
-                            return { ...sprite, blocks: json };
+                            return { ...sprite, blocks: cloneWorkspaceData(json) };
                         }
                         return sprite;
                     })
@@ -265,10 +287,10 @@ export default function JuniorApp({ onBack }) {
             }
         };
 
-        spriteWorkspacesRef.current.set(targetSpriteId, updatedWorkspace);
+        spriteWorkspacesRef.current.set(targetSpriteId, cloneWorkspaceData(updatedWorkspace));
         setScenes(prev => prev.map(scene => ({
             ...scene,
-            sprites: scene.sprites.map(s => s.id === targetSpriteId ? { ...s, blocks: updatedWorkspace } : s)
+            sprites: scene.sprites.map(s => s.id === targetSpriteId ? { ...s, blocks: cloneWorkspaceData(updatedWorkspace) } : s)
         })));
 
         if (window.jiggle) window.jiggle(targetSpriteId);
@@ -297,7 +319,7 @@ export default function JuniorApp({ onBack }) {
             for (const scene of scenesRef.current || []) {
                 const sprite = scene.sprites.find(s => s.id === spriteId);
                 if (sprite && sprite.blocks && Object.keys(sprite.blocks).length > 0) {
-                    json = sprite.blocks;
+                    json = cloneWorkspaceData(sprite.blocks);
                     break;
                 }
             }
@@ -311,7 +333,7 @@ export default function JuniorApp({ onBack }) {
             if (json && Object.keys(json).length > 0) {
                 console.log(`[JuniorApp] Loading workspace for ${spriteId}:`, json);
                 workspaceRef.current.clear();
-                Blockly.serialization.workspaces.load(json, workspaceRef.current);
+                Blockly.serialization.workspaces.load(cloneWorkspaceData(json), workspaceRef.current);
                 console.log('[JuniorApp] Successfully loaded workspace for sprite:', spriteId);
             } else {
                 workspaceRef.current.clear();
@@ -858,8 +880,8 @@ export default function JuniorApp({ onBack }) {
                         ))}
                         <canvas
                             ref={canvasRef}
-                            width={800}
-                            height={600}
+                            width={stageSize.width}
+                            height={stageSize.height}
                             style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 5, width: '100%', height: '100%' }}
                         />
                     </div>
