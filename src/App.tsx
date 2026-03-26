@@ -1,6 +1,5 @@
 import React, { useState, lazy, Suspense } from 'react';
-import LandingPage from './LandingPage';
-import './blockly/registerCustomFields';
+const LandingPage = lazy(() => import('./LandingPage'));
 
 const IntermediateApp = lazy(() => import('./IntermediateApp'));
 // @ts-ignore
@@ -44,6 +43,12 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 
 export default function App() {
     const [mode, setMode] = useState<AppMode>('home');
+
+    // Lazy load Blockly custom fields to keep main bundle small
+    React.useEffect(() => {
+        import('./blockly/registerCustomFields');
+    }, []);
+
     const [intermediateOpenTab, setIntermediateOpenTab] = useState<'blocks' | 'python' | 'costumes' | 'sounds'>('blocks');
     const [switchPrompt, setSwitchPrompt] = useState<null | { from: AppMode; to: AppMode; tab?: 'blocks' | 'python' | 'costumes' | 'sounds' }>(null);
 

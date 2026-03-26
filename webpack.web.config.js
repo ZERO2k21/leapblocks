@@ -1,6 +1,8 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const CompressionPlugin = require('compression-webpack-plugin');
 
 module.exports = {
     mode: 'production',
@@ -20,19 +22,28 @@ module.exports = {
             "child_process": false,
             "serialport": false,
             "electron": false,
-            "events": require.resolve("events/") // occasionally needed
+            "events": require.resolve("events/")
         },
         alias: {
             '@blockly-runtime': path.resolve(__dirname, 'src/blockly/runtime.ts'),
-            // Stub serialport if used
             serialport: false,
             electron: false
         }
     },
     optimization: {
-        // Disable scope hoisting to prevent TDZ (Temporal Dead Zone) errors
-        // in production builds where const/class declarations get reordered
         concatenateModules: false,
+        splitChunks: {
+            chunks: 'all',
+            maxSize: 244000,
+            cacheGroups: {
+                vendors: {
+                    test: /[\\/]node_modules[\\/]/,
+                    name: 'vendors',
+                    chunks: 'all',
+                },
+            },
+        },
+        runtimeChunk: 'single',
     },
     module: {
         rules: [
@@ -66,6 +77,17 @@ module.exports = {
             patterns: [
                 { from: path.resolve(__dirname, 'public'), to: '.' },
             ],
+        }),
+        new BundleAnalyzerPlugin({
+            analyzerMode: 'static',
+            openAnalyzer: false,
+            reportFilename: 'bundle-report.html',
+        }),
+        new CompressionPlugin({
+            algorithm: 'gzip',
+            test: /\.(js|css|html|svg)$/,
+            threshold: 10240,
+            minRatio: 0.8,
         }),
     ],
 };
