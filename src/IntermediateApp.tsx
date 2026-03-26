@@ -62,6 +62,7 @@ import WorkspaceTrash from './components/WorkspaceTrash';
 import UnsavedWarningModal from './junior/components/UnsavedWarningModal';
 
 import { fileService } from './services/FileService';
+import { registerLeapRenderer } from './junior/blocks/LeapRenderer';
 
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
 
@@ -127,12 +128,12 @@ const registerBlocks = () => {
             log.app(`Registered ${newBlocks.length} additional blocks (Arduino/ESP32/Hardware).`);
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : String(e);
-            log.app(`Error registering additional blocks: ${errorMessage}`);
         }
-    } else {
-        log.app('No additional blocks to register.');
     }
 };
+
+// Register Leap Renderer
+registerLeapRenderer(Blockly);
 
 registerBlocks();
 
@@ -2968,9 +2969,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         try {
 
-            const portList = await window.electronAPI.getPorts();
-
+        if ((window as any).electronAPI?.getPorts) {
+            const portList = await (window as any).electronAPI.getPorts();
             setPorts(portList);
+        } else {
+            // Mock port for web demo
+            setPorts([{ path: 'WEB_DEMO', manufacturer: 'LeapBlocks Web' }]);
+        }
 
             if (portList.length === 0) {
 
@@ -2997,17 +3002,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         let timer: NodeJS.Timeout;
 
         if (editorMode === 'upload' && !selectedPort && !isConnected) {
-
             timer = setInterval(() => {
-
-                window.electronAPI.getPorts().then(portList => {
-
-                    setPorts(portList);
-
-                }).catch(() => { });
-
+                if ((window as any).electronAPI?.getPorts) {
+                    (window as any).electronAPI.getPorts().then(portList => {
+                        setPorts(portList);
+                    }).catch(() => { });
+                }
             }, 5000);
-
         }
 
         return () => {

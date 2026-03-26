@@ -3,7 +3,7 @@ import * as Blockly from '@blockly-runtime';
 // ═══════════════════════════════════════════════════════════════════════════
 // JUNIOR BLOCKS - Simplified blocks for ages 4+
 // ═══════════════════════════════════════════════════════════════════════════
-// Junior blocks are:
+// Junior blocks are
 // - Fewer in number
 // - Larger with bigger text
 // - More visual (icons/emojis)

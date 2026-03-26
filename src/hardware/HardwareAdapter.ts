@@ -17,12 +17,12 @@ export class HardwareAdapter {
 
     constructor() {
         // Set up serial data listener
-        if (typeof window !== 'undefined' && window.electronAPI) {
-            window.electronAPI.onSerialData((data: string) => {
+        if (typeof window !== 'undefined' && (window as any).electronAPI) {
+            (window as any).electronAPI.onSerialData((data: string) => {
                 this.handleSerialData(data);
             });
 
-            window.electronAPI.onConnectionChange((connected: boolean) => {
+            (window as any).electronAPI.onConnectionChange((connected: boolean) => {
                 this.isConnected = connected;
                 if (!connected) {
                     this.responseBuffer = '';
@@ -77,6 +77,11 @@ export class HardwareAdapter {
             return { success: false, error: 'Not connected' };
         }
 
+        const electronAPI = (window as any).electronAPI;
+        if (!electronAPI) {
+            return { success: false, error: 'Hardware interaction requires LeapBlocks Desktop' };
+        }
+
         return new Promise((resolve) => {
             const id = this.callbackId++;
 
@@ -93,7 +98,12 @@ export class HardwareAdapter {
             });
 
             // Send command
-            window.electronAPI.sendSerial(command);
+            try {
+                electronAPI.sendSerial(command);
+            } catch (err) {
+                console.error('[HardwareAdapter] sendSerial failed:', err);
+                resolve({ success: false, error: 'Failed to send command' });
+            }
         });
     }
 
