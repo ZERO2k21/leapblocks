@@ -1151,8 +1151,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     };
 
-
-
     // ═══════════════════════════════════════════════════════════════════════
 
     // WORKSPACE CHANGE HANDLER
@@ -1172,7 +1170,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             return;
 
         }
-
 
 
         try {
@@ -1238,8 +1235,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 }
 
             }
-
-
 
             // Auto-save workspace for current sprite on every meaningful change
 
@@ -1519,8 +1514,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     };
 
-
-
     /**
 
      * Handle real-time block interaction: preview animation blocks + hardware control
@@ -1544,7 +1537,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         if (!block) return;
 
 
-
         // Animation block interaction on click
 
         if (event.type === Blockly.Events.CLICK) {
@@ -1562,15 +1554,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 }
             }
 
-
-
             // Fallback: Preview single block action
 
             previewBlockActionRef.current(block);
 
         }
-
-
 
         // Hardware block interaction (Arduino)
 

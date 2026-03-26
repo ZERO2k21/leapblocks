@@ -30,6 +30,16 @@ import { HintManager } from "./engine/HintManager";
 import { AudioEngine } from "../scratch-audio/src/AudioEngine";
 import { Scratch3SoundBlocks } from "../scratch-vm/src/extensions/scratch3_sound/index.js";
 import { Scratch3MusicBlocks } from "../scratch-vm/src/extensions/scratch3_music/index.js";
+import { gettingStartedTutorial } from "./tutorials/gettingStarted";
+import { moveRoboTutorial } from "./tutorials/moveRobo";
+import { makeSoundsTutorial } from "./tutorials/makeSounds";
+import JuniorTutorialOverlay from "./components/JuniorTutorialOverlay";
+
+const TUTORIALS = {
+    'getting_started': gettingStartedTutorial,
+    'move_robo': moveRoboTutorial,
+    'make_sounds': makeSoundsTutorial
+};
 
 // Import styles
 import "./styles/juniorBlocks.css";
@@ -160,6 +170,11 @@ export default function JuniorApp({ onBack }) {
     const [isSpriteModalOpen, setIsSpriteModalOpen] = useState(false);
     const [isBackdropChooserOpen, setIsBackdropChooserOpen] = useState(false);
     const [backdropEditSceneId, setBackdropEditSceneId] = useState(null);
+    const [currentTutorialId, setCurrentTutorialId] = useState(null);
+
+    const handleTutorialStart = (tutorialId) => setCurrentTutorialId(tutorialId);
+    const handleTutorialClose = () => setCurrentTutorialId(null);
+    const currentTutorial = currentTutorialId ? TUTORIALS[currentTutorialId] : null;
 
     // Paint Editor
     const [paintEditor, setPaintEditor] = useState({
@@ -666,8 +681,17 @@ export default function JuniorApp({ onBack }) {
                 onProjectNameChange={setProjectName}
                 onFileAction={handlers.handleFileMenu}
                 onEditAction={handlers.handleEditMenu}
+                onTutorialStart={handleTutorialStart}
                 onBack={onBack}
             />
+
+            {currentTutorial && (
+                <JuniorTutorialOverlay 
+                    tutorial={currentTutorial}
+                    onComplete={handleTutorialClose}
+                    onClose={handleTutorialClose}
+                />
+            )}
 
             <JuniorSoundRecorder
                 isOpen={isSoundRecorderOpen}

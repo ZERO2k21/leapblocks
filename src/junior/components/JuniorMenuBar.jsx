@@ -162,6 +162,7 @@ export default function JuniorMenuBar({
     onProjectNameChange,
     onFileAction,
     onEditAction,
+    onTutorialStart,
     onBack,
 }) {
     const [openMenu, setOpenMenu] = useState(null);
@@ -186,9 +187,9 @@ export default function JuniorMenuBar({
     ];
 
     const tutorialsMenuItems = [
-        { label: 'Getting Started', icon: BookOpen, onClick: () => alert('Tutorial coming soon!') },
-        { label: 'Move the Robo', icon: BookOpen, onClick: () => alert('Tutorial coming soon!') },
-        { label: 'Make Sounds', icon: BookOpen, onClick: () => alert('Tutorial coming soon!') },
+        { label: 'Getting Started', icon: BookOpen, onClick: () => onTutorialStart?.('getting_started') },
+        { label: 'Move the Robo', icon: BookOpen, onClick: () => onTutorialStart?.('move_robo') },
+        { label: 'Make Sounds', icon: BookOpen, onClick: () => onTutorialStart?.('make_sounds') },
     ];
 
     return (
