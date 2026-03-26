@@ -2,7 +2,7 @@ import React from 'react';
 import { X, Cpu } from 'lucide-react';
 
 // Board definitions - Arduino and ESP32 focus with SVG icons
-const BOARDS = [
+export const BOARDS = [
     {
         id: 'arduino_uno',
         name: 'Arduino Uno',
@@ -226,4 +226,3 @@ export default function BoardSelectionModal({ isOpen, onClose, onSelect, current
     );
 }
 
-export { BOARDS };

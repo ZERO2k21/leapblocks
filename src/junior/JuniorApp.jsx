@@ -43,20 +43,54 @@ const robotWave1 = "/assets/sprites/robot/image-Photoroom.png";
 const robotWave2 = "/assets/sprites/robot/image-removebg-preview (1).png";
 const robotTalk1 = "/assets/sprites/robot/image-removebg-preview.png";
 
-const audioEngine = new AudioEngine();
-const runtimeShim = { audioEngine };
-export const soundBlocksExt = new Scratch3SoundBlocks(runtimeShim);
-export const musicBlocksExt = new Scratch3MusicBlocks(runtimeShim);
+// ─── Lazy initialization to avoid TDZ errors in production builds ─────────
+// Webpack's ModuleConcatenationPlugin (scope hoisting) can reorder const/class
+// declarations, causing "Cannot access 'X' before initialization" at runtime.
+// Using lazy init ensures these run only after all module bindings exist.
+let _audioEngine, _soundBlocksExt, _musicBlocksExt, _blocksRegistered;
+
+function getAudioEngine() {
+    if (!_audioEngine) {
+        _audioEngine = new AudioEngine();
+    }
+    return _audioEngine;
+}
+
+function getSoundBlocksExt() {
+    if (!_soundBlocksExt) {
+        const engine = getAudioEngine();
+        _soundBlocksExt = new Scratch3SoundBlocks({ audioEngine: engine });
+    }
+    return _soundBlocksExt;
+}
+
+function getMusicBlocksExt() {
+    if (!_musicBlocksExt) {
+        const engine = getAudioEngine();
+        _musicBlocksExt = new Scratch3MusicBlocks({ audioEngine: engine });
+    }
+    return _musicBlocksExt;
+}
+
+function ensureBlocksRegistered() {
+    if (!_blocksRegistered) {
+        _blocksRegistered = true;
+        Blockly.common.defineBlocks(juniorBlocks);
+        javascriptGenerator.forBlock['junior_change_costume'] = () => 'nextCostume();\n';
+    }
+}
 
 const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspaceJson || {}));
 
-// Register junior blocks
-Blockly.common.defineBlocks(juniorBlocks);
-
-// Define generators for junior blocks
-javascriptGenerator.forBlock['junior_change_costume'] = () => 'nextCostume();\n';
-
 export default function JuniorApp({ onBack }) {
+    // Ensure blocks are registered on first render
+    ensureBlocksRegistered();
+
+    // Get lazily-initialized singletons
+    const audioEngine = getAudioEngine();
+    const soundBlocksExt = getSoundBlocksExt();
+    const musicBlocksExt = getMusicBlocksExt();
+
     // Refs
     const workspaceRef = useRef(null);
     const blocklyDiv = useRef(null);

@@ -111,11 +111,17 @@ const C = {
 };
 
 // Map board IDs to names for template generation
-// We define this here at top level so helper functions can access it
-const BOARD_NAME_BY_ID = BOARDS.reduce((acc, b) => {
-    acc[b.id] = b.name;
-    return acc;
-}, {});
+// Lazy init to avoid TDZ when BOARDS is not yet initialized after scope hoisting
+let _BOARD_NAME_BY_ID;
+function getBoardNameById() {
+    if (!_BOARD_NAME_BY_ID) {
+        _BOARD_NAME_BY_ID = BOARDS.reduce((acc, b) => {
+            acc[b.id] = b.name;
+            return acc;
+        }, {});
+    }
+    return _BOARD_NAME_BY_ID;
+}
 
 
 // ─── Default Files ─────────────────────────────────────────────────────────────
@@ -345,7 +351,7 @@ const insertIncludeLineIntoSource = (sourceCode = "", includeLine) => {
 
 const createUploadFiles = (boardId) => {
     const boardConfig = getBoardConfig(boardId);
-    const boardName = BOARD_NAME_BY_ID[boardId] || boardConfig.runtimeLabel;
+    const boardName = getBoardNameById()[boardId] || boardConfig.runtimeLabel;
 
     return {
         "main.py": buildMicroPythonTemplate(boardName),
@@ -363,13 +369,20 @@ const formatPortLabel = (port) => {
 
 
 // ─── Sprite Library (from shared component) ─────────────────────────────────
-const SPRITE_LIBRARY = FULL_CATALOG.map(sprite => ({
-    name: sprite.name,
-    img: sprite.image || sprite.emoji,
-    type: sprite.id,
-    costumes: sprite.costumes || [],
-    category: sprite.category
-}));
+// Lazy init to avoid TDZ when FULL_CATALOG is not yet initialized after scope hoisting
+let _SPRITE_LIBRARY;
+function getSpriteLibrary() {
+    if (!_SPRITE_LIBRARY) {
+        _SPRITE_LIBRARY = FULL_CATALOG.map(sprite => ({
+            name: sprite.name,
+            img: sprite.image || sprite.emoji,
+            type: sprite.id,
+            costumes: sprite.costumes || [],
+            category: sprite.category
+        }));
+    }
+    return _SPRITE_LIBRARY;
+}
 
 // ─── Backdrop Library (from shared component) ───────────────────────────────
 const BACKDROP_LIBRARY = [
@@ -628,7 +641,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     }, []);
 
     const selectedBoardConfig = getBoardConfig(selectedBoard);
-    const selectedBoardName = BOARD_NAME_BY_ID[selectedBoard] || selectedBoardConfig.runtimeLabel;
+    const selectedBoardName = getBoardNameById()[selectedBoard] || selectedBoardConfig.runtimeLabel;
     const activeBoardFile = selectedBoardConfig.fileName;
     const protectedUploadFiles = new Set(["main.py", activeBoardFile]);
     const visibleUploadFiles = uploadView === "board"
@@ -2851,7 +2864,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         spriteFilter={spriteFilter}
                         setSpriteFilter={setSpriteFilter}
                         addSpriteFromLibrary={addSpriteFromLibrary}
-                        SPRITE_LIBRARY={SPRITE_LIBRARY}
+                        SPRITE_LIBRARY={getSpriteLibrary()}
                         BACKDROP_LIBRARY={BACKDROP_LIBRARY}
                         backdrop={backdrop}
                         handleSetBackdrop={handleSetBackdrop}
@@ -3065,7 +3078,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                 gridTemplateColumns: 'repeat(5, 1fr)',
                                 gap: '12px'
                             }}>
-                                {SPRITE_LIBRARY.map(sp => (
+                                {getSpriteLibrary().map(sp => (
                                     <div
                                         key={sp.name}
                                         onClick={() => {

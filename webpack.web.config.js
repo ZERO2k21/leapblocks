@@ -29,6 +29,11 @@ module.exports = {
             electron: false
         }
     },
+    optimization: {
+        // Disable scope hoisting to prevent TDZ (Temporal Dead Zone) errors
+        // in production builds where const/class declarations get reordered
+        concatenateModules: false,
+    },
     module: {
         rules: [
             {
