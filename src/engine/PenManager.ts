@@ -92,4 +92,11 @@ export class PenManager {
     }
 }
 
-export const penManager = PenManager.getInstance();
+export const penManager: PenManager = new Proxy({} as PenManager, {
+    get(_target, prop) {
+        const instance = PenManager.getInstance();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (PenManager.getInstance() as any)[prop] = value; return true; }
+});

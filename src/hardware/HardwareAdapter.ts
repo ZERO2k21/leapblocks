@@ -287,5 +287,16 @@ export class HardwareAdapter {
     }
 }
 
-// Singleton instance
-export const hardwareAdapter = new HardwareAdapter();
+let _hardwareAdapter: HardwareAdapter | null = null;
+export function getHardwareAdapter(): HardwareAdapter {
+    if (!_hardwareAdapter) _hardwareAdapter = new HardwareAdapter();
+    return _hardwareAdapter;
+}
+export const hardwareAdapter: HardwareAdapter = new Proxy({} as HardwareAdapter, {
+    get(_target, prop) {
+        const instance = getHardwareAdapter();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (getHardwareAdapter() as any)[prop] = value; return true; }
+});

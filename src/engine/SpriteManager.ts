@@ -70,5 +70,17 @@ class SpriteManager {
     }
 }
 
-export const spriteManager = new SpriteManager();
+let _spriteManager: SpriteManager | null = null;
+export function getSpriteManager(): SpriteManager {
+    if (!_spriteManager) _spriteManager = new SpriteManager();
+    return _spriteManager;
+}
+export const spriteManager: SpriteManager = new Proxy({} as SpriteManager, {
+    get(_target, prop) {
+        const instance = getSpriteManager();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (getSpriteManager() as any)[prop] = value; return true; }
+});
 export default spriteManager;

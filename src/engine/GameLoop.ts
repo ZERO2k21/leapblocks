@@ -39,5 +39,17 @@ class GameLoop {
     };
 }
 
-export const gameLoop = new GameLoop();
+let _gameLoop: GameLoop | null = null;
+export function getGameLoop(): GameLoop {
+    if (!_gameLoop) _gameLoop = new GameLoop();
+    return _gameLoop;
+}
+export const gameLoop: GameLoop = new Proxy({} as GameLoop, {
+    get(_target, prop) {
+        const instance = getGameLoop();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (getGameLoop() as any)[prop] = value; return true; }
+});
 export default gameLoop;

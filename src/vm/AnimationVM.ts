@@ -1522,6 +1522,18 @@ export class AnimationVM {
     }
 }
 
-// Singleton instance
-export const animationVM = new AnimationVM();
+// Singleton instance - lazy initialized to avoid TDZ errors from webpack chunk splitting
+let _animationVM: AnimationVM | null = null;
+export function getAnimationVM(): AnimationVM {
+    if (!_animationVM) _animationVM = new AnimationVM();
+    return _animationVM;
+}
+export const animationVM: AnimationVM = new Proxy({} as AnimationVM, {
+    get(_target, prop) {
+        const instance = getAnimationVM();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (getAnimationVM() as any)[prop] = value; return true; }
+});
 

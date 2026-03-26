@@ -18,7 +18,19 @@ const log = (blockType: string, msg: string, data?: any) => {
 
 console.log('[GENERATOR] Creating Arduino generator...');
 
-export const arduinoGenerator = new Blockly.Generator('Arduino');
+let _arduinoGenerator: Blockly.Generator | null = null;
+export function getArduinoGenerator(): Blockly.Generator {
+    if (!_arduinoGenerator) _arduinoGenerator = new Blockly.Generator('Arduino');
+    return _arduinoGenerator;
+}
+export const arduinoGenerator = new Proxy({} as Blockly.Generator, {
+    get(_target, prop) {
+        const instance = getArduinoGenerator();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (getArduinoGenerator() as any)[prop] = value; return true; }
+});
 
 
 

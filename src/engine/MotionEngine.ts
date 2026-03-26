@@ -88,5 +88,17 @@ class MotionEngine {
         sprite.pointInDirection(angle);
     }
 }
-export const motionEngine = new MotionEngine();
+let _motionEngine: MotionEngine | null = null;
+export function getMotionEngine(): MotionEngine {
+    if (!_motionEngine) _motionEngine = new MotionEngine();
+    return _motionEngine;
+}
+export const motionEngine: MotionEngine = new Proxy({} as MotionEngine, {
+    get(_target, prop) {
+        const instance = getMotionEngine();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (getMotionEngine() as any)[prop] = value; return true; }
+});
 export default motionEngine;

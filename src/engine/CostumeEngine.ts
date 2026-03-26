@@ -39,5 +39,17 @@ class CostumeEngine {
     }
 }
 
-export const costumeEngine = new CostumeEngine();
+let _costumeEngine: CostumeEngine | null = null;
+export function getCostumeEngine(): CostumeEngine {
+    if (!_costumeEngine) _costumeEngine = new CostumeEngine();
+    return _costumeEngine;
+}
+export const costumeEngine: CostumeEngine = new Proxy({} as CostumeEngine, {
+    get(_target, prop) {
+        const instance = getCostumeEngine();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (getCostumeEngine() as any)[prop] = value; return true; }
+});
 export default costumeEngine;

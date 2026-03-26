@@ -134,4 +134,11 @@ export class SoundManager {
     }
 }
 
-export const soundManager = SoundManager.getInstance();
+export const soundManager: SoundManager = new Proxy({} as SoundManager, {
+    get(_target, prop) {
+        const instance = SoundManager.getInstance();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (SoundManager.getInstance() as any)[prop] = value; return true; }
+});

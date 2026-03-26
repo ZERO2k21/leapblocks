@@ -119,4 +119,16 @@ class FileService {
     }
 }
 
-export const fileService = new FileService();
+let _fileService: FileService | null = null;
+export function getFileService(): FileService {
+    if (!_fileService) _fileService = new FileService();
+    return _fileService;
+}
+export const fileService: FileService = new Proxy({} as FileService, {
+    get(_target, prop) {
+        const instance = getFileService();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (getFileService() as any)[prop] = value; return true; }
+});

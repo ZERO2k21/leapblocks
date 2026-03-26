@@ -95,5 +95,17 @@ class ProjectManager {
     }
 }
 
-export const projectManager = new ProjectManager();
+let _projectManager: ProjectManager | null = null;
+export function getProjectManager(): ProjectManager {
+    if (!_projectManager) _projectManager = new ProjectManager();
+    return _projectManager;
+}
+export const projectManager: ProjectManager = new Proxy({} as ProjectManager, {
+    get(_target, prop) {
+        const instance = getProjectManager();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (getProjectManager() as any)[prop] = value; return true; }
+});
 export default projectManager;

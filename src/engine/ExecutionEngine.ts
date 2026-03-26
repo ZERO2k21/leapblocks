@@ -54,5 +54,17 @@ class ExecutionEngine {
     }
 }
 
-export const executionEngine = new ExecutionEngine();
+let _executionEngine: ExecutionEngine | null = null;
+export function getExecutionEngine(): ExecutionEngine {
+    if (!_executionEngine) _executionEngine = new ExecutionEngine();
+    return _executionEngine;
+}
+export const executionEngine: ExecutionEngine = new Proxy({} as ExecutionEngine, {
+    get(_target, prop) {
+        const instance = getExecutionEngine();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (getExecutionEngine() as any)[prop] = value; return true; }
+});
 export default executionEngine;

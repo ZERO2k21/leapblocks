@@ -156,8 +156,18 @@ export class StageManager {
     }
 }
 
-// Singleton instance
-export const stageManager = new StageManager(() => {
-    // This will be connected to the GameLoop or direct render triggers
-    window.dispatchEvent(new Event('leap-stage-update'));
+let _stageManager: StageManager | null = null;
+export function getStageManager(): StageManager {
+    if (!_stageManager) _stageManager = new StageManager(() => {
+        window.dispatchEvent(new Event('leap-stage-update'));
+    });
+    return _stageManager;
+}
+export const stageManager: StageManager = new Proxy({} as StageManager, {
+    get(_target, prop) {
+        const instance = getStageManager();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (getStageManager() as any)[prop] = value; return true; }
 });

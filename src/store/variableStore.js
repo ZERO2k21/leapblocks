@@ -77,5 +77,17 @@ class VariableStore {
     }
 }
 
-const variableStore = new VariableStore();
+let _variableStore = null;
+function getVariableStore() {
+    if (!_variableStore) _variableStore = new VariableStore();
+    return _variableStore;
+}
+const variableStore = new Proxy({}, {
+    get(_target, prop) {
+        const instance = getVariableStore();
+        const value = instance[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { getVariableStore()[prop] = value; return true; }
+});
 export default variableStore;

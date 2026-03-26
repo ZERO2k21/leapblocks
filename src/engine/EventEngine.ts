@@ -29,5 +29,17 @@ class EventEngine {
     }
 }
 
-export const eventEngine = new EventEngine();
+let _eventEngine: EventEngine | null = null;
+export function getEventEngine(): EventEngine {
+    if (!_eventEngine) _eventEngine = new EventEngine();
+    return _eventEngine;
+}
+export const eventEngine: EventEngine = new Proxy({} as EventEngine, {
+    get(_target, prop) {
+        const instance = getEventEngine();
+        const value = (instance as any)[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { (getEventEngine() as any)[prop] = value; return true; }
+});
 export default eventEngine;

@@ -513,5 +513,17 @@ class ScratchRuntime {
     }
 }
 
-export const scratchRuntime = new ScratchRuntime();
+let _scratchRuntime = null;
+export function getScratchRuntime() {
+    if (!_scratchRuntime) _scratchRuntime = new ScratchRuntime();
+    return _scratchRuntime;
+}
+export const scratchRuntime = new Proxy({}, {
+    get(_target, prop) {
+        const instance = getScratchRuntime();
+        const value = instance[prop];
+        return typeof value === 'function' ? value.bind(instance) : value;
+    },
+    set(_target, prop, value) { getScratchRuntime()[prop] = value; return true; }
+});
 export default scratchRuntime;
