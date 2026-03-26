@@ -18,7 +18,10 @@ const COLORS = {
 };
 
 // Junior Block Definitions
-export const juniorBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
+let _juniorBlocks: any[] | null = null;
+export const getJuniorBlocks = () => {
+    if (!_juniorBlocks) {
+        _juniorBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
     // ═══════════════════════════════════════════════════════════════════════════
     // EVENTS (Simplified)
     // ═══════════════════════════════════════════════════════════════════════════
@@ -226,67 +229,76 @@ export const juniorBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
         tooltip: 'Keep doing this forever',
         helpUrl: '',
     },
-]);
+        ]);
+    }
+    return _juniorBlocks;
+};
 
 // Junior Toolbox - simplified for young children
-export const juniorToolbox = {
-    kind: 'categoryToolbox',
-    contents: [
-        {
-            kind: 'pictobloxCategory',
-            name: 'Start',
-            colour: COLORS.events,
+let _juniorToolbox: any | null = null;
+export const getJuniorToolbox = () => {
+    if (!_juniorToolbox) {
+        _juniorToolbox = {
+            kind: 'categoryToolbox',
             contents: [
-                { kind: 'block', type: 'junior_event_start' },
-                { kind: 'block', type: 'junior_event_click' },
+                {
+                    kind: 'pictobloxCategory',
+                    name: 'Start',
+                    colour: COLORS.events,
+                    contents: [
+                        { kind: 'block', type: 'junior_event_start' },
+                        { kind: 'block', type: 'junior_event_click' },
+                    ],
+                },
+                {
+                    kind: 'pictobloxCategory',
+                    name: 'Move',
+                    colour: COLORS.motion,
+                    contents: [
+                        { kind: 'block', type: 'junior_move_forward' },
+                        { kind: 'block', type: 'junior_move_backward' },
+                        { kind: 'block', type: 'junior_turn_right' },
+                        { kind: 'block', type: 'junior_turn_left' },
+                        { kind: 'block', type: 'junior_jump' },
+                        { kind: 'block', type: 'junior_go_home' },
+                    ],
+                },
+                {
+                    kind: 'pictobloxCategory',
+                    name: 'Look',
+                    colour: COLORS.looks,
+                    contents: [
+                        { kind: 'block', type: 'junior_say_hello' },
+                        { kind: 'block', type: 'junior_say_goodbye' },
+                        { kind: 'block', type: 'junior_grow' },
+                        { kind: 'block', type: 'junior_shrink' },
+                        { kind: 'block', type: 'junior_show' },
+                        { kind: 'block', type: 'junior_hide' },
+                        { kind: 'block', type: 'junior_change_costume' },
+                    ],
+                },
+                {
+                    kind: 'pictobloxCategory',
+                    name: 'Sound',
+                    colour: COLORS.sound,
+                    contents: [
+                        { kind: 'block', type: 'junior_play_pop' },
+                        { kind: 'block', type: 'junior_play_meow' },
+                        { kind: 'block', type: 'junior_play_boing' },
+                    ],
+                },
+                {
+                    kind: 'pictobloxCategory',
+                    name: 'Control',
+                    colour: COLORS.control,
+                    contents: [
+                        { kind: 'block', type: 'junior_wait' },
+                        { kind: 'block', type: 'junior_repeat_3' },
+                        { kind: 'block', type: 'junior_repeat_forever' },
+                    ],
+                },
             ],
-        },
-        {
-            kind: 'pictobloxCategory',
-            name: 'Move',
-            colour: COLORS.motion,
-            contents: [
-                { kind: 'block', type: 'junior_move_forward' },
-                { kind: 'block', type: 'junior_move_backward' },
-                { kind: 'block', type: 'junior_turn_right' },
-                { kind: 'block', type: 'junior_turn_left' },
-                { kind: 'block', type: 'junior_jump' },
-                { kind: 'block', type: 'junior_go_home' },
-            ],
-        },
-        {
-            kind: 'pictobloxCategory',
-            name: 'Look',
-            colour: COLORS.looks,
-            contents: [
-                { kind: 'block', type: 'junior_say_hello' },
-                { kind: 'block', type: 'junior_say_goodbye' },
-                { kind: 'block', type: 'junior_grow' },
-                { kind: 'block', type: 'junior_shrink' },
-                { kind: 'block', type: 'junior_show' },
-                { kind: 'block', type: 'junior_hide' },
-                { kind: 'block', type: 'junior_change_costume' },
-            ],
-        },
-        {
-            kind: 'pictobloxCategory',
-            name: 'Sound',
-            colour: COLORS.sound,
-            contents: [
-                { kind: 'block', type: 'junior_play_pop' },
-                { kind: 'block', type: 'junior_play_meow' },
-                { kind: 'block', type: 'junior_play_boing' },
-            ],
-        },
-        {
-            kind: 'pictobloxCategory',
-            name: 'Control',
-            colour: COLORS.control,
-            contents: [
-                { kind: 'block', type: 'junior_wait' },
-                { kind: 'block', type: 'junior_repeat_3' },
-                { kind: 'block', type: 'junior_repeat_forever' },
-            ],
-        },
-    ],
+        };
+    }
+    return _juniorToolbox;
 };

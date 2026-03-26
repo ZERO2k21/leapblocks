@@ -2734,50 +2734,27 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                 let tempWs: Blockly.Workspace | null = null;
-
                 try {
-
                     Blockly.Events.disable();
-
                     tempWs = new Blockly.Workspace();
-
                     Blockly.serialization.workspaces.load(savedJson, tempWs);
-
                     Blockly.Events.enable();
-
-
 
                     const compiler = new AnimationCompiler(s.id);
-
-                    const scripts = compiler.compile(tempWs);
-
+                    const scripts = compiler.compile(tempWs!);
                     allScripts = allScripts.concat(scripts);
 
-
-
                     // Soft reset effects for this sprite
-
                     if (s.sayText) s.clearSay();
-
                     s.clearEffects();
 
-
-
-                    tempWs.dispose();
-
+                    tempWs?.dispose();
                 } catch (e) {
-
                     Blockly.Events.enable();
-
                     console.error(`[APP] Error compiling isolated sprite ${s.name}:`, e);
-
-                    if (tempWs) { try { tempWs.dispose(); } catch (_) { } }
-
+                    if (tempWs) { try { (tempWs as any).dispose(); } catch (_) { } }
                 }
-
             }
-
-
 
             if (allScripts.length > 0 || spriteWorkspacesRef.current.size > 0) {
                 setCompiledScripts(allScripts);
@@ -2883,211 +2860,134 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
     // ═══════════════════════════════════════════════════════════════════════
-
     // HARDWARE CONTROLS
-
     // ═══════════════════════════════════════════════════════════════════════
-
     const refreshPorts = useCallback(async () => {
-
         try {
-
-        if ((window as any).electronAPI?.getPorts) {
-            const portList = await (window as any).electronAPI.getPorts();
-            setPorts(portList);
-        } else {
-            // Mock port for web demo
-            setPorts([{ path: 'WEB_DEMO', manufacturer: 'LeapBlocks Web' }]);
-        }
-
-            if (portList.length === 0) {
-
-                // Only log if manual refresh was clicked, or be subtle? 
-
-                // We'll keep it simple for now. The UI says "Searching..."
-
+            let portList: any[] = [];
+            const electronAPI = (window as any).electronAPI;
+            if (electronAPI?.getPorts) {
+                portList = await electronAPI.getPorts();
+                setPorts(portList);
+            } else {
+                // Mock port for web demo
+                portList = [{ path: 'WEB_DEMO', manufacturer: 'LeapBlocks Web' }];
+                setPorts(portList);
             }
-
         } catch (e) {
-
             addLog('Failed to scan ports');
-
         }
-
     }, [addLog]);
 
-
-
     // Auto-refresh ports every 5 seconds when in upload mode and no port is selected
-
     useEffect(() => {
-
         let timer: NodeJS.Timeout;
-
         if (editorMode === 'upload' && !selectedPort && !isConnected) {
             timer = setInterval(() => {
-                if ((window as any).electronAPI?.getPorts) {
-                    (window as any).electronAPI.getPorts().then(portList => {
+                const electronAPI = (window as any).electronAPI;
+                if (electronAPI?.getPorts) {
+                    electronAPI.getPorts().then((portList: any[]) => {
                         setPorts(portList);
                     }).catch(() => { });
                 }
             }, 5000);
         }
-
         return () => {
-
             if (timer) clearInterval(timer);
-
         };
-
     }, [editorMode, selectedPort, isConnected]);
 
-
-
     // Auto-reconnect when baud rate changes while connected
-
     useEffect(() => {
-
         if (isConnected && selectedPort) {
-
             log.app(`Baud rate changed to ${baudRate}, reconnecting...`);
-
             const timer = setTimeout(() => {
-
-                handleConnect(); // Disconnect
-
+                handleConnect(); // Toggle off
                 setTimeout(() => {
-
-                    handleConnect(); // Reconnect with new baud
-
+                    handleConnect(); // Toggle back on with new baud
                 }, 500);
-
             }, 100);
-
             return () => clearTimeout(timer);
-
         }
-
-        // We only want to trigger this when baudRate specifically changes while connected
-
         // eslint-disable-next-line react-hooks/exhaustive-deps
-
     }, [baudRate]);
 
-
-
-
-
     const handleConnect = useCallback(async () => {
-
         if (!selectedPort) {
-
             addLog('Select a port first');
-
             return;
-
         }
 
         if (selectedPort === 'BRIDGE_DETECTED') {
-
             addLog('⚠ Device detected but no COM port assigned. Please install drivers or try a different USB cable.');
-
             return;
-
         }
-
-        try {
-
-            if (isConnected) {
-
-                const result = await window.electronAPI.disconnectPort();
-
-                if (result.success) {
-
-                    setIsConnected(false);
-
-                    addLog(`Disconnected from ${selectedPort}`);
-
-                }
-
-            } else {
-
-                const result = await window.electronAPI.connectPort(selectedPort, baudRate, selectedBoard);
-
-                if (result.success) {
-
-                    setIsConnected(true);
-
-                    addLog(`Connected to ${selectedPort}`);
-
-                } else {
-
-                    addLog(`Connection failed: ${result.error}`);
-
-                }
-
-            }
-
-        } catch (e) {
-
-            addLog('Connection error');
-
-        }
-
-    }, [selectedPort, isConnected, baudRate, addLog]);
-
-
-
-    const handleSendSerial = useCallback(async (data: string) => {
-
-        if (!isConnected) return;
-
-        try {
-
-            await window.electronAPI.sendSerial(data);
-
-            setSerialMessages(prev => [...prev.slice(-100), `> ${data.trim()}`]);
-
-        } catch (e) {
-
-            addLog('Failed to send');
-
-        }
-
-    }, [isConnected, addLog]);
-
-
-
-    const handleUpload = useCallback(async () => {
-
-        if (!generatedCode || isUploading) return;
-
-
-
-        if (!selectedPort) {
-
-            addLog('No port selected! Please connect your board and select a COM port first.');
-
-            alert('⚠️ No port selected!\n\nPlease:\n1. Connect your Arduino/ESP32 board via USB\n2. Click the refresh (↻) button in the toolbar\n3. Select a COM port from the dropdown\n4. Then click Upload again');
-
-            return;
-
-        }
-
-
-
-        // Clear old serial data before new upload
-
-        setSerialMessages([]);
-
-
-
-        // Auto-disconnect if serial is connected to release the port
 
         if (isConnected) {
+            const electronAPI = (window as any).electronAPI;
+            if (electronAPI?.disconnectPort) {
+                const result = await electronAPI.disconnectPort();
+                if (result.success) {
+                    setIsConnected(false);
+                    addLog(`Disconnected from ${selectedPort}`);
+                }
+            } else {
+                setIsConnected(false);
+                addLog(`Disconnected from ${selectedPort}`);
+            }
+            return;
+        }
 
+        try {
+            const electronAPI = (window as any).electronAPI;
+            if (electronAPI?.connectPort) {
+                const result = await electronAPI.connectPort(selectedPort, baudRate, selectedBoard);
+                if (result.success) {
+                    setIsConnected(true);
+                    addLog(`Connected to ${selectedPort} at ${baudRate} baud`);
+                } else {
+                    addLog(`Connection failed: ${result.error}`);
+                }
+            } else if (selectedPort === 'WEB_DEMO') {
+                setIsConnected(true);
+                addLog('Connected to LeapBlocks Web (Simulation Mode)');
+            } else {
+                addLog('Serial connection requires LeapBlocks Desktop');
+            }
+        } catch (err) {
+            addLog('Connection error occurred');
+            console.error(err);
+        }
+    }, [selectedPort, isConnected, baudRate, selectedBoard, addLog]);
+
+    const handleSendSerial = useCallback(async (data: string) => {
+        if (!isConnected) return;
+        try {
+            const electronAPI = (window as any).electronAPI;
+            if (electronAPI?.sendSerial) {
+                await electronAPI.sendSerial(data);
+                setSerialMessages(prev => [...prev.slice(-100), `> ${data.trim()}`]);
+            } else if (selectedPort === 'WEB_DEMO') {
+                setSerialMessages(prev => [...prev.slice(-100), `> ${data.trim()}`]);
+            }
+        } catch (e) {
+            addLog('Failed to send');
+        }
+    }, [isConnected, selectedPort, addLog]);
+
+    const handleUpload = useCallback(async () => {
+        if (!generatedCode || isUploading) return;
+
+        if (!selectedPort) {
+            addLog('No port selected!');
+            alert('⚠️ No port selected!\n\nPlease connect your board and select a COM port.');
+            return;
+        }
+
+        // Auto-disconnect if serial is connected
+        const electronAPI = (window as any).electronAPI;
+        if (isConnected) {
             addLog('Disconnecting serial for upload...');
-
             await window.electronAPI.disconnectPort();
 
             setIsConnected(false);
@@ -5200,7 +5100,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         <>
 
-                            <div ref={blocklyDiv} style={styles.blockly} />
+                            <div ref={blocklyDiv} className={workspaceTab !== 'blocks' ? 'hide-flyout' : ''} style={styles.blockly} />
 
                             <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={undefined} style={undefined} />
 

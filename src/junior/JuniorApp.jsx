@@ -17,7 +17,7 @@ import SuccessModal from "./components/SuccessModal";
 import UnsavedWarningModal from "./components/UnsavedWarningModal";
 import JuniorSoundRecorder from "./components/JuniorSoundRecorder";
 import JuniorExtensionLibrary from "./components/JuniorExtensionLibrary";
-import { juniorBlocks } from "../blocks/junior-blocks";
+import { getJuniorBlocks, getJuniorToolbox } from "../blocks/junior-blocks";
 import { useSpriteSystem } from "./hooks/useSpriteSystem";
 import { useJuniorWorkspace } from "./hooks/useJuniorWorkspace";
 import { useJuniorExecution } from "./hooks/useJuniorExecution";
@@ -85,7 +85,7 @@ function getMusicBlocksExt() {
 function ensureBlocksRegistered() {
     if (!_blocksRegistered) {
         _blocksRegistered = true;
-        Blockly.common.defineBlocks(juniorBlocks);
+        Blockly.common.defineBlocks(getJuniorBlocks());
         javascriptGenerator.forBlock['junior_change_costume'] = () => 'nextCostume();\n';
     }
 }

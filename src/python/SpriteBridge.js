@@ -469,39 +469,44 @@ export function useSpriteBridge() {
 
 // ─── Default Sprite Presets ─────────────────────────────────────────────────
 // These presets can be used by intermediate blocks to quickly add default sprites
-
-export const DEFAULT_SPRITE_PRESETS = {
-    robot: {
-        name: 'Robot',
-        type: 'robot',
-        costumes: {
-            default: "/assets/sprites/robot/robot_idle.svg",
-            wave1: "/assets/sprites/robot/robot_wave1.svg",
-            wave2: "/assets/sprites/robot/robot_wave2.svg",
-            talk: "/assets/sprites/robot/robot_talk1.svg"
-        }
-    },
-    cat: {
-        name: 'Cat',
-        type: 'cat',
-        costumes: {
-            default: "/assets/sprites/cat/cat_idle.svg",
-            walk1: "/assets/sprites/cat/cat_walk1.svg",
-            walk2: "/assets/sprites/cat/cat_walk2.svg"
-        }
-    },
-    ball: {
-        name: 'Ball',
-        type: 'ball',
-        costumes: {
-            default: "/assets/sprites/ball/ball.svg"
-        }
+let _DEFAULT_SPRITE_PRESETS = null;
+export const getDefaultSpritePresets = () => {
+    if (!_DEFAULT_SPRITE_PRESETS) {
+        _DEFAULT_SPRITE_PRESETS = {
+            robot: {
+                name: 'Robot',
+                type: 'robot',
+                costumes: {
+                    default: "/assets/sprites/robot/robot_idle.svg",
+                    wave1: "/assets/sprites/robot/robot_wave1.svg",
+                    wave2: "/assets/sprites/robot/robot_wave2.svg",
+                    talk: "/assets/sprites/robot/robot_talk1.svg"
+                }
+            },
+            cat: {
+                name: 'Cat',
+                type: 'cat',
+                costumes: {
+                    default: "/assets/sprites/cat/cat_idle.svg",
+                    walk1: "/assets/sprites/cat/cat_walk1.svg",
+                    walk2: "/assets/sprites/cat/cat_walk2.svg"
+                }
+            },
+            ball: {
+                name: 'Ball',
+                type: 'ball',
+                costumes: {
+                    default: "/assets/sprites/ball/ball.svg"
+                }
+            }
+        };
     }
+    return _DEFAULT_SPRITE_PRESETS;
 };
 
 // ─── Helper function to add default sprite ──────────────────────────────────
 export function addDefaultSprite(spriteType, addSprite) {
-    const preset = DEFAULT_SPRITE_PRESETS[spriteType];
+    const preset = getDefaultSpritePresets()[spriteType];
     if (!preset) {
         console.error(`Unknown sprite type: ${spriteType}`);
         return null;

@@ -205,3 +205,8 @@
     stroke-width: 2px !important;
     stroke-linecap: round !important;
 }
+
+/* UI Regression Fix: Hide flyout when not in blocks tab */
+.hide-flyout .blocklyFlyout {
+    display: none !important;
+}

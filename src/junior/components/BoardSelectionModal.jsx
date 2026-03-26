@@ -2,36 +2,42 @@ import React from 'react';
 import { X, Cpu } from 'lucide-react';
 
 // Board definitions - Arduino and ESP32 focus with SVG icons
-export const BOARDS = [
-    {
-        id: 'arduino_uno',
-        name: 'Arduino Uno',
-        category: 'Arduino',
-        color: '#00979D', // Arduino teal
-        description: 'Perfect for beginners'
-    },
-    {
-        id: 'arduino_mega',
-        name: 'Arduino Mega',
-        category: 'Arduino',
-        color: '#00979D',
-        description: 'More pins & memory'
-    },
-    {
-        id: 'arduino_nano',
-        name: 'Arduino Nano',
-        category: 'Arduino',
-        color: '#00979D',
-        description: 'Compact size'
-    },
-    {
-        id: 'esp32',
-        name: 'ESP32',
-        category: 'ESP',
-        color: '#E7352C', // ESP red
-        description: 'WiFi & Bluetooth'
-    },
-];
+let _BOARDS = null;
+export const getBoards = () => {
+    if (!_BOARDS) {
+        _BOARDS = [
+            {
+                id: 'arduino_uno',
+                name: 'Arduino Uno',
+                category: 'Arduino',
+                color: '#00979D', // Arduino teal
+                description: 'Perfect for beginners'
+            },
+            {
+                id: 'arduino_mega',
+                name: 'Arduino Mega',
+                category: 'Arduino',
+                color: '#00979D',
+                description: 'More pins & memory'
+            },
+            {
+                id: 'arduino_nano',
+                name: 'Arduino Nano',
+                category: 'Arduino',
+                color: '#00979D',
+                description: 'Compact size'
+            },
+            {
+                id: 'esp32',
+                name: 'ESP32',
+                category: 'ESP',
+                color: '#E7352C', // ESP red
+                description: 'WiFi & Bluetooth'
+            },
+        ];
+    }
+    return _BOARDS;
+};
 
 // Simple Arduino board icon component
 function BoardIcon({ board }) {
@@ -138,7 +144,7 @@ export default function BoardSelectionModal({ isOpen, onClose, onSelect, current
                     gridTemplateColumns: 'repeat(2, 1fr)',
                     gap: '14px',
                 }}>
-                    {BOARDS.map(board => (
+                    {getBoards().map(board => (
                         <button
                             key={board.id}
                             onClick={() => { onSelect(board.id, board.name); onClose(); }}
@@ -202,7 +208,7 @@ export default function BoardSelectionModal({ isOpen, onClose, onSelect, current
                 }}>
                     <span style={{ fontSize: '11px', color: '#666' }}>
                         {currentBoard
-                            ? `Selected: ${BOARDS.find(b => b.id === currentBoard)?.name}`
+                            ? `Selected: ${getBoards().find(b => b.id === currentBoard)?.name}`
                             : 'No board selected'}
                     </span>
                     <button
