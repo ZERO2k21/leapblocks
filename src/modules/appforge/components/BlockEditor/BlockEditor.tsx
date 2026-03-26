@@ -64,7 +64,7 @@ export default function BlockEditor({ project, updateProject }: BlockEditorProps
           zoom: { controls: true, wheel: true, startScale: 0.9, maxScale: 2, minScale: 0.3 },
           move: { scrollbars: true, drag: true, wheel: true },
           sounds: false,
-          renderer: 'zelos',
+           renderer: 'leap',
           trashcan: true,
         });
 

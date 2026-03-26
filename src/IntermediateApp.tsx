@@ -3615,13 +3615,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         sounds: false,
 
-                        renderer: 'zelos',
+                         renderer: 'leap',
 
                         theme: Blockly.Theme.defineTheme('leapblocks', {
 
                             name: 'leapblocks',
 
-                            base: Blockly.Themes.Zelos,
+                             base: Blockly.Themes.Classic,
 
                             componentStyles: {
 

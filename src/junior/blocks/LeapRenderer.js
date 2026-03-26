@@ -1,7 +1,8 @@
 import * as Blockly from '@blockly-runtime';
 
-const BaseConstantProvider = Blockly.zelos ? Blockly.zelos.ConstantProvider : Blockly.blockRendering.ConstantProvider;
-const BaseRenderer = Blockly.zelos ? Blockly.zelos.Renderer : Blockly.blockRendering.Renderer;
+// We don't rely on zelos; we always use the blockRendering classes.
+const BaseConstantProvider = Blockly.blockRendering.ConstantProvider;
+const BaseRenderer = Blockly.blockRendering.Renderer;
 
 export class LeapConstantProvider extends BaseConstantProvider {
     constructor() {

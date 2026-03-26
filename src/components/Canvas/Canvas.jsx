@@ -16,7 +16,7 @@ const Canvas = ({ onWorkspaceCreated }) => {
             trashcan: true,
             move: { scrollbars: true, drag: true, wheel: true },
             zoom: { controls: true, wheel: true, startScale: 0.75, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
-            renderer: 'zelos', // Zelos matches the Scratch 3.0 look
+            renderer: 'leap', // Use our custom Leap renderer for Junior mode
             theme: Blockly.Themes.Modern
         });
 
