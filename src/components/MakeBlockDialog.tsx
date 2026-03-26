@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import * as Blockly from '@blockly-runtime';
 
-type ArgumentType = 'input' | 'boolean' | 'label';
+/**
+ * Argument types supported by Scratch 3.0
+ */
+export type ArgumentType = 'input' | 'boolean' | 'label';
 
-interface BlockArgument {
+export interface BlockArgument {
     id: string;
     type: ArgumentType;
     value: string;
@@ -26,14 +29,14 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
     onCreateBlock,
     workspace
 }) => {
-    const [blockName, setBlockName] = useState('');
+    const [blockName, setBlockName] = useState('my block');
     const [args, setArgs] = useState<BlockArgument[]>([]);
     const [warp, setWarp] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (isOpen) {
-            setBlockName('');
+            setBlockName('my block');
             setArgs([]);
             setWarp(false);
             setError(null);
@@ -44,7 +47,7 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
         const newArg: BlockArgument = {
             id: `arg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             type,
-            value: type === 'label' ? 'label' : (type === 'boolean' ? 'bool' : 'input')
+            value: type === 'label' ? 'text' : (type === 'boolean' ? 'bool' : 'number or text')
         };
         setArgs([...args, newArg]);
     };
@@ -57,7 +60,8 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
         setArgs(args.filter(arg => arg.id !== id));
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         const trimmedName = blockName.trim();
         
         if (!trimmedName) {
@@ -74,53 +78,13 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
     };
 
     const handleCancel = () => {
-        setBlockName('');
-        setArgs([]);
-        setWarp(false);
-        setError(null);
         onClose();
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Escape') {
-            handleCancel();
-        }
-    };
-
-    // Generate block preview
-    const generatePreview = () => {
-        if (!blockName && args.length === 0) {
-            return <span style={styles.previewPlaceholder}>block name</span>;
-        }
-
-        return (
-            <>
-                {blockName && <span style={styles.previewText}>{blockName}</span>}
-                {args.map((arg, index) => {
-                    if (arg.type === 'label') {
-                        return <span key={arg.id} style={styles.previewText}>{arg.value}</span>;
-                    } else if (arg.type === 'boolean') {
-                        return (
-                            <span key={arg.id} style={styles.previewBoolean}>
-                                {arg.value}
-                            </span>
-                        );
-                    } else {
-                        return (
-                            <span key={arg.id} style={styles.previewInput}>
-                                {arg.value}
-                            </span>
-                        );
-                    }
-                })}
-            </>
-        );
     };
 
     if (!isOpen) return null;
 
     return (
-        <div style={styles.overlay}>
+        <div style={styles.overlay} onClick={(e) => e.target === e.currentTarget && handleCancel()}>
             <div style={styles.dialog}>
                 <div style={styles.header}>
                     <span style={styles.headerText}>Make a Block</span>
@@ -128,105 +92,86 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
                 </div>
 
                 <div style={styles.content}>
-                    {/* Block Preview */}
+                    {/* Block Preview Area - Scratch Style */}
                     <div style={styles.previewSection}>
                         <div style={styles.previewBlock}>
-                            {generatePreview()}
+                            <span style={styles.previewText}>{blockName || 'my block'}</span>
+                            {args.map((arg) => (
+                                <span 
+                                    key={arg.id} 
+                                    style={{
+                                        ...styles.previewArg,
+                                        backgroundColor: arg.type === 'boolean' ? '#4C97FF' : 'white',
+                                        color: arg.type === 'boolean' ? 'white' : '#575E75',
+                                        borderRadius: arg.type === 'boolean' ? '20px' : (arg.type === 'label' ? '0' : '8px'),
+                                        border: arg.type === 'label' ? 'none' : '1px solid rgba(0,0,0,0.1)',
+                                        padding: arg.type === 'label' ? '0' : '4px 12px',
+                                        fontWeight: arg.type === 'label' ? 'bold' : 'normal'
+                                    }}
+                                >
+                                    {arg.value}
+                                </span>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Block Name */}
-                    <div style={styles.inputGroup}>
-                        <label style={styles.label}>Block name:</label>
-                        <input
-                            type="text"
-                            value={blockName}
-                            onChange={(e) => {
-                                setBlockName(e.target.value);
-                                setError(null);
-                            }}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Enter block name"
-                            style={{
-                                ...styles.input,
-                                borderColor: error ? '#ff6b6b' : '#ddd'
-                            }}
-                            autoFocus
-                        />
-                        {error && <span style={styles.errorText}>{error}</span>}
-                    </div>
-
-                    {/* Arguments List */}
-                    <div style={styles.inputGroup}>
-                        <label style={styles.label}>Arguments:</label>
-                        <div style={styles.argsList}>
-                            {args.length === 0 ? (
-                                <div style={styles.emptyArgs}>No arguments added</div>
-                            ) : (
-                                args.map((arg, index) => (
-                                    <div key={arg.id} style={styles.argRow}>
-                                        <span style={styles.argNumber}>{index + 1}.</span>
-                                        {arg.type === 'label' ? (
-                                            <input
-                                                type="text"
-                                                value={arg.value}
-                                                onChange={(e) => updateArgument(arg.id, e.target.value)}
-                                                placeholder="Label text"
-                                                style={styles.argInput}
-                                            />
-                                        ) : (
-                                            <input
-                                                type="text"
-                                                value={arg.value}
-                                                onChange={(e) => updateArgument(arg.id, e.target.value)}
-                                                placeholder={arg.type === 'boolean' ? 'Boolean name' : 'Input name'}
-                                                style={styles.argInput}
-                                            />
-                                        )}
-                                        <span style={styles.argTypeBadge}>
-                                            {arg.type === 'input' ? '🔢' : arg.type === 'boolean' ? '◆' : '📝'}
-                                        </span>
-                                        <button
-                                            style={styles.removeArgBtn}
-                                            onClick={() => removeArgument(arg.id)}
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Add Buttons */}
+                    {/* Argument Generation Buttons */}
                     <div style={styles.addButtonsRow}>
-                        <button
-                            style={styles.addBtn}
-                            onClick={() => addArgument('input')}
-                        >
-                            <span>🔢</span> Add an input (number)
+                        <button type="button" style={styles.addBtn} onClick={() => addArgument('input')}>
+                            <div style={styles.iconBox}>123</div>
+                            <span style={styles.addBtnText}>Add an input<br/>number or text</span>
                         </button>
-                        <button
-                            style={styles.addBtn}
-                            onClick={() => addArgument('input')}
-                        >
-                            <span>📝</span> Add an input (text)
+                        <button type="button" style={styles.addBtn} onClick={() => addArgument('boolean')}>
+                            <div style={{...styles.iconBox, borderRadius: '20px', width: '30px', height: '18px'}}></div>
+                            <span style={styles.addBtnText}>Add an input<br/>boolean</span>
                         </button>
-                        <button
-                            style={styles.addBtn}
-                            onClick={() => addArgument('boolean')}
-                        >
-                            <span>◆</span> Add an input (boolean)
-                        </button>
-                        <button
-                            style={styles.addBtn}
-                            onClick={() => addArgument('label')}
-                        >
-                            <span>🏷️</span> Add a label
+                        <button type="button" style={styles.addBtn} onClick={() => addArgument('label')}>
+                            <div style={{...styles.iconBox, border: 'none', fontWeight: 'bold'}}>label</div>
+                            <span style={styles.addBtnText}>Add a label</span>
                         </button>
                     </div>
 
-                    {/* Warp Checkbox */}
+                    {/* Inputs and Labels Configurator */}
+                    <div style={styles.configArea}>
+                        <div style={styles.fieldGroup}>
+                            <label style={styles.fieldLabel}>Block name:</label>
+                            <input
+                                type="text"
+                                value={blockName}
+                                onChange={(e) => {
+                                    setBlockName(e.target.value);
+                                    setError(null);
+                                }}
+                                style={{
+                                    ...styles.textInput,
+                                    borderColor: error ? '#ff6680' : '#ddd'
+                                }}
+                                autoFocus
+                            />
+                            {error && <span style={styles.errorText}>{error}</span>}
+                        </div>
+
+                        {args.map((arg, index) => (
+                            <div key={arg.id} style={styles.argRow}>
+                                <span style={styles.argLabel}>{arg.type === 'label' ? 'Label:' : 'Input:'}</span>
+                                <input
+                                    type="text"
+                                    value={arg.value}
+                                    onChange={(e) => updateArgument(arg.id, e.target.value)}
+                                    style={styles.argInput}
+                                />
+                                <button
+                                    type="button"
+                                    style={styles.removeArgBtn}
+                                    onClick={() => removeArgument(arg.id)}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Warp Mode Toggle */}
                     <div style={styles.checkboxRow}>
                         <label style={styles.checkboxLabel}>
                             <input
@@ -241,16 +186,17 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
                 </div>
 
                 <div style={styles.footer}>
-                    <button style={styles.cancelBtn} onClick={handleCancel}>
+                    <button type="button" style={styles.cancelBtn} onClick={handleCancel}>
                         Cancel
                     </button>
                     <button
+                        type="button"
                         style={{
                             ...styles.okBtn,
                             opacity: blockName.trim() ? 1 : 0.5,
                             cursor: blockName.trim() ? 'pointer' : 'not-allowed'
                         }}
-                        onClick={handleSubmit}
+                        onClick={() => handleSubmit()}
                         disabled={!blockName.trim()}
                     >
                         OK
@@ -268,258 +214,224 @@ const styles: { [key: string]: React.CSSProperties } = {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.55)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 10000,
-        animation: 'fadeIn 0.2s ease-out',
+        backdropFilter: 'blur(2px)',
     },
     dialog: {
         backgroundColor: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-        width: '480px',
+        borderRadius: '16px',
+        boxShadow: '0 12px 48px rgba(0, 0, 0, 0.3)',
+        width: '560px',
         maxWidth: '90vw',
-        fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+        fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
         overflow: 'hidden',
         maxHeight: '90vh',
         display: 'flex',
         flexDirection: 'column',
-        animation: 'slideUp 0.3s ease-out',
     },
-    // Adding CSS for animations via a style tag or external CSS is better, 
-    // but for this component we can inject a style tag in useEffect or assume global CSS.
-    // I'll add the header and other styles below.
     header: {
         backgroundColor: '#FF6680',
-        padding: '16px 20px',
+        padding: '16px 24px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        borderTopLeftRadius: '12px',
-        borderTopRightRadius: '12px',
-        flexShrink: 0,
     },
-    // ... rest of the styles remain the same but I'll add the @keyframes logic in the component
     headerText: {
         color: 'white',
-        fontSize: '18px',
-        fontWeight: 600,
+        fontSize: '1.1rem',
+        fontWeight: 700,
     },
     closeBtn: {
         background: 'none',
         border: 'none',
         color: 'white',
-        fontSize: '24px',
+        fontSize: '28px',
         cursor: 'pointer',
-        width: '30px',
-        height: '30px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: '50%',
-        transition: 'background 0.2s',
+        fontWeight: 300,
+        lineHeight: 1,
     },
     content: {
-        padding: '20px',
+        padding: '24px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
-        overflow: 'auto',
+        gap: '24px',
+        overflowY: 'auto',
     },
     previewSection: {
         display: 'flex',
         justifyContent: 'center',
+        background: '#F8F9FA',
+        padding: '32px',
+        borderRadius: '12px',
+        border: '2px solid #EDF2F7',
     },
     previewBlock: {
         backgroundColor: '#FF6680',
         color: 'white',
-        padding: '12px 20px',
-        borderRadius: '30px 10px 10px 30px',
-        fontFamily: "'Consolas', 'Monaco', monospace",
-        fontSize: '15px',
+        padding: '12px 24px',
+        borderRadius: '8px',
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
-        boxShadow: '0 2px 8px rgba(255, 102, 128, 0.3)',
+        gap: '12px',
+        boxShadow: '0 4px 0 #CC5166',
+        fontSize: '1.1rem',
+        fontWeight: 700,
         flexWrap: 'wrap',
-        maxWidth: '100%',
-    },
-    previewPlaceholder: {
-        opacity: 0.6,
-        fontStyle: 'italic',
     },
     previewText: {
-        fontWeight: 600,
+        whiteSpace: 'nowrap',
     },
-    previewInput: {
-        backgroundColor: 'white',
-        color: '#333',
-        padding: '4px 10px',
-        borderRadius: '12px',
-        fontSize: '13px',
-        minWidth: '50px',
+    previewArg: {
+        fontSize: '0.9rem',
+        minWidth: '32px',
         textAlign: 'center',
     },
-    previewBoolean: {
-        backgroundColor: 'white',
-        color: '#333',
-        padding: '4px 10px',
-        borderRadius: '4px',
-        fontSize: '13px',
-        clipPath: 'polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%)',
-        minWidth: '50px',
-        textAlign: 'center',
+    addButtonsRow: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '12px',
     },
-    inputGroup: {
+    addBtn: {
         display: 'flex',
         flexDirection: 'column',
+        alignItems: 'center',
+        padding: '12px',
+        background: 'white',
+        border: '1px solid #E2E8F0',
+        borderRadius: '12px',
+        cursor: 'pointer',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         gap: '8px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
     },
-    label: {
-        fontSize: '14px',
+    addBtnText: {
+        fontSize: '0.75rem',
+        color: '#4A5568',
+        lineHeight: 1.2,
         fontWeight: 500,
-        color: '#333',
     },
-    input: {
-        padding: '12px 14px',
+    iconBox: {
+        width: '40px',
+        height: '24px',
+        backgroundColor: 'white',
+        border: '1px solid #CBD5E0',
+        borderRadius: '4px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '0.8rem',
+        color: '#4A5568',
+    },
+    configArea: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+    },
+    fieldGroup: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px',
+    },
+    fieldLabel: {
+        fontSize: '0.85rem',
+        fontWeight: 600,
+        color: '#4A5568',
+    },
+    textInput: {
+        padding: '12px',
         borderRadius: '8px',
-        border: '2px solid #ddd',
-        fontSize: '15px',
+        border: '1px solid #E2E8F0',
+        fontSize: '0.95rem',
         outline: 'none',
-        transition: 'border-color 0.2s',
-        fontFamily: 'inherit',
-    },
-    errorText: {
-        color: '#ff6b6b',
-        fontSize: '12px',
-        marginTop: '4px',
-    },
-    argsList: {
-        border: '1px solid #e0e0e0',
-        borderRadius: '8px',
-        padding: '8px',
-        minHeight: '60px',
-        maxHeight: '150px',
-        overflow: 'auto',
-    },
-    emptyArgs: {
-        color: '#999',
-        fontStyle: 'italic',
-        textAlign: 'center',
-        padding: '20px',
+        width: '100%',
     },
     argRow: {
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        padding: '6px',
-        backgroundColor: '#f9f9f9',
-        borderRadius: '6px',
-        marginBottom: '6px',
+        gap: '12px',
+        padding: '10px',
+        backgroundColor: '#F7FAFC',
+        borderRadius: '8px',
+        border: '1px solid #EDF2F7',
     },
-    argNumber: {
-        fontSize: '12px',
-        color: '#999',
-        width: '20px',
+    argLabel: {
+        fontSize: '0.8rem',
+        color: '#718096',
+        minWidth: '60px',
+        fontWeight: 500,
     },
     argInput: {
         flex: 1,
-        padding: '8px 10px',
+        padding: '8px 12px',
         borderRadius: '6px',
-        border: '1px solid #ddd',
-        fontSize: '13px',
+        border: '1px solid #E2E8F0',
+        fontSize: '0.9rem',
         outline: 'none',
-        fontFamily: 'inherit',
-    },
-    argTypeBadge: {
-        fontSize: '14px',
-        padding: '4px',
     },
     removeArgBtn: {
-        background: '#ff6b6b',
+        background: 'none',
         border: 'none',
-        color: 'white',
-        width: '24px',
-        height: '24px',
-        borderRadius: '50%',
+        color: '#A0AEC0',
         cursor: 'pointer',
-        fontSize: '16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 0,
+        fontSize: '1.5rem',
+        fontWeight: 200,
+        padding: '0 4px',
     },
-    addButtonsRow: {
-        display: 'flex',
-        gap: '8px',
-        flexWrap: 'wrap',
-    },
-    addBtn: {
-        flex: 1,
-        minWidth: '120px',
-        padding: '10px 12px',
-        border: '2px solid #FF6680',
-        borderRadius: '8px',
-        backgroundColor: 'white',
+    errorText: {
         color: '#FF6680',
-        cursor: 'pointer',
-        fontSize: '12px',
+        fontSize: '0.75rem',
         fontWeight: 500,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '6px',
-        transition: 'all 0.2s',
     },
     checkboxRow: {
         display: 'flex',
         alignItems: 'center',
-        padding: '8px 0',
+        padding: '4px 0',
     },
     checkboxLabel: {
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
-        fontSize: '14px',
-        color: '#555',
+        gap: '12px',
+        fontSize: '0.95rem',
+        color: '#4A5568',
         cursor: 'pointer',
+        fontWeight: 500,
     },
     checkbox: {
-        width: '18px',
-        height: '18px',
+        width: '20px',
+        height: '20px',
         cursor: 'pointer',
     },
     footer: {
         display: 'flex',
         justifyContent: 'flex-end',
         gap: '12px',
-        padding: '16px 20px',
-        borderTop: '1px solid #eee',
-        flexShrink: 0,
+        padding: '24px',
+        borderTop: '1px solid #EDF2F7',
     },
     cancelBtn: {
-        padding: '10px 20px',
-        border: '1px solid #ddd',
+        padding: '10px 24px',
+        border: '1px solid #E2E8F0',
         borderRadius: '8px',
         backgroundColor: 'white',
+        color: '#4A5568',
+        fontWeight: 600,
         cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: 500,
-        color: '#555',
-        transition: 'background 0.2s',
+        fontSize: '0.95rem',
     },
     okBtn: {
-        padding: '10px 24px',
+        padding: '10px 32px',
         border: 'none',
         borderRadius: '8px',
         backgroundColor: '#FF6680',
         color: 'white',
+        fontWeight: 700,
         cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: 600,
-        transition: 'background 0.2s',
+        fontSize: '0.95rem',
+        boxShadow: '0 4px 12px rgba(255, 102, 128, 0.2)',
     },
 };
 

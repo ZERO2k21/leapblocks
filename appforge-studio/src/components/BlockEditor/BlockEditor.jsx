@@ -5,6 +5,11 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as Blockly from 'blockly';
 import { useVariables } from '../../context/VariablesContext';
 import Toolbox from './Toolbox';
+import { 
+  registerCustomFlyoutBlocks, 
+  variableFlyoutCallback, 
+  listFlyoutCallback 
+} from './custom-toolbox';
 import VariableMakerModal from './VariableMakerModal';
 import CustomBlockModal from './CustomBlockModal';
 import VariableWatcher from '../StageDisplay/VariableWatcher';
@@ -52,6 +57,17 @@ const BlockEditor = () => {
       theme: Blockly.Themes.Classic,
     });
 
+    // Register custom flyout callbacks
+    registerCustomFlyoutBlocks();
+    blocklyWorkspaceRef.current.registerToolboxCategoryCallback(
+      'LEAP_VARIABLES',
+      variableFlyoutCallback
+    );
+    blocklyWorkspaceRef.current.registerToolboxCategoryCallback(
+      'LEAP_LISTS',
+      listFlyoutCallback
+    );
+
     // Set up resize observer
     const resizeObserver = new ResizeObserver(() => {
       if (blocklyWorkspaceRef.current) {
@@ -65,6 +81,24 @@ const BlockEditor = () => {
     window.showMakeListModal = () => setShowModal('list');
     window.showMakeTableModal = () => setShowModal('table');
     window.showMakeBlockModal = () => setShowModal('custom_block');
+
+    // Visibility helpers for checkboxes
+    window.onToggleVisibility = (name, isVisible, type) => {
+      // Find the variable/list ID and update it
+      const accessible = helpers.getAccessibleVariables();
+      const items = type === 'list' ? accessible.lists : accessible.variables;
+      const item = items.find(i => i.name === name);
+      if (item) {
+        actions.setVariableVisible(item.id, isVisible);
+      }
+    };
+
+    window.getVariableVisibility = (name, type) => {
+      const accessible = helpers.getAccessibleVariables();
+      const items = type === 'list' ? accessible.lists : accessible.variables;
+      const item = items.find(i => i.name === name);
+      return item ? item.visible : false;
+    };
 
     setBlocklyInitialized(true);
 
@@ -114,7 +148,50 @@ const BlockEditor = () => {
     const toolbox = Toolbox.buildToolbox(state);
     workspace.refreshToolbox(toolbox);
 
-  }, [state, blocklyInitialized]);
+  }, [blocklyInitialized, state.currentSpriteId, state.globalVariables, state.globalLists, state.sprites, helpers]);
+
+  // Handle Sprite Switching (Load/Save Workspace)
+  const currentSpriteIdRef = useRef(state.currentSpriteId);
+
+  useEffect(() => {
+    if (!blocklyInitialized || !blocklyWorkspaceRef.current) return;
+    const workspace = blocklyWorkspaceRef.current;
+
+    // 1. Save previous sprite's blocks if it changed
+    if (currentSpriteIdRef.current !== state.currentSpriteId) {
+      const xml = Blockly.Xml.workspaceToDom(workspace);
+      const xmlString = new XMLSerializer().serializeToString(xml);
+      actions.updateSpriteBlocks(currentSpriteIdRef.current, xmlString);
+      
+      // 2. Load the new sprite's blocks
+      workspace.clear();
+      const newBlocks = state.sprites[state.currentSpriteId]?.blocks;
+      if (newBlocks) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(newBlocks, 'text/xml');
+        Blockly.Xml.domToWorkspace(xmlDoc.documentElement, workspace);
+      }
+      
+      currentSpriteIdRef.current = state.currentSpriteId;
+    }
+  }, [state.currentSpriteId, blocklyInitialized, state.sprites, actions]);
+
+  // Autosave workspace to current sprite on change
+  useEffect(() => {
+    if (!blocklyInitialized || !blocklyWorkspaceRef.current) return;
+    const workspace = blocklyWorkspaceRef.current;
+
+    const onWorkspaceChange = (event) => {
+      if (event.isUiEvent) return;
+      const xml = Blockly.Xml.workspaceToDom(workspace);
+      const xmlString = new XMLSerializer().serializeToString(xml);
+      // Debounce this in production!
+      actions.updateSpriteBlocks(state.currentSpriteId, xmlString);
+    };
+
+    workspace.addChangeListener(onWorkspaceChange);
+    return () => workspace.removeChangeListener(onWorkspaceChange);
+  }, [blocklyInitialized, state.currentSpriteId, actions]);
 
   // Handle variable/list/table creation
   const handleCreateData = useCallback((name, arg2, arg3) => {
@@ -146,28 +223,47 @@ const BlockEditor = () => {
     try {
       const topBlocks = workspace.getTopBlocks(true);
       const x = 50;
-      const y = topBlocks.length * 100 + 50;
+      const y = topBlocks.length * 150 + 50;
 
-      // Create the definition block
+      // 1. Create the definition block
       const defBlock = workspace.newBlock('procedures_defnoreturn');
       
-      // Configure the block name and inputs
-      // This varies by Blockly version, but here's a common pattern:
-      const name = data.name;
-      defBlock.setFieldValue(name, 'NAME');
+      // 2. Set the name
+      defBlock.setFieldValue(data.name, 'NAME');
       
-      // Handle inputs (this is more involved in real Scratch)
-      // For now, just create the basic block
+      // 3. Set arguments (this is for standard Blockly)
+      // data.inputs: [{ type: 'number', name: 'arg1' }, ...]
+      const argNames = data.inputs
+        .filter(i => i.type !== 'label')
+        .map(i => i.name);
       
+      if (defBlock.updateParams_) {
+        defBlock.arguments_ = [...argNames];
+        defBlock.updateParams_();
+      } else if (defBlock.setStatements_) {
+        // Some versions use different internal methods
+      }
+
+      // 4. Handle 'Run without screen refresh' (warp)
+      // In Scratch-Blocks this is a checkbox in the mutation
+      if (data.noRefresh) {
+        // This is a custom property we'll check during execution
+        defBlock.customProperties_ = { warp: true };
+      }
+
       defBlock.initSvg();
       defBlock.render();
       defBlock.moveBy(x, y);
       
+      // Update toolbox to show the new 'call' block
+      workspace.getToolbox().refreshSelection();
+      
+      setShowModal(null);
+    } catch (err) {
+      console.error('Error creating custom block:', err);
     } finally {
       Blockly.Events.setGroup(false);
     }
-    
-    setShowModal(null);
   }, []);
   const handleExport = useCallback(() => {
     if (blocklyWorkspaceRef.current) {

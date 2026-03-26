@@ -49,23 +49,10 @@ const Toolbox = {
     // Note: We'll add more categories as we implement them
     return `
       <xml id="toolbox" style="display: none">
-        <category name="VARIABLES" colour="#FFBF00" custom="VARIABLE_CATEGORY">
-          <button text="Make a Variable" callback="showMakeVariableModal"/>
-          <sep/>
-          ${variableBlocksXml}
+        <category name="VARIABLES" colour="#FFBF00" custom="LEAP_VARIABLES">
         </category>
 
-        <category name="LISTS" colour="#FF661A">
-          <button text="Make a List" callback="showMakeListModal"/>
-          <sep/>
-          <block type="list_add"/>
-          <block type="list_delete"/>
-          <block type="list_delete_all"/>
-          <block type="list_insert"/>
-          <block type="list_replace"/>
-          <block type="list_item_of"/>
-          <block type="list_length"/>
-          <block type="list_contains"/>
+        <category name="LISTS" colour="#FF661A" custom="LEAP_LISTS">
         </category>
 
         <category name="TABLES" colour="#00A693">

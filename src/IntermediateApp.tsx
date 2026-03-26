@@ -71,7 +71,7 @@ import './custom-toolbox';
 import MakeVariableDialog from './components/MakeVariableDialog';
 import MakeListDialog from './components/MakeListDialog';
 import MakeTableDialog from './components/MakeTableDialog';
-import MakeBlockDialog from './components/MakeBlockDialog';
+import MakeBlockDialog, { BlockArgument } from './components/MakeBlockDialog';
 
 // Import monitor components
 import VariableMonitor from './components/VariableMonitor';
@@ -616,6 +616,17 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const [listMonitors, setListMonitors] = useState<ListMonitorState[]>([]);
     const [tableMonitors, setTableMonitors] = useState<TableMonitorState[]>([]);
 
+    const variableMonitorsRef = useRef(variableMonitors);
+    const listMonitorsRef = useRef(listMonitors);
+
+    useEffect(() => {
+        variableMonitorsRef.current = variableMonitors;
+    }, [variableMonitors]);
+
+    useEffect(() => {
+        listMonitorsRef.current = listMonitors;
+    }, [listMonitors]);
+
     const handleMonitorPositionChange = useCallback((type: 'variable'|'list'|'table', id: string, x: number, y: number) => {
         if (type === 'variable') setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
         if (type === 'list') setListMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
@@ -885,29 +896,63 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         addLog(`Created table: ${table.name} (${table.rows}×${table.cols})`);
     };
 
-    const handleCreateBlock = (block: { name: string; arguments: any[]; warp: boolean }) => {
+    const handleCreateBlock = (block: { name: string; arguments: BlockArgument[]; warp: boolean }) => {
         const ws = workspaceRef.current;
         if (!ws) return;
         
         Blockly.Events.setGroup(true);
         try {
-            // Generate standard Blockly procedure definition XML
-            let mutationXml = `<mutation>`;
-            block.arguments.forEach(arg => {
-                if (arg.type !== 'label') {
-                    mutationXml += `<arg name="${arg.value}"></arg>`;
+            // Scratch-style procedure codes: %s for string/number, %b for boolean
+            let proccode = block.name;
+            const argumentnames: string[] = [];
+            const argumentids: string[] = [];
+
+            block.arguments.forEach((arg) => {
+                if (arg.type === 'label') {
+                    proccode += ` ${arg.value}`;
+                } else {
+                    proccode += arg.type === 'boolean' ? ' %b' : ' %s';
+                    argumentnames.push(arg.value);
+                    argumentids.push(arg.id);
                 }
             });
-            mutationXml += `</mutation>`;
 
-            // We inject standard Blockly procedures_defnoreturn
-            const xmlText = `<xml><block type="procedures_defnoreturn" x="50" y="50"><field name="NAME">${block.name}</field>${mutationXml}</block></xml>`;
+            // Using procedures_definition for Scratch parity
+            const xmlText = `
+                <xml>
+                    <block type="procedures_definition" x="50" y="50">
+                        <statement name="custom_block">
+                            <shadow type="procedures_prototype">
+                                <mutation 
+                                    proccode="${proccode.replace(/"/g, '&quot;')}" 
+                                    argumentnames='${JSON.stringify(argumentnames).replace(/"/g, '&quot;')}' 
+                                    argumentids='${JSON.stringify(argumentids).replace(/"/g, '&quot;')}' 
+                                    warp="${block.warp}" 
+                                />
+                            </shadow>
+                        </statement>
+                    </block>
+                </xml>`;
+            
             const xmlDom = Blockly.utils.xml.textToDom(xmlText);
             Blockly.Xml.domToWorkspace(xmlDom, ws);
             
             addLog(`Created custom block: ${block.name}`);
         } catch(e) {
             console.error('Failed to create custom block', e);
+            // Fallback for non-scratch renderers
+            try {
+                let mutationXml = `<mutation>`;
+                block.arguments.forEach(arg => {
+                    if (arg.type !== 'label') {
+                        mutationXml += `<arg name="${arg.value}"></arg>`;
+                    }
+                });
+                mutationXml += `</mutation>`;
+                const xmlText = `<xml><block type="procedures_defnoreturn" x="50" y="50"><field name="NAME">${block.name}</field>${mutationXml}</block></xml>`;
+                const xmlDom = Blockly.utils.xml.textToDom(xmlText);
+                Blockly.Xml.domToWorkspace(xmlDom, ws);
+            } catch(e2) {}
         } finally {
             Blockly.Events.setGroup(false);
         }
@@ -975,6 +1020,38 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     }, []);
 
 
+
+    // Bridge functions for Blockly flyout checkboxes
+    useEffect(() => {
+        (window as any).onToggleVisibility = (name: string, type: string) => {
+            if (type === 'variable') {
+                const monitor = variableMonitors.find(m => m.name === name);
+                if (monitor && monitor.visible) {
+                    handleHideVariable(name);
+                } else {
+                    handleShowVariable(name);
+                }
+            } else if (type === 'list') {
+                const monitor = listMonitors.find(m => m.name === name);
+                if (monitor && monitor.visible) {
+                    handleHideList(name);
+                } else {
+                    handleShowList(name);
+                }
+            }
+        };
+
+        (window as any).getVariableVisibility = (name: string, type: string) => {
+            if (type === 'variable') {
+                const monitor = variableMonitors.find(m => m.name === name);
+                return monitor ? monitor.visible : false;
+            } else if (type === 'list') {
+                const monitor = listMonitors.find(m => m.name === name);
+                return monitor ? monitor.visible : false;
+            }
+            return false;
+        };
+    }, [variableMonitors, listMonitors, handleShowVariable, handleHideVariable, handleShowList, handleHideList]);
 
     const addLog = useCallback((message: string) => {
 
@@ -3603,8 +3680,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         sounds: false,
 
-                         renderer: 'leap',
-
                         theme: Blockly.Theme.defineTheme('leapblocks', {
 
                             name: 'leapblocks',
@@ -3644,6 +3719,146 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                     workspaceRef.current = blocksWorkspace;
+
+                    // 1. Define custom blocks for reporter checkboxes
+                    Blockly.common.defineBlocksWithJsonArray([
+                        {
+                            "type": "variable_reporter_checkbox",
+                            "message0": "%1 %2",
+                            "args0": [
+                                { "type": "field_checkbox", "name": "CHECK", "checked": false },
+                                { "type": "field_label", "name": "VARIABLE", "text": "variable", "web-class": "variable-checkbox" }
+                            ],
+                            "output": "Number",
+                            "colour": "#FF8C1A",
+                            "tooltip": "Toggle variable visibility",
+                            "web-class": "variable-checkbox-container"
+                        },
+                        {
+                            "type": "list_reporter_checkbox",
+                            "message0": "%1 %2",
+                            "args0": [
+                                { "type": "field_checkbox", "name": "CHECK", "checked": false },
+                                { "type": "field_label", "name": "LIST", "text": "list", "web-class": "list-checkbox" }
+                            ],
+                            "output": "String",
+                            "colour": "#FF8C1A",
+                            "tooltip": "Toggle list visibility",
+                            "web-class": "list-checkbox-container"
+                        }
+                    ]);
+
+                    // 2. Define custom generators for the reporter blocks
+                    const javascriptGenerator = (Blockly as any).javascriptGenerator || (Blockly as any).JavaScript;
+                    if (javascriptGenerator) {
+                        javascriptGenerator['variable_reporter_checkbox'] = (block: any) => {
+                            const varName = block.getFieldValue('VARIABLE');
+                            return [varName, (Blockly as any).javascriptGenerator.ORDER_ATOMIC];
+                        };
+                        javascriptGenerator['list_reporter_checkbox'] = (block: any) => {
+                            const listName = block.getFieldValue('LIST');
+                            return [listName, (Blockly as any).javascriptGenerator.ORDER_ATOMIC];
+                        };
+                    }
+
+                    // 3. Register Toolbox Category Callbacks
+                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_VARIABLES', (ws: any) => {
+                        const contents = [];
+                        
+                        // "Make a Variable" Button
+                        contents.push({
+                            kind: 'button',
+                            text: 'Make a Variable',
+                            callbackKey: 'CREATE_VARIABLE'
+                        });
+
+                        const vars = variableMonitorsRef.current.map(m => m.name);
+
+                        // Variables with checkboxes
+                        vars.forEach((v: string) => {
+                            const isVisible = (window as any).getVariableVisibility?.(v, 'variable');
+                            contents.push({
+                                kind: 'block',
+                                type: 'variable_reporter_checkbox',
+                                gap: 8,
+                                fields: {
+                                    'CHECK': isVisible ? 'TRUE' : 'FALSE',
+                                    'VARIABLE': v
+                                }
+                            });
+                        });
+
+                        // Standard variable blocks
+                        if (vars.length > 0) {
+                            contents.push({
+                                kind: 'block',
+                                type: 'data_setvariableto',
+                                gap: 8
+                            });
+                            contents.push({
+                                kind: 'block',
+                                type: 'data_changevariableby',
+                                gap: 24
+                            });
+                        }
+
+                        // Lists section
+                        contents.push({
+                            kind: 'button',
+                            text: 'Make a List',
+                            callbackKey: 'CREATE_LIST'
+                        });
+
+                        const lists = listMonitorsRef.current.map(m => m.name);
+
+                        lists.forEach((l: string) => {
+                            const isVisible = (window as any).getVariableVisibility?.(l, 'list');
+                            contents.push({
+                                kind: 'block',
+                                type: 'list_reporter_checkbox',
+                                gap: 8,
+                                fields: {
+                                    'CHECK': isVisible ? 'TRUE' : 'FALSE',
+                                    'LIST': l
+                                }
+                            });
+                        });
+
+                        return contents;
+                    });
+
+                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_MYBLOCKS', (ws: any) => {
+                        const contents = [];
+                        contents.push({
+                            kind: 'button',
+                            text: 'Make a Block',
+                            callbackKey: 'CREATE_PROCEDURE'
+                        });
+
+                        // In a real Scratch environment, we would also list the existing procedure call blocks here.
+                        
+                        return contents;
+                    });
+
+                    // 4. Hook FieldCheckbox to toggle visibility
+                    const originalCheckboxSetValue = Blockly.FieldCheckbox.prototype.setValue;
+                    Blockly.FieldCheckbox.prototype.setValue = function(newValue) {
+                        originalCheckboxSetValue.call(this, newValue);
+                        const block = this.getSourceBlock();
+                        if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox')) {
+                            const type = block.type === 'variable_reporter_checkbox' ? 'variable' : 'list';
+                            const nameField = type === 'variable' ? 'VARIABLE' : 'LIST';
+                            const name = block.getFieldValue(nameField);
+                            const checked = this.getValue() === 'TRUE';
+                            
+                            // Check if current visibility matches checkbox to avoid loops
+                            const currentVisible = (window as any).getVariableVisibility?.(name, type);
+                            if (checked !== currentVisible) {
+                                (window as any).onToggleVisibility?.(name, type);
+                            }
+                        }
+                        return null;
+                    };
 
 
 

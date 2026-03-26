@@ -131,7 +131,18 @@ javascriptGenerator.forBlock['table_add_row'] = function(block, generator) {
 // We want to use getVariable() function for scope resolution
 javascriptGenerator.forBlock['variables_get'] = function(block, generator) {
   const variableName = getVariableName(block);
-  return `getVariable('${variableName}')`;
+  return [`getVariable('${variableName}')`, Blockly.JavaScript.ORDER_ATOMIC];
+};
+
+javascriptGenerator.forBlock['variable_reporter_checkbox'] = function(block, generator) {
+  const variableName = getVariableName(block);
+  return [`getVariable('${variableName}')`, Blockly.JavaScript.ORDER_ATOMIC];
+};
+
+javascriptGenerator.forBlock['list_reporter_checkbox'] = function(block, generator) {
+  const variableName = getVariableName(block);
+  // Scratch lists joined by space when used as a reporter
+  return [`getItemOfList('${variableName}', 'all').join(' ')`, Blockly.JavaScript.ORDER_ATOMIC];
 };
 
 console.log('[BlockGenerator] Registered custom code generators for variable blocks');

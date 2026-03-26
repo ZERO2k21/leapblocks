@@ -15,6 +15,7 @@ export const getInitialState = () => ({
       localVariables: {},
       localLists: {},
       localTables: {},
+      blocks: '<xml xmlns="https://developers.google.com/blockly/xml"></xml>',
     }
   },
 

@@ -144,3 +144,33 @@
   font-family: 'Roboto', sans-serif !important;
   font-size: 13px !important;
 }
+/* Checkbox styling within blocks (Scratch-like) */
+.blocklyCheckBox {
+  fill: #fff !important;
+  stroke: rgba(0,0,0,0.15) !important;
+  stroke-width: 1px !important;
+}
+
+.blocklyCheckBoxCheck {
+  fill: #4C97FF !important;
+  display: none;
+}
+
+/* Visibility: Show checkmark when checked */
+rect[checked="true"] + path.blocklyCheckBoxCheck,
+rect[checked="TRUE"] + path.blocklyCheckBoxCheck {
+  display: block !important;
+}
+
+/* Flyout specific coloring */
+.blocklyFlyoutBackground {
+  fill: #f9f9f9 !important;
+  fill-opacity: 0.95 !important;
+}
+
+.blocklyFlyoutLabelText {
+  font-family: 'Roboto', sans-serif !important;
+  font-size: 14px !important;
+  fill: #575e75 !important;
+  font-weight: bold !important;
+}

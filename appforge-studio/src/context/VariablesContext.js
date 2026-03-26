@@ -15,16 +15,19 @@ const ACTION_TYPES = {
   CREATE_LIST: 'CREATE_LIST',
   DELETE_LIST: 'DELETE_LIST',
   UPDATE_LIST_VALUE: 'UPDATE_LIST_VALUE',
+  SET_LIST_VISIBLE: 'SET_LIST_VISIBLE',
   
   // Tables
   CREATE_TABLE: 'CREATE_TABLE',
   DELETE_TABLE: 'DELETE_TABLE',
   UPDATE_TABLE_CELL: 'UPDATE_TABLE_CELL',
+  SET_TABLE_VISIBLE: 'SET_TABLE_VISIBLE',
   
   // Sprites
   SET_CURRENT_SPRITE: 'SET_CURRENT_SPRITE',
   CREATE_SPRITE: 'CREATE_SPRITE',
   DELETE_SPRITE: 'DELETE_SPRITE',
+  UPDATE_SPRITE_BLOCKS: 'UPDATE_SPRITE_BLOCKS',
 };
 
 // Reducer
@@ -287,6 +290,42 @@ function variablesReducer(state, action) {
       return newState;
     }
 
+    case ACTION_TYPES.SET_LIST_VISIBLE: {
+      const { listId, visible, scope, spriteId } = action.payload;
+      let newState = { ...state };
+      if (scope === 'global') {
+        newState.globalLists[listId].visible = visible;
+      } else if (spriteId) {
+        newState.sprites[spriteId].localLists[listId].visible = visible;
+      }
+      return newState;
+    }
+
+    case ACTION_TYPES.SET_TABLE_VISIBLE: {
+      const { tableId, visible, scope, spriteId } = action.payload;
+      let newState = { ...state };
+      if (scope === 'global') {
+        newState.globalTables[tableId].visible = visible;
+      } else if (spriteId) {
+        newState.sprites[spriteId].localTables[tableId].visible = visible;
+      }
+      return newState;
+    }
+
+    case ACTION_TYPES.UPDATE_SPRITE_BLOCKS: {
+      const { spriteId, blocks } = action.payload;
+      return {
+        ...state,
+        sprites: {
+          ...state.sprites,
+          [spriteId]: {
+            ...state.sprites[spriteId],
+            blocks,
+          },
+        },
+      };
+    }
+
     case ACTION_TYPES.SET_CURRENT_SPRITE: {
       return {
         ...state,
@@ -351,12 +390,32 @@ export function VariablesProvider({ children }) {
     });
   }, [state.currentSpriteId]);
 
-  const setVariableVisible = useCallback((variableId, visible, scope, spriteId = state.currentSpriteId) => {
+  const setVariableVisible = useCallback((variableId, visible) => {
+    const { globalVariables, globalLists, globalTables, sprites, currentSpriteId } = state;
+    const currentSprite = sprites[currentSpriteId] || { localVariables: {}, localLists: {}, localTables: {} };
+
+    let type = 'variable';
+    let scope = 'global';
+
+    if (globalVariables[variableId]) { type = 'variable'; scope = 'global'; }
+    else if (globalLists[variableId]) { type = 'list'; scope = 'global'; }
+    else if (globalTables[variableId]) { type = 'table'; scope = 'global'; }
+    else if (currentSprite.localVariables[variableId]) { type = 'variable'; scope = 'local'; }
+    else if (currentSprite.localLists[variableId]) { type = 'list'; scope = 'local'; }
+    else if (currentSprite.localTables[variableId]) { type = 'table'; scope = 'local'; }
+
     dispatch({
-      type: ACTION_TYPES.SET_VARIABLE_VISIBLE,
-      payload: { variableId, visible, scope, spriteId },
+      type: type === 'list' ? ACTION_TYPES.SET_LIST_VISIBLE : 
+            type === 'table' ? ACTION_TYPES.SET_TABLE_VISIBLE : 
+            ACTION_TYPES.SET_VARIABLE_VISIBLE,
+      payload: { 
+        [type === 'list' ? 'listId' : type === 'table' ? 'tableId' : 'variableId']: variableId, 
+        visible, 
+        scope, 
+        spriteId: currentSpriteId 
+      },
     });
-  }, [state.currentSpriteId]);
+  }, [state]);
 
   const updateVariablePosition = useCallback((variableId, x, y, scope, spriteId = state.currentSpriteId) => {
     dispatch({
@@ -392,6 +451,13 @@ export function VariablesProvider({ children }) {
       payload: { name, columns, scope, spriteId: state.currentSpriteId },
     });
   }, [state.currentSpriteId]);
+
+  const updateSpriteBlocks = useCallback((spriteId, blocks) => {
+    dispatch({
+      type: ACTION_TYPES.UPDATE_SPRITE_BLOCKS,
+      payload: { spriteId, blocks },
+    });
+  }, []);
 
   const createSprite = useCallback((spriteId, name) => {
     dispatch({
