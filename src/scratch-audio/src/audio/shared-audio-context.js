@@ -1,23 +1,34 @@
 import StartAudioContext from 'startaudiocontext';
-import bowser from 'bowser';
 
 let AUDIO_CONTEXT;
+let _listenerAttached = false;
 
-if (!bowser.msie) {
-    /**
-     * AudioContext can be initialized only when user interaction event happens
-     */
-    const event =
-        typeof document.ontouchstart === 'undefined' ?
-            'mousedown' :
-            'touchstart';
-    const initAudioContext = () => {
-        document.removeEventListener(event, initAudioContext);
-        AUDIO_CONTEXT = new (window.AudioContext ||
-            window.webkitAudioContext)();
-        StartAudioContext(AUDIO_CONTEXT);
-    };
-    document.addEventListener(event, initAudioContext);
+function ensureAudioContextListener() {
+    if (_listenerAttached) return;
+    _listenerAttached = true;
+
+    // Lazily access bowser to avoid TDZ in production builds
+    let isMsie = false;
+    try {
+        const bowser = require('bowser');
+        isMsie = !!(bowser && bowser.msie);
+    } catch (e) {
+        // bowser not available, assume not IE
+    }
+
+    if (!isMsie) {
+        const event =
+            typeof document.ontouchstart === 'undefined' ?
+                'mousedown' :
+                'touchstart';
+        const initAudioContext = () => {
+            document.removeEventListener(event, initAudioContext);
+            AUDIO_CONTEXT = new (window.AudioContext ||
+                window.webkitAudioContext)();
+            StartAudioContext(AUDIO_CONTEXT);
+        };
+        document.addEventListener(event, initAudioContext);
+    }
 }
 
 /**
@@ -25,5 +36,6 @@ if (!bowser.msie) {
  * @return {AudioContext} The singleton AudioContext
  */
 export default function () {
+    ensureAudioContextListener();
     return AUDIO_CONTEXT;
 }

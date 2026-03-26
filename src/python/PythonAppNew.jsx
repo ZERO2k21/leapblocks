@@ -108,13 +108,22 @@ print("2 + 3 =", add(2, 3))
 
 
 // ─── Sprite Library (from shared component) ─────────────────────────────────
-const SPRITE_LIBRARY = FULL_CATALOG.map(sprite => ({
-    name: sprite.name,
-    img: sprite.image || sprite.emoji,
-    type: sprite.id,
-    costumes: sprite.costumes || [],
-    category: sprite.category
-}));
+let _spriteLibrary = null;
+function getSpriteLibrary() {
+    if (!_spriteLibrary) {
+        _spriteLibrary = FULL_CATALOG.map(sprite => ({
+            name: sprite.name,
+            img: sprite.image || sprite.emoji,
+            type: sprite.id,
+            costumes: sprite.costumes || [],
+            category: sprite.category
+        }));
+    }
+    return _spriteLibrary;
+}
+const SPRITE_LIBRARY = new Proxy([], {
+    get(_target, prop) { return getSpriteLibrary()[prop]; }
+});
 
 // ─── Backdrop Library (from shared component) ───────────────────────────────
 const BACKDROP_LIBRARY = [

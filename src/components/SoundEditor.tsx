@@ -134,9 +134,39 @@ interface SoundEditorProps {
     mode?: 'junior' | 'intermediate';
 }
 
-// Ensure AudioContext is available
-const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-const globalSoundBank = new SoundBank(audioContext);
+// ─── Lazy initialization to avoid TDZ errors in production builds ─────────
+let _audioContext: AudioContext | null = null;
+let _globalSoundBank: SoundBank | null = null;
+
+function getAudioContext(): AudioContext {
+    if (!_audioContext) {
+        _audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    return _audioContext;
+}
+
+function getGlobalSoundBank(): SoundBank {
+    if (!_globalSoundBank) {
+        _globalSoundBank = new SoundBank(getAudioContext());
+    }
+    return _globalSoundBank;
+}
+
+// Proxy references so existing code using `audioContext` and `globalSoundBank` keeps working
+const audioContext: AudioContext = new Proxy({} as AudioContext, {
+    get(_target, prop) {
+        const real = getAudioContext();
+        const value = (real as any)[prop];
+        return typeof value === 'function' ? value.bind(real) : value;
+    }
+});
+const globalSoundBank: SoundBank = new Proxy({} as SoundBank, {
+    get(_target, prop) {
+        const real = getGlobalSoundBank();
+        const value = (real as any)[prop];
+        return typeof value === 'function' ? value.bind(real) : value;
+    }
+});
 
 const generateWaveformPoints = (width: number, height: number): string => {
     let points = '';

@@ -1,10 +1,16 @@
 import React, { useEffect } from "react";
 import Editor, { loader } from "@monaco-editor/react";
 
-loader.config({
-    paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs" },
-    'vs/nls': { availableLanguages: {} },
-});
+// ─── Lazy Monaco loader config to avoid TDZ errors in production builds ───
+let _loaderConfigured = false;
+function ensureLoaderConfig() {
+    if (_loaderConfigured) return;
+    _loaderConfigured = true;
+    loader.config({
+        paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs" },
+        'vs/nls': { availableLanguages: {} },
+    });
+}
 
 // Tell Monaco to not use web workers (avoids CSP blob: errors in Electron/strict CSP environments)
 if (typeof window !== 'undefined') {
@@ -64,18 +70,19 @@ const getLanguageForFile = (fileName = "") => {
     return "python";
 };
 
-export default function MonacoEditor({ 
-    projectFiles, 
-    activeFile, 
-    setProjectFiles, 
-    editorRef, 
-    monacoRef, 
-    editorCursor, 
-    isRunning, 
+export default function MonacoEditor({
+    projectFiles,
+    activeFile,
+    setProjectFiles,
+    editorRef,
+    monacoRef,
+    editorCursor,
+    isRunning,
     onRun,
     onCursorChange,
     editorOptions = {}
 }) {
+    ensureLoaderConfig();
     const editorLanguage = getLanguageForFile(activeFile);
     const mergedOptions = {
         fontSize: 14,
