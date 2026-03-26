@@ -3251,8 +3251,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 await defaultSprite.addSound('Meow', '/assets/sounds/meow.wav');
 
-
-
                 console.log('[APP] Assets loaded:', defaultSprite.costumes.length, 'costumes', defaultSprite.sounds.length, 'sounds');
 
                 triggerUpdate();
@@ -3427,19 +3425,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         
 
-        // Monitor callbacks
+        // Monitor callbacks (unified for both VMs)
+        const commonCallbacks = {
+            onShowVariable: handleShowVariable,
+            onHideVariable: handleHideVariable,
+            onShowList: handleShowList,
+            onHideList: handleHideList,
+            onShowTable: handleShowTable,
+            onHideTable: handleHideTable
+        };
 
-        animationVM.onShowVariable = handleShowVariable;
-
-        animationVM.onHideVariable = handleHideVariable;
-
-        animationVM.onShowList = handleShowList;
-
-        animationVM.onHideList = handleHideList;
-
-        animationVM.onShowTable = handleShowTable;
-
-        animationVM.onHideTable = handleHideTable;
+        Object.assign(animationVM, commonCallbacks);
+        Object.assign(scratchRuntime, commonCallbacks);
 
 
 
@@ -3476,66 +3473,36 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     // Update flyout contents when sprite changes
 
     useEffect(() => {
-
         if (workspaceRef.current && appMode === 'blocks') {
-
             const toolbox = getCurrentToolbox();
-
             const toolboxJson = JSON.stringify(toolbox);
 
-
-
             // Recompute continuous flyout contents
-
             const contents = getFlattenedFlyoutContents(toolbox);
-
             setCurrentToolboxContents(contents);
-
             currentToolboxContentsRef.current = contents;
-
             _continuousFlyoutContents = contents; // Update module-level storage for prototype override
-
-
 
             console.log('[APP] Updating flyout contents for sprite:', selectedSpriteId, '(', contents.length, 'items)');
 
-
-
             // Update the toolbox sidebar (category icons) if the definition changed
-
             if (toolboxJson !== lastToolboxJsonRef.current) {
-
                 console.log('[APP] Updating toolbox dynamically (Sprite:', selectedSpriteId, ')');
-
                 lastToolboxJsonRef.current = toolboxJson;
-
                 workspaceRef.current.updateToolbox(toolbox);
-
             }
-
-
 
             // Always ensure flyout is showing the latest contents
-
             const flyout = workspaceRef.current.getFlyout() as any;
-
             if (flyout) {
-
                 flyout.autoClose = false;
-
                 flyout.show(contents);
-
                 // Ensure flyout is properly laid out
-
                 if (flyout.reflowInternal_) flyout.reflowInternal_();
-
                 console.log('[APP] Flyout re-shown with', contents.length, 'items');
-
             }
-
         }
-
-    }, [selectedSpriteId, editorMode, appMode, getCurrentToolbox]);
+    }, [selectedSpriteId, editorMode, appMode, getCurrentToolbox, variableMonitors, listMonitors, tableMonitors]);
 
 
 
@@ -3662,84 +3629,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         };
                     }
 
-                    // 3. Register Toolbox Category Callbacks
-                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_VARIABLES', (ws: any) => {
-                        const contents = [];
-                        
-                        // "Make a Variable" Button
-                        contents.push({
-                            kind: 'button',
-                            text: 'Make a Variable',
-                            callbackKey: 'CREATE_VARIABLE'
-                        });
-
-                        const vars = variableMonitorsRef.current.map(m => m.name);
-
-                        // Variables with checkboxes
-                        vars.forEach((v: string) => {
-                            const isVisible = (window as any).getVariableVisibility?.(v, 'variable');
-                            contents.push({
-                                kind: 'block',
-                                type: 'variable_reporter_checkbox',
-                                gap: 8,
-                                fields: {
-                                    'CHECK': isVisible ? 'TRUE' : 'FALSE',
-                                    'VARIABLE': v
-                                }
-                            });
-                        });
-
-                        // Standard variable blocks
-                        if (vars.length > 0) {
-                            contents.push({
-                                kind: 'block',
-                                type: 'data_setvariableto',
-                                gap: 8
-                            });
-                            contents.push({
-                                kind: 'block',
-                                type: 'data_changevariableby',
-                                gap: 24
-                            });
-                        }
-
-                        // Lists section
-                        contents.push({
-                            kind: 'button',
-                            text: 'Make a List',
-                            callbackKey: 'CREATE_LIST'
-                        });
-
-                        const lists = listMonitorsRef.current.map(m => m.name);
-
-                        lists.forEach((l: string) => {
-                            const isVisible = (window as any).getVariableVisibility?.(l, 'list');
-                            contents.push({
-                                kind: 'block',
-                                type: 'list_reporter_checkbox',
-                                gap: 8,
-                                fields: {
-                                    'CHECK': isVisible ? 'TRUE' : 'FALSE',
-                                    'LIST': l
-                                }
-                            });
-                        });
-
-                        return contents;
-                    });
-
-                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_MYBLOCKS', (ws: any) => {
-                        const contents = [];
-                        contents.push({
-                            kind: 'button',
-                            text: 'Make a Block',
-                            callbackKey: 'CREATE_PROCEDURE'
-                        });
-
-                        // In a real Scratch environment, we would also list the existing procedure call blocks here.
-                        
-                        return contents;
-                    });
+                    // 3. Register Toolbox Category Callbacks handled later in initialization to avoid duplication
 
                     // 4. Hook FieldCheckbox to toggle visibility
                     const originalCheckboxSetValue = Blockly.FieldCheckbox.prototype.setValue;
@@ -4139,99 +4029,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                    // Dynamic Dropdown Colors: Update highlight and background color based on block color
-
-                    if (!(Blockly.FieldDropdown.prototype as any)._originalShowEditor) {
-
-                        (Blockly.FieldDropdown.prototype as any)._originalShowEditor = (Blockly.FieldDropdown.prototype as any).showEditor_;
-
-                        (Blockly.FieldDropdown.prototype as any).showEditor_ = function (this: Blockly.FieldDropdown, opt_e: any) {
-
-                            const block = this.getSourceBlock();
-
-                            if (block) {
-
-                                const color = block.getColour();
-
-                                document.documentElement.style.setProperty('--blockly-menu-highlight-color', color);
-
-                                // Add a subtle tint for the background (10% opacity)
-
-                                const tint = color.startsWith('#') ? `${color}1A` : 'rgba(0,0,0,0.05)';
-
-                                document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
-
-                            }
-
-                            (this as any)._originalShowEditor(opt_e);
-
-                        };
-
-                    }
-
-
-
-                    // Force all dropdown arrows to be black
-
-                    if (!(Blockly.FieldDropdown.prototype as any)._arrowColourPatched) {
-
-                        const origApplyColour = Blockly.FieldDropdown.prototype.applyColour;
-
-                        (Blockly.FieldDropdown.prototype as any).applyColour = function (this: Blockly.FieldDropdown) {
-
-                            if (origApplyColour) origApplyColour.call(this);
-
-                            const self = this as any;
-
-                            // Handle both property naming conventions (svgArrow / svgArrow_)
-
-                            const svgArrow = self.svgArrow_ || self.svgArrow;
-
-                            if (svgArrow) {
-
-                                svgArrow.style.filter = 'brightness(0)';
-
-                            }
-
-                            // Handle text-based arrow element
-
-                            const arrow = self.arrow_ || self.arrow;
-
-                            if (arrow) {
-
-                                try {
-
-                                    const arrowEl = arrow.getSvgRoot ? arrow.getSvgRoot() : arrow;
-
-                                    if (arrowEl && arrowEl.style) arrowEl.style.fill = '#333333';
-
-                                    if (arrowEl && arrowEl.setAttribute) arrowEl.setAttribute('fill', '#333333');
-
-                                } catch (e) { /* ignore */ }
-
-                            }
-
-                            // Fallback: find any image child within the field group
-
-                            try {
-
-                                const fieldGroup = self.fieldGroup_ || self.fieldGroup;
-
-                                if (fieldGroup) {
-
-                                    const images = fieldGroup.querySelectorAll('image');
-
-                                    images.forEach((img: any) => { img.style.filter = 'brightness(0)'; });
-
-                                }
-
-                            } catch (e) { /* ignore */ }
-
-                        };
-
-                        (Blockly.FieldDropdown.prototype as any)._arrowColourPatched = true;
-
-                    }
 
 
 
@@ -4256,77 +4053,42 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                     // Register custom variable category callback
-
                     workspaceRef.current.registerToolboxCategoryCallback('LEAP_VARIABLES', (ws: any) => {
-
                         const contents: any[] = [];
-
                         
-
-                        // 1. Scalar Variables
-
+                        // 1. Scalar Variables Headers
                         contents.push({
-
                             kind: 'button',
-
                             text: 'Make a Variable',
-
                             callbackKey: 'CREATE_VARIABLE'
-
                         });
 
-
-
                         const allVars = ws.getVariableMap().getAllVariables() || [];
-
                         const scalars = allVars.filter((v: any) => v.type === '' || v.type === 'Number' || v.type === 'String');
-
                         const lists = allVars.filter((v: any) => v.type === 'list');
-
                         const tables = allVars.filter((v: any) => v.type === 'table');
-
-
 
                         scalars.sort((a: any, b: any) => a.getName().localeCompare(b.getName()));
 
                         scalars.forEach((v: any) => {
-                            // Find corresponding monitor
                             const monitor = variableMonitors.find(m => m.name === v.getName());
                             const isVisible = monitor ? monitor.visible : false;
                             
                             contents.push({
-                                kind: 'label',
-                                text: ' ',
-                                'web-class': 'variable-checkbox-container'
-                            });
-                            
-                            contents.push({
-                                kind: 'checkbox',
-                                text: v.getName(),
-                                checked: isVisible,
-                                callbackKey: `TOGGLE_VARIABLE_${v.getId()}`,
-                                'web-class': 'variable-checkbox'
-                            });
-                            
-                            // Add variable reporter block
-                            contents.push({
                                 kind: 'block',
-                                type: 'variables_get',
+                                type: 'variable_reporter_checkbox',
+                                gap: 8,
                                 fields: {
-                                    'VAR': {
-                                        id: v.getId(),
-                                        name: v.getName(),
-                                        type: v.type
-                                    }
+                                    'CHECK': isVisible ? 'TRUE' : 'FALSE',
+                                    'VARIABLE': v.getName()
                                 }
                             });
                         });
 
                         // Add variable blocks
                         if (scalars.length > 0) {
-                            const defaultVar = scalars[scalars.length - 1];
+                            const lastVar = scalars[scalars.length - 1]; // Use most recently added (last in creation order before sort, but sort is alphabetical)
                             const blockTypes = [
-                                'variables_set_intermediate',
                                 'data_setvariableto',
                                 'data_changevariableby',
                                 'data_showvariable',
@@ -4338,13 +4100,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     type: type,
                                     fields: {
                                         'VARIABLE': {
-                                            id: defaultVar.getId(),
-                                            name: defaultVar.getName(),
-                                            type: defaultVar.type
+                                            id: lastVar.getId(),
+                                            name: lastVar.getName(),
+                                            type: lastVar.type
                                         }
                                     }
                                 };
-                                if (type === 'variables_set_intermediate' || type === 'data_setvariableto' || type === 'data_changevariableby') {
+                                if (type === 'data_setvariableto' || type === 'data_changevariableby') {
                                     block.inputs = {
                                         'VALUE': {
                                             shadow: {
@@ -4360,232 +4122,113 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             });
                         }
 
-
-
                         // 2. Lists
-
                         contents.push({
-
                             kind: 'button',
-
                             text: 'Make a List',
-
                             callbackKey: 'CREATE_LIST'
-
                         });
 
-
-
                         lists.sort((a: any, b: any) => a.getName().localeCompare(b.getName()));
-
                         lists.forEach((v: any) => {
-                            // Find corresponding monitor
                             const monitor = listMonitors.find(m => m.name === v.getName());
                             const isVisible = monitor ? monitor.visible : false;
                             
                             contents.push({
-                                kind: 'label',
-                                text: ' ',
-                                'web-class': 'list-checkbox-container'
-                            });
-                            
-                            contents.push({
-                                kind: 'checkbox',
-                                text: v.getName(),
-                                checked: isVisible,
-                                callbackKey: `TOGGLE_LIST_${v.getId()}`,
-                                'web-class': 'list-checkbox'
-                            });
-                            
-                            // Add list reporter block
-                            contents.push({
                                 kind: 'block',
-                                type: 'data_listcontents',
+                                type: 'list_reporter_checkbox',
+                                gap: 8,
                                 fields: {
-                                    'LIST': {
-                                        id: v.getId(),
-                                        name: v.getName(),
-                                        type: 'list'
-                                    }
+                                    'CHECK': isVisible ? 'TRUE' : 'FALSE',
+                                    'LIST': v.getName()
                                 }
                             });
                         });
 
-
-
                         if (lists.length > 0) {
-
-                            const defaultList = lists[lists.length - 1];
-
+                            const lastList = lists[lists.length - 1];
                             const listBlockTypes = [
-
                                 'data_addtolist',
-
                                 'data_deleteoflist',
-
                                 'data_deletealloflist',
-
                                 'data_insertatlist',
-
                                 'data_replaceitemoflist',
-
                                 'data_itemoflist',
-
                                 'data_itemnumoflist',
-
                                 'data_lengthoflist',
-
                                 'data_listcontainsitem',
-
                                 'data_showlist',
-
                                 'data_hidelist'
-
                             ];
-
                             listBlockTypes.forEach(type => {
-
                                 contents.push({
-
                                     kind: 'block',
-
                                     type: type,
-
                                     fields: {
-
                                         'LIST': {
-
-                                            id: defaultList.getId(),
-
-                                            name: defaultList.getName(),
-
+                                            id: lastList.getId(),
+                                            name: lastList.getName(),
                                             type: 'list'
-
                                         }
-
                                     }
-
                                 });
-
                             });
-
                         }
 
-
-
                         // 3. Tables
-
                         contents.push({
-
                             kind: 'button',
-
                             text: 'Make a Table',
-
                             callbackKey: 'CREATE_TABLE'
-
                         });
 
-
-
                         tables.sort((a: any, b: any) => a.getName().localeCompare(b.getName()));
-
                         tables.forEach((v: any) => {
-                            // Find corresponding monitor
                             const monitor = tableMonitors.find(m => m.name === v.getName());
                             const isVisible = monitor ? monitor.visible : false;
                             
                             contents.push({
-                                kind: 'label',
-                                text: ' ',
-                                'web-class': 'table-checkbox-container'
-                            });
-                            
-                            contents.push({
-                                kind: 'checkbox',
-                                text: v.getName(),
-                                checked: isVisible,
-                                callbackKey: `TOGGLE_TABLE_${v.getId()}`,
-                                'web-class': 'table-checkbox'
-                            });
-                            
-                            // Add table reporter block
-                            contents.push({
                                 kind: 'block',
-                                type: 'data_tablecontents',
+                                type: 'list_reporter_checkbox', // Re-using list_reporter_checkbox for tables too for consistency
+                                gap: 8,
                                 fields: {
-                                    'TABLE': {
-                                        id: v.getId(),
-                                        name: v.getName(),
-                                        type: 'table'
-                                    }
+                                    'CHECK': isVisible ? 'TRUE' : 'FALSE',
+                                    'LIST': v.getName()
                                 }
                             });
                         });
 
-
-
                         if (tables.length > 0) {
-
-                            const defaultTable = tables[tables.length - 1];
-
+                            const lastTable = tables[tables.length - 1];
                             const tableBlockTypes = [
-
                                 'data_setintable',
-
                                 'data_addcolumn',
-
                                 'data_deletecolumn',
-
                                 'data_showtable',
-
                                 'data_hidetable',
-
                                 'data_deleterow',
-
                                 'data_cleartable',
-
                                 'data_getvalueattable',
-
                                 'data_gettablecount',
-
                                 'data_gettimestamp',
-
                                 'data_exporttable'
-
                             ];
-
                             tableBlockTypes.forEach(type => {
-
                                 contents.push({
-
                                     kind: 'block',
-
                                     type: type,
-
                                     fields: {
-
                                         'TABLE': {
-
-                                            id: defaultTable.getId(),
-
-                                            name: defaultTable.getName(),
-
+                                            id: lastTable.getId(),
+                                            name: lastTable.getName(),
                                             type: 'table'
-
                                         }
-
                                     }
-
                                 });
-
                             });
-
                         }
 
-
-
                         return contents;
-
                     });
 
 

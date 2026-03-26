@@ -13,6 +13,12 @@ class ScratchRuntime {
         this.isRunning = false;
         this.activeScripts = new Set();
         this.spritesBlocks = new Map();
+        
+        // Monitor callbacks
+        this.onShowVariable = null;
+        this.onHideVariable = null;
+        this.onShowList = null;
+        this.onHideList = null;
     }
 
     triggerFlag() {
@@ -255,6 +261,22 @@ class ScratchRuntime {
                     const clrListName = fields.LIST ? fields.LIST.name : await this.getInputValue(inputs.LIST, spriteId);
                     variableStore.deleteAllOfList(clrListName);
                     break;
+                case 'data_showvariable':
+                    const showVarName = fields.VARIABLE ? fields.VARIABLE.name : await this.getInputValue(inputs.VARIABLE, spriteId);
+                    if (this.onShowVariable) this.onShowVariable(showVarName);
+                    break;
+                case 'data_hidevariable':
+                    const hideVarName = fields.VARIABLE ? fields.VARIABLE.name : await this.getInputValue(inputs.VARIABLE, spriteId);
+                    if (this.onHideVariable) this.onHideVariable(hideVarName);
+                    break;
+                case 'data_showlist':
+                    const showListName = fields.LIST ? fields.LIST.name : await this.getInputValue(inputs.LIST, spriteId);
+                    if (this.onShowList) this.onShowList(showListName);
+                    break;
+                case 'data_hidelist':
+                    const hideListName = fields.LIST ? fields.LIST.name : await this.getInputValue(inputs.LIST, spriteId);
+                    if (this.onHideList) this.onHideList(hideListName);
+                    break;
 
                 // ═══════════════════════════════════════════════════════════════════════
                 // PROCEDURES (My Blocks)
@@ -400,11 +422,13 @@ class ScratchRuntime {
 
             // DATA REPORTERS
             case 'data_variable':
-                const varName = block.fields.VARIABLE ? block.fields.VARIABLE.name : null;
+            case 'variable_reporter_checkbox':
+                const varName = block.fields.VARIABLE ? (block.fields.VARIABLE.id || block.fields.VARIABLE.name || block.fields.VARIABLE.value) : null;
                 return variableStore.getVariable(varName);
-            case 'motion_xposition':
-                const sprite = spriteManager.getSprite(spriteId);
-                return sprite ? sprite.x : 0;
+            case 'data_listcontents':
+            case 'list_reporter_checkbox':
+                const listName = block.fields.LIST ? (block.fields.LIST.id || block.fields.LIST.name || block.fields.LIST.value) : null;
+                return variableStore.getList(listName);
             default:
                 return 0;
         }
