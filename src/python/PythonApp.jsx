@@ -1010,7 +1010,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     }, [activePanel, addLog]);
 
     // ── Run ───────────────────────────────────────────────────────────────────
-    const handleRun = async () => {
+    // NOTE: function declarations (not const arrows) so they hoist above the
+    // keyboard-shortcuts useEffect that references them in its deps array.
+    async function handleRun() {
         if (isRunning) return;
         setIsRunning(true);
         setTerminalOutput([]);
@@ -1069,17 +1071,17 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 setIsRunning(false);
             }
         }
-    };
+    }
 
-    const handleStop = () => {
+    function handleStop() {
         setIsRunning(false);
         addLog("⏹ Execution stopped by user.", "warning");
         if (window.electronAPI?.isElectron) {
             window.electronAPI.pythonStop();
         }
-    };
+    }
 
-    const handleClear = () => setTerminalOutput([]);
+    function handleClear() { setTerminalOutput([]); }
 
     // ── Syntax Warning Checker ────────────────────────────────────────────────
     const checkSyntaxWarnings = (code) => {

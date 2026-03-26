@@ -112,6 +112,7 @@ export default function JuniorApp({ onBack }) {
     const stageContainerRef = useRef(null);
     const timeoutRefs = useRef({});
     const isLoadingWorkspaceRef = useRef(false);
+    const handleSpriteSelectRef = useRef(null);
 
     // UI state
     const [projectName, setProjectName] = useState("Untitled Project");
@@ -347,9 +348,9 @@ export default function JuniorApp({ onBack }) {
 
         // Auto-switch to the target sprite so the user can see the blocks immediately
         setTimeout(() => {
-            handleSpriteSelect(targetSpriteId);
+            handleSpriteSelectRef.current?.(targetSpriteId);
         }, 300);
-    }, [handleSpriteSelect]);
+    }, []);
 
     // Load workspace blocks from the per-sprite map
     const loadSpriteWorkspace = useCallback((spriteId) => {
@@ -507,6 +508,7 @@ export default function JuniorApp({ onBack }) {
         setActiveSpriteId(newId);
         loadSpriteWorkspace(newId);
     }, [activeSpriteId, saveCurrentWorkspace, loadSpriteWorkspace]);
+    handleSpriteSelectRef.current = handleSpriteSelect;
 
     const handleNextScene = () => {
         const currentIndex = scenes.findIndex(s => s.id === currentSceneId);
