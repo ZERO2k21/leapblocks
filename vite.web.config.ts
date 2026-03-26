@@ -9,6 +9,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@blockly-runtime': path.resolve(__dirname, 'src/blockly/runtime.ts'),
+      // fabric ships pre-minified ESM (index.min.mjs) which causes TDZ errors
+      // when Rollup/esbuild reprocesses the already-mangled variable names.
+      // Force the unminified ESM entry so bundling works correctly.
+      'fabric': path.resolve(__dirname, 'node_modules/fabric/dist/index.mjs'),
     },
   },
   define: {
