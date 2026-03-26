@@ -1,5 +1,5 @@
-import * as Blockly from '@blockly-runtime';
-import { CompiledScript, ScriptStep } from '../vm/AnimationVM';
+import Blockly from '@blockly-runtime';
+import type { CompiledScript, ScriptStep } from '../vm/AnimationVM';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // JUNIOR GENERATOR - Compiles junior blocks to executable scripts

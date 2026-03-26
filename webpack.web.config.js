@@ -6,6 +6,7 @@ const CompressionPlugin = require('compression-webpack-plugin');
 
 module.exports = {
     mode: 'production',
+    devtool: 'source-map',
     entry: './src/renderer.tsx',
     target: 'web',
     output: {
@@ -31,16 +32,11 @@ module.exports = {
         }
     },
     optimization: {
-        concatenateModules: false,
+        concatenateModules: true,
         splitChunks: {
             chunks: 'all',
             cacheGroups: {
-                blockly: {
-                    test: /[\\/]node_modules[\\/]blockly[\\/]/,
-                    name: 'blockly',
-                    chunks: 'all',
-                    priority: 20,
-                },
+
                 vendors: {
                     test: /[\\/]node_modules[\\/]/,
                     name: 'vendors',
@@ -66,6 +62,10 @@ module.exports = {
                         loader: 'ts-loader',
                         options: {
                             transpileOnly: true,
+                            compilerOptions: {
+                                module: 'ESNext',
+                                moduleResolution: 'bundler',
+                            },
                         }
                     }
                 ]

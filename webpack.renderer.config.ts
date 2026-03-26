@@ -33,17 +33,7 @@ export const rendererConfig: Configuration = {
       '@blockly-runtime': path.resolve(__dirname, 'src/blockly/runtime.ts'),
     },
   },
-  optimization: {
-    splitChunks: {
-      cacheGroups: {
-        blockly: {
-          test: /[\\/]node_modules[\\/]blockly[\\/]/,
-          name: 'blockly',
-          chunks: 'all',
-        },
-      },
-    },
-  },
+
   devServer: {
     static: {
       directory: require('path').join(__dirname, 'public'),

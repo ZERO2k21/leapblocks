@@ -1,4 +1,4 @@
-import * as Blockly from '@blockly-runtime';
+import Blockly from '@blockly-runtime';
 
 let _registered = false;
 

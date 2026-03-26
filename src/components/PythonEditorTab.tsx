@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import * as Blockly from '@blockly-runtime';
+import Blockly from '@blockly-runtime';
 
 interface PythonEditorTabProps {
     workspace: Blockly.WorkspaceSvg | null;

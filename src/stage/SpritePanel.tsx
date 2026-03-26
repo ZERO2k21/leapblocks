@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Sprite, SpriteType } from "./Sprite";
 import { ActionMenu } from "./ActionMenu";
 import { SpriteLibrary, SpriteEntry } from "../components/SpriteLibrary";
-import { StageManager } from '../engine/StageManager';
+import type { StageManager } from '../engine/StageManager';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SPRITE PANEL - Match Scratch 3.0 Look

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import * as Blockly from '@blockly-runtime';
+import Blockly from '@blockly-runtime';
 
 /**
  * Argument types supported by Scratch 3.0

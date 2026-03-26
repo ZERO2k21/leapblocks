@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import PaintEditor from '../components/PaintEditor';
 import { Sprite } from './Sprite';
-import { StageManager } from '../engine/StageManager';
+import type { StageManager } from '../engine/StageManager';
 
 interface CostumesTabProps {
     selectedSpriteId: string | null;

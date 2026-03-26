@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import * as Blockly from '@blockly-runtime';
+import Blockly from '@blockly-runtime';
 
 /**
  * Drag-to-delete trash overlay for the Blockly workspace.

@@ -1,7 +1,7 @@
 import React from 'react';
 import SoundEditor, { Sound } from '../components/SoundEditor';
 import { Sprite } from './Sprite';
-import { StageManager } from '../engine/StageManager';
+import type { StageManager } from '../engine/StageManager';
 
 interface SoundsTabProps {
     selectedSpriteId: string | null;

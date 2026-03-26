@@ -1,4 +1,4 @@
-import * as Blockly from '@blockly-runtime';
+import Blockly from '@blockly-runtime';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // JUNIOR BLOCKS - Simplified blocks for ages 4+

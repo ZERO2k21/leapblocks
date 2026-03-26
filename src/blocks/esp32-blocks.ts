@@ -1,4 +1,4 @@
-import * as Blockly from '@blockly-runtime';
+import Blockly from '@blockly-runtime';
 
 const COLORS = {
     control: '#F59E0B',

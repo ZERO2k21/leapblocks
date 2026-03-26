@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import * as Blockly from "@blockly-runtime";
+import Blockly from "@blockly-runtime";
 import { javascriptGenerator } from '@blockly-runtime';
 import Teddy from "./sprites/Teddy";
 import RightPanel from "./components/RightPanel";

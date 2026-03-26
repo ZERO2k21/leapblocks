@@ -6,7 +6,7 @@
  * https://blocklycodelabs.dev/blockly/stable/define-block-json.html
  */
 
-import * as Blockly from '@blockly-runtime';
+import Blockly from '@blockly-runtime';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // BLOCK DEFINITIONS

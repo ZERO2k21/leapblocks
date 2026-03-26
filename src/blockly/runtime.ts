@@ -66,6 +66,5 @@ if (Blockly.FieldDropdown && !(Blockly.FieldDropdown.prototype as any)._arrowCol
     (Blockly.FieldDropdown.prototype as any)._arrowColourPatched = true;
 }
 
-export * from 'blockly/core';
 export { javascriptGenerator } from 'blockly/javascript';
 export default Blockly;

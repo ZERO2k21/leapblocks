@@ -1,4 +1,4 @@
-import * as Blockly from "@blockly-runtime";
+import Blockly from "@blockly-runtime";
 
 const normalizeJuniorSpriteType = (rawType) => {
     const normalized = String(rawType || "").trim().toLowerCase();

@@ -1,5 +1,5 @@
-import * as Blockly from '@blockly-runtime';
-import { CompiledScript, ScriptStep } from '../vm/AnimationVM';
+import Blockly from '@blockly-runtime';
+import type { CompiledScript, ScriptStep } from '../vm/AnimationVM';
 import { animationVM } from '../vm/AnimationVM';
 import { hardwareAdapter } from '../hardware/HardwareAdapter';
 import { stageManager } from '../engine/StageManager';

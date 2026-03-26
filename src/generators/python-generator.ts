@@ -1,4 +1,4 @@
-import * as Blockly from '@blockly-runtime';
+import Blockly from '@blockly-runtime';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PYTHON CODE GENERATOR - Custom generator for LeapBlocks animation blocks

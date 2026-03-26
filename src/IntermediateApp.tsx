@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 
-import * as Blockly from '@blockly-runtime';
+import Blockly from '@blockly-runtime';
 
 import './styles/scratch-blocks.css'; // Import Scratch-style blocks CSS
 
@@ -21,9 +21,11 @@ import { AnimationCompiler } from './generators/animation-generator';
 
 import { initPythonGenerator } from './generators/python-generator'; // Deferred registration
 
-import { animationVM, CompiledScript } from './vm/AnimationVM';
+import { animationVM } from './vm/AnimationVM';
+import type { CompiledScript } from './vm/AnimationVM';
 
-import { Sprite, SpriteType } from './stage/Sprite';
+import { Sprite } from './stage/Sprite';
+import type { SpriteType } from './stage/Sprite';
 
 import Stage from './stage/Stage';
 
@@ -53,7 +55,8 @@ import SerialMonitor from './components/SerialMonitor';
 
 import UploadModal from './components/UploadModal';
 
-import { SpriteLibrary, SpriteEntry } from './components/SpriteLibrary';
+import { SpriteLibrary } from './components/SpriteLibrary';
+import type { SpriteEntry } from './components/SpriteLibrary';
 
 import WorkspaceControls from './components/WorkspaceControls';
 
@@ -72,7 +75,8 @@ import { registerPictoBloxCategory } from './custom-toolbox';
 import MakeVariableDialog from './components/MakeVariableDialog';
 import MakeListDialog from './components/MakeListDialog';
 import MakeTableDialog from './components/MakeTableDialog';
-import MakeBlockDialog, { BlockArgument } from './components/MakeBlockDialog';
+import MakeBlockDialog from './components/MakeBlockDialog';
+import type { BlockArgument } from './components/MakeBlockDialog';
 
 // Import monitor components
 import VariableMonitor from './components/VariableMonitor';

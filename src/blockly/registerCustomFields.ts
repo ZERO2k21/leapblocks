@@ -1,4 +1,4 @@
-import * as Blockly from '@blockly-runtime';
+import Blockly from '@blockly-runtime';
 import { FieldAngle } from '@blockly/field-angle';
 import { FieldColour } from '@blockly/field-colour';
 
