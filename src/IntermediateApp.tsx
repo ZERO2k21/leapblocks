@@ -62,6 +62,7 @@ import WorkspaceTrash from './components/WorkspaceTrash';
 import UnsavedWarningModal from './junior/components/UnsavedWarningModal';
 
 import { fileService } from './services/FileService';
+import { registerLeapRenderer } from './junior/blocks/LeapRenderer';
 
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
 
@@ -127,12 +128,12 @@ const registerBlocks = () => {
             log.app(`Registered ${newBlocks.length} additional blocks (Arduino/ESP32/Hardware).`);
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : String(e);
-            log.app(`Error registering additional blocks: ${errorMessage}`);
         }
-    } else {
-        log.app('No additional blocks to register.');
     }
 };
+
+// Register Leap Renderer
+registerLeapRenderer(Blockly);
 
 registerBlocks();
 
