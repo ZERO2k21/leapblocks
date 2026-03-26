@@ -5,10 +5,20 @@
 
 // This will be initialized with the variable state from VariablesContext
 let runtimeState = {
-  globalVariablesById: {}, // id -> variable object
-  localVariablesById: {}, // id -> variable object (for current sprite)
-  globalVariablesByName: {}, // name -> variable object (computed)
-  localVariablesByName: {}, // name -> variable object (computed)
+  globalVariablesById: {}, 
+  localVariablesById: {},
+  globalListsById: {},
+  localListsById: {},
+  globalTablesById: {},
+  localTablesById: {},
+  
+  globalVariablesByName: {},
+  localVariablesByName: {},
+  globalListsByName: {},
+  localListsByName: {},
+  globalTablesByName: {},
+  localTablesByName: {},
+
   currentSpriteId: 'sprite1',
   variableUpdateCallbacks: [],
 };
@@ -18,31 +28,42 @@ let runtimeState = {
  * Called from BlockEditor when execution starts
  */
 export function initializeRuntime(state) {
-  // Build global variables maps
-  const globalById = { ...state.globalVariables };
-  const globalByName = {};
-  Object.values(globalById).forEach(v => {
-    globalByName[v.name] = v;
-  });
-
-  // Build local variables maps for current sprite
-  const currentSprite = state.sprites[state.currentSpriteId];
-  const localById = currentSprite ? { ...currentSprite.localVariables } : {};
-  const localByName = {};
-  Object.values(localById).forEach(v => {
-    localByName[v.name] = v;
-  });
-
-  runtimeState = {
-    globalVariablesById: globalById,
-    localVariablesById: localById,
-    globalVariablesByName: globalByName,
-    localVariablesByName: localByName,
-    currentSpriteId: state.currentSpriteId,
-    variableUpdateCallbacks: [],
+  const buildMaps = (objs) => {
+    const byId = { ...objs };
+    const byName = {};
+    Object.values(byId).forEach(v => { byName[v.name] = v; });
+    return { byId, byName };
   };
 
-  console.log('[Runtime] Initialized with state:', runtimeState);
+  const globalVars = buildMaps(state.globalVariables);
+  const globalLists = buildMaps(state.globalLists || {});
+  const globalTables = buildMaps(state.globalTables || {});
+
+  const currentSprite = state.sprites[state.currentSpriteId] || {};
+  const localVars = buildMaps(currentSprite.localVariables || {});
+  const localLists = buildMaps(currentSprite.localLists || {});
+  const localTables = buildMaps(currentSprite.localTables || {});
+
+  runtimeState = {
+    globalVariablesById: globalVars.byId,
+    globalVariablesByName: globalVars.byName,
+    globalListsById: globalLists.byId,
+    globalListsByName: globalLists.byName,
+    globalTablesById: globalTables.byId,
+    globalTablesByName: globalTables.byName,
+
+    localVariablesById: localVars.byId,
+    localVariablesByName: localVars.byName,
+    localListsById: localLists.byId,
+    localListsByName: localLists.byName,
+    localTablesById: localTables.byId,
+    localTablesByName: localTables.byName,
+
+    currentSpriteId: state.currentSpriteId,
+    variableUpdateCallbacks: runtimeState.variableUpdateCallbacks || [],
+  };
+
+  console.log('[Runtime] Initialized with full state');
 }
 
 /**
@@ -137,45 +158,120 @@ export function changeVariable(variableName, delta) {
   return setVariable(variableName, newValue);
 }
 
-/**
- * Show variable on stage (set visible flag)
- */
-export function showVariable(variableName) {
-  let variable = null;
+// ─────────────────────────────────────────────────────────────────────────────
+// LIST OPERATIONS
+// ─────────────────────────────────────────────────────────────────────────────
 
-  if (runtimeState.localVariablesByName[variableName]) {
-    variable = runtimeState.localVariablesByName[variableName];
-  } else if (runtimeState.globalVariablesByName[variableName]) {
-    variable = runtimeState.globalVariablesByName[variableName];
-  }
+function getList(name) {
+  return runtimeState.localListsByName[name] || runtimeState.globalListsByName[name];
+}
 
-  if (variable) {
-    variable.visible = true;
-    notifyVariableUpdate(variable.id, variable.value, runtimeState.localVariablesByName[variableName] ? 'local' : 'global');
-    console.log(`[Runtime] show variable ${variableName}`);
-  } else {
-    console.warn(`[Runtime] Cannot show non-existent variable '${variableName}'`);
+export function addToList(name, item) {
+  const list = getList(name);
+  if (list) {
+    list.value.push(item);
+    notifyVariableUpdate(list.id, list.value, runtimeState.localListsByName[name] ? 'local' : 'global');
   }
 }
 
-/**
- * Hide variable from stage (unset visible flag)
- */
-export function hideVariable(variableName) {
-  let variable = null;
-
-  if (runtimeState.localVariablesByName[variableName]) {
-    variable = runtimeState.localVariablesByName[variableName];
-  } else if (runtimeState.globalVariablesByName[variableName]) {
-    variable = runtimeState.globalVariablesByName[variableName];
+export function deleteFromList(name, index) {
+  const list = getList(name);
+  if (list) {
+    const idx = parseInt(index, 10) - 1; // 1-based to 0-based
+    if (idx >= 0 && idx < list.value.length) {
+      list.value.splice(idx, 1);
+      notifyVariableUpdate(list.id, list.value, runtimeState.localListsByName[name] ? 'local' : 'global');
+    }
   }
+}
 
-  if (variable) {
-    variable.visible = false;
-    notifyVariableUpdate(variable.id, variable.value, runtimeState.localVariablesByName[variableName] ? 'local' : 'global');
-    console.log(`[Runtime] hide variable ${variableName}`);
-  } else {
-    console.warn(`[Runtime] Cannot hide non-existent variable '${variableName}'`);
+export function deleteAllFromList(name) {
+  const list = getList(name);
+  if (list) {
+    list.value = [];
+    notifyVariableUpdate(list.id, list.value, runtimeState.localListsByName[name] ? 'local' : 'global');
+  }
+}
+
+export function insertInList(name, item, index) {
+  const list = getList(name);
+  if (list) {
+    const idx = parseInt(index, 10) - 1;
+    list.value.splice(idx, 0, item);
+    notifyVariableUpdate(list.id, list.value, runtimeState.localListsByName[name] ? 'local' : 'global');
+  }
+}
+
+export function replaceInList(name, index, item) {
+  const list = getList(name);
+  if (list) {
+    const idx = parseInt(index, 10) - 1;
+    if (idx >= 0 && idx < list.value.length) {
+      list.value[idx] = item;
+      notifyVariableUpdate(list.id, list.value, runtimeState.localListsByName[name] ? 'local' : 'global');
+    }
+  }
+}
+
+export function getItemOfList(name, index) {
+  const list = getList(name);
+  if (list) {
+    const idx = parseInt(index, 10) - 1;
+    return list.value[idx] || "";
+  }
+  return "";
+}
+
+export function getListLength(name) {
+  const list = getList(name);
+  return list ? list.value.length : 0;
+}
+
+export function listContains(name, item) {
+  const list = getList(name);
+  return list ? list.value.includes(item) : false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TABLE OPERATIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getTable(name) {
+  return runtimeState.localTablesByName[name] || runtimeState.globalTablesByName[name];
+}
+
+export function getTableCell(name, row, col) {
+  const table = getTable(name);
+  if (table) {
+    const rIdx = parseInt(row, 10) - 1;
+    const cIdx = table.columns.indexOf(col);
+    if (rIdx >= 0 && rIdx < table.rows.length && cIdx !== -1) {
+      return table.rows[rIdx][cIdx];
+    }
+  }
+  return "";
+}
+
+export function setTableCell(name, row, col, value) {
+  const table = getTable(name);
+  if (table) {
+    const rIdx = parseInt(row, 10) - 1;
+    let cIdx = table.columns.indexOf(col);
+    // If col is a number, use it as index
+    if (cIdx === -1 && !isNaN(col)) cIdx = parseInt(col, 10) - 1;
+
+    if (rIdx >= 0 && rIdx < table.rows.length && cIdx >= 0 && cIdx < table.columns.length) {
+      table.rows[rIdx][cIdx] = value;
+      notifyVariableUpdate(table.id, table.rows, runtimeState.localTablesByName[name] ? 'local' : 'global');
+    }
+  }
+}
+
+export function addTableRow(name, data) {
+  const table = getTable(name);
+  if (table) {
+    table.rows.push(Array.isArray(data) ? data : []);
+    notifyVariableUpdate(table.id, table.rows, runtimeState.localTablesByName[name] ? 'local' : 'global');
   }
 }
 
@@ -187,6 +283,17 @@ window.runtimeDebug = {
   changeVariable,
   showVariable,
   hideVariable,
+  addToList,
+  deleteFromList,
+  deleteAllFromList,
+  insertInList,
+  replaceInList,
+  getItemOfList,
+  getListLength,
+  listContains,
+  getTableCell,
+  setTableCell,
+  addTableRow,
   initializeRuntime,
 };
 

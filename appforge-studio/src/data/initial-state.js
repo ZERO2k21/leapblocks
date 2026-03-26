@@ -1,23 +1,31 @@
 // Initial project state for Variables system
+export const INITIAL_SPRITE_ID = 'sprite1';
+
 export const getInitialState = () => ({
-  // Global variables accessible from any sprite
+  // Global data structures
   globalVariables: {},
+  globalLists: {},
+  globalTables: {},
 
   // All sprites in the project
   sprites: {
-    'sprite1': {
-      id: 'sprite1',
+    [INITIAL_SPRITE_ID]: {
+      id: INITIAL_SPRITE_ID,
       name: 'Sprite 1',
       localVariables: {},
-      // Other sprite properties would go here (costumes, scripts, etc.)
+      localLists: {},
+      localTables: {},
+      blocks: '<xml xmlns="https://developers.google.com/blockly/xml"></xml>',
     }
   },
 
   // Currently selected/active sprite
-  currentSpriteId: 'sprite1',
+  currentSpriteId: INITIAL_SPRITE_ID,
 
-  // Variable ID counter for unique IDs
+  // ID counters for unique IDs
   variableCounter: 0,
+  listCounter: 0,
+  tableCounter: 0,
 });
 
 // Generate unique variable ID

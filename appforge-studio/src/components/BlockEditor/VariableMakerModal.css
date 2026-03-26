@@ -139,6 +139,52 @@
   font-size: 13px;
 }
 
+/* Columns List for Tables */
+.columns-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.column-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.column-item input {
+  flex: 1;
+}
+
+.add-col-btn {
+  align-self: flex-start;
+  padding: 6px 12px;
+  background: rgba(0, 166, 147, 0.1);
+  border: 1px dashed #00A693;
+  color: #00A693;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.add-col-btn:hover {
+  background: rgba(0, 166, 147, 0.2);
+}
+
+/* Block Preview for Custom Blocks */
+.block-preview-area {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.inputs-list {
+  max-height: 150px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
 .radio-group {
   display: flex;
   flex-direction: column;

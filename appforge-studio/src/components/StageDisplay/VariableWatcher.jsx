@@ -79,6 +79,13 @@ const VariableWatcher = ({ variable, onPositionChange, onClose }) => {
 
   // Format value for display
   const formatValue = (val) => {
+    if (Array.isArray(val)) return `List (${val.length} items)`;
+    if (val && typeof val === 'object') {
+      if (val.rows && val.columns) {
+        return `Table (${val.rows.length} x ${val.columns.length})`;
+      }
+      return 'Object';
+    }
     if (typeof val === 'string') return `"${val}"`;
     if (typeof val === 'number') return val.toFixed(2).replace(/\.00$/, '');
     return String(val);

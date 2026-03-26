@@ -49,11 +49,25 @@ const Toolbox = {
     // Note: We'll add more categories as we implement them
     return `
       <xml id="toolbox" style="display: none">
-        <category name="VARIABLES" colour="#FFBF00" custom="VARIABLE_CATEGORY">
-          <button text="Make a Variable" callback="showMakeVariableModal"/>
-          <sep/>
-          ${variableBlocksXml}
+        <category name="VARIABLES" colour="#FFBF00" custom="LEAP_VARIABLES">
         </category>
+
+        <category name="LISTS" colour="#FF661A" custom="LEAP_LISTS">
+        </category>
+
+        <category name="TABLES" colour="#00A693">
+          <button text="Make a Table" callback="showMakeTableModal"/>
+          <sep/>
+          <block type="table_get_cell"/>
+          <block type="table_set_cell"/>
+          <block type="table_add_row"/>
+        </category>
+
+        <category name="MY BLOCKS" colour="#FF6680" custom="PROCEDURE">
+          <button text="Make a Block" callback="showMakeBlockModal"/>
+        </category>
+
+        <sep/>
 
         <category name="MOTION" colour="#4C97FF">
           <block type="move_steps"/>

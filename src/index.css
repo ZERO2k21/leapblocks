@@ -842,3 +842,30 @@ body #root .blocklyFlyoutButton .blocklyText,
 .blocklyTrash {
   display: none !important;
 }
+/* Scratch 3.0-like checkbox styling for flyout reporters */
+.variable-checkbox-container, .list-checkbox-container {
+    padding-left: 8px !important;
+}
+
+.variable-checkbox, .list-checkbox {
+    margin-right: 8px !important;
+    font-weight: 500;
+}
+
+.blocklyFlyoutCheckbox {
+    fill: #fff !important;
+    stroke: rgba(0,0,0,0.15) !important;
+    rx: 4px !important;
+    cursor: pointer !important;
+}
+
+.blocklyFlyoutCheckbox.blocklyChecked {
+    fill: #4C97FF !important;
+    stroke: #4C97FF !important;
+}
+
+.blocklyFlyoutCheckboxPath {
+    stroke: white !important;
+    stroke-width: 3px !important;
+}
+

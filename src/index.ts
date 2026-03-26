@@ -195,12 +195,16 @@ ipcMain.handle('remove-background', async (event, imagePath: string) => {
 });
 
 // App Inventor Handlers
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+declare const __non_webpack_require__: typeof require;
+
 ipcMain.handle('build-apk', async (event, appState) => {
-  // Resolve at runtime relative to the app root, not the webpack bundle
-  const buildApkPath = path.resolve(app.getAppPath(), '..', '..', 'electron', 'buildApk.js');
+  // Use __non_webpack_require__ to bypass Webpack's module bundling.
+  // Webpack replaces dynamic require() with webpackEmptyContext which always fails.
+  const buildApkPath = path.join(app.getAppPath(), 'electron', 'buildApk.js');
   let buildApk: any;
   try {
-    buildApk = require(buildApkPath);
+    buildApk = __non_webpack_require__(buildApkPath);
   } catch (e) {
     console.error('Could not load buildApk from', buildApkPath, e);
     return { success: false, error: `Build script not found at ${buildApkPath}` };

@@ -4,9 +4,10 @@
 import React, { useState, useEffect } from 'react';
 import './VariableMakerModal.css';
 
-const VariableMakerModal = ({ onClose, onCreate }) => {
-  const [variableName, setVariableName] = useState('');
-  const [scope, setScope] = useState('global'); // 'global' or 'local'
+const VariableMakerModal = ({ type = 'variable', onClose, onCreate }) => {
+  const [name, setName] = useState('');
+  const [scope, setScope] = useState('global');
+  const [columns, setColumns] = useState(['Column 1']);
   const [error, setError] = useState('');
 
   // Validation
@@ -20,28 +21,25 @@ const VariableMakerModal = ({ onClose, onCreate }) => {
     setError('');
 
     // Trim whitespace
-    const name = variableName.trim();
+    const trimmedName = name.trim();
 
     // Validate
-    if (!name) {
-      setError('Please enter a variable name.');
+    if (!trimmedName) {
+      setError(`Please enter a ${type} name.`);
       return;
     }
 
-    if (!isValidName(name)) {
-      setError('Variable name must start with a letter or underscore, and contain only letters, numbers, and underscores.');
-      return;
-    }
-
-    // Additional check: reserved words
-    const reservedWords = ['if', 'else', 'for', 'while', 'function', 'return', 'var', 'let', 'const'];
-    if (reservedWords.includes(name.toLowerCase())) {
-      setError('This is a reserved word and cannot be used as a variable name.');
+    if (!isValidName(trimmedName)) {
+      setError('Name must start with a letter and contain only letters, numbers, and underscores.');
       return;
     }
 
     // Call create
-    onCreate(name, scope);
+    if (type === 'table') {
+      onCreate(trimmedName, columns, scope);
+    } else {
+      onCreate(trimmedName, scope);
+    }
   };
 
   // Handle backdrop click to close
@@ -66,25 +64,49 @@ const VariableMakerModal = ({ onClose, onCreate }) => {
     <div className="modal-backdrop" onClick={handleBackdropClick}>
       <div className="modal-content variable-modal">
         <div className="modal-header">
-          <h2>Make a Variable</h2>
+          <h2>Make a {type.charAt(0).toUpperCase() + type.slice(1)}</h2>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             <div className="form-group">
-              <label htmlFor="variableName">Variable name:</label>
+              <label htmlFor="dataName">{type.charAt(0).toUpperCase() + type.slice(1)} name:</label>
               <input
-                id="variableName"
+                id="dataName"
                 type="text"
-                value={variableName}
-                onChange={(e) => setVariableName(e.target.value)}
-                placeholder="Enter variable name..."
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={`Enter ${type} name...`}
                 autoFocus
                 maxLength={50}
               />
               {error && <div className="error-message">{error}</div>}
             </div>
+
+            {type === 'table' && (
+              <div className="form-group">
+                <label>Columns:</label>
+                <div className="columns-list">
+                  {columns.map((col, idx) => (
+                    <div key={idx} className="column-item">
+                      <input 
+                        type="text" 
+                        value={col} 
+                        onChange={(e) => {
+                          const newCols = [...columns];
+                          newCols[idx] = e.target.value;
+                          setColumns(newCols);
+                        }}
+                      />
+                    </div>
+                  ))}
+                  <button type="button" className="add-col-btn" onClick={addColumn}>
+                    + Add Column
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="form-group">
               <label>For:</label>
