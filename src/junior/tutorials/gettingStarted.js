@@ -16,7 +16,7 @@ export const gettingStartedTutorial = {
         },
         {
             title: "When Green Flag Clicked",
-            content: "Drag the 'when green flag clicked' block into the middle area (the workspace). This tells the program when to start.",
+            content: "Drag the 'Start' block into the middle area (the workspace). This tells the program when to start.",
             targetId: "blocklyDiv",
             highlight: true
         },
