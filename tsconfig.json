@@ -12,18 +12,16 @@
     "esModuleInterop": true,
     "noImplicitAny": true,
     "sourceMap": true,
-    "baseUrl": ".",
+    "rootDir": "src",
     "outDir": "dist",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "jsx": "react-jsx",
     "strict": true,
+    "noEmit": true,
     "paths": {
       "@blockly-runtime": [
-        "src/blockly/runtime.ts"
-      ],
-      "*": [
-        "node_modules/*"
+        "./src/blockly/runtime.ts"
       ]
     }
   },
