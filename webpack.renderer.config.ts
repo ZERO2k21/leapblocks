@@ -49,4 +49,7 @@ export const rendererConfig: Configuration = {
       directory: require('path').join(__dirname, 'public'),
     },
   },
+  node: {
+    __dirname: true,
+  },
 };

@@ -3,12 +3,25 @@ import { getInitialState, generateVariableId } from '../data/initial-state';
 
 // Action types
 const ACTION_TYPES = {
+  // Variables
   CREATE_VARIABLE: 'CREATE_VARIABLE',
   DELETE_VARIABLE: 'DELETE_VARIABLE',
   RENAME_VARIABLE: 'RENAME_VARIABLE',
   UPDATE_VARIABLE_VALUE: 'UPDATE_VARIABLE_VALUE',
   SET_VARIABLE_VISIBLE: 'SET_VARIABLE_VISIBLE',
   UPDATE_VARIABLE_POSITION: 'UPDATE_VARIABLE_POSITION',
+  
+  // Lists
+  CREATE_LIST: 'CREATE_LIST',
+  DELETE_LIST: 'DELETE_LIST',
+  UPDATE_LIST_VALUE: 'UPDATE_LIST_VALUE',
+  
+  // Tables
+  CREATE_TABLE: 'CREATE_TABLE',
+  DELETE_TABLE: 'DELETE_TABLE',
+  UPDATE_TABLE_CELL: 'UPDATE_TABLE_CELL',
+  
+  // Sprites
   SET_CURRENT_SPRITE: 'SET_CURRENT_SPRITE',
   CREATE_SPRITE: 'CREATE_SPRITE',
   DELETE_SPRITE: 'DELETE_SPRITE',
@@ -220,6 +233,60 @@ function variablesReducer(state, action) {
       return newState;
     }
 
+    case ACTION_TYPES.CREATE_LIST: {
+      const { name, scope, spriteId } = action.payload;
+      const listId = `list_${state.listCounter}_${Date.now()}`;
+      const list = {
+        id: listId,
+        name,
+        value: [], // Array for list
+        visible: false,
+        x: 100,
+        y: 100,
+      };
+
+      let newState = { ...state, listCounter: state.listCounter + 1 };
+      if (scope === 'global') {
+        newState.globalLists = { ...newState.globalLists, [listId]: list };
+      } else if (spriteId) {
+        newState.sprites[spriteId].localLists = { ...newState.sprites[spriteId].localLists, [listId]: list };
+      }
+      return newState;
+    }
+
+    case ACTION_TYPES.UPDATE_LIST_VALUE: {
+      const { listId, value, scope, spriteId } = action.payload;
+      const newState = { ...state };
+      if (scope === 'global') {
+        newState.globalLists[listId].value = value;
+      } else if (spriteId) {
+        newState.sprites[spriteId].localLists[listId].value = value;
+      }
+      return newState;
+    }
+
+    case ACTION_TYPES.CREATE_TABLE: {
+      const { name, columns, scope, spriteId } = action.payload;
+      const tableId = `table_${state.tableCounter}_${Date.now()}`;
+      const table = {
+        id: tableId,
+        name,
+        columns: columns || ['Column 1'],
+        rows: [], // Data rows
+        visible: false,
+        x: 150,
+        y: 150,
+      };
+
+      let newState = { ...state, tableCounter: state.tableCounter + 1 };
+      if (scope === 'global') {
+        newState.globalTables = { ...newState.globalTables, [tableId]: table };
+      } else if (spriteId) {
+        newState.sprites[spriteId].localTables = { ...newState.sprites[spriteId].localTables, [tableId]: table };
+      }
+      return newState;
+    }
+
     case ACTION_TYPES.SET_CURRENT_SPRITE: {
       return {
         ...state,
@@ -305,6 +372,27 @@ export function VariablesProvider({ children }) {
     });
   }, []);
 
+  const createList = useCallback((name, scope) => {
+    dispatch({
+      type: ACTION_TYPES.CREATE_LIST,
+      payload: { name, scope, spriteId: state.currentSpriteId },
+    });
+  }, [state.currentSpriteId]);
+
+  const updateListValue = useCallback((listId, value, scope) => {
+    dispatch({
+      type: ACTION_TYPES.UPDATE_LIST_VALUE,
+      payload: { listId, value, scope, spriteId: state.currentSpriteId },
+    });
+  }, [state.currentSpriteId]);
+
+  const createTable = useCallback((name, columns, scope) => {
+    dispatch({
+      type: ACTION_TYPES.CREATE_TABLE,
+      payload: { name, columns, scope, spriteId: state.currentSpriteId },
+    });
+  }, [state.currentSpriteId]);
+
   const createSprite = useCallback((spriteId, name) => {
     dispatch({
       type: ACTION_TYPES.CREATE_SPRITE,
@@ -315,22 +403,23 @@ export function VariablesProvider({ children }) {
   // Helper: Get all accessible variables for current sprite (global + local)
   const getAccessibleVariables = useCallback(() => {
     const { globalVariables, sprites, currentSpriteId } = state;
-    const currentSprite = sprites[currentSpriteId] || { localVariables: {} };
+    const currentSprite = sprites[currentSpriteId] || { localVariables: {}, localLists: {}, localTables: {} };
 
-    // Combine global and local with scope info
-    const variables = [];
+    const vars = [];
+    const lists = [];
+    const tables = [];
 
-    // Add global variables
-    Object.values(globalVariables).forEach(v => {
-      variables.push({ ...v, scope: 'global' });
-    });
+    // Global
+    Object.values(globalVariables).forEach(v => vars.push({ ...v, scope: 'global' }));
+    Object.values(state.globalLists || {}).forEach(l => lists.push({ ...l, scope: 'global' }));
+    Object.values(state.globalTables || {}).forEach(t => tables.push({ ...t, scope: 'global' }));
 
-    // Add local variables
-    Object.values(currentSprite.localVariables).forEach(v => {
-      variables.push({ ...v, scope: 'local' });
-    });
+    // Local
+    Object.values(currentSprite.localVariables || {}).forEach(v => vars.push({ ...v, scope: 'local' }));
+    Object.values(currentSprite.localLists || {}).forEach(l => lists.push({ ...l, scope: 'local' }));
+    Object.values(currentSprite.localTables || {}).forEach(t => tables.push({ ...t, scope: 'local' }));
 
-    return variables;
+    return { variables: vars, lists, tables };
   }, [state]);
 
   // Helper: Get variable by ID
@@ -360,6 +449,9 @@ export function VariablesProvider({ children }) {
       updateVariableValue,
       setVariableVisible,
       updateVariablePosition,
+      createList,
+      updateListValue,
+      createTable,
       setCurrentSprite,
       createSprite,
     },

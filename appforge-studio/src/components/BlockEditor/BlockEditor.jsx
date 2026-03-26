@@ -6,6 +6,7 @@ import * as Blockly from 'blockly';
 import { useVariables } from '../../context/VariablesContext';
 import Toolbox from './Toolbox';
 import VariableMakerModal from './VariableMakerModal';
+import CustomBlockModal from './CustomBlockModal';
 import VariableWatcher from '../StageDisplay/VariableWatcher';
 import { initializeRuntime, onVariableUpdate } from '../../utils/runtime';
 
@@ -17,7 +18,7 @@ import './BlockEditor.css';
 const BlockEditor = () => {
   const workspaceRef = useRef(null);
   const blocklyWorkspaceRef = useRef(null);
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(null); // null, 'variable', 'list', 'table'
   const { state, actions, helpers } = useVariables();
   const [blocklyInitialized, setBlocklyInitialized] = useState(false);
 
@@ -59,11 +60,11 @@ const BlockEditor = () => {
     });
     resizeObserver.observe(workspaceRef.current);
 
-    // Set up custom callback for "Make a Variable" button
-    const originalOnClick = window.showMakeVariableModal;
-    window.showMakeVariableModal = () => {
-      setShowModal(true);
-    };
+    // Set up custom callbacks for buttons
+    window.showMakeVariableModal = () => setShowModal('variable');
+    window.showMakeListModal = () => setShowModal('list');
+    window.showMakeTableModal = () => setShowModal('table');
+    window.showMakeBlockModal = () => setShowModal('custom_block');
 
     setBlocklyInitialized(true);
 
@@ -82,55 +83,92 @@ const BlockEditor = () => {
     if (!blocklyInitialized || !blocklyWorkspaceRef.current) return;
 
     const workspace = blocklyWorkspaceRef.current;
-    const variableManager = workspace.getVariableManager();
+    const variableManager = workspace.getVariableMap ? workspace.getVariableMap() : workspace.getVariableManager();
 
-    // Get current accessible variables
-    const { globalVariables, sprites, currentSpriteId } = state;
-    const currentSprite = sprites[currentSpriteId] || { localVariables: {} };
+    // Get current accessible data
+    const accessible = helpers.getAccessibleVariables();
+    const { variables, lists, tables } = accessible;
 
-    // Build list of all variables that should be accessible
-    const allVariables = [
-      ...Object.values(globalVariables).map(v => ({ ...v, scope: 'global' })),
-      ...Object.values(currentSprite.localVariables).map(v => ({ ...v, scope: 'local' })),
-    ];
-
-    // Get existing variables from Blockly's variable manager (map: name -> Variable)
-    const existingVars = variableManager.getVariables();
-    const existingVarMap = {};
-    existingVars.forEach(v => {
-      existingVarMap[v.getName()] = v;
-    });
-
-    // Create a set of variable names we have in our state
-    const stateVarNames = new Set(allVariables.map(v => v.name));
-
-    // 1. Create new variables that don't exist yet
-    allVariables.forEach(variable => {
-      if (!existingVarMap[variable.name]) {
-        variableManager.createVariable(variable.name, null, '');
+    // Sync variables (type: '')
+    variables.forEach(v => {
+      if (!variableManager.getVariableByNameAndType(v.name, '')) {
+        variableManager.createVariable(v.name, '', v.id);
       }
     });
 
-    // 2. Remove variables that no longer exist in state
-    existingVars.forEach(variable => {
-      if (!stateVarNames.has(variable.getName())) {
-        variableManager.deleteVariable(variable);
+    // Sync lists (type: 'list')
+    lists.forEach(l => {
+      if (!variableManager.getVariableByNameAndType(l.name, 'list')) {
+        variableManager.createVariable(l.name, 'list', l.id);
       }
     });
 
-    // Refresh toolbox to pick up variable changes
+    // Sync tables (type: 'table')
+    tables.forEach(t => {
+      if (!variableManager.getVariableByNameAndType(t.name, 'table')) {
+        variableManager.createVariable(t.name, 'table', t.id);
+      }
+    });
+
+    // Refresh toolbox to pick up changes
     const toolbox = Toolbox.buildToolbox(state);
     workspace.refreshToolbox(toolbox);
 
-  }, [state.globalVariables, state.sprites, state.currentSpriteId, blocklyInitialized]);
+  }, [state, blocklyInitialized]);
 
-  // Handle variable creation
-  const handleCreateVariable = useCallback((name, scope) => {
-    actions.createVariable(name, scope, 0);
-    setShowModal(false);
-  }, [actions]);
+  // Handle variable/list/table creation
+  const handleCreateData = useCallback((name, arg2, arg3) => {
+    // Variable: name, scope
+    // List: name, scope
+    // Table: name, columns, scope
+    
+    if (showModal === 'variable') {
+      actions.createVariable(name, arg2, 0);
+    } else if (showModal === 'list') {
+      actions.createList(name, arg2);
+    } else if (showModal === 'table') {
+      actions.createTable(name, arg2, arg3);
+    }
+    
+    setShowModal(null);
+  }, [showModal, actions]);
 
-  // Export workspace XML
+  // Handle custom block creation
+  const handleCreateCustomBlock = useCallback((data) => {
+    if (!blocklyWorkspaceRef.current) return;
+    const workspace = blocklyWorkspaceRef.current;
+    
+    // In Scratch/Blockly, we create a procedure definition block
+    // This is a bit complex as it requires building the block XML or JSON
+    // For now, we'll use a simplified version that adds a definition block
+    
+    Blockly.Events.setGroup(true);
+    try {
+      const topBlocks = workspace.getTopBlocks(true);
+      const x = 50;
+      const y = topBlocks.length * 100 + 50;
+
+      // Create the definition block
+      const defBlock = workspace.newBlock('procedures_defnoreturn');
+      
+      // Configure the block name and inputs
+      // This varies by Blockly version, but here's a common pattern:
+      const name = data.name;
+      defBlock.setFieldValue(name, 'NAME');
+      
+      // Handle inputs (this is more involved in real Scratch)
+      // For now, just create the basic block
+      
+      defBlock.initSvg();
+      defBlock.render();
+      defBlock.moveBy(x, y);
+      
+    } finally {
+      Blockly.Events.setGroup(false);
+    }
+    
+    setShowModal(null);
+  }, []);
   const handleExport = useCallback(() => {
     if (blocklyWorkspaceRef.current) {
       const xml = Blockly.Xml.workspaceToDom(blocklyWorkspaceRef.current);
@@ -213,10 +251,18 @@ const BlockEditor = () => {
       </div>
 
       {/* Variable Creation Modal */}
-      {showModal && (
+      {showModal && showModal !== 'custom_block' && (
         <VariableMakerModal
-          onClose={() => setShowModal(false)}
-          onCreate={handleCreateVariable}
+          type={showModal}
+          onClose={() => setShowModal(null)}
+          onCreate={handleCreateData}
+        />
+      )}
+
+      {showModal === 'custom_block' && (
+        <CustomBlockModal
+          onClose={() => setShowModal(null)}
+          onCreate={handleCreateCustomBlock}
         />
       )}
 

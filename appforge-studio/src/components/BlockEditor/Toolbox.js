@@ -55,6 +55,33 @@ const Toolbox = {
           ${variableBlocksXml}
         </category>
 
+        <category name="LISTS" colour="#FF661A">
+          <button text="Make a List" callback="showMakeListModal"/>
+          <sep/>
+          <block type="list_add"/>
+          <block type="list_delete"/>
+          <block type="list_delete_all"/>
+          <block type="list_insert"/>
+          <block type="list_replace"/>
+          <block type="list_item_of"/>
+          <block type="list_length"/>
+          <block type="list_contains"/>
+        </category>
+
+        <category name="TABLES" colour="#00A693">
+          <button text="Make a Table" callback="showMakeTableModal"/>
+          <sep/>
+          <block type="table_get_cell"/>
+          <block type="table_set_cell"/>
+          <block type="table_add_row"/>
+        </category>
+
+        <category name="MY BLOCKS" colour="#FF6680" custom="PROCEDURE">
+          <button text="Make a Block" callback="showMakeBlockModal"/>
+        </category>
+
+        <sep/>
+
         <category name="MOTION" colour="#4C97FF">
           <block type="move_steps"/>
           <block type="turn_right"/>
