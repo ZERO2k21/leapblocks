@@ -19,7 +19,7 @@ import { arduinoGenerator } from './generators/arduino-generator';
 
 import { AnimationCompiler } from './generators/animation-generator';
 
-import './generators/python-generator'; // Register Python code generation handlers
+import { initPythonGenerator } from './generators/python-generator'; // Deferred registration
 
 import { animationVM, CompiledScript } from './vm/AnimationVM';
 
@@ -66,7 +66,7 @@ import { registerLeapRenderer } from './junior/blocks/LeapRenderer';
 
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
 
-import './custom-toolbox';
+import { registerPictoBloxCategory } from './custom-toolbox';
 
 // Import dialog components
 import MakeVariableDialog from './components/MakeVariableDialog';
@@ -132,133 +132,88 @@ const registerBlocks = () => {
     }
 };
 
-// Register Leap Renderer
-registerLeapRenderer(Blockly);
-
-registerBlocks();
-
-
-
-// Configure Blockly dialogs for Electron (native prompt/alert not supported)
-
-Blockly.dialog.setPrompt((message, defaultValue, callback) => {
-
-    // Use a simple window.prompt replacement with a custom modal approach
-
-    // For now, using a workaround that works in Electron
-
-    const result = window.prompt(message, defaultValue);
-
-    callback(result);
-
-});
-
-
-
-Blockly.dialog.setAlert((message, callback) => {
-
-    window.alert(message);
-
-    if (callback) callback();
-
-});
-
-
-
-Blockly.dialog.setConfirm((message, callback) => {
-
-    const result = window.confirm(message);
-
-    callback(result);
-
-});
-
-
-
+// ═══════════════════════════════════════════════════════════════════════════
+// DEFERRED BLOCKLY INITIALIZATION
+// All Blockly monkey-patches and registrations are deferred to first render
+// to avoid TDZ errors when webpack chunk splitting reorders module evaluation.
 // ═══════════════════════════════════════════════════════════════════════════
 
-// GLOBAL BLOCKLY OVERRIDES
-
-// ═══════════════════════════════════════════════════════════════════════════
-
-
-
-// 1. Persist Flyout: Prevent hiding when autoClose is false (Continuous Toolbox)
-
-// Also override show() to always show ALL contents (continuous mode)
-
+let _blocklyInitialized = false;
 let _continuousFlyoutContents: any[] = []; // Module-level storage for continuous flyout contents
 
+function initBlocklyOnce() {
+    if (_blocklyInitialized) return;
+    _blocklyInitialized = true;
 
+    // Register Leap Renderer
+    registerLeapRenderer(Blockly);
 
-if (Blockly.Flyout && !(Blockly.Flyout.prototype as any)._hidePatched) {
+    registerBlocks();
 
-    // Set default to false globally
+    // Initialize Python generator (deferred from module scope)
+    initPythonGenerator();
 
-    Blockly.Flyout.prototype.autoClose = false;
+    // Register custom toolbox category (deferred from module scope)
+    registerPictoBloxCategory();
 
+    // Configure Blockly dialogs for Electron (native prompt/alert not supported)
+    Blockly.dialog.setPrompt((message, defaultValue, callback) => {
+        const result = window.prompt(message, defaultValue);
+        callback(result);
+    });
 
+    Blockly.dialog.setAlert((message, callback) => {
+        window.alert(message);
+        if (callback) callback();
+    });
 
-    // Override hide: suppress if continuous mode
+    Blockly.dialog.setConfirm((message, callback) => {
+        const result = window.confirm(message);
+        callback(result);
+    });
 
-    const originalHide = Blockly.Flyout.prototype.hide;
+    // ═══════════════════════════════════════════════════════════════════════
+    // GLOBAL BLOCKLY OVERRIDES
+    // ═══════════════════════════════════════════════════════════════════════
 
-    Blockly.Flyout.prototype.hide = function (this: any) {
+    // 1. Persist Flyout: Prevent hiding when autoClose is false (Continuous Toolbox)
+    // Also override show() to always show ALL contents (continuous mode)
+    if (Blockly.Flyout && !(Blockly.Flyout.prototype as any)._hidePatched) {
 
-        if (this.autoClose === false) {
+        // Set default to false globally
+        Blockly.Flyout.prototype.autoClose = false;
 
-            return; // NEVER hide in continuous mode
+        // Override hide: suppress if continuous mode
+        const originalHide = Blockly.Flyout.prototype.hide;
+        Blockly.Flyout.prototype.hide = function (this: any) {
+            if (this.autoClose === false) {
+                return; // NEVER hide in continuous mode
+            }
+            originalHide.call(this);
+        };
 
-        }
+        // Override setVisible: suppress setVisible(false) if continuous mode
+        const originalSetVisible = Blockly.Flyout.prototype.setVisible;
+        Blockly.Flyout.prototype.setVisible = function (this: any, visible: boolean) {
+            if (this.autoClose === false && visible === false) {
+                return; // NEVER make invisible in continuous mode
+            }
+            originalSetVisible.call(this, visible);
+        };
 
-        originalHide.call(this);
+        // Override show: in continuous mode, always show ALL blocks
+        const originalShow = Blockly.Flyout.prototype.show;
+        Blockly.Flyout.prototype.show = function (this: any, flyoutDef: any) {
+            if (this.autoClose === false && _continuousFlyoutContents.length > 0) {
+                // Always use the full flattened contents regardless of what Blockly internally requests
+                originalShow.call(this, _continuousFlyoutContents);
+            } else {
+                originalShow.call(this, flyoutDef);
+            }
+        };
 
-    };
-
-
-
-    // Override setVisible: suppress setVisible(false) if continuous mode
-
-    const originalSetVisible = Blockly.Flyout.prototype.setVisible;
-
-    Blockly.Flyout.prototype.setVisible = function (this: any, visible: boolean) {
-
-        if (this.autoClose === false && visible === false) {
-
-            return; // NEVER make invisible in continuous mode
-
-        }
-
-        originalSetVisible.call(this, visible);
-
-    };
-
-
-
-    // Override show: in continuous mode, always show ALL blocks
-
-    const originalShow = Blockly.Flyout.prototype.show;
-
-    Blockly.Flyout.prototype.show = function (this: any, flyoutDef: any) {
-
-        if (this.autoClose === false && _continuousFlyoutContents.length > 0) {
-
-            // Always use the full flattened contents regardless of what Blockly internally requests
-
-            originalShow.call(this, _continuousFlyoutContents);
-
-        } else {
-
-            originalShow.call(this, flyoutDef);
-
-        }
-
-    };
-
-
-
-    (Blockly.Flyout.prototype as any)._hidePatched = true;
-
+        (Blockly.Flyout.prototype as any)._hidePatched = true;
+    }
 }
 
 
@@ -327,6 +282,9 @@ interface TableMonitorState {
 
 
 const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void; openTab?: 'blocks' | 'python' | 'costumes' | 'sounds' }> = ({ onBack, onOpenPython, openTab = 'blocks' }) => {
+
+    // Initialize Blockly patches on first render (deferred from module scope to avoid TDZ)
+    initBlocklyOnce();
 
     // ═══════════════════════════════════════════════════════════════════════
 

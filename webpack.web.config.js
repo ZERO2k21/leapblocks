@@ -34,12 +34,23 @@ module.exports = {
         concatenateModules: false,
         splitChunks: {
             chunks: 'all',
-            maxSize: 244000,
             cacheGroups: {
+                blockly: {
+                    test: /[\\/]node_modules[\\/]blockly[\\/]/,
+                    name: 'blockly',
+                    chunks: 'all',
+                    priority: 20,
+                },
                 vendors: {
                     test: /[\\/]node_modules[\\/]/,
                     name: 'vendors',
                     chunks: 'all',
+                    priority: 10,
+                },
+                // Do NOT split app source code — keep evaluation order stable
+                default: {
+                    minChunks: 2,
+                    reuseExistingChunk: true,
                 },
             },
         },

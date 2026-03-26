@@ -16,11 +16,23 @@ const log = (blockType: string, msg: string, data?: any) => {
 
 
 
-console.log('[GENERATOR] Creating Arduino generator...');
+// Arduino generator uses a buffered proxy to avoid TDZ errors:
+// Property assignments (set) are buffered at module scope without touching Blockly.
+// On first get access, the real Blockly.Generator is created and buffered props replayed.
 
 let _arduinoGenerator: Blockly.Generator | null = null;
+const _bufferedProps: Array<[PropertyKey, any]> = [];
+
 export function getArduinoGenerator(): Blockly.Generator {
-    if (!_arduinoGenerator) _arduinoGenerator = new Blockly.Generator('Arduino');
+    if (!_arduinoGenerator) {
+        console.log('[GENERATOR] Creating Arduino generator...');
+        _arduinoGenerator = new Blockly.Generator('Arduino');
+        // Replay any buffered property assignments
+        for (const [prop, value] of _bufferedProps) {
+            (_arduinoGenerator as any)[prop] = value;
+        }
+        _bufferedProps.length = 0;
+    }
     return _arduinoGenerator;
 }
 export const arduinoGenerator = new Proxy({} as Blockly.Generator, {
@@ -29,7 +41,14 @@ export const arduinoGenerator = new Proxy({} as Blockly.Generator, {
         const value = (instance as any)[prop];
         return typeof value === 'function' ? value.bind(instance) : value;
     },
-    set(_target, prop, value) { (getArduinoGenerator() as any)[prop] = value; return true; }
+    set(_target, prop, value) {
+        if (_arduinoGenerator) {
+            (_arduinoGenerator as any)[prop] = value;
+        } else {
+            _bufferedProps.push([prop, value]);
+        }
+        return true;
+    }
 });
 
 
