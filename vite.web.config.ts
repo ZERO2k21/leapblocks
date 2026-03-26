@@ -1,0 +1,32 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [react()],
+  root: '.',
+  publicDir: 'public',
+  resolve: {
+    alias: {
+      '@blockly-runtime': path.resolve(__dirname, 'src/blockly/runtime.ts'),
+    },
+  },
+  define: {
+    // Ensure process.env exists for libraries that check it
+    'process.env.NODE_ENV': JSON.stringify('production'),
+  },
+  build: {
+    outDir: 'build',
+    emptyOutDir: true,
+    sourcemap: true,
+    rollupOptions: {
+      input: path.resolve(__dirname, 'index.html'),
+      // Mark Electron/Node-only modules as external so they're stripped
+      external: ['electron', 'serialport', 'child_process', 'fs', 'fs-extra', 'path', 'os', 'crypto', 'adm-zip'],
+    },
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'blockly'],
+    exclude: ['electron', 'serialport'],
+  },
+});

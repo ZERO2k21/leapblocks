@@ -32,7 +32,7 @@ module.exports = {
         }
     },
     optimization: {
-        concatenateModules: true,
+        concatenateModules: false,
         splitChunks: {
             chunks: 'all',
             cacheGroups: {

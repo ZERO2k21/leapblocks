@@ -3,6 +3,7 @@ import * as path from 'path';
 import { SerialManager } from './serial/SerialManager';
 import { ArduinoUploader } from './upload/ArduinoUploader';
 import { PythonManager } from './pythonBackend/PythonManager';
+import { join } from 'path';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL STATE & SERVICES
@@ -17,9 +18,6 @@ const log = (category: string, msg: string, data?: any) => {
   console.log(`[${timestamp}] [MAIN:${category}] ${msg}`, data ?? '');
 };
 
-declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
-declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
-
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
@@ -32,13 +30,18 @@ const createWindow = (): void => {
     minWidth: 1000,
     title: 'LeetBlocks - Block Programming IDE',
     webPreferences: {
-      preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+      preload: join(__dirname, '../preload/index.js'),
       nodeIntegration: false,
       contextIsolation: true,
     },
   });
 
-  mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+  // electron-vite: use env var for dev server URL, file path for production
+  if (process.env['ELECTRON_RENDERER_URL']) {
+    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+  } else {
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+  }
 
   if (process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools();
