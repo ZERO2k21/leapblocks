@@ -18,7 +18,7 @@ const COLORS = {
 };
 
 // Junior Block Definitions
-let _juniorBlocks: any[] | null = null;
+let _juniorBlocks: any | null = null;
 export const getJuniorBlocks = () => {
     if (!_juniorBlocks) {
         _juniorBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
