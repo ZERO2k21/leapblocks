@@ -2892,9 +2892,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         try {
 
-            const portList = await window.electronAPI.getPorts();
-
+        if ((window as any).electronAPI?.getPorts) {
+            const portList = await (window as any).electronAPI.getPorts();
             setPorts(portList);
+        } else {
+            // Mock port for web demo
+            setPorts([{ path: 'WEB_DEMO', manufacturer: 'LeapBlocks Web' }]);
+        }
 
             if (portList.length === 0) {
 
@@ -2921,17 +2925,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         let timer: NodeJS.Timeout;
 
         if (editorMode === 'upload' && !selectedPort && !isConnected) {
-
             timer = setInterval(() => {
-
-                window.electronAPI.getPorts().then(portList => {
-
-                    setPorts(portList);
-
-                }).catch(() => { });
-
+                if ((window as any).electronAPI?.getPorts) {
+                    (window as any).electronAPI.getPorts().then(portList => {
+                        setPorts(portList);
+                    }).catch(() => { });
+                }
             }, 5000);
-
         }
 
         return () => {
