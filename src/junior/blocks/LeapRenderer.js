@@ -1,8 +1,8 @@
 import * as Blockly from '@blockly-runtime';
 
-// We don't rely on zelos; we always use the blockRendering classes.
-const BaseConstantProvider = Blockly.blockRendering.ConstantProvider;
-const BaseRenderer = Blockly.blockRendering.Renderer;
+// We inherit from zelos to get the Scratch block styling
+const BaseConstantProvider = Blockly.zelos.ConstantProvider;
+const BaseRenderer = Blockly.zelos.Renderer;
 
 export class LeapConstantProvider extends BaseConstantProvider {
     constructor() {
