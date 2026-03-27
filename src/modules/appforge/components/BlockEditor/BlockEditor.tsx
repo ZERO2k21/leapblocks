@@ -3,7 +3,7 @@
 // Visual block-based programming
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import React, { useEffect, useRef, useMemo } from 'react';
-import type * as Blockly from '@blockly-runtime';
+import type * as BlocklyType from 'blockly/core';
 import type { AFProject } from '../../AppForgeStudio';
 import componentsData from '../../data/components.json';
 import { getToolboxConfig } from './BlockToolbox';
@@ -15,7 +15,7 @@ interface BlockEditorProps {
 
 export default function BlockEditor({ project, updateProject }: BlockEditorProps) {
   const blocklyDiv = useRef<HTMLDivElement>(null);
-  const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
+  const workspaceRef = useRef<BlocklyType.WorkspaceSvg | null>(null);
 
   const currentScreen = project.screens[project.activeScreenIndex];
   const componentsList = currentScreen?.components || [];
@@ -26,12 +26,13 @@ export default function BlockEditor({ project, updateProject }: BlockEditorProps
   useEffect(() => {
     if (!blocklyDiv.current) return;
 
-    let workspace: Blockly.WorkspaceSvg | null = null;
+    let workspace: BlocklyType.WorkspaceSvg | null = null;
 
     const initBlockly = async () => {
       try {
         // Dynamic imports to prevent circular dependencies in production
-        const Blockly = await import('@blockly-runtime');
+        const BlocklyModule = await import('@blockly-runtime');
+        const Blockly = (BlocklyModule.default || BlocklyModule) as typeof BlocklyType;
         const { registerCustomBlocks } = await import('./CustomBlocks');
 
         // Register all custom blocks
