@@ -666,8 +666,7 @@ const scratchBlocks = [
         previousStatement: null,
         nextStatement: 'any',
         colour: '#FFBF00',
-        tooltip: 'Runs when a specific key is pressed.',
-        helpUrl: 'https://en.scratch-wiki.info/wiki/When_Key_Pressed_%28block%29'
+        tooltip: 'Runs when a specific key is pressed.'
     },
     {
         type: 'event_whenthisspriteclicked',
