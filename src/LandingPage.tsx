@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bell } from 'lucide-react';
 
 // ─── inject keyframes once ───────────────────────────────────────────────────
 function injectCSS() {
@@ -8,14 +7,13 @@ function injectCSS() {
     const s = document.createElement('style');
     s.id = 'lp-anims';
     s.textContent = `
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
         * { box-sizing: border-box; }
 
         @keyframes lp-fadein    { from { opacity:0 } to { opacity:1 } }
         @keyframes lp-fadeup    { from { opacity:0; transform:translateY(30px) } to { opacity:1; transform:translateY(0) } }
 
-        /* Robot intro: launches from bottom, bounces, settles */
         @keyframes lp-robot-launch {
             0%   { transform:translateY(300px) rotate(-8deg) scale(.6); opacity:0 }
             55%  { transform:translateY(-14px) rotate(2deg)  scale(1.03); opacity:1 }
@@ -24,28 +22,39 @@ function injectCSS() {
             100% { transform:translateY(0)     rotate(0deg)  scale(1);   opacity:1 }
         }
 
-        /* Robot hover float after landing */
         @keyframes lp-robot-float {
             0%,100% { transform:translateY(0) rotate(-0.5deg) }
             50%     { transform:translateY(-8px) rotate(0.5deg) }
         }
 
-        /* Type cursor blink */
         @keyframes lp-cursor { 0%,100%{opacity:1} 50%{opacity:0} }
 
-        /* Gentle gradient shift on background */
         @keyframes lp-bg-shift {
             0%,100% { background-position: 0% 50% }
             50%     { background-position: 100% 50% }
         }
 
-        /* Floating shapes */
         @keyframes lp-float-shape {
             0%,100% { transform: translateY(0) rotate(0deg) }
             50%     { transform: translateY(-20px) rotate(5deg) }
         }
 
-        /* Spotlight strip */
+        /* Floating orbs */
+        @keyframes lp-orb-float-a {
+            0%,100% { transform: translateY(0) scale(1); }
+            50%     { transform: translateY(-24px) scale(1.02); }
+        }
+        @keyframes lp-orb-float-b {
+            0%,100% { transform: translateY(0) scale(1); }
+            50%     { transform: translateY(20px) scale(0.98); }
+        }
+
+        /* Badge pulse */
+        @keyframes lp-badge-pulse {
+            0%,100% { transform: scale(1); opacity: 1; }
+            50%     { transform: scale(1.5); opacity: 0.6; }
+        }
+
         @keyframes lp-spotlight {
             0% { transform: translateX(-200%) skewX(-45deg); opacity: 0; }
             10% { opacity: 0.2; }
@@ -53,19 +62,16 @@ function injectCSS() {
             100% { transform: translateX(300%) skewX(-45deg); opacity: 0; }
         }
 
-        /* Ambient grid flow */
         @keyframes lp-grid-flow {
             0% { background-position: 0 0, 0 0; }
             100% { background-position: 40px 40px, 0 0; }
         }
 
-        /* Card hover glow */
         @keyframes lp-card-pulse {
             0%,100% { box-shadow: 0 4px 20px rgba(133,92,214,0.08) }
             50%     { box-shadow: 0 8px 32px rgba(133,92,214,0.18) }
         }
 
-        /* Toast slide in */
         @keyframes lp-toast-in {
             from { opacity:0; transform:translate(-50%, 20px) }
             to   { opacity:1; transform:translate(-50%, 0) }
@@ -75,7 +81,6 @@ function injectCSS() {
             to   { opacity:0; transform:translate(-50%, -20px) }
         }
 
-        /* Wave hand */
         @keyframes lp-wave {
             0%,100% { transform: rotate(0deg) }
             25%     { transform: rotate(14deg) }
@@ -83,7 +88,6 @@ function injectCSS() {
             75%     { transform: rotate(12deg) }
         }
 
-        /* Shadow pulse behind robot */
         @keyframes lp-shadow-pulse {
             0%,100% { transform: scaleX(1); opacity:0.15 }
             50%     { transform: scaleX(1.1); opacity:0.25 }
@@ -127,6 +131,7 @@ interface ModeCardProps {
     chips?: string[];
     cta?: string;
     onClick: () => void;
+    highlighted?: boolean;
 }
 
 const renderCardDecorations = (patternType: string, color: string, gradient: string, hovered: boolean) => {
@@ -277,11 +282,13 @@ const ModeCard: React.FC<ModeCardProps> = ({
     chips = [],
     cta = 'Open',
     onClick,
+    highlighted = false,
 }) => {
     const [hovered, setHovered] = useState(false);
     const [pointer, setPointer] = useState({ x: 50, y: 50 });
 
-    const rotateX = hovered ? (50 - pointer.y) / 10 : 0;
+    const isEffectiveHovered = hovered || highlighted;
+    const rotateX = hovered ? (50 - pointer.y) / 10 : (highlighted ? -2 : 0);
     const rotateY = hovered ? (pointer.x - 50) / 10 : 0;
 
     return (
@@ -303,16 +310,16 @@ const ModeCard: React.FC<ModeCardProps> = ({
                 width: 196,
                 height: 240,
                 background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.72))',
-                border: `1px solid ${hovered ? `${color}33` : 'rgba(255,255,255,0.75)'}`,
+                border: `1px solid ${hovered ? `${color}66` : 'rgba(255,255,255,0.75)'}`,
                 borderRadius: 28,
                 padding: '14px 16px 16px',
                 display: 'flex',
                 flexDirection: 'column',
                 cursor: 'pointer',
                 transition: 'transform .35s ease, box-shadow .35s ease, border-color .35s ease',
-                transform: `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(${hovered ? -10 : 0}px)`,
-                boxShadow: hovered
-                    ? `0 28px 60px ${color}24, 0 10px 24px rgba(15,23,42,0.12)`
+                transform: `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(${isEffectiveHovered ? -10 : 0}px)`,
+                boxShadow: isEffectiveHovered
+                    ? `0 32px 80px ${color}66, 0 12px 28px rgba(15,23,42,0.15), 0 0 45px ${color}33`
                     : '0 12px 30px rgba(15,23,42,0.08)',
                 animation: `lp-fadeup .5s ${delay}s both`,
                 overflow: 'hidden',
@@ -324,7 +331,7 @@ const ModeCard: React.FC<ModeCardProps> = ({
                 position: 'absolute',
                 inset: 0,
                 background: gradient,
-                opacity: hovered ? 0.12 : 0.08,
+                opacity: isEffectiveHovered ? 0.18 : 0.08,
                 transition: 'opacity .35s ease',
                 pointerEvents: 'none',
             }} />
@@ -355,14 +362,14 @@ const ModeCard: React.FC<ModeCardProps> = ({
                 width: 64,
                 height: 64,
                 borderRadius: 20,
-                background: hovered ? gradient : 'rgba(255,255,255,0.78)',
+                background: isEffectiveHovered ? gradient : 'rgba(255,255,255,0.78)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: 18,
-                boxShadow: hovered ? `0 16px 28px ${color}33` : '0 8px 20px rgba(15,23,42,0.08)',
+                boxShadow: isEffectiveHovered ? `0 16px 28px ${color}33` : '0 8px 20px rgba(15,23,42,0.08)',
                 transition: 'all .35s ease',
-                transform: hovered ? 'scale(1.06) rotate(4deg)' : 'scale(1)',
+                transform: isEffectiveHovered ? 'scale(1.06) rotate(4deg)' : 'scale(1)',
                 border: '1px solid rgba(255,255,255,0.84)',
             }}>
                 <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -606,6 +613,105 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     const [typedText, setTypedText] = useState('');
     const [showCursor, setShowCursor] = useState(true);
     const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
+    const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
+
+    // Show toast for coming soon
+    const showComingSoon = (name: string) => {
+        setToast({ message: `${name} is coming soon.`, visible: true });
+        setTimeout(() => setToast({ message: '', visible: false }), 2500);
+    };
+
+    // Cards data
+    const mainCards = [
+
+        {
+            icon: (
+                <img
+                    src="/assets/sprites/robot/robot_idle.svg"
+                    alt="Junior Blocks"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'LEAPLAB IGNITE', subtitle: 'Where curiosity turns into action.',
+            color: '#c77e00ff', gradient: 'linear-gradient(135deg, #ffbb44ff, #fe8b08ff)',
+            available: true, patternType: 'dots', tag: 'Play first', chips: ['Big icons', 'Easy stories'], cta: 'Start studio', onClick: () => onSelect('junior'),
+        },
+        {
+            icon: (
+                <img
+                    src="/assets/arduino_icon.png"
+                    alt="Intermediate Blocks"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'LEAPLAB CIRCUIT', subtitle: 'Build logic, connect ideas, power systems.',
+            color: '#5a29bdff', gradient: 'linear-gradient(135deg, #855CD6, #370091ff)',
+            available: true, patternType: 'lines', tag: 'Build robots', chips: ['Sensors', 'Logic flow'], cta: 'Open hardware', onClick: () => onSelect('intermediate'),
+        },
+        {
+            icon: (
+                <img
+                    src="/assets/python_icon.png"
+                    alt="Python IDE"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'LEAPLAB CODEX', subtitle: 'A powerful space where real coding begins.',
+            color: '#3776ab', gradient: 'linear-gradient(135deg, #3776ab, #ffd343)',
+            available: true, patternType: 'grid', tag: 'Code deeper', chips: ['Text editor', 'Sprite APIs'], cta: 'Write code', onClick: () => onSelect('python'),
+        },
+        {
+            icon: (
+                <img
+                    src="/assets/ml_brain_icon.png"
+                    alt="Advanced Blocks"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'LEAPLAB NEURA', subtitle: 'Inspired by neural networks and AI thinking.',
+            color: '#2c5fb3ff', gradient: 'linear-gradient(135deg, #5a99ffff, #033cd7ff)',
+            available: false, patternType: 'waves', tag: 'AI lab', chips: ['Vision tools', 'Smart blocks'], cta: 'Preview lane', onClick: () => showComingSoon('Advanced'),
+        },
+    ];
+
+    const extraCards = [
+        {
+            icon: (
+                <img
+                    src="/assets/creocad_icon.png"
+                    alt="Creocad"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'LEAPLAB FORGE', subtitle: 'Where ideas are shaped into real designs.',
+            color: '#51c1bdff', gradient: 'linear-gradient(135deg, #51c1bdff, #00fefaff)',
+            available: false, patternType: 'grid', tag: '3D build', chips: ['Model space', 'Prototype'], cta: 'See preview', onClick: () => showComingSoon('Creocad')
+        },
+        {
+            icon: (
+                <img
+                    src="/assets/app_game_dev_icon.png"
+                    alt="App & Game Development"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'LEAPLAB STUDIO', subtitle: 'Create apps, games, and interactive experiences.',
+            color: '#EF4444', gradient: 'linear-gradient(135deg, #ff6a6aff, #b70000ff)',
+            available: true, patternType: 'lines', tag: 'Game lab', chips: ['Scenes', 'Interactions'], cta: 'Start studio', onClick: () => onSelect('appforge'),
+        },
+        {
+            icon: (
+                <img
+                    src="/assets/quiz_icon.png"
+                    alt="Quiz"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+            ),
+            title: 'Quiz', subtitle: 'A focused path for fast classroom checks and fun learning challenges.',
+            color: '#10B981', gradient: 'linear-gradient(135deg, #10B981, #00faabff)',
+            available: false, patternType: 'dots', tag: 'Fast checks', chips: ['Questions', 'Scoreboards'], cta: 'Join queue', onClick: () => showComingSoon('Quiz'),
+        },
+    ];
 
     const FULL_TEXT = 'Welcome to LeapBlocks';
 
@@ -639,112 +745,27 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         return () => clearInterval(iv);
     }, [phase]);
 
-    // Show toast for coming soon
-    const showComingSoon = (name: string) => {
-        setToast({ message: `${name} is coming soon.`, visible: true });
-        setTimeout(() => setToast({ message: '', visible: false }), 2500);
-    };
+    // Cycling highlight effect
+    useEffect(() => {
+        if (highlightIndex === null) return;
+        const totalCards = mainCards.length + extraCards.length;
+        const timer = setTimeout(() => {
+            setHighlightIndex((highlightIndex + 1) % totalCards);
+        }, 800);
+        return () => clearTimeout(timer);
+    }, [highlightIndex, mainCards.length, extraCards.length]);
 
-    // Cards data
-    const mainCards = [
 
-        {
-            icon: (
-                <img
-                    src="/assets/sprites/robot/robot_idle.svg"
-                    alt="Junior Blocks"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-            ),
-            title: 'Junior Blocks', subtitle: 'Picture-first coding for stories, characters, and quick wins.',
-            color: '#c77e00ff', gradient: 'linear-gradient(135deg, #ffbb44ff, #fe8b08ff)',
-            available: true, patternType: 'dots', tag: 'Play first', chips: ['Big icons', 'Easy stories'], cta: 'Start studio', onClick: () => onSelect('junior'),
-        },
-        {
-            icon: (
-                <img
-                    src="/assets/arduino_icon.png"
-                    alt="Intermediate Blocks"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-            ),
-            title: 'Intermediate Blocks', subtitle: 'Blockly plus Arduino for robotics, sensors, and logic flows.',
-            color: '#5a29bdff', gradient: 'linear-gradient(135deg, #855CD6, #370091ff)',
-            available: true, patternType: 'lines', tag: 'Build robots', chips: ['Sensors', 'Logic flow'], cta: 'Open hardware', onClick: () => onSelect('intermediate'),
-        },
-        {
-            icon: (
-                <img
-                    src="/assets/python_icon.png"
-                    alt="Python IDE"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-            ),
-            title: 'Python IDE', subtitle: 'Move into text coding with scripts, editor tools, and sprite control.',
-            color: '#3776ab', gradient: 'linear-gradient(135deg, #3776ab, #ffd343)',
-            available: true, patternType: 'grid', tag: 'Code deeper', chips: ['Text editor', 'Sprite APIs'], cta: 'Write code', onClick: () => onSelect('python'),
-        },
-        {
-            icon: (
-                <img
-                    src="/assets/ml_brain_icon.png"
-                    alt="Advanced Blocks"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-            ),
-            title: 'Advanced Blocks', subtitle: 'A future lane for AI, machine vision, and richer block systems.',
-            color: '#2c5fb3ff', gradient: 'linear-gradient(135deg, #5a99ffff, #033cd7ff)',
-            available: false, patternType: 'waves', tag: 'AI lab', chips: ['Vision tools', 'Smart blocks'], cta: 'Preview lane', onClick: () => showComingSoon('Advanced'),
-        },
-    ];
 
-    const extraCards = [
-        {
-            icon: (
-                <img
-                    src="/assets/creocad_icon.png"
-                    alt="Creocad"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-            ),
-            title: 'Creocad', subtitle: '3D simulation and prototyping before ideas become physical builds.',
-            color: '#51c1bdff', gradient: 'linear-gradient(135deg, #51c1bdff, #00fefaff)',
-            available: false, patternType: 'grid', tag: '3D build', chips: ['Model space', 'Prototype'], cta: 'See preview', onClick: () => showComingSoon('Creocad')
-        },
-        {
-            icon: (
-                <img
-                    src="/assets/app_game_dev_icon.png"
-                    alt="App & Game Development"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-            ),
-            title: 'App & Game Development', subtitle: 'A future studio for scenes, interactions, and game logic.',
-            color: '#EF4444', gradient: 'linear-gradient(135deg, #ff6a6aff, #b70000ff)',
-            available: true, patternType: 'lines', tag: 'Game lab', chips: ['Scenes', 'Interactions'], cta: 'Start studio', onClick: () => onSelect('appforge'),
-        },
-        {
-            icon: (
-                <img
-                    src="/assets/quiz_icon.png"
-                    alt="Quiz"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-            ),
-            title: 'Quiz', subtitle: 'A focused path for fast classroom checks and fun learning challenges.',
-            color: '#10B981', gradient: 'linear-gradient(135deg, #10B981, #00faabff)',
-            available: false, patternType: 'dots', tag: 'Fast checks', chips: ['Questions', 'Scoreboards'], cta: 'Join queue', onClick: () => showComingSoon('Quiz'),
-        },
-    ];
+
 
     const logoAnimationDelay = hasSeenIntro ? 0 : 0.4;
     const subtitleAnimationDelay = hasSeenIntro ? 0.08 : 0.8;
     const getCardAnimation = (index: number, isExtra = false) => {
-        const start = hasSeenIntro
-            ? (isExtra ? 0.35 : 0.1)
-            : (isExtra ? 1.6 : 1.2);
-        const step = hasSeenIntro ? 0.06 : 0.1;
-        return `lp-fadeup .7s ${start + index * step}s both`;
+        const start = hasSeenIntro ? 0.1 : 1.2;
+        const adjustedIndex = isExtra ? index + 4 : index;
+        const step = hasSeenIntro ? 0.07 : 0.1;
+        return `lp-fadeup .7s ${start + adjustedIndex * step}s both`;
     };
 
     return (
@@ -758,74 +779,124 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             minHeight: '100vh',
         }}>
             {/* Topbar */}
-            <div style={{
+            <nav style={{
                 position: 'fixed',
                 top: 0, left: 0, right: 0,
-                height: '56px',
+                height: 64,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '0 40px',
-                background: 'rgba(255, 255, 255, 0.8)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                borderBottom: '1px solid rgba(226, 232, 240, 0.8)',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
+                padding: '0 44px',
+                background: 'rgba(13, 10, 31, 0.96)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                borderBottom: '1px solid rgba(133,92,214,0.24)',
                 zIndex: 100,
                 animation: phase === 'main' ? 'lp-fadeup 0.6s ease-out both' : 'none',
                 opacity: phase === 'main' ? 1 : 0,
                 pointerEvents: phase === 'main' ? 'auto' : 'none',
             }}>
-                {/* Left Logo */}
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <img
-                        src="/assets/topbar_logo.svg"
-                        alt="LeapBlocks"
-                        style={{ height: '40px', objectFit: 'contain' }}
-                        onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/assets/leapblocks_logo.svg';
-                        }}
-                    />
+                {/* Left: Logo + Nav Links */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
+                    {/* Logo */}
+                    <div
+                        style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    >
+                        <img
+                            src="/assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
+                            alt="LeapBlocks"
+                            style={{ 
+                                height: 60, 
+                                objectFit: 'contain', 
+                                filter: 'brightness(0) invert(1)', 
+                                transform: 'scale(2.2)', 
+                                transformOrigin: 'left center',
+                                margin: '0 24px 0 0'
+                            } as React.CSSProperties}
+                            onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/assets/leapblocks_logo.svg';
+                                (e.target as HTMLImageElement).style.filter = 'none';
+                            }}
+                        />
+                    </div>
+
+                    {/* Nav Links */}
+                    <div style={{ display: 'flex', gap: 2 }}>
+                        {['Explore', 'Tutorials'].map((link, i) => (
+                            <div
+                                key={link}
+                                style={{
+                                    padding: '7px 15px', borderRadius: 999,
+                                    fontSize: 13.5, fontWeight: i === 0 ? 600 : 500,
+                                    color: i === 0 ? '#C084FC' : '#94A3B8',
+                                    background: i === 0 ? 'rgba(133,92,214,0.16)' : 'transparent',
+                                    cursor: 'pointer', transition: '0.2s',
+                                    fontFamily: '"Outfit", sans-serif',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(133,92,214,0.16)';
+                                    e.currentTarget.style.color = '#C084FC';
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (i !== 0) {
+                                        e.currentTarget.style.background = 'transparent';
+                                        e.currentTarget.style.color = '#94A3B8';
+                                    }
+                                }}
+                                onClick={() => { if (i !== 0) showComingSoon(link); }}
+                            >
+                                {link}
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
-                {/* Right Notification Icon */}
-                <div style={{
-                    position: 'relative',
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: '12px',
-                    background: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    border: '1px solid #F1F5F9',
-                }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(133,92,214,0.12)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
-                    }}
-                    onClick={() => showComingSoon('Notifications')}
-                >
-                    <Bell size={20} color="#475569" strokeWidth={2} />
-                    <div style={{
-                        position: 'absolute',
-                        top: '10px',
-                        right: '11px',
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: '#EF4444',
-                        border: '2px solid white',
-                    }} />
+                {/* Right: Auth Buttons */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <button
+                        style={{
+                            padding: '8px 18px', borderRadius: 11, fontSize: 13.5, fontWeight: 600,
+                            color: '#DDD6FF', background: 'transparent',
+                            border: '1.5px solid rgba(133,92,214,0.3)',
+                            cursor: 'pointer', transition: '0.2s',
+                            fontFamily: '"Outfit", sans-serif',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = '#C084FC';
+                            e.currentTarget.style.background = 'rgba(133,92,214,0.1)';
+                            e.currentTarget.style.color = '#fff';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(133,92,214,0.3)';
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = '#DDD6FF';
+                        }}
+                        onClick={() => showComingSoon('Log in')}
+                    >
+                        Log in
+                    </button>
+                    <button
+                        style={{
+                            padding: '9px 20px', borderRadius: 11, fontSize: 13.5, fontWeight: 700,
+                            background: '#855CD6', color: '#fff', border: 'none',
+                            cursor: 'pointer', transition: '0.2s',
+                            fontFamily: '"Outfit", sans-serif',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#6D28D9';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#855CD6';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                        }}
+                        onClick={() => showComingSoon('Sign up')}
+                    >
+                        Get started free →
+                    </button>
                 </div>
-            </div>
+            </nav>
             {/* 3D Network Background Interactive Layer */}
             <NetworkBackground />
 
@@ -890,9 +961,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             {/* ══════════ MAIN PHASE ══════════ */}
             {phase === 'main' && (
                 <div style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0,
+                    display: 'flex', flexDirection: 'row', gap: 0,
                     animation: 'lp-fadein .5s ease-out',
-                    padding: '84px 20px 40px 20px', width: '100%',
+                    padding: '64px 0 0 0', width: '100%',
+                    minHeight: '100vh',
+                    position: 'relative',
                 }}>
 
                     {/* ── Spotlight Strip ── */}
@@ -906,104 +979,294 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                         zIndex: 1,
                     }} />
 
-                    {/* ── Logo / Brand ── */}
-                    <div 
-                        style={{
-                        position: 'relative',
-                        marginBottom: 12,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        zIndex: 2, // Above background
-                        animation: `lp-fadeup .8s ${logoAnimationDelay}s both`,
+                    {/* ══════ LEFT SIDE — Hero Content ══════ */}
+                    <div style={{
+                        position: 'sticky',
+                        top: 64,
+                        alignSelf: 'flex-start',
+                        width: '50%',
+                        minWidth: 360,
+                        padding: '36px 28px 36px 48px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 0,
+                        zIndex: 2,
+                        overflow: 'hidden',
+                        height: 'calc(100vh - 64px)',
+                        justifyContent: 'center',
                     }}>
-                        {/* Brand name */}
-                        <div style={{
-                            fontSize: 36,
-                            fontWeight: 900,
-                            fontFamily: '"Orbitron", "Poppins", sans-serif',
-                            letterSpacing: '1px',
-                            background: 'linear-gradient(135deg, #855CD6, #6D28D9)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                        }}>
-                            LeapBlocks
+                        {/* ── Floating Orbs ── */}
+                        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+                            <div style={{
+                                position: 'absolute', width: 280, height: 280, borderRadius: '50%',
+                                background: '#EDE8FF', top: -80, left: -60,
+                                animation: 'lp-orb-float-a 10s ease-in-out infinite',
+                            }} />
+                            <div style={{
+                                position: 'absolute', width: 200, height: 200, borderRadius: '50%',
+                                background: '#FFE8F4', top: -40, right: -40,
+                                animation: 'lp-orb-float-b 12s ease-in-out infinite',
+                            }} />
+                            <div style={{
+                                position: 'absolute', width: 160, height: 160, borderRadius: '50%',
+                                background: '#E0FAF4', bottom: 40, left: 20,
+                                animation: 'lp-orb-float-b 9s ease-in-out 2s infinite',
+                            }} />
+                            <div style={{
+                                position: 'absolute', width: 140, height: 140, borderRadius: '50%',
+                                background: '#FFF0E0', bottom: -20, right: 60,
+                                animation: 'lp-orb-float-a 11s ease-in-out 1s infinite',
+                            }} />
+                            <div style={{
+                                position: 'absolute', width: 100, height: 100, borderRadius: '50%',
+                                background: '#E6F4FF', top: '40%', left: -20,
+                                animation: 'lp-orb-float-a 8s ease-in-out 0.5s infinite',
+                            }} />
                         </div>
+
+                        {/* ── AI Badge ── */}
                         <div style={{
-                            fontSize: 13,
-                            color: '#3e8fffff',
-                            letterSpacing: '0.15em',
-                            textTransform: 'uppercase',
-                            fontFamily: '"Poppins", sans-serif',
+                            position: 'relative',
+                            display: 'inline-flex', alignItems: 'center', gap: 8,
+                            padding: '7px 18px', borderRadius: 999,
+                            background: '#fff', border: '1px solid #DDD6FF',
+                            fontSize: 11, fontWeight: 700, color: '#855CD6',
+                            letterSpacing: '0.06em', textTransform: 'uppercase' as const,
+                            marginBottom: 24,
+                            boxShadow: '0 4px 16px rgba(133,92,214,0.08)',
+                            width: 'fit-content',
+                            animation: `lp-fadeup .6s ${logoAnimationDelay}s both`,
+                            fontFamily: '"Outfit", "Poppins", sans-serif',
+                        }}>
+                            <div style={{
+                                width: 7, height: 7, borderRadius: '50%',
+                                background: '#00D4A4',
+                                animation: 'lp-badge-pulse 1.6s ease-in-out infinite',
+                            }} />
+                            Now with AI-powered mentoring
+                        </div>
+
+                        {/* ── Tagline ── */}
+                        <div style={{
+                            position: 'relative',
+                            fontSize: 11,
+                            color: '#855CD6',
+                            letterSpacing: '0.18em',
+                            textTransform: 'uppercase' as const,
+                            fontFamily: '"Outfit", "Poppins", sans-serif',
+                            fontWeight: 600,
+                            marginBottom: 16,
+                            animation: `lp-fadeup .6s ${logoAnimationDelay + 0.08}s both`,
+                        }}>
+                            Curiosity · Creativity · Critical Thinking
+                        </div>
+
+                        {/* ── Headline ── */}
+                        <div style={{
+                            position: 'relative',
+                            animation: `lp-fadeup .8s ${logoAnimationDelay + 0.1}s both`,
+                        }}>
+                            <div style={{
+                                fontSize: 'clamp(36px, 4.5vw, 58px)',
+                                fontWeight: 900,
+                                lineHeight: 1.05,
+                                letterSpacing: '-2px',
+                                color: '#1A0A3B',
+                                fontFamily: '"Outfit", "Poppins", sans-serif',
+                            }}>
+                                Learn to{' '}
+                                <span style={{
+                                    fontFamily: '"DM Serif Display", serif',
+                                    fontStyle: 'italic',
+                                    fontWeight: 400,
+                                    color: '#855CD6',
+                                }}>code</span>
+                                <br />
+                                the{' '}
+                                <span style={{
+                                    WebkitTextStroke: '2px #855CD6',
+                                    color: 'transparent',
+                                }}>bold</span>{' '}
+                                way
+                            </div>
+                        </div>
+
+                        {/* ── Sub description ── */}
+                        <div style={{
+                            position: 'relative',
+                            marginTop: 20,
+                            fontSize: 15,
+                            color: '#7366A0',
+                            lineHeight: 1.65,
+                            fontFamily: '"Outfit", "Inter", sans-serif',
+                            maxWidth: 380,
+                            fontWeight: 400,
+                            animation: `lp-fadeup .7s ${subtitleAnimationDelay + 0.1}s both`,
+                        }}>
+                            Seven unique tracks from junior picture-blocks all the way to AI, robotics, and machine vision. Pick your adventure.
+                        </div>
+
+                        {/* ── CTA Buttons ── */}
+                        <div style={{
+                            position: 'relative',
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            marginTop: 28, flexWrap: 'wrap',
+                            animation: `lp-fadeup .7s ${subtitleAnimationDelay + 0.25}s both`,
+                        }}>
+                            <button
+                                onClick={() => {
+                                    setHighlightIndex(0); // Start cycling animation
+                                    const cardsArea = document.querySelector('.lp-main-card');
+                                    cardsArea?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                }}
+                                style={{
+                                    padding: '14px 32px', borderRadius: 16, fontSize: 15, fontWeight: 800,
+                                    background: '#855CD6', color: '#fff', border: 'none', cursor: 'pointer',
+                                    boxShadow: '0 8px 28px rgba(133,92,214,0.3)',
+                                    fontFamily: '"Outfit", "Poppins", sans-serif',
+                                    transition: 'all .25s',
+                                    letterSpacing: '-0.2px',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#6D28D9';
+                                    e.currentTarget.style.transform = 'translateY(-3px)';
+                                    e.currentTarget.style.boxShadow = '0 16px 40px rgba(133,92,214,0.4)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = '#855CD6';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 8px 28px rgba(133,92,214,0.3)';
+                                }}
+                            >
+                                Choose your adventure →
+                            </button>
+                            <button
+                                style={{
+                                    padding: '14px 24px', borderRadius: 16, fontSize: 15, fontWeight: 600,
+                                    background: '#fff', color: '#1A0A3B', border: '2px solid #DDD6FF',
+                                    cursor: 'pointer', fontFamily: '"Outfit", "Poppins", sans-serif',
+                                    transition: 'all .25s',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = '#855CD6';
+                                    e.currentTarget.style.color = '#855CD6';
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = '#DDD6FF';
+                                    e.currentTarget.style.color = '#1A0A3B';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                }}
+                            >
+                                ▶ Watch 2-min demo
+                            </button>
+                        </div>
+
+                        {/* ── Info Chips ── */}
+                        <div style={{
+                            position: 'relative',
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            marginTop: 28, flexWrap: 'wrap',
+                            animation: `lp-fadeup .7s ${subtitleAnimationDelay + 0.4}s both`,
+                        }}>
+                            {[
+                                { icon: '✓', label: 'No experience needed', bg: '#E0FAF4', color: '#00A47A' },
+                                { icon: '★', label: 'Ages 7 to 17', bg: '#EDE8FF', color: '#855CD6' },
+                                { icon: '⚡', label: 'Real projects, real skills', bg: '#FFF0E0', color: '#B07000' },
+                            ].map((chip) => (
+                                <div key={chip.label} style={{
+                                    display: 'flex', alignItems: 'center', gap: 7,
+                                    padding: '8px 14px', borderRadius: 999,
+                                    background: '#fff', border: '1px solid rgba(133,92,214,0.1)',
+                                    fontSize: 12, fontWeight: 500, color: '#3D2B7A',
+                                    boxShadow: '0 2px 10px rgba(133,92,214,0.05)',
+                                    fontFamily: '"Outfit", sans-serif',
+                                    transition: '.2s',
+                                }}>
+                                    <div style={{
+                                        width: 20, height: 20, borderRadius: 7,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: 10, fontWeight: 800,
+                                        background: chip.bg, color: chip.color,
+                                    }}>
+                                        {chip.icon}
+                                    </div>
+                                    {chip.label}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* ── Footer ── */}
+                        <div style={{
+                            position: 'relative',
+                            marginTop: 'auto',
+                            paddingTop: 24,
+                            fontSize: 11,
+                            color: '#9B8EC4',
+                            fontFamily: '"Outfit", sans-serif',
                             fontWeight: 500,
+                            letterSpacing: '0.05em',
+                            animation: `lp-fadeup .5s ${subtitleAnimationDelay + 0.55}s both`,
                         }}>
-                            Curiosity · Creativity · Criticalthinking
+                            v1.0 · Creoleap Technologies Pvt. Ltd.
                         </div>
                     </div>
 
-                    {/* ── Subtitle ── */}
+                    {/* ══════ RIGHT SIDE — Mode Cards ══════ */}
                     <div 
-                        className="lp-subtitle"
+                        onMouseEnter={() => setHighlightIndex(null)}
                         style={{
-                        fontSize: 15, color: '#1f242cff', marginBottom: 16,
-                        fontFamily: '"Poppins", sans-serif',
-                        fontWeight: 500,
-                        animation: `lp-fadeup .7s ${subtitleAnimationDelay}s both`,
+                        flex: 1,
+                        padding: '20px 36px 36px 16px',
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 16,
+                        zIndex: 2,
                     }}>
-                        Choose your coding adventure ✨
-                    </div>
+                        {/* Row 1: Main Mode Cards */}
+                        <div style={{
+                            display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'flex-start',
+                        }}>
+                            {mainCards.map((card, i) => (
+                                <div key={card.title} className="lp-main-card" style={{ animation: getCardAnimation(i) }}>
+                                    <ModeCard
+                                        icon={card.icon}
+                                        title={card.title}
+                                        subtitle={card.subtitle}
+                                        color={card.color}
+                                        gradient={card.gradient}
+                                        delay={0}
+                                        available={card.available}
+                                        patternType={(card as any).patternType}
+                                        onClick={card.onClick}
+                                        highlighted={highlightIndex === i}
+                                    />
+                                </div>
+                            ))}
+                        </div>
 
-                    {/* ── Row 1: Main Mode Cards ── */}
-                    <div style={{
-                        display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center',
-                        marginBottom: 16,
-                    }}>
-                        {mainCards.map((card, i) => (
-                            <div key={card.title} className="lp-main-card" style={{ animation: getCardAnimation(i) }}>
-                                <ModeCard
-                                    icon={card.icon}
-                                    title={card.title}
-                                    subtitle={card.subtitle}
-                                    color={card.color}
-                                    gradient={card.gradient}
-                                    delay={0}
-                                    available={card.available}
-                                    patternType={(card as any).patternType}
-                                    onClick={card.onClick}
-                                />
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* ── Row 2: Extra Cards ── */}
-                    <div style={{
-                        display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center',
-                    }}>
-                        {extraCards.map((card, i) => (
-                            <div key={card.title} className="lp-extra-card" style={{ animation: getCardAnimation(i, true) }}>
-                                <ModeCard
-                                    icon={card.icon}
-                                    title={card.title}
-                                    subtitle={card.subtitle}
-                                    color={card.color}
-                                    gradient={card.gradient}
-                                    delay={0}
-                                    available={card.available}
-                                    patternType={(card as any).patternType}
-                                    onClick={card.onClick}
-                                />
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* ── Footer ── */}
-                    <div style={{
-                        marginTop: 28,
-                        fontSize: 11, color: '#001125ff',
-                        fontFamily: '"Poppins", Orbitron',
-                        fontWeight: 500,
-                        animation: 'lp-fadeup .5s .9s both',
-                        letterSpacing: '0.05em',
-                    }}>
-                        v1.0 · Creoleap Technologies Pvt. Ltd.
+                        {/* Row 2: Extra Cards */}
+                        <div style={{
+                            display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'flex-start',
+                        }}>
+                            {extraCards.map((card, i) => (
+                                <div key={card.title} className="lp-extra-card" style={{ animation: getCardAnimation(i, true) }}>
+                                    <ModeCard
+                                        icon={card.icon}
+                                        title={card.title}
+                                        subtitle={card.subtitle}
+                                        color={card.color}
+                                        gradient={card.gradient}
+                                        delay={0}
+                                        available={card.available}
+                                        patternType={(card as any).patternType}
+                                        onClick={card.onClick}
+                                        highlighted={highlightIndex === (mainCards.length + i)}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}
