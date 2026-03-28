@@ -524,7 +524,7 @@ const NetworkBackground: React.FC = () => {
                 if (distance < interactionDist) {
                     const force = (interactionDist - distance) / interactionDist;
                     // Attract slightly on normal hover, pull strongly on drag
-                    const pull = mouse.current.isDragging ? 2.5 : -1.2; 
+                    const pull = mouse.current.isDragging ? 2.5 : -1.2;
                     this.x -= (dx / distance) * force * pull;
                     this.y -= (dy / distance) * force * pull;
                 }
@@ -806,11 +806,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                         <img
                             src="/assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
                             alt="LeapBlocks"
-                            style={{ 
-                                height: 60, 
-                                objectFit: 'contain', 
-                                filter: 'brightness(0) invert(1)', 
-                                transform: 'scale(2.2)', 
+                            style={{
+                                height: 60,
+                                objectFit: 'contain',
+                                filter: 'brightness(0) invert(1)',
+                                transform: 'scale(2.2)',
                                 transformOrigin: 'left center',
                                 margin: '0 24px 0 0'
                             } as React.CSSProperties}
@@ -1213,17 +1213,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     </div>
 
                     {/* ══════ RIGHT SIDE — Mode Cards ══════ */}
-                    <div 
+                    <div
                         onMouseEnter={() => setHighlightIndex(null)}
                         style={{
-                        flex: 1,
-                        padding: '20px 36px 36px 16px',
-                        overflowY: 'auto',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 16,
-                        zIndex: 2,
-                    }}>
+                            flex: 1,
+                            padding: '20px 36px 36px 16px',
+                            overflowY: 'auto',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 16,
+                            zIndex: 2,
+                        }}>
                         {/* Row 1: Main Mode Cards */}
                         <div style={{
                             display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'flex-start',
