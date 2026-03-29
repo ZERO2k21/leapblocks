@@ -247,11 +247,13 @@ export class Interpreter {
                     // Log block execution for debugging
                     console.log(`[Interpreter] [${spriteId}] Executing block: ${block.type}`);
 
-                    this.generator.init(tempWs);
                     const code = this.generator.blockToCode(block);
-                    if (!code) continue;
+                    if (!code) {
+                        console.warn(`[Interpreter] [${spriteId}] No code generated for block: ${block.type}`);
+                        continue;
+                    }
 
-                    console.log(`[Interpreter] [${spriteId}] Generated code:`, code.trim().split("\n")[0]);
+                    console.log(`[Interpreter] [${spriteId}] Generated code for broadcast reception:`, code.trim().split("\n")[0]);
 
                     const wrappedCode = this._wrapCodeWithSpriteContext(code, spriteId);
                     allThreadPromises.push(this.executeThread(wrappedCode, spriteId));
@@ -323,7 +325,10 @@ export class Interpreter {
 
             const entries = this._getSpriteEntries();
             if (entries && entries.length > 0) {
+                console.log(`[Interpreter] Triggering stacks for ${entries.length} sprites for broadcast: "${message}"`);
                 this.runAllSpritesStacks('event_broadcast', entries, this._broadcastBlockly, message);
+            } else {
+                console.warn(`[Interpreter] No sprite entries found for broadcast: "${message}"`);
             }
         };
 

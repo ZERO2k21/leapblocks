@@ -18,13 +18,84 @@ export function useJuniorWindowActions({
     musicBlocksExt,
     setWinMessage
 }) {
+    // --- EFFECT 1: STATIC ACTIONS (Run Once/Rarely) ---
     useEffect(() => {
-        const cleanupKeys = [
+        const staticKeys = [
+            "broadcastMessage",
+            "stopAll",
+            "stopExecution",
+            "resetBear",
+            "setSpeed",
+            "getAnimationDelay",
+            "setPenColor",
+            "setPenSize",
+            "stopAllSounds",
+            "stopMusic"
+        ];
+
+        window.broadcastMessage = (message) => {
+            console.log(`[useJuniorWindowActions] Broadcasting: ${message}`);
+            window.dispatchEvent(new CustomEvent('leap-broadcast', {
+                detail: { message }
+            }));
+            window.showFeedback?.(`📨 ${message}`);
+        };
+
+        window.stopAll = () => {
+            window.showFeedback?.("STOPPED");
+        };
+
+        window.stopExecution = () => {
+            throw new ExecutionStop("Execution stopped by Stop block");
+        };
+
+        window.resetBear = () => {
+            setWinMessage(null);
+            spriteActions.resetAll();
+            if (window.clearPen) window.clearPen();
+        };
+
+        window.animationSpeed = 0.5;
+        window.setSpeed = (speed) => {
+            const speedMap = { slow: 0.8, normal: 0.5, fast: 0.2 };
+            window.animationSpeed = speedMap[speed] ?? speedMap.normal;
+        };
+        window.getAnimationDelay = () => window.animationSpeed || 0.5;
+
+        window.penColor = "#FF0000";
+        window.setPenColor = (color) => { window.penColor = color; };
+        window.penSize = 5;
+        window.setPenSize = (size) => { window.penSize = parseInt(size); };
+
+        window.stopAllSounds = () => {
+            window.speechSynthesis.cancel();
+            if (audioEngine) {
+                audioEngine.stopAllSounds();
+            } else {
+                soundBlocksExt.stopAllSounds();
+            }
+        };
+
+        window.stopMusic = () => {
+            if (audioEngine && audioEngine.soundBank) {
+                audioEngine.soundBank.stopMusic();
+            } else {
+                musicBlocksExt.stopMusic();
+            }
+        };
+
+        return () => {
+            staticKeys.forEach(key => delete window[key]);
+        };
+    }, [spriteActions, audioEngine, soundBlocksExt, musicBlocksExt, setWinMessage]);
+
+    // --- EFFECT 2: CONTEXT-DEPENDENT ACTIONS (Depends on Ref or specific callbacks) ---
+    useEffect(() => {
+        const contextKeys = [
             "getLeapProjectData",
             "updateSprite",
             "moveRelative",
             "goToLocation",
-            "resetBear",
             "changeSize",
             "getCurrentSceneId",
             "getActiveSpriteId",
@@ -35,9 +106,9 @@ export function useJuniorWindowActions({
             "showSprite",
             "hideSprite",
             "say",
+            "showFeedback",
             "goToRandom",
             "moveRandom",
-            "animationSpeed",
             "setSpriteColor",
             "resetSize",
             "nextCostume",
@@ -45,30 +116,26 @@ export function useJuniorWindowActions({
             "mirrorSprite",
             "stampSprite",
             "stampSpriteOnCanvas",
-            "showFeedback",
-            "stopAll",
-            "broadcastMessage",
-            "penColor",
-            "setPenColor",
-            "penSize",
-            "setPenSize",
-            "setSpeed",
-            "getAnimationDelay",
             "playSound",
             "playNote",
             "setInstrument",
-            "stopAllSounds",
-            "playMusic",
-            "stopMusic",
-            "stopExecution"
+            "playMusic"
         ];
 
-        window.getLeapProjectData = () => ({ scenes, currentSceneId, activeSpriteId, sprites });
+        // Use a helper to always get the current ID from ref or window override
+        const getCurrentID = () => window.activeSpriteId || activeSpriteIdRef.current || activeSpriteId;
 
-        window.updateSprite = (id, updates) => spriteActions.update(id, updates);
+        window.getLeapProjectData = () => ({ 
+            scenes, 
+            currentSceneId, 
+            activeSpriteId: getCurrentID(), 
+            sprites 
+        });
+
+        window.updateSprite = (id, updates) => spriteActions.update(id || getCurrentID(), updates);
 
         window.moveRelative = (targetOrDirection, directionOrSteps, maybeSteps) => {
-            let id = window.activeSpriteId || activeSpriteId;
+            let id = getCurrentID();
             let direction = targetOrDirection;
             let steps = 1;
 
@@ -85,7 +152,7 @@ export function useJuniorWindowActions({
         };
 
         window.goToLocation = (targetOrX, xOrY, maybeY) => {
-            let id = window.activeSpriteId || activeSpriteId;
+            let id = getCurrentID();
             let x = targetOrX;
             let y = xOrY;
 
@@ -98,36 +165,28 @@ export function useJuniorWindowActions({
             spriteActions.goToGrid(id, x, y);
         };
 
-        window.resetBear = () => {
-            setWinMessage(null);
-            spriteActions.resetAll();
-            if (window.clearPen) window.clearPen();
-        };
-
         window.changeSize = (id, delta) => {
-            spriteActions.update(id, {
+            spriteActions.update(id || getCurrentID(), {
                 size: (prev) => prev + delta
             });
         };
 
         window.getCurrentSceneId = () => currentSceneId;
-        window.getActiveSpriteId = () => activeSpriteId;
+        window.getActiveSpriteId = () => getCurrentID();
         window.switchScene = (sceneId) => handleSceneSelect(sceneId);
         window.changeScene = () => handleNextScene();
 
         window.selectSprite = (spriteIdOrName) => {
             const sprite = sprites.find(s => s.id === spriteIdOrName || s.id.includes(spriteIdOrName.toLowerCase()) || s.type === spriteIdOrName.toLowerCase());
-            if (sprite) {
-                handleSpriteSelect(sprite.id);
-            }
+            if (sprite) handleSpriteSelect(sprite.id);
         };
 
-        window.setVisible = (id, val) => spriteActions.update(id, { visible: val });
-        window.showSprite = (id) => window.setVisible(id || window.activeSpriteId || "robot_default", true);
-        window.hideSprite = (id) => window.setVisible(id || window.activeSpriteId || "robot_default", false);
+        window.setVisible = (id, val) => spriteActions.update(id || getCurrentID(), { visible: val });
+        window.showSprite = (id) => window.setVisible(id || getCurrentID() || "robot_default", true);
+        window.hideSprite = (id) => window.setVisible(id || getCurrentID() || "robot_default", false);
 
         window.say = (id, text) => {
-            const tid = id || window.activeSpriteId || "robot_default";
+            const tid = id || getCurrentID() || "robot_default";
             if (timeoutRefs.current[tid]) clearTimeout(timeoutRefs.current[tid]);
             spriteActions.update(tid, { speech: text });
             timeoutRefs.current[tid] = setTimeout(() => {
@@ -135,48 +194,35 @@ export function useJuniorWindowActions({
                 delete timeoutRefs.current[tid];
             }, 3000);
         };
+
         window.showFeedback = (text, spriteId) => {
-            window.say(spriteId || window.activeSpriteId || activeSpriteId, text);
+            window.say(spriteId || getCurrentID(), text);
         };
 
         window.goToRandom = (id) => {
-            const tid = id || window.activeSpriteId || "robot_default";
+            const tid = id || getCurrentID() || "robot_default";
             const randomX = Math.floor(Math.random() * 20) + 1;
             const randomY = Math.floor(Math.random() * 15) + 1;
             spriteActions.goToGrid(tid, randomX, randomY);
         };
 
         window.moveRandom = (spriteId, xMin, xMax, yMin, yMax) => {
-            const id = spriteId || window.activeSpriteId || "robot_default";
-            // Pick a random integer grid position within the zone bounds
+            const id = spriteId || getCurrentID() || "robot_default";
             const randomX = Math.floor(Math.random() * (xMax - xMin + 1)) + xMin;
             const randomY = Math.floor(Math.random() * (yMax - yMin + 1)) + yMin;
             spriteActions.goToGrid(id, randomX, randomY);
         };
 
-        window.animationSpeed = 0.5;
-        window.setSpeed = (speed) => {
-            const speedMap = {
-                slow: 0.8,
-                normal: 0.5,
-                fast: 0.2
-            };
-            window.animationSpeed = speedMap[speed] ?? speedMap.normal;
-        };
-        window.getAnimationDelay = () => window.animationSpeed || 0.5;
-
         window.setSpriteColor = (id, color) => {
-            const tid = id || window.activeSpriteId || "robot_default";
-            spriteActions.update(tid, { textColor: color });
+            spriteActions.update(id || getCurrentID() || "robot_default", { textColor: color });
         };
 
         window.resetSize = (id) => {
-            const tid = id || window.activeSpriteId || "robot_default";
-            spriteActions.update(tid, { size: 100 });
+            spriteActions.update(id || getCurrentID() || "robot_default", { size: 100 });
         };
 
         window.nextCostume = (id) => {
-            const tid = id || window.activeSpriteId || "robot_default";
+            const tid = id || getCurrentID() || "robot_default";
             spriteActions.update(tid, (current) => {
                 if (current.costumes) {
                     const keys = Object.keys(current.costumes);
@@ -192,20 +238,17 @@ export function useJuniorWindowActions({
         };
 
         window.changeCostume = (id, costume) => {
-            const tid = id || window.activeSpriteId || "robot_default";
-            spriteActions.update(tid, { currentCostume: costume });
+            spriteActions.update(id || getCurrentID() || "robot_default", { currentCostume: costume });
         };
 
         window.mirrorSprite = (id) => {
-            const tid = id || window.activeSpriteId || "robot_default";
-            spriteActions.update(tid, (prev) => ({ mirrored: !prev.mirrored }));
+            spriteActions.update(id || getCurrentID() || "robot_default", (prev) => ({ mirrored: !prev.mirrored }));
         };
 
         window.stampSprite = (id) => {
-            const handler = window._spriteActions?.[id];
-            if (handler && handler.stamp) {
-                handler.stamp();
-            }
+            const tid = id || getCurrentID();
+            const handler = window._spriteActions?.[tid];
+            if (handler && handler.stamp) handler.stamp();
         };
 
         window.stampSpriteOnCanvas = (spriteId, sx, sy, costumeVal, spriteSize) => {
@@ -213,23 +256,17 @@ export function useJuniorWindowActions({
             if (!canvas) return;
             const ctx = canvas.getContext("2d");
             if (!ctx) return;
-
             const scale = (spriteSize || 100) / 100;
             const drawSize = 50 * scale;
 
             if (typeof costumeVal === 'string' && (
-                costumeVal.includes('/') ||
-                costumeVal.startsWith('http') ||
-                costumeVal.includes('data:image') ||
-                costumeVal.endsWith('.png') ||
-                costumeVal.endsWith('.jpg') ||
-                costumeVal.endsWith('.svg')
+                costumeVal.includes('/') || costumeVal.startsWith('http') ||
+                costumeVal.includes('data:image') || costumeVal.endsWith('.png') ||
+                costumeVal.endsWith('.jpg') || costumeVal.endsWith('.svg')
             )) {
                 const img = new Image();
                 img.crossOrigin = "anonymous";
-                img.onload = () => {
-                    ctx.drawImage(img, sx, sy, drawSize, drawSize);
-                };
+                img.onload = () => ctx.drawImage(img, sx, sy, drawSize, drawSize);
                 img.src = costumeVal;
             } else {
                 ctx.font = `${Math.round(drawSize)}px serif`;
@@ -237,27 +274,18 @@ export function useJuniorWindowActions({
                 ctx.textBaseline = 'top';
                 ctx.fillText(costumeVal || '✏️', sx, sy);
             }
-
             if (window.showFeedback) window.showFeedback("Stamped!");
         };
 
-        window.penColor = "#FF0000";
-        window.setPenColor = (color) => {
-            window.penColor = color;
-        };
-
-        window.penSize = 5;
-        window.setPenSize = (size) => {
-            window.penSize = parseInt(size);
-        };
-
         window.playSound = (name) => {
+            const tid = getCurrentID();
             if (audioEngine) {
-                audioEngine.playSound(name, window.activeSpriteId || activeSpriteId);
+                audioEngine.playSound(name, tid);
             } else {
-                soundBlocksExt.playSound({ SOUND_MENU: name }, { target: { id: window.activeSpriteId || activeSpriteId } });
+                soundBlocksExt.playSound({ SOUND_MENU: name }, { target: { id: tid } });
             }
         };
+
         window.playNote = (note, octave) => {
             if (audioEngine && audioEngine.instrumentPlayer) {
                 audioEngine.instrumentPlayer.playNoteForDuration(note, octave, 0.5);
@@ -265,19 +293,12 @@ export function useJuniorWindowActions({
                 musicBlocksExt.playNoteForDuration({ NOTE: note, OCTAVE: octave, DURATION: 0.5 });
             }
         };
+
         window.setInstrument = (inst) => {
             if (audioEngine && audioEngine.instrumentPlayer) {
                 audioEngine.instrumentPlayer.setInstrument(inst);
             } else {
                 musicBlocksExt.setInstrument({ INSTRUMENT: inst });
-            }
-        };
-        window.stopAllSounds = () => {
-            window.speechSynthesis.cancel();
-            if (audioEngine) {
-                audioEngine.stopAllSounds();
-            } else {
-                soundBlocksExt.stopAllSounds();
             }
         };
 
@@ -288,32 +309,9 @@ export function useJuniorWindowActions({
                 musicBlocksExt.playMusic({ MUSIC: name });
             }
         };
-        window.stopMusic = () => {
-            if (audioEngine && audioEngine.soundBank) {
-                audioEngine.soundBank.stopMusic();
-            } else {
-                musicBlocksExt.stopMusic();
-            }
-        };
-        window.broadcastMessage = (message) => {
-            window.dispatchEvent(new CustomEvent('leap-broadcast', {
-                detail: { message }
-            }));
-            window.showFeedback?.(`📨 ${message}`);
-        };
-        window.stopAll = () => {
-            window.showFeedback?.("STOPPED");
-        };
-
-        window.stopExecution = () => {
-            throw new ExecutionStop("Execution stopped by Stop block");
-        };
 
         return () => {
-            cleanupKeys.forEach(key => {
-                delete window[key];
-            });
+            contextKeys.forEach(key => delete window[key]);
         };
-
-    }, [spriteActions, activeSpriteId, currentSceneId, sprites, handleSceneSelect, handleNextScene, handleSpriteSelect, timeoutRefs, canvasRef, audioEngine, soundBlocksExt, musicBlocksExt, setWinMessage]);
+    }, [scenes, currentSceneId, sprites, spriteActions, handleSceneSelect, handleNextScene, handleSpriteSelect, timeoutRefs, canvasRef, audioEngine, soundBlocksExt, musicBlocksExt]);
 }
