@@ -15,7 +15,7 @@ interface BlockEditorProps {
 
 export default function BlockEditor({ project, updateProject }: BlockEditorProps) {
   const blocklyDiv = useRef<HTMLDivElement>(null);
-  const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
+  const workspaceRef = useRef<BlocklyType.WorkspaceSvg | null>(null);
 
   // ✅ FIX 1: Keep a ref to the latest updateProject callback
   // This avoids the stale closure bug where the onChange listener
@@ -60,11 +60,13 @@ export default function BlockEditor({ project, updateProject }: BlockEditorProps
   useEffect(() => {
     if (!blocklyDiv.current) return;
 
-    let workspace: Blockly.WorkspaceSvg | null = null;
+    let workspace: BlocklyType.WorkspaceSvg | null = null;
 
     const initBlockly = async () => {
       try {
-        const Blockly = await import('@blockly-runtime');
+        // Dynamic imports to prevent circular dependencies in production
+        const BlocklyModule = await import('@blockly-runtime');
+        const Blockly = (BlocklyModule.default || BlocklyModule) as typeof BlocklyType;
         const { registerCustomBlocks } = await import('./CustomBlocks');
 
         // Register custom blocks before injecting the workspace
