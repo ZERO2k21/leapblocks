@@ -143,7 +143,6 @@ const registerBlocks = () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 let _blocklyInitialized = false;
-let _continuousFlyoutContents: any[] = []; // Module-level storage for continuous flyout contents
 
 function initBlocklyOnce() {
     if (_blocklyInitialized) return;
@@ -180,45 +179,81 @@ function initBlocklyOnce() {
     // GLOBAL BLOCKLY OVERRIDES
     // ═══════════════════════════════════════════════════════════════════════
 
-    // 1. Persist Flyout: Prevent hiding when autoClose is false (Continuous Toolbox)
-    // Also override show() to always show ALL contents (continuous mode)
+    // 1. Persist Flyout: keep the selected category flyout open.
     if (Blockly.Flyout && !(Blockly.Flyout.prototype as any)._hidePatched) {
 
-        // Set default to false globally
-        Blockly.Flyout.prototype.autoClose = false;
-
-        // Override hide: suppress if continuous mode
+        // Override hide: suppress if persistent flyout is enabled on the instance
         const originalHide = Blockly.Flyout.prototype.hide;
         Blockly.Flyout.prototype.hide = function (this: any) {
             if (this.autoClose === false) {
-                return; // NEVER hide in continuous mode
+                return;
             }
             originalHide.call(this);
         };
 
-        // Override setVisible: suppress setVisible(false) if continuous mode
+        // Override setVisible: suppress setVisible(false) if persistent flyout is enabled
         const originalSetVisible = Blockly.Flyout.prototype.setVisible;
         Blockly.Flyout.prototype.setVisible = function (this: any, visible: boolean) {
             if (this.autoClose === false && visible === false) {
-                return; // NEVER make invisible in continuous mode
+                return;
             }
             originalSetVisible.call(this, visible);
-        };
-
-        // Override show: in continuous mode, always show ALL blocks
-        const originalShow = Blockly.Flyout.prototype.show;
-        Blockly.Flyout.prototype.show = function (this: any, flyoutDef: any) {
-            if (this.autoClose === false && _continuousFlyoutContents.length > 0) {
-                // Always use the full flattened contents regardless of what Blockly internally requests
-                originalShow.call(this, _continuousFlyoutContents);
-            } else {
-                originalShow.call(this, flyoutDef);
-            }
         };
 
         (Blockly.Flyout.prototype as any)._hidePatched = true;
     }
 }
+
+const MORE_BLOCKS_CATEGORY_NAME = 'More Blocks';
+const MORE_BLOCKS_CATEGORY_COLOUR = '#94A3B8';
+
+const isToolboxCategory = (category: any) =>
+    category?.kind === 'pictobloxCategory' ||
+    category?.kind === 'pictoBloxCategory' ||
+    category?.kind === 'category';
+
+const normalizeCategoryClassName = (value: string) =>
+    value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+const createFlyoutCategoryLabel = (text: string) => ({
+    kind: 'label',
+    text,
+    'web-class': `category-header category-header-${normalizeCategoryClassName(text)}`
+});
+
+const createFlyoutSectionLabel = (text: string, className: string) => ({
+    kind: 'label',
+    text,
+    'web-class': `category-subheader ${className}`
+});
+
+const createMoreBlocksCategory = () => ({
+    kind: 'pictobloxCategory',
+    name: MORE_BLOCKS_CATEGORY_NAME,
+    colour: MORE_BLOCKS_CATEGORY_COLOUR,
+    custom: 'LEAP_MOREBLOCKS'
+});
+
+const withCategoryHeaders = (contents: any[]) => {
+    const categoriesWithMoreBlocks = contents.some((category: any) => category?.name === MORE_BLOCKS_CATEGORY_NAME)
+        ? contents
+        : [...contents, createMoreBlocksCategory()];
+
+    return categoriesWithMoreBlocks.map((category: any) => {
+        if (!isToolboxCategory(category) || !Array.isArray(category.contents)) {
+            return category;
+        }
+
+        return {
+            ...category,
+            contents: [createFlyoutCategoryLabel(category.name), ...category.contents]
+        };
+    });
+};
 
 
 
@@ -491,14 +526,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     // Sprite Library state
 
     const [showSpriteLibrary, setShowSpriteLibrary] = useState(false);
-
-
-
-    // Dynamic toolbox state for continuous flyout
-
-    const [currentToolboxContents, setCurrentToolboxContents] = useState<any[]>([]);
-
-    const currentToolboxContentsRef = useRef<any[]>([]);
 
     const lastToolboxJsonRef = useRef<string>('');
 
@@ -1040,77 +1067,79 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     ...animationToolbox,
 
-                    contents: filteredContents
+                    contents: withCategoryHeaders(
+                        filteredContents
 
-                        .filter((cat: any) => cat.name !== 'Motion')
+                            .filter((cat: any) => cat.name !== 'Motion')
 
-                        .map((cat: any) => {
+                            .map((cat: any) => {
 
-                            let contents = cat.contents;
+                                let contents = cat.contents;
 
-                            if (cat.name === 'Looks') {
+                                if (cat.name === 'Looks') {
 
-                                contents = contents.filter((item: any) => {
+                                    contents = contents.filter((item: any) => {
 
-                                    if (item.kind !== 'block') return true;
+                                        if (item.kind !== 'block') return true;
 
-                                    const t = item.type;
+                                        const t = item.type;
 
-                                    // Stage does not have costumes, size, or layers in the same way sprites do
+                                        // Stage does not have costumes, size, or layers in the same way sprites do
 
-                                    return !t.startsWith('looks_say') && !t.startsWith('looks_think') &&
+                                        return !t.startsWith('looks_say') && !t.startsWith('looks_think') &&
 
-                                        t !== 'looks_show' && t !== 'looks_hide' &&
+                                            t !== 'looks_show' && t !== 'looks_hide' &&
 
-                                        t !== 'looks_switch_costume' && t !== 'looks_next_costume' &&
+                                            t !== 'looks_switch_costume' && t !== 'looks_next_costume' &&
 
-                                        t !== 'looks_set_size' && t !== 'looks_change_size' &&
+                                            t !== 'looks_set_size' && t !== 'looks_change_size' &&
 
-                                        t !== 'looks_go_to_layer' && t !== 'looks_go_forward_layers' &&
+                                            t !== 'looks_go_to_layer' && t !== 'looks_go_forward_layers' &&
 
-                                        t !== 'looks_size' && !t.startsWith('looks_costume_');
+                                            t !== 'looks_size' && !t.startsWith('looks_costume_');
 
-                                });
+                                    });
 
-                            } else if (cat.name === 'Events') {
+                                } else if (cat.name === 'Events') {
 
-                                contents = contents.map((item: any) =>
+                                    contents = contents.map((item: any) =>
 
-                                    (item.kind === 'block' && item.type === 'event_sprite_clicked')
+                                        (item.kind === 'block' && item.type === 'event_sprite_clicked')
 
-                                        ? { ...item, type: 'event_stage_clicked' } : item
+                                            ? { ...item, type: 'event_stage_clicked' } : item
 
-                                );
+                                    );
 
-                            } else if (cat.name === 'Control') {
+                                } else if (cat.name === 'Control') {
 
-                                contents = contents.filter((item: any) =>
+                                    contents = contents.filter((item: any) =>
 
-                                    item.kind !== 'block' || item.type !== 'control_delete_clone'
+                                        item.kind !== 'block' || item.type !== 'control_delete_clone'
 
-                                );
+                                    );
 
-                            } else if (cat.name === 'Sensing') {
+                                } else if (cat.name === 'Sensing') {
 
-                                contents = contents.filter((item: any) => {
+                                    contents = contents.filter((item: any) => {
 
-                                    if (item.kind !== 'block') return true;
+                                        if (item.kind !== 'block') return true;
 
-                                    const t = item.type;
+                                        const t = item.type;
 
-                                    // Stage cannot touch other things or have distance to them
+                                        // Stage cannot touch other things or have distance to them
 
-                                    return t !== 'sensing_touching' && t !== 'sensing_touching_color' &&
+                                        return t !== 'sensing_touching' && t !== 'sensing_touching_color' &&
 
-                                        t !== 'sensing_color_touching_color' && t !== 'sensing_distance_to';
+                                            t !== 'sensing_color_touching_color' && t !== 'sensing_distance_to';
 
-                                });
+                                    });
 
-                            }
+                                }
 
-                            return { ...cat, contents };
+                                return { ...cat, contents };
 
-                        })
+                            })
+                    )
 
                 };
 
@@ -1122,74 +1151,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 ...animationToolbox,
 
-                contents: filteredContents
+                contents: withCategoryHeaders(filteredContents)
 
             };
 
         }
 
-        return selectedBoard === 'esp32' ? esp32Toolbox : arduinoToolbox;
+        const hardwareToolbox = selectedBoard === 'esp32' ? esp32Toolbox : arduinoToolbox;
+
+        return {
+            ...hardwareToolbox,
+            contents: withCategoryHeaders(hardwareToolbox.contents)
+        };
 
     }, [editorMode, selectedBoard, selectedSpriteId]);
-
-
-
-    // Helper to extract all blocks/labels from a categorized toolbox into a single flyout list
-
-    const getFlattenedFlyoutContents = (toolbox: any) => {
-
-        if (!toolbox || !toolbox.contents) return [];
-
-        const flattened: any[] = [];
-
-        toolbox.contents.forEach((category: any, index: number) => {
-
-            if (category.kind === 'pictobloxCategory' || category.kind === 'pictoBloxCategory' || category.kind === 'category') {
-
-                // Add a label/header for the category
-
-                flattened.push({
-
-                    kind: 'label',
-
-                    text: category.name,
-
-                    'web-class': 'category-header'
-
-                });
-
-                // Add all blocks/buttons from this category
-
-                if (Array.isArray(category.contents)) {
-
-                    flattened.push(...category.contents);
-
-                } else if (category.custom && workspaceRef.current) {
-                    // Invoke registered toolbox category callback for dynamic content
-                    try {
-                        const callbackFn = workspaceRef.current.getToolboxCategoryCallback(category.custom);
-                        if (callbackFn) {
-                            const dynamicContents = callbackFn(workspaceRef.current);
-                            if (Array.isArray(dynamicContents)) {
-                                flattened.push(...dynamicContents);
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('[getFlattenedFlyoutContents] Custom callback failed for', category.custom, e);
-                    }
-                }
-
-                // Add some spacing
-
-                flattened.push({ kind: 'sep', gap: 24 });
-
-            }
-
-        });
-
-        return flattened;
-
-    };
 
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -1894,27 +1869,21 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-            // PERSIST FLYOUT: Ensure flyout stays open after workspace load/clear
+            const toolbox = workspaceRef.current.getToolbox() as any;
+
+            if (toolbox?.getSelectedItem?.()) {
+
+                workspaceRef.current.refreshToolboxSelection();
+
+            } else if (toolbox && typeof toolbox.selectItemByPosition === 'function') {
+
+                toolbox.selectItemByPosition(0);
+
+            }
 
             const flyout = workspaceRef.current.getFlyout() as any;
 
-            if (flyout) {
-
-                const contents = currentToolboxContentsRef.current;
-
-                if (contents && contents.length > 0) {
-
-                    console.log('[APP] Restoring flyout after workspace load');
-
-                    flyout.show(contents);
-
-                    // @ts-ignore
-
-                    if (flyout.reflowInternal_) flyout.reflowInternal_();
-
-                }
-
-            }
+            if (flyout?.reflowInternal_) flyout.reflowInternal_();
 
 
 
@@ -1959,6 +1928,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         saveCurrentSpriteWorkspace();
 
         setEditorMode(newMode);
+
+        if (newMode === 'upload') {
+
+            setWorkspaceTab('blocks');
+
+        }
 
 
 
@@ -3418,10 +3393,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             }
 
-            // Clear the module-level flyout contents to prevent interference with Junior mode
-
-            _continuousFlyoutContents = [];
-
         };
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3432,38 +3403,46 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-    // Update flyout contents when sprite changes
+    // Update toolbox and selected category contents when sprite or monitor state changes
 
     useEffect(() => {
-        if (workspaceRef.current && appMode === 'blocks') {
-            const toolbox = getCurrentToolbox();
-            const toolboxJson = JSON.stringify(toolbox);
+        if (!workspaceRef.current || appMode !== 'blocks') {
+            return;
+        }
 
-            // Recompute continuous flyout contents
-            const contents = getFlattenedFlyoutContents(toolbox);
-            setCurrentToolboxContents(contents);
-            currentToolboxContentsRef.current = contents;
-            _continuousFlyoutContents = contents; // Update module-level storage for prototype override
+        const nextToolboxConfig = getCurrentToolbox();
+        const nextToolboxJson = JSON.stringify(nextToolboxConfig);
+        const currentToolbox = workspaceRef.current.getToolbox() as any;
+        const selectedCategoryName = typeof currentToolbox?.getSelectedItem?.()?.getName === 'function'
+            ? currentToolbox.getSelectedItem().getName()
+            : null;
 
-            console.log('[APP] Updating flyout contents for sprite:', selectedSpriteId, '(', contents.length, 'items)');
+        if (nextToolboxJson !== lastToolboxJsonRef.current) {
+            console.log('[APP] Updating toolbox dynamically (Sprite:', selectedSpriteId, ')');
+            lastToolboxJsonRef.current = nextToolboxJson;
+            workspaceRef.current.updateToolbox(nextToolboxConfig);
+        }
 
-            // Update the toolbox sidebar (category icons) if the definition changed
-            if (toolboxJson !== lastToolboxJsonRef.current) {
-                console.log('[APP] Updating toolbox dynamically (Sprite:', selectedSpriteId, ')');
-                lastToolboxJsonRef.current = toolboxJson;
-                workspaceRef.current.updateToolbox(toolbox);
-            }
+        const refreshedToolbox = workspaceRef.current.getToolbox() as any;
+        const toolboxItems = typeof refreshedToolbox?.getToolboxItems === 'function'
+            ? refreshedToolbox.getToolboxItems().filter((item: any) => typeof item?.getName === 'function')
+            : [];
 
-            // Always ensure flyout is showing the latest contents
-            const flyout = workspaceRef.current.getFlyout() as any;
-            if (flyout) {
-                flyout.autoClose = false;
-                flyout.show(contents);
-                // Ensure flyout is properly laid out
-                if (flyout.reflowInternal_) flyout.reflowInternal_();
-                console.log('[APP] Flyout re-shown with', contents.length, 'items');
+        if (selectedCategoryName) {
+            const matchingItem = toolboxItems.find((item: any) => item.getName() === selectedCategoryName);
+            if (matchingItem && typeof refreshedToolbox?.setSelectedItem === 'function') {
+                refreshedToolbox.setSelectedItem(matchingItem);
             }
         }
+
+        if (!refreshedToolbox?.getSelectedItem?.() && typeof refreshedToolbox?.selectItemByPosition === 'function') {
+            refreshedToolbox.selectItemByPosition(0);
+        } else {
+            workspaceRef.current.refreshToolboxSelection();
+        }
+
+        const flyout = workspaceRef.current.getFlyout() as any;
+        if (flyout?.reflowInternal_) flyout.reflowInternal_();
     }, [selectedSpriteId, editorMode, appMode, getCurrentToolbox, variableMonitors, listMonitors, tableMonitors]);
 
 
@@ -3623,10 +3602,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         const flyout = blocksWorkspace.getFlyout() as any;
 
-                        const toolbox = (blocksWorkspace as any).getToolbox() as any;
-
-
-
                         if (flyout) {
 
                             flyout.autoClose = false;
@@ -3640,331 +3615,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 flyout.getWorkspace().setScale(FIXED_SCALE);
 
                             }
-
-
-
-                            // Initialize continuous flyout contents
-
-                            const initContents = getFlattenedFlyoutContents(getCurrentToolbox());
-
-                            currentToolboxContentsRef.current = initContents;
-
-                            _continuousFlyoutContents = initContents; // Update module-level storage
-
-
-
-                            // Force first show (prototype override will use _continuousFlyoutContents)
-
-                            flyout.show(initContents);
-
                         }
-
-
-
-                        // 2. TOOLBOX -> FLYOUT (Click to Scroll)
-
-                        if (toolbox && flyout) {
-
-                            const scrollFlyoutToCategory = (categoryName: string) => {
-
-                                const flyoutWs = flyout.getWorkspace();
-
-                                if (!flyoutWs) {
-
-                                    log.blockly('[ToolboxSync] Flyout workspace unavailable', { categoryName });
-
-                                    return;
-
-                                }
-
-
-
-                                window.requestAnimationFrame(() => {
-
-                                    if (flyout.reflowInternal_) flyout.reflowInternal_();
-
-
-
-                                    const metricsManager = typeof flyoutWs.getMetricsManager === 'function'
-
-                                        ? flyoutWs.getMetricsManager()
-
-                                        : null;
-
-                                    const scrollMetrics = metricsManager?.getScrollMetrics?.();
-
-                                    const viewMetrics = metricsManager?.getViewMetrics?.();
-
-                                    const currentScrollY = scrollMetrics && viewMetrics
-
-                                        ? viewMetrics.top - scrollMetrics.top
-
-                                        : 0;
-
-                                    const maxScrollY = scrollMetrics && viewMetrics
-
-                                        ? Math.max(scrollMetrics.height - viewMetrics.height, 0)
-
-                                        : Number.POSITIVE_INFINITY;
-
-                                    const flyoutSvg = typeof flyoutWs.getParentSvg === 'function'
-
-                                        ? flyoutWs.getParentSvg()
-
-                                        : null;
-
-                                    const flyoutSvgRect = flyoutSvg?.getBoundingClientRect?.();
-
-                                    const desiredTopOffsetPx = 12;
-
-
-
-                                    log.blockly('[ToolboxSync] Resolving category scroll target', {
-
-                                        categoryName,
-
-                                        currentScrollY,
-
-                                        maxScrollY,
-
-                                        flyoutItemCount: typeof flyout.getContents === 'function' ? flyout.getContents().length : 0
-
-                                    });
-
-
-
-                                    const scrollTargetIntoView = (targetSvg: SVGElement | null, targetInfo: Record<string, any>) => {
-
-                                        if (!targetSvg || !flyoutSvgRect) {
-
-                                            log.blockly('[ToolboxSync] Target or flyout SVG unavailable', {
-
-                                                categoryName,
-
-                                                ...targetInfo
-
-                                            });
-
-                                            return;
-
-                                        }
-
-
-
-                                        const targetRect = targetSvg.getBoundingClientRect();
-
-                                        const deltaY = targetRect.top - (flyoutSvgRect.top + desiredTopOffsetPx);
-
-                                        const nextScrollY = Math.min(
-
-                                            Math.max(currentScrollY + deltaY, 0),
-
-                                            maxScrollY
-
-                                        );
-
-
-
-                                        log.blockly('[ToolboxSync] Applying flyout scroll', {
-
-                                            categoryName,
-
-                                            deltaY,
-
-                                            currentScrollY,
-
-                                            nextScrollY,
-
-                                            ...targetInfo
-
-                                        });
-
-
-
-                                        if (flyoutWs.scrollbar?.setY) {
-
-                                            flyoutWs.scrollbar.setY(nextScrollY);
-
-                                            return;
-
-                                        }
-
-
-
-                                        if (flyoutWs.scrollbar?.set) {
-
-                                            flyoutWs.scrollbar.set(0, nextScrollY);
-
-                                            return;
-
-                                        }
-
-
-
-                                        log.blockly('[ToolboxSync] Flyout scrollbar unavailable for target scroll', {
-
-                                            categoryName,
-
-                                            nextScrollY,
-
-                                            ...targetInfo
-
-                                        });
-
-                                    };
-
-
-
-                                    const flyoutContents = typeof flyout.getContents === 'function'
-
-                                        ? flyout.getContents()
-
-                                        : [];
-
-
-
-                                    const categoryHeader = flyoutContents.find((item: any) => {
-
-                                        if (typeof item?.getType !== 'function' || item.getType() !== 'label') return false;
-
-                                        const element = item.getElement?.();
-
-                                        return element &&
-
-                                            typeof element.getButtonText === 'function' &&
-
-                                            element.getButtonText() === categoryName &&
-
-                                            element.info?.['web-class'] === 'category-header';
-
-                                    });
-
-
-
-                                    const headerElement = categoryHeader?.getElement?.();
-
-                                    const headerSvg = headerElement?.getSvgRoot?.() || null;
-
-                                    if (headerSvg) {
-
-                                        log.blockly('[ToolboxSync] Scrolling to category header', { categoryName });
-
-                                        scrollTargetIntoView(headerSvg, { targetType: 'category-header' });
-
-                                        return;
-
-                                    }
-
-
-
-                                    log.blockly('[ToolboxSync] Category header not found, using block fallback', { categoryName });
-
-
-
-                                    const blocks = flyoutWs.getTopBlocks(false);
-
-                                    const targetBlock = blocks.find((b: any) => {
-
-                                        const type = b.type;
-
-                                        const matches = (cat: string) => {
-
-                                            if (cat === 'Motion') return type.startsWith('motion_');
-
-                                            if (cat === 'Looks') return type.startsWith('looks_');
-
-                                            if (cat === 'Sound') return type.startsWith('sound_');
-
-                                            if (cat === 'Events') return type.startsWith('event_');
-
-                                            if (cat === 'Control') return type.startsWith('control_');
-
-                                            if (cat === 'Sensing') return type.startsWith('sensing_');
-
-                                            if (cat === 'Operators') return type.startsWith('operator_') || type.startsWith('arduino_math_');
-
-                                            if (cat === 'Variables') return type.startsWith('data_') || type.startsWith('variables_');
-
-                                            if (cat === 'My Blocks') return type.startsWith('procedures_');
-
-                                            if (cat === 'Arduino' || cat === 'ESP32') return type.startsWith('arduino_') || type.startsWith('esp32_');
-
-                                            return false;
-
-                                        };
-
-                                        return matches(categoryName);
-
-                                    });
-
-
-
-                                    if (!targetBlock) {
-
-                                        log.blockly('[ToolboxSync] No fallback block found for category', { categoryName });
-
-                                        return;
-
-                                    }
-
-
-
-                                    log.blockly('[ToolboxSync] Scrolling to fallback block', {
-
-                                        categoryName,
-
-                                        blockType: targetBlock.type
-
-                                    });
-
-                                    scrollTargetIntoView(targetBlock.getSvgRoot?.() || null, {
-
-                                        targetType: 'fallback-block',
-
-                                        blockType: targetBlock.type
-
-                                    });
-
-                                });
-
-                            };
-
-
-
-                            const originalSetSelectedItem = toolbox.setSelectedItem.bind(toolbox);
-
-                            toolbox.setSelectedItem = (newItem: any) => {
-
-                                originalSetSelectedItem(newItem);
-
-
-
-                                if (newItem && typeof newItem.getName === 'function') {
-
-                                    const categoryName = newItem.getName();
-
-                                    log.blockly('[ToolboxSync] Toolbox category selected', { categoryName });
-
-                                    scrollFlyoutToCategory(categoryName);
-
-                                }
-
-                            };
-
-                        }
-
-
-
-                        // 3. FLYOUT -> TOOLBOX (Scroll to Highlight) - DISABLED
-
-                        // Note: In continuous flyout mode, all blocks are visible, so automatic
-
-                        // category switching on scroll is unnecessary and disruptive.
-
-                        // Users can manually select categories in the toolbox if needed.
-
-
-
                         // 4. FLYOUT BLOCK PREVIEW (Click to Preview)
 
                         if (flyout && flyout.getWorkspace()) {
@@ -4017,8 +3668,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     // Register custom variable category callback
                     workspaceRef.current.registerToolboxCategoryCallback('LEAP_VARIABLES', (ws: any) => {
                         const contents: any[] = [];
-                        
-                        // 1. Scalar Variables Headers
+
+                        contents.push(createFlyoutCategoryLabel('Variables'));
+                        contents.push(createFlyoutSectionLabel('Variables', 'category-subheader-variables'));
                         contents.push({
                             kind: 'button',
                             text: 'Make a Variable',
@@ -4084,7 +3736,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             });
                         }
 
-                        // 2. Lists
+                        contents.push({ kind: 'sep', gap: 20 });
+                        contents.push(createFlyoutSectionLabel('Lists', 'category-subheader-lists'));
                         contents.push({
                             kind: 'button',
                             text: 'Make a List',
@@ -4137,7 +3790,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             });
                         }
 
-                        // 3. Tables
+                        contents.push({ kind: 'sep', gap: 20 });
+                        contents.push(createFlyoutSectionLabel('Tables', 'category-subheader-tables'));
                         contents.push({
                             kind: 'button',
                             text: 'Make a Table',
@@ -4200,6 +3854,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     // Register LEAP_MYBLOCKS custom category callback
                     workspaceRef.current.registerToolboxCategoryCallback('LEAP_MYBLOCKS', (ws: any) => {
                         const contents: any[] = [];
+                        contents.push(createFlyoutCategoryLabel('My Blocks'));
+                        contents.push(createFlyoutSectionLabel('Custom Blocks', 'category-subheader-myblocks'));
                         contents.push({
                             kind: 'button',
                             text: 'Make a Block',
@@ -4223,6 +3879,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             }
                         });
 
+                        return contents;
+                    });
+
+                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_MOREBLOCKS', () => {
+                        const contents: any[] = [];
+                        contents.push(createFlyoutCategoryLabel(MORE_BLOCKS_CATEGORY_NAME));
+                        contents.push(createFlyoutSectionLabel('Reserved for future use', 'category-subheader-moreblocks'));
+                        contents.push({
+                            kind: 'label',
+                            text: 'Future blocks will appear here',
+                            'web-class': 'category-subheader category-subheader-moreblocks-note'
+                        });
                         return contents;
                     });
 
@@ -4920,7 +4588,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         <>
 
-                            <div ref={blocklyDiv} className={workspaceTab !== 'blocks' ? 'hide-flyout' : ''} style={styles.blockly} />
+                            <div
+                                ref={blocklyDiv}
+                                className={editorMode === 'stage' && workspaceTab !== 'blocks' ? 'hide-flyout' : ''}
+                                style={styles.blockly}
+                            />
 
                             <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={undefined} style={undefined} />
 

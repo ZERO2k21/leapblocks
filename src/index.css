@@ -17,6 +17,7 @@
   --operators-color: #22C55E;
   --variables-color: #F97316;
   --myblocks-color: #EC4899;
+  --moreblocks-color: #94A3B8;
   --hardware-color: #10B981;
   --bg-primary: #F8FAFC;
   --border-subtle: #E2E8F0;
@@ -43,11 +44,33 @@ body,
 .blocklyToolboxDiv {
   background-color: #ffffff !important;
   border-right: 1px solid var(--border-subtle) !important;
-  padding: 12px 0 !important;
-  width: 90px !important;
+  padding: 10px 0 12px !important;
+  width: 78px !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02) !important;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f8fafc;
+  scrollbar-gutter: stable;
+}
+
+.blocklyToolboxDiv::-webkit-scrollbar {
+  width: 8px;
+}
+
+.blocklyToolboxDiv::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 999px;
+}
+
+.blocklyToolboxDiv::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #cbd5e1, #94a3b8);
+  border-radius: 999px;
+  border: 2px solid #f8fafc;
+}
+
+.blocklyToolboxDiv::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #94a3b8, #64748b);
 }
 
 /* Each category row - MORE vertical spacing */
@@ -56,9 +79,9 @@ body,
   flex-direction: column !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  padding: 4px 4px 12px 4px !important;
-  margin: 0 4px 4px 4px !important;
-  min-height: 55px !important;
+  padding: 4px 3px 10px 3px !important;
+  margin: 0 2px 2px 2px !important;
+  min-height: 48px !important;
   border-radius: 8px !important;
   cursor: pointer !important;
   transition: background-color 0.15s ease !important;
@@ -94,15 +117,16 @@ body,
 
 /* Labels below icons */
 .blocklyToolboxCategoryLabel {
-  font-size: 11px !important;
+  font-size: 10px !important;
   font-weight: 600 !important;
   color: #575E75 !important;
   text-align: center !important;
   line-height: 1.2 !important;
-  white-space: nowrap !important;
+  white-space: normal !important;
   overflow: visible !important;
-  max-width: 76px !important;
-  margin-top: 6px !important;
+  overflow-wrap: anywhere !important;
+  max-width: 64px !important;
+  margin-top: 4px !important;
   display: block !important;
 }
 
@@ -242,17 +266,17 @@ body,
 /* Create circular icon before each category label */
 .blocklyToolboxCategory::before {
   content: '';
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  margin-bottom: 6px;
+  font-size: 16px;
+  margin-bottom: 4px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  background-size: 26px;
+  background-size: 18px;
   background-repeat: no-repeat;
   background-position: center;
 }
@@ -330,6 +354,13 @@ body,
   content: '🧩';
 }
 
+/* More Blocks - Slate placeholder */
+.blocklyToolboxCategory[aria-label*="More Blocks"]::before,
+.blocklyToolboxCategory[aria-label*="more blocks"]::before {
+  background-color: var(--moreblocks-color);
+  content: '➕';
+}
+
 /* Hardware - Teal */
 .blocklyToolboxCategory[aria-label*="Hardware"]::before,
 .blocklyToolboxCategory[aria-label*="hardware"]::before,
@@ -351,6 +382,35 @@ body,
   fill: rgba(249, 249, 249, 0.6) !important;
   stroke: var(--border-subtle) !important;
   stroke-width: 0.5px !important;
+}
+
+.blocklyFlyoutLabelText {
+  fill: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase;
+}
+
+.blocklyFlyoutLabel.category-header .blocklyFlyoutLabelBackground {
+  opacity: 1 !important;
+  fill: #eef2ff !important;
+}
+
+.blocklyFlyoutLabel.category-header .blocklyFlyoutLabelText {
+  fill: #0f172a !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+}
+
+.blocklyFlyoutLabel.category-subheader .blocklyFlyoutLabelBackground {
+  opacity: 0 !important;
+}
+
+.blocklyFlyoutLabel.category-subheader .blocklyFlyoutLabelText {
+  fill: #94a3b8 !important;
+  font-size: 10px !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
