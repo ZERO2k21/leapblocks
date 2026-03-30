@@ -1,8 +1,8 @@
 import { BrowserWindow } from 'electron';
-// Use __non_webpack_require__ to bypass webpack bundling
-declare const __non_webpack_require__: typeof require;
-const { SerialPort } = __non_webpack_require__('serialport');
-const { ReadlineParser } = __non_webpack_require__('@serialport/parser-readline');
+// Use standard require for serialport loaded as a native module
+const { SerialPort } = require('serialport');
+const { ReadlineParser } = require('@serialport/parser-readline');
+
 
 export class SerialManager {
     private activePort: any = null;

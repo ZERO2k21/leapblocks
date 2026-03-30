@@ -18,6 +18,8 @@ const log = (category: string, msg: string, data?: any) => {
   console.log(`[${timestamp}] [MAIN:${category}] ${msg}`, data ?? '');
 };
 
+console.log('[MAIN] Starting LeapBlocks main process...');
+
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
@@ -30,7 +32,7 @@ const createWindow = (): void => {
     minWidth: 1000,
     title: 'LeetBlocks - Block Programming IDE',
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
     },
@@ -197,21 +199,17 @@ ipcMain.handle('remove-background', async (event, imagePath: string) => {
   });
 });
 
-// App Inventor Handlers
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-declare const __non_webpack_require__: typeof require;
-
 ipcMain.handle('build-apk', async (event, appState) => {
-  // Use __non_webpack_require__ to bypass Webpack's module bundling.
-  // Webpack replaces dynamic require() with webpackEmptyContext which always fails.
+  // In Vite/Electron-Vite, we can just use regular require for our external build script
   const buildApkPath = path.join(app.getAppPath(), 'electron', 'buildApk.js');
   let buildApk: any;
   try {
-    buildApk = __non_webpack_require__(buildApkPath);
+    buildApk = require(buildApkPath);
   } catch (e) {
     console.error('Could not load buildApk from', buildApkPath, e);
     return { success: false, error: `Build script not found at ${buildApkPath}` };
   }
+
   
   const logCallback = (msg: string) => {
     try {

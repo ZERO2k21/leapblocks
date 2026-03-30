@@ -617,18 +617,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         listMonitorsRef.current = listMonitors;
     }, [listMonitors]);
 
-    const handleMonitorPositionChange = useCallback((type: 'variable'|'list'|'table', id: string, x: number, y: number) => {
+    const handleMonitorPositionChange = useCallback((type: 'variable' | 'list' | 'table', id: string, x: number, y: number) => {
         if (type === 'variable') setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
         if (type === 'list') setListMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
         if (type === 'table') setTableMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
     }, []);
 
-    const handleMonitorResize = useCallback((type: 'list'|'table', id: string, width: number, height: number) => {
+    const handleMonitorResize = useCallback((type: 'list' | 'table', id: string, width: number, height: number) => {
         if (type === 'list') setListMonitors(prev => prev.map(m => m.id === id ? { ...m, width, height } : m));
         if (type === 'table') setTableMonitors(prev => prev.map(m => m.id === id ? { ...m, width, height } : m));
     }, []);
 
-    const handleMonitorBringToFront = useCallback((type: 'variable'|'list'|'table', id: string) => {
+    const handleMonitorBringToFront = useCallback((type: 'variable' | 'list' | 'table', id: string) => {
         const vMax = Math.max(100, ...variableMonitors.map(m => m.zIndex || 100));
         const lMax = Math.max(100, ...listMonitors.map(m => m.zIndex || 100));
         const tMax = Math.max(100, ...tableMonitors.map(m => m.zIndex || 100));
@@ -651,7 +651,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             });
         };
         animationVM.onHideVariable = (name) => setVariableMonitors(prev => prev.map(m => m.name === name ? { ...m, visible: false } : m));
-        
+
         animationVM.onShowList = (name) => {
             setListMonitors(prev => {
                 const existing = prev.find(m => m.name === name);
@@ -660,7 +660,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             });
         };
         animationVM.onHideList = (name) => setListMonitors(prev => prev.map(m => m.name === name ? { ...m, visible: false } : m));
-        
+
         animationVM.onShowTable = (name) => {
             setTableMonitors(prev => {
                 const existing = prev.find(m => m.name === name);
@@ -889,7 +889,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const handleCreateBlock = (block: { name: string; arguments: BlockArgument[]; warp: boolean }) => {
         const ws = workspaceRef.current;
         if (!ws) return;
-        
+
         Blockly.Events.setGroup(true);
         try {
             // Scratch-style procedure codes: %s for string/number, %b for boolean
@@ -923,12 +923,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         </statement>
                     </block>
                 </xml>`;
-            
+
             const xmlDom = Blockly.utils.xml.textToDom(xmlText);
             Blockly.Xml.domToWorkspace(xmlDom, ws);
-            
+
             addLog(`Created custom block: ${block.name}`);
-        } catch(e) {
+        } catch (e) {
             console.error('Failed to create custom block', e);
             // Fallback for non-scratch renderers
             try {
@@ -942,7 +942,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 const xmlText = `<xml><block type="procedures_defnoreturn" x="50" y="50"><field name="NAME">${block.name}</field>${mutationXml}</block></xml>`;
                 const xmlDom = Blockly.utils.xml.textToDom(xmlText);
                 Blockly.Xml.domToWorkspace(xmlDom, ws);
-            } catch(e2) {}
+            } catch (e2) { }
         } finally {
             Blockly.Events.setGroup(false);
         }
@@ -950,9 +950,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // Monitor callback handlers
     const handleShowVariable = useCallback((name: string) => {
-        setVariableMonitors(prev => 
-            prev.map(monitor => 
-                monitor.name === name 
+        setVariableMonitors(prev =>
+            prev.map(monitor =>
+                monitor.name === name
                     ? { ...monitor, visible: true }
                     : monitor
             )
@@ -960,9 +960,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     }, []);
 
     const handleHideVariable = useCallback((name: string) => {
-        setVariableMonitors(prev => 
-            prev.map(monitor => 
-                monitor.name === name 
+        setVariableMonitors(prev =>
+            prev.map(monitor =>
+                monitor.name === name
                     ? { ...monitor, visible: false }
                     : monitor
             )
@@ -970,9 +970,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     }, []);
 
     const handleShowList = useCallback((name: string) => {
-        setListMonitors(prev => 
-            prev.map(monitor => 
-                monitor.name === name 
+        setListMonitors(prev =>
+            prev.map(monitor =>
+                monitor.name === name
                     ? { ...monitor, visible: true }
                     : monitor
             )
@@ -980,9 +980,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     }, []);
 
     const handleHideList = useCallback((name: string) => {
-        setListMonitors(prev => 
-            prev.map(monitor => 
-                monitor.name === name 
+        setListMonitors(prev =>
+            prev.map(monitor =>
+                monitor.name === name
                     ? { ...monitor, visible: false }
                     : monitor
             )
@@ -990,9 +990,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     }, []);
 
     const handleShowTable = useCallback((name: string) => {
-        setTableMonitors(prev => 
-            prev.map(monitor => 
-                monitor.name === name 
+        setTableMonitors(prev =>
+            prev.map(monitor =>
+                monitor.name === name
                     ? { ...monitor, visible: true }
                     : monitor
             )
@@ -1000,9 +1000,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     }, []);
 
     const handleHideTable = useCallback((name: string) => {
-        setTableMonitors(prev => 
-            prev.map(monitor => 
-                monitor.name === name 
+        setTableMonitors(prev =>
+            prev.map(monitor =>
+                monitor.name === name
                     ? { ...monitor, visible: false }
                     : monitor
             )
@@ -1559,7 +1559,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             if (!block.type.startsWith('arduino_')) {
                 console.log(`[APP] Running stack with ScratchRuntime for sprite ${selectedSpriteId}`);
                 setIsRunning(true);
-                
+
                 // Convert Blockly block to Scratch-like structure
                 const scratchBlock = (scratchRuntime as any).flattenBlock(Blockly.serialization.blocks.save(block));
                 if (scratchBlock) {
@@ -2773,14 +2773,14 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             if (allScripts.length > 0 || spriteWorkspacesRef.current.size > 0) {
                 setCompiledScripts(allScripts);
                 setIsRunning(true);
-                
+
                 // Start Scratch Runtime
                 scratchRuntime.loadProject(spriteWorkspacesRef.current);
                 scratchRuntime.triggerFlag();
-                
+
                 // Legacy AnimationVM support
                 animationVM.triggerFlag(allScripts);
-                
+
                 addLog(`Started animation with ScratchRuntime`);
             } else {
 
@@ -3360,7 +3360,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         };
 
-        
+
 
         // Monitor callbacks (unified for both VMs)
         const commonCallbacks = {
@@ -3493,7 +3493,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             name: 'leapblocks',
 
-                             base: Blockly.Themes.Classic,
+                            base: Blockly.Themes.Classic,
 
                             componentStyles: {
 
@@ -3574,7 +3574,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     // 4. Hook FieldCheckbox to toggle visibility
                     const originalCheckboxSetValue = Blockly.FieldCheckbox.prototype.setValue;
-                    Blockly.FieldCheckbox.prototype.setValue = function(newValue) {
+                    Blockly.FieldCheckbox.prototype.setValue = function (newValue) {
                         originalCheckboxSetValue.call(this, newValue);
                         const block = this.getSourceBlock();
                         if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox')) {
@@ -3582,7 +3582,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             const nameField = type === 'variable' ? 'VARIABLE' : 'LIST';
                             const name = block.getFieldValue(nameField);
                             const checked = this.getValue() === 'TRUE';
-                            
+
                             // Check if current visibility matches checkbox to avoid loops
                             const currentVisible = (window as any).getVariableVisibility?.(name, type);
                             if (checked !== currentVisible) {
@@ -3687,7 +3687,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         scalars.forEach((v: any) => {
                             const monitor = variableMonitors.find(m => m.name === v.getName());
                             const isVisible = monitor ? monitor.visible : false;
-                            
+
                             contents.push({
                                 kind: 'block',
                                 type: 'variable_reporter_checkbox',
@@ -3748,7 +3748,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         lists.forEach((v: any) => {
                             const monitor = listMonitors.find(m => m.name === v.getName());
                             const isVisible = monitor ? monitor.visible : false;
-                            
+
                             contents.push({
                                 kind: 'block',
                                 type: 'list_reporter_checkbox',
@@ -3802,7 +3802,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         tables.forEach((v: any) => {
                             const monitor = tableMonitors.find(m => m.name === v.getName());
                             const isVisible = monitor ? monitor.visible : false;
-                            
+
                             contents.push({
                                 kind: 'block',
                                 type: 'list_reporter_checkbox', // Re-using list_reporter_checkbox for tables too for consistency
@@ -3933,9 +3933,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         if (ws) {
                             const variable = ws.getVariableById(variableId);
                             if (variable) {
-                                setVariableMonitors(prev => 
-                                    prev.map(monitor => 
-                                        monitor.name === variable.getName() 
+                                setVariableMonitors(prev =>
+                                    prev.map(monitor =>
+                                        monitor.name === variable.getName()
                                             ? { ...monitor, visible: !monitor.visible }
                                             : monitor
                                     )
@@ -3950,9 +3950,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         if (ws) {
                             const list = ws.getVariableById(listId);
                             if (list) {
-                                setListMonitors(prev => 
-                                    prev.map(monitor => 
-                                        monitor.name === list.getName() 
+                                setListMonitors(prev =>
+                                    prev.map(monitor =>
+                                        monitor.name === list.getName()
                                             ? { ...monitor, visible: !monitor.visible }
                                             : monitor
                                     )
@@ -3967,9 +3967,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         if (ws) {
                             const table = ws.getVariableById(tableId);
                             if (table) {
-                                setTableMonitors(prev => 
-                                    prev.map(monitor => 
-                                        monitor.name === table.getName() 
+                                setTableMonitors(prev =>
+                                    prev.map(monitor =>
+                                        monitor.name === table.getName()
                                             ? { ...monitor, visible: !monitor.visible }
                                             : monitor
                                     )
