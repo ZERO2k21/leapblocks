@@ -3,6 +3,9 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Blockly from '@blockly-runtime';
 
 import './styles/scratch-blocks.css'; // Import Scratch-style blocks CSS
+import './junior/styles/juniorBlocks.css'; 
+import './junior/styles/juniorLooksBlocks.css';
+
 
 import { arduinoBlocks, arduinoToolbox } from './blocks/arduino-blocks';
 
@@ -85,7 +88,12 @@ import TableMonitor from './components/TableMonitor';
 
 
 
+// Global initialization guards to prevent duplicate block registration and recursive prototype patching
+let blocksInitialized = false;
+let originalCheckboxSetValue: any = null;
+
 // ═══════════════════════════════════════════════════════════════════════════
+
 
 // LOGGING UTILITY
 
@@ -3478,8 +3486,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     // Inject Blockly
 
                     const blocksWorkspace = Blockly.inject(blocklyDiv.current, {
-
+                        renderer: 'leap',
                         toolbox: getCurrentToolbox(),
+
 
                         grid: { spacing: 20, length: 3, colour: '#e8e8e8', snap: true },
 
@@ -3529,68 +3538,76 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     workspaceRef.current = blocksWorkspace;
 
-                    // 1. Define custom blocks for reporter checkboxes
-                    Blockly.common.defineBlocksWithJsonArray([
-                        {
-                            "type": "variable_reporter_checkbox",
-                            "message0": "%1 %2",
-                            "args0": [
-                                { "type": "field_checkbox", "name": "CHECK", "checked": false },
-                                { "type": "field_label", "name": "VARIABLE", "text": "variable", "web-class": "variable-checkbox" }
-                            ],
-                            "output": "Number",
-                            "colour": "#FF8C1A",
-                            "tooltip": "Toggle variable visibility",
-                            "web-class": "variable-checkbox-container"
-                        },
-                        {
-                            "type": "list_reporter_checkbox",
-                            "message0": "%1 %2",
-                            "args0": [
-                                { "type": "field_checkbox", "name": "CHECK", "checked": false },
-                                { "type": "field_label", "name": "LIST", "text": "list", "web-class": "list-checkbox" }
-                            ],
-                            "output": "String",
-                            "colour": "#FF8C1A",
-                            "tooltip": "Toggle list visibility",
-                            "web-class": "list-checkbox-container"
-                        }
-                    ]);
-
-                    // 2. Define custom generators for the reporter blocks
-                    const javascriptGenerator = (Blockly as any).javascriptGenerator || (Blockly as any).JavaScript;
-                    if (javascriptGenerator) {
-                        javascriptGenerator['variable_reporter_checkbox'] = (block: any) => {
-                            const varName = block.getFieldValue('VARIABLE');
-                            return [varName, (Blockly as any).javascriptGenerator.ORDER_ATOMIC];
-                        };
-                        javascriptGenerator['list_reporter_checkbox'] = (block: any) => {
-                            const listName = block.getFieldValue('LIST');
-                            return [listName, (Blockly as any).javascriptGenerator.ORDER_ATOMIC];
-                        };
-                    }
-
-                    // 3. Register Toolbox Category Callbacks handled later in initialization to avoid duplication
-
-                    // 4. Hook FieldCheckbox to toggle visibility
-                    const originalCheckboxSetValue = Blockly.FieldCheckbox.prototype.setValue;
-                    Blockly.FieldCheckbox.prototype.setValue = function (newValue) {
-                        originalCheckboxSetValue.call(this, newValue);
-                        const block = this.getSourceBlock();
-                        if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox')) {
-                            const type = block.type === 'variable_reporter_checkbox' ? 'variable' : 'list';
-                            const nameField = type === 'variable' ? 'VARIABLE' : 'LIST';
-                            const name = block.getFieldValue(nameField);
-                            const checked = this.getValue() === 'TRUE';
-
-                            // Check if current visibility matches checkbox to avoid loops
-                            const currentVisible = (window as any).getVariableVisibility?.(name, type);
-                            if (checked !== currentVisible) {
-                                (window as any).onToggleVisibility?.(name, type);
+                    // Initialize custom blocks and field overrides only once globally
+                    if (!blocksInitialized) {
+                        // 1. Define custom blocks for reporter checkboxes
+                        Blockly.common.defineBlocksWithJsonArray([
+                            {
+                                "type": "variable_reporter_checkbox",
+                                "message0": "%1 %2",
+                                "args0": [
+                                    { "type": "field_checkbox", "name": "CHECK", "checked": false },
+                                    { "type": "field_label", "name": "VARIABLE", "text": "variable", "web-class": "variable-checkbox" }
+                                ],
+                                "output": "Number",
+                                "colour": "#FF8C1A",
+                                "tooltip": "Toggle variable visibility",
+                                "web-class": "variable-checkbox-container"
+                            },
+                            {
+                                "type": "list_reporter_checkbox",
+                                "message0": "%1 %2",
+                                "args0": [
+                                    { "type": "field_checkbox", "name": "CHECK", "checked": false },
+                                    { "type": "field_label", "name": "LIST", "text": "list", "web-class": "list-checkbox" }
+                                ],
+                                "output": "String",
+                                "colour": "#FF8C1A",
+                                "tooltip": "Toggle list visibility",
+                                "web-class": "list-checkbox-container"
                             }
+                        ]);
+
+                        // 2. Define custom generators for the reporter blocks
+                        const javascriptGenerator = (Blockly as any).javascriptGenerator || (Blockly as any).JavaScript;
+                        if (javascriptGenerator) {
+                            javascriptGenerator['variable_reporter_checkbox'] = (block: any) => {
+                                const varName = block.getFieldValue('VARIABLE');
+                                return [varName, (Blockly as any).javascriptGenerator.ORDER_ATOMIC];
+                            };
+                            javascriptGenerator['list_reporter_checkbox'] = (block: any) => {
+                                const listName = block.getFieldValue('LIST');
+                                return [listName, (Blockly as any).javascriptGenerator.ORDER_ATOMIC];
+                            };
                         }
-                        return null;
-                    };
+
+                        // 4. Hook FieldCheckbox to toggle visibility
+                        // We capture the original setValue only once to avoid recursive wrapping
+                        originalCheckboxSetValue = Blockly.FieldCheckbox.prototype.setValue;
+                        Blockly.FieldCheckbox.prototype.setValue = function (newValue) {
+                            // Call original logic if it exists
+                            if (originalCheckboxSetValue) {
+                                originalCheckboxSetValue.call(this, newValue);
+                            }
+                            
+                            const block = this.getSourceBlock();
+                            if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox')) {
+                                const type = block.type === 'variable_reporter_checkbox' ? 'variable' : 'list';
+                                const nameField = type === 'variable' ? 'VARIABLE' : 'LIST';
+                                const name = block.getFieldValue(nameField);
+                                const checked = this.getValue() === 'TRUE';
+
+                                // Check if current visibility matches checkbox to avoid loops
+                                const currentVisible = (window as any).getVariableVisibility?.(name, type);
+                                if (checked !== currentVisible) {
+                                    (window as any).onToggleVisibility?.(name, type);
+                                }
+                            }
+                            return null;
+                        };
+
+                        blocksInitialized = true;
+                    }
 
 
 
