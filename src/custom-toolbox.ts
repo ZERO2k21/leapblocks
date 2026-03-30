@@ -75,6 +75,7 @@ export function registerPictoBloxCategory(): void {
                 'sound': '🔊',
                 'sensing': '🔍',
                 'my blocks': '🧩',
+                'more blocks': '➕',
                 // Hardware category (Upload mode)
                 'hardware': '🔧',
             };
