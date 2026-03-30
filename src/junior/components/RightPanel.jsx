@@ -44,7 +44,7 @@ export default function RightPanel({
                 {/* Y-Axis Labels */}
                 {showGrid && (
                     <div style={{ width: "22px", display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontSize: "9px", color: "#999" }}>
-                        {[15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(n => {
+                        {Array.from({ length: 23 }, (_, i) => 23 - i).map(n => {
                             const isHighlighted = isDraggingSprite && spriteGridY !== null && Math.round(spriteGridY) === n;
                             return (
                                 <span key={n} style={{
@@ -81,7 +81,7 @@ export default function RightPanel({
                                 width: "100%",
                                 height: "100%",
                                 backgroundImage: "linear-gradient(to right, #d5d5d5 1px, transparent 1px), linear-gradient(to bottom, #d5d5d5 1px, transparent 1px)",
-                                backgroundSize: "calc(100% / 20) calc(100% / 15)",
+                                backgroundSize: "calc(100% / 20) calc(100% / 20)",
                                 pointerEvents: "none",
                                 zIndex: 2,
                             }} />
@@ -156,7 +156,7 @@ export default function RightPanel({
                                 {/* Horizontal line */}
                                 <div style={{
                                     position: "absolute",
-                                    top: `${((15 - spriteGridY) / 15) * 100}%`,
+                                    top: `${((20 - spriteGridY) / 20) * 100}%`,
                                     left: 0,
                                     width: "100%",
                                     height: "1px",
@@ -168,7 +168,7 @@ export default function RightPanel({
                                 <div style={{
                                     position: "absolute",
                                     left: `${(spriteGridX / 20) * 100}%`,
-                                    top: `${((15 - spriteGridY) / 15) * 100}%`,
+                                    top: `${((20 - spriteGridY) / 20) * 100}%`,
                                     transform: "translate(8px, -28px)",
                                     background: "#7B4FC4",
                                     color: "white",
