@@ -3,7 +3,7 @@
 // Visual block-based programming
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import React, { useEffect, useRef, useMemo, useCallback } from 'react';
-import type * as Blockly from '@blockly-runtime';
+import type * as BlocklyType from '@blockly-runtime';
 import type { AFProject } from '../../AppForgeStudio';
 import componentsData from '../../data/components.json';
 import { getToolboxConfig } from './BlockToolbox';
