@@ -1351,6 +1351,36 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             }
 
+            case 'motion_move_left': {
+
+                const steps = Math.abs(Number(block.getFieldValue('STEPS')) || 10);
+
+                activeSprite.setX(activeSprite.x - steps);
+
+                break;
+
+            }
+
+            case 'motion_move_up': {
+
+                const steps = Math.abs(Number(block.getFieldValue('STEPS')) || 10);
+
+                activeSprite.setY(activeSprite.y + steps);
+
+                break;
+
+            }
+
+            case 'motion_move_down': {
+
+                const steps = Math.abs(Number(block.getFieldValue('STEPS')) || 10);
+
+                activeSprite.setY(activeSprite.y - steps);
+
+                break;
+
+            }
+
             case 'motion_turn_right': {
 
                 const deg = Number(block.getFieldValue('DEGREES')) || 15;

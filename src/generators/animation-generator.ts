@@ -416,6 +416,15 @@ export class AnimationCompiler {
             case 'motion_move_steps':
                 step = { type: 'move_steps', steps: Number(block.getFieldValue('STEPS')) };
                 break;
+            case 'motion_move_left':
+                step = { type: 'change_x', dx: -Math.abs(Number(block.getFieldValue('STEPS'))) };
+                break;
+            case 'motion_move_up':
+                step = { type: 'change_y', dy: Math.abs(Number(block.getFieldValue('STEPS'))) };
+                break;
+            case 'motion_move_down':
+                step = { type: 'change_y', dy: -Math.abs(Number(block.getFieldValue('STEPS'))) };
+                break;
             case 'motion_turn_right':
                 step = { type: 'turn_right', degrees: Number(block.getFieldValue('DEGREES')) };
                 break;
