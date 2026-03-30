@@ -125,11 +125,11 @@ export function useJuniorWindowActions({
         // Use a helper to always get the current ID from ref or window override
         const getCurrentID = () => window.activeSpriteId || activeSpriteIdRef.current || activeSpriteId;
 
-        window.getLeapProjectData = () => ({ 
-            scenes, 
-            currentSceneId, 
-            activeSpriteId: getCurrentID(), 
-            sprites 
+        window.getLeapProjectData = () => ({
+            scenes,
+            currentSceneId,
+            activeSpriteId: getCurrentID(),
+            sprites
         });
 
         window.updateSprite = (id, updates) => spriteActions.update(id || getCurrentID(), updates);

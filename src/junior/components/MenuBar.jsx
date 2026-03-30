@@ -362,7 +362,7 @@ export default function MenuBar({
                         lineHeight: 1.2,
                         fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
                     }}>
-                        LEAPBLOCKS
+                        LEAPLABS
                     </span>
                     <span style={{
                         color: 'rgba(255,255,255,0.8)',
@@ -372,7 +372,7 @@ export default function MenuBar({
                         lineHeight: 1.2,
                         fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
                     }}>
-                        Intermediate
+                        LEAPLAB CIRCUITS
                     </span>
                 </div>
             </div>

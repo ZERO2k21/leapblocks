@@ -405,21 +405,21 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
                 return w(`${pin}<rect x="8" y="38" width="32" height="${bar}" rx="1.5" fill="white" opacity=".88"/>`);
             if (zone === 'LEFT')
                 return w(
-                    `<polygon points="5,${c} 16,${c-arrH} 16,${c+arrH}" fill="white" opacity=".88"/>` +
-                    `<rect x="16" y="${c-bar/2}" width="7" height="${bar}" fill="white" opacity=".88"/>` +
+                    `<polygon points="5,${c} 16,${c - arrH} 16,${c + arrH}" fill="white" opacity=".88"/>` +
+                    `<rect x="16" y="${c - bar / 2}" width="7" height="${bar}" fill="white" opacity=".88"/>` +
                     pin
                 );
             if (zone === 'RIGHT')
                 return w(
                     pin +
-                    `<rect x="25" y="${c-bar/2}" width="7" height="${bar}" fill="white" opacity=".88"/>` +
-                    `<polygon points="43,${c} 32,${c-arrH} 32,${c+arrH}" fill="white" opacity=".88"/>`
+                    `<rect x="25" y="${c - bar / 2}" width="7" height="${bar}" fill="white" opacity=".88"/>` +
+                    `<polygon points="43,${c} 32,${c - arrH} 32,${c + arrH}" fill="white" opacity=".88"/>`
                 );
             return w(pin); // CENTER — plain pin
         }
 
         getText_() {
-            return { TOP:'↑', LEFT:'←', CENTER:'?', RIGHT:'→', BOTTOM:'↓' }[this.value_] || '?';
+            return { TOP: '↑', LEFT: '←', CENTER: '?', RIGHT: '→', BOTTOM: '↓' }[this.value_] || '?';
         }
 
         showEditor_() {
@@ -430,7 +430,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
                 'gap:5px;padding:10px;background:#3a82c4;border-radius:14px;' +
                 'box-shadow:0 8px 28px rgba(0,0,0,.35)';
 
-            ['', 'TOP', '', 'LEFT', 'CENTER', 'RIGHT', '', 'BOTTOM', ''].forEach(function(zone) {
+            ['', 'TOP', '', 'LEFT', 'CENTER', 'RIGHT', '', 'BOTTOM', ''].forEach(function (zone) {
                 const cell = document.createElement('div');
                 if (!zone) {
                     cell.style.cssText = 'width:60px;height:60px';
@@ -447,15 +447,15 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
 
                 cell.innerHTML = self._svg(zone);
 
-                cell.onmouseenter = function() {
+                cell.onmouseenter = function () {
                     cell.style.background = '#2570bb';
                     cell.style.transform = 'scale(1.08)';
                 };
-                cell.onmouseleave = function() {
+                cell.onmouseleave = function () {
                     cell.style.background = zone === self.value_ ? '#1a5899' : '#4a8fd6';
                     cell.style.transform = 'scale(1)';
                 };
-                cell.onmousedown = function(e) {
+                cell.onmousedown = function (e) {
                     e.preventDefault();
                     const old = self.value_;
                     self.setValue(zone);
@@ -473,13 +473,13 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
 
             Blockly.DropDownDiv.getContentDiv().appendChild(grid);
             Blockly.DropDownDiv.setColour('#3a82c4', '#2a6aad');
-            Blockly.DropDownDiv.showPositionedByField(this, function(){});
+            Blockly.DropDownDiv.showPositionedByField(this, function () { });
         }
 
-        getValue()         { return this.value_ || 'CENTER'; }
-        setValue(v)        { if (['TOP','LEFT','CENTER','RIGHT','BOTTOM'].includes(v)) super.setValue(v); }
-        saveState()        { return this.getValue(); }
-        loadState(s)       { this.setValue(s); }
+        getValue() { return this.value_ || 'CENTER'; }
+        setValue(v) { if (['TOP', 'LEFT', 'CENTER', 'RIGHT', 'BOTTOM'].includes(v)) super.setValue(v); }
+        saveState() { return this.getValue(); }
+        loadState(s) { this.setValue(s); }
     }
 
     Blockly.fieldRegistry.register('field_direction_picker', FieldDirectionPicker);
@@ -502,10 +502,10 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
         const dir = block.getFieldValue('DIRECTION') || 'CENTER';
         // Grid bounds: x 1-20, y 1-15 (y=15 is topmost, y=1 is bottommost)
         const zones = {
-            TOP:    [1, 20, 11, 15],
-            LEFT:   [1, 6, 1, 15],
+            TOP: [1, 20, 11, 15],
+            LEFT: [1, 6, 1, 15],
             CENTER: [7, 14, 5, 11],
-            RIGHT:  [15, 20, 1, 15],
+            RIGHT: [15, 20, 1, 15],
             BOTTOM: [1, 20, 1, 5],
         };
         const [xMin, xMax, yMin, yMax] = zones[dir];

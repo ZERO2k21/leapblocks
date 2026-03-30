@@ -688,7 +688,7 @@ export default function JuniorApp({ onBack }) {
             />
 
             {currentTutorial && (
-                <JuniorTutorialOverlay 
+                <JuniorTutorialOverlay
                     tutorial={currentTutorial}
                     onComplete={handleTutorialClose}
                     onClose={handleTutorialClose}

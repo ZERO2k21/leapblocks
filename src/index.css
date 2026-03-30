@@ -719,11 +719,6 @@ div::-webkit-scrollbar-thumb {
   transform-origin: left top !important;
 }
 
-/* Ensure flyout SVG maintains its own independent transform context */
-.blocklyFlyout>svg {
-  transform: none !important;
-}
-
 /* Professional styling for flyout buttons (like "Make a Variable") */
 .blocklyFlyoutButton {
   cursor: pointer !important;
