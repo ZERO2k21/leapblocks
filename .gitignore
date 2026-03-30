@@ -30,7 +30,7 @@ coverage
 .lock-wscript
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
-build/Release
+
 
 # Dependency directories
 node_modules/
@@ -95,5 +95,5 @@ everything-claude-code
 # Build outputs
 dist/
 dist-electron/
-build/main.*.js
-build/main.*.js.LICENSE.txt
+build/
+

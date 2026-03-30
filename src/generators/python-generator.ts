@@ -24,21 +24,37 @@ function indentCode(code: string): string {
     return indented.join('\n');
 }
 
-let _pythonGenInitialized = false;
+let _pythonGenerator: any = null;
+
+export const pythonGenerator = new Proxy({} as any, {
+    get(_target, prop) {
+        if (!_pythonGenerator) {
+            initPythonGenerator();
+        }
+        const value = _pythonGenerator[prop];
+        return typeof value === 'function' ? value.bind(_pythonGenerator) : value;
+    },
+    set(_target, prop, value) {
+        if (!_pythonGenerator) {
+            initPythonGenerator();
+        }
+        _pythonGenerator[prop] = value;
+        return true;
+    }
+});
 
 export function initPythonGenerator(): void {
-    if (_pythonGenInitialized) return;
-    _pythonGenInitialized = true;
+    if (_pythonGenerator) return;
 
     console.log('[GENERATOR] Initializing Python generator for animation blocks...');
 
-    // Get or create Python generator
-    let pythonGen = (Blockly as any).Python;
-    if (!pythonGen) {
-        // Fallback: create a minimal generator
-        pythonGen = {
+    // Create Python generator as a separate object instead of attaching to frozen Blockly
+    _pythonGenerator = {
             forBlock: {},
-            workspaceToCode: function(workspace: Blockly.Workspace) { return ''; },
+            workspaceToCode: function(workspace: Blockly.Workspace) { 
+                // Default implementation if not overridden below
+                return ''; 
+            },
             blockToCode: function(block: Blockly.Block) { return ''; },
             valueToCode: function(block: Blockly.Block, name: string, order: number) { return ''; },
             statementToCode: function(block: Blockly.Block, name: string) { return ''; },
@@ -48,8 +64,8 @@ export function initPythonGenerator(): void {
             finish: function() { return ''; },
             init: function() {}
         };
-        (Blockly as any).Python = pythonGen;
-    }
+
+    const pythonGen = _pythonGenerator;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // MOTION BLOCKS

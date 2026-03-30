@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Blockly from '@blockly-runtime';
+import { pythonGenerator } from '../generators/python-generator';
+
 
 interface PythonEditorTabProps {
     workspace: Blockly.WorkspaceSvg | null;
@@ -15,16 +17,14 @@ export const PythonEditorTab: React.FC<PythonEditorTabProps> = ({ workspace, onO
 
         const updateCode = () => {
             try {
-                // Use the global Blockly.Python which has our custom handlers
-                const gen = (Blockly as any).Python;
-
-                if (gen && typeof gen.workspaceToCode === 'function') {
-                    const generatedCode = gen.workspaceToCode(workspace);
+                if (pythonGenerator && typeof pythonGenerator.workspaceToCode === 'function') {
+                    const generatedCode = pythonGenerator.workspaceToCode(workspace);
                     setCode(generatedCode || '# No blocks in workspace');
                     setRenderError(null);
                 } else {
                     setCode('# Python generator is not available. Make sure python-generator.ts is loaded.');
                 }
+
             } catch (err: any) {
                 console.error('[PythonEditorTab] Code generation failed:', err);
                 setRenderError(err.message || String(err));
