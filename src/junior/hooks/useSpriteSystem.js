@@ -23,10 +23,9 @@ export function useSpriteSystem(initialScenes) {
     // We track initial state for Reset functionality
     const initialStatesRef = useRef(new Map());
 
-    // Helper: Clamp values to Stage Boundaries
-    // Allows sprites to partially hide/peek (PEEK_LIMIT) from all edges
-    const clampX = (x) => Math.max(-(SPRITE_DIM - PEEK_LIMIT), Math.min(x, STAGE_WIDTH - PEEK_LIMIT));
-    const clampY = (y) => Math.max(-(SPRITE_DIM - PEEK_LIMIT), Math.min(y, STAGE_HEIGHT - PEEK_LIMIT));
+    // Helper: Clamp values to allow grid coordinates extending to x=22 and y=-1
+    const clampX = (x) => Math.max(-50, Math.min(x, 22 * CELL_SIZE));
+    const clampY = (y) => Math.max(-50, Math.min(y, STAGE_HEIGHT + 2 * CELL_SIZE));
 
     // Capture initial state on first load (or add) for Reset
     // In a real app, this might be more robust
@@ -91,10 +90,10 @@ export function useSpriteSystem(initialScenes) {
             });
         },
 
-        // Go To Grid Location (1-20, 1-15)
+        // Go To Grid Location (-1-22, -1-20)
         goToGrid: (spriteId, gridX, gridY) => {
-            const safeX = Math.max(1, Math.min(GRID_W, Number(gridX) || 1));
-            const safeY = Math.max(1, Math.min(GRID_H, Number(gridY) || 1));
+            const safeX = Math.max(-1, Math.min(22, Number(gridX) || 0));
+            const safeY = Math.max(-1, Math.min(20, Number(gridY) || 0));
             const px = (safeX - 1) * CELL_SIZE;
             const py = STAGE_HEIGHT - (safeY * CELL_SIZE); // Junior Y=1 is Bottom
             updateSprite(spriteId, { x: px, y: py });

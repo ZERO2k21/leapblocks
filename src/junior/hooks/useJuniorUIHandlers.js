@@ -65,10 +65,10 @@ export function useJuniorUIHandlers({
             type: 'sprite',
             targetId: spriteId,
             initialImage: sprite.costumes?.[sprite.currentCostume || 'default'] || null,
-            costumes: Object.entries(sprite.costumes || {}).map(([id, src]) => ({ 
-                id, 
-                name: costumeNameMap[id] || id, 
-                image: src 
+            costumes: Object.entries(sprite.costumes || {}).map(([id, src]) => ({
+                id,
+                name: costumeNameMap[id] || id,
+                image: src
             })),
             spriteName: sprite.name,
             mode: 'junior'
@@ -161,10 +161,10 @@ export function useJuniorUIHandlers({
 
     const handleDeleteCostume = (index) => {
         if (paintEditor.type !== 'sprite' || !paintEditor.targetId) return;
-        
+
         const sprite = sprites.find(s => s.id === paintEditor.targetId);
         if (!sprite) return;
-        
+
         const costumeKeys = Object.keys(sprite.costumes);
         if (costumeKeys.length <= 1) {
             alert("Cannot delete the last costume!");
@@ -182,12 +182,12 @@ export function useJuniorUIHandlers({
                     if (s.id !== paintEditor.targetId) return s;
                     const newCostumes = { ...s.costumes };
                     delete newCostumes[keyToDelete];
-                    
+
                     let nextCostume = s.currentCostume;
                     if (s.currentCostume === keyToDelete) {
                         nextCostume = Object.keys(newCostumes)[0];
                     }
-                    
+
                     return { ...s, costumes: newCostumes, currentCostume: nextCostume };
                 })
             };
@@ -202,14 +202,14 @@ export function useJuniorUIHandlers({
 
     const handleDuplicateCostume = (index) => {
         if (paintEditor.type !== 'sprite' || !paintEditor.targetId) return;
-        
+
         const sprite = sprites.find(s => s.id === paintEditor.targetId);
         if (!sprite) return;
-        
+
         const costumeKeys = Object.keys(sprite.costumes);
         const keyToCopy = costumeKeys[index];
         const dataToCopy = sprite.costumes[keyToCopy];
-        
+
         const newKey = `${keyToCopy}_copy_${Date.now()}`;
 
         setScenes(prev => prev.map(scene => {
@@ -231,7 +231,7 @@ export function useJuniorUIHandlers({
         setPaintEditor(prev => ({
             ...prev,
             costumes: [
-                ...prev.costumes, 
+                ...prev.costumes,
                 { id: newKey, name: `${newKey}`, image: dataToCopy }
             ]
         }));
@@ -239,7 +239,7 @@ export function useJuniorUIHandlers({
 
     const handleSwitchCostume = (index) => {
         if (!paintEditor.targetId) return;
-        
+
         if (paintEditor.type === 'sprite') {
             const sprite = sprites.find(s => s.id === paintEditor.targetId);
             if (!sprite) return;
@@ -275,13 +275,13 @@ export function useJuniorUIHandlers({
 
     const handleRenameCostume = (index, newName) => {
         if (!paintEditor.targetId) return;
-        
+
         if (paintEditor.type === 'sprite') {
             const sprite = sprites.find(s => s.id === paintEditor.targetId);
             if (!sprite) return;
             const oldKey = Object.keys(sprite.costumes)[index];
             const newKey = newName.toLowerCase().replace(/\s+/g, '_');
-            
+
             setScenes(prev => prev.map(scene => {
                 if (scene.id !== currentSceneId) return scene;
                 return {
@@ -293,10 +293,10 @@ export function useJuniorUIHandlers({
                             if (k === oldKey) newCostumes[newKey] = v;
                             else newCostumes[k] = v;
                         });
-                        return { 
-                            ...s, 
-                            costumes: newCostumes, 
-                            currentCostume: s.currentCostume === oldKey ? newKey : s.currentCostume 
+                        return {
+                            ...s,
+                            costumes: newCostumes,
+                            currentCostume: s.currentCostume === oldKey ? newKey : s.currentCostume
                         };
                     })
                 };
@@ -309,7 +309,7 @@ export function useJuniorUIHandlers({
                 return { ...s, backdropName: newName };
             }));
         }
-        
+
         setPaintEditor(prev => ({
             ...prev,
             costumes: prev.costumes.map((c, i) => i === index ? { ...c, name: newName } : c)
@@ -324,7 +324,7 @@ export function useJuniorUIHandlers({
             spriteWorkspacesRef.current.set(activeId, cloneWorkspaceData(json));
             console.log(`[useJuniorUIHandlers] Saved workspace to ref for sprite: ${activeId}`);
         }
-        
+
         saveCurrentWorkspace();
         const newId = `sprite_${Date.now()}`;
 
@@ -372,19 +372,19 @@ export function useJuniorUIHandlers({
         const currentScene = scenes.find(s => s.id === currentSceneId);
         const existingSprites = currentScene?.sprites || [];
         const spreadPositions = [
-            { x: 14 * CELL_SIZE, y: 6 * CELL_SIZE },   
-            { x: 5 * CELL_SIZE, y: 6 * CELL_SIZE },    
-            { x: 10 * CELL_SIZE, y: 3 * CELL_SIZE },   
-            { x: 10 * CELL_SIZE, y: 10 * CELL_SIZE },  
-            { x: 3 * CELL_SIZE, y: 3 * CELL_SIZE },    
-            { x: 16 * CELL_SIZE, y: 3 * CELL_SIZE },   
-            { x: 3 * CELL_SIZE, y: 10 * CELL_SIZE },   
-            { x: 16 * CELL_SIZE, y: 10 * CELL_SIZE },  
-            { x: 7 * CELL_SIZE, y: 8 * CELL_SIZE },    
-            { x: 12 * CELL_SIZE, y: 4 * CELL_SIZE },   
+            { x: 14 * CELL_SIZE, y: 6 * CELL_SIZE },
+            { x: 5 * CELL_SIZE, y: 6 * CELL_SIZE },
+            { x: 10 * CELL_SIZE, y: 3 * CELL_SIZE },
+            { x: 10 * CELL_SIZE, y: 10 * CELL_SIZE },
+            { x: 3 * CELL_SIZE, y: 3 * CELL_SIZE },
+            { x: 16 * CELL_SIZE, y: 3 * CELL_SIZE },
+            { x: 3 * CELL_SIZE, y: 10 * CELL_SIZE },
+            { x: 16 * CELL_SIZE, y: 10 * CELL_SIZE },
+            { x: 7 * CELL_SIZE, y: 8 * CELL_SIZE },
+            { x: 12 * CELL_SIZE, y: 4 * CELL_SIZE },
         ];
 
-        const MIN_DISTANCE = CELL_SIZE * 3; 
+        const MIN_DISTANCE = CELL_SIZE * 3;
         let newX = 200, newY = 150;
 
         let foundPosition = false;
@@ -418,7 +418,7 @@ export function useJuniorUIHandlers({
             textColor: (spriteType.startsWith('letter_') || spriteType.startsWith('number_')) ? "#FF8C1A" : "#575E75",
             blocks: {}
         };
-        
+
         // Update scenes and immediately update scenesRef to ensure workspace loading works
         setScenes(prev => {
             const updated = prev.map(s => {
@@ -431,13 +431,13 @@ export function useJuniorUIHandlers({
             }
             return updated;
         });
-        
+
         // Initialize empty workspace for the new sprite in ref storage
         if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
             spriteWorkspacesRef.current.set(newId, {});
             console.log(`[useJuniorUIHandlers] Initialized empty workspace for new sprite: ${newId}`);
         }
-        
+
         // Clear workspace before switching to new sprite (matching Intermediate Blocks pattern)
         // Set loading flag to prevent change listener from saving empty state
         if (isLoadingWorkspaceRef) {
@@ -467,7 +467,7 @@ export function useJuniorUIHandlers({
                 activeSpriteIdRef.current = newId;
             }
         }
-        
+
         setActiveSpriteId(newId);
         setIsSpriteModalOpen(false);
     };
@@ -515,7 +515,7 @@ export function useJuniorUIHandlers({
         if (remaining.length > 0) {
             const newActiveId = remaining[0].id;
             setActiveSpriteId(newActiveId);
-            
+
             // Load workspace for the new active sprite (matching Intermediate Blocks pattern)
             if (workspaceRef && workspaceRef.current && spriteWorkspacesRef && spriteWorkspacesRef.current) {
                 isLoadingWorkspaceRef.current = true;

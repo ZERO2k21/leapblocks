@@ -151,7 +151,7 @@ export function useJuniorProject({
             console.log(`[JuniorApp] Loading project: ${data.projectName || 'Untitled'}`);
 
             if (stopBlocks) stopBlocks();
-            
+
             // Clear per-sprite workspaces and initialize from loaded project
             if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
                 spriteWorkspacesRef.current.clear();

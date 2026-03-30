@@ -3537,6 +3537,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                     workspaceRef.current = blocksWorkspace;
+                    lastToolboxJsonRef.current = JSON.stringify(getCurrentToolbox());
 
                     // Initialize custom blocks and field overrides only once globally
                     if (!blocksInitialized) {
@@ -3611,10 +3612,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                    // ZOOM & TOOLBOX FIX: Lock flyout scale permanently.
-
-                    // Override getFlyoutScale() — this is what Blockly's reflowInternal_() reads.
-
+                    // Keep the flyout pinned open, but let Blockly manage its own
+                    // scale and transform. Overriding those internals can leave the
+                    // Intermediate palette blank after recent Blockly updates.
                     if (blocksWorkspace) {
 
                         const flyout = blocksWorkspace.getFlyout() as any;
@@ -3623,15 +3623,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             flyout.autoClose = false;
 
-                            const FIXED_SCALE = 0.9;
-
-                            flyout.getFlyoutScale = () => FIXED_SCALE;
-
-                            if (flyout.getWorkspace()) {
-
-                                flyout.getWorkspace().setScale(FIXED_SCALE);
-
-                            }
                         }
                         // 4. FLYOUT BLOCK PREVIEW (Click to Preview)
 
@@ -3673,6 +3664,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             if (toolbox) {
 
                                 toolbox.selectItemByPosition(0);
+
+                                workspaceRef.current.refreshToolboxSelection();
+
+                                const flyout = workspaceRef.current.getFlyout() as any;
+                                if (flyout?.reflowInternal_) flyout.reflowInternal_();
 
                             }
 

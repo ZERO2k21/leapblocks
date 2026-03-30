@@ -688,7 +688,7 @@ export default function JuniorApp({ onBack }) {
             />
 
             {currentTutorial && (
-                <JuniorTutorialOverlay 
+                <JuniorTutorialOverlay
                     tutorial={currentTutorial}
                     onComplete={handleTutorialClose}
                     onClose={handleTutorialClose}
@@ -884,14 +884,14 @@ export default function JuniorApp({ onBack }) {
                         if (!activeSprite || !stageContainerRef.current) return null;
                         const w = stageContainerRef.current.offsetWidth || 1;
                         const spriteCenter = activeSprite.x + 40;
-                        return Math.max(0, Math.min(20, (spriteCenter / w) * 20));
+                        return Math.max(-1, Math.min(22, (spriteCenter / w) * 20));
                     })()}
                     spriteGridY={(() => {
                         const activeSprite = sprites.find(s => s.id === activeSpriteId);
                         if (!activeSprite || !stageContainerRef.current) return null;
                         const h = stageContainerRef.current.offsetHeight || 1;
                         const spriteCenter = activeSprite.y + 40;
-                        return Math.max(1, Math.min(15, 15 - (spriteCenter / h) * 15));
+                        return Math.max(-1, Math.min(22, 23 - (spriteCenter / h) * 23));
                     })()}
                 >
                     <div ref={stageContainerRef} className="stage" style={{
