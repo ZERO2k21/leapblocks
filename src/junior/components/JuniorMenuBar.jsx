@@ -425,13 +425,13 @@ export default function JuniorMenuBar({
 
                 {/* CREOLEAP Right Logo — Premium Fit */}
                 <div style={{
-                    marginLeft: 12,
+                    marginLeft: 14,
                     display: 'flex',
                     alignItems: 'center',
                     flexShrink: 0,
-                    filter: 'drop-shadow(0 0 10px rgba(255,200,80,0.2)) drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                    filter: 'drop-shadow(0 0 14px rgba(255,255,255,0.15)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))',
                 }}>
-                    <CreoleapLogo height={48} />
+                    <CreoleapLogo height={52} />
                 </div>
             </div>
         </div>

@@ -343,7 +343,7 @@ export default function MenuBar({
                 alignItems: 'center',
                 marginRight: 14,
                 flexShrink: 0,
-                filter: 'drop-shadow(0 0 12px rgba(80,200,255,0.25)) drop-shadow(0 2px 6px rgba(0,0,0,0.3))',
+                filter: 'drop-shadow(0 0 12px rgba(36, 0, 85, 1)) drop-shadow(0 2px 6px rgba(0,0,0,0.3))',
             }}>
                 <Logo height={52} />
             </div>
@@ -630,13 +630,13 @@ export default function MenuBar({
 
             {/* CREOLEAP Right Logo — Premium Fit */}
             <div style={{
-                marginLeft: 14,
+                marginLeft: 16,
                 display: 'flex',
                 alignItems: 'center',
                 flexShrink: 0,
-                filter: 'drop-shadow(0 0 10px rgba(255,200,80,0.2)) drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                filter: 'drop-shadow(0 0 14px rgba(255,255,255,0.15)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))',
             }}>
-                <CreoleapLogo height={48} />
+                <CreoleapLogo height={52} />
             </div>
         </div>
     );

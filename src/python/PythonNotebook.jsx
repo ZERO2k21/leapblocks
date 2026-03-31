@@ -7,11 +7,12 @@ import {
     Copy, Clipboard, MoreVertical, GripVertical
 } from "lucide-react";
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
+import Logo, { CreoleapLogo } from "../components/Logo";
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
 const C = {
-    PURPLE: "#8B5CF6",
-    DARK_PURPLE: "#7C3AED",
+    PURPLE: "#210d4fff",
+    DARK_PURPLE: "#1b075aff",
     LIGHT_PURPLE: "#EDE9FE",
     PURPLE_BG: "#F5F3FF",
     BORDER: "#E5E7EB",
@@ -475,17 +476,17 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
     return (
         <div className="flex flex-col h-screen bg-gray-50">
             {/* ══ TOPBAR ══════════════════════════════════════════════════════ */}
-            <header className="h-12 bg-leap-purple flex items-center px-4 justify-between text-white z-10 shadow-md flex-shrink-0">
+            <header className="h-12 flex items-center px-4 justify-between text-white z-10 shadow-md flex-shrink-0" style={{ background: "linear-gradient(180deg, #7B4FC4 0%, #5A2D82 100%)" }}>
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onBack}
                         className="flex items-center gap-2 hover:opacity-80 transition"
                     >
                         <ArrowLeft size={18} />
-                        <span className="text-lg font-bold">LeapBlocks</span>
+                        <Logo height={42} />
                     </button>
                     <div className="w-px h-5 bg-white/30" />
-                    <span className="text-sm opacity-85">📓 Python Notebook</span>
+                    <span className="text-sm opacity-85 font-extrabold tracking-widest text-yellow-400">NOTEBOOK</span>
                 </div>
                 <div className="flex items-center gap-3">
                     {/* Notebook name */}
@@ -518,6 +519,17 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                     <Settings size={18} className="cursor-pointer opacity-80 hover:opacity-100" />
                     <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
                         <User size={16} />
+                    </div>
+
+                    {/* CREOLEAP Right Logo */}
+                    <div style={{
+                        marginLeft: 12,
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                        filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
+                    }}>
+                        <CreoleapLogo height={42} />
                     </div>
                 </div>
             </header>

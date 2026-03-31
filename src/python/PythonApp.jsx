@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StageProvider, useStage } from "../context/StageContext";
-import Logo from "../components/Logo";
+import Logo, { CreoleapLogo } from "../components/Logo";
 import {
     Play,
     Square,
@@ -2430,8 +2430,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             <header style={{
                 position: "sticky",
                 top: 0,
-                height: 44,
-                background: "linear-gradient(180deg, #7B4FC4 0%, #5A2D82 100%)",
+                height: 50,
+                background: "linear-gradient(180deg, #1f0943ff 0%, #3e066fff 100%)",
                 display: "flex",
                 alignItems: "center",
                 padding: "0 12px",
@@ -2442,10 +2442,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={onBack}>
-                        <Logo height={34} />
+                        <Logo height={45} />
                         <span style={{ color: "#FFD500", fontSize: 14, fontWeight: 800, letterSpacing: "0.08em" }}>PYTHON</span>
                     </div>
-                    <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)" }} />
+                    <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.3)" }} />
 
                     {["File", "Edit", "Tutorials", "Board", "Connect"].map((menuLabel) => (
                         <span
@@ -2536,6 +2536,17 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#FF9800", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, fontWeight: "bold" }}>
                         👤
                     </div>
+                </div>
+
+                {/* CREOLEAP Right Logo */}
+                <div style={{
+                    marginLeft: 12,
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexShrink: 0,
+                    filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
+                }}>
+                    <CreoleapLogo height={42} />
                 </div>
             </header>
 
