@@ -1,5 +1,6 @@
 import React from "react";
 import { Save, Settings, User, HelpCircle, Upload, Scissors, Copy, Clipboard, Undo, Redo, Hash, Wand2, Search } from "lucide-react";
+import Logo, { CreoleapLogo } from "../../components/Logo";
 
 // ─── Theme (PictoBlox Colors) ─────────────────────────────────────────────────
 const C = {
@@ -14,13 +15,47 @@ const C = {
 export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowGuide, mode, setMode }) {
     return (
         <header style={{
-            height: 44, background: C.PURPLE, display: "flex",
+            height: 54,
+            background: 'linear-gradient(135deg, #7B4FC4 0%, #6236A0 50%, #4E2A84 100%)',
+            display: "flex",
             alignItems: "center", padding: "0 12px",
             justifyContent: "space-between", color: "#fff", zIndex: 100,
             flexShrink: 0,
+            boxShadow: '0 2px 12px rgba(78,42,132,0.35)',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}>
-            {/* Left Side: Blocks/Python Tabs + Costumes/Sounds Tabs */}
-            <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+            {/* Left Side: LeapLab Logo + App Name + Blocks/Python Tabs */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                {/* Logo + App Name */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 8, flexShrink: 0 }}>
+                    <Logo height={43} />
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        borderLeft: '1px solid rgba(255,255,255,0.15)',
+                        paddingLeft: 8,
+                    }}>
+                        <span style={{
+                            color: '#FFD500',
+                            fontSize: 8,
+                            fontWeight: 900,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.18em',
+                            lineHeight: 1.1,
+                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                        }}>LEAPLAB</span>
+                        <span style={{
+                            color: '#fff',
+                            fontSize: 15,
+                            fontWeight: 900,
+                            letterSpacing: '0.08em',
+                            lineHeight: 1.2,
+                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                            textShadow: '0 0 20px rgba(255,255,255,0.3)',
+                        }}>CODEX 🐍</span>
+                    </div>
+                </div>
                 {/* Blocks/Python Mode Tabs */}
                 <div style={{ display: "flex", background: "rgba(0,0,0,0.2)", borderRadius: 6, overflow: "hidden", marginRight: 12 }}>
                     <div 
@@ -140,8 +175,8 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                     <Search size={16} />
                 </div>
             </div>
-            
-            {/* Right Side: Run/Stop + Upload Firmware */}
+
+            {/* Right Side: Run/Stop + Upload Firmware + CREOLEAP Logo */}
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {/* Green Flag (Run) */}
                 <div style={{ 
@@ -208,6 +243,18 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                         onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                         ⛶
                     </div>
+                </div>
+
+                {/* CREOLEAP Right Logo */}
+                <div style={{
+                    marginLeft: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexShrink: 0,
+                    opacity: 0.92,
+                    filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.15))',
+                }}>
+                    <CreoleapLogo height={40} />
                 </div>
             </div>
         </header>

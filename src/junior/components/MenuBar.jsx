@@ -5,7 +5,7 @@ import {
     Play, Upload, Settings, HelpCircle, Home, RotateCcw,
     Monitor, Rocket
 } from 'lucide-react';
-import Logo from '../../components/Logo';
+import Logo, { CreoleapLogo } from '../../components/Logo';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DROPDOWN MENU — Glassmorphism + slide-in animation
@@ -345,7 +345,7 @@ export default function MenuBar({
                 marginRight: 16,
                 flexShrink: 0,
             }}>
-                <Logo height={40} />
+                <Logo height={46} />
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -355,24 +355,25 @@ export default function MenuBar({
                 }}>
                     <span style={{
                         color: '#FFD500',
-                        fontSize: 9,
-                        fontWeight: 800,
+                        fontSize: 8,
+                        fontWeight: 900,
                         textTransform: 'uppercase',
-                        letterSpacing: '0.15em',
-                        lineHeight: 1.2,
+                        letterSpacing: '0.18em',
+                        lineHeight: 1.1,
                         fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
                     }}>
-                        LEAPLABS
+                        LEAPLAB
                     </span>
                     <span style={{
-                        color: 'rgba(255,255,255,0.8)',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        letterSpacing: '0.02em',
+                        color: '#fff',
+                        fontSize: 16,
+                        fontWeight: 900,
+                        letterSpacing: '0.06em',
                         lineHeight: 1.2,
                         fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                        textShadow: '0 0 20px rgba(255,255,255,0.3)',
                     }}>
-                        LEAPLAB CIRCUITS
+                        CIRCUIT ⚡
                     </span>
                 </div>
             </div>
@@ -656,6 +657,18 @@ export default function MenuBar({
             >
                 <HelpCircle size={17} strokeWidth={2.2} />
             </button>
+
+            {/* CREOLEAP Right Logo */}
+            <div style={{
+                marginLeft: 12,
+                display: 'flex',
+                alignItems: 'center',
+                flexShrink: 0,
+                opacity: 0.92,
+                filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.15))',
+            }}>
+                <CreoleapLogo height={38} />
+            </div>
         </div>
     );
 }

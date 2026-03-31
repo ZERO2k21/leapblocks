@@ -104,7 +104,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --brand-primary: #6366F1; /* Electric Indigo */
+  --brand-primary: #100051; /* Electric Indigo */
   --brand-secondary: #4F46E5;
   --bg-main: #F8FAFC;
   --text-main: #0F172A; /* Deep Slate */

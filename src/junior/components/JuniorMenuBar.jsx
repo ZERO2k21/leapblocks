@@ -5,7 +5,7 @@ import {
     MessageSquareWarning, Trophy, Settings,
     Share
 } from 'lucide-react';
-import Logo from '../../components/Logo';
+import Logo, { CreoleapLogo } from '../../components/Logo';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DROPDOWN MENU — Glassmorphism + slide-in animation (same design as Intermediate)
@@ -239,7 +239,7 @@ export default function JuniorMenuBar({
                 <div style={{ height: 32, width: 1, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 12, flexShrink: 0 }}>
-                    <Logo height={34} />
+                    <Logo height={44} />
                     <div style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -249,24 +249,25 @@ export default function JuniorMenuBar({
                     }}>
                         <span style={{
                             color: '#FFD500',
-                            fontSize: 9,
-                            fontWeight: 800,
+                            fontSize: 8,
+                            fontWeight: 900,
                             textTransform: 'uppercase',
-                            letterSpacing: '0.15em',
-                            lineHeight: 1.2,
+                            letterSpacing: '0.18em',
+                            lineHeight: 1.1,
                             fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
                         }}>
-                            LEAPBLOCKS
+                            LEAPLAB
                         </span>
                         <span style={{
-                            color: 'rgba(255,255,255,0.8)',
-                            fontSize: 12,
-                            fontWeight: 700,
-                            letterSpacing: '0.02em',
+                            color: '#fff',
+                            fontSize: 16,
+                            fontWeight: 900,
+                            letterSpacing: '0.06em',
                             lineHeight: 1.2,
                             fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                            textShadow: '0 0 20px rgba(255,255,255,0.3)',
                         }}>
-                            Junior
+                            IGNITE 🔥
                         </span>
                     </div>
                 </div>
@@ -356,7 +357,7 @@ export default function JuniorMenuBar({
                 </div>
             </div>
 
-            {/* RIGHT SECTION: Utilities and Profile */}
+            {/* RIGHT SECTION: Utilities, Profile, CREOLEAP Logo */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 20, flex: 1, minWidth: 0 }}>
                 <div style={{
                     display: 'flex',
@@ -445,6 +446,18 @@ export default function JuniorMenuBar({
                     </div>
                     Sign In
                 </button>
+
+                {/* CREOLEAP Right Logo */}
+                <div style={{
+                    marginLeft: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexShrink: 0,
+                    opacity: 0.92,
+                    filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.15))',
+                }}>
+                    <CreoleapLogo height={40} />
+                </div>
             </div>
         </div>
     );
