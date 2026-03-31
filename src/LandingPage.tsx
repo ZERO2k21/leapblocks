@@ -102,6 +102,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           <div className="splash-text-container">
             <div className="splash-text-welcome">Welcome to the</div>
             <div className="splash-text">Leaplab</div>
+            <div className="splash-powered-by">
+              <span>Powered by</span>
+              <img src="/assets/topbar_logo.svg" alt="LeapLab" />
+            </div>
           </div>
         </div>
       )}
@@ -186,6 +190,70 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
 }
 
+.splash-powered-by {
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  animation: splash-text-reveal 1s cubic-bezier(0.2, 0.8, 0.2, 1) 1.8s forwards;
+}
+.splash-powered-by span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.splash-powered-by img {
+  height: 28px;
+  opacity: 0.8;
+}
+
+.hero-powered-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  backdrop-filter: blur(8px);
+  border-radius: 100px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+}
+.hero-powered-badge:hover {
+  transform: translateY(-2px);
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+.hero-powered-badge .pb-text {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+.hero-powered-badge .pb-logo {
+  height: 20px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+.hero-powered-badge .pb-info-icon {
+  width: 14px;
+  height: 14px;
+  background: var(--brand-primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 900;
+  font-family: serif;
+}
+
+
 .landing-page-container {
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   background: var(--bg-main);
@@ -238,7 +306,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   filter: drop-shadow(0 2px 8px rgba(99,102,241,0.15));
 }
 .landing-page-container .brand-logo {
-  height: clamp(44px, 6vw, 56px);
+  height: clamp(44px, 6vw, 55px);
   width:auto;
   object-fit:contain;
 }
@@ -273,7 +341,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   .landing-page-container .hero-grid {
     grid-template-columns: 1fr;
     text-align: center;
-    gap: 32px;
+    gap: 50px;
     padding-top: 48px;
   }
   .landing-page-container .hero-sub {
@@ -325,10 +393,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 }
 .landing-page-container .hero-sub {
   font-size: clamp(0.85rem, 1.6vw, 1rem);
-  color: var(--text-muted);
+  color: #0f172a;
   line-height: 1.5;
   max-width: 460px;
-  margin-bottom: 14px;
+  margin-bottom: 20px;
   position: relative;
   z-index: 2;
 }
@@ -519,20 +587,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 }
 
 .landing-page-container .tc-cat {
-  font-size:0.55rem; font-weight:800; letter-spacing:0.07em;
-  text-transform:uppercase; color:rgba(0,0,0,0.4); margin-bottom:1px; line-height:1.2;
+  font-size: 0.80rem; font-weight: 900; letter-spacing: 0.12em;
+  text-transform: uppercase; color: #0a0328ff; margin-bottom: 2px; line-height: 1.2;
+  opacity: 0.65;
 }
 .landing-page-container .tc-name {
-  font-size: clamp(0.75rem, 1.6vw, 0.9rem); font-weight:800; letter-spacing:0.02em;
-  text-transform:uppercase; color:#1a1a2e; margin-bottom:2px; line-height:1.2;
+  font-size: clamp(0.75rem, 1.6vw, 0.95rem); font-weight: 1000; letter-spacing: 0.01em;
+  text-transform: uppercase; color: #0f172a; margin-bottom: 3px; line-height: 1.2;
 }
 .landing-page-container .tc-desc {
-  font-size: 0.65rem; color:rgba(0,0,0,0.5); line-height:1.3;
+  font-size: 0.65rem; color: #020046a5; line-height: 1.4;
+  font-weight: 600;
 }
-
-
-
-
 ` }} />
       <div className="landing-page-container">
 
@@ -597,7 +663,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             <div className="hero-left">
               <div className="hero-tagline">Curiosity · Creativity · Critical Thinking</div>
               <h1 className="hero-title">
-                Learn to <span className="hw-code">code</span><br/>
+                Learn to <span className="hw-code">code</span><br />
                 the <span className="hw-bold">bold</span> way
               </h1>
               <p className="hero-sub">
