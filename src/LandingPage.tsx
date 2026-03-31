@@ -186,8 +186,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   background-image: radial-gradient(rgba(99, 102, 241, 0.05) 1.5px, transparent 1.5px);
   background-size: 30px 30px;
   color: var(--text-main);
-  min-height: 100vh;
-  overflow-x: hidden;
+  height: 100vh;
+  overflow: hidden;
   position: relative;
 }
 
@@ -241,7 +241,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
 
 /* ─── PAGE CONTENT ─── */
-.landing-page-container .page { position:relative; z-index:1; padding-top:64px; }
+.landing-page-container .page { position:relative; z-index:1; padding-top:64px; display: flex; flex-direction: column; height: calc(100vh - 64px); }
 
 /* ─── HERO ─── */
 .landing-page-container .hero-grid {
@@ -250,9 +250,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   align-items: center;
   max-width: 1280px;
   margin: 0 auto;
-  padding: clamp(32px, 8vw, 80px) clamp(24px, 5vw, 48px);
-  gap: 48px;
-  min-height: calc(100vh - 64px - 200px);
+  padding: clamp(12px, 2vw, 24px) clamp(24px, 5vw, 48px);
+  gap: 32px;
+  flex: 1;
+  min-height: 0;
 }
 
 @media (max-width: 1024px) {
@@ -274,9 +275,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 .landing-page-container .hero-title {
   font-size: clamp(2.5rem, 8vw, 5.5rem);
   font-weight: 800;
-  line-height: 1;
+  line-height: 1.15;
   letter-spacing: -0.04em;
-  margin-bottom: 28px;
+  margin-bottom: 12px;
   filter: drop-shadow(0 10px 20px rgba(0,0,0,0.05));
 }
 .landing-page-container .hero-title .t1 {
@@ -298,7 +299,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   color: #000;
   text-transform: uppercase;
   letter-spacing: 0.25em;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
   padding: 8px 16px;
   background: var(--accent);
   border: 2px solid #000;
@@ -310,7 +311,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   color: var(--text-muted);
   line-height: 1.6;
   max-width: 480px;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
   position: relative;
   z-index: 2;
 }
@@ -428,12 +429,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 .landing-page-container .cards-wrap {
   max-width:1280px;
   margin:0 auto;
-  padding: 0 clamp(24px, 5vw, 48px) clamp(48px, 8vw, 80px);
+  padding: clamp(10px, 2vw, 20px) clamp(16px, 3vw, 32px);
 }
 .landing-page-container .cards-row {
   display:grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 16px;
+  gap: 10px;
 }
 
 @media (max-width: 1280px) {
@@ -451,12 +452,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
 .landing-page-container .tc {
   border-radius:16px;
-  padding:20px 16px 16px;
+  padding: 12px 10px;
   cursor:pointer;
   transition:transform .3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow .3s;
   position:relative;
   overflow:hidden;
-  min-height:180px;
+  min-height:100px;
   display:flex;
   flex-direction:column;
   justify-content:flex-end;
@@ -503,43 +504,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 }
 
 
-/* ─── FOOTER STRIP ─── */
-.landing-page-container .footer-strip {
-  position:relative; z-index:1;
-  background:rgba(255, 255, 255, 0.9);
-  border-top:1px solid rgba(0,0,0,0.05);
-  padding: 40px clamp(24px, 5vw, 48px);
-  display:flex;
-  flex-wrap: wrap;
-  gap: 24px;
-}
 
-@media (max-width: 768px) {
-  .landing-page-container .footer-strip {
-    flex-direction: column;
-    gap: 32px;
-  }
-}
-
-.landing-page-container .fs-item {
-  flex:1;
-  min-width: 200px;
-  padding:0 20px;
-  border-right:1px solid rgba(0,0,0,0.05);
-}
-@media (max-width: 768px) {
-  .landing-page-container .fs-item {
-    border-right: none;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    padding: 0 0 16px 0;
-  }
-  .landing-page-container .fs-item:last-child { border-bottom: none; padding-bottom: 0; }
-}
-
-.landing-page-container .fs-item:first-child { padding-left:0; }
-.landing-page-container .fs-item:last-child { border-right:none; }
-.landing-page-container .fs-label { font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(0,0,0,0.35); margin-bottom:8px; }
-.landing-page-container .fs-val { font-size:1.1rem; font-weight:700; color:rgba(0,0,0,0.7); }
 
 ` }} />
       <div className="landing-page-container">
@@ -709,25 +674,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             </div>
           </div>
 
-          {/* FOOTER STRIP */}
-          <div className="footer-strip">
-            <div className="fs-item">
-              <div className="fs-label">Explore</div>
-              <div className="fs-val" style={{ fontSize: '0.95rem', color: 'rgba(0,0,0,0.4)' }}>Tracks & Paths</div>
-            </div>
-            <div className="fs-item">
-              <div className="fs-label">Community</div>
-              <div className="fs-val" style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.4)' }}>50K+ Learners</div>
-            </div>
-            <div className="fs-item">
-              <div className="fs-label">Get Started</div>
-              <div className="fs-val" style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.4)' }}>Free Forever</div>
-            </div>
-            <div className="fs-item">
-              <div className="fs-label">Extras</div>
-              <div className="fs-val" style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.4)' }}>Projects & More</div>
-            </div>
-          </div>
+
 
         </div>
 
