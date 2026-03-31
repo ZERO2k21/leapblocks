@@ -220,7 +220,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 }
 .landing-page-container .nav-brand { display:flex; align-items:center; gap:10px; text-decoration:none; }
 .landing-page-container .brand-logo {
-  height:60px;
+  height:44px;
   width:auto;
   object-fit:contain;
 }
@@ -518,11 +518,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         {/* TOPBAR */}
         <nav>
           <a href="#" className="nav-brand">
-            <img src="public\assets\leaplab_logo.jpeg" alt="Leaplab Logo" className="brand-logo" />
+            <img src="/assets/leaplab_logo.jpeg" alt="Leaplab Logo" className="brand-logo" />
           </a>
 
           <div className="nav-actions">
-            <img src="public/assets/topbar_logo.svg" alt="Logo" className="nav-logo" />
+            <img src="/assets/topbar_logo.svg" alt="Logo" className="nav-logo" />
           </div>
         </nav>
 
