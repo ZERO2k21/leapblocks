@@ -296,13 +296,13 @@ export default function MenuBar({
         <div style={{
             display: 'flex',
             alignItems: 'center',
-            height: 54,
-            padding: '0 16px',
+            height: 62,
+            padding: '0 18px',
             gap: 6,
-            background: 'linear-gradient(135deg, #7B4FC4 0%, #6236A0 50%, #4E2A84 100%)',
-            boxShadow: '0 2px 12px rgba(78,42,132,0.35)',
+            background: 'linear-gradient(135deg, #0F1923 0%, #162033 30%, #1A2744 60%, #1E2D4F 100%)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.45), inset 0 -1px 0 rgba(255,255,255,0.06)',
             zIndex: 100,
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            borderBottom: '1px solid rgba(100,180,255,0.1)',
             position: 'relative',
         }}>
 
@@ -337,45 +337,15 @@ export default function MenuBar({
                 <Home size={18} strokeWidth={2.2} />
             </button>
 
-            {/* Logo + Label */}
+            {/* LeapLab Logo — Massive Premium Left */}
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
-                marginRight: 16,
+                marginRight: 14,
                 flexShrink: 0,
+                filter: 'drop-shadow(0 0 12px rgba(80,200,255,0.25)) drop-shadow(0 2px 6px rgba(0,0,0,0.3))',
             }}>
-                <Logo height={46} />
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    borderLeft: '1px solid rgba(255,255,255,0.15)',
-                    paddingLeft: 10,
-                }}>
-                    <span style={{
-                        color: '#FFD500',
-                        fontSize: 8,
-                        fontWeight: 900,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.18em',
-                        lineHeight: 1.1,
-                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    }}>
-                        LEAPLAB
-                    </span>
-                    <span style={{
-                        color: '#fff',
-                        fontSize: 16,
-                        fontWeight: 900,
-                        letterSpacing: '0.06em',
-                        lineHeight: 1.2,
-                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        textShadow: '0 0 20px rgba(255,255,255,0.3)',
-                    }}>
-                        CIRCUIT ⚡
-                    </span>
-                </div>
+                <Logo height={52} />
             </div>
 
             {/* Separator */}
@@ -658,16 +628,15 @@ export default function MenuBar({
                 <HelpCircle size={17} strokeWidth={2.2} />
             </button>
 
-            {/* CREOLEAP Right Logo */}
+            {/* CREOLEAP Right Logo — Premium Fit */}
             <div style={{
-                marginLeft: 12,
+                marginLeft: 14,
                 display: 'flex',
                 alignItems: 'center',
                 flexShrink: 0,
-                opacity: 0.92,
-                filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.15))',
+                filter: 'drop-shadow(0 0 10px rgba(255,200,80,0.2)) drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
             }}>
-                <CreoleapLogo height={38} />
+                <CreoleapLogo height={48} />
             </div>
         </div>
     );

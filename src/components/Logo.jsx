@@ -4,10 +4,10 @@ import React from 'react';
 export default function Logo({ height = 36, className = "" }) {
     return (
         <img
-            src="/assets/leaplab_logo.png"
+            src="/assets/leaplab_logo_transparent.png"
             alt="LeapLab"
             onError={(e) => {
-                e.target.src = '/assets/logo.svg';
+                e.target.src = '/assets/leaplab_logo.png';
             }}
             style={{ height, objectFit: 'contain' }}
             className={className}
@@ -19,10 +19,10 @@ export default function Logo({ height = 36, className = "" }) {
 export function CreoleapLogo({ height = 36, className = "" }) {
     return (
         <img
-            src="/assets/creoleap_logo.svg"
+            src="/assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
             alt="Leap into the AI Future"
             onError={(e) => {
-                e.target.style.display = 'none';
+                e.target.src = '/assets/creoleap_logo.svg';
             }}
             style={{ height, objectFit: 'contain' }}
             className={className}
