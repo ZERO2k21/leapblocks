@@ -1270,6 +1270,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         return [...otherSpritesScripts, ...scripts];
                     });
 
+                    // SYNC: Update the Sprite object's internal script registry
+                    // This allows the AnimationVM to find scripts even when the sprite is not currently selected.
+                    sprite.setScripts(scripts);
+
                     const modeLabel = 'Stage Mode';
 
                     setGeneratedCode(`// ${modeLabel} - ${scripts.length} script(s) compiled\n// Click 🏳️ to run animation`);
@@ -2824,6 +2828,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     const compiler = new AnimationCompiler(s.id);
                     const scripts = compiler.compile(tempWs!);
                     allScripts = allScripts.concat(scripts);
+                    
+                    // SYNC: Ensure each sprite has its respective compiled scripts for global VM triggers
+                    s.setScripts(scripts);
 
                     // Soft reset effects for this sprite
                     if (s.sayText) s.clearSay();

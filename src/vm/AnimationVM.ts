@@ -199,11 +199,19 @@ export class AnimationVM {
         // Set up key listeners
         if (typeof window !== 'undefined') {
             window.addEventListener('keydown', (e) => {
-                this.keysPressed.add(e.key);
+                const normalized = this.normalizeKey(e);
+                if (normalized) {
+                    this.keysPressed.add(normalized);
+                    // Trigger "when key pressed" hat blocks across all sprites
+                    this.triggerKeyGlobally(normalized);
+                }
                 eventEngine.trigger('keydown', e.key);
             });
             window.addEventListener('keyup', (e) => {
-                this.keysPressed.delete(e.key);
+                const normalized = this.normalizeKey(e);
+                if (normalized) {
+                    this.keysPressed.delete(normalized);
+                }
                 eventEngine.trigger('keyup', e.key);
             });
         }
@@ -467,10 +475,36 @@ export class AnimationVM {
         }
     }
 
+    /**
+     * Trigger all "when key pressed" scripts across all registered sprites.
+     */
+    triggerKeyGlobally(key: string): void {
+        const allSprites = spriteManager.getAllSprites();
+        let matchedTotal = 0;
+        
+        for (const sprite of allSprites) {
+            const scripts = (sprite.scripts as CompiledScript[]) || [];
+            for (const script of scripts) {
+                // Handle matching for specific key or "any"
+                if (script.trigger === 'key' && (script.triggerKey === key || script.triggerKey === 'any')) {
+                    matchedTotal++;
+                    this.setRunning(true);
+                    this.runScript(script).catch(err => {
+                        vmLog.error(`Error in key pressed script for sprite ${sprite.id}`, err);
+                    });
+                }
+            }
+        }
+        
+        if (matchedTotal > 0) {
+            vmLog.trigger('key_pressed', { key, matchedTotal });
+        }
+    }
+
     triggerKey(key: string, scripts: CompiledScript[]): void {
         let matched = 0;
         for (const script of scripts) {
-            if (script.trigger === 'key' && script.triggerKey === key) {
+            if (script.trigger === 'key' && (script.triggerKey === key || script.triggerKey === 'any')) {
                 matched++;
                 this.setRunning(true);
                 this.runScript(script);
@@ -1328,11 +1362,31 @@ export class AnimationVM {
     // SENSING
     // ═══════════════════════════════════════════════════════════════════════
     // ═══════════════════════════════════════════════════════════════════════
-    // SENSING
+    // KEY HANDLING & NORMALIZATION
     // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Normalize browser KeyboardEvent values to Scratch block values.
+     * Maps ' ' to 'space', 'ArrowUp' to 'ArrowUp', etc.
+     */
+    private normalizeKey(e: KeyboardEvent): string {
+        switch (e.key) {
+            case ' ': return 'space';
+            case 'ArrowUp': return 'ArrowUp';
+            case 'ArrowDown': return 'ArrowDown';
+            case 'ArrowLeft': return 'ArrowLeft';
+            case 'ArrowRight': return 'ArrowRight';
+            case 'Enter': return 'enter';
+            default:
+                // For direct character keys (a-z, 0-9), use the lowercase key value
+                if (e.key.length === 1) return e.key.toLowerCase();
+                return e.key;
+        }
+    }
+
     isKeyPressed(key: string): boolean {
-        if (key === 'space') return this.keysPressed.has(' ');
         if (key === 'any') return this.keysPressed.size > 0;
+        // The key passed here comes from the block dropdown fields
         return this.keysPressed.has(key);
     }
 
