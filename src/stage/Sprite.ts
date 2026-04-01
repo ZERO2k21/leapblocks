@@ -611,7 +611,7 @@ export class Sprite {
         // Convert scratch coordinates to sprite-local coordinates
         const costume = this.currentCostume;
         const scale = this.state.size / 100;
-        
+
         // Get sprite dimensions
         let spriteWidth: number, spriteHeight: number;
         if (costume) {
@@ -626,11 +626,11 @@ export class Sprite {
         // Calculate the sprite's bounding box in scratch coordinates
         const halfWidth = spriteWidth / 2;
         const halfHeight = spriteHeight / 2;
-        
+
         // Check if point is within the sprite's bounding box
         const dx = scratchX - this.state.x;
         const dy = scratchY - this.state.y;
-        
+
         return Math.abs(dx) <= halfWidth && Math.abs(dy) <= halfHeight;
     }
 

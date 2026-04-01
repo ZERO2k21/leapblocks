@@ -2079,7 +2079,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         if (id !== 'stage' && id !== selectedSpriteId) {
             handleSpriteSelect(id);
         }
-        
+
         // Trigger click event in the animation VM
         // Note: compiledScripts should already contain all current scripts due to handleWorkspaceChange
         animationVM.triggerSpriteClick(id, compiledScripts);
@@ -2828,7 +2828,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     const compiler = new AnimationCompiler(s.id);
                     const scripts = compiler.compile(tempWs!);
                     allScripts = allScripts.concat(scripts);
-                    
+
                     // SYNC: Ensure each sprite has its respective compiled scripts for global VM triggers
                     s.setScripts(scripts);
 
