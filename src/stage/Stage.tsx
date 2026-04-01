@@ -382,8 +382,28 @@ export const Stage: React.FC<StageProps> = ({
         }
     };
 
+    // --- STAGE CORNER MARKERS CONFIGURATION ---
+    const CORNER_WIDTH = 28;
+    const CORNER_HEIGHT = 28;
+    const BORDER_WIDTH = 4;
+    const CORNER_COLOR = '#8b5cf6';
+    const OFFSET = -BORDER_WIDTH; // To make it flush with the edge
+    const CORNER_RADIUS = 4;
+
     return (
-        <div style={{ position: 'relative', width, height, backgroundColor: '#fff', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+        <div style={{ position: 'relative', width, height, backgroundColor: '#fff', borderRadius: '8px', overflow: 'visible', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+            {/* Top-Left Corner */}
+            <div style={{ position: 'absolute', top: OFFSET, left: OFFSET, width: CORNER_WIDTH, height: CORNER_HEIGHT, borderLeft: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderTop: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderRadius: `${CORNER_RADIUS}px 0 0 0`, zIndex: 1, pointerEvents: 'none', boxSizing: 'border-box' }} />
+            
+            {/* Top-Right Corner */}
+            <div style={{ position: 'absolute', top: OFFSET, right: OFFSET, width: CORNER_WIDTH, height: CORNER_HEIGHT, borderRight: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderTop: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderRadius: `0 ${CORNER_RADIUS}px 0 0`, zIndex: 1, pointerEvents: 'none', boxSizing: 'border-box' }} />
+            
+            {/* Bottom-Left Corner */}
+            <div style={{ position: 'absolute', bottom: OFFSET, left: OFFSET, width: CORNER_WIDTH, height: CORNER_HEIGHT, borderLeft: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderBottom: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderRadius: `0 0 0 ${CORNER_RADIUS}px`, zIndex: 1, pointerEvents: 'none', boxSizing: 'border-box' }} />
+            
+            {/* Bottom-Right Corner */}
+            <div style={{ position: 'absolute', bottom: OFFSET, right: OFFSET, width: CORNER_WIDTH, height: CORNER_HEIGHT, borderRight: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderBottom: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderRadius: `0 0 ${CORNER_RADIUS}px 0`, zIndex: 1, pointerEvents: 'none', boxSizing: 'border-box' }} />
+
             {isCameraOn && (
                 <video
                     ref={videoRef}

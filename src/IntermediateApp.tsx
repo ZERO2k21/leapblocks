@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Blockly from '@blockly-runtime';
 
 import './styles/scratch-blocks.css'; // Import Scratch-style blocks CSS
-import './junior/styles/juniorBlocks.css'; 
+import './junior/styles/juniorBlocks.css';
 import './junior/styles/juniorLooksBlocks.css';
 
 
@@ -3620,7 +3620,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             if (originalCheckboxSetValue) {
                                 originalCheckboxSetValue.call(this, newValue);
                             }
-                            
+
                             const block = this.getSourceBlock();
                             if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox')) {
                                 const type = block.type === 'variable_reporter_checkbox' ? 'variable' : 'list';
@@ -4873,71 +4873,129 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                                <div style={{
+                                {/* --- GLOBAL STAGE SIZE SETTINGS --- */}
 
-                                    flex: 1,
+                                {/* Modify these values to easily control the size and scaling of the Stage in all layout modes! */}
 
-                                    width: '100%',
+                                {(() => {
 
-                                    display: 'flex',
+                                    // 1. The Internal Canvas Resolution (Default 480x360)
 
-                                    alignItems: 'center',
+                                    const CANVAS_WIDTH = 480;
 
-                                    justifyContent: 'center',
+                                    const CANVAS_HEIGHT = 360;
 
-                                    position: 'relative'
 
-                                }}>
 
-                                    <div style={{
+                                    // 2. Large Stage Mode Settings (Default)
 
-                                        transform: isFullscreen ? `scale(${fullscreenScale})` : (stageLayout === 'small' ? 'scale(0.5)' : 'scale(1)'),
+                                    const LARGE_STAGE_WIDTH = 600;
 
-                                        transformOrigin: 'center',
+                                    const LARGE_STAGE_HEIGHT = 380;
 
-                                        width: '480px',
+                                    const LARGE_STAGE_SCALE = 1.1;
 
-                                        height: '360px',
 
-                                        background: 'transparent', // User requested empty screen by default
 
-                                        boxShadow: isFullscreen ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' : 'none',
+                                    // 3. Small Stage Mode Settings
 
-                                        borderRadius: isFullscreen ? '8px' : '0',
+                                    const SMALL_STAGE_WIDTH = 300;
 
-                                        overflow: 'hidden'
+                                    const SMALL_STAGE_HEIGHT = 180;
 
-                                    }}>
+                                    const SMALL_STAGE_SCALE = 0.5;
 
-                                        <Stage
 
-                                            width={480}
 
-                                            height={360}
+                                    return (
 
-                                            sprites={sprites}
+                                        <div style={{
 
-                                            isRunning={isRunning}
+                                            flex: 1,
 
-                                            showGridNumbers={showGrid}
+                                            width: '100%',
 
-                                            onSpriteSelect={handleSpriteSelect}
+                                            display: 'flex',
 
-                                            isCameraOn={isCameraOn}
+                                            alignItems: 'center',
 
-                                            variableMonitors={variableMonitors}
+                                            justifyContent: 'center',
 
-                                            listMonitors={listMonitors}
+                                            position: 'relative'
 
-                                            tableMonitors={tableMonitors}
+                                        }}>
 
-                                            selectedSpriteId={selectedSpriteId}
+                                            <div style={{
 
-                                        />
+                                                width: isFullscreen ? '100vw' : (stageLayout === 'small' ? `${SMALL_STAGE_WIDTH}px` : `${LARGE_STAGE_WIDTH}px`),
 
-                                    </div>
+                                                height: isFullscreen ? '100vh' : (stageLayout === 'small' ? `${SMALL_STAGE_HEIGHT}px` : `${LARGE_STAGE_HEIGHT}px`),
 
-                                </div>
+                                                display: 'flex',
+
+                                                alignItems: 'center',
+
+                                                justifyContent: 'center',
+
+                                                position: 'relative'
+
+                                            }}>
+
+                                                <div style={{
+
+                                                    transform: isFullscreen ? `scale(${fullscreenScale})` : (stageLayout === 'small' ? `scale(${SMALL_STAGE_SCALE})` : `scale(${LARGE_STAGE_SCALE})`),
+
+                                                    transformOrigin: 'center center', // Changed from 'Full Screen' to valid CSS
+
+                                                    width: `${CANVAS_WIDTH}px`,
+
+                                                    height: `${CANVAS_HEIGHT}px`,
+
+                                                    background: 'transparent',
+
+                                                    boxShadow: isFullscreen ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' : 'none',
+
+                                                    borderRadius: isFullscreen ? '10px' : '0',
+
+                                                    overflow: 'visible'
+
+                                                }}>
+
+                                                    <Stage
+
+                                                        width={CANVAS_WIDTH}      /* Link to global settings */
+
+                                                        height={CANVAS_HEIGHT}    /* Link to global settings */
+
+                                                        sprites={sprites}
+
+                                                        isRunning={isRunning}
+
+                                                        showGridNumbers={showGrid}
+
+                                                        onSpriteSelect={handleSpriteSelect}
+
+                                                        isCameraOn={isCameraOn}
+
+                                                        variableMonitors={variableMonitors}
+
+                                                        listMonitors={listMonitors}
+
+                                                        tableMonitors={tableMonitors}
+
+                                                        selectedSpriteId={selectedSpriteId}
+
+                                                    />
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    );
+
+                                })()}
 
                             </div>
 
