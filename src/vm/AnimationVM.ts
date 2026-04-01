@@ -672,7 +672,7 @@ export class AnimationVM {
                 break;
 
             // PictoBlox motion extensions
-             case 'go_to':
+            case 'go_to':
                 motionEngine.goToTarget(step.target, sprite, {
                     width: 480,
                     height: 360,

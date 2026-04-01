@@ -1264,7 +1264,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     });
 
-                    setCompiledScripts(scripts);
+                    // Update global compiled scripts for this sprite only
+                    setCompiledScripts(prev => {
+                        const otherSpritesScripts = prev.filter(s => s.spriteId !== sprite.id);
+                        return [...otherSpritesScripts, ...scripts];
+                    });
 
                     const modeLabel = 'Stage Mode';
 
@@ -2034,14 +2038,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // SPRITE MANAGEMENT
 
-    // ═══════════════════════════════════════════════════════════════════════
-
-
-
     // Handle sprite selection: save old, load new
-
     const handleSpriteSelect = useCallback((newId: string) => {
-
         if (newId === selectedSpriteId) {
 
             // Trigger click event even if already selected (Scratch behavior)
@@ -2072,6 +2070,16 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         loadSpriteWorkspace(newId);
 
     }, [selectedSpriteId, compiledScripts, saveCurrentSpriteWorkspace, loadSpriteWorkspace]);
+
+    const handleSpriteClick = useCallback((id: string) => {
+        if (id !== 'stage' && id !== selectedSpriteId) {
+            handleSpriteSelect(id);
+        }
+        
+        // Trigger click event in the animation VM
+        // Note: compiledScripts should already contain all current scripts due to handleWorkspaceChange
+        animationVM.triggerSpriteClick(id, compiledScripts);
+    }, [selectedSpriteId, handleSpriteSelect, compiledScripts]);
 
 
 
@@ -5001,6 +5009,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                                         showGridNumbers={showGrid}
 
                                                         onSpriteSelect={handleSpriteSelect}
+
+                                                        onSpriteClick={handleSpriteClick}
 
                                                         isCameraOn={isCameraOn}
 

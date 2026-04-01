@@ -67,14 +67,15 @@ interface StageProps {
     onStageClick?: (x: number, y: number) => void;
     showGridNumbers?: boolean;
     onSpriteSelect?: (id: string) => void;
+    onSpriteClick?: (id: string) => void;
     isCameraOn?: boolean;
     variableMonitors?: VariableMonitorState[];
     listMonitors?: ListMonitorState[];
     tableMonitors?: TableMonitorState[];
     selectedSpriteId?: string | null;
-    onMonitorPositionChange?: (type: 'variable'|'list'|'table', id: string, x: number, y: number) => void;
-    onMonitorResize?: (type: 'list'|'table', id: string, width: number, height: number) => void;
-    onMonitorBringToFront?: (type: 'variable'|'list'|'table', id: string) => void;
+    onMonitorPositionChange?: (type: 'variable' | 'list' | 'table', id: string, x: number, y: number) => void;
+    onMonitorResize?: (type: 'list' | 'table', id: string, width: number, height: number) => void;
+    onMonitorBringToFront?: (type: 'variable' | 'list' | 'table', id: string) => void;
     onVariableModeChange?: (id: string, mode: 'normal' | 'large' | 'slider') => void;
     onVariableValueChange?: (id: string, value: number) => void;
     onVariableSliderRangeChange?: (id: string, min: number, max: number) => void;
@@ -86,6 +87,7 @@ export const Stage: React.FC<StageProps> = ({
     sprites,
     isRunning,
     onStageClick,
+    onSpriteClick,
     showGridNumbers = false,
     onSpriteSelect,
     isCameraOn = false,
@@ -346,6 +348,7 @@ export const Stage: React.FC<StageProps> = ({
                 setDragOffset({ x: sprite.x - mouseX, y: sprite.y - mouseY });
                 sprite.setDragging(true); // Trigger drag scale/shadow
                 if (onSpriteSelect) onSpriteSelect(sprite.id);
+                if (onSpriteClick) onSpriteClick(sprite.id);
                 // Capture pointer to track outside canvas
                 canvas.setPointerCapture(e.pointerId);
                 return;
@@ -353,6 +356,7 @@ export const Stage: React.FC<StageProps> = ({
         }
 
         if (onStageClick) onStageClick(mouseX, mouseY);
+        if (onSpriteClick) onSpriteClick('stage');
     };
 
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -398,13 +402,13 @@ export const Stage: React.FC<StageProps> = ({
         <div style={{ position: 'relative', width, height, backgroundColor: '#fff', borderRadius: '8px', overflow: 'visible', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
             {/* Top-Left Corner */}
             <div style={{ position: 'absolute', top: OFFSET, left: OFFSET, width: CORNER_WIDTH, height: CORNER_HEIGHT, borderLeft: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderTop: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderRadius: `${CORNER_RADIUS}px 0 0 0`, zIndex: 1, pointerEvents: 'none', boxSizing: 'border-box' }} />
-            
+
             {/* Top-Right Corner */}
             <div style={{ position: 'absolute', top: OFFSET, right: OFFSET, width: CORNER_WIDTH, height: CORNER_HEIGHT, borderRight: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderTop: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderRadius: `0 ${CORNER_RADIUS}px 0 0`, zIndex: 1, pointerEvents: 'none', boxSizing: 'border-box' }} />
-            
+
             {/* Bottom-Left Corner */}
             <div style={{ position: 'absolute', bottom: OFFSET, left: OFFSET, width: CORNER_WIDTH, height: CORNER_HEIGHT, borderLeft: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderBottom: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderRadius: `0 0 0 ${CORNER_RADIUS}px`, zIndex: 1, pointerEvents: 'none', boxSizing: 'border-box' }} />
-            
+
             {/* Bottom-Right Corner */}
             <div style={{ position: 'absolute', bottom: OFFSET, right: OFFSET, width: CORNER_WIDTH, height: CORNER_HEIGHT, borderRight: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderBottom: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderRadius: `0 0 ${CORNER_RADIUS}px 0`, zIndex: 1, pointerEvents: 'none', boxSizing: 'border-box' }} />
 
@@ -454,13 +458,13 @@ export const Stage: React.FC<StageProps> = ({
                     pointerEvents: 'none', // Let clicks pass through to main canvas
                 }}
             />
-            
+
             {/* Render monitors */}
             {variableMonitors
-                .filter(monitor => 
-                    monitor.visible && 
-                    (monitor.scope === 'all_sprites' || 
-                     (monitor.scope === 'this_sprite' && monitor.spriteId === selectedSpriteId))
+                .filter(monitor =>
+                    monitor.visible &&
+                    (monitor.scope === 'all_sprites' ||
+                        (monitor.scope === 'this_sprite' && monitor.spriteId === selectedSpriteId))
                 )
                 .map(monitor => (
                     <VariableMonitor
@@ -481,12 +485,12 @@ export const Stage: React.FC<StageProps> = ({
                         onSliderRangeChange={(min, max) => onVariableSliderRangeChange?.(monitor.id, min, max)}
                     />
                 ))}
-            
+
             {listMonitors
-                .filter(monitor => 
-                    monitor.visible && 
-                    (monitor.scope === 'all_sprites' || 
-                     (monitor.scope === 'this_sprite' && monitor.spriteId === selectedSpriteId))
+                .filter(monitor =>
+                    monitor.visible &&
+                    (monitor.scope === 'all_sprites' ||
+                        (monitor.scope === 'this_sprite' && monitor.spriteId === selectedSpriteId))
                 )
                 .map(monitor => (
                     <ListMonitor
@@ -504,12 +508,12 @@ export const Stage: React.FC<StageProps> = ({
                         onPointerDown={() => onMonitorBringToFront?.('list', monitor.id)}
                     />
                 ))}
-            
+
             {tableMonitors
-                .filter(monitor => 
-                    monitor.visible && 
-                    (monitor.scope === 'all_sprites' || 
-                     (monitor.scope === 'this_sprite' && monitor.spriteId === selectedSpriteId))
+                .filter(monitor =>
+                    monitor.visible &&
+                    (monitor.scope === 'all_sprites' ||
+                        (monitor.scope === 'this_sprite' && monitor.spriteId === selectedSpriteId))
                 )
                 .map(monitor => (
                     <TableMonitor
