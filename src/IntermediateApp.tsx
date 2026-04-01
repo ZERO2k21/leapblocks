@@ -31,6 +31,7 @@ import { Sprite } from './stage/Sprite';
 import type { SpriteType } from './stage/Sprite';
 
 import Stage from './stage/Stage';
+import AskBar from './components/AskBar';
 
 import SpritePanel from './stage/SpritePanel';
 
@@ -609,6 +610,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const [isMakeTableOpen, setIsMakeTableOpen] = useState(false);
     const [isMakeBlockOpen, setIsMakeBlockOpen] = useState(false);
 
+    // Ask-and-wait state
+    const [askState, setAskState] = useState<{
+        isAsking: boolean;
+        question: string;
+        resolve: ((answer: string) => void) | null;
+    }>({ isAsking: false, question: '', resolve: null });
+
+    const handleAskSubmit = useCallback((answer: string) => {
+        if (askState.resolve) askState.resolve(answer);
+        setAskState({ isAsking: false, question: '', resolve: null });
+    }, [askState.resolve]);
+
     // Monitor states
     const [variableMonitors, setVariableMonitors] = useState<VariableMonitorState[]>([]);
     const [listMonitors, setListMonitors] = useState<ListMonitorState[]>([]);
@@ -678,6 +691,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         };
         animationVM.onHideTable = (name) => setTableMonitors(prev => prev.map(m => m.name === name ? { ...m, visible: false } : m));
 
+        // Ask-and-wait: VM calls this, returns a Promise that blocks execution
+        animationVM.onAskQuestion = (question: string) => {
+            return new Promise<string>((resolve) => {
+                setAskState({ isAsking: true, question, resolve });
+            });
+        };
+
         return () => {
             animationVM.onShowVariable = undefined;
             animationVM.onHideVariable = undefined;
@@ -685,6 +705,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             animationVM.onHideList = undefined;
             animationVM.onShowTable = undefined;
             animationVM.onHideTable = undefined;
+            animationVM.onAskQuestion = undefined;
         };
     }, []);
 
@@ -2843,6 +2864,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         scratchRuntime.stopAll();
         animationVM.stopAll();
 
+        // Cancel any pending ask prompt
+        setAskState(prev => {
+            if (prev.resolve) prev.resolve('');
+            return { isAsking: false, question: '', resolve: null };
+        });
+
 
 
         // Clear ongoing visual actions for all sprites
@@ -4986,6 +5013,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                                         selectedSpriteId={selectedSpriteId}
 
                                                     />
+
+                                                    {/* Ask-and-wait input overlay */}
+                                                    {askState.isAsking && (
+                                                        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', zIndex: 100 }}>
+                                                            <AskBar question={askState.question} onSubmit={handleAskSubmit} />
+                                                        </div>
+                                                    )}
 
                                                 </div>
 

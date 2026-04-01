@@ -205,6 +205,9 @@ export class AnimationCompiler {
                     return idx > 0 && idx <= str.length ? str[idx - 1] : '';
                 };
             }
+            case 'sensing_answer': {
+                return () => animationVM.getAnswer();
+            }
             case 'looks_costume_name': {
                 const sprite = animationVM.getSprite(this.spriteId);
                 return () => {
@@ -325,8 +328,8 @@ export class AnimationCompiler {
                 const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
                 const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
                 return () => {
-                   const divisor = num2Func();
-                   return divisor !== 0 ? num1Func() / divisor : 0;
+                    const divisor = num2Func();
+                    return divisor !== 0 ? num1Func() / divisor : 0;
                 };
             }
             case 'operator_random': {
@@ -350,9 +353,9 @@ export class AnimationCompiler {
                 const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
                 const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
                 return () => {
-                   const n1 = num1Func();
-                   const n2 = num2Func();
-                   return n2 !== 0 ? n1 % n2 : 0;
+                    const n1 = num1Func();
+                    const n2 = num2Func();
+                    return n2 !== 0 ? n1 % n2 : 0;
                 };
             }
             case 'operator_round': {
@@ -364,9 +367,9 @@ export class AnimationCompiler {
                 // The dropdown might return strings like '1', '2' etc. Get it as number natively if possible, else string
                 const decimals = Number(valueBlock.getFieldValue('DECIMALS') || 1);
                 return () => {
-                   const num = numFunc();
-                   const multiplier = Math.pow(10, decimals);
-                   return Math.round(num * multiplier) / multiplier;
+                    const num = numFunc();
+                    const multiplier = Math.pow(10, decimals);
+                    return Math.round(num * multiplier) / multiplier;
                 };
             }
             case 'operator_mathop': {

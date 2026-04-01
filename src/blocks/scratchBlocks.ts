@@ -58,7 +58,7 @@ const scratchBlocks = [
         nextStatement: null,
         colour: '#4C97FF',
         tooltip: 'Moves the sprite to a specific position.',
-        helpUrl: 'https://en.scratch-wiki.info/wiki/Go_To_%28block%29
+        helpUrl: 'https://en.scratch-wiki.info/wiki/Go_To_%28block%29'
     },
     {
         type: 'motion_gotoxy',

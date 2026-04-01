@@ -177,6 +177,9 @@ export class AnimationVM {
     public onShowTable?: (name: string) => void;
     public onHideTable?: (name: string) => void;
 
+    // Ask callback — when set, the VM delegates input to the React UI instead of window.prompt
+    public onAskQuestion?: (question: string) => Promise<string>;
+
     // Timer
     private timerStart: number = Date.now();
 
@@ -1499,19 +1502,28 @@ export class AnimationVM {
     // ASK/ANSWER
     // ═══════════════════════════════════════════════════════════════════════
     async askQuestion(question: string, sprite: Sprite): Promise<void> {
-        // Show the question in a speech bubble
+        // Show the question in a speech bubble on the sprite
         sprite.say(question);
 
-        // In a full implementation, this would show an input field on the stage
-        // For now, use a browser prompt as a placeholder
-        // Use a small delay to ensure UI updates before alert/prompt blocks main thread
-        await new Promise(resolve => setTimeout(resolve, 50));
-
-        try {
-            const answer = window.prompt(question) || '';
-            this.currentAnswer = answer;
-        } catch (e) {
-            console.error('Prompt failed', e);
+        if (this.onAskQuestion) {
+            // Delegate to the React UI — this returns a Promise that blocks
+            // until the user types an answer and clicks OK / presses Enter
+            try {
+                const answer = await this.onAskQuestion(question);
+                this.currentAnswer = answer;
+            } catch {
+                // Promise was rejected (e.g. user clicked Stop) — keep previous answer
+                console.log('[AnimationVM] Ask cancelled');
+            }
+        } else {
+            // Fallback: browser prompt (blocks the main thread — not ideal)
+            await new Promise(resolve => setTimeout(resolve, 50));
+            try {
+                const answer = window.prompt(question) || '';
+                this.currentAnswer = answer;
+            } catch (e) {
+                console.error('Prompt failed', e);
+            }
         }
 
         sprite.clearSay();
