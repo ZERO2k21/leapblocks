@@ -6,6 +6,7 @@ import { penManager } from '../engine/PenManager';
 import VariableMonitor from '../components/VariableMonitor';
 import ListMonitor from '../components/ListMonitor';
 import TableMonitor from '../components/TableMonitor';
+import { animationVM } from '../vm/AnimationVM';
 
 // Monitor interfaces (matching IntermediateApp)
 interface VariableMonitorState {
@@ -355,18 +356,21 @@ export const Stage: React.FC<StageProps> = ({
     };
 
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-        if (!draggingSpriteId) return;
-
         const canvas = canvasRef.current;
         if (!canvas) return;
         const rect = canvas.getBoundingClientRect();
-        const mouseX = ((e.clientX - rect.left) * (width / rect.width)) - width / 2;
-        const mouseY = height / 2 - ((e.clientY - rect.top) * (height / rect.height));
+        const mx = ((e.clientX - rect.left) * (width / rect.width)) - width / 2;
+        const my = height / 2 - ((e.clientY - rect.top) * (height / rect.height));
 
-        const sprite = sprites.find(s => s.id === draggingSpriteId);
-        if (sprite) {
-            sprite.setX(mouseX + dragOffset.x);
-            sprite.setY(mouseY + dragOffset.y);
+        // Sync with VM for blocks like "distance to mouse" or "go to mouse"
+        animationVM.setMousePosition(mx, my);
+
+        if (draggingSpriteId) {
+            const sprite = sprites.find(s => s.id === draggingSpriteId);
+            if (sprite) {
+                sprite.setX(mx + dragOffset.x);
+                sprite.setY(my + dragOffset.y);
+            }
         }
     };
 

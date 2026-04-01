@@ -672,38 +672,44 @@ export class AnimationVM {
                 break;
 
             // PictoBlox motion extensions
-            case 'go_to':
-                if (step.target === 'random') {
-                    const randX = Math.random() * 480 - 240; // -240 to 240
-                    const randY = Math.random() * 360 - 180; // -180 to 180
-                    motionEngine.goTo(sprite, randX, randY);
-                } else if (step.target === 'mouse') {
-                    motionEngine.goTo(sprite, this.mouseX, this.mouseY);
-                } else {
-                    // target is a sprite name
-                    const targetSprite = spriteManager.getSprite(step.target);
-                    if (targetSprite) {
-                        motionEngine.goTo(sprite, targetSprite.x, targetSprite.y);
-                    } else {
-                        console.warn(`[AnimationVM] go_to: Sprite '${step.target}' not found`);
-                    }
-                }
+             case 'go_to':
+                motionEngine.goToTarget(step.target, sprite, {
+                    width: 480,
+                    height: 360,
+                    mouseX: this.mouseX,
+                    mouseY: this.mouseY
+                });
                 break;
 
             case 'glide_to':
-                if (step.target === 'random') {
-                    const randX = Math.random() * 480 - 240;
-                    const randY = Math.random() * 360 - 180;
-                    sprite.startGlide(randX, randY, step.secs);
-                } else if (step.target === 'mouse') {
-                    sprite.startGlide(this.mouseX, this.mouseY, step.secs);
-                } else {
-                    const targetSprite = spriteManager.getSprite(step.target);
-                    if (targetSprite) {
-                        sprite.startGlide(targetSprite.x, targetSprite.y, step.secs);
+                {
+                    let tx = sprite.x;
+                    let ty = sprite.y;
+
+                    if (step.target === 'random' || step.target === '_random_') {
+                        tx = (Math.random() - 0.5) * 480;
+                        ty = (Math.random() - 0.5) * 360;
+                    } else if (step.target === 'mouse' || step.target === '_mouse_') {
+                        tx = this.mouseX;
+                        ty = this.mouseY;
                     } else {
-                        console.warn(`[AnimationVM] glide_to: Sprite '${step.target}' not found`);
+                        const targetSprite = spriteManager.getSprite(step.target);
+                        if (targetSprite) {
+                            tx = targetSprite.x;
+                            ty = targetSprite.y;
+                        }
                     }
+
+                    // Strict clamping for glide target too
+                    const costume = sprite.currentCostume;
+                    const scale = sprite.size / 100;
+                    const sw = (costume?.width || 40) * scale;
+                    const sh = (costume?.height || 40) * scale;
+
+                    tx = Math.max(-240 + sw / 2, Math.min(240 - sw / 2, tx));
+                    ty = Math.max(-180 + sh / 2, Math.min(180 - sh / 2, ty));
+
+                    sprite.startGlide(tx, ty, step.secs);
                 }
                 await this.waitForGlide(sprite, signal);
                 break;
@@ -1343,9 +1349,14 @@ export class AnimationVM {
         return this.mouseY;
     }
 
-    updateMousePosition(x: number, y: number): void {
+    setMousePosition(x: number, y: number): void {
         this.mouseX = x;
         this.mouseY = y;
+        // Also update any global objects if necessary
+        if (typeof window !== 'undefined') {
+            (window as any).mouseX = x;
+            (window as any).mouseY = y;
+        }
     }
 
     getDistanceTo(target: string, fromSpriteId: string): number {
