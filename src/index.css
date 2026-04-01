@@ -1,5 +1,124 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-primary: #100051;
+  --color-brand-secondary: #4F46E5;
+  --color-bg-main: #F8FAFC;
+  --color-text-main: #0F172A;
+  --color-text-muted: #64748B;
+  --color-accent-lime: #BEF264;
+  --color-accent-pink: #F472B6;
+
+  --font-jakarta: "Plus Jakarta Sans", system-ui, sans-serif;
+
+  --animate-hero-reveal: hero-reveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  --animate-float-slow: float-slow 10s ease-in-out infinite;
+  --animate-float-glow: float-glow 6s ease-in-out infinite;
+  --animate-tc-pulse: tc-pulse 1.5s infinite;
+  --animate-splash-fade-out: splash-fade-out 0.8s ease-in-out 3s forwards;
+  --animate-rocket-fly: rocket-fly 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+
+  @keyframes hero-reveal {
+    0% {
+      opacity: 0;
+      transform: translateY(30px) scale(0.95);
+      filter: blur(8px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0px);
+    }
+  }
+
+  @keyframes float-slow {
+
+    0%,
+    100% {
+      transform: translate(0, 0) rotate(0deg);
+    }
+
+    33% {
+      transform: translate(20px, 30px) rotate(2deg);
+    }
+
+    66% {
+      transform: translate(-10px, 15px) rotate(-2deg);
+    }
+  }
+
+  @keyframes float-glow {
+
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.5;
+    }
+
+    50% {
+      transform: scale(1.05);
+      opacity: 0.8;
+    }
+  }
+
+  @keyframes tc-pulse {
+    0% {
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+      transform: translateY(-4px);
+    }
+
+    50% {
+      box-shadow: 0 0 35px rgba(99, 102, 241, 0.8);
+      transform: translateY(-8px);
+    }
+
+    100% {
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+      transform: translateY(-4px);
+    }
+  }
+
+  @keyframes splash-fade-out {
+    0% {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    100% {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+
+  @keyframes rocket-fly {
+    0% {
+      transform: translateY(120vh) scale(1);
+      opacity: 1;
+    }
+
+    35% {
+      transform: translateY(0) scale(1.1);
+      opacity: 1;
+    }
+
+    50% {
+      transform: translateY(0) scale(1.1);
+      opacity: 1;
+    }
+
+    85% {
+      transform: translateY(-120vh) scale(0.8);
+      opacity: 1;
+    }
+
+    100% {
+      transform: translateY(-120vh) scale(0.8);
+      opacity: 0;
+    }
+  }
+}
+
 /* LeapBlocks Styles */
 * {
   margin: 0;
@@ -96,6 +215,7 @@ body,
   border-radius: 8px !important;
   transition: background-color 0.15s ease !important;
 }
+
 .blocklyToolboxCategoryContainer:hover .blocklyToolboxCategory {
   background-color: rgba(0, 0, 0, 0.05) !important;
 }
@@ -897,30 +1017,32 @@ body #root .blocklyFlyoutButton .blocklyText,
 .blocklyTrash {
   display: none !important;
 }
+
 /* Scratch 3.0-like checkbox styling for flyout reporters */
-.variable-checkbox-container, .list-checkbox-container {
-    padding-left: 8px !important;
+.variable-checkbox-container,
+.list-checkbox-container {
+  padding-left: 8px !important;
 }
 
-.variable-checkbox, .list-checkbox {
-    margin-right: 8px !important;
-    font-weight: 500;
+.variable-checkbox,
+.list-checkbox {
+  margin-right: 8px !important;
+  font-weight: 500;
 }
 
 .blocklyFlyoutCheckbox {
-    fill: #fff !important;
-    stroke: rgba(0,0,0,0.15) !important;
-    rx: 4px !important;
-    cursor: pointer !important;
+  fill: #fff !important;
+  stroke: rgba(0, 0, 0, 0.15) !important;
+  rx: 4px !important;
+  cursor: pointer !important;
 }
 
 .blocklyFlyoutCheckbox.blocklyChecked {
-    fill: #4C97FF !important;
-    stroke: #4C97FF !important;
+  fill: #4C97FF !important;
+  stroke: #4C97FF !important;
 }
 
 .blocklyFlyoutCheckboxPath {
-    stroke: white !important;
-    stroke-width: 3px !important;
+  stroke: white !important;
+  stroke-width: 3px !important;
 }
-

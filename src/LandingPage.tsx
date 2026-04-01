@@ -34,12 +34,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
       setTimeout(() => setToast({ message: '', visible: false }), 2500);
     };
 
-    // Dynamically load Lottie script if not present
+    // Dynamically load DotLottie script if not present
     let script: HTMLScriptElement | null = null;
-    if (!(window as any).lottie) {
+    if (!customElements.get('dotlottie-player')) {
       script = document.createElement('script');
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";
-      script.async = true;
+      script.src = "https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs";
+      script.type = "module";
       script.onload = initLottie;
       document.body.appendChild(script);
     } else {
@@ -49,40 +49,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     function initLottie() {
       const container = document.getElementById('lottie-anim');
       if (!container) return;
-      container.innerHTML = ''; // clear any existing animation
-      const anim = (window as any).lottie.loadAnimation({
-        container: container,
-        renderer: 'svg',
-        loop: true,
-        autoplay: true,
-        path: encodeURI('/assets/chatbot_messenger.json')
-      });
-      anim.setSpeed(0.5); // Reset speed to normal
-
-      anim.addEventListener('data_failed', function () {
-        const el = document.getElementById('lottie-anim');
-        if (el) {
-          el.style.cssText = `
-              display:flex; align-items:center; justify-content:center;
-              flex-direction:column; gap:18px;
-              background: radial-gradient(ellipse at 38% 38%, rgba(124,92,252,0.12), transparent 60%),
-                          radial-gradient(ellipse at 66% 66%, rgba(31,220,232,0.08), transparent 60%);
-              border-radius:20px; min-height:400px;
-              `;
-          el.innerHTML = `
-              <style>
-                  @keyframes rb{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-14px) rotate(2deg)}}
-                  @keyframes cp{0%,100%{opacity:0;transform:translateY(6px)}18%,82%{opacity:1;transform:translateY(0)}}
-                  .rb-e{animation:rb 3s ease-in-out infinite;font-size:68px}
-                  .rb-a{animation:cp 4.2s ease-in-out infinite .3s;background:rgba(31,220,232,0.1);border:1px solid rgba(31,220,232,0.2);padding:7px 16px;border-radius:10px;font-size:.82rem;color:#1a1a2e}
-                  .rb-b{animation:cp 4.2s ease-in-out infinite 2.1s;background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.2);padding:7px 16px;border-radius:10px;font-size:.82rem;color:#1a1a2e}
-              </style>
-              <div class="rb-a">Hi! How can I help? 👋</div>
-              <div class="rb-e">🤖</div>
-              <div class="rb-b">Let's build something! 🚀</div>
-              `;
-        }
-      });
+      container.innerHTML = `
+        <dotlottie-player 
+          src="/assets/robot.lottie" 
+          background="transparent" 
+          speed="1" 
+          style="width: 100%; height: 100%;" 
+          loop 
+          autoplay
+        ></dotlottie-player>
+      `;
     }
 
     return () => {
@@ -95,762 +71,228 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   return (
     <>
       {showSplash && (
-        <div className="splash-screen">
-          <div className="splash-rocket-container">
-            <img src="/assets/sprites/robot/robot_idle.svg" alt="Robot Flow" className="splash-robot-img" />
+        <div className="fixed inset-0 z-[9999] bg-[#f8f9fa] flex items-center justify-center flex-col overflow-hidden animate-splash-fade-out">
+          <div className="absolute z-2 animate-rocket-fly">
+            <img
+              src="/assets/sprites/robot/robot_idle.svg"
+              alt="Robot Flow"
+              className="w-[clamp(100px,25vw,140px)] h-auto drop-shadow-[0_10px_30px_rgba(124,92,252,0.5)]"
+            />
           </div>
-          <div className="splash-text-container">
-            <div className="splash-text-welcome">Welcome to the</div>
-            <div className="splash-text">Leaplab</div>
-            <div className="splash-powered-by">
-              <span>Powered by</span>
-              <img src="/assets/topbar_logo.svg" alt="LeapLab" />
+          <div className="z-1 opacity-0 flex flex-col items-center gap-[10px] animate-[splash-text-reveal_1.2s_cubic-bezier(0.2,0.8,0.2,1)_1.2s_forwards]">
+            <div className="text-[clamp(1rem,3vw,1.8rem)] font-medium text-black/60 tracking-[0.1em] uppercase mb-[-15px]">Welcome to the</div>
+            <div className="text-[clamp(3rem,12vw,5.5rem)] font-black tracking-[-0.02em] bg-clip-text text-transparent bg-gradient-to-br from-[#7a5af8] to-[#38bdf8] leading-[1.1]">Leaplab</div>
+            <div className="mt-[15px] flex items-center gap-[10px] opacity-0 animate-[splash-text-reveal_1s_cubic-bezier(0.2,0.8,0.2,1)_1.8s_forwards]">
+              <span className="text-[0.85rem] font-semibold text-black/40 uppercase tracking-[0.1em]">Powered by</span>
+              <img src="/assets/topbar_logo.svg" alt="LeapLab" className="h-[28px] opacity-80" />
             </div>
           </div>
+          <style dangerouslySetInnerHTML={{
+            __html: `
+            @keyframes splash-text-reveal {
+              0% { opacity: 0; transform: scale(0.8) translateY(20px); filter: blur(10px); }
+              100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
+            }
+          `}} />
         </div>
       )}
-      <style dangerouslySetInnerHTML={{
-        __html: `
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-:root {
-  --brand-primary: #100051; /* Electric Indigo */
-  --brand-secondary: #4F46E5;
-  --bg-main: #F8FAFC;
-  --text-main: #0F172A; /* Deep Slate */
-  --text-muted: #64748B;
-  --accent: #BEF264; /* Acid Green for Funky pop */
-  --accent-secondary: #F472B6; /* Hot Pink accents */
-}
+      {/* Tailwind handles the design tokens via utility classes */}
+      <div className="font-jakarta bg-bg-main text-text-main min-h-screen overflow-x-hidden overflow-y-auto relative selection:bg-brand-secondary/20">
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        {/* Global Floating Shapes */}
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          <div className="absolute top-[-5%] left-[-10%] w-[550px] h-[550px] bg-[#bef264]/20 rounded-full blur-[130px] animate-float-slow"></div>
+          <div className="absolute top-[25%] left-[-5%] w-[500px] h-[500px] bg-[#7c5cfc]/15 rounded-full blur-[120px] animate-float-slow delay-[-2s]"></div>
+          <div className="absolute top-[30%] right-[5%] w-[450px] h-[450px] bg-[#38bdf8]/10 rounded-full blur-[110px] animate-float-slow delay-[-4s]"></div>
+          <div className="absolute bottom-[-10%] left-[25%] w-[450px] h-[450px] bg-[#f472b6]/20 rounded-full blur-[120px] animate-float-slow delay-[-5s]"></div>
+        </div>
 
-/* ─── SPLASH SCREEN ─── */
-.splash-screen {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: #f8f9fa;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  animation: splash-fade-out 0.8s ease-in-out 3s forwards;
-}
-@keyframes splash-fade-out {
-  0% { opacity: 1; visibility: visible; }
-  100% { opacity: 0; visibility: hidden; }
-}
-.splash-rocket-container {
-  position: absolute;
-  animation: rocket-fly 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  z-index: 2;
-}
-.splash-robot-img {
-  width: clamp(100px, 25vw, 140px);
-  height: auto;
-  filter: drop-shadow(0 10px 30px rgba(124, 92, 252, 0.5));
-}
-@keyframes rocket-fly {
-  0% { transform: translateY(120vh) scale(1); opacity: 1; }
-  35% { transform: translateY(0) scale(1.1); opacity: 1; }
-  50% { transform: translateY(0) scale(1.1); opacity: 1; }
-  85% { transform: translateY(-120vh) scale(0.8); opacity: 1; }
-  100% { transform: translateY(-120vh) scale(0.8); opacity: 0; }
-}
-.splash-text-container {
-  z-index: 1;
-  opacity: 0;
-  animation: splash-text-reveal 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) 1.2s forwards;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-.splash-text-welcome {
-  font-size: clamp(1rem, 3vw, 1.8rem);
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.6);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-bottom: -15px; 
-}
-.splash-text {
-  font-size: clamp(3rem, 12vw, 5.5rem);
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #7a5af8 0%, #38bdf8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  line-height: 1.1;
-}
-@keyframes splash-text-reveal {
-  0% { opacity: 0; transform: scale(0.8) translateY(20px); filter: blur(10px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
-}
-
-.splash-powered-by {
-  margin-top: 15px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  opacity: 0;
-  animation: splash-text-reveal 1s cubic-bezier(0.2, 0.8, 0.2, 1) 1.8s forwards;
-}
-.splash-powered-by span {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.4);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-.splash-powered-by img {
-  height: 28px;
-  opacity: 0.8;
-}
-
-.hero-powered-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  background: rgba(99, 102, 241, 0.05);
-  border: 1px solid rgba(99, 102, 241, 0.15);
-  backdrop-filter: blur(8px);
-  border-radius: 100px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-  transition: all 0.3s ease;
-}
-.hero-powered-badge:hover {
-  transform: translateY(-2px);
-  background: rgba(99, 102, 241, 0.08);
-  border-color: rgba(99, 102, 241, 0.25);
-}
-.hero-powered-badge .pb-text {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-}
-.hero-powered-badge .pb-logo {
-  height: 20px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-}
-.hero-powered-badge .pb-info-icon {
-  width: 14px;
-  height: 14px;
-  background: var(--brand-primary);
-  color: #fff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: 900;
-  font-family: serif;
-}
-
-
-.landing-page-container {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  background: var(--bg-main);
-  background-image: radial-gradient(rgba(99, 102, 241, 0.05) 1.5px, transparent 1.5px);
-  background-size: 30px 30px;
-  color: var(--text-main);
-  height: 100dvh;
-  overflow: hidden;
-  min-height: 100vh;
-  overflow-x: hidden;
-  overflow-y: auto;
-  position: relative;
-}
-
-/* ─── BACKGROUND NODES ─── */
-.landing-page-container .bg-nodes {
-  position: fixed;
-  top: 0; right: 0;
-  width: 100%;
-  max-width: 1200px;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-  opacity: 0.3;
-}
-@media (min-width: 1024px) {
-  .landing-page-container .bg-nodes {
-    width: 60%;
-    opacity: 0.6;
-  }
-}
-.landing-page-container .bg-nodes svg { width: 100%; height: 100%; opacity: 0.5; }
-
-/* ─── TOPBAR ─── */
-.landing-page-container nav {
-  position: sticky;
-  top: 0; left: 0; right: 0;
-  z-index: 200;
-  height: clamp(60px, 8vw, 68px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 clamp(12px, 3vw, 36px);
-  background: rgba(248, 250, 252, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-}
-.landing-page-container .nav-brand {
-  display:flex; align-items:center; gap:10px; text-decoration:none;
-  filter: drop-shadow(0 2px 8px rgba(99,102,241,0.15));
-}
-.landing-page-container .brand-logo {
-  height: clamp(44px, 6vw, 55px);
-  width:auto;
-  object-fit:contain;
-}
-.landing-page-container .nav-actions {
-  display:flex; align-items:center; gap:14px;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.08));
-}
-.landing-page-container .nav-links {
-  display: flex;
-  gap: 24px;
-  margin-left: 12px;
-}
-@media (max-width: 768px) {
-  .landing-page-container .nav-links {
-    display: none;
-  }
-}
-
-
-/* ─── PAGE CONTENT ─── */
-.landing-page-container .page { position:relative; z-index:1; padding-top: clamp(15px, 3vh, 30px); display: flex; flex-direction: column; height: calc(100dvh - 68px); overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
-.landing-page-container .page { position:relative; z-index:1; padding-top:20px; display: flex; flex-direction: column; min-height: calc(100vh - 68px); transition: all 0.3s ease; }
-
-/* ─── HERO ─── */
-.landing-page-container .hero-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: clamp(6px, 1.2vw, 16px) clamp(24px, 5vw, 48px);
-  gap: 24px;
-  flex: 1 0 auto;
-}
-
-@media (max-width: 1024px) {
-  .landing-page-container .hero-grid {
-    grid-template-columns: 1fr;
-    text-align: center;
-    gap: clamp(24px, 5vw, 50px);
-    padding-top: clamp(12px, 4vw, 48px);
-    gap: 32px;
-    padding-top: clamp(24px, 10vw, 48px);
-    margin-bottom: 40px;
-  }
-  .landing-page-container .hero-left {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .landing-page-container .hero-sub {
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 100%;
-  }
-  .landing-page-container .hero-btns {
-    justify-content: center;
-    width: 100%;
-  }
-}
-
-.landing-page-container .hero-title {
-  font-size: clamp(2rem, 6vw, 4rem);
-  font-weight: 900;
-  line-height: 1.12;
-  letter-spacing: -0.04em;
-  margin-bottom: 8px;
-  color: #0F172A;
-}
-.landing-page-container .hero-title .hw-code {
-  font-style: italic;
-  color: transparent;
-  background: linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #8B5CF6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: 0.02em;
-  padding: 0 4px;
-}
-.landing-page-container .hero-title .hw-bold {
-  color: transparent;
-  -webkit-text-stroke: 2.5px #6366F1;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: -0.02em;
-}
-.landing-page-container .hero-tagline {
-  display: inline-block;
-  font-size: clamp(0.6rem, 1.2vw, 0.7rem);
-  font-weight: 800;
-  color: #000;
-  text-transform: uppercase;
-  letter-spacing: 0.25em;
-  margin-bottom: 8px;
-  padding: 6px 14px;
-  background: var(--accent);
-  border: 2px solid #000;
-  box-shadow: 4px 4px 0px #000;
-  transform: rotate(-1deg);
-}
-.landing-page-container .hero-sub {
-  font-size: clamp(0.9rem, 2vw, 1.1rem);
-  color: #0f172a;
-  line-height: 1.6;
-  max-width: 520px;
-  margin-bottom: 24px;
-  position: relative;
-  z-index: 2;
-  opacity: 0.85;
-}
-.landing-page-container .hero-btns { display:flex; gap:10px; flex-wrap:wrap; }
-.landing-page-container .btn-adventure {
-  background: var(--brand-primary);
-  border: none;
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  padding: 12px 24px;
-  border-radius: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
-}
-.landing-page-container .btn-adventure:hover {
-  background: var(--brand-secondary);
-  transform: scale(1.05) rotate(2deg);
-  box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
-}
-.landing-page-container .btn-demo {
-  background: #fff;
-  border: 2px solid #000;
-  color: var(--text-main);
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  padding: 12px 24px;
-  border-radius: 12px;
-  transition: all 0.2s;
-  box-shadow: 4px 4px 0px #000;
-}
-.landing-page-container .btn-demo:hover {
-  background: var(--bg-main);
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0px #000;
-}
-
-/* ─── ANIMATIONS ─── */
-@keyframes hero-reveal {
-  0% { opacity: 0; transform: translateY(50px) scale(0.9); filter: blur(10px); }
-  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
-}
-
-.hero-tagline { animation: hero-reveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-.hero-title { animation: hero-reveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s forwards; }
-.hero-sub { animation: hero-reveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.2s forwards; }
-.hero-btns { animation: hero-reveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s forwards; }
-.hero-right { animation: hero-reveal 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.4s forwards; }
-
-
-/* ─── FLOATING SHAPES ─── */
-.shape {
-  position: absolute;
-  z-index: 0;
-  filter: blur(40px);
-  opacity: 0.4;
-  animation: float-slow 10s ease-in-out infinite;
-}
-.shape-1 {
-  width: 300px; height: 300px;
-  background: var(--accent);
-  top: 10%; left: -5%;
-}
-.shape-2 {
-  width: 400px; height: 400px;
-  background: var(--brand-primary);
-  top: 40%; right: -10%;
-  animation-delay: -2s;
-}
-.shape-3 {
-  width: 250px; height: 250px;
-  background: var(--accent-secondary);
-  bottom: 10%; left: 20%;
-  animation-delay: -5s;
-}
-@keyframes float-slow {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  33% { transform: translate(30px, 50px) rotate(5deg); }
-  66% { transform: translate(-20px, 30px) rotate(-5deg); }
-}
-
-/* RIGHT — Lottie */
-.landing-page-container .hero-right {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-.landing-page-container .hero-right::after {
-  content: '';
-  position: absolute;
-  width: 120%;
-  height: 120%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
-  z-index: -1;
-  animation: float-glow 6s ease-in-out infinite;
-}
-@keyframes float-glow {
-  0%, 100% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.1); opacity: 0.8; }
-}
-.landing-page-container #lottie-anim {
-  width:100%;
-  max-width: clamp(260px, 80vw, 460px);
-  aspect-ratio:1;
-  border-radius:24px;
-  overflow:hidden;
-}
-
-@media (max-width: 1024px) {
-  .landing-page-container #lottie-anim {
-    max-width: clamp(260px, 60vw, 380px);
-    margin: 0 auto;
-  }
-}
-
-/* ─── CARDS ROW ─── */
-.landing-page-container .cards-wrap {
-  max-width:1280px;
-  margin:0 auto;
-  padding: clamp(4px, 1vw, 1px) clamp(16px, 3vw, 32px) clamp(8px, 1.5vw, 14px);
-}
-.landing-page-container .cards-row {
-  display:grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: clamp(8px, 1.5vw, 16px);
-}
-.landing-page-container .cards-row.highlight-active .tc {
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
-  transform: translateY(-4px);
-  animation: tc-pulse 1.5s infinite;
-}
-@keyframes tc-pulse {
-  0% { box-shadow: 0 0 10px rgba(99, 102, 241, 0.2); transform: translateY(-4px); }
-  50% { box-shadow: 0 0 35px rgba(99, 102, 241, 0.8); transform: translateY(-8px); }
-  100% { box-shadow: 0 0 10px rgba(99, 102, 241, 0.2); transform: translateY(-4px); }
-}
-
-@media (max-width: 1280px) {
-  .landing-page-container .cards-row { grid-template-columns: repeat(4, 1fr); }
-}
-@media (max-width: 900px) {
-  .landing-page-container .cards-row { grid-template-columns: repeat(3, 1fr); }
-}
-@media (max-width: 640px) {
-  .landing-page-container .cards-row { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 400px) {
-  .landing-page-container .cards-row { grid-template-columns: 1fr; }
-}
-
-.landing-page-container .tc {
-  border-radius:14px;
-  padding: 8px 8px;
-  cursor:pointer;
-  transition:transform .3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow .3s;
-  position:relative;
-  overflow:hidden;
-  min-height:0;
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-end;
-  box-shadow:0 4px 12px rgba(0,0,0,0.03),0 1px 3px rgba(0,0,0,0.02);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-.landing-page-container .tc:hover { 
-  transform:translateY(-8px); 
-  box-shadow:0 20px 40px rgba(0,0,0,0.08), 0 8px 16px rgba(0,0,0,0.04); 
-}
-
-.landing-page-container .tc-ignite  { background:linear-gradient(155deg,#f0f4ff 0%,#e8eeff 60%,#e0e8ff 100%); border-bottom: 4px solid #6366F1; }
-.landing-page-container .tc-circuit { background:linear-gradient(155deg,#f0f8ff 0%,#e6f2ff 60%,#dceeff 100%); border-bottom: 4px solid #0EA5E9; }
-.landing-page-container .tc-codex   { background:linear-gradient(155deg,#f0fff8 0%,#e6fff0 60%,#dcffe8 100%); border-bottom: 4px solid #10B981; }
-.landing-page-container .tc-neura   { background:linear-gradient(155deg,#faf0ff 0%,#f5e6ff 60%,#f0dcff 100%); border-bottom: 4px solid #A855F7; }
-.landing-page-container .tc-forge   { background:linear-gradient(155deg,#fff5f0 0%,#ffece6 60%,#ffe4dc 100%); border-bottom: 4px solid #F97316; }
-.landing-page-container .tc-studio  { background:linear-gradient(155deg,#fff0fa 0%,#ffe6f5 60%,#ffdcee 100%); border-bottom: 4px solid #EC4899; }
-.landing-page-container .tc-quiz    { background:linear-gradient(155deg,#fffaf0 0%,#fff5e6 60%,#fff0dc 100%); border-bottom: 4px solid #F59E0B; }
-
-.landing-page-container .tc-icon {
-  flex:1;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding-bottom:6px;
-}
-.landing-page-container .tc-icon svg,
-.landing-page-container .tc-icon img { 
-  width: clamp(40px, 7vw, 56px); 
-  height: clamp(40px, 7vw, 56px); 
-  object-fit: contain; 
-}
-
-.landing-page-container .tc-cat {
-  font-size: 0.80rem; font-weight: 900; letter-spacing: 0.12em;
-  text-transform: uppercase; color: #0a0328ff; margin-bottom: 2px; line-height: 1.2;
-  opacity: 0.65;
-}
-.landing-page-container .tc-name {
-  font-size: clamp(0.75rem, 1.6vw, 0.95rem); font-weight: 1000; letter-spacing: 0.01em;
-  text-transform: uppercase; color: #0f172a; margin-bottom: 3px; line-height: 1.2;
-}
-.landing-page-container .tc-desc {
-  font-size: 0.65rem; color: #020046a5; line-height: 1.4;
-  font-weight: 600;
-}
-` }} />
-      <div className="landing-page-container">
-
-        <div className="shape shape-1"></div>
-        <div className="shape shape-2"></div>
-        <div className="shape shape-3"></div>
-
-        <div className="bg-nodes">
-          <svg viewBox="0 0 820 920" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="690" cy="72" r="54" fill="rgba(200,210,240,0.6)" stroke="rgba(90,110,180,0.2)" strokeWidth="1.5" />
-            <circle cx="690" cy="72" r="42" fill="rgba(210,220,245,0.5)" />
-            <circle cx="690" cy="72" r="26" fill="rgba(220,230,250,0.4)" />
-            <circle cx="584" cy="198" r="40" fill="rgba(195,205,235,0.55)" stroke="rgba(88,108,175,0.18)" strokeWidth="1.5" />
-            <circle cx="584" cy="198" r="30" fill="rgba(205,215,240,0.45)" />
-            <circle cx="770" cy="285" r="32" fill="rgba(195,205,235,0.5)" stroke="rgba(88,108,175,0.16)" strokeWidth="1.5" />
-            <circle cx="770" cy="285" r="22" fill="rgba(205,215,240,0.4)" />
-            <circle cx="494" cy="118" r="24" fill="rgba(195,205,235,0.45)" stroke="rgba(88,108,175,0.14)" strokeWidth="1" />
-            <circle cx="494" cy="118" r="16" fill="rgba(205,215,240,0.35)" />
-            <circle cx="724" cy="430" r="28" fill="rgba(195,205,235,0.45)" stroke="rgba(88,108,175,0.14)" strokeWidth="1" />
-            <circle cx="620" cy="378" r="18" fill="rgba(195,205,235,0.35)" />
-            <circle cx="534" cy="318" r="14" fill="rgba(195,205,235,0.3)" />
-            <circle cx="450" cy="262" r="9" fill="rgba(195,205,235,0.25)" />
-            {/* Lines */}
-            <line x1="690" y1="72" x2="584" y2="198" stroke="rgba(100,120,200,0.2)" strokeWidth="1.2" />
-            <line x1="690" y1="72" x2="770" y2="285" stroke="rgba(100,120,200,0.18)" strokeWidth="1.2" />
-            <line x1="584" y1="198" x2="494" y2="118" stroke="rgba(100,120,200,0.16)" strokeWidth="1" />
-            <line x1="584" y1="198" x2="534" y2="318" stroke="rgba(100,120,200,0.14)" strokeWidth="1" />
-            <line x1="770" y1="285" x2="724" y2="430" stroke="rgba(100,120,200,0.12)" strokeWidth="1" />
-            <line x1="534" y1="318" x2="620" y2="378" stroke="rgba(100,120,200,0.12)" strokeWidth="1" />
-            <line x1="620" y1="378" x2="724" y2="430" stroke="rgba(100,120,200,0.1)" strokeWidth="1" />
-            <line x1="494" y1="118" x2="450" y2="262" stroke="rgba(100,120,200,0.1)" strokeWidth="1" />
-            {/* Dots */}
-            <circle cx="666" cy="338" r="4" fill="rgba(100,120,200,0.25)" />
-            <circle cx="786" cy="158" r="5" fill="rgba(100,120,200,0.2)" />
-            <circle cx="506" cy="444" r="4" fill="rgba(100,120,200,0.18)" />
-            <circle cx="700" cy="518" r="5" fill="rgba(100,120,200,0.15)" />
-            <circle cx="440" cy="168" r="3" fill="rgba(100,120,200,0.16)" />
+        <div className="fixed top-0 right-0 w-full lg:w-3/5 h-screen pointer-events-none z-0 overflow-hidden opacity-10 lg:opacity-30">
+          <svg viewBox="0 0 820 920" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="690" cy="72" r="54" fill="rgba(200,210,240,0.6)" />
+            <circle cx="584" cy="198" r="40" fill="rgba(195,205,235,0.55)" />
+            <circle cx="770" cy="285" r="32" fill="rgba(195,205,235,0.5)" />
+            <circle cx="494" cy="118" r="24" fill="rgba(195,205,235,0.45)" />
           </svg>
         </div>
 
         {/* TOPBAR */}
-        <nav>
-          <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-            <a href="#" className="nav-brand">
-              <img src="/assets/leaplab_logo_transparent.png" alt="LeapLab Logo" className="brand-logo" />
-            </a>
-            <div className="nav-links">
-              <a href="#" style={{ color: '#0f172a', textDecoration: 'none', fontWeight: 600, fontSize: '0.95rem', transition: 'color 0.2s' }}>Tutorials</a>
-              <a href="#" style={{ color: '#0f172a', textDecoration: 'none', fontWeight: 600, fontSize: '0.95rem', transition: 'color 0.2s' }}>Explore</a>
+        <nav className="sticky top-0 left-0 right-0 z-[200] h-[clamp(50px,10vw, 80px)] bg-white/95 backdrop-blur-lg border-b border-black/5 shadow-sm">
+          <div className="max-w-[1500px] mx-auto px-[clamp(16px,3vw,32px)] h-full flex items-center justify-between relative">
+            <div className="flex items-center gap-2 drop-shadow-sm">
+              <img src="/assets/leaplab_logo_transparent.png" alt="LeapLab Logo" className="h-[clamp(40px,8vw,60px)] w-auto object-contain" />
             </div>
-          </div>
 
-          <div className="nav-actions">
-            <img src="/assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="nav-logo" style={{ height: 'clamp(45px, 6vw, 55px)' }} />
+            <div className="hidden md:flex items-start justify-start gap-12 absolute left-1/2 -translate-x-1/2">
+              <a href="#" className="text-[#05001eff]/80 hover:text-brand-primary text-[16px] font-bold transition-all duration-200 tracking-tight">Tutorials</a>
+              <a href="#" className="text-[#05001eff]/80 hover:text-brand-primary text-[16px] font-bold transition-all duration-200 tracking-tight">Explore</a>
+            </div>
+
+            <div className="flex items-center gap-4 drop-shadow-sm">
+              <img src="/assets/topbar_logo.svg" alt="Creoleap" className="h-[clamp(45px,7vw,55px)] w-auto object-contain pr-1" />
+            </div>
           </div>
         </nav>
 
-        <div className="page">
-
+        <main className="relative z-10 flex flex-col min-h-[calc(100vh-68px)] overflow-x-hidden">
           {/* HERO */}
-          <div className="hero-grid">
-            <div className="hero-left">
-              <div className="hero-tagline">Curiosity · Creativity · Critical Thinking</div>
-              <h1 className="hero-title">
-                Learn to <span className="hw-code">code</span><br />
-                the <span className="hw-bold">bold</span> way
+          <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] items-center max-w-[1300px] mx-auto px-[clamp(12px,3vw,48px)] py-4 lg:py-6 gap-6 lg:gap-10 flex-1 min-h-[0]">
+            <div className="flex flex-col order-2 lg:order-1">
+              <div className="inline-block py-2.5 px-6 bg-[#bef264] border-2 border-black shadow-[5px_5px_0px_#000] -rotate-1 mb-8 text-[0.8rem] rounded-full font-black uppercase tracking-[0.3em] transform animate-hero-reveal lg:self-end">
+                Curiosity · Creativity · Critical Thinking
+              </div>
+              <h1 className="text-[clamp(3rem,10vw,6rem)] font-black leading-[0.95] tracking-tight mb-8 text-[#05001eff] animate-hero-reveal delay-100 lg:text-right lg:self-end">
+                Learn to <span className="text-[#7c5cfc] italic inline-block mt-[-10px] transform translate-y-[5px]">code</span><br />
+                the <span className="text-white [-webkit-text-stroke:2.5px_#221e4bff] drop-shadow-[0_4px_2px_rgba(0,0,0,0.15)] inline-block mt-[-10px] transform translate-y-[5px]">bold</span> way
               </h1>
-              <p className="hero-sub">
+              <p className="text-[clamp(1rem,2vw,1.20rem)] text-text-main leading-relaxed max-w-[540px] mb-8 opacity-80 animate-hero-reveal delay-200 lg:text-center lg:self-end lg:ml-auto">
                 Seven unique tracks from junior picture-blocks all the way to AI,
                 robotics, and machine vision. Pick your adventure.
               </p>
-              <div className="hero-btns">
-                <button className="btn-adventure" onClick={() => {
-                  setHighlightCards(true);
-                  document.querySelector('.cards-wrap')?.scrollIntoView({ behavior: 'smooth' });
-                }}>Choose your adventure</button>
-                <button className="btn-demo">Watch 2-min demo</button>
+              <div className="flex flex-wrap gap-6 justify-center lg:justify-center lg:self-center animate-hero-reveal delay-300">
+                <button
+                  onClick={() => {
+                    setHighlightCards(true);
+                    document.querySelector('#adventure-start')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="bg-[#100051] hover:bg-[#1a0077] text-white font-black py-10 px-32 rounded-full shadow-[4px_4px_0px_#000] hover:scale-105 hover:shadow-[6px_6px_0px_#000] active:scale-95 transition-all duration-300 tracking-tight text-[19px]"
+                >
+                  Choose your adventure
+                </button>
+                <button className="bg-white border-2 border-black text-[#05001eff] font-black py-10 px-32 rounded-full shadow-[4px_4px_0px_#000] hover:translate-y-[-3px] hover:translate-x-[-3px] hover:shadow-[7px_7px_0px_#000] active:translate-y-0 active:translate-x-0 transition-all duration-200 text-[19px]">
+                  Watch 2-min demo
+                </button>
               </div>
             </div>
 
-            {/* RIGHT: Lottie animation (exact uploaded file) */}
-            <div className="hero-right">
-              <div id="lottie-anim"></div>
-            </div>
-          </div>
-
-          {/* 7 TRACK CARDS */}
-          <div className="cards-wrap">
-            <div className={`cards-row ${highlightCards ? 'highlight-active' : ''}`}>
-
-              {/* 1 IGNITE */}
-              <div className="tc tc-ignite" onClick={() => handleCardClick(() => onSelect('junior'))}>
-                <div className="tc-icon">
-                  <img src="/assets/sprites/robot/robot_idle.svg" alt="Ignite Robot" />
-                </div>
-                <div>
-                  <div className="tc-cat">Leaplab</div>
-                  <div className="tc-name">Ignite</div>
-                  <div className="tc-desc">Glowing robot and robot animation</div>
-                </div>
-              </div>
-
-              {/* 2 CIRCUIT */}
-              <div className="tc tc-circuit" onClick={() => handleCardClick(() => onSelect('intermediate'))}>
-                <div className="tc-icon">
-                  <img src="/assets/arduino_icon.png" alt="Circuit Icon" />
-                </div>
-                <div>
-                  <div className="tc-cat">Leaplab</div>
-                  <div className="tc-name">Circuit</div>
-                  <div className="tc-desc">Glowing micro microchip</div>
-                </div>
-              </div>
-
-              {/* 3 CODEX */}
-              <div className="tc tc-codex" onClick={() => handleCardClick(() => onSelect('python'))}>
-                <div className="tc-icon">
-                  <img src="/assets/python_icon.png" alt="Codex Icon" />
-                </div>
-                <div>
-                  <div className="tc-cat">Leaplab</div>
-                  <div className="tc-name">Codex</div>
-                  <div className="tc-desc">Glowing python animations</div>
-                </div>
-              </div>
-
-              {/* 4 NEURA */}
-              <div className="tc tc-neura" onClick={() => handleCardClick(() => (window as any).showComingSoon('Neura'))}>
-                <div className="tc-icon">
-                  <img src="/assets/ml_brain_icon.png" alt="Neura Icon" />
-                </div>
-                <div>
-                  <div className="tc-cat">Leaplab</div>
-                  <div className="tc-name">Neura</div>
-                  <div className="tc-desc">Glowing brain with neural network</div>
-                </div>
-              </div>
-
-              {/* 5 FORGE */}
-              <div className="tc tc-forge" onClick={() => handleCardClick(() => (window as any).showComingSoon('Creocad'))}>
-                <div className="tc-icon">
-                  <img src="/assets/creocad_icon.png" alt="Forge Icon" />
-                </div>
-                <div>
-                  <div className="tc-cat">Leaplab</div>
-                  <div className="tc-name">Forge</div>
-                  <div className="tc-desc">Glowing gears and 3D printer</div>
-                </div>
-              </div>
-
-              {/* 6 STUDIO */}
-              <div className="tc tc-studio" onClick={() => handleCardClick(() => onSelect('appforge'))}>
-                <div className="tc-icon">
-                  <img src="/assets/app_game_dev_icon.png" alt="Studio Icon" />
-                </div>
-                <div>
-                  <div className="tc-cat">Leaplab</div>
-                  <div className="tc-name">Studio</div>
-                  <div className="tc-desc">Glowing game with game and clouds</div>
-                </div>
-              </div>
-
-              {/* 7 QUIZ */}
-              <div className="tc tc-quiz" onClick={() => handleCardClick(() => (window as any).showComingSoon('Quiz'))}>
-                <div className="tc-icon">
-                  <img src="/assets/quiz_icon.png" alt="Quiz Icon" />
-                </div>
-                <div>
-                  <div className="tc-cat">&nbsp;</div>
-                  <div className="tc-name">Quiz</div>
-                  <div className="tc-desc">Learning target of brain cognition</div>
-                </div>
-              </div>
-
+            <div className="relative flex items-center justify-center animate-hero-reveal delay-400 order-1 lg:order-2">
+              <div className="absolute inset-0 bg-brand-secondary/15 rounded-full blur-[100px] animate-float-glow"></div>
+              <div id="lottie-anim" className="w-full max-w-[clamp(280px,80vw,480px)] aspect-square rounded-[32px] overflow-hidden relative z-10 transform scale-105"></div>
             </div>
           </div>
 
-          {/* FOOTER */}
-          <footer style={{
-            textAlign: 'center',
-            padding: '28px 0',
-            color: '#05001eff',
-            fontSize: '0.85rem',
-            fontFamily: '"Poppins", sans-serif',
-            opacity: 0.8,
-            letterSpacing: '0.5px',
-            flexShrink: 0
-          }}>
-            LeapLab v1.0 © Creoleap Technologies Pvt. Ltd.
-          </footer>
+      <div id="adventure-start" className="scroll-mt-24" />
 
+      {/* 7 TRACK CARDS */}
+      <section className="w-full px-[clamp(12px,3vw,48px)] pb-6 -mt-24 flex justify-center">
+        <div className="w-full max-w-[1300px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 animate-hero-reveal delay-500">
+
+            {/* Common Card Classes */}
+            {(() => {
+              const baseTc = `relative overflow-hidden rounded-[22px] px-6 py-6 flex flex-col justify-end h-[180px] cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] border border-black/5 transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-2 hover:scale-[1.02] hover:shadow-[0_20px_40px_rgba(99,102,241,0.12),0_8px_16px_rgba(99,102,241,0.06)] ${highlightCards ? 'animate-tc-pulse' : ''}`;
+
+              return (
+                <>
+                  {/* 1 IGNITE */}
+                  <div className={`${baseTc} bg-gradient-to-b from-[#f4f2ff] to-[#ede9ff] border-b-4 border-[#4f46e5] group`} onClick={() => handleCardClick(() => onSelect('junior'))}>
+                    <div className="flex-1 flex items-center justify-center">
+                      <img src="/assets/sprites/robot/robot_idle.svg" alt="Ignite Robot" className="w-[clamp(56px,8vw,72px)] h-[clamp(56px,8vw,72px)] object-contain transition-transform duration-300 group-hover:scale-110" />
+                    </div>
+                    <div className="mt-auto">
+                      <div className="text-[0.6rem] font-bold tracking-[0.15em] uppercase text-[#05001eff]/35 mb-0.5">Leaplab</div>
+                      <div className="text-[1rem] font-black uppercase text-[#05001eff] mb-1">Ignite</div>
+                      <div className="text-[0.65rem] font-semibold text-[#05001eff]/50 leading-snug">Glowing robot and robot animation</div>
+                    </div>
+                  </div>
+
+                  {/* 2 CIRCUIT */}
+                  <div className={`${baseTc} bg-gradient-to-b from-[#f0faff] to-[#e0f2fe] border-b-4 border-[#0ea5e9] group`} onClick={() => handleCardClick(() => onSelect('intermediate'))}>
+                    <div className="flex-1 flex items-center justify-center pb-2 transition-transform duration-300 group-hover:scale-110">
+                      <img src="/assets/arduino_icon.png" alt="Circuit Icon" className="w-[clamp(40px,7vw,56px)] h-[clamp(40px,7vw,56px)] object-contain" />
+                    </div>
+                    <div>
+                      <div className="text-[0.7rem] font-bold tracking-[0.1em] uppercase text-[#05001eff]/40 mb-0.5">Leaplab</div>
+                      <div className="text-[0.95rem] font-black uppercase text-[#05001eff] mb-0.5">Circuit</div>
+                      <div className="text-[0.62rem] font-bold text-[#05001eff]/60 leading-tight">Glowing microchip</div>
+                    </div>
+                  </div>
+
+                  {/* 3 CODEX */}
+                  <div className={`${baseTc} bg-gradient-to-b from-[#f0fff4] to-[#dcfce7] border-b-4 border-[#10b981] group`} onClick={() => handleCardClick(() => onSelect('python'))}>
+                    <div className="flex-1 flex items-center justify-center pb-2 transition-transform duration-300 group-hover:scale-110">
+                      <img src="/assets/python_icon.png" alt="Codex Icon" className="w-[clamp(40px,7vw,56px)] h-[clamp(40px,7vw,56px)] object-contain" />
+                    </div>
+                    <div>
+                      <div className="text-[0.7rem] font-bold tracking-[0.1em] uppercase text-[#05001eff]/40 mb-0.5">Leaplab</div>
+                      <div className="text-[0.95rem] font-black uppercase text-[#05001eff] mb-0.5">Codex</div>
+                      <div className="text-[0.62rem] font-bold text-[#05001eff]/60 leading-tight">Glowing python animations</div>
+                    </div>
+                  </div>
+
+                  {/* 4 NEURA */}
+                  <div className={`${baseTc} bg-gradient-to-b from-[#f5f3ff] to-[#ede9fe] border-b-4 border-[#8b5cf6] group`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Neura'))}>
+                    <div className="flex-1 flex items-center justify-center pb-2 transition-transform duration-300 group-hover:scale-110">
+                      <img src="/assets/ml_brain_icon.png" alt="Neura Icon" className="w-[clamp(40px,7vw,56px)] h-[clamp(40px,7vw,56px)] object-contain" />
+                    </div>
+                    <div>
+                      <div className="text-[0.7rem] font-bold tracking-[0.1em] uppercase text-[#05001eff]/40 mb-0.5">Leaplab</div>
+                      <div className="text-[0.95rem] font-black uppercase text-[#05001eff] mb-0.5">Neura</div>
+                      <div className="text-[0.62rem] font-bold text-[#05001eff]/60 leading-tight">Glowing brain with neural network</div>
+                    </div>
+                  </div>
+
+                  {/* 5 FORGE */}
+                  <div className={`${baseTc} bg-gradient-to-b from-[#fff7ed] to-[#ffedd5] border-b-4 border-[#f97316] group`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Creocad'))}>
+                    <div className="flex-1 flex items-center justify-center pb-2 transition-transform duration-300 group-hover:scale-110">
+                      <img src="/assets/creocad_icon.png" alt="Forge Icon" className="w-[clamp(40px,7vw,56px)] h-[clamp(40px,7vw,56px)] object-contain" />
+                    </div>
+                    <div>
+                      <div className="text-[0.7rem] font-bold tracking-[0.1em] uppercase text-[#05001eff]/40 mb-0.5">Leaplab</div>
+                      <div className="text-[0.95rem] font-black uppercase text-[#05001eff] mb-0.5">Forge</div>
+                      <div className="text-[0.62rem] font-bold text-[#05001eff]/60 leading-tight">Glowing gears and 3D printer</div>
+                    </div>
+                  </div>
+
+                  {/* 6 STUDIO */}
+                  <div className={`${baseTc} bg-gradient-to-b from-[#fdf2f8] to-[#fce7f3] border-b-4 border-[#ec4899] group`} onClick={() => handleCardClick(() => onSelect('appforge'))}>
+                    <div className="flex-1 flex items-center justify-center pb-2 transition-transform duration-300 group-hover:scale-110">
+                      <img src="/assets/app_game_dev_icon.png" alt="Studio Icon" className="w-[clamp(40px,7vw,56px)] h-[clamp(40px,7vw,56px)] object-contain" />
+                    </div>
+                    <div>
+                      <div className="text-[0.7rem] font-bold tracking-[0.1em] uppercase text-[#05001eff]/40 mb-0.5">Leaplab</div>
+                      <div className="text-[0.95rem] font-black uppercase text-[#05001eff] mb-0.5">Studio</div>
+                      <div className="text-[0.62rem] font-bold text-[#05001eff]/60 leading-tight">Glowing game with game and clouds</div>
+                    </div>
+                  </div>
+
+                  {/* 7 QUIZ */}
+                  <div className={`${baseTc} bg-gradient-to-b from-[#fffbeb] to-[#fef3c7] border-b-4 border-[#f59e0b] group`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Quiz'))}>
+                    <div className="flex-1 flex items-center justify-center pb-2 transition-transform duration-300 group-hover:scale-110">
+                      <img src="/assets/quiz_icon.png" alt="Quiz Icon" className="w-[clamp(40px,7vw,56px)] h-[clamp(40px,7vw,56px)] object-contain" />
+                    </div>
+                    <div>
+                      <div className="text-[0.7rem] font-bold tracking-[0.1em] uppercase text-[#05001eff]/40 mb-0.5">Leaplab</div>
+                      <div className="text-[0.95rem] font-black uppercase text-[#05001eff] mb-0.5">Quiz</div>
+                      <div className="text-[0.62rem] font-bold text-[#05001eff]/60 leading-tight">Learning target of brain cognition</div>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
         </div>
+      </section>
 
+      {/* FOOTER */}
+      <footer className="mt-auto py-8 text-center bg-white/20 border-t border-black/5 backdrop-blur-sm shrink-0">
+        <p className="text-[13px] font-bold text-[#05001eff]/60 tracking-tight">
+          LeapLab v1.0 © Creoleap Technologies Pvt. Ltd.
+        </p>
+      </footer>
+    </main >
 
-        {/* Toast notification */}
-        {toast.visible && (
-          <div style={{
-            position: 'fixed',
-            bottom: 32,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            padding: '14px 20px',
-            borderRadius: 18,
-            background: 'rgba(15,23,42,0.94)',
-            color: 'white',
-            fontSize: 13,
-            fontWeight: 700,
-            fontFamily: '"Poppins", sans-serif',
-            boxShadow: '0 18px 34px rgba(15,23,42,0.22)',
-            animation: 'lp-toast-in .3s ease-out',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-          }}>
-            <span style={{
-              width: 10,
-              height: 10,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #f59e0b, #38bdf8)',
-              boxShadow: '0 0 14px rgba(56,189,248,0.45)',
-            }} />
-            {toast.message}
-          </div>
-        )}
+      {/* TOAST NOTIFICATION */ }
+  {
+    toast.visible && (
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] px-6 py-3 bg-brand-primary/95 text-white rounded-2xl font-bold shadow-2xl animate-hero-reveal flex items-center gap-3 border border-white/10 backdrop-blur-md">
+        <div className="w-2.5 h-2.5 rounded-full bg-accent-lime shadow-[0_0_10px_#bef264]" />
+        {toast.message}
       </div>
+    )
+  }
+      </div >
     </>
   );
 };
