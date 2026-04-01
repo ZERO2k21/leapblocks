@@ -260,6 +260,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   background-image: radial-gradient(rgba(99, 102, 241, 0.05) 1.5px, transparent 1.5px);
   background-size: 30px 30px;
   color: var(--text-main);
+  height: 100dvh;
+  overflow: hidden;
   min-height: 100vh;
   overflow-x: hidden;
   overflow-y: auto;
@@ -328,6 +330,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
 
 /* ─── PAGE CONTENT ─── */
+.landing-page-container .page { position:relative; z-index:1; padding-top: clamp(15px, 3vh, 30px); display: flex; flex-direction: column; height: calc(100dvh - 68px); overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
 .landing-page-container .page { position:relative; z-index:1; padding-top:20px; display: flex; flex-direction: column; min-height: calc(100vh - 68px); transition: all 0.3s ease; }
 
 /* ─── HERO ─── */
@@ -339,14 +342,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   margin: 0 auto;
   padding: clamp(6px, 1.2vw, 16px) clamp(24px, 5vw, 48px);
   gap: 24px;
-  flex: 1;
-  min-height: 0;
+  flex: 1 0 auto;
 }
 
 @media (max-width: 1024px) {
   .landing-page-container .hero-grid {
     grid-template-columns: 1fr;
     text-align: center;
+    gap: clamp(24px, 5vw, 50px);
+    padding-top: clamp(12px, 4vw, 48px);
     gap: 32px;
     padding-top: clamp(24px, 10vw, 48px);
     margin-bottom: 40px;
@@ -523,6 +527,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   aspect-ratio:1;
   border-radius:24px;
   overflow:hidden;
+}
+
+@media (max-width: 1024px) {
+  .landing-page-container #lottie-anim {
+    max-width: clamp(260px, 60vw, 380px);
+    margin: 0 auto;
+  }
 }
 
 /* ─── CARDS ROW ─── */
@@ -794,12 +805,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           {/* FOOTER */}
           <footer style={{
             textAlign: 'center',
-            padding: '0px 0',
+            padding: '28px 0',
             color: '#05001eff',
             fontSize: '0.85rem',
             fontFamily: '"Poppins", sans-serif',
             opacity: 0.8,
-            letterSpacing: '0.5px'
+            letterSpacing: '0.5px',
+            flexShrink: 0
           }}>
             LeapLab v1.0 © Creoleap Technologies Pvt. Ltd.
           </footer>
