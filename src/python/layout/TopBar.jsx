@@ -1,5 +1,5 @@
 import React from "react";
-import { Save, Settings, User, HelpCircle, Upload, Scissors, Copy, Clipboard, Undo, Redo, Hash, Wand2, Search } from "lucide-react";
+import { Home, Save, Settings, User, HelpCircle, Upload, Scissors, Copy, Clipboard, Undo, Redo, Hash, Wand2, Search } from "lucide-react";
 import Logo, { CreoleapLogo } from "../../components/Logo";
 
 // ─── Theme (PictoBlox Colors) ─────────────────────────────────────────────────
@@ -26,6 +26,39 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
         }}>
             {/* Left Side: LeapLab Logo + App Name + Blocks/Python Tabs */}
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                {/* Home Button */}
+                <button
+                    onClick={onBack}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 36,
+                        height: 36,
+                        background: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: 10,
+                        color: '#fff',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        flexShrink: 0,
+                        marginRight: 4
+                    }}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                        e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    title="Back to Home"
+                >
+                    <Home size={18} strokeWidth={2.2} />
+                </button>
+
+                <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', marginRight: 4 }} />
+
                 {/* Logo + App Name */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 8, flexShrink: 0 }}>
                     <Logo height={43} />

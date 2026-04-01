@@ -147,8 +147,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   z-index: 2;
 }
 .splash-robot-img {
-  width: 140px;
-  height: 140px;
+  width: clamp(100px, 25vw, 140px);
+  height: auto;
   filter: drop-shadow(0 10px 30px rgba(124, 92, 252, 0.5));
 }
 @keyframes rocket-fly {
@@ -262,6 +262,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   color: var(--text-main);
   height: 100dvh;
   overflow: hidden;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   position: relative;
 }
 
@@ -287,14 +290,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
 /* ─── TOPBAR ─── */
 .landing-page-container nav {
-  position: fixed;
+  position: sticky;
   top: 0; left: 0; right: 0;
   z-index: 200;
-  height: 68px;
+  height: clamp(60px, 8vw, 68px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 clamp(18px, 4vw, 36px);
+  padding: 0 clamp(12px, 3vw, 36px);
   background: rgba(248, 250, 252, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -314,15 +317,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   display:flex; align-items:center; gap:14px;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.08));
 }
-.landing-page-container .nav-logo {
-  height: clamp(36px, 5vw, 50px);
-  width:auto;
-  object-fit:contain;
+.landing-page-container .nav-links {
+  display: flex;
+  gap: 24px;
+  margin-left: 12px;
+}
+@media (max-width: 768px) {
+  .landing-page-container .nav-links {
+    display: none;
+  }
 }
 
 
 /* ─── PAGE CONTENT ─── */
 .landing-page-container .page { position:relative; z-index:1; padding-top: clamp(15px, 3vh, 30px); display: flex; flex-direction: column; height: calc(100dvh - 68px); overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
+.landing-page-container .page { position:relative; z-index:1; padding-top:20px; display: flex; flex-direction: column; min-height: calc(100vh - 68px); transition: all 0.3s ease; }
 
 /* ─── HERO ─── */
 .landing-page-container .hero-grid {
@@ -342,13 +351,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     text-align: center;
     gap: clamp(24px, 5vw, 50px);
     padding-top: clamp(12px, 4vw, 48px);
+    gap: 32px;
+    padding-top: clamp(24px, 10vw, 48px);
+    margin-bottom: 40px;
+  }
+  .landing-page-container .hero-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   .landing-page-container .hero-sub {
     margin-left: auto;
     margin-right: auto;
+    max-width: 100%;
   }
   .landing-page-container .hero-btns {
     justify-content: center;
+    width: 100%;
   }
 }
 
@@ -391,13 +410,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   transform: rotate(-1deg);
 }
 .landing-page-container .hero-sub {
-  font-size: clamp(0.85rem, 1.6vw, 1rem);
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
   color: #0f172a;
-  line-height: 1.5;
-  max-width: 460px;
-  margin-bottom: 20px;
+  line-height: 1.6;
+  max-width: 520px;
+  margin-bottom: 24px;
   position: relative;
   z-index: 2;
+  opacity: 0.85;
 }
 .landing-page-container .hero-btns { display:flex; gap:10px; flex-wrap:wrap; }
 .landing-page-container .btn-adventure {
@@ -503,9 +523,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 }
 .landing-page-container #lottie-anim {
   width:100%;
-  max-width:460px;
+  max-width: clamp(260px, 80vw, 460px);
   aspect-ratio:1;
-  border-radius:22px;
+  border-radius:24px;
   overflow:hidden;
 }
 
@@ -520,12 +540,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 .landing-page-container .cards-wrap {
   max-width:1280px;
   margin:0 auto;
-  padding: clamp(4px, 1vw, 10px) clamp(16px, 3vw, 32px) clamp(8px, 1.5vw, 14px);
+  padding: clamp(4px, 1vw, 1px) clamp(16px, 3vw, 32px) clamp(8px, 1.5vw, 14px);
 }
 .landing-page-container .cards-row {
   display:grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 10px;
+  gap: clamp(8px, 1.5vw, 16px);
 }
 .landing-page-container .cards-row.highlight-active .tc {
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
@@ -651,7 +671,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             <a href="#" className="nav-brand">
               <img src="/assets/leaplab_logo_transparent.png" alt="LeapLab Logo" className="brand-logo" />
             </a>
-            <div className="nav-links" style={{ display: 'flex', gap: '24px', marginLeft: '12px' }}>
+            <div className="nav-links">
               <a href="#" style={{ color: '#0f172a', textDecoration: 'none', fontWeight: 600, fontSize: '0.95rem', transition: 'color 0.2s' }}>Tutorials</a>
               <a href="#" style={{ color: '#0f172a', textDecoration: 'none', fontWeight: 600, fontSize: '0.95rem', transition: 'color 0.2s' }}>Explore</a>
             </div>
