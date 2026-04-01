@@ -1419,9 +1419,10 @@ export const animationBlocks = [
         type: 'operator_add',
         message0: '%1 + %2',
         args0: [
-            { type: 'field_number', name: 'NUM1', value: 0 },
-            { type: 'field_number', name: 'NUM2', value: 0 },
+            { type: 'input_value', name: 'NUM1' },
+            { type: 'input_value', name: 'NUM2' },
         ],
+        inputsInline: true,
         output: 'Number',
         colour: COLORS.operators,
         tooltip: 'Add two numbers',
@@ -1431,9 +1432,10 @@ export const animationBlocks = [
         type: 'operator_subtract',
         message0: '%1 - %2',
         args0: [
-            { type: 'field_number', name: 'NUM1', value: 0 },
-            { type: 'field_number', name: 'NUM2', value: 0 },
+            { type: 'input_value', name: 'NUM1' },
+            { type: 'input_value', name: 'NUM2' },
         ],
+        inputsInline: true,
         output: 'Number',
         colour: COLORS.operators,
         tooltip: 'Subtract two numbers',
@@ -1443,9 +1445,10 @@ export const animationBlocks = [
         type: 'operator_multiply',
         message0: '%1 × %2',
         args0: [
-            { type: 'field_number', name: 'NUM1', value: 0 },
-            { type: 'field_number', name: 'NUM2', value: 0 },
+            { type: 'input_value', name: 'NUM1' },
+            { type: 'input_value', name: 'NUM2' },
         ],
+        inputsInline: true,
         output: 'Number',
         colour: COLORS.operators,
         tooltip: 'Multiply two numbers',
@@ -1455,9 +1458,10 @@ export const animationBlocks = [
         type: 'operator_divide',
         message0: '%1 ÷ %2',
         args0: [
-            { type: 'field_number', name: 'NUM1', value: 0 },
-            { type: 'field_number', name: 'NUM2', value: 1 },
+            { type: 'input_value', name: 'NUM1' },
+            { type: 'input_value', name: 'NUM2' },
         ],
+        inputsInline: true,
         output: 'Number',
         colour: COLORS.operators,
         tooltip: 'Divide two numbers',
@@ -1467,9 +1471,10 @@ export const animationBlocks = [
         type: 'operator_random',
         message0: 'pick random %1 to %2',
         args0: [
-            { type: 'field_number', name: 'FROM', value: 1 },
-            { type: 'field_number', name: 'TO', value: 10 },
+            { type: 'input_value', name: 'FROM' },
+            { type: 'input_value', name: 'TO' },
         ],
+        inputsInline: true,
         output: 'Number',
         colour: COLORS.operators,
         tooltip: 'Random number',
@@ -1479,9 +1484,10 @@ export const animationBlocks = [
         type: 'operator_gt',
         message0: '%1 > %2',
         args0: [
-            { type: 'field_number', name: 'OPERAND1', value: 0 },
-            { type: 'field_number', name: 'OPERAND2', value: 50 },
+            { type: 'input_value', name: 'OPERAND1' },
+            { type: 'input_value', name: 'OPERAND2' },
         ],
+        inputsInline: true,
         output: 'Boolean',
         colour: COLORS.operators,
         tooltip: 'Greater than',
@@ -1491,9 +1497,10 @@ export const animationBlocks = [
         type: 'operator_lt',
         message0: '%1 < %2',
         args0: [
-            { type: 'field_number', name: 'OPERAND1', value: 0 },
-            { type: 'field_number', name: 'OPERAND2', value: 50 },
+            { type: 'input_value', name: 'OPERAND1' },
+            { type: 'input_value', name: 'OPERAND2' },
         ],
+        inputsInline: true,
         output: 'Boolean',
         colour: COLORS.operators,
         tooltip: 'Less than',
@@ -1503,9 +1510,10 @@ export const animationBlocks = [
         type: 'operator_equals',
         message0: '%1 = %2',
         args0: [
-            { type: 'field_number', name: 'OPERAND1', value: 0 },
-            { type: 'field_number', name: 'OPERAND2', value: 50 },
+            { type: 'input_value', name: 'OPERAND1' },
+            { type: 'input_value', name: 'OPERAND2' },
         ],
+        inputsInline: true,
         output: 'Boolean',
         colour: COLORS.operators,
         tooltip: 'Equals',
@@ -1550,9 +1558,10 @@ export const animationBlocks = [
         type: 'operator_mod',
         message0: '%1 mod %2',
         args0: [
-            { type: 'field_number', name: 'NUM1', value: 0 },
-            { type: 'field_number', name: 'NUM2', value: 1 },
+            { type: 'input_value', name: 'NUM1' },
+            { type: 'input_value', name: 'NUM2' },
         ],
+        inputsInline: true,
         output: 'Number',
         colour: COLORS.operators,
         tooltip: 'Modulo (remainder)',
@@ -1561,10 +1570,27 @@ export const animationBlocks = [
     {
         type: 'operator_round',
         message0: 'round %1',
-        args0: [{ type: 'field_number', name: 'NUM', value: 0 }],
+        args0: [{ type: 'input_value', name: 'NUM' }],
         output: 'Number',
         colour: COLORS.operators,
         tooltip: 'Round to nearest integer',
+        helpUrl: '',
+    },
+    {
+        type: 'operator_round_to_decimals',
+        message0: 'round %1 to %2 decimals',
+        args0: [
+            { type: 'input_value', name: 'NUM' },
+            {
+                type: 'field_dropdown', name: 'DECIMALS', options: [
+                    ['1', '1'], ['2', '2'], ['3', '3'], ['4', '4'], ['5', '5']
+                ]
+            }
+        ],
+        inputsInline: true,
+        output: 'Number',
+        colour: COLORS.operators,
+        tooltip: 'Round number to specified decimal places',
         helpUrl: '',
     },
     {
@@ -1575,10 +1601,13 @@ export const animationBlocks = [
                 type: 'field_dropdown', name: 'OPERATOR', options: [
                     ['abs', 'abs'], ['floor', 'floor'], ['ceiling', 'ceiling'],
                     ['sqrt', 'sqrt'], ['sin', 'sin'], ['cos', 'cos'], ['tan', 'tan'],
+                    ['asin', 'asin'], ['acos', 'acos'], ['atan', 'atan'],
+                    ['ln', 'ln'], ['log', 'log'], ['e ^', 'e ^'], ['10 ^', '10 ^']
                 ]
             },
-            { type: 'field_number', name: 'NUM', value: 0 },
+            { type: 'input_value', name: 'NUM' },
         ],
+        inputsInline: true,
         output: 'Number',
         colour: COLORS.operators,
         tooltip: 'Math operation',
@@ -1588,9 +1617,10 @@ export const animationBlocks = [
         type: 'operator_join',
         message0: 'join %1 %2',
         args0: [
-            { type: 'field_input', name: 'STRING1', text: 'hello ' },
-            { type: 'field_input', name: 'STRING2', text: 'world' },
+            { type: 'input_value', name: 'STRING1' },
+            { type: 'input_value', name: 'STRING2' },
         ],
+        inputsInline: true,
         output: 'String',
         colour: COLORS.operators,
         tooltip: 'Join two strings',
@@ -1600,9 +1630,10 @@ export const animationBlocks = [
         type: 'operator_letter_of',
         message0: 'letter %1 of %2',
         args0: [
-            { type: 'field_number', name: 'LETTER', value: 1, min: 1 },
-            { type: 'field_input', name: 'STRING', text: 'apple' },
+            { type: 'input_value', name: 'LETTER' },
+            { type: 'input_value', name: 'STRING' },
         ],
+        inputsInline: true,
         output: 'String',
         colour: COLORS.operators,
         tooltip: 'Letter at position',
@@ -1611,7 +1642,7 @@ export const animationBlocks = [
     {
         type: 'operator_length',
         message0: 'length of %1',
-        args0: [{ type: 'field_input', name: 'STRING', text: 'apple' }],
+        args0: [{ type: 'input_value', name: 'STRING' }],
         output: 'Number',
         colour: COLORS.operators,
         tooltip: 'Length of string',
@@ -1621,9 +1652,10 @@ export const animationBlocks = [
         type: 'operator_contains',
         message0: '%1 contains %2 ?',
         args0: [
-            { type: 'field_input', name: 'STRING1', text: 'apple' },
-            { type: 'field_input', name: 'STRING2', text: 'a' },
+            { type: 'input_value', name: 'STRING1' },
+            { type: 'input_value', name: 'STRING2' },
         ],
+        inputsInline: true,
         output: 'Boolean',
         colour: COLORS.operators,
         tooltip: 'Check if string contains substring',
@@ -2115,29 +2147,138 @@ export const animationToolbox = {
             name: 'Operators',
             colour: COLORS.operators,
             contents: [
-                { kind: 'block', type: 'operator_add' },
-                { kind: 'block', type: 'operator_subtract' },
-                { kind: 'block', type: 'operator_multiply' },
-                { kind: 'block', type: 'operator_divide' },
+                {
+                    kind: 'block',
+                    type: 'operator_add',
+                    inputs: {
+                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_subtract',
+                    inputs: {
+                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_multiply',
+                    inputs: {
+                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_divide',
+                    inputs: {
+                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                    },
+                },
                 { kind: 'label', text: '── Random ──' },
-                { kind: 'block', type: 'operator_random' },
+                {
+                    kind: 'block',
+                    type: 'operator_random',
+                    inputs: {
+                        FROM: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                        TO: { shadow: { type: 'math_number', fields: { NUM: 10 } } },
+                    },
+                },
                 { kind: 'label', text: '── Compare ──' },
-                { kind: 'block', type: 'operator_gt' },
-                { kind: 'block', type: 'operator_lt' },
-                { kind: 'block', type: 'operator_equals' },
+                {
+                    kind: 'block',
+                    type: 'operator_gt',
+                    inputs: {
+                        OPERAND1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        OPERAND2: { shadow: { type: 'math_number', fields: { NUM: 50 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_lt',
+                    inputs: {
+                        OPERAND1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        OPERAND2: { shadow: { type: 'math_number', fields: { NUM: 50 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_equals',
+                    inputs: {
+                        OPERAND1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        OPERAND2: { shadow: { type: 'math_number', fields: { NUM: 50 } } },
+                    },
+                },
                 { kind: 'label', text: '── Logic ──' },
                 { kind: 'block', type: 'operator_and' },
                 { kind: 'block', type: 'operator_or' },
                 { kind: 'block', type: 'operator_not' },
-                { kind: 'label', text: '── Math ──' },
-                { kind: 'block', type: 'operator_mod' },
-                { kind: 'block', type: 'operator_round' },
-                { kind: 'block', type: 'operator_mathop' },
                 { kind: 'label', text: '── Strings ──' },
-                { kind: 'block', type: 'operator_join' },
-                { kind: 'block', type: 'operator_letter_of' },
-                { kind: 'block', type: 'operator_length' },
-                { kind: 'block', type: 'operator_contains' },
+                {
+                    kind: 'block',
+                    type: 'operator_join',
+                    inputs: {
+                        STRING1: { shadow: { type: 'text', fields: { TEXT: 'apple ' } } },
+                        STRING2: { shadow: { type: 'text', fields: { TEXT: 'banana' } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_letter_of',
+                    inputs: {
+                        LETTER: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                        STRING: { shadow: { type: 'text', fields: { TEXT: 'apple' } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_length',
+                    inputs: {
+                        STRING: { shadow: { type: 'text', fields: { TEXT: 'apple' } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_contains',
+                    inputs: {
+                        STRING1: { shadow: { type: 'text', fields: { TEXT: 'apple' } } },
+                        STRING2: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
+                    },
+                },
+                { kind: 'label', text: '── Math ──' },
+                {
+                    kind: 'block',
+                    type: 'operator_mod',
+                    inputs: {
+                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_round',
+                    inputs: {
+                        NUM: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_mathop',
+                    inputs: {
+                        NUM: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_round_to_decimals',
+                    inputs: {
+                        NUM: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                    },
+                },
             ],
         },
         {

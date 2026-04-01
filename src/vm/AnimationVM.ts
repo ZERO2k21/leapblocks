@@ -168,7 +168,7 @@ export class AnimationVM {
     // Callbacks for UI sync
     public onHighlightBlock?: (blockId: string | null, spriteId: string) => void;
     public onRunningChange?: (isRunning: boolean) => void;
-    
+
     // Monitor callbacks
     public onShowVariable?: (name: string) => void;
     public onHideVariable?: (name: string) => void;
@@ -334,7 +334,7 @@ export class AnimationVM {
     setInTable(name: string, column: number | string, row: number, value: string | number): void {
         const table = this.getTable(name);
         const columns = this.getColumns(name);
-        
+
         let colIdx = -1;
         if (typeof column === 'string') {
             colIdx = columns.indexOf(column);
@@ -1228,30 +1228,30 @@ export class AnimationVM {
                 console.log(`[AnimationVM] Export table: ${step.table}`);
                 // TODO: Implement actual CSV download if running in browser
                 break;
-                
+
             case 'procedures_call': {
                 // To support "Run without screen refresh", we need to execute the procedure stack inline
                 // but with a safety budget (e.g., max 10,000 steps or 500ms).
-                
+
                 // 1. Find the procedure script definition for this sprite
                 const scripts = sprite.scripts as CompiledScript[] || [];
                 const procScript = scripts.find(s => s.trigger === 'procedure' && s.triggerKey === step.proccode);
-                
+
                 if (procScript) {
                     const startTime = performance.now();
                     let stepsCount = 0;
-                    
+
                     const executeBudgetedSteps = async (stepsToRun: ScriptStep[]) => {
                         for (let i = 0; i < stepsToRun.length; i++) {
                             await this.checkPause();
-                            
+
                             if (signal.aborted || !this.isRunning) {
                                 throw new DOMException('Aborted', 'AbortError');
                             }
-                            
+
                             // Recursively execute
                             await this.executeStep(stepsToRun[i], ctx, signal);
-                            
+
                             stepsCount++;
                             // Yield if we exceed budget (auto-yield safety)
                             if (stepsCount > 10000 || (performance.now() - startTime) > 500) {
@@ -1260,7 +1260,7 @@ export class AnimationVM {
                             }
                         }
                     };
-                    
+
                     await executeBudgetedSteps(procScript.steps);
                 } else {
                     console.warn(`[AnimationVM] Procedure '${step.proccode}' not found for sprite ${sprite.id}`);

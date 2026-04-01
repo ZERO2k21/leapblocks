@@ -23,8 +23,7 @@ const scratchBlocks = [
         previousStatement: null,
         nextStatement: null,
         colour: '#4C97FF',
-        tooltip: 'Moves the sprite forward or backward.',
-        helpUrl: 'https://en.scratch-wiki.info/wiki/Move_Steps_%28block%29'
+        tooltip: 'Moves the sprite forward or backward.'
     },
     {
         type: 'motion_turnright',
@@ -33,8 +32,7 @@ const scratchBlocks = [
         previousStatement: null,
         nextStatement: null,
         colour: '#4C97FF',
-        tooltip: 'Turns the sprite clockwise.',
-        helpUrl: 'https://en.scratch-wiki.info/wiki/Turn_Right_%28block%29'
+        tooltip: 'Turns the sprite clockwise.'
     },
     {
         type: 'motion_turnleft',
@@ -43,8 +41,7 @@ const scratchBlocks = [
         previousStatement: null,
         nextStatement: null,
         colour: '#4C97FF',
-        tooltip: 'Turns the sprite counter-clockwise.',
-        helpUrl: 'https://en.scratch-wiki.info/wiki/Turn_Left_%28block%29'
+        tooltip: 'Turns the sprite counter-clockwise.'
     },
     {
         type: 'motion_goto',
@@ -61,7 +58,7 @@ const scratchBlocks = [
         nextStatement: null,
         colour: '#4C97FF',
         tooltip: 'Moves the sprite to a specific position.',
-        helpUrl: 'https://en.scratch-wiki.info/wiki/Go_To_%28block%29'
+        helpUrl: 'https://en.scratch-wiki.info/wiki/Go_To_%28block%29
     },
     {
         type: 'motion_gotoxy',

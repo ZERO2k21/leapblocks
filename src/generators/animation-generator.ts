@@ -57,13 +57,41 @@ export class AnimationCompiler {
                 const value = Number(conditionBlock.getFieldValue('VALUE'));
                 if (sensor === 'loudness') return () => animationVM.getLoudness() > value;
                 if (sensor === 'timer') return () => animationVM.getTimer() > value;
-                if (sensor === 'timer') return () => animationVM.getTimer() > value;
                 return () => false;
             }
+            case 'operator_gt': {
+                const op1Func = this.compileNumberValue(conditionBlock, 'OPERAND1');
+                const op2Func = this.compileNumberValue(conditionBlock, 'OPERAND2');
+                return () => op1Func() > op2Func();
+            }
+            case 'operator_lt': {
+                const op1Func = this.compileNumberValue(conditionBlock, 'OPERAND1');
+                const op2Func = this.compileNumberValue(conditionBlock, 'OPERAND2');
+                return () => op1Func() < op2Func();
+            }
+            case 'operator_equals': {
+                const op1Func = this.compileStringValue(conditionBlock, 'OPERAND1');
+                const op2Func = this.compileStringValue(conditionBlock, 'OPERAND2');
+                return () => op1Func().toLowerCase() === op2Func().toLowerCase();
+            }
+            case 'operator_and': {
+                const op1Func = this.compileCondition(conditionBlock, 'OPERAND1');
+                const op2Func = this.compileCondition(conditionBlock, 'OPERAND2');
+                return () => op1Func() && op2Func();
+            }
+            case 'operator_or': {
+                const op1Func = this.compileCondition(conditionBlock, 'OPERAND1');
+                const op2Func = this.compileCondition(conditionBlock, 'OPERAND2');
+                return () => op1Func() || op2Func();
+            }
+            case 'operator_not': {
+                const opFunc = this.compileCondition(conditionBlock, 'OPERAND');
+                return () => !opFunc();
+            }
             case 'operator_contains': {
-                const str1 = String(conditionBlock.getFieldValue('STRING1'));
-                const str2 = String(conditionBlock.getFieldValue('STRING2'));
-                return () => str1.includes(str2);
+                const str1Func = this.compileStringValue(conditionBlock, 'STRING1');
+                const str2Func = this.compileStringValue(conditionBlock, 'STRING2');
+                return () => str1Func().toLowerCase().includes(str2Func().toLowerCase());
             }
             case 'data_listcontainsitem': {
                 const list = this.getVariableName(conditionBlock);
@@ -169,8 +197,8 @@ export class AnimationCompiler {
                 return () => animationVM.getListItem(list, idxFunc());
             }
             case 'operator_letter_of': {
-                const letterFunc = () => Number(valueBlock.getFieldValue('LETTER'));
-                const stringFunc = () => String(valueBlock.getFieldValue('STRING'));
+                const letterFunc = this.compileNumberValue(valueBlock, 'LETTER');
+                const stringFunc = this.compileStringValue(valueBlock, 'STRING');
                 return () => {
                     const idx = Math.floor(letterFunc());
                     const str = stringFunc();
@@ -278,8 +306,95 @@ export class AnimationCompiler {
                 const name = variable ? (variable as any).name : id;
                 return () => Number(animationVM.getVariable(name)); // compileNumberValue forces return number
             }
+            case 'operator_add': {
+                const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
+                const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
+                return () => num1Func() + num2Func();
+            }
+            case 'operator_subtract': {
+                const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
+                const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
+                return () => num1Func() - num2Func();
+            }
+            case 'operator_multiply': {
+                const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
+                const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
+                return () => num1Func() * num2Func();
+            }
+            case 'operator_divide': {
+                const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
+                const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
+                return () => {
+                   const divisor = num2Func();
+                   return divisor !== 0 ? num1Func() / divisor : 0;
+                };
+            }
+            case 'operator_random': {
+                const fromFunc = this.compileNumberValue(valueBlock, 'FROM');
+                const toFunc = this.compileNumberValue(valueBlock, 'TO');
+                return () => {
+                    const from = fromFunc();
+                    const to = toFunc();
+                    if (Number.isInteger(from) && Number.isInteger(to)) {
+                        const min = Math.min(from, to);
+                        const max = Math.max(from, to);
+                        return Math.floor(Math.random() * (max - min + 1)) + min;
+                    } else {
+                        const min = Math.min(from, to);
+                        const max = Math.max(from, to);
+                        return Math.random() * (max - min) + min;
+                    }
+                };
+            }
+            case 'operator_mod': {
+                const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
+                const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
+                return () => {
+                   const n1 = num1Func();
+                   const n2 = num2Func();
+                   return n2 !== 0 ? n1 % n2 : 0;
+                };
+            }
+            case 'operator_round': {
+                const numFunc = this.compileNumberValue(valueBlock, 'NUM');
+                return () => Math.round(numFunc());
+            }
+            case 'operator_round_to_decimals': {
+                const numFunc = this.compileNumberValue(valueBlock, 'NUM');
+                // The dropdown might return strings like '1', '2' etc. Get it as number natively if possible, else string
+                const decimals = Number(valueBlock.getFieldValue('DECIMALS') || 1);
+                return () => {
+                   const num = numFunc();
+                   const multiplier = Math.pow(10, decimals);
+                   return Math.round(num * multiplier) / multiplier;
+                };
+            }
+            case 'operator_mathop': {
+                const numFunc = this.compileNumberValue(valueBlock, 'NUM');
+                const operator = valueBlock.getFieldValue('OPERATOR');
+                return () => {
+                    const num = numFunc();
+                    switch (operator) {
+                        case 'abs': return Math.abs(num);
+                        case 'floor': return Math.floor(num);
+                        case 'ceiling': return Math.ceil(num);
+                        case 'sqrt': return num < 0 ? 0 : Math.sqrt(num);
+                        case 'sin': return Math.sin((num * Math.PI) / 180);
+                        case 'cos': return Math.cos((num * Math.PI) / 180);
+                        case 'tan': return Math.tan((num * Math.PI) / 180);
+                        case 'asin': return (Math.asin(num) * 180) / Math.PI;
+                        case 'acos': return (Math.acos(num) * 180) / Math.PI;
+                        case 'atan': return (Math.atan(num) * 180) / Math.PI;
+                        case 'ln': return num <= 0 ? 0 : Math.log(num);
+                        case 'log': return num <= 0 ? 0 : Math.log10(num);
+                        case 'e ^': return Math.exp(num);
+                        case '10 ^': return Math.pow(10, num);
+                        default: return num;
+                    }
+                };
+            }
             case 'operator_length': {
-                const stringFunc = () => String(valueBlock.getFieldValue('STRING'));
+                const stringFunc = this.compileStringValue(valueBlock, 'STRING');
                 return () => stringFunc().length;
             }
             case 'data_lengthoflist': {
@@ -648,7 +763,7 @@ export class AnimationCompiler {
             case 'sensing_reset_timer':
                 step = { type: 'reset_timer' };
                 break;
-            
+
             // Procedures
             case 'procedures_callnoreturn': {
                 // Determine procedure name
