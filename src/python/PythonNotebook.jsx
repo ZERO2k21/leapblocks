@@ -476,7 +476,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
     return (
         <div className="flex flex-col h-screen bg-gray-50">
             {/* ══ TOPBAR ══════════════════════════════════════════════════════ */}
-            <header className="h-12 flex items-center px-4 justify-between text-white z-10 shadow-md flex-shrink-0" style={{ background: "linear-gradient(180deg, #7B4FC4 0%, #5A2D82 100%)" }}>
+            <header className="h-12 flex items-center px-4 justify-between text-white z-10 shadow-md flex-shrink-0" style={{ background: "#5A2D82" }}>
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onBack}
@@ -529,7 +529,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                         flexShrink: 0,
                         filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
                     }}>
-                        <CreoleapLogo height={42} />
+                        <CreoleapLogo height={70} />
                     </div>
                 </div>
             </header>

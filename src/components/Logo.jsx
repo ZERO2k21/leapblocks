@@ -16,7 +16,7 @@ export default function Logo({ height = 36, className = "" }) {
 }
 
 // CREOLEAP right-logo (AI Future SVG) — used on right side of topbars
-export function CreoleapLogo({ height = 36, className = "", style = {} }) {
+export function CreoleapLogo({ height = 100, className = "", style = {} }) {
     return (
         <img
             src="/assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"

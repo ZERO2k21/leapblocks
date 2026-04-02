@@ -16,7 +16,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
     return (
         <header style={{
             height: 54,
-            background: 'linear-gradient(135deg, #7B4FC4 0%, #6236A0 50%, #4E2A84 100%)',
+            background: C.PURPLE,
             display: "flex",
             alignItems: "center", padding: "0 12px",
             justifyContent: "space-between", color: "#fff", zIndex: 100,
@@ -86,7 +86,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                             lineHeight: 1.2,
                             fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
                             textShadow: '0 0 20px rgba(255,255,255,0.3)',
-                        }}>CODEX 🐍</span>
+                        }}>CODEX </span>
                     </div>
                 </div>
                 {/* Blocks/Python Mode Tabs */}
@@ -286,7 +286,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                     flexShrink: 0,
                     filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.15)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
                 }}>
-                    <CreoleapLogo height={42} />
+                    <CreoleapLogo height={150} />
                 </div>
             </div>
         </header>

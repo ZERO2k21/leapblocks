@@ -151,7 +151,7 @@ export default function PythonIDEGuide({ onClose }) {
     }}>
       {/* Header */}
       <div style={{
-        background: "linear-gradient(135deg, #6c2eb9 0%, #2563eb 100%)",
+        background: "#5A2D82",
         padding: "16px 20px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         flexShrink: 0,

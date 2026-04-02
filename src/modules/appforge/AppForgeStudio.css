@@ -20,8 +20,8 @@
   justify-content: space-between;
   height: 48px;
   padding: 0 12px;
-  background: #16161d;
-  border-bottom: 1px solid #2a2a3a;
+  background: #5A2D82;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
   z-index: 100;
   flex-shrink: 0;
 }
@@ -53,19 +53,23 @@
 .af-brand {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
 }
-.af-brand-icon {
-  font-size: 18px;
-  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.5));
+.af-brand-texts {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.af-brand-small {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.75);
 }
 .af-brand-text {
-  font-size: 14px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #3b82f6, #06b6d4);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: -0.3px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
 }
 
 .af-divider {
@@ -163,7 +167,18 @@
 .af-topbar-right {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+}
+.af-right-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 8px;
+}
+.af-right-brand-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
 }
 .af-action-btn {
   width: 32px;
@@ -263,6 +278,7 @@
   font-size: 20px;
   font-weight: 700;
   background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
