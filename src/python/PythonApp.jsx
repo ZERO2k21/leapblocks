@@ -30,6 +30,7 @@ import {
     Plug,
     FileCode2,
     AlertCircle,
+    Home,
 } from "lucide-react";
 
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
@@ -2431,7 +2432,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 position: "sticky",
                 top: 0,
                 height: 50,
-                background: "linear-gradient(180deg, #1f0943ff 0%, #3e066fff 100%)",
+                background: "#5A2D82",
                 display: "flex",
                 alignItems: "center",
                 padding: "0 12px",
@@ -2441,11 +2442,39 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 flexShrink: 0,
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <button
+                        onClick={onBack}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 40,
+                            height: 40,
+                            background: 'rgba(255,255,255,0.1)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: 12,
+                            color: '#fff',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            flexShrink: 0,
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                            e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                            e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                        title="Back to Home"
+                    >
+                        <Home size={19} strokeWidth={2.2} />
+                    </button>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={onBack}>
                         <Logo height={45} />
-                        <span style={{ color: "#FFD500", fontSize: 14, fontWeight: 800, letterSpacing: "0.08em" }}>PYTHON</span>
+                        <span style={{ color: "#FFD500", fontSize: 14, fontWeight: 800, letterSpacing: "0.08em" }}>CODEX</span>
                     </div>
-                    <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.3)" }} />
+                    <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
 
                     {["File", "Edit", "Tutorials", "Board", "Connect"].map((menuLabel) => (
                         <span
@@ -2466,7 +2495,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         </span>
                     ))}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "end", gap: 8 }}>
                     {/* Project name */}
                     <div style={{ background: "rgba(255,255,255,0.2)", padding: "4px 10px", borderRadius: 4, display: "flex", alignItems: "center", gap: 6 }}>
                         <input
@@ -2546,7 +2575,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     flexShrink: 0,
                     filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
                 }}>
-                    <CreoleapLogo height={42} />
+                    <CreoleapLogo height={110} />
                 </div>
             </header>
 

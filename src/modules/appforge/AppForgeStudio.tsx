@@ -3,6 +3,8 @@
 // Integrates into LeapBlocks as a module
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import React, { useState, lazy, Suspense } from 'react';
+import { Home } from 'lucide-react';
+import Logo, { CreoleapLogo } from '../../components/Logo';
 import './AppForgeStudio.css';
 
 // Lazy load heavy panels
@@ -92,14 +94,41 @@ export default function AppForgeStudio({ onBack }: AppForgeProps) {
       {/* ── Top Bar ──────────────────────────── */}
       <header className="af-topbar">
         <div className="af-topbar-left">
-          <button className="af-back-btn" onClick={onBack} title="Back to LeapBlocks">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
+          <button
+            onClick={onBack}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 40,
+              height: 40,
+              background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 12,
+              color: '#fff',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              flexShrink: 0,
+              marginRight: 10,
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            title="Back to Home"
+          >
+            <Home size={19} strokeWidth={2.2} />
           </button>
           <div className="af-brand">
-            <span className="af-brand-icon">⚡</span>
-            <span className="af-brand-text">AppForge</span>
+            <Logo height={48} />
+            <div className="af-brand-texts">
+              <span className="af-brand-small">LeapLab</span>
+              <span className="af-brand-text">AppForge</span>
+            </div>
           </div>
           <div className="af-divider" />
           {isEditingName ? (
@@ -135,6 +164,9 @@ export default function AppForgeStudio({ onBack }: AppForgeProps) {
         </nav>
 
         <div className="af-topbar-right">
+          <div className="af-right-brand">
+            <CreoleapLogo height={150} />
+          </div>
           <button className="af-action-btn" onClick={handleSave} title="Save Project">💾</button>
           <button className="af-action-btn" onClick={handleOpen} title="Open Project">📂</button>
         </div>

@@ -299,7 +299,7 @@ export default function MenuBar({
             height: 62,
             padding: '0 18px',
             gap: 6,
-            background: 'linear-gradient(135deg, #0F1923 0%, #162033 30%, #1A2744 60%, #1E2D4F 100%)',
+            background: '#5A2D82',
             boxShadow: '0 4px 20px rgba(0,0,0,0.45), inset 0 -1px 0 rgba(255,255,255,0.06)',
             zIndex: 100,
             borderBottom: '1px solid rgba(100,180,255,0.1)',
@@ -346,6 +346,29 @@ export default function MenuBar({
                 filter: 'drop-shadow(0 0 12px rgba(36, 0, 85, 1)) drop-shadow(0 2px 6px rgba(0,0,0,0.3))',
             }}>
                 <Logo height={52} />
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    marginLeft: 10,
+                    lineHeight: 1.1,
+                }}>
+                    <span style={{
+                        color: '#FFD500',
+                        fontSize: 8,
+                        fontWeight: 900,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.18em',
+                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                    }}>LEAPLAB</span>
+                    <span style={{
+                        color: '#fff',
+                        fontSize: 16,
+                        fontWeight: 900,
+                        letterSpacing: '0.08em',
+                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                    }}>CIRCUIT</span>
+                </div>
             </div>
 
             {/* Separator */}
@@ -630,13 +653,13 @@ export default function MenuBar({
 
             {/* CREOLEAP Right Logo — Premium Fit */}
             <div style={{
-                marginLeft: 16,
+                marginLeft: 10,
                 display: 'flex',
                 alignItems: 'center',
                 flexShrink: 0,
                 filter: 'drop-shadow(0 0 14px rgba(255,255,255,0.15)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))',
             }}>
-                <CreoleapLogo height={52} />
+                <CreoleapLogo height={150} />
             </div>
         </div>
     );

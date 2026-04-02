@@ -246,6 +246,29 @@ export default function JuniorMenuBar({
                     filter: 'drop-shadow(0 0 14px rgba(80,200,255,0.3)) drop-shadow(0 2px 6px rgba(0,0,0,0.3))',
                 }}>
                     <Logo height={52} />
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        marginLeft: 10,
+                        lineHeight: 1.1,
+                    }}>
+                        <span style={{
+                            color: '#FFD500',
+                            fontSize: 8,
+                            fontWeight: 900,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.18em',
+                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                        }}>LEAPLAB</span>
+                        <span style={{
+                            color: '#fff',
+                            fontSize: 16,
+                            fontWeight: 900,
+                            letterSpacing: '0.08em',
+                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                        }}>IGNITE</span>
+                    </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -431,7 +454,7 @@ export default function JuniorMenuBar({
                     flexShrink: 0,
                     filter: 'drop-shadow(0 0 14px rgba(255,255,255,0.15)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))',
                 }}>
-                    <CreoleapLogo height={52} />
+                    <CreoleapLogo height={160} />
                 </div>
             </div>
         </div>
