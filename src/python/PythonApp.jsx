@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StageProvider, useStage } from "../context/StageContext";
 import Logo, { CreoleapLogo } from "../components/Logo";
 import {
+    Home,
     Play,
     Square,
     Undo,
@@ -2435,7 +2436,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 background: "#5A2D82",
                 display: "flex",
                 alignItems: "center",
-                padding: "0 12px",
+                padding: "0 8px",
                 justifyContent: "space-between",
                 color: "#fff",
                 zIndex: 100,
