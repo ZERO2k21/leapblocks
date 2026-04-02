@@ -31,7 +31,6 @@ import {
     Plug,
     FileCode2,
     AlertCircle,
-    Home,
 } from "lucide-react";
 
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
