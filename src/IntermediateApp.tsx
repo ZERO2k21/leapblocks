@@ -2764,7 +2764,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 if (s.id === 'stage') {
                     stageScripts.push(...scripts);
                 }
-                
+
                 if (typeof s.setScripts === 'function') {
                     s.setScripts(scripts);
                 }
@@ -3393,7 +3393,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             onShowList: handleShowList,
             onHideList: handleHideList,
             onShowTable: handleShowTable,
-            onHideTable: handleHideTable
+            onHideTable: handleHideTable,
+            onLog: addLog
         };
 
         Object.assign(animationVM, commonCallbacks);
@@ -3553,6 +3554,54 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                     workspaceRef.current = blocksWorkspace;
+
+                    // 1. BLOCK REPLACEMENT LISTENER
+                    // Auto-replace checkbox-reporters from flyout with standard reporters in workspace
+                    blocksWorkspace.addChangeListener((event: any) => {
+                        if (event.type === Blockly.Events.BLOCK_CREATE && !isLoadingWorkspaceRef.current) {
+                            const blockId = event.blockId;
+                            const block = blocksWorkspace.getBlockById(blockId);
+                            if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox')) {
+                                const isVariable = block.type === 'variable_reporter_checkbox';
+                                const nameField = isVariable ? 'VARIABLE' : 'LIST';
+                                const name = block.getFieldValue(nameField);
+
+                                // Determine type (Variable, List, or Table)
+                                let newType = isVariable ? 'data_variable' : 'data_listcontents';
+
+                                if (block.type === 'list_reporter_checkbox') {
+                                    // Check if this is actually a table (they share the same checkbox block type)
+                                    const variable = blocksWorkspace.getVariable(name, 'table');
+                                    if (variable) {
+                                        newType = 'data_tablecontents';
+                                    }
+                                }
+
+                                // Record position before disposal
+                                const xy = block.getRelativeToSurfaceXY();
+
+                                // Dispose the placeholder block from flyout
+                                // We use setTimeout to ensure we don't interfere with the current event loop/gesture
+                                setTimeout(() => {
+                                    if (!blocksWorkspace.getBlockById(blockId)) return; // Already gone
+
+                                    Blockly.Events.disable();
+                                    try {
+                                        block.dispose(false);
+                                        const newBlock = blocksWorkspace.newBlock(newType);
+                                        newBlock.setFieldValue(name, nameField);
+                                        newBlock.initSvg();
+                                        newBlock.render();
+                                        newBlock.moveBy(xy.x, xy.y);
+                                        newBlock.select();
+                                    } finally {
+                                        Blockly.Events.enable();
+                                    }
+                                }, 0);
+                            }
+                        }
+                    });
+
                     lastToolboxJsonRef.current = JSON.stringify(getCurrentToolbox());
 
                     // Initialize custom blocks and field overrides only once globally

@@ -15,12 +15,16 @@ import 'blockly/javascript';
 if (Blockly.FieldDropdown && !(Blockly.FieldDropdown.prototype as any)._dropdownColorsPatched) {
     const origShowEditor = (Blockly.FieldDropdown.prototype as any).showEditor_;
     (Blockly.FieldDropdown.prototype as any).showEditor_ = function (this: any, opt_e?: any) {
-        const block = this.getSourceBlock();
-        if (block) {
-            const color = block.getColour();
-            document.documentElement.style.setProperty('--blockly-menu-highlight-color', color);
-            const tint = color.startsWith('#') ? `${color}1A` : 'rgba(0,0,0,0.05)';
-            document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
+        try {
+            const block = this.getSourceBlock();
+            if (block) {
+                const color = block.getColour();
+                document.documentElement.style.setProperty('--blockly-menu-highlight-color', color);
+                const tint = color.startsWith('#') ? `${color}1A` : 'rgba(0,0,0,0.05)';
+                document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
+            }
+        } catch (e) {
+            console.warn('[Blockly Patch] Failed to set dropdown colors:', e);
         }
 
         // HEALING: If the field's current value is an object (due to a previous bug), 
@@ -31,7 +35,11 @@ if (Blockly.FieldDropdown && !(Blockly.FieldDropdown.prototype as any)._dropdown
         }
 
         if (typeof origShowEditor === 'function') {
-            origShowEditor.call(this, opt_e);
+            try {
+                origShowEditor.call(this, opt_e);
+            } catch (e) {
+                console.error('[Blockly Patch] Error in origShowEditor:', e);
+            }
         }
     };
     (Blockly.FieldDropdown.prototype as any)._dropdownColorsPatched = true;
@@ -42,6 +50,9 @@ if (Blockly.FieldDropdown && !(Blockly.FieldDropdown.prototype as any)._dropdown
 // "Rename Variable" or "Delete Variable" items without valid translations.
 if (Blockly.Msg) {
     Blockly.Msg['DELETE_VARIABLE'] = Blockly.Msg['DELETE_VARIABLE'] || 'Delete the "%1" variable';
+    Blockly.Msg['RENAME_VARIABLE'] = Blockly.Msg['RENAME_VARIABLE'] || 'Rename variable...';
+    Blockly.Msg['NEW_VARIABLE'] = Blockly.Msg['NEW_VARIABLE'] || 'New variable...';
+    Blockly.Msg['NEW_VARIABLE_TITLE'] = Blockly.Msg['NEW_VARIABLE_TITLE'] || 'New variable name:';
 }
 
 // 2. DROPDOWN ARROW COLORS

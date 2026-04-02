@@ -1655,6 +1655,59 @@ const scratchBlocks = [
         tooltip: 'Hides the list monitor on the stage.',
         helpUrl: 'https://en.scratch-wiki.info/wiki/Hide_List_%28block%29'
     },
+    // Placeholders for Toolbox/Flyout: replaced by real reporters upon creation in workspace
+    {
+        type: 'variable_reporter_checkbox',
+        message0: '%1 %2',
+        args0: [
+            { type: 'field_checkbox', name: 'CHECK', checked: false },
+            { type: 'field_label', name: 'VARIABLE', text: 'variable' }
+        ],
+        output: 'String',
+        colour: '#FF8C1A',
+        tooltip: 'Flyout placeholder'
+    },
+    {
+        type: 'list_reporter_checkbox',
+        message0: '%1 %2',
+        args0: [
+            { type: 'field_checkbox', name: 'CHECK', checked: false },
+            { type: 'field_label', name: 'LIST', text: 'list' }
+        ],
+        output: 'String',
+        colour: '#FF8C1A',
+        tooltip: 'Flyout placeholder'
+    },
+    {
+        type: 'data_listcontents',
+        message0: '%1',
+        args0: [{
+            type: 'field_variable',
+            name: 'LIST',
+            variable: 'my list',
+            variableTypes: ['list'],
+            defaultType: 'list'
+        }],
+        output: 'String',
+        colour: '#FF8C1A',
+        tooltip: 'Reports the contents of a list.',
+        helpUrl: ''
+    },
+    {
+        type: 'data_tablecontents',
+        message0: 'table %1',
+        args0: [{
+            type: 'field_variable',
+            name: 'LIST',
+            variable: 'my table',
+            variableTypes: ['table'],
+            defaultType: 'table'
+        }],
+        output: 'String',
+        colour: '#FF8C1A',
+        tooltip: 'Reports the contents of a table.',
+        helpUrl: ''
+    },
 
     // ═══════════════════════════════════════════════════════════════════════════
     // MY BLOCKS (Custom procedures)

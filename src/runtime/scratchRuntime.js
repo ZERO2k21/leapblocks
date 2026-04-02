@@ -19,6 +19,7 @@ class ScratchRuntime {
         this.onHideVariable = null;
         this.onShowList = null;
         this.onHideList = null;
+        this.onLog = null;
     }
 
     triggerFlag() {
@@ -241,41 +242,72 @@ class ScratchRuntime {
                 // DATA (Variables & Lists)
                 // ═══════════════════════════════════════════════════════════════════════
                 case 'data_setvariableto':
-                    const varName = fields.VARIABLE ? fields.VARIABLE.id || fields.VARIABLE.name : null;
-                    variableStore.setVariable(varName, await this.getInputValue(inputs.VALUE, spriteId));
+                    {
+                        const varName = fields.VARIABLE ? fields.VARIABLE.id || fields.VARIABLE.name : null;
+                        const val = await this.getInputValue(inputs.VALUE, spriteId);
+                        variableStore.setVariable(varName, val);
+                        this.onLog?.(`Variable '${varName}' set to ${val}`);
+                    }
                     break;
                 case 'data_changevariableby':
-                    const cVarName = fields.VARIABLE ? fields.VARIABLE.id || fields.VARIABLE.name : null;
-                    const cVal = Number(await this.getInputValue(inputs.VALUE, spriteId));
-                    variableStore.setVariable(cVarName, Number(variableStore.getVariable(cVarName)) + cVal);
+                    {
+                        const cVarName = fields.VARIABLE ? fields.VARIABLE.id || fields.VARIABLE.name : null;
+                        const cVal = Number(await this.getInputValue(inputs.VALUE, spriteId));
+                        const newValue = Number(variableStore.getVariable(cVarName)) + cVal;
+                        variableStore.setVariable(cVarName, newValue);
+                        this.onLog?.(`Variable '${cVarName}' changed by ${cVal} (New value: ${newValue})`);
+                    }
                     break;
                 case 'data_addtolist':
-                    const addListName = fields.LIST ? fields.LIST.name : await this.getInputValue(inputs.LIST, spriteId);
-                    variableStore.addToList(addListName, await this.getInputValue(inputs.ITEM, spriteId));
+                    {
+                        const addListName = fields.LIST ? fields.LIST.name || fields.LIST.id : await this.getInputValue(inputs.LIST, spriteId);
+                        const item = await this.getInputValue(inputs.ITEM, spriteId);
+                        variableStore.addToList(addListName, item);
+                        this.onLog?.(`List '${addListName}': Added item '${item}'`);
+                    }
                     break;
                 case 'data_deleteoflist':
-                    const delListName = fields.LIST ? fields.LIST.name : await this.getInputValue(inputs.LIST, spriteId);
-                    variableStore.deleteFromList(delListName, await this.getInputValue(inputs.INDEX, spriteId));
+                    {
+                        const delListName = fields.LIST ? fields.LIST.name || fields.LIST.id : await this.getInputValue(inputs.LIST, spriteId);
+                        const idx = await this.getInputValue(inputs.INDEX, spriteId);
+                        variableStore.deleteFromList(delListName, idx);
+                        this.onLog?.(`List '${delListName}': Deleted item at index ${idx}`);
+                    }
                     break;
                 case 'data_deletealloflist':
-                    const clrListName = fields.LIST ? fields.LIST.name : await this.getInputValue(inputs.LIST, spriteId);
-                    variableStore.deleteAllOfList(clrListName);
+                    {
+                        const clrListName = fields.LIST ? fields.LIST.name || fields.LIST.id : await this.getInputValue(inputs.LIST, spriteId);
+                        variableStore.deleteAllOfList(clrListName);
+                        this.onLog?.(`List '${clrListName}': Deleted all items`);
+                    }
                     break;
                 case 'data_showvariable':
-                    const showVarName = fields.VARIABLE ? fields.VARIABLE.name : await this.getInputValue(inputs.VARIABLE, spriteId);
-                    if (this.onShowVariable) this.onShowVariable(showVarName);
+                    {
+                        const showVarName = fields.VARIABLE ? fields.VARIABLE.name || fields.VARIABLE.id : await this.getInputValue(inputs.VARIABLE, spriteId);
+                        if (this.onShowVariable) this.onShowVariable(showVarName);
+                        this.onLog?.(`Show variable: ${showVarName}`);
+                    }
                     break;
                 case 'data_hidevariable':
-                    const hideVarName = fields.VARIABLE ? fields.VARIABLE.name : await this.getInputValue(inputs.VARIABLE, spriteId);
-                    if (this.onHideVariable) this.onHideVariable(hideVarName);
+                    {
+                        const hideVarName = fields.VARIABLE ? fields.VARIABLE.name || fields.VARIABLE.id : await this.getInputValue(inputs.VARIABLE, spriteId);
+                        if (this.onHideVariable) this.onHideVariable(hideVarName);
+                        this.onLog?.(`Hide variable: ${hideVarName}`);
+                    }
                     break;
                 case 'data_showlist':
-                    const showListName = fields.LIST ? fields.LIST.name : await this.getInputValue(inputs.LIST, spriteId);
-                    if (this.onShowList) this.onShowList(showListName);
+                    {
+                        const showListName = fields.LIST ? fields.LIST.name || fields.LIST.id : await this.getInputValue(inputs.LIST, spriteId);
+                        if (this.onShowList) this.onShowList(showListName);
+                        this.onLog?.(`Show list: ${showListName}`);
+                    }
                     break;
                 case 'data_hidelist':
-                    const hideListName = fields.LIST ? fields.LIST.name : await this.getInputValue(inputs.LIST, spriteId);
-                    if (this.onHideList) this.onHideList(hideListName);
+                    {
+                        const hideListName = fields.LIST ? fields.LIST.name || fields.LIST.id : await this.getInputValue(inputs.LIST, spriteId);
+                        if (this.onHideList) this.onHideList(hideListName);
+                        this.onLog?.(`Hide list: ${hideListName}`);
+                    }
                     break;
 
                 // ═══════════════════════════════════════════════════════════════════════

@@ -25,6 +25,7 @@ export interface VMContext {
     onHideList?: (name: string) => void;
     onShowTable?: (name: string) => void;
     onHideTable?: (name: string) => void;
+    onLog?: (msg: string) => void;
 }
 
 export interface CompiledScript {
@@ -179,6 +180,7 @@ export class AnimationVM {
 
     // Ask callback — when set, the VM delegates input to the React UI instead of window.prompt
     public onAskQuestion?: (question: string) => Promise<string>;
+    public onLog?: (msg: string) => void;
 
     // Broadcast sync hook — called right before a message is dispatched
     public onBeforeBroadcast?: (message: string) => void;
@@ -271,14 +273,17 @@ export class AnimationVM {
     setVariable(name: string, value: number | string): void {
         this.variables.set(name, value);
         vmLog.step('set_variable', { name, value });
+        this.onLog?.(`Variable '${name}' set to ${value}`);
     }
 
     changeVariable(name: string, delta: number): void {
         const current = this.getVariable(name);
         const currentNum = Number(current);
         if (!isNaN(currentNum)) {
-            this.variables.set(name, currentNum + delta);
-            vmLog.step('change_variable', { name, delta, newValue: currentNum + delta });
+            const newValue = currentNum + delta;
+            this.variables.set(name, newValue);
+            vmLog.step('change_variable', { name, delta, newValue });
+            this.onLog?.(`Variable '${name}' changed by ${delta} (New value: ${newValue})`);
         }
     }
 
@@ -624,6 +629,7 @@ export class AnimationVM {
             onHideList: this.onHideList,
             onShowTable: this.onShowTable,
             onHideTable: this.onHideTable,
+            onLog: this.onLog,
         };
 
         let isAborted = false;
@@ -1174,47 +1180,53 @@ export class AnimationVM {
 
             // Variable blocks
             case 'data_setvariableto':
-                this.setVariable(step.variable, step.value());
+                {
+                    const val = step.value();
+                    this.setVariable(step.variable, val);
+                    ctx.onLog?.(`Variable '${step.variable}' set to ${val}`);
+                }
                 break;
 
             case 'data_changevariableby':
-                this.changeVariable(step.variable, step.value());
+                {
+                    const delta = step.value();
+                    this.changeVariable(step.variable, delta);
+                    // Detailed log is already handled in changeVariable() method
+                }
                 break;
 
             case 'data_showvariable':
-                // Show variable monitor on stage
-                if (ctx.onShowVariable) {
-                    ctx.onShowVariable(step.variable);
-                }
-                console.log(`[AnimationVM] Show variable: ${step.variable} = ${this.getVariable(step.variable)}`);
+                if (ctx.onShowVariable) ctx.onShowVariable(step.variable);
+                ctx.onLog?.(`Show variable: ${step.variable}`);
                 break;
 
             case 'data_hidevariable':
-                // Hide variable monitor on stage
-                if (ctx.onHideVariable) {
-                    ctx.onHideVariable(step.variable);
-                }
-                console.log(`[AnimationVM] Hide variable: ${step.variable}`);
+                if (ctx.onHideVariable) ctx.onHideVariable(step.variable);
+                ctx.onLog?.(`Hide variable: ${step.variable}`);
                 break;
 
             // List blocks
             case 'list_add': {
                 const list = this.getList(step.list);
-                list.push(step.item());
-                vmLog.step('list_add', { list: step.list, item: step.item() });
+                const item = step.item();
+                list.push(item);
+                ctx.onLog?.(`List '${step.list}': Added item '${item}'`);
+                vmLog.step('list_add', { list: step.list, item });
                 break;
             }
             case 'list_delete': {
                 const list = this.getList(step.list);
                 const idx = step.index();
                 if (idx >= 1 && idx <= list.length) {
-                    list.splice(idx - 1, 1);
+                    const removed = list.splice(idx - 1, 1);
+                    ctx.onLog?.(`List '${step.list}': Deleted item at index ${idx} ('${removed[0]}')`);
                     vmLog.step('list_delete', { list: step.list, index: idx });
                 }
                 break;
             }
             case 'list_delete_all': {
                 this.lists.set(step.list, []);
+                ctx.onLog?.(`List '${step.list}': Deleted all items`);
                 vmLog.step('list_delete_all', { list: step.list });
                 break;
             }
@@ -1224,6 +1236,7 @@ export class AnimationVM {
                 const item = step.item();
                 if (idx >= 1 && idx <= list.length + 1) {
                     list.splice(idx - 1, 0, item);
+                    ctx.onLog?.(`List '${step.list}': Inserted '${item}' at index ${idx}`);
                     vmLog.step('list_insert', { list: step.list, index: idx, item });
                 }
                 break;
@@ -1234,58 +1247,65 @@ export class AnimationVM {
                 const item = step.item();
                 if (idx >= 1 && idx <= list.length) {
                     list[idx - 1] = item;
+                    ctx.onLog?.(`List '${step.list}': Replaced item at index ${idx} with '${item}'`);
                     vmLog.step('list_replace', { list: step.list, index: idx, item });
                 }
                 break;
             }
             case 'list_show':
-                // Show list monitor on stage
-                if (ctx.onShowList) {
-                    ctx.onShowList(step.list);
-                }
-                console.log(`[AnimationVM] Show list: ${step.list}`);
+                if (ctx.onShowList) ctx.onShowList(step.list);
+                ctx.onLog?.(`Show list: ${step.list}`);
                 break;
             case 'list_hide':
-                // Hide list monitor on stage
-                if (ctx.onHideList) {
-                    ctx.onHideList(step.list);
-                }
-                console.log(`[AnimationVM] Hide list: ${step.list}`);
+                if (ctx.onHideList) ctx.onHideList(step.list);
+                ctx.onLog?.(`Hide list: ${step.list}`);
                 break;
 
             // Table blocks
             case 'table_set':
-                this.setInTable(step.table, step.col(), step.row(), step.value());
+                {
+                    const val = step.value();
+                    const row = step.row();
+                    const col = step.col();
+                    this.setInTable(step.table, col, row, val);
+                    ctx.onLog?.(`Table '${step.table}': Set [row: ${row}, col: ${col}] to ${val}`);
+                }
                 break;
             case 'table_add_column':
-                this.addColumn(step.table, step.col());
+                {
+                    const col = step.col();
+                    this.addColumn(step.table, col);
+                    ctx.onLog?.(`Table '${step.table}': Added column '${col}'`);
+                }
                 break;
             case 'table_delete_column':
-                this.deleteColumn(step.table, step.col());
+                {
+                    const col = step.col();
+                    this.deleteColumn(step.table, col);
+                    ctx.onLog?.(`Table '${step.table}': Deleted column '${col}'`);
+                }
                 break;
             case 'table_show':
-                // Show table monitor on stage
-                if (ctx.onShowTable) {
-                    ctx.onShowTable(step.table);
-                }
-                console.log(`[AnimationVM] Show table: ${step.table} as ${step.format}`);
+                if (ctx.onShowTable) ctx.onShowTable(step.table);
+                ctx.onLog?.(`Show table: ${step.table}`);
                 break;
             case 'table_hide':
-                // Hide table monitor on stage
-                if (ctx.onHideTable) {
-                    ctx.onHideTable(step.table);
-                }
-                console.log(`[AnimationVM] Hide table: ${step.table}`);
+                if (ctx.onHideTable) ctx.onHideTable(step.table);
+                ctx.onLog?.(`Hide table: ${step.table}`);
                 break;
             case 'table_delete_row':
-                this.deleteRow(step.table, step.row());
+                {
+                    const row = step.row();
+                    this.deleteRow(step.table, row);
+                    ctx.onLog?.(`Table '${step.table}': Deleted row ${row}`);
+                }
                 break;
             case 'table_clear':
                 this.clearTable(step.table);
+                ctx.onLog?.(`Table '${step.table}': Cleared all data`);
                 break;
             case 'table_export':
-                console.log(`[AnimationVM] Export table: ${step.table}`);
-                // TODO: Implement actual CSV download if running in browser
+                ctx.onLog?.(`Export table: ${step.table}`);
                 break;
 
             case 'procedures_call': {
