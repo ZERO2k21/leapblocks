@@ -148,43 +148,43 @@ export class SkulptEngine {
 
         const toJS = (a) => {
             if (a == null) return a;
-            if (a instanceof sk.builtin.int_)   return a.v;
+            if (a instanceof sk.builtin.int_) return a.v;
             if (a instanceof sk.builtin.float_) return parseFloat(sk.ffi.remapToJs(a));
-            if (a instanceof sk.builtin.str)    return a.v;
+            if (a instanceof sk.builtin.str) return a.v;
             try { return sk.ffi.remapToJs(a); } catch (_) { return a?.v; }
         };
 
         const dispatch = (skName, skAction, skArgs) => {
-            const n   = toJS(skName);
+            const n = toJS(skName);
             const act = toJS(skAction);
             const args = (skArgs?.v ?? []).map(toJS);
             switch (act) {
                 // Initialization
-                case 'INIT':       bridge.initSprite(n); break;
+                case 'INIT': bridge.initSprite(n); break;
 
                 // Movement
-                case 'RIGHT':      bridge.moveRelative(n, 'RIGHT',  args[0] ?? 20); break;
-                case 'LEFT':       bridge.moveRelative(n, 'LEFT',   args[0] ?? 20); break;
-                case 'UP':         bridge.moveRelative(n, 'UP',     args[0] ?? 20); break;
-                case 'DOWN':       bridge.moveRelative(n, 'DOWN',   args[0] ?? 20); break;
-                case 'FORWARD':    bridge.moveSteps(n,              args[0] ?? 20); break;
-                case 'GOTO':       bridge.update(n, { x: args[0] ?? 0, y: args[1] ?? 0, position: { x: args[0] ?? 0, y: args[1] ?? 0 } }); break;
-                case 'SETX':       bridge.update(n, { x: args[0] ?? 0, position: { x: args[0] ?? 0 } }); break;
-                case 'SETY':       bridge.update(n, { y: args[0] ?? 0, position: { y: args[0] ?? 0 } }); break;
+                case 'RIGHT': bridge.moveRelative(n, 'RIGHT', args[0] ?? 20); break;
+                case 'LEFT': bridge.moveRelative(n, 'LEFT', args[0] ?? 20); break;
+                case 'UP': bridge.moveRelative(n, 'UP', args[0] ?? 20); break;
+                case 'DOWN': bridge.moveRelative(n, 'DOWN', args[0] ?? 20); break;
+                case 'FORWARD': bridge.moveSteps(n, args[0] ?? 20); break;
+                case 'GOTO': bridge.update(n, { x: args[0] ?? 0, y: args[1] ?? 0, position: { x: args[0] ?? 0, y: args[1] ?? 0 } }); break;
+                case 'SETX': bridge.update(n, { x: args[0] ?? 0, position: { x: args[0] ?? 0 } }); break;
+                case 'SETY': bridge.update(n, { y: args[0] ?? 0, position: { y: args[0] ?? 0 } }); break;
                 case 'TURN_RIGHT': bridge.update(n, { angle: (old) => (old ?? 0) + (15 * (args[0] ?? 1)), direction: (old) => (old ?? 0) + (15 * (args[0] ?? 1)) }); break;
-                case 'TURN_LEFT':  bridge.update(n, { angle: (old) => (old ?? 0) - (15 * (args[0] ?? 1)), direction: (old) => (old ?? 0) - (15 * (args[0] ?? 1)) }); break;
-                
+                case 'TURN_LEFT': bridge.update(n, { angle: (old) => (old ?? 0) - (15 * (args[0] ?? 1)), direction: (old) => (old ?? 0) - (15 * (args[0] ?? 1)) }); break;
+
                 // Appearance
-                case 'SAY':     bridge.update(n, { speech: args[0] ?? '' }); break;
-                case 'THINK':   bridge.update(n, { speech: '💭 ' + (args[0] ?? '') }); break;
-                case 'HIDE':    bridge.update(n, { visible: false }); break;
-                case 'SHOW':    bridge.update(n, { visible: true  }); break;
-                case 'SIZE':    bridge.update(n, { size:  args[0] ?? 100 }); break;
+                case 'SAY': bridge.update(n, { speech: args[0] ?? '' }); break;
+                case 'THINK': bridge.update(n, { speech: '💭 ' + (args[0] ?? '') }); break;
+                case 'HIDE': bridge.update(n, { visible: false }); break;
+                case 'SHOW': bridge.update(n, { visible: true }); break;
+                case 'SIZE': bridge.update(n, { size: args[0] ?? 100 }); break;
                 case 'CHANGE_SIZE': bridge.update(n, { size: (old) => (old || 100) + (args[0] ?? 10) }); break;
-                case 'ANGLE':   bridge.update(n, { angle: args[0] ?? 0  }); break;
+                case 'ANGLE': bridge.update(n, { angle: args[0] ?? 0 }); break;
                 case 'COSTUME': bridge.update(n, { currentCostume: args[0] }); break;
-                case 'NEXT_COSTUME': 
-                    bridge.update(n, { nextCostume: true }); 
+                case 'NEXT_COSTUME':
+                    bridge.update(n, { nextCostume: true });
                     break;
                 default: break;
             }
@@ -193,14 +193,14 @@ export class SkulptEngine {
 
         // Store dispatch function globally for the preamble to use
         this._dispatchFunc = dispatch;
-        
+
         // Create the __leap__ module
         const mod = new sk.builtin.module();
         mod.$d = { _dispatch: new sk.builtin.func(dispatch) };
-        
+
         // Register in sysmodules
         sk.sysmodules.mp$ass_subscript(new sk.builtin.str('__leap__'), mod);
-        
+
         // Also add to builtins for direct access
         if (sk.builtins) {
             sk.builtins.__leap__ = mod;
@@ -212,7 +212,7 @@ export class SkulptEngine {
     _configureSkulpt(sk) {
         // Build the __leap__ module first to set up builtins
         this._buildLeapModule(sk);
-        
+
         sk.configure({
             output: (text) => this.callbacks.onOut(text),
             inputfun: (prompt) => {
@@ -240,7 +240,7 @@ export class SkulptEngine {
     _errStr(e) {
         if (!e) return 'Unknown error';
         if (typeof e === 'string') return e;
-        try { if (e.tp$str) return e.tp$str().v; } catch (_) {}
+        try { if (e.tp$str) return e.tp$str().v; } catch (_) { }
         if (e.message && e.message !== '[object Event]') return e.message;
         if (e.toString && !e.toString().includes('[object')) return e.toString();
         try { return JSON.stringify(e); } catch { return 'Unknown error'; }
@@ -276,7 +276,7 @@ export class SkulptEngine {
             this._replReady = true;
             try {
                 await sk.importMainWithBody('<repl-init>', false, SPRITE_PREAMBLE, true);
-            } catch (_) {}
+            } catch (_) { }
         }
 
         try {

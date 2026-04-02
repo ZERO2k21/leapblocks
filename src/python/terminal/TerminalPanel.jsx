@@ -82,11 +82,11 @@ export default function TerminalPanel({
                             style={{
                                 color: log.type === "error" ? "#B91C1C"
                                     : log.type === "success" ? "#047857"
-                                    : log.type === "info" ? (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "#0EA5E9" : "#0F172A"
-                                    : log.type === "warning" ? "#C2410C"
-                                    : log.type === "repl-in" ? "#7C3AED"
-                                    : log.type === "input" ? "#111827"
-                                    : "#374151",
+                                        : log.type === "info" ? (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "#0EA5E9" : "#0F172A"
+                                            : log.type === "warning" ? "#C2410C"
+                                                : log.type === "repl-in" ? "#7C3AED"
+                                                    : log.type === "input" ? "#111827"
+                                                        : "#374151",
                                 marginBottom: 2,
                                 paddingLeft: log.type === "repl-in" ? 0 : 4,
                                 whiteSpace: "pre-wrap",
