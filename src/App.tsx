@@ -1,4 +1,5 @@
 import React, { useState, lazy, Suspense } from 'react';
+import Loader from './components/Loader';
 const LandingPage = lazy(() => import('./LandingPage'));
 
 const IntermediateApp = lazy(() => import('./IntermediateApp'));
@@ -16,7 +17,7 @@ const AppForgeStudio = lazy(() => import('./modules/appforge/AppForgeStudio'));
 type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'appinventor' | 'appforge';
 
 
-class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
     constructor(props: any) {
         super(props);
         this.state = { hasError: false, error: null };
@@ -69,7 +70,7 @@ export default function App() {
 
     return (
         <ErrorBoundary key={mode}>
-            <Suspense fallback={<div style={{ padding: 20, color: '#673AB7', fontWeight: 'bold' }}>Loading LeapBlocks...</div>}>
+            <Suspense fallback={<Loader />}>
                 {mode === 'intermediate' && <IntermediateApp
                     onBack={() => setMode('home')}
                     onOpenPython={() => requestSwitch('intermediate', 'python')}
