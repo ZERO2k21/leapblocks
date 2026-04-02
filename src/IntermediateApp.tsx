@@ -3570,29 +3570,35 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     // 1. BLOCK REPLACEMENT LISTENER
                     // Auto-replace checkbox-reporters from flyout with standard reporters in workspace
                     blocksWorkspace.addChangeListener((event: any) => {
-                        if (event.type === Blockly.Events.BLOCK_CREATE && !isLoadingWorkspaceRef.current) {
-                            const blockId = event.blockId;
+                        if ((event.type === Blockly.Events.BLOCK_CREATE || event.type === Blockly.Events.BLOCK_MOVE) && !isLoadingWorkspaceRef.current) {
+                            const blockId = event.type === Blockly.Events.BLOCK_CREATE ? event.blockId : event.id;
                             const block = blocksWorkspace.getBlockById(blockId);
+                            
                             if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox')) {
+                                // IMPORTANT: Do not replace while dragging or it breaks the gesture
+                                if (blocksWorkspace.isDragging && (blocksWorkspace as any).isDragging()) return;
+
                                 const isVariable = block.type === 'variable_reporter_checkbox';
                                 const nameField = isVariable ? 'VARIABLE' : 'LIST';
                                 const name = block.getFieldValue(nameField);
 
                                 // Determine type (Variable, List, or Table)
                                 let newType = isVariable ? 'data_variable' : 'data_listcontents';
+                                let varType: string = isVariable ? '' : 'list';
 
                                 if (block.type === 'list_reporter_checkbox') {
                                     // Check if this is actually a table (they share the same checkbox block type)
                                     const variable = blocksWorkspace.getVariable(name, 'table');
                                     if (variable) {
                                         newType = 'data_tablecontents';
+                                        varType = 'table';
                                     }
                                 }
 
                                 // Record position before disposal
                                 const xy = block.getRelativeToSurfaceXY();
 
-                                // Dispose the placeholder block from flyout
+                                // New block logic - resolve the real variable ID
                                 // We use setTimeout to ensure we don't interfere with the current event loop/gesture
                                 setTimeout(() => {
                                     if (!blocksWorkspace.getBlockById(blockId)) return; // Already gone
@@ -3601,7 +3607,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     try {
                                         block.dispose(false);
                                         const newBlock = blocksWorkspace.newBlock(newType);
-                                        newBlock.setFieldValue(name, nameField);
+                                        
+                                        // Find real variable ID for the name
+                                        const variable = blocksWorkspace.getVariable(name, varType);
+                                        const valueToSet = variable ? variable.getId() : name;
+                                        
+                                        newBlock.setFieldValue(valueToSet, nameField);
                                         newBlock.initSvg();
                                         newBlock.render();
                                         newBlock.moveBy(xy.x, xy.y);
@@ -3625,7 +3636,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 "message0": "%1 %2",
                                 "args0": [
                                     { "type": "field_checkbox", "name": "CHECK", "checked": false },
-                                    { "type": "field_label", "name": "VARIABLE", "text": "variable", "web-class": "variable-checkbox" }
+                                    { "type": "field_input", "name": "VARIABLE", "text": "variable", "enabled": false }
                                 ],
                                 "output": "Number",
                                 "colour": "#FF8C1A",
@@ -3637,7 +3648,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 "message0": "%1 %2",
                                 "args0": [
                                     { "type": "field_checkbox", "name": "CHECK", "checked": false },
-                                    { "type": "field_label", "name": "LIST", "text": "list", "web-class": "list-checkbox" }
+                                    { "type": "field_input", "name": "LIST", "text": "list", "enabled": false }
                                 ],
                                 "output": "String",
                                 "colour": "#FF8C1A",

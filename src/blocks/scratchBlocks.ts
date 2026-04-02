@@ -1661,7 +1661,7 @@ const scratchBlocks = [
         message0: '%1 %2',
         args0: [
             { type: 'field_checkbox', name: 'CHECK', checked: false },
-            { type: 'field_label', name: 'VARIABLE', text: 'variable' }
+            { type: 'field_input', name: 'VARIABLE', text: 'variable', enabled: false }
         ],
         output: 'String',
         colour: '#FF8C1A',
@@ -1672,7 +1672,7 @@ const scratchBlocks = [
         message0: '%1 %2',
         args0: [
             { type: 'field_checkbox', name: 'CHECK', checked: false },
-            { type: 'field_label', name: 'LIST', text: 'list' }
+            { type: 'field_input', name: 'LIST', text: 'list', enabled: false }
         ],
         output: 'String',
         colour: '#FF8C1A',
