@@ -2670,245 +2670,149 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         if (workspaceRef.current) {
 
                             loadSpriteWorkspace(firstId);
-
                             triggerUpdate();
-
                             addLog('Project loaded successfully');
-
                         } else if (attempts < 10) {
-
                             attempts++;
-
                             setTimeout(tryLoad, 200);
-
                         } else {
-
                             console.warn('[APP] Project loaded but workspace injection timed out');
-
                             addLog('Project loaded (Workspace loading delayed)');
-
                         }
-
                     };
-
                     tryLoad();
-
                 } else {
-
                     triggerUpdate();
-
                     addLog('Project loaded successfully (Empty)');
-
                 }
-
             } catch (err: any) {
-
                 console.error('Failed to load project:', err);
-
                 alert(`Failed to load project file: ${err.message}`);
-
             }
-
         };
-
         input.click();
-
     }, [triggerUpdate, sprites, loadSpriteWorkspace, addLog]);
 
-
-
     const handleOpenProject = useCallback(() => {
-
         setPendingAction('open');
-
         setShowUnsavedModal(true);
-
     }, []);
 
-
-
     const confirmUnsavedAction = useCallback((saveFirst: boolean) => {
-
         setShowUnsavedModal(false);
-
         if (saveFirst) {
-
             handleSaveProject(true);
-
             setTimeout(() => {
-
                 if (pendingAction === 'new') executeNewProject();
-
                 if (pendingAction === 'open') executeOpenProject();
-
                 setPendingAction(null);
-
             }, 500);
-
         } else {
-
             if (pendingAction === 'new') executeNewProject();
-
             if (pendingAction === 'open') executeOpenProject();
-
             setPendingAction(null);
-
         }
-
     }, [pendingAction, handleSaveProject, executeNewProject, executeOpenProject]);
 
-
-
     const deleteSprite = useCallback((id: string) => {
-
         animationVM.unregisterSprite(id);
-
         spriteWorkspacesRef.current.delete(id); // Clean up saved workspace
-
         setSprites(prev => prev.filter(s => s.id !== id));
-
         if (selectedSpriteId === id) {
-
             const remaining = sprites.filter(s => s.id !== id);
-
             const newSelected = remaining.length > 0 ? remaining[0].id : null;
-
             setSelectedSpriteId(newSelected);
-
             if (newSelected) loadSpriteWorkspace(newSelected);
-
             else if (workspaceRef.current) workspaceRef.current.clear();
-
         }
-
         addLog('Deleted sprite');
-
     }, [sprites, selectedSpriteId, addLog, loadSpriteWorkspace]);
 
-
-
-    // ═══════════════════════════════════════════════════════════════════════
-
-    // ANIMATION CONTROLS
-
-    // ═══════════════════════════════════════════════════════════════════════
-
-    const handleRunClick = useCallback(() => {
-
-        console.log('[APP] ══════════════════════════════════════════');
-
-        console.log('[APP] Run button clicked - MULTI-SPRITE MODE');
-
-        addLog('Green flag clicked');
-
-        console.log('[APP] All sprites:', sprites.map(s => ({ id: s.id, name: s.name })));
-
-
-
-        // Stop any currently running scripts before starting
-
-        animationVM.stopAll();
-
-
-
+    const syncAllWorkspaces = useCallback(() => {
+        log.app('Syncing all entities (Sprites + Stage) for global events');
         let allScripts: CompiledScript[] = [];
+        const stageScripts: CompiledScript[] = [];
 
-        try {
-
-            // Compile scripts for EVERY sprite
-
-            for (const s of sprites) {
-
-                // Determine workspace JSON for this sprite
-
-                let savedJson = spriteWorkspacesRef.current.get(s.id);
-
-                // If it's the active sprite, always use real-time workspace state
-
-                if (s.id === selectedSpriteId && workspaceRef.current) {
-
-                    savedJson = Blockly.serialization.workspaces.save(workspaceRef.current);
-
-                }
-
-
-
-                if (!savedJson || Object.keys(savedJson).length === 0) {
-
-                    continue; // Skip sprites with no blocks
-
-                }
-
-
-
-                let tempWs: Blockly.Workspace | null = null;
-                try {
-                    // KEY FIX: For the active sprite, use the live workspace directly.
-                    // Deserializing into a headless `new Blockly.Workspace()` strips shadow
-                    // block connections, so targetBlock() returns null for shadow inputs.
-                    let compileWs: Blockly.Workspace;
-                    let usedLiveWs = false;
-
-                    if (s.id === selectedSpriteId && workspaceRef.current) {
-                        // Use the live rendered workspace directly — shadow blocks are intact
-                        compileWs = workspaceRef.current;
-                        usedLiveWs = true;
-                        console.log(`[APP] Compiling sprite ${s.name} using LIVE workspace`);
-                    } else {
-                        // Non-active sprite: deserialize into temp workspace
-                        Blockly.Events.disable();
-                        tempWs = new Blockly.Workspace();
-                        Blockly.serialization.workspaces.load(savedJson, tempWs);
-                        Blockly.Events.enable();
-                        compileWs = tempWs;
-                        console.log(`[APP] Compiling sprite ${s.name} using TEMP workspace`);
-                    }
-
-                    const compiler = new AnimationCompiler(s.id);
-                    const scripts = compiler.compile(compileWs);
-                    allScripts = allScripts.concat(scripts);
-
-                    // SYNC: Ensure each sprite has its respective compiled scripts for global VM triggers
-                    s.setScripts(scripts);
-
-                    // Soft reset effects for this sprite
-                    if (s.sayText) s.clearSay();
-                    s.clearEffects();
-
-                    if (!usedLiveWs) tempWs?.dispose();
-
-                } catch (e) {
-                    Blockly.Events.enable();
-                    console.error(`[APP] Error compiling isolated sprite ${s.name}:`, e);
-                    if (tempWs) { try { (tempWs as any).dispose(); } catch (_) { } }
-                }
+        for (const s of sprites) {
+            let savedJson = spriteWorkspacesRef.current.get(s.id);
+            if (s.id === selectedSpriteId && workspaceRef.current) {
+                savedJson = Blockly.serialization.workspaces.save(workspaceRef.current);
             }
 
+            if (!savedJson || Object.keys(savedJson).length === 0) continue;
+
+            let tempWs: Blockly.Workspace | null = null;
+            try {
+                let compileWs: Blockly.Workspace;
+                let usedLiveWs = false;
+
+                if (s.id === selectedSpriteId && workspaceRef.current) {
+                    compileWs = workspaceRef.current;
+                    usedLiveWs = true;
+                } else {
+                    Blockly.Events.disable();
+                    tempWs = new Blockly.Workspace();
+                    Blockly.serialization.workspaces.load(savedJson, tempWs);
+                    Blockly.Events.enable();
+                    compileWs = tempWs;
+                }
+
+                const compiler = new AnimationCompiler(s.id);
+                const scripts = compiler.compile(compileWs);
+                allScripts = allScripts.concat(scripts);
+
+                if (s.id === 'stage') {
+                    stageScripts.push(...scripts);
+                }
+                
+                if (typeof s.setScripts === 'function') {
+                    s.setScripts(scripts);
+                }
+
+                if (!usedLiveWs) tempWs?.dispose();
+            } catch (e) {
+                Blockly.Events.enable();
+                console.error(`[APP] Error compiling entity ${s.name}:`, e);
+                if (tempWs) { try { (tempWs as any).dispose(); } catch (_) { } }
+            }
+        }
+
+        animationVM.stageScripts = stageScripts;
+        return allScripts;
+    }, [sprites, selectedSpriteId]);
+
+    useEffect(() => {
+        animationVM.onBeforeBroadcast = (message) => {
+            log.app(`Syncing for broadcast: ${message}`);
+            syncAllWorkspaces();
+        };
+        return () => {
+            animationVM.onBeforeBroadcast = undefined;
+        };
+    }, [syncAllWorkspaces]);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ANIMATION CONTROLS
+    // ═══════════════════════════════════════════════════════════════════════
+    const handleRunClick = useCallback(() => {
+        console.log('[APP] Run button clicked - MULTI-SPRITE MODE');
+        addLog('Green flag clicked');
+        animationVM.stopAll();
+
+        try {
+            const allScripts = syncAllWorkspaces();
             if (allScripts.length > 0 || spriteWorkspacesRef.current.size > 0) {
                 setCompiledScripts(allScripts);
                 setIsRunning(true);
-
-                // Start Scratch Runtime
                 scratchRuntime.loadProject(spriteWorkspacesRef.current);
                 scratchRuntime.triggerFlag();
-
-                // Legacy AnimationVM support
                 animationVM.triggerFlag(allScripts);
-
                 addLog(`Started animation with ScratchRuntime`);
-            } else {
-
-                console.log('[APP] No sprites have blocks to run');
-
             }
-
         } catch (e) {
-
             console.error(`[APP] Error during multi-sprite compilation:`, e);
-
         }
-
-    }, [sprites, selectedSpriteId, addLog, saveCurrentSpriteWorkspace]);
+    }, [addLog, syncAllWorkspaces]);
 
 
 

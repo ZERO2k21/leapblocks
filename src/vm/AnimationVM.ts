@@ -180,6 +180,9 @@ export class AnimationVM {
     // Ask callback — when set, the VM delegates input to the React UI instead of window.prompt
     public onAskQuestion?: (question: string) => Promise<string>;
 
+    // Broadcast sync hook — called right before a message is dispatched
+    public onBeforeBroadcast?: (message: string) => void;
+
     // Timer
     private timerStart: number = Date.now();
 
@@ -191,6 +194,7 @@ export class AnimationVM {
 
     // Broadcast system
     private broadcastListeners: Map<string, CompiledScript[]> = new Map();
+    public stageScripts: CompiledScript[] = [];
 
     constructor() {
         // Initialize sound manager
@@ -1525,35 +1529,68 @@ export class AnimationVM {
     // BROADCAST
     // ═══════════════════════════════════════════════════════════════════════
     triggerBroadcast(message: string): void {
-        console.log(`[AnimationVM] Broadcasting: ${message}`);
-        // Find and execute all scripts with broadcast_receive trigger matching this message
+        vmLog.info(`Broadcasting: ${message}`);
+
+        // 1. Trigger sync callback to ensure all entities have latest scripts
+        if (this.onBeforeBroadcast) {
+            this.onBeforeBroadcast(message);
+        }
+
+        // 2. Find and execute all matching scripts on all Sprites
         const allSprites = spriteManager.getAllSprites();
         for (const sprite of allSprites) {
-            const scripts = sprite.scripts || [];
+            const scripts = (sprite.scripts as CompiledScript[]) || [];
             for (const script of scripts) {
-                if ((script as CompiledScript).trigger === 'broadcast_receive' && (script as CompiledScript).triggerKey === message) {
+                if (script.trigger === 'broadcast_receive' && script.triggerKey === message) {
                     this.setRunning(true);
-                    this.runScript(script as CompiledScript).catch(err => {
-                        vmLog.error('Error in broadcast receive script', err);
+                    this.runScript(script).catch(err => {
+                        vmLog.error('Error in sprite broadcast receive script', err);
                     });
                 }
+            }
+        }
+
+        // 3. Also check the Backdrop (Stage) scripts
+        for (const script of this.stageScripts) {
+            if (script.trigger === 'broadcast_receive' && script.triggerKey === message) {
+                this.setRunning(true);
+                this.runScript(script).catch(err => {
+                    vmLog.error('Error in stage broadcast receive script', err);
+                });
             }
         }
     }
 
     async triggerBroadcastAndWait(message: string): Promise<void> {
-        console.log(`[AnimationVM] Broadcasting and waiting: ${message}`);
+        vmLog.info(`Broadcasting and waiting: ${message}`);
+
+        // 1. Trigger sync callback
+        if (this.onBeforeBroadcast) {
+            this.onBeforeBroadcast(message);
+        }
+
         const promises: Promise<void>[] = [];
+
+        // 2. Find matching scripts on all Sprites
         const allSprites = spriteManager.getAllSprites();
         for (const sprite of allSprites) {
-            const scripts = sprite.scripts || [];
+            const scripts = (sprite.scripts as CompiledScript[]) || [];
             for (const script of scripts) {
-                if ((script as CompiledScript).trigger === 'broadcast_receive' && (script as CompiledScript).triggerKey === message) {
+                if (script.trigger === 'broadcast_receive' && script.triggerKey === message) {
                     this.setRunning(true);
-                    promises.push(this.runScript(script as CompiledScript));
+                    promises.push(this.runScript(script));
                 }
             }
         }
+
+        // 3. Find matching scripts on the Stage
+        for (const script of this.stageScripts) {
+            if (script.trigger === 'broadcast_receive' && script.triggerKey === message) {
+                this.setRunning(true);
+                promises.push(this.runScript(script));
+            }
+        }
+
         if (promises.length > 0) {
             await Promise.all(promises);
         }
