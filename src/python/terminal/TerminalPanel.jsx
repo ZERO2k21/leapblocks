@@ -13,6 +13,10 @@ export default function TerminalPanel({
     activePanel,
     setActivePanel,
     terminalOutput,
+    terminalInputPrompt,
+    terminalInputValue,
+    setTerminalInputValue,
+    handleTerminalInputSubmit,
     replInput,
     setReplInput,
     handleReplSubmit,
@@ -34,8 +38,8 @@ export default function TerminalPanel({
     ];
 
     return (
-        <div style={{ height: 220, display: "flex", flexDirection: "column", borderTop: `1px solid ${C.BORDER}`, background: "#fff", flexShrink: 0 }}>
-            <div style={{ display: "flex", background: "#F5F5F5", borderBottom: `1px solid ${C.BORDER}`, height: 32, alignItems: "center" }}>
+        <div style={{ height: 220, display: "flex", flexDirection: "column", borderTop: `1px solid ${C.BORDER}`, background: "#F8FAFC", flexShrink: 0 }}>
+            <div style={{ display: "flex", background: "#F3F4F6", borderBottom: `1px solid ${C.BORDER}`, height: 32, alignItems: "center" }}>
                 {tabs.map(({ id, label, icon }) => (
                     <div
                         key={id}
@@ -65,7 +69,7 @@ export default function TerminalPanel({
             </div>
 
             {activePanel === "terminal" && (
-                <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6, background: "#1E1E1E" }}>
+                <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6, background: "#FFFFFF", color: C.TEXT }}>
                     {terminalOutput.length === 0 ? (
                         <div style={{ color: "#6A9955", fontStyle: "italic" }}>
                             <div>// LeapBlocks Python Terminal</div>
@@ -76,17 +80,18 @@ export default function TerminalPanel({
                         <div
                             key={i}
                             style={{
-                                color: log.type === "error" ? "#F44747"
-                                    : log.type === "success" ? "#6A9955"
-                                    : log.type === "info" ? (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "#9CDCFE" : "#569CD6"
-                                    : log.type === "warning" ? "#FFD700"
-                                    : log.type === "repl-in" ? "#C586C0"
-                                    : "#D4D4D4",
+                                color: log.type === "error" ? "#B91C1C"
+                                    : log.type === "success" ? "#047857"
+                                    : log.type === "info" ? (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "#0EA5E9" : "#0F172A"
+                                    : log.type === "warning" ? "#C2410C"
+                                    : log.type === "repl-in" ? "#7C3AED"
+                                    : log.type === "input" ? "#111827"
+                                    : "#374151",
                                 marginBottom: 2,
                                 paddingLeft: log.type === "repl-in" ? 0 : 4,
                                 whiteSpace: "pre-wrap",
                                 wordBreak: "break-word",
-                                borderLeft: (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "2px solid #9CDCFE" : "none",
+                                borderLeft: (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "2px solid #0EA5E9" : "none",
                                 paddingLeft: (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "8px" : (log.type === "repl-in" ? 0 : 4),
                             }}
                         >
@@ -98,6 +103,50 @@ export default function TerminalPanel({
                     {isRunning && (
                         <div style={{ color: "#569CD6", marginTop: 4 }}>
                             <span style={{ animation: "blink 1s infinite" }}>▋</span> Running...
+                        </div>
+                    )}
+                    {terminalInputPrompt && (
+                        <div style={{ marginTop: 12, padding: "12px", background: "#F3F4F6", border: `1px solid ${C.BORDER}`, borderRadius: 10 }}>
+                            <div style={{ marginBottom: 8, fontSize: 12, color: C.MUTED }}>{terminalInputPrompt}</div>
+                            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                <input
+                                    value={terminalInputValue}
+                                    onChange={(e) => setTerminalInputValue(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            handleTerminalInputSubmit();
+                                        }
+                                    }}
+                                    placeholder="Type your answer and press Enter..."
+                                    style={{
+                                        flex: 1,
+                                        padding: "10px 12px",
+                                        borderRadius: 8,
+                                        border: `1px solid ${C.BORDER}`,
+                                        background: "#fff",
+                                        color: C.TEXT,
+                                        outline: "none",
+                                        fontFamily: "'Fira Code', Consolas, monospace",
+                                        fontSize: 13,
+                                    }}
+                                />
+                                <button
+                                    onClick={handleTerminalInputSubmit}
+                                    style={{
+                                        padding: "10px 14px",
+                                        borderRadius: 8,
+                                        border: "none",
+                                        background: C.PURPLE,
+                                        color: "#fff",
+                                        cursor: "pointer",
+                                        fontWeight: 700,
+                                        fontSize: 12,
+                                    }}
+                                >
+                                    Send
+                                </button>
+                            </div>
                         </div>
                     )}
                     <div ref={terminalEndRef} />

@@ -602,6 +602,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         { text: "", type: "info", ts: new Date() },
         { text: "Ready to run Python code. Click ▶ Run or press Ctrl+Enter.", type: "success", ts: new Date() },
     ]);
+    const [terminalInputPrompt, setTerminalInputPrompt] = useState(null);
+    const [terminalInputValue, setTerminalInputValue] = useState("");
     const [replInput, setReplInput] = useState("");
     const [replHistory, setReplHistory] = useState([]);
     const [replHistIdx, setReplHistIdx] = useState(-1);
@@ -646,6 +648,27 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const addLog = useCallback((text, type = "log") => {
         setTerminalOutput(prev => [...prev, { text, type, ts: new Date() }]);
     }, []);
+
+    const handleTerminalInput = useCallback((promptText) => {
+        const display = promptText ? String(promptText) : "Input requested:";
+        addLog(display, "info");
+        setTerminalInputPrompt(display);
+        setTerminalInputValue("");
+
+        return new Promise((resolve) => {
+            terminalInputResolveRef.current = resolve;
+        });
+    }, [addLog]);
+
+    const handleTerminalInputSubmit = useCallback(() => {
+        if (!terminalInputResolveRef.current) return;
+        const response = terminalInputValue ?? "";
+        addLog(response, "input");
+        terminalInputResolveRef.current(response);
+        terminalInputResolveRef.current = null;
+        setTerminalInputPrompt(null);
+        setTerminalInputValue("");
+    }, [addLog, terminalInputValue]);
 
     const selectedBoardConfig = getBoardConfig(selectedBoard);
     const selectedBoardName = getBoardNameById()[selectedBoard] || selectedBoardConfig.runtimeLabel;
@@ -768,6 +791,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         skulptRef.current = new SkulptEngine({
             onOut: (text) => addLog(text.replace(/\n$/, ""), "log"),
             onErr: (text) => addLog(text, "error"),
+            onInput: handleTerminalInput,
+            onInputResponse: (response) => {
+                if (response != null && response !== "") {
+                    addLog(response, "input");
+                }
+            },
             actions: {
                 initSprite: (name) => {
                     setSprites(prev => {
@@ -1075,6 +1104,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     }
 
     function handleStop() {
+        if (terminalInputResolveRef.current) {
+            terminalInputResolveRef.current("");
+            terminalInputResolveRef.current = null;
+            setTerminalInputPrompt(null);
+            setTerminalInputValue("");
+        }
         setIsRunning(false);
         addLog("⏹ Execution stopped by user.", "warning");
         if (window.electronAPI?.isElectron) {
@@ -2938,6 +2973,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         activePanel={activePanel}
                         setActivePanel={setActivePanel}
                         terminalOutput={terminalOutput}
+                        terminalInputPrompt={terminalInputPrompt}
+                        terminalInputValue={terminalInputValue}
+                        setTerminalInputValue={setTerminalInputValue}
+                        handleTerminalInputSubmit={handleTerminalInputSubmit}
                         replInput={replInput}
                         setReplInput={setReplInput}
                         handleReplSubmit={handleReplSubmit}

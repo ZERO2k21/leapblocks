@@ -16,6 +16,10 @@ export default function EditorPanel({
     activePanel,
     setActivePanel,
     terminalOutput,
+    terminalInputPrompt,
+    terminalInputValue,
+    setTerminalInputValue,
+    handleTerminalInputSubmit,
     replInput,
     setReplInput,
     handleReplSubmit,
@@ -61,6 +65,10 @@ export default function EditorPanel({
                 activePanel={activePanel}
                 setActivePanel={setActivePanel}
                 terminalOutput={terminalOutput}
+                terminalInputPrompt={terminalInputPrompt}
+                terminalInputValue={terminalInputValue}
+                setTerminalInputValue={setTerminalInputValue}
+                handleTerminalInputSubmit={handleTerminalInputSubmit}
                 replInput={replInput}
                 setReplInput={setReplInput}
                 handleReplSubmit={handleReplSubmit}

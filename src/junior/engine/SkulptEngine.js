@@ -215,6 +215,19 @@ export class SkulptEngine {
         
         sk.configure({
             output: (text) => this.callbacks.onOut(text),
+            inputfun: (prompt) => {
+                const promptText = prompt != null ? String(prompt) : "";
+                if (this.callbacks.onInput) this.callbacks.onInput(promptText);
+
+                let result = "";
+                if (typeof window !== "undefined" && typeof window.prompt === "function") {
+                    result = window.prompt(promptText, "") ?? "";
+                }
+
+                if (this.callbacks.onInputResponse) this.callbacks.onInputResponse(result);
+                return result;
+            },
+            inputfunTakesPrompt: true,
             read: (x) => {
                 if (sk.builtinFiles?.files?.[x]) return sk.builtinFiles.files[x];
                 throw new Error("Module not found: '" + x + "'");
