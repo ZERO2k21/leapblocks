@@ -182,6 +182,11 @@ export class AnimationVM {
     public onAskQuestion?: (question: string) => Promise<string>;
     public onLog?: (msg: string) => void;
 
+    // Change callbacks for UI/Monitor synchronization
+    public onVariableChange?: (name: string, value: string | number) => void;
+    public onListChange?: (name: string, value: (string | number)[]) => void;
+    public onTableChange?: (name: string, data: (string | number)[][]) => void;
+
     // Broadcast sync hook — called right before a message is dispatched
     public onBeforeBroadcast?: (message: string) => void;
 
@@ -274,6 +279,7 @@ export class AnimationVM {
         this.variables.set(name, value);
         vmLog.step('set_variable', { name, value });
         this.onLog?.(`Variable '${name}' set to ${value}`);
+        this.onVariableChange?.(name, value);
     }
 
     changeVariable(name: string, delta: number): void {
@@ -284,6 +290,7 @@ export class AnimationVM {
             this.variables.set(name, newValue);
             vmLog.step('change_variable', { name, delta, newValue });
             this.onLog?.(`Variable '${name}' changed by ${delta} (New value: ${newValue})`);
+            this.onVariableChange?.(name, newValue);
         }
     }
 
@@ -330,6 +337,46 @@ export class AnimationVM {
         return list.join(' ');
     }
 
+    addToList(name: string, item: string | number): void {
+        const list = this.getList(name);
+        list.push(item);
+        vmLog.step('list_add', { name, item });
+        this.onListChange?.(name, [...list]);
+    }
+
+    deleteOfList(name: string, index: number): void {
+        const list = this.getList(name);
+        if (index >= 1 && index <= list.length) {
+            list.splice(index - 1, 1);
+            vmLog.step('list_delete', { name, index });
+            this.onListChange?.(name, [...list]);
+        }
+    }
+
+    deleteAllOfList(name: string): void {
+        this.lists.set(name, []);
+        vmLog.step('list_delete_all', { name });
+        this.onListChange?.(name, []);
+    }
+
+    insertAtList(name: string, index: number, item: string | number): void {
+        const list = this.getList(name);
+        if (index >= 1 && index <= list.length + 1) {
+            list.splice(index - 1, 0, item);
+            vmLog.step('list_insert', { name, index, item });
+            this.onListChange?.(name, [...list]);
+        }
+    }
+
+    replaceItemOfList(name: string, index: number, item: string | number): void {
+        const list = this.getList(name);
+        if (index >= 1 && index <= list.length) {
+            list[index - 1] = item;
+            vmLog.step('list_replace', { name, index, item });
+            this.onListChange?.(name, [...list]);
+        }
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // TABLES
     // ═══════════════════════════════════════════════════════════════════════
@@ -369,6 +416,7 @@ export class AnimationVM {
             }
             table[row - 1][colIdx] = value;
             vmLog.step('table_set', { name, column, row, value });
+            this.onTableChange?.(name, [...table]);
         }
     }
 
@@ -378,6 +426,7 @@ export class AnimationVM {
         columns.push(colName);
         table.forEach(row => row.push(''));
         vmLog.step('table_add_column', { name, colName });
+        this.onTableChange?.(name, [...table]);
     }
 
     deleteColumn(name: string, column: number | string): void {
@@ -394,6 +443,7 @@ export class AnimationVM {
             columns.splice(colIdx, 1);
             table.forEach(row => row.splice(colIdx, 1));
             vmLog.step('table_delete_column', { name, column });
+            this.onTableChange?.(name, [...table]);
         }
     }
 
@@ -402,12 +452,14 @@ export class AnimationVM {
         if (rowIdx >= 1 && rowIdx <= table.length) {
             table.splice(rowIdx - 1, 1);
             vmLog.step('table_delete_row', { name, rowIdx });
+            this.onTableChange?.(name, [...table]);
         }
     }
 
     clearTable(name: string): void {
         this.tables.set(name, []);
         vmLog.step('table_clear', { name });
+        this.onTableChange?.(name, []);
     }
 
     getValueAtTable(name: string, column: number | string, row: number): string | number {

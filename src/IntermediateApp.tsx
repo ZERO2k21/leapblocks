@@ -979,98 +979,31 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // Monitor callback handlers
     const handleShowVariable = useCallback((name: string) => {
-        setVariableMonitors(prev =>
-            prev.map(monitor =>
-                monitor.name === name
-                    ? { ...monitor, visible: true }
-                    : monitor
-            )
-        );
+        (window as any).onToggleVisibility?.(name, 'variable', true);
     }, []);
 
     const handleHideVariable = useCallback((name: string) => {
-        setVariableMonitors(prev =>
-            prev.map(monitor =>
-                monitor.name === name
-                    ? { ...monitor, visible: false }
-                    : monitor
-            )
-        );
+        (window as any).onToggleVisibility?.(name, 'variable', false);
     }, []);
 
     const handleShowList = useCallback((name: string) => {
-        setListMonitors(prev =>
-            prev.map(monitor =>
-                monitor.name === name
-                    ? { ...monitor, visible: true }
-                    : monitor
-            )
-        );
+        (window as any).onToggleVisibility?.(name, 'list', true);
     }, []);
 
     const handleHideList = useCallback((name: string) => {
-        setListMonitors(prev =>
-            prev.map(monitor =>
-                monitor.name === name
-                    ? { ...monitor, visible: false }
-                    : monitor
-            )
-        );
+        (window as any).onToggleVisibility?.(name, 'list', false);
     }, []);
 
     const handleShowTable = useCallback((name: string) => {
-        setTableMonitors(prev =>
-            prev.map(monitor =>
-                monitor.name === name
-                    ? { ...monitor, visible: true }
-                    : monitor
-            )
-        );
+        (window as any).onToggleVisibility?.(name, 'table', true);
     }, []);
 
     const handleHideTable = useCallback((name: string) => {
-        setTableMonitors(prev =>
-            prev.map(monitor =>
-                monitor.name === name
-                    ? { ...monitor, visible: false }
-                    : monitor
-            )
-        );
+        (window as any).onToggleVisibility?.(name, 'table', false);
     }, []);
 
 
 
-    // Bridge functions for Blockly flyout checkboxes
-    useEffect(() => {
-        (window as any).onToggleVisibility = (name: string, type: string) => {
-            if (type === 'variable') {
-                const monitor = variableMonitors.find(m => m.name === name);
-                if (monitor && monitor.visible) {
-                    handleHideVariable(name);
-                } else {
-                    handleShowVariable(name);
-                }
-            } else if (type === 'list') {
-                const monitor = listMonitors.find(m => m.name === name);
-                if (monitor && monitor.visible) {
-                    handleHideList(name);
-                } else {
-                    handleShowList(name);
-                }
-            }
-        };
-
-        (window as any).getVariableVisibility = (name: string, type: string) => {
-            if (type === 'variable') {
-                const monitor = variableMonitors.find(m => m.name === name);
-                return monitor ? monitor.visible : false;
-            } else if (type === 'list') {
-                const monitor = listMonitors.find(m => m.name === name);
-                return monitor ? monitor.visible : false;
-            }
-            return false;
-        };
-    }, [variableMonitors, listMonitors, handleShowVariable, handleHideVariable, handleShowList, handleHideList]);
 
     const addLog = useCallback((message: string) => {
 
@@ -3400,6 +3333,85 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         Object.assign(animationVM, commonCallbacks);
         Object.assign(scratchRuntime, commonCallbacks);
 
+        // --- VM CHANGE CALLBACKS (Real-time Sync) ---
+        animationVM.onVariableChange = (name, value) => {
+            setVariableMonitors(prev => prev.map(m => m.name === name ? { ...m, value } : m));
+        };
+        animationVM.onListChange = (name, items) => {
+            setListMonitors(prev => prev.map(m => m.name === name ? { ...m, items, value: items } : m));
+        };
+        animationVM.onTableChange = (name, data) => {
+            setTableMonitors(prev => prev.map(m => m.name === name ? { ...m, data, value: data } : m));
+        };
+
+        // --- BLOCKLY VISIBILITY CALLBACKS ---
+        // We use refs here to avoid stale closures in the window functions
+        // since this useEffect only runs once for VM/Runtime setup.
+        const monitorsRef = {
+            variable: variableMonitors,
+            list: listMonitors,
+            table: tableMonitors
+        };
+
+        (window as any).getVariableVisibility = (name: string, type: string) => {
+            const currentMonitors = (window as any)._monitors_for_sync?.[type] || [];
+            const monitor = currentMonitors.find((m: any) => m.name === name);
+            return monitor ? monitor.visible : false;
+        };
+
+        (window as any).onToggleVisibility = (name: string, type: string, forceVisible?: boolean) => {
+            const setFn = type === 'variable' ? setVariableMonitors : (type === 'list' ? setListMonitors : setTableMonitors);
+
+            setFn((prev: any[]) => {
+                const existing = prev.find(m => m.name === name);
+                const newVisible = forceVisible !== undefined ? forceVisible : (existing ? !existing.visible : true);
+
+                if (existing) {
+                    return prev.map(m => m.name === name ? { ...m, visible: newVisible } : m);
+                } else {
+                    // Create new with defaults
+                    if (type === 'variable') {
+                        return [...prev, {
+                            id: `var_${Date.now()}`,
+                            name,
+                            type: 'Number',
+                            scope: 'all_sprites',
+                            visible: true,
+                            x: 10, y: 10,
+                            value: animationVM.getVariable(name)
+                        }];
+                    } else if (type === 'list') {
+                        return [...prev, {
+                            id: `list_${Date.now()}`,
+                            name,
+                            scope: 'all_sprites',
+                            visible: true,
+                            x: 10, y: 10,
+                            items: [...animationVM.getList(name)],
+                            value: [...animationVM.getList(name)],
+                            width: 100,
+                            height: 200
+                        }];
+                    } else if (type === 'table') {
+                        return [...prev, {
+                            id: `table_${Date.now()}`,
+                            name,
+                            scope: 'all_sprites',
+                            visible: true,
+                            x: 10, y: 10,
+                            rows: animationVM.getTableCount(name, 'row'),
+                            cols: animationVM.getTableCount(name, 'column'),
+                            data: [...animationVM.getTable(name)],
+                            value: [...animationVM.getTable(name)],
+                            width: 250,
+                            height: 200
+                        }];
+                    }
+                    return prev;
+                }
+            });
+        };
+
 
 
         return () => {
@@ -3763,7 +3775,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         scalars.sort((a: any, b: any) => a.getName().localeCompare(b.getName()));
 
                         scalars.forEach((v: any) => {
-                            const monitor = variableMonitors.find(m => m.name === v.getName());
+                            const currentMonitors = (window as any)._monitors_for_sync?.variable || [];
+                            const monitor = currentMonitors.find((m: any) => m.name === v.getName());
                             const isVisible = monitor ? monitor.visible : false;
 
                             contents.push({
@@ -3820,7 +3833,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         lists.sort((a: any, b: any) => a.getName().localeCompare(b.getName()));
                         lists.forEach((v: any) => {
-                            const monitor = listMonitors.find(m => m.name === v.getName());
+                            const currentMonitors = (window as any)._monitors_for_sync?.list || [];
+                            const monitor = currentMonitors.find((m: any) => m.name === v.getName());
                             const isVisible = monitor ? monitor.visible : false;
 
                             contents.push({
@@ -3870,7 +3884,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         tables.sort((a: any, b: any) => a.getName().localeCompare(b.getName()));
                         tables.forEach((v: any) => {
-                            const monitor = tableMonitors.find(m => m.name === v.getName());
+                            const currentMonitors = (window as any)._monitors_for_sync?.table || [];
+                            const monitor = currentMonitors.find((m: any) => m.name === v.getName());
                             const isVisible = monitor ? monitor.visible : false;
 
                             contents.push({
@@ -4554,13 +4569,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         </button>
 
-                        <button style={{ ...styles.iconBtn, ...(stageLayout === 'small' ? styles.iconBtnActive : {}) }} onClick={() => setStageLayout('small')} title="Small Stage">
+                        <button style={{ ...styles.iconBtn, ...(stageLayout === 'small' ? styles.iconBtnActive : {}) }} onClick={() => { setStageLayout('small'); addLog("Switched to Small Stage mode"); }} title="Small Stage">
 
                             <LayoutTemplate size={18} />
 
                         </button>
 
-                        <button style={{ ...styles.iconBtn, ...(stageLayout === 'large' ? styles.iconBtnActive : {}) }} onClick={() => setStageLayout('large')} title="Large Stage">
+                        <button style={{ ...styles.iconBtn, ...(stageLayout === 'large' ? styles.iconBtnActive : {}) }} onClick={() => { setStageLayout('large'); addLog("Switched to Large Stage mode"); }} title="Large Stage">
 
                             <LayoutPanelLeft size={18} />
 
@@ -4916,7 +4931,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                     const LARGE_STAGE_HEIGHT = 380;
 
-                                    const LARGE_STAGE_SCALE = 1.1;
+                                    const LARGE_STAGE_SCALE = 1.05;
 
 
 
