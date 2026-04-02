@@ -55,9 +55,9 @@ export type ScriptStep = (
     | { type: 'set_rotation_style'; style: 'left-right' | 'all around' | 'none' }
     // Looks
     | { type: 'say'; message: string | (() => string) }
-    | { type: 'say_for_secs'; message: string | (() => string); secs: number }
+    | { type: 'say_for_secs'; message: string | (() => string); secs: number | (() => number) }
     | { type: 'think'; message: string | (() => string) }
-    | { type: 'think_for_secs'; message: string | (() => string); secs: number }
+    | { type: 'think_for_secs'; message: string | (() => string); secs: number | (() => number) }
     | { type: 'show' }
     | { type: 'hide' }
     | { type: 'next_costume' }
@@ -72,8 +72,8 @@ export type ScriptStep = (
     | { type: 'go_to_layer'; layer: 'front' | 'back' }
     | { type: 'go_forward_layers'; direction: 'forward' | 'backward'; layers: number }
     // Control
-    | { type: 'wait'; secs: number }
-    | { type: 'repeat'; times: number; body: ScriptStep[] }
+    | { type: 'wait'; secs: number | (() => number) }
+    | { type: 'repeat'; times: number | (() => number); body: ScriptStep[] }
     | { type: 'forever'; body: ScriptStep[] }
     | { type: 'if'; condition: () => boolean; body: ScriptStep[] }
     | { type: 'if_else'; condition: () => boolean; body: ScriptStep[]; elseBody: ScriptStep[] }
@@ -451,6 +451,7 @@ export class AnimationVM {
     }
 
     triggerFlag(scripts: CompiledScript[]): void {
+        vmLog.info('Green flag clicked');
         this.setRunning(true);
         let flagScripts = 0;
         for (const script of scripts) {
@@ -481,7 +482,7 @@ export class AnimationVM {
     triggerKeyGlobally(key: string): void {
         const allSprites = spriteManager.getAllSprites();
         let matchedTotal = 0;
-        
+
         for (const sprite of allSprites) {
             const scripts = (sprite.scripts as CompiledScript[]) || [];
             for (const script of scripts) {
@@ -495,7 +496,7 @@ export class AnimationVM {
                 }
             }
         }
-        
+
         if (matchedTotal > 0) {
             vmLog.trigger('key_pressed', { key, matchedTotal });
         }
@@ -799,10 +800,15 @@ export class AnimationVM {
                 sprite.say(typeof step.message === 'function' ? step.message() : step.message);
                 break;
 
-            case 'say_for_secs':
-                sprite.say(typeof step.message === 'function' ? step.message() : step.message, step.secs);
-                await this.sleep(step.secs * 1000, signal);
+            case 'say_for_secs': {
+                const rawMessage = typeof step.message === 'function' ? step.message() : step.message;
+                const message = rawMessage === null || rawMessage === undefined ? '' : String(rawMessage);
+                const secs = typeof step.secs === 'function' ? step.secs() : step.secs;
+                vmLog.step(`Executing Say "${message}" for ${secs} seconds`);
+                sprite.say(message, secs);
+                await this.sleep(secs * 1000, signal);
                 break;
+            }
 
             case 'show':
                 costumeEngine.show(sprite);
@@ -841,10 +847,13 @@ export class AnimationVM {
                 sprite.think(typeof step.message === 'function' ? step.message() : step.message);
                 break;
 
-            case 'think_for_secs':
-                sprite.think(typeof step.message === 'function' ? step.message() : step.message, step.secs);
-                await this.sleep(step.secs * 1000, signal);
+            case 'think_for_secs': {
+                const message = typeof step.message === 'function' ? step.message() : step.message;
+                const secs = typeof step.secs === 'function' ? step.secs() : step.secs;
+                sprite.think(message, secs);
+                await this.sleep(secs * 1000, signal);
                 break;
+            }
 
             case 'switch_costume':
                 costumeEngine.setCostume(sprite, step.costume);
@@ -871,16 +880,19 @@ export class AnimationVM {
                 break;
 
             // Control blocks
-            case 'wait':
-                await this.sleep(step.secs * 1000, signal);
+            case 'wait': {
+                const secs = typeof step.secs === 'function' ? step.secs() : step.secs;
+                await this.sleep(secs * 1000, signal);
                 break;
-
-            case 'repeat':
-                for (let i = 0; i < step.times; i++) {
+            }
+            case 'repeat': {
+                const times = typeof step.times === 'function' ? step.times() : step.times;
+                for (let i = 0; i < times; i++) {
                     if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
                     await this.executeSteps(step.body, ctx, signal);
                 }
                 break;
+            }
 
             case 'forever':
                 while (!signal.aborted && this.isRunning) {

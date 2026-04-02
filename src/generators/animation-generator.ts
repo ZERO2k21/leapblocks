@@ -137,19 +137,42 @@ export class AnimationCompiler {
     // Compile a value input block into a runtime string/number function
     private compileStringValue(block: Blockly.Block, inputName: string): () => string {
         const input = block.getInput(inputName);
-        // If no input connection or target, try to get field value (for backward compat or direct fields)
-        if (!input || !input.connection || !input.connection.targetBlock()) {
-            return () => String(block.getFieldValue(inputName) || '');
+
+        // Debug: log input resolution
+        console.info(`[Compiler] compileStringValue: block=${block.type}, input=${inputName}`);
+
+        if (!input || !input.connection) {
+            console.warn(`[Compiler] No input or connection for ${inputName} on ${block.type} - returning empty`);
+            return () => '';
         }
 
+        // In Blockly, targetBlock() returns both real blocks AND shadow blocks
         const valueBlock = input.connection.targetBlock();
-        if (!valueBlock) return () => '';
+
+        console.info(`[Compiler] targetBlock for ${inputName}: ${valueBlock ? valueBlock.type : 'null'}`, valueBlock);
+
+        if (!valueBlock) {
+            // No block connected at all - try direct field fallback
+            // NOTE: inputName is an INPUT name, not a FIELD name!
+            // For shadow-less inputs we default to empty string
+            console.warn(`[Compiler] No targetBlock for input '${inputName}' on block '${block.type}' - falling back to empty`);
+            return () => '';
+        }
+
+        console.info(`[Compiler] Resolving string from block type: ${valueBlock.type}`);
 
         switch (valueBlock.type) {
             case 'text':
-                return () => String(valueBlock.getFieldValue('TEXT'));
+                return () => {
+                    const val = valueBlock.getFieldValue('TEXT');
+                    console.info(`[Compiler] text field TEXT = "${val}"`);
+                    return val !== null ? String(val) : '';
+                };
             case 'math_number':
-                return () => String(valueBlock.getFieldValue('NUM'));
+                return () => {
+                    const val = valueBlock.getFieldValue('NUM');
+                    return val !== null ? String(val) : '0';
+                };
             case 'variables_get': {
                 const id = valueBlock.getFieldValue('VAR');
                 const ws = valueBlock.workspace;
@@ -222,8 +245,18 @@ export class AnimationCompiler {
                 };
             }
             default: {
+                console.warn(`[Compiler] Unknown string block type: ${valueBlock.type} - trying numFunc fallback`);
                 // Try compileNumberValue as fallback, convert to string
-                const numFunc = this.compileNumberValue(block, inputName);
+                // IMPORTANT: pass valueBlock (the connected block), not the parent block
+                const numFunc = this.compileNumberValue(valueBlock.getInput ? block : block, inputName);
+                // Actually resolve from the correct source:
+                const input2 = block.getInput(inputName);
+                const vb = input2?.connection?.targetBlock();
+                if (vb) {
+                    // Re-enter compileNumberValue with the correct block resolution
+                    const nf = this.compileNumberValue(block, inputName);
+                    return () => String(nf());
+                }
                 return () => String(numFunc());
             }
         }
@@ -232,14 +265,26 @@ export class AnimationCompiler {
     // Compile a value input block into a runtime number function
     private compileNumberValue(block: Blockly.Block, inputName: string): () => number {
         const input = block.getInput(inputName);
-        if (!input || !input.connection) return () => 0;
+        if (!input || !input.connection) {
+            console.warn(`[Compiler] compileNumberValue: No input/connection for '${inputName}' on '${block.type}'`);
+            return () => 0;
+        }
 
         const valueBlock = input.connection.targetBlock();
-        if (!valueBlock) return () => 0;
+
+        console.info(`[Compiler] compileNumberValue: block=${block.type}, input=${inputName}, targetBlock=${valueBlock?.type ?? 'null'}`);
+
+        if (!valueBlock) {
+            console.warn(`[Compiler] compileNumberValue: No targetBlock for input '${inputName}' on '${block.type}'`);
+            return () => 0;
+        }
 
         switch (valueBlock.type) {
             case 'math_number':
-                return () => Number(valueBlock.getFieldValue('NUM'));
+                return () => {
+                    const val = valueBlock.getFieldValue('NUM');
+                    return val !== null ? Number(val) : 0;
+                };
             case 'sensing_mouse_x':
                 return () => animationVM.getMouseX();
             case 'sensing_mouse_y':
@@ -431,6 +476,8 @@ export class AnimationCompiler {
                     return 0;
                 };
             }
+            case 'sensing_answer':
+                return () => Number(animationVM.getAnswer());
             default:
                 compilerLog.warn(`Unknown value block: ${valueBlock.type}`);
                 return () => 0;
@@ -589,10 +636,10 @@ export class AnimationCompiler {
 
             // Looks
             case 'looks_say':
-                step = { type: 'say', message: String(block.getFieldValue('MESSAGE') || block.getFieldValue('MSG') || '') };
+                step = { type: 'say', message: this.compileStringValue(block, 'MESSAGE') };
                 break;
             case 'looks_say_for_secs':
-                step = { type: 'say_for_secs', message: String(block.getFieldValue('MESSAGE') || block.getFieldValue('MSG') || ''), secs: Number(block.getFieldValue('SECS')) };
+                step = { type: 'say_for_secs', message: this.compileStringValue(block, 'MESSAGE'), secs: this.compileNumberValue(block, 'SECS') };
                 break;
             case 'looks_show':
                 step = { type: 'show' };
@@ -620,10 +667,10 @@ export class AnimationCompiler {
                 break;
             // New Looks blocks
             case 'looks_think':
-                step = { type: 'think', message: String(block.getFieldValue('MESSAGE') || block.getFieldValue('MSG') || '') };
+                step = { type: 'think', message: this.compileStringValue(block, 'MESSAGE') };
                 break;
             case 'looks_think_for_secs':
-                step = { type: 'think_for_secs', message: String(block.getFieldValue('MESSAGE') || block.getFieldValue('MSG') || ''), secs: Number(block.getFieldValue('SECS')) };
+                step = { type: 'think_for_secs', message: this.compileStringValue(block, 'MESSAGE'), secs: this.compileNumberValue(block, 'SECS') };
                 break;
             case 'looks_switch_costume':
                 step = { type: 'switch_costume', costume: block.getFieldValue('COSTUME') };
@@ -643,13 +690,17 @@ export class AnimationCompiler {
 
             // Control & Arduino Control
             case 'control_wait':
-            case 'arduino_delay':
-                step = { type: 'wait', secs: Number(block.getFieldValue('SECS')) };
+            case 'arduino_delay': {
+                const secs = this.compileNumberValue(block, 'SECS');
+                step = { type: 'wait', secs };
                 break;
+            }
             case 'control_repeat':
-            case 'arduino_repeat':
-                step = { type: 'repeat', times: Number(block.getFieldValue('TIMES')), body: this.compileStatementInput(block, 'DO') };
+            case 'arduino_repeat': {
+                const times = this.compileNumberValue(block, 'TIMES');
+                step = { type: 'repeat', times, body: this.compileStatementInput(block, 'DO') };
                 break;
+            }
             case 'control_forever':
             case 'arduino_loop':
                 step = { type: 'forever', body: this.compileStatementInput(block, 'DO') };

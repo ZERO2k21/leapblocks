@@ -425,8 +425,8 @@ export const animationBlocks = [
         type: 'looks_say_for_secs',
         message0: '🗣️ say %1 for %2 seconds',
         args0: [
-            { type: 'field_input', name: 'MESSAGE', text: 'Hello!' },
-            { type: 'field_number', name: 'SECS', value: 2, min: 0.1 },
+            { type: 'input_value', name: 'MESSAGE' },
+            { type: 'input_value', name: 'SECS' },
         ],
         inputsInline: true,
         previousStatement: null,
@@ -438,7 +438,7 @@ export const animationBlocks = [
     {
         type: 'looks_say',
         message0: '🗣️ say %1',
-        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hello!' }],
+        args0: [{ type: 'input_value', name: 'MESSAGE' }],
         inputsInline: true,
         previousStatement: null,
         nextStatement: null,
@@ -556,8 +556,8 @@ export const animationBlocks = [
         type: 'looks_think_for_secs',
         message0: '💭 think %1 for %2 seconds',
         args0: [
-            { type: 'field_input', name: 'MESSAGE', text: 'Hmm...' },
-            { type: 'field_number', name: 'SECS', value: 2, min: 0.1 },
+            { type: 'input_value', name: 'MESSAGE' },
+            { type: 'input_value', name: 'SECS' },
         ],
         inputsInline: true,
         previousStatement: null,
@@ -569,7 +569,7 @@ export const animationBlocks = [
     {
         type: 'looks_think',
         message0: '💭 think %1',
-        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hmm...' }],
+        args0: [{ type: 'input_value', name: 'MESSAGE' }],
         inputsInline: true,
         previousStatement: null,
         nextStatement: null,
@@ -738,7 +738,7 @@ export const animationBlocks = [
     {
         type: 'control_wait',
         message0: '⏱️ wait %1 seconds',
-        args0: [{ type: 'field_number', name: 'SECS', value: 1, min: 0.1 }],
+        args0: [{ type: 'input_value', name: 'SECS' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.control,
@@ -748,7 +748,7 @@ export const animationBlocks = [
     {
         type: 'control_repeat',
         message0: '🔁 repeat %1 times',
-        args0: [{ type: 'field_number', name: 'TIMES', value: 10, min: 1 }],
+        args0: [{ type: 'input_value', name: 'TIMES' }],
         message1: '%1',
         args1: [{ type: 'input_statement', name: 'DO' }],
         previousStatement: null,
@@ -2038,10 +2038,36 @@ export const animationToolbox = {
             name: 'Looks',
             colour: COLORS.looks,
             contents: [
-                { kind: 'block', type: 'looks_say_for_secs' },
-                { kind: 'block', type: 'looks_say' },
-                { kind: 'block', type: 'looks_think_for_secs' },
-                { kind: 'block', type: 'looks_think' },
+                {
+                    kind: 'block',
+                    type: 'looks_say_for_secs',
+                    inputs: {
+                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hello!' } } },
+                        SECS: { shadow: { type: 'math_number', fields: { NUM: 2 } } }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'looks_say',
+                    inputs: {
+                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hello!' } } }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'looks_think_for_secs',
+                    inputs: {
+                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hmm...' } } },
+                        SECS: { shadow: { type: 'math_number', fields: { NUM: 2 } } }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'looks_think',
+                    inputs: {
+                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hmm...' } } }
+                    }
+                },
                 { kind: 'label', text: '── Visibility ──' },
                 { kind: 'block', type: 'looks_show' },
                 { kind: 'block', type: 'looks_hide' },
@@ -2091,9 +2117,21 @@ export const animationToolbox = {
             name: 'Control',
             colour: COLORS.control,
             contents: [
-                { kind: 'block', type: 'control_wait' },
+                {
+                    kind: 'block',
+                    type: 'control_wait',
+                    inputs: {
+                        SECS: { shadow: { type: 'math_number', fields: { NUM: 1 } } }
+                    }
+                },
                 { kind: 'label', text: '── Loops ──' },
-                { kind: 'block', type: 'control_repeat' },
+                {
+                    kind: 'block',
+                    type: 'control_repeat',
+                    inputs: {
+                        TIMES: { shadow: { type: 'math_number', fields: { NUM: 10 } } }
+                    }
+                },
                 { kind: 'block', type: 'control_forever' },
                 { kind: 'block', type: 'control_repeat_until' },
                 { kind: 'label', text: '── Conditions ──' },

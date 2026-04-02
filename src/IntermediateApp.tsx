@@ -1502,11 +1502,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 break;
 
-            case 'looks_say_for_secs':
-
-                activeSprite.say(String(block.getFieldValue('MESSAGE') || 'Hello!'), Number(block.getFieldValue('SECS')) || 2);
-
+            case 'looks_say_for_secs': {
+                const message = String(block.getFieldValue('MESSAGE') || 'Hello!');
+                const secs = Number(block.getFieldValue('SECS')) || 2;
+                addLog(`Preview: Say "${message}" for ${secs} seconds`);
+                activeSprite.say(message, secs);
                 break;
+            }
 
             case 'looks_think':
 
@@ -2778,6 +2780,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         console.log('[APP] Run button clicked - MULTI-SPRITE MODE');
 
+        addLog('Green flag clicked');
+
         console.log('[APP] All sprites:', sprites.map(s => ({ id: s.id, name: s.name })));
 
 
@@ -2820,13 +2824,29 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 let tempWs: Blockly.Workspace | null = null;
                 try {
-                    Blockly.Events.disable();
-                    tempWs = new Blockly.Workspace();
-                    Blockly.serialization.workspaces.load(savedJson, tempWs);
-                    Blockly.Events.enable();
+                    // KEY FIX: For the active sprite, use the live workspace directly.
+                    // Deserializing into a headless `new Blockly.Workspace()` strips shadow
+                    // block connections, so targetBlock() returns null for shadow inputs.
+                    let compileWs: Blockly.Workspace;
+                    let usedLiveWs = false;
+
+                    if (s.id === selectedSpriteId && workspaceRef.current) {
+                        // Use the live rendered workspace directly — shadow blocks are intact
+                        compileWs = workspaceRef.current;
+                        usedLiveWs = true;
+                        console.log(`[APP] Compiling sprite ${s.name} using LIVE workspace`);
+                    } else {
+                        // Non-active sprite: deserialize into temp workspace
+                        Blockly.Events.disable();
+                        tempWs = new Blockly.Workspace();
+                        Blockly.serialization.workspaces.load(savedJson, tempWs);
+                        Blockly.Events.enable();
+                        compileWs = tempWs;
+                        console.log(`[APP] Compiling sprite ${s.name} using TEMP workspace`);
+                    }
 
                     const compiler = new AnimationCompiler(s.id);
-                    const scripts = compiler.compile(tempWs!);
+                    const scripts = compiler.compile(compileWs);
                     allScripts = allScripts.concat(scripts);
 
                     // SYNC: Ensure each sprite has its respective compiled scripts for global VM triggers
@@ -2836,7 +2856,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     if (s.sayText) s.clearSay();
                     s.clearEffects();
 
-                    tempWs?.dispose();
+                    if (!usedLiveWs) tempWs?.dispose();
+
                 } catch (e) {
                     Blockly.Events.enable();
                     console.error(`[APP] Error compiling isolated sprite ${s.name}:`, e);
