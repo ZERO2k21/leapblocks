@@ -57,13 +57,41 @@ export class AnimationCompiler {
                 const value = Number(conditionBlock.getFieldValue('VALUE'));
                 if (sensor === 'loudness') return () => animationVM.getLoudness() > value;
                 if (sensor === 'timer') return () => animationVM.getTimer() > value;
-                if (sensor === 'timer') return () => animationVM.getTimer() > value;
                 return () => false;
             }
+            case 'operator_gt': {
+                const op1Func = this.compileNumberValue(conditionBlock, 'OPERAND1');
+                const op2Func = this.compileNumberValue(conditionBlock, 'OPERAND2');
+                return () => op1Func() > op2Func();
+            }
+            case 'operator_lt': {
+                const op1Func = this.compileNumberValue(conditionBlock, 'OPERAND1');
+                const op2Func = this.compileNumberValue(conditionBlock, 'OPERAND2');
+                return () => op1Func() < op2Func();
+            }
+            case 'operator_equals': {
+                const op1Func = this.compileStringValue(conditionBlock, 'OPERAND1');
+                const op2Func = this.compileStringValue(conditionBlock, 'OPERAND2');
+                return () => op1Func().toLowerCase() === op2Func().toLowerCase();
+            }
+            case 'operator_and': {
+                const op1Func = this.compileCondition(conditionBlock, 'OPERAND1');
+                const op2Func = this.compileCondition(conditionBlock, 'OPERAND2');
+                return () => op1Func() && op2Func();
+            }
+            case 'operator_or': {
+                const op1Func = this.compileCondition(conditionBlock, 'OPERAND1');
+                const op2Func = this.compileCondition(conditionBlock, 'OPERAND2');
+                return () => op1Func() || op2Func();
+            }
+            case 'operator_not': {
+                const opFunc = this.compileCondition(conditionBlock, 'OPERAND');
+                return () => !opFunc();
+            }
             case 'operator_contains': {
-                const str1 = String(conditionBlock.getFieldValue('STRING1'));
-                const str2 = String(conditionBlock.getFieldValue('STRING2'));
-                return () => str1.includes(str2);
+                const str1Func = this.compileStringValue(conditionBlock, 'STRING1');
+                const str2Func = this.compileStringValue(conditionBlock, 'STRING2');
+                return () => str1Func().toLowerCase().includes(str2Func().toLowerCase());
             }
             case 'data_listcontainsitem': {
                 const list = this.getVariableName(conditionBlock);
@@ -109,19 +137,42 @@ export class AnimationCompiler {
     // Compile a value input block into a runtime string/number function
     private compileStringValue(block: Blockly.Block, inputName: string): () => string {
         const input = block.getInput(inputName);
-        // If no input connection or target, try to get field value (for backward compat or direct fields)
-        if (!input || !input.connection || !input.connection.targetBlock()) {
-            return () => String(block.getFieldValue(inputName) || '');
+
+        // Debug: log input resolution
+        console.info(`[Compiler] compileStringValue: block=${block.type}, input=${inputName}`);
+
+        if (!input || !input.connection) {
+            console.warn(`[Compiler] No input or connection for ${inputName} on ${block.type} - returning empty`);
+            return () => '';
         }
 
+        // In Blockly, targetBlock() returns both real blocks AND shadow blocks
         const valueBlock = input.connection.targetBlock();
-        if (!valueBlock) return () => '';
+
+        console.info(`[Compiler] targetBlock for ${inputName}: ${valueBlock ? valueBlock.type : 'null'}`, valueBlock);
+
+        if (!valueBlock) {
+            // No block connected at all - try direct field fallback
+            // NOTE: inputName is an INPUT name, not a FIELD name!
+            // For shadow-less inputs we default to empty string
+            console.warn(`[Compiler] No targetBlock for input '${inputName}' on block '${block.type}' - falling back to empty`);
+            return () => '';
+        }
+
+        console.info(`[Compiler] Resolving string from block type: ${valueBlock.type}`);
 
         switch (valueBlock.type) {
             case 'text':
-                return () => String(valueBlock.getFieldValue('TEXT'));
+                return () => {
+                    const val = valueBlock.getFieldValue('TEXT');
+                    console.info(`[Compiler] text field TEXT = "${val}"`);
+                    return val !== null ? String(val) : '';
+                };
             case 'math_number':
-                return () => String(valueBlock.getFieldValue('NUM'));
+                return () => {
+                    const val = valueBlock.getFieldValue('NUM');
+                    return val !== null ? String(val) : '0';
+                };
             case 'variables_get': {
                 const id = valueBlock.getFieldValue('VAR');
                 const ws = valueBlock.workspace;
@@ -169,13 +220,16 @@ export class AnimationCompiler {
                 return () => animationVM.getListItem(list, idxFunc());
             }
             case 'operator_letter_of': {
-                const letterFunc = () => Number(valueBlock.getFieldValue('LETTER'));
-                const stringFunc = () => String(valueBlock.getFieldValue('STRING'));
+                const letterFunc = this.compileNumberValue(valueBlock, 'LETTER');
+                const stringFunc = this.compileStringValue(valueBlock, 'STRING');
                 return () => {
                     const idx = Math.floor(letterFunc());
                     const str = stringFunc();
                     return idx > 0 && idx <= str.length ? str[idx - 1] : '';
                 };
+            }
+            case 'sensing_answer': {
+                return () => animationVM.getAnswer();
             }
             case 'looks_costume_name': {
                 const sprite = animationVM.getSprite(this.spriteId);
@@ -191,8 +245,18 @@ export class AnimationCompiler {
                 };
             }
             default: {
+                console.warn(`[Compiler] Unknown string block type: ${valueBlock.type} - trying numFunc fallback`);
                 // Try compileNumberValue as fallback, convert to string
-                const numFunc = this.compileNumberValue(block, inputName);
+                // IMPORTANT: pass valueBlock (the connected block), not the parent block
+                const numFunc = this.compileNumberValue(valueBlock.getInput ? block : block, inputName);
+                // Actually resolve from the correct source:
+                const input2 = block.getInput(inputName);
+                const vb = input2?.connection?.targetBlock();
+                if (vb) {
+                    // Re-enter compileNumberValue with the correct block resolution
+                    const nf = this.compileNumberValue(block, inputName);
+                    return () => String(nf());
+                }
                 return () => String(numFunc());
             }
         }
@@ -201,14 +265,26 @@ export class AnimationCompiler {
     // Compile a value input block into a runtime number function
     private compileNumberValue(block: Blockly.Block, inputName: string): () => number {
         const input = block.getInput(inputName);
-        if (!input || !input.connection) return () => 0;
+        if (!input || !input.connection) {
+            console.warn(`[Compiler] compileNumberValue: No input/connection for '${inputName}' on '${block.type}'`);
+            return () => 0;
+        }
 
         const valueBlock = input.connection.targetBlock();
-        if (!valueBlock) return () => 0;
+
+        console.info(`[Compiler] compileNumberValue: block=${block.type}, input=${inputName}, targetBlock=${valueBlock?.type ?? 'null'}`);
+
+        if (!valueBlock) {
+            console.warn(`[Compiler] compileNumberValue: No targetBlock for input '${inputName}' on '${block.type}'`);
+            return () => 0;
+        }
 
         switch (valueBlock.type) {
             case 'math_number':
-                return () => Number(valueBlock.getFieldValue('NUM'));
+                return () => {
+                    const val = valueBlock.getFieldValue('NUM');
+                    return val !== null ? Number(val) : 0;
+                };
             case 'sensing_mouse_x':
                 return () => animationVM.getMouseX();
             case 'sensing_mouse_y':
@@ -278,8 +354,95 @@ export class AnimationCompiler {
                 const name = variable ? (variable as any).name : id;
                 return () => Number(animationVM.getVariable(name)); // compileNumberValue forces return number
             }
+            case 'operator_add': {
+                const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
+                const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
+                return () => num1Func() + num2Func();
+            }
+            case 'operator_subtract': {
+                const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
+                const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
+                return () => num1Func() - num2Func();
+            }
+            case 'operator_multiply': {
+                const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
+                const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
+                return () => num1Func() * num2Func();
+            }
+            case 'operator_divide': {
+                const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
+                const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
+                return () => {
+                    const divisor = num2Func();
+                    return divisor !== 0 ? num1Func() / divisor : 0;
+                };
+            }
+            case 'operator_random': {
+                const fromFunc = this.compileNumberValue(valueBlock, 'FROM');
+                const toFunc = this.compileNumberValue(valueBlock, 'TO');
+                return () => {
+                    const from = fromFunc();
+                    const to = toFunc();
+                    if (Number.isInteger(from) && Number.isInteger(to)) {
+                        const min = Math.min(from, to);
+                        const max = Math.max(from, to);
+                        return Math.floor(Math.random() * (max - min + 1)) + min;
+                    } else {
+                        const min = Math.min(from, to);
+                        const max = Math.max(from, to);
+                        return Math.random() * (max - min) + min;
+                    }
+                };
+            }
+            case 'operator_mod': {
+                const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
+                const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
+                return () => {
+                    const n1 = num1Func();
+                    const n2 = num2Func();
+                    return n2 !== 0 ? n1 % n2 : 0;
+                };
+            }
+            case 'operator_round': {
+                const numFunc = this.compileNumberValue(valueBlock, 'NUM');
+                return () => Math.round(numFunc());
+            }
+            case 'operator_round_to_decimals': {
+                const numFunc = this.compileNumberValue(valueBlock, 'NUM');
+                // The dropdown might return strings like '1', '2' etc. Get it as number natively if possible, else string
+                const decimals = Number(valueBlock.getFieldValue('DECIMALS') || 1);
+                return () => {
+                    const num = numFunc();
+                    const multiplier = Math.pow(10, decimals);
+                    return Math.round(num * multiplier) / multiplier;
+                };
+            }
+            case 'operator_mathop': {
+                const numFunc = this.compileNumberValue(valueBlock, 'NUM');
+                const operator = valueBlock.getFieldValue('OPERATOR');
+                return () => {
+                    const num = numFunc();
+                    switch (operator) {
+                        case 'abs': return Math.abs(num);
+                        case 'floor': return Math.floor(num);
+                        case 'ceiling': return Math.ceil(num);
+                        case 'sqrt': return num < 0 ? 0 : Math.sqrt(num);
+                        case 'sin': return Math.sin((num * Math.PI) / 180);
+                        case 'cos': return Math.cos((num * Math.PI) / 180);
+                        case 'tan': return Math.tan((num * Math.PI) / 180);
+                        case 'asin': return (Math.asin(num) * 180) / Math.PI;
+                        case 'acos': return (Math.acos(num) * 180) / Math.PI;
+                        case 'atan': return (Math.atan(num) * 180) / Math.PI;
+                        case 'ln': return num <= 0 ? 0 : Math.log(num);
+                        case 'log': return num <= 0 ? 0 : Math.log10(num);
+                        case 'e ^': return Math.exp(num);
+                        case '10 ^': return Math.pow(10, num);
+                        default: return num;
+                    }
+                };
+            }
             case 'operator_length': {
-                const stringFunc = () => String(valueBlock.getFieldValue('STRING'));
+                const stringFunc = this.compileStringValue(valueBlock, 'STRING');
                 return () => stringFunc().length;
             }
             case 'data_lengthoflist': {
@@ -313,6 +476,8 @@ export class AnimationCompiler {
                     return 0;
                 };
             }
+            case 'sensing_answer':
+                return () => Number(animationVM.getAnswer());
             default:
                 compilerLog.warn(`Unknown value block: ${valueBlock.type}`);
                 return () => 0;
@@ -471,10 +636,10 @@ export class AnimationCompiler {
 
             // Looks
             case 'looks_say':
-                step = { type: 'say', message: String(block.getFieldValue('MESSAGE') || block.getFieldValue('MSG') || '') };
+                step = { type: 'say', message: this.compileStringValue(block, 'MESSAGE') };
                 break;
             case 'looks_say_for_secs':
-                step = { type: 'say_for_secs', message: String(block.getFieldValue('MESSAGE') || block.getFieldValue('MSG') || ''), secs: Number(block.getFieldValue('SECS')) };
+                step = { type: 'say_for_secs', message: this.compileStringValue(block, 'MESSAGE'), secs: this.compileNumberValue(block, 'SECS') };
                 break;
             case 'looks_show':
                 step = { type: 'show' };
@@ -502,10 +667,10 @@ export class AnimationCompiler {
                 break;
             // New Looks blocks
             case 'looks_think':
-                step = { type: 'think', message: String(block.getFieldValue('MESSAGE') || block.getFieldValue('MSG') || '') };
+                step = { type: 'think', message: this.compileStringValue(block, 'MESSAGE') };
                 break;
             case 'looks_think_for_secs':
-                step = { type: 'think_for_secs', message: String(block.getFieldValue('MESSAGE') || block.getFieldValue('MSG') || ''), secs: Number(block.getFieldValue('SECS')) };
+                step = { type: 'think_for_secs', message: this.compileStringValue(block, 'MESSAGE'), secs: this.compileNumberValue(block, 'SECS') };
                 break;
             case 'looks_switch_costume':
                 step = { type: 'switch_costume', costume: block.getFieldValue('COSTUME') };
@@ -525,13 +690,17 @@ export class AnimationCompiler {
 
             // Control & Arduino Control
             case 'control_wait':
-            case 'arduino_delay':
-                step = { type: 'wait', secs: Number(block.getFieldValue('SECS')) };
+            case 'arduino_delay': {
+                const secs = this.compileNumberValue(block, 'SECS');
+                step = { type: 'wait', secs };
                 break;
+            }
             case 'control_repeat':
-            case 'arduino_repeat':
-                step = { type: 'repeat', times: Number(block.getFieldValue('TIMES')), body: this.compileStatementInput(block, 'DO') };
+            case 'arduino_repeat': {
+                const times = this.compileNumberValue(block, 'TIMES');
+                step = { type: 'repeat', times, body: this.compileStatementInput(block, 'DO') };
                 break;
+            }
             case 'control_forever':
             case 'arduino_loop':
                 step = { type: 'forever', body: this.compileStatementInput(block, 'DO') };
@@ -648,7 +817,7 @@ export class AnimationCompiler {
             case 'sensing_reset_timer':
                 step = { type: 'reset_timer' };
                 break;
-            
+
             // Procedures
             case 'procedures_callnoreturn': {
                 // Determine procedure name

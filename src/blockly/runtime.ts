@@ -37,7 +37,7 @@ if (Blockly.FieldDropdown && !(Blockly.FieldDropdown.prototype as any)._arrowCol
     const origApplyColour = (Blockly.FieldDropdown.prototype as any).applyColour;
     (Blockly.FieldDropdown.prototype as any).applyColour = function (this: any) {
         if (origApplyColour) origApplyColour.call(this);
-        
+
         // Handle both property naming conventions (svgArrow / svgArrow_)
         const svgArrow = this.svgArrow_ || this.svgArrow;
         if (svgArrow && svgArrow.style) {

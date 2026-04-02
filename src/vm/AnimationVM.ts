@@ -55,9 +55,9 @@ export type ScriptStep = (
     | { type: 'set_rotation_style'; style: 'left-right' | 'all around' | 'none' }
     // Looks
     | { type: 'say'; message: string | (() => string) }
-    | { type: 'say_for_secs'; message: string | (() => string); secs: number }
+    | { type: 'say_for_secs'; message: string | (() => string); secs: number | (() => number) }
     | { type: 'think'; message: string | (() => string) }
-    | { type: 'think_for_secs'; message: string | (() => string); secs: number }
+    | { type: 'think_for_secs'; message: string | (() => string); secs: number | (() => number) }
     | { type: 'show' }
     | { type: 'hide' }
     | { type: 'next_costume' }
@@ -72,8 +72,8 @@ export type ScriptStep = (
     | { type: 'go_to_layer'; layer: 'front' | 'back' }
     | { type: 'go_forward_layers'; direction: 'forward' | 'backward'; layers: number }
     // Control
-    | { type: 'wait'; secs: number }
-    | { type: 'repeat'; times: number; body: ScriptStep[] }
+    | { type: 'wait'; secs: number | (() => number) }
+    | { type: 'repeat'; times: number | (() => number); body: ScriptStep[] }
     | { type: 'forever'; body: ScriptStep[] }
     | { type: 'if'; condition: () => boolean; body: ScriptStep[] }
     | { type: 'if_else'; condition: () => boolean; body: ScriptStep[]; elseBody: ScriptStep[] }
@@ -168,7 +168,7 @@ export class AnimationVM {
     // Callbacks for UI sync
     public onHighlightBlock?: (blockId: string | null, spriteId: string) => void;
     public onRunningChange?: (isRunning: boolean) => void;
-    
+
     // Monitor callbacks
     public onShowVariable?: (name: string) => void;
     public onHideVariable?: (name: string) => void;
@@ -176,6 +176,9 @@ export class AnimationVM {
     public onHideList?: (name: string) => void;
     public onShowTable?: (name: string) => void;
     public onHideTable?: (name: string) => void;
+
+    // Ask callback — when set, the VM delegates input to the React UI instead of window.prompt
+    public onAskQuestion?: (question: string) => Promise<string>;
 
     // Timer
     private timerStart: number = Date.now();
@@ -196,11 +199,19 @@ export class AnimationVM {
         // Set up key listeners
         if (typeof window !== 'undefined') {
             window.addEventListener('keydown', (e) => {
-                this.keysPressed.add(e.key);
+                const normalized = this.normalizeKey(e);
+                if (normalized) {
+                    this.keysPressed.add(normalized);
+                    // Trigger "when key pressed" hat blocks across all sprites
+                    this.triggerKeyGlobally(normalized);
+                }
                 eventEngine.trigger('keydown', e.key);
             });
             window.addEventListener('keyup', (e) => {
-                this.keysPressed.delete(e.key);
+                const normalized = this.normalizeKey(e);
+                if (normalized) {
+                    this.keysPressed.delete(normalized);
+                }
                 eventEngine.trigger('keyup', e.key);
             });
         }
@@ -334,7 +345,7 @@ export class AnimationVM {
     setInTable(name: string, column: number | string, row: number, value: string | number): void {
         const table = this.getTable(name);
         const columns = this.getColumns(name);
-        
+
         let colIdx = -1;
         if (typeof column === 'string') {
             colIdx = columns.indexOf(column);
@@ -440,6 +451,7 @@ export class AnimationVM {
     }
 
     triggerFlag(scripts: CompiledScript[]): void {
+        vmLog.info('Green flag clicked');
         this.setRunning(true);
         let flagScripts = 0;
         for (const script of scripts) {
@@ -464,10 +476,36 @@ export class AnimationVM {
         }
     }
 
+    /**
+     * Trigger all "when key pressed" scripts across all registered sprites.
+     */
+    triggerKeyGlobally(key: string): void {
+        const allSprites = spriteManager.getAllSprites();
+        let matchedTotal = 0;
+
+        for (const sprite of allSprites) {
+            const scripts = (sprite.scripts as CompiledScript[]) || [];
+            for (const script of scripts) {
+                // Handle matching for specific key or "any"
+                if (script.trigger === 'key' && (script.triggerKey === key || script.triggerKey === 'any')) {
+                    matchedTotal++;
+                    this.setRunning(true);
+                    this.runScript(script).catch(err => {
+                        vmLog.error(`Error in key pressed script for sprite ${sprite.id}`, err);
+                    });
+                }
+            }
+        }
+
+        if (matchedTotal > 0) {
+            vmLog.trigger('key_pressed', { key, matchedTotal });
+        }
+    }
+
     triggerKey(key: string, scripts: CompiledScript[]): void {
         let matched = 0;
         for (const script of scripts) {
-            if (script.trigger === 'key' && script.triggerKey === key) {
+            if (script.trigger === 'key' && (script.triggerKey === key || script.triggerKey === 'any')) {
                 matched++;
                 this.setRunning(true);
                 this.runScript(script);
@@ -670,37 +708,43 @@ export class AnimationVM {
 
             // PictoBlox motion extensions
             case 'go_to':
-                if (step.target === 'random') {
-                    const randX = Math.random() * 480 - 240; // -240 to 240
-                    const randY = Math.random() * 360 - 180; // -180 to 180
-                    motionEngine.goTo(sprite, randX, randY);
-                } else if (step.target === 'mouse') {
-                    motionEngine.goTo(sprite, this.mouseX, this.mouseY);
-                } else {
-                    // target is a sprite name
-                    const targetSprite = spriteManager.getSprite(step.target);
-                    if (targetSprite) {
-                        motionEngine.goTo(sprite, targetSprite.x, targetSprite.y);
-                    } else {
-                        console.warn(`[AnimationVM] go_to: Sprite '${step.target}' not found`);
-                    }
-                }
+                motionEngine.goToTarget(step.target, sprite, {
+                    width: 480,
+                    height: 360,
+                    mouseX: this.mouseX,
+                    mouseY: this.mouseY
+                });
                 break;
 
             case 'glide_to':
-                if (step.target === 'random') {
-                    const randX = Math.random() * 480 - 240;
-                    const randY = Math.random() * 360 - 180;
-                    sprite.startGlide(randX, randY, step.secs);
-                } else if (step.target === 'mouse') {
-                    sprite.startGlide(this.mouseX, this.mouseY, step.secs);
-                } else {
-                    const targetSprite = spriteManager.getSprite(step.target);
-                    if (targetSprite) {
-                        sprite.startGlide(targetSprite.x, targetSprite.y, step.secs);
+                {
+                    let tx = sprite.x;
+                    let ty = sprite.y;
+
+                    if (step.target === 'random' || step.target === '_random_') {
+                        tx = (Math.random() - 0.5) * 480;
+                        ty = (Math.random() - 0.5) * 360;
+                    } else if (step.target === 'mouse' || step.target === '_mouse_') {
+                        tx = this.mouseX;
+                        ty = this.mouseY;
                     } else {
-                        console.warn(`[AnimationVM] glide_to: Sprite '${step.target}' not found`);
+                        const targetSprite = spriteManager.getSprite(step.target);
+                        if (targetSprite) {
+                            tx = targetSprite.x;
+                            ty = targetSprite.y;
+                        }
                     }
+
+                    // Strict clamping for glide target too
+                    const costume = sprite.currentCostume;
+                    const scale = sprite.size / 100;
+                    const sw = (costume?.width || 40) * scale;
+                    const sh = (costume?.height || 40) * scale;
+
+                    tx = Math.max(-240 + sw / 2, Math.min(240 - sw / 2, tx));
+                    ty = Math.max(-180 + sh / 2, Math.min(180 - sh / 2, ty));
+
+                    sprite.startGlide(tx, ty, step.secs);
                 }
                 await this.waitForGlide(sprite, signal);
                 break;
@@ -756,10 +800,15 @@ export class AnimationVM {
                 sprite.say(typeof step.message === 'function' ? step.message() : step.message);
                 break;
 
-            case 'say_for_secs':
-                sprite.say(typeof step.message === 'function' ? step.message() : step.message, step.secs);
-                await this.sleep(step.secs * 1000, signal);
+            case 'say_for_secs': {
+                const rawMessage = typeof step.message === 'function' ? step.message() : step.message;
+                const message = rawMessage === null || rawMessage === undefined ? '' : String(rawMessage);
+                const secs = typeof step.secs === 'function' ? step.secs() : step.secs;
+                vmLog.step(`Executing Say "${message}" for ${secs} seconds`);
+                sprite.say(message, secs);
+                await this.sleep(secs * 1000, signal);
                 break;
+            }
 
             case 'show':
                 costumeEngine.show(sprite);
@@ -798,10 +847,13 @@ export class AnimationVM {
                 sprite.think(typeof step.message === 'function' ? step.message() : step.message);
                 break;
 
-            case 'think_for_secs':
-                sprite.think(typeof step.message === 'function' ? step.message() : step.message, step.secs);
-                await this.sleep(step.secs * 1000, signal);
+            case 'think_for_secs': {
+                const message = typeof step.message === 'function' ? step.message() : step.message;
+                const secs = typeof step.secs === 'function' ? step.secs() : step.secs;
+                sprite.think(message, secs);
+                await this.sleep(secs * 1000, signal);
                 break;
+            }
 
             case 'switch_costume':
                 costumeEngine.setCostume(sprite, step.costume);
@@ -828,16 +880,19 @@ export class AnimationVM {
                 break;
 
             // Control blocks
-            case 'wait':
-                await this.sleep(step.secs * 1000, signal);
+            case 'wait': {
+                const secs = typeof step.secs === 'function' ? step.secs() : step.secs;
+                await this.sleep(secs * 1000, signal);
                 break;
-
-            case 'repeat':
-                for (let i = 0; i < step.times; i++) {
+            }
+            case 'repeat': {
+                const times = typeof step.times === 'function' ? step.times() : step.times;
+                for (let i = 0; i < times; i++) {
                     if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
                     await this.executeSteps(step.body, ctx, signal);
                 }
                 break;
+            }
 
             case 'forever':
                 while (!signal.aborted && this.isRunning) {
@@ -1228,30 +1283,30 @@ export class AnimationVM {
                 console.log(`[AnimationVM] Export table: ${step.table}`);
                 // TODO: Implement actual CSV download if running in browser
                 break;
-                
+
             case 'procedures_call': {
                 // To support "Run without screen refresh", we need to execute the procedure stack inline
                 // but with a safety budget (e.g., max 10,000 steps or 500ms).
-                
+
                 // 1. Find the procedure script definition for this sprite
                 const scripts = sprite.scripts as CompiledScript[] || [];
                 const procScript = scripts.find(s => s.trigger === 'procedure' && s.triggerKey === step.proccode);
-                
+
                 if (procScript) {
                     const startTime = performance.now();
                     let stepsCount = 0;
-                    
+
                     const executeBudgetedSteps = async (stepsToRun: ScriptStep[]) => {
                         for (let i = 0; i < stepsToRun.length; i++) {
                             await this.checkPause();
-                            
+
                             if (signal.aborted || !this.isRunning) {
                                 throw new DOMException('Aborted', 'AbortError');
                             }
-                            
+
                             // Recursively execute
                             await this.executeStep(stepsToRun[i], ctx, signal);
-                            
+
                             stepsCount++;
                             // Yield if we exceed budget (auto-yield safety)
                             if (stepsCount > 10000 || (performance.now() - startTime) > 500) {
@@ -1260,7 +1315,7 @@ export class AnimationVM {
                             }
                         }
                     };
-                    
+
                     await executeBudgetedSteps(procScript.steps);
                 } else {
                     console.warn(`[AnimationVM] Procedure '${step.proccode}' not found for sprite ${sprite.id}`);
@@ -1319,11 +1374,31 @@ export class AnimationVM {
     // SENSING
     // ═══════════════════════════════════════════════════════════════════════
     // ═══════════════════════════════════════════════════════════════════════
-    // SENSING
+    // KEY HANDLING & NORMALIZATION
     // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Normalize browser KeyboardEvent values to Scratch block values.
+     * Maps ' ' to 'space', 'ArrowUp' to 'ArrowUp', etc.
+     */
+    private normalizeKey(e: KeyboardEvent): string {
+        switch (e.key) {
+            case ' ': return 'space';
+            case 'ArrowUp': return 'ArrowUp';
+            case 'ArrowDown': return 'ArrowDown';
+            case 'ArrowLeft': return 'ArrowLeft';
+            case 'ArrowRight': return 'ArrowRight';
+            case 'Enter': return 'enter';
+            default:
+                // For direct character keys (a-z, 0-9), use the lowercase key value
+                if (e.key.length === 1) return e.key.toLowerCase();
+                return e.key;
+        }
+    }
+
     isKeyPressed(key: string): boolean {
-        if (key === 'space') return this.keysPressed.has(' ');
         if (key === 'any') return this.keysPressed.size > 0;
+        // The key passed here comes from the block dropdown fields
         return this.keysPressed.has(key);
     }
 
@@ -1340,9 +1415,14 @@ export class AnimationVM {
         return this.mouseY;
     }
 
-    updateMousePosition(x: number, y: number): void {
+    setMousePosition(x: number, y: number): void {
         this.mouseX = x;
         this.mouseY = y;
+        // Also update any global objects if necessary
+        if (typeof window !== 'undefined') {
+            (window as any).mouseX = x;
+            (window as any).mouseY = y;
+        }
     }
 
     getDistanceTo(target: string, fromSpriteId: string): number {
@@ -1499,19 +1579,28 @@ export class AnimationVM {
     // ASK/ANSWER
     // ═══════════════════════════════════════════════════════════════════════
     async askQuestion(question: string, sprite: Sprite): Promise<void> {
-        // Show the question in a speech bubble
+        // Show the question in a speech bubble on the sprite
         sprite.say(question);
 
-        // In a full implementation, this would show an input field on the stage
-        // For now, use a browser prompt as a placeholder
-        // Use a small delay to ensure UI updates before alert/prompt blocks main thread
-        await new Promise(resolve => setTimeout(resolve, 50));
-
-        try {
-            const answer = window.prompt(question) || '';
-            this.currentAnswer = answer;
-        } catch (e) {
-            console.error('Prompt failed', e);
+        if (this.onAskQuestion) {
+            // Delegate to the React UI — this returns a Promise that blocks
+            // until the user types an answer and clicks OK / presses Enter
+            try {
+                const answer = await this.onAskQuestion(question);
+                this.currentAnswer = answer;
+            } catch {
+                // Promise was rejected (e.g. user clicked Stop) — keep previous answer
+                console.log('[AnimationVM] Ask cancelled');
+            }
+        } else {
+            // Fallback: browser prompt (blocks the main thread — not ideal)
+            await new Promise(resolve => setTimeout(resolve, 50));
+            try {
+                const answer = window.prompt(question) || '';
+                this.currentAnswer = answer;
+            } catch (e) {
+                console.error('Prompt failed', e);
+            }
         }
 
         sprite.clearSay();
