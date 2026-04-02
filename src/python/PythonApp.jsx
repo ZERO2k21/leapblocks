@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StageProvider, useStage } from "../context/StageContext";
 import Logo, { CreoleapLogo } from "../components/Logo";
 import {
+    Home,
     Play,
     Square,
     Undo,
@@ -2434,13 +2435,44 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 background: "linear-gradient(180deg, #1f0943ff 0%, #3e066fff 100%)",
                 display: "flex",
                 alignItems: "center",
-                padding: "0 12px",
+                padding: "0 8px",
                 justifyContent: "space-between",
                 color: "#fff",
                 zIndex: 100,
                 flexShrink: 0,
             }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {/* Home Button */}
+                    <button
+                        onClick={onBack}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 36,
+                            height: 36,
+                            background: 'rgba(255,255,255,0.1)',
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            borderRadius: 10,
+                            color: '#fff',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            marginRight: 0,
+                            flexShrink: 0,
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                            e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                            e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                        title="Back to Home"
+                    >
+                        <Home size={18} strokeWidth={2.2} />
+                    </button>
+
                     <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={onBack}>
                         <Logo height={45} />
                         <span style={{ color: "#FFD500", fontSize: 14, fontWeight: 800, letterSpacing: "0.08em" }}>PYTHON</span>
