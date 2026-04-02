@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import JSZip from 'jszip';
 
 interface LandingPageProps {
   onSelect: (mode: 'intermediate' | 'junior' | 'python' | 'appinventor' | any) => void;
@@ -71,48 +72,67 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
       script.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";
       script.async = true;
       script.onload = initLottie;
+      script.onerror = initLottie;
       document.body.appendChild(script);
     } else {
       initLottie();
     }
 
-    function initLottie() {
+    function renderLottieFallback(container: HTMLElement, message = 'Animation unavailable.') {
+      container.style.cssText = `
+        display:flex; align-items:center; justify-content:center;
+        flex-direction:column; gap:18px;
+        background: radial-gradient(ellipse at 38% 38%, rgba(124,92,252,0.12), transparent 60%),
+                    radial-gradient(ellipse at 66% 66%, rgba(31,220,232,0.08), transparent 60%);
+        border-radius:20px; min-height:400px;
+      `;
+      container.innerHTML = `
+        <div style="text-align:center; padding:24px; color:#1a1a2e; font-weight:600;">
+          ${message}
+        </div>
+      `;
+    }
+
+    async function initLottie() {
       const container = document.getElementById('lottie-anim');
       if (!container) return;
       container.innerHTML = '';
-      const anim = (window as any).lottie.loadAnimation({
-        container: container,
-        renderer: 'svg',
-        loop: true,
-        autoplay: true,
-        path: encodeURI('/assets/chatbot_messenger.json')
-      });
-      anim.setSpeed(0.5);
 
-      anim.addEventListener('data_failed', function () {
-        const el = document.getElementById('lottie-anim');
-        if (el) {
-          el.style.cssText = `
-              display:flex; align-items:center; justify-content:center;
-              flex-direction:column; gap:18px;
-              background: radial-gradient(ellipse at 38% 38%, rgba(124,92,252,0.12), transparent 60%),
-                          radial-gradient(ellipse at 66% 66%, rgba(31,220,232,0.08), transparent 60%);
-              border-radius:20px; min-height:400px;
-              `;
-          el.innerHTML = `
-              <style>
-                  @keyframes rb{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-14px) rotate(2deg)}}
-                  @keyframes cp{0%,100%{opacity:0;transform:translateY(6px)}18%,82%{opacity:1;transform:translateY(0)}}
-                  .rb-e{animation:rb 3s ease-in-out infinite;font-size:68px}
-                  .rb-a{animation:cp 4.2s ease-in-out infinite .3s;background:rgba(31,220,232,0.1);border:1px solid rgba(31,220,232,0.2);padding:7px 16px;border-radius:10px;font-size:.82rem;color:#1a1a2e}
-                  .rb-b{animation:cp 4.2s ease-in-out infinite 2.1s;background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.2);padding:7px 16px;border-radius:10px;font-size:.82rem;color:#1a1a2e}
-              </style>
-              <div class="rb-a">Hi! How can I help? 👋</div>
-              <div class="rb-e">🤖</div>
-              <div class="rb-b">Let's build something! 🚀</div>
-              `;
-        }
-      });
+      const lottieLib = (window as any).lottie;
+      if (!lottieLib) {
+        renderLottieFallback(container);
+        return;
+      }
+
+      try {
+        const response = await fetch('/assets/robot.lottie');
+        if (!response.ok) throw new Error(`Failed to fetch .lottie (${response.status})`);
+        const buffer = await response.arrayBuffer();
+        const zip = await JSZip.loadAsync(buffer);
+        const manifestFile = zip.file('manifest.json');
+        if (!manifestFile) throw new Error('Missing manifest.json in .lottie');
+        const manifestText = await manifestFile.async('text');
+        const manifest = JSON.parse(manifestText);
+        const animationId = manifest.animations?.[0]?.id;
+        if (!animationId) throw new Error('Missing animation ID in .lottie manifest');
+        const animationFile = zip.file(`animations/${animationId}.json`);
+        if (!animationFile) throw new Error(`Missing animations/${animationId}.json in .lottie`);
+        const animationText = await animationFile.async('text');
+        const animationData = JSON.parse(animationText);
+
+        const anim = lottieLib.loadAnimation({
+          container,
+          renderer: 'svg',
+          loop: true,
+          autoplay: true,
+          animationData,
+        });
+        anim.setSpeed(0.5);
+        anim.addEventListener('data_failed', () => renderLottieFallback(container, 'Animation data failed to load.'));
+      } catch (err) {
+        console.error('[LandingPage] .lottie load error:', err);
+        renderLottieFallback(container);
+      }
     }
 
     return () => {
