@@ -9,26 +9,39 @@ import 'blockly/javascript';
 // ═══════════════════════════════════════════════════════════════════════════
 
 // 1. DYNAMIC DROPDOWN COLORS
-// Update highlight and background color based on block color when opening a dropdown
-if (Blockly.FieldDropdown && !(Blockly.FieldDropdown.prototype as any)._originalShowEditor) {
-    (Blockly.FieldDropdown.prototype as any)._originalShowEditor = (Blockly.FieldDropdown.prototype as any).showEditor_;
-    (Blockly.FieldDropdown.prototype as any).showEditor_ = function (this: any, opt_e: any) {
+// Update highlight and background color based on block color when opening a dropdown.
+// We use showEditor_ instead of onMouseDown_ to avoid interfering with Blockly's gesture system
+// (which can lead to "Tried to start the same gesture twice" errors).
+if (Blockly.FieldDropdown && !(Blockly.FieldDropdown.prototype as any)._dropdownColorsPatched) {
+    const origShowEditor = (Blockly.FieldDropdown.prototype as any).showEditor_;
+    (Blockly.FieldDropdown.prototype as any).showEditor_ = function (this: any, opt_e?: any) {
         const block = this.getSourceBlock();
         if (block) {
             const color = block.getColour();
             document.documentElement.style.setProperty('--blockly-menu-highlight-color', color);
-            // Add a subtle tint for the background (10% opacity)
             const tint = color.startsWith('#') ? `${color}1A` : 'rgba(0,0,0,0.05)';
             document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
         }
 
-        // SAFETY: Only call the original if it exists. 
-        // This avoids issues where subclasses (like FieldVariable) might have different prototype chains.
-        const original = (this as any)._originalShowEditor;
-        if (typeof original === 'function') {
-            original.call(this, opt_e);
+        // HEALING: If the field's current value is an object (due to a previous bug), 
+        // convert it back to a string before opening the editor to prevent crashes.
+        if (typeof (this as any).value_ === 'object' && (this as any).value_ !== null) {
+            const val = (this as any).value_;
+            (this as any).value_ = val.name || val.id || String(val);
+        }
+
+        if (typeof origShowEditor === 'function') {
+            origShowEditor.call(this, opt_e);
         }
     };
+    (Blockly.FieldDropdown.prototype as any)._dropdownColorsPatched = true;
+}
+
+// 2. FALLBACK TRANSLATIONS FOR VARIABLES
+// Prevents appendChild errors in MenuItem.createDom when Blockly attempts to render 
+// "Rename Variable" or "Delete Variable" items without valid translations.
+if (Blockly.Msg) {
+    Blockly.Msg['DELETE_VARIABLE'] = Blockly.Msg['DELETE_VARIABLE'] || 'Delete the "%1" variable';
 }
 
 // 2. DROPDOWN ARROW COLORS

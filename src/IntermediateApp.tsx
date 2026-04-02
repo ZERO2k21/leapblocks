@@ -1906,8 +1906,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         // to prevent handleWorkspaceChange from saving intermediate/wrong states
 
-        isLoadingWorkspaceRef.current = true;
+        const ws = workspaceRef.current;
+        if (!ws) return;
 
+        isLoadingWorkspaceRef.current = true;
         Blockly.Events.disable();
 
         try {
@@ -1920,13 +1922,30 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 console.log('[APP] Successfully loaded workspace for sprite:', spriteId);
 
-            } else {
-
-                workspaceRef.current.clear();
-
-                console.log('[APP] Cleared workspace (no saved blocks) for sprite:', spriteId);
-
             }
+
+            // Sync global variables found in state to this workspace's variable map
+            // This ensures dropdowns remain functional when switching sprites
+            variableMonitors.forEach(m => {
+                const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
+                if (!existing) {
+                    ws.createVariable(m.name, m.type || '');
+                }
+            });
+
+            listMonitors.forEach(m => {
+                const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
+                if (!existing) {
+                    ws.createVariable(m.name, 'list');
+                }
+            });
+
+            tableMonitors.forEach(m => {
+                const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
+                if (!existing) {
+                    ws.createVariable(m.name, 'table');
+                }
+            });
 
         } catch (err) {
 
@@ -3819,11 +3838,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     kind: 'block',
                                     type: type,
                                     fields: {
-                                        'VARIABLE': {
-                                            id: lastVar.getId(),
-                                            name: lastVar.getName(),
-                                            type: lastVar.type
-                                        }
+                                        'VARIABLE': lastVar.getName()
                                     }
                                 };
                                 if (type === 'data_setvariableto' || type === 'data_changevariableby') {
@@ -3886,11 +3901,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     kind: 'block',
                                     type: type,
                                     fields: {
-                                        'LIST': {
-                                            id: lastList.getId(),
-                                            name: lastList.getName(),
-                                            type: 'list'
-                                        }
+                                        'LIST': lastList.getName()
                                     }
                                 });
                             });
@@ -3940,11 +3951,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     kind: 'block',
                                     type: type,
                                     fields: {
-                                        'TABLE': {
-                                            id: lastTable.getId(),
-                                            name: lastTable.getName(),
-                                            type: 'table'
-                                        }
+                                        'TABLE': lastTable.getName()
                                     }
                                 });
                             });
