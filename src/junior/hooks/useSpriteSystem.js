@@ -23,9 +23,39 @@ export function useSpriteSystem(initialScenes) {
     // We track initial state for Reset functionality
     const initialStatesRef = useRef(new Map());
 
-    // Helper: Clamp values to allow grid coordinates extending to x=22 and y=-1
-    const clampX = (x) => Math.max(-50, Math.min(x, 22 * CELL_SIZE));
-    const clampY = (y) => Math.max(-50, Math.min(y, STAGE_HEIGHT + 2 * CELL_SIZE));
+    // Helper: Dynamically measure the parent '.stage' container to lock the sprite exactly inside its physical bounds!
+
+    const getStageBounds = () => {
+
+        const stageEl = document.querySelector('.stage');
+
+        return stageEl ? { w: stageEl.offsetWidth, h: stageEl.offsetHeight } : { w: STAGE_WIDTH, h: STAGE_HEIGHT };
+
+    };
+
+
+
+    // Clamp limits restrict the sprite from crossing the edge, keeping it fully visible
+
+    // We use a margin of roughly ~100px so even scaled-up sprites don't get sliced on the right/bottom borders.
+
+    const clampX = (x) => {
+
+        const bounds = getStageBounds();
+
+        return Math.max(0, Math.min(x, bounds.w - 100));
+
+    };
+
+
+
+    const clampY = (y) => {
+
+        const bounds = getStageBounds();
+
+        return Math.max(0, Math.min(y, bounds.h - 100));
+
+    };
 
     // Capture initial state on first load (or add) for Reset
     // In a real app, this might be more robust

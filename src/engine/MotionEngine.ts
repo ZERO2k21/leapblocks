@@ -21,6 +21,56 @@ class MotionEngine {
         sprite.setY(y);
     }
 
+    /**
+     * Instantly move a sprite to a target (mouse, random, or another sprite)
+     * with strict boundary clamping.
+     */
+    goToTarget(
+        target: string | 'random' | 'mouse',
+        sprite: Sprite,
+        stage: { width: number; height: number; mouseX: number; mouseY: number }
+    ) {
+        let tx = sprite.x;
+        let ty = sprite.y;
+
+        if (target === 'mouse' || target === '_mouse_') {
+            tx = stage.mouseX;
+            ty = stage.mouseY;
+        } else if (target === 'random' || target === '_random_') {
+            tx = (Math.random() - 0.5) * stage.width;
+            ty = (Math.random() - 0.5) * stage.height;
+        } else {
+            const targetSprite = spriteManager.getSprite(target);
+            if (targetSprite) {
+                tx = targetSprite.x;
+                ty = targetSprite.y;
+            } else {
+                console.warn(`[MotionEngine] Target sprite '${target}' not found`);
+                return;
+            }
+        }
+
+        // Apply strict clamping: sprite stays entirely within stage boundaries
+        const costume = sprite.currentCostume;
+        const scale = sprite.size / 100;
+        const sw = (costume?.width || 40) * scale;
+        const sh = (costume?.height || 40) * scale;
+
+        const halfW = stage.width / 2;
+        const halfH = stage.height / 2;
+
+        const minX = -halfW + sw / 2;
+        const maxX = halfW - sw / 2;
+        const minY = -halfH + sh / 2;
+        const maxY = halfH - sh / 2;
+
+        tx = Math.max(minX, Math.min(maxX, tx));
+        ty = Math.max(minY, Math.min(maxY, ty));
+
+        sprite.setX(tx);
+        sprite.setY(ty);
+    }
+
     pointInDirection(sprite: Sprite, direction: number) {
         sprite.pointInDirection(direction);
     }

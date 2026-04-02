@@ -15,7 +15,8 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
-    "build": "vite build --config vite.web.config.ts"
+    "build": "vite build --config vite.web.config.ts",
+    "debug": "electron-vite dev --inspect=5858 --remote-debugging-port=9222"
   },
   "keywords": [],
   "author": {

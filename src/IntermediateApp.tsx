@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Blockly from '@blockly-runtime';
 
 import './styles/scratch-blocks.css'; // Import Scratch-style blocks CSS
-import './junior/styles/juniorBlocks.css'; 
+import './junior/styles/juniorBlocks.css';
 import './junior/styles/juniorLooksBlocks.css';
 
 
@@ -31,6 +31,7 @@ import { Sprite } from './stage/Sprite';
 import type { SpriteType } from './stage/Sprite';
 
 import Stage from './stage/Stage';
+import AskBar from './components/AskBar';
 
 import SpritePanel from './stage/SpritePanel';
 
@@ -609,6 +610,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const [isMakeTableOpen, setIsMakeTableOpen] = useState(false);
     const [isMakeBlockOpen, setIsMakeBlockOpen] = useState(false);
 
+    // Ask-and-wait state
+    const [askState, setAskState] = useState<{
+        isAsking: boolean;
+        question: string;
+        resolve: ((answer: string) => void) | null;
+    }>({ isAsking: false, question: '', resolve: null });
+
+    const handleAskSubmit = useCallback((answer: string) => {
+        if (askState.resolve) askState.resolve(answer);
+        setAskState({ isAsking: false, question: '', resolve: null });
+    }, [askState.resolve]);
+
     // Monitor states
     const [variableMonitors, setVariableMonitors] = useState<VariableMonitorState[]>([]);
     const [listMonitors, setListMonitors] = useState<ListMonitorState[]>([]);
@@ -678,6 +691,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         };
         animationVM.onHideTable = (name) => setTableMonitors(prev => prev.map(m => m.name === name ? { ...m, visible: false } : m));
 
+        // Ask-and-wait: VM calls this, returns a Promise that blocks execution
+        animationVM.onAskQuestion = (question: string) => {
+            return new Promise<string>((resolve) => {
+                setAskState({ isAsking: true, question, resolve });
+            });
+        };
+
         return () => {
             animationVM.onShowVariable = undefined;
             animationVM.onHideVariable = undefined;
@@ -685,6 +705,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             animationVM.onHideList = undefined;
             animationVM.onShowTable = undefined;
             animationVM.onHideTable = undefined;
+            animationVM.onAskQuestion = undefined;
         };
     }, []);
 
@@ -1243,7 +1264,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     });
 
-                    setCompiledScripts(scripts);
+                    // Update global compiled scripts for this sprite only
+                    setCompiledScripts(prev => {
+                        const otherSpritesScripts = prev.filter(s => s.spriteId !== sprite.id);
+                        return [...otherSpritesScripts, ...scripts];
+                    });
+
+                    // SYNC: Update the Sprite object's internal script registry
+                    // This allows the AnimationVM to find scripts even when the sprite is not currently selected.
+                    sprite.setScripts(scripts);
 
                     const modeLabel = 'Stage Mode';
 
@@ -1473,11 +1502,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 break;
 
-            case 'looks_say_for_secs':
-
-                activeSprite.say(String(block.getFieldValue('MESSAGE') || 'Hello!'), Number(block.getFieldValue('SECS')) || 2);
-
+            case 'looks_say_for_secs': {
+                const message = String(block.getFieldValue('MESSAGE') || 'Hello!');
+                const secs = Number(block.getFieldValue('SECS')) || 2;
+                addLog(`Preview: Say "${message}" for ${secs} seconds`);
+                activeSprite.say(message, secs);
                 break;
+            }
 
             case 'looks_think':
 
@@ -2013,14 +2044,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // SPRITE MANAGEMENT
 
-    // ═══════════════════════════════════════════════════════════════════════
-
-
-
     // Handle sprite selection: save old, load new
-
     const handleSpriteSelect = useCallback((newId: string) => {
-
         if (newId === selectedSpriteId) {
 
             // Trigger click event even if already selected (Scratch behavior)
@@ -2051,6 +2076,16 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         loadSpriteWorkspace(newId);
 
     }, [selectedSpriteId, compiledScripts, saveCurrentSpriteWorkspace, loadSpriteWorkspace]);
+
+    const handleSpriteClick = useCallback((id: string) => {
+        if (id !== 'stage' && id !== selectedSpriteId) {
+            handleSpriteSelect(id);
+        }
+
+        // Trigger click event in the animation VM
+        // Note: compiledScripts should already contain all current scripts due to handleWorkspaceChange
+        animationVM.triggerSpriteClick(id, compiledScripts);
+    }, [selectedSpriteId, handleSpriteSelect, compiledScripts]);
 
 
 
@@ -2745,6 +2780,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         console.log('[APP] Run button clicked - MULTI-SPRITE MODE');
 
+        addLog('Green flag clicked');
+
         console.log('[APP] All sprites:', sprites.map(s => ({ id: s.id, name: s.name })));
 
 
@@ -2787,20 +2824,40 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 let tempWs: Blockly.Workspace | null = null;
                 try {
-                    Blockly.Events.disable();
-                    tempWs = new Blockly.Workspace();
-                    Blockly.serialization.workspaces.load(savedJson, tempWs);
-                    Blockly.Events.enable();
+                    // KEY FIX: For the active sprite, use the live workspace directly.
+                    // Deserializing into a headless `new Blockly.Workspace()` strips shadow
+                    // block connections, so targetBlock() returns null for shadow inputs.
+                    let compileWs: Blockly.Workspace;
+                    let usedLiveWs = false;
+
+                    if (s.id === selectedSpriteId && workspaceRef.current) {
+                        // Use the live rendered workspace directly — shadow blocks are intact
+                        compileWs = workspaceRef.current;
+                        usedLiveWs = true;
+                        console.log(`[APP] Compiling sprite ${s.name} using LIVE workspace`);
+                    } else {
+                        // Non-active sprite: deserialize into temp workspace
+                        Blockly.Events.disable();
+                        tempWs = new Blockly.Workspace();
+                        Blockly.serialization.workspaces.load(savedJson, tempWs);
+                        Blockly.Events.enable();
+                        compileWs = tempWs;
+                        console.log(`[APP] Compiling sprite ${s.name} using TEMP workspace`);
+                    }
 
                     const compiler = new AnimationCompiler(s.id);
-                    const scripts = compiler.compile(tempWs!);
+                    const scripts = compiler.compile(compileWs);
                     allScripts = allScripts.concat(scripts);
+
+                    // SYNC: Ensure each sprite has its respective compiled scripts for global VM triggers
+                    s.setScripts(scripts);
 
                     // Soft reset effects for this sprite
                     if (s.sayText) s.clearSay();
                     s.clearEffects();
 
-                    tempWs?.dispose();
+                    if (!usedLiveWs) tempWs?.dispose();
+
                 } catch (e) {
                     Blockly.Events.enable();
                     console.error(`[APP] Error compiling isolated sprite ${s.name}:`, e);
@@ -2842,6 +2899,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         setIsRunning(false);
         scratchRuntime.stopAll();
         animationVM.stopAll();
+
+        // Cancel any pending ask prompt
+        setAskState(prev => {
+            if (prev.resolve) prev.resolve('');
+            return { isAsking: false, question: '', resolve: null };
+        });
 
 
 
@@ -3620,7 +3683,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             if (originalCheckboxSetValue) {
                                 originalCheckboxSetValue.call(this, newValue);
                             }
-                            
+
                             const block = this.getSourceBlock();
                             if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox')) {
                                 const type = block.type === 'variable_reporter_checkbox' ? 'variable' : 'list';
@@ -4873,71 +4936,138 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                                <div style={{
+                                {/* --- GLOBAL STAGE SIZE SETTINGS --- */}
 
-                                    flex: 1,
+                                {/* Modify these values to easily control the size and scaling of the Stage in all layout modes! */}
 
-                                    width: '100%',
+                                {(() => {
 
-                                    display: 'flex',
+                                    // 1. The Internal Canvas Resolution (Default 480x360)
 
-                                    alignItems: 'center',
+                                    const CANVAS_WIDTH = 480;
 
-                                    justifyContent: 'center',
+                                    const CANVAS_HEIGHT = 360;
 
-                                    position: 'relative'
 
-                                }}>
 
-                                    <div style={{
+                                    // 2. Large Stage Mode Settings (Default)
 
-                                        transform: isFullscreen ? `scale(${fullscreenScale})` : (stageLayout === 'small' ? 'scale(0.5)' : 'scale(1)'),
+                                    const LARGE_STAGE_WIDTH = 600;
 
-                                        transformOrigin: 'center',
+                                    const LARGE_STAGE_HEIGHT = 380;
 
-                                        width: '480px',
+                                    const LARGE_STAGE_SCALE = 1.1;
 
-                                        height: '360px',
 
-                                        background: 'transparent', // User requested empty screen by default
 
-                                        boxShadow: isFullscreen ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' : 'none',
+                                    // 3. Small Stage Mode Settings
 
-                                        borderRadius: isFullscreen ? '8px' : '0',
+                                    const SMALL_STAGE_WIDTH = 300;
 
-                                        overflow: 'hidden'
+                                    const SMALL_STAGE_HEIGHT = 180;
 
-                                    }}>
+                                    const SMALL_STAGE_SCALE = 0.5;
 
-                                        <Stage
 
-                                            width={480}
 
-                                            height={360}
+                                    return (
 
-                                            sprites={sprites}
+                                        <div style={{
 
-                                            isRunning={isRunning}
+                                            flex: 1,
 
-                                            showGridNumbers={showGrid}
+                                            width: '100%',
 
-                                            onSpriteSelect={handleSpriteSelect}
+                                            display: 'flex',
 
-                                            isCameraOn={isCameraOn}
+                                            alignItems: 'center',
 
-                                            variableMonitors={variableMonitors}
+                                            justifyContent: 'center',
 
-                                            listMonitors={listMonitors}
+                                            position: 'relative'
 
-                                            tableMonitors={tableMonitors}
+                                        }}>
 
-                                            selectedSpriteId={selectedSpriteId}
+                                            <div style={{
 
-                                        />
+                                                width: isFullscreen ? '100vw' : (stageLayout === 'small' ? `${SMALL_STAGE_WIDTH}px` : `${LARGE_STAGE_WIDTH}px`),
 
-                                    </div>
+                                                height: isFullscreen ? '100vh' : (stageLayout === 'small' ? `${SMALL_STAGE_HEIGHT}px` : `${LARGE_STAGE_HEIGHT}px`),
 
-                                </div>
+                                                display: 'flex',
+
+                                                alignItems: 'center',
+
+                                                justifyContent: 'center',
+
+                                                position: 'relative'
+
+                                            }}>
+
+                                                <div style={{
+
+                                                    transform: isFullscreen ? `scale(${fullscreenScale})` : (stageLayout === 'small' ? `scale(${SMALL_STAGE_SCALE})` : `scale(${LARGE_STAGE_SCALE})`),
+
+                                                    transformOrigin: 'center center', // Changed from 'Full Screen' to valid CSS
+
+                                                    width: `${CANVAS_WIDTH}px`,
+
+                                                    height: `${CANVAS_HEIGHT}px`,
+
+                                                    background: 'transparent',
+
+                                                    boxShadow: isFullscreen ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' : 'none',
+
+                                                    borderRadius: isFullscreen ? '10px' : '0',
+
+                                                    overflow: 'visible'
+
+                                                }}>
+
+                                                    <Stage
+
+                                                        width={CANVAS_WIDTH}      /* Link to global settings */
+
+                                                        height={CANVAS_HEIGHT}    /* Link to global settings */
+
+                                                        sprites={sprites}
+
+                                                        isRunning={isRunning}
+
+                                                        showGridNumbers={showGrid}
+
+                                                        onSpriteSelect={handleSpriteSelect}
+
+                                                        onSpriteClick={handleSpriteClick}
+
+                                                        isCameraOn={isCameraOn}
+
+                                                        variableMonitors={variableMonitors}
+
+                                                        listMonitors={listMonitors}
+
+                                                        tableMonitors={tableMonitors}
+
+                                                        selectedSpriteId={selectedSpriteId}
+
+                                                    />
+
+                                                    {/* Ask-and-wait input overlay */}
+                                                    {askState.isAsking && (
+                                                        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', zIndex: 100 }}>
+                                                            <AskBar question={askState.question} onSubmit={handleAskSubmit} />
+                                                        </div>
+                                                    )}
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    );
+
+                                })()}
 
                             </div>
 
