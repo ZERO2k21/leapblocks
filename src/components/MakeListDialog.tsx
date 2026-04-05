@@ -50,7 +50,7 @@ export const MakeListDialog: React.FC<MakeListDialogProps> = ({
 
         if (workspace) {
             try {
-                const newList = workspace.createVariable(trimmedName, 'list');
+                const newList = workspace.getVariableMap().createVariable(trimmedName, 'list');
                 if (newList) {
                     onCreateList({
                         name: trimmedName,

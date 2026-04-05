@@ -801,7 +801,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 const ws = workspaceRef.current;
 
-                const newVar = ws.createVariable(promptInput, variableType); // Type is loosely used here
+                const newVar = ws.getVariableMap().createVariable(promptInput, variableType); // Type is loosely used here
 
                 if (newVar) {
 
@@ -821,7 +821,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 const ws = workspaceRef.current;
 
-                ws.createVariable(promptInput, 'list'); // 'list' type is crucial
+                ws.getVariableMap().createVariable(promptInput, 'list'); // 'list' type is crucial
 
             } else if (promptState.type === 'table' && workspaceRef.current) {
 
@@ -829,7 +829,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 const ws = workspaceRef.current;
 
-                ws.createVariable(promptInput, 'table'); // 'table' type
+                ws.getVariableMap().createVariable(promptInput, 'table'); // 'table' type
 
             }
 
@@ -1148,6 +1148,24 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         }
 
+
+        // Handle Variable Renaming and Deletion
+        if (event.type === Blockly.Events.VAR_RENAME) {
+            const renameEvent = event as any;
+            const oldName = renameEvent.oldName;
+            const newName = renameEvent.newName;
+
+            setVariableMonitors(prev => prev.map(m => m.name === oldName ? { ...m, name: newName } : m));
+            setListMonitors(prev => prev.map(m => m.name === oldName ? { ...m, name: newName } : m));
+            setTableMonitors(prev => prev.map(m => m.name === oldName ? { ...m, name: newName } : m));
+        } else if (event.type === Blockly.Events.VAR_DELETE) {
+            const deleteEvent = event as any;
+            const deletedName = deleteEvent.varName;
+
+            setVariableMonitors(prev => prev.filter(m => m.name !== deletedName));
+            setListMonitors(prev => prev.filter(m => m.name !== deletedName));
+            setTableMonitors(prev => prev.filter(m => m.name !== deletedName));
+        }
 
         try {
 
@@ -1862,21 +1880,21 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             variableMonitors.forEach(m => {
                 const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
                 if (!existing) {
-                    ws.createVariable(m.name, m.type || '');
+                    ws.getVariableMap().createVariable(m.name, m.type || '');
                 }
             });
 
             listMonitors.forEach(m => {
                 const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
                 if (!existing) {
-                    ws.createVariable(m.name, 'list');
+                    ws.getVariableMap().createVariable(m.name, 'list');
                 }
             });
 
             tableMonitors.forEach(m => {
                 const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
                 if (!existing) {
-                    ws.createVariable(m.name, 'table');
+                    ws.getVariableMap().createVariable(m.name, 'table');
                 }
             });
 
@@ -2906,7 +2924,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 setIsConnected(false);
                 addLog(`Disconnected from ${selectedPort}`);
             }
-            return;
         }
 
         try {
@@ -3573,7 +3590,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         if ((event.type === Blockly.Events.BLOCK_CREATE || event.type === Blockly.Events.BLOCK_MOVE) && !isLoadingWorkspaceRef.current) {
                             const blockId = event.type === Blockly.Events.BLOCK_CREATE ? event.blockId : event.id;
                             const block = blocksWorkspace.getBlockById(blockId);
-                            
+
                             if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox')) {
                                 // IMPORTANT: Do not replace while dragging or it breaks the gesture
                                 if (blocksWorkspace.isDragging && (blocksWorkspace as any).isDragging()) return;
@@ -3607,11 +3624,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     try {
                                         block.dispose(false);
                                         const newBlock = blocksWorkspace.newBlock(newType);
-                                        
+
                                         // Find real variable ID for the name
                                         const variable = blocksWorkspace.getVariable(name, varType);
                                         const valueToSet = variable ? variable.getId() : name;
-                                        
+
                                         newBlock.setFieldValue(valueToSet, nameField);
                                         newBlock.initSvg();
                                         newBlock.render();
@@ -3801,9 +3818,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             });
                         });
 
-                        // Add variable blocks
+                        // Add variable blocks — use the first variable alphabetically as default
                         if (scalars.length > 0) {
-                            const lastVar = scalars[scalars.length - 1]; // Use most recently added (last in creation order before sort, but sort is alphabetical)
+                            const defaultVar = scalars[0];
                             const blockTypes = [
                                 'data_setvariableto',
                                 'data_changevariableby',
@@ -3815,7 +3832,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     kind: 'block',
                                     type: type,
                                     fields: {
-                                        'VARIABLE': lastVar.getName()
+                                        // Pass full variable object so Blockly resolves by ID, not auto-create
+                                        'VARIABLE': {
+                                            id: defaultVar.getId(),
+                                            name: defaultVar.getName(),
+                                            type: defaultVar.type || ''
+                                        }
                                     }
                                 };
                                 if (type === 'data_setvariableto' || type === 'data_changevariableby') {
@@ -3860,7 +3882,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         });
 
                         if (lists.length > 0) {
-                            const lastList = lists[lists.length - 1];
+                            const defaultList = lists[0];
                             const listBlockTypes = [
                                 'data_addtolist',
                                 'data_deleteoflist',
@@ -3879,7 +3901,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     kind: 'block',
                                     type: type,
                                     fields: {
-                                        'LIST': lastList.getName()
+                                        'LIST': {
+                                            id: defaultList.getId(),
+                                            name: defaultList.getName(),
+                                            type: defaultList.type || 'list'
+                                        }
                                     }
                                 });
                             });
@@ -3911,7 +3937,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         });
 
                         if (tables.length > 0) {
-                            const lastTable = tables[tables.length - 1];
+                            const defaultTable = tables[0];
                             const tableBlockTypes = [
                                 'data_setintable',
                                 'data_addcolumn',
@@ -3930,7 +3956,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     kind: 'block',
                                     type: type,
                                     fields: {
-                                        'TABLE': lastTable.getName()
+                                        'TABLE': {
+                                            id: defaultTable.getId(),
+                                            name: defaultTable.getName(),
+                                            type: defaultTable.type || 'table'
+                                        }
                                     }
                                 });
                             });
@@ -5227,9 +5257,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         <div style={styles.modalContent}>
 
-                            <div style={{ ...styles.modalTitle, backgroundColor: promptState.type === 'variable' ? '#855CD6' : '#855CD6' }}>
+                            <div style={{ ...styles.modalTitle, backgroundColor: '#855CD6' }}>
 
-                                {promptState.type === 'variable' ? 'New Variable' : 'Input'}
+                                {promptState.type === 'variable' ? 'New Variable' : (promptState.message?.includes('Rename') ? 'Rename Variable' : 'Input')}
 
                                 <div
 
@@ -5245,7 +5275,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             <div style={{ padding: '20px' }}>
 
-                                {promptState.type === 'variable' && (
+                                {promptState.type === 'variable' ? (
 
                                     <div style={{ marginBottom: '10px', fontSize: '14px', color: '#575E75' }}>
 
@@ -5253,7 +5283,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                     </div>
 
-                                )}
+                                ) : promptState.message ? (
+
+                                    <div style={{ marginBottom: '10px', fontSize: '14px', color: '#575E75' }}>
+
+                                        {promptState.message}
+
+                                    </div>
+
+                                ) : null}
 
 
 
@@ -5267,13 +5305,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                     onChange={(e) => setPromptInput(e.target.value)}
 
-                                    onBlur={() => {
 
-                                        // Slight delay so if they clicked Submit it still registers
-
-                                        setTimeout(handlePromptCancel, 100);
-
-                                    }}
 
                                     onKeyDown={(e) => {
 

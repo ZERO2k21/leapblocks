@@ -35,7 +35,7 @@ function MakeVariableDialog({
 
     const handleSubmit = () => {
         const trimmedName = variableName.trim();
-        
+
         if (!trimmedName) {
             setError('Variable name cannot be empty');
             return;
@@ -44,7 +44,7 @@ function MakeVariableDialog({
         // Check if variable already exists
         if (workspace) {
             const existingVars = workspace.getVariableMap().getAllVariables();
-            const exists = existingVars.some((v: any) => 
+            const exists = existingVars.some((v: any) =>
                 v.name.toLowerCase() === trimmedName.toLowerCase()
             );
             if (exists) {
@@ -56,7 +56,7 @@ function MakeVariableDialog({
         // Create the variable in Blockly
         if (workspace) {
             try {
-                const newVar = workspace.createVariable(trimmedName, variableType);
+                const newVar = workspace.getVariableMap().createVariable(trimmedName, variableType);
                 if (newVar) {
                     onCreateVariable({
                         name: trimmedName,

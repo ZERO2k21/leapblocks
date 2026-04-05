@@ -22,7 +22,7 @@ export default defineConfig({
   build: {
     outDir: 'build',
     emptyOutDir: true,
-    minify: false,
+    minify: true,
     sourcemap: true,
     rollupOptions: {
       input: path.resolve(__dirname, 'index.html'),

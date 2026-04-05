@@ -66,7 +66,7 @@ export const MakeTableDialog: React.FC<MakeTableDialogProps> = ({
 
         if (workspace) {
             try {
-                const newTable = workspace.createVariable(trimmedName, 'table');
+                const newTable = workspace.getVariableMap().createVariable(trimmedName, 'table');
                 if (newTable) {
                     onCreateTable({
                         name: trimmedName,
