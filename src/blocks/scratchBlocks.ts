@@ -1210,8 +1210,8 @@ const scratchBlocks = [
         type: 'operator_gt',
         message0: '%1 > %2',
         args0: [
-            { type: 'input_value', name: 'OPERAND1', check: 'Number' },
-            { type: 'input_value', name: 'OPERAND2', check: 'Number' }
+            { type: 'input_value', name: 'OPERAND1' },
+            { type: 'input_value', name: 'OPERAND2' }
         ],
         output: 'Boolean',
         colour: '#59C059',
@@ -1222,8 +1222,8 @@ const scratchBlocks = [
         type: 'operator_lt',
         message0: '%1 < %2',
         args0: [
-            { type: 'input_value', name: 'OPERAND1', check: 'Number' },
-            { type: 'input_value', name: 'OPERAND2', check: 'Number' }
+            { type: 'input_value', name: 'OPERAND1' },
+            { type: 'input_value', name: 'OPERAND2' }
         ],
         output: 'Boolean',
         colour: '#59C059',
