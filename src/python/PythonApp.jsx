@@ -590,6 +590,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
     // Terminal / REPL
     const [activePanel, setActivePanel] = useState("terminal"); // "terminal" | "repl" | "debugger" | "pip"
+    const _isWebMode = !window.electronAPI?.isElectron;
     const [terminalOutput, setTerminalOutput] = useState([
         { text: "╔══════════════════════════════════════════════════════════════╗", type: "info", ts: new Date() },
         { text: "║  LeapBlocks Python IDE v1.0                                 ║", type: "info", ts: new Date() },
@@ -600,7 +601,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         { text: "║  ▶ Press Ctrl+S to save project                             ║", type: "info", ts: new Date() },
         { text: "╚══════════════════════════════════════════════════════════════╝", type: "info", ts: new Date() },
         { text: "", type: "info", ts: new Date() },
-        { text: "Ready to run Python code. Click ▶ Run or press Ctrl+Enter.", type: "success", ts: new Date() },
+        { text: _isWebMode
+            ? "🌐 Web Mode — Python runs in-browser via Skulpt. No install needed!"
+            : "🖥 Desktop Mode — Native Python connected. Ready!",
+          type: "success", ts: new Date() },
     ]);
     const [replInput, setReplInput] = useState("");
     const [replHistory, setReplHistory] = useState([]);
@@ -1007,6 +1011,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         if (activePanel === "repl" && window.electronAPI?.isElectron) {
             window.electronAPI.pythonReplStart();
             addLog(`>>> Native Python REPL Connected.`, "success");
+        } else if (activePanel === "repl" && !window.electronAPI?.isElectron) {
+            addLog(`>>> Python REPL Ready (in-browser Skulpt engine).`, "success");
         }
     }, [activePanel, addLog]);
 
@@ -1615,6 +1621,13 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             setActivePanel("terminal");
             if (window.electronAPI?.isElectron) {
                 window.electronAPI.pythonPipInstall(pkgName);
+            } else {
+                // Web mode: simulate install with feedback
+                setTimeout(() => {
+                    addLog(`✓ ${pkgName} registered (web mode)`, "success");
+                    addLog(`  ⚠ Browser mode uses Skulpt — only built-in modules run natively.`, "warning");
+                    addLog(`  → For full library support, use the LeapLab desktop app.`, "info");
+                }, 600);
             }
 
             // Add helpful import examples for popular libraries

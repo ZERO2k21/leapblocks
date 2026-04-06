@@ -546,6 +546,17 @@ function PipPanel({ packages, pipFilter, setPipFilter, handleInstall, onBackToFi
             </div>
 
             <div style={{ flex: 1, overflowY: "auto" }}>
+                {!window.electronAPI?.isElectron && (
+                    <div style={{
+                        padding: "8px 12px",
+                        background: "#FEF3C7",
+                        borderBottom: "1px solid #FCD34D",
+                        fontSize: 11,
+                        color: "#92400E",
+                    }}>
+                        🌐 Web Mode: Only built-in Python modules are fully functional in-browser.
+                    </div>
+                )}
                 {builtinPackages.length > 0 && (
                     <>
                         <div style={{ padding: "8px 12px 4px", background: "#FAFAFA" }}>
