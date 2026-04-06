@@ -31,8 +31,13 @@ import {
     Plug,
     FileCode2,
     AlertCircle,
+    ChevronDown,
+    FolderOpen,
+    File,
+    Share,
 } from "lucide-react";
 
+import { fileService } from "../services/FileService";
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
 import SerialMonitor from "../components/SerialMonitor";
@@ -45,6 +50,138 @@ import EditorPanel from "./panels/EditorPanel";
 import StagePanel from "./panels/StagePanel";
 import PythonIDEGuide from "./PythonIDEGuide";
 import MonacoEditor from "./editor/MonacoEditor";
+
+// ─── Dropdown Menu (Glassmorphism) ────────────────────────────────────────────
+function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
+    const menuRef = useRef(null);
+    const onCloseRef = useRef(onClose);
+    onCloseRef.current = onClose;
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleClickOutside = (e) => {
+            if (menuRef.current && !menuRef.current.contains(e.target)) {
+                onCloseRef.current();
+            }
+        };
+        const timer = setTimeout(() => {
+            document.addEventListener('mousedown', handleClickOutside, true);
+        }, 0);
+        return () => {
+            clearTimeout(timer);
+            document.removeEventListener('mousedown', handleClickOutside, true);
+        };
+    }, [isOpen]);
+
+    return (
+        <div ref={menuRef} style={{ position: 'relative' }}>
+            <button
+                onClick={onToggle}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '4px 8px',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                    cursor: 'pointer',
+                    borderRadius: 4,
+                    transition: 'all 0.2s ease',
+                    background: isOpen ? 'rgba(255,255,255,0.18)' : 'transparent',
+                    backdropFilter: isOpen ? 'blur(4px)' : 'none',
+                }}
+                onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
+                onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = isOpen ? 'rgba(255,255,255,0.18)' : 'transparent'; }}
+            >
+                {Icon && <Icon size={14} strokeWidth={2.2} style={{ opacity: 0.9 }} />}
+                {label}
+                <ChevronDown
+                    size={12}
+                    strokeWidth={2.5}
+                    style={{
+                        opacity: 0.5,
+                        transition: 'transform 0.2s ease',
+                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}
+                />
+            </button>
+
+            {isOpen && (
+                <div style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 6px)',
+                    left: 0,
+                    background: 'rgba(255,255,255,0.95)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    borderRadius: 8,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)',
+                    border: '1px solid rgba(255,255,255,0.6)',
+                    minWidth: 160,
+                    overflow: 'hidden',
+                    zIndex: 1000,
+                    padding: '4px 0',
+                    animation: 'pyMenuSlideIn 0.1s ease-out',
+                }}>
+                    <style>{`
+                        @keyframes pyMenuSlideIn {
+                            from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+                            to { opacity: 1; transform: translateY(0) scale(1); }
+                        }
+                    `}</style>
+                    {items.map((item, idx) => (
+                        item.divider ? (
+                            <div key={idx} style={{ height: 1, background: 'rgba(0,0,0,0.08)', margin: '4px 12px' }} />
+                        ) : (
+                            <button
+                                key={idx}
+                                onClick={() => { item.onClick?.(); onClose(); }}
+                                disabled={item.disabled}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    width: '100%',
+                                    padding: '7px 14px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    fontSize: 12,
+                                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                                    fontWeight: 500,
+                                    textAlign: 'left',
+                                    cursor: item.disabled ? 'not-allowed' : 'pointer',
+                                    color: item.disabled ? '#bbb' : '#374151',
+                                    transition: 'all 0.12s ease',
+                                }}
+                                onMouseEnter={e => {
+                                    if (!item.disabled) {
+                                        e.currentTarget.style.background = 'rgba(124, 58, 237, 0.08)'; // Purple hover
+                                        e.currentTarget.style.color = '#5A2D82';
+                                    }
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = item.disabled ? '#bbb' : '#374151';
+                                }}
+                            >
+                                {item.icon && <item.icon size={14} color="#7C3AED" strokeWidth={2} style={{ opacity: 0.8 }} />}
+                                <span style={{ flex: 1 }}>{item.label}</span>
+                                {item.shortcut && (
+                                    <span style={{ fontSize: 10, color: '#9CA3AF', background: '#F3F4F6', padding: '2px 4px', borderRadius: 4 }}>
+                                        {item.shortcut}
+                                    </span>
+                                )}
+                            </button>
+                        )
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
 // ─── CSS Animations ───────────────────────────────────────────────────────────
 function injectPythonIDEAnimations() {
@@ -587,6 +724,76 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const [uploadLogMessages, setUploadLogMessages] = useState([
         "Upload mode initialized",
     ]);
+
+    // ─── Project File Handlers ─────────────────────────────────────────────────────
+    const fileInputRef = useRef(null);
+    const [openMenuId, setOpenMenuId] = useState(null);
+
+    const handleNewProject = () => {
+        if (!window.confirm("Create a new project? All unsaved work will be lost.")) return;
+        setProjectName("My Project");
+        setProjectFiles(DEFAULT_FILES);
+        setActiveFile("sprite.py");
+        resetStage();
+    };
+
+    const handleSaveProject = () => {
+        const payload = {
+            projectFiles,
+            activeFile,
+            sprites,
+            backdrop,
+        };
+        fileService.saveProject(projectName, "python", payload);
+    };
+
+    const handleOpenProject = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.accept = '.leap,.lbproject,application/json';
+            fileInputRef.current.click();
+        }
+    };
+
+    const handleFileLoad = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const data = await fileService.loadProject(file);
+            const validation = fileService.validateProject(data, "python");
+            if (!validation.isValid) {
+                alert(validation.error);
+                return;
+            }
+
+            setProjectName(data.projectName || "My Project");
+            setProjectFiles(data.projectFiles || DEFAULT_FILES);
+            setActiveFile(data.activeFile || "sprite.py");
+            
+            if (data.sprites && Array.isArray(data.sprites) && data.sprites.length > 0) {
+                setSprites(data.sprites);
+                setSelectedSpriteId(data.sprites[0].id);
+            } else {
+                resetStage();
+            }
+            if (data.backdrop) setBackdropImg(data.backdrop);
+            
+        } catch (err) {
+            alert('Failed to load project: ' + err.message);
+        } finally {
+            e.target.value = "";
+        }
+    };
+
+    const handleShareProject = () => {
+        const payload = {
+            projectFiles,
+            activeFile,
+            sprites,
+            backdrop,
+        };
+        fileService.shareProject(projectName, "python", payload);
+    };
 
     // Terminal / REPL
     const [activePanel, setActivePanel] = useState("terminal"); // "terminal" | "repl" | "debugger" | "pip"
@@ -2489,7 +2696,33 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     </div>
                     <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
 
-                    {["File", "Edit", "Tutorials", "Board", "Connect"].map((menuLabel) => (
+                    <DropdownMenu
+                        label="File"
+                        isOpen={openMenuId === 'file'}
+                        onToggle={() => setOpenMenuId(openMenuId === 'file' ? null : 'file')}
+                        onClose={() => setOpenMenuId(null)}
+                        items={[
+                            { label: 'New Project', icon: File, onClick: handleNewProject, shortcut: 'Ctrl+N' },
+                            { label: 'Open from your computer', icon: FolderOpen, onClick: handleOpenProject, shortcut: 'Ctrl+O' },
+                            { divider: true },
+                            { label: 'Save to your computer', icon: Save, onClick: handleSaveProject, shortcut: 'Ctrl+S' },
+                            { divider: true },
+                            { label: 'Share', icon: Share, onClick: handleShareProject }
+                        ]}
+                    />
+
+                    <DropdownMenu
+                        label="Edit"
+                        isOpen={openMenuId === 'edit'}
+                        onToggle={() => setOpenMenuId(openMenuId === 'edit' ? null : 'edit')}
+                        onClose={() => setOpenMenuId(null)}
+                        items={[
+                            { label: 'Undo', icon: Undo, shortcut: 'Ctrl+Z', onClick: () => editorRef.current?.trigger('keyboard', 'undo', null) },
+                            { label: 'Redo', icon: Redo, shortcut: 'Ctrl+Y', onClick: () => editorRef.current?.trigger('keyboard', 'redo', null) },
+                        ]}
+                    />
+
+                    {["Tutorials", "Board", "Connect"].map((menuLabel) => (
                         <span
                             key={menuLabel}
                             style={{ fontSize: 12, cursor: "pointer", opacity: 0.9, padding: "4px 8px", borderRadius: 4 }}
@@ -2516,7 +2749,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             onChange={(e) => setProjectName(e.target.value)}
                             style={{ background: "transparent", border: "none", color: "#fff", width: 90, outline: "none", fontSize: 12, fontWeight: 500 }}
                         />
-                        <Save size={12} style={{ opacity: 0.8, cursor: "pointer" }} />
+                        <Save size={12} style={{ opacity: 0.8, cursor: "pointer" }} onClick={handleSaveProject} title="Save Project" />
                     </div>
                     {/* Mode/Stage/Upload buttons */}
                     <div style={{ display: "flex", background: "rgba(0,0,0,0.2)", borderRadius: 4, overflow: "hidden" }}>
@@ -2633,19 +2866,19 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         {/* Editing tools */}
                         <div style={{ display: "flex", gap: 2 }}>
-                            <div title="Undo (Ctrl+Z)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
+                            <div title="Undo (Ctrl+Z)" onClick={() => editorRef.current?.trigger('keyboard', 'undo', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <Undo size={16} />
                             </div>
-                            <div title="Redo (Ctrl+Y)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
+                            <div title="Redo (Ctrl+Y)" onClick={() => editorRef.current?.trigger('keyboard', 'redo', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <Redo size={16} />
                             </div>
-                            <div title="Copy (Ctrl+C)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
+                            <div title="Copy (Ctrl+C)" onClick={() => editorRef.current?.trigger('keyboard', 'editor.action.clipboardCopyAction', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <span style={{ fontSize: 14 }}>📋</span>
                             </div>
-                            <div title="Paste (Ctrl+V)" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
+                            <div title="Paste (Ctrl+V)" onClick={() => editorRef.current?.trigger('keyboard', 'editor.action.clipboardPasteAction', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <span style={{ fontSize: 14 }}>📄</span>
                             </div>
-                            <div title="Delete" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
+                            <div title="Delete" onClick={() => { if(window.confirm('Clear active file?')) { const ed = editorRef.current; if(ed) { ed.setValue(''); } } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <Trash2 size={16} />
                             </div>
                         </div>
@@ -3191,7 +3424,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     </div>
                 </div>
             )}
-
+            
+            <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileLoad} accept=".leap,.lbproject,application/json" />
         </div>
     );
 }
