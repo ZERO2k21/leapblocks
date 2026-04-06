@@ -53,8 +53,8 @@ const DEFAULT_PROJECT: AFProject = {
 
 const TABS: { id: AFTab; label: string; icon: string }[] = [
   { id: 'designer', label: 'Designer', icon: '🎨' },
-  { id: 'blocks',   label: 'Blocks',   icon: '🧩' },
-  { id: 'build',    label: 'Build',    icon: '📦' },
+  { id: 'blocks', label: 'Blocks', icon: '🧩' },
+  { id: 'build', label: 'Build', icon: '📦' },
 ];
 
 export default function AppForgeStudio({ onBack }: AppForgeProps) {

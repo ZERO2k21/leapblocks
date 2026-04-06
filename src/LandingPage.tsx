@@ -294,7 +294,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   display:flex; align-items:center; gap:10px; text-decoration:none;
   filter: drop-shadow(0 2px 8px rgba(99,102,241,0.15));
 }
-.landing-page-container .brand-logo { height: clamp(44px, 6vw, 55px); width:auto; object-fit:contain; }
+.landing-page-container .brand-logo { height: clamp(55px, 6vw, 70px); width:auto; object-fit:contain; }
 .landing-page-container .nav-actions {
   display:flex; align-items:center; gap:14px;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.08));
@@ -556,7 +556,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         <nav>
           <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
             <a href="#" className="nav-brand">
-              <img src="/assets/leaplab_logo_transparent.png" alt="LeapLab Logo" className="brand-logo" />
+              <img src="/assets/Final_logo_b.png" alt="LeapLab Logo" className="brand-logo" />
             </a>
             <div className="nav-links">
               <a href="#" style={{ color: '#0f172a', textDecoration: 'none', fontWeight: 600, fontSize: '0.95rem', transition: 'color 0.2s' }}>Tutorials</a>

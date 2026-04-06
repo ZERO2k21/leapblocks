@@ -1,7 +1,7 @@
 import React from 'react';
 
 // LeapLab left-logo (background-removed circuit letters)
-export default function Logo({ height = 36, className = "" }) {
+export default function Logo({ height = 80, className = "" }) {
     return (
         <img
             src="/assets/leaplab_logo_transparent.png"
@@ -24,11 +24,11 @@ export function CreoleapLogo({ height = 100, className = "", style = {} }) {
             onError={(e) => {
                 e.target.src = '/assets/creoleap_logo.svg';
             }}
-            style={{ 
-                height, 
+            style={{
+                height,
                 objectFit: 'contain',
-                filter: 'brightness(1.2) contrast(1.1) drop-shadow(0 0 2px rgba(255,255,255,0.2))', 
-                ...style 
+                filter: 'brightness(1.2) contrast(1.1) drop-shadow(0 0 2px rgba(255,255,255,0.2))',
+                ...style
             }}
             className={className}
         />
