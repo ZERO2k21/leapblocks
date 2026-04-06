@@ -3593,7 +3593,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox')) {
                                 // IMPORTANT: Do not replace while dragging or it breaks the gesture
-                                if (blocksWorkspace.isDragging && (blocksWorkspace as any).isDragging()) return;
+                                if (typeof (blocksWorkspace as any).isDragging === 'function' && (blocksWorkspace as any).isDragging()) return;
 
                                 const isVariable = block.type === 'variable_reporter_checkbox';
                                 const nameField = isVariable ? 'VARIABLE' : 'LIST';
@@ -4476,7 +4476,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             {/* Unified Toolbar - Tabs on left, Stage controls on right */}
 
-            {appMode === 'blocks' && editorMode === 'stage' && (
+            {appMode === 'blocks' && (
 
                 <div style={styles.unifiedToolbar}>
 
@@ -4800,39 +4800,26 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     ...styles.rightPanel,
 
-                    width: stageLayout === 'small' ? '256px' : '496px',
+                    width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '256px' : (stageLayout === 'large' ? '616px' : '496px')),
 
                     transition: 'width 0.2s ease-in-out',
 
                 }}>
 
-                    {editorMode === 'stage' ? (
-
-                        <>
-
-                            {/* Stage */}
-
-                            <div ref={stageContainerRef} style={{
-
-                                ...(!isFullscreen ? styles.stageContainer : {}),
-
-                                width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '240px' : '480px'),
-
-                                height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '180px' : '360px'),
-
-                                transition: 'all 0.2s ease-in-out',
-
-                                position: 'relative',
-
-                                display: 'flex',
-
-                                flexDirection: 'column',
-
-                                background: isFullscreen ? '#09090b' : '#fff', // Premium dark mode background in fullscreen
-
-                                overflow: 'hidden'
-
-                            }}>
+                    {/* Stage Container - Always rendered, conditionally visible to keep ref valid */}
+                    <div ref={stageContainerRef} style={{
+                        ...(!isFullscreen ? styles.stageContainer : {}),
+                        width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '240px' : (stageLayout === 'large' ? '600px' : '480px')),
+                        height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '180px' : (stageLayout === 'large' ? '380px' : '360px')),
+                        transition: 'all 0.2s ease-in-out',
+                        position: isFullscreen ? 'fixed' : 'relative',
+                        top: isFullscreen ? 0 : 'auto', left: isFullscreen ? 0 : 'auto',
+                        zIndex: isFullscreen ? 9999 : 1,
+                        display: (editorMode === 'stage' || isFullscreen) ? 'flex' : 'none',
+                        flexDirection: 'column',
+                        background: isFullscreen ? '#09090b' : '#fff',
+                        overflow: 'hidden'
+                    }}>
 
                                 {/* Fullscreen Toolbar - Premium Dark/Glass */}
 
@@ -4967,12 +4954,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                                     // 2. Large Stage Mode Settings (Default)
-
                                     const LARGE_STAGE_WIDTH = 600;
-
-                                    const LARGE_STAGE_HEIGHT = 380;
-
-                                    const LARGE_STAGE_SCALE = 1.05;
+                                    const LARGE_STAGE_HEIGHT = 450;
+                                    const LARGE_STAGE_SCALE = 1.25;
 
 
 
@@ -5087,60 +5071,26 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             </div>
 
+                    {/* Sprite & Stage Panels - Visible in Stage mode OR Fullscreen */}
+                    {(editorMode === 'stage' || isFullscreen) && (
+                        <div style={styles.assetsContainer}>
+                            <SpritePanel
+                                sprites={sprites}
+                                selectedSpriteId={selectedSpriteId}
+                                onSelectSprite={handleSpriteSelect}
+                                onAddSprite={addSprite}
+                                onDeleteSprite={deleteSprite}
+                                onRemoveBackground={handleRemoveBackground}
+                                onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
+                                onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
+                                stageManager={stageManager}
+                                backdropVersion={backdropRefresh}
+                            />
+                        </div>
+                    )}
 
-
-                            {/* Sprite & Stage Panels */}
-
-                            <div style={styles.assetsContainer}>
-
-                                <SpritePanel
-
-                                    sprites={sprites}
-
-                                    selectedSpriteId={selectedSpriteId}
-
-                                    onSelectSprite={handleSpriteSelect}
-
-                                    onAddSprite={addSprite}
-
-                                    onDeleteSprite={deleteSprite}
-
-                                    onRemoveBackground={handleRemoveBackground} // v2
-
-                                    onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
-
-                                    onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
-
-                                    stageManager={stageManager}
-
-                                    backdropVersion={backdropRefresh}
-
-                                />
-
-                                {/* <StagePanel
-
-                                    isSelected={selectedSpriteId === 'stage'}
-
-                                    onSelect={() => handleSpriteSelect('stage')}
-
-                                    onOpenLibrary={() => setShowBackdropLibrary(true)}
-
-                                    onOpenEditor={() => {
-
-                                        handleSpriteSelect('stage');
-
-                                        handleWorkspaceTabChange('costumes');
-
-                                    }}
-
-                                /> */}
-
-                            </div>
-
-                        </>
-
-                    ) : (
-
+                    {/* Code Preview - Only in Upload mode AND NOT Fullscreen */}
+                    {editorMode === 'upload' && !isFullscreen && (
                         <>
 
                             {/* Code Preview */}

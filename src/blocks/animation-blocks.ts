@@ -2191,32 +2191,32 @@ export const animationToolbox = {
                     kind: 'block',
                     type: 'operator_add',
                     inputs: {
-                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        NUM2: { shadow: { type: 'text', fields: { TEXT: '0' } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_subtract',
                     inputs: {
-                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        NUM2: { shadow: { type: 'text', fields: { TEXT: '0' } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_multiply',
                     inputs: {
-                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        NUM2: { shadow: { type: 'text', fields: { TEXT: '0' } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_divide',
                     inputs: {
-                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        NUM2: { shadow: { type: 'text', fields: { TEXT: '0' } } },
                     },
                 },
                 { kind: 'label', text: '── Random ──' },
@@ -2224,8 +2224,8 @@ export const animationToolbox = {
                     kind: 'block',
                     type: 'operator_random',
                     inputs: {
-                        FROM: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
-                        TO: { shadow: { type: 'math_number', fields: { NUM: 10 } } },
+                        FROM: { shadow: { type: 'text', fields: { TEXT: '1' } } },
+                        TO: { shadow: { type: 'text', fields: { TEXT: '10' } } },
                     },
                 },
                 { kind: 'label', text: '── Compare ──' },
@@ -2233,24 +2233,24 @@ export const animationToolbox = {
                     kind: 'block',
                     type: 'operator_gt',
                     inputs: {
-                        OPERAND1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        OPERAND2: { shadow: { type: 'math_number', fields: { NUM: 50 } } },
+                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_lt',
                     inputs: {
-                        OPERAND1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        OPERAND2: { shadow: { type: 'math_number', fields: { NUM: 50 } } },
+                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_equals',
                     inputs: {
-                        OPERAND1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        OPERAND2: { shadow: { type: 'math_number', fields: { NUM: 50 } } },
+                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
                     },
                 },
                 { kind: 'label', text: '── Logic ──' },
@@ -2294,29 +2294,29 @@ export const animationToolbox = {
                     kind: 'block',
                     type: 'operator_mod',
                     inputs: {
-                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                        NUM1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        NUM2: { shadow: { type: 'text', fields: { TEXT: '1' } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_round',
                     inputs: {
-                        NUM: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM: { shadow: { type: 'text', fields: { TEXT: '0' } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_mathop',
                     inputs: {
-                        NUM: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                        NUM: { shadow: { type: 'text', fields: { TEXT: '1' } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_round_to_decimals',
                     inputs: {
-                        NUM: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM: { shadow: { type: 'text', fields: { TEXT: '0' } } },
                     },
                 },
             ],

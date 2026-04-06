@@ -528,6 +528,9 @@ export class AnimationVM {
 
     triggerSpriteClick(spriteId: string, scripts: CompiledScript[]): void {
         let matched = 0;
+        // Scratch behavior: clicking the sprite restarts its onclick scripts
+        this.stopSpriteScripts(spriteId);
+        
         for (const script of scripts) {
             if (script.trigger === 'sprite_click' && script.spriteId === spriteId) {
                 matched++;
