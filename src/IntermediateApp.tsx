@@ -3593,7 +3593,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox')) {
                                 // IMPORTANT: Do not replace while dragging or it breaks the gesture
-                                if (blocksWorkspace.isDragging && (blocksWorkspace as any).isDragging()) return;
+                                if (typeof (blocksWorkspace as any).isDragging === 'function' && (blocksWorkspace as any).isDragging()) return;
 
                                 const isVariable = block.type === 'variable_reporter_checkbox';
                                 const nameField = isVariable ? 'VARIABLE' : 'LIST';
