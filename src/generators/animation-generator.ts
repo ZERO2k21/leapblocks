@@ -247,17 +247,8 @@ export class AnimationCompiler {
             default: {
                 console.warn(`[Compiler] Unknown string block type: ${valueBlock.type} - trying numFunc fallback`);
                 // Try compileNumberValue as fallback, convert to string
-                // IMPORTANT: pass valueBlock (the connected block), not the parent block
-                const numFunc = this.compileNumberValue(valueBlock.getInput ? block : block, inputName);
-                // Actually resolve from the correct source:
-                const input2 = block.getInput(inputName);
-                const vb = input2?.connection?.targetBlock();
-                if (vb) {
-                    // Re-enter compileNumberValue with the correct block resolution
-                    const nf = this.compileNumberValue(block, inputName);
-                    return () => String(nf());
-                }
-                return () => String(numFunc());
+                const nf = this.compileNumberValue(block, inputName);
+                return () => String(nf());
             }
         }
     }
@@ -280,6 +271,24 @@ export class AnimationCompiler {
         }
 
         switch (valueBlock.type) {
+            case 'text':
+            case 'operator_join':
+            case 'data_listcontents':
+            case 'data_tablecontents':
+            case 'data_getvalueattable':
+            case 'data_gettablecount':
+            case 'data_gettimestamp':
+            case 'data_itemoflist':
+            case 'operator_letter_of':
+            case 'looks_costume_name':
+            case 'looks_backdrop_name': {
+                // Delegate to compileStringValue and cast to Number for mathematical evaluation
+                const strFunc = this.compileStringValue(block, inputName);
+                return () => {
+                    const num = Number(strFunc());
+                    return isNaN(num) ? 0 : num;
+                };
+            }
             case 'math_number':
                 return () => {
                     const val = valueBlock.getFieldValue('NUM');
@@ -352,7 +361,10 @@ export class AnimationCompiler {
                 const ws = valueBlock.workspace;
                 const variable = ws.getVariableById(id);
                 const name = variable ? (variable as any).name : id;
-                return () => Number(animationVM.getVariable(name)); // compileNumberValue forces return number
+                return () => {
+                    const num = Number(animationVM.getVariable(name));
+                    return isNaN(num) ? 0 : num;
+                }; // compileNumberValue forces return number
             }
             case 'operator_add': {
                 const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
@@ -477,7 +489,10 @@ export class AnimationCompiler {
                 };
             }
             case 'sensing_answer':
-                return () => Number(animationVM.getAnswer());
+                return () => {
+                    const num = Number(animationVM.getAnswer());
+                    return isNaN(num) ? 0 : num;
+                };
             default:
                 compilerLog.warn(`Unknown value block: ${valueBlock.type}`);
                 return () => 0;

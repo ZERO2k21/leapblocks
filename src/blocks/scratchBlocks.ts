@@ -1,10 +1,3 @@
-/**
- * Scratch 3.0 Compatible Block Definitions for Blockly
- * Full parity with scratch-gui block definitions
- *
- * Each block follows Blockly's JSON block format:
- * https://blocklycodelabs.dev/blockly/stable/define-block-json.html
- */
 
 import Blockly from '@blockly-runtime';
 
@@ -1150,8 +1143,8 @@ const scratchBlocks = [
         type: 'operator_add',
         message0: '%1 + %2',
         args0: [
-            { type: 'field_number', name: 'NUM1', value: 0 },
-            { type: 'field_number', name: 'NUM2', value: 0 }
+            { type: 'input_value', name: 'NUM1' },
+            { type: 'input_value', name: 'NUM2' }
         ],
         output: 'Number',
         colour: '#59C059',
@@ -1162,8 +1155,8 @@ const scratchBlocks = [
         type: 'operator_subtract',
         message0: '%1 - %2',
         args0: [
-            { type: 'field_number', name: 'NUM1', value: 0 },
-            { type: 'field_number', name: 'NUM2', value: 0 }
+            { type: 'input_value', name: 'NUM1' },
+            { type: 'input_value', name: 'NUM2' }
         ],
         output: 'Number',
         colour: '#59C059',
@@ -1174,8 +1167,8 @@ const scratchBlocks = [
         type: 'operator_multiply',
         message0: '%1 × %2',
         args0: [
-            { type: 'field_number', name: 'NUM1', value: 0 },
-            { type: 'field_number', name: 'NUM2', value: 0 }
+            { type: 'input_value', name: 'NUM1' },
+            { type: 'input_value', name: 'NUM2' }
         ],
         output: 'Number',
         colour: '#59C059',
@@ -1186,8 +1179,8 @@ const scratchBlocks = [
         type: 'operator_divide',
         message0: '%1 ÷ %2',
         args0: [
-            { type: 'field_number', name: 'NUM1', value: 0 },
-            { type: 'field_number', name: 'NUM2', value: 1 }
+            { type: 'input_value', name: 'NUM1' },
+            { type: 'input_value', name: 'NUM2' }
         ],
         output: 'Number',
         colour: '#59C059',
@@ -1198,8 +1191,8 @@ const scratchBlocks = [
         type: 'operator_random',
         message0: 'pick random %1 to %2',
         args0: [
-            { type: 'field_number', name: 'FROM', value: 1 },
-            { type: 'field_number', name: 'TO', value: 10 }
+            { type: 'input_value', name: 'FROM' },
+            { type: 'input_value', name: 'TO' }
         ],
         output: 'Number',
         colour: '#59C059',
@@ -1279,8 +1272,8 @@ const scratchBlocks = [
         type: 'operator_join',
         message0: 'join %1 %2',
         args0: [
-            { type: 'field_input', name: 'STRING1', text: 'hello ' },
-            { type: 'field_input', name: 'STRING2', text: 'world' }
+            { type: 'input_value', name: 'STRING1' },
+            { type: 'input_value', name: 'STRING2' }
         ],
         output: 'String',
         colour: '#59C059',
@@ -1291,8 +1284,8 @@ const scratchBlocks = [
         type: 'operator_letter_of',
         message0: 'letter %1 of %2',
         args0: [
-            { type: 'field_number', name: 'LETTER', value: 1, min: 1 },
-            { type: 'field_input', name: 'STRING', text: 'apple' }
+            { type: 'input_value', name: 'LETTER' },
+            { type: 'input_value', name: 'STRING' }
         ],
         output: 'String',
         colour: '#59C059',
@@ -1302,7 +1295,7 @@ const scratchBlocks = [
     {
         type: 'operator_length',
         message0: 'length of %1',
-        args0: [{ type: 'field_input', name: 'STRING', text: 'apple' }],
+        args0: [{ type: 'input_value', name: 'STRING' }],
         output: 'Number',
         colour: '#59C059',
         tooltip: 'Reports the length of a string.',
@@ -1312,8 +1305,8 @@ const scratchBlocks = [
         type: 'operator_mod',
         message0: '%1 mod %2',
         args0: [
-            { type: 'field_number', name: 'NUM1', value: 0 },
-            { type: 'field_number', name: 'NUM2', value: 1 }
+            { type: 'input_value', name: 'NUM1' },
+            { type: 'input_value', name: 'NUM2' }
         ],
         output: 'Number',
         colour: '#59C059',
@@ -1323,7 +1316,7 @@ const scratchBlocks = [
     {
         type: 'operator_round',
         message0: 'round %1',
-        args0: [{ type: 'field_number', name: 'NUM', value: 0 }],
+        args0: [{ type: 'input_value', name: 'NUM' }],
         output: 'Number',
         colour: '#59C059',
         tooltip: 'Rounds a number to the nearest integer.',
@@ -1353,7 +1346,7 @@ const scratchBlocks = [
                     ['10^', '10^']
                 ]
             },
-            { type: 'field_number', name: 'NUM', value: 0 }
+            { type: 'input_value', name: 'NUM' }
         ],
         output: 'Number',
         colour: '#59C059',
@@ -1364,8 +1357,8 @@ const scratchBlocks = [
         type: 'operator_contains',
         message0: '%1 contains %2 ?',
         args0: [
-            { type: 'field_input', name: 'STRING1', text: 'apple' },
-            { type: 'field_input', name: 'STRING2', text: 'a' }
+            { type: 'input_value', name: 'STRING1' },
+            { type: 'input_value', name: 'STRING2' }
         ],
         output: 'Boolean',
         colour: '#59C059',
