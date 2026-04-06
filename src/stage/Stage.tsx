@@ -145,8 +145,9 @@ export const Stage: React.FC<StageProps> = ({
         const y = event.clientY - rect.top;
 
         // Convert to Scratch coordinates (-240 to 240, -180 to 180)
-        const scratchX = (x - width / 2) * (480 / width);
-        const scratchY = (height / 2 - y) * (360 / height);
+        // Correct math using rect.width/height to handle scaled/responsive canvas
+        const scratchX = ((x / rect.width) * width) - width / 2;
+        const scratchY = height / 2 - ((y / rect.height) * height);
 
         // Resume audio context on user interaction (required by browser autoplay policy)
         const soundManager = (window as any).soundManager;
