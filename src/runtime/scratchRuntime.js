@@ -30,6 +30,7 @@ class ScratchRuntime {
 
     triggerClick(spriteId) {
         this.triggerEvent('event_whenthisspriteclicked', {}, false, spriteId);
+        this.triggerEvent('event_sprite_clicked', {}, false, spriteId);
     }
 
     /**
@@ -184,6 +185,7 @@ class ScratchRuntime {
                 case 'event_whenflagclicked':
                 case 'event_whenkeypressed':
                 case 'event_whenthisspriteclicked':
+                case 'event_sprite_clicked':
                 case 'event_whenbroadcastreceived':
                 case 'event_whenbackdropswitchesto':
                 case 'event_whengreaterthan':
@@ -484,7 +486,13 @@ class ScratchRuntime {
     }
 
     async triggerEvent(opcode, condition = {}, wait = false, spriteIdOnly = null) {
-        if (!this.isRunning) return;
+        if (!this.isRunning) {
+            if (opcode === 'event_whenthisspriteclicked' || opcode === 'event_sprite_clicked') {
+                this.isRunning = true; // Sprite click starts block execution even if stopped
+            } else {
+                return;
+            }
+        }
         
         const promises = [];
         for (const [spriteId, blocks] of this.spritesBlocks.entries()) {
