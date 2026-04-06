@@ -1829,54 +1829,35 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // Load workspace blocks from the per-sprite map
 
-    const loadSpriteWorkspace = useCallback((spriteId: string) => {
-
-        // ALWAYS update the true owner tracking, even if workspace is null (unmounted)
-
-        // This ensures that when the workspace is re-initialized, it knows what it should be loading.
-
+        const loadSpriteWorkspace = useCallback((spriteId: string) => {
+        // ALWAYS update the true owner tracking
         activeSpriteIdRef.current = spriteId;
 
-
-
         if (!workspaceRef.current) {
-
             console.log('[APP] Workspace unmounted, deferred loading for sprite:', spriteId);
-
             return;
-
         }
 
-
-
         const json = spriteWorkspacesRef.current.get(spriteId);
-
-
-
-        // ALWAYS disable events when manually changing workspace content
-
-        // to prevent handleWorkspaceChange from saving intermediate/wrong states
-
         const ws = workspaceRef.current;
         if (!ws) return;
 
         isLoadingWorkspaceRef.current = true;
         Blockly.Events.disable();
+        console.log('[APP] Switching workspace to:', spriteId);
 
         try {
+            // ALWAYS clear first to prevent blocks from previous target leaking
+            workspaceRef.current.clear();
 
             if (json && Object.keys(json).length > 0) {
-
-                workspaceRef.current.clear();
-
                 Blockly.serialization.workspaces.load(json, workspaceRef.current);
-
-                console.log('[APP] Successfully loaded workspace for sprite:', spriteId);
-
+                console.log('[APP] Successfully loaded workspace for target:', spriteId);
+            } else {
+                console.log('[APP] Initialized empty workspace for target:', spriteId);
             }
 
             // Sync global variables found in state to this workspace's variable map
-            // This ensures dropdowns remain functional when switching sprites
             variableMonitors.forEach(m => {
                 const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
                 if (!existing) {
@@ -1899,53 +1880,28 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             });
 
         } catch (err) {
-
             console.error('[APP] Error loading workspace JSON:', err);
-
         } finally {
-
             Blockly.Events.enable();
 
-
-
             const toolbox = workspaceRef.current.getToolbox() as any;
-
             if (toolbox?.getSelectedItem?.()) {
-
                 workspaceRef.current.refreshToolboxSelection();
-
             } else if (toolbox && typeof toolbox.selectItemByPosition === 'function') {
-
                 toolbox.selectItemByPosition(0);
-
             }
 
             const flyout = workspaceRef.current.getFlyout() as any;
-
             if (flyout?.reflowInternal_) flyout.reflowInternal_();
 
-
-
-            // Use setTimeout to ensure any strictly asynchronous layout events 
-
-            // thrown by Blockly immediately after enable() are also swallowed.
-
+            // Use setTimeout to allow Blockly to process internal events before enabling saving
             setTimeout(() => {
-
                 isLoadingWorkspaceRef.current = false;
-
-                // Force a recompile for the newly loaded sprite/backdrop
-
                 if (workspaceRef.current) {
-
                     handleWorkspaceChange({ isUiEvent: false } as Blockly.Events.Abstract);
-
                 }
-
             }, 50);
-
         }
-
     }, [handleWorkspaceChange]);
 
 
@@ -2048,7 +2004,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     }, [selectedSpriteId, compiledScripts, saveCurrentSpriteWorkspace, loadSpriteWorkspace]);
 
     const handleSpriteClick = useCallback((id: string) => {
-        if (id !== 'stage' && id !== selectedSpriteId) {
+        if (id !== selectedSpriteId) {
             handleSpriteSelect(id);
         }
 
@@ -2168,8 +2124,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         if (workspaceRef.current) {
 
             isLoadingWorkspaceRef.current = true;
-
-            Blockly.Events.disable();
+        Blockly.Events.disable();
+        console.log('[APP] Initializing empty workspace for new sprite:', id);
 
             workspaceRef.current.clear();
 
@@ -2302,8 +2258,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         if (workspaceRef.current) {
 
             isLoadingWorkspaceRef.current = true;
-
-            Blockly.Events.disable();
+        Blockly.Events.disable();
+        console.log('[APP] Clearing workspace for new project');
 
             workspaceRef.current.clear();
 
@@ -4227,70 +4183,40 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     // Update workspace listeners and highlights when sprite selection or workspace changes
 
     useEffect(() => {
+        const ws = workspaceRef.current;
+        if (!ws) return;
 
-        if (!workspaceRef.current) {
+        console.log('[APP] Attaching listeners for target:', selectedSpriteId);
 
-            console.log('[APP] No workspaceRef.current, skipping listener attachment');
+        // Capture current function instances to ensure correct removal during cleanup
+        const currentWsChange = handleWorkspaceChange;
+        const currentBlockInteract = handleBlockInteraction;
 
-            return;
+        ws.addChangeListener(currentWsChange);
+        ws.addChangeListener(currentBlockInteract);
 
-        }
-
-
-
-        console.log('[APP] Updating listeners for sprite:', selectedSpriteId);
-
-
-
-        // Remove old and add new (to ensure only ONE instance of the handler is attached)
-
-        workspaceRef.current.removeChangeListener(handleWorkspaceChange);
-
-        workspaceRef.current.addChangeListener(handleWorkspaceChange);
-
-
-
-        workspaceRef.current.removeChangeListener(handleBlockInteraction);
-
-        workspaceRef.current.addChangeListener(handleBlockInteraction);
-
-
-
-        // Trigger an initial recompile for the new sprite
-
-        if (sprites.length > 0 && selectedSpriteId) {
-
-            handleWorkspaceChange({ isUiEvent: false } as Blockly.Events.Abstract);
-
-        }
-
-
-
-        // Register highlighting callback that knows about the *current* selectedSpriteId
-
+        // Highlight
         animationVM.onHighlightBlock = (spriteId, blockId) => {
-
             if (workspaceRef.current && spriteId === selectedSpriteId) {
-
                 // @ts-ignore
-
                 workspaceRef.current.highlightBlock(blockId);
-
             }
-
         };
 
+        // Recompile
+        if (sprites.length > 0 && selectedSpriteId) {
+            handleWorkspaceChange({ isUiEvent: false } as Blockly.Events.Abstract);
+        }
 
-
-        // Clear highlights initially
-
-        // @ts-ignore
-
-        workspaceRef.current.highlightBlock(null);
-
-
-
-    }, [sprites, selectedSpriteId, handleWorkspaceChange, handleBlockInteraction, workspaceTab]);
+        return () => {
+            console.log('[APP] Removing listeners for target:', selectedSpriteId);
+            ws.removeChangeListener(currentWsChange);
+            ws.removeChangeListener(currentBlockInteract);
+            // Clear highlighting when switching or unmounting
+            // @ts-ignore
+            ws.highlightBlock(null);
+        };
+    }, [selectedSpriteId, handleWorkspaceChange, handleBlockInteraction, sprites.length]);
 
 
 
@@ -5687,8 +5613,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     if (workspaceRef.current) {
 
                         isLoadingWorkspaceRef.current = true;
-
-                        Blockly.Events.disable();
+        Blockly.Events.disable();
+        console.log('[APP] Initializing empty workspace for new sprite:', id);
 
                         workspaceRef.current.clear();
 
