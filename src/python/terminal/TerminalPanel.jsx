@@ -110,7 +110,7 @@ export default function TerminalPanel({
                         Interactive Python REPL - type commands and press Enter
                     </div>
                     <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6 }}>
-                        <div style={{ color: C.MUTED }}>Python 3 (Skulpt) - LeapBlocks Interactive Shell</div>
+                        <div style={{ color: C.MUTED }}>Python 3 — LeapBlocks Interactive Shell</div>
                         <div style={{ color: C.MUTED, marginBottom: 8 }}>Type Python code and press Enter. Use up/down arrows for history.</div>
                     </div>
                     <div style={{ display: "flex", borderTop: `1px solid ${C.BORDER}`, padding: "6px 10px", alignItems: "center", gap: 8, background: "#FAFAFA" }}>

@@ -4,18 +4,20 @@
  * No CDN or dynamic script tags needed.
  */
 
-// Import Skulpt from the npm package — webpack bundles this directly.
-// skulpt/main.js does: require('./dist/skulpt.min.js') + require('./dist/skulpt-stdlib.js')
-// and then: module.exports = Sk;
-let Sk;
-try {
-    // eslint-disable-next-line import/no-extraneous-dependencies
-    Sk = require('skulpt');
-    // Skulpt also attaches to window.Sk, but let's keep a direct reference
-    if (!Sk) Sk = window.Sk;
-} catch (e) {
-    console.warn('[SkulptEngine] Direct require failed, will use window.Sk:', e);
-    Sk = window.Sk;
+// Import Skulpt from the npm package.
+// Uses ESM import so both Vite (web) and electron-vite (desktop) can bundle it.
+// Skulpt's CJS entry does: require('./dist/skulpt.min.js') + require('./dist/skulpt-stdlib.js')
+// Vite's pre-bundler (esbuild) converts this CJS → ESM automatically.
+import * as _SkModule from 'skulpt';
+
+// Resolve the actual Sk object — handle both default export and window global
+let Sk = _SkModule?.default || _SkModule || null;
+if (!Sk || typeof Sk.configure !== 'function') {
+    // Fallback: Skulpt attaches itself to window.Sk when loaded
+    Sk = (typeof window !== 'undefined') ? window.Sk : null;
+}
+if (!Sk && typeof window !== 'undefined') {
+    console.warn('[SkulptEngine] Skulpt not resolved via import, waiting for window.Sk...');
 }
 
 // ─── Sprite preamble (PictoBlox-compatible API) ──────────────────────────────
@@ -138,8 +140,17 @@ export class SkulptEngine {
     }
 
     _getSk() {
-        const sk = Sk || window.Sk;
-        if (!sk) throw new Error('Python runtime (Skulpt) is not available. Try refreshing the page.');
+        // Try the imported reference first, then window.Sk as fallback
+        let sk = Sk;
+        if (!sk || typeof sk.configure !== 'function') {
+            sk = (typeof window !== 'undefined') ? window.Sk : null;
+            if (sk && typeof sk.configure === 'function') {
+                Sk = sk; // Cache for future calls
+            }
+        }
+        if (!sk || typeof sk.configure !== 'function') {
+            throw new Error('Python runtime (Skulpt) is not available. Try refreshing the page.');
+        }
         return sk;
     }
 
