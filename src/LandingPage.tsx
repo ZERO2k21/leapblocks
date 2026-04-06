@@ -294,7 +294,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   display:flex; align-items:center; gap:10px; text-decoration:none;
   filter: drop-shadow(0 2px 8px rgba(99,102,241,0.15));
 }
-.landing-page-container .brand-logo { height: clamp(55px, 6vw, 70px); width:auto; object-fit:contain; }
+.landing-page-container .brand-logo { height: clamp(50px, 5.5vw, 64px); width:auto; object-fit:contain; }
 .landing-page-container .nav-actions {
   display:flex; align-items:center; gap:14px;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.08));
@@ -317,8 +317,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 .landing-page-container .hero-grid {
   display: grid; grid-template-columns: 1fr 1fr;
   align-items: center; max-width: 1280px; margin: 0 auto;
-  padding: clamp(6px, 1.2vw, 16px) clamp(16px, 5vw, 48px);
-  gap: clamp(24px, 8vw, 110px); flex: 1 0 auto;
+  padding: clamp(4px, 1vw, 12px) clamp(16px, 5vw, 48px);
+  gap: clamp(16px, 6vw, 75px); flex: 1 0 auto;
 }
 @media (max-width: 1024px) {
   .landing-page-container .hero-grid {
@@ -339,8 +339,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 }
 
 .landing-page-container .hero-title {
-  font-size: clamp(2rem, 6vw, 4rem); font-weight: 900;
-  line-height: 1.12; letter-spacing: -0.04em; margin-bottom: 8px; color: #0F172A;
+  font-size: clamp(1.8rem, 5.2vw, 3.4rem); font-weight: 900;
+  line-height: 1.12; letter-spacing: -0.04em; margin-bottom: 6px; color: #0F172A;
 }
 .landing-page-container .hero-title .hw-code {
   font-style: italic; color: transparent;
@@ -353,15 +353,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   -webkit-text-fill-color: transparent; letter-spacing: -0.02em;
 }
 .landing-page-container .hero-tagline {
-  display: inline-block; font-size: clamp(0.6rem, 1.2vw, 0.7rem);
+  display: inline-block; font-size: clamp(0.55rem, 1.1vw, 0.65rem);
   font-weight: 800; color: #000; text-transform: uppercase;
-  letter-spacing: 0.25em; margin-bottom: 8px; padding: 6px 14px;
+  letter-spacing: 0.25em; margin-bottom: 6px; padding: 4px 12px;
   background: var(--accent); border: 2px solid #000; box-shadow: 4px 4px 0px #000;
   transform: rotate(-1deg);
 }
 .landing-page-container .hero-sub {
-  font-size: clamp(0.9rem, 2vw, 1.1rem); color: #0f172a;
-  line-height: 1.6; max-width: 520px; margin-bottom: 24px;
+  font-size: clamp(0.85rem, 1.8vw, 1rem); color: #0f172a;
+  line-height: 1.55; max-width: 500px; margin-bottom: 20px;
   position: relative; z-index: 2; opacity: 0.85;
 }
 .landing-page-container .hero-btns { display:flex; gap:10px; flex-wrap:wrap; }
@@ -432,11 +432,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* ─── CARDS ROW ─── */
 .landing-page-container .cards-wrap {
   max-width:1280px; margin:0 auto;
-  padding: clamp(4px, 1vw, 1px) clamp(16px, 3vw, 32px) clamp(8px, 1.5vw, 14px);
+  padding: 0 clamp(16px, 3vw, 32px) clamp(6px, 1.2vw, 12px);
 }
 .landing-page-container .cards-row {
-  display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: clamp(12px, 2vw, 20px);
+  display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: clamp(10px, 1.5vw, 16px);
 }
 @media (min-width: 1440px) {
   .landing-page-container .cards-row { grid-template-columns: repeat(7, 1fr); }
@@ -444,19 +444,30 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
 /* ── Card base + scan transitions ── */
 .landing-page-container .tc {
-  border-radius:14px; padding: 8px 8px; cursor:pointer;
-  transition: transform .3s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow .3s ease,
-              opacity .3s ease,
-              outline .15s ease;
+  border-radius:12px; padding: 6px 6px; cursor:pointer;
+  transition: transform .4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow .5s ease,
+              opacity .3s ease;
   position:relative; overflow:hidden; min-height:0;
   display:flex; flex-direction:column; justify-content:flex-end;
-  box-shadow:0 4px 12px rgba(0,0,0,0.03),0 1px 3px rgba(0,0,0,0.02);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  /* 3D Shadows — Contact + Object + Ambient */
+  box-shadow: 
+    0 1px 2px rgba(0,0,0,0.06), 
+    0 4px 8px rgba(0,0,0,0.04),
+    0 12px 24px rgba(0,0,0,0.02),
+    inset 0 0 0 1px rgba(255,255,255,0.7); /* Inner Rim Glint */
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  border-top: 1px solid rgba(255, 255, 255, 0.82); /* Rim Light Top */
+  border-left: 1px solid rgba(255, 255, 255, 0.4); /* Rim Light Left */
 }
 .landing-page-container .tc:hover {
-  transform:translateY(-8px);
-  box-shadow:0 20px 40px rgba(0,0,0,0.08), 0 8px 16px rgba(0,0,0,0.04);
+  transform: translateY(-10px) scale(1.015);
+  box-shadow: 
+    0 2px 4px rgba(0,0,0,0.1), 
+    0 12px 28px rgba(0,0,0,0.08), 
+    0 24px 50px rgba(0,0,0,0.05),
+    inset 0 0 0 1px rgba(255,255,255,1);
+  z-index: 5;
 }
 
 /* Scanning spotlight — active card */
@@ -488,31 +499,38 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   .landing-page-container .tc { padding: 12px; }
 }
 
-.landing-page-container .tc-ignite  { background:linear-gradient(155deg,#f0f4ff 0%,#e8eeff 60%,#e0e8ff 100%); border-bottom: 4px solid #6366F1; }
-.landing-page-container .tc-circuit { background:linear-gradient(155deg,#f0f8ff 0%,#e6f2ff 60%,#dceeff 100%); border-bottom: 4px solid #0EA5E9; }
-.landing-page-container .tc-codex   { background:linear-gradient(155deg,#f0fff8 0%,#e6fff0 60%,#dcffe8 100%); border-bottom: 4px solid #10B981; }
-.landing-page-container .tc-neura   { background:linear-gradient(155deg,#faf0ff 0%,#f5e6ff 60%,#f0dcff 100%); border-bottom: 4px solid #A855F7; }
-.landing-page-container .tc-forge   { background:linear-gradient(155deg,#fff5f0 0%,#ffece6 60%,#ffe4dc 100%); border-bottom: 4px solid #F97316; }
-.landing-page-container .tc-studio  { background:linear-gradient(155deg,#fff0fa 0%,#ffe6f5 60%,#ffdcee 100%); border-bottom: 4px solid #EC4899; }
-.landing-page-container .tc-quiz    { background:linear-gradient(155deg,#fffaf0 0%,#fff5e6 60%,#fff0dc 100%); border-bottom: 4px solid #F59E0B; }
+.landing-page-container .tc-ignite  { background:linear-gradient(155deg,#ffffff 0%, #f0f4ff 60%,#e0e8ff 100%); border-bottom: 4px solid #6366F1; }
+.landing-page-container .tc-ignite:hover { box-shadow: 0 20px 40px rgba(99,102,241,0.15), 0 0 0 1px rgba(99,102,241,0.1); }
+.landing-page-container .tc-circuit { background:linear-gradient(155deg,#ffffff 0%, #f0f8ff 60%,#dceeff 100%); border-bottom: 4px solid #0EA5E9; }
+.landing-page-container .tc-circuit:hover { box-shadow: 0 20px 40px rgba(14,165,233,0.15), 0 0 0 1px rgba(14,165,233,0.1); }
+.landing-page-container .tc-codex   { background:linear-gradient(155deg,#ffffff 0%, #f0fff8 60%,#dcffe8 100%); border-bottom: 4px solid #10B981; }
+.landing-page-container .tc-codex:hover { box-shadow: 0 20px 40px rgba(16,185,129,0.15), 0 0 0 1px rgba(16,185,129,0.1); }
+.landing-page-container .tc-neura   { background:linear-gradient(155deg,#ffffff 0%, #faf0ff 60%,#f0dcff 100%); border-bottom: 4px solid #A855F7; }
+.landing-page-container .tc-neura:hover { box-shadow: 0 20px 40px rgba(168,85,247,0.15), 0 0 0 1px rgba(168,85,247,0.1); }
+.landing-page-container .tc-forge   { background:linear-gradient(155deg,#ffffff 0%, #fff5f0 60%,#ffe4dc 100%); border-bottom: 4px solid #F97316; }
+.landing-page-container .tc-forge:hover { box-shadow: 0 20px 40px rgba(249,115,22,0.15), 0 0 0 1px rgba(249,115,22,0.1); }
+.landing-page-container .tc-studio  { background:linear-gradient(155deg,#ffffff 0%, #fff0fa 60%,#ffdcee 100%); border-bottom: 4px solid #EC4899; }
+.landing-page-container .tc-studio:hover { box-shadow: 0 20px 40px rgba(236,72,153,0.15), 0 0 0 1px rgba(236,72,153,0.1); }
+.landing-page-container .tc-quiz    { background:linear-gradient(155deg,#ffffff 0%, #fffaf0 60%,#fff0dc 100%); border-bottom: 4px solid #F59E0B; }
+.landing-page-container .tc-quiz:hover { box-shadow: 0 20px 40px rgba(245,158,11,0.15), 0 0 0 1px rgba(245,158,11,0.1); }
 
 .landing-page-container .tc-icon {
   flex:1; display:flex; align-items:center; justify-content:center; padding-bottom:6px;
 }
 .landing-page-container .tc-icon svg,
 .landing-page-container .tc-icon img {
-  width: clamp(40px, 7vw, 56px); height: clamp(40px, 7vw, 56px); object-fit: contain;
+  width: clamp(34px, 6vw, 48px); height: clamp(34px, 6vw, 48px); object-fit: contain;
 }
 .landing-page-container .tc-cat {
   font-size: 0.80rem; font-weight: 900; letter-spacing: 0.12em;
   text-transform: uppercase; color: #0a0328ff; margin-bottom: 2px; line-height: 1.2; opacity: 0.65;
 }
 .landing-page-container .tc-name {
-  font-size: clamp(0.75rem, 1.6vw, 0.95rem); font-weight: 1000; letter-spacing: 0.01em;
-  text-transform: uppercase; color: #0f172a; margin-bottom: 3px; line-height: 1.2;
+  font-size: clamp(0.7rem, 1.4vw, 0.88rem); font-weight: 1000; letter-spacing: 0.01em;
+  text-transform: uppercase; color: #0f172a; margin-bottom: 2px; line-height: 1.2;
 }
 .landing-page-container .tc-desc {
-  font-size: 0.65rem; color: #020046a5; line-height: 1.4; font-weight: 600;
+  font-size: 0.62rem; color: #020046a5; line-height: 1.4; font-weight: 600;
 }
 ` }} />
       <div className="landing-page-container">
@@ -564,7 +582,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             </div>
           </div>
           <div className="nav-actions">
-            <img src="/assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="nav-logo" style={{ height: 'clamp(45px, 6vw, 55px)' }} />
+            <img src="/assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="nav-logo" style={{ height: 'clamp(40px, 5vw, 50px)' }} />
           </div>
         </nav>
 
