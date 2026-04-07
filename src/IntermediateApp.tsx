@@ -2074,9 +2074,38 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             handleSpriteSelect(id);
         }
 
-        // Trigger click event in the animation VM
-        // Note: compiledScripts should already contain all current scripts due to handleWorkspaceChange
-        animationVM.triggerSpriteClick(id, compiledScripts);
+        // Compile the clicked sprite's workspace to get latest scripts
+        let clickScripts: CompiledScript[] = compiledScripts;
+        const savedJson = id === selectedSpriteId && workspaceRef.current
+            ? Blockly.serialization.workspaces.save(workspaceRef.current)
+            : spriteWorkspacesRef.current.get(id);
+
+        if (savedJson && Object.keys(savedJson).length > 0) {
+            try {
+                let tempWs: Blockly.Workspace | null = null;
+                let compileWs: Blockly.Workspace;
+
+                if (id === selectedSpriteId && workspaceRef.current) {
+                    compileWs = workspaceRef.current;
+                } else {
+                    Blockly.Events.disable();
+                    tempWs = new Blockly.Workspace();
+                    Blockly.serialization.workspaces.load(savedJson, tempWs);
+                    Blockly.Events.enable();
+                    compileWs = tempWs;
+                }
+
+                const compiler = new AnimationCompiler(id);
+                clickScripts = compiler.compile(compileWs);
+                if (tempWs) { try { (tempWs as any).dispose(); } catch (_) {} }
+            } catch (e) {
+                Blockly.Events.enable();
+                console.error('[APP] Error compiling sprite for click:', e);
+            }
+        }
+
+        // Trigger click event in the animation VM with fresh scripts
+        animationVM.triggerSpriteClick(id, clickScripts);
     }, [selectedSpriteId, handleSpriteSelect, compiledScripts]);
 
 
