@@ -632,19 +632,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <div>
                   <div className="tc-cat">Leaplab</div>
                   <div className="tc-name">Ignite</div>
-                  <div className="tc-desc">Glowing robot and robot animation</div>
+                  <div className="tc-desc">Scratch & block coding</div>
                 </div>
               </div>
 
-              {/* 2 CIRCUIT */}
+              {/* 2 EMBED */}
               <div className={`tc tc-circuit ${tcClass(1)}`} onClick={() => handleCardClick(() => onSelect('intermediate'))}>
                 <div className="tc-icon">
                   <img src="/assets/arduino_icon.png" alt="Circuit Icon" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>
-                  <div className="tc-name">Circuit</div>
-                  <div className="tc-desc">Glowing micro microchip</div>
+                  <div className="tc-name">Embed</div>
+                  <div className="tc-desc">Block Coding, Arduino & Embedded Systems</div>
                 </div>
               </div>
 
@@ -656,7 +656,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <div>
                   <div className="tc-cat">Leaplab</div>
                   <div className="tc-name">Codex</div>
-                  <div className="tc-desc">Glowing python animations</div>
+                  <div className="tc-desc">Python Programming</div>
                 </div>
               </div>
 
@@ -668,23 +668,35 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <div>
                   <div className="tc-cat">Leaplab</div>
                   <div className="tc-name">Neura</div>
-                  <div className="tc-desc">Glowing brain with neural network</div>
+                  <div className="tc-desc">AI Logic & Advanced Block Programming</div>
                 </div>
               </div>
 
-              {/* 5 FORGE */}
+              {/* 5 ELECTRA */}
               <div className={`tc tc-forge ${tcClass(4)}`} onClick={() => handleCardClick(() => onSelect('leapforge'))}>
                 <div className="tc-icon">
                   <img src="/assets/creocad_icon.png" alt="Forge Icon" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>
-                  <div className="tc-name">Forge</div>
-                  <div className="tc-desc">Modular Circuit Simulator & Engine</div>
+                  <div className="tc-name">Electra</div>
+                  <div className="tc-desc">Circuit Design & Simulation</div>
                 </div>
               </div>
 
-              {/* 6 STUDIO */}
+              {/* 6 VISION3D */}
+              <div className={`tc tc-studio ${tcClass(5)}`} onClick={() => handleCardClick(() => onSelect('appforge'))}>
+                <div className="tc-icon">
+                  <img src="/assets/app_game_dev_icon.png" alt="Studio Icon" />
+                </div>
+                <div>
+                  <div className="tc-cat">Leaplab</div>
+                  <div className="tc-name">Vision3D</div>
+                  <div className="tc-desc">3D Design & Modeling </div>
+                </div>
+              </div>
+
+              {/* 7 STUDIO */}
               <div className={`tc tc-studio ${tcClass(5)}`} onClick={() => handleCardClick(() => onSelect('appforge'))}>
                 <div className="tc-icon">
                   <img src="/assets/app_game_dev_icon.png" alt="Studio Icon" />
@@ -692,19 +704,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <div>
                   <div className="tc-cat">Leaplab</div>
                   <div className="tc-name">Studio</div>
-                  <div className="tc-desc">Glowing game with game and clouds</div>
+                  <div className="tc-desc">App & Game Development</div>
                 </div>
               </div>
 
-              {/* 7 QUIZ */}
+              {/* 8 PULSE */}
               <div className={`tc tc-quiz ${tcClass(6)}`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Quiz'))}>
                 <div className="tc-icon">
                   <img src="/assets/quiz_icon.png" alt="Quiz Icon" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>
-                  <div className="tc-name">Quiz</div>
-                  <div className="tc-desc">Learning target of brain cognition</div>
+                  <div className="tc-name">Pulse</div>
+                  <div className="tc-desc">Assessment & Quiz Creation</div>
                 </div>
               </div>
 

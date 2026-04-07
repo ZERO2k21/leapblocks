@@ -72,12 +72,13 @@ interface StageProps {
     variableMonitors?: VariableMonitorState[];
     listMonitors?: ListMonitorState[];
     tableMonitors?: TableMonitorState[];
+    sensingMonitors?: VariableMonitorState[];
     selectedSpriteId?: string | null;
-    onMonitorPositionChange?: (type: 'variable' | 'list' | 'table', id: string, x: number, y: number) => void;
+    onMonitorPositionChange?: (type: 'variable' | 'list' | 'table' | 'sensing', id: string, x: number, y: number) => void;
     onMonitorResize?: (type: 'list' | 'table', id: string, width: number, height: number) => void;
-    onMonitorBringToFront?: (type: 'variable' | 'list' | 'table', id: string) => void;
+    onMonitorBringToFront?: (type: 'variable' | 'list' | 'table' | 'sensing', id: string) => void;
     onVariableModeChange?: (id: string, mode: 'normal' | 'large' | 'slider') => void;
-    onVariableValueChange?: (id: string, value: number) => void;
+    onVariableValueChange?: (id: string, value: number | string) => void;
     onVariableSliderRangeChange?: (id: string, min: number, max: number) => void;
 }
 
@@ -94,6 +95,7 @@ export const Stage: React.FC<StageProps> = ({
     variableMonitors = [],
     listMonitors = [],
     tableMonitors = [],
+    sensingMonitors = [],
     selectedSpriteId = null,
     onMonitorPositionChange,
     onMonitorResize,
@@ -475,6 +477,8 @@ export const Stage: React.FC<StageProps> = ({
                         visible={monitor.visible}
                         x={monitor.x}
                         y={monitor.y}
+                        stageWidth={width}
+                        stageHeight={height}
                         zIndex={monitor.zIndex}
                         mode={monitor.mode}
                         sliderMin={monitor.sliderMin}
@@ -482,7 +486,7 @@ export const Stage: React.FC<StageProps> = ({
                         onPositionChange={(x, y) => onMonitorPositionChange?.('variable', monitor.id, x, y)}
                         onPointerDown={() => onMonitorBringToFront?.('variable', monitor.id)}
                         onModeChange={(mode) => onVariableModeChange?.(monitor.id, mode)}
-                        onValueChange={(value) => onVariableValueChange?.(monitor.id, value)}
+                        onValueChange={(value) => onVariableValueChange?.(monitor.id, value as number)}
                         onSliderRangeChange={(min, max) => onVariableSliderRangeChange?.(monitor.id, min, max)}
                     />
                 ))}
@@ -532,8 +536,27 @@ export const Stage: React.FC<StageProps> = ({
                         onPointerDown={() => onMonitorBringToFront?.('table', monitor.id)}
                     />
                 ))}
+
+            {sensingMonitors
+                .filter(monitor => monitor.visible)
+                .map(monitor => (
+                    <VariableMonitor
+                        key={monitor.id}
+                        name={monitor.name}
+                        value={monitor.value}
+                        visible={monitor.visible}
+                        x={monitor.x}
+                        y={monitor.y}
+                        stageWidth={width}
+                        stageHeight={height}
+                        zIndex={monitor.zIndex}
+                        onPositionChange={(x, y) => onMonitorPositionChange?.('sensing', monitor.id, x, y)}
+                        onPointerDown={() => onMonitorBringToFront?.('sensing', monitor.id)}
+                    />
+                ))}
         </div>
     );
 };
+
 
 export default Stage;

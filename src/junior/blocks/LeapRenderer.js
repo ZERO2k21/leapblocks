@@ -26,6 +26,11 @@ export function registerLeapRenderer(blocklyInstance) {
             // Font
             this.FIELD_TEXT_FONTWEIGHT = '700'; // Bold text
             this.FIELD_TEXT_FONTFAMILY = '"Nunito", "Rounded Mplus 1c", sans-serif';
+
+            // Checkbox styling (Premium feel)
+            this.CHECKBOX_SIZE = 16;
+            this.CHECKBOX_CORNER_RADIUS = 4;
+            this.CHECKBOX_X_OFFSET = 8;
         }
     }
 

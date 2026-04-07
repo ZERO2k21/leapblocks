@@ -602,6 +602,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     const [variableScope, setVariableScope] = useState('global'); // global | local
 
+    const selectedSpriteIdRef = useRef(selectedSpriteId);
+    useEffect(() => { selectedSpriteIdRef.current = selectedSpriteId; }, [selectedSpriteId]);
+
 
 
     // Dialog states
@@ -626,9 +629,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const [variableMonitors, setVariableMonitors] = useState<VariableMonitorState[]>([]);
     const [listMonitors, setListMonitors] = useState<ListMonitorState[]>([]);
     const [tableMonitors, setTableMonitors] = useState<TableMonitorState[]>([]);
+    const [sensingMonitors, setSensingMonitors] = useState<VariableMonitorState[]>([
+        { id: 'answer', name: 'answer', type: 'String', scope: 'all_sprites', visible: false, value: '', x: 10, y: 350 },
+        { id: 'timer', name: 'timer', type: 'Number', scope: 'all_sprites', visible: false, value: 0, x: 10, y: 380 },
+        { id: 'loudness', name: 'loudness', type: 'Number', scope: 'all_sprites', visible: false, value: 0, x: 10, y: 410 }
+    ]);
 
     const variableMonitorsRef = useRef(variableMonitors);
     const listMonitorsRef = useRef(listMonitors);
+    const sensingMonitorsRef = useRef(sensingMonitors);
 
     useEffect(() => {
         variableMonitorsRef.current = variableMonitors;
@@ -638,10 +647,25 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         listMonitorsRef.current = listMonitors;
     }, [listMonitors]);
 
-    const handleMonitorPositionChange = useCallback((type: 'variable' | 'list' | 'table', id: string, x: number, y: number) => {
+    useEffect(() => {
+        sensingMonitorsRef.current = sensingMonitors;
+    }, [sensingMonitors]);
+
+    // Keep window monitors in sync for Blockly toolbox checkboxes
+    useEffect(() => {
+        (window as any)._monitors_for_sync = {
+            variable: variableMonitors,
+            list: listMonitors,
+            table: tableMonitors,
+            sensing: sensingMonitors
+        };
+    }, [variableMonitors, listMonitors, tableMonitors, sensingMonitors]);
+
+    const handleMonitorPositionChange = useCallback((type: 'variable' | 'list' | 'table' | 'sensing', id: string, x: number, y: number) => {
         if (type === 'variable') setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
         if (type === 'list') setListMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
         if (type === 'table') setTableMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
+        if (type === 'sensing') setSensingMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
     }, []);
 
     const handleMonitorResize = useCallback((type: 'list' | 'table', id: string, width: number, height: number) => {
@@ -649,17 +673,38 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         if (type === 'table') setTableMonitors(prev => prev.map(m => m.id === id ? { ...m, width, height } : m));
     }, []);
 
-    const handleMonitorBringToFront = useCallback((type: 'variable' | 'list' | 'table', id: string) => {
+    const handleMonitorBringToFront = useCallback((type: 'variable' | 'list' | 'table' | 'sensing', id: string) => {
         const vMax = Math.max(100, ...variableMonitors.map(m => m.zIndex || 100));
         const lMax = Math.max(100, ...listMonitors.map(m => m.zIndex || 100));
         const tMax = Math.max(100, ...tableMonitors.map(m => m.zIndex || 100));
-        const maxZ = Math.max(vMax, lMax, tMax);
+        const sMax = Math.max(100, ...sensingMonitors.map(m => m.zIndex || 100));
+        const maxZ = Math.max(vMax, lMax, tMax, sMax);
         const newZ = maxZ + 1;
 
         if (type === 'variable') setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, zIndex: newZ } : m));
         if (type === 'list') setListMonitors(prev => prev.map(m => m.id === id ? { ...m, zIndex: newZ } : m));
         if (type === 'table') setTableMonitors(prev => prev.map(m => m.id === id ? { ...m, zIndex: newZ } : m));
-    }, [variableMonitors, listMonitors, tableMonitors]);
+        if (type === 'sensing') setSensingMonitors(prev => prev.map(m => m.id === id ? { ...m, zIndex: newZ } : m));
+    }, [variableMonitors, listMonitors, tableMonitors, sensingMonitors]);
+
+    const handleVariableModeChange = useCallback((id: string, mode: 'normal' | 'large' | 'slider') => {
+        setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, mode } : m));
+    }, []);
+
+    const handleVariableValueChange = useCallback((id: string, value: string | number) => {
+        setVariableMonitors(prev => {
+            const monitor = prev.find(m => m.id === id);
+            if (monitor) {
+                animationVM.setVariable(monitor.name, value);
+                return prev.map(m => m.id === id ? { ...m, value } : m);
+            }
+            return prev;
+        });
+    }, []);
+
+    const handleVariableSliderRangeChange = useCallback((id: string, min: number, max: number) => {
+        setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, sliderMin: min, sliderMax: max } : m));
+    }, []);
 
     // Bind AnimationVM execution callbacks to update React state
     useEffect(() => {
@@ -698,6 +743,22 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             });
         };
 
+        animationVM.onVariableChange = (name, value) => {
+            setVariableMonitors(prev => prev.map(m => m.name === name ? { ...m, value } : m));
+        };
+
+        animationVM.onListChange = (name, value) => {
+            setListMonitors(prev => prev.map(m => m.name === name ? { ...m, items: value } : m));
+        };
+
+        animationVM.onTableChange = (name, data) => {
+            setTableMonitors(prev => prev.map(m => m.name === name ? { ...m, data } : m));
+        };
+
+        animationVM.onAnswerChange = (answer: string) => {
+            setSensingMonitors(prev => prev.map(m => m.name === 'answer' ? { ...m, value: answer } : m));
+        };
+
         return () => {
             animationVM.onShowVariable = undefined;
             animationVM.onHideVariable = undefined;
@@ -706,6 +767,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             animationVM.onShowTable = undefined;
             animationVM.onHideTable = undefined;
             animationVM.onAskQuestion = undefined;
+            animationVM.onVariableChange = undefined;
+            animationVM.onListChange = undefined;
+            animationVM.onTableChange = undefined;
+            animationVM.onAnswerChange = undefined;
         };
     }, []);
 
@@ -1037,6 +1102,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             .map((cat: any) => {
 
                                 let contents = cat.contents;
+                                if (!contents) return cat;
 
                                 if (cat.name === 'Looks') {
 
@@ -2273,7 +2339,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         }
 
+        // Clear all monitor states (prevents stale variables from previous project)
+        setVariableMonitors([]);
+        setListMonitors([]);
+        setTableMonitors([]);
+        setCompiledScripts([]);
+        setIsRunning(false);
 
+        // Reset AnimationVM state (variables, lists, tables, answer, timer)
+        animationVM.resetState();
 
         // Reset stage manager (clears old backdrops and creates fresh default)
 
@@ -3204,6 +3278,56 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         };
 
+        (window as any).onToggleVisibility = (name: string, type: string, forceVisible?: boolean) => {
+            const setFn = type === 'variable' ? setVariableMonitors : (type === 'list' ? setListMonitors : (type === 'table' ? setTableMonitors : setSensingMonitors));
+
+            setFn((prev: any[]) => {
+                const existing = prev.find(m => m.name === name);
+                const newVisible = forceVisible !== undefined ? forceVisible : (existing ? !existing.visible : true);
+
+                if (existing) {
+                    return prev.map(m => m.name === name ? { ...m, visible: newVisible } : m);
+                } else if (type !== 'sensing') {
+                    // Create new with defaults
+                    const newY = 10 + (prev.length * 30);
+                    if (type === 'variable') {
+                        return [...prev, {
+                            id: `var_${Date.now()}`,
+                            name,
+                            type: 'Number',
+                            scope: 'all_sprites',
+                            visible: true,
+                            x: 10, y: newY,
+                            value: animationVM.getVariable(name)
+                        }];
+                    } else if (type === 'list') {
+                        return [...prev, {
+                            id: `list_${Date.now()}`,
+                            name,
+                            scope: 'all_sprites',
+                            visible: true,
+                            x: 10, y: newY,
+                            items: [...animationVM.getList(name)],
+                            width: 100,
+                            height: 200
+                        }];
+                    } else if (type === 'table') {
+                        return [...prev, {
+                            id: `table_${Date.now()}`,
+                            name,
+                            scope: 'all_sprites',
+                            visible: true,
+                            x: 10, y: newY,
+                            data: [...animationVM.getTable(name)],
+                            width: 300,
+                            height: 200
+                        }];
+                    }
+                }
+                return prev;
+            });
+        };
+
         return () => {
 
             delete (window as any).getActiveSpriteSounds;
@@ -3211,6 +3335,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             delete (window as any).getActiveSpriteCostumes;
 
             delete (window as any).getActiveStageBackdrops;
+
+            delete (window as any).onToggleVisibility;
 
         };
 
@@ -3316,6 +3442,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         animationVM.onTableChange = (name, data) => {
             setTableMonitors(prev => prev.map(m => m.name === name ? { ...m, data, value: data } : m));
         };
+ 
+        // --- SENSING SYNC ---
+        const sensingSyncInterval = setInterval(() => {
+            if (isRunning) {
+                setSensingMonitors(prev => prev.map(m => {
+                    if (m.name === 'timer') return { ...m, value: Math.round(animationVM.getTimer() * 10) / 10 };
+                    if (m.name === 'answer') return { ...m, value: animationVM.getAnswer() };
+                    if (m.name === 'loudness') return { ...m, value: animationVM.getLoudness() || 0 };
+                    return m;
+                }));
+            }
+        }, 100);
 
         // --- BLOCKLY VISIBILITY CALLBACKS ---
         // We use refs here to avoid stale closures in the window functions
@@ -3343,6 +3481,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     return prev.map(m => m.name === name ? { ...m, visible: newVisible } : m);
                 } else {
                     // Create new with defaults
+                    const newY = 10 + (prev.length * 30);
                     if (type === 'variable') {
                         return [...prev, {
                             id: `var_${Date.now()}`,
@@ -3350,7 +3489,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             type: 'Number',
                             scope: 'all_sprites',
                             visible: true,
-                            x: 10, y: 10,
+                            x: 10, y: newY,
                             value: animationVM.getVariable(name)
                         }];
                     } else if (type === 'list') {
@@ -3359,7 +3498,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             name,
                             scope: 'all_sprites',
                             visible: true,
-                            x: 10, y: 10,
+                            x: 10, y: newY,
                             items: [...animationVM.getList(name)],
                             value: [...animationVM.getList(name)],
                             width: 100,
@@ -3371,7 +3510,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             name,
                             scope: 'all_sprites',
                             visible: true,
-                            x: 10, y: 10,
+                            x: 10, y: newY,
                             rows: animationVM.getTableCount(name, 'row'),
                             cols: animationVM.getTableCount(name, 'column'),
                             data: [...animationVM.getTable(name)],
@@ -3546,19 +3685,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         if ((event.type === Blockly.Events.BLOCK_CREATE || event.type === Blockly.Events.BLOCK_MOVE) && !isLoadingWorkspaceRef.current) {
                             const blockId = event.type === Blockly.Events.BLOCK_CREATE ? event.blockId : event.id;
                             const block = blocksWorkspace.getBlockById(blockId);
-
-                            if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox')) {
+ 
+                            if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox' || block.type === 'sensing_reporter_checkbox')) {
                                 // IMPORTANT: Do not replace while dragging or it breaks the gesture
                                 if (typeof (blocksWorkspace as any).isDragging === 'function' && (blocksWorkspace as any).isDragging()) return;
-
+ 
                                 const isVariable = block.type === 'variable_reporter_checkbox';
-                                const nameField = isVariable ? 'VARIABLE' : 'LIST';
+                                const isSensing = block.type === 'sensing_reporter_checkbox';
+                                const nameField = isVariable ? 'VARIABLE' : (isSensing ? 'VARIABLE' : 'LIST');
                                 const name = block.getFieldValue(nameField);
-
-                                // Determine type (Variable, List, or Table)
-                                let newType = isVariable ? 'data_variable' : 'data_listcontents';
-                                let varType: string = isVariable ? '' : 'list';
-
+ 
+                                // Determine type (Variable, List, Table, or Sensing)
+                                let newType = isVariable ? 'data_variable' : (isSensing ? `sensing_${name}` : 'data_listcontents');
+                                let varType: string = isVariable ? '' : (isSensing ? 'sensing' : 'list');
+ 
                                 if (block.type === 'list_reporter_checkbox') {
                                     // Check if this is actually a table (they share the same checkbox block type)
                                     const variable = blocksWorkspace.getVariable(name, 'table');
@@ -3567,25 +3707,27 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                         varType = 'table';
                                     }
                                 }
-
+ 
                                 // Record position before disposal
                                 const xy = block.getRelativeToSurfaceXY();
-
+ 
                                 // New block logic - resolve the real variable ID
                                 // We use setTimeout to ensure we don't interfere with the current event loop/gesture
                                 setTimeout(() => {
                                     if (!blocksWorkspace.getBlockById(blockId)) return; // Already gone
-
+ 
                                     Blockly.Events.disable();
                                     try {
                                         block.dispose(false);
                                         const newBlock = blocksWorkspace.newBlock(newType);
-
-                                        // Find real variable ID for the name
-                                        const variable = blocksWorkspace.getVariable(name, varType);
-                                        const valueToSet = variable ? variable.getId() : name;
-
-                                        newBlock.setFieldValue(valueToSet, nameField);
+ 
+                                        if (!isSensing) {
+                                            // Find real variable ID for the name
+                                            const variable = blocksWorkspace.getVariable(name, varType);
+                                            const valueToSet = variable ? variable.getId() : name;
+                                            newBlock.setFieldValue(valueToSet, nameField);
+                                        }
+ 
                                         newBlock.initSvg();
                                         newBlock.render();
                                         newBlock.moveBy(xy.x, xy.y);
@@ -3627,6 +3769,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 "colour": "#FF8C1A",
                                 "tooltip": "Toggle list visibility",
                                 "web-class": "list-checkbox-container"
+                            },
+                            {
+                                "type": "sensing_reporter_checkbox",
+                                "message0": "%1 %2",
+                                "args0": [
+                                    { "type": "field_checkbox", "name": "CHECK", "checked": false },
+                                    { "type": "field_input", "name": "VARIABLE", "text": "variable", "enabled": false }
+                                ],
+                                "output": "String",
+                                "colour": "#5CB1D6",
+                                "tooltip": "Toggle sensing monitor visibility",
+                                "web-class": "sensing-checkbox-container"
                             }
                         ]);
 
@@ -3641,32 +3795,49 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 const listName = block.getFieldValue('LIST');
                                 return [listName, (Blockly as any).javascriptGenerator.ORDER_ATOMIC];
                             };
+                            javascriptGenerator['sensing_reporter_checkbox'] = (block: any) => {
+                                const varName = block.getFieldValue('VARIABLE');
+                                return [varName, (Blockly as any).javascriptGenerator.ORDER_ATOMIC];
+                            };
                         }
 
                         // 4. Hook FieldCheckbox to toggle visibility
                         // We capture the original setValue only once to avoid recursive wrapping
-                        originalCheckboxSetValue = Blockly.FieldCheckbox.prototype.setValue;
-                        Blockly.FieldCheckbox.prototype.setValue = function (newValue) {
-                            // Call original logic if it exists
-                            if (originalCheckboxSetValue) {
-                                originalCheckboxSetValue.call(this, newValue);
-                            }
-
-                            const block = this.getSourceBlock();
-                            if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox')) {
-                                const type = block.type === 'variable_reporter_checkbox' ? 'variable' : 'list';
-                                const nameField = type === 'variable' ? 'VARIABLE' : 'LIST';
-                                const name = block.getFieldValue(nameField);
-                                const checked = this.getValue() === 'TRUE';
-
-                                // Check if current visibility matches checkbox to avoid loops
-                                const currentVisible = (window as any).getVariableVisibility?.(name, type);
-                                if (checked !== currentVisible) {
-                                    (window as any).onToggleVisibility?.(name, type);
+                        if (!originalCheckboxSetValue) {
+                            originalCheckboxSetValue = Blockly.FieldCheckbox.prototype.setValue;
+                            Blockly.FieldCheckbox.prototype.setValue = function (this: any, newValue: any) {
+                                // Call original logic first to ensure the value is updated
+                                if (originalCheckboxSetValue) {
+                                    originalCheckboxSetValue.call(this, newValue);
                                 }
-                            }
-                            return null;
-                        };
+
+                                const block = this.getSourceBlock();
+                                // Performance: Only run logic if we are on a reporter checkbox block and not during disposal
+                                if (block && !block.isDisposed() && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox' || block.type === 'sensing_reporter_checkbox')) {
+                                    const isSensing = block.type === 'sensing_reporter_checkbox';
+                                    const type = isSensing ? 'sensing' : (block.type === 'variable_reporter_checkbox' ? 'variable' : 'list');
+                                    const nameField = isSensing ? 'VARIABLE' : (type === 'variable' ? 'VARIABLE' : 'LIST');
+                                    const name = block.getFieldValue(nameField);
+                                    
+                                    // Robust check for boolean vs string 'TRUE'
+                                    const checked = this.getValue() === 'TRUE' || this.getValue() === true;
+
+                                    if (name) {
+                                        // Check if current visibility matches checkbox to avoid loops/stale updates
+                                        // Use direct sync monitor check if window helper isn't available
+                                        const currentVisible = (window as any).getVariableVisibility ? 
+                                            (window as any).getVariableVisibility(name, type) : 
+                                            !!(window as any)._monitors_for_sync?.[type]?.find((m: any) => m.name === name)?.visible;
+
+                                        if (checked !== currentVisible) {
+                                            console.log(`[BLOCKLY] Checkbox toggle for ${type} '${name}': ${checked}`);
+                                            (window as any).onToggleVisibility?.(name, type, checked);
+                                        }
+                                    }
+                                }
+                                return null;
+                            };
+                        }
 
                         blocksInitialized = true;
                     }
@@ -3928,6 +4099,71 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                     // Register button callback for "Make a Variable"
+
+                    // Register LEAP_SENSING custom category callback
+                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_SENSING', (ws: any) => {
+                        const contents: any[] = [];
+                        const isStage = selectedSpriteIdRef.current === 'stage';
+
+                        contents.push({
+                            kind: 'label',
+                            text: 'Sensing',
+                            'web-class': 'category-header'
+                        });
+
+                        if (!isStage) {
+                            contents.push({ kind: 'block', type: 'sensing_touching' });
+                            contents.push({ kind: 'block', type: 'sensing_touching_color' });
+                            contents.push({ kind: 'block', type: 'sensing_color_touching_color' });
+                            contents.push({ kind: 'block', type: 'sensing_distance_to' });
+                            contents.push({ kind: 'sep', gap: 20 });
+                        }
+                        contents.push({ kind: 'label', text: 'Ask', 'web-class': 'category-subheader' });
+                        contents.push({ 
+                            kind: 'block', 
+                            type: 'sensing_ask',
+                            inputs: {
+                                QUESTION: {
+                                    shadow: { type: 'text', fields: { TEXT: 'What is your name?' } }
+                                }
+                            }
+                        });
+
+                        const sensingReporters = ['answer', 'loudness', 'timer'];
+                        sensingReporters.forEach(name => {
+                            const monitor = sensingMonitorsRef.current.find(m => m.name === name);
+                            contents.push({
+                                kind: 'block',
+                                type: 'sensing_reporter_checkbox',
+                                gap: 8,
+                                fields: {
+                                    'CHECK': monitor?.visible ? 'TRUE' : 'FALSE',
+                                    'VARIABLE': name
+                                }
+                            });
+                        });
+
+                        contents.push({ kind: 'block', type: 'sensing_reset_timer' });
+                        
+                        contents.push({ kind: 'sep', gap: 20 });
+                        contents.push({ kind: 'label', text: 'Keyboard/Mouse', 'web-class': 'category-subheader' });
+                        contents.push({ kind: 'block', type: 'sensing_key_pressed' });
+                        contents.push({ kind: 'block', type: 'sensing_mouse_down' });
+                        contents.push({ kind: 'block', type: 'sensing_mouse_x' });
+                        contents.push({ kind: 'block', type: 'sensing_mouse_y' });
+                        
+                        contents.push({ kind: 'sep', gap: 20 });
+                        contents.push({ kind: 'label', text: 'Date/Time', 'web-class': 'category-subheader' });
+                        contents.push({ kind: 'block', type: 'sensing_current_year' });
+                        contents.push({ kind: 'block', type: 'sensing_days_since_2000' });
+                        contents.push({ kind: 'block', type: 'sensing_username' });
+                        
+                        contents.push({ kind: 'sep', gap: 20 });
+                        contents.push({ kind: 'label', text: 'Attributes', 'web-class': 'category-subheader' });
+                        contents.push({ kind: 'block', type: 'sensing_of' });
+
+                        return contents;
+                    });
 
                     // Register LEAP_MYBLOCKS custom category callback
                     workspaceRef.current.registerToolboxCategoryCallback('LEAP_MYBLOCKS', (ws: any) => {
@@ -4976,6 +5212,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                                         selectedSpriteId={selectedSpriteId}
 
+                                                        onMonitorPositionChange={handleMonitorPositionChange}
+
+                                                        onMonitorResize={handleMonitorResize}
+
+                                                        onMonitorBringToFront={handleMonitorBringToFront}
+
+                                                        onVariableModeChange={handleVariableModeChange}
+
+                                                        onVariableValueChange={handleVariableValueChange}
+
+                                                        onVariableSliderRangeChange={handleVariableSliderRangeChange}
+
                                                     />
 
                                                     {/* Ask-and-wait input overlay */}
@@ -5948,7 +6196,7 @@ const styles: { [key: string]: React.CSSProperties } = {
 
 
 
-    // PictoBlox-style tabs
+    // Leapblocks-style tabs
 
     tabBar: {
 
@@ -6000,7 +6248,7 @@ const styles: { [key: string]: React.CSSProperties } = {
 
         alignItems: 'center',
 
-        gap: '8px',
+        gap: '10px',
 
         transition: 'all 0.2s',
 
@@ -6122,7 +6370,7 @@ const styles: { [key: string]: React.CSSProperties } = {
 
     rightPanel: {
 
-        width: '496px',
+        width: '500px',
 
         backgroundColor: '#f5f5f5',
 
@@ -6198,7 +6446,7 @@ const styles: { [key: string]: React.CSSProperties } = {
 
         cursor: 'pointer',
 
-        fontSize: '12px',
+        fontSize: '15px',
 
         marginRight: '4px',
 
@@ -6216,10 +6464,9 @@ const styles: { [key: string]: React.CSSProperties } = {
 
         cursor: 'pointer',
 
-        fontSize: '12px',
+        fontSize: '15px',
 
     },
-
 
 
     // Code Panel (Upload Mode)
