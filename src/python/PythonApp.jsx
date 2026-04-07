@@ -84,7 +84,7 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
                     padding: '4px 8px',
                     border: 'none',
                     color: '#fff',
-                    fontSize: 12,
+                    fontSize: 15,
                     fontWeight: 500,
                     fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
                     cursor: 'pointer',
@@ -2651,7 +2651,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             <header style={{
                 position: "sticky",
                 top: 0,
-                height: 50,
+                height: 60,
                 background: "#5A2D82",
                 display: "flex",
                 alignItems: "center",
@@ -2691,8 +2691,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         <Home size={19} strokeWidth={2.2} />
                     </button>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={onBack}>
-                        <Logo height={45} />
-                        <span style={{ color: "#FFD500", fontSize: 14, fontWeight: 800, letterSpacing: "0.08em" }}>CODEX</span>
+                        <Logo height={50} />
+                        <span style={{ color: "#ffffffff", fontSize: 15, fontWeight: 1000, letterSpacing: "0.08em", fontFamily:"'sego ui',Inter,system-ui,sans-serif" }}>CODEX</span>
                     </div>
                     <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
 
@@ -2725,7 +2725,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     {["Tutorials", "Board", "Connect"].map((menuLabel) => (
                         <span
                             key={menuLabel}
-                            style={{ fontSize: 12, cursor: "pointer", opacity: 0.9, padding: "4px 8px", borderRadius: 4 }}
+                            style={{ fontSize: 15, cursor: "pointer", opacity: 0.9, padding: "4px 8px", borderRadius: 4 }}
                             onClick={() => {
                                 if (menuLabel === "Board") {
                                     setIsBoardModalOpen(true);
@@ -2749,18 +2749,18 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             onChange={(e) => setProjectName(e.target.value)}
                             style={{ background: "transparent", border: "none", color: "#fff", width: 90, outline: "none", fontSize: 12, fontWeight: 500 }}
                         />
-                        <Save size={12} style={{ opacity: 0.8, cursor: "pointer" }} onClick={handleSaveProject} title="Save Project" />
+                        <Save size={15} style={{ opacity: 0.8, cursor: "pointer" }} onClick={handleSaveProject} title="Save Project" />
                     </div>
                     {/* Mode/Stage/Upload buttons */}
                     <div style={{ display: "flex", background: "rgba(0,0,0,0.2)", borderRadius: 4, overflow: "hidden" }}>
-                        <div style={{ padding: "5px 10px", background: "rgba(255,255,255,0.2)", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Mode</div>
+                        <div style={{ padding: "5px 10px", background: "rgba(255,255,255,0.2)", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>Mode</div>
                         <button
                             onClick={() => handleWorkflowModeChange("stage")}
                             style={{
                                 padding: "5px 10px",
                                 background: workflowMode === "stage" ? "#4CAF50" : "transparent",
                                 color: "#fff",
-                                fontSize: 11,
+                                fontSize: 15,
                                 fontWeight: 600,
                                 cursor: "pointer",
                                 border: "none",
@@ -2774,7 +2774,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                 padding: "5px 10px",
                                 background: workflowMode === "upload" ? "#4CAF50" : "transparent",
                                 color: workflowMode === "upload" ? "#fff" : "rgba(255,255,255,0.8)",
-                                fontSize: 11,
+                                fontSize: 15,
                                 fontWeight: 600,
                                 cursor: "pointer",
                                 border: "none",
@@ -2795,17 +2795,14 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         }}
                         style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 11, fontWeight: 500 }}
                     >
-                        <Upload size={12} /> {workflowMode === "upload" ? "Upload Code" : "Open Upload"}
+                        <Upload size={15} /> {workflowMode === "upload" ? "Upload Code" : "Open Upload"}
                     </button>
                     <div style={{ display: "flex", gap: 4 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                            <Clock size={14} />
+                        <div style={{ width: 28, height: 30, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                            <Maximize size={15} />
                         </div>
-                        <div style={{ width: 28, height: 28, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                            <Maximize size={14} />
-                        </div>
-                        <div style={{ width: 28, height: 28, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                            <Settings size={14} />
+                        <div style={{ width: 28, height: 30, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                            <Settings size={15} />
                         </div>
                     </div>
                     <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#FF9800", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, fontWeight: "bold" }}>
@@ -2821,7 +2818,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     flexShrink: 0,
                     filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
                 }}>
-                    <CreoleapLogo height={110} />
+                    <CreoleapLogo height={200} />
                 </div>
             </header>
 

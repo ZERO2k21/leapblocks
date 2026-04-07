@@ -111,7 +111,7 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
                                     padding: '9px 14px',
                                     border: 'none',
                                     background: 'transparent',
-                                    fontSize: 13,
+                                    fontSize: 15,
                                     fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
                                     fontWeight: 500,
                                     textAlign: 'left',
@@ -253,14 +253,6 @@ export default function JuniorMenuBar({
                         marginLeft: 10,
                         lineHeight: 1.1,
                     }}>
-                        <span style={{
-                            color: '#FFD500',
-                            fontSize: 8,
-                            fontWeight: 900,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.18em',
-                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        }}>LEAPLAB</span>
                         <span style={{
                             color: '#fff',
                             fontSize: 16,

@@ -515,22 +515,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 .landing-page-container .tc-quiz:hover { box-shadow: 0 20px 40px rgba(245,158,11,0.15), 0 0 0 1px rgba(245,158,11,0.1); }
 
 .landing-page-container .tc-icon {
-  flex:1; display:flex; align-items:center; justify-content:center; padding-bottom:6px;
+  flex:1; display:flex; align-items:center; justify-content:right; padding-bottom:6px;
 }
 .landing-page-container .tc-icon svg,
 .landing-page-container .tc-icon img {
-  width: clamp(34px, 6vw, 48px); height: clamp(34px, 6vw, 48px); object-fit: contain;
+  width: clamp(34px, 9vw,68px); height: clamp(34px, 9vw, 68px); object-fit: contain;
 }
 .landing-page-container .tc-cat {
-  font-size: 0.80rem; font-weight: 900; letter-spacing: 0.12em;
+  font-size: 0.90rem; font-weight: 900; letter-spacing: 0.12em;
   text-transform: uppercase; color: #0a0328ff; margin-bottom: 2px; line-height: 1.2; opacity: 0.65;
 }
 .landing-page-container .tc-name {
-  font-size: clamp(0.7rem, 1.4vw, 0.88rem); font-weight: 1000; letter-spacing: 0.01em;
+  font-size: clamp(0.9rem, 1.4vw, 0.98rem); font-weight: 1000; letter-spacing: 0.01em;
   text-transform: uppercase; color: #0f172a; margin-bottom: 2px; line-height: 1.2;
 }
 .landing-page-container .tc-desc {
-  font-size: 0.62rem; color: #020046a5; line-height: 1.4; font-weight: 600;
+  font-size: 0.82rem; color: #020046a5; line-height: 1.4; font-weight: 600;
 }
 ` }} />
       <div className="landing-page-container">
@@ -702,7 +702,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="/assets/quiz_icon.png" alt="Quiz Icon" />
                 </div>
                 <div>
-                  <div className="tc-cat">&nbsp;</div>
+                  <div className="tc-cat">Leaplab</div>
                   <div className="tc-name">Quiz</div>
                   <div className="tc-desc">Learning target of brain cognition</div>
                 </div>
@@ -716,9 +716,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             textAlign: 'center',
             padding: '28px 0',
             color: '#05001eff',
-            fontSize: '0.85rem',
+            fontSize: '0.95rem',
             fontFamily: '"Poppins", sans-serif',
-            opacity: 0.8,
+            opacity: 1,
             letterSpacing: '0.5px',
             flexShrink: 0
           }}>
