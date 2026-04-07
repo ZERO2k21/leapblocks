@@ -48,13 +48,14 @@ export const WokwiNode = memo(({ data, selected }: NodeProps) => {
           style={{ 
             background: '#BEF264', 
             border: '1.5px solid #1e293b',
-            width: '6px',
-            height: '6px',
+            width: '8px',
+            height: '8px',
             left: `${pin.x}%`,
             top: `${pin.y}%`,
-            opacity: selected ? 1 : 0, // Hide handles when not selected for a cleaner look
+            opacity: selected ? 1 : 0.3, // Subtle visibility for non-selected nodes
             transition: 'opacity 0.2s',
-            zIndex: 10
+            zIndex: 10,
+            pointerEvents: 'all'
           }}
           title={pin.name}
         />

@@ -12,7 +12,6 @@ const backgroundColors: { [key: string]: string } = {
   blue: '#000eff',
 };
 
-@customElement('leap-lcd1602')
 export class LCD1602Element extends LitElement {
   @property() color = 'black';
   @property() background = 'green';
@@ -299,4 +298,8 @@ export class LCD1602Element extends LitElement {
       </svg>
     `;
   }
+}
+
+if (!customElements.get('leap-lcd1602')) {
+  customElements.define('leap-lcd1602', LCD1602Element);
 }

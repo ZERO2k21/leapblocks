@@ -5,7 +5,6 @@ import { clamp } from './utils/clamp';
 import { getScreenCTM } from './utils/ctm-workaround';
 import { mmToPix } from './utils/units';
 
-@customElement('leap-slide-potentiometer')
 export class SlidePotentiometerElement extends LitElement {
   @property({ type: Number }) travelLength = 30;
   @property({ type: Number }) value = 0;
@@ -149,7 +148,7 @@ export class SlidePotentiometerElement extends LitElement {
           transform="translate(${tipOffsetX} 0)"
           @mousedown=${this.down}
           @touchstart=${this.down}
-          @touchmove=${this.touchMove}
+          @touchmove=${this.handleTouchMove}
           @touchend=${this.up}
           @keydown=${this.down}
           @keyup=${this.up}
@@ -260,13 +259,8 @@ export class SlidePotentiometerElement extends LitElement {
   };
 
   @eventOptions({ passive: true })
-  private touchMove(event: TouchEvent): void {
-    if (this.isPressed) {
-      if (event.targetTouches.length > 0) {
-        const touchTarget = event.targetTouches[0];
-        this.updateValueFromXCoordinate(new DOMPointReadOnly(touchTarget.pageX, touchTarget.pageY));
-      }
-    }
+  private handleTouchMove(event: TouchEvent) {
+    this.updateValue(event.touches[0].clientX);
   }
 
   private updateValueFromXCoordinate(position: DOMPointReadOnly): void {

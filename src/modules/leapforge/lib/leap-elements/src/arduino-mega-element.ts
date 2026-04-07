@@ -4,7 +4,6 @@ import { pinsFemalePattern } from './patterns/pins-female';
 import { analog, ElementPin, i2c, spi, usart } from './pin';
 import { SPACE_KEYS } from './utils/keys';
 
-@customElement('leap-arduino-mega')
 export class ArduinoMegaElement extends LitElement {
   @property() led13 = false;
   @property() ledRX = false;
@@ -419,4 +418,8 @@ export class ArduinoMegaElement extends LitElement {
     this.resetButton.blur();
     this.up();
   }
+}
+
+if (!customElements.get('leap-arduino-mega')) {
+  customElements.define('leap-arduino-mega', ArduinoMegaElement);
 }

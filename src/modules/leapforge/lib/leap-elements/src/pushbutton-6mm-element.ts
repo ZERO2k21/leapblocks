@@ -3,7 +3,6 @@ import { customElement, eventOptions, property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
 import { ctrlCmdPressed, SPACE_KEYS } from './utils/keys';
 
-@customElement('leap-pushbutton-6mm')
 export class Pushbutton6mmElement extends LitElement {
   @property() color = 'red';
   @property() pressed = false;
@@ -252,4 +251,8 @@ export class Pushbutton6mmElement extends LitElement {
       this.dispatchEvent(new Event('button-release'));
     }
   }
+}
+
+if (!customElements.get('leap-pushbutton-6mm')) {
+  customElements.define('leap-pushbutton-6mm', Pushbutton6mmElement);
 }

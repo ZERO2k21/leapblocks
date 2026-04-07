@@ -80,8 +80,8 @@ export const PIN_MAP: PinLayout = {
     { name: 'VIN', x: 87.2, y: 89.1 },
   ],
   'led': [
-    { name: 'A', x: 15, y: 80 }, // Anode
-    { name: 'K', x: 35, y: 80 }, // Cathode
+    { name: 'A', x: 38, y: 84 }, // Anode
+    { name: 'K', x: 62, y: 84 }, // Cathode
   ],
   'lcd1602': [
     { name: 'VSS', x: 32, y: 120 }, { name: 'VDD', x: 41, y: 120 },

@@ -3,7 +3,6 @@ import { customElement, property, query } from 'lit/decorators.js';
 import { analog, ElementPin, i2c, spi, usart } from './pin';
 import { SPACE_KEYS } from './utils/keys';
 
-@customElement('leap-arduino-nano')
 export class ArduinoNanoElement extends LitElement {
   @property() led13 = false;
   @property() ledRX = false;
@@ -332,4 +331,8 @@ export class ArduinoNanoElement extends LitElement {
     this.resetButton.blur();
     this.up();
   }
+}
+
+if (!customElements.get('leap-arduino-nano')) {
+  customElements.define('leap-arduino-nano', ArduinoNanoElement);
 }

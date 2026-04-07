@@ -4,7 +4,6 @@ import { pinsFemalePattern } from './patterns/pins-female';
 import { analog, ElementPin, i2c, spi } from './pin';
 import { SPACE_KEYS } from './utils/keys';
 
-@customElement('leap-franzininho')
 export class FranzininhoElement extends LitElement {
   @property() led1 = false;
   @property() ledPower = false;
@@ -457,4 +456,8 @@ export class FranzininhoElement extends LitElement {
     this.resetButton.blur();
     this.up();
   }
+}
+
+if (!customElements.get('leap-franzininho')) {
+  customElements.define('leap-franzininho', FranzininhoElement);
 }

@@ -11,7 +11,6 @@ function isNumeric(text: string) {
   return !isNaN(parseFloat(text));
 }
 
-@customElement('leap-membrane-keypad')
 export class MembraneKeypadElement extends LitElement {
   /**
    * Number of columns (3 or 4)
@@ -311,4 +310,8 @@ export class MembraneKeypadElement extends LitElement {
       this.up(text, selectedKey as SVGElement);
     }
   }
+}
+
+if (!customElements.get('leap-membrane-keypad')) {
+  customElements.define('leap-membrane-keypad', MembraneKeypadElement);
 }

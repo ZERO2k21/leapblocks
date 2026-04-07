@@ -48,7 +48,6 @@ const keyboardKeyMap: { [key: string]: string } = {
   9: '9',
 };
 
-@customElement('leap-ir-remote')
 export class IRRemoteElement extends LitElement {
   static get styles() {
     return css`
@@ -253,4 +252,8 @@ export class IRRemoteElement extends LitElement {
       </svg>
     `;
   }
+}
+
+if (!customElements.get('leap-ir-remote')) {
+  customElements.define('leap-ir-remote', IRRemoteElement);
 }

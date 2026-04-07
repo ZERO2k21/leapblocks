@@ -12,7 +12,6 @@ const knobCenter = {
 
 /** The potentiometer SVG is taken from https://freesvg.org/potentiometer and some of the
     functions are taken from https://github.com/vitaliy-bobrov/js-rocks knob component */
-@customElement('leap-potentiometer')
 export class PotentiometerElement extends LitElement {
   @property({ type: Number }) min = 0;
   @property({ type: Number }) max = 1023;
@@ -238,4 +237,8 @@ export class PotentiometerElement extends LitElement {
     this.value = Math.round(updated * 100) / 100;
     this.dispatchEvent(new InputEvent('input', { detail: this.value }));
   }
+}
+
+if (!customElements.get('leap-potentiometer')) {
+  customElements.define('leap-potentiometer', PotentiometerElement);
 }

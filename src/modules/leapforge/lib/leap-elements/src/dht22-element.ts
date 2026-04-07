@@ -2,7 +2,6 @@ import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { ElementPin } from './pin';
 
-@customElement('leap-dht22')
 export class DHT22Element extends LitElement {
   readonly pinInfo: ElementPin[] = [
     { name: 'VCC', x: 15, y: 114.9, signals: [{ type: 'power', signal: 'VCC' }], number: 1 },
@@ -47,4 +46,8 @@ export class DHT22Element extends LitElement {
       </svg>
     `;
   }
+}
+
+if (!customElements.get('leap-dht22')) {
+  customElements.define('leap-dht22', DHT22Element);
 }

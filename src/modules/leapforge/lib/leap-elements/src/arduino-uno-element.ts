@@ -4,7 +4,6 @@ import { pinsFemalePattern } from './patterns/pins-female';
 import { analog, ElementPin, i2c, spi, usart } from './pin';
 import { SPACE_KEYS } from './utils/keys';
 
-@customElement('leap-arduino-uno')
 export class ArduinoUnoElement extends LitElement {
   @property() led13 = false;
   @property() ledRX = false;
@@ -395,4 +394,8 @@ export class ArduinoUnoElement extends LitElement {
   private handleTouchEnd() {
     this.leave();
   }
+}
+
+if (!customElements.get('leap-arduino-uno')) {
+  customElements.define('leap-arduino-uno', ArduinoUnoElement);
 }

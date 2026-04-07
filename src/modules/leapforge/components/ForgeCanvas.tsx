@@ -4,6 +4,7 @@ import ReactFlow, {
   Controls, 
   MiniMap, 
   Connection, 
+  ConnectionMode,
   Edge,
   Node,
   useNodesState,
@@ -111,6 +112,7 @@ const ForgeCanvasInner: React.FC = () => {
         fitView
         snapToGrid
         snapGrid={[20, 20]}
+        connectionMode={ConnectionMode.Loose}
         style={{ background: '#0f172a' }}
       >
         <Bg color="#1e293b" gap={20} />

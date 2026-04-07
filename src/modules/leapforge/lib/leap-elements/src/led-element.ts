@@ -12,7 +12,6 @@ const lightColors: { [key: string]: string } = {
   purple: '#ff80ff',
 };
 
-@customElement('leap-led')
 export class LEDElement extends LitElement {
   @property() value = false;
   @property() brightness = 1.0;
@@ -172,4 +171,8 @@ export class LEDElement extends LitElement {
       </div>
     `;
   }
+}
+
+if (!customElements.get('leap-led')) {
+  customElements.define('leap-led', LEDElement);
 }
