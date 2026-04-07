@@ -1,12 +1,14 @@
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, lazy, Suspense, useRef, useEffect } from 'react';
 import { Home, Play, Square, Save, FolderOpen, Settings, Layers, Box } from 'lucide-react';
 // Register internal leaplab forge elements (rebranded Wokwi)
 import './lib/leap-elements/src/index';
 import './ForgeStudio.css';
+import ScriptRunner from './engine/ScriptRunner';
 
 // Lazy load complex inner components
 const ForgeCanvas = lazy(() => import('./components/ForgeCanvas'));
 const Sidebar = lazy(() => import('./components/Sidebar'));
+const ForgeEditor = lazy(() => import('./components/Editor/ForgeEditor'));
 
 interface ForgeStudioProps {
   onBack: () => void;
@@ -14,92 +16,121 @@ interface ForgeStudioProps {
 
 export default function ForgeStudio({ onBack }: ForgeStudioProps) {
   const [isSimulating, setIsSimulating] = useState(false);
-  const [activeLayer, setActiveLayer] = useState<'schematic' | 'pcb'>('schematic');
+  const runnerRef = useRef<ScriptRunner | null>(null);
+  
+  const [code, setCode] = useState(`// LeapForge Sketch
+void setup() {
+  pinMode(13, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(13, HIGH);
+  delay(1000);
+  digitalWrite(13, LOW);
+  delay(1000);
+}`);
 
   const toggleSimulation = () => {
-    setIsSimulating(!isSimulating);
+    if (isSimulating) {
+      runnerRef.current?.stop();
+      setIsSimulating(false);
+    } else {
+      const runner = new ScriptRunner(code);
+      runnerRef.current = runner;
+      runner.start();
+      setIsSimulating(true);
+    }
   };
 
+  useEffect(() => {
+    return () => {
+      runnerRef.current?.stop();
+    };
+  }, []);
+
   return (
-    <div className="forge-root dark">
+    <div className="forge-root dark" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* ── TOPBAR ──────────────────────────── */}
-      <header className="forge-topbar">
-        <div className="forge-topbar-left">
-          <button className="forge-home-btn" onClick={onBack}>
+      <header className="forge-topbar" style={{ 
+        height: '48px', 
+        background: '#1a1a1b', 
+        borderBottom: '1px solid #2d2d2d',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 16px',
+        justifyContent: 'space-between'
+      }}>
+        <div className="forge-topbar-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <button onClick={onBack} style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer' }}>
             <Home size={18} />
           </button>
-          <div className="forge-divider" />
-          <div className="forge-brand">
-            <span className="brand-leap">LeapLab</span>
-            <span className="brand-forge">Forge</span>
-          </div>
-          <div className="forge-tag">PRO SIMULATOR</div>
+          <div style={{ color: '#e0e0e0', fontWeight: 'bold' }}>LeapLab <span style={{ color: '#BEF264' }}>Forge</span></div>
         </div>
 
         <div className="forge-controls">
           <button 
-            className={`control-btn ${isSimulating ? 'simulating' : ''}`} 
             onClick={toggleSimulation}
+            style={{
+              background: isSimulating ? '#ef4444' : '#BEF264',
+              color: isSimulating ? '#fff' : '#000',
+              border: 'none',
+              padding: '6px 16px',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontWeight: '600',
+              transition: 'all 0.2s'
+            }}
           >
-            {isSimulating ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
-            <span>{isSimulating ? 'Stop Simulation' : 'Run Simulation'}</span>
+            {isSimulating ? <Square size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
+            <span>{isSimulating ? 'Stop' : 'Play'}</span>
           </button>
         </div>
 
-        <div className="forge-topbar-right">
+        <div className="forge-topbar-right" style={{ display: 'flex', gap: '10px' }}>
           <button className="action-icon" title="Save Project"><Save size={18} /></button>
           <button className="action-icon" title="Open Project"><FolderOpen size={18} /></button>
-          <div className="forge-divider" />
           <button className="action-icon" title="Settings"><Settings size={18} /></button>
         </div>
       </header>
 
-      {/* ── MAIN LAYOUT ─────────────────────── */}
-      <div className="forge-main">
-        <Suspense fallback={<div className="forge-loader">Loading Sidebar...</div>}>
-          <Sidebar />
-        </Suspense>
+      {/* ── MAIN SPLIT LAYOUT ────────────────── */}
+      <div className="forge-main-split" style={{ flex: 1, display: 'flex', background: '#0f172a' }}>
+        {/* Left: Code Editor */}
+        <div className="editor-pane" style={{ flex: 1, borderRight: '1px solid #2d2d2d' }}>
+          <Suspense fallback={<div className="forge-loader">Loading Editor...</div>}>
+            <ForgeEditor code={code} onChange={(val) => setCode(val || '')} />
+          </Suspense>
+        </div>
 
-        <section className="forge-workspace">
-          <div className="workspace-header">
-            <div className="layer-tabs">
-              <button 
-                className={`layer-tab ${activeLayer === 'schematic' ? 'active' : ''}`}
-                onClick={() => setActiveLayer('schematic')}
-              >
-                <Layers size={14} />
-                Schematic
-              </button>
-              <button 
-                className={`layer-tab ${activeLayer === 'pcb' ? 'active' : ''}`}
-                onClick={() => setActiveLayer('pcb')}
-              >
-                <Box size={14} />
-                3D View
-              </button>
-            </div>
-            <div className="workspace-status">
-              {isSimulating && <span className="status-live">● LIVE</span>}
-              <span className="grid-info">Grid: 10px</span>
-            </div>
-          </div>
-          
-          <div className="forge-canvas-container">
-            <Suspense fallback={<div className="forge-loader">Initializing Canvas...</div>}>
-              <ForgeCanvas />
-            </Suspense>
-          </div>
-        </section>
+        {/* Right: Circuit Canvas */}
+        <div className="canvas-pane" style={{ flex: 1, position: 'relative' }}>
+          <Suspense fallback={<div className="forge-loader">Initializing Canvas...</div>}>
+            <ForgeCanvas />
+          </Suspense>
+        </div>
       </div>
 
-      {/* ── FOOTER/STATUS ───────────────────── */}
-      <footer className="forge-footer">
-        <div className="status-left">
-          <span className="status-item">Engine: <b>LeapForge v1.0 (Internal)</b></span>
-          <span className="status-item">Latency: <b>0.8ms</b></span>
+      {/* ── FOOTER ──────────────────────────── */}
+      <footer className="forge-footer" style={{ 
+        height: '28px', 
+        background: '#1a1a1b', 
+        borderTop: '1px solid #2d2d2d',
+        fontSize: '11px',
+        color: '#888',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 12px',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', gap: '15px' }}>
+          <span>Engine: <b style={{ color: '#BEF264' }}>LeapLab Simulator v1.0</b></span>
+          {isSimulating && <span style={{ color: '#ef4444' }}>● Simulation Live</span>}
         </div>
-        <div className="status-right">
-          <span>{new Date().toLocaleTimeString()}</span>
+        <div>
+          {new Date().toLocaleTimeString()}
         </div>
       </footer>
     </div>

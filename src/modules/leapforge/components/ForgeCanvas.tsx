@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import ReactFlow, { 
   Background, 
   Controls, 
@@ -13,6 +13,8 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { useForgeStore } from '../store/useForgeStore';
 import { WokwiNode } from './Nodes/WokwiNode';
+import { PartPicker } from './Library/PartPicker';
+import { Plus, Play, Square, Info } from 'lucide-react';
 
 // Define custom node types
 const nodeTypes = {
@@ -30,6 +32,8 @@ const ForgeCanvasInner: React.FC = () => {
   
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [showPicker, setShowPicker] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   // Sync store -> local React Flow state
   useEffect(() => {
@@ -53,7 +57,7 @@ const ForgeCanvasInner: React.FC = () => {
     updateNodePosition(node.id, node.position);
   }, [updateNodePosition]);
 
-  // Handle drag and drop from sidebar
+  // Handle drag and drop from sidebar (kept for backward compatibility)
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
@@ -79,13 +83,19 @@ const ForgeCanvasInner: React.FC = () => {
     [addNode]
   );
 
+  const handleAddPart = (type: string) => {
+    const center = { x: 400, y: 300 }; // Default center
+    addNode(type, center, { label: `${type.toUpperCase()}` });
+    setShowPicker(false);
+  };
+
   const Bg = Background as any;
   const Mm = MiniMap as any;
 
   return (
     <div 
       className="forge-canvas-container" 
-      style={{ width: '100%', height: '100%', background: '#0f172a' }}
+      style={{ width: '100%', height: '100%', background: '#0f172a', position: 'relative' }}
       onDrop={onDrop}
       onDragOver={onDragOver}
     >
@@ -102,16 +112,96 @@ const ForgeCanvasInner: React.FC = () => {
         snapGrid={[20, 20]}
         style={{ background: '#0f172a' }}
       >
-        <Bg 
-          color="#1e293b" 
-          gap={20} 
-        />
+        <Bg color="#1e293b" gap={20} />
         <Controls />
         <Mm 
           style={{ background: '#1e293b' }} 
           nodeColor={(n: any) => n.data?.type === 'boards' ? '#BEF264' : '#64748b'}
         />
       </ReactFlow>
+
+      {/* ── FLOATING TOOLBAR (Wokwi Style) ────────────────── */}
+      <div className="canvas-fab-group" style={{
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        display: 'flex',
+        gap: '12px',
+        zIndex: 100
+      }}>
+        {/* Play/Stop Toggle */}
+        <button 
+          onClick={() => setIsSimulating(!isSimulating)}
+          style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '50%',
+            background: isSimulating ? '#ef4444' : '#22c55e',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+            cursor: 'pointer',
+            transition: 'transform 0.2s'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          {isSimulating ? <Square size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+        </button>
+
+        {/* Add Part Button */}
+        <button 
+          onClick={() => setShowPicker(!showPicker)}
+          style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '50%',
+            background: '#3b82f6',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+            cursor: 'pointer',
+            transition: 'transform 0.2s'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <Plus size={22} />
+        </button>
+
+        {/* Help Menu */}
+        <button 
+          style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '50%',
+            background: '#475569',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+            cursor: 'pointer'
+          }}
+        >
+          <Info size={18} />
+        </button>
+      </div>
+
+      {/* ── PART PICKER POPOVER ─────────────────────────── */}
+      {showPicker && (
+        <PartPicker 
+          onSelect={handleAddPart} 
+          onClose={() => setShowPicker(false)} 
+        />
+      )}
     </div>
   );
 };

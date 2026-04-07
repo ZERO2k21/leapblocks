@@ -11,6 +11,7 @@ export interface ForgeState {
   addNode: (type: string, position: { x: number; y: number }, data?: any) => void;
   removeNode: (id: string) => void;
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
+  updateNodeData: (id: string, data: any) => void;
   
   addEdge: (edge: Edge | Connection) => void;
   removeEdge: (id: string) => void;
@@ -46,6 +47,10 @@ export const useForgeStore = create<ForgeState>((set) => ({
 
   updateNodePosition: (id, position) => set((state) => ({
     nodes: state.nodes.map(n => n.id === id ? { ...n, position } : n)
+  })),
+  
+  updateNodeData: (id, data) => set((state) => ({
+    nodes: state.nodes.map(n => n.id === id ? { ...n, data: { ...n.data, ...data } } : n)
   })),
 
   addEdge: (connection) => set((state) => ({
