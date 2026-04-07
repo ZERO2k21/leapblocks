@@ -20,12 +20,19 @@ export interface ForgeState {
   clearWorkspace: () => void;
   setNodes: (nodes: Node[]) => void;
   setEdges: (edges: Edge[]) => void;
+  
+  // Simulation
+  isSimulating: boolean;
+  toggleSimulation: () => void;
 }
 
-export const useForgeStore = create<ForgeState>((set) => ({
+export const useForgeStore = create<ForgeState>((set, get) => ({
   nodes: [],
   edges: [],
   selectedNodeId: null,
+  isSimulating: false,
+
+  toggleSimulation: () => set((state) => ({ isSimulating: !state.isSimulating })),
 
   addNode: (type, position, data = {}) => set((state) => ({
     nodes: [

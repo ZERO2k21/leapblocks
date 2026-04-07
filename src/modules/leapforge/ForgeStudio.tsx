@@ -3,7 +3,10 @@ import { Home, Play, Square, Save, FolderOpen, Settings, Layers, Box } from 'luc
 // Register internal leaplab forge elements (rebranded Wokwi)
 import './lib/leap-elements/src/index';
 import './ForgeStudio.css';
-import ScriptRunner from './engine/ScriptRunner';
+import { LeapSimulator } from './lib/SimulatorEngine';
+import { PinBridge } from './lib/PinBridge';
+import { BLINK_HEX } from './lib/BlinkFirmware';
+import { useForgeStore } from './store/useForgeStore';
 
 // Lazy load complex inner components
 const ForgeCanvas = lazy(() => import('./components/ForgeCanvas'));
@@ -16,7 +19,8 @@ interface ForgeStudioProps {
 
 export default function ForgeStudio({ onBack }: ForgeStudioProps) {
   const [isSimulating, setIsSimulating] = useState(false);
-  const runnerRef = useRef<ScriptRunner | null>(null);
+  const simulatorRef = useRef<LeapSimulator | null>(null);
+  const { nodes, updateNodeData } = useForgeStore();
   
   const [code, setCode] = useState(`// LeapForge Sketch
 void setup() {
@@ -32,19 +36,30 @@ void loop() {
 
   const toggleSimulation = () => {
     if (isSimulating) {
-      runnerRef.current?.stop();
+      simulatorRef.current?.stop();
       setIsSimulating(false);
+      // Reset all pin states on stop
+      nodes.forEach(node => updateNodeData(node.id, { pinStates: {} }));
     } else {
-      const runner = new ScriptRunner(code);
-      runnerRef.current = runner;
-      runner.start();
+      // Find the first Arduino Uno to simulate
+      const unoNode = nodes.find(n => n.data?.type === 'arduino-uno');
+      if (!unoNode) {
+        alert('Please add an Arduino Uno to the canvas first!');
+        return;
+      }
+
+      const simulator = new LeapSimulator(BLINK_HEX);
+      new PinBridge(simulator.getCpu()!, unoNode.id);
+      
+      simulatorRef.current = simulator;
+      simulator.start();
       setIsSimulating(true);
     }
   };
 
   useEffect(() => {
     return () => {
-      runnerRef.current?.stop();
+      simulatorRef.current?.stop();
     };
   }, []);
 

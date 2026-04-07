@@ -47,7 +47,7 @@ export const WokwiNode = memo(({ data, selected }: NodeProps) => {
           type={pin.type || 'source'}
           position={pin.y < 50 ? Position.Top : Position.Bottom}
           style={{ 
-            background: '#BEF264', 
+            background: data.pinStates?.[`pin_${pin.name}`] ? '#ef4444' : '#BEF264', 
             border: '1.5px solid #1e293b',
             width: '8px',
             height: '8px',
