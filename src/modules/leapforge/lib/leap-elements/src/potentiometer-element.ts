@@ -84,9 +84,9 @@ export class PotentiometerElement extends LitElement {
       @mousedown=${this.down}
       @mousemove=${this.move}
       @mouseup=${this.up}
-      @touchstart=${this.down}
-      @touchmove=${this.move}
-      @touchend=${this.up}
+      @touchstart=${{ handleEvent: (e: any) => this.down(e), passive: true }}
+      @touchmove=${{ handleEvent: (e: any) => this.move(e), passive: true }}
+      @touchend=${{ handleEvent: () => this.up(), passive: true }}
       style=${styleMap({
         '--knob-angle': knobDeg + 'deg',
       })}

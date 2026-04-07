@@ -115,6 +115,50 @@ ipcMain.handle('build-apk', async (event, appState) => {
   }
 });
 
+ipcMain.handle('compile-arduino', async (_, code) => {
+  const tempDir = path.join(app.getPath('temp'), `sketch_${Date.now()}`);
+  const sketchPath = path.join(tempDir, 'sketch.ino');
+  const cliPath = isDev 
+    ? path.join(APP_ROOT, 'arduino-cli', 'arduino-cli.exe')
+    : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe');
+
+  try {
+    fs.mkdirSync(tempDir, { recursive: true });
+    fs.writeFileSync(sketchPath, code);
+
+    return new Promise((resolve) => {
+      const compile = spawn(cliPath, [
+        'compile',
+        '--fqbn', 'arduino:avr:uno',
+        '--output-dir', tempDir,
+        sketchPath
+      ]);
+
+      let errorOutput = '';
+      compile.stderr.on('data', (data) => errorOutput += data.toString());
+      
+      compile.on('close', (code) => {
+        if (code === 0) {
+          const hexPath = path.join(tempDir, 'sketch.ino.hex');
+          if (fs.existsSync(hexPath)) {
+            const hexContent = fs.readFileSync(hexPath, 'utf-8');
+            resolve({ success: true, hex: hexContent });
+          } else {
+            resolve({ success: false, error: 'HEX file not generated' });
+          }
+        } else {
+          resolve({ success: false, error: errorOutput || `Compiler exited with code ${code}` });
+        }
+        // Cleanup
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch(e) {}
+      });
+    });
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// Original IPC Handlers conclude below...
 ipcMain.handle('show-in-folder', (_, filePath) => {
   shell.showItemInFolder(filePath);
 });

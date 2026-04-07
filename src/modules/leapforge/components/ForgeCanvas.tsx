@@ -25,6 +25,8 @@ const nodeTypes = {
 const ForgeCanvasInner: React.FC = () => {
   const store = useForgeStore();
   const { 
+    isSimulating,
+    toggleSimulation: toggleStoreSimulation,
     nodes: storeNodes, 
     edges: storeEdges, 
     addNode, 
@@ -35,7 +37,6 @@ const ForgeCanvasInner: React.FC = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [showPicker, setShowPicker] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(false);
 
   // Sync store -> local React Flow state
   useEffect(() => {
@@ -134,7 +135,7 @@ const ForgeCanvasInner: React.FC = () => {
       }}>
         {/* Play/Stop Toggle */}
         <button 
-          onClick={() => setIsSimulating(!isSimulating)}
+          onClick={toggleStoreSimulation}
           style={{
             width: '42px',
             height: '42px',

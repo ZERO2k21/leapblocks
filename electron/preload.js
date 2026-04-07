@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   showInFolder: (p) => ipcRenderer.invoke("show-in-folder", p),
   saveProject: (d) => ipcRenderer.invoke("save-project", d),
   openProject: () => ipcRenderer.invoke("open-project"),
+  compileArduino: (code) => ipcRenderer.invoke("compile-arduino", code),
   platform: process.platform,
   isElectron: true
 });

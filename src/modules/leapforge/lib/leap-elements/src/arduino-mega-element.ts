@@ -183,10 +183,10 @@ export class ArduinoMegaElement extends LitElement {
           stroke-width="0.15"
           tabindex="0"
           @mousedown=${() => this.down()}
-          @touchstart=${() => this.down()}
+          @touchstart=${{ handleEvent: () => this.down(), passive: true }}
           @mouseup=${() => this.up()}
           @mouseleave=${() => this.leave()}
-          @touchend=${() => this.leave()}
+          @touchend=${{ handleEvent: () => this.leave(), passive: true }}
           @keydown=${(e: KeyboardEvent) => SPACE_KEYS.includes(e.key) && this.down()}
           @keyup=${(e: KeyboardEvent) => SPACE_KEYS.includes(e.key) && this.up()}
         />

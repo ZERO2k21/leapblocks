@@ -133,8 +133,8 @@ export class MembraneKeypadElement extends LitElement {
       }}
       @mousedown=${() => this.down(text)}
       @mouseup=${() => this.up(text)}
-      @touchstart=${() => this.handleTouchStart(text)}
-      @touchend=${() => this.handleTouchEnd(text)}
+      @touchstart=${{ handleEvent: () => this.handleTouchStart(text), passive: true }}
+      @touchend=${{ handleEvent: () => this.handleTouchEnd(text), passive: true }}
       @keydown=${(e: KeyboardEvent) =>
         SPACE_KEYS.includes(e.key) && this.down(text, e.currentTarget as SVGElement)}
       @keyup=${(e: KeyboardEvent) =>

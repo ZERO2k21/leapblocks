@@ -24,6 +24,11 @@ export interface ForgeState {
   // Simulation
   isSimulating: boolean;
   toggleSimulation: () => void;
+  
+  // Serial Monitor
+  serialOutput: string;
+  appendSerial: (data: string) => void;
+  clearSerial: () => void;
 }
 
 export const useForgeStore = create<ForgeState>((set, get) => ({
@@ -31,8 +36,15 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   edges: [],
   selectedNodeId: null,
   isSimulating: false,
-
+  serialOutput: '',
+  
   toggleSimulation: () => set((state) => ({ isSimulating: !state.isSimulating })),
+  
+  appendSerial: (data) => set((state) => ({ 
+    serialOutput: state.serialOutput + data 
+  })),
+
+  clearSerial: () => set({ serialOutput: '' }),
 
   addNode: (type, position, data = {}) => set((state) => ({
     nodes: [
