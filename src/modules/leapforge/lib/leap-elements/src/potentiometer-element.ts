@@ -32,6 +32,10 @@ export class PotentiometerElement extends LitElement {
 
   static get styles() {
     return css`
+      :host {
+        display: block;
+        touch-action: none;
+      }
       #rotating {
         transform-origin: 10px 8px;
         transform: rotate(var(--knob-angle, 0deg));

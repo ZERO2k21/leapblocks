@@ -78,6 +78,11 @@ export class ArduinoNanoElement extends LitElement {
         user-select: none;
       }
 
+      :host {
+        display: block;
+        touch-action: none;
+      }
+
       circle[tabindex]:hover,
       circle[tabindex]:focus {
         stroke: white;

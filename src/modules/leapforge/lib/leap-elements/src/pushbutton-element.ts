@@ -1,5 +1,5 @@
 import { css, html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, eventOptions, property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
 import { ctrlCmdPressed, SPACE_KEYS } from './utils/keys';
 
@@ -31,6 +31,7 @@ export class PushbuttonElement extends LitElement {
       :host {
         display: inline-flex;
         flex-direction: column;
+        touch-action: none;
       }
 
       button {
@@ -165,8 +166,8 @@ export class PushbuttonElement extends LitElement {
         aria-label="${label} ${color} pushbutton"
         @mousedown=${this.down}
         @mouseup=${this.up}
-        @touchstart=${this.down}
-        @touchend=${this.up}
+        @touchstart=${this.handleTouchStart}
+        @touchend=${this.handleTouchEnd}
         @pointerleave=${this.leave}
         @keydown=${(e: KeyboardEvent) => SPACE_KEYS.includes(e.key) && this.down()}
         @keyup=${(e: KeyboardEvent) => SPACE_KEYS.includes(e.key) && this.up(e)}
@@ -175,6 +176,16 @@ export class PushbuttonElement extends LitElement {
       </button>
       <span class="label">${this.label}</span>
     `;
+  }
+
+  @eventOptions({ passive: true })
+  private handleTouchStart() {
+    this.down();
+  }
+
+  @eventOptions({ passive: true })
+  private handleTouchEnd(e: TouchEvent) {
+    this.up(e as any);
   }
 
   private down() {

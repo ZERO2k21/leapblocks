@@ -1,5 +1,5 @@
 import { css, html, LitElement, svg } from 'lit';
-import { customElement, property, query } from 'lit/decorators.js';
+import { customElement, eventOptions, property, query } from 'lit/decorators.js';
 import { pinsFemalePattern } from './patterns/pins-female';
 import { analog, ElementPin, i2c, spi, usart } from './pin';
 import { SPACE_KEYS } from './utils/keys';
@@ -49,6 +49,11 @@ export class ArduinoUnoElement extends LitElement {
 
   static get styles() {
     return css`
+      :host {
+        display: block;
+        touch-action: none;
+      }
+
       text {
         font-size: 2px;
         font-family: monospace;
@@ -125,10 +130,10 @@ export class ArduinoUnoElement extends LitElement {
           stroke-width="0.15"
           tabindex="0"
           @mousedown=${() => this.down()}
-          @touchstart=${() => this.down()}
+          @touchstart=${this.handleTouchStart}
           @mouseup=${() => this.up()}
           @mouseleave=${() => this.leave()}
-          @touchend=${() => this.leave()}
+          @touchend=${this.handleTouchEnd}
           @keydown=${(e: KeyboardEvent) => SPACE_KEYS.includes(e.key) && this.down()}
           @keyup=${(e: KeyboardEvent) => SPACE_KEYS.includes(e.key) && this.up()}
         />
@@ -379,5 +384,15 @@ export class ArduinoUnoElement extends LitElement {
   private leave() {
     this.resetButton.blur();
     this.up();
+  }
+
+  @eventOptions({ passive: true })
+  private handleTouchStart() {
+    this.down();
+  }
+
+  @eventOptions({ passive: true })
+  private handleTouchEnd() {
+    this.leave();
   }
 }

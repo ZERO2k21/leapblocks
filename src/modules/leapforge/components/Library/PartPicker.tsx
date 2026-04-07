@@ -155,41 +155,86 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
         ))}
       </div>
 
-      <div className="picker-list" style={{
+    <div className="picker-list" style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '0 8px 8px'
+        padding: '8px',
+        background: 'rgba(15, 23, 42, 0.2)'
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           {filteredComponents.map(comp => (
             <div 
               key={comp.id} 
               onClick={() => onSelect(comp.id)}
               style={{
-                background: 'rgba(148, 163, 184, 0.05)',
-                padding: '12px',
+                background: 'rgba(51, 65, 85, 0.4)',
+                padding: '12px 8px',
                 borderRadius: '12px',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 textAlign: 'center',
-                border: '1px solid transparent',
-                transition: 'all 0.2s'
+                border: '1px solid rgba(148, 163, 184, 0.1)',
+                transition: 'all 0.2s',
+                height: '100px',
+                justifyContent: 'center',
+                position: 'relative',
+                overflow: 'hidden'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(148, 163, 184, 0.1)';
-                e.currentTarget.style.borderColor = 'rgba(190, 242, 100, 0.3)';
+                e.currentTarget.style.background = 'rgba(51, 65, 85, 0.6)';
+                e.currentTarget.style.borderColor = 'rgba(190, 242, 100, 0.4)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(148, 163, 184, 0.05)';
-                e.currentTarget.style.borderColor = 'transparent';
+                e.currentTarget.style.background = 'rgba(51, 65, 85, 0.4)';
+                e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.1)';
+                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              <div style={{ color: '#BEF264', marginBottom: '8px' }}>
-                {comp.category === 'boards' ? <Cpu size={20} /> : <Lightbulb size={20} />}
+              {/* Component Preview Container */}
+              <div style={{ 
+                height: '54px', 
+                width: '100%',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                marginBottom: '4px',
+                pointerEvents: 'none',
+                opacity: 0.9,
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  transform: comp.id.includes('mega') ? 'scale(0.12)' : 
+                             comp.id.includes('uno') ? 'scale(0.18)' :
+                             comp.id.includes('esp32') ? 'scale(0.22)' :
+                             comp.category === 'boards' ? 'scale(0.25)' : 
+                             comp.category === 'displays' ? 'scale(0.3)' : 'scale(0.5)',
+                  transformOrigin: 'center center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {React.createElement(`leap-${comp.id}` as any, { 
+                    color: comp.id === 'led' ? 'red' : undefined,
+                    value: true 
+                  })}
+                </div>
               </div>
-              <span style={{ color: '#f8fafc', fontSize: '11px', fontWeight: 600 }}>{comp.name}</span>
+
+              <span style={{ 
+                color: '#f8fafc', 
+                fontSize: '10px', 
+                fontWeight: 600,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                lineHeight: '1.2'
+              }}>
+                {comp.name}
+              </span>
             </div>
           ))}
         </div>

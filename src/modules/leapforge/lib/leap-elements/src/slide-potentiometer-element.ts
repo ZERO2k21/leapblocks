@@ -1,5 +1,5 @@
 import { css, html, LitElement } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, eventOptions, property } from 'lit/decorators.js';
 import { analog, ElementPin } from './pin';
 import { clamp } from './utils/clamp';
 import { getScreenCTM } from './utils/ctm-workaround';
@@ -33,6 +33,10 @@ export class SlidePotentiometerElement extends LitElement {
 
   static get styles() {
     return css`
+      :host {
+        display: block;
+        touch-action: none;
+      }
       .hide-input {
         position: absolute;
         clip: rect(0 0 0 0);
@@ -255,6 +259,7 @@ export class SlidePotentiometerElement extends LitElement {
     }
   };
 
+  @eventOptions({ passive: true })
   private touchMove(event: TouchEvent): void {
     if (this.isPressed) {
       if (event.targetTouches.length > 0) {

@@ -16,19 +16,20 @@ import { WokwiNode } from './Nodes/WokwiNode';
 import { PartPicker } from './Library/PartPicker';
 import { Plus, Play, Square, Info } from 'lucide-react';
 
-// Define custom node types
+// Define custom node types outside component to prevent re-renders
 const nodeTypes = {
   wokwi: WokwiNode,
 };
 
 const ForgeCanvasInner: React.FC = () => {
+  const store = useForgeStore();
   const { 
     nodes: storeNodes, 
     edges: storeEdges, 
     addNode, 
     addEdge: addStoreEdge,
     updateNodePosition
-  } = useForgeStore();
+  } = store;
   
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);

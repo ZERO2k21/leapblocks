@@ -52,6 +52,10 @@ const keyboardKeyMap: { [key: string]: string } = {
 export class IRRemoteElement extends LitElement {
   static get styles() {
     return css`
+      :host {
+        display: block;
+        touch-action: none;
+      }
       use {
         fill: #fff;
       }

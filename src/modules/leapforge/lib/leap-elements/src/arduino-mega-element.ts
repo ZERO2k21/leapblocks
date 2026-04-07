@@ -105,6 +105,10 @@ export class ArduinoMegaElement extends LitElement {
 
   static get styles() {
     return css`
+      :host {
+        display: block;
+        touch-action: none;
+      }
       text {
         font-size: 2px;
         font-family: monospace;

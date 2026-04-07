@@ -1,5 +1,5 @@
 import { css, html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, eventOptions, property } from 'lit/decorators.js';
 import { pinsFemalePattern } from './patterns/pins-female';
 import { ElementPin } from './pin';
 import { SPACE_KEYS } from './utils/keys';
@@ -63,6 +63,10 @@ export class MembraneKeypadElement extends LitElement {
 
   static get styles() {
     return css`
+      :host {
+        display: block;
+        touch-action: none;
+      }
       text {
         fill: #dfe2e5;
         user-select: none;
@@ -130,8 +134,8 @@ export class MembraneKeypadElement extends LitElement {
       }}
       @mousedown=${() => this.down(text)}
       @mouseup=${() => this.up(text)}
-      @touchstart=${() => this.down(text)}
-      @touchend=${() => this.up(text)}
+      @touchstart=${() => this.handleTouchStart(text)}
+      @touchend=${() => this.handleTouchEnd(text)}
       @keydown=${(e: KeyboardEvent) =>
         SPACE_KEYS.includes(e.key) && this.down(text, e.currentTarget as SVGElement)}
       @keyup=${(e: KeyboardEvent) =>
@@ -240,6 +244,16 @@ export class MembraneKeypadElement extends LitElement {
   private keyIndex(key: string) {
     const index = this.keys.indexOf(key);
     return { row: Math.floor(index / 4), column: index % 4 };
+  }
+
+  @eventOptions({ passive: true })
+  private handleTouchStart(key: string) {
+    this.down(key);
+  }
+
+  @eventOptions({ passive: true })
+  private handleTouchEnd(key: string) {
+    this.up(key);
   }
 
   private down(key: string, element?: Element) {
