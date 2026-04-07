@@ -1,5 +1,5 @@
 import { css, html, LitElement, svg } from 'lit';
-import { customElement, property, query } from 'lit/decorators.js';
+import { customElement, eventOptions, property, query } from 'lit/decorators.js';
 import { pinsFemalePattern } from './patterns/pins-female';
 import { analog, ElementPin, i2c, spi, usart } from './pin';
 import { SPACE_KEYS } from './utils/keys';
@@ -388,6 +388,7 @@ export class ArduinoMegaElement extends LitElement {
       </svg>
     `;
   }
+  @eventOptions({ passive: true })
   private down() {
     if (this.resetPressed) {
       return;
@@ -401,6 +402,7 @@ export class ArduinoMegaElement extends LitElement {
     );
   }
 
+  @eventOptions({ passive: true })
   private up() {
     if (!this.resetPressed) {
       return;
@@ -414,6 +416,7 @@ export class ArduinoMegaElement extends LitElement {
     );
   }
 
+  @eventOptions({ passive: true })
   private leave() {
     this.resetButton.blur();
     this.up();

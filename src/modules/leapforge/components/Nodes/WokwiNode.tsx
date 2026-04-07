@@ -14,7 +14,8 @@ export const WokwiNode = memo(({ data, selected }: NodeProps) => {
     background: 'transparent',
     border: `1px solid ${selected ? '#BEF264' : 'transparent'}`,
     transition: 'all 0.2s ease-out',
-    position: 'relative'
+    position: 'relative',
+    boxSizing: 'border-box'
   };
 
   return (

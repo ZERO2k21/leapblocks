@@ -1,5 +1,5 @@
 import { css, html, LitElement } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, eventOptions, property } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { analog, ElementPin } from './pin';
 import { clamp } from './utils/clamp';
@@ -163,31 +163,36 @@ export class PotentiometerElement extends LitElement {
     inputEl?.focus();
   }
 
+  @eventOptions({ passive: true })
+  private down(event: MouseEvent | TouchEvent) {
+    this.pressed = true;
+    this.updateKnobMatrix();
+    this.move(event);
+  }
+
+  @eventOptions({ passive: true })
+  private move(event: MouseEvent | TouchEvent) {
+    if (!this.pressed || !this.pageToKnobMatrix) {
+      return;
+    }
+    const { clientX, clientY } = 'touches' in event ? event.touches[0] : event;
+    const pt = new DOMPoint(clientX, clientY).matrixTransform(this.pageToKnobMatrix);
+    const angle = Math.atan2(pt.y - knobCenter.y, pt.x - knobCenter.x);
+    const deg = (angle * 180) / Math.PI + 90;
+    const normalizedDeg = (deg + 360 + 135) % 360;
+    const percent = clamp(0, 1, normalizedDeg / 270);
+    this.value = this.mapToMinMax(percent, this.min, this.max);
+    this.dispatchEvent(new CustomEvent('input', { detail: this.value }));
+  }
+
+  @eventOptions({ passive: true })
+  private up() {
+    this.pressed = false;
+  }
+
   private onValueChange(event: KeyboardEvent) {
     const target = event.target as HTMLInputElement;
     this.updateValue(parseFloat(target.value));
-  }
-
-  private down(event: MouseEvent) {
-    if (event.button === 0 || window.navigator.maxTouchPoints) {
-      this.pressed = true;
-
-      event.stopPropagation();
-      event.preventDefault();
-
-      this.updateKnobMatrix();
-    }
-  }
-
-  private move(event: MouseEvent) {
-    const { pressed } = this;
-    if (pressed) {
-      this.rotateHandler(event);
-    }
-  }
-
-  private up() {
-    this.pressed = false;
   }
 
   private updateKnobMatrix() {
