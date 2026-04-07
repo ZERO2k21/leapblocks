@@ -13,8 +13,10 @@ const PythonNotebook = lazy(() => import('./python/PythonNotebook'));
 const AppInventor = lazy(() => import('./modules/AppInventor'));
 // @ts-ignore
 const AppForgeStudio = lazy(() => import('./modules/appforge/AppForgeStudio'));
+// @ts-ignore
+const LeapForgeStudio = lazy(() => import('./modules/leapforge/ForgeStudio'));
 
-type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'appinventor' | 'appforge';
+type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'appinventor' | 'appforge' | 'leapforge';
 
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
@@ -86,6 +88,7 @@ export default function App() {
                 {mode === 'notebook' && <PythonNotebook onBack={() => setMode('home')} onSwitchToIDE={() => setMode('python')} />}
                 {mode === 'appinventor' && <AppInventor {...({ onBack: () => setMode('home') } as any)} />}
                 {mode === 'appforge' && <AppForgeStudio {...({ onBack: () => setMode('home') } as any)} />}
+                {mode === 'leapforge' && <LeapForgeStudio {...({ onBack: () => setMode('home') } as any)} />}
                 {mode === 'home' && <LandingPage onSelect={setMode} />}
             </Suspense>
 

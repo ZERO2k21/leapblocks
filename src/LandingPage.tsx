@@ -655,14 +655,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 5 FORGE */}
-              <div className={`tc tc-forge ${tcClass(4)}`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Creocad'))}>
+              <div className={`tc tc-forge ${tcClass(4)}`} onClick={() => handleCardClick(() => onSelect('leapforge'))}>
                 <div className="tc-icon">
                   <img src="/assets/creocad_icon.png" alt="Forge Icon" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>
                   <div className="tc-name">Forge</div>
-                  <div className="tc-desc">Glowing gears and 3D printer</div>
+                  <div className="tc-desc">Modular Circuit Simulator & Engine</div>
                 </div>
               </div>
 
