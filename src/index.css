@@ -1030,6 +1030,37 @@ body #root .blocklyFlyoutButton .blocklyText,
   font-weight: 500;
 }
 
+/* Custom Checkbox Appearance for FieldCheckbox in Leapblocks */
+.blocklyCheckbox {
+  fill: #fff !important;
+  stroke: rgba(0, 0, 0, 0.2) !important;
+  stroke-width: 1px !important;
+  rx: 4px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.blocklyCheckbox:hover {
+  stroke: #4C97FF !important;
+  filter: drop-shadow(0 0 2px rgba(76, 151, 255, 0.4)) !important;
+}
+
+/* Checked state */
+rect.blocklyCheckbox[fill*="true"],
+.blocklyChecked .blocklyCheckbox {
+  fill: #4C97FF !important;
+  stroke: #4C97FF !important;
+}
+
+/* The checkmark (path) inside the checkbox */
+.blocklyCheckmark {
+  stroke: #fff !important;
+  stroke-width: 3px !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+/* Flyout-specific overrides for reporters */
 .blocklyFlyoutCheckbox {
   fill: #fff !important;
   stroke: rgba(0, 0, 0, 0.15) !important;
@@ -1040,6 +1071,7 @@ body #root .blocklyFlyoutButton .blocklyText,
 .blocklyFlyoutCheckbox.blocklyChecked {
   fill: #4C97FF !important;
   stroke: #4C97FF !important;
+  animation: tc-pulse 0.4s ease-out;
 }
 
 .blocklyFlyoutCheckboxPath {

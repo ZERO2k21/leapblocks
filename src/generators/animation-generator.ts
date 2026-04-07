@@ -131,7 +131,15 @@ export class AnimationCompiler {
         const id = this.getVariableId(block);
         const ws = block.workspace;
         const variable = ws.getVariableById(id);
-        return variable ? (variable as any).name : id;
+        if (variable) return (variable as any).name;
+        
+        // Fallback: If ID not found, try to get the human-readable text from the field itself.
+        // This is critical if the variable was recreated and the block still points to a ghost ID.
+        const field = block.getField('VARIABLE') || block.getField('VAR') || block.getField('LIST');
+        const nameFallback = field ? field.getText() : id;
+        
+        compilerLog.warn(`Variable ID not found in workspace: ${id}. Using display text as name: ${nameFallback}`);
+        return nameFallback;
     }
 
     // Compile a value input block into a runtime string/number function
@@ -174,10 +182,11 @@ export class AnimationCompiler {
                     return val !== null ? String(val) : '0';
                 };
             case 'variables_get': {
-                const id = valueBlock.getFieldValue('VAR');
-                const ws = valueBlock.workspace;
-                const variable = ws.getVariableById(id);
-                const name = variable ? (variable as any).name : id;
+                const name = this.getVariableName(valueBlock);
+                return () => String(animationVM.getVariable(name));
+            }
+            case 'data_variable': {
+                const name = this.getVariableName(valueBlock);
                 return () => String(animationVM.getVariable(name));
             }
             case 'operator_join': {
@@ -356,20 +365,35 @@ export class AnimationCompiler {
                 };
             }
             case 'variables_get': {
-                // Important: We need to get variable name by ID since that's how Blockly stores it
-                const id = valueBlock.getFieldValue('VAR');
-                const ws = valueBlock.workspace;
-                const variable = ws.getVariableById(id);
-                const name = variable ? (variable as any).name : id;
+                const name = this.getVariableName(valueBlock);
                 return () => {
-                    const num = Number(animationVM.getVariable(name));
+                    const val = animationVM.getVariable(name);
+                    const num = Number(val);
                     return isNaN(num) ? 0 : num;
-                }; // compileNumberValue forces return number
+                };
+            }
+            case 'data_variable': {
+                const dvName = this.getVariableName(valueBlock);
+                return () => {
+                    const value = animationVM.getVariable(dvName);
+                    const num = Number(value);
+                    if (isNaN(num)) {
+                        compilerLog.warn(`Variable '${dvName}' is not a number:`, value);
+                        return 0;
+                    }
+                    return num;
+                };
             }
             case 'operator_add': {
                 const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
                 const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
-                return () => num1Func() + num2Func();
+                return () => {
+                    const n1 = num1Func();
+                    const n2 = num2Func();
+                    const result = Number(n1) + Number(n2);
+                    compilerLog.info(`Addition: ${n1} + ${n2} = ${result}`);
+                    return result;
+                };
             }
             case 'operator_subtract': {
                 const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
@@ -488,11 +512,13 @@ export class AnimationCompiler {
                     return 0;
                 };
             }
-            case 'sensing_answer':
+            case 'sensing_answer': {
                 return () => {
-                    const num = Number(animationVM.getAnswer());
+                    const ans = animationVM.getAnswer();
+                    const num = Number(ans);
                     return isNaN(num) ? 0 : num;
                 };
+            }
             default:
                 compilerLog.warn(`Unknown value block: ${valueBlock.type}`);
                 return () => 0;
@@ -827,7 +853,11 @@ export class AnimationCompiler {
             // Sensing
             case 'ask':
             case 'sensing_ask':
-                step = { type: 'ask', question: block.getFieldValue('QUESTION') };
+            case 'sensing_askandwait':
+                step = {
+                    type: 'ask',
+                    question: this.compileStringValue(block, 'QUESTION')
+                };
                 break;
             case 'sensing_reset_timer':
                 step = { type: 'reset_timer' };

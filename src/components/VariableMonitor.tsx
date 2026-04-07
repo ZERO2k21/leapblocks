@@ -10,6 +10,8 @@ interface VariableMonitorProps {
     mode?: 'normal' | 'large' | 'slider';
     sliderMin?: number;
     sliderMax?: number;
+    stageWidth?: number;
+    stageHeight?: number;
     onPositionChange?: (x: number, y: number) => void;
     onPointerDown?: () => void;
     onModeChange?: (mode: 'normal' | 'large' | 'slider') => void;
@@ -27,6 +29,8 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
     mode = 'normal',
     sliderMin = 0,
     sliderMax = 100,
+    stageWidth = 480,
+    stageHeight = 360,
     onPositionChange,
     onPointerDown,
     onModeChange,
@@ -59,9 +63,37 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
 
     const handlePointerMove = (e: React.PointerEvent) => {
         if (!isDragging) return;
-        const dx = e.clientX - dragStartRef.current.x;
-        const dy = e.clientY - dragStartRef.current.y;
-        onPositionChange?.(Math.max(-50, dragStartRef.current.startX + dx), Math.max(-50, dragStartRef.current.startY + dy));
+
+        // Automatically detect inherited scale to keep drag 1:1 with mouse
+        let scale = 1;
+        let parent = e.currentTarget.parentElement;
+        while (parent) {
+            const style = window.getComputedStyle(parent);
+            if (style.transform && style.transform !== 'none') {
+                const matrix = style.transform.match(/^matrix\((.+)\)$/);
+                if (matrix) {
+                    scale = parseFloat(matrix[1].split(',')[0]);
+                    break;
+                }
+            }
+            parent = parent.parentElement;
+        }
+
+        const dx = (e.clientX - dragStartRef.current.x) / scale;
+        const dy = (e.clientY - dragStartRef.current.y) / scale;
+        
+        let newX = dragStartRef.current.startX + dx;
+        let newY = dragStartRef.current.startY + dy;
+
+        // Strict Clamping to Stage Boundaries
+        const element = e.currentTarget as HTMLElement;
+        const width = element.offsetWidth;
+        const height = element.offsetHeight;
+
+        newX = Math.max(0, Math.min(newX, stageWidth - width));
+        newY = Math.max(0, Math.min(newY, stageHeight - height));
+
+        onPositionChange?.(newX, newY);
     };
 
     const handlePointerUp = (e: React.PointerEvent) => {
@@ -79,6 +111,20 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
     const handleMenuClick = (newMode: 'normal' | 'large' | 'slider') => {
         onModeChange?.(newMode);
         setContextMenu(null);
+    };
+
+    const handleDoubleClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Cycle mode: normal -> large -> slider -> normal
+        const cycle: Record<string, 'normal' | 'large' | 'slider'> = {
+            'normal': 'large',
+            'large': 'slider',
+            'slider': 'normal'
+        };
+        const nextMode = cycle[mode] || 'normal';
+        onModeChange?.(nextMode);
     };
 
     if (!visible) return null;
@@ -101,6 +147,7 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
                 onContextMenu={handleContextMenu}
+                onDoubleClick={handleDoubleClick}
             >
                 {mode === 'normal' && (
                     <div style={styles.normalContent}>
@@ -167,35 +214,38 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: {
-        backgroundColor: '#FF8C1A', // PictoBlox orange variable color
-        borderRadius: '5px',
-        padding: '3px',
-        boxShadow: '1px 1px 2px rgba(0, 0, 0, 0.2)',
+        backgroundColor: '#edeff2', // Light gray standard base
+        borderRadius: '6px',
+        padding: '3px 4px',
+        boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3)',
+        border: '1px solid #bcc5ce',
         fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
         fontSize: '11px',
         color: 'black',
         userSelect: 'none',
-        border: '1px solid rgba(0,0,0,0.2)',
-        minWidth: '60px',
-        display: 'inline-block'
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        minHeight: '22px'
     },
     largeContainer: {
-        padding: '2px',
-        minWidth: '40px'
+        backgroundColor: 'transparent',
+        border: 'none',
+        boxShadow: 'none',
+        padding: 0
     },
     sliderContainer: {
-        backgroundColor: '#e5eaec',
-        borderColor: '#bcc5ce',
-        color: 'black',
-        padding: '5px',
-        borderRadius: '5px',
-        minWidth: '100px'
+        backgroundColor: '#edeff2',
+        border: '1px solid #bcc5ce',
+        padding: '4px 6px',
+        display: 'inline-flex',
+        flexDirection: 'column',
     },
     normalContent: {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '4px',
+        gap: '6px',
         whiteSpace: 'nowrap',
     },
     largeContent: {
@@ -207,32 +257,38 @@ const styles: { [key: string]: React.CSSProperties } = {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '6px'
+        gap: '8px',
+        width: '100%',
+        minWidth: '120px'
     },
     name: {
         fontWeight: 'bold',
-        color: 'white',
-        textShadow: '0 1px 1px rgba(0,0,0,0.2)',
-        marginRight: '2px',
-        marginLeft: '2px'
+        color: '#575E75', // Darker gray for label
+        marginLeft: '2px',
+        marginRight: '2px'
     },
     value: {
-        backgroundColor: '#FF6400',
-        padding: '1px 4px',
-        borderRadius: '3px',
+        backgroundColor: '#FF8C1A', // PictoBlox orange
+        padding: '1px 8px',
+        borderRadius: '4px',
         color: 'white',
+        fontWeight: 'bold',
         fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
         textAlign: 'center',
-        border: '1px solid rgba(0,0,0,0.1)'
+        border: '1px solid rgba(0,0,0,0.1)',
+        minWidth: '30px'
     },
     largeValue: {
-        backgroundColor: '#FF6400',
-        padding: '5px 12px',
+        backgroundColor: '#FF8C1A',
+        padding: '6px 16px',
         color: 'white',
         fontSize: '14px',
+        fontWeight: 'bold',
         textAlign: 'center',
-        borderRadius: '3px',
-        border: '1px solid rgba(0,0,0,0.1)'
+        borderRadius: '6px',
+        border: '1px solid rgba(0,0,0,0.1)',
+        minWidth: '40px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
     },
     rangeInput: {
         width: '100%',

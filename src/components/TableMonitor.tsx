@@ -41,8 +41,23 @@ export const TableMonitor: React.FC<TableMonitorProps> = ({
 
     const handlePointerMove = (e: React.PointerEvent) => {
         if (!isDragging) return;
-        const dx = e.clientX - dragStartRef.current.x;
-        const dy = e.clientY - dragStartRef.current.y;
+
+        let scale = 1;
+        let parent = e.currentTarget.parentElement;
+        while (parent) {
+            const style = window.getComputedStyle(parent);
+            if (style.transform && style.transform !== 'none') {
+                const matrix = style.transform.match(/^matrix\((.+)\)$/);
+                if (matrix) {
+                    scale = parseFloat(matrix[1].split(',')[0]);
+                    break;
+                }
+            }
+            parent = parent.parentElement;
+        }
+
+        const dx = (e.clientX - dragStartRef.current.x) / scale;
+        const dy = (e.clientY - dragStartRef.current.y) / scale;
         onPositionChange?.(Math.max(-100, dragStartRef.current.startX + dx), Math.max(-100, dragStartRef.current.startY + dy));
     };
 

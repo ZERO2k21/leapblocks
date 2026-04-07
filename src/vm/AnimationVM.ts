@@ -98,7 +98,7 @@ export type ScriptStep = (
     | { type: 'change_sound_effect'; effect: 'pitch' | 'pan'; value: number }
     | { type: 'clear_sound_effects' }
     // Sensing
-    | { type: 'ask'; question: string }
+    | { type: 'ask'; question: string | (() => string) }
     | { type: 'reset_timer' }
     // Hardware blocks for Stage mode
     | { type: 'hw_set_digital'; pin: number | string; value: boolean }
@@ -153,6 +153,7 @@ const vmLog = {
     info: (msg: string, data?: any) => console.log(`[AnimationVM] ${msg}`, data ?? ''),
     step: (type: string, details?: any) => console.log(`[AnimationVM.Step] ${type}`, details ?? ''),
     trigger: (event: string, data?: any) => console.log(`[AnimationVM.Trigger] ${event}`, data ?? ''),
+    warn: (msg: string, data?: any) => console.warn(`[AnimationVM.Warn] ${msg}`, data ?? ''),
     error: (msg: string, err?: any) => console.error(`[AnimationVM.Error] ${msg}`, err ?? ''),
 };
 
@@ -181,6 +182,7 @@ export class AnimationVM {
     // Ask callback — when set, the VM delegates input to the React UI instead of window.prompt
     public onAskQuestion?: (question: string) => Promise<string>;
     public onLog?: (msg: string) => void;
+    public onAnswerChange?: (answer: string) => void;
 
     // Change callbacks for UI/Monitor synchronization
     public onVariableChange?: (name: string, value: string | number) => void;
@@ -228,6 +230,28 @@ export class AnimationVM {
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // RESET STATE (for new project)
+    // ═══════════════════════════════════════════════════════════════════════
+    resetState(): void {
+        console.log('[AnimationVM] Resetting all state for new project');
+        // Stop all running scripts
+        this.stopAll();
+        // Clear variables, lists, tables
+        this.variables.clear();
+        this.lists.clear();
+        this.tables.clear();
+        this.tableColumns.clear();
+        // Reset sensing state
+        this.currentAnswer = '';
+        this.timerStart = Date.now();
+        // Clear broadcast listeners
+        this.broadcastListeners.clear();
+        this.stageScripts = [];
+        // Reset volume
+        this.volume = 100;
+    }
+
     // Sound playback helper
     private async playSound(sprite: Sprite, name: string, wait: boolean = false): Promise<void> {
         soundManager.setVolume(this.volume / 100);
@@ -253,16 +277,10 @@ export class AnimationVM {
             }
             return;
         }
-
-        console.warn(`[Audio] Sound not found: ${name}`);
     }
 
     // Helper to get current sprite id from context
     private currentSpriteId(): string {
-        // This is a workaround; we need to track current sprite in VM context
-        // For now, we'll rely on the fact that runScript gets sprite from script.spriteId
-        // But audioManager doesn't have access to that directly. Let's change approach: instead of
-        // trying to get sprite from manager, we'll store current sprite in the VM context and pass to audioManager
         return ''; // placeholder - we'll fix this by modifying audioManager calls to pass sprite
     };
 
@@ -272,13 +290,21 @@ export class AnimationVM {
     private variables: Map<string, number | string> = new Map();
 
     getVariable(name: string): number | string {
-        return this.variables.get(name) ?? 0;
+        const value = this.variables.get(name);
+        if (value === undefined) {
+             vmLog.warn(`Variable lookup failed for name: "${name}". Returning 0.`);
+             return 0;
+        }
+        return value;
     }
 
     setVariable(name: string, value: number | string): void {
+        const oldValue = this.variables.get(name);
         this.variables.set(name, value);
-        vmLog.step('set_variable', { name, value });
-        this.onLog?.(`Variable '${name}' set to ${value}`);
+        const type = typeof value;
+        const msg = `Variable '${name}': ${oldValue !== undefined ? oldValue : '(new)'} -> ${value} (Type: ${type})`;
+        vmLog.info(msg);
+        this.onLog?.(msg);
         this.onVariableChange?.(name, value);
     }
 
@@ -484,8 +510,6 @@ export class AnimationVM {
     }
 
 
-
-
     // ═══════════════════════════════════════════════════════════════════════
     // SPRITE MANAGEMENT (Delegated to SpriteManager)
     // ═══════════════════════════════════════════════════════════════════════
@@ -512,7 +536,8 @@ export class AnimationVM {
     }
 
     triggerFlag(scripts: CompiledScript[]): void {
-        vmLog.info('Green flag clicked');
+        vmLog.info('Green flag clicked - stopping all scripts before restart');
+        this.stopAll();
         this.setRunning(true);
         let flagScripts = 0;
         for (const script of scripts) {
@@ -1180,9 +1205,11 @@ export class AnimationVM {
             }
 
             // Sensing blocks
-            case 'ask':
-                await this.askQuestion(step.question, sprite);
+            case 'ask': {
+                const question = typeof step.question === 'function' ? step.question() : step.question;
+                await this.askQuestion(question, sprite);
                 break;
+            }
 
             case 'reset_timer':
                 this.resetTimer();
@@ -1700,6 +1727,7 @@ export class AnimationVM {
             try {
                 const answer = await this.onAskQuestion(question);
                 this.currentAnswer = answer;
+                if (this.onAnswerChange) this.onAnswerChange(answer);
             } catch {
                 // Promise was rejected (e.g. user clicked Stop) — keep previous answer
                 console.log('[AnimationVM] Ask cancelled');
@@ -1710,6 +1738,7 @@ export class AnimationVM {
             try {
                 const answer = window.prompt(question) || '';
                 this.currentAnswer = answer;
+                if (this.onAnswerChange) this.onAnswerChange(answer);
             } catch (e) {
                 console.error('Prompt failed', e);
             }
@@ -1719,7 +1748,7 @@ export class AnimationVM {
     }
 
     getAnswer(): string {
-        return this.currentAnswer;
+        return this.currentAnswer || '';
     }
 }
 
