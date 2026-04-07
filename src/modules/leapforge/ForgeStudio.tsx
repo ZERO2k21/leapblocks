@@ -1,7 +1,7 @@
 import React, { useState, lazy, Suspense } from 'react';
 import { Home, Play, Square, Save, FolderOpen, Settings, Layers, Box } from 'lucide-react';
 // Register internal leaplab forge elements (rebranded Wokwi)
-import '@leaplab/forge-elements';
+import './lib/leap-elements/src/index';
 import './ForgeStudio.css';
 
 // Lazy load complex inner components
