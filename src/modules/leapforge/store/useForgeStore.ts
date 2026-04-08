@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { Node, Edge, Connection, addEdge as rfAddEdge } from 'reactflow';
 import { v4 as uuidv4 } from 'uuid';
+import { simulationRunner } from '../engine/SimulationRunner';
+import { circuitEngine } from '../engine/CircuitEngine';
 
 export interface ForgeState {
   nodes: Node[];
@@ -23,6 +25,9 @@ export interface ForgeState {
   
   // Simulation
   isSimulating: boolean;
+  startSimulation: (hexString: string) => void;
+  stopSimulation: () => void;
+  resetSimulation: () => void;
   toggleSimulation: () => void;
   
   // Serial Monitor
@@ -38,7 +43,42 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   isSimulating: false,
   serialOutput: '',
   
-  toggleSimulation: () => set((state) => ({ isSimulating: !state.isSimulating })),
+  startSimulation: (hexString) => set((state) => {
+    console.log('[FORGE STORE] startSimulation triggered. Hex length:', hexString.length);
+    circuitEngine.init();
+    
+    // Pass the downloaded compiled hex into the CPU
+    console.log('[FORGE STORE] Initializing CPU and syncing graph...');
+    simulationRunner.initCPU(hexString);
+    circuitEngine.syncCircuitGraph();
+    
+    console.log('[FORGE STORE] Firing simulationRunner.start()');
+    simulationRunner.start();
+    
+    return { isSimulating: true, serialOutput: '' };
+  }),
+  
+  stopSimulation: () => set(() => {
+    console.log('[FORGE STORE] stopSimulation triggered.');
+    simulationRunner.stop();
+    return { isSimulating: false };
+  }),
+  
+  resetSimulation: () => set(() => {
+    console.log('[FORGE STORE] resetSimulation triggered.');
+    simulationRunner.reset();
+    return { isSimulating: false, serialOutput: '' };
+  }),
+
+  toggleSimulation: () => {
+    const { isSimulating, stopSimulation } = get();
+    if (isSimulating) {
+      stopSimulation();
+    } else {
+      // Note: Full toggle logic usually handled in the UI button that has access to the hex data.
+      console.warn('[FORGE STORE] toggleSimulation called, but start requires hex.');
+    }
+  },
   
   appendSerial: (data) => set((state) => ({ 
     serialOutput: state.serialOutput + data 

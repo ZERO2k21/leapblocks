@@ -216,7 +216,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  {React.createElement(`leap-${comp.id}` as any, { 
+                  {React.createElement(`wokwi-${comp.id}` as any, { 
                     color: comp.id === 'led' ? 'red' : undefined,
                     value: true 
                   })}

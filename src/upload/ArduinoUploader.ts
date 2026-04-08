@@ -72,7 +72,7 @@ export class ArduinoUploader {
 
             // ── Phase 2: Saving sketch (10–25%) ──
             this.sendProgress(10, 'Preparing sketch directory...');
-            const sketchDir = path.join(process.cwd(), 'leapblocks_sketch');
+            const sketchDir = path.join(os.tmpdir(), 'leapblocks_sketch');
             const sketchFile = path.join(sketchDir, 'leapblocks_sketch.ino');
 
             if (!fs.existsSync(sketchDir)) {
@@ -117,4 +117,76 @@ export class ArduinoUploader {
             return { success: false, error: (error as Error).message };
         }
     }
+
+    async compileForSimulation(code: string, fqbn: string): Promise<{ success: boolean; hexContent?: string; error?: string }> {
+        try {
+            let arduinoCliPath = 'arduino-cli';
+
+            try {
+                await execAsync('arduino-cli version');
+            } catch {
+                const possiblePaths = [
+                    path.join(process.cwd(), 'arduino-cli', 'arduino-cli.exe'),
+                    path.join(os.homedir(), 'AppData', 'Local', 'Arduino15', 'arduino-cli.exe'),
+                    'C:\\Program Files\\Arduino CLI\\arduino-cli.exe',
+                    'C:\\arduino-cli\\arduino-cli.exe',
+                ];
+
+                let found = false;
+                for (const p of possiblePaths) {
+                    if (fs.existsSync(p)) {
+                        arduinoCliPath = p;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    return { success: false, error: 'arduino-cli not found. Please install it.' };
+                }
+            }
+
+            const sketchDir = path.join(os.tmpdir(), 'leapblocks_sketch');
+            const sketchFile = path.join(sketchDir, 'leapblocks_sketch.ino');
+
+            if (!fs.existsSync(sketchDir)) {
+                fs.mkdirSync(sketchDir, { recursive: true });
+            }
+
+            fs.writeFileSync(sketchFile, code, 'utf-8');
+
+            try {
+                const buildPath = path.join(sketchDir, 'build');
+                if (!fs.existsSync(buildPath)) {
+                    fs.mkdirSync(buildPath, { recursive: true });
+                }
+                
+                await execAsync(`"${arduinoCliPath}" compile --fqbn ${fqbn} --export-binaries --build-path "${buildPath}" "${sketchDir}"`, { timeout: 120000 });
+                
+                // The hex file is usually named sketch_name.ino.hex OR sketch_name.ino.with_bootloader.hex
+                const hexFilePath = path.join(buildPath, 'leapblocks_sketch.ino.hex');
+                if (fs.existsSync(hexFilePath)) {
+                    const hexContent = fs.readFileSync(hexFilePath, 'utf-8');
+                    return { success: true, hexContent };
+                } else {
+                    // Try finding any .hex file in the build path
+                    const files = fs.readdirSync(buildPath);
+                    const hexFile = files.find(f => f.endsWith('.hex'));
+                    if (hexFile) {
+                        const hexContent = fs.readFileSync(path.join(buildPath, hexFile), 'utf-8');
+                        return { success: true, hexContent };
+                    }
+                    return { success: false, error: 'Compiled successfully, but no .hex file was found.' };
+                }
+            } catch (compileError: any) {
+                return {
+                    success: false,
+                    error: `Compilation failed: ${compileError.stderr || compileError.message}`,
+                };
+            }
+        } catch (err: any) {
+             return { success: false, error: err.message };
+        }
+    }
 }
+

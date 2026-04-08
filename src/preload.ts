@@ -70,6 +70,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
         return ipcRenderer.invoke('upload-code', code, port, fqbn);
     },
 
+    /**
+     * Compile code to hex for simulation
+     */
+    compileCode: (code: string, fqbn?: string): Promise<{ success: boolean; hexContent?: string; error?: string }> => {
+        console.log('[PRELOAD] compileCode called', { codeLength: code.length, fqbn });
+        return ipcRenderer.invoke('compile-code', code, fqbn || 'arduino:avr:uno');
+    },
+
     // ═══════════════════════════════════════════════════════════════════════
     // EVENT LISTENERS
     // ═══════════════════════════════════════════════════════════════════════
@@ -167,6 +175,7 @@ declare global {
             disconnectPort: () => Promise<ConnectResult>;
             sendSerial: (data: string) => Promise<void>;
             uploadCode: (code: string, port?: string, fqbn?: string) => Promise<UploadResult>;
+            compileCode: (code: string, fqbn?: string) => Promise<{ success: boolean; hexContent?: string; error?: string }>;
             onSerialData: (callback: (data: string) => void) => void;
             onConnectionChange: (callback: (connected: boolean) => void) => void;
             onUploadProgress: (callback: (progress: number, message: string) => void) => void;

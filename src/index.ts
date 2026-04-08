@@ -126,6 +126,11 @@ ipcMain.handle('upload-code', async (event, code: string, selectedPort: string, 
   return result;
 });
 
+ipcMain.handle('compile-code', async (event, code: string, fqbn: string) => {
+  const result = await arduinoUploader.compileForSimulation(code, fqbn);
+  return result;
+});
+
 // Python Handlers
 ipcMain.handle('python-run', async (event, code: string) => {
   await pythonManager.runCode(code);

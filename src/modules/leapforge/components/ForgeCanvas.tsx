@@ -15,7 +15,7 @@ import 'reactflow/dist/style.css';
 import { useForgeStore } from '../store/useForgeStore';
 import { WokwiNode } from './Nodes/WokwiNode';
 import { PartPicker } from './Library/PartPicker';
-import { Plus, Play, Square, Info } from 'lucide-react';
+import { Plus, Play, Square, Info, RotateCcw } from 'lucide-react';
 
 // Define custom node types outside component to prevent re-renders
 const nodeTypes = {
@@ -59,6 +59,16 @@ const ForgeCanvasInner: React.FC = () => {
   const onNodeDragStop = useCallback((_: any, node: Node) => {
     updateNodePosition(node.id, node.position);
   }, [updateNodePosition]);
+
+  // Record node click in Global Store to stabilize the slider UI
+  const onNodeClick = useCallback((_: any, node: Node) => {
+    store.setSelectedNode(node.id);
+  }, [store]);
+
+  // Record pane click to clear selection
+  const onPaneClick = useCallback(() => {
+    store.setSelectedNode(null);
+  }, [store]);
 
   // Handle drag and drop from sidebar (kept for backward compatibility)
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -109,6 +119,8 @@ const ForgeCanvasInner: React.FC = () => {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeDragStop={onNodeDragStop}
+        onNodeClick={onNodeClick}
+        onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         fitView
         snapToGrid
@@ -154,6 +166,30 @@ const ForgeCanvasInner: React.FC = () => {
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
         >
           {isSimulating ? <Square size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+        </button>
+
+        {/* Reset Simulation Button */}
+        <button 
+          onClick={store.resetSimulation}
+          style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '50%',
+            background: '#eab308',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+            cursor: 'pointer',
+            transition: 'transform 0.2s'
+          }}
+          title="Reset Simulation"
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <RotateCcw size={18} />
         </button>
 
         {/* Add Part Button */}

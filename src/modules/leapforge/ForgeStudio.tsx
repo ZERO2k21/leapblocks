@@ -1,13 +1,9 @@
 import React, { useState, lazy, Suspense, useRef, useEffect } from 'react';
 import { SerialMonitor } from './components/Editor/SerialMonitor';
 import { Home, Save, FolderOpen, Settings, Play, Square, Code, Terminal } from 'lucide-react';
-// Register internal leaplab forge elements (rebranded Wokwi)
-import './lib/leap-elements/src/index';
+// Register official wokwi elements
+import '@wokwi/elements';
 import './ForgeStudio.css';
-import { LeapSimulator } from './lib/SimulatorEngine';
-import { PinBridge } from './lib/PinBridge';
-import { CompilerService } from './lib/CompilerService';
-import { BLINK_HEX } from './lib/BlinkFirmware'; // Fallback hex if needed
 import { useForgeStore } from './store/useForgeStore';
 
 // Lazy load complex inner components
@@ -20,13 +16,12 @@ interface ForgeStudioProps {
 }
 
 export default function ForgeStudio({ onBack }: ForgeStudioProps) {
-  const [isCompiling, setIsCompiling] = useState(false);
-  const simulatorRef = useRef<LeapSimulator | null>(null);
   const { 
     nodes, 
     updateNodeData, 
     isSimulating, 
-    toggleSimulation,
+    startSimulation,
+    stopSimulation,
     appendSerial,
     clearSerial,
     serialOutput
@@ -49,67 +44,47 @@ void loop() {
   delay(1000);
 }`);
 
-  useEffect(() => {
-    const runSimulation = async () => {
-      if (isSimulating) {
-        // 1. Find board
-        const arduinoNode = nodes.find(n => n.data?.type && (n.data.type === 'arduino-uno' || n.data.type === 'arduino-nano'));
-        
-        if (!arduinoNode) {
-          const hasMega = nodes.find(n => n.data?.type === 'arduino-mega');
-          if (hasMega) {
-            alert('Arduino Mega simulation is currently in development. Please use Uno or Nano for real-time logic.');
-          } else {
-            alert('Please add an Arduino (Uno or Nano) to the canvas first!');
-          }
-          toggleSimulation();
-          return;
-        }
+  const [isCompiling, setIsCompiling] = useState(false);
+  const [compileError, setCompileError] = useState<string | null>(null);
 
-        // 2. Compile user code
-        setIsCompiling(true);
-        console.log(`[LeapForge] Compiling program for ${arduinoNode.data.type}...`);
-        
-        const compileResult = await CompilerService.compile(code);
-        setIsCompiling(false);
-
-        if (!compileResult.success) {
-          alert(`Compilation Error:\n${compileResult.error}`);
-          toggleSimulation();
-          return;
-        }
-
-        // 3. Start Simulator
-        console.log(`[LeapForge] Successfully compiled. Starting simulation...`);
-        const simulator = new LeapSimulator(compileResult.program || BLINK_HEX);
-        const bridge = new PinBridge(simulator.getCpu()!, arduinoNode.id);
-        
-        // Serial Monitor Callback
-        simulator.onSerialData = (byte: number) => {
-          appendSerial(String.fromCharCode(byte));
-        };
-        
-        (window as any).leapBridge = bridge;
-        simulatorRef.current = simulator;
-        simulator.start();
+  const handleToggleSimulation = async () => {
+    console.log('[FORGE UI] Simulation button clicked. Currently simulating:', isSimulating);
+    if (isSimulating) {
+      console.log('[FORGE UI] Stopping simulation...');
+      stopSimulation();
+      return;
+    }
+    
+    console.log('[FORGE UI] Preparing to compile code...');
+    setIsCompiling(true);
+    setCompileError(null);
+    clearSerial();
+    
+    try {
+      console.log('[FORGE UI] Sending IPC request to compileCode...');
+      const result = await window.electronAPI.compileCode(code, 'arduino:avr:uno');
+      console.log('[FORGE UI] IPC returned:', result.success ? 'Success' : 'Failed');
+      
+      if (result.success && result.hexContent) {
+        console.log('[FORGE UI] Starting simulation with new hex code.');
+        startSimulation(result.hexContent);
+        appendSerial("Compilation successful. Simulation running...\n");
       } else {
-        console.log(`[LeapForge] Stopping simulation`);
-        simulatorRef.current?.stop();
-        nodes.forEach(node => updateNodeData(node.id, { pinStates: {} }));
-        delete (window as any).leapBridge;
-        // Optionally clear serial on stop? Let's keep it for viewing.
+        console.log('[FORGE UI] Compilation error:', result.error);
+        setCompileError(result.error || 'Unknown compilation error');
+        appendSerial(`[ERROR]: ${result.error || 'Unknown compilation error'}\n`);
       }
-    };
+    } catch (err: any) {
+      console.error('[FORGE UI] Exception during compilation:', err);
+      setCompileError(err.message);
+      appendSerial(`[ERROR]: ${err.message}\n`);
+    } finally {
+      setIsCompiling(false);
+    }
+  };
 
-    runSimulation();
-  }, [isSimulating]);
-
-  useEffect(() => {
-    return () => {
-      simulatorRef.current?.stop();
-      delete (window as any).leapBridge;
-    };
-  }, []);
+  // The new SimulationEngine (Phase 1-5) manages the loop internally via useForgeStore!
+  // No need for duplicate useEffect mounts.
 
   return (
     <div className="forge-root dark" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -132,24 +107,22 @@ void loop() {
 
         <div className="forge-controls">
           <button 
-            onClick={toggleSimulation}
+            type="button"
+            onClick={handleToggleSimulation}
             disabled={isCompiling}
             className={`p-2 rounded-full flex items-center gap-2 transition-all ${
               isSimulating ? 'bg-red-500/20 text-red-400 border border-red-500/50' : 'bg-green-500/20 text-green-400 border border-green-500/50'
-            }`}
+            } ${isCompiling ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-              {isCompiling ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin h-4 w-4 border-2 border-green-400 border-t-transparent rounded-full" />
-                  <span className="text-xs font-bold uppercase tracking-wider">Compiling...</span>
-                </div>
-              ) : (
-                <>
-                  {isSimulating ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
-                  <span className="text-xs font-bold uppercase tracking-wider">{isSimulating ? 'Stop' : 'Start Simulation'}</span>
-                </>
-              )}
-            </button>
+            {isCompiling ? (
+               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            ) : isSimulating ? (
+               <Square size={16} fill="currentColor" />
+            ) : (
+               <Play size={16} fill="currentColor" />
+            )}
+            <span className="text-xs font-bold uppercase tracking-wider">{isCompiling ? 'Compiling...' : isSimulating ? 'Stop' : 'Start Simulation'}</span>
+          </button>
         </div>
 
         <div className="forge-topbar-right" style={{ display: 'flex', gap: '10px' }}>
