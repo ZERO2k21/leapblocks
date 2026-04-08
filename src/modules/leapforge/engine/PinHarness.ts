@@ -49,36 +49,37 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
         }
     ]
 },
-  "neopixel": {
+  "small-sound-sensor": {
     "viewBox": {
       "minX": 0,
       "minY": 0,
-      "width": 5.6631,
-      "height": 5
+      "width": 133,
+      "height": 50.4
     },
     "pins": [
       {
-        "name": "VDD",
-        "x": 1,
-        "y": 3.5
+        "name": "AOUT",
+        "y": 11,
+        "x": 0
+      },
+      {
+        "name": "GND",
+        "y": 20.5,
+        "x": 0
+      },
+      {
+        "name": "VCC",
+        "y": 30.5,
+        "x": 0
       },
       {
         "name": "DOUT",
-        "x": 1,
-        "y": 14
-      },
-      {
-        "name": "VSS",
-        "x": 21,
-        "y": 14
-      },
-      {
-        "name": "DIN",
-        "x": 21,
-        "y": 3.5
+        "y": 40.5,
+        "x": 0
       }
     ]
   },
+
 
   "analog-joystick": {
     "viewBox": {
@@ -2036,36 +2037,6 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
       }
     ]
   },
-  "neopixel": {
-    "viewBox": {
-        "minX": 0,
-        "minY": 0,
-        "width": 5.6631,
-        "height": 5
-    },
-    "pins": [
-        {
-            "name": "VDD",
-            "y": 3.5,
-            "x": 1
-        },
-        {
-            "name": "DOUT",
-            "y": 14,
-            "x": 1
-        },
-        {
-            "name": "VSS",
-            "y": 14,
-            "x": 21
-        },
-        {
-            "name": "DIN",
-            "y": 3.5,
-            "x": 21
-        }
-    ]
-},
   "ntc-temperature-sensor": {
     "viewBox": {
       "minX": 0,
@@ -2301,26 +2272,6 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
       }
     ]
   },
-  "small-sound-sensor": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 133,
-      "height": 50.4
-    },
-    "pins": [
-      {
-        "name": "AOUT",
-        "x": 0,
-        "y": 20.5
-      },
-      {
-        "name": "VCC",
-        "x": 0,
-        "y": 40.5
-      }
-    ]
-  },
   "tilt-switch": {
     "viewBox": {
       "minX": 0,
@@ -2378,31 +2329,6 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
         "name": "PULSE",
         "x": 141.2,
         "y": 286
-      }
-    ]
-  },
-  "slide-potentiometer": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 55,
-      "height": 29
-    },
-    "pins": [
-      {
-        "name": "VCC",
-        "x": 1,
-        "y": 43
-      },
-      {
-        "name": "SIG",
-        "x": 1,
-        "y": 63
-      },
-      {
-        "name": "GND",
-        "x": 206.98582677165354,
-        "y": 43
       }
     ]
   }
