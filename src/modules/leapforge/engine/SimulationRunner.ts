@@ -3,10 +3,11 @@
  * Decouples logic execution from UI rendering.
  * Provides a high-frequency tick loop and pin-state management mapped dynamically to AVR8js.
  */
-import { avrInstruction, CPU, AVRTimer, timer0Config, timer1Config, timer2Config, AVRIOPort, portBConfig, portCConfig, portDConfig, usart0Config, AVRUSART, AVRADC, adcConfig, AVRTWI, twiConfig, AVRSPI, spiConfig, AVREEPROM, eepromConfig, EEPROMMemoryBackend } from 'avr8js';
+import { avrInstruction, CPU, AVRTimer, AVRIOPort, AVRUSART, usart0Config, AVRADC, adcConfig, AVRTWI, twiConfig, AVRSPI, spiConfig, AVREEPROM, EEPROMMemoryBackend, AVRWatchdog, watchdogConfig, AVRClock, clockConfig } from '../lib/avr8js';
 import { parseHexString } from './HexParser';
 import { BLINK_HEX } from './TestSketches';
 import { USARTEmulator } from './USARTEmulator';
+import { BOARDS, MCUConfig } from './BoardConfig';
 
 export type PinState = 'HIGH' | 'LOW' | 'FLOATING';
 export type PinListener = (state: PinState) => void;
@@ -28,14 +29,16 @@ class SimulationRunner {
   private spi: AVRSPI | null = null;
   private eeprom: AVREEPROM | null = null;
   private eepromBackend: EEPROMMemoryBackend | null = null;
+  private watchdog: AVRWatchdog | null = null;
+  private clock: AVRClock | null = null;
+
+  private selectedBoard: string = 'arduino-uno';
 
   // Custom Event Scheduler for Peripheral Emulation
   private scheduledEvents: { targetCycles: number, callback: () => void }[] = [];
 
   // Ports
-  private portB: AVRIOPort | null = null;
-  private portC: AVRIOPort | null = null;
-  private portD: AVRIOPort | null = null;
+  private ports = new Map<string, AVRIOPort>();
 
   // Execution configuration
   private isRunning: boolean = false;
@@ -49,48 +52,65 @@ class SimulationRunner {
    * Initializes the inner AVR CPU with a compiled Hex buffer.
    */
   initCPU(hexString: string = BLINK_HEX) {
-    console.log('[FORGE ENGINE] initCPU initializing. Parsing HEX string...');
+    const config = BOARDS[this.selectedBoard] || BOARDS['arduino-uno'];
+    console.log(`[FORGE ENGINE] initCPU initializing ${config.name}. Parsing HEX string...`);
+    
     const progData = parseHexString(hexString);
     this.cpu = new CPU(progData);
-    console.log('[FORGE ENGINE] CPU allocated in memory.');
     
-    // Attach Core Timers
-    new AVRTimer(this.cpu, timer0Config);
-    new AVRTimer(this.cpu, timer1Config);
-    new AVRTimer(this.cpu, timer2Config);
-
-    // Attach Serial USART listener
-    this.usart = new AVRUSART(this.cpu, usart0Config, this.MHZ);
-    this.usartEmulator = new USARTEmulator(this.usart, (char) => {
-      // Send Serial data to the React UI Panel
-      import('../store/useForgeStore').then(({ useForgeStore }) => {
-        useForgeStore.getState().appendSerial(char);
-      });
-      // console.log(`[AVR-Serial]: ${char}`);
+    // Attach Dynamic Ports
+    this.ports.clear();
+    Object.entries(config.ports).forEach(([letter, portConfig]) => {
+      const port = new AVRIOPort(this.cpu!, portConfig);
+      this.ports.set(letter, port);
+      port.addListener((state) => this.pushPortState(letter, state));
     });
 
-    // Attach Physical Ports
-    this.portB = new AVRIOPort(this.cpu, portBConfig);
-    this.portC = new AVRIOPort(this.cpu, portCConfig);
-    this.portD = new AVRIOPort(this.cpu, portDConfig);
-    
-    // Bind Hardware Ports to UI Pin Emitters
-    this.portB.addListener((state) => this.pushPortState('B', state));
-    this.portC.addListener((state) => this.pushPortState('C', state));
-    this.portD.addListener((state) => this.pushPortState('D', state));
-    
+    // Attach Dynamic Timers
+    config.timers.forEach(timerConfig => {
+      new AVRTimer(this.cpu!, timerConfig);
+    });
+
+    // Attach Serial USART
+    if (config.hasUSART) {
+      this.usart = new AVRUSART(this.cpu!, usart0Config, config.frequency);
+      this.usartEmulator = new USARTEmulator(this.usart, (char) => {
+        import('../store/useForgeStore').then(({ useForgeStore }) => {
+          useForgeStore.getState().appendSerial(char);
+        });
+      });
+    }
+
     // Attach ADC
-    this.adc = new AVRADC(this.cpu, adcConfig);
+    if (config.hasADC) {
+      this.adc = new AVRADC(this.cpu!, adcConfig);
+    }
 
     // Attach I2C (TWI)
-    this.twi = new AVRTWI(this.cpu, twiConfig, this.MHZ);
+    if (config.hasTWI) {
+      this.twi = new AVRTWI(this.cpu!, twiConfig, config.frequency);
+    }
 
     // Attach SPI
-    this.spi = new AVRSPI(this.cpu, spiConfig);
+    if (config.hasSPI) {
+      this.spi = new AVRSPI(this.cpu!, spiConfig);
+    }
 
     // Attach EEPROM
-    this.eepromBackend = new EEPROMMemoryBackend(1024); // 1KB for ATMega328P
-    this.eeprom = new AVREEPROM(this.cpu!, this.eepromBackend, eepromConfig);
+    this.eepromBackend = new EEPROMMemoryBackend(config.eepromSize);
+    this.eeprom = new AVREEPROM(this.cpu!, this.eepromBackend);
+
+    // Attach Clock & Watchdog
+    this.clock = new AVRClock(this.cpu!, config.frequency, clockConfig);
+    this.watchdog = new AVRWatchdog(this.cpu!, watchdogConfig, this.clock);
+  }
+
+  public setBoard(boardId: string) {
+    this.selectedBoard = boardId;
+    if (this.isRunning) {
+      this.reset();
+      this.start();
+    }
   }
 
   /**
@@ -168,8 +188,9 @@ class SimulationRunner {
     // Throttle massive execution spikes if browser tab sleeps
     const elapsedMs = Math.min(deltaMs, 100);
 
+    const config = BOARDS[this.selectedBoard] || BOARDS['arduino-uno'];
     // Calculate elapsed clock cycles: 16MHz = 16,000 cycles per ms
-    const cyclesToRun = Math.floor(elapsedMs * (this.MHZ / 1000));
+    const cyclesToRun = Math.floor(elapsedMs * (config.frequency / 1000));
     const startCycles = this.cpu.cycles;
     
     try {
@@ -264,9 +285,8 @@ class SimulationRunner {
     const portLetter = pinId.charAt(1);
     const bit = parseInt(pinId.charAt(2), 10);
     
-    if (portLetter === 'B' && this.portB) this.portB.setPin(bit, isHigh);
-    else if (portLetter === 'C' && this.portC) this.portC.setPin(bit, isHigh);
-    else if (portLetter === 'D' && this.portD) this.portD.setPin(bit, isHigh);
+    const port = this.ports.get(portLetter);
+    if (port) port.setPin(bit, isHigh);
     
     // Immediately echo changes to external UI listeners smoothly
     this.setPinState(pinId, isHigh ? 'HIGH' : 'LOW');

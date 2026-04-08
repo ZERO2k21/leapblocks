@@ -1,4 +1,4 @@
-import { TWIEventHandler } from 'avr8js';
+import { TWIEventHandler } from '../lib/avr8js';
 import { simulationRunner } from './SimulationRunner';
 
 /**

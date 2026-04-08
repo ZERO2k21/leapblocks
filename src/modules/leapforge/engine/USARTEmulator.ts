@@ -1,4 +1,4 @@
-import { AVRUSART } from 'avr8js';
+import { AVRUSART } from '../lib/avr8js';
 
 /**
  * Intercepts USART signals from the AVR and emits them to JS.
