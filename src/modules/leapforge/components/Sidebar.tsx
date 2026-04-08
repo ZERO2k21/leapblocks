@@ -5,8 +5,10 @@ import {
   Lightbulb,
   Smartphone,
   Gauge,
-  MousePointer2
+  MousePointer2,
+  ChevronDown
 } from 'lucide-react';
+import { useForgeStore } from '../store/useForgeStore';
 
 const CATEGORIES = [
   { id: 'all', name: 'All', icon: Search },
@@ -21,6 +23,7 @@ const COMPONENTS = [
   // BOARDS
   { id: 'arduino-uno', name: 'Arduino Uno', category: 'boards', desc: 'Standard microcontroller' },
   { id: 'arduino-mega', name: 'Arduino Mega', category: 'boards', desc: 'Powerful microcontroller' },
+  { id: 'attiny85', name: 'ATtiny85', category: 'boards', desc: 'Mini 8-pin MCU' },
   { id: 'arduino-nano', name: 'Arduino Nano', category: 'boards', desc: 'Compact microcontroller' },
   { id: 'esp32-devkit-v1', name: 'ESP32 DevKit', category: 'boards', desc: 'WiFi & Bluetooth MCU' },
 
@@ -67,6 +70,22 @@ export default function Sidebar() {
 
   return (
     <div className="forge-sidebar">
+      <div className="sidebar-section">
+        <label className="section-label">Target Board</label>
+        <div className="board-selector">
+          <Cpu size={14} />
+          <select 
+            value={useForgeStore((s) => s.board)}
+            onChange={(e) => useForgeStore.getState().setBoard(e.target.value)}
+          >
+            {COMPONENTS.filter(c => c.category === 'boards').map(b => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
+          <ChevronDown size={14} className="chevron" />
+        </div>
+      </div>
+
       <div className="sidebar-header">
         <div className="search-container">
           <Search size={16} />

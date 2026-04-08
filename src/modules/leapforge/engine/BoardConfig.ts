@@ -6,6 +6,13 @@ import {
   AVRTimerConfig
 } from '../lib/avr8js';
 
+export const portBTinyConfig: AVRPortConfig = {
+  PIN: 0x16,
+  DDR: 0x17,
+  PORT: 0x18,
+  externalInterrupts: [],
+};
+
 export interface MCUConfig {
   name: string;
   flashSize: number;
@@ -69,7 +76,7 @@ export const BOARDS: Record<string, MCUConfig> = {
     sramSize: 512,
     eepromSize: 512,
     ports: {
-      'B': portBConfig
+      'B': portBTinyConfig
     },
     timers: [timer0Config], // Attiny85 uses standard Timer0
     hasADC: true,

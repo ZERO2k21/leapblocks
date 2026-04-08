@@ -3,7 +3,7 @@
  * Decouples logic execution from UI rendering.
  * Provides a high-frequency tick loop and pin-state management mapped dynamically to AVR8js.
  */
-import { avrInstruction, CPU, AVRTimer, AVRIOPort, AVRUSART, usart0Config, AVRADC, adcConfig, AVRTWI, twiConfig, AVRSPI, spiConfig, AVREEPROM, EEPROMMemoryBackend, AVRWatchdog, watchdogConfig, AVRClock, clockConfig } from '../lib/avr8js';
+import { avrInstruction, CPU, AVRTimer, AVRIOPort, AVRUSART, usart0Config, AVRADC, adcConfig, AVRTWI, twiConfig, AVRSPI, spiConfig, AVREEPROM, EEPROMMemoryBackend, AVRWatchdog, watchdogConfig, AVRClock, clockConfig, ATtinyTimer1, attinyTimer1Config, AVRUSI } from '../lib/avr8js';
 import { parseHexString } from './HexParser';
 import { BLINK_HEX } from './TestSketches';
 import { USARTEmulator } from './USARTEmulator';
@@ -70,6 +70,12 @@ class SimulationRunner {
     config.timers.forEach(timerConfig => {
       new AVRTimer(this.cpu!, timerConfig);
     });
+
+    // Attach ATtiny Specialized Hardware
+    if (this.selectedBoard === 'attiny85') {
+      new ATtinyTimer1(this.cpu!, attinyTimer1Config);
+      new AVRUSI(this.cpu!, this.ports.get('B')!, 0x16, 0, 2);
+    }
 
     // Attach Serial USART
     if (config.hasUSART) {

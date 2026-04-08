@@ -254,11 +254,59 @@
 
 /* ── SIDEBAR ── */
 .forge-sidebar {
-  width: var(--sidebar-width);
-  background: var(--bg-main);
-  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
+}
+
+.sidebar-section {
+  padding: 16px 12px 12px;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.section-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+}
+
+.board-selector {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--bg-lighter);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0 10px;
+  height: 36px;
+  transition: border-color 0.2s;
+}
+
+.board-selector:hover {
+  border-color: var(--accent-green);
+}
+
+.board-selector select {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  padding-left: 10px;
+  width: 100%;
+}
+
+.board-selector .chevron {
+  color: var(--text-secondary);
+  pointer-events: none;
 }
 
 .sidebar-search {

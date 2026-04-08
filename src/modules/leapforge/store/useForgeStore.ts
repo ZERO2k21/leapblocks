@@ -34,6 +34,10 @@ export interface ForgeState {
   serialOutput: string;
   appendSerial: (data: string) => void;
   clearSerial: () => void;
+  
+  // Board Configuration
+  board: string;
+  setBoard: (board: string) => void;
 }
 
 export const useForgeStore = create<ForgeState>((set, get) => ({
@@ -42,6 +46,12 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   selectedNodeId: null,
   isSimulating: false,
   serialOutput: '',
+  board: 'arduino-uno',
+  
+  setBoard: (board) => set(() => {
+    simulationRunner.setBoard(board);
+    return { board };
+  }),
   
   startSimulation: (hexString) => set((state) => {
     console.log('[FORGE STORE] startSimulation triggered. Hex length:', hexString.length);
