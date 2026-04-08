@@ -296,7 +296,7 @@ export default function MenuBar({
         <div style={{
             display: 'flex',
             alignItems: 'center',
-            height: 62,
+            height: 56,
             padding: '0 18px',
             gap: 6,
             background: '#5A2D82',
@@ -345,7 +345,7 @@ export default function MenuBar({
                 flexShrink: 0,
                 filter: 'drop-shadow(0 0 12px rgba(36, 0, 85, 1)) drop-shadow(0 2px 6px rgba(0,0,0,0.3))',
             }}>
-                <Logo height={52} />
+                <Logo height={44} />
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -363,7 +363,7 @@ export default function MenuBar({
                     }}>LEAPLAB</span>
                     <span style={{
                         color: '#fff',
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: 900,
                         letterSpacing: '0.08em',
                         fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
@@ -546,7 +546,7 @@ export default function MenuBar({
                 borderRadius: 10,
                 padding: '0 4px 0 12px',
                 border: '1px solid rgba(255,255,255,0.08)',
-                height: 36,
+                height: 32,
                 gap: 6,
             }}>
                 <span style={{ fontSize: 14, opacity: 0.5 }}>📁</span>

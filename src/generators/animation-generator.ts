@@ -131,7 +131,15 @@ export class AnimationCompiler {
         const id = this.getVariableId(block);
         const ws = block.workspace;
         const variable = ws.getVariableById(id);
-        return variable ? (variable as any).name : id;
+        if (variable) return (variable as any).name;
+        
+        // Fallback: If ID not found, try to get the human-readable text from the field itself.
+        // This is critical if the variable was recreated and the block still points to a ghost ID.
+        const field = block.getField('VARIABLE') || block.getField('VAR') || block.getField('LIST');
+        const nameFallback = field ? field.getText() : id;
+        
+        compilerLog.warn(`Variable ID not found in workspace: ${id}. Using display text as name: ${nameFallback}`);
+        return nameFallback;
     }
 
     // Compile a value input block into a runtime string/number function
@@ -142,6 +150,17 @@ export class AnimationCompiler {
         console.info(`[Compiler] compileStringValue: block=${block.type}, input=${inputName}`);
 
         if (!input || !input.connection) {
+            // Fallback: check if the name corresponds to a direct field (field_input)
+            // e.g. scratchBlocks.ts defines looks_say with field_input named MESSAGE
+            const fieldVal = block.getFieldValue(inputName);
+            if (fieldVal !== null && fieldVal !== undefined) {
+                console.info(`[Compiler] Using field fallback for '${inputName}' on ${block.type}: "${fieldVal}"`);
+                return () => {
+                    // Re-read at runtime so live edits to the field are reflected
+                    const v = block.getFieldValue(inputName);
+                    return v !== null && v !== undefined ? String(v) : '';
+                };
+            }
             console.warn(`[Compiler] No input or connection for ${inputName} on ${block.type} - returning empty`);
             return () => '';
         }
@@ -174,10 +193,11 @@ export class AnimationCompiler {
                     return val !== null ? String(val) : '0';
                 };
             case 'variables_get': {
-                const id = valueBlock.getFieldValue('VAR');
-                const ws = valueBlock.workspace;
-                const variable = ws.getVariableById(id);
-                const name = variable ? (variable as any).name : id;
+                const name = this.getVariableName(valueBlock);
+                return () => String(animationVM.getVariable(name));
+            }
+            case 'data_variable': {
+                const name = this.getVariableName(valueBlock);
                 return () => String(animationVM.getVariable(name));
             }
             case 'operator_join': {
@@ -257,6 +277,18 @@ export class AnimationCompiler {
     private compileNumberValue(block: Blockly.Block, inputName: string): () => number {
         const input = block.getInput(inputName);
         if (!input || !input.connection) {
+            // Fallback: check if the name corresponds to a direct field (field_number)
+            const fieldVal = block.getFieldValue(inputName);
+            if (fieldVal !== null && fieldVal !== undefined) {
+                const num = Number(fieldVal);
+                if (!isNaN(num)) {
+                    return () => {
+                        const v = block.getFieldValue(inputName);
+                        const n = Number(v);
+                        return isNaN(n) ? 0 : n;
+                    };
+                }
+            }
             console.warn(`[Compiler] compileNumberValue: No input/connection for '${inputName}' on '${block.type}'`);
             return () => 0;
         }
@@ -356,20 +388,35 @@ export class AnimationCompiler {
                 };
             }
             case 'variables_get': {
-                // Important: We need to get variable name by ID since that's how Blockly stores it
-                const id = valueBlock.getFieldValue('VAR');
-                const ws = valueBlock.workspace;
-                const variable = ws.getVariableById(id);
-                const name = variable ? (variable as any).name : id;
+                const name = this.getVariableName(valueBlock);
                 return () => {
-                    const num = Number(animationVM.getVariable(name));
+                    const val = animationVM.getVariable(name);
+                    const num = Number(val);
                     return isNaN(num) ? 0 : num;
-                }; // compileNumberValue forces return number
+                };
+            }
+            case 'data_variable': {
+                const dvName = this.getVariableName(valueBlock);
+                return () => {
+                    const value = animationVM.getVariable(dvName);
+                    const num = Number(value);
+                    if (isNaN(num)) {
+                        compilerLog.warn(`Variable '${dvName}' is not a number:`, value);
+                        return 0;
+                    }
+                    return num;
+                };
             }
             case 'operator_add': {
                 const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
                 const num2Func = this.compileNumberValue(valueBlock, 'NUM2');
-                return () => num1Func() + num2Func();
+                return () => {
+                    const n1 = num1Func();
+                    const n2 = num2Func();
+                    const result = Number(n1) + Number(n2);
+                    compilerLog.info(`Addition: ${n1} + ${n2} = ${result}`);
+                    return result;
+                };
             }
             case 'operator_subtract': {
                 const num1Func = this.compileNumberValue(valueBlock, 'NUM1');
@@ -488,11 +535,13 @@ export class AnimationCompiler {
                     return 0;
                 };
             }
-            case 'sensing_answer':
+            case 'sensing_answer': {
                 return () => {
-                    const num = Number(animationVM.getAnswer());
+                    const ans = animationVM.getAnswer();
+                    const num = Number(ans);
                     return isNaN(num) ? 0 : num;
                 };
+            }
             default:
                 compilerLog.warn(`Unknown value block: ${valueBlock.type}`);
                 return () => 0;
@@ -534,38 +583,52 @@ export class AnimationCompiler {
         compilerLog.block(block.type, 'checking trigger type...');
 
         switch (block.type) {
+            // Green flag — support both old internal name and Scratch-standard name
             case 'event_flag_clicked':
+            case 'event_whenflagclicked':
             case 'arduino_setup':
                 trigger = 'flag';
                 compilerLog.info(`  Trigger: flag (green flag or arduino setup)`);
                 break;
+            // Sprite / stage click — support both naming conventions
             case 'event_sprite_clicked':
+            case 'event_whenthisspriteclicked':
             case 'event_stage_clicked':
                 trigger = 'sprite_click';
                 compilerLog.info(`  Trigger: sprite_click (sprite or stage)`);
                 break;
+            // Key pressed
             case 'event_key_pressed':
+            case 'event_whenkeypressed':
                 trigger = 'key';
-                triggerKey = block.getFieldValue('KEY');
+                triggerKey = block.getFieldValue('KEY') || block.getFieldValue('KEY_OPTION');
                 compilerLog.info(`  Trigger: key (${triggerKey})`);
                 break;
+            // Broadcast receive
             case 'event_receive':
+            case 'event_whenbroadcastreceived':
                 trigger = 'broadcast_receive';
-                triggerKey = block.getFieldValue('MESSAGE');
+                triggerKey = block.getFieldValue('MESSAGE') || block.getFieldValue('BROADCAST_OPTION');
                 compilerLog.info(`  Trigger: broadcast receive (${triggerKey})`);
                 break;
+            // Clone start
             case 'event_clone_start':
+            case 'control_start_as_clone':
                 trigger = 'clone';
                 compilerLog.info(`  Trigger: clone start`);
                 break;
+            // Backdrop switch
             case 'event_backdrop_switch':
+            case 'event_whenbackdropswitchesto':
                 trigger = 'backdrop_switch';
                 triggerKey = block.getFieldValue('BACKDROP');
                 compilerLog.info(`  Trigger: backdrop switch (${triggerKey})`);
                 break;
+            // Greater than
             case 'event_greater_than':
+            case 'event_whengreaterthan':
                 trigger = 'greater_than';
-                triggerKey = block.getFieldValue('SENSOR') + ':' + block.getFieldValue('VALUE');
+                triggerKey = (block.getFieldValue('SENSOR') || block.getFieldValue('WHEN')) + ':' + block.getFieldValue('VALUE');
                 compilerLog.info(`  Trigger: greater than (${triggerKey})`);
                 break;
             case 'procedures_defnoreturn':
@@ -574,7 +637,7 @@ export class AnimationCompiler {
                 compilerLog.info(`  Trigger: custom procedure (${triggerKey})`);
                 break;
             default:
-                compilerLog.info(`  Not an event block, returning null`);
+                compilerLog.info(`  Not an event block (type: ${block.type}), returning null`);
                 return null; // Not an event block
         }
 
@@ -592,8 +655,9 @@ export class AnimationCompiler {
     private compileBlock(block: Blockly.Block): ScriptStep | null {
         let step: ScriptStep | null = null;
         switch (block.type) {
-            // Motion
+            // Motion (support both internal underscore names and Scratch-standard concatenated names)
             case 'motion_move_steps':
+            case 'motion_movesteps':
                 step = { type: 'move_steps', steps: Number(block.getFieldValue('STEPS')) };
                 break;
             case 'motion_move_left':
@@ -606,54 +670,69 @@ export class AnimationCompiler {
                 step = { type: 'change_y', dy: -Math.abs(Number(block.getFieldValue('STEPS'))) };
                 break;
             case 'motion_turn_right':
+            case 'motion_turnright':
                 step = { type: 'turn_right', degrees: Number(block.getFieldValue('DEGREES')) };
                 break;
             case 'motion_turn_left':
+            case 'motion_turnleft':
                 step = { type: 'turn_left', degrees: Number(block.getFieldValue('DEGREES')) };
                 break;
             case 'motion_go_to_xy':
+            case 'motion_gotoxy':
                 step = { type: 'go_to_xy', x: Number(block.getFieldValue('X')), y: Number(block.getFieldValue('Y')) };
                 break;
             case 'motion_glide_to_xy':
+            case 'motion_glidesecstoxy':
                 step = { type: 'glide_to_xy', secs: Number(block.getFieldValue('SECS')), x: Number(block.getFieldValue('X')), y: Number(block.getFieldValue('Y')) };
                 break;
             case 'motion_point_direction':
+            case 'motion_pointindirection':
                 step = { type: 'point_direction', direction: Number(block.getFieldValue('DIRECTION')) };
                 break;
             case 'motion_change_x':
+            case 'motion_changexby':
                 step = { type: 'change_x', dx: Number(block.getFieldValue('DX')) };
                 break;
             case 'motion_change_y':
+            case 'motion_changeyby':
                 step = { type: 'change_y', dy: Number(block.getFieldValue('DY')) };
                 break;
             case 'motion_set_x':
+            case 'motion_setx':
                 step = { type: 'set_x', x: Number(block.getFieldValue('X')) };
                 break;
             case 'motion_set_y':
+            case 'motion_sety':
                 step = { type: 'set_y', y: Number(block.getFieldValue('Y')) };
                 break;
-            // New PictoBlox motion blocks
+            // Motion — go to, glide, point towards, edge bounce, rotation
             case 'motion_go_to':
+            case 'motion_goto':
                 step = { type: 'go_to', target: block.getFieldValue('TO') as 'random' | 'mouse' | string };
                 break;
             case 'motion_glide_to':
+            case 'motion_glideto':
                 step = { type: 'glide_to', secs: Number(block.getFieldValue('SECS')), target: block.getFieldValue('TO') as 'random' | 'mouse' | string };
                 break;
             case 'motion_point_towards':
+            case 'motion_pointtowards':
                 step = { type: 'point_towards', towards: block.getFieldValue('TOWARDS') as 'mouse' | 'random' | string };
                 break;
             case 'motion_if_on_edge_bounce':
+            case 'motion_ifonedgebounce':
                 step = { type: 'if_on_edge_bounce' };
                 break;
             case 'motion_set_rotation_style':
+            case 'motion_setrotationstyle':
                 step = { type: 'set_rotation_style', style: block.getFieldValue('STYLE') as 'left-right' | 'all around' | 'none' };
                 break;
 
-            // Looks
+            // Looks (support both internal and Scratch-standard names)
             case 'looks_say':
                 step = { type: 'say', message: this.compileStringValue(block, 'MESSAGE') };
                 break;
             case 'looks_say_for_secs':
+            case 'looks_sayforsecs':
                 step = { type: 'say_for_secs', message: this.compileStringValue(block, 'MESSAGE'), secs: this.compileNumberValue(block, 'SECS') };
                 break;
             case 'looks_show':
@@ -663,50 +742,68 @@ export class AnimationCompiler {
                 step = { type: 'hide' };
                 break;
             case 'looks_next_costume':
+            case 'looks_nextcostume':
                 step = { type: 'next_costume' };
                 break;
             case 'looks_set_size':
+            case 'looks_setsizeto':
                 step = { type: 'set_size', size: Number(block.getFieldValue('SIZE')) };
                 break;
             case 'looks_change_size':
+            case 'looks_changesizeby':
                 step = { type: 'change_size', change: Number(block.getFieldValue('CHANGE')) };
                 break;
             case 'looks_set_effect':
+            case 'looks_seteffectto':
                 step = { type: 'set_effect', effect: block.getFieldValue('EFFECT') as 'ghost' | 'brightness', value: Number(block.getFieldValue('VALUE')) };
                 break;
             case 'looks_clear_effects':
+            case 'looks_cleargraphiceffects':
                 step = { type: 'clear_effects' };
                 break;
             case 'looks_change_effect':
-                step = { type: 'change_effect', effect: block.getFieldValue('EFFECT'), change: Number(block.getFieldValue('CHANGE')) };
+            case 'looks_changeeffectby':
+                step = { type: 'change_effect', effect: block.getFieldValue('EFFECT'), change: Number(block.getFieldValue('CHANGE') || block.getFieldValue('VALUE')) };
                 break;
-            // New Looks blocks
+            // Looks — think, costume, backdrop, layers
             case 'looks_think':
                 step = { type: 'think', message: this.compileStringValue(block, 'MESSAGE') };
                 break;
             case 'looks_think_for_secs':
+            case 'looks_thinkforsecs':
                 step = { type: 'think_for_secs', message: this.compileStringValue(block, 'MESSAGE'), secs: this.compileNumberValue(block, 'SECS') };
                 break;
             case 'looks_switch_costume':
+            case 'looks_switchcostumeto':
                 step = { type: 'switch_costume', costume: block.getFieldValue('COSTUME') };
                 break;
             case 'looks_switch_backdrop':
+            case 'looks_switchbackdropto':
                 step = { type: 'switch_backdrop', backdrop: block.getFieldValue('BACKDROP') };
                 break;
             case 'looks_next_backdrop':
+            case 'looks_nextbackdrop':
                 step = { type: 'next_backdrop' };
                 break;
             case 'looks_go_to_layer':
-                step = { type: 'go_to_layer', layer: block.getFieldValue('LAYER') as 'front' | 'back' };
+            case 'looks_gotofrontback': {
+                const layer = block.getFieldValue('LAYER') || block.getFieldValue('FRONT_BACK');
+                step = { type: 'go_to_layer', layer: layer as 'front' | 'back' };
                 break;
+            }
             case 'looks_go_forward_layers':
-                step = { type: 'go_forward_layers', direction: block.getFieldValue('DIRECTION') as 'forward' | 'backward', layers: Number(block.getFieldValue('LAYERS')) };
+            case 'looks_goforwardbackwardlayers': {
+                const dir = block.getFieldValue('DIRECTION') || block.getFieldValue('FORWARD_BACKWARD');
+                const num = Number(block.getFieldValue('LAYERS') || block.getFieldValue('NUM'));
+                step = { type: 'go_forward_layers', direction: dir as 'forward' | 'backward', layers: num };
                 break;
+            }
 
             // Control & Arduino Control
             case 'control_wait':
             case 'arduino_delay': {
-                const secs = this.compileNumberValue(block, 'SECS');
+                // scratchBlocks uses DURATION, animation-blocks uses SECS
+                const secs = this.compileNumberValue(block, 'SECS') || this.compileNumberValue(block, 'DURATION');
                 step = { type: 'wait', secs };
                 break;
             }
@@ -747,37 +844,45 @@ export class AnimationCompiler {
                 break;
             }
             case 'control_create_clone':
+            case 'control_create_clone_of':
                 step = { type: 'create_clone', target: block.getFieldValue('CLONE_OPTION') };
                 break;
             case 'control_delete_clone':
+            case 'control_delete_this_clone':
                 step = { type: 'delete_clone' };
                 break;
 
-            // Events - broadcast
+            // Events - broadcast (support both field names)
             case 'event_broadcast':
-                step = { type: 'broadcast', message: block.getFieldValue('MESSAGE') };
+                step = { type: 'broadcast', message: block.getFieldValue('MESSAGE') || block.getFieldValue('BROADCAST_INPUT') };
                 break;
             case 'event_broadcast_wait':
-                step = { type: 'broadcast_wait', message: block.getFieldValue('MESSAGE') };
+            case 'event_broadcastandwait':
+                step = { type: 'broadcast_wait', message: block.getFieldValue('MESSAGE') || block.getFieldValue('BROADCAST_INPUT') };
                 break;
 
             // Sound
             case 'sound_play':
-                step = { type: 'play_sound', sound: block.getFieldValue('SOUND') };
+                step = { type: 'play_sound', sound: block.getFieldValue('SOUND') || block.getFieldValue('SOUND_MENU') };
                 break;
             case 'sound_play_until_done':
-                step = { type: 'play_sound_until_done', sound: block.getFieldValue('SOUND') };
+            case 'sound_playuntildone':
+                step = { type: 'play_sound_until_done', sound: block.getFieldValue('SOUND') || block.getFieldValue('SOUND_MENU') };
                 break;
             case 'sound_stop_all':
+            case 'sound_stopallsounds':
                 step = { type: 'stop_all_sounds' };
                 break;
             case 'sound_set_volume':
+            case 'sound_setvolumeto':
                 step = { type: 'set_volume', volume: Number(block.getFieldValue('VOLUME')) };
                 break;
             case 'sound_change_volume':
+            case 'sound_changevolumeby':
                 step = { type: 'change_volume', change: Number(block.getFieldValue('VOLUME')) };
                 break;
             case 'sound_set_effect':
+            case 'sound_seteffectto':
                 step = {
                     type: 'set_sound_effect',
                     effect: block.getFieldValue('EFFECT') as 'pitch' | 'pan',
@@ -785,6 +890,7 @@ export class AnimationCompiler {
                 };
                 break;
             case 'sound_change_effect':
+            case 'sound_changeeffectby':
                 step = {
                     type: 'change_sound_effect',
                     effect: block.getFieldValue('EFFECT') as 'pitch' | 'pan',
@@ -792,6 +898,7 @@ export class AnimationCompiler {
                 };
                 break;
             case 'sound_clear_effects':
+            case 'sound_cleareffects':
                 step = { type: 'clear_sound_effects' };
                 break;
 
@@ -827,9 +934,14 @@ export class AnimationCompiler {
             // Sensing
             case 'ask':
             case 'sensing_ask':
-                step = { type: 'ask', question: block.getFieldValue('QUESTION') };
+            case 'sensing_askandwait':
+                step = {
+                    type: 'ask',
+                    question: this.compileStringValue(block, 'QUESTION')
+                };
                 break;
             case 'sensing_reset_timer':
+            case 'sensing_resettimer':
                 step = { type: 'reset_timer' };
                 break;
 

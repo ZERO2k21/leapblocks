@@ -91,14 +91,14 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                 </div>
                 {/* Blocks/Python Mode Tabs */}
                 <div style={{ display: "flex", background: "rgba(0,0,0,0.2)", borderRadius: 6, overflow: "hidden", marginRight: 12 }}>
-                    <div 
+                    <div
                         onClick={() => setMode && setMode("blocks")}
-                        style={{ 
-                            padding: "6px 14px", 
-                            background: mode === "blocks" ? "rgba(255,255,255,0.2)" : "transparent", 
-                            color: "#fff", 
-                            fontSize: 12, 
-                            fontWeight: 600, 
+                        style={{
+                            padding: "6px 14px",
+                            background: mode === "blocks" ? "rgba(255,255,255,0.2)" : "transparent",
+                            color: "#fff",
+                            fontSize: 12,
+                            fontWeight: 600,
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
@@ -106,14 +106,14 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                         }}>
                         <span style={{ fontSize: 14 }}>🧩</span> Blocks
                     </div>
-                    <div 
+                    <div
                         onClick={() => setMode && setMode("python")}
-                        style={{ 
-                            padding: "6px 14px", 
-                            background: mode === "python" ? "rgba(255,255,255,0.2)" : "transparent", 
-                            color: "#fff", 
-                            fontSize: 12, 
-                            fontWeight: 600, 
+                        style={{
+                            padding: "6px 14px",
+                            background: mode === "python" ? "rgba(255,255,255,0.2)" : "transparent",
+                            color: "#fff",
+                            fontSize: 12,
+                            fontWeight: 600,
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
@@ -122,42 +122,42 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                         <span style={{ fontSize: 14 }}>🐍</span> Python
                     </div>
                 </div>
-                
+
                 {/* Costumes/Sounds Tabs */}
                 <div style={{ display: "flex", gap: 4 }}>
-                    <div style={{ 
-                        padding: "6px 12px", 
-                        background: "transparent", 
-                        color: "rgba(255,255,255,0.8)", 
-                        fontSize: 12, 
+                    <div style={{
+                        padding: "6px 12px",
+                        background: "transparent",
+                        color: "rgba(255,255,255,0.8)",
+                        fontSize: 12,
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
                         gap: 6,
                         borderRadius: 4
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                         <span style={{ fontSize: 14 }}>🎨</span> Costumes
                     </div>
-                    <div style={{ 
-                        padding: "6px 12px", 
-                        background: "transparent", 
-                        color: "rgba(255,255,255,0.8)", 
-                        fontSize: 12, 
+                    <div style={{
+                        padding: "6px 12px",
+                        background: "transparent",
+                        color: "rgba(255,255,255,0.8)",
+                        fontSize: 12,
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
                         gap: 6,
                         borderRadius: 4
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                         <span style={{ fontSize: 14 }}>🔊</span> Sounds
                     </div>
                 </div>
             </div>
-            
+
             {/* Middle: Toolbar Icons */}
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
@@ -212,53 +212,53 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
             {/* Right Side: Run/Stop + Upload Firmware + CREOLEAP Logo */}
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {/* Green Flag (Run) */}
-                <div style={{ 
-                    padding: "6px 10px", 
-                    cursor: "pointer", 
-                    borderRadius: 4, 
+                <div style={{
+                    padding: "6px 10px",
+                    cursor: "pointer",
+                    borderRadius: 4,
                     color: "#4CAF50",
                     fontSize: 18
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                     ▶
                 </div>
                 {/* Red Circle (Stop) */}
-                <div style={{ 
-                    padding: "6px 10px", 
-                    cursor: "pointer", 
-                    borderRadius: 4, 
+                <div style={{
+                    padding: "6px 10px",
+                    cursor: "pointer",
+                    borderRadius: 4,
                     color: "#F44336",
                     fontSize: 18
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                     ●
                 </div>
-                
+
                 <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)", margin: "0 4px" }} />
-                
+
                 {/* Upload Firmware Button */}
-                <button 
-                    style={{ 
-                        display: "flex", 
-                        alignItems: "center", 
-                        gap: 6, 
-                        padding: "6px 12px", 
-                        background: "rgba(255,255,255,0.2)", 
-                        color: "#fff", 
-                        border: "1px solid rgba(255,255,255,0.3)", 
-                        borderRadius: 6, 
-                        cursor: "pointer", 
-                        fontSize: 12, 
-                        fontWeight: 600 
+                <button
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        padding: "6px 12px",
+                        background: "rgba(255,255,255,0.2)",
+                        color: "#fff",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        borderRadius: 6,
+                        cursor: "pointer",
+                        fontSize: 12,
+                        fontWeight: 600
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
                     onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
                 >
                     <Upload size={14} /> Upload Firmware
                 </button>
-                
+
                 {/* Camera, Window, Fullscreen icons */}
                 <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
                     <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
