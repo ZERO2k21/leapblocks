@@ -52,6 +52,7 @@ import BackdropLibrary from './components/BackdropLibrary';
 // import BackdropEditor from './components/BackdropEditor'; // Temporarily disabled
 
 import { stageManager } from './engine/StageManager';
+import { spriteManager } from './engine/SpriteManager';
 import { scratchRuntime } from './runtime/scratchRuntime';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
 
@@ -378,7 +379,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // Sprites
 
-    const [sprites, setSprites] = useState<Sprite[]>([]);
+    const [sprites, setSprites] = useState<Sprite[]>(spriteManager.getAllSprites());
+
+    // Runtime Sprite Sync (Clones, Deletions, etc.)
+    useEffect(() => {
+        const handleUpdate = () => setSprites([...spriteManager.getAllSprites()]);
+        spriteManager.setUpdateCallback(handleUpdate);
+        handleUpdate();
+        return () => spriteManager.setUpdateCallback(() => {});
+    }, []);
 
     const [selectedSpriteId, setSelectedSpriteId] = useState<string | null>(null);
 
@@ -3307,6 +3316,23 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         };
 
+        // Expose all sprite names for sensing_touching dropdown
+        (window as any).getAllSpriteNames = () => {
+            const allSprites = spriteManager.getAllSprites();
+            const activeId = activeSpriteIdRef.current;
+            // Return names of all non-clone sprites, excluding the active one
+            const names: string[] = [];
+            const seen = new Set<string>();
+            for (const sprite of allSprites) {
+                // Skip clones (they have '_clone_' in their ID) and the active sprite
+                if (!sprite.id.includes('_clone_') && sprite.id !== activeId && !seen.has(sprite.name)) {
+                    names.push(sprite.name);
+                    seen.add(sprite.name);
+                }
+            }
+            return names;
+        };
+
         (window as any).onToggleVisibility = (name: string, type: string, forceVisible?: boolean) => {
             const setFn = type === 'variable' ? setVariableMonitors : (type === 'list' ? setListMonitors : (type === 'table' ? setTableMonitors : setSensingMonitors));
 
@@ -3364,6 +3390,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             delete (window as any).getActiveSpriteCostumes;
 
             delete (window as any).getActiveStageBackdrops;
+
+            delete (window as any).getAllSpriteNames;
 
             delete (window as any).onToggleVisibility;
 
@@ -3965,12 +3993,14 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             contents.push({
                                 kind: 'block',
-                                type: 'variable_reporter_checkbox',
-                                gap: 8,
-                                fields: {
-                                    'CHECK': isVisible ? 'TRUE' : 'FALSE',
-                                    'VARIABLE': v.getName()
-                                }
+                                type: 'checkbox_only',
+                                gap: -32,
+                                fields: { 'CHECK': isVisible ? 'TRUE' : 'FALSE' }
+                            });
+                            contents.push({
+                                kind: 'block',
+                                type: 'data_variable',
+                                fields: { 'VARIABLE': { id: v.getId(), name: v.getName() } }
                             });
                         });
 
@@ -4028,12 +4058,14 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             contents.push({
                                 kind: 'block',
-                                type: 'list_reporter_checkbox',
-                                gap: 8,
-                                fields: {
-                                    'CHECK': isVisible ? 'TRUE' : 'FALSE',
-                                    'LIST': v.getName()
-                                }
+                                type: 'checkbox_only',
+                                gap: -32,
+                                fields: { 'CHECK': isVisible ? 'TRUE' : 'FALSE' }
+                            });
+                            contents.push({
+                                kind: 'block',
+                                type: 'data_listcontents',
+                                fields: { 'LIST': { id: v.getId(), name: v.getName() } }
                             });
                         });
 
@@ -4083,12 +4115,14 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             contents.push({
                                 kind: 'block',
-                                type: 'list_reporter_checkbox', // Re-using list_reporter_checkbox for tables too for consistency
-                                gap: 8,
-                                fields: {
-                                    'CHECK': isVisible ? 'TRUE' : 'FALSE',
-                                    'LIST': v.getName()
-                                }
+                                type: 'checkbox_only',
+                                gap: -32,
+                                fields: { 'CHECK': isVisible ? 'TRUE' : 'FALSE' }
+                            });
+                            contents.push({
+                                kind: 'block',
+                                type: 'data_listcontents',
+                                fields: { 'LIST': { id: v.getId(), name: v.getName() } }
                             });
                         });
 
@@ -4163,12 +4197,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             const monitor = sensingMonitorsRef.current.find(m => m.name === name);
                             contents.push({
                                 kind: 'block',
-                                type: 'sensing_reporter_checkbox',
-                                gap: 8,
-                                fields: {
-                                    'CHECK': monitor?.visible ? 'TRUE' : 'FALSE',
-                                    'VARIABLE': name
-                                }
+                                type: 'checkbox_only',
+                                gap: -32,
+                                fields: { 'CHECK': monitor?.visible ? 'TRUE' : 'FALSE' }
+                            });
+                            contents.push({
+                                kind: 'block',
+                                type: `sensing_${name}`
                             });
                         });
 
@@ -4319,6 +4354,17 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 );
                             }
                         }
+                    }));
+
+                    workspaceRef.current.registerButtonCallback('TOGGLE_SENSING_*', ((btn: any) => {
+                        const monitorName = btn.target_.replace('TOGGLE_SENSING_', '');
+                        setSensingMonitors(prev =>
+                            prev.map(monitor =>
+                                monitor.name === monitorName
+                                    ? { ...monitor, visible: !monitor.visible }
+                                    : monitor
+                            )
+                        );
                     }));
 
 

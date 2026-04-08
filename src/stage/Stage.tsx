@@ -347,6 +347,7 @@ export const Stage: React.FC<StageProps> = ({
             const h = (sprite.currentCostume?.height || 80) * scale;
 
             if (Math.abs(mouseX - sprite.x) <= w / 2 && Math.abs(mouseY - sprite.y) <= h / 2) {
+                animationVM.setMouseDown(true);
                 setDraggingSpriteId(sprite.id);
                 setDragOffset({ x: sprite.x - mouseX, y: sprite.y - mouseY });
                 sprite.setDragging(true); // Trigger drag scale/shadow
@@ -358,6 +359,7 @@ export const Stage: React.FC<StageProps> = ({
             }
         }
 
+        animationVM.setMouseDown(true);
         if (onStageClick) onStageClick(mouseX, mouseY);
         if (onSpriteClick) onSpriteClick('stage');
     };
@@ -382,6 +384,7 @@ export const Stage: React.FC<StageProps> = ({
     };
 
     const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        animationVM.setMouseDown(false);
         if (draggingSpriteId) {
             const sprite = sprites.find(s => s.id === draggingSpriteId);
             if (sprite) {

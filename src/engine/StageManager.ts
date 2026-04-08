@@ -151,6 +151,10 @@ export class StageManager {
         return [...this.backdrops];
     }
 
+    getCurrentBackdropIndex(): number {
+        return this.currentBackdropIndex;
+    }
+
     get currentBackdrop(): BackdropState | null {
         return this.getCurrentBackdrop();
     }
