@@ -16,7 +16,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setSelectedNode(null);
-    }, 3000); // 3 seconds
+    }, 5000); // 5 seconds
   }, [setSelectedNode]);
 
   // Start/Reset timer on mount and activity
@@ -27,20 +27,41 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     };
   }, [resetTimer]);
 
-  // Default values if not set
-  const distance = currentValues?.distance ?? 100;
+  // --- Configuration Mapping ---
+  const isDistanceSensor = type === 'hc-sr04';
+  const isAnalogSensor = ['potentiometer', 'photoresistor', 'ntc-temperature-sensor', 'mq2'].includes(type);
+
+  if (!isDistanceSensor && !isAnalogSensor) return null;
+
+  // Configuration for display
+  const config = isDistanceSensor 
+    ? { label: 'DISTANCE', unit: 'cm', min: 2, max: 400, key: 'distance' }
+    : type === 'potentiometer' ? { label: 'RESISTANCE', unit: '%', min: 0, max: 100, key: 'value' }
+    : type === 'photoresistor' ? { label: 'LIGHT', unit: 'lux', min: 0, max: 1000, key: 'value' }
+    : type === 'ntc-temperature-sensor' ? { label: 'TEMP', unit: '°C', min: -40, max: 125, key: 'value' }
+    : { label: 'VALUE', unit: '', min: 0, max: 1023, key: 'value' };
+
+  const currentValue = currentValues?.[config.key] ?? config.min;
   
-  const handleDistanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    resetTimer(); // Reset the 3s countdown on interaction
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    resetTimer();
+    const newValue = parseFloat(e.target.value);
+    
     updateNodeData(nodeId, {
       sensorValues: {
         ...currentValues,
-        distance: parseInt(e.target.value, 10)
+        [config.key]: newValue
       }
     });
-  };
 
-  if (type !== 'hc-sr04') return null;
+    // Proactively push to simulation engine if it's an analog input
+    if (isAnalogSensor) {
+      import('../../engine/CircuitEngine').then(({ circuitEngine }) => {
+        // We push 'true' as a dummy for digital, the engine will pull the analog value from store
+        circuitEngine.pushInputSignal(nodeId, 'SIG', true); 
+      });
+    }
+  };
 
   return (
     <div 
@@ -50,37 +71,41 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       className="nodrag nopan"
       style={{
         position: 'absolute',
-        bottom: '-60px',
+        bottom: '-70px',
         left: '50%',
         transform: 'translateX(-50%)',
-        width: '160px',
-        background: 'rgba(30, 41, 59, 0.95)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(148, 163, 184, 0.2)',
-        borderRadius: '8px',
-        padding: '8px 12px',
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
-        zIndex: 100,
+        width: '180px',
+        background: 'rgba(15, 23, 42, 0.9)',
+        backdropFilter: 'blur(16px)',
+        border: '1px solid rgba(186, 242, 100, 0.3)',
+        borderRadius: '12px',
+        padding: '10px 14px',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)',
+        zIndex: 1000,
         display: 'flex',
         flexDirection: 'column',
-        gap: '6px',
+        gap: '8px',
         cursor: 'default'
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600, fontFamily: 'sans-serif' }}>DISTANCE</span>
-        <span style={{ fontSize: '11px', color: '#BEF264', fontWeight: 700, fontFamily: 'monospace' }}>{distance} cm</span>
+        <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em', fontFamily: 'system-ui' }}>{config.label}</span>
+        <span style={{ fontSize: '12px', color: '#BEF264', fontWeight: 800, fontFamily: 'monospace' }}>
+          {currentValue} {config.unit}
+        </span>
       </div>
       <input 
         type="range" 
-        min="2" 
-        max="400" 
-        value={distance} 
-        onChange={handleDistanceChange}
+        min={config.min} 
+        max={config.max} 
+        value={currentValue} 
+        onChange={handleChange}
         style={{
           width: '100%',
           accentColor: '#BEF264',
-          cursor: 'pointer'
+          height: '4px',
+          cursor: 'pointer',
+          borderRadius: '2px'
         }}
       />
     </div>

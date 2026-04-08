@@ -38,6 +38,23 @@ export const WokwiNode = memo(({ id, data, selected }: NodeProps) => {
     if (data.pinStates?.pin_PIEZO === true || data.pinStates?.pin_1 === true) {
       mappedProps.hasSignal = true;
     }
+  } else if (data.type === 'servo') {
+    // Servos use the 'angle' property calculated in CircuitEngine
+    mappedProps.angle = data.angle ?? 0;
+  } else if (['potentiometer', 'photoresistor', 'ntc-temperature-sensor', 'mq2'].includes(data.type)) {
+    // Analog sensors use the 'value' from sensorValues
+    mappedProps.value = data.sensorValues?.value ?? 0;
+  } else if (data.type === 'lcd1602' || data.type === 'lcd2004') {
+    // LCD Displays map the internal emulator state to visual properties
+    const state = data.lcdState;
+    if (state) {
+      mappedProps.characters = new Uint8Array(state.characters);
+      mappedProps.cursorX = state.cursorX;
+      mappedProps.cursorY = state.cursorY;
+      mappedProps.cursor = state.cursor;
+      mappedProps.blink = state.blink;
+      mappedProps.backlight = state.backlight;
+    }
   }
 
   // Optional: Fallback for generic elements that listen to 'value'

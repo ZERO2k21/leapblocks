@@ -3,13 +3,18 @@
  * Decouples logic execution from UI rendering.
  * Provides a high-frequency tick loop and pin-state management mapped dynamically to AVR8js.
  */
-import { avrInstruction, CPU, AVRTimer, timer0Config, timer1Config, timer2Config, AVRIOPort, portBConfig, portCConfig, portDConfig, usart0Config, AVRUSART } from 'avr8js';
+import { avrInstruction, CPU, AVRTimer, timer0Config, timer1Config, timer2Config, AVRIOPort, portBConfig, portCConfig, portDConfig, usart0Config, AVRUSART, AVRADC, adcConfig, AVRTWI, twiConfig, AVRSPI, spiConfig, AVREEPROM, eepromConfig, EEPROMMemoryBackend } from 'avr8js';
 import { parseHexString } from './HexParser';
 import { BLINK_HEX } from './TestSketches';
 import { USARTEmulator } from './USARTEmulator';
 
 export type PinState = 'HIGH' | 'LOW' | 'FLOATING';
 export type PinListener = (state: PinState) => void;
+
+export interface PinMapping {
+  avrPin: string;
+  adcChannel?: number;
+}
 
 class SimulationRunner {
   private pinStates: Map<string, PinState> = new Map();
@@ -18,6 +23,11 @@ class SimulationRunner {
   private cpu: CPU | null = null;
   private usart: AVRUSART | null = null;
   private usartEmulator: USARTEmulator | null = null;
+  private adc: AVRADC | null = null;
+  private twi: AVRTWI | null = null;
+  private spi: AVRSPI | null = null;
+  private eeprom: AVREEPROM | null = null;
+  private eepromBackend: EEPROMMemoryBackend | null = null;
 
   // Custom Event Scheduler for Peripheral Emulation
   private scheduledEvents: { targetCycles: number, callback: () => void }[] = [];
@@ -68,6 +78,19 @@ class SimulationRunner {
     this.portB.addListener((state) => this.pushPortState('B', state));
     this.portC.addListener((state) => this.pushPortState('C', state));
     this.portD.addListener((state) => this.pushPortState('D', state));
+    
+    // Attach ADC
+    this.adc = new AVRADC(this.cpu, adcConfig);
+
+    // Attach I2C (TWI)
+    this.twi = new AVRTWI(this.cpu, twiConfig, this.MHZ);
+
+    // Attach SPI
+    this.spi = new AVRSPI(this.cpu, spiConfig);
+
+    // Attach EEPROM
+    this.eepromBackend = new EEPROMMemoryBackend(1024); // 1KB for ATMega328P
+    this.eeprom = new AVREEPROM(this.cpu!, this.eepromBackend, eepromConfig);
   }
 
   /**
@@ -109,6 +132,7 @@ class SimulationRunner {
   reset() {
     this.stop();
     this.cpu = null;
+    this.adc = null;
     
     // Broadcast FLOATING to visually turn off LEDs/peripherals
     this.pinStates.forEach((_, pinId) => {
@@ -249,15 +273,27 @@ class SimulationRunner {
   }
 
   /**
+   * Inject an analog voltage into a specific ADC channel (0-5 for Arduino A0-A5)
+   */
+  setAnalogInput(channel: number, voltage: number) {
+    if (!this.adc) return;
+    if (channel < 0 || channel >= this.adc.channelValues.length) return;
+    
+    // Set the voltage (0-5V) directly. avr8js converts this internally to 10-bit digital.
+    this.adc.channelValues[channel] = voltage;
+    // console.log(`[FORGE ENGINE] ADC Channel ${channel} set to ${voltage}V`);
+  }
+
+  /**
    * Utility for abstracting Arduino board numbers to AVR raw chip pins
    */
-  convertArduinoPin(arduinoPin: number | string): string | null {
+  convertArduinoPin(arduinoPin: number | string): PinMapping | null {
     const val = String(arduinoPin).toUpperCase();
     
     // Analog A0-A5 -> PC0-PC5
     if (val.startsWith('A')) {
       const p = parseInt(val.replace('A', ''), 10);
-      if (p >= 0 && p <= 5) return `PC${p}`;
+      if (p >= 0 && p <= 5) return { avrPin: `PC${p}`, adcChannel: p };
       return null;
     }
     
@@ -265,14 +301,35 @@ class SimulationRunner {
     const p = parseInt(val, 10);
     if (isNaN(p)) return null;
     
-    if (p >= 0 && p <= 7) return `PD${p}`;     // D0-D7 -> PD0-PD7
-    if (p >= 8 && p <= 13) return `PB${p - 8}`; // D8-D13 -> PB0-PB5
+    if (p >= 0 && p <= 7) return { avrPin: `PD${p}` };     // D0-D7 -> PD0-PD7
+    if (p >= 8 && p <= 13) return { avrPin: `PB${p - 8}` }; // D8-D13 -> PB0-PB5
     
     return null;
   }
   
   public getCycles(): number {
     return this.cpu ? this.cpu.cycles : 0;
+  }
+
+  public get TWI(): AVRTWI | null {
+    return this.twi;
+  }
+
+  public get SPI(): AVRSPI | null {
+    return this.spi;
+  }
+
+  /**
+   * EEPROM Support
+   */
+  public getEEPROMState(): Uint8Array {
+    return this.eepromBackend?.memory || new Uint8Array(0);
+  }
+
+  public loadEEPROM(data: Uint8Array) {
+    if (this.eepromBackend && data.length === this.eepromBackend.memory.length) {
+      this.eepromBackend.memory.set(data);
+    }
   }
 }
 
