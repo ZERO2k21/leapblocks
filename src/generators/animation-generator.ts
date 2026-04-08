@@ -142,6 +142,45 @@ export class AnimationCompiler {
         return nameFallback;
     }
 
+    private compileDynamicValue(block: Blockly.Block, inputName: string): () => number | string {
+        const input = block.getInput(inputName);
+        if (!input || !input.connection) {
+            const fieldVal = block.getFieldValue(inputName);
+            if (fieldVal !== null && fieldVal !== undefined) {
+                return () => String(fieldVal);
+            }
+            return () => '';
+        }
+
+        const valueBlock = input.connection.targetBlock();
+        if (!valueBlock) {
+            return () => '';
+        }
+
+        switch (valueBlock.type) {
+            case 'variables_get':
+            case 'data_variable': {
+                const name = this.getVariableName(valueBlock);
+                return () => animationVM.getVariable(name);
+            }
+            case 'data_itemoflist': {
+                const list = this.getVariableName(valueBlock);
+                const idxFunc = this.compileNumberValue(valueBlock, 'INDEX');
+                return () => animationVM.getListItem(list, idxFunc());
+            }
+            default: {
+                const outputChecks = valueBlock.outputConnection?.getCheck() || [];
+                if (outputChecks.includes('Number')) {
+                    const numFunc = this.compileNumberValue(block, inputName);
+                    return () => numFunc();
+                }
+
+                const strFunc = this.compileStringValue(block, inputName);
+                return () => strFunc();
+            }
+        }
+    }
+
     // Compile a value input block into a runtime string/number function
     private compileStringValue(block: Blockly.Block, inputName: string): () => string {
         const input = block.getInput(inputName);
@@ -365,6 +404,10 @@ export class AnimationCompiler {
                     return idx >= 0 ? idx + 1 : 1; // 1-based
                 };
             }
+            case 'sound_volume': {
+                const sprite = animationVM.getSprite(this.spriteId);
+                return () => sprite?.volume ?? 100;
+            }
             case 'sensing_distance_to': {
                 const target = valueBlock.getFieldValue('OBJECT');
                 return () => animationVM.getDistanceTo(target, this.spriteId);
@@ -517,22 +560,9 @@ export class AnimationCompiler {
                 const property = valueBlock.getFieldValue('PROPERTY');
                 const object = valueBlock.getFieldValue('OBJECT');
                 return () => {
-                    if (object === '_stage_') {
-                        // Stage properties
-                        if (property === 'backdrop #') return stageManager.getAllBackdrops().findIndex(b => b.name === stageManager.currentBackdrop?.name) + 1;
-                        if (property === 'backdrop name') return 0; // Name is string, will be handled by compileStringValue
-                        if (property === 'volume') return 100;
-                        return 0;
-                    }
-                    const target = animationVM.getSprite(object);
-                    if (!target) return 0;
-                    if (property === 'x position') return target.x;
-                    if (property === 'y position') return target.y;
-                    if (property === 'direction') return target.direction;
-                    if (property === 'costume #') return target.currentCostumeIndex + 1;
-                    if (property === 'size') return target.size;
-                    if (property === 'volume') return 100;
-                    return 0;
+                    const value = animationVM.getSpriteProperty(object, property);
+                    const num = Number(value);
+                    return Number.isFinite(num) ? num : 0;
                 };
             }
             case 'sensing_answer': {
@@ -1018,7 +1048,7 @@ export class AnimationCompiler {
                 step = {
                     type: 'data_setvariableto',
                     variable: this.getVariableName(block),
-                    value: this.compileStringValue(block, 'VALUE') // Assume string for now to support both numbers and strings
+                    value: this.compileDynamicValue(block, 'VALUE')
                 };
                 break;
             case 'data_changevariableby':

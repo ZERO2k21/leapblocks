@@ -1061,12 +1061,14 @@ body #root .blocklyFlyoutButton .blocklyText,
 
 /* Scratch 3.0-like checkbox styling for flyout reporters */
 .variable-checkbox-container,
-.list-checkbox-container {
+.list-checkbox-container,
+.sensing-checkbox-container {
   padding-left: 8px !important;
 }
 
 .variable-checkbox,
-.list-checkbox {
+.list-checkbox,
+.sensing-checkbox {
   margin-right: 8px !important;
   font-weight: 500;
 }
