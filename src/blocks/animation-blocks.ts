@@ -134,7 +134,7 @@ export const animationBlocks = [
     {
         type: 'motion_move_steps',
         message0: '➡️ move %1 steps',
-        args0: [{ type: 'field_number', name: 'STEPS', value: 10 }],
+        args0: [{ type: 'input_value', name: 'STEPS' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -144,7 +144,7 @@ export const animationBlocks = [
     {
         type: 'motion_move_left',
         message0: '⬅️ move left %1 steps',
-        args0: [{ type: 'field_number', name: 'STEPS', value: 10 }],
+        args0: [{ type: 'input_value', name: 'STEPS' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -154,7 +154,7 @@ export const animationBlocks = [
     {
         type: 'motion_move_up',
         message0: '⬆️ move up %1 steps',
-        args0: [{ type: 'field_number', name: 'STEPS', value: 10 }],
+        args0: [{ type: 'input_value', name: 'STEPS' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -164,7 +164,7 @@ export const animationBlocks = [
     {
         type: 'motion_move_down',
         message0: '⬇️ move down %1 steps',
-        args0: [{ type: 'field_number', name: 'STEPS', value: 10 }],
+        args0: [{ type: 'input_value', name: 'STEPS' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -174,7 +174,7 @@ export const animationBlocks = [
     {
         type: 'motion_turn_right',
         message0: '↻ turn right %1 degrees',
-        args0: [{ type: 'field_angle', name: 'DEGREES', angle: 15 }],
+        args0: [{ type: 'input_value', name: 'DEGREES' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -184,7 +184,7 @@ export const animationBlocks = [
     {
         type: 'motion_turn_left',
         message0: '↺ turn left %1 degrees',
-        args0: [{ type: 'field_angle', name: 'DEGREES', angle: 15 }],
+        args0: [{ type: 'input_value', name: 'DEGREES' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -193,11 +193,12 @@ export const animationBlocks = [
     },
     {
         type: 'motion_go_to_xy',
-        message0: '📍 go to x: %1 y: %2',
+        message0: 'go to x: %1 y: %2',
         args0: [
-            { type: 'field_number', name: 'X', value: 0 },
-            { type: 'field_number', name: 'Y', value: 0 },
+            { type: 'input_value', name: 'X' },
+            { type: 'input_value', name: 'Y' },
         ],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -206,12 +207,13 @@ export const animationBlocks = [
     },
     {
         type: 'motion_glide_to_xy',
-        message0: '✨ glide %1 secs to x: %2 y: %3',
+        message0: 'glide %1 secs to x: %2 y: %3',
         args0: [
-            { type: 'field_number', name: 'SECS', value: 1, min: 0.1 },
-            { type: 'field_number', name: 'X', value: 0 },
-            { type: 'field_number', name: 'Y', value: 0 },
+            { type: 'input_value', name: 'SECS' },
+            { type: 'input_value', name: 'X' },
+            { type: 'input_value', name: 'Y' },
         ],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -221,7 +223,7 @@ export const animationBlocks = [
     {
         type: 'motion_point_direction',
         message0: '🧭 point in direction %1',
-        args0: [{ type: 'field_angle', name: 'DIRECTION', angle: 90 }],
+        args0: [{ type: 'input_value', name: 'DIRECTION' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -231,7 +233,7 @@ export const animationBlocks = [
     {
         type: 'motion_change_x',
         message0: '↔️ change x by %1',
-        args0: [{ type: 'field_number', name: 'DX', value: 10 }],
+        args0: [{ type: 'input_value', name: 'DX' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -241,7 +243,7 @@ export const animationBlocks = [
     {
         type: 'motion_change_y',
         message0: '↕️ change y by %1',
-        args0: [{ type: 'field_number', name: 'DY', value: 10 }],
+        args0: [{ type: 'input_value', name: 'DY' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -251,7 +253,7 @@ export const animationBlocks = [
     {
         type: 'motion_set_x',
         message0: '📐 set x to %1',
-        args0: [{ type: 'field_number', name: 'X', value: 0 }],
+        args0: [{ type: 'input_value', name: 'X' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -261,7 +263,7 @@ export const animationBlocks = [
     {
         type: 'motion_set_y',
         message0: '📐 set y to %1',
-        args0: [{ type: 'field_number', name: 'Y', value: 0 }],
+        args0: [{ type: 'input_value', name: 'Y' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -335,16 +337,17 @@ export const animationBlocks = [
     // ═══════════════════════════════════════════════════════════════════════════
     {
         type: 'motion_go_to',
-        message0: '📍 go to %1',
+        message0: 'go to %1',
         args0: [{
             type: 'field_dropdown',
             name: 'TO',
             options: [
-                ['random position', 'random'],
-                ['mouse-pointer', 'mouse'],
+                ['random position', '_random_'],
+                ['mouse-pointer', '_mouse_'],
                 // Sprite options will be populated dynamically at runtime
             ],
         }],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -353,19 +356,20 @@ export const animationBlocks = [
     },
     {
         type: 'motion_glide_to',
-        message0: '✨ glide %1 secs to %2',
+        message0: 'glide %1 secs to %2',
         args0: [
             { type: 'field_number', name: 'SECS', value: 1, min: 0.1 },
             {
                 type: 'field_dropdown',
                 name: 'TO',
                 options: [
-                    ['random position', 'random'],
-                    ['mouse-pointer', 'mouse'],
+                    ['random position', '_random_'],
+                    ['mouse-pointer', '_mouse_'],
                     // Sprite options will be populated dynamically at runtime
                 ],
             },
         ],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -835,7 +839,18 @@ export const animationBlocks = [
         args0: [{
             type: 'field_dropdown',
             name: 'CLONE_OPTION',
-            options: [['myself', '_myself_']],
+            options: () => {
+                const baseOptions: [string, string][] = [['myself', '_myself_']];
+                if (typeof window !== 'undefined' && (window as any).getAllSpriteNames) {
+                    const names: string[] = (window as any).getAllSpriteNames();
+                    if (names && names.length > 0) {
+                        for (const name of names) {
+                            baseOptions.push([name, name]);
+                        }
+                    }
+                }
+                return baseOptions;
+            },
         }],
         previousStatement: null,
         nextStatement: null,
@@ -912,7 +927,18 @@ export const animationBlocks = [
         args0: [{
             type: 'field_dropdown',
             name: 'OBJECT',
-            options: [['mouse-pointer', '_mouse_'], ['edge', '_edge_']],
+            options: () => {
+                const baseOptions: [string, string][] = [['mouse-pointer', '_mouse_'], ['edge', '_edge_']];
+                if (typeof window !== 'undefined' && (window as any).getAllSpriteNames) {
+                    const names: string[] = (window as any).getAllSpriteNames();
+                    if (names && names.length > 0) {
+                        for (const name of names) {
+                            baseOptions.push([name, name]);
+                        }
+                    }
+                }
+                return baseOptions;
+            },
         }],
         output: 'Boolean',
         colour: COLORS.sensing,
@@ -946,7 +972,18 @@ export const animationBlocks = [
         args0: [{
             type: 'field_dropdown',
             name: 'OBJECT',
-            options: [['mouse-pointer', '_mouse_']],
+            options: () => {
+                const baseOptions: [string, string][] = [['mouse-pointer', '_mouse_']];
+                if (typeof window !== 'undefined' && (window as any).getAllSpriteNames) {
+                    const names: string[] = (window as any).getAllSpriteNames();
+                    if (names && names.length > 0) {
+                        for (const name of names) {
+                            baseOptions.push([name, name]);
+                        }
+                    }
+                }
+                return baseOptions;
+            },
         }],
         output: 'Number',
         colour: COLORS.sensing,
@@ -1969,7 +2006,18 @@ export const animationBlocks = [
             {
                 type: 'field_dropdown',
                 name: 'OBJECT',
-                options: [['Stage', '_stage_']],
+                options: () => {
+                    const baseOptions: [string, string][] = [['Stage', '_stage_']];
+                    if (typeof window !== 'undefined' && (window as any).getAllSpriteNames) {
+                        const names: string[] = (window as any).getAllSpriteNames();
+                        if (names && names.length > 0) {
+                            for (const name of names) {
+                                baseOptions.push([name, name]);
+                            }
+                        }
+                    }
+                    return baseOptions;
+                },
             },
         ],
         output: null,
@@ -2006,25 +2054,84 @@ export const animationToolbox = {
             name: 'Motion',
             colour: COLORS.motion,
             contents: [
-                { kind: 'block', type: 'motion_move_steps' },
-                { kind: 'block', type: 'motion_move_left' },
-                { kind: 'block', type: 'motion_move_up' },
-                { kind: 'block', type: 'motion_move_down' },
-                { kind: 'block', type: 'motion_turn_right' },
-                { kind: 'block', type: 'motion_turn_left' },
+                {
+                    kind: 'block',
+                    type: 'motion_move_steps',
+                    inputs: { STEPS: { shadow: { type: 'math_number', fields: { NUM: 10 } } } }
+                },
+                {
+                    kind: 'block',
+                    type: 'motion_move_left',
+                    inputs: { STEPS: { shadow: { type: 'math_number', fields: { NUM: 10 } } } }
+                },
+                {
+                    kind: 'block',
+                    type: 'motion_move_up',
+                    inputs: { STEPS: { shadow: { type: 'math_number', fields: { NUM: 10 } } } }
+                },
+                {
+                    kind: 'block',
+                    type: 'motion_move_down',
+                    inputs: { STEPS: { shadow: { type: 'math_number', fields: { NUM: 10 } } } }
+                },
+                {
+                    kind: 'block',
+                    type: 'motion_turn_right',
+                    inputs: { DEGREES: { shadow: { type: 'math_number', fields: { NUM: 15 } } } }
+                },
+                {
+                    kind: 'block',
+                    type: 'motion_turn_left',
+                    inputs: { DEGREES: { shadow: { type: 'math_number', fields: { NUM: 15 } } } }
+                },
                 { kind: 'label', text: '── Position ──' },
-                { kind: 'block', type: 'motion_go_to_xy' },
-                { kind: 'block', type: 'motion_glide_to_xy' },
-                { kind: 'block', type: 'motion_point_direction' },
-                { kind: 'label', text: '── Go To / Glide ──' },
                 { kind: 'block', type: 'motion_go_to' },
+                {
+                    kind: 'block',
+                    type: 'motion_go_to_xy',
+                    inputs: {
+                        X: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        Y: { shadow: { type: 'math_number', fields: { NUM: 0 } } }
+                    }
+                },
                 { kind: 'block', type: 'motion_glide_to' },
+                {
+                    kind: 'block',
+                    type: 'motion_glide_to_xy',
+                    inputs: {
+                        SECS: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                        X: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        Y: { shadow: { type: 'math_number', fields: { NUM: 0 } } }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'motion_point_direction',
+                    inputs: { DIRECTION: { shadow: { type: 'math_number', fields: { NUM: 90 } } } }
+                },
+                { kind: 'label', text: '── More Motion ──' },
                 { kind: 'block', type: 'motion_point_towards' },
                 { kind: 'label', text: '── Change ──' },
-                { kind: 'block', type: 'motion_change_x' },
-                { kind: 'block', type: 'motion_change_y' },
-                { kind: 'block', type: 'motion_set_x' },
-                { kind: 'block', type: 'motion_set_y' },
+                {
+                    kind: 'block',
+                    type: 'motion_change_x',
+                    inputs: { DX: { shadow: { type: 'math_number', fields: { NUM: 10 } } } }
+                },
+                {
+                    kind: 'block',
+                    type: 'motion_change_y',
+                    inputs: { DY: { shadow: { type: 'math_number', fields: { NUM: 10 } } } }
+                },
+                {
+                    kind: 'block',
+                    type: 'motion_set_x',
+                    inputs: { X: { shadow: { type: 'math_number', fields: { NUM: 0 } } } }
+                },
+                {
+                    kind: 'block',
+                    type: 'motion_set_y',
+                    inputs: { Y: { shadow: { type: 'math_number', fields: { NUM: 0 } } } }
+                },
                 { kind: 'label', text: '── Edge & Rotation ──' },
                 { kind: 'block', type: 'motion_if_on_edge_bounce' },
                 { kind: 'block', type: 'motion_set_rotation_style' },

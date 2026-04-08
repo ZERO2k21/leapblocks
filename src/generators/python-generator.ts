@@ -133,9 +133,9 @@ export function initPythonGenerator(): void {
 
     pythonGen.forBlock['motion_go_to'] = function (block: Blockly.Block): string {
         const target = block.getFieldValue('TO');
-        if (target === 'random') {
+        if (target === 'random' || target === '_random_') {
             return `sprite.go_to_random()\n`;
-        } else if (target === 'mouse') {
+        } else if (target === 'mouse' || target === '_mouse_') {
             return `sprite.go_to_mouse()\n`;
         } else {
             return `sprite.go_to_sprite("${target}")\n`;
@@ -146,9 +146,9 @@ export function initPythonGenerator(): void {
         const gen = this;
         const secs = block.getFieldValue('SECS');
         const target = block.getFieldValue('TO');
-        if (target === 'random') {
+        if (target === 'random' || target === '_random_') {
             return `await sprite.glide_to_random(${secs})\n`;
-        } else if (target === 'mouse') {
+        } else if (target === 'mouse' || target === '_mouse_') {
             return `await sprite.glide_to_mouse(${secs})\n`;
         } else {
             return `await sprite.glide_to_sprite(${secs}, "${target}")\n`;

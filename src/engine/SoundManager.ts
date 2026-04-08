@@ -1,6 +1,14 @@
 // SoundManager.ts - Handles sound playback for animation VM
 
 import { ADPCMSoundDecoder } from '../scratch-audio/src/ADPCMSoundDecoder';
+import type { Sprite } from '../stage/Sprite';
+
+type PlaybackOptions = {
+    cacheKey?: string;
+    pan?: number;
+    pitch?: number;
+    volume?: number;
+};
 
 export class SoundManager {
     private static instance: SoundManager;
@@ -38,12 +46,53 @@ export class SoundManager {
         }
     }
 
+    private getBufferKey(src: string, cacheKey?: string): string {
+        return cacheKey || src;
+    }
+
+    private getPlaybackRate(pitch = 0): number {
+        const safePitch = Number.isFinite(pitch) ? pitch : 0;
+        return Math.max(0.125, Math.min(8, Math.pow(2, safePitch / 120)));
+    }
+
+    private connectSource(source: AudioBufferSourceNode, options?: PlaybackOptions): void {
+        if (!this.audioContext || !this.masterGain) return;
+
+        const gainNode = this.audioContext.createGain();
+        const playbackVolume = Math.max(0, Math.min(1, (options?.volume ?? 100) / 100));
+        gainNode.gain.value = playbackVolume;
+
+        source.playbackRate.value = this.getPlaybackRate(options?.pitch);
+        source.connect(gainNode);
+
+        let lastNode: AudioNode = gainNode;
+        if (typeof this.audioContext.createStereoPanner === 'function') {
+            const panner = this.audioContext.createStereoPanner();
+            const pan = Math.max(-1, Math.min(1, (options?.pan ?? 0) / 100));
+            panner.pan.value = pan;
+            gainNode.connect(panner);
+            lastNode = panner;
+        }
+
+        lastNode.connect(this.masterGain);
+    }
+
+    private trackSource(source: AudioBufferSourceNode, onEnded?: () => void): void {
+        this.currentSources.push(source);
+        source.onended = () => {
+            const idx = this.currentSources.indexOf(source);
+            if (idx > -1) this.currentSources.splice(idx, 1);
+            onEnded?.();
+        };
+    }
+
     /**
      * Load a sound from a URL or data URL and cache it
      */
-    async loadSound(name: string, src: string): Promise<AudioBuffer | undefined> {
-        if (this.soundBuffers.has(name)) {
-            return this.soundBuffers.get(name);
+    async loadSound(name: string, src: string, cacheKey?: string): Promise<AudioBuffer | undefined> {
+        const bufferKey = this.getBufferKey(src, cacheKey);
+        if (this.soundBuffers.has(bufferKey)) {
+            return this.soundBuffers.get(bufferKey);
         }
 
         this.init();
@@ -55,7 +104,7 @@ export class SoundManager {
             const arrayBuffer = await response.arrayBuffer();
             const decoder = new ADPCMSoundDecoder(this.audioContext);
             const audioBuffer = await decoder.decode(arrayBuffer);
-            this.soundBuffers.set(name, audioBuffer);
+            this.soundBuffers.set(bufferKey, audioBuffer);
             return audioBuffer;
         } catch (err) {
             console.warn(`[SoundManager] Failed to load sound: ${name}`, err);
@@ -67,49 +116,63 @@ export class SoundManager {
      * Play a sound by its name. If the sound is not loaded, it will try to load it.
      * Returns a promise that resolves when playback starts (not when it ends)
      */
-    async play(name: string, src: string): Promise<void> {
+    async play(name: string, src: string, options?: PlaybackOptions): Promise<void> {
         this.init();
         if (!this.audioContext || !this.masterGain) return;
 
-        let buffer = this.soundBuffers.get(name);
+        const bufferKey = this.getBufferKey(src, options?.cacheKey);
+        let buffer = this.soundBuffers.get(bufferKey);
         if (!buffer) {
-            buffer = await this.loadSound(name, src);
+            buffer = await this.loadSound(name, src, options?.cacheKey);
             if (!buffer) return;
         }
 
         const source = this.audioContext.createBufferSource();
         source.buffer = buffer;
-        source.connect(this.masterGain!);
+        this.connectSource(source, options);
         source.start();
-        this.currentSources.push(source);
-
-        // Clean up after playback
-        source.onended = () => {
-            const idx = this.currentSources.indexOf(source);
-            if (idx > -1) this.currentSources.splice(idx, 1);
-        };
+        this.trackSource(source);
     }
 
     /**
      * Play a sound and await until it finishes
      */
-    async playAndWait(name: string, src: string): Promise<void> {
+    async playAndWait(name: string, src: string, options?: PlaybackOptions): Promise<void> {
         this.init();
         if (!this.audioContext || !this.masterGain) return;
 
-        let buffer = this.soundBuffers.get(name);
+        const bufferKey = this.getBufferKey(src, options?.cacheKey);
+        let buffer = this.soundBuffers.get(bufferKey);
         if (!buffer) {
-            buffer = await this.loadSound(name, src);
+            buffer = await this.loadSound(name, src, options?.cacheKey);
             if (!buffer) return;
         }
 
         return new Promise((resolve) => {
             const source = this.audioContext!.createBufferSource();
             source.buffer = buffer;
-            source.connect(this.masterGain!);
+            this.connectSource(source, options);
             source.start();
-            source.onended = () => resolve();
+            this.trackSource(source, resolve);
         });
+    }
+
+    async playSound(sprite: Sprite, name: string, wait = false): Promise<void> {
+        const sound = sprite.sounds.find((entry) => entry.name === name);
+        if (!sound) return;
+
+        const options: PlaybackOptions = {
+            cacheKey: `${sprite.id}:${sound.src}`,
+            pan: sprite.soundEffects.pan,
+            pitch: sprite.soundEffects.pitch,
+            volume: sprite.volume,
+        };
+
+        if (wait) {
+            await this.playAndWait(name, sound.src, options);
+        } else {
+            await this.play(name, sound.src, options);
+        }
     }
 
     /**

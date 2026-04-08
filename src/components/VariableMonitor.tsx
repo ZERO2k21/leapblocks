@@ -39,6 +39,9 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const dragStartRef = useRef({ x: 0, y: 0, startX: 0, startY: 0 });
+    const activePointerIdRef = useRef<number | null>(null);
+    const didDragRef = useRef(false);
+    const lastTapTimeRef = useRef(0);
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number } | null>(null);
 
     useEffect(() => {
@@ -51,18 +54,29 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
         };
     }, []);
 
+    const handleModeCycle = () => {
+        const cycle: Record<string, 'normal' | 'large' | 'slider'> = {
+            normal: 'large',
+            large: 'slider',
+            slider: 'normal'
+        };
+        onModeChange?.(cycle[mode] || 'normal');
+    };
+
     const handlePointerDown = (e: React.PointerEvent) => {
         if (contextMenu) setContextMenu(null);
         onPointerDown?.();
         // Only drag from left click, and ignore if clicking input slider
         if (e.button !== 0 || (e.target as HTMLElement).tagName.toLowerCase() === 'input') return;
-        setIsDragging(true);
+        activePointerIdRef.current = e.pointerId;
+        didDragRef.current = false;
+        setIsDragging(false);
         dragStartRef.current = { x: e.clientX, y: e.clientY, startX: x, startY: y };
         e.currentTarget.setPointerCapture(e.pointerId);
     };
 
     const handlePointerMove = (e: React.PointerEvent) => {
-        if (!isDragging) return;
+        if (activePointerIdRef.current !== e.pointerId) return;
 
         // Automatically detect inherited scale to keep drag 1:1 with mouse
         let scale = 1;
@@ -81,6 +95,16 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
 
         const dx = (e.clientX - dragStartRef.current.x) / scale;
         const dy = (e.clientY - dragStartRef.current.y) / scale;
+
+        if (!didDragRef.current && Math.abs(dx) < 4 && Math.abs(dy) < 4) {
+            return;
+        }
+
+        didDragRef.current = true;
+        lastTapTimeRef.current = 0;
+        if (!isDragging) {
+            setIsDragging(true);
+        }
         
         let newX = dragStartRef.current.startX + dx;
         let newY = dragStartRef.current.startY + dy;
@@ -97,8 +121,37 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
     };
 
     const handlePointerUp = (e: React.PointerEvent) => {
+        if (activePointerIdRef.current !== e.pointerId) return;
+        activePointerIdRef.current = null;
+        const wasTap = !didDragRef.current && (e.target as HTMLElement).tagName.toLowerCase() !== 'input';
+        didDragRef.current = false;
         setIsDragging(false);
-        e.currentTarget.releasePointerCapture(e.pointerId);
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+
+        if (!wasTap) {
+            return;
+        }
+
+        const now = Date.now();
+        if (now - lastTapTimeRef.current <= 350) {
+            lastTapTimeRef.current = 0;
+            handleModeCycle();
+            return;
+        }
+
+        lastTapTimeRef.current = now;
+    };
+
+    const handlePointerCancel = (e: React.PointerEvent) => {
+        if (activePointerIdRef.current !== e.pointerId) return;
+        activePointerIdRef.current = null;
+        didDragRef.current = false;
+        setIsDragging(false);
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        }
     };
 
     const handleContextMenu = (e: React.MouseEvent) => {
@@ -111,20 +164,6 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
     const handleMenuClick = (newMode: 'normal' | 'large' | 'slider') => {
         onModeChange?.(newMode);
         setContextMenu(null);
-    };
-
-    const handleDoubleClick = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Cycle mode: normal -> large -> slider -> normal
-        const cycle: Record<string, 'normal' | 'large' | 'slider'> = {
-            'normal': 'large',
-            'large': 'slider',
-            'slider': 'normal'
-        };
-        const nextMode = cycle[mode] || 'normal';
-        onModeChange?.(nextMode);
     };
 
     if (!visible) return null;
@@ -145,9 +184,8 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                onPointerCancel={handlePointerUp}
+                onPointerCancel={handlePointerCancel}
                 onContextMenu={handleContextMenu}
-                onDoubleClick={handleDoubleClick}
             >
                 {mode === 'normal' && (
                     <div style={styles.normalContent}>
@@ -203,7 +241,12 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
                         <div style={styles.menuItem} onClick={() => {
                             const min = window.prompt("Slider minimum:", sliderMin.toString()) || sliderMin.toString();
                             const max = window.prompt("Slider maximum:", sliderMax.toString()) || sliderMax.toString();
-                            onSliderRangeChange?.(Number(min), Number(max));
+                            const parsedMin = Number(min);
+                            const parsedMax = Number(max);
+                            if (Number.isFinite(parsedMin) && Number.isFinite(parsedMax)) {
+                                onSliderRangeChange?.(Math.min(parsedMin, parsedMax), Math.max(parsedMin, parsedMax));
+                            }
+                            setContextMenu(null);
                         }}>change slider range</div>
                     )}
                 </div>
@@ -223,6 +266,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontSize: '11px',
         color: 'black',
         userSelect: 'none',
+        touchAction: 'manipulation',
         display: 'inline-flex',
         alignItems: 'center',
         gap: '4px',

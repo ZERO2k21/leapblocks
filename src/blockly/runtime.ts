@@ -4,6 +4,8 @@ import * as Blockly from 'blockly/core';
 import 'blockly/blocks';
 import 'blockly/javascript';
 
+export const LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG = '__leap_custom_block_context_menu__';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL BLOCKLY OVERRIDES & PATCHES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -163,6 +165,176 @@ if (Blockly.FieldVariable && !(Blockly.FieldVariable.prototype as any)._initMode
         }
     };
     (Blockly.FieldVariable.prototype as any)._initModelPatched = true;
+}
+
+const BLOCK_MENU_WEIGHT_DUPLICATE = 1;
+const BLOCK_MENU_WEIGHT_COMMENT = 2;
+const BLOCK_MENU_WEIGHT_INLINE = 3;
+const BLOCK_MENU_WEIGHT_COLLAPSE = 4;
+const BLOCK_MENU_WEIGHT_DISABLE = 5;
+const BLOCK_MENU_WEIGHT_DELETE = 6;
+const BLOCK_MENU_WEIGHT_HELP = 7;
+
+const HIDDEN_BLOCK_MENU_WEIGHTS = new Set([
+    BLOCK_MENU_WEIGHT_INLINE,
+    BLOCK_MENU_WEIGHT_COLLAPSE,
+    BLOCK_MENU_WEIGHT_DISABLE,
+    BLOCK_MENU_WEIGHT_HELP,
+]);
+
+const canCopyBlock = (block: any): boolean => {
+    if (!block || typeof block.toCopyData !== 'function') return false;
+    if (typeof block.isCopyable === 'function') return !!block.isCopyable();
+    return true;
+};
+
+const exportBlockAsImage = (block: any): void => {
+    const svgRoot = block?.getSvgRoot?.();
+    if (!svgRoot) return;
+
+    let bounds: DOMRect | SVGRect;
+    try {
+        bounds = svgRoot.getBBox();
+    } catch (error) {
+        console.warn('[Blockly Patch] Unable to measure block for image export:', error);
+        return;
+    }
+
+    const padding = 16;
+    const width = Math.max(1, Math.ceil(bounds.width + padding * 2));
+    const height = Math.max(1, Math.ceil(bounds.height + padding * 2));
+    const minX = bounds.x - padding;
+    const minY = bounds.y - padding;
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const exportSvg = document.createElementNS(svgNs, 'svg');
+    exportSvg.setAttribute('xmlns', svgNs);
+    exportSvg.setAttribute('width', String(width));
+    exportSvg.setAttribute('height', String(height));
+    exportSvg.setAttribute('viewBox', `${minX} ${minY} ${width} ${height}`);
+
+    const style = document.createElementNS(svgNs, 'style');
+    style.textContent = `
+        text {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+    `;
+    exportSvg.appendChild(style);
+    exportSvg.appendChild(svgRoot.cloneNode(true));
+
+    const serialized = new XMLSerializer().serializeToString(exportSvg);
+    const svgBlob = new Blob([serialized], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    const image = new Image();
+
+    image.onload = () => {
+        const scale = Math.max(1, window.devicePixelRatio || 1);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(width * scale);
+        canvas.height = Math.round(height * scale);
+
+        const context = canvas.getContext('2d');
+        if (!context) {
+            URL.revokeObjectURL(svgUrl);
+            return;
+        }
+
+        context.scale(scale, scale);
+        context.drawImage(image, 0, 0, width, height);
+        URL.revokeObjectURL(svgUrl);
+
+        canvas.toBlob((pngBlob) => {
+            if (!pngBlob) return;
+            const downloadUrl = URL.createObjectURL(pngBlob);
+            const link = document.createElement('a');
+            const safeType = String(block.type || 'block').replace(/[^a-z0-9_-]+/gi, '_').toLowerCase();
+            link.href = downloadUrl;
+            link.download = `${safeType || 'block'}.png`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+        }, 'image/png');
+    };
+
+    image.onerror = (error) => {
+        URL.revokeObjectURL(svgUrl);
+        console.warn('[Blockly Patch] Failed to export block as image:', error);
+    };
+
+    image.src = svgUrl;
+};
+
+if (Blockly.BlockSvg && !(Blockly.BlockSvg.prototype as any)._leapContextMenuPatched) {
+    const originalGenerateContextMenu = (Blockly.BlockSvg.prototype as any).generateContextMenu;
+
+    (Blockly.BlockSvg.prototype as any).generateContextMenu = function (this: any, e: Event) {
+        const workspace = this.workspace;
+        if (!workspace || workspace.isFlyout || !(workspace as any)[LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG]) {
+            return typeof originalGenerateContextMenu === 'function'
+                ? originalGenerateContextMenu.call(this, e)
+                : null;
+        }
+
+        const baseMenu = typeof originalGenerateContextMenu === 'function'
+            ? originalGenerateContextMenu.call(this, e)
+            : [];
+
+        if (!Array.isArray(baseMenu)) return baseMenu;
+
+        const filteredMenu = baseMenu
+            .filter((option: any) => {
+                if (!option || option.separator === true) return false;
+                return !HIDDEN_BLOCK_MENU_WEIGHTS.has(option.weight);
+            })
+            .map((option: any) => {
+                if (option.weight === BLOCK_MENU_WEIGHT_DUPLICATE) {
+                    return { ...option, text: 'Duplicate' };
+                }
+                if (option.weight === BLOCK_MENU_WEIGHT_DELETE) {
+                    return { ...option, text: 'Delete Block' };
+                }
+                if (option.weight === BLOCK_MENU_WEIGHT_COMMENT) {
+                    return {
+                        ...option,
+                        text: this.getCommentText?.() ? 'Remove Comment' : 'Add Comment',
+                    };
+                }
+                return option;
+            });
+
+        const copyOption = canCopyBlock(this) ? {
+            enabled: true,
+            scope: { block: this, workspace, focusedNode: this },
+            text: 'Copy Block',
+            weight: 1.5,
+            callback: () => {
+                const copyLocation = this.getRelativeToSurfaceXY?.();
+                Blockly.clipboard.copy(this, copyLocation);
+            },
+        } : null;
+
+        const exportOption = {
+            enabled: true,
+            scope: { block: this, workspace, focusedNode: this },
+            text: 'Export Block as Image',
+            weight: 99,
+            callback: () => exportBlockAsImage(this),
+        };
+
+        const duplicateIndex = filteredMenu.findIndex((option: any) => option?.weight === BLOCK_MENU_WEIGHT_DUPLICATE);
+        if (copyOption) {
+            if (duplicateIndex >= 0) {
+                filteredMenu.splice(duplicateIndex + 1, 0, copyOption);
+            } else {
+                filteredMenu.unshift(copyOption);
+            }
+        }
+        filteredMenu.push(exportOption);
+
+        return filteredMenu;
+    };
+
+    (Blockly.BlockSvg.prototype as any)._leapContextMenuPatched = true;
 }
 
 export * from 'blockly/core';

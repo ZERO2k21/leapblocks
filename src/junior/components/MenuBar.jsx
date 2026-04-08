@@ -367,7 +367,7 @@ export default function MenuBar({
                         fontWeight: 900,
                         letterSpacing: '0.08em',
                         fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    }}>CIRCUIT</span>
+                    }}>EMBED</span>
                 </div>
             </div>
 

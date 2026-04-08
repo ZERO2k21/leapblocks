@@ -37,20 +37,19 @@ export interface CompiledScript {
 
 export type ScriptStep = (
     // Motion
-    | { type: 'move_steps'; steps: number }
-    | { type: 'turn_right'; degrees: number }
-    | { type: 'turn_left'; degrees: number }
-    | { type: 'go_to_xy'; x: number; y: number }
-    | { type: 'glide_to_xy'; secs: number; x: number; y: number }
-    | { type: 'point_direction'; direction: number }
-    | { type: 'change_x'; dx: number }
-    | { type: 'change_y'; dy: number }
-    | { type: 'set_x'; x: number }
-    | { type: 'set_x'; x: number }
-    | { type: 'set_y'; y: number }
+    | { type: 'move_steps'; steps: number | (() => number) }
+    | { type: 'turn_right'; degrees: number | (() => number) }
+    | { type: 'turn_left'; degrees: number | (() => number) }
+    | { type: 'go_to_xy'; x: number | (() => number); y: number | (() => number) }
+    | { type: 'glide_to_xy'; secs: number | (() => number); x: number | (() => number); y: number | (() => number) }
+    | { type: 'point_direction'; direction: number | (() => number) }
+    | { type: 'change_x'; dx: number | (() => number) }
+    | { type: 'change_y'; dy: number | (() => number) }
+    | { type: 'set_x'; x: number | (() => number) }
+    | { type: 'set_y'; y: number | (() => number) }
     // PictoBlox Motion
     | { type: 'go_to'; target: 'random' | 'mouse' | string }  // string = sprite name
-    | { type: 'glide_to'; secs: number; target: 'random' | 'mouse' | string }
+    | { type: 'glide_to'; secs: number | (() => number); target: 'random' | 'mouse' | string }
     | { type: 'point_towards'; towards: 'mouse' | 'random' | string }
     | { type: 'if_on_edge_bounce' }
     | { type: 'set_rotation_style'; style: 'left-right' | 'all around' | 'none' }
@@ -163,6 +162,8 @@ export class AnimationVM {
     private mouseX: number = 0;
     private mouseY: number = 0;
     private isRunning: boolean = false;
+    private isMouseDownState: boolean = false;
+    private timerStart: number = Date.now();
     public isPaused: boolean = false;
     private pausePromise: Promise<void> | null = null;
     private resolvePause: (() => void) | null = null;
@@ -193,13 +194,10 @@ export class AnimationVM {
     public onBeforeBroadcast?: (message: string) => void;
 
     // Timer
-    private timerStart: number = Date.now();
-
+    // timerStart is already declared above
+    
     // Sensing
     private currentAnswer: string = '';
-
-    // Sound
-    private volume: number = 100;
 
     // Broadcast system
     private broadcastListeners: Map<string, CompiledScript[]> = new Map();
@@ -248,21 +246,23 @@ export class AnimationVM {
         // Clear broadcast listeners
         this.broadcastListeners.clear();
         this.stageScripts = [];
-        // Reset volume
-        this.volume = 100;
     }
 
     // Sound playback helper
     private async playSound(sprite: Sprite, name: string, wait: boolean = false): Promise<void> {
-        soundManager.setVolume(this.volume / 100);
-
         // Look for sound in sprite's sounds first
         const sound = sprite.sounds.find(s => s.name === name);
+        const playbackOptions = {
+            pan: sprite.soundEffects.pan,
+            pitch: sprite.soundEffects.pitch,
+            volume: sprite.volume,
+        };
+
         if (sound) {
             if (wait) {
-                await soundManager.playAndWait(name, sound.src);
+                await soundManager.playAndWait(name, sound.src, playbackOptions);
             } else {
-                await soundManager.play(name, sound.src);
+                await soundManager.play(name, sound.src, playbackOptions);
             }
             return;
         }
@@ -271,12 +271,14 @@ export class AnimationVM {
         const stageSound = stageManager.getAllSounds().find(s => s.name === name);
         if (stageSound) {
             if (wait) {
-                await soundManager.playAndWait(name, stageSound.src);
+                await soundManager.playAndWait(name, stageSound.src, playbackOptions);
             } else {
-                await soundManager.play(name, stageSound.src);
+                await soundManager.play(name, stageSound.src, playbackOptions);
             }
             return;
         }
+
+        vmLog.warn(`Sound not found for sprite '${sprite.name}': ${name}`);
     }
 
     // Helper to get current sprite id from context
@@ -288,6 +290,10 @@ export class AnimationVM {
     // VARIABLES
     // ═══════════════════════════════════════════════════════════════════════
     private variables: Map<string, number | string> = new Map();
+
+    hasVariable(name: string): boolean {
+        return this.variables.has(name);
+    }
 
     getVariable(name: string): number | string {
         const value = this.variables.get(name);
@@ -308,16 +314,30 @@ export class AnimationVM {
         this.onVariableChange?.(name, value);
     }
 
+    deleteVariable(name: string): void {
+        if (!this.variables.has(name)) {
+            return;
+        }
+
+        const oldValue = this.variables.get(name);
+        this.variables.delete(name);
+        const msg = `Variable '${name}' deleted${oldValue !== undefined ? ` (Last value: ${oldValue})` : ''}`;
+        vmLog.info(msg);
+        this.onLog?.(msg);
+    }
+
     changeVariable(name: string, delta: number): void {
         const current = this.getVariable(name);
         const currentNum = Number(current);
-        if (!isNaN(currentNum)) {
-            const newValue = currentNum + delta;
-            this.variables.set(name, newValue);
-            vmLog.step('change_variable', { name, delta, newValue });
-            this.onLog?.(`Variable '${name}' changed by ${delta} (New value: ${newValue})`);
-            this.onVariableChange?.(name, newValue);
-        }
+        const deltaNum = Number(delta);
+        const baseValue = Number.isNaN(currentNum) ? 0 : currentNum;
+        const changeAmount = Number.isNaN(deltaNum) ? 0 : deltaNum;
+        const newValue = baseValue + changeAmount;
+
+        this.variables.set(name, newValue);
+        vmLog.step('change_variable', { name, delta: changeAmount, newValue });
+        this.onLog?.(`Variable '${name}' changed by ${changeAmount} (New value: ${newValue})`);
+        this.onVariableChange?.(name, newValue);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -617,6 +637,7 @@ export class AnimationVM {
             controller.abort();
         }
         this.runningScripts.clear();
+        soundManager.stopAll();
 
         // Clear highlights
         if (this.onHighlightBlock) {
@@ -770,30 +791,34 @@ export class AnimationVM {
         const { sprite } = ctx;
         console.log('[AnimationVM] Executing step:', step.type, step);
 
+        const evalNum = (val: number | (() => number)) => {
+            return typeof val === 'function' ? val() : val;
+        };
+
         switch (step.type) {
             case 'move_steps':
-                motionEngine.move(sprite, step.steps);
+                motionEngine.move(sprite, evalNum(step.steps));
                 break;
 
             case 'turn_right':
-                motionEngine.turnRight(sprite, step.degrees);
+                motionEngine.turnRight(sprite, evalNum(step.degrees));
                 break;
 
             case 'turn_left':
-                motionEngine.turnLeft(sprite, step.degrees);
+                motionEngine.turnLeft(sprite, evalNum(step.degrees));
                 break;
 
             case 'go_to_xy':
-                motionEngine.goTo(sprite, step.x, step.y);
+                motionEngine.goTo(sprite, evalNum(step.x), evalNum(step.y));
                 break;
 
             case 'glide_to_xy':
-                motionEngine.glide(sprite, step.x, step.y, step.secs);
+                motionEngine.glide(sprite, evalNum(step.x), evalNum(step.y), evalNum(step.secs));
                 await this.waitForGlide(sprite, signal);
                 break;
 
             case 'point_direction':
-                motionEngine.pointInDirection(sprite, step.direction);
+                motionEngine.pointInDirection(sprite, evalNum(step.direction));
                 break;
 
             // PictoBlox motion extensions
@@ -834,7 +859,7 @@ export class AnimationVM {
                     tx = Math.max(-240 + sw / 2, Math.min(240 - sw / 2, tx));
                     ty = Math.max(-180 + sh / 2, Math.min(180 - sh / 2, ty));
 
-                    sprite.startGlide(tx, ty, step.secs);
+                    sprite.startGlide(tx, ty, evalNum(step.secs));
                 }
                 await this.waitForGlide(sprite, signal);
                 break;
@@ -871,19 +896,19 @@ export class AnimationVM {
                 break;
 
             case 'change_x':
-                sprite.setX(sprite.x + step.dx);
+                sprite.setX(sprite.x + evalNum(step.dx));
                 break;
 
             case 'change_y':
-                sprite.setY(sprite.y + step.dy);
+                sprite.setY(sprite.y + evalNum(step.dy));
                 break;
 
             case 'set_x':
-                sprite.setX(step.x);
+                sprite.setX(evalNum(step.x));
                 break;
 
             case 'set_y':
-                sprite.setY(step.y);
+                sprite.setY(evalNum(step.y));
                 break;
 
             case 'say':
@@ -1027,9 +1052,9 @@ export class AnimationVM {
 
             case 'create_clone': {
                 // Determine which sprite to clone
-                const targetSprite = step.target === 'myself' || step.target === sprite.name
+                const targetSprite = step.target === '_myself_' || step.target === 'myself' || step.target === sprite.name
                     ? sprite
-                    : spriteManager.getSprite(step.target);
+                    : spriteManager.getSprite(step.target) || spriteManager.getSpriteByName(step.target);
 
                 if (!targetSprite) {
                     vmLog.error(`create_clone: target sprite not found: ${step.target}`);
@@ -1132,25 +1157,23 @@ export class AnimationVM {
                 break;
 
             case 'set_volume':
-                this.volume = Math.max(0, Math.min(100, step.volume));
-                soundManager.setVolume(this.volume);
+                ctx.sprite.setVolume(step.volume);
                 break;
 
             case 'change_volume':
-                this.volume = Math.max(0, Math.min(100, this.volume + step.change));
-                soundManager.setVolume(this.volume);
+                ctx.sprite.changeVolume(step.change);
                 break;
 
             case 'set_sound_effect':
-                vmLog.info('set_sound_effect not fully implemented', { effect: step.effect, value: step.value });
+                ctx.sprite.setSoundEffect(step.effect, step.value);
                 break;
 
             case 'change_sound_effect':
-                vmLog.info('change_sound_effect not fully implemented', { effect: step.effect, delta: step.value });
+                ctx.sprite.changeSoundEffect(step.effect, step.value);
                 break;
 
             case 'clear_sound_effects':
-                vmLog.info('clear_sound_effects not implemented');
+                ctx.sprite.clearSoundEffects();
                 break;
 
             // Pen blocks
@@ -1509,8 +1532,15 @@ export class AnimationVM {
     }
 
     isMouseDown(): boolean {
-        // TODO: Implement actual mouse down state tracking
-        return false;
+        return this.isMouseDownState;
+    }
+
+    setMouseDown(down: boolean): void {
+        this.isMouseDownState = down;
+        // Also update any global objects if necessary
+        if (typeof window !== 'undefined') {
+            (window as any).isMouseDown = down;
+        }
     }
 
     getMouseX(): number {
@@ -1542,7 +1572,7 @@ export class AnimationVM {
             targetX = this.mouseX;
             targetY = this.mouseY;
         } else {
-            const targetSprite = spriteManager.getSprite(target);
+            const targetSprite = spriteManager.getSprite(target) || spriteManager.getSpriteByName(target);
             if (!targetSprite) return 0;
             targetX = targetSprite.x;
             targetY = targetSprite.y;
@@ -1555,21 +1585,43 @@ export class AnimationVM {
 
     isTouching(target: string, fromSpriteId: string): boolean {
         const fromSprite = spriteManager.getSprite(fromSpriteId);
-        if (!fromSprite) return false;
+        if (!fromSprite || !fromSprite.visible) return false;
+
+        // Helper to get bounding box half-dimensions for a sprite
+        const getHalfDims = (sprite: Sprite): { hw: number; hh: number } => {
+            const scale = sprite.size / 100;
+            const costume = sprite.currentCostume;
+            const w = (costume?.width || 40) * scale;
+            const h = (costume?.height || 40) * scale;
+            return { hw: w / 2, hh: h / 2 };
+        };
 
         if (target === '_mouse_') {
-            // Simple point-in-rect check for mouse
-            // Assuming default size 40x40 roughly for now, should use bounding box
-            const halfSize = (fromSprite.size / 100) * 20;
-            return Math.abs(this.mouseX - fromSprite.x) < halfSize &&
-                Math.abs(this.mouseY - fromSprite.y) < halfSize;
+            const { hw, hh } = getHalfDims(fromSprite);
+            return Math.abs(this.mouseX - fromSprite.x) < hw &&
+                Math.abs(this.mouseY - fromSprite.y) < hh;
         } else if (target === '_edge_') {
-            const w = 320 / 2; // stage half width
-            const h = 240 / 2; // stage half height
-            return Math.abs(fromSprite.x) >= w || Math.abs(fromSprite.y) >= h;
+            const { hw, hh } = getHalfDims(fromSprite);
+            return (fromSprite.x + hw) >= 240 || (fromSprite.x - hw) <= -240 ||
+                   (fromSprite.y + hh) >= 180 || (fromSprite.y - hh) <= -180;
         }
 
-        // TODO: Implement sprite-to-sprite collision
+        // Sprite-to-sprite collision: find target by name (supports clones too)
+        const allSprites = spriteManager.getAllSprites();
+        for (const other of allSprites) {
+            // Match by name (not ID) so clones of the target also count
+            if (other.name === target && other.id !== fromSpriteId && other.visible) {
+                const fromDims = getHalfDims(fromSprite);
+                const otherDims = getHalfDims(other);
+
+                // AABB (Axis-Aligned Bounding Box) overlap test
+                const overlapX = Math.abs(fromSprite.x - other.x) < (fromDims.hw + otherDims.hw);
+                const overlapY = Math.abs(fromSprite.y - other.y) < (fromDims.hh + otherDims.hh);
+
+                if (overlapX && overlapY) return true;
+            }
+        }
+
         return false;
     }
 
@@ -1581,6 +1633,50 @@ export class AnimationVM {
     isColorTouchingColor(color1: string, color2: string, fromSpriteId: string): boolean {
         // TODO: Implement color-color collision
         return false;
+    }
+
+    getSpriteProperty(target: string, property: string): any {
+        // Handle "Stage" target
+        if (target === '_stage_' || target === 'Stage') {
+            switch (property) {
+                case 'backdrop #':
+                case 'backdrop_index':
+                    return stageManager.getCurrentBackdropIndex() + 1;
+                case 'backdrop name':
+                case 'backdrop_name':
+                    return stageManager.currentBackdrop?.name || '';
+                case 'volume':
+                    return this.getSprite('stage')?.volume ?? 100;
+                default:
+                    return 0;
+            }
+        }
+
+        const sprite = spriteManager.getSprite(target) || spriteManager.getSpriteByName(target);
+        if (!sprite) return 0;
+
+        switch (property) {
+            case 'x position':
+            case 'x':
+                return sprite.x;
+            case 'y position':
+            case 'y':
+                return sprite.y;
+            case 'direction':
+                return sprite.direction;
+            case 'costume #':
+            case 'costume_index':
+                return sprite.currentCostumeIndex + 1;
+            case 'costume name':
+            case 'costume_name':
+                return sprite.currentCostume?.name || '';
+            case 'size':
+                return sprite.size;
+            case 'volume':
+                return sprite.volume;
+            default:
+                return 0;
+        }
     }
 
     getLoudness(): number {
