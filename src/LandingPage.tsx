@@ -21,7 +21,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     setScanIndex(0);
     let i = 0;
     scanIntervalRef.current = setInterval(() => {
-      i = (i + 1) % 7;
+      i = (i + 1) % 8;
       setScanIndex(i);
     }, 300);
   };
@@ -282,9 +282,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* ─── TOPBAR ─── */
 .landing-page-container nav {
   position: sticky; top: 0; left: 0; right: 0; z-index: 200;
-  height: clamp(60px, 8vw, 68px);
+  height: 8vh;
+  min-height: 50px;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 clamp(12px, 3vw, 40px);
+  padding: 0 clamp(12px, 2vw, 30px);
   background: rgba(248, 250, 252, 0.85);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
@@ -304,26 +305,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
 /* ─── PAGE CONTENT ─── */
 .landing-page-container .page {
-  position:relative; z-index:1; padding-top:20px;
-  display: flex; flex-direction: column;
-  min-height: calc(100vh - 68px); transition: all 0.3s ease;
-  overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  position:relative; z-index:1; padding-top: 1vh;
+  display: flex; flex-direction: column; justify-content: space-between;
+  height: 92vh; transition: all 0.3s ease;
+  overflow: hidden; scroll-behavior: smooth;
 }
-.page::-webkit-scrollbar { display: none; }
 
 /* ─── HERO ─── */
 .landing-page-container .hero-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  align-items: center; max-width: 1280px; margin: 0 auto;
-  padding: clamp(4px, 1vw, 12px) clamp(16px, 5vw, 48px);
-  gap: clamp(16px, 6vw, 75px); flex: 1 0 auto;
+  display: grid; grid-template-columns: 1.1fr 0.9fr;
+  align-items: center; max-width: 1800px; margin: 0 auto;
+  padding: 0 2vw;
+  gap: 10vw; flex: 1 1 auto; /* Fill remaining space natively */
 }
 @media (max-width: 1024px) {
   .landing-page-container .hero-grid {
     grid-template-columns: 1fr; text-align: center;
-    gap: 32px; padding-top: clamp(24px, 10vw, 48px); margin-bottom: 20px;
+    gap: 2vh; padding-top: 2vh; height: 45vh; flex: 0 1 45vh;
   }
   .landing-page-container .hero-left { display: flex; flex-direction: column; align-items: center; }
   .landing-page-container .hero-sub { margin-left: auto; margin-right: auto; max-width: 90%; }
@@ -333,14 +331,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   .landing-page-container nav { padding: 0 16px; height: 56px; }
   .landing-page-container .nav-brand { gap: 6px; }
   .landing-page-container .brand-logo { height: 38px; }
-  .landing-page-container .hero-title { font-size: clamp(2rem, 10vw, 2.4rem); }
-  .landing-page-container .hero-sub { font-size: 0.9rem; max-width: 100%; padding: 0 10px; }
-  .landing-page-container .hero-btns { gap: 10px; }
+  .landing-page-container .hero-title { font-size: 5vh; }
+  .landing-page-container .hero-sub { font-size: 2vh; max-width: 100%; padding: 0 1vw; }
+  .landing-page-container .hero-btns { gap: 1vh; }
 }
 
 .landing-page-container .hero-title {
-  font-size: clamp(1.8rem, 5.2vw, 3.4rem); font-weight: 900;
-  line-height: 1.12; letter-spacing: -0.04em; margin-bottom: 6px; color: #0F172A;
+  font-size: min(4.8rem, 7.5vh); font-weight: 900;
+  line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 2vh; color: #0F172A;
 }
 .landing-page-container .hero-title .hw-code {
   font-style: italic; color: transparent;
@@ -349,41 +347,41 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   letter-spacing: 0.02em; padding: 0 4px;
 }
 .landing-page-container .hero-title .hw-bold {
-  color: transparent; -webkit-text-stroke: 2.5px #6366F1;
+  color: transparent; -webkit-text-stroke: 2px #6366F1;
   -webkit-text-fill-color: transparent; letter-spacing: -0.02em;
 }
 .landing-page-container .hero-tagline {
-  display: inline-block; font-size: clamp(0.55rem, 1.1vw, 0.65rem);
+  display: inline-block; font-size: min(0.7rem, 1.4vh);
   font-weight: 800; color: #000; text-transform: uppercase;
-  letter-spacing: 0.25em; margin-bottom: 6px; padding: 4px 12px;
-  background: var(--accent); border: 2px solid #000; box-shadow: 4px 4px 0px #000;
+  letter-spacing: 0.25em; margin-bottom: 1.5vh; padding: 0.8vh 1.2vw;
+  background: var(--accent); border: 2px solid #000; box-shadow: 2px 2px 0px #000;
   transform: rotate(-1deg);
 }
 .landing-page-container .hero-sub {
-  font-size: clamp(0.85rem, 1.8vw, 1rem); color: #0f172a;
-  line-height: 1.55; max-width: 500px; margin-bottom: 20px;
+  font-size: min(1.25rem, 2.6vh); color: #0f172a;
+  line-height: 1.45; max-width: 600px; margin-bottom: 3vh;
   position: relative; z-index: 2; opacity: 0.85;
 }
-.landing-page-container .hero-btns { display:flex; gap:10px; flex-wrap:wrap; }
+.landing-page-container .hero-btns { display:flex; gap:1.2vw; flex-wrap:wrap; }
 .landing-page-container .btn-adventure {
   background: var(--brand-primary); border: none; color: #fff;
-  font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit;
-  padding: 12px 24px; border-radius: 12px;
+  font-size: min(1.05rem, 2.2vh); font-weight: 600; cursor: pointer; font-family: inherit;
+  padding: 1.8vh 1.8vw; border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 8px 12px -3px rgba(99, 102, 241, 0.3);
 }
 .landing-page-container .btn-adventure:hover {
   background: var(--brand-secondary); transform: scale(1.05) rotate(2deg);
-  box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 16px 20px -5px rgba(99, 102, 241, 0.4);
 }
 .landing-page-container .btn-demo {
   background: #fff; border: 2px solid #000; color: var(--text-main);
-  font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: inherit;
-  padding: 12px 24px; border-radius: 12px; transition: all 0.2s;
-  box-shadow: 4px 4px 0px #000;
+  font-size: min(1.05rem, 2.2vh); font-weight: 700; cursor: pointer; font-family: inherit;
+  padding: 1.8vh 1.8vw; border-radius: 12px; transition: all 0.2s;
+  box-shadow: 3px 3px 0px #000;
 }
 .landing-page-container .btn-demo:hover {
-  background: var(--bg-main); transform: translate(-2px, -2px); box-shadow: 6px 6px 0px #000;
+  background: var(--bg-main); transform: translate(-2px, -2px); box-shadow: 5px 5px 0px #000;
 }
 
 /* ─── ANIMATIONS ─── */
@@ -422,33 +420,35 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   50%       { transform: scale(1.1); opacity: 0.8; }
 }
 .landing-page-container #lottie-anim {
-  width:100%; max-width: clamp(260px, 80vw, 460px);
+  width:100%; max-height: 48vh; max-width: max(260px, 46vh);
   aspect-ratio:1; border-radius:24px; overflow:hidden;
 }
 @media (max-width: 1024px) {
-  .landing-page-container #lottie-anim { max-width: clamp(260px, 60vw, 380px); margin: 0 auto; }
+  .landing-page-container #lottie-anim { max-height: 35vh; max-width: max(220px, 35vh); margin: 0 auto; }
 }
 
 /* ─── CARDS ROW ─── */
 .landing-page-container .cards-wrap {
-  max-width:1280px; margin:0 auto;
-  padding: 0 clamp(16px, 3vw, 32px) clamp(6px, 1.2vw, 12px);
+  width: 100%; margin: 0 auto;
+  padding: 2vh 1.5vw 4vh; /* Breating room */
+  flex: 0 1 auto; display: flex; align-items: center; justify-content: center;
 }
 .landing-page-container .cards-row {
-  display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: clamp(10px, 1.5vw, 16px);
+  display:grid; grid-template-columns: repeat(8, 1fr);
+  gap: 1vw; width: 100%; max-width: 1600px; /* Maximize row expanse */
 }
-@media (min-width: 1440px) {
-  .landing-page-container .cards-row { grid-template-columns: repeat(7, 1fr); }
+@media (max-width: 1440px) {
+  .landing-page-container .cards-row { grid-template-columns: repeat(8, 1fr); }
 }
 
 /* ── Card base + scan transitions ── */
 .landing-page-container .tc {
-  border-radius:12px; padding: 6px 6px; cursor:pointer;
+  border-radius:18px; padding: 1.5vh 0.8vw; cursor:pointer;
   transition: transform .4s cubic-bezier(0.34, 1.56, 0.64, 1),
               box-shadow .5s ease,
               opacity .3s ease;
-  position:relative; overflow:hidden; min-height:0;
+  position:relative; overflow:hidden; 
+  height: clamp(140px, 28vh, 260px); /* Massive, properly proportionate height */
   display:flex; flex-direction:column; justify-content:flex-end;
   /* 3D Shadows — Contact + Object + Ambient */
   box-shadow: 
@@ -470,17 +470,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   z-index: 5;
 }
 
-/* Scanning spotlight — active card */
+/* Scanning spotlight — active card (3D Pop Animation) */
 .landing-page-container .tc.tc-scan-active {
-  transform: translateY(-10px) scale(1.04) !important;
-  box-shadow: 0 0 0 3px #6366F1, 0 20px 40px rgba(99,102,241,0.25) !important;
+  transform: perspective(1000px) translate3d(0, -10px, 40px) scale(1.08) rotateX(8deg) rotateY(-2deg) !important;
+  box-shadow: 
+    0 0 0 3px #6366F1, 
+    0 15px 35px rgba(99,102,241,0.35),
+    inset 0 2px 4px rgba(255,255,255,1) !important;
   z-index: 10;
+  border-color: rgba(99,102,241,0.5);
 }
 
 /* Dim non-active cards while scanning */
 .landing-page-container .cards-row.is-scanning .tc:not(.tc-scan-active) {
-  opacity: 0.55;
-  transform: scale(0.97);
+  opacity: 0.4;
+  transform: perspective(1000px) translateZ(-20px) scale(0.95);
+  box-shadow: none;
 }
 
 /* Subtle glow on all cards before scan starts */
@@ -488,49 +493,64 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   box-shadow: 0 0 0 2px rgba(99,102,241,0.35), 0 8px 20px rgba(99,102,241,0.08);
 }
 
-@media (max-width: 1280px) { .landing-page-container .cards-row { grid-template-columns: repeat(4, 1fr); gap: 14px; } }
-@media (max-width: 900px)  { .landing-page-container .cards-row { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
+@media (max-width: 1200px) { 
+  .landing-page-container .cards-row { grid-template-columns: repeat(8, 1fr); gap: 0.5vw; } 
+}
+@media (max-width: 900px)  { 
+  .landing-page-container .cards-row { grid-template-columns: repeat(8, 1fr); gap: 0.5vw; } 
+}
 @media (max-width: 768px)  { 
-  .landing-page-container .cards-wrap { padding: 0 20px 40px; }
-  .landing-page-container .cards-row { grid-template-columns: repeat(2, 1fr); gap: 12px; } 
+  .landing-page-container .cards-wrap { padding: 1vh 1vw; }
+  .landing-page-container .cards-row { grid-template-columns: repeat(8, 1fr); gap: 0.5vw; } 
 }
 @media (max-width: 480px)  { 
-  .landing-page-container .cards-row { grid-template-columns: 1fr; gap: 12px; } 
-  .landing-page-container .tc { padding: 12px; }
+  .landing-page-container .cards-row { grid-template-columns: repeat(8, 1fr); gap: 0.5vw; } 
+  .landing-page-container .tc { padding: 0.5vh 0.5vw; }
 }
 
-.landing-page-container .tc-ignite  { background:linear-gradient(155deg,#ffffff 0%, #f0f4ff 60%,#e0e8ff 100%); border-bottom: 4px solid #6366F1; }
-.landing-page-container .tc-ignite:hover { box-shadow: 0 20px 40px rgba(99,102,241,0.15), 0 0 0 1px rgba(99,102,241,0.1); }
-.landing-page-container .tc-circuit { background:linear-gradient(155deg,#ffffff 0%, #f0f8ff 60%,#dceeff 100%); border-bottom: 4px solid #0EA5E9; }
-.landing-page-container .tc-circuit:hover { box-shadow: 0 20px 40px rgba(14,165,233,0.15), 0 0 0 1px rgba(14,165,233,0.1); }
-.landing-page-container .tc-codex   { background:linear-gradient(155deg,#ffffff 0%, #f0fff8 60%,#dcffe8 100%); border-bottom: 4px solid #10B981; }
-.landing-page-container .tc-codex:hover { box-shadow: 0 20px 40px rgba(16,185,129,0.15), 0 0 0 1px rgba(16,185,129,0.1); }
-.landing-page-container .tc-neura   { background:linear-gradient(155deg,#ffffff 0%, #faf0ff 60%,#f0dcff 100%); border-bottom: 4px solid #A855F7; }
+.landing-page-container .tc-ignite  { background:linear-gradient(155deg,#ffffff 0%, #fff0e5 60%,#fce5d4 100%); border-bottom: 4px solid #F97316; }
+.landing-page-container .tc-ignite:hover { box-shadow: 0 20px 40px rgba(249,115,22,0.15), 0 0 0 1px rgba(249,115,22,0.1); }
+.landing-page-container .tc-embed   { background:linear-gradient(155deg,#ffffff 0%, #e5f2f5 60%,#d5f2f7 100%); border-bottom: 4px solid #59aaa4ff; }
+.landing-page-container .tc-embed:hover { box-shadow: 0 20px 40px rgba(15, 118, 109, 0.86), 0 0 0 1px rgba(15,118,110,0.1); }
+.landing-page-container .tc-codex   { background:linear-gradient(155deg,#ffffff 0%, #ebf0fd 60%,#ccdafa 100%); border-bottom: 4px solid #3B82F6; }
+.landing-page-container .tc-codex:hover { box-shadow: 0 20px 40px rgba(59,130,246,0.15), 0 0 0 1px rgba(59,130,246,0.1); }
+.landing-page-container .tc-neura   { background:linear-gradient(155deg,#ffffff 0%, #f4ebfa 60%,#eddef7 100%); border-bottom: 4px solid #A855F7; }
 .landing-page-container .tc-neura:hover { box-shadow: 0 20px 40px rgba(168,85,247,0.15), 0 0 0 1px rgba(168,85,247,0.1); }
-.landing-page-container .tc-forge   { background:linear-gradient(155deg,#ffffff 0%, #fff5f0 60%,#ffe4dc 100%); border-bottom: 4px solid #F97316; }
-.landing-page-container .tc-forge:hover { box-shadow: 0 20px 40px rgba(249,115,22,0.15), 0 0 0 1px rgba(249,115,22,0.1); }
-.landing-page-container .tc-studio  { background:linear-gradient(155deg,#ffffff 0%, #fff0fa 60%,#ffdcee 100%); border-bottom: 4px solid #EC4899; }
+.landing-page-container .tc-electra { background:linear-gradient(155deg,#ffffff 0%, #eaf8ed 60%,#d6f7df 100%); border-bottom: 4px solid #22C55E; }
+.landing-page-container .tc-electra:hover { box-shadow: 0 20px 40px rgba(34,197,94,0.15), 0 0 0 1px rgba(34,197,94,0.1); }
+.landing-page-container .tc-vision3d{ background:linear-gradient(155deg,#ffffff 0%, #e5f6f8 60%,#d2f6fa 100%); border-bottom: 4px solid #06B6D4; }
+.landing-page-container .tc-vision3d:hover { box-shadow: 0 20px 40px rgba(6,182,212,0.15), 0 0 0 1px rgba(6,182,212,0.1); }
+.landing-page-container .tc-studio  { background:linear-gradient(155deg,#ffffff 0%, #fbedf4 60%,#fae1ee 100%); border-bottom: 4px solid #EC4899; }
 .landing-page-container .tc-studio:hover { box-shadow: 0 20px 40px rgba(236,72,153,0.15), 0 0 0 1px rgba(236,72,153,0.1); }
-.landing-page-container .tc-quiz    { background:linear-gradient(155deg,#ffffff 0%, #fffaf0 60%,#fff0dc 100%); border-bottom: 4px solid #F59E0B; }
-.landing-page-container .tc-quiz:hover { box-shadow: 0 20px 40px rgba(245,158,11,0.15), 0 0 0 1px rgba(245,158,11,0.1); }
+.landing-page-container .tc-pulse   { background:linear-gradient(155deg,#ffffff 0%, #eafcf1 60%,#c7fade 100%); border-bottom: 4px solid #10B981; }
+.landing-page-container .tc-pulse:hover { box-shadow: 0 20px 40px rgba(16,185,129,0.15), 0 0 0 1px rgba(16,185,129,0.1); }
 
 .landing-page-container .tc-icon {
-  flex:1; display:flex; align-items:center; justify-content:right; padding-bottom:6px;
+  flex:1; display:flex; align-items:center; justify-content:center; padding-bottom: 2vh;
 }
 .landing-page-container .tc-icon svg,
 .landing-page-container .tc-icon img {
-  width: clamp(34px, 9vw,68px); height: clamp(34px, 9vw, 68px); object-fit: contain;
+  width: 90%; max-height: 12vh; object-fit: contain;
+  transform: scale(1) translateY(0);
+  filter: drop-shadow(0 10px 10px rgba(0,0,0,0.15));
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.4s ease;
+}
+.landing-page-container .tc:hover .tc-icon img {
+  transform: scale(1.12) translateY(-6px);
+  filter: drop-shadow(0 15px 15px rgba(0,0,0,0.25));
+  z-index: 20;
 }
 .landing-page-container .tc-cat {
-  font-size: 0.90rem; font-weight: 900; letter-spacing: 0.12em;
-  text-transform: uppercase; color: #0a0328ff; margin-bottom: 2px; line-height: 1.2; opacity: 0.65;
+  font-size: min(0.8rem, 1.2vw); font-weight: 900; letter-spacing: 0.05em;
+  text-transform: uppercase; color: #0a0328ff; margin-bottom: 0.5vh; line-height: 1.1; opacity: 0.65;
 }
 .landing-page-container .tc-name {
-  font-size: clamp(0.9rem, 1.4vw, 0.98rem); font-weight: 1000; letter-spacing: 0.01em;
-  text-transform: uppercase; color: #0f172a; margin-bottom: 2px; line-height: 1.2;
+  font-size: min(0.9rem, 1.5vw); font-weight: 1000; letter-spacing: 0.01em;
+  text-transform: uppercase; color: #281746ff; margin-bottom: 0.5vh; line-height: 1.1;
 }
 .landing-page-container .tc-desc {
-  font-size: 0.82rem; color: #020046a5; line-height: 1.4; font-weight: 600;
+  font-size: min(0.75rem, 1vw); color: #020046b1; line-height: 1.2; font-weight: 600;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 ` }} />
       <div className="landing-page-container">
@@ -627,7 +647,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               {/* 1 IGNITE */}
               <div className={`tc tc-ignite ${tcClass(0)}`} onClick={() => handleCardClick(() => onSelect('junior'))}>
                 <div className="tc-icon">
-                  <img src="/assets/sprites/robot/robot_idle.svg" alt="Ignite Robot" />
+                  <img src="/assets/ignite_icon.png" alt="Ignite Robot" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>
@@ -637,7 +657,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 2 EMBED */}
-              <div className={`tc tc-circuit ${tcClass(1)}`} onClick={() => handleCardClick(() => onSelect('intermediate'))}>
+              <div className={`tc tc-embed ${tcClass(1)}`} onClick={() => handleCardClick(() => onSelect('intermediate'))}>
                 <div className="tc-icon">
                   <img src="/assets/arduino_icon.png" alt="Circuit Icon" />
                 </div>
@@ -673,7 +693,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 5 ELECTRA */}
-              <div className={`tc tc-forge ${tcClass(4)}`} onClick={() => handleCardClick(() => onSelect('leapforge'))}>
+              <div className={`tc tc-electra ${tcClass(4)}`} onClick={() => handleCardClick(() => onSelect('leapforge'))}>
                 <div className="tc-icon">
                   <img src="/assets/creocad_icon.png" alt="Forge Icon" />
                 </div>
@@ -685,9 +705,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 6 VISION3D */}
-              <div className={`tc tc-studio ${tcClass(5)}`} onClick={() => handleCardClick(() => onSelect('appforge'))}>
+              <div className={`tc tc-vision3d ${tcClass(5)}`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Vision3D'))}>
                 <div className="tc-icon">
-                  <img src="/assets/app_game_dev_icon.png" alt="Studio Icon" />
+                  <img src="/assets/vision3d_icon.png" alt="Vision3D Icon" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>
@@ -697,7 +717,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 7 STUDIO */}
-              <div className={`tc tc-studio ${tcClass(5)}`} onClick={() => handleCardClick(() => onSelect('appforge'))}>
+              <div className={`tc tc-studio ${tcClass(6)}`} onClick={() => handleCardClick(() => onSelect('appforge'))}>
                 <div className="tc-icon">
                   <img src="/assets/app_game_dev_icon.png" alt="Studio Icon" />
                 </div>
@@ -709,7 +729,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 8 PULSE */}
-              <div className={`tc tc-quiz ${tcClass(6)}`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Quiz'))}>
+              <div className={`tc tc-pulse ${tcClass(7)}`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Quiz'))}>
                 <div className="tc-icon">
                   <img src="/assets/quiz_icon.png" alt="Quiz Icon" />
                 </div>
@@ -726,9 +746,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           {/* FOOTER */}
           <footer style={{
             textAlign: 'center',
-            padding: '28px 0',
+            height: '4vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             color: '#05001eff',
-            fontSize: '0.95rem',
+            fontSize: 'min(1.5rem, 2vh)',
             fontFamily: '"Poppins", sans-serif',
             opacity: 1,
             letterSpacing: '0.5px',
