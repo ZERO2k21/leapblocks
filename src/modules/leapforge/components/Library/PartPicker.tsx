@@ -24,31 +24,60 @@ const COMPONENTS = [
   { id: 'arduino-mega', name: 'Arduino Mega', category: 'boards', desc: 'Powerful microcontroller' },
   { id: 'arduino-nano', name: 'Arduino Nano', category: 'boards', desc: 'Compact microcontroller' },
   { id: 'esp32-devkit-v1', name: 'ESP32 DevKit', category: 'boards', desc: 'WiFi & Bluetooth MCU' },
+  { id: 'franzininho', name: 'Franzininho', category: 'boards', desc: 'ATtiny85 board' },
+  { id: 'nano-rp2040-connect', name: 'Nano RP2040', category: 'boards', desc: 'RP2040 connected board' },
   
   // OUTPUTS
   { id: 'led', name: 'LED', category: 'outputs', desc: 'Standard 5mm LED' },
   { id: 'rgb-led', name: 'RGB LED', category: 'outputs', desc: 'Multi-color LED' },
   { id: 'neopixel', name: 'NeoPixel', category: 'outputs', desc: 'Addressable RGB LED' },
+  { id: 'led-bar-graph', name: 'LED Bar Graph', category: 'outputs', desc: '10-segment LED bar' },
+  { id: 'led-ring', name: 'LED Ring', category: 'outputs', desc: 'NeoPixel Ring' },
+  { id: 'neopixel-matrix', name: 'NeoPixel Matrix', category: 'outputs', desc: 'RGB LED Matrix' },
   { id: 'buzzer', name: 'Buzzer', category: 'outputs', desc: 'Piezo sounder' },
   { id: 'servo', name: 'Servo Motor', category: 'outputs', desc: 'Positionable motor' },
+  { id: 'stepper-motor', name: 'Stepper Motor', category: 'outputs', desc: 'Step motor' },
+  { id: 'biaxial-stepper', name: 'Biaxial Stepper', category: 'outputs', desc: 'Dual-axis stepper' },
+  { id: 'ks2e-m-dc5', name: 'Relay', category: 'outputs', desc: '5V Relay' },
   
   // DISPLAYS
   { id: 'lcd1602', name: 'LCD 1602', category: 'displays', desc: '16x2 Character display' },
   { id: 'lcd2004', name: 'LCD 2004', category: 'displays', desc: '20x4 Character display' },
   { id: '7segment', name: '7-Segment', category: 'displays', desc: 'Numeric display' },
-  { id: 'ssd1306', name: 'OLED SSD1306', category: 'displays', desc: '128x64 Graphics display' },
+  { id: 'ssd1306', name: 'OLED SSD1306', category: 'displays', desc: '128x64 Graphics OLED' },
+  { id: 'ili9341', name: 'ILI9341 TFT', category: 'displays', desc: '2.8" SPI TFT display' },
   
   // SENSORS
   { id: 'dht22', name: 'DHT22', category: 'sensors', desc: 'Temp & Humidity' },
   { id: 'hc-sr04', name: 'HC-SR04', category: 'sensors', desc: 'Ultrasonic distance' },
   { id: 'pir-motion-sensor', name: 'PIR Sensor', category: 'sensors', desc: 'Motion detector' },
   { id: 'mpu6050', name: 'MPU6050', category: 'sensors', desc: 'Accelerometer & Gyro' },
+  { id: 'ntc-temperature-sensor', name: 'NTC Thermistor', category: 'sensors', desc: 'Temperature sensor' },
+  { id: 'photoresistor-sensor', name: 'Photoresistor', category: 'sensors', desc: 'Light sensor (LDR)' },
+  { id: 'flame-sensor', name: 'Flame Sensor', category: 'sensors', desc: 'IR flame detector' },
+  { id: 'gas-sensor', name: 'Gas Sensor', category: 'sensors', desc: 'MQ-series gas sensor' },
+  { id: 'heart-beat-sensor', name: 'Heart Rate', category: 'sensors', desc: 'Pulse sensor' },
+  { id: 'big-sound-sensor', name: 'Big Sound Sensor', category: 'sensors', desc: 'Microphone module' },
+  { id: 'small-sound-sensor', name: 'Small Sound Sensor', category: 'sensors', desc: 'Microphone module' },
+  { id: 'hx711', name: 'HX711 Load Cell', category: 'sensors', desc: 'Weight sensor amp' },
+  { id: 'ir-receiver', name: 'IR Receiver', category: 'sensors', desc: 'Infrared receiver' },
+  { id: 'ds1307', name: 'DS1307 RTC', category: 'sensors', desc: 'Real-time clock' },
+  { id: 'microsd-card', name: 'MicroSD Card', category: 'sensors', desc: 'SD card module' },
   
-  // INPUTS
+  // INPUTS / PASSIVES
   { id: 'pushbutton', name: 'Pushbutton', category: 'inputs', desc: 'Momentary switch' },
+  { id: 'pushbutton-6mm', name: 'Pushbutton 6mm', category: 'inputs', desc: 'Small tactile button' },
   { id: 'potentiometer', name: 'Potentiometer', category: 'inputs', desc: 'Variable resistor' },
-  { id: 'membrane-keypad', name: 'Keypad', category: 'inputs', desc: 'Matrix keypad' },
+  { id: 'slide-potentiometer', name: 'Slide Pot.', category: 'inputs', desc: 'Linear variable resistor' },
+  { id: 'membrane-keypad', name: 'Keypad (4x4)', category: 'inputs', desc: 'Matrix keypad' },
   { id: 'slide-switch', name: 'Slide Switch', category: 'inputs', desc: 'SPDT toggle' },
+  { id: 'dip-switch-8', name: 'DIP Switch (8)', category: 'inputs', desc: '8-position toggle' },
+  { id: 'tilt-switch', name: 'Tilt Switch', category: 'inputs', desc: 'Tilt sensor switch' },
+  { id: 'analog-joystick', name: 'Joystick', category: 'inputs', desc: '2-axis analog joystick' },
+  { id: 'ky-040', name: 'Rotary Encoder', category: 'inputs', desc: 'Incremental encoder' },
+  { id: 'rotary-dialer', name: 'Rotary Dialer', category: 'inputs', desc: 'Classic rotary dial' },
+  { id: 'ir-remote', name: 'IR Remote', category: 'inputs', desc: 'Infrared remote control' },
+  { id: 'resistor', name: 'Resistor', category: 'inputs', desc: 'Passive resistor' },
 ];
 
 interface PartPickerProps {

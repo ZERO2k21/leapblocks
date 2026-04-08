@@ -1,85 +1,4 @@
-export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, width: number, height: number}, pins: {name: string, x: number, y: number}[] }> = {
-  "slide-potentiometer": {
-    "viewBox": {
-        "minX": 0,
-        "minY": 0,
-        "width": 55,
-        "height": 29
-    },
-    "pins": [
-        {
-            "name": "VCC",
-            "x": 1,
-            "y": 43
-        },
-        {
-            "name": "SIG",
-            "x": 1,
-            "y": 63
-        },
-        {
-            "name": "GND",
-            "x": 207,
-            "y": 43
-        }
-    ]
-},
-  "slide-pot": {
-    "viewBox": {
-        "minX": 0,
-        "minY": 0,
-        "width": 55,
-        "height": 29
-    },
-    "pins": [
-        {
-            "name": "VCC",
-            "x": 1,
-            "y": 43
-        },
-        {
-            "name": "SIG",
-            "x": 1,
-            "y": 63
-        },
-        {
-            "name": "GND",
-            "x": 207,
-            "y": 43
-        }
-    ]
-},
-  "neopixel": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 5.6631,
-      "height": 5
-    },
-    "pins": [
-      {
-        "name": "VDD",
-        "x": 1,
-        "y": 3.5
-      },
-      {
-        "name": "DOUT",
-        "x": 1,
-        "y": 14
-      },
-      {
-        "name": "VSS",
-        "x": 21,
-        "y": 14
-      },
-      {
-        "name": "DIN",
-        "x": 21,
-        "y": 3.5
-      }
-    ]
-  },
-
+{
   "analog-joystick": {
     "viewBox": {
       "minX": 0,
@@ -905,15 +824,6 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
       }
     ]
   },
-  "biaxial-stepper": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 212,
-      "height": 255
-    },
-    "pins": []
-  },
   "big-sound-sensor": {
     "viewBox": {
       "minX": 0,
@@ -1364,6 +1274,26 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
       }
     ]
   },
+  "hx711": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 30,
+      "height": 30
+    },
+    "pins": [
+      {
+        "name": "VCC",
+        "x": 7,
+        "y": 36.3
+      },
+      {
+        "name": "SCK",
+        "x": 7,
+        "y": 26.5
+      }
+    ]
+  },
   "ili9341": {
     "viewBox": {
       "minX": 0,
@@ -1434,24 +1364,6 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
       }
     ]
   },
-  "ir-remote": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 151,
-      "height": 316
-    },
-    "pins": []
-  },
-  "ks2e-m-dc5": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 21,
-      "height": 10
-    },
-    "pins": []
-  },
   "ky-040": {
     "viewBox": {
       "minX": 0,
@@ -1471,15 +1383,6 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
         "y": 36.3
       }
     ]
-  },
-  "led-bar-graph": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 10.1,
-      "height": 25.5
-    },
-    "pins": []
   },
   "lcd1602": {
     "viewBox": {
@@ -1508,226 +1411,6 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
         "name": "SCL",
         "x": 4,
         "y": 60.5
-      }
-    ]
-  },
-  "lcd2004": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 94,
-      "height": 47.5
-    },
-    "pins": [
-      {
-        "name": "VSS",
-        "x": 32,
-        "y": 45
-      },
-      {
-        "name": "VDD",
-        "x": 41.5,
-        "y": 45
-      },
-      {
-        "name": "V0",
-        "x": 51.5,
-        "y": 45
-      },
-      {
-        "name": "RS",
-        "x": 60.5,
-        "y": 45
-      },
-      {
-        "name": "RW",
-        "x": 70.5,
-        "y": 45
-      },
-      {
-        "name": "E",
-        "x": 80,
-        "y": 45
-      },
-      {
-        "name": "D0",
-        "x": 89.5,
-        "y": 45
-      },
-      {
-        "name": "D1",
-        "x": 99.5,
-        "y": 45
-      },
-      {
-        "name": "D2",
-        "x": 109,
-        "y": 45
-      },
-      {
-        "name": "D3",
-        "x": 118.5,
-        "y": 45
-      },
-      {
-        "name": "D4",
-        "x": 128,
-        "y": 45
-      },
-      {
-        "name": "D5",
-        "x": 137.5,
-        "y": 45
-      },
-      {
-        "name": "D6",
-        "x": 147,
-        "y": 45
-      },
-      {
-        "name": "D7",
-        "x": 156.5,
-        "y": 45
-      },
-      {
-        "name": "A",
-        "x": 166.5,
-        "y": 45
-      },
-      {
-        "name": "K",
-        "x": 176,
-        "y": 45
-      }
-    ]
-  },
-  "led": {
-    "viewBox": {
-      "minX": -10,
-      "minY": -5,
-      "width": 35.456,
-      "height": 39.618
-    },
-    "pins": [
-      {
-        "name": "A",
-        "x": 25,
-        "y": 42
-      },
-      {
-        "name": "C",
-        "x": 15,
-        "y": 42
-      }
-    ]
-  },
-  "ssd1306": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 50,
-      "height": 50
-    },
-    "pins": [
-      {
-        "name": "DATA",
-        "x": 36.5,
-        "y": 12.5
-      },
-      {
-        "name": "CLK",
-        "x": 45.5,
-        "y": 12.5
-      },
-      {
-        "name": "DC",
-        "x": 54.5,
-        "y": 12.5
-      },
-      {
-        "name": "RST",
-        "x": 64.5,
-        "y": 12.5
-      },
-      {
-        "name": "CS",
-        "x": 74.5,
-        "y": 12.5
-      },
-      {
-        "name": "3V3",
-        "x": 83.5,
-        "y": 12.5
-      },
-      {
-        "name": "VIN",
-        "x": 93.5,
-        "y": 12.5
-      },
-      {
-        "name": "GND",
-        "x": 103.5,
-        "y": 12
-      }
-    ]
-  },
-  "7segment": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 12.55,
-      "height": 22
-    },
-    "pins": [
-      {
-        "name": "E",
-        "x": 1.27,
-        "y": 21
-      },
-      {
-        "name": "D",
-        "x": 3.81,
-        "y": 21
-      },
-      {
-        "name": "COM.1",
-        "x": 6.35,
-        "y": 21
-      },
-      {
-        "name": "C",
-        "x": 8.89,
-        "y": 21
-      },
-      {
-        "name": "DP",
-        "x": 11.43,
-        "y": 21
-      },
-      {
-        "name": "B",
-        "x": 1.27,
-        "y": 1
-      },
-      {
-        "name": "A",
-        "x": 3.81,
-        "y": 1
-      },
-      {
-        "name": "COM.2",
-        "x": 6.35,
-        "y": 1
-      },
-      {
-        "name": "F",
-        "x": 8.89,
-        "y": 1
-      },
-      {
-        "name": "G",
-        "x": 11.43,
-        "y": 1
       }
     ]
   },
@@ -2038,34 +1721,24 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
   },
   "neopixel": {
     "viewBox": {
-        "minX": 0,
-        "minY": 0,
-        "width": 5.6631,
-        "height": 5
+      "minX": 0,
+      "minY": 0,
+      "width": 5.6631,
+      "height": 5
     },
     "pins": [
-        {
-            "name": "VDD",
-            "y": 3.5,
-            "x": 1
-        },
-        {
-            "name": "DOUT",
-            "y": 14,
-            "x": 1
-        },
-        {
-            "name": "VSS",
-            "y": 14,
-            "x": 21
-        },
-        {
-            "name": "DIN",
-            "y": 3.5,
-            "x": 21
-        }
+      {
+        "name": "VDD",
+        "x": 1,
+        "y": 14
+      },
+      {
+        "name": "VSS",
+        "x": 21,
+        "y": 3.5
+      }
     ]
-},
+  },
   "ntc-temperature-sensor": {
     "viewBox": {
       "minX": 0,
@@ -2261,6 +1934,31 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
       }
     ]
   },
+  "rotary-dialer": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 50,
+      "height": 50
+    },
+    "pins": [
+      {
+        "name": "GND",
+        "x": 122,
+        "y": 286
+      },
+      {
+        "name": "DIAL",
+        "x": 131.6,
+        "y": 286
+      },
+      {
+        "name": "PULSE",
+        "x": 141.2,
+        "y": 286
+      }
+    ]
+  },
   "servo": {
     "viewBox": {
       "minX": 0,
@@ -2283,6 +1981,31 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
         "name": "PWM",
         "x": 0,
         "y": 69
+      }
+    ]
+  },
+  "slide-potentiometer": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 55,
+      "height": 29
+    },
+    "pins": [
+      {
+        "name": "VCC",
+        "x": 1,
+        "y": 43
+      },
+      {
+        "name": "SIG",
+        "x": 1,
+        "y": 63
+      },
+      {
+        "name": "GND",
+        "x": 206.98582677165354,
+        "y": 43
       }
     ]
   },
@@ -2321,6 +2044,56 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
       }
     ]
   },
+  "ssd1306": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 50,
+      "height": 50
+    },
+    "pins": [
+      {
+        "name": "DATA",
+        "x": 36.5,
+        "y": 12.5
+      },
+      {
+        "name": "CLK",
+        "x": 45.5,
+        "y": 12.5
+      },
+      {
+        "name": "DC",
+        "x": 54.5,
+        "y": 12.5
+      },
+      {
+        "name": "RST",
+        "x": 64.5,
+        "y": 12.5
+      },
+      {
+        "name": "CS",
+        "x": 74.5,
+        "y": 12.5
+      },
+      {
+        "name": "3V3",
+        "x": 83.5,
+        "y": 12.5
+      },
+      {
+        "name": "VIN",
+        "x": 93.5,
+        "y": 12.5
+      },
+      {
+        "name": "GND",
+        "x": 103.5,
+        "y": 12
+      }
+    ]
+  },
   "tilt-switch": {
     "viewBox": {
       "minX": 0,
@@ -2335,75 +2108,5 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
         "y": 27.8
       }
     ]
-  },
-  "hx711": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 30,
-      "height": 30
-    },
-    "pins": [
-      {
-        "name": "VCC",
-        "x": 7,
-        "y": 36.3
-      },
-      {
-        "name": "SCK",
-        "x": 7,
-        "y": 26.5
-      }
-    ]
-  },
-  "rotary-dialer": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 50,
-      "height": 50
-    },
-    "pins": [
-      {
-        "name": "GND",
-        "x": 122,
-        "y": 286
-      },
-      {
-        "name": "DIAL",
-        "x": 131.6,
-        "y": 286
-      },
-      {
-        "name": "PULSE",
-        "x": 141.2,
-        "y": 286
-      }
-    ]
-  },
-  "slide-potentiometer": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 55,
-      "height": 29
-    },
-    "pins": [
-      {
-        "name": "VCC",
-        "x": 1,
-        "y": 43
-      },
-      {
-        "name": "SIG",
-        "x": 1,
-        "y": 63
-      },
-      {
-        "name": "GND",
-        "x": 206.98582677165354,
-        "y": 43
-      }
-    ]
   }
-};
+}
