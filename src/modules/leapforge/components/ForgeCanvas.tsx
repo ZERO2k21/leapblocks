@@ -50,7 +50,13 @@ const ForgeCanvasInner: React.FC = () => {
   // Handle new connections (wiring)
   const onConnect = useCallback(
     (params: Connection | Edge) => {
-      addStoreEdge(params as Edge);
+      // Normalize handle IDs — strip "__target" suffix from dual-handle system
+      const normalized = {
+        ...params,
+        sourceHandle: (params.sourceHandle || '').replace('__target', ''),
+        targetHandle: (params.targetHandle || '').replace('__target', ''),
+      };
+      addStoreEdge(normalized as Edge);
     },
     [addStoreEdge]
   );

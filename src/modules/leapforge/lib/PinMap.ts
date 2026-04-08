@@ -64,7 +64,6 @@ export function getComponentPins(type: string): PinEntry[] {
       name: pin.name,
       x: xPercent,
       y: yPercent,
-      type: pin.y < 50 ? 'target' : 'source'
     };
   });
 }

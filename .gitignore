@@ -97,3 +97,6 @@ dist/
 dist-electron/
 build/
 
+
+*storybook.log
+storybook-static

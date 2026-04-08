@@ -101,28 +101,49 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
         />
       )}
 
-      {/* ── DYNAMIC PIN HANDLES (Routing) ────────────────── */}
-      {pins.map((pin, idx) => (
-        <Handle
-          key={`${pin.name}-${idx}`}
-          id={pin.name}
-          type={pin.type || 'source'}
-          position={pin.y < 50 ? Position.Top : Position.Bottom}
-          style={{ 
-            background: data.pinStates?.[`pin_${pin.name}`] ? '#ef4444' : '#BEF264', 
-            border: '1.5px solid #1e293b',
-            width: '8px',
-            height: '8px',
-            left: `${pin.x}%`,
-            top: `${pin.y}%`,
-            opacity: selected ? 1 : 0.3, // Subtle visibility for non-selected nodes
-            transition: 'opacity 0.2s',
-            zIndex: 10,
-            pointerEvents: 'all'
-          }}
-          title={pin.name}
-        />
-      ))}
+      {/* ── DYNAMIC PIN HANDLES (Dual Source+Target for bidirectional wiring) ── */}
+      {pins.map((pin, idx) => {
+        const pinPosition = pin.y < 50 ? Position.Top : Position.Bottom;
+        const handleStyle: React.CSSProperties = {
+          left: `${pin.x}%`,
+          top: `${pin.y}%`,
+          width: '8px',
+          height: '8px',
+          zIndex: 10,
+          pointerEvents: 'all',
+          transition: 'opacity 0.2s',
+        };
+
+        return (
+          <React.Fragment key={`${pin.name}-${idx}`}>
+            {/* Hidden handle (target) — renders first, underneath */}
+            <Handle
+              id={`${pin.name}__target`}
+              type="target"
+              position={pinPosition}
+              style={{
+                ...handleStyle,
+                background: 'transparent',
+                border: 'none',
+                opacity: 0,
+              }}
+            />
+            {/* Visible handle (source) — renders last, on top for hover tooltip */}
+            <Handle
+              id={`${pin.name}`}
+              type="source"
+              position={pinPosition}
+              style={{
+                ...handleStyle,
+                background: data.pinStates?.[`pin_${pin.name}`] ? '#ef4444' : '#BEF264',
+                border: '1.5px solid #1e293b',
+                opacity: selected ? 1 : 0.3,
+              }}
+              title={pin.name}
+            />
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 });

@@ -99,7 +99,7 @@ class SimulationRunner {
 
     // Attach SPI
     if (config.hasSPI) {
-      this.spi = new AVRSPI(this.cpu!, spiConfig);
+      this.spi = new AVRSPI(this.cpu!, spiConfig, config.frequency);
     }
 
     // Attach EEPROM
