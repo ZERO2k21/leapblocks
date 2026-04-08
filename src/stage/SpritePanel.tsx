@@ -204,8 +204,10 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           )}
 
           <div style={styles.spriteList}>
-            {sprites.filter(s => s.id !== 'stage').map((sprite) => {
+            {sprites.filter(s => s.id !== 'stage' && !s.id.includes('_clone_')).map((sprite) => {
               const isSelected = selectedSpriteId === sprite.id;
+              const cloneCount = sprites.filter(s => s.id.startsWith(`${sprite.id}_clone_`)).length;
+              
               return (
                 <div
                   key={sprite.id}
@@ -227,6 +229,13 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                       🗑️
                     </button>
                   )}
+                  
+                  {cloneCount > 0 && (
+                    <div style={styles.cloneBadge} title={`${cloneCount} clones active`}>
+                      {cloneCount}
+                    </div>
+                  )}
+
                   <div style={styles.spriteThumbnail}>
                     {sprite.currentCostume ? (
                       <img
@@ -617,6 +626,24 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: 'bold',
     whiteSpace: 'nowrap',
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  },
+  cloneBadge: {
+    position: 'absolute',
+    top: '-8px',
+    left: '-8px',
+    backgroundColor: '#FF8C1A',
+    color: 'white',
+    borderRadius: '10px',
+    padding: '2px 8px',
+    fontSize: '10px',
+    fontWeight: 'bold',
+    border: '2px solid white',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+    zIndex: 11,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '20px',
   },
 };
 

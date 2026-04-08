@@ -800,7 +800,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const _isWebMode = !window.electronAPI?.isElectron;
     const [terminalOutput, setTerminalOutput] = useState([
         { text: "╔══════════════════════════════════════════════════════════════╗", type: "info", ts: new Date() },
-        { text: "║  LeapBlocks Python IDE v1.0                                 ║", type: "info", ts: new Date() },
+        { text: "║  Leaplab CODEX.v1.0                                          ║", type: "info", ts: new Date() },
         { text: "║  ─────────────────────────────────────────────────────────── ║", type: "info", ts: new Date() },
         { text: "║  ▶ Press Ctrl+Enter or F5 to run code                       ║", type: "info", ts: new Date() },
         { text: "║  ▶ Press Escape to stop execution                           ║", type: "info", ts: new Date() },
@@ -2690,9 +2690,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     >
                         <Home size={19} strokeWidth={2.2} />
                     </button>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={onBack}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }} onClick={onBack}>
                         <Logo height={50} />
-                        <span style={{ color: "#ffffffff", fontSize: 15, fontWeight: 1000, letterSpacing: "0.08em", fontFamily:"'sego ui',Inter,system-ui,sans-serif" }}>CODEX</span>
+                        <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em", fontFamily:"'sego ui',Inter,system-ui,sans-serif" }}>CODEX</span>
                     </div>
                     <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
 
@@ -2747,7 +2747,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         <input
                             value={projectName}
                             onChange={(e) => setProjectName(e.target.value)}
-                            style={{ background: "transparent", border: "none", color: "#fff", width: 90, outline: "none", fontSize: 12, fontWeight: 500 }}
+                            style={{ background: "transparent", border: "none", color: "#fff", width: 90, outline: "none", fontSize: 14, fontWeight: 500 }}
                         />
                         <Save size={15} style={{ opacity: 0.8, cursor: "pointer" }} onClick={handleSaveProject} title="Save Project" />
                     </div>
@@ -2798,10 +2798,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         <Upload size={15} /> {workflowMode === "upload" ? "Upload Code" : "Open Upload"}
                     </button>
                     <div style={{ display: "flex", gap: 4 }}>
-                        <div style={{ width: 28, height: 30, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                        <div style={{ width: 38, height: 30, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                             <Maximize size={15} />
                         </div>
-                        <div style={{ width: 28, height: 30, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                        <div style={{ width: 38, height: 30, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                             <Settings size={15} />
                         </div>
                     </div>

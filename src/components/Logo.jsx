@@ -1,7 +1,7 @@
 import React from 'react';
 
 // LeapLab left-logo (background-removed circuit letters)
-export default function Logo({ height = 80, className = "" }) {
+export default function Logo({ height = 100, className = "" }) {
     return (
         <img
             src="/assets/leaplab_logo_transparent.png"
@@ -16,7 +16,7 @@ export default function Logo({ height = 80, className = "" }) {
 }
 
 // CREOLEAP right-logo (AI Future SVG) — used on right side of topbars
-export function CreoleapLogo({ height = 100, className = "", style = {} }) {
+export function CreoleapLogo({ height = 250, className = "", style = {} }) {
     return (
         <img
             src="/assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"

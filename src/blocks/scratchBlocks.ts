@@ -1657,7 +1657,7 @@ const scratchBlocks = [
             { type: 'field_input', name: 'VARIABLE', text: 'variable', enabled: false }
         ],
         output: 'String',
-        colour: '#FF8C1A',
+        colour: '#FF8C1A00',
         tooltip: 'Flyout placeholder'
     },
     {
@@ -1668,8 +1668,30 @@ const scratchBlocks = [
             { type: 'field_input', name: 'LIST', text: 'list', enabled: false }
         ],
         output: 'String',
-        colour: '#FF8C1A',
+        colour: '#FF8C1A00',
         tooltip: 'Flyout placeholder'
+    },
+    {
+        type: 'sensing_reporter_checkbox',
+        message0: '%1 %2',
+        args0: [
+            { type: 'field_checkbox', name: 'CHECK', checked: false },
+            { type: 'field_input', name: 'VARIABLE', text: 'sensing', enabled: false }
+        ],
+        output: 'String',
+        colour: '#5CB1D600',
+        tooltip: 'Flyout placeholder'
+    },
+    {
+        type: 'checkbox_only',
+        message0: '%1 %2',
+        args0: [
+            { type: 'field_checkbox', name: 'CHECK', checked: false },
+            { type: 'field_input', name: 'VARIABLE', text: '', enabled: false }
+        ],
+        output: 'String',
+        colour: '#FFFFFF00',
+        tooltip: ''
     },
     {
         type: 'data_listcontents',

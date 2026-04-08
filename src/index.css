@@ -916,6 +916,47 @@ body #root .blocklyFlyoutButton .blocklyText,
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   TRUE INDIVIDUAL FLYOUT REPORTER STYLING
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Target the standalone checkbox blocks in the flyout using their specific white color hook */
+.blocklyFlyout g path[fill^="#ffffff00"],
+.blocklyFlyout g path[fill="rgba(255,255,255,0)"] {
+  transform: translate(8px, 0) !important;
+  pointer-events: all;
+}
+
+/* Hide the block shape and any dummy text for these checkbox toggles */
+.blocklyFlyout g:has(path[fill^="#ffffff00"]) .blocklyPath,
+.blocklyFlyout g:has(path[fill^="#ffffff00"]) .blocklyEditableText,
+.blocklyFlyout g:has(path[fill^="#ffffff00"]) .blocklyText {
+  display: none !important;
+}
+
+/* The actual checkbox square */
+.blocklyFlyout .blocklyCheckbox {
+  display: block !important;
+  fill: #fff !important;
+  stroke: rgba(0,0,0,0.2) !important;
+}
+
+/* Ensure reporter blocks following a checkbox are shifted right and UP onto the same row */
+.blocklyFlyout .blocklyBlockCanvas g:has(path[fill^="#ffffff00"]) + g {
+  transform: translate(44px, -32px) !important;
+}
+
+/* Category colors for separate pills in flyout */
+/* Sensing (Blue) */
+.blocklyFlyout g[data-type^="sensing_"] .blocklyPath { 
+  fill: #5CB1D6 !important; 
+}
+
+/* Variables/Lists (Orange) */
+.blocklyFlyout g[data-type^="data_"] .blocklyPath { 
+  fill: #FF8C1A !important; 
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    WORKSPACE TRASH OVERLAY (Shared: Junior + Intermediate)
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -1077,4 +1118,43 @@ rect.blocklyCheckbox[fill*="true"],
 .blocklyFlyoutCheckboxPath {
   stroke: white !important;
   stroke-width: 3px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SEPARATE FLYOUT REPORTER STYLING
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Remove shadow/background for the transparent wrapper block in flyout */
+.blocklyFlyout .blocklyPath[fill="#00000000"] {
+  display: none !important;
+}
+
+/* Style the checkbox field specifically within these transparent blocks */
+.blocklyFlyout .blocklyBlockCanvas g[style*="fill: #00000000"] .blocklyCheckbox,
+.blocklyFlyout .blocklyBlockCanvas g[style*="fill: rgb(0, 0, 0)"] .blocklyCheckbox {
+  /* Note: #00000000 might show up as rgb(0, 0, 0) fill-opacity 0 */
+  display: block !important;
+}
+
+/* Ensure the label/input part looks like a pill */
+.blocklyFlyout .blocklyBlockCanvas g[style*="fill: #00000000"] .blocklyFieldRect,
+.blocklyFlyout .blocklyBlockCanvas g[style*="fill: rgb(0, 0, 0)"] .blocklyFieldRect {
+  rx: 14px !important;
+  ry: 14px !important;
+  stroke: rgba(0, 0, 0, 0.1) !important;
+  stroke-width: 1px !important;
+}
+
+/* Color coding for Sensing (Blue) in the flyout */
+.blocklyFlyout .blocklyBlockCanvas g[style*="fill: #00000000"] .blocklyFieldRect {
+   fill: #5CB1D6 !important;
+}
+
+.blocklyFlyout .blocklyBlockCanvas g[style*="fill: #00000000"] .blocklyText {
+   fill: white !important;
+}
+
+/* Adjust checkbox styling to be a bit more robust */
+.blocklyFlyout .blocklyCheckbox {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)) !important;
 }
