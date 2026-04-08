@@ -156,19 +156,39 @@ class ScratchRuntime {
                 // ═══════════════════════════════════════════════════════════════════════
                 // SOUND
                 // ═══════════════════════════════════════════════════════════════════════
-                case 'sound_play':
-                case 'sound_playuntildone':
+                case 'sound_play': {
                     const sound = fields.SOUND_MENU ? fields.SOUND_MENU.value : await this.getInputValue(inputs.SOUND_MENU, spriteId);
-                    await soundManager.playSound(sprite, sound);
+                    await soundManager.playSound(sprite, sound, false);
                     break;
+                }
+                case 'sound_playuntildone': {
+                    const sound = fields.SOUND_MENU ? fields.SOUND_MENU.value : await this.getInputValue(inputs.SOUND_MENU, spriteId);
+                    await soundManager.playSound(sprite, sound, true);
+                    break;
+                }
                 case 'sound_stopallsounds':
                     soundManager.stopAll();
                     break;
                 case 'sound_changevolumeby':
-                    sprite.setVolume(sprite.volume + Number(await this.getInputValue(inputs.VOLUME, spriteId)));
+                    sprite.changeVolume(Number(await this.getInputValue(inputs.VOLUME, spriteId)));
                     break;
                 case 'sound_setvolumeto':
                     sprite.setVolume(Number(await this.getInputValue(inputs.VOLUME, spriteId)));
+                    break;
+                case 'sound_changeeffectby':
+                    sprite.changeSoundEffect(
+                        (fields.EFFECT ? fields.EFFECT.value : await this.getInputValue(inputs.EFFECT, spriteId)).toLowerCase() === 'pan' ? 'pan' : 'pitch',
+                        Number(await this.getInputValue(inputs.VALUE, spriteId))
+                    );
+                    break;
+                case 'sound_seteffectto':
+                    sprite.setSoundEffect(
+                        (fields.EFFECT ? fields.EFFECT.value : await this.getInputValue(inputs.EFFECT, spriteId)).toLowerCase() === 'pan' ? 'pan' : 'pitch',
+                        Number(await this.getInputValue(inputs.VALUE, spriteId))
+                    );
+                    break;
+                case 'sound_cleareffects':
+                    sprite.clearSoundEffects();
                     break;
 
                 // ═══════════════════════════════════════════════════════════════════════
@@ -254,8 +274,11 @@ class ScratchRuntime {
                 case 'data_changevariableby':
                     {
                         const cVarName = fields.VARIABLE ? fields.VARIABLE.id || fields.VARIABLE.name : null;
-                        const cVal = Number(await this.getInputValue(inputs.VALUE, spriteId));
-                        const newValue = Number(variableStore.getVariable(cVarName)) + cVal;
+                        const cValRaw = Number(await this.getInputValue(inputs.VALUE, spriteId));
+                        const currentRaw = Number(variableStore.getVariable(cVarName));
+                        const cVal = Number.isNaN(cValRaw) ? 0 : cValRaw;
+                        const currentValue = Number.isNaN(currentRaw) ? 0 : currentRaw;
+                        const newValue = currentValue + cVal;
                         variableStore.setVariable(cVarName, newValue);
                         this.onLog?.(`Variable '${cVarName}' changed by ${cVal} (New value: ${newValue})`);
                     }

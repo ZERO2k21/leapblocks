@@ -199,9 +199,6 @@ export class AnimationVM {
     // Sensing
     private currentAnswer: string = '';
 
-    // Sound
-    private volume: number = 100;
-
     // Broadcast system
     private broadcastListeners: Map<string, CompiledScript[]> = new Map();
     public stageScripts: CompiledScript[] = [];
@@ -249,21 +246,23 @@ export class AnimationVM {
         // Clear broadcast listeners
         this.broadcastListeners.clear();
         this.stageScripts = [];
-        // Reset volume
-        this.volume = 100;
     }
 
     // Sound playback helper
     private async playSound(sprite: Sprite, name: string, wait: boolean = false): Promise<void> {
-        soundManager.setVolume(this.volume / 100);
-
         // Look for sound in sprite's sounds first
         const sound = sprite.sounds.find(s => s.name === name);
+        const playbackOptions = {
+            pan: sprite.soundEffects.pan,
+            pitch: sprite.soundEffects.pitch,
+            volume: sprite.volume,
+        };
+
         if (sound) {
             if (wait) {
-                await soundManager.playAndWait(name, sound.src);
+                await soundManager.playAndWait(name, sound.src, playbackOptions);
             } else {
-                await soundManager.play(name, sound.src);
+                await soundManager.play(name, sound.src, playbackOptions);
             }
             return;
         }
@@ -272,12 +271,14 @@ export class AnimationVM {
         const stageSound = stageManager.getAllSounds().find(s => s.name === name);
         if (stageSound) {
             if (wait) {
-                await soundManager.playAndWait(name, stageSound.src);
+                await soundManager.playAndWait(name, stageSound.src, playbackOptions);
             } else {
-                await soundManager.play(name, stageSound.src);
+                await soundManager.play(name, stageSound.src, playbackOptions);
             }
             return;
         }
+
+        vmLog.warn(`Sound not found for sprite '${sprite.name}': ${name}`);
     }
 
     // Helper to get current sprite id from context
@@ -289,6 +290,10 @@ export class AnimationVM {
     // VARIABLES
     // ═══════════════════════════════════════════════════════════════════════
     private variables: Map<string, number | string> = new Map();
+
+    hasVariable(name: string): boolean {
+        return this.variables.has(name);
+    }
 
     getVariable(name: string): number | string {
         const value = this.variables.get(name);
@@ -309,16 +314,30 @@ export class AnimationVM {
         this.onVariableChange?.(name, value);
     }
 
+    deleteVariable(name: string): void {
+        if (!this.variables.has(name)) {
+            return;
+        }
+
+        const oldValue = this.variables.get(name);
+        this.variables.delete(name);
+        const msg = `Variable '${name}' deleted${oldValue !== undefined ? ` (Last value: ${oldValue})` : ''}`;
+        vmLog.info(msg);
+        this.onLog?.(msg);
+    }
+
     changeVariable(name: string, delta: number): void {
         const current = this.getVariable(name);
         const currentNum = Number(current);
-        if (!isNaN(currentNum)) {
-            const newValue = currentNum + delta;
-            this.variables.set(name, newValue);
-            vmLog.step('change_variable', { name, delta, newValue });
-            this.onLog?.(`Variable '${name}' changed by ${delta} (New value: ${newValue})`);
-            this.onVariableChange?.(name, newValue);
-        }
+        const deltaNum = Number(delta);
+        const baseValue = Number.isNaN(currentNum) ? 0 : currentNum;
+        const changeAmount = Number.isNaN(deltaNum) ? 0 : deltaNum;
+        const newValue = baseValue + changeAmount;
+
+        this.variables.set(name, newValue);
+        vmLog.step('change_variable', { name, delta: changeAmount, newValue });
+        this.onLog?.(`Variable '${name}' changed by ${changeAmount} (New value: ${newValue})`);
+        this.onVariableChange?.(name, newValue);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -618,6 +637,7 @@ export class AnimationVM {
             controller.abort();
         }
         this.runningScripts.clear();
+        soundManager.stopAll();
 
         // Clear highlights
         if (this.onHighlightBlock) {
@@ -1137,25 +1157,23 @@ export class AnimationVM {
                 break;
 
             case 'set_volume':
-                this.volume = Math.max(0, Math.min(100, step.volume));
-                soundManager.setVolume(this.volume);
+                ctx.sprite.setVolume(step.volume);
                 break;
 
             case 'change_volume':
-                this.volume = Math.max(0, Math.min(100, this.volume + step.change));
-                soundManager.setVolume(this.volume);
+                ctx.sprite.changeVolume(step.change);
                 break;
 
             case 'set_sound_effect':
-                vmLog.info('set_sound_effect not fully implemented', { effect: step.effect, value: step.value });
+                ctx.sprite.setSoundEffect(step.effect, step.value);
                 break;
 
             case 'change_sound_effect':
-                vmLog.info('change_sound_effect not fully implemented', { effect: step.effect, delta: step.value });
+                ctx.sprite.changeSoundEffect(step.effect, step.value);
                 break;
 
             case 'clear_sound_effects':
-                vmLog.info('clear_sound_effects not implemented');
+                ctx.sprite.clearSoundEffects();
                 break;
 
             // Pen blocks
@@ -1628,7 +1646,7 @@ export class AnimationVM {
                 case 'backdrop_name':
                     return stageManager.currentBackdrop?.name || '';
                 case 'volume':
-                    return this.volume;
+                    return this.getSprite('stage')?.volume ?? 100;
                 default:
                     return 0;
             }
@@ -1655,7 +1673,7 @@ export class AnimationVM {
             case 'size':
                 return sprite.size;
             case 'volume':
-                return this.volume; // Global volume for now as Sprite doesn't have local volume
+                return sprite.volume;
             default:
                 return 0;
         }

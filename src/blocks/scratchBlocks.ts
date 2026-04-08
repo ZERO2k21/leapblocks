@@ -1683,17 +1683,6 @@ const scratchBlocks = [
         tooltip: 'Flyout placeholder'
     },
     {
-        type: 'checkbox_only',
-        message0: '%1 %2',
-        args0: [
-            { type: 'field_checkbox', name: 'CHECK', checked: false },
-            { type: 'field_input', name: 'VARIABLE', text: '', enabled: false }
-        ],
-        output: 'String',
-        colour: '#FFFFFF00',
-        tooltip: ''
-    },
-    {
         type: 'data_listcontents',
         message0: '%1',
         args0: [{

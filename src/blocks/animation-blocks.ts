@@ -193,11 +193,12 @@ export const animationBlocks = [
     },
     {
         type: 'motion_go_to_xy',
-        message0: '📍 go to x: %1 y: %2',
+        message0: 'go to x: %1 y: %2',
         args0: [
             { type: 'input_value', name: 'X' },
             { type: 'input_value', name: 'Y' },
         ],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -206,12 +207,13 @@ export const animationBlocks = [
     },
     {
         type: 'motion_glide_to_xy',
-        message0: '✨ glide %1 secs to x: %2 y: %3',
+        message0: 'glide %1 secs to x: %2 y: %3',
         args0: [
             { type: 'input_value', name: 'SECS' },
             { type: 'input_value', name: 'X' },
             { type: 'input_value', name: 'Y' },
         ],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -335,16 +337,17 @@ export const animationBlocks = [
     // ═══════════════════════════════════════════════════════════════════════════
     {
         type: 'motion_go_to',
-        message0: '📍 go to %1',
+        message0: 'go to %1',
         args0: [{
             type: 'field_dropdown',
             name: 'TO',
             options: [
-                ['random position', 'random'],
-                ['mouse-pointer', 'mouse'],
+                ['random position', '_random_'],
+                ['mouse-pointer', '_mouse_'],
                 // Sprite options will be populated dynamically at runtime
             ],
         }],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -353,19 +356,20 @@ export const animationBlocks = [
     },
     {
         type: 'motion_glide_to',
-        message0: '✨ glide %1 secs to %2',
+        message0: 'glide %1 secs to %2',
         args0: [
             { type: 'field_number', name: 'SECS', value: 1, min: 0.1 },
             {
                 type: 'field_dropdown',
                 name: 'TO',
                 options: [
-                    ['random position', 'random'],
-                    ['mouse-pointer', 'mouse'],
+                    ['random position', '_random_'],
+                    ['mouse-pointer', '_mouse_'],
                     // Sprite options will be populated dynamically at runtime
                 ],
             },
         ],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.motion,
@@ -2081,6 +2085,7 @@ export const animationToolbox = {
                     inputs: { DEGREES: { shadow: { type: 'math_number', fields: { NUM: 15 } } } }
                 },
                 { kind: 'label', text: '── Position ──' },
+                { kind: 'block', type: 'motion_go_to' },
                 {
                     kind: 'block',
                     type: 'motion_go_to_xy',
@@ -2089,6 +2094,7 @@ export const animationToolbox = {
                         Y: { shadow: { type: 'math_number', fields: { NUM: 0 } } }
                     }
                 },
+                { kind: 'block', type: 'motion_glide_to' },
                 {
                     kind: 'block',
                     type: 'motion_glide_to_xy',
@@ -2103,9 +2109,7 @@ export const animationToolbox = {
                     type: 'motion_point_direction',
                     inputs: { DIRECTION: { shadow: { type: 'math_number', fields: { NUM: 90 } } } }
                 },
-                { kind: 'label', text: '── Go To / Glide ──' },
-                { kind: 'block', type: 'motion_go_to' },
-                { kind: 'block', type: 'motion_glide_to' },
+                { kind: 'label', text: '── More Motion ──' },
                 { kind: 'block', type: 'motion_point_towards' },
                 { kind: 'label', text: '── Change ──' },
                 {

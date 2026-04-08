@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 
-import Blockly from '@blockly-runtime';
+import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
 
 import './styles/scratch-blocks.css'; // Import Scratch-style blocks CSS
 import './junior/styles/juniorBlocks.css';
@@ -153,6 +153,7 @@ const registerBlocks = () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 let _blocklyInitialized = false;
+const BLOCKLY_MEDIA_PATH = './blockly-media/';
 
 function initBlocklyOnce() {
     if (_blocklyInitialized) return;
@@ -189,29 +190,6 @@ function initBlocklyOnce() {
     // GLOBAL BLOCKLY OVERRIDES
     // ═══════════════════════════════════════════════════════════════════════
 
-    // 1. Persist Flyout: keep the selected category flyout open.
-    if (Blockly.Flyout && !(Blockly.Flyout.prototype as any)._hidePatched) {
-
-        // Override hide: suppress if persistent flyout is enabled on the instance
-        const originalHide = Blockly.Flyout.prototype.hide;
-        Blockly.Flyout.prototype.hide = function (this: any) {
-            if (this.autoClose === false) {
-                return;
-            }
-            originalHide.call(this);
-        };
-
-        // Override setVisible: suppress setVisible(false) if persistent flyout is enabled
-        const originalSetVisible = Blockly.Flyout.prototype.setVisible;
-        Blockly.Flyout.prototype.setVisible = function (this: any, visible: boolean) {
-            if (this.autoClose === false && visible === false) {
-                return;
-            }
-            originalSetVisible.call(this, visible);
-        };
-
-        (Blockly.Flyout.prototype as any)._hidePatched = true;
-    }
 }
 
 const MORE_BLOCKS_CATEGORY_NAME = 'More Blocks';
@@ -239,6 +217,22 @@ const createFlyoutSectionLabel = (text: string, className: string) => ({
     kind: 'label',
     text,
     'web-class': `category-subheader ${className}`
+});
+
+const createMonitorReporterPlaceholder = (
+    blockType: string,
+    fieldName: string,
+    fieldValue: string,
+    checked: boolean,
+    gap?: number
+) => ({
+    kind: 'block',
+    type: blockType,
+    ...(typeof gap === 'number' ? { gap } : {}),
+    fields: {
+        CHECK: checked ? 'TRUE' : 'FALSE',
+        [fieldName]: fieldValue
+    }
 });
 
 const createMoreBlocksCategory = () => ({
@@ -297,6 +291,25 @@ interface VariableMonitorState {
     sliderMin?: number;
     sliderMax?: number;
 }
+
+const DEFAULT_VARIABLE_MONITOR_MODE: 'normal' = 'normal';
+const DEFAULT_VARIABLE_SLIDER_MIN = 0;
+const DEFAULT_VARIABLE_SLIDER_MAX = 100;
+
+const hasFiniteNumber = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value);
+
+const normalizeVariableMonitor = (monitor: VariableMonitorState, index = 0): VariableMonitorState => ({
+    ...monitor,
+    visible: monitor.visible ?? true,
+    value: monitor.value ?? (monitor.type === 'String' ? '' : 0),
+    x: hasFiniteNumber(monitor.x) ? monitor.x : 10,
+    y: hasFiniteNumber(monitor.y) ? monitor.y : 10 + (index * 30),
+    zIndex: hasFiniteNumber(monitor.zIndex) ? monitor.zIndex : 100 + index,
+    mode: monitor.mode || DEFAULT_VARIABLE_MONITOR_MODE,
+    sliderMin: hasFiniteNumber(monitor.sliderMin) ? monitor.sliderMin : DEFAULT_VARIABLE_SLIDER_MIN,
+    sliderMax: hasFiniteNumber(monitor.sliderMax) ? monitor.sliderMax : DEFAULT_VARIABLE_SLIDER_MAX
+});
 
 interface ListMonitorState {
     id: string;
@@ -647,6 +660,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const variableMonitorsRef = useRef(variableMonitors);
     const listMonitorsRef = useRef(listMonitors);
     const sensingMonitorsRef = useRef(sensingMonitors);
+    const syncedVariableMonitorNamesRef = useRef<Set<string>>(new Set());
 
     useEffect(() => {
         variableMonitorsRef.current = variableMonitors;
@@ -669,6 +683,27 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             sensing: sensingMonitors
         };
     }, [variableMonitors, listMonitors, tableMonitors, sensingMonitors]);
+
+    useEffect(() => {
+        const activeVariableNames = new Set<string>();
+        const previouslySyncedVariableNames = syncedVariableMonitorNamesRef.current;
+
+        variableMonitors.forEach((monitor) => {
+            activeVariableNames.add(monitor.name);
+
+            if (!animationVM.hasVariable(monitor.name) || animationVM.getVariable(monitor.name) !== monitor.value) {
+                animationVM.setVariable(monitor.name, monitor.value);
+            }
+        });
+
+        previouslySyncedVariableNames.forEach((name) => {
+            if (!activeVariableNames.has(name)) {
+                animationVM.deleteVariable(name);
+            }
+        });
+
+        syncedVariableMonitorNamesRef.current = activeVariableNames;
+    }, [variableMonitors]);
 
     const handleMonitorPositionChange = useCallback((type: 'variable' | 'list' | 'table' | 'sensing', id: string, x: number, y: number) => {
         if (type === 'variable') setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
@@ -712,7 +747,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     }, []);
 
     const handleVariableSliderRangeChange = useCallback((id: string, min: number, max: number) => {
-        setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, sliderMin: min, sliderMax: max } : m));
+        if (!Number.isFinite(min) || !Number.isFinite(max)) {
+            return;
+        }
+
+        const nextMin = Math.min(min, max);
+        const nextMax = Math.max(min, max);
+        setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, sliderMin: nextMin, sliderMax: nextMax } : m));
     }, []);
 
     // Bind AnimationVM execution callbacks to update React state
@@ -937,7 +978,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // Dialog handlers
     const handleCreateVariable = (variable: { name: string; type: 'Number' | 'String'; scope: 'all_sprites' | 'this_sprite' }) => {
-        const newMonitor: VariableMonitorState = {
+        const newMonitor = normalizeVariableMonitor({
             id: `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             name: variable.name,
             type: variable.type,
@@ -947,7 +988,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             value: variable.type === 'Number' ? 0 : '',
             x: 10 + (variableMonitors.length * 20),
             y: 10 + (variableMonitors.length * 30)
-        };
+        }, variableMonitors.length);
         setVariableMonitors(prev => [...prev, newMonitor]);
         addLog(`Created variable: ${variable.name} (${variable.type})`);
     };
@@ -2507,6 +2548,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             visible: s.visible,
 
+            volume: s.volume,
+
+            soundEffects: { ...s.soundEffects },
+
+            sounds: (s.id === 'stage' ? stageManager.getAllSounds() : s.sounds).map(sound => ({
+
+                name: sound.name,
+
+                src: sound.src
+
+            })),
+
             costumes: s.costumes.map(c => ({
 
                 name: c.name,
@@ -2551,7 +2604,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         addLog(`Project saved: ${projectName}`);
 
-    }, [projectName, sprites, addLog]);
+    }, [projectName, sprites, variableMonitors, listMonitors, tableMonitors, addLog]);
 
 
 
@@ -2618,6 +2671,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                 const newSprites: Sprite[] = [];
+                stageManager.clearSounds();
 
                 for (const sData of data.sprites) {
 
@@ -2633,12 +2687,37 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     if (sData.visible) s.show(); else s.hide();
 
+                    if (typeof sData.volume === 'number') {
+                        s.setVolume(sData.volume);
+                    }
+
+                    if (sData.soundEffects) {
+                        if (typeof sData.soundEffects.pitch === 'number') {
+                            s.setSoundEffect('pitch', sData.soundEffects.pitch);
+                        }
+                        if (typeof sData.soundEffects.pan === 'number') {
+                            s.setSoundEffect('pan', sData.soundEffects.pan);
+                        }
+                    }
+
 
 
                     for (const cData of sData.costumes) {
 
                         await s.addCostume(cData.name, cData.src);
 
+                    }
+
+                    if (Array.isArray(sData.sounds)) {
+                        if (sData.id === 'stage') {
+                            for (const soundData of sData.sounds) {
+                                await stageManager.addSound(soundData.name, soundData.src);
+                            }
+                        } else {
+                            for (const soundData of sData.sounds) {
+                                await s.addSound(soundData.name, soundData.src);
+                            }
+                        }
                     }
 
                     newSprites.push(s);
@@ -2661,7 +2740,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 // 4. Update UI state (triggers re-render)
                 if (data.monitors) {
-                    setVariableMonitors(data.monitors.variables || []);
+                    setVariableMonitors((data.monitors.variables || []).map((monitor: VariableMonitorState, index: number) => normalizeVariableMonitor(monitor, index)));
                     setListMonitors(data.monitors.lists || []);
                     setTableMonitors(data.monitors.tables || []);
                 } else {
@@ -3274,6 +3353,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             if (!activeId) return [];
 
+            if (activeId === 'stage') {
+                return stageManager.getAllSounds().map((s: any) => s.name);
+            }
+
             const sprite = animationVM.getSprite(activeId);
 
             if (sprite && sprite.sounds) {
@@ -3346,15 +3429,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     // Create new with defaults
                     const newY = 10 + (prev.length * 30);
                     if (type === 'variable') {
-                        return [...prev, {
+                        return [...prev, normalizeVariableMonitor({
                             id: `var_${Date.now()}`,
                             name,
                             type: 'Number',
                             scope: 'all_sprites',
                             visible: true,
                             x: 10, y: newY,
-                            value: animationVM.getVariable(name)
-                        }];
+                            value: animationVM.hasVariable(name) ? animationVM.getVariable(name) : 0
+                        }, prev.length)];
                     } else if (type === 'list') {
                         return [...prev, {
                             id: `list_${Date.now()}`,
@@ -3540,15 +3623,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     // Create new with defaults
                     const newY = 10 + (prev.length * 30);
                     if (type === 'variable') {
-                        return [...prev, {
+                        return [...prev, normalizeVariableMonitor({
                             id: `var_${Date.now()}`,
                             name,
                             type: 'Number',
                             scope: 'all_sprites',
                             visible: true,
                             x: 10, y: newY,
-                            value: animationVM.getVariable(name)
-                        }];
+                            value: animationVM.hasVariable(name) ? animationVM.getVariable(name) : 0
+                        }, prev.length)];
                     } else if (type === 'list') {
                         return [...prev, {
                             id: `list_${Date.now()}`,
@@ -3686,6 +3769,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     const blocksWorkspace = Blockly.inject(blocklyDiv.current, {
                         renderer: 'leap',
                         toolbox: getCurrentToolbox(),
+                        media: BLOCKLY_MEDIA_PATH,
+                        comments: true,
 
 
                         grid: { spacing: 20, length: 3, colour: '#e8e8e8', snap: true },
@@ -3735,6 +3820,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                     workspaceRef.current = blocksWorkspace;
+                    (blocksWorkspace as any)[LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG] = true;
 
                     // 1. BLOCK REPLACEMENT LISTENER
                     // Auto-replace checkbox-reporters from flyout with standard reporters in workspace
@@ -3991,17 +4077,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             const monitor = currentMonitors.find((m: any) => m.name === v.getName());
                             const isVisible = monitor ? monitor.visible : false;
 
-                            contents.push({
-                                kind: 'block',
-                                type: 'checkbox_only',
-                                gap: -32,
-                                fields: { 'CHECK': isVisible ? 'TRUE' : 'FALSE' }
-                            });
-                            contents.push({
-                                kind: 'block',
-                                type: 'data_variable',
-                                fields: { 'VARIABLE': { id: v.getId(), name: v.getName() } }
-                            });
+                            contents.push(createMonitorReporterPlaceholder(
+                                'variable_reporter_checkbox',
+                                'VARIABLE',
+                                v.getName(),
+                                isVisible
+                            ));
                         });
 
                         // Add variable blocks — use the first variable alphabetically as default
@@ -4056,17 +4137,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             const monitor = currentMonitors.find((m: any) => m.name === v.getName());
                             const isVisible = monitor ? monitor.visible : false;
 
-                            contents.push({
-                                kind: 'block',
-                                type: 'checkbox_only',
-                                gap: -32,
-                                fields: { 'CHECK': isVisible ? 'TRUE' : 'FALSE' }
-                            });
-                            contents.push({
-                                kind: 'block',
-                                type: 'data_listcontents',
-                                fields: { 'LIST': { id: v.getId(), name: v.getName() } }
-                            });
+                            contents.push(createMonitorReporterPlaceholder(
+                                'list_reporter_checkbox',
+                                'LIST',
+                                v.getName(),
+                                isVisible
+                            ));
                         });
 
                         if (lists.length > 0) {
@@ -4113,17 +4189,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             const monitor = currentMonitors.find((m: any) => m.name === v.getName());
                             const isVisible = monitor ? monitor.visible : false;
 
-                            contents.push({
-                                kind: 'block',
-                                type: 'checkbox_only',
-                                gap: -32,
-                                fields: { 'CHECK': isVisible ? 'TRUE' : 'FALSE' }
-                            });
-                            contents.push({
-                                kind: 'block',
-                                type: 'data_listcontents',
-                                fields: { 'LIST': { id: v.getId(), name: v.getName() } }
-                            });
+                            contents.push(createMonitorReporterPlaceholder(
+                                'list_reporter_checkbox',
+                                'LIST',
+                                v.getName(),
+                                isVisible
+                            ));
                         });
 
                         if (tables.length > 0) {
@@ -4195,16 +4266,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         const sensingReporters = ['answer', 'loudness', 'timer'];
                         sensingReporters.forEach(name => {
                             const monitor = sensingMonitorsRef.current.find(m => m.name === name);
-                            contents.push({
-                                kind: 'block',
-                                type: 'checkbox_only',
-                                gap: -32,
-                                fields: { 'CHECK': monitor?.visible ? 'TRUE' : 'FALSE' }
-                            });
-                            contents.push({
-                                kind: 'block',
-                                type: `sensing_${name}`
-                            });
+                            contents.push(createMonitorReporterPlaceholder(
+                                'sensing_reporter_checkbox',
+                                'VARIABLE',
+                                name,
+                                !!monitor?.visible
+                            ));
                         });
 
                         contents.push({ kind: 'block', type: 'sensing_reset_timer' });

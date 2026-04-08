@@ -118,6 +118,11 @@ export class StageManager {
         });
     }
 
+    clearSounds(): void {
+        this.sounds = [];
+        this.onUpdate();
+    }
+
     deleteSound(index: number): void {
         if (index >= 0 && index < this.sounds.length) {
             this.sounds.splice(index, 1);

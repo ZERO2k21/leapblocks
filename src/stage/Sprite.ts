@@ -23,6 +23,11 @@ export interface SpriteState {
     costumes: Costume[];
     currentCostumeIndex: number;
     sounds: { name: string; src: string }[];
+    volume: number;
+    soundEffects: {
+        pitch: number;
+        pan: number;
+    };
     sayText: string | null;
     sayTimeout: number | null;
     effects: {
@@ -66,6 +71,8 @@ export class Sprite {
             costumes: [],
             currentCostumeIndex: 0,
             sounds: [],
+            volume: 100,
+            soundEffects: { pitch: 0, pan: 0 },
             sayText: null,
             sayTimeout: null,
             effects: { color: 0, brightness: 0, ghost: 0, fisheye: 0, whirl: 0, pixelate: 0, mosaic: 0 },
@@ -99,6 +106,8 @@ export class Sprite {
     get costumes() { return this.state.costumes; }
     get currentCostumeIndex() { return this.state.currentCostumeIndex; }
     get sounds() { return this.state.sounds; }
+    get volume() { return this.state.volume; }
+    get soundEffects() { return this.state.soundEffects; }
     get effects() { return this.state.effects; }
     get isGliding() { return this.state.glideTarget !== null; }
     get rotationStyle() { return this.state.rotationStyle; }
@@ -181,6 +190,8 @@ export class Sprite {
 
     copySoundsFrom(other: Sprite) {
         this.state.sounds = other.state.sounds.map(s => ({ name: s.name, src: s.src }));
+        this.state.volume = other.volume;
+        this.state.soundEffects = { ...other.soundEffects };
         this.onUpdate();
     }
 
@@ -286,6 +297,38 @@ export class Sprite {
             this.onUpdate();
             resolve();
         });
+    }
+
+    setVolume(volume: number): void {
+        const nextVolume = Math.max(0, Math.min(100, Number.isFinite(volume) ? volume : 100));
+        this.state.volume = nextVolume;
+        this.onUpdate();
+    }
+
+    changeVolume(delta: number): void {
+        const nextDelta = Number.isFinite(delta) ? delta : 0;
+        this.setVolume(this.state.volume + nextDelta);
+    }
+
+    setSoundEffect(effect: 'pitch' | 'pan', value: number): void {
+        const numericValue = Number.isFinite(value) ? value : 0;
+        if (effect === 'pan') {
+            this.state.soundEffects.pan = Math.max(-100, Math.min(100, numericValue));
+        } else {
+            this.state.soundEffects.pitch = Math.max(-360, Math.min(360, numericValue));
+        }
+        this.onUpdate();
+    }
+
+    changeSoundEffect(effect: 'pitch' | 'pan', delta: number): void {
+        const currentValue = this.state.soundEffects[effect];
+        const nextDelta = Number.isFinite(delta) ? delta : 0;
+        this.setSoundEffect(effect, currentValue + nextDelta);
+    }
+
+    clearSoundEffects(): void {
+        this.state.soundEffects = { pitch: 0, pan: 0 };
+        this.onUpdate();
     }
 
     deleteSound(index: number): void {
