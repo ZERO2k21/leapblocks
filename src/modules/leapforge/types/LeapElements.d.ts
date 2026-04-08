@@ -28,7 +28,7 @@ declare global {
         cols?: number;
         data?: string;
       };
-      // Add all other Wokwi/Leap elements as needed
+      // Add all other Leap/Leap elements as needed
       [elemName: string]: any;
     }
   }

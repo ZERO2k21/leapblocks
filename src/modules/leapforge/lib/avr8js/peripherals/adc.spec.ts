@@ -75,7 +75,7 @@ describe('ADC', () => {
 
   it('should read 0 when the ADC peripheral is not enabled', () => {
     // This behavior was verified on real hardware, using the following test program:
-    // https://wokwi.com/arduino/projects/309156042450666050
+    // https://leap.com/arduino/projects/309156042450666050
     // Thanks Oscar Oomens for spotting this!
 
     const { program } = asmProgram(`

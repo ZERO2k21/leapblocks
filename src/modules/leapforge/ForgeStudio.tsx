@@ -1,8 +1,8 @@
 import React, { useState, lazy, Suspense, useRef, useEffect } from 'react';
 import { SerialMonitor } from './components/Editor/SerialMonitor';
 import { Home, Save, FolderOpen, Settings, Play, Square, Code, Terminal } from 'lucide-react';
-// Register official wokwi elements
-import '@wokwi/elements';
+// Register official leap elements
+import './elements/leap-elements';
 import './ForgeStudio.css';
 import { useForgeStore } from './store/useForgeStore';
 

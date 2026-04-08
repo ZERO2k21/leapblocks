@@ -1,4 +1,4 @@
-import { WOKWI_PINS } from '../engine/PinHarness';
+import { LEAP_PINS } from '../engine/PinHarness';
 
 export interface PinEntry {
   name: string;
@@ -12,7 +12,7 @@ const MM_PER_INCH = 25.4;
 const PX_PER_MM = DPI / MM_PER_INCH; // ~3.7795
 
 export function getComponentPins(type: string): PinEntry[] {
-  const componentData = WOKWI_PINS[type];
+  const componentData = LEAP_PINS[type];
   
   if (!componentData || !componentData.viewBox) {
     // Fallback generic
@@ -26,7 +26,7 @@ export function getComponentPins(type: string): PinEntry[] {
   const isArduino = type.includes('arduino') || type.includes('mega');
 
   return pins.map(pin => {
-    // Wokwi pin coordinates are usually in CSS pixels (96 DPI).
+    // Leap pin coordinates are usually in CSS pixels (96 DPI).
     // but the component itself defines width in mm inside its SVGs, rendering to native CSS pixels.
     // If the element renders at intrinsic size, its width in pixels is viewBox.width * PX_PER_MM.
     
@@ -44,12 +44,12 @@ export function getComponentPins(type: string): PinEntry[] {
         const widthPx = viewBox.width * PX_PER_MM;
         const heightPx = viewBox.height * PX_PER_MM;
         
-        // We account for 'minX' shifting if necessary, though Wokwi's px coordinates
+        // We account for 'minX' shifting if necessary, though Leap's px coordinates
         // generally map from the absolute top-left visual corner (0,0).
         xPercent = (pin.x / widthPx) * 100;
         yPercent = (pin.y / heightPx) * 100;
 
-        // Tweak: if it's Arduino, Wokwi actually shifts minX by -4mm, so the "0" of the drawing board is displaced.
+        // Tweak: if it's Arduino, Leap actually shifts minX by -4mm, so the "0" of the drawing board is displaced.
         if (viewBox.minX < 0) {
            const offsetPx = Math.abs(viewBox.minX) * PX_PER_MM;
            xPercent = ((pin.x + offsetPx) / widthPx) * 100;

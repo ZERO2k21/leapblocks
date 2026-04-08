@@ -13,13 +13,13 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useForgeStore } from '../store/useForgeStore';
-import { WokwiNode } from './Nodes/WokwiNode';
+import { LeapNode } from './Nodes/LeapNode';
 import { PartPicker } from './Library/PartPicker';
 import { Plus, Play, Square, Info, RotateCcw } from 'lucide-react';
 
 // Define custom node types outside component to prevent re-renders
 const nodeTypes = {
-  wokwi: WokwiNode,
+  leap: LeapNode,
 };
 
 const ForgeCanvasInner: React.FC = () => {
@@ -136,7 +136,7 @@ const ForgeCanvasInner: React.FC = () => {
         />
       </ReactFlow>
 
-      {/* ── FLOATING TOOLBAR (Wokwi Style) ────────────────── */}
+      {/* ── FLOATING TOOLBAR (Leap Style) ────────────────── */}
       <div className="canvas-fab-group" style={{
         position: 'absolute',
         top: '20px',

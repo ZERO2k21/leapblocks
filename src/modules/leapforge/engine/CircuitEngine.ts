@@ -65,7 +65,7 @@ class CircuitEngine {
         // Does it have an I2C Backpack? 
         // For now, we auto-attach an I2C Backpack at 0x27 if it's the only display, 
         // or if it's explicitly marked as I2C in data. 
-        // (WokwiNode will eventually handle this distinction)
+        // (LeapNode will eventually handle this distinction)
         if (node.data?.i2cAddress) {
           const backpack = new PCF8574(node.data.i2cAddress, emulator, (state) => {
             updateNodeData(node.id, { lcdState: state });

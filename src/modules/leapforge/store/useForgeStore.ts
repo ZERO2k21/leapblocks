@@ -101,7 +101,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       ...state.nodes, 
       { 
         id: uuidv4(), 
-        type: 'wokwi', // Use our custom generic node
+        type: 'leap', // Use our custom generic node
         position, 
         data: { ...data, type } // The real leap element type
       }

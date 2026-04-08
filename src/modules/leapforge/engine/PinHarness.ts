@@ -1,4 +1,4 @@
-export const WOKWI_PINS: Record<string, { viewBox: {minX: number, minY: number, width: number, height: number}, pins: {name: string, x: number, y: number}[] }> = {
+export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, width: number, height: number}, pins: {name: string, x: number, y: number}[] }> = {
   "analog-joystick": {
     "viewBox": {
       "minX": 0,

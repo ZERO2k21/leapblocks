@@ -177,7 +177,7 @@ describe('GPIO', () => {
     });
 
     it('should reflect the current port state when called inside a listener', () => {
-      // Related issue: https://github.com/wokwi/avr8js/issues/9
+      // Related issue: https://github.com/leap/avr8js/issues/9
       const cpu = new CPU(new Uint16Array(1024));
       const port = new AVRIOPort(cpu, portBConfig);
       const listener = vi.fn(() => {
@@ -191,7 +191,7 @@ describe('GPIO', () => {
     });
 
     it('should reflect the current port state when called inside a listener after DDR change', () => {
-      // Related issue: https://github.com/wokwi/avr8js/issues/47
+      // Related issue: https://github.com/leap/avr8js/issues/47
       const cpu = new CPU(new Uint16Array(1024));
       const port = new AVRIOPort(cpu, portBConfig);
       const listener = vi.fn(() => {

@@ -4,11 +4,11 @@ import { getComponentPins } from '../../lib/PinMap';
 import { useForgeStore } from '../../store/useForgeStore';
 import { SensorOverlay } from './SensorOverlay';
 
-// This is a generic wrapper for our internalized Leap elements (rebranded Wokwi)
-export const WokwiNode = memo(({ id, data, selected }: NodeProps) => {
+// This is a generic wrapper for our internalized Leap elements (rebranded Leap)
+export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   const selectedNodeId = useForgeStore((state) => state.selectedNodeId);
   const isSelected = selected || selectedNodeId === id;
-  const Tag = `wokwi-${data.type}` as any;
+  const Tag = `leap-${data.type}` as any;
   const pins = getComponentPins(data.type);
   
   // Custom styling for the node container
@@ -23,7 +23,7 @@ export const WokwiNode = memo(({ id, data, selected }: NodeProps) => {
   };
 
   // ── Hardware Property Mapper ──
-  // Translating electrical logic (HIGH/LOW on pins) directly into Wokwi's visual attributes!
+  // Translating electrical logic (HIGH/LOW on pins) directly into Leap's visual attributes!
   const mappedProps: any = { ...data };
 
   if (data.type === 'led') {
@@ -34,7 +34,7 @@ export const WokwiNode = memo(({ id, data, selected }: NodeProps) => {
       mappedProps.value = false;
     }
   } else if (data.type === 'buzzer') {
-    // Buzzers usually use `hasSignal` in Wokwi
+    // Buzzers usually use `hasSignal` in Leap
     if (data.pinStates?.pin_PIEZO === true || data.pinStates?.pin_1 === true) {
       mappedProps.hasSignal = true;
     }
@@ -63,13 +63,13 @@ export const WokwiNode = memo(({ id, data, selected }: NodeProps) => {
   }
 
   return (
-    <div style={nodeStyle} className="wokwi-node-wrapper">
+    <div style={nodeStyle} className="leap-node-wrapper">
       {/* Dynamic Leap Element */}
       <div>
         <Tag 
           {...mappedProps} 
           onPinStateChange={(pinName: string, state: boolean) => {
-            console.log(`[WOKWI NODE] Interaction event fired on Node ${data.id}, pin ${pinName} = ${state}`);
+            console.log(`[LEAP NODE] Interaction event fired on Node ${data.id}, pin ${pinName} = ${state}`);
             // Lazy load to prevent circular dependencies in React mapping
             import('../../engine/CircuitEngine').then(({ circuitEngine }) => {
               circuitEngine.pushInputSignal(data.id || '', pinName, state);
@@ -127,4 +127,4 @@ export const WokwiNode = memo(({ id, data, selected }: NodeProps) => {
   );
 });
 
-WokwiNode.displayName = 'WokwiNode';
+LeapNode.displayName = 'LeapNode';
