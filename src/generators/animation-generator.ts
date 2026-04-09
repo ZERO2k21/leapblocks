@@ -223,13 +223,15 @@ export class AnimationCompiler {
             case 'text':
                 return () => {
                     const val = valueBlock.getFieldValue('TEXT');
-                    console.info(`[Compiler] text field TEXT = "${val}"`);
-                    return val !== null ? String(val) : '';
+                    // In headless mode, fields might return null if default/empty
+                    if (val === null || val === undefined) return '';
+                    return String(val);
                 };
             case 'math_number':
                 return () => {
                     const val = valueBlock.getFieldValue('NUM');
-                    return val !== null ? String(val) : '0';
+                    if (val === null || val === undefined) return '0';
+                    return String(val);
                 };
             case 'variables_get': {
                 const name = this.getVariableName(valueBlock);
@@ -679,7 +681,13 @@ export class AnimationCompiler {
             nextBlock = nextBlock.getNextBlock();
         }
 
-        return { trigger, triggerKey, spriteId: this.spriteId, steps };
+        return {
+            trigger,
+            triggerKey,
+            spriteId: this.spriteId,
+            hatBlockId: block.id,
+            steps
+        };
     }
 
     private compileBlock(block: Blockly.Block): ScriptStep | null {
@@ -890,11 +898,11 @@ export class AnimationCompiler {
 
             // Events - broadcast (support both field names)
             case 'event_broadcast':
-                step = { type: 'broadcast', message: block.getFieldValue('MESSAGE') || block.getFieldValue('BROADCAST_INPUT') };
+                step = { type: 'broadcast', message: block.getFieldValue('MESSAGE') || block.getFieldValue('BROADCAST_INPUT') || block.getFieldValue('BROADCAST_OPTION') };
                 break;
             case 'event_broadcast_wait':
             case 'event_broadcastandwait':
-                step = { type: 'broadcast_wait', message: block.getFieldValue('MESSAGE') || block.getFieldValue('BROADCAST_INPUT') };
+                step = { type: 'broadcast_wait', message: block.getFieldValue('MESSAGE') || block.getFieldValue('BROADCAST_INPUT') || block.getFieldValue('BROADCAST_OPTION') };
                 break;
 
             // Sound

@@ -1,5 +1,5 @@
 /**
- * Scratch-compatible Runtime Engine for LeapBlocks
+ * Runtime Engine for LeapBlocks
  * Handles sprite state, variable management, and block execution.
  */
 import { spriteManager } from '../engine/SpriteManager';
@@ -8,7 +8,7 @@ import { costumeEngine } from '../engine/CostumeEngine';
 import { soundManager } from '../engine/SoundManager';
 import variableStore from '../store/variableStore';
 
-class ScratchRuntime {
+class LeapRuntime {
     constructor() {
         this.isRunning = false;
         this.activeScripts = new Set();
@@ -194,21 +194,39 @@ class ScratchRuntime {
                 // ═══════════════════════════════════════════════════════════════════════
                 // EVENT
                 // ═══════════════════════════════════════════════════════════════════════
-                case 'event_broadcast':
-                    this.triggerEvent('event_whenbroadcastreceived', { BROADCAST_OPTION: { value: await this.getInputValue(inputs.BROADCAST_INPUT, spriteId) } });
+                case 'event_broadcast': {
+                    const broadcastMsg = fields.BROADCAST_INPUT ? fields.BROADCAST_INPUT.value : await this.getInputValue(inputs.BROADCAST_INPUT || inputs.MESSAGE, spriteId);
+                    this.triggerEvent('event_whenbroadcastreceived', { BROADCAST_OPTION: { value: broadcastMsg } });
+                    // Also trigger AnimationVM broadcast for cross-sprite compiled scripts
+                    if (typeof this._onBroadcast === 'function') {
+                        this._onBroadcast(broadcastMsg);
+                    }
                     break;
-                case 'event_broadcastandwait':
-                    await this.triggerEvent('event_whenbroadcastreceived', { BROADCAST_OPTION: { value: await this.getInputValue(inputs.BROADCAST_INPUT, spriteId) } }, true);
+                }
+                case 'event_broadcast_wait':
+                case 'event_broadcastandwait': {
+                    const broadcastWaitMsg = fields.BROADCAST_INPUT ? fields.BROADCAST_INPUT.value : await this.getInputValue(inputs.BROADCAST_INPUT || inputs.MESSAGE, spriteId);
+                    await this.triggerEvent('event_whenbroadcastreceived', { BROADCAST_OPTION: { value: broadcastWaitMsg } }, true);
+                    // Also trigger AnimationVM broadcast_wait for cross-sprite compiled scripts
+                    if (typeof this._onBroadcastAndWait === 'function') {
+                        await this._onBroadcastAndWait(broadcastWaitMsg);
+                    }
                     break;
+                }
                 // "When" blocks are event triggers, not executable blocks themselves.
                 // They are handled by the runtime's event system, not executed directly.
                 case 'event_whenflagclicked':
+                case 'event_flag_clicked':
                 case 'event_whenkeypressed':
+                case 'event_key_pressed':
                 case 'event_whenthisspriteclicked':
                 case 'event_sprite_clicked':
                 case 'event_whenbroadcastreceived':
+                case 'event_receive':
                 case 'event_whenbackdropswitchesto':
+                case 'event_backdrop_switch':
                 case 'event_whengreaterthan':
+                case 'event_greater_than':
                     // No-op, these blocks are entry points for scripts, not actions.
                     break;
 
@@ -362,10 +380,10 @@ class ScratchRuntime {
                     break;
 
                 default:
-                    console.warn(`[ScratchRuntime] Unknown opcode: ${opcode}`);
+                    console.warn(`[LeapRuntime] Unknown opcode: ${opcode}`);
             }
         } catch (e) {
-            console.error(`[ScratchRuntime] Error executing ${opcode}:`, e);
+            console.error(`[LeapRuntime] Error executing ${opcode}:`, e);
         }
 
         // Execute next block
@@ -497,7 +515,7 @@ class ScratchRuntime {
         }
         const blocks = json.blocks.blocks || [];
         this.spritesBlocks.set(spriteId, blocks.map(b => this.flattenBlock(b)));
-        console.log(`[ScratchRuntime] Synced workspace for sprite: ${spriteId}`);
+        console.log(`[LeapRuntime] Synced workspace for sprite: ${spriteId}`);
     }
 
     loadProject(workspaces) {
@@ -505,7 +523,7 @@ class ScratchRuntime {
         for (const [spriteId, json] of workspaces.entries()) {
             this.syncSprite(spriteId, json);
         }
-        console.log(`[ScratchRuntime] Loaded project with ${this.spritesBlocks.size} sprites`);
+        console.log(`[LeapRuntime] Loaded project with ${this.spritesBlocks.size} sprites`);
     }
 
     async triggerEvent(opcode, condition = {}, wait = false, spriteIdOnly = null) {
@@ -525,7 +543,16 @@ class ScratchRuntime {
             if (!sprite) continue;
 
             for (const block of blocks) {
-                if (block.opcode === opcode) {
+                // Support both standard Scratch opcodes and modernized aliases
+                const blockOpcode = block.opcode;
+                const isMatch = blockOpcode === opcode || 
+                              (opcode === 'event_whenflagclicked' && blockOpcode === 'event_flag_clicked') ||
+                              (opcode === 'event_whenbroadcastreceived' && blockOpcode === 'event_receive') ||
+                              (opcode === 'event_whenthisspriteclicked' && blockOpcode === 'event_sprite_clicked') ||
+                              (opcode === 'event_whenbackdropswitchesto' && blockOpcode === 'event_backdrop_switch') ||
+                              (opcode === 'event_whengreaterthan' && blockOpcode === 'event_greater_than');
+
+                if (isMatch) {
                     let match = true;
                     for (const [key, val] of Object.entries(condition)) {
                         if (block.fields[key]?.value !== val.value) {
@@ -572,21 +599,21 @@ class ScratchRuntime {
     stopAll() {
         this.isRunning = false;
         this.activeScripts.clear();
-        console.log('[ScratchRuntime] Stopped all scripts');
+        console.log('[LeapRuntime] Stopped all scripts');
     }
 }
 
-let _scratchRuntime = null;
-export function getScratchRuntime() {
-    if (!_scratchRuntime) _scratchRuntime = new ScratchRuntime();
-    return _scratchRuntime;
+let _leapRuntime = null;
+export function getLeapRuntime() {
+    if (!_leapRuntime) _leapRuntime = new LeapRuntime();
+    return _leapRuntime;
 }
-export const scratchRuntime = new Proxy({}, {
+export const leapRuntime = new Proxy({}, {
     get(_target, prop) {
-        const instance = getScratchRuntime();
+        const instance = getLeapRuntime();
         const value = instance[prop];
         return typeof value === 'function' ? value.bind(instance) : value;
     },
-    set(_target, prop, value) { getScratchRuntime()[prop] = value; return true; }
+    set(_target, prop, value) { getLeapRuntime()[prop] = value; return true; }
 });
-export default scratchRuntime;
+export default leapRuntime;

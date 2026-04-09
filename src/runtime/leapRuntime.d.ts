@@ -1,4 +1,4 @@
-export interface ScratchRuntime {
+export interface LeapRuntime {
     isRunning: boolean;
     onShowVariable: ((name: string) => void) | null;
     onHideVariable: ((name: string) => void) | null;
@@ -16,5 +16,5 @@ export interface ScratchRuntime {
     flattenBlock(block: any): any;
 }
 
-export const scratchRuntime: ScratchRuntime;
-export default scratchRuntime;
+export const leapRuntime: LeapRuntime;
+export default leapRuntime;
