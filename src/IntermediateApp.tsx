@@ -2472,7 +2472,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             await robotSprite.addCostume('talk', '/assets/sprites/robot/image-removebg-preview.png');
 
-            await robotSprite.addSound('Meow', '/assets/sounds/meow.wav');
+            await robotSprite.addSound('Meow', '/assets/sounds/83c36d806dc92327b9e7049a565c6bff.wav');
 
 
 
@@ -3307,7 +3307,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 // Add default sound
 
-                await defaultSprite.addSound('Meow', '/assets/sounds/meow.wav');
+                await defaultSprite.addSound('Meow', '/assets/sounds/83c36d806dc92327b9e7049a565c6bff.wav');
 
                 console.log('[APP] Assets loaded:', defaultSprite.costumes.length, 'costumes', defaultSprite.sounds.length, 'sounds');
 
@@ -5940,7 +5940,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             // Add default sound
 
-                            await newSprite.addSound('Meow', '/assets/sounds/meow.wav');
+                            await newSprite.addSound('Meow', '/assets/sounds/83c36d806dc92327b9e7049a565c6bff.wav');
 
 
 

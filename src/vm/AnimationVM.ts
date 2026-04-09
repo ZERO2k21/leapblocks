@@ -198,6 +198,7 @@ export class AnimationVM {
     
     // Sensing
     private currentAnswer: string = '';
+    private askMutex: Promise<void> = Promise.resolve();
 
     // Broadcast system
     private broadcastListeners: Map<string, CompiledScript[]> = new Map();

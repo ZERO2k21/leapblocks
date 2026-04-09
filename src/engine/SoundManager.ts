@@ -101,13 +101,22 @@ export class SoundManager {
         try {
             const response = await fetch(src);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            
+            // Safety check: if we got HTML instead of audio (common 404 behavior), fail early
+            const contentType = response.headers.get('Content-Type');
+            if (contentType && contentType.includes('text/html')) {
+                throw new Error('Received HTML instead of audio data. Path might be incorrect.');
+            }
+
             const arrayBuffer = await response.arrayBuffer();
+            if (arrayBuffer.byteLength === 0) throw new Error('Received empty audio data.');
+
             const decoder = new ADPCMSoundDecoder(this.audioContext);
             const audioBuffer = await decoder.decode(arrayBuffer);
             this.soundBuffers.set(bufferKey, audioBuffer);
             return audioBuffer;
         } catch (err) {
-            console.warn(`[SoundManager] Failed to load sound: ${name}`, err);
+            console.error(`[SoundManager] Failed to load sound "${name}" from ${src}:`, err);
             return undefined;
         }
     }
