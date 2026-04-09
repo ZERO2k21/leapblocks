@@ -10,25 +10,34 @@ import { useForgeStore } from './store/useForgeStore';
 const ForgeCanvas = lazy(() => import('./components/ForgeCanvas'));
 const Sidebar = lazy(() => import('./components/Sidebar'));
 const ForgeEditor = lazy(() => import('./components/Editor/ForgeEditor'));
+import { LibraryManager } from './components/Library/LibraryManager';
+import { Library as LibraryIcon } from 'lucide-react';
+import { IgniteTopbar } from './components/Layout/IgniteTopbar';
 
 interface ForgeStudioProps {
   onBack: () => void;
 }
 
 export default function ForgeStudio({ onBack }: ForgeStudioProps) {
-  const { 
-    nodes, 
-    updateNodeData, 
-    isSimulating, 
+  const {
+    nodes,
+    updateNodeData,
+    isSimulating,
     startSimulation,
     stopSimulation,
     appendSerial,
     clearSerial,
-    serialOutput
+    serialOutput,
+    projectPath,
+    setProjectPath,
+    setNodes,
+    setEdges,
+    projectName,
+    setProjectName
   } = useForgeStore();
-  
-  const [activeTab, setActiveTab] = useState<'code' | 'serial'>('code');
-  
+
+  const [activeTab, setActiveTab] = useState<'code' | 'serial' | 'libraries'>('code');
+
   const [code, setCode] = useState(`// LeapForge Serial Test
 void setup() {
   Serial.begin(9600);
@@ -54,17 +63,19 @@ void loop() {
       stopSimulation();
       return;
     }
-    
+
     console.log('[FORGE UI] Preparing to compile code...');
     setIsCompiling(true);
     setCompileError(null);
     clearSerial();
-    
+
     try {
       console.log('[FORGE UI] Sending IPC request to compileCode...');
-      const result = await window.electronAPI.compileCode(code, 'arduino:avr:uno');
+      // Pass the libs folder path from the projectPath
+      const libsFolder = projectPath ? `${projectPath}/libs` : undefined;
+      const result = await window.electronAPI.compileCode(code, 'arduino:avr:uno', libsFolder);
       console.log('[FORGE UI] IPC returned:', result.success ? 'Success' : 'Failed');
-      
+
       if (result.success && result.hexContent) {
         console.log('[FORGE UI] Starting simulation with new hex code.');
         startSimulation(result.hexContent);
@@ -83,54 +94,52 @@ void loop() {
     }
   };
 
+  const handleSaveProject = async () => {
+    const projectData = {
+      nodes,
+      edges,
+      code,
+      version: '1.0.0'
+    };
+
+    try {
+      const result = await window.electronAPI.invoke('save-project', projectData, projectPath);
+      if (result.success && result.projectPath) {
+        setProjectPath(result.projectPath);
+        console.log('[FORGE UI] Project saved to:', result.projectPath);
+      }
+    } catch (err) {
+      console.error('Failed to save project:', err);
+    }
+  };
+
+  const handleOpenProject = async () => {
+    try {
+      const result = await window.electronAPI.invoke('open-project');
+      if (result && result.data) {
+        setNodes(result.data.nodes || []);
+        setEdges(result.data.edges || []);
+        if (result.data.code) setCode(result.data.code);
+        setProjectPath(result.projectPath);
+        console.log('[FORGE UI] Project opened from:', result.projectPath);
+      }
+    } catch (err) {
+      console.error('Failed to open project:', err);
+    }
+  };
+
   // The new SimulationEngine (Phase 1-5) manages the loop internally via useForgeStore!
   // No need for duplicate useEffect mounts.
 
   return (
     <div className="forge-root dark" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* ── TOPBAR ──────────────────────────── */}
-      <header className="forge-topbar" style={{ 
-        height: '48px', 
-        background: '#1a1a1b', 
-        borderBottom: '1px solid #2d2d2d',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 16px',
-        justifyContent: 'space-between'
-      }}>
-        <div className="forge-topbar-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <button onClick={onBack} style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer' }}>
-            <Home size={18} />
-          </button>
-          <div style={{ color: '#e0e0e0', fontWeight: 'bold' }}>LeapLab <span style={{ color: '#BEF264' }}>Forge</span></div>
-        </div>
-
-        <div className="forge-controls">
-          <button 
-            type="button"
-            onClick={handleToggleSimulation}
-            disabled={isCompiling}
-            className={`p-2 rounded-full flex items-center gap-2 transition-all ${
-              isSimulating ? 'bg-red-500/20 text-red-400 border border-red-500/50' : 'bg-green-500/20 text-green-400 border border-green-500/50'
-            } ${isCompiling ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            {isCompiling ? (
-               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            ) : isSimulating ? (
-               <Square size={16} fill="currentColor" />
-            ) : (
-               <Play size={16} fill="currentColor" />
-            )}
-            <span className="text-xs font-bold uppercase tracking-wider">{isCompiling ? 'Compiling...' : isSimulating ? 'Stop' : 'Start Simulation'}</span>
-          </button>
-        </div>
-
-        <div className="forge-topbar-right" style={{ display: 'flex', gap: '10px' }}>
-          <button className="action-icon" title="Save Project"><Save size={18} /></button>
-          <button className="action-icon" title="Open Project"><FolderOpen size={18} /></button>
-          <button className="action-icon" title="Settings"><Settings size={18} /></button>
-        </div>
-      </header>
+      <IgniteTopbar
+        title={projectName}
+        onTitleChange={setProjectName}
+        onBack={onBack}
+        onSave={handleSaveProject}  
+      />
 
       {/* ── MAIN SPLIT LAYOUT ────────────────── */}
       <div className="forge-main-split" style={{ flex: 1, display: 'flex', background: '#0f172a' }}>
@@ -144,10 +153,10 @@ void loop() {
             display: 'flex',
             padding: '0 16px'
           }}>
-            <button 
+            <button
               onClick={() => setActiveTab('code')}
-              style={{ 
-                background: activeTab === 'code' ? '#1f6feb' : 'transparent', 
+              style={{
+                background: activeTab === 'code' ? '#1f6feb' : 'transparent',
                 color: activeTab === 'code' ? '#fff' : '#8b949e',
                 border: 'none',
                 padding: '0 20px',
@@ -163,10 +172,10 @@ void loop() {
             >
               <Code size={14} /> SKETCH
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('serial')}
-              style={{ 
-                background: activeTab === 'serial' ? '#1f6feb' : 'transparent', 
+              style={{
+                background: activeTab === 'serial' ? '#1f6feb' : 'transparent',
                 color: activeTab === 'serial' ? '#fff' : '#8b949e',
                 border: 'none',
                 padding: '0 20px',
@@ -182,6 +191,25 @@ void loop() {
             >
               <Terminal size={14} /> SERIAL MONITOR {serialOutput.length > 0 && <span style={{ background: '#f85149', width: '6px', height: '6px', borderRadius: '50%' }} />}
             </button>
+            <button
+              onClick={() => setActiveTab('libraries')}
+              style={{
+                background: activeTab === 'libraries' ? '#1f6feb' : 'transparent',
+                color: activeTab === 'libraries' ? '#fff' : '#8b949e',
+                border: 'none',
+                padding: '0 20px',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s',
+                borderBottom: activeTab === 'libraries' ? '2px solid #58a6ff' : 'none'
+              }}
+            >
+              <LibraryIcon size={14} /> LIBRARIES
+            </button>
           </div>
 
           <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
@@ -189,11 +217,13 @@ void loop() {
               <Suspense fallback={<div className="p-4 text-white">Loading Editor...</div>}>
                 <ForgeEditor code={code} onChange={(val) => setCode(val || '')} />
               </Suspense>
-            ) : (
-              <SerialMonitor 
-                output={serialOutput} 
-                onClear={() => clearSerial()} 
+            ) : activeTab === 'serial' ? (
+              <SerialMonitor
+                output={serialOutput}
+                onClear={() => clearSerial()}
               />
+            ) : (
+              <LibraryManager />
             )}
           </div>
         </div>
@@ -201,15 +231,15 @@ void loop() {
         {/* Right: Circuit Canvas */}
         <div className="canvas-pane" style={{ flex: 1, position: 'relative' }}>
           <Suspense fallback={<div className="forge-loader">Initializing Canvas...</div>}>
-            <ForgeCanvas />
+            <ForgeCanvas onToggleSimulation={handleToggleSimulation} isCompiling={isCompiling} />
           </Suspense>
         </div>
       </div>
 
       {/* ── FOOTER ──────────────────────────── */}
-      <footer className="forge-footer" style={{ 
-        height: '28px', 
-        background: '#1a1a1b', 
+      <footer className="forge-footer" style={{
+        height: '28px',
+        background: '#1a1a1b',
         borderTop: '1px solid #2d2d2d',
         fontSize: '11px',
         color: '#888',

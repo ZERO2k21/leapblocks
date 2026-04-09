@@ -27,7 +27,8 @@ export class LeapSimulator {
     this.timer2 = new AVRTimer(this.cpu, timer2Config);
     
     // Serial Support (USART0)
-    this.usart = new AVRUSART(this.cpu, usart0Config);
+    const FREQ_16MHZ = 16000000;
+    this.usart = new AVRUSART(this.cpu, usart0Config, FREQ_16MHZ);
     this.usart.onByteTransmit = (value) => this.onSerialData(value);
     
     // High-performance scheduler

@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import ReactFlow, { 
-  Background, 
-  Controls, 
-  MiniMap, 
-  Connection, 
+import ReactFlow, {
+  Background,
+  Controls,
+  MiniMap,
+  Connection,
   ConnectionMode,
   Edge,
   Node,
@@ -16,25 +16,30 @@ import { useForgeStore } from '../store/useForgeStore';
 import { LeapNode } from './Nodes/LeapNode';
 import { PartPicker } from './Library/PartPicker';
 import { SelectionToolbar } from './SelectionToolbar';
-import { Plus, Play, Square, Info, RotateCcw } from 'lucide-react';
+import { Plus, Play, Square, CircleHelp, RotateCcw } from 'lucide-react';
 
 // Define custom node types outside component to prevent re-renders
 const nodeTypes = {
   leap: LeapNode,
 };
 
-const ForgeCanvasInner: React.FC = () => {
+interface ForgeCanvasProps {
+  onToggleSimulation?: () => void;
+  isCompiling?: boolean;
+}
+
+const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCompiling }) => {
   const store = useForgeStore();
-  const { 
+  const {
     isSimulating,
     toggleSimulation: toggleStoreSimulation,
-    nodes: storeNodes, 
-    edges: storeEdges, 
-    addNode, 
+    nodes: storeNodes,
+    edges: storeEdges,
+    addNode,
     addEdge: addStoreEdge,
     updateNodePosition
   } = store;
-  
+
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [showPicker, setShowPicker] = useState(false);
@@ -113,8 +118,8 @@ const ForgeCanvasInner: React.FC = () => {
   const Mm = MiniMap as any;
 
   return (
-    <div 
-      className="forge-canvas-container" 
+    <div
+      className="forge-canvas-container"
       style={{ width: '100%', height: '100%', background: '#0f172a', position: 'relative' }}
       onDrop={onDrop}
       onDragOver={onDragOver}
@@ -137,12 +142,12 @@ const ForgeCanvasInner: React.FC = () => {
       >
         <Bg color="#1e293b" gap={20} />
         <Controls />
-        <Mm 
-          style={{ background: '#1e293b' }} 
+        <Mm
+          style={{ background: '#1e293b' }}
           nodeColor={(n: any) => n.data?.type === 'boards' ? '#BEF264' : '#64748b'}
         />
       </ReactFlow>
-      
+
       {/* ── SELECTION TOOLBAR ─────────────────────────── */}
       <SelectionToolbar />
 
@@ -150,19 +155,22 @@ const ForgeCanvasInner: React.FC = () => {
       <div className="canvas-fab-group" style={{
         position: 'absolute',
         top: '20px',
-        left: '20px',
+        right: '20px',
         display: 'flex',
+        flexDirection: 'column',
         gap: '12px',
         zIndex: 100
       }}>
         {/* Play/Stop Toggle */}
         <button 
-          onClick={toggleStoreSimulation}
+          onClick={onToggleSimulation || toggleStoreSimulation}
+          disabled={isCompiling}
+          title={isSimulating ? 'Stop Simulation' : 'Start Simulation'}
           style={{
             width: '42px',
             height: '42px',
             borderRadius: '50%',
-            background: isSimulating ? '#ef4444' : '#22c55e',
+            background: isSimulating ? '#ef4444' : 'rgb(34, 197, 94)',
             border: 'none',
             display: 'flex',
             alignItems: 'center',
@@ -172,15 +180,22 @@ const ForgeCanvasInner: React.FC = () => {
             cursor: 'pointer',
             transition: 'transform 0.2s'
           }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
         >
-          {isSimulating ? <Square size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+          {isCompiling ? (
+            <div style={{ width: '18px', height: '18px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          ) : isSimulating ? (
+            <Square size={18} fill="currentColor" stroke="currentColor" strokeWidth={2} />
+          ) : (
+            <Play size={18} fill="currentColor" stroke="currentColor" strokeWidth={2} />
+          )}
         </button>
 
         {/* Reset Simulation Button */}
-        <button 
+        <button
           onClick={store.resetSimulation}
+          title="Reset Simulation"
           style={{
             width: '42px',
             height: '42px',
@@ -195,16 +210,16 @@ const ForgeCanvasInner: React.FC = () => {
             cursor: 'pointer',
             transition: 'transform 0.2s'
           }}
-          title="Reset Simulation"
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
         >
           <RotateCcw size={18} />
         </button>
 
         {/* Add Part Button */}
-        <button 
+        <button
           onClick={() => setShowPicker(!showPicker)}
+          title="Add Component"
           style={{
             width: '42px',
             height: '42px',
@@ -219,14 +234,15 @@ const ForgeCanvasInner: React.FC = () => {
             cursor: 'pointer',
             transition: 'transform 0.2s'
           }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
         >
           <Plus size={22} />
         </button>
 
         {/* Help Menu */}
-        <button 
+        <button
+          title="Help"
           style={{
             width: '42px',
             height: '42px',
@@ -241,24 +257,24 @@ const ForgeCanvasInner: React.FC = () => {
             cursor: 'pointer'
           }}
         >
-          <Info size={18} />
+          <CircleHelp size={18} />
         </button>
       </div>
 
       {/* ── PART PICKER POPOVER ─────────────────────────── */}
       {showPicker && (
-        <PartPicker 
-          onSelect={handleAddPart} 
-          onClose={() => setShowPicker(false)} 
+        <PartPicker
+          onSelect={handleAddPart}
+          onClose={() => setShowPicker(false)}
         />
       )}
     </div>
   );
 };
 
-const ForgeCanvas: React.FC = () => (
+const ForgeCanvas: React.FC<ForgeCanvasProps> = (props) => (
   <ReactFlowProvider>
-    <ForgeCanvasInner />
+    <ForgeCanvasInner {...props} />
   </ReactFlowProvider>
 );
 
