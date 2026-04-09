@@ -190,6 +190,24 @@ function initBlocklyOnce() {
     // GLOBAL BLOCKLY OVERRIDES
     // ═══════════════════════════════════════════════════════════════════════
 
+    /**
+     * Override Toolbox.prototype.onClick_ to prevent "Double Click/Tap" closure.
+     * Standard Blockly toggles selection to null if the same item is clicked.
+     * We want it to stay open (Scratch behavior).
+     */
+    if (Blockly.Toolbox && Blockly.Toolbox.prototype) {
+        // Override setSelectedItem to prevent the flyout from EVER closing by being set to null.
+        // This is the most robust way to disable "toggle-off" behavior across re-renders.
+        const originalSetSelectedItem = (Blockly.Toolbox.prototype as any).setSelectedItem;
+        (Blockly.Toolbox.prototype as any).setSelectedItem = function (item: any) {
+            if (!item && (this as any).getSelectedItem()) {
+                // If we already have something selected, don't allow setting to null (closing)
+                return;
+            }
+            originalSetSelectedItem.call(this, item);
+        };
+    }
+
 }
 
 const MORE_BLOCKS_CATEGORY_NAME = 'More Blocks';
@@ -3725,6 +3743,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         }
 
         if (!refreshedToolbox?.getSelectedItem?.() && typeof refreshedToolbox?.selectItemByPosition === 'function') {
+            // Force select first item if none selected (Ensures flyout is visible on 1st entry)
             refreshedToolbox.selectItemByPosition(0);
         } else {
             workspaceRef.current.refreshToolboxSelection();
