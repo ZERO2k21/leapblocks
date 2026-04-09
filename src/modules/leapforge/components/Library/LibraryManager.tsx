@@ -16,9 +16,18 @@ interface LibraryManagerProps {
 }
 
 export const LibraryManager: React.FC<LibraryManagerProps> = ({ onInitializeProject }) => {
-  const { projectPath, importedLibraries, addImportedLibrary, setImportedLibraries } = useForgeStore();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState<ArduinoLib[]>([]);
+  const { 
+    projectPath, 
+    importedLibraries, 
+    addImportedLibrary, 
+    setImportedLibraries,
+    librarySearchQuery,
+    librarySearchResults,
+    setLibrarySearch
+  } = useForgeStore();
+
+  const [searchQuery, setSearchQuery] = useState(librarySearchQuery);
+  const [results, setResults] = useState<ArduinoLib[]>(librarySearchResults);
   const [isSearching, setIsSearching] = useState(false);
   const [installingLib, setInstallingLib] = useState<string | null>(null);
 
@@ -42,7 +51,9 @@ export const LibraryManager: React.FC<LibraryManagerProps> = ({ onInitializeProj
       // However, it might be proxied via Electron IPC in the current setup.
       if (isElectron) {
         const data = await (window as any).electronAPI.librarySearch(query);
-        setResults(data.libraries || []);
+        const libs = data.libraries || [];
+        setResults(libs);
+        setLibrarySearch(query, libs);
       } else {
         // Fallback for Web mode search (mock or direct API call if available)
         // For now, let's keep it as is or show empty.
@@ -59,9 +70,11 @@ export const LibraryManager: React.FC<LibraryManagerProps> = ({ onInitializeProj
     if (projectPath && isElectron) {
       fetchProjectLibs();
     }
-    // Auto-fetch featured libraries on mount
-    performSearch('');
-  }, [fetchProjectLibs, performSearch, projectPath, isElectron]);
+    // Only auto-fetch featured libraries if there are no persisted results
+    if (results.length === 0 && !searchQuery) {
+      performSearch('');
+    }
+  }, [fetchProjectLibs, projectPath, isElectron]); // Removed performSearch, results, searchQuery from deps to prevent loops
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +111,8 @@ export const LibraryManager: React.FC<LibraryManagerProps> = ({ onInitializeProj
       const res = await (window as any).electronAPI.libraryInstall(lib.name, projectPath);
       if (res.success) {
         addImportedLibrary(lib.name);
+        // Sync with disk immediately to get the actual folder name
+        fetchProjectLibs();
       } else {
         alert(`Failed to install ${lib.name}: ${res.error}`);
       }
@@ -290,7 +305,11 @@ export const LibraryManager: React.FC<LibraryManagerProps> = ({ onInitializeProj
         )}
 
         {results.map((lib) => {
-          const isImported = importedLibraries.includes(lib.name);
+          // Normalize names for robust matching (e.g. 107-Arduino vs 107_Arduino)
+          const normalize = (name: string) => name.toLowerCase().replace(/[- ]/g, '_');
+          const isImported = importedLibraries.some(imported => 
+            normalize(imported) === normalize(lib.name)
+          );
           const isInstalling = installingLib === lib.name;
 
           return (

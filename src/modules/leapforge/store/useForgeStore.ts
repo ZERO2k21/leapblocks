@@ -47,6 +47,11 @@ export interface ForgeState {
   importedLibraries: string[];
   setImportedLibraries: (libs: string[]) => void;
   addImportedLibrary: (lib: string) => void;
+  
+  // Library Search Persistence
+  librarySearchQuery: string;
+  librarySearchResults: any[];
+  setLibrarySearch: (query: string, results: any[]) => void;
 }
 
 export const useForgeStore = create<ForgeState>((set, get) => ({
@@ -58,6 +63,8 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   board: 'arduino-uno',
   projectPath: null,
   importedLibraries: [],
+  librarySearchQuery: '',
+  librarySearchResults: [],
 
   setProjectPath: (path) => set({ projectPath: path }),
   setImportedLibraries: (libs) => set({ importedLibraries: libs }),
@@ -70,6 +77,11 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   setBoard: (board) => set(() => {
     simulationRunner.setBoard(board);
     return { board };
+  }),
+
+  setLibrarySearch: (query, results) => set({ 
+    librarySearchQuery: query, 
+    librarySearchResults: results 
   }),
 
   startSimulation: (hexString) => set((state) => {
