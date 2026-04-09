@@ -78,7 +78,7 @@ class CircuitEngine {
   public init() {
     if (this.isInitialized) return;
     this.isInitialized = true;
-    console.log('[FORGE CIRCUIT] Engine connected to Zustand Store');
+    console.log('[FORGE CIRCUIT] Engine connected (Version: Ideal Mode - Indestructible)');
 
     // Listen to changes in the visual circuit board
     let previousEdgesCount = -1;
@@ -194,25 +194,17 @@ class CircuitEngine {
                 pinStates: { ...currentPinStates, [pinKey]: isHigh }
               };
 
-              if (isHigh) {
-                // Heuristic: 220 Ohm is standard "Full Power"
-                // Intensity = 220 / (220 + pathResistance)
-                const intensity = Math.max(0.1, 220 / (220 + target.resistance));
-                
-                // Burnout logic: LEDs burn if path resistance is too low (< 10 Ohm)
-                // Buzzers are exempt per user request.
-                const isLoadThatBurns = ['led', 'rgb-led'].includes(target.type);
-                const damaged = isLoadThatBurns && target.resistance < 10;
-                
-                if (target.type === 'led') updates.brightness = intensity;
-                else if (target.type === 'rgb-led') updates[`intensity_${target.pinName}`] = intensity;
-                else if (target.type === 'buzzer') updates.intensity = intensity;
-                
-                if (damaged) {
-                    updates.damaged = true;
-                    console.warn(`[FORGE CIRCUIT] Component ${target.nodeId} (${target.type}) burned out due to low resistance!`);
-                }
+              const intensity = isHigh ? 1.0 : 0.0;
+              
+              if (target.type === 'led') updates.brightness = intensity;
+              else if (target.type === 'rgb-led') updates[`intensity_${target.pinName}`] = intensity;
+              else if (target.type === 'buzzer') {
+                updates.intensity = intensity;
+                updates.hasSignal = isHigh;
               }
+              
+              updates.damaged = false;
+
               updateNodeData(target.nodeId, updates);
             }
           });

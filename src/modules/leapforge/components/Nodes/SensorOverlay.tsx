@@ -37,7 +37,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   const config = isDistanceSensor 
     ? { label: 'DISTANCE', unit: 'cm', min: 2, max: 400, key: 'distance' }
     : type === 'potentiometer' ? { label: 'RESISTANCE', unit: '%', min: 0, max: 100, key: 'value' }
-    : type === 'resistor' ? { label: 'RESISTANCE', unit: 'Ω', min: 0, max: 10000, key: 'value' } 
+    : type === 'resistor' ? { label: 'RESISTANCE', unit: 'Ω', min: 0, max: 1000000, key: 'value' } 
     : type === 'photoresistor' ? { label: 'LIGHT', unit: 'lux', min: 0, max: 1000, key: 'value' }
     : type === 'ntc-temperature-sensor' ? { label: 'TEMP', unit: '°C', min: -40, max: 125, key: 'value' }
     : { label: 'VALUE', unit: '', min: 0, max: 1023, key: 'value' };
@@ -91,9 +91,44 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em', fontFamily: 'system-ui' }}>{config.label}</span>
-        <span style={{ fontSize: '12px', color: '#BEF264', fontWeight: 800, fontFamily: 'monospace' }}>
-          {currentValue >= 1000 ? `${(currentValue / 1000).toFixed(1)} k` : currentValue} {config.unit}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+          <input 
+            type="number" 
+            value={currentValue}
+            onChange={(e) => {
+              const val = parseFloat(e.target.value) || 0;
+              updateNodeData(nodeId, {
+                sensorValues: {
+                  ...currentValues,
+                  [config.key]: val
+                }
+              });
+              
+              // Proactively push to simulation engine
+              if (isAnalogSensor) {
+                import('../../engine/CircuitEngine').then(({ circuitEngine }) => {
+                  circuitEngine.pushInputSignal(nodeId, 'SIG', true); 
+                });
+              }
+            }}
+            style={{
+              width: '80px',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: '1px dotted rgba(190, 242, 100, 0.5)',
+              color: '#BEF264',
+              fontSize: '13px',
+              fontWeight: 800,
+              fontFamily: 'monospace',
+              textAlign: 'right',
+              outline: 'none',
+              padding: '0 2px'
+            }}
+          />
+          <span style={{ fontSize: '12px', color: '#BEF264', fontWeight: 800, fontFamily: 'monospace' }}>
+            {config.unit}
+          </span>
+        </div>
       </div>
       <input 
         type="range" 

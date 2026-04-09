@@ -28,20 +28,20 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   if (data.type === 'led') {
     mappedProps.value = data.pinStates?.pin_A === true;
     mappedProps.brightness = data.brightness ?? 1.0;
-    mappedProps.damaged = data.damaged ?? false;
+    mappedProps.damaged = false;
   } else if (data.type === 'rgb-led') {
     // RGB LED uses Red, Green, and Blue channels relative to Common pin (COM)
     // We expect intensity per channel if provided by CircuitEngine, otherwise fallback to digital
     mappedProps.ledRed = data.pinStates?.pin_R === true ? (data.intensity_R ?? 1.0) : 0;
     mappedProps.ledGreen = data.pinStates?.pin_G === true ? (data.intensity_G ?? 1.0) : 0;
     mappedProps.ledBlue = data.pinStates?.pin_B === true ? (data.intensity_B ?? 1.0) : 0;
-    mappedProps.damaged = data.damaged ?? false;
+    mappedProps.damaged = false;
   } else if (data.type === 'buzzer') {
     // Buzzers use Pin 2 as Positive (Red) signal pin as per spec
     if (data.pinStates?.pin_PIEZO === true || data.pinStates?.pin_1 === true || data.pinStates?.pin_2 === true) {
       mappedProps.hasSignal = true;
       mappedProps.intensity = data.intensity ?? 1.0;
-      mappedProps.damaged = data.damaged ?? false;
+      mappedProps.damaged = false;
       mappedProps.mode = data.mode ?? 'smooth';
       mappedProps.volume = data.volume ?? 1.0;
     } else {

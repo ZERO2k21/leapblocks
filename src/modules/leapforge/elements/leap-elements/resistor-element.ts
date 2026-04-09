@@ -26,7 +26,7 @@ export class ResistorElement extends LitElement {
    * Resitance value, in ohms. The value is reflected in the color of the bands, according to
    * standard [electronic color code](https://en.wikipedia.org/wiki/Electronic_color_code#Resistors).
    */
-  @property() value = '1000';
+  @property() value = '2000';
 
   readonly pinInfo: ElementPin[] = [
     { name: '1', x: 0, y: 5.65, signals: [] },

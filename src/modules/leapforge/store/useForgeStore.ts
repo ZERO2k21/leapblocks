@@ -55,6 +55,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   
   startSimulation: (hexString) => set((state) => {
     console.log('[FORGE STORE] startSimulation triggered. Hex length:', hexString.length);
+    // Force simulation engine refresh (Ideal Mode - Ver 1.0.1)
     circuitEngine.init();
     
     // Pass the downloaded compiled hex into the CPU
