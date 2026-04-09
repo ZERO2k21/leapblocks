@@ -206,39 +206,47 @@ export class ArduinoUploader {
                 fs.mkdirSync(libsDir, { recursive: true });
             }
 
-            // Arduino-cli lib download downloads to a default staging area.
-            // We want to extract it to projectPath/libs.
-            // A simpler way with arduino-cli is:
-            // 1. Download the zip
-            // 2. Extract to destination
-
-            // First, update index to find the zip
+            // 1. Update index to ensure we can find the library
             await execAsync(`"${arduinoCliPath}" lib update-index`);
 
-            // Download to a temporary location
-            const tempDir = path.join(os.tmpdir(), 'leapblocks_lib_dl');
-            if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+            // 2. Create a temporary staging area for the installation
+            const tempUserDir = path.join(os.tmpdir(), `leapblocks_install_${Date.now()}`);
+            if (!fs.existsSync(tempUserDir)) fs.mkdirSync(tempUserDir, { recursive: true });
 
-            await execAsync(`"${arduinoCliPath}" lib download "${libName}" --dest-dir "${tempDir}"`);
+            try {
+                // 3. Install the library into the temporary user directory
+                // We use the ARDUINO_DIRECTORIES_USER environment variable to redirect the installation.
+                // This is more reliable than --dest-dir which is missing in some arduino-cli versions.
+                const env = { ...process.env, ARDUINO_DIRECTORIES_USER: tempUserDir };
+                await execAsync(`"${arduinoCliPath}" lib install "${libName}"`, { env });
 
-            // Find the downloaded zip
-            const files = fs.readdirSync(tempDir);
-            const zipFile = files.find(f => f.endsWith('.zip'));
+                // 4. Find the installed library folder
+                // arduino-cli installs to {user_dir}/libraries/{libName}
+                const installedLibsPath = path.join(tempUserDir, 'libraries');
+                if (!fs.existsSync(installedLibsPath)) {
+                    throw new Error('Library installation failed: directory not created');
+                }
 
-            if (!zipFile) throw new Error('Downloaded library zip not found');
+                const libFolders = fs.readdirSync(installedLibsPath);
+                // We actually want to move ALL folders found in the staging area (in case of dependencies)
+                // but usually we just want the specific library. 
+                // For now, let's move everything from the libraries subfolder to our project libs.
+                for (const folder of libFolders) {
+                    const sourcePath = path.join(installedLibsPath, folder);
+                    const destPath = path.join(libsDir, folder);
+                    
+                    const fsExtra = require('fs-extra');
+                    await fsExtra.move(sourcePath, destPath, { overwrite: true });
+                }
 
-            const zipPath = path.join(tempDir, zipFile);
-
-            // Extract using adm-zip
-            const AdmZip = require('adm-zip');
-            const zip = new AdmZip(zipPath);
-            zip.extractAllTo(libsDir, true);
-
-            // Cleanup zip
-            fs.unlinkSync(zipPath);
-
-            return { success: true };
+                return { success: true };
+            } finally {
+                // 5. Cleanup temp directory
+                const fsExtra = require('fs-extra');
+                await fsExtra.remove(tempUserDir);
+            }
         } catch (error: any) {
+            console.error('Library installation failed:', error);
             return { success: false, error: error.message };
         }
     }

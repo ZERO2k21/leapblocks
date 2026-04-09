@@ -21,6 +21,7 @@ interface ForgeStudioProps {
 export default function ForgeStudio({ onBack }: ForgeStudioProps) {
   const {
     nodes,
+    edges,
     updateNodeData,
     isSimulating,
     startSimulation,
@@ -223,7 +224,7 @@ void loop() {
                 onClear={() => clearSerial()}
               />
             ) : (
-              <LibraryManager />
+              <LibraryManager onInitializeProject={handleSaveProject} />
             )}
           </div>
         </div>
