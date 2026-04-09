@@ -20,6 +20,7 @@ export class LEDElement extends LitElement {
   @property() lightColor: string | null = null;
   @property() label = '';
   @property({ type: Boolean }) flip = false;
+  @property({ type: Boolean }) damaged = false;
 
   get pinInfo(): ElementPin[] {
     const anodeX = this.flip ? 15 : 25;
@@ -65,13 +66,15 @@ export class LEDElement extends LitElement {
     const { color, lightColor, flip } = this;
     const lightColorActual = lightColor || lightColors[color?.toLowerCase()] || color;
     const opacity = this.brightness ? 0.3 + this.brightness * 0.7 : 0;
-    const lightOn = this.value && this.brightness > Number.EPSILON;
+    const lightOn = this.value && this.brightness > Number.EPSILON && !this.damaged;
     const xScale = flip ? -1 : 1;
+    const grayscaleFilter = this.damaged ? 'grayscale(100%) opacity(0.5)' : '';
 
     return html`<svg
       width="40"
       height="50"
       transform="scale(${xScale} 1)"
+      style="filter: ${grayscaleFilter}"
       version="1.2"
       viewBox="-10 -5 35.456 39.618"
       xmlns="http://www.w3.org/2000/svg"

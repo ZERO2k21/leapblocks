@@ -13,10 +13,65 @@ import { DHT } from './DHT';
 class CircuitEngine {
   private activeSubscriptions = new Map<string, () => void>();
   private lcdEmulators = new Map<string, HD44780>();
-  private peripheralPinBuffers = new Map<string, Record<string, boolean>>(); 
+  private peripheralPinBuffers = new Map<string, Record<string, boolean>>();
   private i2cBusManager = new I2CBusManager();
   private dhtEmulators = new Map<string, DHT>();
   private isInitialized = false;
+  
+  /**
+   * Traces an electrical net from a starting point (board pin) and returns all 
+   * reachable endpoints (LEDs, Buzzers, etc.) along with the total resistance in the path.
+   */
+  private traceNet(startNodeId: string, startPin: string): { nodeId: string, pinName: string, resistance: number, type: string }[] {
+    const { nodes, edges } = useForgeStore.getState();
+    const targets: { nodeId: string, pinName: string, resistance: number, type: string }[] = [];
+    const queue = [{ id: startNodeId, pin: startPin, resistance: 0 }];
+    const visited = new Set<string>();
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const key = `${current.id}-${current.pin}`;
+      if (visited.has(key)) continue;
+      visited.add(key);
+
+      const node = nodes.find(n => n.id === current.id);
+      if (!node) continue;
+
+      const nodeType = node.data?.type;
+
+      if (['led', 'buzzer'].includes(nodeType)) {
+        targets.push({ nodeId: current.id, pinName: current.pin, resistance: current.resistance, type: nodeType });
+      } else if (nodeType === 'resistor') {
+        const rValue = Number(node.data?.sensorValues?.value ?? 0);
+        
+        // Find the other pin of the resistor
+        let exitPin = '';
+        if (current.pin === '1' || current.pin === 'pin_1' || current.pin === 'IN') {
+           exitPin = node.data?.pinOUT ? 'OUT' : '2'; 
+        } else {
+           exitPin = node.data?.pinIN ? 'IN' : '1';
+        }
+        
+        // Robust fallback: if we don't know the pins, check if they are 'IN'/'OUT'
+        if (current.pin === 'IN') exitPin = 'OUT';
+        else if (current.pin === 'OUT') exitPin = 'IN';
+        else if (current.pin === '1' || current.pin === 'pin_1') exitPin = '2';
+        else if (current.pin === '2' || current.pin === 'pin_2') exitPin = '1';
+
+        const downstreamEdges = edges.filter(e => 
+          (e.source === current.id && e.sourceHandle === exitPin) || 
+          (e.target === current.id && e.targetHandle === exitPin)
+        );
+
+        for (const edge of downstreamEdges) {
+          const nextId = edge.source === current.id ? edge.target : edge.source;
+          const nextPin = edge.source === current.id ? edge.targetHandle : edge.sourceHandle;
+          queue.push({ id: nextId, pin: nextPin, resistance: current.resistance + rValue });
+        }
+      }
+    }
+    return targets;
+  }
 
   constructor() { }
 
@@ -52,9 +107,15 @@ class CircuitEngine {
     this.dhtEmulators.clear();
 
     const { nodes, edges, updateNodeData } = useForgeStore.getState();
+    const currentStateStore = useForgeStore.getState();
 
-    // 2.1 Register I2C Slaves
+    // 2.1 Register I2C Slaves and Reset States
     nodes.forEach(node => {
+      // Reset damaged/visual states on sync (e.g. simulation start)
+      if (node.data?.damaged || node.data?.pinStates) {
+          updateNodeData(node.id, { damaged: false, pinStates: {} });
+      }
+
       if (node.data?.type === 'lcd1602' || node.data?.type === 'lcd2004') {
         // Create an emulator for the display
         const cols = node.data?.type === 'lcd1602' ? 16 : 20;
@@ -116,43 +177,76 @@ class CircuitEngine {
         // Create a dedicated listener that pushes the HIGH/LOW state across the wire to the target node
         const listener = (state: PinState) => {
           const isHigh = state === 'HIGH';
-          // console.log(`[FORGE CIRCUIT] Pushing ${isHigh ? 'HIGH' : 'LOW'} to Node ${peripheralId} (Pin ${peripheralPinName})`);
-
           const currentStateStore = useForgeStore.getState();
+
+          // 1. Trace the electrical network to find all connected "Loads" (LEDs, Buzzers, etc.)
+          const reachableTargets = this.traceNet(peripheralId, peripheralPinName);
+          
+          reachableTargets.forEach(target => {
+            const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
+            if (!targetNode) return;
+
+            const currentPinStates = targetNode.data?.pinStates || {};
+            const pinKey = `pin_${target.pinName}`;
+
+            if (currentPinStates[pinKey] !== isHigh) {
+              const updates: any = {
+                pinStates: { ...currentPinStates, [pinKey]: isHigh }
+              };
+
+              if (isHigh) {
+                // Heuristic: 220 Ohm is standard "Full Power"
+                // Intensity = 220 / (220 + pathResistance)
+                const intensity = Math.max(0.1, 220 / (220 + target.resistance));
+                
+                // Burnout logic: LEDs burn if path resistance is too low (< 10 Ohm)
+                // Buzzers are exempt per user request.
+                const isLoadThatBurns = ['led', 'rgb-led'].includes(target.type);
+                const damaged = isLoadThatBurns && target.resistance < 10;
+                
+                if (target.type === 'led') updates.brightness = intensity;
+                else if (target.type === 'rgb-led') updates[`intensity_${target.pinName}`] = intensity;
+                else if (target.type === 'buzzer') updates.intensity = intensity;
+                
+                if (damaged) {
+                    updates.damaged = true;
+                    console.warn(`[FORGE CIRCUIT] Component ${target.nodeId} (${target.type}) burned out due to low resistance!`);
+                }
+              }
+              updateNodeData(target.nodeId, updates);
+            }
+          });
+
+          // 2. Specialized Peripheral Emulation (Servo, LCD, etc. - keep original logic for these)
           const peripheralNode = currentStateStore.nodes.find(n => n.id === peripheralId);
 
           if (peripheralNode) {
+            // ... (rest of the specialized logic for HC-SR04, Servo, LCD, DHT)
+            // Note: We only keep the physics simulation here. 
+            // The pin state update for these complex peripherals is handled below.
+
             // Emulate HC-SR04 Hardware Physics
             if (peripheralNode.data?.type === 'hc-sr04' && peripheralPinName === 'TRIG') {
               if (isHigh) {
                 trigStartCycles = simulationRunner.getCycles();
               } else {
                 const pulseCycles = simulationRunner.getCycles() - trigStartCycles;
-                const durationUs = pulseCycles / 16; // 16MHz
-                // Valid TRIG pulse is min 10us (real), but we'll accept 2us in simulation for robustness
+                const durationUs = pulseCycles / 16;
                 if (durationUs >= 2) {
                   const distStr = peripheralNode.data?.sensorValues?.distance;
                   const distParam = distStr !== undefined ? parseFloat(distStr) : 100;
-
                   const echoPulseUs = distParam * 58;
                   const echoPulseCycles = Math.floor(echoPulseUs * 16);
-
                   const echoWire = currentStateStore.edges.find(e => (e.source === peripheralId && e.sourceHandle === 'ECHO') || (e.target === peripheralId && e.targetHandle === 'ECHO'));
                   if (echoWire) {
                     const _boardPinName = echoWire.source === peripheralId ? echoWire.targetHandle : echoWire.sourceHandle;
                     // @ts-ignore
                     const _echoMapping = simulationRunner.convertArduinoPin(_boardPinName);
                     if (_echoMapping) {
-                      const avrEchoPin = _echoMapping.avrPin;
-                      // console.log(`[FORGE CIRCUIT] HC-SR04 detected TRIG pulse (${durationUs.toFixed(1)}us). Scheduling ECHO pulse for ${distParam}cm (${echoPulseUs}us)`);
-
-                      // robust timing: increased to 500 cycles 
-                      // to ensure Arduino has fully entered the pulseIn polling loop
                       simulationRunner.scheduleEvent(500, () => {
-                        simulationRunner.setVirtualInput(avrEchoPin, true);
-                        // Then scheduled ECHO LOW after the distance duration
+                        simulationRunner.setVirtualInput(_echoMapping.avrPin, true);
                         simulationRunner.scheduleEvent(echoPulseCycles, () => {
-                          simulationRunner.setVirtualInput(avrEchoPin, false);
+                          simulationRunner.setVirtualInput(_echoMapping.avrPin, false);
                         });
                       });
                     }
@@ -168,12 +262,8 @@ class CircuitEngine {
               } else {
                 const pulseCycles = simulationRunner.getCycles() - pwmStartCycles;
                 const durationUs = pulseCycles / 16;
-                // Standard Servo: 1ms (0 deg) to 2ms (180 deg)
-                // We accept 400us to 2600us for robustness
                 if (durationUs >= 400 && durationUs <= 2600) {
                   const angle = Math.max(0, Math.min(180, ((durationUs - 1000) / 1000) * 180));
-
-                  // Optimization: Only update if angle significant change (> 1 degree)
                   const currentAngle = peripheralNode.data?.angle ?? 0;
                   if (Math.abs(currentAngle - angle) >= 0.5) {
                     updateNodeData(peripheralId, { angle });
@@ -187,31 +277,16 @@ class CircuitEngine {
               const buffer = this.peripheralPinBuffers.get(peripheralId)!;
               const prevE = buffer['E'];
               buffer[peripheralPinName] = isHigh;
-
-              // Register the emulator if not already present
-              if (!this.lcdEmulators.has(peripheralId)) {
-                const cols = peripheralNode.data?.type === 'lcd1602' ? 16 : 20;
-                const rows = peripheralNode.data?.type === 'lcd1602' ? 2 : 4;
-                this.lcdEmulators.set(peripheralId, new HD44780(cols, rows));
-              }
-
-              // Trigger on falling edge of E (Enable) pin
               if (prevE === true && isHigh === false && peripheralPinName === 'E') {
                 const emulator = this.lcdEmulators.get(peripheralId)!;
                 const rs = !!buffer['RS'];
-                // Construct nibble from D4-D7
                 let data = 0;
                 if (buffer['D4']) data |= 0x10;
                 if (buffer['D5']) data |= 0x20;
                 if (buffer['D6']) data |= 0x40;
                 if (buffer['D7']) data |= 0x80;
-
                 emulator.processPulse(rs, data);
-                
-                // Sync LCD state back to node
-                updateNodeData(peripheralId, {
-                  lcdState: emulator.getState()
-                });
+                updateNodeData(peripheralId, { lcdState: emulator.getState() });
               }
             }
 
@@ -282,14 +357,14 @@ class CircuitEngine {
         // Fetch the simulated sensor value from the node
         const peripheralNode = nodes.find(n => n.id === nodeId);
         const sensorValue = peripheralNode?.data?.sensorValues?.value ?? 0; // expected 0-100 or 0-1023?
-        
+
         // For standard Leap sensors, we assume value is 0-1023 (raw ADC) or 0-100 (percentage)
         // Let's normalize it to 0-5V.
         // If the node data indicates it's an analog sensor, we use the value.
         // For now, assume value is 0-5.0V directly for simplicity, or 0-1023.
         const voltage = sensorValue > 5 ? (sensorValue / 1023) * 5.0 : sensorValue;
         simulationRunner.setAnalogInput(mapping.adcChannel, voltage);
-        
+
         console.log(`[FORGE CIRCUIT] Analog Signal: Peripheral[${nodeId}] pin ${pinName} -> ${voltage.toFixed(2)}V on channel ${mapping.adcChannel}`);
       } else {
         // --- Digital Mapping ---

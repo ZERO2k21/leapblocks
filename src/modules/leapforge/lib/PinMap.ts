@@ -33,31 +33,25 @@ export function getComponentPins(type: string): PinEntry[] {
     let xPercent = 0;
     let yPercent = 0;
 
-    if (type === 'led' || type === 'pushbutton') {
-        // Special case: LED natively defines its pin.x within its viewBox width!
-        // LED viewBox width: 35.456. Pin x=25. Percentage = 25 / 35.456
-        xPercent = (pin.x / viewBox.width) * 100;
-        yPercent = (pin.y / viewBox.height) * 100;
+    const isSvgComponent = ['led', 'rgb-led', 'pushbutton', 'pushbutton-6mm'].includes(type);
+
+    if (isSvgComponent) {
+        // SVG components define pin coordinates in leur internal viewBox space.
+        // We calculate percentage relative to the total width/height after offset.
+        xPercent = ((pin.x - viewBox.minX) / viewBox.width) * 100;
+        yPercent = ((pin.y - viewBox.minY) / viewBox.height) * 100;
     } else {
         // For MM based components like Arduino:
         // Convert viewBox width (mm) to CSS pixels
         const widthPx = viewBox.width * PX_PER_MM;
         const heightPx = viewBox.height * PX_PER_MM;
         
-        // We account for 'minX' shifting if necessary, though Leap's px coordinates
-        // generally map from the absolute top-left visual corner (0,0).
-        xPercent = (pin.x / widthPx) * 100;
-        yPercent = (pin.y / heightPx) * 100;
+        // Account for 'minX' shifting if necessary
+        const offsetXPx = viewBox.minX < 0 ? Math.abs(viewBox.minX) * PX_PER_MM : 0;
+        const offsetYPx = viewBox.minY < 0 ? Math.abs(viewBox.minY) * PX_PER_MM : 0;
 
-        // Tweak: if it's Arduino, Leap actually shifts minX by -4mm, so the "0" of the drawing board is displaced.
-        if (viewBox.minX < 0) {
-           const offsetPx = Math.abs(viewBox.minX) * PX_PER_MM;
-           xPercent = ((pin.x + offsetPx) / widthPx) * 100;
-        }
-        if (viewBox.minY < 0) {
-           const offsetPx = Math.abs(viewBox.minY) * PX_PER_MM;
-           yPercent = ((pin.y + offsetPx) / heightPx) * 100;
-        }
+        xPercent = ((pin.x + offsetXPx) / widthPx) * 100;
+        yPercent = ((pin.y + offsetYPx) / heightPx) * 100;
     }
 
     return {

@@ -1,54 +1,54 @@
-export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, width: number, height: number}, pins: {name: string, x: number, y: number}[] }> = {
+export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, width: number, height: number }, pins: { name: string, x: number, y: number }[] }> = {
   "slide-potentiometer": {
     "viewBox": {
-        "minX": 0,
-        "minY": 0,
-        "width": 55,
-        "height": 29
+      "minX": 0,
+      "minY": 0,
+      "width": 55,
+      "height": 29
     },
     "pins": [
-        {
-            "name": "VCC",
-            "x": 1,
-            "y": 43
-        },
-        {
-            "name": "SIG",
-            "x": 1,
-            "y": 63
-        },
-        {
-            "name": "GND",
-            "x": 207,
-            "y": 43
-        }
+      {
+        "name": "VCC",
+        "x": 1,
+        "y": 43
+      },
+      {
+        "name": "SIG",
+        "x": 1,
+        "y": 63
+      },
+      {
+        "name": "GND",
+        "x": 207,
+        "y": 43
+      }
     ]
-},
+  },
   "slide-pot": {
     "viewBox": {
-        "minX": 0,
-        "minY": 0,
-        "width": 55,
-        "height": 29
+      "minX": 0,
+      "minY": 0,
+      "width": 55,
+      "height": 29
     },
     "pins": [
-        {
-            "name": "VCC",
-            "x": 1,
-            "y": 43
-        },
-        {
-            "name": "SIG",
-            "x": 1,
-            "y": 63
-        },
-        {
-            "name": "GND",
-            "x": 207,
-            "y": 43
-        }
+      {
+        "name": "VCC",
+        "x": 1,
+        "y": 43
+      },
+      {
+        "name": "SIG",
+        "x": 1,
+        "y": 63
+      },
+      {
+        "name": "GND",
+        "x": 207,
+        "y": 43
+      }
     ]
-},
+  },
   "small-sound-sensor": {
     "viewBox": {
       "minX": 0,
@@ -1612,13 +1612,15 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
     "pins": [
       {
         "name": "A",
-        "x": 25,
-        "y": 42
+        "description": "Anode",
+        "x": 12.9,
+        "y": 30.2
       },
       {
         "name": "C",
-        "x": 15,
-        "y": 42
+        "description": "Cathode",
+        "x": 3.5,
+        "y": 30.2
       }
     ]
   },
@@ -2212,23 +2214,23 @@ export const LEAP_PINS: Record<string, { viewBox: {minX: number, minY: number, w
     "pins": [
       {
         "name": "R",
-        "x": 8.5,
-        "y": 44
+        "x": 7.2,
+        "y": 21
       },
       {
         "name": "COM",
-        "x": 18,
-        "y": 54
+        "x": -1.4,
+        "y": 27
       },
       {
         "name": "G",
-        "x": 26.4,
-        "y": 44
+        "x": -9.5,
+        "y": 21
       },
       {
         "name": "B",
-        "x": 35.7,
-        "y": 44
+        "x": 15.2,
+        "y": 21
       }
     ]
   },

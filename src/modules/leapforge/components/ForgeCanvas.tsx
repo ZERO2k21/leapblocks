@@ -15,6 +15,7 @@ import 'reactflow/dist/style.css';
 import { useForgeStore } from '../store/useForgeStore';
 import { LeapNode } from './Nodes/LeapNode';
 import { PartPicker } from './Library/PartPicker';
+import { SelectionToolbar } from './SelectionToolbar';
 import { Plus, Play, Square, Info, RotateCcw } from 'lucide-react';
 
 // Define custom node types outside component to prevent re-renders
@@ -141,6 +142,9 @@ const ForgeCanvasInner: React.FC = () => {
           nodeColor={(n: any) => n.data?.type === 'boards' ? '#BEF264' : '#64748b'}
         />
       </ReactFlow>
+      
+      {/* ── SELECTION TOOLBAR ─────────────────────────── */}
+      <SelectionToolbar />
 
       {/* ── FLOATING TOOLBAR (Leap Style) ────────────────── */}
       <div className="canvas-fab-group" style={{
