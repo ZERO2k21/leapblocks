@@ -2839,78 +2839,59 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     }, [sprites, selectedSpriteId, addLog, loadSpriteWorkspace]);
 
     const syncAllWorkspaces = useCallback(() => {
+    console.log('[APP] 🔄 FULL SYNC - Recompiling ALL sprites (broadcast fix)');
 
-    // ✅ STEP 1: Save current workspace
+    // 1. Always save whatever the user is currently editing
     const activeId = activeSpriteIdRef.current;
     if (activeId && workspaceRef.current) {
         const json = Blockly.serialization.workspaces.save(workspaceRef.current);
         spriteWorkspacesRef.current.set(activeId, json);
+        console.log(`[SYNC] Saved current workspace for ${activeId}`);
     }
-
-    log.app('Syncing ALL sprites (FINAL FIX)');
 
     let allScripts: CompiledScript[] = [];
     const stageScripts: CompiledScript[] = [];
 
     const allLiveSprites = spriteManager.getAllSprites();
 
-    // Ensure stage exists
-    if (!allLiveSprites.some(s => s.id === 'stage')) {
-        const stage = spriteManager.getSprite('stage');
-        if (stage) allLiveSprites.push(stage);
-    }
+    for (const sprite of allLiveSprites) {
+        const savedJson = spriteWorkspacesRef.current.get(sprite.id);
 
-    for (const s of allLiveSprites) {
-
-        const savedJson = spriteWorkspacesRef.current.get(s.id);
-        if (!savedJson || Object.keys(savedJson).length === 0) continue;
+        if (!savedJson || Object.keys(savedJson).length === 0) {
+            sprite.setScripts([]);   // clean state
+            continue;
+        }
 
         let tempWs: Blockly.Workspace | null = null;
-
         try {
-            // ✅ ALWAYS use temp workspace (NO special case)
             Blockly.Events.disable();
-
             tempWs = new Blockly.Workspace();
             Blockly.serialization.workspaces.load(savedJson, tempWs);
 
-            Blockly.Events.enable();
-
-            const compiler = new AnimationCompiler(s.id);
+            const compiler = new AnimationCompiler(sprite.id);
             const scripts = compiler.compile(tempWs);
 
+            // CRITICAL: Attach fresh scripts to the sprite
+            sprite.setScripts(scripts);
+
+            console.log(`[SYNC] ${sprite.name} → ${scripts.length} scripts`);
+
             allScripts.push(...scripts);
-
-            if (s.id === 'stage') {
-                stageScripts.push(...scripts);
-            }
-
-            // ✅ CRITICAL: Attach scripts to sprite
-            if (typeof s.setScripts === 'function') {
-                s.setScripts(scripts);
-            }
-
-            console.log(`[SYNC] ${s.name} → ${scripts.length} scripts`);
-
+            if (sprite.id === 'stage') stageScripts.push(...scripts);
         } catch (e) {
-            Blockly.Events.enable();
-            console.error(`[SYNC ERROR] ${s.name}`, e);
+            console.error(`[SYNC ERROR] ${sprite.name}`, e);
         } finally {
-            if (tempWs) {
-                try { tempWs.dispose(); } catch (_) {}
-            }
+            if (tempWs) tempWs.dispose();
+            Blockly.Events.enable();
         }
     }
 
-    // ✅ Only update stage scripts globally
     animationVM.stageScripts = stageScripts;
+    // Do NOT call animationVM.setScripts() — we already attached to each sprite
 
-    // ❌ REMOVE THIS (VERY IMPORTANT)
-    // animationVM.setScripts(allScripts);
-
+    console.log(`[SYNC] Total scripts across all sprites: ${allScripts.length}`);
     return allScripts;
-
-}, [sprites]);
+}, []);
 
     useEffect(() => {
     animationVM.onBeforeBroadcast = (message) => {
@@ -2950,35 +2931,23 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     // ═══════════════════════════════════════════════════════════════════════
     // ANIMATION CONTROLS
     // ═══════════════════════════════════════════════════════════════════════
-    const handleRunClick = useCallback(() => {
-    console.log('[APP] Run button clicked - MULTI-SPRITE MODE');
+   const handleRunClick = useCallback(() => {
+    console.log('[APP] 🟢 Green Flag clicked — FULL SYNC + TRIGGER');
     addLog('Green flag clicked');
 
     animationVM.stopAll();
 
-    // ✅ SAVE CURRENT WORKSPACE BEFORE RUN
-    const activeId = activeSpriteIdRef.current;
-    if (activeId && workspaceRef.current) {
-        const json = Blockly.serialization.workspaces.save(workspaceRef.current);
-        spriteWorkspacesRef.current.set(activeId, json);
-    }
+    // Force full recompile of EVERY sprite before triggering
+    const allScripts = syncAllWorkspaces();
 
-    try {
-        const allScripts = syncAllWorkspaces();
+    setCompiledScripts(allScripts);
+    setIsRunning(true);
 
-        if (allScripts.length > 0 || spriteWorkspacesRef.current.size > 0) {
-            setCompiledScripts(allScripts);
-            setIsRunning(true);
+    leapRuntime.loadProject(spriteWorkspacesRef.current);
+    leapRuntime.triggerFlag();
+    animationVM.triggerFlag();        // ← now sees fresh scripts on every sprite
 
-            leapRuntime.loadProject(spriteWorkspacesRef.current);
-            leapRuntime.triggerFlag();
-            animationVM.triggerFlag();
-
-            addLog(`Started animation`);
-        }
-    } catch (e) {
-        console.error(`[APP] Run error:`, e);
-    }
+    addLog(`Started animation with ${allScripts.length} scripts`);
 }, [addLog, syncAllWorkspaces]);
 
     const handleStopClick = useCallback(() => {

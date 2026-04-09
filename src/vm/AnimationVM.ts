@@ -590,28 +590,30 @@ export class AnimationVM {
     }
 
     triggerFlag(): void {
-        vmLog.info('Green flag clicked - stopping all scripts before restart');
-        this.stopAll();
-        
-        const allSprites = spriteManager.getAllSprites();
-        vmLog.info(`TriggerFlag: scanning ${allSprites.length} entities`);
-        let flagScripts = 0;
-        
-        for (const sprite of allSprites) {
-            const scripts = (sprite.scripts as CompiledScript[]) || [];
-            for (const script of scripts) {
-                if (script.trigger === 'flag') {
-                    flagScripts++;
-                    this.setRunning(true);
-                    this.runScript(script);
-                }
+    vmLog.info('Green flag clicked - stopping all scripts before restart');
+    this.stopAll();
+
+    const allSprites = spriteManager.getAllSprites();
+    let flagScripts = 0;
+
+    for (const sprite of allSprites) {
+        const scripts = (sprite.scripts as CompiledScript[]) || [];
+        console.log(`[VM] ${sprite.name} has ${scripts.length} scripts`);
+
+        for (const script of scripts) {
+            if (script.trigger === 'flag') {
+                flagScripts++;
+                this.setRunning(true);
+                if (script.hatBlockId) this.stopScriptByHat(sprite.id, script.hatBlockId);
+                this.runScript(script).catch(err => console.error('Flag script error', err));
             }
         }
-
-        if (flagScripts === 0) {
-            this.checkAllFinished();
-        }
     }
+
+    if (flagScripts === 0) {
+        console.log('[VM] No flag scripts, but broadcast receivers will still run');
+    }
+}
 
     triggerSpriteClick(spriteId: string): void {
         let matched = 0;
@@ -1019,9 +1021,19 @@ export class AnimationVM {
                 const rawMessage = typeof step.message === 'function' ? step.message() : step.message;
                 const message = rawMessage === null || rawMessage === undefined ? '' : String(rawMessage);
                 const secs = typeof step.secs === 'function' ? step.secs() : step.secs;
-                vmLog.step(`Executing Say "${message}" for ${secs} seconds`);
-                sprite.say(message, secs);
+
+                vmLog.step(`Say "${message}" for ${secs} seconds`);
+
+                // Show the bubble with duration
+                sprite.say(message, secs);   // Make sure your Sprite.say() accepts duration
+
+                // Wait the full time (this already exists, but make sure pause/resume works)
                 await this.sleep(secs * 1000, signal);
+
+                // Only clear if the script is still running and no new say/think happened
+                if (!signal.aborted && sprite.sayText === message) {
+                    sprite.clearSay();
+                }
                 break;
             }
 
@@ -1063,10 +1075,22 @@ export class AnimationVM {
                 break;
 
             case 'think_for_secs': {
-                const message = typeof step.message === 'function' ? step.message() : step.message;
+                const rawMessage = typeof step.message === 'function' ? step.message() : step.message;
+                const message = rawMessage === null || rawMessage === undefined ? '' : String(rawMessage);
                 const secs = typeof step.secs === 'function' ? step.secs() : step.secs;
-                sprite.think(message, secs);
+
+                vmLog.step(`Think "${message}" for ${secs} seconds`);
+
+                // Show the bubble with duration
+                sprite.think(message, secs);   // Make sure your Sprite.say() accepts duration
+
+                // Wait the full time (this already exists, but make sure pause/resume works)
                 await this.sleep(secs * 1000, signal);
+
+                // Only clear if the script is still running and no new say/think happened
+                if (!signal.aborted && sprite.sayText === message) {
+                    sprite.clearSay();
+                }
                 break;
             }
 
@@ -1843,109 +1867,85 @@ export class AnimationVM {
     // BROADCAST
     // ═══════════════════════════════════════════════════════════════════════
     triggerBroadcast(message: string): void {
-        vmLog.info(`Broadcasting: ${message}`);
-        this.registerBroadcast(message);
-        const normalizedMessage = message.toLowerCase();
+    vmLog.info(`Broadcasting: ${message}`);
+    this.registerBroadcast(message);
 
-        // 1. Trigger sync callback to ensure all entities have latest scripts
-        if (this.onBeforeBroadcast) {
-            this.onBeforeBroadcast(message);
-        }
+    const normalizedMessage = message.toLowerCase();
 
-        // 2. Use the cached broadcast listeners for efficiency
-        const listeners = this.broadcastListeners.get(normalizedMessage) || [];
-        
-        if (listeners.length > 0) {
-            console.log(`[AnimationVM] TriggerBroadcast: Dispatching "${message}" to ${listeners.length} listener(s) in active cache.`);
-            for (const script of listeners) {
+    // Ensure latest scripts are synced
+    if (this.onBeforeBroadcast) {
+        this.onBeforeBroadcast(message);
+    }
+
+    let matched = 0;
+    const allSprites = spriteManager.getAllSprites();
+
+    console.log(`[VM FIX] Broadcasting "${message}" to ${allSprites.length} sprites`);
+
+    for (const sprite of allSprites) {
+        const scripts = (sprite.scripts as CompiledScript[]) || [];
+
+        for (const script of scripts) {
+            if (
+                script.trigger === 'broadcast_receive' &&
+                (script.triggerKey || '').toLowerCase() === normalizedMessage
+            ) {
+                matched++;
+
                 this.setRunning(true);
-                // Stop any existing instance of THIS script before restarting
+
                 if (script.hatBlockId) {
-                    this.stopScriptByHat(script.spriteId, script.hatBlockId);
+                    this.stopScriptByHat(sprite.id, script.hatBlockId);
                 }
-                const targetSprite = spriteManager.getSprite(script.spriteId);
-                console.log(`[AnimationVM]   -> Triggering receiver on sprite: ${targetSprite?.name || script.spriteId}`);
+
+                console.log(`[VM FIX] Running on ${sprite.name}`);
+
                 this.runScript(script).catch(err => {
-                    vmLog.error('Error in broadcast receive script', err);
+                    vmLog.error('Broadcast error', err);
                 });
             }
-            return;
-        }
-
-        // Fallback: Scan all sprites if the cache is empty or doesn't match
-        // (This handles cases where setScripts wasn't called correctly)
-        let matchedInFallback = 0;
-        const allSprites = spriteManager.getAllSprites();
-        vmLog.info(`TriggerBroadcast Fallback: scanning ${allSprites.length} entities for message: ${message}`);
-        
-        for (const sprite of allSprites) {
-            const scripts = (sprite.scripts as CompiledScript[]) || [];
-            for (const script of scripts) {
-                if (script.trigger === 'broadcast_receive' && (script.triggerKey || '').toLowerCase() === normalizedMessage) {
-                    matchedInFallback++;
-                    this.setRunning(true);
-                    if (script.hatBlockId) {
-                        this.stopScriptByHat(sprite.id, script.hatBlockId);
-                    }
-                    console.log(`[AnimationVM]   -> Triggering fallback receiver on sprite: ${sprite.name} (${sprite.id})`);
-                    this.runScript(script).catch(err => {
-                        vmLog.error('Error in fallback broadcast receive script', err);
-                    });
-                }
-            }
-        }
-        if (matchedInFallback > 0) {
-            console.log(`[AnimationVM] TriggerBroadcast Fallback: Dispatched "${message}" to ${matchedInFallback} matching script(s) via full scan.`);
-        } else {
-            console.log(`[AnimationVM] TriggerBroadcast: No receivers found for "${message}" across ${allSprites.length} sprites.`);
         }
     }
 
+    if (matched === 0) {
+        console.warn(`[VM FIX] ❌ No receivers for "${message}"`);
+    }
+}
     async triggerBroadcastAndWait(message: string): Promise<void> {
-        vmLog.info(`Broadcasting and waiting: ${message}`);
-        this.registerBroadcast(message);
-        const normalizedMessage = message.toLowerCase();
+    vmLog.info(`Broadcasting and waiting: ${message}`);
+    this.registerBroadcast(message);
 
-        // 1. Trigger sync callback
-        if (this.onBeforeBroadcast) {
-            this.onBeforeBroadcast(message);
-        }
+    const normalizedMessage = message.toLowerCase();
 
-        const promises: Promise<void>[] = [];
+    if (this.onBeforeBroadcast) {
+        this.onBeforeBroadcast(message);
+    }
 
-        // 2. Use cached listeners if available
-        const listeners = this.broadcastListeners.get(normalizedMessage) || [];
-        if (listeners.length > 0) {
-            for (const script of listeners) {
+    const promises: Promise<void>[] = [];
+    const allSprites = spriteManager.getAllSprites();
+
+    for (const sprite of allSprites) {
+        const scripts = (sprite.scripts as CompiledScript[]) || [];
+
+        for (const script of scripts) {
+            if (
+                script.trigger === 'broadcast_receive' &&
+                (script.triggerKey || '').toLowerCase() === normalizedMessage
+            ) {
                 this.setRunning(true);
+
                 if (script.hatBlockId) {
-                    this.stopScriptByHat(script.spriteId, script.hatBlockId);
+                    this.stopScriptByHat(sprite.id, script.hatBlockId);
                 }
+
                 promises.push(this.runScript(script));
             }
-        } else {
-            // Fallback scan
-            const allSprites = spriteManager.getAllSprites();
-            
-            for (const sprite of allSprites) {
-                const scripts = (sprite.scripts as CompiledScript[]) || [];
-                for (const script of scripts) {
-                    if (script.trigger === 'broadcast_receive' && (script.triggerKey || '').toLowerCase() === normalizedMessage) {
-                        this.setRunning(true);
-                        if (script.hatBlockId) {
-                            this.stopScriptByHat(sprite.id, script.hatBlockId);
-                        }
-                        promises.push(this.runScript(script));
-                    }
-                }
-            }
-        }
-
-        if (promises.length > 0) {
-            await Promise.all(promises);
         }
     }
 
+    await Promise.all(promises);
+}
+            
     triggerBackdropSwitch(backdrop: string): void {
         console.log(`[AnimationVM] Backdrop switch: ${backdrop}`);
         const allSprites = spriteManager.getAllSprites();
