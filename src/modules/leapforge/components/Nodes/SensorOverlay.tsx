@@ -29,7 +29,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
   // --- Configuration Mapping ---
   const isDistanceSensor = type === 'hc-sr04';
-  const isAnalogSensor = ['potentiometer', 'photoresistor', 'ntc-temperature-sensor', 'mq2'].includes(type);
+  const isAnalogSensor = ['potentiometer', 'photoresistor', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(type);
 
   if (!isDistanceSensor && !isAnalogSensor) return null;
 
@@ -37,6 +37,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   const config = isDistanceSensor 
     ? { label: 'DISTANCE', unit: 'cm', min: 2, max: 400, key: 'distance' }
     : type === 'potentiometer' ? { label: 'RESISTANCE', unit: '%', min: 0, max: 100, key: 'value' }
+    : type === 'resistor' ? { label: 'RESISTANCE', unit: 'Ω', min: 0, max: 10000, key: 'value' } 
     : type === 'photoresistor' ? { label: 'LIGHT', unit: 'lux', min: 0, max: 1000, key: 'value' }
     : type === 'ntc-temperature-sensor' ? { label: 'TEMP', unit: '°C', min: -40, max: 125, key: 'value' }
     : { label: 'VALUE', unit: '', min: 0, max: 1023, key: 'value' };
@@ -91,7 +92,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em', fontFamily: 'system-ui' }}>{config.label}</span>
         <span style={{ fontSize: '12px', color: '#BEF264', fontWeight: 800, fontFamily: 'monospace' }}>
-          {currentValue} {config.unit}
+          {currentValue >= 1000 ? `${(currentValue / 1000).toFixed(1)} k` : currentValue} {config.unit}
         </span>
       </div>
       <input 
