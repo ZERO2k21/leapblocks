@@ -15,6 +15,14 @@ export default defineConfig({
       'fabric': path.resolve(__dirname, 'node_modules/fabric/dist/index.mjs'),
     },
   },
+  esbuild: {
+    tsconfigRaw: {
+      compilerOptions: {
+        experimentalDecorators: true,
+        useDefineForClassFields: false,
+      },
+    },
+  },
   define: {
     // Ensure process.env exists for libraries that check it
     'process.env.NODE_ENV': JSON.stringify('production'),
