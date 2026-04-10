@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState } from './hooks/useAppState';
-import TopBar from './components/TopBar';
+import { IgniteTopbar } from '../leapforge/components/Layout/IgniteTopbar';
 import Palette from './components/Palette';
 import PhoneCanvas from './components/PhoneCanvas';
 import PropertiesPanel from './components/PropertiesPanel';
@@ -68,12 +68,57 @@ export default function AppInventor({ onBack }) {
 
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden bg-white text-gray-900 font-sans">
-      <TopBar
-        appState={appState}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onBuildApk={handleBuildApk}
+      <IgniteTopbar 
+        title={appState.appName}
+        onTitleChange={(val) => appState.setAppName(val)}
         onBack={onBack}
+        onSave={() => {}} // Save logic if needed
+        brandName="APP INVENTOR"
+        centerContent={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '20px' }}>
+             <nav style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '20px' }}>
+              {['designer', 'blocks'].map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  style={{
+                    padding: '6px 16px',
+                    borderRadius: '16px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    transition: '0.2s',
+                    background: activeTab === tab ? (tab === 'designer' ? '#10B981' : '#3B82F6') : 'transparent',
+                    color: '#fff',
+                    textTransform: 'capitalize'
+                  }}
+                >
+                  {tab}
+                </button>
+              ))}
+            </nav>
+            <button
+              onClick={handleBuildApk}
+              style={{
+                marginLeft: '8px',
+                padding: '8px 16px',
+                borderRadius: '20px',
+                border: 'none',
+                cursor: 'pointer',
+                background: 'linear-gradient(135deg, #FFD500, #FFB800)',
+                color: '#1a1a2e',
+                fontSize: '12px',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <span>📦</span> Build APK
+            </button>
+          </div>
+        }
       />
 
       <div className="flex-1 flex overflow-hidden w-full">
