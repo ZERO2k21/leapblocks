@@ -31,6 +31,7 @@ interface SpritePanelProps {
   onOpenBackdropLibrary?: () => void;
   stageManager: StageManager;
   backdropVersion?: number; // triggers re-render when backdrops change
+  isFullscreen?: boolean;
 }
 
 export const SpritePanel: React.FC<SpritePanelProps> = ({
@@ -43,6 +44,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   onOpenSpriteLibrary,
   onOpenBackdropLibrary,
   stageManager,
+  isFullscreen,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -203,89 +205,148 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
             </div>
           )}
 
-          <div style={styles.spriteList}>
-            {sprites.filter(s => s.id !== 'stage' && !s.id.includes('_clone_')).map((sprite) => {
-              const isSelected = selectedSpriteId === sprite.id;
-              const cloneCount = sprites.filter(s => s.id.startsWith(`${sprite.id}_clone_`)).length;
-              
-              return (
-                <div
-                  key={sprite.id}
-                  style={{
-                    ...styles.spriteItem,
-                    ...(isSelected ? styles.spriteItemSelected : {}),
-                  }}
-                  onClick={() => onSelectSprite(sprite.id)}
-                >
-                  {isSelected && (
-                    <button
-                      style={styles.deleteButton}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteSprite(sprite.id);
-                      }}
-                      title="Delete"
-                    >
-                      🗑️
-                    </button>
-                  )}
-                  
-                  {cloneCount > 0 && (
-                    <div style={styles.cloneBadge} title={`${cloneCount} clones active`}>
-                      {cloneCount}
-                    </div>
-                  )}
-
-                  <div style={styles.spriteThumbnail}>
-                    {sprite.currentCostume ? (
-                      <img
-                        src={sprite.currentCostume.image.src}
-                        alt={sprite.name}
-                        style={{
-                          maxWidth: "40px",
-                          maxHeight: "40px",
-                          objectFit: "contain",
+            <div style={{
+              ...styles.spriteList,
+              overflowY: "auto",
+              height: "100%",
+            }}>
+              {sprites.filter(s => s.id !== 'stage' && !s.id.includes('_clone_')).map((sprite) => {
+                const isSelected = selectedSpriteId === sprite.id;
+                const cloneCount = sprites.filter(s => s.id.startsWith(`${sprite.id}_clone_`)).length;
+                
+                return (
+                  <div
+                    key={sprite.id}
+                    style={{
+                      ...styles.spriteItem,
+                      ...(isSelected ? styles.spriteItemSelected : {}),
+                    }}
+                    onClick={() => onSelectSprite(sprite.id)}
+                  >
+                    {isSelected && (
+                      <button
+                        style={styles.deleteButton}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteSprite(sprite.id);
                         }}
-                      />
-                    ) : (
-                      <div style={{ fontSize: "32px" }}>
-                        {getSpriteEmoji(sprite)}
+                        title="Delete"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                    
+                    {cloneCount > 0 && (
+                      <div style={styles.cloneBadge} title={`${cloneCount} clones active`}>
+                        {cloneCount}
                       </div>
                     )}
+
+                    <div style={styles.spriteThumbnail}>
+                      {sprite.currentCostume ? (
+                        <img
+                          src={sprite.currentCostume.image.src}
+                          alt={sprite.name}
+                          style={{
+                            maxWidth: "40px",
+                            maxHeight: "40px",
+                            objectFit: "contain",
+                          }}
+                        />
+                      ) : (
+                        <div style={{ fontSize: "32px" }}>
+                          {getSpriteEmoji(sprite)}
+                        </div>
+                      )}
+                    </div>
+                    <div
+                      style={{
+                        ...styles.spriteName,
+                        ...(isSelected ? styles.spriteNameSelected : {}),
+                      }}
+                    >
+                      {sprite.name}
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      ...styles.spriteName,
-                      ...(isSelected ? styles.spriteNameSelected : {}),
-                    }}
-                  >
-                    {sprite.name}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+              
+              {/* Integrated Add Sprite button */}
+              <div style={{
+                ...styles.spriteItem,
+                border: '2px dashed #d9d9d9',
+                backgroundColor: isFullscreen ? 'rgba(255,255,255,0.03)' : '#f0f0f0',
+                order: 999,
+                cursor: 'default',
+              }}>
+                <ActionMenu
+                  mainIcon="➕"
+                  color="#9974ffff"
+                  tooltipLabel="Choose a Sprite"
+                  actions={[
+                    {
+                      id: 'upload',
+                      icon: '⬆️',
+                      label: 'Upload Sprite',
+                      onClick: () => alert('Upload sprite coming soon!')
+                    },
+                    {
+                      id: 'surprise',
+                      icon: '✨',
+                      label: 'Surprise',
+                      onClick: () => {
+                        const randomSprite = SPRITE_TYPES[Math.floor(Math.random() * SPRITE_TYPES.length)];
+                        handleAddSprite(randomSprite.type);
+                      }
+                    },
+                    {
+                      id: 'paint',
+                      icon: '🖌️',
+                      label: 'Paint',
+                      onClick: () => alert('Paint editor coming soon!')
+                    },
+                    {
+                      id: 'search',
+                      icon: '🔍',
+                      label: 'Choose a Sprite',
+                      onClick: () => onOpenSpriteLibrary ? onOpenSpriteLibrary() : setShowPicker(!showPicker)
+                    }
+                  ]}
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Floating action button for Sprites */}
-          <div style={styles.floatingAction}>
+        {/* Stage Area */}
+        <div className="slim-scrollbar" style={{ 
+          width: "110px", 
+          padding: "16px 8px", 
+          display: "flex", 
+          flexDirection: "column", 
+          alignItems: "center", 
+          position: "relative",
+          height: "100%",
+          overflowY: "auto",
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', width: '100%', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#575E75' }}>Stage</div>
             <ActionMenu
-              mainIcon="➕"
-              color="#9974ffff"
-              tooltipLabel="Choose a Sprite"
+              mainIcon={<span style={{ fontSize: '12px' }}>🖼️</span>}
+              color="#4c97ffff"
+              tooltipLabel="Choose a Backdrop"
               actions={[
                 {
                   id: 'upload',
                   icon: '⬆️',
-                  label: 'Upload Sprite',
-                  onClick: () => alert('Upload sprite coming soon!')
+                  label: 'Upload Backdrop',
+                  onClick: () => alert('Upload backdrop coming soon!')
                 },
                 {
                   id: 'surprise',
                   icon: '✨',
                   label: 'Surprise',
                   onClick: () => {
-                    const randomSprite = SPRITE_TYPES[Math.floor(Math.random() * SPRITE_TYPES.length)];
-                    handleAddSprite(randomSprite.type);
+                    // Logic for surprise backdrop
                   }
                 },
                 {
@@ -297,17 +358,12 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 {
                   id: 'search',
                   icon: '🔍',
-                  label: 'Choose a Sprite',
-                  onClick: () => onOpenSpriteLibrary ? onOpenSpriteLibrary() : setShowPicker(!showPicker)
+                  label: 'Choose a Backdrop',
+                  onClick: () => onOpenBackdropLibrary ? onOpenBackdropLibrary() : alert('Library coming soon!')
                 }
               ]}
             />
           </div>
-        </div>
-
-        {/* Stage Area */}
-        <div style={{ width: "88px", padding: "16px 8px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
-          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#575E75', marginBottom: '8px' }}>Stage</div>
           {sprites.filter(s => s.id === 'stage').map((stageSprite) => {
             const isSelected = selectedSpriteId === 'stage';
             return (
@@ -335,38 +391,16 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 </div>
                 <div style={{
                   ...styles.spriteName,
-                  padding: '2px 0',
-                  fontSize: '9px',
+                  padding: '4px 0',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
                   ...(isSelected ? { backgroundColor: '#3498DB', color: '#fff' } : {})
                 }}>
-                  Backdrops<br />{stageManager.getAllBackdrops().length}
+                  Backdrops {stageManager.getAllBackdrops().length}
                 </div>
               </div>
             );
           })}
-
-          {/* Floating action button for Backdrops */}
-          <div style={{ ...styles.floatingAction, right: '4px', bottom: '12px' }}>
-            <ActionMenu
-              mainIcon="🖼️"
-              color="#8f59f5ff"
-              tooltipLabel="Choose a Backdrop"
-              actions={[
-                {
-                  id: 'upload',
-                  icon: '⬆️',
-                  label: 'Upload Backdrop',
-                  onClick: () => alert('Upload backdrop coming soon!')
-                },
-                {
-                  id: 'search',
-                  icon: '🔍',
-                  label: 'Choose a Backdrop',
-                  onClick: () => onOpenBackdropLibrary ? onOpenBackdropLibrary() : alert('Backdrop library coming soon!')
-                }
-              ]}
-            />
-          </div>
         </div>
       </div>
     </div>

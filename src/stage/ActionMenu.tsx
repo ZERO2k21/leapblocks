@@ -129,7 +129,8 @@ const styles: { [key: string]: React.CSSProperties } = {
         width: '40px',
         transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        right: '4px', // Align with main button
+        left: '50%',
+        transform: 'translateX(-50%)',
         zIndex: 100,
         gap: '8px'
     },

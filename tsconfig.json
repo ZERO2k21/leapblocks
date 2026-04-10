@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES6",
     "lib": [
-      "ES2022",
+      "ES6",
       "DOM",
       "DOM.Iterable"
     ],
@@ -19,8 +19,6 @@
     "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
-    "experimentalDecorators": true,
-    "useDefineForClassFields": false,
     "paths": {
       "@blockly-runtime": [
         "./src/blockly/runtime.ts"
