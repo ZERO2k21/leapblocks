@@ -17,6 +17,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
   /* ── Card scan ── */
   const startCardScan = () => {
+    // Clear any existing interval to prevent leaks and flickering
+    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+
     setHighlightCards(true);
     setScanIndex(0);
     let i = 0;
@@ -27,8 +30,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   };
 
   const stopCardScan = () => {
-    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
     setScanIndex(-1);
+    setHighlightCards(false);
   };
 
   const handleCardClick = (action: () => void) => {
@@ -624,8 +631,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <button
                   className="btn-adventure"
                   onClick={() => {
-                    startCardScan();
-                    document.querySelector('.cards-wrap')?.scrollIntoView({ behavior: 'smooth' });
+                    if (highlightCards) {
+                      stopCardScan();
+                    } else {
+                      startCardScan();
+                      document.querySelector('.cards-wrap')?.scrollIntoView({ behavior: 'smooth' });
+                    }
                   }}
                 >
                   Choose your adventure
