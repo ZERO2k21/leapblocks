@@ -1,5 +1,5 @@
-// ═══════════════════════════════════════════════════════════════════════════
-// SPRITE - Core animation entity
+import { STAGE_CONFIG } from '../engine/StageConfig';
+
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface Costume {
@@ -131,8 +131,8 @@ export class Sprite {
     // ═══════════════════════════════════════════════════════════════════════
     // STATE MODIFIERS
     // ═══════════════════════════════════════════════════════════════════════
-    setX(x: number) { this.state.x = Math.max(-240, Math.min(240, x)); this.onUpdate(); }
-    setY(y: number) { this.state.y = Math.max(-180, Math.min(180, y)); this.onUpdate(); }
+    setX(x: number) { this.state.x = Math.max(STAGE_CONFIG.MIN_X, Math.min(STAGE_CONFIG.MAX_X, x)); this.onUpdate(); }
+    setY(y: number) { this.state.y = Math.max(STAGE_CONFIG.MIN_Y, Math.min(STAGE_CONFIG.MAX_Y, y)); this.onUpdate(); }
 
     pointInDirection(degrees: number) {
         this.state.direction = degrees % 360;
@@ -363,7 +363,7 @@ export class Sprite {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-// LOOKS - Say / Think / Bubble System
+    // LOOKS - Say / Think / Bubble System
 // ═══════════════════════════════════════════════════════════════════════
 
     say(text: string, secs?: number): void {
@@ -457,11 +457,11 @@ export class Sprite {
         const margin = 20;
         let bounced = false;
 
-        if (this.state.x >= 240 - margin || this.state.x <= -240 + margin) {
+        if (this.state.x >= STAGE_CONFIG.MAX_X - margin || this.state.x <= STAGE_CONFIG.MIN_X + margin) {
             this.state.direction = (180 - this.state.direction + 360) % 360;
             bounced = true;
         }
-        if (this.state.y >= 180 - margin || this.state.y <= -180 + margin) {
+        if (this.state.y >= STAGE_CONFIG.MAX_Y - margin || this.state.y <= STAGE_CONFIG.MIN_Y + margin) {
             this.state.direction = (360 - this.state.direction) % 360;
             bounced = true;
         }
