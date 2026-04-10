@@ -41,11 +41,13 @@ export class AnimationCompiler {
                 const object = conditionBlock.getFieldValue('OBJECT');
                 return () => animationVM.isTouching(object, this.spriteId);
             }
-            case 'sensing_touching_color': {
+            case 'sensing_touching_color':
+            case 'sensing_touchingcolor': {
                 const color = conditionBlock.getFieldValue('COLOR');
                 return () => animationVM.isTouchingColor(color, this.spriteId);
             }
-            case 'sensing_color_touching_color': {
+            case 'sensing_color_touching_color':
+            case 'sensing_coloristouchingcolor': {
                 const color1 = conditionBlock.getFieldValue('COLOR1');
                 const color2 = conditionBlock.getFieldValue('COLOR2');
                 return () => animationVM.isColorTouchingColor(color1, color2, this.spriteId);
@@ -221,7 +223,8 @@ export class AnimationCompiler {
                 const textVal = String(valueBlock.getFieldValue('TEXT') ?? '');
                 return () => textVal;
             }
-            case 'math_number': {
+            case 'math_number':
+            case 'arduino_number': {
                 const numVal = String(valueBlock.getFieldValue('NUM') ?? '0');
                 return () => numVal;
             }
@@ -347,7 +350,8 @@ export class AnimationCompiler {
                     return isNaN(num) ? 0 : num;
                 };
             }
-            case 'math_number': {
+            case 'math_number':
+            case 'arduino_number': {
                 const val = valueBlock.getFieldValue('NUM');
                 const numVal = val !== null ? Number(val) : 0;
                 return () => numVal;

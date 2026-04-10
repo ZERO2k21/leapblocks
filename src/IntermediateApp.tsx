@@ -1733,21 +1733,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         // Animation block interaction on click
 
         if (event.type === Blockly.Events.CLICK) {
-            // Use leapRuntime for Scratch blocks
+            // Use AnimationVM compiler for Scratch blocks (supports operators, variables, etc.)
             if (!block.type.startsWith('arduino_')) {
-                console.log(`[APP] Running stack with leapRuntime for sprite ${selectedSpriteId}`);
+                console.log(`[APP] Running stack with AnimationVM for sprite ${selectedSpriteId}`);
                 setIsRunning(true);
 
                 // Ensure the current sprite workspace is saved and all sprite workspaces are loaded
                 saveCurrentSpriteWorkspace();
                 syncAllWorkspaces(); // Sync everything to the VM so broadcasts work across sprites
-                leapRuntime.loadProject(spriteWorkspacesRef.current);
 
-                // Convert Blockly block to Scratch-like structure
-                const scratchBlock = (leapRuntime as any).flattenBlock(Blockly.serialization.blocks.save(block));
-                if (scratchBlock) {
-                    leapRuntime.stopAll(); // Optional: stop others?
-                    leapRuntime.executeBlock(scratchBlock, selectedSpriteId || '');
+                // Compile and execute via AnimationVM for correct operator/variable handling
+                const compiler = new AnimationCompiler(selectedSpriteId || '');
+                const script = compiler.compileStack(block);
+                if (script) {
+                    animationVM.runScript(script);
                     return;
                 }
             }
@@ -2125,7 +2124,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             // Trigger click event even if already selected (Scratch behavior)
 
-            leapRuntime.triggerClick(newId);
+            animationVM.triggerSpriteClick(newId);
             return;
 
         }
@@ -2925,16 +2924,23 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         console.log('[APP] Run button clicked - MULTI-SPRITE MODE');
         addLog('Green flag clicked');
         animationVM.stopAll();
+        leapRuntime.stopAll();
 
         try {
             const allScripts = syncAllWorkspaces();
             if (allScripts.length > 0 || spriteWorkspacesRef.current.size > 0) {
                 setCompiledScripts(allScripts);
                 setIsRunning(true);
+                // Load workspace data into leapRuntime for broadcast bridging only
                 leapRuntime.loadProject(spriteWorkspacesRef.current);
-                leapRuntime.triggerFlag();
+                // Only trigger AnimationVM - it has the proper compiler that handles
+                // operators, variables, and all block types correctly.
+                // leapRuntime.triggerFlag() is NOT called because it uses an incomplete
+                // interpreter that doesn't handle math_number/arduino_number shadows,
+                // causing all numeric inputs to resolve to 0. It also writes to a
+                // separate variableStore, creating race conditions with the AnimationVM.
                 animationVM.triggerFlag();
-                addLog(`Started animation with leapRuntime`);
+                addLog(`Started animation`);
             }
         } catch (e) {
             console.error(`[APP] Error during multi-sprite compilation:`, e);
@@ -4305,6 +4311,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 }
                             }
                         });
+                        contents.push({ kind: 'block', type: 'sensing_answer' });
 
                         const sensingReporters = ['answer', 'loudness', 'timer'];
                         sensingReporters.forEach(name => {
@@ -5314,142 +5321,108 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             const SMALL_STAGE_HEIGHT = 160;
                             const SMALL_STAGE_SCALE = 0.5;
 
-                            const SMALL_STAGE_SCALE_INTERNAL = 0.5;
-
 
                             return (
 
                                 <div style={{
-
                                     flex: 1,
-
                                     width: '100%',
-
                                     display: 'flex',
-
+                                    flexDirection: 'column',
                                     alignItems: 'center',
-
-                                    justifyContent: 'center',
-
-                                    position: 'relative'
-
+                                    justifyContent: isFullscreen ? 'flex-start' : 'center',
+                                    position: 'relative',
+                                    transform: isFullscreen ? `scale(${fullscreenScale})` : 'none',
+                                    transformOrigin: isFullscreen ? 'top center' : 'center center',
+                                    padding: isFullscreen ? '10px 0' : '0',
+                                    transition: 'all 0.2s ease-in-out',
                                 }}>
-
+                                    {/* Stage Unit */}
                                     <div style={{
-
-                                        width: isFullscreen ? '100vw' : (stageLayout === 'small' ? `${SMALL_STAGE_WIDTH}px` : `${LARGE_STAGE_WIDTH}px`),
-
-                                        height: isFullscreen ? '100vh' : (stageLayout === 'small' ? `${SMALL_STAGE_HEIGHT}px` : `${LARGE_STAGE_HEIGHT}px`),
-
-                                        display: 'flex',
-
-                                        alignItems: 'center',
-
-                                        justifyContent: 'center',
-
-                                        position: 'relative'
-
+                                        width: `${CANVAS_WIDTH}px`,
+                                        height: `${CANVAS_HEIGHT}px`,
+                                        background: 'transparent',
+                                        boxShadow: isFullscreen ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' : 'none',
+                                        borderRadius: isFullscreen ? '10px' : '0',
+                                        overflow: 'visible',
+                                        position: 'relative',
+                                        flex: '0 0 auto',
                                     }}>
+                                        <Stage
 
-                                        <div style={{
+                                            width={CANVAS_WIDTH}
 
-                                            transform: isFullscreen ? `scale(${fullscreenScale})` : (stageLayout === 'small' ? `scale(${SMALL_STAGE_SCALE_INTERNAL})` : `scale(${LARGE_STAGE_SCALE})`),
+                                            height={CANVAS_HEIGHT}
 
-                                            transformOrigin: 'center center',
+                                            sprites={sprites}
 
-                                            width: `${CANVAS_WIDTH}px`,
+                                            isRunning={isRunning}
 
-                                            height: `${CANVAS_HEIGHT}px`,
+                                            showGridNumbers={showGrid}
 
-                                            background: 'transparent',
+                                            onSpriteSelect={handleSpriteSelect}
 
-                                            boxShadow: isFullscreen ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' : 'none',
+                                            onSpriteClick={handleSpriteClick}
 
-                                            borderRadius: isFullscreen ? '10px' : '0',
+                                            isCameraOn={isCameraOn}
 
-                                            overflow: 'visible'
+                                            variableMonitors={variableMonitors}
 
-                                        }}>
+                                            listMonitors={listMonitors}
 
-                                            <Stage
+                                            tableMonitors={tableMonitors}
 
-                                                width={CANVAS_WIDTH}
+                                            selectedSpriteId={selectedSpriteId}
 
-                                                height={CANVAS_HEIGHT}
+                                            onMonitorPositionChange={handleMonitorPositionChange}
 
-                                                sprites={sprites}
+                                            onMonitorResize={handleMonitorResize}
 
-                                                isRunning={isRunning}
+                                            onMonitorBringToFront={handleMonitorBringToFront}
 
-                                                showGridNumbers={showGrid}
+                                            onVariableModeChange={handleVariableModeChange}
 
-                                                onSpriteSelect={handleSpriteSelect}
+                                            onVariableValueChange={handleVariableValueChange}
 
-                                                onSpriteClick={handleSpriteClick}
+                                            onVariableSliderRangeChange={handleVariableSliderRangeChange}
 
-                                                isCameraOn={isCameraOn}
+                                        />
 
-                                                variableMonitors={variableMonitors}
-
-                                                listMonitors={listMonitors}
-
-                                                tableMonitors={tableMonitors}
-
-                                                selectedSpriteId={selectedSpriteId}
-
-                                                onMonitorPositionChange={handleMonitorPositionChange}
-
-                                                onMonitorResize={handleMonitorResize}
-
-                                                onMonitorBringToFront={handleMonitorBringToFront}
-
-                                                onVariableModeChange={handleVariableModeChange}
-
-                                                onVariableValueChange={handleVariableValueChange}
-
-                                                onVariableSliderRangeChange={handleVariableSliderRangeChange}
-
-                                            />
-
-                                            {/* Ask-and-wait input overlay */}
-                                            {askState.isAsking && (
-                                                <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', zIndex: 100 }}>
-                                                    <AskBar question={askState.question} onSubmit={handleAskSubmit} />
-                                                </div>
-                                            )}
-
-                                        </div>
-
-                                        {/* Sprite & Stage Panel Unit */}
-                                        {(editorMode === 'stage' || isFullscreen) && (
-                                            <div style={{
-                                                ...styles.assetsContainer,
-                                                width: `${CANVAS_WIDTH}px`, // Match exactly
-                                                flex: '0 0 auto',
-                                                marginTop: '8px',
-                                                display: 'flex',
-                                                justifyContent: 'center',
-                                                alignItems: 'flex-start',
-                                                overflow: 'visible',
-                                            }}>
-                                                <SpritePanel
-                                                    sprites={sprites}
-                                                    selectedSpriteId={selectedSpriteId}
-                                                    onSelectSprite={handleSpriteSelect}
-                                                    onAddSprite={addSprite}
-                                                    onDeleteSprite={deleteSprite}
-                                                    onRemoveBackground={handleRemoveBackground}
-                                                    onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
-                                                    onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
-                                                    stageManager={stageManager}
-                                                    backdropVersion={backdropRefresh}
-                                                    isFullscreen={isFullscreen}
-                                                />
+                                        {/* Ask-and-wait input overlay */}
+                                        {askState.isAsking && (
+                                            <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', zIndex: 100 }}>
+                                                <AskBar question={askState.question} onSubmit={handleAskSubmit} />
                                             </div>
                                         )}
-
                                     </div>
 
+                                    {/* Sprite & Stage Panel Unit */}
+                                    {(editorMode === 'stage' || isFullscreen) && (
+                                        <div style={{
+                                            ...styles.assetsContainer,
+                                            width: `${CANVAS_WIDTH}px`,
+                                            flex: '0 0 auto',
+                                            marginTop: '8px',
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            alignItems: 'flex-start',
+                                            overflow: 'visible',
+                                        }}>
+                                            <SpritePanel
+                                                sprites={sprites}
+                                                selectedSpriteId={selectedSpriteId}
+                                                onSelectSprite={handleSpriteSelect}
+                                                onAddSprite={addSprite}
+                                                onDeleteSprite={deleteSprite}
+                                                onRemoveBackground={handleRemoveBackground}
+                                                onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
+                                                onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
+                                                stageManager={stageManager}
+                                                backdropVersion={backdropRefresh}
+                                                isFullscreen={isFullscreen}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
 
                             );

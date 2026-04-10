@@ -1733,13 +1733,122 @@ export class AnimationVM {
         return false;
     }
 
+    /**
+     * Parse a CSS color string (#rrggbb or #rgb) into [r, g, b].
+     */
+    private parseColor(color: string): [number, number, number] {
+        let hex = color.replace('#', '');
+        if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+        return [
+            parseInt(hex.substring(0, 2), 16),
+            parseInt(hex.substring(2, 4), 16),
+            parseInt(hex.substring(4, 6), 16),
+        ];
+    }
+
+    /**
+     * Check if an [r,g,b] pixel matches a target color within tolerance.
+     */
+    private colorMatches(r: number, g: number, b: number, target: [number, number, number], tolerance = 30): boolean {
+        return Math.abs(r - target[0]) <= tolerance &&
+               Math.abs(g - target[1]) <= tolerance &&
+               Math.abs(b - target[2]) <= tolerance;
+    }
+
+    /**
+     * Render a single sprite onto a fresh offscreen canvas and return its ImageData.
+     */
+    private renderSpriteToImageData(sprite: Sprite): ImageData | null {
+        const w = STAGE_CONFIG.WIDTH;
+        const h = STAGE_CONFIG.HEIGHT;
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+        sprite.render(ctx, w, h);
+        return ctx.getImageData(0, 0, w, h);
+    }
+
+    /**
+     * Render the stage background (backdrop + all sprites except the given one) onto an offscreen canvas.
+     */
+    private renderStageWithout(excludeSpriteId: string): ImageData | null {
+        const w = STAGE_CONFIG.WIDTH;
+        const h = STAGE_CONFIG.HEIGHT;
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+
+        // Draw backdrop
+        const backdrop = stageManager.currentBackdrop;
+        if (backdrop && backdrop.image) {
+            ctx.drawImage(backdrop.image, 0, 0, w, h);
+        } else {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, w, h);
+        }
+
+        // Draw all other visible sprites
+        const allSprites = spriteManager.getAllSprites();
+        for (const s of allSprites) {
+            if (s.id !== excludeSpriteId && s.visible) {
+                s.render(ctx, w, h);
+            }
+        }
+
+        return ctx.getImageData(0, 0, w, h);
+    }
+
     isTouchingColor(color: string, fromSpriteId: string): boolean {
-        // TODO: Implement color collision
+        const sprite = spriteManager.getSprite(fromSpriteId);
+        if (!sprite || !sprite.visible) return false;
+
+        const target = this.parseColor(color);
+        const spriteData = this.renderSpriteToImageData(sprite);
+        const stageData = this.renderStageWithout(fromSpriteId);
+        if (!spriteData || !stageData) return false;
+
+        const pixels = spriteData.data;
+        const stagePixels = stageData.data;
+        const len = pixels.length;
+
+        // For every non-transparent pixel of the sprite, check if the stage pixel at that position matches the target color
+        for (let i = 0; i < len; i += 4) {
+            if (pixels[i + 3] > 0) { // sprite pixel is non-transparent
+                if (this.colorMatches(stagePixels[i], stagePixels[i + 1], stagePixels[i + 2], target)) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
     isColorTouchingColor(color1: string, color2: string, fromSpriteId: string): boolean {
-        // TODO: Implement color-color collision
+        const sprite = spriteManager.getSprite(fromSpriteId);
+        if (!sprite || !sprite.visible) return false;
+
+        const target1 = this.parseColor(color1);
+        const target2 = this.parseColor(color2);
+        const spriteData = this.renderSpriteToImageData(sprite);
+        const stageData = this.renderStageWithout(fromSpriteId);
+        if (!spriteData || !stageData) return false;
+
+        const pixels = spriteData.data;
+        const stagePixels = stageData.data;
+        const len = pixels.length;
+
+        // For every pixel where the sprite has color1 and the stage has color2, return true
+        for (let i = 0; i < len; i += 4) {
+            if (pixels[i + 3] > 0 &&
+                this.colorMatches(pixels[i], pixels[i + 1], pixels[i + 2], target1)) {
+                if (this.colorMatches(stagePixels[i], stagePixels[i + 1], stagePixels[i + 2], target2)) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
