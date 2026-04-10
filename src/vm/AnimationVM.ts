@@ -1023,6 +1023,9 @@ export class AnimationVM {
                 vmLog.step(`Executing Say "${message}" for ${secs} seconds`);
                 sprite.say(message, secs);
                 await this.sleep(secs * 1000, signal);
+                if (!signal.aborted && sprite.sayText === message) {
+                    sprite.clearSay();
+                }
                 break;
             }
 
@@ -1064,10 +1067,14 @@ export class AnimationVM {
                 break;
 
             case 'think_for_secs': {
-                const message = typeof step.message === 'function' ? step.message() : step.message;
+                const rawMessage = typeof step.message === 'function' ? step.message() : step.message;
+                const message = rawMessage === null || rawMessage === undefined ? '' : String(rawMessage);
                 const secs = typeof step.secs === 'function' ? step.secs() : step.secs;
                 sprite.think(message, secs);
                 await this.sleep(secs * 1000, signal);
+                if (!signal.aborted && sprite.thinkText === message) {
+                    sprite.clearThink();
+                }
                 break;
             }
 

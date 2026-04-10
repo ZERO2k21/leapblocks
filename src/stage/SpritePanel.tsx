@@ -306,57 +306,12 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                     )}
                   </div>
                   <div
-                    key={sprite.id}
                     style={{
-                      ...styles.spriteItem,
-                      ...(isSelected ? styles.spriteItemSelected : {}),
+                      ...styles.spriteName,
+                      ...(isSelected ? styles.spriteNameSelected : {}),
                     }}
-                    onClick={() => onSelectSprite(sprite.id)}
                   >
-                    {isSelected && (
-                      <button
-                        style={styles.deleteButton}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteSprite(sprite.id);
-                        }}
-                        title="Delete"
-                      >
-                        🗑️
-                      </button>
-                    )}
-                    
-                    {cloneCount > 0 && (
-                      <div style={styles.cloneBadge} title={`${cloneCount} clones active`}>
-                        {cloneCount}
-                      </div>
-                    )}
-
-                    <div style={styles.spriteThumbnail}>
-                      {sprite.currentCostume ? (
-                        <img
-                          src={sprite.currentCostume.image.src}
-                          alt={sprite.name}
-                          style={{
-                            maxWidth: "40px",
-                            maxHeight: "40px",
-                            objectFit: "contain",
-                          }}
-                        />
-                      ) : (
-                        <div style={{ fontSize: "32px" }}>
-                          {getSpriteEmoji(sprite)}
-                        </div>
-                      )}
-                    </div>
-                    <div
-                      style={{
-                        ...styles.spriteName,
-                        ...(isSelected ? styles.spriteNameSelected : {}),
-                      }}
-                    >
-                      {sprite.name}
-                    </div>
+                    {sprite.name}
                   </div>
                 </div>
               );

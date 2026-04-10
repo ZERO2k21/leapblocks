@@ -5316,8 +5316,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             const SMALL_STAGE_SCALE_INTERNAL = 0.5;
 
-                            const SMALL_STAGE_SCALE_INTERNAL = 0.5;
-
 
                             return (
 
@@ -5449,7 +5447,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                                     />
                                                 </div>
                                             )}
-                                        </div>
 
                                     </div>
 
