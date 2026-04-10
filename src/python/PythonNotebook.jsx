@@ -102,7 +102,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
         x: 0, y: 0, angle: 90, size: 100, visible: true,
         speech: '', currentCostume: 'default',
         costumes: {
-            default: "/assets/sprites/robot/robot_idle.svg",
+            default: "assets/sprites/robot/robot_idle.svg",
         },
     }]);
     const [stageSize] = useState({ w: 300, h: 240 });

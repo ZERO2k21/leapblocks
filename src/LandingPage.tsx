@@ -112,7 +112,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
       }
 
       try {
-        const response = await fetch('/assets/robot.lottie');
+        const response = await fetch('assets/robot.lottie');
         if (!response.ok) throw new Error(`Failed to fetch .lottie (${response.status})`);
         const buffer = await response.arrayBuffer();
         const zip = await JSZip.loadAsync(buffer);
@@ -154,14 +154,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
       {showSplash && (
         <div className="splash-screen">
           <div className="splash-rocket-container">
-            <img src="/assets/sprites/robot/robot_idle.svg" alt="Robot Flow" className="splash-robot-img" />
+            <img src="assets/sprites/robot/robot_idle.svg" alt="Robot Flow" className="splash-robot-img" />
           </div>
           <div className="splash-text-container">
             <div className="splash-text-welcome">Welcome to the</div>
             <div className="splash-text">Leaplab</div>
             <div className="splash-powered-by">
               <span>Powered by</span>
-              <img src="/assets/topbar_logo.svg" alt="LeapLab" />
+              <img src="assets/topbar_logo.svg" alt="LeapLab" />
             </div>
           </div>
         </div>
@@ -637,7 +637,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         <nav>
           <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
             <a href="#" className="nav-brand">
-              <img src="/assets/Final_logo_b.png" alt="LeapLab Logo" className="brand-logo" />
+              <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="brand-logo" />
             </a>
             <div className="nav-links">
               <a href="#" style={{ color: '#0f172a', textDecoration: 'none', fontWeight: 600, fontSize: '0.95rem', transition: 'color 0.2s' }}>Tutorials</a>
@@ -645,7 +645,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             </div>
           </div>
           <div className="nav-actions">
-            <img src="/assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="nav-logo" style={{ height: 'clamp(40px, 5vw, 50px)' }} />
+            <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="nav-logo" style={{ height: 'clamp(40px, 5vw, 50px)' }} />
           </div>
           
         </nav>
@@ -700,7 +700,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               {/* 1 IGNITE */}
               <div className={`tc tc-ignite ${tcClass(0)}`} onClick={() => handleCardClick(() => onSelect('junior'))}>
                 <div className="tc-icon">
-                  <img src="/assets/ignite_icon.png" alt="Ignite Robot" />
+                  <img src="assets/ignite_icon.png" alt="Ignite Robot" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>
@@ -712,7 +712,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               {/* 2 EMBED */}
               <div className={`tc tc-embed ${tcClass(1)}`} onClick={() => handleCardClick(() => onSelect('intermediate'))}>
                 <div className="tc-icon">
-                  <img src="/assets/arduino_icon.png" alt="Circuit Icon" />
+                  <img src="assets/arduino_icon.png" alt="Circuit Icon" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>
@@ -724,7 +724,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               {/* 3 CODEX */}
               <div className={`tc tc-codex ${tcClass(2)}`} onClick={() => handleCardClick(() => onSelect('python'))}>
                 <div className="tc-icon">
-                  <img src="/assets/python_icon.png" alt="Codex Icon" />
+                  <img src="assets/python_icon.png" alt="Codex Icon" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>
@@ -736,7 +736,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               {/* 4 NEURA */}
               <div className={`tc tc-neura ${tcClass(3)}`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Neura'))}>
                 <div className="tc-icon">
-                  <img src="/assets/ml_brain_icon.png" alt="Neura Icon" />
+                  <img src="assets/ml_brain_icon.png" alt="Neura Icon" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>
@@ -748,7 +748,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               {/* 5 ELECTRA */}
               <div className={`tc tc-electra ${tcClass(4)}`} onClick={() => handleCardClick(() => onSelect('leapforge'))}>
                 <div className="tc-icon">
-                  <img src="/assets/creocad_icon.png" alt="Forge Icon" />
+                  <img src="assets/creocad_icon.png" alt="Forge Icon" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>
@@ -760,7 +760,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               {/* 6 VISION3D */}
               <div className={`tc tc-vision3d ${tcClass(5)}`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Vision3D'))}>
                 <div className="tc-icon">
-                  <img src="/assets/vision3d_icon.png" alt="Vision3D Icon" />
+                  <img src="assets/vision3d_icon.png" alt="Vision3D Icon" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>
@@ -772,7 +772,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               {/* 7 STUDIO */}
               <div className={`tc tc-studio ${tcClass(6)}`} onClick={() => handleCardClick(() => onSelect('appforge'))}>
                 <div className="tc-icon">
-                  <img src="/assets/app_game_dev_icon.png" alt="Studio Icon" />
+                  <img src="assets/app_game_dev_icon.png" alt="Studio Icon" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>
@@ -784,7 +784,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               {/* 8 PULSE */}
               <div className={`tc tc-pulse ${tcClass(7)}`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Quiz'))}>
                 <div className="tc-icon">
-                  <img src="/assets/quiz_icon.png" alt="Quiz Icon" />
+                  <img src="assets/quiz_icon.png" alt="Quiz Icon" />
                 </div>
                 <div>
                   <div className="tc-cat">Leaplab</div>

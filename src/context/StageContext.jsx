@@ -37,10 +37,10 @@ const DEFAULT_SPRITES = [
         visible: true,
         currentCostume: 'default',
         costumes: {
-            default: "/assets/sprites/robot/robot_idle.svg",
-            wave1: "/assets/sprites/robot/robot_wave1.svg",
-            wave2: "/assets/sprites/robot/robot_wave2.svg",
-            talk: "/assets/sprites/robot/robot_talk1.svg"
+            default: "assets/sprites/robot/robot_idle.svg",
+            wave1: "assets/sprites/robot/robot_wave1.svg",
+            wave2: "assets/sprites/robot/robot_wave2.svg",
+            talk: "assets/sprites/robot/robot_talk1.svg"
         },
         sounds: [],
         speech: '',
@@ -62,26 +62,26 @@ export const SPRITE_PRESETS = {
         name: 'Robot',
         type: 'robot',
         costumes: {
-            default: "/assets/sprites/robot/robot_idle.svg",
-            wave1: "/assets/sprites/robot/robot_wave1.svg",
-            wave2: "/assets/sprites/robot/robot_wave2.svg",
-            talk: "/assets/sprites/robot/robot_talk1.svg"
+            default: "assets/sprites/robot/robot_idle.svg",
+            wave1: "assets/sprites/robot/robot_wave1.svg",
+            wave2: "assets/sprites/robot/robot_wave2.svg",
+            talk: "assets/sprites/robot/robot_talk1.svg"
         }
     },
     cat: {
         name: 'Cat',
         type: 'cat',
         costumes: {
-            default: "/assets/sprites/cat/cat_idle.svg",
-            walk1: "/assets/sprites/cat/cat_walk1.svg",
-            walk2: "/assets/sprites/cat/cat_walk2.svg"
+            default: "assets/sprites/cat/cat_idle.svg",
+            walk1: "assets/sprites/cat/cat_walk1.svg",
+            walk2: "assets/sprites/cat/cat_walk2.svg"
         }
     },
     ball: {
         name: 'Ball',
         type: 'ball',
         costumes: {
-            default: "/assets/sprites/ball/ball.svg"
+            default: "assets/sprites/ball/ball.svg"
         }
     },
     abby: {
@@ -119,10 +119,10 @@ export function StageProvider({ children }) {
     // Backdrop library
     const [backdropLibrary] = useState([
         { name: 'Blank', img: null },
-        { name: 'Blue Sky', img: '/assets/backdrops/blue_sky.svg' },
-        { name: 'City', img: '/assets/backdrops/city.svg' },
-        { name: 'Forest', img: '/assets/backdrops/forest.svg' },
-        { name: 'Space', img: '/assets/backdrops/space.svg' }
+        { name: 'Blue Sky', img: 'assets/backdrops/blue_sky.svg' },
+        { name: 'City', img: 'assets/backdrops/city.svg' },
+        { name: 'Forest', img: 'assets/backdrops/forest.svg' },
+        { name: 'Space', img: 'assets/backdrops/space.svg' }
     ]);
 
     // ─── Sprite Actions ─────────────────────────────────────────────────────

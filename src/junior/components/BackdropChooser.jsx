@@ -4,15 +4,15 @@ import { scratchBackdrops } from '../../components/generated_scratch_backdrops';
 
 // Pre-built backdrops available in the library
 const PRESET_BACKDROPS = [
-    { id: 'maze', name: 'Maze', src: '/assets/backdrops/maze.svg', color: '#FFD54F' },
-    { id: 'park', name: 'Park', src: '/assets/backdrops/park.svg', color: '#66BB6A' },
-    { id: 'underwater', name: 'Underwater', src: '/assets/backdrops/underwater.svg', color: '#0288D1' },
-    { id: 'space', name: 'Space', src: '/assets/backdrops/space_bg.svg', color: '#1A237E' },
-    { id: 'city', name: 'City', src: '/assets/backdrops/city.svg', color: '#607D8B' },
-    { id: 'arctic', name: 'Arctic', src: '/assets/backdrops/Artic.png', color: '#E0F7FA' },
-    { id: 'beach', name: 'Beach', src: '/assets/backdrops/Beach.png', color: '#FFF9C4' },
-    { id: 'castle', name: 'Castle', src: '/assets/backdrops/Castle.png', color: '#E1BEE7' },
-    { id: 'space_photo', name: 'Galaxy', src: '/assets/backdrops/Space.png', color: '#0D0D2B' },
+    { id: 'maze', name: 'Maze', src: 'assets/backdrops/maze.svg', color: '#FFD54F' },
+    { id: 'park', name: 'Park', src: 'assets/backdrops/park.svg', color: '#66BB6A' },
+    { id: 'underwater', name: 'Underwater', src: 'assets/backdrops/underwater.svg', color: '#0288D1' },
+    { id: 'space', name: 'Space', src: 'assets/backdrops/space_bg.svg', color: '#1A237E' },
+    { id: 'city', name: 'City', src: 'assets/backdrops/city.svg', color: '#607D8B' },
+    { id: 'arctic', name: 'Arctic', src: 'assets/backdrops/Artic.png', color: '#E0F7FA' },
+    { id: 'beach', name: 'Beach', src: 'assets/backdrops/Beach.png', color: '#FFF9C4' },
+    { id: 'castle', name: 'Castle', src: 'assets/backdrops/Castle.png', color: '#E1BEE7' },
+    { id: 'space_photo', name: 'Galaxy', src: 'assets/backdrops/Space.png', color: '#0D0D2B' },
 ];
 
 const mappedScratchBackdrops = scratchBackdrops.map(bg => ({

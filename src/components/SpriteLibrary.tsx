@@ -18,12 +18,12 @@ const LEAPBLOCKS_SPRITES: SpriteEntry[] = [
         id: 'robot',
         name: 'Robot',
         emoji: '🤖',
-        image: '/assets/sprites/robot/robot_idle.svg',
+        image: 'assets/sprites/robot/robot_idle.svg',
         costumes: [
-            '/assets/sprites/robot/robot_idle.svg',
-            '/assets/sprites/robot/image-Photoroom.png',
-            '/assets/sprites/robot/image-removebg-preview (1).png',
-            '/assets/sprites/robot/image-removebg-preview.png'
+            'assets/sprites/robot/robot_idle.svg',
+            'assets/sprites/robot/image-Photoroom.png',
+            'assets/sprites/robot/image-removebg-preview (1).png',
+            'assets/sprites/robot/image-removebg-preview.png'
         ],
         category: 'Fantasy'
     }

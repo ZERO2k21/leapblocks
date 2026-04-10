@@ -20,15 +20,15 @@ const CATEGORIES = [
 // In a full implementation, this would be loaded from a manifest
 const DEFAULT_COSTUMES = [
     // Robot sprites
-    { name: 'Robot Idle', src: '/assets/sprites/robot/robot_idle.svg', category: 'Fantasy' },
-    { name: 'Robot Talk 1', src: '/assets/sprites/robot/image-removebg-preview.png', category: 'Fantasy' },
-    { name: 'Robot Talk 2', src: '/assets/sprites/robot/robot_talk1.svg', category: 'Fantasy' },
-    { name: 'Robot Wave 1', src: '/assets/sprites/robot/image-removebg-preview (1).png', category: 'Fantasy' },
-    { name: 'Robot Wave 2', src: '/assets/sprites/robot/robot_wave1.svg', category: 'Fantasy' },
-    { name: 'Robot Wave 3', src: '/assets/sprites/robot/image-Photoroom.png', category: 'Fantasy' },
-    { name: 'Robot Wave 4', src: '/assets/sprites/robot/robot_wave2.svg', category: 'Fantasy' },
+    { name: 'Robot Idle', src: 'assets/sprites/robot/robot_idle.svg', category: 'Fantasy' },
+    { name: 'Robot Talk 1', src: 'assets/sprites/robot/image-removebg-preview.png', category: 'Fantasy' },
+    { name: 'Robot Talk 2', src: 'assets/sprites/robot/robot_talk1.svg', category: 'Fantasy' },
+    { name: 'Robot Wave 1', src: 'assets/sprites/robot/image-removebg-preview (1).png', category: 'Fantasy' },
+    { name: 'Robot Wave 2', src: 'assets/sprites/robot/robot_wave1.svg', category: 'Fantasy' },
+    { name: 'Robot Wave 3', src: 'assets/sprites/robot/image-Photoroom.png', category: 'Fantasy' },
+    { name: 'Robot Wave 4', src: 'assets/sprites/robot/robot_wave2.svg', category: 'Fantasy' },
     // Scratch default cat (if available)
-    { name: 'Cat', src: '/assets/sprites/scratch/cat.svg', category: 'Animals' },
+    { name: 'Cat', src: 'assets/sprites/scratch/cat.svg', category: 'Animals' },
     // Add more as needed
 ];
 

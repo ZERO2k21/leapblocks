@@ -56,10 +56,10 @@ export function useJuniorProject({
             mirrored: false,
             speech: null,
             costumes: {
-                default: "/assets/sprites/robot/robot_idle.svg",
-                wave1: "/assets/sprites/robot/robot_wave1.svg",
-                wave2: "/assets/sprites/robot/robot_wave2.svg",
-                talk: "/assets/sprites/robot/robot_talk1.svg"
+                default: "assets/sprites/robot/robot_idle.svg",
+                wave1: "assets/sprites/robot/robot_wave1.svg",
+                wave2: "assets/sprites/robot/robot_wave2.svg",
+                talk: "assets/sprites/robot/robot_talk1.svg"
             },
             currentCostume: "default",
             blocks: {}

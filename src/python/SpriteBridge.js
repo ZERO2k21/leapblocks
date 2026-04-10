@@ -477,26 +477,26 @@ export const getDefaultSpritePresets = () => {
                 name: 'Robot',
                 type: 'robot',
                 costumes: {
-                    default: "/assets/sprites/robot/robot_idle.svg",
-                    wave1: "/assets/sprites/robot/robot_wave1.svg",
-                    wave2: "/assets/sprites/robot/robot_wave2.svg",
-                    talk: "/assets/sprites/robot/robot_talk1.svg"
+                    default: "assets/sprites/robot/robot_idle.svg",
+                    wave1: "assets/sprites/robot/robot_wave1.svg",
+                    wave2: "assets/sprites/robot/robot_wave2.svg",
+                    talk: "assets/sprites/robot/robot_talk1.svg"
                 }
             },
             cat: {
                 name: 'Cat',
                 type: 'cat',
                 costumes: {
-                    default: "/assets/sprites/cat/cat_idle.svg",
-                    walk1: "/assets/sprites/cat/cat_walk1.svg",
-                    walk2: "/assets/sprites/cat/cat_walk2.svg"
+                    default: "assets/sprites/cat/cat_idle.svg",
+                    walk1: "assets/sprites/cat/cat_walk1.svg",
+                    walk2: "assets/sprites/cat/cat_walk2.svg"
                 }
             },
             ball: {
                 name: 'Ball',
                 type: 'ball',
                 costumes: {
-                    default: "/assets/sprites/ball/ball.svg"
+                    default: "assets/sprites/ball/ball.svg"
                 }
             }
         };
