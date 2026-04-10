@@ -134,12 +134,12 @@ export class AnimationCompiler {
         const ws = block.workspace;
         const variable = ws.getVariableById(id);
         if (variable) return (variable as any).name;
-        
+
         // Fallback: If ID not found, try to get the human-readable text from the field itself.
         // This is critical if the variable was recreated and the block still points to a ghost ID.
         const field = block.getField('VARIABLE') || block.getField('VAR') || block.getField('LIST');
         const nameFallback = field ? field.getText() : id;
-        
+
         compilerLog.warn(`Variable ID not found in workspace: ${id}. Using display text as name: ${nameFallback}`);
         return nameFallback;
     }
