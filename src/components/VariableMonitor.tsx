@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { STAGE_CONFIG } from '../engine/StageConfig';
 
 interface VariableMonitorProps {
     name: string;
@@ -29,8 +30,8 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
     mode = 'normal',
     sliderMin = 0,
     sliderMax = 100,
-    stageWidth = 480,
-    stageHeight = 360,
+    stageWidth = STAGE_CONFIG.WIDTH,
+    stageHeight = STAGE_CONFIG.HEIGHT,
     onPositionChange,
     onPointerDown,
     onModeChange,

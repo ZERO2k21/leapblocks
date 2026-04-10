@@ -126,10 +126,11 @@ const styles: { [key: string]: React.CSSProperties } = {
         alignItems: 'center',
         padding: '10px 0',
         borderRadius: '24px',
-        width: '40px',
+        width: '36px',
         transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        right: '4px', // Align with main button
+        left: '50%',
+        transform: 'translateX(-50%)',
         zIndex: 100,
         gap: '8px'
     },
@@ -140,8 +141,8 @@ const styles: { [key: string]: React.CSSProperties } = {
         justifyContent: 'center',
     },
     menuButton: {
-        width: '32px',
-        height: '32px',
+        width: '28px',
+        height: '28px',
         borderRadius: '50%',
         backgroundColor: 'transparent',
         border: 'none',
@@ -156,12 +157,12 @@ const styles: { [key: string]: React.CSSProperties } = {
         position: 'relative',
         display: 'flex',
         justifyContent: 'flex-end',
-        width: '36px',
-        height: '36px',
+        width: '34px',
+        height: '34px',
     },
     mainButton: {
-        width: '36px',
-        height: '36px',
+        width: '34px',
+        height: '34px',
         borderRadius: '50%',
         color: 'white',
         border: '2px solid white',
@@ -183,7 +184,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     mainTooltip: {
         position: 'absolute',
-        right: '55px', // Will animate to 65px via CSS
+        right: '48px', // Will animate to 58px via CSS
         top: '50%',
         transform: 'translateY(-50%)',
         backgroundColor: '#855CD6',
@@ -201,7 +202,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     actionTooltip: {
         position: 'absolute',
-        right: '35px', // Will animate to 45px via CSS
+        right: '28px', // Will animate to 38px via CSS
         top: '50%',
         transform: 'translateY(-50%)',
         backgroundColor: '#855CD6',

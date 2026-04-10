@@ -182,6 +182,42 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ─── TOPBAR GRADIENT LINE ─── */
+.topbar-gradient-line {
+  width: 100%;
+  position: relative;
+  z-index: 150;
+}
+
+.topbar-gradient-line .line-primary {
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    #F97316 0%,
+    #14B8A6 20%,
+    #3B82F6 40%,
+    #A855F7 60%,
+    #22C55E 80%,
+    #EC4899 100%
+  );
+}
+
+.topbar-gradient-line .line-secondary {
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(249,115,22,0.5),
+    rgba(20,184,166,0.5),
+    rgba(59,130,246,0.5),
+    rgba(168,85,247,0.5),
+    rgba(34,197,94,0.5),
+    rgba(236,72,153,0.5)
+  );
+  opacity: 0.6;
+}
+
 /* ─── SPLASH SCREEN ─── */
 .splash-screen {
   position: fixed; inset: 0; z-index: 9999;
@@ -611,8 +647,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           <div className="nav-actions">
             <img src="/assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="nav-logo" style={{ height: 'clamp(40px, 5vw, 50px)' }} />
           </div>
+          
         </nav>
 
+        {/* Gradient Divider Line */}
+        <div className="topbar-gradient-line">
+          <div className="line-primary"></div>
+          <div className="line-secondary"></div>
+        </div>
         <div className="page">
 
           {/* HERO */}

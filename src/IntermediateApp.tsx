@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { STAGE_CONFIG } from './engine/StageConfig';
 
 import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
 
@@ -538,13 +539,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         const updateScale = () => {
 
             if (document.fullscreenElement) {
+                // Account for the entire workspace height (Stage + Sprite Panel + Spacing)
+                // Stage: 310, Panel: ~410, Spacing: 30, Toolbar: 60
+                const TOTAL_WORKSPACE_HEIGHT = 750;
+                const TOTAL_WORKSPACE_WIDTH = 450;
+                
+                const toolbarHeight = 60;
+                const availableHeight = window.innerHeight - toolbarHeight;
+                
+                const scaleX = window.innerWidth / TOTAL_WORKSPACE_WIDTH;
+                const scaleY = availableHeight / TOTAL_WORKSPACE_HEIGHT;
 
-                const scaleX = window.innerWidth / 480;
-
-                const scaleY = window.innerHeight / 360;
-
-                setFullscreenScale(Math.min(scaleX, scaleY));
-
+                setFullscreenScale(Math.min(scaleX, scaleY)); // Removed 1.5x cap for full responsiveness
             } else {
 
                 setFullscreenScale(1);
@@ -5190,8 +5196,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 <div style={{
 
                     ...styles.rightPanel,
-
-                    width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '256px' : (stageLayout === 'large' ? '616px' : '496px')),
+                    width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '256px' : '496px'),
 
                     transition: 'width 0.2s ease-in-out',
 
@@ -5200,16 +5205,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {/* Stage Container - Always rendered, conditionally visible to keep ref valid */}
                     <div ref={stageContainerRef} style={{
                         ...(!isFullscreen ? styles.stageContainer : {}),
-                        width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '240px' : (stageLayout === 'large' ? '600px' : '480px')),
-                        height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '180px' : (stageLayout === 'large' ? '380px' : '360px')),
+                        width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '225px' : '450px'),
+                        height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '155px' : (editorMode === 'stage' ? 'auto' : '310px')),
                         transition: 'all 0.2s ease-in-out',
                         position: isFullscreen ? 'fixed' : 'relative',
                         top: isFullscreen ? 0 : 'auto', left: isFullscreen ? 0 : 'auto',
                         zIndex: isFullscreen ? 9999 : 1,
                         display: (editorMode === 'stage' || isFullscreen) ? 'flex' : 'none',
                         flexDirection: 'column',
-                        background: isFullscreen ? '#09090b' : '#fff',
-                        overflow: 'hidden'
+                        alignItems: isFullscreen ? 'center' : 'stretch',
+                        justifyContent: isFullscreen ? 'flex-start' : 'flex-start',
+                        background: isFullscreen ? '#0c0c0e' : 'transparent',
+                        overflowX: 'hidden',
+                        overflowY: 'hidden',
+                        gap: isFullscreen ? '0' : '8px',
                     }}>
 
                                 {/* Fullscreen Toolbar - Premium Dark/Glass */}
@@ -5352,11 +5361,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                                     // 3. Small Stage Mode Settings
-
-                                    const SMALL_STAGE_WIDTH = 300;
-
-                                    const SMALL_STAGE_HEIGHT = 180;
-
+                                    const SMALL_STAGE_WIDTH = 250;
+                                    const SMALL_STAGE_HEIGHT = 160;
                                     const SMALL_STAGE_SCALE = 0.5;
 
 
@@ -5364,108 +5370,83 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     return (
 
                                         <div style={{
-
                                             flex: 1,
-
                                             width: '100%',
-
                                             display: 'flex',
-
+                                            flexDirection: 'column',
                                             alignItems: 'center',
-
-                                            justifyContent: 'center',
-
-                                            position: 'relative'
-
+                                            justifyContent: isFullscreen ? 'flex-start' : 'center',
+                                            position: 'relative',
+                                            transform: isFullscreen ? `scale(${fullscreenScale})` : 'none',
+                                            transformOrigin: isFullscreen ? 'top center' : 'center center',
+                                            padding: isFullscreen ? '10px 0' : '0',
+                                            transition: 'all 0.2s ease-in-out',
                                         }}>
-
+                                            {/* Stage Unit */}
                                             <div style={{
-
-                                                width: isFullscreen ? '100vw' : (stageLayout === 'small' ? `${SMALL_STAGE_WIDTH}px` : `${LARGE_STAGE_WIDTH}px`),
-
-                                                height: isFullscreen ? '100vh' : (stageLayout === 'small' ? `${SMALL_STAGE_HEIGHT}px` : `${LARGE_STAGE_HEIGHT}px`),
-
-                                                display: 'flex',
-
-                                                alignItems: 'center',
-
-                                                justifyContent: 'center',
-
-                                                position: 'relative'
-
+                                                width: `${CANVAS_WIDTH}px`,
+                                                height: `${CANVAS_HEIGHT}px`,
+                                                background: 'transparent',
+                                                boxShadow: isFullscreen ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' : 'none',
+                                                borderRadius: isFullscreen ? '10px' : '0',
+                                                overflow: 'visible',
+                                                position: 'relative',
+                                                flex: '0 0 auto',
                                             }}>
-
-                                                <div style={{
-
-                                                    transform: isFullscreen ? `scale(${fullscreenScale})` : (stageLayout === 'small' ? `scale(${SMALL_STAGE_SCALE})` : `scale(${LARGE_STAGE_SCALE})`),
-
-                                                    transformOrigin: 'center center', // Changed from 'Full Screen' to valid CSS
-
-                                                    width: `${CANVAS_WIDTH}px`,
-
-                                                    height: `${CANVAS_HEIGHT}px`,
-
-                                                    background: 'transparent',
-
-                                                    boxShadow: isFullscreen ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' : 'none',
-
-                                                    borderRadius: isFullscreen ? '10px' : '0',
-
-                                                    overflow: 'visible'
-
-                                                }}>
-
-                                                    <Stage
-
-                                                        width={CANVAS_WIDTH}      /* Link to global settings */
-
-                                                        height={CANVAS_HEIGHT}    /* Link to global settings */
-
-                                                        sprites={sprites}
-
-                                                        isRunning={isRunning}
-
-                                                        showGridNumbers={showGrid}
-
-                                                        onSpriteSelect={handleSpriteSelect}
-
-                                                        onSpriteClick={handleSpriteClick}
-
-                                                        isCameraOn={isCameraOn}
-
-                                                        variableMonitors={variableMonitors}
-
-                                                        listMonitors={listMonitors}
-
-                                                        tableMonitors={tableMonitors}
-
-                                                        selectedSpriteId={selectedSpriteId}
-
-                                                        onMonitorPositionChange={handleMonitorPositionChange}
-
-                                                        onMonitorResize={handleMonitorResize}
-
-                                                        onMonitorBringToFront={handleMonitorBringToFront}
-
-                                                        onVariableModeChange={handleVariableModeChange}
-
-                                                        onVariableValueChange={handleVariableValueChange}
-
-                                                        onVariableSliderRangeChange={handleVariableSliderRangeChange}
-
-                                                    />
-
-                                                    {/* Ask-and-wait input overlay */}
-                                                    {askState.isAsking && (
-                                                        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', zIndex: 100 }}>
-                                                            <AskBar question={askState.question} onSubmit={handleAskSubmit} />
-                                                        </div>
-                                                    )}
-
-                                                </div>
-
+                                                <Stage
+                                                    width={CANVAS_WIDTH}
+                                                    height={CANVAS_HEIGHT}
+                                                    sprites={sprites}
+                                                    isRunning={isRunning}
+                                                    showGridNumbers={showGrid}
+                                                    onSpriteSelect={handleSpriteSelect}
+                                                    onSpriteClick={handleSpriteClick}
+                                                    isCameraOn={isCameraOn}
+                                                    variableMonitors={variableMonitors}
+                                                    listMonitors={listMonitors}
+                                                    tableMonitors={tableMonitors}
+                                                    selectedSpriteId={selectedSpriteId}
+                                                    onMonitorPositionChange={handleMonitorPositionChange}
+                                                    onMonitorResize={handleMonitorResize}
+                                                    onMonitorBringToFront={handleMonitorBringToFront}
+                                                    onVariableModeChange={handleVariableModeChange}
+                                                    onVariableValueChange={handleVariableValueChange}
+                                                    onVariableSliderRangeChange={handleVariableSliderRangeChange}
+                                                />
+                                                {askState.isAsking && (
+                                                    <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', zIndex: 100 }}>
+                                                        <AskBar question={askState.question} onSubmit={handleAskSubmit} />
+                                                    </div>
+                                                )}
                                             </div>
 
+                                            {/* Sprite & Stage Panel Unit */}
+                                            {(editorMode === 'stage' || isFullscreen) && (
+                                                <div style={{
+                                                    ...styles.assetsContainer,
+                                                    width: `${CANVAS_WIDTH}px`, // Match exactly
+                                                    flex: '0 0 auto',
+                                                    marginTop: '8px',
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'flex-start',
+                                                    overflow: 'visible',
+                                                }}>
+                                                    <SpritePanel
+                                                        sprites={sprites}
+                                                        selectedSpriteId={selectedSpriteId}
+                                                        onSelectSprite={handleSpriteSelect}
+                                                        onAddSprite={addSprite}
+                                                        onDeleteSprite={deleteSprite}
+                                                        onRemoveBackground={handleRemoveBackground}
+                                                        onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
+                                                        onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
+                                                        stageManager={stageManager}
+                                                        backdropVersion={backdropRefresh}
+                                                        isFullscreen={isFullscreen}
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
 
                                     );
@@ -5473,24 +5454,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 })()}
 
                             </div>
-
-                    {/* Sprite & Stage Panels - Visible in Stage mode OR Fullscreen */}
-                    {(editorMode === 'stage' || isFullscreen) && (
-                        <div style={styles.assetsContainer}>
-                            <SpritePanel
-                                sprites={sprites}
-                                selectedSpriteId={selectedSpriteId}
-                                onSelectSprite={handleSpriteSelect}
-                                onAddSprite={addSprite}
-                                onDeleteSprite={deleteSprite}
-                                onRemoveBackground={handleRemoveBackground}
-                                onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
-                                onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
-                                stageManager={stageManager}
-                                backdropVersion={backdropRefresh}
-                            />
-                        </div>
-                    )}
 
                     {/* Code Preview - Only in Upload mode AND NOT Fullscreen */}
                     {editorMode === 'upload' && !isFullscreen && (
@@ -6610,6 +6573,8 @@ const styles: { [key: string]: React.CSSProperties } = {
         gap: '8px',
 
         padding: '8px',
+
+        overflow: 'hidden',
 
     },
 

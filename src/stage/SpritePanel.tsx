@@ -31,6 +31,7 @@ interface SpritePanelProps {
   onOpenBackdropLibrary?: () => void;
   stageManager: StageManager;
   backdropVersion?: number; // triggers re-render when backdrops change
+  isFullscreen?: boolean;
 }
 
 export const SpritePanel: React.FC<SpritePanelProps> = ({
@@ -42,7 +43,9 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   onRemoveBackground,
   onOpenSpriteLibrary,
   onOpenBackdropLibrary,
+  backdropVersion,
   stageManager,
+  isFullscreen = false,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -63,10 +66,42 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
     return found ? found.emoji : "🐱";
   };
 
+  // Dynamic colors for the fading overlay
+  const overlayColor = isFullscreen ? "#111116" : "#F9F9F9";
+
   return (
-    <div style={styles.container}>
+    <div style={{
+      ...styles.container,
+      ...(isFullscreen ? {
+        border: '1px solid rgba(255,255,255,0.1)',
+        backgroundColor: '#16161a',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+      } : {})
+    }}>
+      {/* Slim Modern Scrollbar CSS */}
+      <style>{`
+        .slim-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .slim-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .slim-scrollbar::-webkit-scrollbar-thumb {
+          background: ${isFullscreen ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'};
+          border-radius: 10px;
+        }
+        .slim-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: ${isFullscreen ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'};
+        }
+      `}</style>
       {/* Top Area: Sprite Properties */}
-      <div style={styles.propertyPanel}>
+      <div style={{
+        ...styles.propertyPanel,
+        ...(isFullscreen ? {
+          backgroundColor: '#1c1c21',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+        } : {})
+      }}>
         <div style={styles.propertyRow}>
           {/* Sprite Name Input */}
           <div style={{ ...styles.propertyGroup, flex: 2 }}>
@@ -177,10 +212,23 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
       </div>
 
       {/* Bottom Area: Sprites and Stage Lists */}
-      <div style={{ display: "flex", flex: 1, backgroundColor: "#F9F9F9", minHeight: "240px" }}>
+      <div style={{ 
+        display: "flex", 
+        flex: 1, 
+        backgroundColor: isFullscreen ? "#111116" : "#F9F9F9", 
+        height: "180px",
+        overflow: "visible",
+        position: "relative",
+        zIndex: 10
+      }}>
 
         {/* Main Sprites Area */}
-        <div style={{ ...styles.spriteListContainer, flex: 1, borderRight: "1px solid #d9d9d9" }}>
+        <div style={{ 
+          ...styles.spriteListContainer, 
+          flex: 1, 
+          borderRight: isFullscreen ? "1px solid rgba(255,255,255,0.05)" : "1px solid #d9d9d9",
+          backgroundColor: isFullscreen ? "#111116" : "#F9F9F9",
+        }}>
           {showPicker && (
             <div style={styles.picker}>
               <div style={styles.pickerTitle}>Choose a sprite:</div>
@@ -203,7 +251,11 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
             </div>
           )}
 
-          <div style={styles.spriteList}>
+          <div className="slim-scrollbar" style={{
+            ...styles.spriteList,
+            overflowY: "auto",
+            height: "100%",
+          }}>
             {sprites.filter(s => s.id !== 'stage' && !s.id.includes('_clone_')).map((sprite) => {
               const isSelected = selectedSpriteId === sprite.id;
               const cloneCount = sprites.filter(s => s.id.startsWith(`${sprite.id}_clone_`)).length;
@@ -264,50 +316,110 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 </div>
               );
             })}
-          </div>
-
-          {/* Floating action button for Sprites */}
-          <div style={styles.floatingAction}>
-            <ActionMenu
-              mainIcon="➕"
-              color="#9974ffff"
-              tooltipLabel="Choose a Sprite"
-              actions={[
-                {
-                  id: 'upload',
-                  icon: '⬆️',
-                  label: 'Upload Sprite',
-                  onClick: () => alert('Upload sprite coming soon!')
-                },
-                {
-                  id: 'surprise',
-                  icon: '✨',
-                  label: 'Surprise',
-                  onClick: () => {
-                    const randomSprite = SPRITE_TYPES[Math.floor(Math.random() * SPRITE_TYPES.length)];
-                    handleAddSprite(randomSprite.type);
+            
+            <div style={{
+              ...styles.addSpriteBtnFlow,
+              border: '2px dashed #d9d9d9',
+              borderRadius: '8px',
+              backgroundColor: isFullscreen ? 'rgba(255,255,255,0.03)' : '#f0f0f0',
+              order: 999, // Ensure it stays last in flex row
+            }}>
+              <ActionMenu
+                mainIcon="➕"
+                color="#9974ffff"
+                tooltipLabel="Choose a Sprite"
+                actions={[
+                  {
+                    id: 'upload',
+                    icon: '⬆️',
+                    label: 'Upload Sprite',
+                    onClick: () => alert('Upload sprite coming soon!')
+                  },
+                  {
+                    id: 'surprise',
+                    icon: '✨',
+                    label: 'Surprise',
+                    onClick: () => {
+                      const randomSprite = SPRITE_TYPES[Math.floor(Math.random() * SPRITE_TYPES.length)];
+                      handleAddSprite(randomSprite.type);
+                    }
+                  },
+                  {
+                    id: 'paint',
+                    icon: '🖌️',
+                    label: 'Paint',
+                    onClick: () => alert('Paint editor coming soon!')
+                  },
+                  {
+                    id: 'search',
+                    icon: '🔍',
+                    label: 'Choose a Sprite',
+                    onClick: () => onOpenSpriteLibrary ? onOpenSpriteLibrary() : setShowPicker(!showPicker)
                   }
-                },
-                {
-                  id: 'paint',
-                  icon: '🖌️',
-                  label: 'Paint',
-                  onClick: () => alert('Paint editor coming soon!')
-                },
-                {
-                  id: 'search',
-                  icon: '🔍',
-                  label: 'Choose a Sprite',
-                  onClick: () => onOpenSpriteLibrary ? onOpenSpriteLibrary() : setShowPicker(!showPicker)
-                }
-              ]}
-            />
+                ]}
+              />
+            </div>
           </div>
+          
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '40px',
+            pointerEvents: 'none',
+            background: `linear-gradient(to bottom, transparent, ${overlayColor})`,
+            zIndex: 5,
+          }} />
         </div>
 
         {/* Stage Area */}
-        <div style={{ width: "88px", padding: "16px 8px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
-          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#575E75', marginBottom: '8px' }}>Stage</div>
+        <div className="slim-scrollbar" style={{ 
+          width: "92px", 
+          padding: "16px 8px", 
+          display: "flex", 
+          flexDirection: "column", 
+          alignItems: "center", 
+          position: "relative",
+          height: "100%",
+          overflowY: "auto",
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', width: '100%', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#575E75' }}>Stage</div>
+              <ActionMenu
+                mainIcon={<span style={{ fontSize: '10px' }}>🖼️</span>}
+                color="#4c97ffff"
+                tooltipLabel="Choose a Backdrop"
+                actions={[
+                  {
+                    id: 'upload',
+                    icon: '⬆️',
+                    label: 'Upload Backdrop',
+                    onClick: () => alert('Upload backdrop coming soon!')
+                  },
+                  {
+                    id: 'surprise',
+                    icon: '✨',
+                    label: 'Surprise',
+                    onClick: () => {
+                      // Logic for surprise backdrop
+                    }
+                  },
+                  {
+                    id: 'paint',
+                    icon: '🖌️',
+                    label: 'Paint',
+                    onClick: () => alert('Paint editor coming soon!')
+                  },
+                  {
+                    id: 'search',
+                    icon: '🔍',
+                    label: 'Choose a Backdrop',
+                    onClick: () => onOpenBackdropLibrary ? onOpenBackdropLibrary() : alert('Library coming soon!')
+                  }
+                ]}
+              />
+            </div>
           {sprites.filter(s => s.id === 'stage').map((stageSprite) => {
             const isSelected = selectedSpriteId === 'stage';
             return (
@@ -339,34 +451,22 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   fontSize: '9px',
                   ...(isSelected ? { backgroundColor: '#3498DB', color: '#fff' } : {})
                 }}>
-                  Backdrops<br />{stageManager.getAllBackdrops().length}
+                  Backdrops {stageManager.getAllBackdrops().length}
                 </div>
               </div>
             );
           })}
 
-          {/* Floating action button for Backdrops */}
-          <div style={{ ...styles.floatingAction, right: '4px', bottom: '12px' }}>
-            <ActionMenu
-              mainIcon="🖼️"
-              color="#8f59f5ff"
-              tooltipLabel="Choose a Backdrop"
-              actions={[
-                {
-                  id: 'upload',
-                  icon: '⬆️',
-                  label: 'Upload Backdrop',
-                  onClick: () => alert('Upload backdrop coming soon!')
-                },
-                {
-                  id: 'search',
-                  icon: '🔍',
-                  label: 'Choose a Backdrop',
-                  onClick: () => onOpenBackdropLibrary ? onOpenBackdropLibrary() : alert('Backdrop library coming soon!')
-                }
-              ]}
-            />
-          </div>
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '20px',
+            pointerEvents: 'none',
+            background: `linear-gradient(to bottom, transparent, ${overlayColor})`,
+            zIndex: 5,
+          }} />
         </div>
       </div>
     </div>
@@ -381,21 +481,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: "8px",
     border: "1px solid #d9d9d9",
     overflow: "hidden",
-    width: "376px",
+    width: "450px",
   },
   propertyPanel: {
-    padding: "12px 16px",
-    backgroundColor: "#EDF1F7", // PictoBlox style light blue-gray
+    padding: "8px 16px",
+    backgroundColor: "#EDF1F7", // style light blue-gray
     borderBottom: "1px solid #d9d9d9",
     display: "flex",
     flexDirection: "column",
-    gap: "12px",
+    gap: "8px",
   },
   propertyRow: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: "16px",
+    justifyContent: "flex-start",
+    gap: "12px",
   },
   propertyGroup: {
     display: "flex",
@@ -409,7 +509,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   propertyLabel: {
     fontSize: "12px",
-    color: "#575E75",
+    color: "#8E94A7", // Lighter for dark mode
     fontWeight: "bold",
     whiteSpace: "nowrap",
   },
@@ -470,23 +570,31 @@ const styles: { [key: string]: React.CSSProperties } = {
     flexDirection: "column",
     backgroundColor: "#F9F9F9",
     position: "relative",
-    minHeight: "240px",
-    padding: "16px",
-    paddingBottom: "80px",
+    minHeight: "180px",
+    padding: "12px",
+    paddingBottom: "60px",
   },
   spriteList: {
     display: "flex",
     flexWrap: "wrap",
     gap: "16px",
-    overflowY: "auto",
+    alignItems: "flex-start",
+    paddingBottom: "80px", // space for expanded menu
+  },
+  addSpriteBtnFlow: {
+    width: "64px",
+    height: "80px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   spriteItem: {
     position: "relative",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    width: "72px",
-    height: "88px",
+    width: "64px",
+    height: "80px",
     backgroundColor: "#fff",
     border: "2px solid #d9d9d9",
     borderRadius: "8px",
@@ -501,7 +609,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   spriteThumbnail: {
     width: "100%",
-    height: "60px",
+    height: "52px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -511,7 +619,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     width: "100%",
     backgroundColor: "transparent",
     color: "#575E75",
-    fontSize: "11px",
+    fontSize: "10px",
     textAlign: "center",
     padding: "4px 0",
     borderBottomLeftRadius: "6px",
