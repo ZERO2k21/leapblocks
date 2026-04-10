@@ -7,7 +7,7 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
             id: 'face_detection',
             name: 'Face Detection',
             description: 'Detect and recognize human face',
-            image: '/assets/extensions/face_detection.png', // We'll add a generic background color if image isn't available
+            image: 'assets/extensions/face_detection.png', // We'll add a generic background color if image isn't available
             color: '#EFEFEF', // Placeholder color if no image
             bannerColor: '#fbeb21'
         },
@@ -15,7 +15,7 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
             id: 'hand_pose',
             name: 'Hand Pose Detection',
             description: 'Identify hand gestures',
-            image: '/assets/extensions/hand_pose.png',
+            image: 'assets/extensions/hand_pose.png',
             color: '#EFEFEF',
             bannerColor: '#282759'
         }

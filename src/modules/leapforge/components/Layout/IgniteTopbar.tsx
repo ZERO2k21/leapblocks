@@ -78,7 +78,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         }}>
           <img
             alt="LeapLab"
-            src="/assets/leaplab_logo_transparent.png"
+            src="assets/leaplab_logo_transparent.png"
             style={{ height: '52px', objectFit: 'contain' }}
           />
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', marginLeft: '10px', lineHeight: '1.1' }}>
@@ -265,7 +265,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         }}>
           <img
             alt="Leap into the AI Future"
-            src="/assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
+            src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
             style={{ height: '160px', objectFit: 'contain', filter: 'brightness(1.2) contrast(1.1) drop-shadow(rgba(255, 255, 255, 0.2) 0px 0px 2px)' }}
           />
         </div>

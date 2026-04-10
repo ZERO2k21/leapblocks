@@ -3,12 +3,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_abby",
     "name": "Abby",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/abby_abby-a.svg",
+    "image": "assets/sprites/scratch/abby_abby-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/abby_abby-a.svg",
-      "/assets/sprites/scratch/abby_abby-b.svg",
-      "/assets/sprites/scratch/abby_abby-c.svg",
-      "/assets/sprites/scratch/abby_abby-d.svg"
+      "assets/sprites/scratch/abby_abby-a.svg",
+      "assets/sprites/scratch/abby_abby-b.svg",
+      "assets/sprites/scratch/abby_abby-c.svg",
+      "assets/sprites/scratch/abby_abby-d.svg"
     ],
     "tags": [
       "people",
@@ -21,9 +21,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_amon",
     "name": "Amon",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/amon_amon.png",
+    "image": "assets/sprites/scratch/amon_amon.png",
     "costumes": [
-      "/assets/sprites/scratch/amon_amon.png"
+      "assets/sprites/scratch/amon_amon.png"
     ],
     "tags": [
       "people",
@@ -35,12 +35,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_andie",
     "name": "Andie",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/andie_andie-a.svg",
+    "image": "assets/sprites/scratch/andie_andie-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/andie_andie-a.svg",
-      "/assets/sprites/scratch/andie_andie-b.svg",
-      "/assets/sprites/scratch/andie_andie-c.svg",
-      "/assets/sprites/scratch/andie_andie-d.svg"
+      "assets/sprites/scratch/andie_andie-a.svg",
+      "assets/sprites/scratch/andie_andie-b.svg",
+      "assets/sprites/scratch/andie_andie-c.svg",
+      "assets/sprites/scratch/andie_andie-d.svg"
     ],
     "tags": [
       "sports",
@@ -57,21 +57,21 @@ export const scratchSprites: any[] = [
     "id": "scratch_anina_dance",
     "name": "Anina Dance",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/anina_dance_anina_stance.png",
+    "image": "assets/sprites/scratch/anina_dance_anina_stance.png",
     "costumes": [
-      "/assets/sprites/scratch/anina_dance_anina_stance.png",
-      "/assets/sprites/scratch/anina_dance_anina_top_stand.png",
-      "/assets/sprites/scratch/anina_dance_anina_top_r_step.png",
-      "/assets/sprites/scratch/anina_dance_anina_top_l_step.png",
-      "/assets/sprites/scratch/anina_dance_anina_top_freeze.png",
-      "/assets/sprites/scratch/anina_dance_anina_r_cross.png",
-      "/assets/sprites/scratch/anina_dance_anina_pop_front.png",
-      "/assets/sprites/scratch/anina_dance_anina_pop_down.png",
-      "/assets/sprites/scratch/anina_dance_anina_pop_left.png",
-      "/assets/sprites/scratch/anina_dance_anina_pop_right.png",
-      "/assets/sprites/scratch/anina_dance_anina_pop_l_arm.png",
-      "/assets/sprites/scratch/anina_dance_anina_pop_stand.png",
-      "/assets/sprites/scratch/anina_dance_anina_pop_r_arm.png"
+      "assets/sprites/scratch/anina_dance_anina_stance.png",
+      "assets/sprites/scratch/anina_dance_anina_top_stand.png",
+      "assets/sprites/scratch/anina_dance_anina_top_r_step.png",
+      "assets/sprites/scratch/anina_dance_anina_top_l_step.png",
+      "assets/sprites/scratch/anina_dance_anina_top_freeze.png",
+      "assets/sprites/scratch/anina_dance_anina_r_cross.png",
+      "assets/sprites/scratch/anina_dance_anina_pop_front.png",
+      "assets/sprites/scratch/anina_dance_anina_pop_down.png",
+      "assets/sprites/scratch/anina_dance_anina_pop_left.png",
+      "assets/sprites/scratch/anina_dance_anina_pop_right.png",
+      "assets/sprites/scratch/anina_dance_anina_pop_l_arm.png",
+      "assets/sprites/scratch/anina_dance_anina_pop_stand.png",
+      "assets/sprites/scratch/anina_dance_anina_pop_r_arm.png"
     ],
     "tags": [
       "people",
@@ -83,9 +83,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_apple",
     "name": "Apple",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/apple_apple.svg",
+    "image": "assets/sprites/scratch/apple_apple.svg",
     "costumes": [
-      "/assets/sprites/scratch/apple_apple.svg"
+      "assets/sprites/scratch/apple_apple.svg"
     ],
     "tags": [
       "food",
@@ -99,12 +99,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_arrow1",
     "name": "Arrow1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/arrow1_arrow1-a.svg",
+    "image": "assets/sprites/scratch/arrow1_arrow1-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/arrow1_arrow1-a.svg",
-      "/assets/sprites/scratch/arrow1_arrow1-b.svg",
-      "/assets/sprites/scratch/arrow1_arrow1-c.svg",
-      "/assets/sprites/scratch/arrow1_arrow1-d.svg"
+      "assets/sprites/scratch/arrow1_arrow1-a.svg",
+      "assets/sprites/scratch/arrow1_arrow1-b.svg",
+      "assets/sprites/scratch/arrow1_arrow1-c.svg",
+      "assets/sprites/scratch/arrow1_arrow1-d.svg"
     ],
     "tags": [
       "icons",
@@ -118,10 +118,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_avery",
     "name": "Avery",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/avery_avery-a.svg",
+    "image": "assets/sprites/scratch/avery_avery-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/avery_avery-a.svg",
-      "/assets/sprites/scratch/avery_avery-b.svg"
+      "assets/sprites/scratch/avery_avery-a.svg",
+      "assets/sprites/scratch/avery_avery-b.svg"
     ],
     "tags": [
       "people"
@@ -132,12 +132,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_avery_walking",
     "name": "Avery Walking",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/avery_walking_avery_walking-a.svg",
+    "image": "assets/sprites/scratch/avery_walking_avery_walking-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/avery_walking_avery_walking-a.svg",
-      "/assets/sprites/scratch/avery_walking_avery_walking-b.svg",
-      "/assets/sprites/scratch/avery_walking_avery_walking-c.svg",
-      "/assets/sprites/scratch/avery_walking_avery_walking-d.svg"
+      "assets/sprites/scratch/avery_walking_avery_walking-a.svg",
+      "assets/sprites/scratch/avery_walking_avery_walking-b.svg",
+      "assets/sprites/scratch/avery_walking_avery_walking-c.svg",
+      "assets/sprites/scratch/avery_walking_avery_walking-d.svg"
     ],
     "tags": [
       "people",
@@ -149,13 +149,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_ball",
     "name": "Ball",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/ball_ball-a.svg",
+    "image": "assets/sprites/scratch/ball_ball-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/ball_ball-a.svg",
-      "/assets/sprites/scratch/ball_ball-b.svg",
-      "/assets/sprites/scratch/ball_ball-c.svg",
-      "/assets/sprites/scratch/ball_ball-d.svg",
-      "/assets/sprites/scratch/ball_ball-e.svg"
+      "assets/sprites/scratch/ball_ball-a.svg",
+      "assets/sprites/scratch/ball_ball-b.svg",
+      "assets/sprites/scratch/ball_ball-c.svg",
+      "assets/sprites/scratch/ball_ball-d.svg",
+      "assets/sprites/scratch/ball_ball-e.svg"
     ],
     "tags": [
       "round",
@@ -175,12 +175,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_ballerina",
     "name": "Ballerina",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/ballerina_ballerina-a.svg",
+    "image": "assets/sprites/scratch/ballerina_ballerina-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/ballerina_ballerina-a.svg",
-      "/assets/sprites/scratch/ballerina_ballerina-b.svg",
-      "/assets/sprites/scratch/ballerina_ballerina-c.svg",
-      "/assets/sprites/scratch/ballerina_ballerina-d.svg"
+      "assets/sprites/scratch/ballerina_ballerina-a.svg",
+      "assets/sprites/scratch/ballerina_ballerina-b.svg",
+      "assets/sprites/scratch/ballerina_ballerina-c.svg",
+      "assets/sprites/scratch/ballerina_ballerina-d.svg"
     ],
     "tags": [
       "people",
@@ -192,11 +192,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_balloon1",
     "name": "Balloon1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/balloon1_balloon1-a.svg",
+    "image": "assets/sprites/scratch/balloon1_balloon1-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/balloon1_balloon1-a.svg",
-      "/assets/sprites/scratch/balloon1_balloon1-b.svg",
-      "/assets/sprites/scratch/balloon1_balloon1-c.svg"
+      "assets/sprites/scratch/balloon1_balloon1-a.svg",
+      "assets/sprites/scratch/balloon1_balloon1-b.svg",
+      "assets/sprites/scratch/balloon1_balloon1-c.svg"
     ],
     "tags": [
       "party",
@@ -214,9 +214,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_bananas",
     "name": "Bananas",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/bananas_bananas.svg",
+    "image": "assets/sprites/scratch/bananas_bananas.svg",
     "costumes": [
-      "/assets/sprites/scratch/bananas_bananas.svg"
+      "assets/sprites/scratch/bananas_bananas.svg"
     ],
     "tags": [
       "food",
@@ -231,9 +231,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_baseball",
     "name": "Baseball",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/baseball_baseball.svg",
+    "image": "assets/sprites/scratch/baseball_baseball.svg",
     "costumes": [
-      "/assets/sprites/scratch/baseball_baseball.svg"
+      "assets/sprites/scratch/baseball_baseball.svg"
     ],
     "tags": [
       "baseball",
@@ -247,9 +247,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_basketball",
     "name": "Basketball",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/basketball_basketball.svg",
+    "image": "assets/sprites/scratch/basketball_basketball.svg",
     "costumes": [
-      "/assets/sprites/scratch/basketball_basketball.svg"
+      "assets/sprites/scratch/basketball_basketball.svg"
     ],
     "tags": [
       "sports",
@@ -262,12 +262,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_bat",
     "name": "Bat",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/bat_bat-a.svg",
+    "image": "assets/sprites/scratch/bat_bat-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/bat_bat-a.svg",
-      "/assets/sprites/scratch/bat_bat-b.svg",
-      "/assets/sprites/scratch/bat_bat-c.svg",
-      "/assets/sprites/scratch/bat_bat-d.svg"
+      "assets/sprites/scratch/bat_bat-a.svg",
+      "assets/sprites/scratch/bat_bat-b.svg",
+      "assets/sprites/scratch/bat_bat-c.svg",
+      "assets/sprites/scratch/bat_bat-d.svg"
     ],
     "tags": [
       "fantasy",
@@ -283,12 +283,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_batter",
     "name": "Batter",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/batter_batter-a.svg",
+    "image": "assets/sprites/scratch/batter_batter-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/batter_batter-a.svg",
-      "/assets/sprites/scratch/batter_batter-b.svg",
-      "/assets/sprites/scratch/batter_batter-c.svg",
-      "/assets/sprites/scratch/batter_batter-d.svg"
+      "assets/sprites/scratch/batter_batter-a.svg",
+      "assets/sprites/scratch/batter_batter-b.svg",
+      "assets/sprites/scratch/batter_batter-c.svg",
+      "assets/sprites/scratch/batter_batter-d.svg"
     ],
     "tags": [
       "baseball",
@@ -302,9 +302,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_beachball",
     "name": "Beachball",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/beachball_beachball.svg",
+    "image": "assets/sprites/scratch/beachball_beachball.svg",
     "costumes": [
-      "/assets/sprites/scratch/beachball_beachball.svg"
+      "assets/sprites/scratch/beachball_beachball.svg"
     ],
     "tags": [
       "round",
@@ -318,10 +318,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_bear",
     "name": "Bear",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/bear_bear-a.svg",
+    "image": "assets/sprites/scratch/bear_bear-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/bear_bear-a.svg",
-      "/assets/sprites/scratch/bear_bear-b.svg"
+      "assets/sprites/scratch/bear_bear-a.svg",
+      "assets/sprites/scratch/bear_bear-b.svg"
     ],
     "tags": [
       "animals",
@@ -334,16 +334,16 @@ export const scratchSprites: any[] = [
     "id": "scratch_bear-walking",
     "name": "Bear-walking",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/bear-walking_bear-walk-a.svg",
+    "image": "assets/sprites/scratch/bear-walking_bear-walk-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/bear-walking_bear-walk-a.svg",
-      "/assets/sprites/scratch/bear-walking_bear-walk-b.svg",
-      "/assets/sprites/scratch/bear-walking_bear-walk-c.svg",
-      "/assets/sprites/scratch/bear-walking_bear-walk-d.svg",
-      "/assets/sprites/scratch/bear-walking_bear-walk-e.svg",
-      "/assets/sprites/scratch/bear-walking_bear-walk-f.svg",
-      "/assets/sprites/scratch/bear-walking_bear-walk-g.svg",
-      "/assets/sprites/scratch/bear-walking_bear-walk-h.svg"
+      "assets/sprites/scratch/bear-walking_bear-walk-a.svg",
+      "assets/sprites/scratch/bear-walking_bear-walk-b.svg",
+      "assets/sprites/scratch/bear-walking_bear-walk-c.svg",
+      "assets/sprites/scratch/bear-walking_bear-walk-d.svg",
+      "assets/sprites/scratch/bear-walking_bear-walk-e.svg",
+      "assets/sprites/scratch/bear-walking_bear-walk-f.svg",
+      "assets/sprites/scratch/bear-walking_bear-walk-g.svg",
+      "assets/sprites/scratch/bear-walking_bear-walk-h.svg"
     ],
     "tags": [
       "animals",
@@ -356,9 +356,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_beetle",
     "name": "Beetle",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/beetle_beetle.svg",
+    "image": "assets/sprites/scratch/beetle_beetle.svg",
     "costumes": [
-      "/assets/sprites/scratch/beetle_beetle.svg"
+      "assets/sprites/scratch/beetle_beetle.svg"
     ],
     "tags": [
       "animals",
@@ -372,9 +372,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_bell",
     "name": "Bell",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/bell_bell1.svg",
+    "image": "assets/sprites/scratch/bell_bell1.svg",
     "costumes": [
-      "/assets/sprites/scratch/bell_bell1.svg"
+      "assets/sprites/scratch/bell_bell1.svg"
     ],
     "tags": [
       "music",
@@ -388,12 +388,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_ben",
     "name": "Ben",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/ben_ben-a.svg",
+    "image": "assets/sprites/scratch/ben_ben-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/ben_ben-a.svg",
-      "/assets/sprites/scratch/ben_ben-b.svg",
-      "/assets/sprites/scratch/ben_ben-c.svg",
-      "/assets/sprites/scratch/ben_ben-d.svg"
+      "assets/sprites/scratch/ben_ben-a.svg",
+      "assets/sprites/scratch/ben_ben-b.svg",
+      "assets/sprites/scratch/ben_ben-c.svg",
+      "assets/sprites/scratch/ben_ben-d.svg"
     ],
     "tags": [
       "sports",
@@ -408,9 +408,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_bowl",
     "name": "Bowl",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/bowl_bowl-a.svg",
+    "image": "assets/sprites/scratch/bowl_bowl-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/bowl_bowl-a.svg"
+      "assets/sprites/scratch/bowl_bowl-a.svg"
     ],
     "tags": [
       "thing",
@@ -422,9 +422,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_bowtie",
     "name": "Bowtie",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/bowtie_bowtie.svg",
+    "image": "assets/sprites/scratch/bowtie_bowtie.svg",
     "costumes": [
-      "/assets/sprites/scratch/bowtie_bowtie.svg"
+      "assets/sprites/scratch/bowtie_bowtie.svg"
     ],
     "tags": [
       "fashion",
@@ -437,9 +437,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_bread",
     "name": "Bread",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/bread_bread.svg",
+    "image": "assets/sprites/scratch/bread_bread.svg",
     "costumes": [
-      "/assets/sprites/scratch/bread_bread.svg"
+      "assets/sprites/scratch/bread_bread.svg"
     ],
     "tags": [
       "food",
@@ -451,9 +451,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_broom",
     "name": "Broom",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/broom_broom.svg",
+    "image": "assets/sprites/scratch/broom_broom.svg",
     "costumes": [
-      "/assets/sprites/scratch/broom_broom.svg"
+      "assets/sprites/scratch/broom_broom.svg"
     ],
     "tags": [
       "fantasy",
@@ -467,18 +467,18 @@ export const scratchSprites: any[] = [
     "id": "scratch_buildings",
     "name": "Buildings",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/buildings_building-a.svg",
+    "image": "assets/sprites/scratch/buildings_building-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/buildings_building-a.svg",
-      "/assets/sprites/scratch/buildings_building-b.svg",
-      "/assets/sprites/scratch/buildings_building-c.svg",
-      "/assets/sprites/scratch/buildings_building-d.svg",
-      "/assets/sprites/scratch/buildings_building-e.svg",
-      "/assets/sprites/scratch/buildings_building-f.svg",
-      "/assets/sprites/scratch/buildings_building-g.svg",
-      "/assets/sprites/scratch/buildings_building-h.svg",
-      "/assets/sprites/scratch/buildings_building-i.svg",
-      "/assets/sprites/scratch/buildings_building-j.svg"
+      "assets/sprites/scratch/buildings_building-a.svg",
+      "assets/sprites/scratch/buildings_building-b.svg",
+      "assets/sprites/scratch/buildings_building-c.svg",
+      "assets/sprites/scratch/buildings_building-d.svg",
+      "assets/sprites/scratch/buildings_building-e.svg",
+      "assets/sprites/scratch/buildings_building-f.svg",
+      "assets/sprites/scratch/buildings_building-g.svg",
+      "assets/sprites/scratch/buildings_building-h.svg",
+      "assets/sprites/scratch/buildings_building-i.svg",
+      "assets/sprites/scratch/buildings_building-j.svg"
     ],
     "tags": [
       "things",
@@ -492,11 +492,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_butterfly_1",
     "name": "Butterfly 1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/butterfly_1_butterfly1-a.svg",
+    "image": "assets/sprites/scratch/butterfly_1_butterfly1-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/butterfly_1_butterfly1-a.svg",
-      "/assets/sprites/scratch/butterfly_1_butterfly1-b.svg",
-      "/assets/sprites/scratch/butterfly_1_butterfly1-c.svg"
+      "assets/sprites/scratch/butterfly_1_butterfly1-a.svg",
+      "assets/sprites/scratch/butterfly_1_butterfly1-b.svg",
+      "assets/sprites/scratch/butterfly_1_butterfly1-c.svg"
     ],
     "tags": [
       "animals",
@@ -511,10 +511,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_butterfly_2",
     "name": "Butterfly 2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/butterfly_2_butterfly2-a.svg",
+    "image": "assets/sprites/scratch/butterfly_2_butterfly2-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/butterfly_2_butterfly2-a.svg",
-      "/assets/sprites/scratch/butterfly_2_butterfly2-b.svg"
+      "assets/sprites/scratch/butterfly_2_butterfly2-a.svg",
+      "assets/sprites/scratch/butterfly_2_butterfly2-b.svg"
     ],
     "tags": [
       "animals",
@@ -531,9 +531,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_button1",
     "name": "Button1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/button1_button1.svg",
+    "image": "assets/sprites/scratch/button1_button1.svg",
     "costumes": [
-      "/assets/sprites/scratch/button1_button1.svg"
+      "assets/sprites/scratch/button1_button1.svg"
     ],
     "tags": [
       "icons",
@@ -547,10 +547,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_button2",
     "name": "Button2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/button2_button2-a.svg",
+    "image": "assets/sprites/scratch/button2_button2-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/button2_button2-a.svg",
-      "/assets/sprites/scratch/button2_button2-b.svg"
+      "assets/sprites/scratch/button2_button2-a.svg",
+      "assets/sprites/scratch/button2_button2-b.svg"
     ],
     "tags": [
       "icons",
@@ -563,10 +563,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_button3",
     "name": "Button3",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/button3_button3-a.svg",
+    "image": "assets/sprites/scratch/button3_button3-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/button3_button3-a.svg",
-      "/assets/sprites/scratch/button3_button3-b.svg"
+      "assets/sprites/scratch/button3_button3-a.svg",
+      "assets/sprites/scratch/button3_button3-b.svg"
     ],
     "tags": [
       "icons",
@@ -580,10 +580,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_button4",
     "name": "Button4",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/button4_button4-a.svg",
+    "image": "assets/sprites/scratch/button4_button4-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/button4_button4-a.svg",
-      "/assets/sprites/scratch/button4_button4-b.svg"
+      "assets/sprites/scratch/button4_button4-a.svg",
+      "assets/sprites/scratch/button4_button4-b.svg"
     ],
     "tags": [
       "icons",
@@ -595,10 +595,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_button5",
     "name": "Button5",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/button5_button5-a.svg",
+    "image": "assets/sprites/scratch/button5_button5-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/button5_button5-a.svg",
-      "/assets/sprites/scratch/button5_button5-b.svg"
+      "assets/sprites/scratch/button5_button5-a.svg",
+      "assets/sprites/scratch/button5_button5-b.svg"
     ],
     "tags": [
       "icons",
@@ -613,10 +613,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_cake",
     "name": "Cake",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/cake_cake-a.svg",
+    "image": "assets/sprites/scratch/cake_cake-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/cake_cake-a.svg",
-      "/assets/sprites/scratch/cake_cake-b.svg"
+      "assets/sprites/scratch/cake_cake-a.svg",
+      "assets/sprites/scratch/cake_cake-b.svg"
     ],
     "tags": [
       "food",
@@ -634,10 +634,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_calvrett",
     "name": "Calvrett",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/calvrett_calvrett_jumping.png",
+    "image": "assets/sprites/scratch/calvrett_calvrett_jumping.png",
     "costumes": [
-      "/assets/sprites/scratch/calvrett_calvrett_jumping.png",
-      "/assets/sprites/scratch/calvrett_calvrett_thinking.png"
+      "assets/sprites/scratch/calvrett_calvrett_jumping.png",
+      "assets/sprites/scratch/calvrett_calvrett_thinking.png"
     ],
     "tags": [
       "people"
@@ -648,12 +648,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_casey",
     "name": "Casey",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/casey_casey-a.svg",
+    "image": "assets/sprites/scratch/casey_casey-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/casey_casey-a.svg",
-      "/assets/sprites/scratch/casey_casey-b.svg",
-      "/assets/sprites/scratch/casey_casey-c.svg",
-      "/assets/sprites/scratch/casey_casey-d.svg"
+      "assets/sprites/scratch/casey_casey-a.svg",
+      "assets/sprites/scratch/casey_casey-b.svg",
+      "assets/sprites/scratch/casey_casey-c.svg",
+      "assets/sprites/scratch/casey_casey-d.svg"
     ],
     "tags": [
       "sports",
@@ -667,12 +667,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_cassy_dance",
     "name": "Cassy Dance",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/cassy_dance_cassy-a.png",
+    "image": "assets/sprites/scratch/cassy_dance_cassy-a.png",
     "costumes": [
-      "/assets/sprites/scratch/cassy_dance_cassy-a.png",
-      "/assets/sprites/scratch/cassy_dance_cassy-b.png",
-      "/assets/sprites/scratch/cassy_dance_cassy-c.png",
-      "/assets/sprites/scratch/cassy_dance_cassy-d.png"
+      "assets/sprites/scratch/cassy_dance_cassy-a.png",
+      "assets/sprites/scratch/cassy_dance_cassy-b.png",
+      "assets/sprites/scratch/cassy_dance_cassy-c.png",
+      "assets/sprites/scratch/cassy_dance_cassy-d.png"
     ],
     "tags": [
       "people",
@@ -684,10 +684,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_cat",
     "name": "Cat",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/cat_cat-a.svg",
+    "image": "assets/sprites/scratch/cat_cat-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/cat_cat-a.svg",
-      "/assets/sprites/scratch/cat_cat-b.svg"
+      "assets/sprites/scratch/cat_cat-a.svg",
+      "assets/sprites/scratch/cat_cat-b.svg"
     ],
     "tags": [
       "animals",
@@ -704,9 +704,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_cat_2",
     "name": "Cat 2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/cat_2_cat_2.svg",
+    "image": "assets/sprites/scratch/cat_2_cat_2.svg",
     "costumes": [
-      "/assets/sprites/scratch/cat_2_cat_2.svg"
+      "assets/sprites/scratch/cat_2_cat_2.svg"
     ],
     "tags": [
       "cat",
@@ -721,10 +721,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_cat_flying",
     "name": "Cat Flying",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/cat_flying_cat_flying-a.svg",
+    "image": "assets/sprites/scratch/cat_flying_cat_flying-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/cat_flying_cat_flying-a.svg",
-      "/assets/sprites/scratch/cat_flying_cat_flying-b.svg"
+      "assets/sprites/scratch/cat_flying_cat_flying-a.svg",
+      "assets/sprites/scratch/cat_flying_cat_flying-b.svg"
     ],
     "tags": [
       "animals",
@@ -738,12 +738,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_catcher",
     "name": "Catcher",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/catcher_catcher-a.svg",
+    "image": "assets/sprites/scratch/catcher_catcher-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/catcher_catcher-a.svg",
-      "/assets/sprites/scratch/catcher_catcher-b.svg",
-      "/assets/sprites/scratch/catcher_catcher-c.svg",
-      "/assets/sprites/scratch/catcher_catcher-d.svg"
+      "assets/sprites/scratch/catcher_catcher-a.svg",
+      "assets/sprites/scratch/catcher_catcher-b.svg",
+      "assets/sprites/scratch/catcher_catcher-c.svg",
+      "assets/sprites/scratch/catcher_catcher-d.svg"
     ],
     "tags": [
       "baseball",
@@ -757,12 +757,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_centaur",
     "name": "Centaur",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/centaur_centaur-a.svg",
+    "image": "assets/sprites/scratch/centaur_centaur-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/centaur_centaur-a.svg",
-      "/assets/sprites/scratch/centaur_centaur-b.svg",
-      "/assets/sprites/scratch/centaur_centaur-c.svg",
-      "/assets/sprites/scratch/centaur_centaur-d.svg"
+      "assets/sprites/scratch/centaur_centaur-a.svg",
+      "assets/sprites/scratch/centaur_centaur-b.svg",
+      "assets/sprites/scratch/centaur_centaur-c.svg",
+      "assets/sprites/scratch/centaur_centaur-d.svg"
     ],
     "tags": [
       "fantasy",
@@ -776,15 +776,15 @@ export const scratchSprites: any[] = [
     "id": "scratch_champ99",
     "name": "Champ99",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/champ99_champ99-a.png",
+    "image": "assets/sprites/scratch/champ99_champ99-a.png",
     "costumes": [
-      "/assets/sprites/scratch/champ99_champ99-a.png",
-      "/assets/sprites/scratch/champ99_champ99-b.png",
-      "/assets/sprites/scratch/champ99_champ99-c.png",
-      "/assets/sprites/scratch/champ99_champ99-d.png",
-      "/assets/sprites/scratch/champ99_champ99-e.png",
-      "/assets/sprites/scratch/champ99_champ99-f.png",
-      "/assets/sprites/scratch/champ99_champ99-g.png"
+      "assets/sprites/scratch/champ99_champ99-a.png",
+      "assets/sprites/scratch/champ99_champ99-b.png",
+      "assets/sprites/scratch/champ99_champ99-c.png",
+      "assets/sprites/scratch/champ99_champ99-d.png",
+      "assets/sprites/scratch/champ99_champ99-e.png",
+      "assets/sprites/scratch/champ99_champ99-f.png",
+      "assets/sprites/scratch/champ99_champ99-g.png"
     ],
     "tags": [
       "people",
@@ -796,21 +796,21 @@ export const scratchSprites: any[] = [
     "id": "scratch_characters_1",
     "name": "Characters 1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/characters_1_character1-a.svg",
+    "image": "assets/sprites/scratch/characters_1_character1-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/characters_1_character1-a.svg",
-      "/assets/sprites/scratch/characters_1_character1-b.svg",
-      "/assets/sprites/scratch/characters_1_character1-c.svg",
-      "/assets/sprites/scratch/characters_1_character1-d.svg",
-      "/assets/sprites/scratch/characters_1_character1-e.svg",
-      "/assets/sprites/scratch/characters_1_character1-f.svg",
-      "/assets/sprites/scratch/characters_1_character1-g.svg",
-      "/assets/sprites/scratch/characters_1_character1-h.svg",
-      "/assets/sprites/scratch/characters_1_character1-i.svg",
-      "/assets/sprites/scratch/characters_1_character1-j.svg",
-      "/assets/sprites/scratch/characters_1_character1-k.svg",
-      "/assets/sprites/scratch/characters_1_character1-l.svg",
-      "/assets/sprites/scratch/characters_1_character1-m.svg"
+      "assets/sprites/scratch/characters_1_character1-a.svg",
+      "assets/sprites/scratch/characters_1_character1-b.svg",
+      "assets/sprites/scratch/characters_1_character1-c.svg",
+      "assets/sprites/scratch/characters_1_character1-d.svg",
+      "assets/sprites/scratch/characters_1_character1-e.svg",
+      "assets/sprites/scratch/characters_1_character1-f.svg",
+      "assets/sprites/scratch/characters_1_character1-g.svg",
+      "assets/sprites/scratch/characters_1_character1-h.svg",
+      "assets/sprites/scratch/characters_1_character1-i.svg",
+      "assets/sprites/scratch/characters_1_character1-j.svg",
+      "assets/sprites/scratch/characters_1_character1-k.svg",
+      "assets/sprites/scratch/characters_1_character1-l.svg",
+      "assets/sprites/scratch/characters_1_character1-m.svg"
     ],
     "tags": [
       "people",
@@ -828,18 +828,18 @@ export const scratchSprites: any[] = [
     "id": "scratch_characters_2",
     "name": "Characters 2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/characters_2_character2-a.svg",
+    "image": "assets/sprites/scratch/characters_2_character2-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/characters_2_character2-a.svg",
-      "/assets/sprites/scratch/characters_2_character2-b.svg",
-      "/assets/sprites/scratch/characters_2_character2-c.svg",
-      "/assets/sprites/scratch/characters_2_character2-d.svg",
-      "/assets/sprites/scratch/characters_2_character2-e.svg",
-      "/assets/sprites/scratch/characters_2_character2-f.svg",
-      "/assets/sprites/scratch/characters_2_character2-g.svg",
-      "/assets/sprites/scratch/characters_2_character2-h.svg",
-      "/assets/sprites/scratch/characters_2_character2-i.svg",
-      "/assets/sprites/scratch/characters_2_character2-j.svg"
+      "assets/sprites/scratch/characters_2_character2-a.svg",
+      "assets/sprites/scratch/characters_2_character2-b.svg",
+      "assets/sprites/scratch/characters_2_character2-c.svg",
+      "assets/sprites/scratch/characters_2_character2-d.svg",
+      "assets/sprites/scratch/characters_2_character2-e.svg",
+      "assets/sprites/scratch/characters_2_character2-f.svg",
+      "assets/sprites/scratch/characters_2_character2-g.svg",
+      "assets/sprites/scratch/characters_2_character2-h.svg",
+      "assets/sprites/scratch/characters_2_character2-i.svg",
+      "assets/sprites/scratch/characters_2_character2-j.svg"
     ],
     "tags": [
       "people",
@@ -857,9 +857,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_cheesy_puffs",
     "name": "Cheesy Puffs",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/cheesy_puffs_cheesy_puffs.png",
+    "image": "assets/sprites/scratch/cheesy_puffs_cheesy_puffs.png",
     "costumes": [
-      "/assets/sprites/scratch/cheesy_puffs_cheesy_puffs.png"
+      "assets/sprites/scratch/cheesy_puffs_cheesy_puffs.png"
     ],
     "tags": [
       "food"
@@ -870,11 +870,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_chick",
     "name": "Chick",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/chick_chick-a.svg",
+    "image": "assets/sprites/scratch/chick_chick-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/chick_chick-a.svg",
-      "/assets/sprites/scratch/chick_chick-b.svg",
-      "/assets/sprites/scratch/chick_chick-c.svg"
+      "assets/sprites/scratch/chick_chick-a.svg",
+      "assets/sprites/scratch/chick_chick-b.svg",
+      "assets/sprites/scratch/chick_chick-c.svg"
     ],
     "tags": [
       "animals",
@@ -888,10 +888,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_city_bus",
     "name": "City Bus",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/city_bus_city_bus-a.svg",
+    "image": "assets/sprites/scratch/city_bus_city_bus-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/city_bus_city_bus-a.svg",
-      "/assets/sprites/scratch/city_bus_city_bus-b.svg"
+      "assets/sprites/scratch/city_bus_city_bus-a.svg",
+      "assets/sprites/scratch/city_bus_city_bus-b.svg"
     ],
     "tags": [
       "city",
@@ -905,9 +905,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_cloud",
     "name": "Cloud",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/cloud_cloud.svg",
+    "image": "assets/sprites/scratch/cloud_cloud.svg",
     "costumes": [
-      "/assets/sprites/scratch/cloud_cloud.svg"
+      "assets/sprites/scratch/cloud_cloud.svg"
     ],
     "tags": [
       "thing",
@@ -920,12 +920,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_clouds",
     "name": "Clouds",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/clouds_cloud-a.svg",
+    "image": "assets/sprites/scratch/clouds_cloud-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/clouds_cloud-a.svg",
-      "/assets/sprites/scratch/clouds_cloud-b.svg",
-      "/assets/sprites/scratch/clouds_cloud-c.svg",
-      "/assets/sprites/scratch/clouds_cloud-d.svg"
+      "assets/sprites/scratch/clouds_cloud-a.svg",
+      "assets/sprites/scratch/clouds_cloud-b.svg",
+      "assets/sprites/scratch/clouds_cloud-c.svg",
+      "assets/sprites/scratch/clouds_cloud-d.svg"
     ],
     "tags": [
       "flying",
@@ -939,9 +939,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_convertible",
     "name": "Convertible",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/convertible_convertible.png",
+    "image": "assets/sprites/scratch/convertible_convertible.png",
     "costumes": [
-      "/assets/sprites/scratch/convertible_convertible.png"
+      "assets/sprites/scratch/convertible_convertible.png"
     ],
     "tags": [
       "car",
@@ -953,9 +953,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_convertible_2",
     "name": "Convertible 2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/convertible_2_convertible_3.svg",
+    "image": "assets/sprites/scratch/convertible_2_convertible_3.svg",
     "costumes": [
-      "/assets/sprites/scratch/convertible_2_convertible_3.svg"
+      "assets/sprites/scratch/convertible_2_convertible_3.svg"
     ],
     "tags": [
       "transportation",
@@ -968,10 +968,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_crab",
     "name": "Crab",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/crab_crab-a.svg",
+    "image": "assets/sprites/scratch/crab_crab-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/crab_crab-a.svg",
-      "/assets/sprites/scratch/crab_crab-b.svg"
+      "assets/sprites/scratch/crab_crab-a.svg",
+      "assets/sprites/scratch/crab_crab-b.svg"
     ],
     "tags": [
       "animals",
@@ -991,10 +991,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_crystal",
     "name": "Crystal",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/crystal_crystal-a.svg",
+    "image": "assets/sprites/scratch/crystal_crystal-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/crystal_crystal-a.svg",
-      "/assets/sprites/scratch/crystal_crystal-b.svg"
+      "assets/sprites/scratch/crystal_crystal-a.svg",
+      "assets/sprites/scratch/crystal_crystal-b.svg"
     ],
     "tags": [
       "fantasy",
@@ -1007,20 +1007,20 @@ export const scratchSprites: any[] = [
     "id": "scratch_d-money_dance",
     "name": "D-Money Dance",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/d-money_dance_dm_stance.png",
+    "image": "assets/sprites/scratch/d-money_dance_dm_stance.png",
     "costumes": [
-      "/assets/sprites/scratch/d-money_dance_dm_stance.png",
-      "/assets/sprites/scratch/d-money_dance_dm_top_stand.png",
-      "/assets/sprites/scratch/d-money_dance_dm_top_r_leg.png",
-      "/assets/sprites/scratch/d-money_dance_dm_top_l_leg.png",
-      "/assets/sprites/scratch/d-money_dance_dm_freeze.png",
-      "/assets/sprites/scratch/d-money_dance_dm_pop_front.png",
-      "/assets/sprites/scratch/d-money_dance_dm_pop_down.png",
-      "/assets/sprites/scratch/d-money_dance_dm_pop_left.png",
-      "/assets/sprites/scratch/d-money_dance_dm_pop_right.png",
-      "/assets/sprites/scratch/d-money_dance_dm_pop_l_arm.png",
-      "/assets/sprites/scratch/d-money_dance_dm_pop_stand.png",
-      "/assets/sprites/scratch/d-money_dance_dm_pop_r_arm.png"
+      "assets/sprites/scratch/d-money_dance_dm_stance.png",
+      "assets/sprites/scratch/d-money_dance_dm_top_stand.png",
+      "assets/sprites/scratch/d-money_dance_dm_top_r_leg.png",
+      "assets/sprites/scratch/d-money_dance_dm_top_l_leg.png",
+      "assets/sprites/scratch/d-money_dance_dm_freeze.png",
+      "assets/sprites/scratch/d-money_dance_dm_pop_front.png",
+      "assets/sprites/scratch/d-money_dance_dm_pop_down.png",
+      "assets/sprites/scratch/d-money_dance_dm_pop_left.png",
+      "assets/sprites/scratch/d-money_dance_dm_pop_right.png",
+      "assets/sprites/scratch/d-money_dance_dm_pop_l_arm.png",
+      "assets/sprites/scratch/d-money_dance_dm_pop_stand.png",
+      "assets/sprites/scratch/d-money_dance_dm_pop_r_arm.png"
     ],
     "tags": [
       "people",
@@ -1032,10 +1032,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_dan",
     "name": "Dan",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dan_dan-a.png",
+    "image": "assets/sprites/scratch/dan_dan-a.png",
     "costumes": [
-      "/assets/sprites/scratch/dan_dan-a.png",
-      "/assets/sprites/scratch/dan_dan-b.png"
+      "assets/sprites/scratch/dan_dan-a.png",
+      "assets/sprites/scratch/dan_dan-b.png"
     ],
     "tags": [
       "people"
@@ -1046,11 +1046,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_dani",
     "name": "Dani",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dani_dani-a.svg",
+    "image": "assets/sprites/scratch/dani_dani-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dani_dani-a.svg",
-      "/assets/sprites/scratch/dani_dani-b.svg",
-      "/assets/sprites/scratch/dani_dani-c.svg"
+      "assets/sprites/scratch/dani_dani-a.svg",
+      "assets/sprites/scratch/dani_dani-b.svg",
+      "assets/sprites/scratch/dani_dani-c.svg"
     ],
     "tags": [
       "people"
@@ -1061,13 +1061,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_dee",
     "name": "Dee",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dee_dee-a.svg",
+    "image": "assets/sprites/scratch/dee_dee-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dee_dee-a.svg",
-      "/assets/sprites/scratch/dee_dee-b.svg",
-      "/assets/sprites/scratch/dee_dee-c.svg",
-      "/assets/sprites/scratch/dee_dee-d.svg",
-      "/assets/sprites/scratch/dee_dee-e.svg"
+      "assets/sprites/scratch/dee_dee-a.svg",
+      "assets/sprites/scratch/dee_dee-b.svg",
+      "assets/sprites/scratch/dee_dee-c.svg",
+      "assets/sprites/scratch/dee_dee-d.svg",
+      "assets/sprites/scratch/dee_dee-e.svg"
     ],
     "tags": [
       "people"
@@ -1078,12 +1078,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_devin",
     "name": "Devin",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/devin_devin-a.svg",
+    "image": "assets/sprites/scratch/devin_devin-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/devin_devin-a.svg",
-      "/assets/sprites/scratch/devin_devin-b.svg",
-      "/assets/sprites/scratch/devin_devin-c.svg",
-      "/assets/sprites/scratch/devin_devin-d.svg"
+      "assets/sprites/scratch/devin_devin-a.svg",
+      "assets/sprites/scratch/devin_devin-b.svg",
+      "assets/sprites/scratch/devin_devin-c.svg",
+      "assets/sprites/scratch/devin_devin-d.svg"
     ],
     "tags": [
       "people"
@@ -1094,12 +1094,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_dinosaur1",
     "name": "Dinosaur1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dinosaur1_dinosaur1-a.svg",
+    "image": "assets/sprites/scratch/dinosaur1_dinosaur1-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dinosaur1_dinosaur1-a.svg",
-      "/assets/sprites/scratch/dinosaur1_dinosaur1-b.svg",
-      "/assets/sprites/scratch/dinosaur1_dinosaur1-c.svg",
-      "/assets/sprites/scratch/dinosaur1_dinosaur1-d.svg"
+      "assets/sprites/scratch/dinosaur1_dinosaur1-a.svg",
+      "assets/sprites/scratch/dinosaur1_dinosaur1-b.svg",
+      "assets/sprites/scratch/dinosaur1_dinosaur1-c.svg",
+      "assets/sprites/scratch/dinosaur1_dinosaur1-d.svg"
     ],
     "tags": [
       "animals",
@@ -1112,12 +1112,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_dinosaur2",
     "name": "Dinosaur2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dinosaur2_dinosaur2-a.svg",
+    "image": "assets/sprites/scratch/dinosaur2_dinosaur2-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dinosaur2_dinosaur2-a.svg",
-      "/assets/sprites/scratch/dinosaur2_dinosaur2-b.svg",
-      "/assets/sprites/scratch/dinosaur2_dinosaur2-c.svg",
-      "/assets/sprites/scratch/dinosaur2_dinosaur2-d.svg"
+      "assets/sprites/scratch/dinosaur2_dinosaur2-a.svg",
+      "assets/sprites/scratch/dinosaur2_dinosaur2-b.svg",
+      "assets/sprites/scratch/dinosaur2_dinosaur2-c.svg",
+      "assets/sprites/scratch/dinosaur2_dinosaur2-d.svg"
     ],
     "tags": [
       "animals",
@@ -1131,13 +1131,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_dinosaur3",
     "name": "Dinosaur3",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dinosaur3_dinosaur3-a.svg",
+    "image": "assets/sprites/scratch/dinosaur3_dinosaur3-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dinosaur3_dinosaur3-a.svg",
-      "/assets/sprites/scratch/dinosaur3_dinosaur3-b.svg",
-      "/assets/sprites/scratch/dinosaur3_dinosaur3-c.svg",
-      "/assets/sprites/scratch/dinosaur3_dinosaur3-d.svg",
-      "/assets/sprites/scratch/dinosaur3_dinosaur3-e.svg"
+      "assets/sprites/scratch/dinosaur3_dinosaur3-a.svg",
+      "assets/sprites/scratch/dinosaur3_dinosaur3-b.svg",
+      "assets/sprites/scratch/dinosaur3_dinosaur3-c.svg",
+      "assets/sprites/scratch/dinosaur3_dinosaur3-d.svg",
+      "assets/sprites/scratch/dinosaur3_dinosaur3-e.svg"
     ],
     "tags": [
       "animals",
@@ -1152,12 +1152,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_dinosaur4",
     "name": "Dinosaur4",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dinosaur4_dinosaur4-a.svg",
+    "image": "assets/sprites/scratch/dinosaur4_dinosaur4-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dinosaur4_dinosaur4-a.svg",
-      "/assets/sprites/scratch/dinosaur4_dinosaur4-b.svg",
-      "/assets/sprites/scratch/dinosaur4_dinosaur4-c.svg",
-      "/assets/sprites/scratch/dinosaur4_dinosaur4-d.svg"
+      "assets/sprites/scratch/dinosaur4_dinosaur4-a.svg",
+      "assets/sprites/scratch/dinosaur4_dinosaur4-b.svg",
+      "assets/sprites/scratch/dinosaur4_dinosaur4-c.svg",
+      "assets/sprites/scratch/dinosaur4_dinosaur4-d.svg"
     ],
     "tags": [
       "animals",
@@ -1173,16 +1173,16 @@ export const scratchSprites: any[] = [
     "id": "scratch_dinosaur5",
     "name": "Dinosaur5",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dinosaur5_dinosaur5-a.png",
+    "image": "assets/sprites/scratch/dinosaur5_dinosaur5-a.png",
     "costumes": [
-      "/assets/sprites/scratch/dinosaur5_dinosaur5-a.png",
-      "/assets/sprites/scratch/dinosaur5_dinosaur5-b.png",
-      "/assets/sprites/scratch/dinosaur5_dinosaur5-c.png",
-      "/assets/sprites/scratch/dinosaur5_dinosaur5-d.png",
-      "/assets/sprites/scratch/dinosaur5_dinosaur5-e.png",
-      "/assets/sprites/scratch/dinosaur5_dinosaur5-f.png",
-      "/assets/sprites/scratch/dinosaur5_dinosaur5-g.png",
-      "/assets/sprites/scratch/dinosaur5_dinosaur5-h.png"
+      "assets/sprites/scratch/dinosaur5_dinosaur5-a.png",
+      "assets/sprites/scratch/dinosaur5_dinosaur5-b.png",
+      "assets/sprites/scratch/dinosaur5_dinosaur5-c.png",
+      "assets/sprites/scratch/dinosaur5_dinosaur5-d.png",
+      "assets/sprites/scratch/dinosaur5_dinosaur5-e.png",
+      "assets/sprites/scratch/dinosaur5_dinosaur5-f.png",
+      "assets/sprites/scratch/dinosaur5_dinosaur5-g.png",
+      "assets/sprites/scratch/dinosaur5_dinosaur5-h.png"
     ],
     "tags": [
       "animals",
@@ -1195,9 +1195,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_diver1",
     "name": "Diver1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/diver1_diver1.svg",
+    "image": "assets/sprites/scratch/diver1_diver1.svg",
     "costumes": [
-      "/assets/sprites/scratch/diver1_diver1.svg"
+      "assets/sprites/scratch/diver1_diver1.svg"
     ],
     "tags": [
       "people",
@@ -1213,9 +1213,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_diver2",
     "name": "Diver2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/diver2_diver2.svg",
+    "image": "assets/sprites/scratch/diver2_diver2.svg",
     "costumes": [
-      "/assets/sprites/scratch/diver2_diver2.svg"
+      "assets/sprites/scratch/diver2_diver2.svg"
     ],
     "tags": [
       "people",
@@ -1231,10 +1231,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_dog1",
     "name": "Dog1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dog1_dog1-a.svg",
+    "image": "assets/sprites/scratch/dog1_dog1-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dog1_dog1-a.svg",
-      "/assets/sprites/scratch/dog1_dog1-b.svg"
+      "assets/sprites/scratch/dog1_dog1-a.svg",
+      "assets/sprites/scratch/dog1_dog1-b.svg"
     ],
     "tags": [
       "animals",
@@ -1248,11 +1248,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_dog2",
     "name": "Dog2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dog2_dog2-a.svg",
+    "image": "assets/sprites/scratch/dog2_dog2-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dog2_dog2-a.svg",
-      "/assets/sprites/scratch/dog2_dog2-b.svg",
-      "/assets/sprites/scratch/dog2_dog2-c.svg"
+      "assets/sprites/scratch/dog2_dog2-a.svg",
+      "assets/sprites/scratch/dog2_dog2-b.svg",
+      "assets/sprites/scratch/dog2_dog2-c.svg"
     ],
     "tags": [
       "animals",
@@ -1266,9 +1266,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_donut",
     "name": "Donut",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/donut_donut.svg",
+    "image": "assets/sprites/scratch/donut_donut.svg",
     "costumes": [
-      "/assets/sprites/scratch/donut_donut.svg"
+      "assets/sprites/scratch/donut_donut.svg"
     ],
     "tags": [
       "food",
@@ -1286,12 +1286,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_dorian",
     "name": "Dorian",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dorian_dorian-a.svg",
+    "image": "assets/sprites/scratch/dorian_dorian-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dorian_dorian-a.svg",
-      "/assets/sprites/scratch/dorian_dorian-b.svg",
-      "/assets/sprites/scratch/dorian_dorian-c.svg",
-      "/assets/sprites/scratch/dorian_dorian-d.svg"
+      "assets/sprites/scratch/dorian_dorian-a.svg",
+      "assets/sprites/scratch/dorian_dorian-b.svg",
+      "assets/sprites/scratch/dorian_dorian-c.svg",
+      "assets/sprites/scratch/dorian_dorian-d.svg"
     ],
     "tags": [
       "sports",
@@ -1305,12 +1305,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_dot",
     "name": "Dot",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dot_dot-a.svg",
+    "image": "assets/sprites/scratch/dot_dot-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dot_dot-a.svg",
-      "/assets/sprites/scratch/dot_dot-b.svg",
-      "/assets/sprites/scratch/dot_dot-c.svg",
-      "/assets/sprites/scratch/dot_dot-d.svg"
+      "assets/sprites/scratch/dot_dot-a.svg",
+      "assets/sprites/scratch/dot_dot-b.svg",
+      "assets/sprites/scratch/dot_dot-c.svg",
+      "assets/sprites/scratch/dot_dot-d.svg"
     ],
     "tags": [
       "space",
@@ -1324,10 +1324,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_dove",
     "name": "Dove",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dove_dove-a.svg",
+    "image": "assets/sprites/scratch/dove_dove-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dove_dove-a.svg",
-      "/assets/sprites/scratch/dove_dove-b.svg"
+      "assets/sprites/scratch/dove_dove-a.svg",
+      "assets/sprites/scratch/dove_dove-b.svg"
     ],
     "tags": [
       "animals",
@@ -1340,11 +1340,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_dragon",
     "name": "Dragon",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dragon_dragon-a.svg",
+    "image": "assets/sprites/scratch/dragon_dragon-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dragon_dragon-a.svg",
-      "/assets/sprites/scratch/dragon_dragon-b.svg",
-      "/assets/sprites/scratch/dragon_dragon-c.svg"
+      "assets/sprites/scratch/dragon_dragon-a.svg",
+      "assets/sprites/scratch/dragon_dragon-b.svg",
+      "assets/sprites/scratch/dragon_dragon-c.svg"
     ],
     "tags": [
       "fantasy",
@@ -1358,10 +1358,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_dragonfly",
     "name": "Dragonfly",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dragonfly_dragonfly-a.svg",
+    "image": "assets/sprites/scratch/dragonfly_dragonfly-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dragonfly_dragonfly-a.svg",
-      "/assets/sprites/scratch/dragonfly_dragonfly-b.svg"
+      "assets/sprites/scratch/dragonfly_dragonfly-a.svg",
+      "assets/sprites/scratch/dragonfly_dragonfly-b.svg"
     ],
     "tags": [
       "animals",
@@ -1376,11 +1376,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_dress",
     "name": "Dress",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/dress_dress-a.svg",
+    "image": "assets/sprites/scratch/dress_dress-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/dress_dress-a.svg",
-      "/assets/sprites/scratch/dress_dress-b.svg",
-      "/assets/sprites/scratch/dress_dress-c.svg"
+      "assets/sprites/scratch/dress_dress-a.svg",
+      "assets/sprites/scratch/dress_dress-b.svg",
+      "assets/sprites/scratch/dress_dress-c.svg"
     ],
     "tags": [
       "fashion",
@@ -1393,10 +1393,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_drum",
     "name": "Drum",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/drum_drum-a.svg",
+    "image": "assets/sprites/scratch/drum_drum-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/drum_drum-a.svg",
-      "/assets/sprites/scratch/drum_drum-b.svg"
+      "assets/sprites/scratch/drum_drum-a.svg",
+      "assets/sprites/scratch/drum_drum-b.svg"
     ],
     "tags": [
       "music",
@@ -1408,10 +1408,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_drum_kit",
     "name": "Drum Kit",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/drum_kit_drum-kit.svg",
+    "image": "assets/sprites/scratch/drum_kit_drum-kit.svg",
     "costumes": [
-      "/assets/sprites/scratch/drum_kit_drum-kit.svg",
-      "/assets/sprites/scratch/drum_kit_drum-kit-b.svg"
+      "assets/sprites/scratch/drum_kit_drum-kit.svg",
+      "assets/sprites/scratch/drum_kit_drum-kit-b.svg"
     ],
     "tags": [
       "music",
@@ -1423,10 +1423,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_drum-cymbal",
     "name": "Drum-cymbal",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/drum-cymbal_drum-cymbal-a.svg",
+    "image": "assets/sprites/scratch/drum-cymbal_drum-cymbal-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/drum-cymbal_drum-cymbal-a.svg",
-      "/assets/sprites/scratch/drum-cymbal_drum-cymbal-b.svg"
+      "assets/sprites/scratch/drum-cymbal_drum-cymbal-a.svg",
+      "assets/sprites/scratch/drum-cymbal_drum-cymbal-b.svg"
     ],
     "tags": [
       "music",
@@ -1438,10 +1438,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_drum-highhat",
     "name": "Drum-highhat",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/drum-highhat_drum-highhat-a.svg",
+    "image": "assets/sprites/scratch/drum-highhat_drum-highhat-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/drum-highhat_drum-highhat-a.svg",
-      "/assets/sprites/scratch/drum-highhat_drum-highhat-b.svg"
+      "assets/sprites/scratch/drum-highhat_drum-highhat-a.svg",
+      "assets/sprites/scratch/drum-highhat_drum-highhat-b.svg"
     ],
     "tags": [
       "music",
@@ -1453,10 +1453,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_drum-snare",
     "name": "Drum-snare",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/drum-snare_drum-snare-a.svg",
+    "image": "assets/sprites/scratch/drum-snare_drum-snare-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/drum-snare_drum-snare-a.svg",
-      "/assets/sprites/scratch/drum-snare_drum-snare-b.svg"
+      "assets/sprites/scratch/drum-snare_drum-snare-a.svg",
+      "assets/sprites/scratch/drum-snare_drum-snare-b.svg"
     ],
     "tags": [
       "music",
@@ -1468,10 +1468,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_drums_conga",
     "name": "Drums Conga",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/drums_conga_drums_conga-a.svg",
+    "image": "assets/sprites/scratch/drums_conga_drums_conga-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/drums_conga_drums_conga-a.svg",
-      "/assets/sprites/scratch/drums_conga_drums_conga-b.svg"
+      "assets/sprites/scratch/drums_conga_drums_conga-a.svg",
+      "assets/sprites/scratch/drums_conga_drums_conga-b.svg"
     ],
     "tags": [
       "drums",
@@ -1486,10 +1486,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_drums_tabla",
     "name": "Drums Tabla",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/drums_tabla_tabla-a.svg",
+    "image": "assets/sprites/scratch/drums_tabla_tabla-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/drums_tabla_tabla-a.svg",
-      "/assets/sprites/scratch/drums_tabla_tabla-b.svg"
+      "assets/sprites/scratch/drums_tabla_tabla-a.svg",
+      "assets/sprites/scratch/drums_tabla_tabla-b.svg"
     ],
     "tags": [
       "drums",
@@ -1504,9 +1504,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_duck",
     "name": "Duck",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/duck_duck.svg",
+    "image": "assets/sprites/scratch/duck_duck.svg",
     "costumes": [
-      "/assets/sprites/scratch/duck_duck.svg"
+      "assets/sprites/scratch/duck_duck.svg"
     ],
     "tags": [
       "animals",
@@ -1521,9 +1521,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_earth",
     "name": "Earth",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/earth_earth.svg",
+    "image": "assets/sprites/scratch/earth_earth.svg",
     "costumes": [
-      "/assets/sprites/scratch/earth_earth.svg"
+      "assets/sprites/scratch/earth_earth.svg"
     ],
     "tags": [
       "space",
@@ -1537,11 +1537,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_easel",
     "name": "Easel",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/easel_easel-a.svg",
+    "image": "assets/sprites/scratch/easel_easel-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/easel_easel-a.svg",
-      "/assets/sprites/scratch/easel_easel-b.svg",
-      "/assets/sprites/scratch/easel_easel-c.svg"
+      "assets/sprites/scratch/easel_easel-a.svg",
+      "assets/sprites/scratch/easel_easel-b.svg",
+      "assets/sprites/scratch/easel_easel-c.svg"
     ],
     "tags": [
       "bedroom",
@@ -1554,14 +1554,14 @@ export const scratchSprites: any[] = [
     "id": "scratch_egg",
     "name": "Egg",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/egg_egg-a.svg",
+    "image": "assets/sprites/scratch/egg_egg-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/egg_egg-a.svg",
-      "/assets/sprites/scratch/egg_egg-b.svg",
-      "/assets/sprites/scratch/egg_egg-c.svg",
-      "/assets/sprites/scratch/egg_egg-d.svg",
-      "/assets/sprites/scratch/egg_egg-e.svg",
-      "/assets/sprites/scratch/egg_egg-f.svg"
+      "assets/sprites/scratch/egg_egg-a.svg",
+      "assets/sprites/scratch/egg_egg-b.svg",
+      "assets/sprites/scratch/egg_egg-c.svg",
+      "assets/sprites/scratch/egg_egg-d.svg",
+      "assets/sprites/scratch/egg_egg-e.svg",
+      "assets/sprites/scratch/egg_egg-f.svg"
     ],
     "tags": [
       "food",
@@ -1574,10 +1574,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_elephant",
     "name": "Elephant",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/elephant_elephant-a.svg",
+    "image": "assets/sprites/scratch/elephant_elephant-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/elephant_elephant-a.svg",
-      "/assets/sprites/scratch/elephant_elephant-b.svg"
+      "assets/sprites/scratch/elephant_elephant-a.svg",
+      "assets/sprites/scratch/elephant_elephant-b.svg"
     ],
     "tags": [
       "animals",
@@ -1590,13 +1590,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_elf",
     "name": "Elf",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/elf_elf-a.svg",
+    "image": "assets/sprites/scratch/elf_elf-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/elf_elf-a.svg",
-      "/assets/sprites/scratch/elf_elf-b.svg",
-      "/assets/sprites/scratch/elf_elf-c.svg",
-      "/assets/sprites/scratch/elf_elf-d.svg",
-      "/assets/sprites/scratch/elf_elf-e.svg"
+      "assets/sprites/scratch/elf_elf-a.svg",
+      "assets/sprites/scratch/elf_elf-b.svg",
+      "assets/sprites/scratch/elf_elf-c.svg",
+      "assets/sprites/scratch/elf_elf-d.svg",
+      "assets/sprites/scratch/elf_elf-e.svg"
     ],
     "tags": [
       "fantasy",
@@ -1610,13 +1610,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_fairy",
     "name": "Fairy",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/fairy_fairy-a.svg",
+    "image": "assets/sprites/scratch/fairy_fairy-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/fairy_fairy-a.svg",
-      "/assets/sprites/scratch/fairy_fairy-b.svg",
-      "/assets/sprites/scratch/fairy_fairy-c.svg",
-      "/assets/sprites/scratch/fairy_fairy-d.svg",
-      "/assets/sprites/scratch/fairy_fairy-e.svg"
+      "assets/sprites/scratch/fairy_fairy-a.svg",
+      "assets/sprites/scratch/fairy_fairy-b.svg",
+      "assets/sprites/scratch/fairy_fairy-c.svg",
+      "assets/sprites/scratch/fairy_fairy-d.svg",
+      "assets/sprites/scratch/fairy_fairy-e.svg"
     ],
     "tags": [
       "fantasy",
@@ -1630,12 +1630,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_fish",
     "name": "Fish",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/fish_fish-a.svg",
+    "image": "assets/sprites/scratch/fish_fish-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/fish_fish-a.svg",
-      "/assets/sprites/scratch/fish_fish-b.svg",
-      "/assets/sprites/scratch/fish_fish-c.svg",
-      "/assets/sprites/scratch/fish_fish-d.svg"
+      "assets/sprites/scratch/fish_fish-a.svg",
+      "assets/sprites/scratch/fish_fish-b.svg",
+      "assets/sprites/scratch/fish_fish-c.svg",
+      "assets/sprites/scratch/fish_fish-d.svg"
     ],
     "tags": [
       "animals",
@@ -1650,10 +1650,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_fishbowl",
     "name": "Fishbowl",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/fishbowl_fishbowl-a.svg",
+    "image": "assets/sprites/scratch/fishbowl_fishbowl-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/fishbowl_fishbowl-a.svg",
-      "/assets/sprites/scratch/fishbowl_fishbowl-b.svg"
+      "assets/sprites/scratch/fishbowl_fishbowl-a.svg",
+      "assets/sprites/scratch/fishbowl_fishbowl-b.svg"
     ],
     "tags": [
       "fishbowl",
@@ -1667,11 +1667,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_food_truck",
     "name": "Food Truck",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/food_truck_food_truck-a.svg",
+    "image": "assets/sprites/scratch/food_truck_food_truck-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/food_truck_food_truck-a.svg",
-      "/assets/sprites/scratch/food_truck_food_truck-b.svg",
-      "/assets/sprites/scratch/food_truck_food_truck-c.svg"
+      "assets/sprites/scratch/food_truck_food_truck-a.svg",
+      "assets/sprites/scratch/food_truck_food_truck-b.svg",
+      "assets/sprites/scratch/food_truck_food_truck-c.svg"
     ],
     "tags": [
       "city",
@@ -1686,10 +1686,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_football",
     "name": "Football",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/football_football_running.png",
+    "image": "assets/sprites/scratch/football_football_running.png",
     "costumes": [
-      "/assets/sprites/scratch/football_football_running.png",
-      "/assets/sprites/scratch/football_football_standing.png"
+      "assets/sprites/scratch/football_football_running.png",
+      "assets/sprites/scratch/football_football_standing.png"
     ],
     "tags": [
       "people",
@@ -1701,9 +1701,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_fortune_cookie",
     "name": "Fortune Cookie",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/fortune_cookie_fortune_cookie.png",
+    "image": "assets/sprites/scratch/fortune_cookie_fortune_cookie.png",
     "costumes": [
-      "/assets/sprites/scratch/fortune_cookie_fortune_cookie.png"
+      "assets/sprites/scratch/fortune_cookie_fortune_cookie.png"
     ],
     "tags": [
       "food"
@@ -1714,11 +1714,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_fox",
     "name": "Fox",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/fox_fox-a.svg",
+    "image": "assets/sprites/scratch/fox_fox-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/fox_fox-a.svg",
-      "/assets/sprites/scratch/fox_fox-b.svg",
-      "/assets/sprites/scratch/fox_fox-c.svg"
+      "assets/sprites/scratch/fox_fox-a.svg",
+      "assets/sprites/scratch/fox_fox-b.svg",
+      "assets/sprites/scratch/fox_fox-c.svg"
     ],
     "tags": [
       "animals",
@@ -1731,12 +1731,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_frank",
     "name": "Frank",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/frank_frank-a.svg",
+    "image": "assets/sprites/scratch/frank_frank-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/frank_frank-a.svg",
-      "/assets/sprites/scratch/frank_frank-b.svg",
-      "/assets/sprites/scratch/frank_frank-c.svg",
-      "/assets/sprites/scratch/frank_frank-d.svg"
+      "assets/sprites/scratch/frank_frank-a.svg",
+      "assets/sprites/scratch/frank_frank-b.svg",
+      "assets/sprites/scratch/frank_frank-c.svg",
+      "assets/sprites/scratch/frank_frank-d.svg"
     ],
     "tags": [
       "fantasy",
@@ -1753,9 +1753,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_frog",
     "name": "Frog",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/frog_frog.svg",
+    "image": "assets/sprites/scratch/frog_frog.svg",
     "costumes": [
-      "/assets/sprites/scratch/frog_frog.svg"
+      "assets/sprites/scratch/frog_frog.svg"
     ],
     "tags": [
       "animals",
@@ -1771,11 +1771,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_frog_2_",
     "name": "Frog 2 ",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/frog_2__frog_2-a.svg",
+    "image": "assets/sprites/scratch/frog_2__frog_2-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/frog_2__frog_2-a.svg",
-      "/assets/sprites/scratch/frog_2__frog_2-b.svg",
-      "/assets/sprites/scratch/frog_2__frog_2-c.svg"
+      "assets/sprites/scratch/frog_2__frog_2-a.svg",
+      "assets/sprites/scratch/frog_2__frog_2-b.svg",
+      "assets/sprites/scratch/frog_2__frog_2-c.svg"
     ],
     "tags": [
       "animals",
@@ -1790,9 +1790,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_fruit_platter",
     "name": "Fruit Platter",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/fruit_platter_fruit_platter.png",
+    "image": "assets/sprites/scratch/fruit_platter_fruit_platter.png",
     "costumes": [
-      "/assets/sprites/scratch/fruit_platter_fruit_platter.png"
+      "assets/sprites/scratch/fruit_platter_fruit_platter.png"
     ],
     "tags": [
       "food"
@@ -1803,9 +1803,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_fruit_salad",
     "name": "Fruit Salad",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/fruit_salad_fruitsalad.svg",
+    "image": "assets/sprites/scratch/fruit_salad_fruitsalad.svg",
     "costumes": [
-      "/assets/sprites/scratch/fruit_salad_fruitsalad.svg"
+      "assets/sprites/scratch/fruit_salad_fruitsalad.svg"
     ],
     "tags": [
       "food",
@@ -1817,12 +1817,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_ghost",
     "name": "Ghost",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/ghost_ghost-a.svg",
+    "image": "assets/sprites/scratch/ghost_ghost-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/ghost_ghost-a.svg",
-      "/assets/sprites/scratch/ghost_ghost-b.svg",
-      "/assets/sprites/scratch/ghost_ghost-c.svg",
-      "/assets/sprites/scratch/ghost_ghost-d.svg"
+      "assets/sprites/scratch/ghost_ghost-a.svg",
+      "assets/sprites/scratch/ghost_ghost-b.svg",
+      "assets/sprites/scratch/ghost_ghost-c.svg",
+      "assets/sprites/scratch/ghost_ghost-d.svg"
     ],
     "tags": [
       "fantasy",
@@ -1838,10 +1838,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_gift",
     "name": "Gift",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/gift_gift-a.svg",
+    "image": "assets/sprites/scratch/gift_gift-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/gift_gift-a.svg",
-      "/assets/sprites/scratch/gift_gift-b.svg"
+      "assets/sprites/scratch/gift_gift-a.svg",
+      "assets/sprites/scratch/gift_gift-b.svg"
     ],
     "tags": [
       "thing",
@@ -1853,12 +1853,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_giga",
     "name": "Giga",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/giga_giga-a.svg",
+    "image": "assets/sprites/scratch/giga_giga-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/giga_giga-a.svg",
-      "/assets/sprites/scratch/giga_giga-b.svg",
-      "/assets/sprites/scratch/giga_giga-c.svg",
-      "/assets/sprites/scratch/giga_giga-d.svg"
+      "assets/sprites/scratch/giga_giga-a.svg",
+      "assets/sprites/scratch/giga_giga-b.svg",
+      "assets/sprites/scratch/giga_giga-c.svg",
+      "assets/sprites/scratch/giga_giga-d.svg"
     ],
     "tags": [
       "fantasy",
@@ -1870,11 +1870,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_giga_walking",
     "name": "Giga Walking",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/giga_walking_giga_walk1.svg",
+    "image": "assets/sprites/scratch/giga_walking_giga_walk1.svg",
     "costumes": [
-      "/assets/sprites/scratch/giga_walking_giga_walk1.svg",
-      "/assets/sprites/scratch/giga_walking_giga_walk2.svg",
-      "/assets/sprites/scratch/giga_walking_giga_walk3.svg"
+      "assets/sprites/scratch/giga_walking_giga_walk1.svg",
+      "assets/sprites/scratch/giga_walking_giga_walk2.svg",
+      "assets/sprites/scratch/giga_walking_giga_walk3.svg"
     ],
     "tags": [
       "fantasy",
@@ -1886,11 +1886,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_giraffe",
     "name": "Giraffe",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/giraffe_giraffe-a.svg",
+    "image": "assets/sprites/scratch/giraffe_giraffe-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/giraffe_giraffe-a.svg",
-      "/assets/sprites/scratch/giraffe_giraffe-b.svg",
-      "/assets/sprites/scratch/giraffe_giraffe-c.svg"
+      "assets/sprites/scratch/giraffe_giraffe-a.svg",
+      "assets/sprites/scratch/giraffe_giraffe-b.svg",
+      "assets/sprites/scratch/giraffe_giraffe-c.svg"
     ],
     "tags": [
       "animals",
@@ -1903,10 +1903,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_glass_water",
     "name": "Glass Water",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glass_water_glass_water-a.svg",
+    "image": "assets/sprites/scratch/glass_water_glass_water-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/glass_water_glass_water-a.svg",
-      "/assets/sprites/scratch/glass_water_glass_water-b.svg"
+      "assets/sprites/scratch/glass_water_glass_water-a.svg",
+      "assets/sprites/scratch/glass_water_glass_water-b.svg"
     ],
     "tags": [
       "food",
@@ -1919,12 +1919,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_glasses",
     "name": "Glasses",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glasses_glasses-a.svg",
+    "image": "assets/sprites/scratch/glasses_glasses-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/glasses_glasses-a.svg",
-      "/assets/sprites/scratch/glasses_glasses-b.svg",
-      "/assets/sprites/scratch/glasses_glasses-c.svg",
-      "/assets/sprites/scratch/glasses_glasses-e.svg"
+      "assets/sprites/scratch/glasses_glasses-a.svg",
+      "assets/sprites/scratch/glasses_glasses-b.svg",
+      "assets/sprites/scratch/glasses_glasses-c.svg",
+      "assets/sprites/scratch/glasses_glasses-e.svg"
     ],
     "tags": [
       "fashion",
@@ -1937,13 +1937,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_goalie",
     "name": "Goalie",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/goalie_goalie-a.svg",
+    "image": "assets/sprites/scratch/goalie_goalie-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/goalie_goalie-a.svg",
-      "/assets/sprites/scratch/goalie_goalie-b.svg",
-      "/assets/sprites/scratch/goalie_goalie-c.svg",
-      "/assets/sprites/scratch/goalie_goalie-d.svg",
-      "/assets/sprites/scratch/goalie_goalie-e.svg"
+      "assets/sprites/scratch/goalie_goalie-a.svg",
+      "assets/sprites/scratch/goalie_goalie-b.svg",
+      "assets/sprites/scratch/goalie_goalie-c.svg",
+      "assets/sprites/scratch/goalie_goalie-d.svg",
+      "assets/sprites/scratch/goalie_goalie-e.svg"
     ],
     "tags": [
       "sports",
@@ -1957,12 +1957,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_goblin",
     "name": "Goblin",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/goblin_goblin-a.svg",
+    "image": "assets/sprites/scratch/goblin_goblin-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/goblin_goblin-a.svg",
-      "/assets/sprites/scratch/goblin_goblin-b.svg",
-      "/assets/sprites/scratch/goblin_goblin-c.svg",
-      "/assets/sprites/scratch/goblin_goblin-d.svg"
+      "assets/sprites/scratch/goblin_goblin-a.svg",
+      "assets/sprites/scratch/goblin_goblin-b.svg",
+      "assets/sprites/scratch/goblin_goblin-c.svg",
+      "assets/sprites/scratch/goblin_goblin-d.svg"
     ],
     "tags": [
       "fantasy",
@@ -1975,11 +1975,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_gobo",
     "name": "Gobo",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/gobo_gobo-a.svg",
+    "image": "assets/sprites/scratch/gobo_gobo-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/gobo_gobo-a.svg",
-      "/assets/sprites/scratch/gobo_gobo-b.svg",
-      "/assets/sprites/scratch/gobo_gobo-c.svg"
+      "assets/sprites/scratch/gobo_gobo-a.svg",
+      "assets/sprites/scratch/gobo_gobo-b.svg",
+      "assets/sprites/scratch/gobo_gobo-c.svg"
     ],
     "tags": [
       "fantasy",
@@ -1993,14 +1993,14 @@ export const scratchSprites: any[] = [
     "id": "scratch_grasshopper",
     "name": "Grasshopper",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/grasshopper_grasshopper-a.svg",
+    "image": "assets/sprites/scratch/grasshopper_grasshopper-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/grasshopper_grasshopper-a.svg",
-      "/assets/sprites/scratch/grasshopper_grasshopper-b.svg",
-      "/assets/sprites/scratch/grasshopper_grasshopper-c.svg",
-      "/assets/sprites/scratch/grasshopper_grasshopper-d.svg",
-      "/assets/sprites/scratch/grasshopper_grasshopper-e.svg",
-      "/assets/sprites/scratch/grasshopper_grasshopper-f.svg"
+      "assets/sprites/scratch/grasshopper_grasshopper-a.svg",
+      "assets/sprites/scratch/grasshopper_grasshopper-b.svg",
+      "assets/sprites/scratch/grasshopper_grasshopper-c.svg",
+      "assets/sprites/scratch/grasshopper_grasshopper-d.svg",
+      "assets/sprites/scratch/grasshopper_grasshopper-e.svg",
+      "assets/sprites/scratch/grasshopper_grasshopper-f.svg"
     ],
     "tags": [
       "animals",
@@ -2015,9 +2015,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_green_flag",
     "name": "Green Flag",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/green_flag_green_flag.svg",
+    "image": "assets/sprites/scratch/green_flag_green_flag.svg",
     "costumes": [
-      "/assets/sprites/scratch/green_flag_green_flag.svg"
+      "assets/sprites/scratch/green_flag_green_flag.svg"
     ],
     "tags": [
       "thing"
@@ -2028,12 +2028,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_griffin",
     "name": "Griffin",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/griffin_griffin-a.svg",
+    "image": "assets/sprites/scratch/griffin_griffin-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/griffin_griffin-a.svg",
-      "/assets/sprites/scratch/griffin_griffin-b.svg",
-      "/assets/sprites/scratch/griffin_griffin-c.svg",
-      "/assets/sprites/scratch/griffin_griffin-d.svg"
+      "assets/sprites/scratch/griffin_griffin-a.svg",
+      "assets/sprites/scratch/griffin_griffin-b.svg",
+      "assets/sprites/scratch/griffin_griffin-c.svg",
+      "assets/sprites/scratch/griffin_griffin-d.svg"
     ],
     "tags": [
       "fantasy",
@@ -2047,10 +2047,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_guitar",
     "name": "Guitar",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/guitar_guitar-a.svg",
+    "image": "assets/sprites/scratch/guitar_guitar-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/guitar_guitar-a.svg",
-      "/assets/sprites/scratch/guitar_guitar-b.svg"
+      "assets/sprites/scratch/guitar_guitar-a.svg",
+      "assets/sprites/scratch/guitar_guitar-b.svg"
     ],
     "tags": [
       "music",
@@ -2062,10 +2062,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_guitar-electric1",
     "name": "Guitar-electric1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/guitar-electric1_guitar-electric1-a.svg",
+    "image": "assets/sprites/scratch/guitar-electric1_guitar-electric1-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/guitar-electric1_guitar-electric1-a.svg",
-      "/assets/sprites/scratch/guitar-electric1_guitar-electric1-b.svg"
+      "assets/sprites/scratch/guitar-electric1_guitar-electric1-a.svg",
+      "assets/sprites/scratch/guitar-electric1_guitar-electric1-b.svg"
     ],
     "tags": [
       "music",
@@ -2077,10 +2077,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_guitar-electric2",
     "name": "Guitar-electric2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/guitar-electric2_guitar-electric2-a.svg",
+    "image": "assets/sprites/scratch/guitar-electric2_guitar-electric2-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/guitar-electric2_guitar-electric2-a.svg",
-      "/assets/sprites/scratch/guitar-electric2_guitar-electric2-b.svg"
+      "assets/sprites/scratch/guitar-electric2_guitar-electric2-a.svg",
+      "assets/sprites/scratch/guitar-electric2_guitar-electric2-b.svg"
     ],
     "tags": [
       "music",
@@ -2092,11 +2092,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_hannah",
     "name": "Hannah",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/hannah_hannah-a.png",
+    "image": "assets/sprites/scratch/hannah_hannah-a.png",
     "costumes": [
-      "/assets/sprites/scratch/hannah_hannah-a.png",
-      "/assets/sprites/scratch/hannah_hannah-b.png",
-      "/assets/sprites/scratch/hannah_hannah-c.png"
+      "assets/sprites/scratch/hannah_hannah-a.png",
+      "assets/sprites/scratch/hannah_hannah-b.png",
+      "assets/sprites/scratch/hannah_hannah-c.png"
     ],
     "tags": [
       "people",
@@ -2108,11 +2108,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_hare",
     "name": "Hare",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/hare_hare-a.svg",
+    "image": "assets/sprites/scratch/hare_hare-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/hare_hare-a.svg",
-      "/assets/sprites/scratch/hare_hare-b.svg",
-      "/assets/sprites/scratch/hare_hare-c.svg"
+      "assets/sprites/scratch/hare_hare-a.svg",
+      "assets/sprites/scratch/hare_hare-b.svg",
+      "assets/sprites/scratch/hare_hare-c.svg"
     ],
     "tags": [
       "animals",
@@ -2131,11 +2131,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_harper",
     "name": "Harper",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/harper_harper-a.svg",
+    "image": "assets/sprites/scratch/harper_harper-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/harper_harper-a.svg",
-      "/assets/sprites/scratch/harper_harper-b.svg",
-      "/assets/sprites/scratch/harper_harper-c.svg"
+      "assets/sprites/scratch/harper_harper-a.svg",
+      "assets/sprites/scratch/harper_harper-b.svg",
+      "assets/sprites/scratch/harper_harper-c.svg"
     ],
     "tags": [
       "people",
@@ -2148,12 +2148,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_hat1_",
     "name": "Hat1 ",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/hat1__hat-a.svg",
+    "image": "assets/sprites/scratch/hat1__hat-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/hat1__hat-a.svg",
-      "/assets/sprites/scratch/hat1__hat-b.svg",
-      "/assets/sprites/scratch/hat1__hat-c.svg",
-      "/assets/sprites/scratch/hat1__hat-d.svg"
+      "assets/sprites/scratch/hat1__hat-a.svg",
+      "assets/sprites/scratch/hat1__hat-b.svg",
+      "assets/sprites/scratch/hat1__hat-c.svg",
+      "assets/sprites/scratch/hat1__hat-d.svg"
     ],
     "tags": [
       "fashion",
@@ -2166,11 +2166,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_hatchling",
     "name": "Hatchling",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/hatchling_hatchling-a.svg",
+    "image": "assets/sprites/scratch/hatchling_hatchling-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/hatchling_hatchling-a.svg",
-      "/assets/sprites/scratch/hatchling_hatchling-b.svg",
-      "/assets/sprites/scratch/hatchling_hatchling-c.svg"
+      "assets/sprites/scratch/hatchling_hatchling-a.svg",
+      "assets/sprites/scratch/hatchling_hatchling-b.svg",
+      "assets/sprites/scratch/hatchling_hatchling-c.svg"
     ],
     "tags": [
       "animals",
@@ -2184,10 +2184,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_heart",
     "name": "Heart",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/heart_heart_red.svg",
+    "image": "assets/sprites/scratch/heart_heart_red.svg",
     "costumes": [
-      "/assets/sprites/scratch/heart_heart_red.svg",
-      "/assets/sprites/scratch/heart_heart_purple.svg"
+      "assets/sprites/scratch/heart_heart_red.svg",
+      "assets/sprites/scratch/heart_heart_purple.svg"
     ],
     "tags": [
       "holiday",
@@ -2202,12 +2202,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_heart_candy",
     "name": "Heart Candy",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/heart_candy_heart_code.svg",
+    "image": "assets/sprites/scratch/heart_candy_heart_code.svg",
     "costumes": [
-      "/assets/sprites/scratch/heart_candy_heart_code.svg",
-      "/assets/sprites/scratch/heart_candy_heart_love.svg",
-      "/assets/sprites/scratch/heart_candy_heart_sweet.svg",
-      "/assets/sprites/scratch/heart_candy_heart_smile.svg"
+      "assets/sprites/scratch/heart_candy_heart_code.svg",
+      "assets/sprites/scratch/heart_candy_heart_love.svg",
+      "assets/sprites/scratch/heart_candy_heart_sweet.svg",
+      "assets/sprites/scratch/heart_candy_heart_smile.svg"
     ],
     "tags": [
       "food",
@@ -2219,9 +2219,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_heart_face",
     "name": "Heart Face",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/heart_face_heart_face.svg",
+    "image": "assets/sprites/scratch/heart_face_heart_face.svg",
     "costumes": [
-      "/assets/sprites/scratch/heart_face_heart_face.svg"
+      "assets/sprites/scratch/heart_face_heart_face.svg"
     ],
     "tags": [
       "emotions"
@@ -2232,13 +2232,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_hedgehog",
     "name": "Hedgehog",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/hedgehog_hedgehog-a.svg",
+    "image": "assets/sprites/scratch/hedgehog_hedgehog-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/hedgehog_hedgehog-a.svg",
-      "/assets/sprites/scratch/hedgehog_hedgehog-b.svg",
-      "/assets/sprites/scratch/hedgehog_hedgehog-c.svg",
-      "/assets/sprites/scratch/hedgehog_hedgehog-d.svg",
-      "/assets/sprites/scratch/hedgehog_hedgehog-e.svg"
+      "assets/sprites/scratch/hedgehog_hedgehog-a.svg",
+      "assets/sprites/scratch/hedgehog_hedgehog-b.svg",
+      "assets/sprites/scratch/hedgehog_hedgehog-c.svg",
+      "assets/sprites/scratch/hedgehog_hedgehog-d.svg",
+      "assets/sprites/scratch/hedgehog_hedgehog-e.svg"
     ],
     "tags": [
       "animals",
@@ -2252,12 +2252,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_hen",
     "name": "Hen",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/hen_hen-a.svg",
+    "image": "assets/sprites/scratch/hen_hen-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/hen_hen-a.svg",
-      "/assets/sprites/scratch/hen_hen-b.svg",
-      "/assets/sprites/scratch/hen_hen-c.svg",
-      "/assets/sprites/scratch/hen_hen-d.svg"
+      "assets/sprites/scratch/hen_hen-a.svg",
+      "assets/sprites/scratch/hen_hen-b.svg",
+      "assets/sprites/scratch/hen_hen-c.svg",
+      "assets/sprites/scratch/hen_hen-d.svg"
     ],
     "tags": [
       "animals",
@@ -2271,10 +2271,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_hippo1",
     "name": "Hippo1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/hippo1_hippo1-a.svg",
+    "image": "assets/sprites/scratch/hippo1_hippo1-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/hippo1_hippo1-a.svg",
-      "/assets/sprites/scratch/hippo1_hippo1-b.svg"
+      "assets/sprites/scratch/hippo1_hippo1-a.svg",
+      "assets/sprites/scratch/hippo1_hippo1-b.svg"
     ],
     "tags": [
       "animals",
@@ -2292,9 +2292,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_home_button",
     "name": "Home Button",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/home_button_home_button.svg",
+    "image": "assets/sprites/scratch/home_button_home_button.svg",
     "costumes": [
-      "/assets/sprites/scratch/home_button_home_button.svg"
+      "assets/sprites/scratch/home_button_home_button.svg"
     ],
     "tags": [
       "ui",
@@ -2306,10 +2306,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_horse",
     "name": "Horse",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/horse_horse-a.svg",
+    "image": "assets/sprites/scratch/horse_horse-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/horse_horse-a.svg",
-      "/assets/sprites/scratch/horse_horse-b.svg"
+      "assets/sprites/scratch/horse_horse-a.svg",
+      "assets/sprites/scratch/horse_horse-b.svg"
     ],
     "tags": [
       "animals",
@@ -2325,15 +2325,15 @@ export const scratchSprites: any[] = [
     "id": "scratch_jaime",
     "name": "Jaime",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/jaime_jaime-a.png",
+    "image": "assets/sprites/scratch/jaime_jaime-a.png",
     "costumes": [
-      "/assets/sprites/scratch/jaime_jaime-a.png",
-      "/assets/sprites/scratch/jaime_jaime-b.png",
-      "/assets/sprites/scratch/jaime_jaime_walking-a.png",
-      "/assets/sprites/scratch/jaime_jaime_walking-b.png",
-      "/assets/sprites/scratch/jaime_jaime_walking-c.png",
-      "/assets/sprites/scratch/jaime_jaime_walking-d.png",
-      "/assets/sprites/scratch/jaime_jaime_walking-e.png"
+      "assets/sprites/scratch/jaime_jaime-a.png",
+      "assets/sprites/scratch/jaime_jaime-b.png",
+      "assets/sprites/scratch/jaime_jaime_walking-a.png",
+      "assets/sprites/scratch/jaime_jaime_walking-b.png",
+      "assets/sprites/scratch/jaime_jaime_walking-c.png",
+      "assets/sprites/scratch/jaime_jaime_walking-d.png",
+      "assets/sprites/scratch/jaime_jaime_walking-e.png"
     ],
     "tags": [
       "people"
@@ -2344,12 +2344,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_jamal",
     "name": "Jamal",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/jamal_jamal-a.svg",
+    "image": "assets/sprites/scratch/jamal_jamal-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/jamal_jamal-a.svg",
-      "/assets/sprites/scratch/jamal_jamal-b.svg",
-      "/assets/sprites/scratch/jamal_jamal-c.svg",
-      "/assets/sprites/scratch/jamal_jamal-d.svg"
+      "assets/sprites/scratch/jamal_jamal-a.svg",
+      "assets/sprites/scratch/jamal_jamal-b.svg",
+      "assets/sprites/scratch/jamal_jamal-c.svg",
+      "assets/sprites/scratch/jamal_jamal-d.svg"
     ],
     "tags": [
       "sports",
@@ -2363,10 +2363,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_jar",
     "name": "Jar",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/jar_jar-a.svg",
+    "image": "assets/sprites/scratch/jar_jar-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/jar_jar-a.svg",
-      "/assets/sprites/scratch/jar_jar-b.svg"
+      "assets/sprites/scratch/jar_jar-a.svg",
+      "assets/sprites/scratch/jar_jar-b.svg"
     ],
     "tags": [
       "food",
@@ -2379,12 +2379,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_jellyfish",
     "name": "Jellyfish",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/jellyfish_jellyfish-a.svg",
+    "image": "assets/sprites/scratch/jellyfish_jellyfish-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/jellyfish_jellyfish-a.svg",
-      "/assets/sprites/scratch/jellyfish_jellyfish-b.svg",
-      "/assets/sprites/scratch/jellyfish_jellyfish-c.svg",
-      "/assets/sprites/scratch/jellyfish_jellyfish-d.svg"
+      "assets/sprites/scratch/jellyfish_jellyfish-a.svg",
+      "assets/sprites/scratch/jellyfish_jellyfish-b.svg",
+      "assets/sprites/scratch/jellyfish_jellyfish-c.svg",
+      "assets/sprites/scratch/jellyfish_jellyfish-d.svg"
     ],
     "tags": [
       "animals",
@@ -2400,12 +2400,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_jordyn",
     "name": "Jordyn",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/jordyn_jordyn-a.svg",
+    "image": "assets/sprites/scratch/jordyn_jordyn-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/jordyn_jordyn-a.svg",
-      "/assets/sprites/scratch/jordyn_jordyn-b.svg",
-      "/assets/sprites/scratch/jordyn_jordyn-c.svg",
-      "/assets/sprites/scratch/jordyn_jordyn-d.svg"
+      "assets/sprites/scratch/jordyn_jordyn-a.svg",
+      "assets/sprites/scratch/jordyn_jordyn-b.svg",
+      "assets/sprites/scratch/jordyn_jordyn-c.svg",
+      "assets/sprites/scratch/jordyn_jordyn-d.svg"
     ],
     "tags": [
       "sports",
@@ -2420,21 +2420,21 @@ export const scratchSprites: any[] = [
     "id": "scratch_jouvi_dance",
     "name": "Jouvi Dance",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/jouvi_dance_jo_stance.png",
+    "image": "assets/sprites/scratch/jouvi_dance_jo_stance.png",
     "costumes": [
-      "/assets/sprites/scratch/jouvi_dance_jo_stance.png",
-      "/assets/sprites/scratch/jouvi_dance_jo_top_stand.png",
-      "/assets/sprites/scratch/jouvi_dance_jo_top_r_leg.png",
-      "/assets/sprites/scratch/jouvi_dance_jo_top_l_leg.png",
-      "/assets/sprites/scratch/jouvi_dance_jo_top_r_cross.png",
-      "/assets/sprites/scratch/jouvi_dance_jo_top_l_cross.png",
-      "/assets/sprites/scratch/jouvi_dance_jo_pop_front.png",
-      "/assets/sprites/scratch/jouvi_dance_jo_pop_down.png",
-      "/assets/sprites/scratch/jouvi_dance_jo_pop_left.png",
-      "/assets/sprites/scratch/jouvi_dance_jo_pop_right.png",
-      "/assets/sprites/scratch/jouvi_dance_jo_pop_l_arm.png",
-      "/assets/sprites/scratch/jouvi_dance_jo_pop_stand.png",
-      "/assets/sprites/scratch/jouvi_dance_jo_pop_r_arm.png"
+      "assets/sprites/scratch/jouvi_dance_jo_stance.png",
+      "assets/sprites/scratch/jouvi_dance_jo_top_stand.png",
+      "assets/sprites/scratch/jouvi_dance_jo_top_r_leg.png",
+      "assets/sprites/scratch/jouvi_dance_jo_top_l_leg.png",
+      "assets/sprites/scratch/jouvi_dance_jo_top_r_cross.png",
+      "assets/sprites/scratch/jouvi_dance_jo_top_l_cross.png",
+      "assets/sprites/scratch/jouvi_dance_jo_pop_front.png",
+      "assets/sprites/scratch/jouvi_dance_jo_pop_down.png",
+      "assets/sprites/scratch/jouvi_dance_jo_pop_left.png",
+      "assets/sprites/scratch/jouvi_dance_jo_pop_right.png",
+      "assets/sprites/scratch/jouvi_dance_jo_pop_l_arm.png",
+      "assets/sprites/scratch/jouvi_dance_jo_pop_stand.png",
+      "assets/sprites/scratch/jouvi_dance_jo_pop_r_arm.png"
     ],
     "tags": [
       "people",
@@ -2446,10 +2446,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_kai",
     "name": "Kai",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/kai_kai-a.png",
+    "image": "assets/sprites/scratch/kai_kai-a.png",
     "costumes": [
-      "/assets/sprites/scratch/kai_kai-a.png",
-      "/assets/sprites/scratch/kai_kai-b.png"
+      "assets/sprites/scratch/kai_kai-a.png",
+      "assets/sprites/scratch/kai_kai-b.png"
     ],
     "tags": [
       "people"
@@ -2460,9 +2460,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_key",
     "name": "Key",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/key_key.svg",
+    "image": "assets/sprites/scratch/key_key.svg",
     "costumes": [
-      "/assets/sprites/scratch/key_key.svg"
+      "assets/sprites/scratch/key_key.svg"
     ],
     "tags": [
       "thing",
@@ -2474,10 +2474,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_keyboard",
     "name": "Keyboard",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/keyboard_keyboard-a.svg",
+    "image": "assets/sprites/scratch/keyboard_keyboard-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/keyboard_keyboard-a.svg",
-      "/assets/sprites/scratch/keyboard_keyboard-b.svg"
+      "assets/sprites/scratch/keyboard_keyboard-a.svg",
+      "assets/sprites/scratch/keyboard_keyboard-b.svg"
     ],
     "tags": [
       "music",
@@ -2489,11 +2489,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_kia",
     "name": "Kia",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/kia_kia-a.svg",
+    "image": "assets/sprites/scratch/kia_kia-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/kia_kia-a.svg",
-      "/assets/sprites/scratch/kia_kia-b.svg",
-      "/assets/sprites/scratch/kia_kia-c.svg"
+      "assets/sprites/scratch/kia_kia-a.svg",
+      "assets/sprites/scratch/kia_kia-b.svg",
+      "assets/sprites/scratch/kia_kia-c.svg"
     ],
     "tags": [
       "people",
@@ -2511,14 +2511,14 @@ export const scratchSprites: any[] = [
     "id": "scratch_kiran",
     "name": "Kiran",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/kiran_kiran-a.svg",
+    "image": "assets/sprites/scratch/kiran_kiran-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/kiran_kiran-a.svg",
-      "/assets/sprites/scratch/kiran_kiran-b.svg",
-      "/assets/sprites/scratch/kiran_kiran-c.svg",
-      "/assets/sprites/scratch/kiran_kiran-d.svg",
-      "/assets/sprites/scratch/kiran_kiran-e.svg",
-      "/assets/sprites/scratch/kiran_kiran-f.svg"
+      "assets/sprites/scratch/kiran_kiran-a.svg",
+      "assets/sprites/scratch/kiran_kiran-b.svg",
+      "assets/sprites/scratch/kiran_kiran-c.svg",
+      "assets/sprites/scratch/kiran_kiran-d.svg",
+      "assets/sprites/scratch/kiran_kiran-e.svg",
+      "assets/sprites/scratch/kiran_kiran-f.svg"
     ],
     "tags": [
       "space",
@@ -2531,9 +2531,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_knight",
     "name": "Knight",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/knight_knight.svg",
+    "image": "assets/sprites/scratch/knight_knight.svg",
     "costumes": [
-      "/assets/sprites/scratch/knight_knight.svg"
+      "assets/sprites/scratch/knight_knight.svg"
     ],
     "tags": [
       "people",
@@ -2546,21 +2546,21 @@ export const scratchSprites: any[] = [
     "id": "scratch_lb_dance",
     "name": "LB Dance",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/lb_dance_lb_stance.png",
+    "image": "assets/sprites/scratch/lb_dance_lb_stance.png",
     "costumes": [
-      "/assets/sprites/scratch/lb_dance_lb_stance.png",
-      "/assets/sprites/scratch/lb_dance_lb_top_stand.png",
-      "/assets/sprites/scratch/lb_dance_lb_top_r_leg.png",
-      "/assets/sprites/scratch/lb_dance_lb_top_l_leg.png",
-      "/assets/sprites/scratch/lb_dance_lb_top_l_cross.png",
-      "/assets/sprites/scratch/lb_dance_lb_top_r_cross.png",
-      "/assets/sprites/scratch/lb_dance_lb_pop_front.png",
-      "/assets/sprites/scratch/lb_dance_lb_pop_down.png",
-      "/assets/sprites/scratch/lb_dance_lb_pop_left.png",
-      "/assets/sprites/scratch/lb_dance_lb_pop_right.png",
-      "/assets/sprites/scratch/lb_dance_lb_pop_l_arm.png",
-      "/assets/sprites/scratch/lb_dance_lb_pop_stand.png",
-      "/assets/sprites/scratch/lb_dance_lb_pop_r_arm.png"
+      "assets/sprites/scratch/lb_dance_lb_stance.png",
+      "assets/sprites/scratch/lb_dance_lb_top_stand.png",
+      "assets/sprites/scratch/lb_dance_lb_top_r_leg.png",
+      "assets/sprites/scratch/lb_dance_lb_top_l_leg.png",
+      "assets/sprites/scratch/lb_dance_lb_top_l_cross.png",
+      "assets/sprites/scratch/lb_dance_lb_top_r_cross.png",
+      "assets/sprites/scratch/lb_dance_lb_pop_front.png",
+      "assets/sprites/scratch/lb_dance_lb_pop_down.png",
+      "assets/sprites/scratch/lb_dance_lb_pop_left.png",
+      "assets/sprites/scratch/lb_dance_lb_pop_right.png",
+      "assets/sprites/scratch/lb_dance_lb_pop_l_arm.png",
+      "assets/sprites/scratch/lb_dance_lb_pop_stand.png",
+      "assets/sprites/scratch/lb_dance_lb_pop_r_arm.png"
     ],
     "tags": [
       "people",
@@ -2572,9 +2572,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_ladybug1",
     "name": "Ladybug1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/ladybug1_ladybug2.svg",
+    "image": "assets/sprites/scratch/ladybug1_ladybug2.svg",
     "costumes": [
-      "/assets/sprites/scratch/ladybug1_ladybug2.svg"
+      "assets/sprites/scratch/ladybug1_ladybug2.svg"
     ],
     "tags": [
       "animals",
@@ -2588,10 +2588,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_ladybug2",
     "name": "Ladybug2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/ladybug2_ladybug2-a.svg",
+    "image": "assets/sprites/scratch/ladybug2_ladybug2-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/ladybug2_ladybug2-a.svg",
-      "/assets/sprites/scratch/ladybug2_ladybug2-b.svg"
+      "assets/sprites/scratch/ladybug2_ladybug2-a.svg",
+      "assets/sprites/scratch/ladybug2_ladybug2-b.svg"
     ],
     "tags": [
       "animals",
@@ -2606,9 +2606,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_laptop",
     "name": "Laptop",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/laptop_laptop.svg",
+    "image": "assets/sprites/scratch/laptop_laptop.svg",
     "costumes": [
-      "/assets/sprites/scratch/laptop_laptop.svg"
+      "assets/sprites/scratch/laptop_laptop.svg"
     ],
     "tags": [
       "things",
@@ -2620,9 +2620,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_lightning",
     "name": "Lightning",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/lightning_lightning.svg",
+    "image": "assets/sprites/scratch/lightning_lightning.svg",
     "costumes": [
-      "/assets/sprites/scratch/lightning_lightning.svg"
+      "assets/sprites/scratch/lightning_lightning.svg"
     ],
     "tags": [
       "weather",
@@ -2637,9 +2637,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_line",
     "name": "Line",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/line_line.svg",
+    "image": "assets/sprites/scratch/line_line.svg",
     "costumes": [
-      "/assets/sprites/scratch/line_line.svg"
+      "assets/sprites/scratch/line_line.svg"
     ],
     "tags": [
       "lava",
@@ -2652,11 +2652,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_lion",
     "name": "Lion",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/lion_lion-a.svg",
+    "image": "assets/sprites/scratch/lion_lion-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/lion_lion-a.svg",
-      "/assets/sprites/scratch/lion_lion-b.svg",
-      "/assets/sprites/scratch/lion_lion-c.svg"
+      "assets/sprites/scratch/lion_lion-a.svg",
+      "assets/sprites/scratch/lion_lion-b.svg",
+      "assets/sprites/scratch/lion_lion-c.svg"
     ],
     "tags": [
       "cat",
@@ -2671,11 +2671,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_llama",
     "name": "Llama",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/llama_llama.svg",
+    "image": "assets/sprites/scratch/llama_llama.svg",
     "costumes": [
-      "/assets/sprites/scratch/llama_llama.svg",
-      "/assets/sprites/scratch/llama_llama-b.svg",
-      "/assets/sprites/scratch/llama_llama-c.svg"
+      "assets/sprites/scratch/llama_llama.svg",
+      "assets/sprites/scratch/llama_llama-b.svg",
+      "assets/sprites/scratch/llama_llama-c.svg"
     ],
     "tags": [
       "animals",
@@ -2688,11 +2688,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_luca",
     "name": "Luca",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/luca_luca-a.svg",
+    "image": "assets/sprites/scratch/luca_luca-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/luca_luca-a.svg",
-      "/assets/sprites/scratch/luca_luca-b.svg",
-      "/assets/sprites/scratch/luca_luca-c.svg"
+      "assets/sprites/scratch/luca_luca-a.svg",
+      "assets/sprites/scratch/luca_luca-b.svg",
+      "assets/sprites/scratch/luca_luca-c.svg"
     ],
     "tags": [
       "people",
@@ -2710,9 +2710,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_magic_wand",
     "name": "Magic Wand",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/magic_wand_magicwand.svg",
+    "image": "assets/sprites/scratch/magic_wand_magicwand.svg",
     "costumes": [
-      "/assets/sprites/scratch/magic_wand_magicwand.svg"
+      "assets/sprites/scratch/magic_wand_magicwand.svg"
     ],
     "tags": [
       "fantasy",
@@ -2725,13 +2725,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_marian",
     "name": "Marian",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/marian_marian-a.png",
+    "image": "assets/sprites/scratch/marian_marian-a.png",
     "costumes": [
-      "/assets/sprites/scratch/marian_marian-a.png",
-      "/assets/sprites/scratch/marian_marian-b.png",
-      "/assets/sprites/scratch/marian_marian-c.png",
-      "/assets/sprites/scratch/marian_marian-d.png",
-      "/assets/sprites/scratch/marian_marian-e.png"
+      "assets/sprites/scratch/marian_marian-a.png",
+      "assets/sprites/scratch/marian_marian-b.png",
+      "assets/sprites/scratch/marian_marian-c.png",
+      "assets/sprites/scratch/marian_marian-d.png",
+      "assets/sprites/scratch/marian_marian-e.png"
     ],
     "tags": [
       "people"
@@ -2742,12 +2742,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_max",
     "name": "Max",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/max_max-a.svg",
+    "image": "assets/sprites/scratch/max_max-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/max_max-a.svg",
-      "/assets/sprites/scratch/max_max-b.svg",
-      "/assets/sprites/scratch/max_max-c.svg",
-      "/assets/sprites/scratch/max_max-d.svg"
+      "assets/sprites/scratch/max_max-a.svg",
+      "assets/sprites/scratch/max_max-b.svg",
+      "assets/sprites/scratch/max_max-c.svg",
+      "assets/sprites/scratch/max_max-d.svg"
     ],
     "tags": [
       "sports",
@@ -2761,12 +2761,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_mermaid",
     "name": "Mermaid",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/mermaid_mermaid-a.svg",
+    "image": "assets/sprites/scratch/mermaid_mermaid-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/mermaid_mermaid-a.svg",
-      "/assets/sprites/scratch/mermaid_mermaid-b.svg",
-      "/assets/sprites/scratch/mermaid_mermaid-c.svg",
-      "/assets/sprites/scratch/mermaid_mermaid-d.svg"
+      "assets/sprites/scratch/mermaid_mermaid-a.svg",
+      "assets/sprites/scratch/mermaid_mermaid-b.svg",
+      "assets/sprites/scratch/mermaid_mermaid-c.svg",
+      "assets/sprites/scratch/mermaid_mermaid-d.svg"
     ],
     "tags": [
       "fantasy",
@@ -2780,10 +2780,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_microphone",
     "name": "Microphone",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/microphone_microphone-a.svg",
+    "image": "assets/sprites/scratch/microphone_microphone-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/microphone_microphone-a.svg",
-      "/assets/sprites/scratch/microphone_microphone-b.svg"
+      "assets/sprites/scratch/microphone_microphone-a.svg",
+      "assets/sprites/scratch/microphone_microphone-b.svg"
     ],
     "tags": [
       "music",
@@ -2795,13 +2795,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_milk",
     "name": "Milk",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/milk_milk-a.svg",
+    "image": "assets/sprites/scratch/milk_milk-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/milk_milk-a.svg",
-      "/assets/sprites/scratch/milk_milk-b.svg",
-      "/assets/sprites/scratch/milk_milk-c.svg",
-      "/assets/sprites/scratch/milk_milk-d.svg",
-      "/assets/sprites/scratch/milk_milk-e.svg"
+      "assets/sprites/scratch/milk_milk-a.svg",
+      "assets/sprites/scratch/milk_milk-b.svg",
+      "assets/sprites/scratch/milk_milk-c.svg",
+      "assets/sprites/scratch/milk_milk-d.svg",
+      "assets/sprites/scratch/milk_milk-e.svg"
     ],
     "tags": [
       "food",
@@ -2814,13 +2814,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_monet",
     "name": "Monet",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/monet_monet-a.svg",
+    "image": "assets/sprites/scratch/monet_monet-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/monet_monet-a.svg",
-      "/assets/sprites/scratch/monet_monet-b.svg",
-      "/assets/sprites/scratch/monet_monet-c.svg",
-      "/assets/sprites/scratch/monet_monet-d.svg",
-      "/assets/sprites/scratch/monet_monet-e.svg"
+      "assets/sprites/scratch/monet_monet-a.svg",
+      "assets/sprites/scratch/monet_monet-b.svg",
+      "assets/sprites/scratch/monet_monet-c.svg",
+      "assets/sprites/scratch/monet_monet-d.svg",
+      "assets/sprites/scratch/monet_monet-e.svg"
     ],
     "tags": [
       "space",
@@ -2833,11 +2833,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_monkey",
     "name": "Monkey",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/monkey_monkey-a.svg",
+    "image": "assets/sprites/scratch/monkey_monkey-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/monkey_monkey-a.svg",
-      "/assets/sprites/scratch/monkey_monkey-b.svg",
-      "/assets/sprites/scratch/monkey_monkey-c.svg"
+      "assets/sprites/scratch/monkey_monkey-a.svg",
+      "assets/sprites/scratch/monkey_monkey-b.svg",
+      "assets/sprites/scratch/monkey_monkey-c.svg"
     ],
     "tags": [
       "animals",
@@ -2851,12 +2851,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_motorcycle",
     "name": "Motorcycle",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/motorcycle_motorcycle-a.svg",
+    "image": "assets/sprites/scratch/motorcycle_motorcycle-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/motorcycle_motorcycle-a.svg",
-      "/assets/sprites/scratch/motorcycle_motorcycle-b.svg",
-      "/assets/sprites/scratch/motorcycle_motorcycle-c.svg",
-      "/assets/sprites/scratch/motorcycle_motorcycle-d.svg"
+      "assets/sprites/scratch/motorcycle_motorcycle-a.svg",
+      "assets/sprites/scratch/motorcycle_motorcycle-b.svg",
+      "assets/sprites/scratch/motorcycle_motorcycle-c.svg",
+      "assets/sprites/scratch/motorcycle_motorcycle-d.svg"
     ],
     "tags": [
       "city",
@@ -2870,10 +2870,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_mouse1",
     "name": "Mouse1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/mouse1_mouse1-a.svg",
+    "image": "assets/sprites/scratch/mouse1_mouse1-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/mouse1_mouse1-a.svg",
-      "/assets/sprites/scratch/mouse1_mouse1-b.svg"
+      "assets/sprites/scratch/mouse1_mouse1-a.svg",
+      "assets/sprites/scratch/mouse1_mouse1-b.svg"
     ],
     "tags": [
       "animals",
@@ -2886,10 +2886,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_muffin",
     "name": "Muffin",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/muffin_muffin-a.svg",
+    "image": "assets/sprites/scratch/muffin_muffin-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/muffin_muffin-a.svg",
-      "/assets/sprites/scratch/muffin_muffin-b.svg"
+      "assets/sprites/scratch/muffin_muffin-a.svg",
+      "assets/sprites/scratch/muffin_muffin-b.svg"
     ],
     "tags": [
       "food"
@@ -2900,12 +2900,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_nano",
     "name": "Nano",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/nano_nano-a.svg",
+    "image": "assets/sprites/scratch/nano_nano-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/nano_nano-a.svg",
-      "/assets/sprites/scratch/nano_nano-b.svg",
-      "/assets/sprites/scratch/nano_nano-c.svg",
-      "/assets/sprites/scratch/nano_nano-d.svg"
+      "assets/sprites/scratch/nano_nano-a.svg",
+      "assets/sprites/scratch/nano_nano-b.svg",
+      "assets/sprites/scratch/nano_nano-c.svg",
+      "assets/sprites/scratch/nano_nano-d.svg"
     ],
     "tags": [
       "fantasy",
@@ -2917,9 +2917,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_neigh_pony",
     "name": "Neigh Pony",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/neigh_pony_neigh_pony.svg",
+    "image": "assets/sprites/scratch/neigh_pony_neigh_pony.svg",
     "costumes": [
-      "/assets/sprites/scratch/neigh_pony_neigh_pony.svg"
+      "assets/sprites/scratch/neigh_pony_neigh_pony.svg"
     ],
     "tags": [
       "animals",
@@ -2931,11 +2931,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_noor",
     "name": "Noor",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/noor_noor-a.svg",
+    "image": "assets/sprites/scratch/noor_noor-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/noor_noor-a.svg",
-      "/assets/sprites/scratch/noor_noor-b.svg",
-      "/assets/sprites/scratch/noor_noor-c.svg"
+      "assets/sprites/scratch/noor_noor-a.svg",
+      "assets/sprites/scratch/noor_noor-b.svg",
+      "assets/sprites/scratch/noor_noor-c.svg"
     ],
     "tags": [
       "people",
@@ -2953,13 +2953,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_octopus",
     "name": "Octopus",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/octopus_octopus-a.svg",
+    "image": "assets/sprites/scratch/octopus_octopus-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/octopus_octopus-a.svg",
-      "/assets/sprites/scratch/octopus_octopus-b.svg",
-      "/assets/sprites/scratch/octopus_octopus-c.svg",
-      "/assets/sprites/scratch/octopus_octopus-d.svg",
-      "/assets/sprites/scratch/octopus_octopus-e.svg"
+      "assets/sprites/scratch/octopus_octopus-a.svg",
+      "assets/sprites/scratch/octopus_octopus-b.svg",
+      "assets/sprites/scratch/octopus_octopus-c.svg",
+      "assets/sprites/scratch/octopus_octopus-d.svg",
+      "assets/sprites/scratch/octopus_octopus-e.svg"
     ],
     "tags": [
       "animals",
@@ -2974,9 +2974,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_orange",
     "name": "Orange",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/orange_orange.svg",
+    "image": "assets/sprites/scratch/orange_orange.svg",
     "costumes": [
-      "/assets/sprites/scratch/orange_orange.svg"
+      "assets/sprites/scratch/orange_orange.svg"
     ],
     "tags": [
       "food",
@@ -2988,10 +2988,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_orange2",
     "name": "Orange2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/orange2_orange2-a.svg",
+    "image": "assets/sprites/scratch/orange2_orange2-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/orange2_orange2-a.svg",
-      "/assets/sprites/scratch/orange2_orange2-b.svg"
+      "assets/sprites/scratch/orange2_orange2-a.svg",
+      "assets/sprites/scratch/orange2_orange2-b.svg"
     ],
     "tags": [
       "food",
@@ -3004,12 +3004,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_outfielder",
     "name": "Outfielder",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/outfielder_outfielder-a.svg",
+    "image": "assets/sprites/scratch/outfielder_outfielder-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/outfielder_outfielder-a.svg",
-      "/assets/sprites/scratch/outfielder_outfielder-b.svg",
-      "/assets/sprites/scratch/outfielder_outfielder-c.svg",
-      "/assets/sprites/scratch/outfielder_outfielder-d.svg"
+      "assets/sprites/scratch/outfielder_outfielder-a.svg",
+      "assets/sprites/scratch/outfielder_outfielder-b.svg",
+      "assets/sprites/scratch/outfielder_outfielder-c.svg",
+      "assets/sprites/scratch/outfielder_outfielder-d.svg"
     ],
     "tags": [
       "baseball",
@@ -3023,11 +3023,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_owl",
     "name": "Owl",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/owl_owl-a.svg",
+    "image": "assets/sprites/scratch/owl_owl-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/owl_owl-a.svg",
-      "/assets/sprites/scratch/owl_owl-b.svg",
-      "/assets/sprites/scratch/owl_owl-c.svg"
+      "assets/sprites/scratch/owl_owl-a.svg",
+      "assets/sprites/scratch/owl_owl-b.svg",
+      "assets/sprites/scratch/owl_owl-c.svg"
     ],
     "tags": [
       "animals",
@@ -3040,9 +3040,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_paddle",
     "name": "Paddle",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/paddle_paddle.svg",
+    "image": "assets/sprites/scratch/paddle_paddle.svg",
     "costumes": [
-      "/assets/sprites/scratch/paddle_paddle.svg"
+      "assets/sprites/scratch/paddle_paddle.svg"
     ],
     "tags": [
       "thing"
@@ -3053,11 +3053,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_panther",
     "name": "Panther",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/panther_panther-a.svg",
+    "image": "assets/sprites/scratch/panther_panther-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/panther_panther-a.svg",
-      "/assets/sprites/scratch/panther_panther-b.svg",
-      "/assets/sprites/scratch/panther_panther-c.svg"
+      "assets/sprites/scratch/panther_panther-a.svg",
+      "assets/sprites/scratch/panther_panther-b.svg",
+      "assets/sprites/scratch/panther_panther-c.svg"
     ],
     "tags": [
       "animals",
@@ -3071,10 +3071,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_pants",
     "name": "Pants",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/pants_pants-a.svg",
+    "image": "assets/sprites/scratch/pants_pants-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/pants_pants-a.svg",
-      "/assets/sprites/scratch/pants_pants-b.svg"
+      "assets/sprites/scratch/pants_pants-a.svg",
+      "assets/sprites/scratch/pants_pants-b.svg"
     ],
     "tags": [
       "fashion",
@@ -3087,10 +3087,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_parrot",
     "name": "Parrot",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/parrot_parrot-a.svg",
+    "image": "assets/sprites/scratch/parrot_parrot-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/parrot_parrot-a.svg",
-      "/assets/sprites/scratch/parrot_parrot-b.svg"
+      "assets/sprites/scratch/parrot_parrot-a.svg",
+      "assets/sprites/scratch/parrot_parrot-b.svg"
     ],
     "tags": [
       "animals",
@@ -3107,11 +3107,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_party_hats",
     "name": "Party Hats",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/party_hats_party_hat-a.svg",
+    "image": "assets/sprites/scratch/party_hats_party_hat-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/party_hats_party_hat-a.svg",
-      "/assets/sprites/scratch/party_hats_party_hat-b.svg",
-      "/assets/sprites/scratch/party_hats_party_hat-e.svg"
+      "assets/sprites/scratch/party_hats_party_hat-a.svg",
+      "assets/sprites/scratch/party_hats_party_hat-b.svg",
+      "assets/sprites/scratch/party_hats_party_hat-e.svg"
     ],
     "tags": [
       "fashion",
@@ -3123,10 +3123,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_pencil",
     "name": "Pencil",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/pencil_pencil-a.svg",
+    "image": "assets/sprites/scratch/pencil_pencil-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/pencil_pencil-a.svg",
-      "/assets/sprites/scratch/pencil_pencil-b.svg"
+      "assets/sprites/scratch/pencil_pencil-a.svg",
+      "assets/sprites/scratch/pencil_pencil-b.svg"
     ],
     "tags": [
       "thing",
@@ -3138,11 +3138,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_penguin",
     "name": "Penguin",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/penguin_penguin-a.svg",
+    "image": "assets/sprites/scratch/penguin_penguin-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/penguin_penguin-a.svg",
-      "/assets/sprites/scratch/penguin_penguin-b.svg",
-      "/assets/sprites/scratch/penguin_penguin-c.svg"
+      "assets/sprites/scratch/penguin_penguin-a.svg",
+      "assets/sprites/scratch/penguin_penguin-b.svg",
+      "assets/sprites/scratch/penguin_penguin-c.svg"
     ],
     "tags": [
       "animals",
@@ -3161,12 +3161,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_penguin_2",
     "name": "Penguin 2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/penguin_2_penguin2-a.svg",
+    "image": "assets/sprites/scratch/penguin_2_penguin2-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/penguin_2_penguin2-a.svg",
-      "/assets/sprites/scratch/penguin_2_penguin2-b.svg",
-      "/assets/sprites/scratch/penguin_2_penguin2-c.svg",
-      "/assets/sprites/scratch/penguin_2_penguin2-d.svg"
+      "assets/sprites/scratch/penguin_2_penguin2-a.svg",
+      "assets/sprites/scratch/penguin_2_penguin2-b.svg",
+      "assets/sprites/scratch/penguin_2_penguin2-c.svg",
+      "assets/sprites/scratch/penguin_2_penguin2-d.svg"
     ],
     "tags": [
       "animals",
@@ -3180,12 +3180,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_pico",
     "name": "Pico",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/pico_pico-a.svg",
+    "image": "assets/sprites/scratch/pico_pico-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/pico_pico-a.svg",
-      "/assets/sprites/scratch/pico_pico-b.svg",
-      "/assets/sprites/scratch/pico_pico-c.svg",
-      "/assets/sprites/scratch/pico_pico-d.svg"
+      "assets/sprites/scratch/pico_pico-a.svg",
+      "assets/sprites/scratch/pico_pico-b.svg",
+      "assets/sprites/scratch/pico_pico-c.svg",
+      "assets/sprites/scratch/pico_pico-d.svg"
     ],
     "tags": [
       "fantasy",
@@ -3197,12 +3197,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_pico_walking",
     "name": "Pico Walking",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/pico_walking_pico_walk1.svg",
+    "image": "assets/sprites/scratch/pico_walking_pico_walk1.svg",
     "costumes": [
-      "/assets/sprites/scratch/pico_walking_pico_walk1.svg",
-      "/assets/sprites/scratch/pico_walking_pico_walk2.svg",
-      "/assets/sprites/scratch/pico_walking_pico_walk3.svg",
-      "/assets/sprites/scratch/pico_walking_pico_walk4.svg"
+      "assets/sprites/scratch/pico_walking_pico_walk1.svg",
+      "assets/sprites/scratch/pico_walking_pico_walk2.svg",
+      "assets/sprites/scratch/pico_walking_pico_walk3.svg",
+      "assets/sprites/scratch/pico_walking_pico_walk4.svg"
     ],
     "tags": [
       "fantasy",
@@ -3214,12 +3214,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_pitcher",
     "name": "Pitcher",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/pitcher_pitcher-a.svg",
+    "image": "assets/sprites/scratch/pitcher_pitcher-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/pitcher_pitcher-a.svg",
-      "/assets/sprites/scratch/pitcher_pitcher-b.svg",
-      "/assets/sprites/scratch/pitcher_pitcher-c.svg",
-      "/assets/sprites/scratch/pitcher_pitcher-d.svg"
+      "assets/sprites/scratch/pitcher_pitcher-a.svg",
+      "assets/sprites/scratch/pitcher_pitcher-b.svg",
+      "assets/sprites/scratch/pitcher_pitcher-c.svg",
+      "assets/sprites/scratch/pitcher_pitcher-d.svg"
     ],
     "tags": [
       "baseball",
@@ -3233,9 +3233,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_planet2",
     "name": "Planet2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/planet2_planet2.svg",
+    "image": "assets/sprites/scratch/planet2_planet2.svg",
     "costumes": [
-      "/assets/sprites/scratch/planet2_planet2.svg"
+      "assets/sprites/scratch/planet2_planet2.svg"
     ],
     "tags": [
       "space"
@@ -3246,11 +3246,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_polar_bear",
     "name": "Polar Bear",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/polar_bear_polar_bear-a.svg",
+    "image": "assets/sprites/scratch/polar_bear_polar_bear-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/polar_bear_polar_bear-a.svg",
-      "/assets/sprites/scratch/polar_bear_polar_bear-b.svg",
-      "/assets/sprites/scratch/polar_bear_polar_bear-c.svg"
+      "assets/sprites/scratch/polar_bear_polar_bear-a.svg",
+      "assets/sprites/scratch/polar_bear_polar_bear-b.svg",
+      "assets/sprites/scratch/polar_bear_polar_bear-c.svg"
     ],
     "tags": [
       "animals",
@@ -3270,11 +3270,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_potion",
     "name": "Potion",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/potion_potion-a.svg",
+    "image": "assets/sprites/scratch/potion_potion-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/potion_potion-a.svg",
-      "/assets/sprites/scratch/potion_potion-b.svg",
-      "/assets/sprites/scratch/potion_potion-c.svg"
+      "assets/sprites/scratch/potion_potion-a.svg",
+      "assets/sprites/scratch/potion_potion-b.svg",
+      "assets/sprites/scratch/potion_potion-c.svg"
     ],
     "tags": [
       "fantasy",
@@ -3287,9 +3287,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_prince",
     "name": "Prince",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/prince_prince.svg",
+    "image": "assets/sprites/scratch/prince_prince.svg",
     "costumes": [
-      "/assets/sprites/scratch/prince_prince.svg"
+      "assets/sprites/scratch/prince_prince.svg"
     ],
     "tags": [
       "people",
@@ -3302,13 +3302,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_princess",
     "name": "Princess",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/princess_princess-a.svg",
+    "image": "assets/sprites/scratch/princess_princess-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/princess_princess-a.svg",
-      "/assets/sprites/scratch/princess_princess-b.svg",
-      "/assets/sprites/scratch/princess_princess-c.svg",
-      "/assets/sprites/scratch/princess_princess-d.svg",
-      "/assets/sprites/scratch/princess_princess-e.svg"
+      "assets/sprites/scratch/princess_princess-a.svg",
+      "assets/sprites/scratch/princess_princess-b.svg",
+      "assets/sprites/scratch/princess_princess-c.svg",
+      "assets/sprites/scratch/princess_princess-d.svg",
+      "assets/sprites/scratch/princess_princess-e.svg"
     ],
     "tags": [
       "fantasy",
@@ -3323,12 +3323,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_pufferfish",
     "name": "Pufferfish",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/pufferfish_pufferfish-a.svg",
+    "image": "assets/sprites/scratch/pufferfish_pufferfish-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/pufferfish_pufferfish-a.svg",
-      "/assets/sprites/scratch/pufferfish_pufferfish-b.svg",
-      "/assets/sprites/scratch/pufferfish_pufferfish-c.svg",
-      "/assets/sprites/scratch/pufferfish_pufferfish-d.svg"
+      "assets/sprites/scratch/pufferfish_pufferfish-a.svg",
+      "assets/sprites/scratch/pufferfish_pufferfish-b.svg",
+      "assets/sprites/scratch/pufferfish_pufferfish-c.svg",
+      "assets/sprites/scratch/pufferfish_pufferfish-d.svg"
     ],
     "tags": [
       "animals",
@@ -3343,12 +3343,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_puppy",
     "name": "Puppy",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/puppy_puppy_right.png",
+    "image": "assets/sprites/scratch/puppy_puppy_right.png",
     "costumes": [
-      "/assets/sprites/scratch/puppy_puppy_right.png",
-      "/assets/sprites/scratch/puppy_puppy_sit.png",
-      "/assets/sprites/scratch/puppy_puppy_side.png",
-      "/assets/sprites/scratch/puppy_puppy_back.png"
+      "assets/sprites/scratch/puppy_puppy_right.png",
+      "assets/sprites/scratch/puppy_puppy_sit.png",
+      "assets/sprites/scratch/puppy_puppy_side.png",
+      "assets/sprites/scratch/puppy_puppy_back.png"
     ],
     "tags": [
       "animals",
@@ -3361,13 +3361,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_rabbit",
     "name": "Rabbit",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/rabbit_rabbit-a.svg",
+    "image": "assets/sprites/scratch/rabbit_rabbit-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/rabbit_rabbit-a.svg",
-      "/assets/sprites/scratch/rabbit_rabbit-b.svg",
-      "/assets/sprites/scratch/rabbit_rabbit-c.svg",
-      "/assets/sprites/scratch/rabbit_rabbit-d.svg",
-      "/assets/sprites/scratch/rabbit_rabbit-e.svg"
+      "assets/sprites/scratch/rabbit_rabbit-a.svg",
+      "assets/sprites/scratch/rabbit_rabbit-b.svg",
+      "assets/sprites/scratch/rabbit_rabbit-c.svg",
+      "assets/sprites/scratch/rabbit_rabbit-d.svg",
+      "assets/sprites/scratch/rabbit_rabbit-e.svg"
     ],
     "tags": [
       "animals",
@@ -3383,10 +3383,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_radio",
     "name": "Radio",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/radio_radio-a.svg",
+    "image": "assets/sprites/scratch/radio_radio-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/radio_radio-a.svg",
-      "/assets/sprites/scratch/radio_radio-b.svg"
+      "assets/sprites/scratch/radio_radio-a.svg",
+      "assets/sprites/scratch/radio_radio-b.svg"
     ],
     "tags": [
       "radio",
@@ -3400,9 +3400,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_rainbow",
     "name": "Rainbow",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/rainbow_rainbow.svg",
+    "image": "assets/sprites/scratch/rainbow_rainbow.svg",
     "costumes": [
-      "/assets/sprites/scratch/rainbow_rainbow.svg"
+      "assets/sprites/scratch/rainbow_rainbow.svg"
     ],
     "tags": [
       "things",
@@ -3416,12 +3416,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_referee",
     "name": "Referee",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/referee_referee-a.svg",
+    "image": "assets/sprites/scratch/referee_referee-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/referee_referee-a.svg",
-      "/assets/sprites/scratch/referee_referee-b.svg",
-      "/assets/sprites/scratch/referee_referee-c.svg",
-      "/assets/sprites/scratch/referee_referee-d.svg"
+      "assets/sprites/scratch/referee_referee-a.svg",
+      "assets/sprites/scratch/referee_referee-b.svg",
+      "assets/sprites/scratch/referee_referee-c.svg",
+      "assets/sprites/scratch/referee_referee-d.svg"
     ],
     "tags": [
       "sports",
@@ -3435,9 +3435,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_reindeer",
     "name": "Reindeer",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/reindeer_reindeer.svg",
+    "image": "assets/sprites/scratch/reindeer_reindeer.svg",
     "costumes": [
-      "/assets/sprites/scratch/reindeer_reindeer.svg"
+      "assets/sprites/scratch/reindeer_reindeer.svg"
     ],
     "tags": [
       "animals",
@@ -3450,11 +3450,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_retro_robot",
     "name": "Retro Robot",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/retro_robot_retro_robot_a.svg",
+    "image": "assets/sprites/scratch/retro_robot_retro_robot_a.svg",
     "costumes": [
-      "/assets/sprites/scratch/retro_robot_retro_robot_a.svg",
-      "/assets/sprites/scratch/retro_robot_retro_robot_b.svg",
-      "/assets/sprites/scratch/retro_robot_retro_robot_c.svg"
+      "assets/sprites/scratch/retro_robot_retro_robot_a.svg",
+      "assets/sprites/scratch/retro_robot_retro_robot_b.svg",
+      "assets/sprites/scratch/retro_robot_retro_robot_c.svg"
     ],
     "tags": [
       "robot"
@@ -3465,14 +3465,14 @@ export const scratchSprites: any[] = [
     "id": "scratch_ripley",
     "name": "Ripley",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/ripley_ripley-a.svg",
+    "image": "assets/sprites/scratch/ripley_ripley-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/ripley_ripley-a.svg",
-      "/assets/sprites/scratch/ripley_ripley-b.svg",
-      "/assets/sprites/scratch/ripley_ripley-c.svg",
-      "/assets/sprites/scratch/ripley_ripley-d.svg",
-      "/assets/sprites/scratch/ripley_ripley-e.svg",
-      "/assets/sprites/scratch/ripley_ripley-f.svg"
+      "assets/sprites/scratch/ripley_ripley-a.svg",
+      "assets/sprites/scratch/ripley_ripley-b.svg",
+      "assets/sprites/scratch/ripley_ripley-c.svg",
+      "assets/sprites/scratch/ripley_ripley-d.svg",
+      "assets/sprites/scratch/ripley_ripley-e.svg",
+      "assets/sprites/scratch/ripley_ripley-f.svg"
     ],
     "tags": [
       "space",
@@ -3485,12 +3485,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_robot",
     "name": "Robot",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/robot_robot-a.svg",
+    "image": "assets/sprites/scratch/robot_robot-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/robot_robot-a.svg",
-      "/assets/sprites/scratch/robot_robot-b.svg",
-      "/assets/sprites/scratch/robot_robot-c.svg",
-      "/assets/sprites/scratch/robot_robot-d.svg"
+      "assets/sprites/scratch/robot_robot-a.svg",
+      "assets/sprites/scratch/robot_robot-b.svg",
+      "assets/sprites/scratch/robot_robot-c.svg",
+      "assets/sprites/scratch/robot_robot-d.svg"
     ],
     "tags": [
       "space",
@@ -3503,13 +3503,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_rocketship",
     "name": "Rocketship",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/rocketship_rocketship-a.svg",
+    "image": "assets/sprites/scratch/rocketship_rocketship-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/rocketship_rocketship-a.svg",
-      "/assets/sprites/scratch/rocketship_rocketship-b.svg",
-      "/assets/sprites/scratch/rocketship_rocketship-c.svg",
-      "/assets/sprites/scratch/rocketship_rocketship-d.svg",
-      "/assets/sprites/scratch/rocketship_rocketship-e.svg"
+      "assets/sprites/scratch/rocketship_rocketship-a.svg",
+      "assets/sprites/scratch/rocketship_rocketship-b.svg",
+      "assets/sprites/scratch/rocketship_rocketship-c.svg",
+      "assets/sprites/scratch/rocketship_rocketship-d.svg",
+      "assets/sprites/scratch/rocketship_rocketship-e.svg"
     ],
     "tags": [
       "space",
@@ -3522,9 +3522,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_rocks",
     "name": "Rocks",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/rocks_rocks.svg",
+    "image": "assets/sprites/scratch/rocks_rocks.svg",
     "costumes": [
-      "/assets/sprites/scratch/rocks_rocks.svg"
+      "assets/sprites/scratch/rocks_rocks.svg"
     ],
     "tags": [
       "things",
@@ -3536,11 +3536,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_rooster",
     "name": "Rooster",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/rooster_rooster-a.svg",
+    "image": "assets/sprites/scratch/rooster_rooster-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/rooster_rooster-a.svg",
-      "/assets/sprites/scratch/rooster_rooster-b.svg",
-      "/assets/sprites/scratch/rooster_rooster-c.svg"
+      "assets/sprites/scratch/rooster_rooster-a.svg",
+      "assets/sprites/scratch/rooster_rooster-b.svg",
+      "assets/sprites/scratch/rooster_rooster-c.svg"
     ],
     "tags": [
       "animals",
@@ -3554,10 +3554,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_ruby",
     "name": "Ruby",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/ruby_ruby-a.png",
+    "image": "assets/sprites/scratch/ruby_ruby-a.png",
     "costumes": [
-      "/assets/sprites/scratch/ruby_ruby-a.png",
-      "/assets/sprites/scratch/ruby_ruby-b.png"
+      "assets/sprites/scratch/ruby_ruby-a.png",
+      "assets/sprites/scratch/ruby_ruby-b.png"
     ],
     "tags": [
       "people"
@@ -3568,9 +3568,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_sailboat",
     "name": "Sailboat",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/sailboat_sailboat.png",
+    "image": "assets/sprites/scratch/sailboat_sailboat.png",
     "costumes": [
-      "/assets/sprites/scratch/sailboat_sailboat.png"
+      "assets/sprites/scratch/sailboat_sailboat.png"
     ],
     "tags": [
       "boat",
@@ -3582,9 +3582,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_sam",
     "name": "Sam",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/sam_sam.png",
+    "image": "assets/sprites/scratch/sam_sam.png",
     "costumes": [
-      "/assets/sprites/scratch/sam_sam.png"
+      "assets/sprites/scratch/sam_sam.png"
     ],
     "tags": [
       "people"
@@ -3595,11 +3595,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_sasha",
     "name": "Sasha",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/sasha_sasha-a.svg",
+    "image": "assets/sprites/scratch/sasha_sasha-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/sasha_sasha-a.svg",
-      "/assets/sprites/scratch/sasha_sasha-b.svg",
-      "/assets/sprites/scratch/sasha_sasha-c.svg"
+      "assets/sprites/scratch/sasha_sasha-a.svg",
+      "assets/sprites/scratch/sasha_sasha-b.svg",
+      "assets/sprites/scratch/sasha_sasha-c.svg"
     ],
     "tags": [
       "people",
@@ -3617,10 +3617,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_saxophone",
     "name": "Saxophone",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/saxophone_saxophone-a.svg",
+    "image": "assets/sprites/scratch/saxophone_saxophone-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/saxophone_saxophone-a.svg",
-      "/assets/sprites/scratch/saxophone_saxophone-b.svg"
+      "assets/sprites/scratch/saxophone_saxophone-a.svg",
+      "assets/sprites/scratch/saxophone_saxophone-b.svg"
     ],
     "tags": [
       "music",
@@ -3632,11 +3632,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_scarf",
     "name": "Scarf",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/scarf_scarf-a.svg",
+    "image": "assets/sprites/scratch/scarf_scarf-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/scarf_scarf-a.svg",
-      "/assets/sprites/scratch/scarf_scarf-b.svg",
-      "/assets/sprites/scratch/scarf_scarf-c.svg"
+      "assets/sprites/scratch/scarf_scarf-a.svg",
+      "assets/sprites/scratch/scarf_scarf-b.svg",
+      "assets/sprites/scratch/scarf_scarf-c.svg"
     ],
     "tags": [
       "fashion",
@@ -3648,10 +3648,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_shark",
     "name": "Shark",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/shark_shark-a.svg",
+    "image": "assets/sprites/scratch/shark_shark-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/shark_shark-a.svg",
-      "/assets/sprites/scratch/shark_shark-b.svg"
+      "assets/sprites/scratch/shark_shark-a.svg",
+      "assets/sprites/scratch/shark_shark-b.svg"
     ],
     "tags": [
       "animals",
@@ -3665,11 +3665,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_shark_2",
     "name": "Shark 2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/shark_2_shark2-a.svg",
+    "image": "assets/sprites/scratch/shark_2_shark2-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/shark_2_shark2-a.svg",
-      "/assets/sprites/scratch/shark_2_shark2-b.svg",
-      "/assets/sprites/scratch/shark_2_shark2-c.svg"
+      "assets/sprites/scratch/shark_2_shark2-a.svg",
+      "assets/sprites/scratch/shark_2_shark2-b.svg",
+      "assets/sprites/scratch/shark_2_shark2-c.svg"
     ],
     "tags": [
       "animals",
@@ -3686,9 +3686,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_shirt",
     "name": "Shirt",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/shirt_shirt-a.svg",
+    "image": "assets/sprites/scratch/shirt_shirt-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/shirt_shirt-a.svg"
+      "assets/sprites/scratch/shirt_shirt-a.svg"
     ],
     "tags": [
       "fashion",
@@ -3700,12 +3700,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_shoes",
     "name": "Shoes",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/shoes_shoes-a.svg",
+    "image": "assets/sprites/scratch/shoes_shoes-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/shoes_shoes-a.svg",
-      "/assets/sprites/scratch/shoes_shoes-b.svg",
-      "/assets/sprites/scratch/shoes_shoes-d.svg",
-      "/assets/sprites/scratch/shoes_shoes-c.svg"
+      "assets/sprites/scratch/shoes_shoes-a.svg",
+      "assets/sprites/scratch/shoes_shoes-b.svg",
+      "assets/sprites/scratch/shoes_shoes-d.svg",
+      "assets/sprites/scratch/shoes_shoes-c.svg"
     ],
     "tags": [
       "fashion",
@@ -3719,11 +3719,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_shorts",
     "name": "Shorts",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/shorts_shorts-a.svg",
+    "image": "assets/sprites/scratch/shorts_shorts-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/shorts_shorts-a.svg",
-      "/assets/sprites/scratch/shorts_shorts-b.svg",
-      "/assets/sprites/scratch/shorts_shorts-c.svg"
+      "assets/sprites/scratch/shorts_shorts-a.svg",
+      "assets/sprites/scratch/shorts_shorts-b.svg",
+      "assets/sprites/scratch/shorts_shorts-c.svg"
     ],
     "tags": [
       "fashion",
@@ -3737,9 +3737,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_singer1",
     "name": "Singer1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/singer1_singer1.svg",
+    "image": "assets/sprites/scratch/singer1_singer1.svg",
     "costumes": [
-      "/assets/sprites/scratch/singer1_singer1.svg"
+      "assets/sprites/scratch/singer1_singer1.svg"
     ],
     "tags": [
       "people",
@@ -3751,12 +3751,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_skeleton",
     "name": "Skeleton",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/skeleton_skeleton-a.svg",
+    "image": "assets/sprites/scratch/skeleton_skeleton-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/skeleton_skeleton-a.svg",
-      "/assets/sprites/scratch/skeleton_skeleton-b.svg",
-      "/assets/sprites/scratch/skeleton_skeleton-d.svg",
-      "/assets/sprites/scratch/skeleton_skeleton-e.svg"
+      "assets/sprites/scratch/skeleton_skeleton-a.svg",
+      "assets/sprites/scratch/skeleton_skeleton-b.svg",
+      "assets/sprites/scratch/skeleton_skeleton-d.svg",
+      "assets/sprites/scratch/skeleton_skeleton-e.svg"
     ],
     "tags": [
       "fantasy",
@@ -3772,11 +3772,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_snake",
     "name": "Snake",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/snake_snake-a.svg",
+    "image": "assets/sprites/scratch/snake_snake-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/snake_snake-a.svg",
-      "/assets/sprites/scratch/snake_snake-b.svg",
-      "/assets/sprites/scratch/snake_snake-c.svg"
+      "assets/sprites/scratch/snake_snake-a.svg",
+      "assets/sprites/scratch/snake_snake-b.svg",
+      "assets/sprites/scratch/snake_snake-c.svg"
     ],
     "tags": [
       "animals",
@@ -3789,9 +3789,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_snowflake",
     "name": "Snowflake",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/snowflake_snowflake.svg",
+    "image": "assets/sprites/scratch/snowflake_snowflake.svg",
     "costumes": [
-      "/assets/sprites/scratch/snowflake_snowflake.svg"
+      "assets/sprites/scratch/snowflake_snowflake.svg"
     ],
     "tags": [
       "winter"
@@ -3802,9 +3802,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_snowman",
     "name": "Snowman",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/snowman_snowman.svg",
+    "image": "assets/sprites/scratch/snowman_snowman.svg",
     "costumes": [
-      "/assets/sprites/scratch/snowman_snowman.svg"
+      "assets/sprites/scratch/snowman_snowman.svg"
     ],
     "tags": [
       "fantasy",
@@ -3817,9 +3817,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_soccer_ball",
     "name": "Soccer Ball",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/soccer_ball_soccer_ball.svg",
+    "image": "assets/sprites/scratch/soccer_ball_soccer_ball.svg",
     "costumes": [
-      "/assets/sprites/scratch/soccer_ball_soccer_ball.svg"
+      "assets/sprites/scratch/soccer_ball_soccer_ball.svg"
     ],
     "tags": [
       "sports",
@@ -3833,9 +3833,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_speaker",
     "name": "Speaker",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/speaker_speaker.svg",
+    "image": "assets/sprites/scratch/speaker_speaker.svg",
     "costumes": [
-      "/assets/sprites/scratch/speaker_speaker.svg"
+      "assets/sprites/scratch/speaker_speaker.svg"
     ],
     "tags": [
       "music",
@@ -3850,9 +3850,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_squirrel",
     "name": "Squirrel",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/squirrel_squirrel.png",
+    "image": "assets/sprites/scratch/squirrel_squirrel.png",
     "costumes": [
-      "/assets/sprites/scratch/squirrel_squirrel.png"
+      "assets/sprites/scratch/squirrel_squirrel.png"
     ],
     "tags": [
       "animals"
@@ -3863,9 +3863,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_star",
     "name": "Star",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/star_star.svg",
+    "image": "assets/sprites/scratch/star_star.svg",
     "costumes": [
-      "/assets/sprites/scratch/star_star.svg"
+      "assets/sprites/scratch/star_star.svg"
     ],
     "tags": [
       "shapes",
@@ -3877,10 +3877,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_starfish",
     "name": "Starfish",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/starfish_starfish-a.svg",
+    "image": "assets/sprites/scratch/starfish_starfish-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/starfish_starfish-a.svg",
-      "/assets/sprites/scratch/starfish_starfish-b_.svg"
+      "assets/sprites/scratch/starfish_starfish-a.svg",
+      "assets/sprites/scratch/starfish_starfish-b_.svg"
     ],
     "tags": [
       "animals",
@@ -3895,9 +3895,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_stop",
     "name": "Stop",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/stop_stop.svg",
+    "image": "assets/sprites/scratch/stop_stop.svg",
     "costumes": [
-      "/assets/sprites/scratch/stop_stop.svg"
+      "assets/sprites/scratch/stop_stop.svg"
     ],
     "tags": [
       "shapes",
@@ -3909,13 +3909,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_strawberry",
     "name": "Strawberry",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/strawberry_strawberry-a.svg",
+    "image": "assets/sprites/scratch/strawberry_strawberry-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/strawberry_strawberry-a.svg",
-      "/assets/sprites/scratch/strawberry_strawberry-b.svg",
-      "/assets/sprites/scratch/strawberry_strawberry-c.svg",
-      "/assets/sprites/scratch/strawberry_strawberry-d.svg",
-      "/assets/sprites/scratch/strawberry_strawberry-e.svg"
+      "assets/sprites/scratch/strawberry_strawberry-a.svg",
+      "assets/sprites/scratch/strawberry_strawberry-b.svg",
+      "assets/sprites/scratch/strawberry_strawberry-c.svg",
+      "assets/sprites/scratch/strawberry_strawberry-d.svg",
+      "assets/sprites/scratch/strawberry_strawberry-e.svg"
     ],
     "tags": [
       "food",
@@ -3928,9 +3928,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_sun",
     "name": "Sun",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/sun_sun.svg",
+    "image": "assets/sprites/scratch/sun_sun.svg",
     "costumes": [
-      "/assets/sprites/scratch/sun_sun.svg"
+      "assets/sprites/scratch/sun_sun.svg"
     ],
     "tags": [
       "space",
@@ -3946,10 +3946,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_sunglasses1",
     "name": "Sunglasses1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/sunglasses1_sunglasses-a.svg",
+    "image": "assets/sprites/scratch/sunglasses1_sunglasses-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/sunglasses1_sunglasses-a.svg",
-      "/assets/sprites/scratch/sunglasses1_sunglasses-b.svg"
+      "assets/sprites/scratch/sunglasses1_sunglasses-a.svg",
+      "assets/sprites/scratch/sunglasses1_sunglasses-b.svg"
     ],
     "tags": [
       "fashion",
@@ -3961,10 +3961,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_taco",
     "name": "Taco",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/taco_taco.svg",
+    "image": "assets/sprites/scratch/taco_taco.svg",
     "costumes": [
-      "/assets/sprites/scratch/taco_taco.svg",
-      "/assets/sprites/scratch/taco_taco-wizard.svg"
+      "assets/sprites/scratch/taco_taco.svg",
+      "assets/sprites/scratch/taco_taco-wizard.svg"
     ],
     "tags": [
       "food",
@@ -3976,13 +3976,13 @@ export const scratchSprites: any[] = [
     "id": "scratch_takeout",
     "name": "Takeout",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/takeout_takeout-a.svg",
+    "image": "assets/sprites/scratch/takeout_takeout-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/takeout_takeout-a.svg",
-      "/assets/sprites/scratch/takeout_takeout-b.svg",
-      "/assets/sprites/scratch/takeout_takeout-c.svg",
-      "/assets/sprites/scratch/takeout_takeout-d.svg",
-      "/assets/sprites/scratch/takeout_takeout-e.svg"
+      "assets/sprites/scratch/takeout_takeout-a.svg",
+      "assets/sprites/scratch/takeout_takeout-b.svg",
+      "assets/sprites/scratch/takeout_takeout-c.svg",
+      "assets/sprites/scratch/takeout_takeout-d.svg",
+      "assets/sprites/scratch/takeout_takeout-e.svg"
     ],
     "tags": [
       "food",
@@ -3994,12 +3994,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_tatiana",
     "name": "Tatiana",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/tatiana_tatiana-a.svg",
+    "image": "assets/sprites/scratch/tatiana_tatiana-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/tatiana_tatiana-a.svg",
-      "/assets/sprites/scratch/tatiana_tatiana-b.svg",
-      "/assets/sprites/scratch/tatiana_tatiana-c.svg",
-      "/assets/sprites/scratch/tatiana_tatiana-d.svg"
+      "assets/sprites/scratch/tatiana_tatiana-a.svg",
+      "assets/sprites/scratch/tatiana_tatiana-b.svg",
+      "assets/sprites/scratch/tatiana_tatiana-c.svg",
+      "assets/sprites/scratch/tatiana_tatiana-d.svg"
     ],
     "tags": [
       "people",
@@ -4017,12 +4017,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_taylor",
     "name": "Taylor",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/taylor_taylor-a.svg",
+    "image": "assets/sprites/scratch/taylor_taylor-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/taylor_taylor-a.svg",
-      "/assets/sprites/scratch/taylor_taylor-b.svg",
-      "/assets/sprites/scratch/taylor_taylor-c.svg",
-      "/assets/sprites/scratch/taylor_taylor-d.svg"
+      "assets/sprites/scratch/taylor_taylor-a.svg",
+      "assets/sprites/scratch/taylor_taylor-b.svg",
+      "assets/sprites/scratch/taylor_taylor-c.svg",
+      "assets/sprites/scratch/taylor_taylor-d.svg"
     ],
     "tags": [
       "people",
@@ -4040,21 +4040,21 @@ export const scratchSprites: any[] = [
     "id": "scratch_ten80_dance",
     "name": "Ten80 Dance",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/ten80_dance_ten80_stance.png",
+    "image": "assets/sprites/scratch/ten80_dance_ten80_stance.png",
     "costumes": [
-      "/assets/sprites/scratch/ten80_dance_ten80_stance.png",
-      "/assets/sprites/scratch/ten80_dance_ten80_top_stand.png",
-      "/assets/sprites/scratch/ten80_dance_ten80_top_r_step.png",
-      "/assets/sprites/scratch/ten80_dance_ten80_top_l_step.png",
-      "/assets/sprites/scratch/ten80_dance_ten80_top_freeze.png",
-      "/assets/sprites/scratch/ten80_dance_ten80_top_r_cross.png",
-      "/assets/sprites/scratch/ten80_dance_ten80_pop_front.png",
-      "/assets/sprites/scratch/ten80_dance_ten80_pop_down.png",
-      "/assets/sprites/scratch/ten80_dance_ten80_pop_left.png",
-      "/assets/sprites/scratch/ten80_dance_ten80_pop_right.png",
-      "/assets/sprites/scratch/ten80_dance_ten80_pop_l_arm.png",
-      "/assets/sprites/scratch/ten80_dance_ten80_pop_stand.png",
-      "/assets/sprites/scratch/ten80_dance_ten80_pop_r_arm.png"
+      "assets/sprites/scratch/ten80_dance_ten80_stance.png",
+      "assets/sprites/scratch/ten80_dance_ten80_top_stand.png",
+      "assets/sprites/scratch/ten80_dance_ten80_top_r_step.png",
+      "assets/sprites/scratch/ten80_dance_ten80_top_l_step.png",
+      "assets/sprites/scratch/ten80_dance_ten80_top_freeze.png",
+      "assets/sprites/scratch/ten80_dance_ten80_top_r_cross.png",
+      "assets/sprites/scratch/ten80_dance_ten80_pop_front.png",
+      "assets/sprites/scratch/ten80_dance_ten80_pop_down.png",
+      "assets/sprites/scratch/ten80_dance_ten80_pop_left.png",
+      "assets/sprites/scratch/ten80_dance_ten80_pop_right.png",
+      "assets/sprites/scratch/ten80_dance_ten80_pop_l_arm.png",
+      "assets/sprites/scratch/ten80_dance_ten80_pop_stand.png",
+      "assets/sprites/scratch/ten80_dance_ten80_pop_r_arm.png"
     ],
     "tags": [
       "people",
@@ -4066,9 +4066,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_tennis_ball",
     "name": "Tennis Ball",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/tennis_ball_tennisball.png",
+    "image": "assets/sprites/scratch/tennis_ball_tennisball.png",
     "costumes": [
-      "/assets/sprites/scratch/tennis_ball_tennisball.png"
+      "assets/sprites/scratch/tennis_ball_tennisball.png"
     ],
     "tags": [
       "ball",
@@ -4080,12 +4080,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_tera",
     "name": "Tera",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/tera_tera-a.svg",
+    "image": "assets/sprites/scratch/tera_tera-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/tera_tera-a.svg",
-      "/assets/sprites/scratch/tera_tera-b.svg",
-      "/assets/sprites/scratch/tera_tera-c.svg",
-      "/assets/sprites/scratch/tera_tera-d.svg"
+      "assets/sprites/scratch/tera_tera-a.svg",
+      "assets/sprites/scratch/tera_tera-b.svg",
+      "assets/sprites/scratch/tera_tera-c.svg",
+      "assets/sprites/scratch/tera_tera-d.svg"
     ],
     "tags": [
       "fantasy",
@@ -4097,11 +4097,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_toucan",
     "name": "Toucan",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/toucan_toucan-a.svg",
+    "image": "assets/sprites/scratch/toucan_toucan-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/toucan_toucan-a.svg",
-      "/assets/sprites/scratch/toucan_toucan-b.svg",
-      "/assets/sprites/scratch/toucan_toucan-c.svg"
+      "assets/sprites/scratch/toucan_toucan-a.svg",
+      "assets/sprites/scratch/toucan_toucan-b.svg",
+      "assets/sprites/scratch/toucan_toucan-c.svg"
     ],
     "tags": [
       "animals",
@@ -4114,9 +4114,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_trampoline",
     "name": "Trampoline",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/trampoline_trampoline.png",
+    "image": "assets/sprites/scratch/trampoline_trampoline.png",
     "costumes": [
-      "/assets/sprites/scratch/trampoline_trampoline.png"
+      "assets/sprites/scratch/trampoline_trampoline.png"
     ],
     "tags": [
       "sports"
@@ -4127,9 +4127,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_tree1",
     "name": "Tree1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/tree1_tree1.svg",
+    "image": "assets/sprites/scratch/tree1_tree1.svg",
     "costumes": [
-      "/assets/sprites/scratch/tree1_tree1.svg"
+      "assets/sprites/scratch/tree1_tree1.svg"
     ],
     "tags": [
       "plants",
@@ -4142,10 +4142,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_trees",
     "name": "Trees",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/trees_trees-a.svg",
+    "image": "assets/sprites/scratch/trees_trees-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/trees_trees-a.svg",
-      "/assets/sprites/scratch/trees_trees-b.svg"
+      "assets/sprites/scratch/trees_trees-a.svg",
+      "assets/sprites/scratch/trees_trees-b.svg"
     ],
     "tags": [
       "plants",
@@ -4158,12 +4158,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_trisha",
     "name": "Trisha",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/trisha_trisha-a.svg",
+    "image": "assets/sprites/scratch/trisha_trisha-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/trisha_trisha-a.svg",
-      "/assets/sprites/scratch/trisha_trisha-b.svg",
-      "/assets/sprites/scratch/trisha_trisha-c.svg",
-      "/assets/sprites/scratch/trisha_trisha-d.svg"
+      "assets/sprites/scratch/trisha_trisha-a.svg",
+      "assets/sprites/scratch/trisha_trisha-b.svg",
+      "assets/sprites/scratch/trisha_trisha-c.svg",
+      "assets/sprites/scratch/trisha_trisha-d.svg"
     ],
     "tags": [
       "people",
@@ -4181,11 +4181,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_truck",
     "name": "Truck",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/truck_truck-a.svg",
+    "image": "assets/sprites/scratch/truck_truck-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/truck_truck-a.svg",
-      "/assets/sprites/scratch/truck_truck-b.svg",
-      "/assets/sprites/scratch/truck_truck-c.svg"
+      "assets/sprites/scratch/truck_truck-a.svg",
+      "assets/sprites/scratch/truck_truck-b.svg",
+      "assets/sprites/scratch/truck_truck-c.svg"
     ],
     "tags": [
       "truck",
@@ -4199,10 +4199,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_trumpet",
     "name": "Trumpet",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/trumpet_trumpet-a.svg",
+    "image": "assets/sprites/scratch/trumpet_trumpet-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/trumpet_trumpet-a.svg",
-      "/assets/sprites/scratch/trumpet_trumpet-b.svg"
+      "assets/sprites/scratch/trumpet_trumpet-a.svg",
+      "assets/sprites/scratch/trumpet_trumpet-b.svg"
     ],
     "tags": [
       "music",
@@ -4214,9 +4214,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_unicorn",
     "name": "Unicorn",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/unicorn_unicorn.svg",
+    "image": "assets/sprites/scratch/unicorn_unicorn.svg",
     "costumes": [
-      "/assets/sprites/scratch/unicorn_unicorn.svg"
+      "assets/sprites/scratch/unicorn_unicorn.svg"
     ],
     "tags": [
       "fantasy",
@@ -4229,9 +4229,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_unicorn_2",
     "name": "Unicorn 2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/unicorn_2_unicorn_2.svg",
+    "image": "assets/sprites/scratch/unicorn_2_unicorn_2.svg",
     "costumes": [
-      "/assets/sprites/scratch/unicorn_2_unicorn_2.svg"
+      "assets/sprites/scratch/unicorn_2_unicorn_2.svg"
     ],
     "tags": [
       "fantasy",
@@ -4246,14 +4246,14 @@ export const scratchSprites: any[] = [
     "id": "scratch_unicorn_running",
     "name": "Unicorn Running",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/unicorn_running_unicorn_running-a.svg",
+    "image": "assets/sprites/scratch/unicorn_running_unicorn_running-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/unicorn_running_unicorn_running-a.svg",
-      "/assets/sprites/scratch/unicorn_running_unicorn_running-b.svg",
-      "/assets/sprites/scratch/unicorn_running_unicorn_running-c.svg",
-      "/assets/sprites/scratch/unicorn_running_unicorn_running-d.svg",
-      "/assets/sprites/scratch/unicorn_running_unicorn_running-e.svg",
-      "/assets/sprites/scratch/unicorn_running_unicorn_running-f.svg"
+      "assets/sprites/scratch/unicorn_running_unicorn_running-a.svg",
+      "assets/sprites/scratch/unicorn_running_unicorn_running-b.svg",
+      "assets/sprites/scratch/unicorn_running_unicorn_running-c.svg",
+      "assets/sprites/scratch/unicorn_running_unicorn_running-d.svg",
+      "assets/sprites/scratch/unicorn_running_unicorn_running-e.svg",
+      "assets/sprites/scratch/unicorn_running_unicorn_running-f.svg"
     ],
     "tags": [
       "fantasy",
@@ -4267,9 +4267,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_wand",
     "name": "Wand",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/wand_wand.svg",
+    "image": "assets/sprites/scratch/wand_wand.svg",
     "costumes": [
-      "/assets/sprites/scratch/wand_wand.svg"
+      "assets/sprites/scratch/wand_wand.svg"
     ],
     "tags": [
       "fantasy",
@@ -4282,9 +4282,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_wanda",
     "name": "Wanda",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/wanda_wanda.svg",
+    "image": "assets/sprites/scratch/wanda_wanda.svg",
     "costumes": [
-      "/assets/sprites/scratch/wanda_wanda.svg"
+      "assets/sprites/scratch/wanda_wanda.svg"
     ],
     "tags": [
       "people"
@@ -4295,11 +4295,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_watermelon",
     "name": "Watermelon",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/watermelon_watermelon-a.svg",
+    "image": "assets/sprites/scratch/watermelon_watermelon-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/watermelon_watermelon-a.svg",
-      "/assets/sprites/scratch/watermelon_watermelon-b.svg",
-      "/assets/sprites/scratch/watermelon_watermelon-c.svg"
+      "assets/sprites/scratch/watermelon_watermelon-a.svg",
+      "assets/sprites/scratch/watermelon_watermelon-b.svg",
+      "assets/sprites/scratch/watermelon_watermelon-c.svg"
     ],
     "tags": [
       "food",
@@ -4315,9 +4315,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_winter_hat",
     "name": "Winter Hat",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/winter_hat_winter_hat.svg",
+    "image": "assets/sprites/scratch/winter_hat_winter_hat.svg",
     "costumes": [
-      "/assets/sprites/scratch/winter_hat_winter_hat.svg"
+      "assets/sprites/scratch/winter_hat_winter_hat.svg"
     ],
     "tags": [
       "fashion",
@@ -4331,12 +4331,12 @@ export const scratchSprites: any[] = [
     "id": "scratch_witch",
     "name": "Witch",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/witch_witch-a.svg",
+    "image": "assets/sprites/scratch/witch_witch-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/witch_witch-a.svg",
-      "/assets/sprites/scratch/witch_witch-b.svg",
-      "/assets/sprites/scratch/witch_witch-c.svg",
-      "/assets/sprites/scratch/witch_witch-d.svg"
+      "assets/sprites/scratch/witch_witch-a.svg",
+      "assets/sprites/scratch/witch_witch-b.svg",
+      "assets/sprites/scratch/witch_witch-c.svg",
+      "assets/sprites/scratch/witch_witch-d.svg"
     ],
     "tags": [
       "fantasy",
@@ -4352,11 +4352,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_wizard",
     "name": "Wizard",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/wizard_wizard-a.svg",
+    "image": "assets/sprites/scratch/wizard_wizard-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/wizard_wizard-a.svg",
-      "/assets/sprites/scratch/wizard_wizard-b.svg",
-      "/assets/sprites/scratch/wizard_wizard-c.svg"
+      "assets/sprites/scratch/wizard_wizard-a.svg",
+      "assets/sprites/scratch/wizard_wizard-b.svg",
+      "assets/sprites/scratch/wizard_wizard-c.svg"
     ],
     "tags": [
       "fantasy",
@@ -4372,9 +4372,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_wizard_girl",
     "name": "Wizard Girl",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/wizard_girl_wizard_girl.svg",
+    "image": "assets/sprites/scratch/wizard_girl_wizard_girl.svg",
     "costumes": [
-      "/assets/sprites/scratch/wizard_girl_wizard_girl.svg"
+      "assets/sprites/scratch/wizard_girl_wizard_girl.svg"
     ],
     "tags": [
       "people",
@@ -4390,9 +4390,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_wizard_hat",
     "name": "Wizard Hat",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/wizard_hat_wizard_hat.svg",
+    "image": "assets/sprites/scratch/wizard_hat_wizard_hat.svg",
     "costumes": [
-      "/assets/sprites/scratch/wizard_hat_wizard_hat.svg"
+      "assets/sprites/scratch/wizard_hat_wizard_hat.svg"
     ],
     "tags": [
       "fashion",
@@ -4405,10 +4405,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_wizard-toad",
     "name": "Wizard-toad",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/wizard-toad_wizard-toad-a.svg",
+    "image": "assets/sprites/scratch/wizard-toad_wizard-toad-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/wizard-toad_wizard-toad-a.svg",
-      "/assets/sprites/scratch/wizard-toad_wizard-toad-b.svg"
+      "assets/sprites/scratch/wizard-toad_wizard-toad-a.svg",
+      "assets/sprites/scratch/wizard-toad_wizard-toad-b.svg"
     ],
     "tags": [
       "fantasy",
@@ -4425,10 +4425,10 @@ export const scratchSprites: any[] = [
     "id": "scratch_zebra",
     "name": "Zebra",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/zebra_zebra-a.svg",
+    "image": "assets/sprites/scratch/zebra_zebra-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/zebra_zebra-a.svg",
-      "/assets/sprites/scratch/zebra_zebra-b.svg"
+      "assets/sprites/scratch/zebra_zebra-a.svg",
+      "assets/sprites/scratch/zebra_zebra-b.svg"
     ],
     "tags": [
       "animals",
@@ -4442,9 +4442,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-a",
     "name": "Block-A",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-a_block-a.svg",
+    "image": "assets/sprites/scratch/block-a_block-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-a_block-a.svg"
+      "assets/sprites/scratch/block-a_block-a.svg"
     ],
     "tags": [
       "alphabet",
@@ -4456,9 +4456,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-b",
     "name": "Block-B",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-b_block-b.svg",
+    "image": "assets/sprites/scratch/block-b_block-b.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-b_block-b.svg"
+      "assets/sprites/scratch/block-b_block-b.svg"
     ],
     "tags": [
       "alphabet",
@@ -4470,9 +4470,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-c",
     "name": "Block-C",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-c_block-c.svg",
+    "image": "assets/sprites/scratch/block-c_block-c.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-c_block-c.svg"
+      "assets/sprites/scratch/block-c_block-c.svg"
     ],
     "tags": [
       "alphabet",
@@ -4484,9 +4484,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-d",
     "name": "Block-D",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-d_block-d.svg",
+    "image": "assets/sprites/scratch/block-d_block-d.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-d_block-d.svg"
+      "assets/sprites/scratch/block-d_block-d.svg"
     ],
     "tags": [
       "alphabet",
@@ -4498,9 +4498,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-e",
     "name": "Block-E",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-e_block-e.svg",
+    "image": "assets/sprites/scratch/block-e_block-e.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-e_block-e.svg"
+      "assets/sprites/scratch/block-e_block-e.svg"
     ],
     "tags": [
       "alphabet",
@@ -4512,9 +4512,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-f",
     "name": "Block-F",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-f_block-f.svg",
+    "image": "assets/sprites/scratch/block-f_block-f.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-f_block-f.svg"
+      "assets/sprites/scratch/block-f_block-f.svg"
     ],
     "tags": [
       "alphabet",
@@ -4526,9 +4526,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-g",
     "name": "Block-G",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-g_block-g.svg",
+    "image": "assets/sprites/scratch/block-g_block-g.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-g_block-g.svg"
+      "assets/sprites/scratch/block-g_block-g.svg"
     ],
     "tags": [
       "alphabet",
@@ -4540,9 +4540,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-h",
     "name": "Block-H",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-h_block-h.svg",
+    "image": "assets/sprites/scratch/block-h_block-h.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-h_block-h.svg"
+      "assets/sprites/scratch/block-h_block-h.svg"
     ],
     "tags": [
       "alphabet",
@@ -4554,9 +4554,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-i",
     "name": "Block-I",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-i_block-i.svg",
+    "image": "assets/sprites/scratch/block-i_block-i.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-i_block-i.svg"
+      "assets/sprites/scratch/block-i_block-i.svg"
     ],
     "tags": [
       "alphabet",
@@ -4568,9 +4568,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-j",
     "name": "Block-J",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-j_block-j.svg",
+    "image": "assets/sprites/scratch/block-j_block-j.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-j_block-j.svg"
+      "assets/sprites/scratch/block-j_block-j.svg"
     ],
     "tags": [
       "alphabet",
@@ -4582,9 +4582,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-k",
     "name": "Block-K",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-k_block-k.svg",
+    "image": "assets/sprites/scratch/block-k_block-k.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-k_block-k.svg"
+      "assets/sprites/scratch/block-k_block-k.svg"
     ],
     "tags": [
       "alphabet",
@@ -4596,9 +4596,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-l",
     "name": "Block-L",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-l_block-l.svg",
+    "image": "assets/sprites/scratch/block-l_block-l.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-l_block-l.svg"
+      "assets/sprites/scratch/block-l_block-l.svg"
     ],
     "tags": [
       "alphabet",
@@ -4610,9 +4610,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-m",
     "name": "Block-M",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-m_block-m.svg",
+    "image": "assets/sprites/scratch/block-m_block-m.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-m_block-m.svg"
+      "assets/sprites/scratch/block-m_block-m.svg"
     ],
     "tags": [
       "alphabet",
@@ -4624,9 +4624,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-n",
     "name": "Block-N",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-n_block-n.svg",
+    "image": "assets/sprites/scratch/block-n_block-n.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-n_block-n.svg"
+      "assets/sprites/scratch/block-n_block-n.svg"
     ],
     "tags": [
       "alphabet",
@@ -4638,9 +4638,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-o",
     "name": "Block-O",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-o_block-o.svg",
+    "image": "assets/sprites/scratch/block-o_block-o.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-o_block-o.svg"
+      "assets/sprites/scratch/block-o_block-o.svg"
     ],
     "tags": [
       "alphabet",
@@ -4652,9 +4652,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-p",
     "name": "Block-P",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-p_block-p.svg",
+    "image": "assets/sprites/scratch/block-p_block-p.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-p_block-p.svg"
+      "assets/sprites/scratch/block-p_block-p.svg"
     ],
     "tags": [
       "alphabet",
@@ -4666,9 +4666,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-q",
     "name": "Block-Q",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-q_block-q.svg",
+    "image": "assets/sprites/scratch/block-q_block-q.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-q_block-q.svg"
+      "assets/sprites/scratch/block-q_block-q.svg"
     ],
     "tags": [
       "alphabet",
@@ -4680,9 +4680,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-r",
     "name": "Block-R",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-r_block-r.svg",
+    "image": "assets/sprites/scratch/block-r_block-r.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-r_block-r.svg"
+      "assets/sprites/scratch/block-r_block-r.svg"
     ],
     "tags": [
       "alphabet",
@@ -4694,9 +4694,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-s",
     "name": "Block-S",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-s_block-s.svg",
+    "image": "assets/sprites/scratch/block-s_block-s.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-s_block-s.svg"
+      "assets/sprites/scratch/block-s_block-s.svg"
     ],
     "tags": [
       "alphabet",
@@ -4708,9 +4708,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-t",
     "name": "Block-T",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-t_block-t.svg",
+    "image": "assets/sprites/scratch/block-t_block-t.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-t_block-t.svg"
+      "assets/sprites/scratch/block-t_block-t.svg"
     ],
     "tags": [
       "alphabet",
@@ -4722,9 +4722,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-u",
     "name": "Block-U",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-u_block-u.svg",
+    "image": "assets/sprites/scratch/block-u_block-u.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-u_block-u.svg"
+      "assets/sprites/scratch/block-u_block-u.svg"
     ],
     "tags": [
       "alphabet",
@@ -4736,9 +4736,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-v",
     "name": "Block-V",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-v_block-v.svg",
+    "image": "assets/sprites/scratch/block-v_block-v.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-v_block-v.svg"
+      "assets/sprites/scratch/block-v_block-v.svg"
     ],
     "tags": [
       "alphabet",
@@ -4750,9 +4750,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-w",
     "name": "Block-W",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-w_block-w.svg",
+    "image": "assets/sprites/scratch/block-w_block-w.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-w_block-w.svg"
+      "assets/sprites/scratch/block-w_block-w.svg"
     ],
     "tags": [
       "alphabet",
@@ -4764,9 +4764,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-x",
     "name": "Block-X",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-x_block-x.svg",
+    "image": "assets/sprites/scratch/block-x_block-x.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-x_block-x.svg"
+      "assets/sprites/scratch/block-x_block-x.svg"
     ],
     "tags": [
       "alphabet",
@@ -4778,9 +4778,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-y",
     "name": "Block-Y",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-y_block-y.svg",
+    "image": "assets/sprites/scratch/block-y_block-y.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-y_block-y.svg"
+      "assets/sprites/scratch/block-y_block-y.svg"
     ],
     "tags": [
       "alphabet",
@@ -4792,9 +4792,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_block-z",
     "name": "Block-Z",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/block-z_block-z.svg",
+    "image": "assets/sprites/scratch/block-z_block-z.svg",
     "costumes": [
-      "/assets/sprites/scratch/block-z_block-z.svg"
+      "assets/sprites/scratch/block-z_block-z.svg"
     ],
     "tags": [
       "alphabet",
@@ -4806,9 +4806,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-0",
     "name": "Glow-0",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-0_glow-0.svg",
+    "image": "assets/sprites/scratch/glow-0_glow-0.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-0_glow-0.svg"
+      "assets/sprites/scratch/glow-0_glow-0.svg"
     ],
     "tags": [
       "numbers",
@@ -4820,9 +4820,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-1",
     "name": "Glow-1",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-1_glow-1.svg",
+    "image": "assets/sprites/scratch/glow-1_glow-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-1_glow-1.svg"
+      "assets/sprites/scratch/glow-1_glow-1.svg"
     ],
     "tags": [
       "numbers",
@@ -4834,9 +4834,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-2",
     "name": "Glow-2",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-2_glow-2.svg",
+    "image": "assets/sprites/scratch/glow-2_glow-2.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-2_glow-2.svg"
+      "assets/sprites/scratch/glow-2_glow-2.svg"
     ],
     "tags": [
       "numbers",
@@ -4848,9 +4848,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-3",
     "name": "Glow-3",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-3_glow-3.svg",
+    "image": "assets/sprites/scratch/glow-3_glow-3.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-3_glow-3.svg"
+      "assets/sprites/scratch/glow-3_glow-3.svg"
     ],
     "tags": [
       "numbers",
@@ -4862,9 +4862,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-4",
     "name": "Glow-4",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-4_glow-4.svg",
+    "image": "assets/sprites/scratch/glow-4_glow-4.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-4_glow-4.svg"
+      "assets/sprites/scratch/glow-4_glow-4.svg"
     ],
     "tags": [
       "numbers",
@@ -4876,9 +4876,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-5",
     "name": "Glow-5",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-5_glow-5.svg",
+    "image": "assets/sprites/scratch/glow-5_glow-5.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-5_glow-5.svg"
+      "assets/sprites/scratch/glow-5_glow-5.svg"
     ],
     "tags": [
       "numbers",
@@ -4890,9 +4890,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-6",
     "name": "Glow-6",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-6_glow-6.svg",
+    "image": "assets/sprites/scratch/glow-6_glow-6.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-6_glow-6.svg"
+      "assets/sprites/scratch/glow-6_glow-6.svg"
     ],
     "tags": [
       "numbers",
@@ -4904,9 +4904,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-7",
     "name": "Glow-7",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-7_glow-7.svg",
+    "image": "assets/sprites/scratch/glow-7_glow-7.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-7_glow-7.svg"
+      "assets/sprites/scratch/glow-7_glow-7.svg"
     ],
     "tags": [
       "numbers",
@@ -4918,9 +4918,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-8",
     "name": "Glow-8",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-8_glow-8.svg",
+    "image": "assets/sprites/scratch/glow-8_glow-8.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-8_glow-8.svg"
+      "assets/sprites/scratch/glow-8_glow-8.svg"
     ],
     "tags": [
       "numbers",
@@ -4932,9 +4932,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-9",
     "name": "Glow-9",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-9_glow-9.svg",
+    "image": "assets/sprites/scratch/glow-9_glow-9.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-9_glow-9.svg"
+      "assets/sprites/scratch/glow-9_glow-9.svg"
     ],
     "tags": [
       "numbers",
@@ -4946,9 +4946,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-a",
     "name": "Glow-A",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-a_glow-a.svg",
+    "image": "assets/sprites/scratch/glow-a_glow-a.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-a_glow-a.svg"
+      "assets/sprites/scratch/glow-a_glow-a.svg"
     ],
     "tags": [
       "alphabet",
@@ -4960,9 +4960,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-b",
     "name": "Glow-B",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-b_glow-b.svg",
+    "image": "assets/sprites/scratch/glow-b_glow-b.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-b_glow-b.svg"
+      "assets/sprites/scratch/glow-b_glow-b.svg"
     ],
     "tags": [
       "alphabet",
@@ -4974,9 +4974,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-c",
     "name": "Glow-C",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-c_glow-c.svg",
+    "image": "assets/sprites/scratch/glow-c_glow-c.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-c_glow-c.svg"
+      "assets/sprites/scratch/glow-c_glow-c.svg"
     ],
     "tags": [
       "alphabet",
@@ -4988,9 +4988,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-d",
     "name": "Glow-D",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-d_glow-d.svg",
+    "image": "assets/sprites/scratch/glow-d_glow-d.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-d_glow-d.svg"
+      "assets/sprites/scratch/glow-d_glow-d.svg"
     ],
     "tags": [
       "alphabet",
@@ -5002,9 +5002,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-e",
     "name": "Glow-E",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-e_glow-e.svg",
+    "image": "assets/sprites/scratch/glow-e_glow-e.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-e_glow-e.svg"
+      "assets/sprites/scratch/glow-e_glow-e.svg"
     ],
     "tags": [
       "alphabet",
@@ -5016,9 +5016,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-f",
     "name": "Glow-F",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-f_glow-f.svg",
+    "image": "assets/sprites/scratch/glow-f_glow-f.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-f_glow-f.svg"
+      "assets/sprites/scratch/glow-f_glow-f.svg"
     ],
     "tags": [
       "alphabet",
@@ -5030,9 +5030,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-g",
     "name": "Glow-G",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-g_glow-g.svg",
+    "image": "assets/sprites/scratch/glow-g_glow-g.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-g_glow-g.svg"
+      "assets/sprites/scratch/glow-g_glow-g.svg"
     ],
     "tags": [
       "alphabet",
@@ -5044,9 +5044,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-h",
     "name": "Glow-H",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-h_glow-h.svg",
+    "image": "assets/sprites/scratch/glow-h_glow-h.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-h_glow-h.svg"
+      "assets/sprites/scratch/glow-h_glow-h.svg"
     ],
     "tags": [
       "alphabet",
@@ -5058,9 +5058,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-i",
     "name": "Glow-I",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-i_glow-i.svg",
+    "image": "assets/sprites/scratch/glow-i_glow-i.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-i_glow-i.svg"
+      "assets/sprites/scratch/glow-i_glow-i.svg"
     ],
     "tags": [
       "alphabet",
@@ -5072,9 +5072,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-j",
     "name": "Glow-J",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-j_glow-j.svg",
+    "image": "assets/sprites/scratch/glow-j_glow-j.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-j_glow-j.svg"
+      "assets/sprites/scratch/glow-j_glow-j.svg"
     ],
     "tags": [
       "alphabet",
@@ -5086,9 +5086,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-k",
     "name": "Glow-K",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-k_glow-k.svg",
+    "image": "assets/sprites/scratch/glow-k_glow-k.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-k_glow-k.svg"
+      "assets/sprites/scratch/glow-k_glow-k.svg"
     ],
     "tags": [
       "alphabet",
@@ -5100,9 +5100,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-l",
     "name": "Glow-L",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-l_glow-l.svg",
+    "image": "assets/sprites/scratch/glow-l_glow-l.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-l_glow-l.svg"
+      "assets/sprites/scratch/glow-l_glow-l.svg"
     ],
     "tags": [
       "alphabet",
@@ -5114,9 +5114,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-m",
     "name": "Glow-M",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-m_glow-m.svg",
+    "image": "assets/sprites/scratch/glow-m_glow-m.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-m_glow-m.svg"
+      "assets/sprites/scratch/glow-m_glow-m.svg"
     ],
     "tags": [
       "alphabet",
@@ -5128,9 +5128,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-n",
     "name": "Glow-N",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-n_glow-n.svg",
+    "image": "assets/sprites/scratch/glow-n_glow-n.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-n_glow-n.svg"
+      "assets/sprites/scratch/glow-n_glow-n.svg"
     ],
     "tags": [
       "alphabet",
@@ -5142,9 +5142,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-o",
     "name": "Glow-O",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-o_glow-o.svg",
+    "image": "assets/sprites/scratch/glow-o_glow-o.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-o_glow-o.svg"
+      "assets/sprites/scratch/glow-o_glow-o.svg"
     ],
     "tags": [
       "alphabet",
@@ -5156,9 +5156,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-p",
     "name": "Glow-P",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-p_glow-p.svg",
+    "image": "assets/sprites/scratch/glow-p_glow-p.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-p_glow-p.svg"
+      "assets/sprites/scratch/glow-p_glow-p.svg"
     ],
     "tags": [
       "alphabet",
@@ -5170,9 +5170,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-q",
     "name": "Glow-Q",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-q_glow-q.svg",
+    "image": "assets/sprites/scratch/glow-q_glow-q.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-q_glow-q.svg"
+      "assets/sprites/scratch/glow-q_glow-q.svg"
     ],
     "tags": [
       "alphabet",
@@ -5184,9 +5184,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-r",
     "name": "Glow-R",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-r_glow-r.svg",
+    "image": "assets/sprites/scratch/glow-r_glow-r.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-r_glow-r.svg"
+      "assets/sprites/scratch/glow-r_glow-r.svg"
     ],
     "tags": [
       "alphabet",
@@ -5198,9 +5198,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-s",
     "name": "Glow-S",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-s_glow-s.svg",
+    "image": "assets/sprites/scratch/glow-s_glow-s.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-s_glow-s.svg"
+      "assets/sprites/scratch/glow-s_glow-s.svg"
     ],
     "tags": [
       "alphabet",
@@ -5212,9 +5212,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-t",
     "name": "Glow-T",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-t_glow-t.svg",
+    "image": "assets/sprites/scratch/glow-t_glow-t.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-t_glow-t.svg"
+      "assets/sprites/scratch/glow-t_glow-t.svg"
     ],
     "tags": [
       "alphabet",
@@ -5226,9 +5226,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-u",
     "name": "Glow-U",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-u_glow-u.svg",
+    "image": "assets/sprites/scratch/glow-u_glow-u.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-u_glow-u.svg"
+      "assets/sprites/scratch/glow-u_glow-u.svg"
     ],
     "tags": [
       "alphabet",
@@ -5240,9 +5240,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-v",
     "name": "Glow-V",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-v_glow-v.svg",
+    "image": "assets/sprites/scratch/glow-v_glow-v.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-v_glow-v.svg"
+      "assets/sprites/scratch/glow-v_glow-v.svg"
     ],
     "tags": [
       "alphabet",
@@ -5254,9 +5254,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-w",
     "name": "Glow-W",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-w_glow-w.svg",
+    "image": "assets/sprites/scratch/glow-w_glow-w.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-w_glow-w.svg"
+      "assets/sprites/scratch/glow-w_glow-w.svg"
     ],
     "tags": [
       "alphabet",
@@ -5268,9 +5268,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-x",
     "name": "Glow-X",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-x_glow-x.svg",
+    "image": "assets/sprites/scratch/glow-x_glow-x.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-x_glow-x.svg"
+      "assets/sprites/scratch/glow-x_glow-x.svg"
     ],
     "tags": [
       "alphabet",
@@ -5282,9 +5282,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-y",
     "name": "Glow-Y",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-y_glow-y.svg",
+    "image": "assets/sprites/scratch/glow-y_glow-y.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-y_glow-y.svg"
+      "assets/sprites/scratch/glow-y_glow-y.svg"
     ],
     "tags": [
       "alphabet",
@@ -5296,9 +5296,9 @@ export const scratchSprites: any[] = [
     "id": "scratch_glow-z",
     "name": "Glow-Z",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/glow-z_glow-z.svg",
+    "image": "assets/sprites/scratch/glow-z_glow-z.svg",
     "costumes": [
-      "/assets/sprites/scratch/glow-z_glow-z.svg"
+      "assets/sprites/scratch/glow-z_glow-z.svg"
     ],
     "tags": [
       "alphabet",
@@ -5310,11 +5310,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-a",
     "name": "Story-A",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-a_story-a-1.svg",
+    "image": "assets/sprites/scratch/story-a_story-a-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-a_story-a-1.svg",
-      "/assets/sprites/scratch/story-a_story-a-2.svg",
-      "/assets/sprites/scratch/story-a_story-a-3.svg"
+      "assets/sprites/scratch/story-a_story-a-1.svg",
+      "assets/sprites/scratch/story-a_story-a-2.svg",
+      "assets/sprites/scratch/story-a_story-a-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5326,11 +5326,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-b",
     "name": "Story-B",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-b_story-b-1.svg",
+    "image": "assets/sprites/scratch/story-b_story-b-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-b_story-b-1.svg",
-      "/assets/sprites/scratch/story-b_story-b-2.svg",
-      "/assets/sprites/scratch/story-b_story-b-3.svg"
+      "assets/sprites/scratch/story-b_story-b-1.svg",
+      "assets/sprites/scratch/story-b_story-b-2.svg",
+      "assets/sprites/scratch/story-b_story-b-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5342,11 +5342,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-c",
     "name": "Story-C",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-c_story-c-1.svg",
+    "image": "assets/sprites/scratch/story-c_story-c-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-c_story-c-1.svg",
-      "/assets/sprites/scratch/story-c_story-c-2.svg",
-      "/assets/sprites/scratch/story-c_story-c-3.svg"
+      "assets/sprites/scratch/story-c_story-c-1.svg",
+      "assets/sprites/scratch/story-c_story-c-2.svg",
+      "assets/sprites/scratch/story-c_story-c-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5358,11 +5358,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-d",
     "name": "Story-D",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-d_story-d-1.svg",
+    "image": "assets/sprites/scratch/story-d_story-d-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-d_story-d-1.svg",
-      "/assets/sprites/scratch/story-d_story-d-2.svg",
-      "/assets/sprites/scratch/story-d_story-d-3.svg"
+      "assets/sprites/scratch/story-d_story-d-1.svg",
+      "assets/sprites/scratch/story-d_story-d-2.svg",
+      "assets/sprites/scratch/story-d_story-d-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5374,11 +5374,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-e",
     "name": "Story-E",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-e_story-e-1.svg",
+    "image": "assets/sprites/scratch/story-e_story-e-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-e_story-e-1.svg",
-      "/assets/sprites/scratch/story-e_story-e-2.svg",
-      "/assets/sprites/scratch/story-e_story-e-3.svg"
+      "assets/sprites/scratch/story-e_story-e-1.svg",
+      "assets/sprites/scratch/story-e_story-e-2.svg",
+      "assets/sprites/scratch/story-e_story-e-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5390,11 +5390,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-f",
     "name": "Story-F",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-f_story-f-1.svg",
+    "image": "assets/sprites/scratch/story-f_story-f-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-f_story-f-1.svg",
-      "/assets/sprites/scratch/story-f_story-f-2.svg",
-      "/assets/sprites/scratch/story-f_story-f-3.svg"
+      "assets/sprites/scratch/story-f_story-f-1.svg",
+      "assets/sprites/scratch/story-f_story-f-2.svg",
+      "assets/sprites/scratch/story-f_story-f-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5406,11 +5406,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-g",
     "name": "Story-G",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-g_story-g-1.svg",
+    "image": "assets/sprites/scratch/story-g_story-g-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-g_story-g-1.svg",
-      "/assets/sprites/scratch/story-g_story-g-2.svg",
-      "/assets/sprites/scratch/story-g_story-g-3.svg"
+      "assets/sprites/scratch/story-g_story-g-1.svg",
+      "assets/sprites/scratch/story-g_story-g-2.svg",
+      "assets/sprites/scratch/story-g_story-g-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5422,11 +5422,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-h",
     "name": "Story-H",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-h_story-h-1.svg",
+    "image": "assets/sprites/scratch/story-h_story-h-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-h_story-h-1.svg",
-      "/assets/sprites/scratch/story-h_story-h-2.svg",
-      "/assets/sprites/scratch/story-h_story-h-3.svg"
+      "assets/sprites/scratch/story-h_story-h-1.svg",
+      "assets/sprites/scratch/story-h_story-h-2.svg",
+      "assets/sprites/scratch/story-h_story-h-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5438,11 +5438,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-i",
     "name": "Story-I",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-i_story-i-1.svg",
+    "image": "assets/sprites/scratch/story-i_story-i-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-i_story-i-1.svg",
-      "/assets/sprites/scratch/story-i_story-i-2.svg",
-      "/assets/sprites/scratch/story-i_story-i-3.svg"
+      "assets/sprites/scratch/story-i_story-i-1.svg",
+      "assets/sprites/scratch/story-i_story-i-2.svg",
+      "assets/sprites/scratch/story-i_story-i-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5454,11 +5454,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-j",
     "name": "Story-J",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-j_story-j-1.svg",
+    "image": "assets/sprites/scratch/story-j_story-j-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-j_story-j-1.svg",
-      "/assets/sprites/scratch/story-j_story-j-2.svg",
-      "/assets/sprites/scratch/story-j_story-j-3.svg"
+      "assets/sprites/scratch/story-j_story-j-1.svg",
+      "assets/sprites/scratch/story-j_story-j-2.svg",
+      "assets/sprites/scratch/story-j_story-j-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5470,11 +5470,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-k",
     "name": "Story-K",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-k_story-k-1.svg",
+    "image": "assets/sprites/scratch/story-k_story-k-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-k_story-k-1.svg",
-      "/assets/sprites/scratch/story-k_story-k-2.svg",
-      "/assets/sprites/scratch/story-k_story-k-3.svg"
+      "assets/sprites/scratch/story-k_story-k-1.svg",
+      "assets/sprites/scratch/story-k_story-k-2.svg",
+      "assets/sprites/scratch/story-k_story-k-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5486,11 +5486,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-l",
     "name": "Story-L",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-l_story-l-1.svg",
+    "image": "assets/sprites/scratch/story-l_story-l-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-l_story-l-1.svg",
-      "/assets/sprites/scratch/story-l_story-l-2.svg",
-      "/assets/sprites/scratch/story-l_story-l-3.svg"
+      "assets/sprites/scratch/story-l_story-l-1.svg",
+      "assets/sprites/scratch/story-l_story-l-2.svg",
+      "assets/sprites/scratch/story-l_story-l-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5502,11 +5502,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-m",
     "name": "Story-M",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-m_story-m-1.svg",
+    "image": "assets/sprites/scratch/story-m_story-m-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-m_story-m-1.svg",
-      "/assets/sprites/scratch/story-m_story-m-2.svg",
-      "/assets/sprites/scratch/story-m_story-m-3.svg"
+      "assets/sprites/scratch/story-m_story-m-1.svg",
+      "assets/sprites/scratch/story-m_story-m-2.svg",
+      "assets/sprites/scratch/story-m_story-m-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5518,11 +5518,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-n",
     "name": "Story-N",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-n_story-n-1.svg",
+    "image": "assets/sprites/scratch/story-n_story-n-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-n_story-n-1.svg",
-      "/assets/sprites/scratch/story-n_story-n-2.svg",
-      "/assets/sprites/scratch/story-n_story-n-3.svg"
+      "assets/sprites/scratch/story-n_story-n-1.svg",
+      "assets/sprites/scratch/story-n_story-n-2.svg",
+      "assets/sprites/scratch/story-n_story-n-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5534,11 +5534,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-o",
     "name": "Story-O",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-o_story-o-1.svg",
+    "image": "assets/sprites/scratch/story-o_story-o-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-o_story-o-1.svg",
-      "/assets/sprites/scratch/story-o_story-o-2.svg",
-      "/assets/sprites/scratch/story-o_story-o-3.svg"
+      "assets/sprites/scratch/story-o_story-o-1.svg",
+      "assets/sprites/scratch/story-o_story-o-2.svg",
+      "assets/sprites/scratch/story-o_story-o-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5550,11 +5550,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-p",
     "name": "Story-P",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-p_story-p-1.svg",
+    "image": "assets/sprites/scratch/story-p_story-p-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-p_story-p-1.svg",
-      "/assets/sprites/scratch/story-p_story-p-2.svg",
-      "/assets/sprites/scratch/story-p_story-p-3.svg"
+      "assets/sprites/scratch/story-p_story-p-1.svg",
+      "assets/sprites/scratch/story-p_story-p-2.svg",
+      "assets/sprites/scratch/story-p_story-p-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5566,11 +5566,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-q",
     "name": "Story-Q",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-q_story-q-1.svg",
+    "image": "assets/sprites/scratch/story-q_story-q-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-q_story-q-1.svg",
-      "/assets/sprites/scratch/story-q_story-q-2.svg",
-      "/assets/sprites/scratch/story-q_story-q-3.svg"
+      "assets/sprites/scratch/story-q_story-q-1.svg",
+      "assets/sprites/scratch/story-q_story-q-2.svg",
+      "assets/sprites/scratch/story-q_story-q-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5582,11 +5582,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-r",
     "name": "Story-R",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-r_story-r-1.svg",
+    "image": "assets/sprites/scratch/story-r_story-r-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-r_story-r-1.svg",
-      "/assets/sprites/scratch/story-r_story-r-2.svg",
-      "/assets/sprites/scratch/story-r_story-r-3.svg"
+      "assets/sprites/scratch/story-r_story-r-1.svg",
+      "assets/sprites/scratch/story-r_story-r-2.svg",
+      "assets/sprites/scratch/story-r_story-r-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5598,11 +5598,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-s",
     "name": "Story-S",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-s_story-s-1.svg",
+    "image": "assets/sprites/scratch/story-s_story-s-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-s_story-s-1.svg",
-      "/assets/sprites/scratch/story-s_story-s-2.svg",
-      "/assets/sprites/scratch/story-s_story-s-3.svg"
+      "assets/sprites/scratch/story-s_story-s-1.svg",
+      "assets/sprites/scratch/story-s_story-s-2.svg",
+      "assets/sprites/scratch/story-s_story-s-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5614,11 +5614,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-t",
     "name": "Story-T",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-t_story-t-1.svg",
+    "image": "assets/sprites/scratch/story-t_story-t-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-t_story-t-1.svg",
-      "/assets/sprites/scratch/story-t_story-t-2.svg",
-      "/assets/sprites/scratch/story-t_story-t-3.svg"
+      "assets/sprites/scratch/story-t_story-t-1.svg",
+      "assets/sprites/scratch/story-t_story-t-2.svg",
+      "assets/sprites/scratch/story-t_story-t-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5630,11 +5630,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-u",
     "name": "Story-U",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-u_story-u-1.svg",
+    "image": "assets/sprites/scratch/story-u_story-u-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-u_story-u-1.svg",
-      "/assets/sprites/scratch/story-u_story-u-2.svg",
-      "/assets/sprites/scratch/story-u_story-u-3.svg"
+      "assets/sprites/scratch/story-u_story-u-1.svg",
+      "assets/sprites/scratch/story-u_story-u-2.svg",
+      "assets/sprites/scratch/story-u_story-u-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5646,11 +5646,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-v",
     "name": "Story-V",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-v_story-v-1.svg",
+    "image": "assets/sprites/scratch/story-v_story-v-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-v_story-v-1.svg",
-      "/assets/sprites/scratch/story-v_story-v-2.svg",
-      "/assets/sprites/scratch/story-v_story-v-3.svg"
+      "assets/sprites/scratch/story-v_story-v-1.svg",
+      "assets/sprites/scratch/story-v_story-v-2.svg",
+      "assets/sprites/scratch/story-v_story-v-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5662,11 +5662,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-w",
     "name": "Story-W",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-w_story-w-1.svg",
+    "image": "assets/sprites/scratch/story-w_story-w-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-w_story-w-1.svg",
-      "/assets/sprites/scratch/story-w_story-w-2.svg",
-      "/assets/sprites/scratch/story-w_story-w-3.svg"
+      "assets/sprites/scratch/story-w_story-w-1.svg",
+      "assets/sprites/scratch/story-w_story-w-2.svg",
+      "assets/sprites/scratch/story-w_story-w-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5678,11 +5678,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-x",
     "name": "Story-X",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-x_story-x-1.svg",
+    "image": "assets/sprites/scratch/story-x_story-x-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-x_story-x-1.svg",
-      "/assets/sprites/scratch/story-x_story-x-2.svg",
-      "/assets/sprites/scratch/story-x_story-x-3.svg"
+      "assets/sprites/scratch/story-x_story-x-1.svg",
+      "assets/sprites/scratch/story-x_story-x-2.svg",
+      "assets/sprites/scratch/story-x_story-x-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5694,11 +5694,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-y",
     "name": "Story-Y",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-y_story-y-1.svg",
+    "image": "assets/sprites/scratch/story-y_story-y-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-y_story-y-1.svg",
-      "/assets/sprites/scratch/story-y_story-y-2.svg",
-      "/assets/sprites/scratch/story-y_story-y-3.svg"
+      "assets/sprites/scratch/story-y_story-y-1.svg",
+      "assets/sprites/scratch/story-y_story-y-2.svg",
+      "assets/sprites/scratch/story-y_story-y-3.svg"
     ],
     "tags": [
       "alphabet",
@@ -5710,11 +5710,11 @@ export const scratchSprites: any[] = [
     "id": "scratch_story-z",
     "name": "Story-Z",
     "emoji": "🤖",
-    "image": "/assets/sprites/scratch/story-z_story-z-1.svg",
+    "image": "assets/sprites/scratch/story-z_story-z-1.svg",
     "costumes": [
-      "/assets/sprites/scratch/story-z_story-z-1.svg",
-      "/assets/sprites/scratch/story-z_story-z-2.svg",
-      "/assets/sprites/scratch/story-z_story-z-3.svg"
+      "assets/sprites/scratch/story-z_story-z-1.svg",
+      "assets/sprites/scratch/story-z_story-z-2.svg",
+      "assets/sprites/scratch/story-z_story-z-3.svg"
     ],
     "tags": [
       "alphabet",

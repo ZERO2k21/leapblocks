@@ -1,0 +1,27 @@
+appId: com.leapblocks.app
+productName: LeapBlocks
+directories:
+  output: out
+  buildResources: build
+files:
+  - dist/**/*
+  - package.json
+  - node_modules/**/*
+  - remove_bg.py
+  - electron/buildApk.js
+win:
+  target:
+    - target: squirrel
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  artifactName: "${productName}-Setup-${version}.${ext}"
+asar: true
+npmRebuild: true
+extraResources:
+  - from: public
+    to: public
+    filter:
+      - "**/*"

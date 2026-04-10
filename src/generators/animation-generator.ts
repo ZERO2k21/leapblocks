@@ -338,9 +338,6 @@ export class AnimationCompiler {
             case 'data_tablecontents':
             case 'data_getvalueattable':
             case 'data_gettablecount':
-            case 'sensing_answer':
-            case 'sensing_timer':
-            case 'sensing_loudness':
             case 'looks_costume_name':
             case 'looks_backdrop_name': {
                 // Delegate to compileStringValue and cast to Number for mathematical evaluation

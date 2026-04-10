@@ -2316,7 +2316,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         // The src might be a full URL, we need the relative path from public/
 
-        const relativePath = imagePath.split('/assets/')[1];
+        const relativePath = imagePath.split('assets/')[1];
 
         if (!relativePath) {
 
@@ -2466,15 +2466,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         const loadAssets = async () => {
 
-            await robotSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
+            await robotSprite.addCostume('idle', 'assets/sprites/robot/robot_idle.svg');
 
-            await robotSprite.addCostume('wave 1', '/assets/sprites/robot/image-removebg-preview (1).png');
+            await robotSprite.addCostume('wave 1', 'assets/sprites/robot/image-removebg-preview (1).png');
 
-            await robotSprite.addCostume('wave 2', '/assets/sprites/robot/image-Photoroom.png');
+            await robotSprite.addCostume('wave 2', 'assets/sprites/robot/image-Photoroom.png');
 
-            await robotSprite.addCostume('talk', '/assets/sprites/robot/image-removebg-preview.png');
+            await robotSprite.addCostume('talk', 'assets/sprites/robot/image-removebg-preview.png');
 
-            await robotSprite.addSound('Meow', '/assets/sounds/meow.wav');
+            await robotSprite.addSound('Meow', 'assets/sounds/meow.wav');
 
 
 
@@ -3324,19 +3324,19 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 console.log('[APP] Loading assets for robot...');
 
-                await defaultSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
+                await defaultSprite.addCostume('idle', 'assets/sprites/robot/robot_idle.svg');
 
-                await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/image-removebg-preview (1).png');
+                await defaultSprite.addCostume('wave 1', 'assets/sprites/robot/image-removebg-preview (1).png');
 
-                await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/image-Photoroom.png');
+                await defaultSprite.addCostume('wave 2', 'assets/sprites/robot/image-Photoroom.png');
 
-                await defaultSprite.addCostume('talk', '/assets/sprites/robot/image-removebg-preview.png');
+                await defaultSprite.addCostume('talk', 'assets/sprites/robot/image-removebg-preview.png');
 
 
 
                 // Add default sound
 
-                await defaultSprite.addSound('Meow', '/assets/sounds/meow.wav');
+                await defaultSprite.addSound('Meow', 'assets/sounds/meow.wav');
 
                 console.log('[APP] Assets loaded:', defaultSprite.costumes.length, 'costumes', defaultSprite.sounds.length, 'sounds');
 
@@ -5943,7 +5943,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             // Add default sound
 
-                            await newSprite.addSound('Meow', '/assets/sounds/meow.wav');
+                            await newSprite.addSound('Meow', 'assets/sounds/meow.wav');
 
 
 

@@ -12,10 +12,10 @@ import { previewActions } from "../engine/previewActions";
 import { looksPreview } from "../engine/looksPreview";
 
 // Robot Assets
-const robotIdle = "/assets/sprites/robot/robot_idle.svg";
-const robotWave1 = "/assets/sprites/robot/robot_wave1.svg";
-const robotWave2 = "/assets/sprites/robot/robot_wave2.svg";
-const robotTalk1 = "/assets/sprites/robot/robot_talk1.svg";
+const robotIdle = "assets/sprites/robot/robot_idle.svg";
+const robotWave1 = "assets/sprites/robot/robot_wave1.svg";
+const robotWave2 = "assets/sprites/robot/robot_wave2.svg";
+const robotTalk1 = "assets/sprites/robot/robot_talk1.svg";
 
 // Categories
 const CATEGORIES = [
