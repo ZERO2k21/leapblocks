@@ -83,7 +83,6 @@ export default function TerminalPanel({
                                     : log.type === "repl-in" ? "#C586C0"
                                     : "#D4D4D4",
                                 marginBottom: 2,
-                                paddingLeft: log.type === "repl-in" ? 0 : 4,
                                 whiteSpace: "pre-wrap",
                                 wordBreak: "break-word",
                                 borderLeft: (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "2px solid #9CDCFE" : "none",

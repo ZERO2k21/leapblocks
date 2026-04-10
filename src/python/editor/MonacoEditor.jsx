@@ -88,7 +88,6 @@ export default function MonacoEditor({
         fontSize: 14,
         fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
         fontLigatures: true,
-        minimap: { enabled: true },
         scrollBeyondLastLine: false,
         automaticLayout: true,
         lineNumbers: "on",

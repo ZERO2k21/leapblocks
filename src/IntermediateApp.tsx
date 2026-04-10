@@ -5307,7 +5307,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             const SMALL_STAGE_HEIGHT = 180;
 
-                            const SMALL_STAGE_SCALE = 0.5;
+                            const SMALL_STAGE_SCALE_INTERNAL = 0.5;
 
 
 
@@ -5347,9 +5347,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                         <div style={{
 
-                                            transform: isFullscreen ? `scale(${fullscreenScale})` : (stageLayout === 'small' ? `scale(${SMALL_STAGE_SCALE})` : `scale(${LARGE_STAGE_SCALE})`),
+                                            transform: isFullscreen ? `scale(${fullscreenScale})` : (stageLayout === 'small' ? `scale(${SMALL_STAGE_SCALE_INTERNAL})` : `scale(${LARGE_STAGE_SCALE})`),
 
-                                            transformOrigin: 'center center', // Changed from 'Full Screen' to valid CSS
+                                            transformOrigin: 'center center',
 
                                             width: `${CANVAS_WIDTH}px`,
 
@@ -5367,9 +5367,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                             <Stage
 
-                                                width={CANVAS_WIDTH}      /* Link to global settings */
+                                                width={CANVAS_WIDTH}
 
-                                                height={CANVAS_HEIGHT}    /* Link to global settings */
+                                                height={CANVAS_HEIGHT}
 
                                                 sprites={sprites}
 

@@ -27,7 +27,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
   onTitleChange,
   centerContent,
   rightContent,
-  brandName = "IGNITE"
+  brandName = "ELECTRA"
 }) => {
   return (
     <div style={{
