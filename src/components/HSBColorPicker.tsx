@@ -11,6 +11,7 @@ interface HSBColorPickerProps {
 // Convert HEX to HSB
 function hexToHsb(hex: string) {
     let r = 0, g = 0, b = 0;
+    if (!hex) return { h: 0, s: 100, b: 100, a: 1 };
     if (hex.length === 4) {
         r = parseInt(hex[1] + hex[1], 16);
         g = parseInt(hex[2] + hex[2], 16);

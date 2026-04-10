@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 
 import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
 
-import './styles/scratch-blocks.css'; // Import Scratch-style blocks CSS
+import './styles/Leaplab-blocks.css'; // Import Scratch-style blocks CSS
 import './junior/styles/juniorBlocks.css';
 import './junior/styles/juniorLooksBlocks.css';
 
@@ -13,7 +13,6 @@ import { esp32Blocks, esp32Toolbox } from './blocks/esp32-blocks';
 
 import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
 import { COLORS } from './blocks/blockDefinitions';
-import { getScratchBlocks } from './blocks/scratchBlocks';
 import { registerScratchBlocks } from './blocks/scratchBlocks';
 
 import { hardwareBlocks } from './blocks/hardware-blocks';
@@ -53,7 +52,7 @@ import BackdropLibrary from './components/BackdropLibrary';
 
 import { stageManager } from './engine/StageManager';
 import { spriteManager } from './engine/SpriteManager';
-import { scratchRuntime } from './runtime/scratchRuntime';
+import { leapRuntime } from './runtime/leapRuntime';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
 
 import SerialMonitor from './components/SerialMonitor';
@@ -190,6 +189,46 @@ function initBlocklyOnce() {
     // GLOBAL BLOCKLY OVERRIDES
     // ═══════════════════════════════════════════════════════════════════════
 
+    // Extension for broadcast dropdowns to handle "New message..."
+    if (!Blockly.Extensions.isRegistered('broadcast_dropdown_ext')) {
+    Blockly.Extensions.register('broadcast_dropdown_ext', function (this: any) {
+        this.setOnChange(function (this: any, event: any) {
+            if (event.type === Blockly.Events.BLOCK_CHANGE && event.blockId === this.id) {
+                const fieldName = event.name;
+                if (fieldName === 'BROADCAST_INPUT' || fieldName === 'BROADCAST_OPTION') {
+                    const newValue = event.newValue;
+                    if (newValue === 'new') {
+                        (window as any).createNewBroadcast((name: string | null) => {
+                            if (name) {
+                                this.setFieldValue(name, fieldName);
+                            } else {
+                                this.setFieldValue('message1', fieldName);
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    });
+
+    // ✅ APPLY EXTENSION SAFELY AFTER BLOCK INIT
+    ['event_broadcast', 'event_broadcast_wait', 'event_receive'].forEach(type => {
+        if (Blockly.Blocks[type] && !(Blockly.Blocks[type] as any).__broadcastExtApplied) {
+            const originalInit = Blockly.Blocks[type].init;
+            (Blockly.Blocks[type] as any).__broadcastExtApplied = true;
+
+            Blockly.Blocks[type].init = function (this: any) {
+                originalInit.call(this);
+
+                try {
+                    Blockly.Extensions.apply('broadcast_dropdown_ext', this, false);
+                } catch (e) {
+                    // Safe ignore
+                }
+            };
+        }
+    });
+}
 }
 
 const MORE_BLOCKS_CATEGORY_NAME = 'More Blocks';
@@ -577,17 +616,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     // ═══════════════════════════════════════════════════════════════════════
 
     const handleBackdropSelect = async (name: string, src: string) => {
-
         await stageManager.addBackdrop(name, src);
-
         stageManager.setBackdrop(name); // Force the stage to switch to this backdrop
 
+        // Synchronize with the stage sprite so backdrops are saved in the project
+        const stageSprite = sprites.find(s => s.id === 'stage');
+        if (stageSprite) {
+            await stageSprite.addCostume(name, src);
+        }
+
         setShowBackdropLibrary(false);
-
         setBackdropRefresh(prev => prev + 1);
-
         window.dispatchEvent(new Event('leap-stage-update')); // Ensure canvas repaints
-
     };
 
 
@@ -809,6 +849,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             setSensingMonitors(prev => prev.map(m => m.name === 'answer' ? { ...m, value: answer } : m));
         };
 
+        animationVM.onRunningChange = (running: boolean) => {
+            setIsRunning(running);
+        };
+
         return () => {
             animationVM.onShowVariable = undefined;
             animationVM.onHideVariable = undefined;
@@ -821,6 +865,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             animationVM.onListChange = undefined;
             animationVM.onTableChange = undefined;
             animationVM.onAnswerChange = undefined;
+            animationVM.onRunningChange = undefined;
         };
     }, []);
 
@@ -1671,6 +1716,19 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
      */
 
+    // Save current workspace blocks to the per-sprite map
+    const saveCurrentSpriteWorkspace = useCallback(() => {
+
+        const activeId = activeSpriteIdRef.current;
+
+        if (!workspaceRef.current || !activeId) return;
+
+        const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+        spriteWorkspacesRef.current.set(activeId, json);
+
+        console.log('[APP] Saved workspace for sprite:', activeId);
+    }, []);
+
     const handleBlockInteraction = useCallback(async (event: Blockly.Events.Abstract) => {
 
         if (!workspaceRef.current) return;
@@ -1691,16 +1749,21 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         // Animation block interaction on click
 
         if (event.type === Blockly.Events.CLICK) {
-            // Use ScratchRuntime for Scratch blocks
+            // Use leapRuntime for Scratch blocks
             if (!block.type.startsWith('arduino_')) {
-                console.log(`[APP] Running stack with ScratchRuntime for sprite ${selectedSpriteId}`);
+                console.log(`[APP] Running stack with leapRuntime for sprite ${selectedSpriteId}`);
                 setIsRunning(true);
 
+                // Ensure the current sprite workspace is saved and all sprite workspaces are loaded
+                saveCurrentSpriteWorkspace();
+                syncAllWorkspaces(); // Sync everything to the VM so broadcasts work across sprites
+                leapRuntime.loadProject(spriteWorkspacesRef.current);
+
                 // Convert Blockly block to Scratch-like structure
-                const scratchBlock = (scratchRuntime as any).flattenBlock(Blockly.serialization.blocks.save(block));
+                const scratchBlock = (leapRuntime as any).flattenBlock(Blockly.serialization.blocks.save(block));
                 if (scratchBlock) {
-                    scratchRuntime.stopAll(); // Optional: stop others?
-                    scratchRuntime.executeBlock(scratchBlock, selectedSpriteId || '');
+                    leapRuntime.stopAll(); // Optional: stop others?
+                    leapRuntime.executeBlock(scratchBlock, selectedSpriteId || '');
                     return;
                 }
             }
@@ -1725,7 +1788,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             setIsRunning(true);
 
-            animationVM.triggerFlag(compiledScripts);
+            animationVM.triggerFlag();
 
             addLog('Started Arduino script');
 
@@ -1915,7 +1978,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         }
 
-    }, [editorMode, isConnected, sprites, selectedSpriteId]);
+    }, [editorMode, isConnected, saveCurrentSpriteWorkspace, sprites, selectedSpriteId]);
 
 
 
@@ -1926,20 +1989,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     // ═══════════════════════════════════════════════════════════════════════
 
     // Save current workspace blocks to the per-sprite map
-
-    const saveCurrentSpriteWorkspace = useCallback(() => {
-
-        const activeId = activeSpriteIdRef.current;
-
-        if (!workspaceRef.current || !activeId) return;
-
-        const json = Blockly.serialization.workspaces.save(workspaceRef.current);
-
-        spriteWorkspacesRef.current.set(activeId, json);
-
-        console.log('[APP] Saved workspace for sprite:', activeId);
-
-    }, []);
 
 
 
@@ -2001,10 +2050,22 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             Blockly.Events.enable();
 
             const toolbox = workspaceRef.current.getToolbox() as any;
-            if (toolbox?.getSelectedItem?.()) {
-                workspaceRef.current.refreshToolboxSelection();
-            } else if (toolbox && typeof toolbox.selectItemByPosition === 'function') {
-                toolbox.selectItemByPosition(0);
+            if (toolbox) {
+                // Use a small timeout to allow Blockly to finish internal disposal 
+                // and serialization before we trigger a toolbox/flyout refresh.
+                // This prevents race conditions in item disposal.
+                setTimeout(() => {
+                    if (!workspaceRef.current) return;
+                    try {
+                        if (toolbox.getSelectedItem?.()) {
+                            workspaceRef.current.refreshToolboxSelection();
+                        } else if (typeof toolbox.selectItemByPosition === 'function') {
+                            toolbox.selectItemByPosition(0);
+                        }
+                    } catch (e) {
+                        console.warn('[APP] Safe recovery from toolbox refresh error:', e);
+                    }
+                }, 20);
             }
 
             const flyout = workspaceRef.current.getFlyout() as any;
@@ -2092,7 +2153,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             // Trigger click event even if already selected (Scratch behavior)
 
-            scratchRuntime.triggerClick(newId);
+            leapRuntime.triggerClick(newId);
             return;
 
         }
@@ -2124,39 +2185,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             handleSpriteSelect(id);
         }
 
-        // Compile the clicked sprite's workspace to get latest scripts
-        let clickScripts: CompiledScript[] = compiledScripts;
-        const savedJson = id === selectedSpriteId && workspaceRef.current
-            ? Blockly.serialization.workspaces.save(workspaceRef.current)
-            : spriteWorkspacesRef.current.get(id);
-
-        if (savedJson && Object.keys(savedJson).length > 0) {
-            try {
-                let tempWs: Blockly.Workspace | null = null;
-                let compileWs: Blockly.Workspace;
-
-                if (id === selectedSpriteId && workspaceRef.current) {
-                    compileWs = workspaceRef.current;
-                } else {
-                    Blockly.Events.disable();
-                    tempWs = new Blockly.Workspace();
-                    Blockly.serialization.workspaces.load(savedJson, tempWs);
-                    Blockly.Events.enable();
-                    compileWs = tempWs;
-                }
-
-                const compiler = new AnimationCompiler(id);
-                clickScripts = compiler.compile(compileWs);
-                if (tempWs) { try { (tempWs as any).dispose(); } catch (_) {} }
-            } catch (e) {
-                Blockly.Events.enable();
-                console.error('[APP] Error compiling sprite for click:', e);
-            }
-        }
-
-        // Trigger click event in the animation VM with fresh scripts
-        animationVM.triggerSpriteClick(id, clickScripts);
-    }, [selectedSpriteId, handleSpriteSelect, compiledScripts]);
+        // Trigger click event in the animation VM. 
+        // The VM now scans its own internally synced sprite scripts.
+        animationVM.triggerSpriteClick(id);
+    }, [selectedSpriteId, handleSpriteSelect]);
 
 
 
@@ -2253,8 +2285,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
         animationVM.registerSprite(newSprite);
-
-        setSprites(prev => [...prev, newSprite]);
 
 
 
@@ -2591,6 +2621,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         const payload = {
             sprites: spritesData,
             workspaces: workspacesData,
+            currentBackdropIndex: stageManager.getCurrentBackdropIndex(),
             monitors: {
                 variables: variableMonitors,
                 lists: listMonitors,
@@ -2657,12 +2688,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                 // Full Reset before loading
-
                 sprites.forEach(s => animationVM.unregisterSprite(s.id));
-
                 spriteWorkspacesRef.current.clear();
-
                 if (workspaceRef.current) workspaceRef.current.clear();
+
+                // Clear stage engine
+                stageManager.clearBackdrops();
+                stageManager.clearSounds();
 
 
 
@@ -2703,9 +2735,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                     for (const cData of sData.costumes) {
-
                         await s.addCostume(cData.name, cData.src);
-
+                        if (sData.id === 'stage') {
+                            await stageManager.addBackdrop(cData.name, cData.src);
+                        }
                     }
 
                     if (Array.isArray(sData.sounds)) {
@@ -2752,8 +2785,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 setSprites(newSprites);
 
                 const firstId = newSprites.length > 0 ? newSprites[0].id : null;
-
                 setSelectedSpriteId(firstId);
+
+                // Restore current backdrop
+                if (typeof data.currentBackdropIndex === 'number') {
+                    stageManager.setBackdrop(data.currentBackdropIndex);
+                }
 
 
 
@@ -2770,6 +2807,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             loadSpriteWorkspace(firstId);
                             triggerUpdate();
                             addLog('Project loaded successfully');
+                            // Ensure stage repaints after backdrop loading
+                            window.dispatchEvent(new Event('leap-stage-update'));
                         } else if (attempts < 10) {
                             attempts++;
                             setTimeout(tryLoad, 200);
@@ -2827,98 +2866,122 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     }, [sprites, selectedSpriteId, addLog, loadSpriteWorkspace]);
 
     const syncAllWorkspaces = useCallback(() => {
-        log.app('Syncing all entities (Sprites + Stage) for global events');
-        let allScripts: CompiledScript[] = [];
-        const stageScripts: CompiledScript[] = [];
+    console.log('[APP] 🔄 FULL SYNC - Recompiling ALL sprites (broadcast fix)');
 
-        for (const s of sprites) {
-            let savedJson = spriteWorkspacesRef.current.get(s.id);
-            if (s.id === selectedSpriteId && workspaceRef.current) {
-                savedJson = Blockly.serialization.workspaces.save(workspaceRef.current);
-            }
+    // 1. Always save whatever the user is currently editing
+    const activeId = activeSpriteIdRef.current;
+    if (activeId && workspaceRef.current) {
+        const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+        spriteWorkspacesRef.current.set(activeId, json);
+        console.log(`[SYNC] Saved current workspace for ${activeId}`);
+    }
 
-            if (!savedJson || Object.keys(savedJson).length === 0) continue;
+    let allScripts: CompiledScript[] = [];
+    const stageScripts: CompiledScript[] = [];
 
-            let tempWs: Blockly.Workspace | null = null;
-            try {
-                let compileWs: Blockly.Workspace;
-                let usedLiveWs = false;
+    const allLiveSprites = spriteManager.getAllSprites();
 
-                if (s.id === selectedSpriteId && workspaceRef.current) {
-                    compileWs = workspaceRef.current;
-                    usedLiveWs = true;
-                } else {
-                    Blockly.Events.disable();
-                    tempWs = new Blockly.Workspace();
-                    Blockly.serialization.workspaces.load(savedJson, tempWs);
-                    Blockly.Events.enable();
-                    compileWs = tempWs;
-                }
+    for (const sprite of allLiveSprites) {
+        const savedJson = spriteWorkspacesRef.current.get(sprite.id);
 
-                const compiler = new AnimationCompiler(s.id);
-                const scripts = compiler.compile(compileWs);
-                allScripts = allScripts.concat(scripts);
-
-                if (s.id === 'stage') {
-                    stageScripts.push(...scripts);
-                }
-
-                if (typeof s.setScripts === 'function') {
-                    s.setScripts(scripts);
-                }
-
-                if (!usedLiveWs) tempWs?.dispose();
-            } catch (e) {
-                Blockly.Events.enable();
-                console.error(`[APP] Error compiling entity ${s.name}:`, e);
-                if (tempWs) { try { (tempWs as any).dispose(); } catch (_) { } }
-            }
+        if (!savedJson || Object.keys(savedJson).length === 0) {
+            sprite.setScripts([]);   // clean state
+            continue;
         }
 
-        animationVM.stageScripts = stageScripts;
-        return allScripts;
-    }, [sprites, selectedSpriteId]);
+        let tempWs: Blockly.Workspace | null = null;
+        try {
+            Blockly.Events.disable();
+            tempWs = new Blockly.Workspace();
+            Blockly.serialization.workspaces.load(savedJson, tempWs);
+
+            const compiler = new AnimationCompiler(sprite.id);
+            const scripts = compiler.compile(tempWs);
+
+            // CRITICAL: Attach fresh scripts to the sprite
+            sprite.setScripts(scripts);
+
+            if (scripts.length > 0) {
+                console.log(`[SYNC] ${sprite.name} (${sprite.id}) → Compiled ${scripts.length} scripts successfully`);
+            }
+
+            allScripts.push(...scripts);
+            if (sprite.id === 'stage') stageScripts.push(...scripts);
+        } catch (e) {
+            console.error(`[SYNC ERROR] ${sprite.name}`, e);
+        } finally {
+            if (tempWs) tempWs.dispose();
+            Blockly.Events.enable();
+        }
+    }
+
+    animationVM.stageScripts = stageScripts;
+    // Do NOT call animationVM.setScripts() — we already attached to each sprite
+
+    console.log(`[SYNC] Total scripts across all sprites: ${allScripts.length}`);
+    return allScripts;
+}, []);
 
     useEffect(() => {
-        animationVM.onBeforeBroadcast = (message) => {
-            log.app(`Syncing for broadcast: ${message}`);
-            syncAllWorkspaces();
-        };
-        return () => {
-            animationVM.onBeforeBroadcast = undefined;
-        };
-    }, [syncAllWorkspaces]);
+    animationVM.onBeforeBroadcast = (message) => {
+        console.log(`[APP] Intercepted broadcast "${message}"`);
+
+        // ✅ SAVE CURRENT WORKSPACE FIRST
+        const activeId = activeSpriteIdRef.current;
+        if (activeId && workspaceRef.current) {
+            const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+            spriteWorkspacesRef.current.set(activeId, json);
+        }
+
+        syncAllWorkspaces();
+    };
+
+    (leapRuntime as any)._onBroadcast = (message: string) => {
+        console.log(`[APP] Runtime broadcast "${message}"`);
+
+        syncAllWorkspaces();
+        animationVM.triggerBroadcast(message);
+    };
+
+    (leapRuntime as any)._onBroadcastAndWait = async (message: string) => {
+        console.log(`[APP] Runtime broadcast_wait "${message}"`);
+
+        syncAllWorkspaces();
+        await animationVM.triggerBroadcastAndWait(message);
+    };
+
+    return () => {
+        animationVM.onBeforeBroadcast = undefined;
+        (leapRuntime as any)._onBroadcast = undefined;
+        (leapRuntime as any)._onBroadcastAndWait = undefined;
+    };
+}, [syncAllWorkspaces]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // ANIMATION CONTROLS
     // ═══════════════════════════════════════════════════════════════════════
-    const handleRunClick = useCallback(() => {
-        console.log('[APP] Run button clicked - MULTI-SPRITE MODE');
-        addLog('Green flag clicked');
-        animationVM.stopAll();
+   const handleRunClick = useCallback(() => {
+    console.log('[APP] 🟢 Green Flag clicked — FULL SYNC + TRIGGER');
+    addLog('Green flag clicked');
 
-        try {
-            const allScripts = syncAllWorkspaces();
-            if (allScripts.length > 0 || spriteWorkspacesRef.current.size > 0) {
-                setCompiledScripts(allScripts);
-                setIsRunning(true);
-                scratchRuntime.loadProject(spriteWorkspacesRef.current);
-                scratchRuntime.triggerFlag();
-                animationVM.triggerFlag(allScripts);
-                addLog(`Started animation with ScratchRuntime`);
-            }
-        } catch (e) {
-            console.error(`[APP] Error during multi-sprite compilation:`, e);
-        }
-    }, [addLog, syncAllWorkspaces]);
+    animationVM.stopAll();
 
+    // Force full recompile of EVERY sprite before triggering
+    const allScripts = syncAllWorkspaces();
 
+    setCompiledScripts(allScripts);
+    setIsRunning(true);
 
+    leapRuntime.loadProject(spriteWorkspacesRef.current);
+    leapRuntime.triggerFlag();
+    animationVM.triggerFlag();        // ← now sees fresh scripts on every sprite
 
+    addLog(`Started animation with ${allScripts.length} scripts`);
+}, [addLog, syncAllWorkspaces]);
 
     const handleStopClick = useCallback(() => {
         setIsRunning(false);
-        scratchRuntime.stopAll();
+        leapRuntime.stopAll();
         animationVM.stopAll();
 
         // Cancel any pending ask prompt
@@ -3399,6 +3462,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         };
 
+        (window as any).getBroadcastMessages = () => {
+            return animationVM.getBroadcastMessages();
+        };
+
+        (window as any).createNewBroadcast = (callback: (name: string | null) => void) => {
+            const name = window.prompt('New message name:');
+            if (name) {
+                animationVM.registerBroadcast(name);
+                callback(name);
+            } else {
+                callback(null);
+            }
+        };
+
         // Expose all sprite names for sensing_touching dropdown
         (window as any).getAllSpriteNames = () => {
             const allSprites = spriteManager.getAllSprites();
@@ -3570,7 +3647,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         };
 
         Object.assign(animationVM, commonCallbacks);
-        Object.assign(scratchRuntime, commonCallbacks);
+        Object.assign(leapRuntime, commonCallbacks);
 
         // --- VM CHANGE CALLBACKS (Real-time Sync) ---
         animationVM.onVariableChange = (name, value) => {
@@ -3713,21 +3790,31 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         }
 
         const refreshedToolbox = workspaceRef.current.getToolbox() as any;
-        const toolboxItems = typeof refreshedToolbox?.getToolboxItems === 'function'
-            ? refreshedToolbox.getToolboxItems().filter((item: any) => typeof item?.getName === 'function')
+        const toolboxItems = (typeof refreshedToolbox?.getToolboxItems === 'function')
+            ? (refreshedToolbox.getToolboxItems() || []).filter((item: any) => item && typeof item.getName === 'function')
             : [];
 
-        if (selectedCategoryName) {
+        if (selectedCategoryName && refreshedToolbox) {
             const matchingItem = toolboxItems.find((item: any) => item.getName() === selectedCategoryName);
-            if (matchingItem && typeof refreshedToolbox?.setSelectedItem === 'function') {
-                refreshedToolbox.setSelectedItem(matchingItem);
+            if (matchingItem && typeof refreshedToolbox.setSelectedItem === 'function') {
+                try {
+                    refreshedToolbox.setSelectedItem(matchingItem);
+                } catch (e) {
+                    console.warn('[APP] Failed to restore toolbox selection:', e);
+                }
             }
         }
 
-        if (!refreshedToolbox?.getSelectedItem?.() && typeof refreshedToolbox?.selectItemByPosition === 'function') {
-            refreshedToolbox.selectItemByPosition(0);
-        } else {
-            workspaceRef.current.refreshToolboxSelection();
+        if (refreshedToolbox) {
+            if (!refreshedToolbox.getSelectedItem?.() && typeof refreshedToolbox.selectItemByPosition === 'function') {
+                try {
+                    refreshedToolbox.selectItemByPosition(0);
+                } catch (e) {
+                    console.warn('[APP] Failed to select default toolbox item:', e);
+                }
+            } else if (typeof workspaceRef.current.refreshToolboxSelection === 'function') {
+                workspaceRef.current.refreshToolboxSelection();
+            }
         }
 
         const flyout = workspaceRef.current.getFlyout() as any;
@@ -5987,8 +6074,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     }
 
                     animationVM.registerSprite(newSprite);
-
-                    setSprites(prev => [...prev, newSprite]);
 
 
 

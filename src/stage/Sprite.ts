@@ -29,7 +29,10 @@ export interface SpriteState {
         pan: number;
     };
     sayText: string | null;
-    sayTimeout: number | null;
+    thinkText: string | null;
+    sayTimer: number | null;
+    thinkTimer: number | null;
+    sayTimeout: number | null; // Keep for compatibility if needed, but we'll use timers
     effects: {
         color: number;      // color tint/hue shift 0-100
         brightness: number; // brightness 0-100
@@ -74,6 +77,9 @@ export class Sprite {
             volume: 100,
             soundEffects: { pitch: 0, pan: 0 },
             sayText: null,
+            thinkText: null,
+            sayTimer: null,
+            thinkTimer: null,
             sayTimeout: null,
             effects: { color: 0, brightness: 0, ghost: 0, fisheye: 0, whirl: 0, pixelate: 0, mosaic: 0 },
             glideTarget: null,
@@ -100,6 +106,9 @@ export class Sprite {
     get size() { return this.state.size; }
     get visible() { return this.state.visible; }
     get sayText() { return this.state.sayText; }
+    get thinkText() { return this.state.thinkText; }
+    get sayTimer() { return this.state.sayTimer; }
+    get thinkTimer() { return this.state.thinkTimer; }
     get currentCostume(): Costume | null {
         return this.state.costumes[this.state.currentCostumeIndex] || null;
     }
@@ -243,6 +252,10 @@ export class Sprite {
         }, 300); // 300ms animation
     }
 
+    triggerUpdate() {
+        this.onUpdate();
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // COSTUME MANAGEMENT
     // ═══════════════════════════════════════════════════════════════════════
@@ -350,40 +363,65 @@ export class Sprite {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // LOOKS
-    // ═══════════════════════════════════════════════════════════════════════
-    say(text: string, durationSecs?: number): void {
-        if (this.state.sayTimeout) {
-            clearTimeout(this.state.sayTimeout);
-            this.state.sayTimeout = null;
+// LOOKS - Say / Think / Bubble System
+// ═══════════════════════════════════════════════════════════════════════
+
+    say(text: string, secs?: number): void {
+        this.state.sayText = String(text || '').trim();
+        this.state.thinkText = '';                    // clear think if any
+        this.state.thinkTimer = null;
+
+        if (secs && secs > 0) {
+            this.state.sayTimer = Date.now() + secs * 1000;
+        } else {
+            this.state.sayTimer = null;               // permanent until cleared
         }
-        this.state.sayText = text;
-        if (durationSecs && durationSecs > 0) {
-            this.state.sayTimeout = window.setTimeout(() => {
-                this.state.sayText = null;
-                this.state.sayTimeout = null;
-                this.onUpdate();
-            }, durationSecs * 1000);
+
+        this.triggerUpdate();                   // force Stage re-render
+    }
+
+    think(text: string, secs?: number): void {
+        this.state.thinkText = String(text || '').trim();
+        this.state.sayText = '';                      // clear say if any
+        this.state.sayTimer = null;
+
+        if (secs && secs > 0) {
+            this.state.thinkTimer = Date.now() + secs * 1000;
+        } else {
+            this.state.thinkTimer = null;
         }
-        this.onUpdate();
+
+        this.triggerUpdate();
     }
 
     clearSay(): void {
-        if (this.state.sayTimeout) {
-            clearTimeout(this.state.sayTimeout);
-            this.state.sayTimeout = null;
-        }
-        this.state.sayText = null;
-        this.onUpdate();
+        this.state.sayText = '';
+        this.state.sayTimer = null;
+        this.triggerUpdate();
     }
 
-    think(text: string, durationSecs?: number): void {
-        this.say(text, durationSecs);
+    clearThink(): void {
+        this.state.thinkText = '';
+        this.state.thinkTimer = null;
+        this.triggerUpdate();
+    }
+
+    clearSayThink(): void {
+        this.state.sayText = '';
+        this.state.thinkText = '';
+        this.state.sayTimer = null;
+        this.state.thinkTimer = null;
+        this.triggerUpdate();
+    }
+
+    hasVisibleBubble(): boolean {
+        return !!(this.state.sayText || this.state.thinkText);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     // MOTION HELPERS
     // ═══════════════════════════════════════════════════════════════════════
+
     startGlide(x: number, y: number, durationSecs: number): void {
         this.state.glideTarget = {
             x,
@@ -401,18 +439,24 @@ export class Sprite {
 
     updateGlide(deltaMs: number): boolean {
         if (!this.state.glideTarget) return false;
+
         this.state.glideTarget.elapsed += deltaMs;
         const t = Math.min(1, this.state.glideTarget.elapsed / this.state.glideTarget.duration);
-        const easeT = 1 - Math.pow(1 - t, 2);
+        const easeT = 1 - Math.pow(1 - t, 2);   // easeOutQuad
+
         this.setX(this.state.glideTarget.startX + (this.state.glideTarget.x - this.state.glideTarget.startX) * easeT);
         this.setY(this.state.glideTarget.startY + (this.state.glideTarget.y - this.state.glideTarget.startY) * easeT);
-        if (t >= 1) this.state.glideTarget = null;
+
+        if (t >= 1) {
+            this.state.glideTarget = null;
+        }
         return this.state.glideTarget === null;
     }
 
     ifOnEdgeBounce(): void {
         const margin = 20;
         let bounced = false;
+
         if (this.state.x >= 240 - margin || this.state.x <= -240 + margin) {
             this.state.direction = (180 - this.state.direction + 360) % 360;
             bounced = true;
@@ -421,14 +465,17 @@ export class Sprite {
             this.state.direction = (360 - this.state.direction) % 360;
             bounced = true;
         }
+
         if (bounced) this.onUpdate();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     // RENDER
     // ═══════════════════════════════════════════════════════════════════════
+
     render(ctx: CanvasRenderingContext2D, stageWidth: number, stageHeight: number): void {
         if (!this.state.visible) return;
+
         const costume = this.currentCostume;
         const centerX = stageWidth / 2 + this.state.x;
         const centerY = stageHeight / 2 - this.state.y;
@@ -436,29 +483,34 @@ export class Sprite {
         ctx.save();
         ctx.translate(centerX, centerY);
 
-        // Visual feedback animations
+        // Visual feedback animations (jiggle, drag)
         let animScale = 1;
         let animRotate = 0;
+
         if (this.state.jiggleStartTime) {
             const elapsed = performance.now() - this.state.jiggleStartTime;
             if (elapsed < 300) {
                 const t = elapsed / 300;
                 animScale = 1 + Math.sin(t * Math.PI) * 0.15;
                 animRotate = Math.sin(t * Math.PI * 4) * 0.15;
+            } else {
+                this.state.jiggleStartTime = null;
             }
         }
 
         if (this.state.isDragging) {
-            animScale *= 1.15; // enlarge while dragged
+            animScale *= 1.15;
         }
 
         ctx.scale(animScale, animScale);
 
+        // Rotation style
         if (this.state.rotationStyle === 'all around') {
             ctx.rotate((this.state.direction - 90) * Math.PI / 180 + animRotate);
         } else {
             ctx.rotate(animRotate);
-            if (this.state.rotationStyle === 'left-right' && (this.state.direction > 180 || this.state.direction < 0)) {
+            if (this.state.rotationStyle === 'left-right' && 
+                (this.state.direction > 180 || this.state.direction < 0)) {
                 ctx.scale(-1, 1);
             }
         }
@@ -466,17 +518,17 @@ export class Sprite {
         const eff = this.state.effects;
         const alpha = 1 - (eff.ghost / 100);
 
-        // Build combined filter string from dragging, brightness, and color effects
+        // Build filter string
         const filters: string[] = [];
         if (this.state.isDragging) {
             filters.push('drop-shadow(0px 15px 15px rgba(0,0,0,0.3))', 'brightness(110%)');
         }
         if (eff.brightness !== 0) {
-            const pct = 100 + eff.brightness; // value can be negative
+            const pct = 100 + eff.brightness;
             filters.push(`brightness(${pct}%)`);
         }
         if (eff.color !== 0) {
-            const deg = eff.color * 3.6; // 0-100 -> 0-360 degrees
+            const deg = eff.color * 3.6;
             filters.push(`hue-rotate(${deg}deg)`);
         }
         if (filters.length > 0) {
@@ -485,7 +537,9 @@ export class Sprite {
 
         const scale = this.state.size / 100;
 
-        if (costume) {
+        ctx.globalAlpha = alpha;
+
+        if (costume && costume.image) {
             const w = costume.width * scale;
             const h = costume.height * scale;
 
@@ -494,15 +548,13 @@ export class Sprite {
             const hasWhirl = eff.whirl > 0;
             const hasDistortion = hasPixelate || hasFisheye || hasWhirl;
 
-            ctx.globalAlpha = alpha;
-
             if (hasDistortion) {
-                // Determine pixelation factor (mosaic uses same factor)
                 let factor = 1;
                 if (hasPixelate) {
                     const pv = eff.pixelate > 0 ? eff.pixelate : eff.mosaic;
                     factor = Math.max(1, Math.floor(pv / 10) + 1);
                 }
+
                 const smallW = Math.max(1, Math.floor(w / factor));
                 const smallH = Math.max(1, Math.floor(h / factor));
 
@@ -510,41 +562,37 @@ export class Sprite {
                 offscreen.width = smallW;
                 offscreen.height = smallH;
                 const offCtx = offscreen.getContext('2d');
+
                 if (offCtx) {
-                    // Draw costume downscaled to small canvas
                     offCtx.drawImage(costume.image, 0, 0, smallW, smallH);
 
-                    // Apply additional pixel-level distortions
-                    if (hasFisheye) {
-                        this.applyFisheye(offCtx, smallW, smallH, eff.fisheye);
-                    }
-                    if (hasWhirl) {
-                        this.applyWhirl(offCtx, smallW, smallH, eff.whirl);
-                    }
+                    if (hasFisheye) this.applyFisheye(offCtx, smallW, smallH, eff.fisheye);
+                    if (hasWhirl) this.applyWhirl(offCtx, smallW, smallH, eff.whirl);
 
-                    // Render the distorted offscreen canvas scaled up with nearest-neighbor (pixelated)
                     ctx.imageSmoothingEnabled = false;
                     ctx.drawImage(offscreen, -w / 2, -h / 2, w, h);
                     ctx.imageSmoothingEnabled = true;
                 } else {
-                    // Fallback: direct draw if offscreen context fails
                     ctx.drawImage(costume.image, -w / 2, -h / 2, w, h);
                 }
             } else {
-                // No distortion; direct draw
                 ctx.drawImage(costume.image, -w / 2, -h / 2, w, h);
             }
         } else {
-            // Default vector sprites (cat, ball, arrow, robot)
-            // Distortion effects not applicable to vector sprites
-            ctx.globalAlpha = alpha;
+            // Default vector sprites
             ctx.scale(scale, scale);
             this.renderDefaultSprite(ctx);
         }
 
         ctx.restore();
 
-        if (this.state.sayText) this.renderSpeechBubble(ctx, centerX, centerY, this.state.sayText);
+        // Render speech/think bubble on top
+        if (this.sayText) {
+            this.renderSpeechBubble(ctx, centerX, centerY, this.sayText, 'say');
+        }
+        if (this.thinkText) {
+            this.renderSpeechBubble(ctx, centerX, centerY, this.thinkText, 'think');
+        }
     }
 
     private renderDefaultSprite(ctx: CanvasRenderingContext2D): void {
@@ -552,125 +600,160 @@ export class Sprite {
             case 'ball': this.renderBall(ctx); break;
             case 'arrow': this.renderArrow(ctx); break;
             case 'robot': this.renderRobot(ctx); break;
-            // default: this.renderCat(ctx); break;
+            default:
+                this.renderBall(ctx);
+                break;
         }
     }
 
-
     private renderBall(ctx: CanvasRenderingContext2D): void {
-        const scale = this.state.size / 100;
-        const radius = 20 * scale;
-        const gradient = ctx.createRadialGradient(-radius / 3, -radius / 3, 0, 0, 0, radius);
-        gradient.addColorStop(0, '#6DD5FA');
-        gradient.addColorStop(0.5, '#2980B9');
-        gradient.addColorStop(1, '#1A5276');
+        // High-quality glossy ball
+        const gradient = ctx.createRadialGradient(-10, -10, 5, 0, 0, 40);
+        gradient.addColorStop(0, '#ff9999');
+        gradient.addColorStop(0.4, '#ff0000');
+        gradient.addColorStop(1, '#990000');
+
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.arc(0, 0, 40, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+
+        // Shine
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
         ctx.beginPath();
-        ctx.arc(-radius / 3, -radius / 3, radius / 4, 0, Math.PI * 2);
+        ctx.ellipse(-15, -15, 15, 10, Math.PI / 4, 0, Math.PI * 2);
         ctx.fill();
     }
 
     private renderArrow(ctx: CanvasRenderingContext2D): void {
-        const scale = this.state.size / 100;
-        const size = 40 * scale;
-        ctx.fillStyle = '#E74C3C';
+        // Sleek modern arrow
+        ctx.fillStyle = '#4cc9f0';
+        ctx.strokeStyle = '#4361ee';
+        ctx.lineWidth = 3;
+
         ctx.beginPath();
-        ctx.moveTo(size / 2, 0);
-        ctx.lineTo(-size / 4, -size / 3);
-        ctx.lineTo(-size / 4, -size / 6);
-        ctx.lineTo(-size / 2, -size / 6);
-        ctx.lineTo(-size / 2, size / 6);
-        ctx.lineTo(-size / 4, size / 6);
-        ctx.lineTo(-size / 4, size / 3);
+        ctx.moveTo(-40, -15);
+        ctx.lineTo(10, -15);
+        ctx.lineTo(10, -35);
+        ctx.lineTo(45, 0);
+        ctx.lineTo(10, 35);
+        ctx.lineTo(10, 15);
+        ctx.lineTo(-40, 15);
         ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = '#922B21';
-        ctx.lineWidth = 2 * scale;
+        ctx.stroke();
+
+        // Detail line
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-30, -5);
+        ctx.lineTo(0, -5);
         ctx.stroke();
     }
 
     private renderRobot(ctx: CanvasRenderingContext2D): void {
-        const scale = this.state.size / 100;
-        const size = 40 * scale;
-        ctx.fillStyle = '#7D8C9C';
-        ctx.fillRect(-size / 2.5, -size / 3, size / 1.25, size / 1.5);
-        ctx.fillStyle = '#5D6C7C';
-        ctx.fillRect(-size / 3, -size / 2.2, size / 1.5, size / 4);
-        ctx.fillStyle = '#2ECC71';
+        // Cute techy robot
+        // Head
+        ctx.fillStyle = '#ced4da';
+        ctx.strokeStyle = '#495057';
+        ctx.lineWidth = 2;
+        
         ctx.beginPath();
-        ctx.arc(-size / 6, -size / 3, size / 12, 0, Math.PI * 2);
-        ctx.arc(size / 6, -size / 3, size / 12, 0, Math.PI * 2);
+        if (ctx.roundRect) ctx.roundRect(-25, -40, 50, 40, 8);
+        else ctx.rect(-25, -40, 50, 40);
         ctx.fill();
-        ctx.strokeStyle = '#5D6C7C';
-        ctx.lineWidth = 2 * scale;
-        ctx.beginPath();
-        ctx.moveTo(0, -size / 2.2);
-        ctx.lineTo(0, -size / 1.5);
         ctx.stroke();
-        ctx.fillStyle = '#E74C3C';
+
+        // Eyes
+        ctx.fillStyle = '#00f5d4';
         ctx.beginPath();
-        ctx.arc(0, -size / 1.5, size / 15, 0, Math.PI * 2);
+        ctx.arc(-12, -25, 5, 0, Math.PI * 2);
+        ctx.arc(12, -25, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Body
+        ctx.fillStyle = '#adb5bd';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(-35, 0, 70, 50, 5);
+        else ctx.rect(-35, 0, 70, 50);
+        ctx.fill();
+        ctx.stroke();
+
+        // Antenna
+        ctx.strokeStyle = '#495057';
+        ctx.beginPath();
+        ctx.moveTo(0, -40);
+        ctx.lineTo(0, -55);
+        ctx.stroke();
+        ctx.fillStyle = '#f72585';
+        ctx.beginPath();
+        ctx.arc(0, -55, 4, 0, Math.PI * 2);
         ctx.fill();
     }
 
-    private renderSpeechBubble(ctx: CanvasRenderingContext2D, x: number, y: number, text: string): void {
+    private renderSpeechBubble(
+        ctx: CanvasRenderingContext2D, 
+        x: number, 
+        y: number, 
+        text: string, 
+        type: 'say' | 'think' = 'say'
+    ): void {
         ctx.save();
-        ctx.font = '12px Arial';
+        ctx.font = 'bold 13px Arial';
         const metrics = ctx.measureText(text);
-        const padding = 8;
-        const bubbleWidth = metrics.width + padding * 2;
-        const bubbleHeight = 24;
+        const padding = 10;
+        const bubbleWidth = metrics.width + padding * 2 + 10;
+        const bubbleHeight = 28;
         const bubbleX = x - bubbleWidth / 2;
-        const bubbleY = y - 60;
-        ctx.fillStyle = 'white';
-        ctx.strokeStyle = '#888';
-        ctx.lineWidth = 1;
+        const bubbleY = y - 75;
+
+        // Bubble background
+        ctx.fillStyle = type === 'think' ? '#f0f0f0' : '#ffffff';
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 1.5;
+
         ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight, 8);
-        else ctx.rect(bubbleX, bubbleY, bubbleWidth, bubbleHeight);
+        if (ctx.roundRect) {
+            ctx.roundRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight, 12);
+        } else {
+            ctx.rect(bubbleX, bubbleY, bubbleWidth, bubbleHeight);
+        }
         ctx.fill();
         ctx.stroke();
+
+        // Tail / pointer
         ctx.beginPath();
-        ctx.moveTo(x - 5, bubbleY + bubbleHeight);
-        ctx.lineTo(x, bubbleY + bubbleHeight + 8);
-        ctx.lineTo(x + 5, bubbleY + bubbleHeight);
+        ctx.moveTo(x - 6, bubbleY + bubbleHeight - 2);
+        ctx.lineTo(x, bubbleY + bubbleHeight + 10);
+        ctx.lineTo(x + 6, bubbleY + bubbleHeight - 2);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = 'black';
+        ctx.stroke();
+
+        // Text
+        ctx.fillStyle = '#222';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(text, x, bubbleY + bubbleHeight / 2);
+
         ctx.restore();
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // HIT TESTING
     // ═══════════════════════════════════════════════════════════════════════════
+
     isPointInSprite(scratchX: number, scratchY: number): boolean {
-        // Convert scratch coordinates to sprite-local coordinates
         const costume = this.currentCostume;
         const scale = this.state.size / 100;
 
-        // Get sprite dimensions
-        let spriteWidth: number, spriteHeight: number;
-        if (costume) {
-            spriteWidth = costume.width * scale;
-            spriteHeight = costume.height * scale;
-        } else {
-            // Default sprite sizes
-            spriteWidth = 40 * scale;
-            spriteHeight = 40 * scale;
-        }
+        let spriteWidth = costume ? costume.width * scale : 40 * scale;
+        let spriteHeight = costume ? costume.height * scale : 40 * scale;
 
-        // Calculate the sprite's bounding box in scratch coordinates
         const halfWidth = spriteWidth / 2;
         const halfHeight = spriteHeight / 2;
 
-        // Check if point is within the sprite's bounding box
         const dx = scratchX - this.state.x;
         const dy = scratchY - this.state.y;
 
@@ -678,11 +761,11 @@ export class Sprite {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // DISTORTION EFFECT HELPERS (Fisheye, Whirl)
-    // Applied to offscreen canvases at low resolution for performance
+    // DISTORTION EFFECTS (Fisheye, Whirl)
     // ═══════════════════════════════════════════════════════════════════════════
+
     private applyFisheye(ctx: CanvasRenderingContext2D, width: number, height: number, strength: number): void {
-        // Barrel distortion: magnifies center, compresses edges
+        // Your existing applyFisheye code (unchanged)
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
         const output = ctx.createImageData(width, height);
@@ -690,7 +773,7 @@ export class Sprite {
         const cx = width / 2;
         const cy = height / 2;
         const maxR = Math.min(width, height) / 2;
-        const s = strength / 100; // normalize to 0-1
+        const s = strength / 100;
 
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
@@ -698,14 +781,15 @@ export class Sprite {
                 const dy = y - cy;
                 const r = Math.sqrt(dx * dx + dy * dy);
                 let srcX = x, srcY = y;
+
                 if (r < maxR && r > 0) {
                     const amount = r / maxR;
-                    // Quadratic distortion: more push outward as radius increases
                     const newR = r * (1 + s * amount * amount);
                     const angle = Math.atan2(dy, dx);
                     srcX = cx + Math.cos(angle) * newR;
                     srcY = cy + Math.sin(angle) * newR;
                 }
+
                 const dstIdx = (y * width + x) * 4;
                 if (srcX >= 0 && srcX < width && srcY >= 0 && srcY < height) {
                     const sx = Math.round(srcX);
@@ -716,7 +800,7 @@ export class Sprite {
                     dst[dstIdx + 2] = data[srcIdx + 2];
                     dst[dstIdx + 3] = data[srcIdx + 3];
                 } else {
-                    dst[dstIdx + 3] = 0; // transparent
+                    dst[dstIdx + 3] = 0;
                 }
             }
         }
@@ -724,7 +808,7 @@ export class Sprite {
     }
 
     private applyWhirl(ctx: CanvasRenderingContext2D, width: number, height: number, strength: number): void {
-        // Swirl distortion: rotates pixels more near center
+        // Your existing applyWhirl code (unchanged)
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
         const output = ctx.createImageData(width, height);
@@ -732,7 +816,7 @@ export class Sprite {
         const cx = width / 2;
         const cy = height / 2;
         const maxR = Math.min(width, height) / 2;
-        const s = strength / 100; // normalize
+        const s = strength / 100;
 
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
@@ -740,14 +824,15 @@ export class Sprite {
                 const dy = y - cy;
                 const r = Math.sqrt(dx * dx + dy * dy);
                 let srcX = x, srcY = y;
+
                 if (r < maxR && r > 0) {
                     const amount = r / maxR;
-                    // Spin decreases linearly from center to edge; at center full rotation, at edge 0
-                    const spin = s * (1 - amount) * Math.PI * 2; // up to 2π*s at center
+                    const spin = s * (1 - amount) * Math.PI * 2;
                     const angle = Math.atan2(dy, dx) + spin;
                     srcX = cx + Math.cos(angle) * r;
                     srcY = cy + Math.sin(angle) * r;
                 }
+
                 const dstIdx = (y * width + x) * 4;
                 if (srcX >= 0 && srcX < width && srcY >= 0 && srcY < height) {
                     const sx = Math.round(srcX);
