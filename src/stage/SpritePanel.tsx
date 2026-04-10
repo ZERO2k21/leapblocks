@@ -212,10 +212,10 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
       </div>
 
       {/* Bottom Area: Sprites and Stage Lists */}
-      <div style={{ 
-        display: "flex", 
-        flex: 1, 
-        backgroundColor: isFullscreen ? "#111116" : "#F9F9F9", 
+      <div style={{
+        display: "flex",
+        flex: 1,
+        backgroundColor: isFullscreen ? "#111116" : "#F9F9F9",
         height: "180px",
         overflow: "visible",
         position: "relative",
@@ -223,9 +223,9 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
       }}>
 
         {/* Main Sprites Area */}
-        <div style={{ 
-          ...styles.spriteListContainer, 
-          flex: 1, 
+        <div style={{
+          ...styles.spriteListContainer,
+          flex: 1,
           borderRight: isFullscreen ? "1px solid rgba(255,255,255,0.05)" : "1px solid #d9d9d9",
           backgroundColor: isFullscreen ? "#111116" : "#F9F9F9",
         }}>
@@ -259,7 +259,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
             {sprites.filter(s => s.id !== 'stage' && !s.id.includes('_clone_')).map((sprite) => {
               const isSelected = selectedSpriteId === sprite.id;
               const cloneCount = sprites.filter(s => s.id.startsWith(`${sprite.id}_clone_`)).length;
-              
+
               return (
                 <div
                   key={sprite.id}
@@ -281,7 +281,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                       🗑️
                     </button>
                   )}
-                  
+
                   {cloneCount > 0 && (
                     <div style={styles.cloneBadge} title={`${cloneCount} clones active`}>
                       {cloneCount}
@@ -316,7 +316,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 </div>
               );
             })}
-            
+
             <div style={{
               ...styles.addSpriteBtnFlow,
               border: '2px dashed #d9d9d9',
@@ -360,7 +360,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
               />
             </div>
           </div>
-          
+
           <div style={{
             position: 'absolute',
             bottom: 0,
@@ -374,52 +374,52 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
         </div>
 
         {/* Stage Area */}
-        <div className="slim-scrollbar" style={{ 
-          width: "92px", 
-          padding: "16px 8px", 
-          display: "flex", 
-          flexDirection: "column", 
-          alignItems: "center", 
+        <div className="slim-scrollbar" style={{
+          width: "92px",
+          padding: "16px 8px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
           position: "relative",
           height: "100%",
           overflowY: "auto",
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', width: '100%', justifyContent: 'space-between' }}>
-              <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#575E75' }}>Stage</div>
-              <ActionMenu
-                mainIcon={<span style={{ fontSize: '10px' }}>🖼️</span>}
-                color="#4c97ffff"
-                tooltipLabel="Choose a Backdrop"
-                actions={[
-                  {
-                    id: 'upload',
-                    icon: '⬆️',
-                    label: 'Upload Backdrop',
-                    onClick: () => alert('Upload backdrop coming soon!')
-                  },
-                  {
-                    id: 'surprise',
-                    icon: '✨',
-                    label: 'Surprise',
-                    onClick: () => {
-                      // Logic for surprise backdrop
-                    }
-                  },
-                  {
-                    id: 'paint',
-                    icon: '🖌️',
-                    label: 'Paint',
-                    onClick: () => alert('Paint editor coming soon!')
-                  },
-                  {
-                    id: 'search',
-                    icon: '🔍',
-                    label: 'Choose a Backdrop',
-                    onClick: () => onOpenBackdropLibrary ? onOpenBackdropLibrary() : alert('Library coming soon!')
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', width: '100%', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#575E75' }}>Stage</div>
+            <ActionMenu
+              mainIcon={<span style={{ fontSize: '10px' }}>🖼️</span>}
+              color="#4c97ffff"
+              tooltipLabel="Choose a Backdrop"
+              actions={[
+                {
+                  id: 'upload',
+                  icon: '⬆️',
+                  label: 'Upload Backdrop',
+                  onClick: () => alert('Upload backdrop coming soon!')
+                },
+                {
+                  id: 'surprise',
+                  icon: '✨',
+                  label: 'Surprise',
+                  onClick: () => {
+                    // Logic for surprise backdrop
                   }
-                ]}
-              />
-            </div>
+                },
+                {
+                  id: 'paint',
+                  icon: '🖌️',
+                  label: 'Paint',
+                  onClick: () => alert('Paint editor coming soon!')
+                },
+                {
+                  id: 'search',
+                  icon: '🔍',
+                  label: 'Choose a Backdrop',
+                  onClick: () => onOpenBackdropLibrary ? onOpenBackdropLibrary() : alert('Library coming soon!')
+                }
+              ]}
+            />
+          </div>
           {sprites.filter(s => s.id === 'stage').map((stageSprite) => {
             const isSelected = selectedSpriteId === 'stage';
             return (

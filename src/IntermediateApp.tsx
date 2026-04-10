@@ -527,10 +527,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 // Stage: 310, Panel: ~410, Spacing: 30, Toolbar: 60
                 const TOTAL_WORKSPACE_HEIGHT = 750;
                 const TOTAL_WORKSPACE_WIDTH = 450;
-                
+
                 const toolbarHeight = 60;
                 const availableHeight = window.innerHeight - toolbarHeight;
-                
+
                 const scaleX = window.innerWidth / TOTAL_WORKSPACE_WIDTH;
                 const scaleY = availableHeight / TOTAL_WORKSPACE_HEIGHT;
 
@@ -5309,10 +5309,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             const LARGE_STAGE_SCALE = 1.25;
 
 
-                                    // 3. Small Stage Mode Settings
-                                    const SMALL_STAGE_WIDTH = 250;
-                                    const SMALL_STAGE_HEIGHT = 160;
-                                    const SMALL_STAGE_SCALE = 0.5;
+                            // 3. Small Stage Mode Settings
+                            const SMALL_STAGE_WIDTH = 250;
+                            const SMALL_STAGE_HEIGHT = 160;
+                            const SMALL_STAGE_SCALE = 0.5;
 
                             const SMALL_STAGE_SCALE_INTERNAL = 0.5;
 
@@ -5420,33 +5420,33 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                         </div>
 
-                                            {/* Sprite & Stage Panel Unit */}
-                                            {(editorMode === 'stage' || isFullscreen) && (
-                                                <div style={{
-                                                    ...styles.assetsContainer,
-                                                    width: `${CANVAS_WIDTH}px`, // Match exactly
-                                                    flex: '0 0 auto',
-                                                    marginTop: '8px',
-                                                    display: 'flex',
-                                                    justifyContent: 'center',
-                                                    alignItems: 'flex-start',
-                                                    overflow: 'visible',
-                                                }}>
-                                                    <SpritePanel
-                                                        sprites={sprites}
-                                                        selectedSpriteId={selectedSpriteId}
-                                                        onSelectSprite={handleSpriteSelect}
-                                                        onAddSprite={addSprite}
-                                                        onDeleteSprite={deleteSprite}
-                                                        onRemoveBackground={handleRemoveBackground}
-                                                        onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
-                                                        onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
-                                                        stageManager={stageManager}
-                                                        backdropVersion={backdropRefresh}
-                                                        isFullscreen={isFullscreen}
-                                                    />
-                                                </div>
-                                            )}
+                                        {/* Sprite & Stage Panel Unit */}
+                                        {(editorMode === 'stage' || isFullscreen) && (
+                                            <div style={{
+                                                ...styles.assetsContainer,
+                                                width: `${CANVAS_WIDTH}px`, // Match exactly
+                                                flex: '0 0 auto',
+                                                marginTop: '8px',
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'flex-start',
+                                                overflow: 'visible',
+                                            }}>
+                                                <SpritePanel
+                                                    sprites={sprites}
+                                                    selectedSpriteId={selectedSpriteId}
+                                                    onSelectSprite={handleSpriteSelect}
+                                                    onAddSprite={addSprite}
+                                                    onDeleteSprite={deleteSprite}
+                                                    onRemoveBackground={handleRemoveBackground}
+                                                    onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
+                                                    onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
+                                                    stageManager={stageManager}
+                                                    backdropVersion={backdropRefresh}
+                                                    isFullscreen={isFullscreen}
+                                                />
+                                            </div>
+                                        )}
 
                                     </div>
 
