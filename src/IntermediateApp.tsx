@@ -848,6 +848,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             setSensingMonitors(prev => prev.map(m => m.name === 'answer' ? { ...m, value: answer } : m));
         };
 
+        animationVM.onRunningChange = (running: boolean) => {
+            setIsRunning(running);
+        };
+
         return () => {
             animationVM.onShowVariable = undefined;
             animationVM.onHideVariable = undefined;
@@ -860,6 +864,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             animationVM.onListChange = undefined;
             animationVM.onTableChange = undefined;
             animationVM.onAnswerChange = undefined;
+            animationVM.onRunningChange = undefined;
         };
     }, []);
 
@@ -2874,7 +2879,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             // CRITICAL: Attach fresh scripts to the sprite
             sprite.setScripts(scripts);
 
-            console.log(`[SYNC] ${sprite.name} → ${scripts.length} scripts`);
+            if (scripts.length > 0) {
+                console.log(`[SYNC] ${sprite.name} (${sprite.id}) → Compiled ${scripts.length} scripts successfully`);
+            }
 
             allScripts.push(...scripts);
             if (sprite.id === 'stage') stageScripts.push(...scripts);
@@ -3761,21 +3768,31 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         }
 
         const refreshedToolbox = workspaceRef.current.getToolbox() as any;
-        const toolboxItems = typeof refreshedToolbox?.getToolboxItems === 'function'
-            ? refreshedToolbox.getToolboxItems().filter((item: any) => typeof item?.getName === 'function')
+        const toolboxItems = (typeof refreshedToolbox?.getToolboxItems === 'function')
+            ? (refreshedToolbox.getToolboxItems() || []).filter((item: any) => item && typeof item.getName === 'function')
             : [];
 
-        if (selectedCategoryName) {
+        if (selectedCategoryName && refreshedToolbox) {
             const matchingItem = toolboxItems.find((item: any) => item.getName() === selectedCategoryName);
-            if (matchingItem && typeof refreshedToolbox?.setSelectedItem === 'function') {
-                refreshedToolbox.setSelectedItem(matchingItem);
+            if (matchingItem && typeof refreshedToolbox.setSelectedItem === 'function') {
+                try {
+                    refreshedToolbox.setSelectedItem(matchingItem);
+                } catch (e) {
+                    console.warn('[APP] Failed to restore toolbox selection:', e);
+                }
             }
         }
 
-        if (!refreshedToolbox?.getSelectedItem?.() && typeof refreshedToolbox?.selectItemByPosition === 'function') {
-            refreshedToolbox.selectItemByPosition(0);
-        } else {
-            workspaceRef.current.refreshToolboxSelection();
+        if (refreshedToolbox) {
+            if (!refreshedToolbox.getSelectedItem?.() && typeof refreshedToolbox.selectItemByPosition === 'function') {
+                try {
+                    refreshedToolbox.selectItemByPosition(0);
+                } catch (e) {
+                    console.warn('[APP] Failed to select default toolbox item:', e);
+                }
+            } else if (typeof workspaceRef.current.refreshToolboxSelection === 'function') {
+                workspaceRef.current.refreshToolboxSelection();
+            }
         }
 
         const flyout = workspaceRef.current.getFlyout() as any;

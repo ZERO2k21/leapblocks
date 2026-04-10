@@ -193,12 +193,9 @@ export class AnimationCompiler {
             // e.g. scratchBlocks.ts defines looks_say with field_input named MESSAGE
             const fieldVal = block.getFieldValue(inputName);
             if (fieldVal !== null && fieldVal !== undefined) {
-                console.info(`[Compiler] Using field fallback for '${inputName}' on ${block.type}: "${fieldVal}"`);
-                return () => {
-                    // Re-read at runtime so live edits to the field are reflected
-                    const v = block.getFieldValue(inputName);
-                    return v !== null && v !== undefined ? String(v) : '';
-                };
+                const capturedVal = String(fieldVal);
+                console.info(`[Compiler] Using field fallback for '${inputName}' on ${block.type}: "${capturedVal}"`);
+                return () => capturedVal;
             }
             console.warn(`[Compiler] No input or connection for ${inputName} on ${block.type} - returning empty`);
             return () => '';
@@ -220,19 +217,14 @@ export class AnimationCompiler {
         console.info(`[Compiler] Resolving string from block type: ${valueBlock.type}`);
 
         switch (valueBlock.type) {
-            case 'text':
-                return () => {
-                    const val = valueBlock.getFieldValue('TEXT');
-                    // In headless mode, fields might return null if default/empty
-                    if (val === null || val === undefined) return '';
-                    return String(val);
-                };
-            case 'math_number':
-                return () => {
-                    const val = valueBlock.getFieldValue('NUM');
-                    if (val === null || val === undefined) return '0';
-                    return String(val);
-                };
+            case 'text': {
+                const textVal = String(valueBlock.getFieldValue('TEXT') ?? '');
+                return () => textVal;
+            }
+            case 'math_number': {
+                const numVal = String(valueBlock.getFieldValue('NUM') ?? '0');
+                return () => numVal;
+            }
             case 'variables_get': {
                 const name = this.getVariableName(valueBlock);
                 return () => String(animationVM.getVariable(name));
@@ -323,11 +315,7 @@ export class AnimationCompiler {
             if (fieldVal !== null && fieldVal !== undefined) {
                 const num = Number(fieldVal);
                 if (!isNaN(num)) {
-                    return () => {
-                        const v = block.getFieldValue(inputName);
-                        const n = Number(v);
-                        return isNaN(n) ? 0 : n;
-                    };
+                    return () => num;
                 }
             }
             console.warn(`[Compiler] compileNumberValue: No input/connection for '${inputName}' on '${block.type}'`);
@@ -362,11 +350,11 @@ export class AnimationCompiler {
                     return isNaN(num) ? 0 : num;
                 };
             }
-            case 'math_number':
-                return () => {
-                    const val = valueBlock.getFieldValue('NUM');
-                    return val !== null ? Number(val) : 0;
-                };
+            case 'math_number': {
+                const val = valueBlock.getFieldValue('NUM');
+                const numVal = val !== null ? Number(val) : 0;
+                return () => numVal;
+            }
             case 'sensing_mouse_x':
                 return () => animationVM.getMouseX();
             case 'sensing_mouse_y':
