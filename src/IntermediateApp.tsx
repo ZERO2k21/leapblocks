@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 
 import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
 
-import './styles/scratch-blocks.css'; // Import Scratch-style blocks CSS
+import './styles/Leaplab-blocks.css'; // Import Scratch-style blocks CSS
 import './junior/styles/juniorBlocks.css';
 import './junior/styles/juniorLooksBlocks.css';
 
@@ -13,7 +13,6 @@ import { esp32Blocks, esp32Toolbox } from './blocks/esp32-blocks';
 
 import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
 import { COLORS } from './blocks/blockDefinitions';
-import { getScratchBlocks } from './blocks/scratchBlocks';
 import { registerScratchBlocks } from './blocks/scratchBlocks';
 
 import { hardwareBlocks } from './blocks/hardware-blocks';
@@ -53,7 +52,7 @@ import BackdropLibrary from './components/BackdropLibrary';
 
 import { stageManager } from './engine/StageManager';
 import { spriteManager } from './engine/SpriteManager';
-import { scratchRuntime } from './runtime/scratchRuntime';
+import { leapRuntime } from './runtime/leapRuntime';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
 
 import SerialMonitor from './components/SerialMonitor';
@@ -190,22 +189,28 @@ function initBlocklyOnce() {
     // GLOBAL BLOCKLY OVERRIDES
     // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Override Toolbox.prototype.onClick_ to prevent "Double Click/Tap" closure.
-     * Standard Blockly toggles selection to null if the same item is clicked.
-     * We want it to stay open (Scratch behavior).
-     */
-    if (Blockly.Toolbox && Blockly.Toolbox.prototype) {
-        // Override setSelectedItem to prevent the flyout from EVER closing by being set to null.
-        // This is the most robust way to disable "toggle-off" behavior across re-renders.
-        const originalSetSelectedItem = (Blockly.Toolbox.prototype as any).setSelectedItem;
-        (Blockly.Toolbox.prototype as any).setSelectedItem = function (item: any) {
-            if (!item && (this as any).getSelectedItem()) {
-                // If we already have something selected, don't allow setting to null (closing)
-                return;
-            }
-            originalSetSelectedItem.call(this, item);
-        };
+    // Extension for broadcast dropdowns to handle "New message..."
+    if (!Blockly.Extensions.isRegistered('broadcast_dropdown_ext')) {
+        Blockly.Extensions.register('broadcast_dropdown_ext', function (this: any) {
+            this.setOnChange(function (this: any, event: any) {
+                if (event.type === Blockly.Events.BLOCK_CHANGE && event.blockId === this.id) {
+                    const fieldName = event.name;
+                    if (fieldName === 'BROADCAST_INPUT' || fieldName === 'BROADCAST_OPTION') {
+                        const newValue = event.newValue;
+                        if (newValue === 'new') {
+                            (window as any).createNewBroadcast((name: string | null) => {
+                                if (name) {
+                                    this.setFieldValue(name, fieldName);
+                                } else {
+                                    // Revert to default or previous if cancelled
+                                    this.setFieldValue('message1', fieldName);
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+        });
     }
 
 }
@@ -417,7 +422,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         const handleUpdate = () => setSprites([...spriteManager.getAllSprites()]);
         spriteManager.setUpdateCallback(handleUpdate);
         handleUpdate();
-        return () => spriteManager.setUpdateCallback(() => {});
+        return () => spriteManager.setUpdateCallback(() => { });
     }, []);
 
     const [selectedSpriteId, setSelectedSpriteId] = useState<string | null>(null);
@@ -1689,6 +1694,19 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
      */
 
+    // Save current workspace blocks to the per-sprite map
+    const saveCurrentSpriteWorkspace = useCallback(() => {
+
+        const activeId = activeSpriteIdRef.current;
+
+        if (!workspaceRef.current || !activeId) return;
+
+        const json = Blockly.serialization.workspaces.save(workspaceRef.current);
+        spriteWorkspacesRef.current.set(activeId, json);
+
+        console.log('[APP] Saved workspace for sprite:', activeId);
+    }, []);
+
     const handleBlockInteraction = useCallback(async (event: Blockly.Events.Abstract) => {
 
         if (!workspaceRef.current) return;
@@ -1709,16 +1727,21 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         // Animation block interaction on click
 
         if (event.type === Blockly.Events.CLICK) {
-            // Use ScratchRuntime for Scratch blocks
+            // Use leapRuntime for Scratch blocks
             if (!block.type.startsWith('arduino_')) {
-                console.log(`[APP] Running stack with ScratchRuntime for sprite ${selectedSpriteId}`);
+                console.log(`[APP] Running stack with leapRuntime for sprite ${selectedSpriteId}`);
                 setIsRunning(true);
 
+                // Ensure the current sprite workspace is saved and all sprite workspaces are loaded
+                saveCurrentSpriteWorkspace();
+                syncAllWorkspaces(); // Sync everything to the VM so broadcasts work across sprites
+                leapRuntime.loadProject(spriteWorkspacesRef.current);
+
                 // Convert Blockly block to Scratch-like structure
-                const scratchBlock = (scratchRuntime as any).flattenBlock(Blockly.serialization.blocks.save(block));
+                const scratchBlock = (leapRuntime as any).flattenBlock(Blockly.serialization.blocks.save(block));
                 if (scratchBlock) {
-                    scratchRuntime.stopAll(); // Optional: stop others?
-                    scratchRuntime.executeBlock(scratchBlock, selectedSpriteId || '');
+                    leapRuntime.stopAll(); // Optional: stop others?
+                    leapRuntime.executeBlock(scratchBlock, selectedSpriteId || '');
                     return;
                 }
             }
@@ -1743,7 +1766,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             setIsRunning(true);
 
-            animationVM.triggerFlag(compiledScripts);
+            animationVM.triggerFlag();
 
             addLog('Started Arduino script');
 
@@ -1933,7 +1956,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         }
 
-    }, [editorMode, isConnected, sprites, selectedSpriteId]);
+    }, [editorMode, isConnected, saveCurrentSpriteWorkspace, sprites, selectedSpriteId]);
 
 
 
@@ -1945,25 +1968,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // Save current workspace blocks to the per-sprite map
 
-    const saveCurrentSpriteWorkspace = useCallback(() => {
-
-        const activeId = activeSpriteIdRef.current;
-
-        if (!workspaceRef.current || !activeId) return;
-
-        const json = Blockly.serialization.workspaces.save(workspaceRef.current);
-
-        spriteWorkspacesRef.current.set(activeId, json);
-
-        console.log('[APP] Saved workspace for sprite:', activeId);
-
-    }, []);
-
 
 
     // Load workspace blocks from the per-sprite map
 
-        const loadSpriteWorkspace = useCallback((spriteId: string) => {
+    const loadSpriteWorkspace = useCallback((spriteId: string) => {
         // ALWAYS update the true owner tracking
         activeSpriteIdRef.current = spriteId;
 
@@ -2110,7 +2119,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             // Trigger click event even if already selected (Scratch behavior)
 
-            scratchRuntime.triggerClick(newId);
+            leapRuntime.triggerClick(newId);
             return;
 
         }
@@ -2142,39 +2151,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             handleSpriteSelect(id);
         }
 
-        // Compile the clicked sprite's workspace to get latest scripts
-        let clickScripts: CompiledScript[] = compiledScripts;
-        const savedJson = id === selectedSpriteId && workspaceRef.current
-            ? Blockly.serialization.workspaces.save(workspaceRef.current)
-            : spriteWorkspacesRef.current.get(id);
-
-        if (savedJson && Object.keys(savedJson).length > 0) {
-            try {
-                let tempWs: Blockly.Workspace | null = null;
-                let compileWs: Blockly.Workspace;
-
-                if (id === selectedSpriteId && workspaceRef.current) {
-                    compileWs = workspaceRef.current;
-                } else {
-                    Blockly.Events.disable();
-                    tempWs = new Blockly.Workspace();
-                    Blockly.serialization.workspaces.load(savedJson, tempWs);
-                    Blockly.Events.enable();
-                    compileWs = tempWs;
-                }
-
-                const compiler = new AnimationCompiler(id);
-                clickScripts = compiler.compile(compileWs);
-                if (tempWs) { try { (tempWs as any).dispose(); } catch (_) {} }
-            } catch (e) {
-                Blockly.Events.enable();
-                console.error('[APP] Error compiling sprite for click:', e);
-            }
-        }
-
-        // Trigger click event in the animation VM with fresh scripts
-        animationVM.triggerSpriteClick(id, clickScripts);
-    }, [selectedSpriteId, handleSpriteSelect, compiledScripts]);
+        // Trigger click event in the animation VM. 
+        // The VM now scans its own internally synced sprite scripts.
+        animationVM.triggerSpriteClick(id);
+    }, [selectedSpriteId, handleSpriteSelect]);
 
 
 
@@ -2272,8 +2252,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         animationVM.registerSprite(newSprite);
 
-        setSprites(prev => [...prev, newSprite]);
-
 
 
         // 1. Explicitly initialize an empty workspace for the new sprite in our map
@@ -2287,8 +2265,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         if (workspaceRef.current) {
 
             isLoadingWorkspaceRef.current = true;
-        Blockly.Events.disable();
-        console.log('[APP] Initializing empty workspace for new sprite:', id);
+            Blockly.Events.disable();
+            console.log('[APP] Initializing empty workspace for new sprite:', id);
 
             workspaceRef.current.clear();
 
@@ -2421,8 +2399,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         if (workspaceRef.current) {
 
             isLoadingWorkspaceRef.current = true;
-        Blockly.Events.disable();
-        console.log('[APP] Clearing workspace for new project');
+            Blockly.Events.disable();
+            console.log('[APP] Clearing workspace for new project');
 
             workspaceRef.current.clear();
 
@@ -2490,7 +2468,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             await robotSprite.addCostume('talk', '/assets/sprites/robot/image-removebg-preview.png');
 
-            await robotSprite.addSound('Meow', '/assets/sounds/83c36d806dc92327b9e7049a565c6bff.wav');
+            await robotSprite.addSound('Meow', '/assets/sounds/meow.wav');
 
 
 
@@ -2849,7 +2827,16 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         let allScripts: CompiledScript[] = [];
         const stageScripts: CompiledScript[] = [];
 
-        for (const s of sprites) {
+        const allLiveSprites = spriteManager.getAllSprites();
+        // Ensure the stage is included in the sync even if it's not in the main sprites list
+        // (though it usually is, explicitly checking ensures no scripts are lost)
+        if (!allLiveSprites.some(s => s.id === 'stage')) {
+            const stage = spriteManager.getSprite('stage');
+            if (stage) allLiveSprites.push(stage);
+        }
+
+        console.log(`[APP] SyncAllWorkspaces: Syncing ${allLiveSprites.length} entities for global event readiness.`);
+        for (const s of allLiveSprites) {
             let savedJson = spriteWorkspacesRef.current.get(s.id);
             if (s.id === selectedSpriteId && workspaceRef.current) {
                 savedJson = Blockly.serialization.workspaces.save(workspaceRef.current);
@@ -2882,28 +2869,46 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 }
 
                 if (typeof s.setScripts === 'function') {
+                    log.app(`  Updating scripts for ${s.name} (${s.id}): ${scripts.length} scripts found`);
                     s.setScripts(scripts);
                 }
 
                 if (!usedLiveWs) tempWs?.dispose();
             } catch (e) {
                 Blockly.Events.enable();
-                console.error(`[APP] Error compiling entity ${s.name}:`, e);
+                log.app(`  ✗ Error compiling entity ${s.name}:`, e);
                 if (tempWs) { try { (tempWs as any).dispose(); } catch (_) { } }
             }
         }
 
         animationVM.stageScripts = stageScripts;
+
+        // Also update the VM's internal script cache to ensure broadcasts work immediately
+        animationVM.setScripts(allScripts);
+
         return allScripts;
-    }, [sprites, selectedSpriteId]);
+    }, [selectedSpriteId]);
 
     useEffect(() => {
         animationVM.onBeforeBroadcast = (message) => {
-            log.app(`Syncing for broadcast: ${message}`);
+            console.log(`[APP] Intercepted broadcast "${message}" - Triggering global synchronization.`);
             syncAllWorkspaces();
         };
+
+        // Bridge leapRuntime broadcasts to AnimationVM for global reach
+        (leapRuntime as any)._onBroadcast = (message: string) => {
+            console.log(`[APP] leapRuntime broadcast "${message}" -> Bridging to AnimationVM`);
+            animationVM.triggerBroadcast(message);
+        };
+        (leapRuntime as any)._onBroadcastAndWait = async (message: string) => {
+            console.log(`[APP] leapRuntime broadcast_wait "${message}" -> Bridging to AnimationVM`);
+            await animationVM.triggerBroadcastAndWait(message);
+        };
+
         return () => {
             animationVM.onBeforeBroadcast = undefined;
+            (leapRuntime as any)._onBroadcast = undefined;
+            (leapRuntime as any)._onBroadcastAndWait = undefined;
         };
     }, [syncAllWorkspaces]);
 
@@ -2920,10 +2925,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             if (allScripts.length > 0 || spriteWorkspacesRef.current.size > 0) {
                 setCompiledScripts(allScripts);
                 setIsRunning(true);
-                scratchRuntime.loadProject(spriteWorkspacesRef.current);
-                scratchRuntime.triggerFlag();
-                animationVM.triggerFlag(allScripts);
-                addLog(`Started animation with ScratchRuntime`);
+                leapRuntime.loadProject(spriteWorkspacesRef.current);
+                leapRuntime.triggerFlag();
+                animationVM.triggerFlag();
+                addLog(`Started animation with leapRuntime`);
             }
         } catch (e) {
             console.error(`[APP] Error during multi-sprite compilation:`, e);
@@ -2936,7 +2941,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     const handleStopClick = useCallback(() => {
         setIsRunning(false);
-        scratchRuntime.stopAll();
+        leapRuntime.stopAll();
         animationVM.stopAll();
 
         // Cancel any pending ask prompt
@@ -3325,7 +3330,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 // Add default sound
 
-                await defaultSprite.addSound('Meow', '/assets/sounds/83c36d806dc92327b9e7049a565c6bff.wav');
+                await defaultSprite.addSound('Meow', '/assets/sounds/meow.wav');
 
                 console.log('[APP] Assets loaded:', defaultSprite.costumes.length, 'costumes', defaultSprite.sounds.length, 'sounds');
 
@@ -3415,6 +3420,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             return [];
 
+        };
+
+        (window as any).getBroadcastMessages = () => {
+            return animationVM.getBroadcastMessages();
+        };
+
+        (window as any).createNewBroadcast = (callback: (name: string | null) => void) => {
+            const name = window.prompt('New message name:');
+            if (name) {
+                animationVM.registerBroadcast(name);
+                callback(name);
+            } else {
+                callback(null);
+            }
         };
 
         // Expose all sprite names for sensing_touching dropdown
@@ -3588,7 +3607,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         };
 
         Object.assign(animationVM, commonCallbacks);
-        Object.assign(scratchRuntime, commonCallbacks);
+        Object.assign(leapRuntime, commonCallbacks);
 
         // --- VM CHANGE CALLBACKS (Real-time Sync) ---
         animationVM.onVariableChange = (name, value) => {
@@ -3600,7 +3619,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         animationVM.onTableChange = (name, data) => {
             setTableMonitors(prev => prev.map(m => m.name === name ? { ...m, data, value: data } : m));
         };
- 
+
         // --- SENSING SYNC ---
         const sensingSyncInterval = setInterval(() => {
             if (isRunning) {
@@ -3743,7 +3762,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         }
 
         if (!refreshedToolbox?.getSelectedItem?.() && typeof refreshedToolbox?.selectItemByPosition === 'function') {
-            // Force select first item if none selected (Ensures flyout is visible on 1st entry)
             refreshedToolbox.selectItemByPosition(0);
         } else {
             workspaceRef.current.refreshToolboxSelection();
@@ -3847,20 +3865,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         if ((event.type === Blockly.Events.BLOCK_CREATE || event.type === Blockly.Events.BLOCK_MOVE) && !isLoadingWorkspaceRef.current) {
                             const blockId = event.type === Blockly.Events.BLOCK_CREATE ? event.blockId : event.id;
                             const block = blocksWorkspace.getBlockById(blockId);
- 
+
                             if (block && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox' || block.type === 'sensing_reporter_checkbox')) {
                                 // IMPORTANT: Do not replace while dragging or it breaks the gesture
                                 if (typeof (blocksWorkspace as any).isDragging === 'function' && (blocksWorkspace as any).isDragging()) return;
- 
+
                                 const isVariable = block.type === 'variable_reporter_checkbox';
                                 const isSensing = block.type === 'sensing_reporter_checkbox';
                                 const nameField = isVariable ? 'VARIABLE' : (isSensing ? 'VARIABLE' : 'LIST');
                                 const name = block.getFieldValue(nameField);
- 
+
                                 // Determine type (Variable, List, Table, or Sensing)
                                 let newType = isVariable ? 'data_variable' : (isSensing ? `sensing_${name}` : 'data_listcontents');
                                 let varType: string = isVariable ? '' : (isSensing ? 'sensing' : 'list');
- 
+
                                 if (block.type === 'list_reporter_checkbox') {
                                     // Check if this is actually a table (they share the same checkbox block type)
                                     const variable = blocksWorkspace.getVariable(name, 'table');
@@ -3869,27 +3887,27 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                         varType = 'table';
                                     }
                                 }
- 
+
                                 // Record position before disposal
                                 const xy = block.getRelativeToSurfaceXY();
- 
+
                                 // New block logic - resolve the real variable ID
                                 // We use setTimeout to ensure we don't interfere with the current event loop/gesture
                                 setTimeout(() => {
                                     if (!blocksWorkspace.getBlockById(blockId)) return; // Already gone
- 
+
                                     Blockly.Events.disable();
                                     try {
                                         block.dispose(false);
                                         const newBlock = blocksWorkspace.newBlock(newType);
- 
+
                                         if (!isSensing) {
                                             // Find real variable ID for the name
                                             const variable = blocksWorkspace.getVariable(name, varType);
                                             const valueToSet = variable ? variable.getId() : name;
                                             newBlock.setFieldValue(valueToSet, nameField);
                                         }
- 
+
                                         newBlock.initSvg();
                                         newBlock.render();
                                         newBlock.moveBy(xy.x, xy.y);
@@ -3980,15 +3998,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     const type = isSensing ? 'sensing' : (block.type === 'variable_reporter_checkbox' ? 'variable' : 'list');
                                     const nameField = isSensing ? 'VARIABLE' : (type === 'variable' ? 'VARIABLE' : 'LIST');
                                     const name = block.getFieldValue(nameField);
-                                    
+
                                     // Robust check for boolean vs string 'TRUE'
                                     const checked = this.getValue() === 'TRUE' || this.getValue() === true;
 
                                     if (name) {
                                         // Check if current visibility matches checkbox to avoid loops/stale updates
                                         // Use direct sync monitor check if window helper isn't available
-                                        const currentVisible = (window as any).getVariableVisibility ? 
-                                            (window as any).getVariableVisibility(name, type) : 
+                                        const currentVisible = (window as any).getVariableVisibility ?
+                                            (window as any).getVariableVisibility(name, type) :
                                             !!(window as any)._monitors_for_sync?.[type]?.find((m: any) => m.name === name)?.visible;
 
                                         if (checked !== currentVisible) {
@@ -4272,8 +4290,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             contents.push({ kind: 'sep', gap: 20 });
                         }
                         contents.push({ kind: 'label', text: 'Ask', 'web-class': 'category-subheader' });
-                        contents.push({ 
-                            kind: 'block', 
+                        contents.push({
+                            kind: 'block',
                             type: 'sensing_ask',
                             inputs: {
                                 QUESTION: {
@@ -4294,20 +4312,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         });
 
                         contents.push({ kind: 'block', type: 'sensing_reset_timer' });
-                        
+
                         contents.push({ kind: 'sep', gap: 20 });
                         contents.push({ kind: 'label', text: 'Keyboard/Mouse', 'web-class': 'category-subheader' });
                         contents.push({ kind: 'block', type: 'sensing_key_pressed' });
                         contents.push({ kind: 'block', type: 'sensing_mouse_down' });
                         contents.push({ kind: 'block', type: 'sensing_mouse_x' });
                         contents.push({ kind: 'block', type: 'sensing_mouse_y' });
-                        
+
                         contents.push({ kind: 'sep', gap: 20 });
                         contents.push({ kind: 'label', text: 'Date/Time', 'web-class': 'category-subheader' });
                         contents.push({ kind: 'block', type: 'sensing_current_year' });
                         contents.push({ kind: 'block', type: 'sensing_days_since_2000' });
                         contents.push({ kind: 'block', type: 'sensing_username' });
-                        
+
                         contents.push({ kind: 'sep', gap: 20 });
                         contents.push({ kind: 'label', text: 'Attributes', 'web-class': 'category-subheader' });
                         contents.push({ kind: 'block', type: 'sensing_of' });
@@ -5144,267 +5162,267 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         overflow: 'hidden'
                     }}>
 
-                                {/* Fullscreen Toolbar - Premium Dark/Glass */}
+                        {/* Fullscreen Toolbar - Premium Dark/Glass */}
 
-                                {isFullscreen && (
+                        {isFullscreen && (
+
+                            <div style={{
+
+                                width: '100%',
+
+                                height: '54px',
+
+                                backgroundColor: 'rgba(9, 9, 11, 0.7)',
+
+                                backdropFilter: 'blur(12px)',
+
+                                WebkitBackdropFilter: 'blur(12px)',
+
+                                display: 'flex',
+
+                                alignItems: 'center',
+
+                                justifyContent: 'space-between',
+
+                                padding: '0 24px',
+
+                                boxSizing: 'border-box',
+
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+
+                                zIndex: 10
+
+                            }}>
+
+                                {/* Left: Run and Stop */}
+
+                                <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+
+                                    <button style={{ ...styles.runButtonTop, background: 'rgba(76, 187, 23, 0.15)', border: '1px solid rgba(76, 187, 23, 0.3)', borderRadius: '8px', padding: '6px 12px', transition: 'all 0.2s' }} onClick={handleRunClick} title="Run" onMouseOver={(e) => e.currentTarget.style.background = 'rgba(76, 187, 23, 0.25)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(76, 187, 23, 0.15)'}>
+
+                                        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4ce01b" d="M5 3v18M19 8l-14-5v10l14 5V8z" stroke="#4ce01b" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+
+                                    </button>
+
+                                    <button style={{ ...styles.stopButtonTop, background: 'rgba(236, 89, 89, 0.15)', border: '1px solid rgba(236, 89, 89, 0.3)', borderRadius: '8px', padding: '6px 12px', transition: 'all 0.2s' }} onClick={handleStopClick} title="Stop" onMouseOver={(e) => e.currentTarget.style.background = 'rgba(236, 89, 89, 0.25)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(236, 89, 89, 0.15)'}>
+
+                                        <svg viewBox="0 0 24 24" width="20" height="20"><polygon fill="#ff6b6b" points="7.3,2 16.7,2 22,7.3 22,16.7 16.7,22 7.3,22 2,16.7 2,7.3" /></svg>
+
+                                    </button>
+
+                                </div>
+
+
+
+                                {/* Middle: Custom Tools */}
+
+                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+
+                                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#a855f7', boxShadow: '0 0 8px #a855f7' }} title="Status"></div>
+
+                                    <button style={{ ...styles.iconBtn, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px' }} onClick={() => setIsCameraOn(!isCameraOn)} title="Toggle Camera">
+
+                                        {isCameraOn ? <Camera size={18} color="#e9d5ff" /> : <CameraOff size={18} color="#94a3b8" />}
+
+                                    </button>
 
                                     <div style={{
 
-                                        width: '100%',
+                                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
 
-                                        height: '54px',
+                                        border: '1px solid rgba(168, 85, 247, 0.4)',
 
-                                        backgroundColor: 'rgba(9, 9, 11, 0.7)',
+                                        color: '#f3e8ff',
 
-                                        backdropFilter: 'blur(12px)',
+                                        padding: '4px 12px',
 
-                                        WebkitBackdropFilter: 'blur(12px)',
+                                        borderRadius: '16px',
+
+                                        fontSize: '13px',
+
+                                        fontWeight: '600',
 
                                         display: 'flex',
 
                                         alignItems: 'center',
 
-                                        justifyContent: 'space-between',
+                                        gap: '8px',
 
-                                        padding: '0 24px',
-
-                                        boxSizing: 'border-box',
-
-                                        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-
-                                        zIndex: 10
+                                        letterSpacing: '0.5px'
 
                                     }}>
 
-                                        {/* Left: Run and Stop */}
+                                        <Volume2 size={14} color="#d8b4fe" />
 
-                                        <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                                        <span>0 : 00</span>
 
-                                            <button style={{ ...styles.runButtonTop, background: 'rgba(76, 187, 23, 0.15)', border: '1px solid rgba(76, 187, 23, 0.3)', borderRadius: '8px', padding: '6px 12px', transition: 'all 0.2s' }} onClick={handleRunClick} title="Run" onMouseOver={(e) => e.currentTarget.style.background = 'rgba(76, 187, 23, 0.25)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(76, 187, 23, 0.15)'}>
+                                    </div>
 
-                                                <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4ce01b" d="M5 3v18M19 8l-14-5v10l14 5V8z" stroke="#4ce01b" strokeWidth="1.5" strokeLinejoin="round" /></svg>
-
-                                            </button>
-
-                                            <button style={{ ...styles.stopButtonTop, background: 'rgba(236, 89, 89, 0.15)', border: '1px solid rgba(236, 89, 89, 0.3)', borderRadius: '8px', padding: '6px 12px', transition: 'all 0.2s' }} onClick={handleStopClick} title="Stop" onMouseOver={(e) => e.currentTarget.style.background = 'rgba(236, 89, 89, 0.25)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(236, 89, 89, 0.15)'}>
-
-                                                <svg viewBox="0 0 24 24" width="20" height="20"><polygon fill="#ff6b6b" points="7.3,2 16.7,2 22,7.3 22,16.7 16.7,22 7.3,22 2,16.7 2,7.3" /></svg>
-
-                                            </button>
-
-                                        </div>
+                                </div>
 
 
 
-                                        {/* Middle: Custom Tools */}
+                                {/* Right: Exit Fullscreen */}
 
-                                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', flex: 1 }}>
 
-                                            <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#a855f7', boxShadow: '0 0 8px #a855f7' }} title="Status"></div>
+                                    <button style={{ ...styles.iconBtn, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px', color: '#e2e8f0', transition: 'all 0.2s' }} onClick={handleFullscreen} title="Exit Fullscreen" onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}>
 
-                                            <button style={{ ...styles.iconBtn, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px' }} onClick={() => setIsCameraOn(!isCameraOn)} title="Toggle Camera">
+                                        <Minimize size={18} strokeWidth={2.5} />
 
-                                                {isCameraOn ? <Camera size={18} color="#e9d5ff" /> : <CameraOff size={18} color="#94a3b8" />}
+                                    </button>
 
-                                            </button>
+                                </div>
 
-                                            <div style={{
+                            </div>
 
-                                                backgroundColor: 'rgba(168, 85, 247, 0.2)',
-
-                                                border: '1px solid rgba(168, 85, 247, 0.4)',
-
-                                                color: '#f3e8ff',
-
-                                                padding: '4px 12px',
-
-                                                borderRadius: '16px',
-
-                                                fontSize: '13px',
-
-                                                fontWeight: '600',
-
-                                                display: 'flex',
-
-                                                alignItems: 'center',
-
-                                                gap: '8px',
-
-                                                letterSpacing: '0.5px'
-
-                                            }}>
-
-                                                <Volume2 size={14} color="#d8b4fe" />
-
-                                                <span>0 : 00</span>
-
-                                            </div>
-
-                                        </div>
+                        )}
 
 
 
-                                        {/* Right: Exit Fullscreen */}
+                        {/* --- GLOBAL STAGE SIZE SETTINGS --- */}
 
-                                        <div style={{ display: 'flex', justifyContent: 'flex-end', flex: 1 }}>
+                        {/* Modify these values to easily control the size and scaling of the Stage in all layout modes! */}
 
-                                            <button style={{ ...styles.iconBtn, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px', color: '#e2e8f0', transition: 'all 0.2s' }} onClick={handleFullscreen} title="Exit Fullscreen" onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}>
+                        {(() => {
 
-                                                <Minimize size={18} strokeWidth={2.5} />
+                            // 1. The Internal Canvas Resolution (Default 480x360)
 
-                                            </button>
+                            const CANVAS_WIDTH = 480;
+
+                            const CANVAS_HEIGHT = 360;
+
+
+
+                            // 2. Large Stage Mode Settings (Default)
+                            const LARGE_STAGE_WIDTH = 600;
+                            const LARGE_STAGE_HEIGHT = 450;
+                            const LARGE_STAGE_SCALE = 1.25;
+
+
+
+                            // 3. Small Stage Mode Settings
+
+                            const SMALL_STAGE_WIDTH = 300;
+
+                            const SMALL_STAGE_HEIGHT = 180;
+
+                            const SMALL_STAGE_SCALE = 0.5;
+
+
+
+                            return (
+
+                                <div style={{
+
+                                    flex: 1,
+
+                                    width: '100%',
+
+                                    display: 'flex',
+
+                                    alignItems: 'center',
+
+                                    justifyContent: 'center',
+
+                                    position: 'relative'
+
+                                }}>
+
+                                    <div style={{
+
+                                        width: isFullscreen ? '100vw' : (stageLayout === 'small' ? `${SMALL_STAGE_WIDTH}px` : `${LARGE_STAGE_WIDTH}px`),
+
+                                        height: isFullscreen ? '100vh' : (stageLayout === 'small' ? `${SMALL_STAGE_HEIGHT}px` : `${LARGE_STAGE_HEIGHT}px`),
+
+                                        display: 'flex',
+
+                                        alignItems: 'center',
+
+                                        justifyContent: 'center',
+
+                                        position: 'relative'
+
+                                    }}>
+
+                                        <div style={{
+
+                                            transform: isFullscreen ? `scale(${fullscreenScale})` : (stageLayout === 'small' ? `scale(${SMALL_STAGE_SCALE})` : `scale(${LARGE_STAGE_SCALE})`),
+
+                                            transformOrigin: 'center center', // Changed from 'Full Screen' to valid CSS
+
+                                            width: `${CANVAS_WIDTH}px`,
+
+                                            height: `${CANVAS_HEIGHT}px`,
+
+                                            background: 'transparent',
+
+                                            boxShadow: isFullscreen ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' : 'none',
+
+                                            borderRadius: isFullscreen ? '10px' : '0',
+
+                                            overflow: 'visible'
+
+                                        }}>
+
+                                            <Stage
+
+                                                width={CANVAS_WIDTH}      /* Link to global settings */
+
+                                                height={CANVAS_HEIGHT}    /* Link to global settings */
+
+                                                sprites={sprites}
+
+                                                isRunning={isRunning}
+
+                                                showGridNumbers={showGrid}
+
+                                                onSpriteSelect={handleSpriteSelect}
+
+                                                onSpriteClick={handleSpriteClick}
+
+                                                isCameraOn={isCameraOn}
+
+                                                variableMonitors={variableMonitors}
+
+                                                listMonitors={listMonitors}
+
+                                                tableMonitors={tableMonitors}
+
+                                                selectedSpriteId={selectedSpriteId}
+
+                                                onMonitorPositionChange={handleMonitorPositionChange}
+
+                                                onMonitorResize={handleMonitorResize}
+
+                                                onMonitorBringToFront={handleMonitorBringToFront}
+
+                                                onVariableModeChange={handleVariableModeChange}
+
+                                                onVariableValueChange={handleVariableValueChange}
+
+                                                onVariableSliderRangeChange={handleVariableSliderRangeChange}
+
+                                            />
+
+                                            {/* Ask-and-wait input overlay */}
+                                            {askState.isAsking && (
+                                                <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', zIndex: 100 }}>
+                                                    <AskBar question={askState.question} onSubmit={handleAskSubmit} />
+                                                </div>
+                                            )}
 
                                         </div>
 
                                     </div>
 
-                                )}
+                                </div>
 
+                            );
 
+                        })()}
 
-                                {/* --- GLOBAL STAGE SIZE SETTINGS --- */}
-
-                                {/* Modify these values to easily control the size and scaling of the Stage in all layout modes! */}
-
-                                {(() => {
-
-                                    // 1. The Internal Canvas Resolution (Default 480x360)
-
-                                    const CANVAS_WIDTH = 480;
-
-                                    const CANVAS_HEIGHT = 360;
-
-
-
-                                    // 2. Large Stage Mode Settings (Default)
-                                    const LARGE_STAGE_WIDTH = 600;
-                                    const LARGE_STAGE_HEIGHT = 450;
-                                    const LARGE_STAGE_SCALE = 1.25;
-
-
-
-                                    // 3. Small Stage Mode Settings
-
-                                    const SMALL_STAGE_WIDTH = 300;
-
-                                    const SMALL_STAGE_HEIGHT = 180;
-
-                                    const SMALL_STAGE_SCALE = 0.5;
-
-
-
-                                    return (
-
-                                        <div style={{
-
-                                            flex: 1,
-
-                                            width: '100%',
-
-                                            display: 'flex',
-
-                                            alignItems: 'center',
-
-                                            justifyContent: 'center',
-
-                                            position: 'relative'
-
-                                        }}>
-
-                                            <div style={{
-
-                                                width: isFullscreen ? '100vw' : (stageLayout === 'small' ? `${SMALL_STAGE_WIDTH}px` : `${LARGE_STAGE_WIDTH}px`),
-
-                                                height: isFullscreen ? '100vh' : (stageLayout === 'small' ? `${SMALL_STAGE_HEIGHT}px` : `${LARGE_STAGE_HEIGHT}px`),
-
-                                                display: 'flex',
-
-                                                alignItems: 'center',
-
-                                                justifyContent: 'center',
-
-                                                position: 'relative'
-
-                                            }}>
-
-                                                <div style={{
-
-                                                    transform: isFullscreen ? `scale(${fullscreenScale})` : (stageLayout === 'small' ? `scale(${SMALL_STAGE_SCALE})` : `scale(${LARGE_STAGE_SCALE})`),
-
-                                                    transformOrigin: 'center center', // Changed from 'Full Screen' to valid CSS
-
-                                                    width: `${CANVAS_WIDTH}px`,
-
-                                                    height: `${CANVAS_HEIGHT}px`,
-
-                                                    background: 'transparent',
-
-                                                    boxShadow: isFullscreen ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' : 'none',
-
-                                                    borderRadius: isFullscreen ? '10px' : '0',
-
-                                                    overflow: 'visible'
-
-                                                }}>
-
-                                                    <Stage
-
-                                                        width={CANVAS_WIDTH}      /* Link to global settings */
-
-                                                        height={CANVAS_HEIGHT}    /* Link to global settings */
-
-                                                        sprites={sprites}
-
-                                                        isRunning={isRunning}
-
-                                                        showGridNumbers={showGrid}
-
-                                                        onSpriteSelect={handleSpriteSelect}
-
-                                                        onSpriteClick={handleSpriteClick}
-
-                                                        isCameraOn={isCameraOn}
-
-                                                        variableMonitors={variableMonitors}
-
-                                                        listMonitors={listMonitors}
-
-                                                        tableMonitors={tableMonitors}
-
-                                                        selectedSpriteId={selectedSpriteId}
-
-                                                        onMonitorPositionChange={handleMonitorPositionChange}
-
-                                                        onMonitorResize={handleMonitorResize}
-
-                                                        onMonitorBringToFront={handleMonitorBringToFront}
-
-                                                        onVariableModeChange={handleVariableModeChange}
-
-                                                        onVariableValueChange={handleVariableValueChange}
-
-                                                        onVariableSliderRangeChange={handleVariableSliderRangeChange}
-
-                                                    />
-
-                                                    {/* Ask-and-wait input overlay */}
-                                                    {askState.isAsking && (
-                                                        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', zIndex: 100 }}>
-                                                            <AskBar question={askState.question} onSubmit={handleAskSubmit} />
-                                                        </div>
-                                                    )}
-
-                                                </div>
-
-                                            </div>
-
-                                        </div>
-
-                                    );
-
-                                })()}
-
-                            </div>
+                    </div>
 
                     {/* Sprite & Stage Panels - Visible in Stage mode OR Fullscreen */}
                     {(editorMode === 'stage' || isFullscreen) && (
@@ -5959,7 +5977,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             // Add default sound
 
-                            await newSprite.addSound('Meow', '/assets/sounds/83c36d806dc92327b9e7049a565c6bff.wav');
+                            await newSprite.addSound('Meow', '/assets/sounds/meow.wav');
 
 
 
@@ -6007,8 +6025,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     animationVM.registerSprite(newSprite);
 
-                    setSprites(prev => [...prev, newSprite]);
-
 
 
                     // Initialize empty workspace for the new sprite
@@ -6022,8 +6038,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     if (workspaceRef.current) {
 
                         isLoadingWorkspaceRef.current = true;
-        Blockly.Events.disable();
-        console.log('[APP] Initializing empty workspace for new sprite:', id);
+                        Blockly.Events.disable();
+                        console.log('[APP] Initializing empty workspace for new sprite:', id);
 
                         workspaceRef.current.clear();
 

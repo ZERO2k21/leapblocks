@@ -1,0 +1,212 @@
+/* Leaplab-style Blocks CSS */
+
+/* Main block styling */
+.blocklyBlockCanvas .blocklyDraggable {
+    border-radius: 8px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    transition: box-shadow 0.2s ease !important;
+}
+
+.blocklyBlockCanvas .blocklyDraggable:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Block text styling */
+.blocklyText {
+    font-family: 'Helvetica Neue', Arial, sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+}
+
+/* Block connection styling */
+.blocklyPath {
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+
+/* Category colors - Scratch official */
+.blocklyMainBackground {
+    background-color: #f9f9f9 !important;
+}
+
+/* Motion blocks styling */
+.blocklyBlockCanvas .blocklyDraggable[style*="rgb(76, 151, 255)"] {
+    border-radius: 12px !important;
+}
+
+/* Looks blocks styling */
+.blocklyBlockCanvas .blocklyDraggable[style*="rgb(153, 102, 255)"] {
+    border-radius: 12px !important;
+}
+
+/* Sound blocks styling */
+.blocklyBlockCanvas .blocklyDraggable[style*="rgb(207, 99, 207)"] {
+    border-radius: 12px !important;
+}
+
+/* Events blocks styling */
+.blocklyBlockCanvas .blocklyDraggable[style*="rgb(255, 191, 0)"] {
+    border-radius: 12px !important;
+}
+
+/* Control blocks styling */
+.blocklyBlockCanvas .blocklyDraggable[style*="rgb(255, 171, 25)"] {
+    border-radius: 12px !important;
+}
+
+/* Sensing blocks styling */
+.blocklyBlockCanvas .blocklyDraggable[style*="rgb(92, 177, 214)"] {
+    border-radius: 12px !important;
+}
+
+/* Operators blocks styling */
+.blocklyBlockCanvas .blocklyDraggable[style*="rgb(89, 192, 89)"] {
+    border-radius: 12px !important;
+}
+
+/* Variables blocks styling */
+.blocklyBlockCanvas .blocklyDraggable[style*="rgb(255, 140, 26)"] {
+    border-radius: 12px !important;
+}
+
+/* My Blocks styling */
+.blocklyBlockCanvas .blocklyDraggable[style*="rgb(255, 102, 128)"] {
+    border-radius: 12px !important;
+}
+
+/* Field styling */
+.blocklyFieldTextInput {
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 2px 4px !important;
+    font-family: 'Helvetica Neue', Arial, sans-serif !important;
+    font-size: 12px !important;
+}
+
+.blocklyFieldTextInput:focus {
+    background-color: rgba(255, 255, 255, 0.8) !important;
+    outline: 2px solid rgba(76, 151, 255, 0.5) !important;
+}
+
+/* Dropdown styling */
+.blocklyDropdownArrow {
+    fill: #666 !important;
+}
+
+.blocklyFieldDropdown {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+}
+
+/* Toolbox category styling */
+.pictoblox-icon {
+    transition: transform 0.2s ease !important;
+}
+
+.blocklyTreeRow:hover .pictoblox-icon {
+    transform: scale(1.1) !important;
+}
+
+/* Connection highlights */
+.blocklyBlockCanvas .blocklyHighlightedConnection {
+    stroke-width: 4px !important;
+    stroke: #4C97FF !important;
+    fill: none !important;
+}
+
+/* Shadow blocks */
+.blocklyShadow {
+    opacity: 0.6 !important;
+}
+
+/* Comment styling */
+.blocklyCommentTextarea {
+    background-color: #fff !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    font-family: 'Helvetica Neue', Arial, sans-serif !important;
+    font-size: 11px !important;
+    padding: 4px !important;
+}
+
+/* Workspace background */
+.blocklyMainBackground {
+    background-color: #f0f0f0 !important;
+    background-image: 
+        linear-gradient(rgba(255,255,255,.8) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.8) 1px, transparent 1px) !important;
+    background-size: 20px 20px !important;
+}
+
+/* Scrollbar styling */
+.blocklyScrollbarHorizontal .blocklyScrollbarThumb,
+.blocklyScrollbarVertical .blocklyScrollbarThumb {
+    background-color: #ccc !important;
+    border-radius: 4px !important;
+}
+
+.blocklyScrollbarHorizontal .blocklyScrollbarThumb:hover,
+.blocklyScrollbarVertical .blocklyScrollbarThumb:hover {
+    background-color: #999 !important;
+}
+
+/* Zoom controls */
+.blocklyZoom {
+    background-color: #fff !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Trash can */
+.blocklyTrash {
+    opacity: 0.8 !important;
+    transition: opacity 0.2s ease !important;
+}
+
+.blocklyTrash:hover {
+    opacity: 1 !important;
+}
+
+/* Category specific styling */
+.blocklyCategoryIcon {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* Enhanced block shadows for depth */
+.blocklyBlockCanvas .blocklyDraggable {
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.12)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.24)) !important;
+}
+
+/* Active block highlighting */
+.blocklyBlockCanvas .blocklySelected {
+    filter: drop-shadow(0 0 0 2px #4C97FF) !important;
+}
+
+/* Input connection styling */
+.blocklyInputConnection {
+    stroke-width: 2px !important;
+    stroke-linecap: round !important;
+}
+
+/* Output connection styling */
+.blocklyOutputConnection {
+    stroke-width: 2px !important;
+    stroke-linecap: round !important;
+}
+
+/* Statement connection styling */
+.blocklyPreviousConnection,
+.blocklyNextConnection {
+    stroke-width: 2px !important;
+    stroke-linecap: round !important;
+}
+
+/* UI Regression Fix: Hide flyout when not in blocks tab */
+.hide-flyout .blocklyFlyout {
+    display: none !important;
+}

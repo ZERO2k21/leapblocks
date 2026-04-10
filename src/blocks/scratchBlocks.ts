@@ -1748,10 +1748,80 @@ const scratchBlocks = [
 ];
 
 // Register all blocks with Blockly
-export const registerScratchBlocks = () => {
-    Blockly.common.defineBlocks(scratchBlocks);
-};
 
+   export const registerScratchBlocks = () => {
+    // Step 1: Filter out blocks that use function-based options (can't use defineBlocks JSON path)
+    const jsonSafeBlocks = scratchBlocks.filter(b => !Blockly.Blocks[b.type]);
+    Blockly.common.defineBlocks(jsonSafeBlocks);
+
+    // Step 2: Register broadcast blocks imperatively (they need dynamic dropdown + extension)
+    const broadcastOptions = () => {
+        if (typeof window !== 'undefined' && (window as any).getBroadcastMessages) {
+            const msgs = (window as any).getBroadcastMessages();
+            if (msgs && msgs.length > 0) {
+                const options = msgs.map((m: string) => [m, m]);
+                options.push(['New message...', 'new']);
+                return options;
+            }
+        }
+        return [['message1', 'message1'], ['New message...', 'new']];
+    };
+     if (!Blockly.Blocks['event_broadcast_wait']) {
+        Blockly.Blocks['event_broadcast_wait'] = {
+            init(this: Blockly.Block) {
+                this.appendDummyInput()
+                    .appendField('📢 broadcast')
+                    .appendField(new Blockly.FieldDropdown(broadcastOptions), 'BROADCAST_INPUT')
+                    .appendField('and wait');
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+                this.setColour('#FFBF00');
+                this.setTooltip('Send message and wait for all handlers to finish');
+                // ✅ NO extension here — applied later after initBlocklyOnce registers it
+            }
+        };
+    }
+    if (!Blockly.Blocks['event_broadcast']) {
+        Blockly.Blocks['event_broadcast'] = {
+            init(this: Blockly.Block) {
+                this.appendDummyInput()
+                    .appendField('📢 broadcast')
+                    .appendField(new Blockly.FieldDropdown(broadcastOptions), 'BROADCAST_INPUT');
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+                this.setColour('#FFBF00');
+                this.setTooltip('Send a message to all sprites');
+                Blockly.Extensions.apply('broadcast_dropdown_ext', this, false);
+            }
+        };
+    }
+if (!Blockly.Blocks['event_broadcast']) {
+        Blockly.Blocks['event_broadcast'] = {
+            init(this: Blockly.Block) {
+                this.appendDummyInput()
+                    .appendField('📢 broadcast')
+                    .appendField(new Blockly.FieldDropdown(broadcastOptions), 'BROADCAST_INPUT');
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+                this.setColour('#FFBF00');
+                this.setTooltip('Send a message to all sprites');
+            }
+        };
+    }
+
+    if (!Blockly.Blocks['event_receive']) {
+        Blockly.Blocks['event_receive'] = {
+            init(this: Blockly.Block) {
+                this.appendDummyInput()
+                    .appendField('📨 when I receive')
+                    .appendField(new Blockly.FieldDropdown(broadcastOptions), 'BROADCAST_OPTION');
+                this.setNextStatement(true, null);
+                this.setColour('#FFBF00');
+                this.setTooltip('Runs when message is received');
+            }
+        };
+    }
+};
 // Export block list for toolbox generation
 export const getScratchBlocks = () => scratchBlocks;
 

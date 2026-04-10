@@ -38,6 +38,14 @@ export default defineConfig({
         'fabric': path.resolve(__dirname, 'node_modules/fabric/dist/index.mjs'),
       },
     },
+    esbuild: {
+      tsconfigRaw: {
+        compilerOptions: {
+          experimentalDecorators: true,
+          useDefineForClassFields: false,
+        },
+      },
+    },
 
     build: {
       outDir: 'dist/renderer',

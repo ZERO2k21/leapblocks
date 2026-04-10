@@ -17,6 +17,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
   /* ── Card scan ── */
   const startCardScan = () => {
+    // Clear any existing interval to prevent leaks and flickering
+    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+
     setHighlightCards(true);
     setScanIndex(0);
     let i = 0;
@@ -27,8 +30,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   };
 
   const stopCardScan = () => {
-    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
     setScanIndex(-1);
+    setHighlightCards(false);
   };
 
   const handleCardClick = (action: () => void) => {
@@ -624,8 +631,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <button
                   className="btn-adventure"
                   onClick={() => {
-                    startCardScan();
-                    document.querySelector('.cards-wrap')?.scrollIntoView({ behavior: 'smooth' });
+                    if (highlightCards) {
+                      stopCardScan();
+                    } else {
+                      startCardScan();
+                      document.querySelector('.cards-wrap')?.scrollIntoView({ behavior: 'smooth' });
+                    }
                   }}
                 >
                   Choose your adventure
@@ -693,7 +704,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 5 ELECTRA */}
-              <div className={`tc tc-electra ${tcClass(4)}`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Creocad'))}>
+              <div className={`tc tc-electra ${tcClass(4)}`} onClick={() => handleCardClick(() => onSelect('leapforge'))}>
                 <div className="tc-icon">
                   <img src="/assets/creocad_icon.png" alt="Forge Icon" />
                 </div>

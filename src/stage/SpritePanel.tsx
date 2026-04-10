@@ -269,8 +269,8 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           {/* Floating action button for Sprites */}
           <div style={styles.floatingAction}>
             <ActionMenu
-              mainIcon="🐱"
-              color="#855CD6"
+              mainIcon="➕"
+              color="#9974ffff"
               tooltipLabel="Choose a Sprite"
               actions={[
                 {
@@ -349,7 +349,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           <div style={{ ...styles.floatingAction, right: '4px', bottom: '12px' }}>
             <ActionMenu
               mainIcon="🖼️"
-              color="#3498DB"
+              color="#8f59f5ff"
               tooltipLabel="Choose a Backdrop"
               actions={[
                 {

@@ -32,6 +32,7 @@ export interface CompiledScript {
     trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than' | 'procedure';
     triggerKey?: string;
     spriteId: string;
+    hatBlockId?: string; // Unique identifier for the hat block that started this script
     steps: ScriptStep[];
 }
 
@@ -157,7 +158,13 @@ const vmLog = {
 };
 
 export class AnimationVM {
-    private runningScripts: Map<string, AbortController> = new Map();
+    private runningScripts: Map<string, { 
+        controller: AbortController, 
+        spriteId: string, 
+        hatBlockId?: string,
+        trigger?: string,
+        triggerKey?: string
+    }> = new Map();
     private keysPressed: Set<string> = new Set();
     private mouseX: number = 0;
     private mouseY: number = 0;
@@ -202,6 +209,9 @@ export class AnimationVM {
 
     // Broadcast system
     private broadcastListeners: Map<string, CompiledScript[]> = new Map();
+    private broadcasts: Set<string> = new Set(['message1']); // Default message like Scratch
+    // Refactor: stageScripts is redundant if the stage is registered as a sprite,
+    // but we'll keep it as a proxy for the stage's scripts for backward compatibility if needed.
     public stageScripts: CompiledScript[] = [];
 
     constructor() {
@@ -215,7 +225,7 @@ export class AnimationVM {
                 if (normalized) {
                     this.keysPressed.add(normalized);
                     // Trigger "when key pressed" hat blocks across all sprites
-                    this.triggerKeyGlobally(normalized);
+                    this.triggerKey(normalized);
                 }
                 eventEngine.trigger('keydown', e.key);
             });
@@ -240,6 +250,8 @@ export class AnimationVM {
         this.variables.clear();
         this.lists.clear();
         this.tables.clear();
+        this.broadcasts.clear();
+        this.broadcasts.add('message1');
         this.tableColumns.clear();
         // Reset sensing state
         this.currentAnswer = '';
@@ -556,32 +568,90 @@ export class AnimationVM {
         }
     }
 
-    triggerFlag(scripts: CompiledScript[]): void {
-        vmLog.info('Green flag clicked - stopping all scripts before restart');
-        this.stopAll();
-        this.setRunning(true);
-        let flagScripts = 0;
+    /**
+     * Update the global script registry and broadcast listeners.
+     * This ensures that all entities have up-to-date scripts for global events.
+     */
+    setScripts(scripts: CompiledScript[]): void {
+        this.broadcastListeners.clear();
+        vmLog.info(`Updating global script registry: ${scripts.length} total scripts`);
+        
+        scripts.forEach(script => {
+            if (script.trigger === 'broadcast_receive') {
+                const messageName = script.triggerKey || 'message1';
+                // Register message name for dropdowns
+                this.registerBroadcast(messageName);
+                
+                const key = messageName.toLowerCase();
+                const listeners = this.broadcastListeners.get(key) || [];
+                listeners.push(script);
+                this.broadcastListeners.set(key, listeners);
+            }
+        });
+    }
+
+    triggerFlag(): void {
+    vmLog.info('Green flag clicked - stopping all scripts before restart');
+    this.stopAll();
+
+    const allSprites = spriteManager.getAllSprites();
+    let flagScripts = 0;
+
+    for (const sprite of allSprites) {
+        const scripts = (sprite.scripts as CompiledScript[]) || [];
+        console.log(`[VM] ${sprite.name} has ${scripts.length} scripts`);
+
         for (const script of scripts) {
             if (script.trigger === 'flag') {
                 flagScripts++;
-                this.runScript(script);
+                this.setRunning(true);
+                if (script.hatBlockId) this.stopScriptByHat(sprite.id, script.hatBlockId);
+                this.runScript(script).catch(err => console.error('Flag script error', err));
             }
-        }
-        if (flagScripts === 0) {
-            this.checkAllFinished();
         }
     }
 
-    triggerSpriteClick(spriteId: string, scripts: CompiledScript[]): void {
+    if (flagScripts === 0) {
+        console.log('[VM] No flag scripts, but broadcast receivers will still run');
+    }
+}
+
+    triggerSpriteClick(spriteId: string): void {
         let matched = 0;
-        // Scratch behavior: clicking the sprite restarts its onclick scripts
-        this.stopSpriteScripts(spriteId);
+        const allSprites = spriteManager.getAllSprites();
         
-        for (const script of scripts) {
-            if (script.trigger === 'sprite_click' && script.spriteId === spriteId) {
-                matched++;
-                this.setRunning(true);
-                this.runScript(script);
+        for (const sprite of allSprites) {
+            // We scan all sprites because multiple sprites (clones) might share the same ID logic 
+            // or we might want global listeners. In standard Scratch, only the clicked sprite responds.
+            if (sprite.id !== spriteId) continue;
+
+            const scripts = (sprite.scripts as CompiledScript[]) || [];
+            for (const script of scripts) {
+                if (script.trigger === 'sprite_click') {
+                    matched++;
+                    this.setRunning(true);
+                    
+                    // Scratch behavior: clicking the sprite restarts its onclick scripts
+                    if (script.hatBlockId) {
+                        this.stopScriptByHat(sprite.id, script.hatBlockId);
+                    }
+
+                    this.runScript(script).catch(err => {
+                        vmLog.error(`Error in sprite click script for sprite ${sprite.id}`, err);
+                    });
+                }
+            }
+        }
+
+        // Also check Stage if spriteId is 'stage'
+        if (spriteId === 'stage') {
+            for (const script of this.stageScripts) {
+                if (script.trigger === 'sprite_click') {
+                    matched++;
+                    this.setRunning(true);
+                    if (script.hatBlockId) this.stopScriptByHat('stage', script.hatBlockId);
+                    this.runScript(script);
+                }
             }
         }
     }
@@ -589,7 +659,7 @@ export class AnimationVM {
     /**
      * Trigger all "when key pressed" scripts across all registered sprites.
      */
-    triggerKeyGlobally(key: string): void {
+    triggerKey(key: string): void {
         const allSprites = spriteManager.getAllSprites();
         let matchedTotal = 0;
 
@@ -600,6 +670,12 @@ export class AnimationVM {
                 if (script.trigger === 'key' && (script.triggerKey === key || script.triggerKey === 'any')) {
                     matchedTotal++;
                     this.setRunning(true);
+                    
+                    // Stop existing before restart
+                    if (script.hatBlockId) {
+                        this.stopScriptByHat(sprite.id, script.hatBlockId);
+                    }
+
                     this.runScript(script).catch(err => {
                         vmLog.error(`Error in key pressed script for sprite ${sprite.id}`, err);
                     });
@@ -607,19 +683,19 @@ export class AnimationVM {
             }
         }
 
-        if (matchedTotal > 0) {
-            vmLog.trigger('key_pressed', { key, matchedTotal });
-        }
-    }
-
-    triggerKey(key: string, scripts: CompiledScript[]): void {
-        let matched = 0;
-        for (const script of scripts) {
+        // Also check Stage
+        for (const script of this.stageScripts) {
             if (script.trigger === 'key' && (script.triggerKey === key || script.triggerKey === 'any')) {
-                matched++;
+                matchedTotal++;
                 this.setRunning(true);
+                if (script.hatBlockId) this.stopScriptByHat('stage', script.hatBlockId);
                 this.runScript(script);
             }
+        }
+
+        if (matchedTotal > 0) {
+            vmLog.trigger('key_pressed', { key, matchedTotal });
+            console.log(`[AnimationVM] Distributed key press '${key}' to ${matchedTotal} script(s) across sprites.`);
         }
     }
 
@@ -633,9 +709,9 @@ export class AnimationVM {
         }
         this.isPaused = false;
 
-        for (const [id, controller] of this.runningScripts) {
+        for (const [id, data] of this.runningScripts) {
             vmLog.info(`Aborting script: ${id}`);
-            controller.abort();
+            data.controller.abort();
         }
         this.runningScripts.clear();
         soundManager.stopAll();
@@ -657,19 +733,39 @@ export class AnimationVM {
      */
     stopSpriteScripts(spriteId: string): void {
         const toStop: string[] = [];
-        for (const [id, controller] of this.runningScripts) {
-            if (id.startsWith(`${spriteId}-`)) {
+        for (const [id, data] of this.runningScripts) {
+            if (data.spriteId === spriteId) {
                 toStop.push(id);
             }
         }
         toStop.forEach(id => {
-            const controller = this.runningScripts.get(id);
-            if (controller) {
-                controller.abort();
+            const data = this.runningScripts.get(id);
+            if (data) {
+                data.controller.abort();
                 this.runningScripts.delete(id);
             }
         });
         this.checkAllFinished();
+    }
+
+    /**
+     * Stop a specific script identified by its hat block.
+     * Standard Scratch behavior: if a broadcast is received, the script for it restarts.
+     */
+    stopScriptByHat(spriteId: string, hatBlockId: string): void {
+        const toStop: string[] = [];
+        for (const [id, data] of this.runningScripts) {
+            if (data.spriteId === spriteId && data.hatBlockId === hatBlockId) {
+                toStop.push(id);
+            }
+        }
+        toStop.forEach(id => {
+            const data = this.runningScripts.get(id);
+            if (data) {
+                data.controller.abort();
+                this.runningScripts.delete(id);
+            }
+        });
     }
 
     pause(): void {
@@ -715,7 +811,13 @@ export class AnimationVM {
 
         const id = `${script.spriteId}-${Date.now()}-${Math.random()}`;
         const controller = new AbortController();
-        this.runningScripts.set(id, controller);
+        this.runningScripts.set(id, {
+            controller,
+            spriteId: script.spriteId,
+            hatBlockId: script.hatBlockId,
+            trigger: script.trigger,
+            triggerKey: script.triggerKey
+        });
         vmLog.info(`Script registered: ${id}`);
 
         const context: VMContext = {
@@ -920,9 +1022,19 @@ export class AnimationVM {
                 const rawMessage = typeof step.message === 'function' ? step.message() : step.message;
                 const message = rawMessage === null || rawMessage === undefined ? '' : String(rawMessage);
                 const secs = typeof step.secs === 'function' ? step.secs() : step.secs;
-                vmLog.step(`Executing Say "${message}" for ${secs} seconds`);
-                sprite.say(message, secs);
+
+                vmLog.step(`Say "${message}" for ${secs} seconds`);
+
+                // Show the bubble with duration
+                sprite.say(message, secs);   // Make sure your Sprite.say() accepts duration
+
+                // Wait the full time (this already exists, but make sure pause/resume works)
                 await this.sleep(secs * 1000, signal);
+
+                // Only clear if the script is still running and no new say/think happened
+                if (!signal.aborted && sprite.sayText === message) {
+                    sprite.clearSay();
+                }
                 break;
             }
 
@@ -964,10 +1076,22 @@ export class AnimationVM {
                 break;
 
             case 'think_for_secs': {
-                const message = typeof step.message === 'function' ? step.message() : step.message;
+                const rawMessage = typeof step.message === 'function' ? step.message() : step.message;
+                const message = rawMessage === null || rawMessage === undefined ? '' : String(rawMessage);
                 const secs = typeof step.secs === 'function' ? step.secs() : step.secs;
-                sprite.think(message, secs);
+
+                vmLog.step(`Think "${message}" for ${secs} seconds`);
+
+                // Show the bubble with duration
+                sprite.think(message, secs);   // Make sure your Sprite.say() accepts duration
+
+                // Wait the full time (this already exists, but make sure pause/resume works)
                 await this.sleep(secs * 1000, signal);
+
+                // Only clear if the script is still running and no new say/think happened
+                if (!signal.aborted && sprite.sayText === message) {
+                    sprite.clearSay();
+                }
                 break;
             }
 
@@ -1124,9 +1248,9 @@ export class AnimationVM {
                     const scriptIdsToAbort = Array.from(this.runningScripts.keys())
                         .filter(id => id.startsWith(`${sprite.id}-`));
                     for (const abortId of scriptIdsToAbort) {
-                        const controller = this.runningScripts.get(abortId);
-                        if (controller) {
-                            controller.abort();
+                        const scriptData = this.runningScripts.get(abortId);
+                        if (scriptData) {
+                            scriptData.controller.abort();
                             this.runningScripts.delete(abortId);
                         }
                     }
@@ -1725,76 +1849,104 @@ export class AnimationVM {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    // BROADCAST MANAGEMENT
+    // ═══════════════════════════════════════════════════════════════════════
+
+    registerBroadcast(message: string): void {
+        const msg = message.trim();
+        if (msg && !this.broadcasts.has(msg)) {
+            this.broadcasts.add(msg);
+            vmLog.info(`Registered new broadcast message: "${msg}"`);
+        }
+    }
+
+    getBroadcastMessages(): string[] {
+        return Array.from(this.broadcasts);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     // BROADCAST
     // ═══════════════════════════════════════════════════════════════════════
     triggerBroadcast(message: string): void {
-        vmLog.info(`Broadcasting: ${message}`);
+    vmLog.info(`Broadcasting: ${message}`);
+    this.registerBroadcast(message);
 
-        // 1. Trigger sync callback to ensure all entities have latest scripts
-        if (this.onBeforeBroadcast) {
-            this.onBeforeBroadcast(message);
-        }
+    const normalizedMessage = message.toLowerCase();
 
-        // 2. Find and execute all matching scripts on all Sprites
-        const allSprites = spriteManager.getAllSprites();
-        for (const sprite of allSprites) {
-            const scripts = (sprite.scripts as CompiledScript[]) || [];
-            for (const script of scripts) {
-                if (script.trigger === 'broadcast_receive' && script.triggerKey === message) {
-                    this.setRunning(true);
-                    this.runScript(script).catch(err => {
-                        vmLog.error('Error in sprite broadcast receive script', err);
-                    });
-                }
-            }
-        }
+    // Ensure latest scripts are synced
+    if (this.onBeforeBroadcast) {
+        this.onBeforeBroadcast(message);
+    }
 
-        // 3. Also check the Backdrop (Stage) scripts
-        for (const script of this.stageScripts) {
-            if (script.trigger === 'broadcast_receive' && script.triggerKey === message) {
+    let matched = 0;
+    const allSprites = spriteManager.getAllSprites();
+
+    console.log(`[VM FIX] Broadcasting "${message}" to ${allSprites.length} sprites`);
+
+    for (const sprite of allSprites) {
+        const scripts = (sprite.scripts as CompiledScript[]) || [];
+
+        for (const script of scripts) {
+            if (
+                script.trigger === 'broadcast_receive' &&
+                (script.triggerKey || '').toLowerCase() === normalizedMessage
+            ) {
+                matched++;
+
                 this.setRunning(true);
+
+                if (script.hatBlockId) {
+                    this.stopScriptByHat(sprite.id, script.hatBlockId);
+                }
+
+                console.log(`[VM FIX] Running on ${sprite.name}`);
+
                 this.runScript(script).catch(err => {
-                    vmLog.error('Error in stage broadcast receive script', err);
+                    vmLog.error('Broadcast error', err);
                 });
             }
         }
     }
 
+    if (matched === 0) {
+        console.warn(`[VM FIX] ❌ No receivers for "${message}"`);
+    }
+}
     async triggerBroadcastAndWait(message: string): Promise<void> {
-        vmLog.info(`Broadcasting and waiting: ${message}`);
+    vmLog.info(`Broadcasting and waiting: ${message}`);
+    this.registerBroadcast(message);
 
-        // 1. Trigger sync callback
-        if (this.onBeforeBroadcast) {
-            this.onBeforeBroadcast(message);
-        }
+    const normalizedMessage = message.toLowerCase();
 
-        const promises: Promise<void>[] = [];
+    if (this.onBeforeBroadcast) {
+        this.onBeforeBroadcast(message);
+    }
 
-        // 2. Find matching scripts on all Sprites
-        const allSprites = spriteManager.getAllSprites();
-        for (const sprite of allSprites) {
-            const scripts = (sprite.scripts as CompiledScript[]) || [];
-            for (const script of scripts) {
-                if (script.trigger === 'broadcast_receive' && script.triggerKey === message) {
-                    this.setRunning(true);
-                    promises.push(this.runScript(script));
-                }
-            }
-        }
+    const promises: Promise<void>[] = [];
+    const allSprites = spriteManager.getAllSprites();
 
-        // 3. Find matching scripts on the Stage
-        for (const script of this.stageScripts) {
-            if (script.trigger === 'broadcast_receive' && script.triggerKey === message) {
+    for (const sprite of allSprites) {
+        const scripts = (sprite.scripts as CompiledScript[]) || [];
+
+        for (const script of scripts) {
+            if (
+                script.trigger === 'broadcast_receive' &&
+                (script.triggerKey || '').toLowerCase() === normalizedMessage
+            ) {
                 this.setRunning(true);
+
+                if (script.hatBlockId) {
+                    this.stopScriptByHat(sprite.id, script.hatBlockId);
+                }
+
                 promises.push(this.runScript(script));
             }
         }
-
-        if (promises.length > 0) {
-            await Promise.all(promises);
-        }
     }
 
+    await Promise.all(promises);
+}
+            
     triggerBackdropSwitch(backdrop: string): void {
         console.log(`[AnimationVM] Backdrop switch: ${backdrop}`);
         const allSprites = spriteManager.getAllSprites();

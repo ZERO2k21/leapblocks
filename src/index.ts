@@ -126,6 +126,28 @@ ipcMain.handle('upload-code', async (event, code: string, selectedPort: string, 
   return result;
 });
 
+ipcMain.handle('compile-code', async (event, code: string, fqbn: string, libraryPath?: string) => {
+  const result = await arduinoUploader.compileForSimulation(code, fqbn, libraryPath);
+  return result;
+});
+
+// Library Handlers
+ipcMain.handle('library-search', async (event, query: string) => {
+  return await arduinoUploader.searchLibraries(query);
+});
+
+ipcMain.handle('library-install', async (event, libName: string, projectPath: string) => {
+  return await arduinoUploader.installLibrary(libName, projectPath);
+});
+
+ipcMain.handle('library-list-project', async (event, projectPath: string) => {
+  return await arduinoUploader.listProjectLibraries(projectPath);
+});
+
+ipcMain.handle('library-uninstall', async (event, libName: string, projectPath: string) => {
+  return await arduinoUploader.uninstallLibrary(libName, projectPath);
+});
+
 // Python Handlers
 ipcMain.handle('python-run', async (event, code: string) => {
   await pythonManager.runCode(code);
@@ -233,42 +255,73 @@ ipcMain.handle('show-in-folder', (_, filePath) => {
   shell.showItemInFolder(filePath);
 });
 
-ipcMain.handle('save-project', async (_, data) => {
-  if (!mainWindow) return false;
-  const { filePath } = await dialog.showSaveDialog(mainWindow, {
-    title: 'Save LeapBlocks Project',
-    defaultPath: 'project.lbp',
-    filters: [
-      { name: 'LeapBlocks Project', extensions: ['lbp'] }
-    ]
-  });
-
-  if (filePath) {
-    const fsMod = require('fs');
-    fsMod.writeFileSync(filePath, JSON.stringify(data, null, 2));
-    return true;
+ipcMain.handle('save-project', async (_, data, existingPath?: string) => {
+  if (!mainWindow) return { success: false };
+  
+  let targetPath = existingPath;
+  
+  if (!targetPath) {
+    const { filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Save LeapBlocks Project Folder',
+      defaultPath: 'MyLeapProject',
+      buttonLabel: 'Create Project Folder'
+    });
+    if (!filePath) return { success: false };
+    targetPath = filePath;
   }
-  return false;
+
+  const fsMod = require('fs');
+  const pathMod = require('path');
+
+  try {
+    if (!fsMod.existsSync(targetPath)) {
+      fsMod.mkdirSync(targetPath, { recursive: true });
+    }
+    
+    // Save the .lbp file inside the folder
+    const projectName = pathMod.basename(targetPath);
+    const lbpPath = pathMod.join(targetPath, `${projectName}.lbp`);
+    fsMod.writeFileSync(lbpPath, JSON.stringify(data, null, 2));
+
+    // Ensure libs folder exists
+    const libsDir = pathMod.join(targetPath, 'libs');
+    if (!fsMod.existsSync(libsDir)) {
+      fsMod.mkdirSync(libsDir, { recursive: true });
+    }
+
+    return { success: true, projectPath: targetPath };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 });
 
 ipcMain.handle('open-project', async () => {
   if (!mainWindow) return null;
+  
+  // Choose Folder Mode
   const { filePaths } = await dialog.showOpenDialog(mainWindow, {
-    title: 'Open LeapBlocks Project',
-    properties: ['openFile'],
-    filters: [
-      { name: 'LeapBlocks Project', extensions: ['lbp'] }
-    ]
+    title: 'Select LeapBlocks Project Folder',
+    properties: ['openDirectory']
   });
 
   if (filePaths && filePaths.length > 0) {
+    const projectPath = filePaths[0];
     const fsMod = require('fs');
-    const content = fsMod.readFileSync(filePaths[0], 'utf-8');
-    try {
-      return JSON.parse(content);
-    } catch(e) {
-      console.error("Invalid project file", e);
-      return null;
+    const pathMod = require('path');
+    
+    // Look for any .lbp file in the root
+    const files = fsMod.readdirSync(projectPath);
+    const lbpFile = files.find((f: string) => f.endsWith('.lbp'));
+    
+    if (lbpFile) {
+      const content = fsMod.readFileSync(pathMod.join(projectPath, lbpFile), 'utf-8');
+      try {
+        const data = JSON.parse(content);
+        return { data, projectPath };
+      } catch(e) {
+        console.error("Invalid project file", e);
+        return null;
+      }
     }
   }
   return null;

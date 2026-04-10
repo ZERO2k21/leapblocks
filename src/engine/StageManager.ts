@@ -24,10 +24,14 @@ export class StageManager {
 
     // Reset stage manager to initial state (for new projects)
     reset(): void {
+        this.clearBackdrops();
+        this.clearSounds();
+        this.initDefaultBackdrop();
+    }
+
+    clearBackdrops(): void {
         this.backdrops = [];
         this.currentBackdropIndex = -1;
-        this.sounds = [];
-        this.initDefaultBackdrop();
         this.onUpdate();
     }
 

@@ -70,6 +70,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
         return ipcRenderer.invoke('upload-code', code, port, fqbn);
     },
 
+    /**
+     * Compile code to hex for simulation
+     */
+    compileCode: (code: string, fqbn?: string, libraryPath?: string): Promise<{ success: boolean; hexContent?: string; error?: string }> => {
+        console.log('[PRELOAD] compileCode called', { codeLength: code.length, fqbn, libraryPath });
+        return ipcRenderer.invoke('compile-code', code, fqbn || 'arduino:avr:uno', libraryPath);
+    },
+
     // ═══════════════════════════════════════════════════════════════════════
     // EVENT LISTENERS
     // ═══════════════════════════════════════════════════════════════════════
@@ -136,6 +144,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     showInFolder: (p: string) => ipcRenderer.invoke("show-in-folder", p),
     saveProject: (d: any) => ipcRenderer.invoke("save-project", d),
     openProject: () => ipcRenderer.invoke("open-project"),
+    librarySearch: (query: string) => ipcRenderer.invoke('library-search', query),
+    libraryInstall: (libName: string, projectPath: string) => ipcRenderer.invoke('library-install', libName, projectPath),
+    libraryListProject: (projectPath: string) => ipcRenderer.invoke('library-list-project', projectPath),
+    libraryUninstall: (libName: string, projectPath: string) => ipcRenderer.invoke('library-uninstall', libName, projectPath),
     isElectron: true,
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -156,10 +168,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onPythonPipOutput: (callback: (data: string) => void) => ipcRenderer.on('python-pip-output', (_, msg) => callback(msg)),
     onPythonPipError: (callback: (data: string) => void) => ipcRenderer.on('python-pip-error', (_, msg) => callback(msg)),
     onPythonPipExit: (callback: (code: number) => void) => ipcRenderer.on('python-pip-exit', (_, code) => callback(code)),
+    
+    /**
+     * Generic invoke for flexible IPC calls
+     */
+    invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),
 });
 
 // Declare global type for TypeScript
 declare global {
+    interface ArduinoLib {
+        name: string;
+        author: string;
+        version: string;
+        sentence: string;
+        paragraph?: string;
+        website?: string;
+    }
     interface Window {
         electronAPI: {
             getPorts: () => Promise<PortInfo[]>;
@@ -167,6 +192,7 @@ declare global {
             disconnectPort: () => Promise<ConnectResult>;
             sendSerial: (data: string) => Promise<void>;
             uploadCode: (code: string, port?: string, fqbn?: string) => Promise<UploadResult>;
+            compileCode: (code: string, fqbn?: string, libraryPath?: string) => Promise<{ success: boolean; hexContent?: string; error?: string }>;
             onSerialData: (callback: (data: string) => void) => void;
             onConnectionChange: (callback: (connected: boolean) => void) => void;
             onUploadProgress: (callback: (progress: number, message: string) => void) => void;
@@ -179,6 +205,10 @@ declare global {
             showInFolder: (p: string) => void;
             saveProject: (d: any) => Promise<boolean>;
             openProject: () => Promise<any>;
+            librarySearch: (query: string) => Promise<{ libraries: ArduinoLib[] }>;
+            libraryInstall: (libName: string, projectPath: string) => Promise<{ success: boolean; error?: string }>;
+            libraryListProject: (projectPath: string) => Promise<string[]>;
+            libraryUninstall: (libName: string, projectPath: string) => Promise<{ success: boolean; error?: string }>;
             isElectron: boolean;
             
             pythonRun: (code: string) => Promise<void>;
@@ -196,6 +226,8 @@ declare global {
             onPythonPipOutput: (callback: (data: string) => void) => void;
             onPythonPipError: (callback: (data: string) => void) => void;
             onPythonPipExit: (callback: (code: number) => void) => void;
+            
+            invoke: (channel: string, ...args: any[]) => Promise<any>;
         };
     }
 }
