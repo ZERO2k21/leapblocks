@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { STAGE_CONFIG } from './engine/StageConfig';
 
 import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
 
@@ -522,13 +523,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         const updateScale = () => {
 
             if (document.fullscreenElement) {
+                // Account for the entire workspace height (Stage + Sprite Panel + Spacing)
+                // Stage: 310, Panel: ~410, Spacing: 30, Toolbar: 60
+                const TOTAL_WORKSPACE_HEIGHT = 750;
+                const TOTAL_WORKSPACE_WIDTH = 450;
+                
+                const toolbarHeight = 60;
+                const availableHeight = window.innerHeight - toolbarHeight;
+                
+                const scaleX = window.innerWidth / TOTAL_WORKSPACE_WIDTH;
+                const scaleY = availableHeight / TOTAL_WORKSPACE_HEIGHT;
 
-                const scaleX = window.innerWidth / 480;
-
-                const scaleY = window.innerHeight / 360;
-
-                setFullscreenScale(Math.min(scaleX, scaleY));
-
+                setFullscreenScale(Math.min(scaleX, scaleY)); // Removed 1.5x cap for full responsiveness
             } else {
 
                 setFullscreenScale(1);
@@ -2310,7 +2316,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         // The src might be a full URL, we need the relative path from public/
 
-        const relativePath = imagePath.split('/assets/')[1];
+        const relativePath = imagePath.split('assets/')[1];
 
         if (!relativePath) {
 
@@ -2460,15 +2466,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         const loadAssets = async () => {
 
-            await robotSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
+            await robotSprite.addCostume('idle', 'assets/sprites/robot/robot_idle.svg');
 
-            await robotSprite.addCostume('wave 1', '/assets/sprites/robot/image-removebg-preview (1).png');
+            await robotSprite.addCostume('wave 1', 'assets/sprites/robot/image-removebg-preview (1).png');
 
-            await robotSprite.addCostume('wave 2', '/assets/sprites/robot/image-Photoroom.png');
+            await robotSprite.addCostume('wave 2', 'assets/sprites/robot/image-Photoroom.png');
 
-            await robotSprite.addCostume('talk', '/assets/sprites/robot/image-removebg-preview.png');
+            await robotSprite.addCostume('talk', 'assets/sprites/robot/image-removebg-preview.png');
 
-            await robotSprite.addSound('Meow', '/assets/sounds/meow.wav');
+            await robotSprite.addSound('Meow', 'assets/sounds/meow.wav');
 
 
 
@@ -3318,19 +3324,19 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 console.log('[APP] Loading assets for robot...');
 
-                await defaultSprite.addCostume('idle', '/assets/sprites/robot/robot_idle.svg');
+                await defaultSprite.addCostume('idle', 'assets/sprites/robot/robot_idle.svg');
 
-                await defaultSprite.addCostume('wave 1', '/assets/sprites/robot/image-removebg-preview (1).png');
+                await defaultSprite.addCostume('wave 1', 'assets/sprites/robot/image-removebg-preview (1).png');
 
-                await defaultSprite.addCostume('wave 2', '/assets/sprites/robot/image-Photoroom.png');
+                await defaultSprite.addCostume('wave 2', 'assets/sprites/robot/image-Photoroom.png');
 
-                await defaultSprite.addCostume('talk', '/assets/sprites/robot/image-removebg-preview.png');
+                await defaultSprite.addCostume('talk', 'assets/sprites/robot/image-removebg-preview.png');
 
 
 
                 // Add default sound
 
-                await defaultSprite.addSound('Meow', '/assets/sounds/meow.wav');
+                await defaultSprite.addSound('Meow', 'assets/sounds/meow.wav');
 
                 console.log('[APP] Assets loaded:', defaultSprite.costumes.length, 'costumes', defaultSprite.sounds.length, 'sounds');
 
@@ -5140,8 +5146,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 <div style={{
 
                     ...styles.rightPanel,
-
-                    width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '256px' : (stageLayout === 'large' ? '616px' : '496px')),
+                    width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '256px' : '496px'),
 
                     transition: 'width 0.2s ease-in-out',
 
@@ -5150,16 +5155,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {/* Stage Container - Always rendered, conditionally visible to keep ref valid */}
                     <div ref={stageContainerRef} style={{
                         ...(!isFullscreen ? styles.stageContainer : {}),
-                        width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '240px' : (stageLayout === 'large' ? '600px' : '480px')),
-                        height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '180px' : (stageLayout === 'large' ? '380px' : '360px')),
+                        width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '225px' : '450px'),
+                        height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '155px' : (editorMode === 'stage' ? 'auto' : '310px')),
                         transition: 'all 0.2s ease-in-out',
                         position: isFullscreen ? 'fixed' : 'relative',
                         top: isFullscreen ? 0 : 'auto', left: isFullscreen ? 0 : 'auto',
                         zIndex: isFullscreen ? 9999 : 1,
                         display: (editorMode === 'stage' || isFullscreen) ? 'flex' : 'none',
                         flexDirection: 'column',
-                        background: isFullscreen ? '#09090b' : '#fff',
-                        overflow: 'hidden'
+                        alignItems: isFullscreen ? 'center' : 'stretch',
+                        justifyContent: isFullscreen ? 'flex-start' : 'flex-start',
+                        background: isFullscreen ? '#0c0c0e' : 'transparent',
+                        overflowX: 'hidden',
+                        overflowY: 'hidden',
+                        gap: isFullscreen ? '0' : '8px',
                     }}>
 
                         {/* Fullscreen Toolbar - Premium Dark/Glass */}
@@ -5300,15 +5309,14 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             const LARGE_STAGE_SCALE = 1.25;
 
 
-
-                            // 3. Small Stage Mode Settings
-
-                            const SMALL_STAGE_WIDTH = 300;
-
-                            const SMALL_STAGE_HEIGHT = 180;
+                                    // 3. Small Stage Mode Settings
+                                    const SMALL_STAGE_WIDTH = 250;
+                                    const SMALL_STAGE_HEIGHT = 160;
+                                    const SMALL_STAGE_SCALE = 0.5;
 
                             const SMALL_STAGE_SCALE_INTERNAL = 0.5;
 
+                            const SMALL_STAGE_SCALE_INTERNAL = 0.5;
 
 
                             return (
@@ -5414,6 +5422,35 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                         </div>
 
+                                            {/* Sprite & Stage Panel Unit */}
+                                            {(editorMode === 'stage' || isFullscreen) && (
+                                                <div style={{
+                                                    ...styles.assetsContainer,
+                                                    width: `${CANVAS_WIDTH}px`, // Match exactly
+                                                    flex: '0 0 auto',
+                                                    marginTop: '8px',
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'flex-start',
+                                                    overflow: 'visible',
+                                                }}>
+                                                    <SpritePanel
+                                                        sprites={sprites}
+                                                        selectedSpriteId={selectedSpriteId}
+                                                        onSelectSprite={handleSpriteSelect}
+                                                        onAddSprite={addSprite}
+                                                        onDeleteSprite={deleteSprite}
+                                                        onRemoveBackground={handleRemoveBackground}
+                                                        onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
+                                                        onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
+                                                        stageManager={stageManager}
+                                                        backdropVersion={backdropRefresh}
+                                                        isFullscreen={isFullscreen}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+
                                     </div>
 
                                 </div>
@@ -5423,24 +5460,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         })()}
 
                     </div>
-
-                    {/* Sprite & Stage Panels - Visible in Stage mode OR Fullscreen */}
-                    {(editorMode === 'stage' || isFullscreen) && (
-                        <div style={styles.assetsContainer}>
-                            <SpritePanel
-                                sprites={sprites}
-                                selectedSpriteId={selectedSpriteId}
-                                onSelectSprite={handleSpriteSelect}
-                                onAddSprite={addSprite}
-                                onDeleteSprite={deleteSprite}
-                                onRemoveBackground={handleRemoveBackground}
-                                onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
-                                onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
-                                stageManager={stageManager}
-                                backdropVersion={backdropRefresh}
-                            />
-                        </div>
-                    )}
 
                     {/* Code Preview - Only in Upload mode AND NOT Fullscreen */}
                     {editorMode === 'upload' && !isFullscreen && (
@@ -5977,7 +5996,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             // Add default sound
 
-                            await newSprite.addSound('Meow', '/assets/sounds/meow.wav');
+                            await newSprite.addSound('Meow', 'assets/sounds/meow.wav');
 
 
 

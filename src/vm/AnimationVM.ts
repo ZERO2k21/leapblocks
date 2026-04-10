@@ -7,6 +7,7 @@ import { eventEngine } from '../engine/EventEngine';
 import { stageManager } from '../engine/StageManager';
 import { penManager } from '../engine/PenManager';
 import { soundManager } from '../engine/SoundManager';
+import { STAGE_CONFIG } from '../engine/StageConfig';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ANIMATION VM - Executes animation scripts
@@ -924,8 +925,8 @@ export class AnimationVM {
             // PictoBlox motion extensions
             case 'go_to':
                 motionEngine.goToTarget(step.target, sprite, {
-                    width: 480,
-                    height: 360,
+                    width: STAGE_CONFIG.WIDTH,
+                    height: STAGE_CONFIG.HEIGHT,
                     mouseX: this.mouseX,
                     mouseY: this.mouseY
                 });
@@ -937,8 +938,8 @@ export class AnimationVM {
                     let ty = sprite.y;
 
                     if (step.target === 'random' || step.target === '_random_') {
-                        tx = (Math.random() - 0.5) * 480;
-                        ty = (Math.random() - 0.5) * 360;
+                        tx = (Math.random() - 0.5) * STAGE_CONFIG.WIDTH;
+                        ty = (Math.random() - 0.5) * STAGE_CONFIG.HEIGHT;
                     } else if (step.target === 'mouse' || step.target === '_mouse_') {
                         tx = this.mouseX;
                         ty = this.mouseY;

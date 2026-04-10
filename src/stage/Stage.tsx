@@ -59,6 +59,8 @@ export interface TableMonitorState {
 // STAGE component
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { STAGE_CONFIG } from '../engine/StageConfig';
+
 interface StageProps {
     width?: number;
     height?: number;
@@ -83,8 +85,8 @@ interface StageProps {
 }
 
 export const Stage: React.FC<StageProps> = ({
-    width = 480,
-    height = 360,
+    width = STAGE_CONFIG.WIDTH,
+    height = STAGE_CONFIG.HEIGHT,
     sprites,
     isRunning,
     onStageClick,
@@ -203,7 +205,7 @@ export const Stage: React.FC<StageProps> = ({
             ctx.fillRect(0, 0, width, height);
         }
 
-        // 2. Draw grid (PictoBlox style)
+        // 2. Draw grid (Leapblocks style)
         if (showGridNumbers) {
             ctx.strokeStyle = '#e5e5e5';
             ctx.lineWidth = 1;

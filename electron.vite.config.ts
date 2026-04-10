@@ -28,6 +28,7 @@ export default defineConfig({
   // ─── Renderer process (src/renderer.tsx) ────────────────────────────────
   renderer: {
     root: '.',
+    base: './',
     plugins: [react()],
     publicDir: 'public',
     resolve: {

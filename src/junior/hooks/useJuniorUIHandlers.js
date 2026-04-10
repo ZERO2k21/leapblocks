@@ -354,10 +354,10 @@ export function useJuniorUIHandlers({
 
             if (type === "robot") {
                 costumes = {
-                    default: '/assets/sprites/robot/robot_idle.svg',
-                    wave1: '/assets/sprites/robot/image-Photoroom.png',
-                    wave2: '/assets/sprites/robot/image-removebg-preview (1).png',
-                    talk: '/assets/sprites/robot/image-removebg-preview.png'
+                    default: 'assets/sprites/robot/robot_idle.svg',
+                    wave1: 'assets/sprites/robot/image-Photoroom.png',
+                    wave2: 'assets/sprites/robot/image-removebg-preview (1).png',
+                    talk: 'assets/sprites/robot/image-removebg-preview.png'
                 };
             } else if (type === "bear") {
                 costumes = { default: "🐻", wave: "👋", angry: "😠" };

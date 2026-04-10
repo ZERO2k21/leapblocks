@@ -1,6 +1,8 @@
 import { Sprite } from '../stage/Sprite';
 import { spriteManager } from './SpriteManager';
 
+import { STAGE_CONFIG } from './StageConfig';
+
 class MotionEngine {
     move(sprite: Sprite, steps: number) {
         const radians = (sprite.direction - 90) * Math.PI / 180;
@@ -92,7 +94,11 @@ class MotionEngine {
             return sprite.isPointInSprite((window as any).mouseX || 0, (window as any).mouseY || 0);
         }
         if (target === '_edge_') {
-            return sprite.x <= -230 || sprite.x >= 230 || sprite.y <= -170 || sprite.y >= 170;
+            const margin = 10;
+            return sprite.x <= STAGE_CONFIG.MIN_X + margin || 
+                   sprite.x >= STAGE_CONFIG.MAX_X - margin || 
+                   sprite.y <= STAGE_CONFIG.MIN_Y + margin || 
+                   sprite.y >= STAGE_CONFIG.MAX_Y - margin;
         }
         const targetSprite = spriteManager.getSpriteByName(target) || spriteManager.getSprite(target);
         if (!targetSprite) return false;

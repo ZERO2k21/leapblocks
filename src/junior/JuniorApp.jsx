@@ -48,10 +48,10 @@ import "./styles/directionPicker.css";
 import "./styles/juniorLooksBlocks.css";
 
 // Robot Assets
-const robotIdle = "/assets/sprites/robot/robot_idle.svg";
-const robotWave1 = "/assets/sprites/robot/image-Photoroom.png";
-const robotWave2 = "/assets/sprites/robot/image-removebg-preview (1).png";
-const robotTalk1 = "/assets/sprites/robot/image-removebg-preview.png";
+const robotIdle = "assets/sprites/robot/robot_idle.svg";
+const robotWave1 = "assets/sprites/robot/image-Photoroom.png";
+const robotWave2 = "assets/sprites/robot/image-removebg-preview (1).png";
+const robotTalk1 = "assets/sprites/robot/image-removebg-preview.png";
 
 // ─── Lazy initialization to avoid TDZ errors in production builds ─────────
 // Webpack's ModuleConcatenationPlugin (scope hoisting) can reorder const/class
@@ -194,7 +194,7 @@ export default function JuniorApp({ onBack }) {
             id: "scene1",
             name: "Scene 1",
             background: "white",
-            backgroundImage: "/assets/backdrops/default.jpg",
+            backgroundImage: "assets/backdrops/default.jpg",
             backdropName: "Default",
             sprites: [
                 {

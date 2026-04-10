@@ -139,7 +139,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, progress }) => {
                     {/* Rocket Image */}
                     {!launched && (
                         <img
-                            src="/assets/ui/rocket.png"
+                            src="assets/ui/rocket.png"
                             alt="Uploading"
                             style={{
                                 width: 80,

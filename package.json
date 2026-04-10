@@ -9,6 +9,7 @@
     "dev:web": "vite --config vite.web.config.ts",
     "build:web": "vite build --config vite.web.config.ts",
     "build:electron": "electron-vite build",
+    "dist": "npm run build:electron && electron-builder",
     "preview:web": "vite preview --config vite.web.config.ts",
     "start": "electron-forge start",
     "package": "electron-forge package",

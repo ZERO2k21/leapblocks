@@ -41,7 +41,7 @@ const getSpriteFallback = (spriteType) => {
     if (spriteType === "robot") {
         return (
             <img
-                src="/assets/sprites/robot/robot_idle.svg"
+                src="assets/sprites/robot/robot_idle.svg"
                 alt="Robot"
                 style={{ width: 48, height: 48 }}
             />

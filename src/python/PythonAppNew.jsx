@@ -129,15 +129,15 @@ const SPRITE_LIBRARY = new Proxy([], {
 const BACKDROP_LIBRARY = [
     { name: 'Blank', img: null, id: 'blank' },
     // Preset backdrops
-    { name: 'Maze', img: '/assets/backdrops/maze.svg', id: 'maze' },
-    { name: 'Park', img: '/assets/backdrops/park.svg', id: 'park' },
-    { name: 'Underwater', img: '/assets/backdrops/underwater.svg', id: 'underwater' },
-    { name: 'Space', img: '/assets/backdrops/space_bg.svg', id: 'space' },
-    { name: 'City', img: '/assets/backdrops/city.svg', id: 'city' },
-    { name: 'Arctic', img: '/assets/backdrops/Artic.png', id: 'arctic' },
-    { name: 'Beach', img: '/assets/backdrops/Beach.png', id: 'beach' },
-    { name: 'Castle', img: '/assets/backdrops/Castle.png', id: 'castle' },
-    { name: 'Galaxy', img: '/assets/backdrops/Space.png', id: 'galaxy' },
+    { name: 'Maze', img: 'assets/backdrops/maze.svg', id: 'maze' },
+    { name: 'Park', img: 'assets/backdrops/park.svg', id: 'park' },
+    { name: 'Underwater', img: 'assets/backdrops/underwater.svg', id: 'underwater' },
+    { name: 'Space', img: 'assets/backdrops/space_bg.svg', id: 'space' },
+    { name: 'City', img: 'assets/backdrops/city.svg', id: 'city' },
+    { name: 'Arctic', img: 'assets/backdrops/Artic.png', id: 'arctic' },
+    { name: 'Beach', img: 'assets/backdrops/Beach.png', id: 'beach' },
+    { name: 'Castle', img: 'assets/backdrops/Castle.png', id: 'castle' },
+    { name: 'Galaxy', img: 'assets/backdrops/Space.png', id: 'galaxy' },
 ];
 
 const getFileBaseName = (fileName = "") => fileName.replace(/\.[^/.]+$/, "").toLowerCase();
@@ -332,10 +332,10 @@ export default function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks
         x: 0, y: 0, angle: 90, size: 100, visible: true,
         speech: '', currentCostume: 'default',
         costumes: {
-            default: "/assets/sprites/robot/robot_idle.svg",
-            wave1: "/assets/sprites/robot/robot_wave1.svg",
-            wave2: "/assets/sprites/robot/robot_wave2.svg",
-            talk: "/assets/sprites/robot/robot_talk1.svg"
+            default: "assets/sprites/robot/robot_idle.svg",
+            wave1: "assets/sprites/robot/robot_wave1.svg",
+            wave2: "assets/sprites/robot/robot_wave2.svg",
+            talk: "assets/sprites/robot/robot_talk1.svg"
         },
         mirrored: false
     }]);

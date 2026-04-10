@@ -26,7 +26,7 @@ if (Blockly.FieldDropdown && !(Blockly.FieldDropdown.prototype as any)._dropdown
                 document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
             }
         } catch (e) {
-            console.warn('[Blockly Patch] Failed to set dropdown colors:', e);
+            console.warn('[Blockly Patch] Failed to set dropdown colors:',e );
         }
 
         // HEALING: If the field's current value is an object (due to a previous bug), 
@@ -340,10 +340,10 @@ if (Blockly.BlockSvg && !(Blockly.BlockSvg.prototype as any)._leapContextMenuPat
 // 5. SAFE EVENT UNBINDING
 // Prevents "Cannot read properties of undefined (reading '2')" in browser_events.unbind
 // which can occur during rapid workspace switching or disposal of flyout items.
-const bEvents = (Blockly as any).browserEvents;
-if (bEvents && typeof bEvents.unbind === 'function' && !bEvents._unbindPatched) {
-    const origUnbind = bEvents.unbind;
-    bEvents.unbind = function (bindData: any) {
+const browserEvents = (Blockly as any).browserEvents || (Blockly as any).Binder;
+if (browserEvents && typeof browserEvents.unbind === 'function' && !browserEvents._unbindPatched) {
+    const origUnbind = browserEvents.unbind;
+    browserEvents.unbind = function (bindData: any) {
         if (!Array.isArray(bindData) || bindData.length < 3 || !bindData[0] || !bindData[2]) {
             // Silently skip if invalid. Logging every skip might be too noisy in some edge cases.
             return;

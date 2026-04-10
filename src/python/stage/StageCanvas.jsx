@@ -62,7 +62,7 @@ const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight, 
     // Get current costume
     const costumes = sprite.costumes || {};
     const currentCostume = sprite.currentCostume || 'default';
-    const costumeValue = costumes[currentCostume] || costumes.default || '/assets/sprites/robot/robot_idle.svg';
+    const costumeValue = costumes[currentCostume] || costumes.default || 'assets/sprites/robot/robot_idle.svg';
     
     // Determine if it's an image path or emoji
     const isImage = costumeValue.includes('/') || costumeValue.endsWith('.png') || costumeValue.endsWith('.svg') || costumeValue.endsWith('.jpg');
@@ -219,7 +219,7 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
                         color: "#999",
                         fontSize: 12
                     }}>
-                        <img src="/assets/sprites/robot/robot_idle.svg" alt="Empty stage" style={{ width: 64, height: 64, opacity: 0.5, marginBottom: 8 }} />
+                        <img src="assets/sprites/robot/robot_idle.svg" alt="Empty stage" style={{ width: 64, height: 64, opacity: 0.5, marginBottom: 8 }} />
                         <span>No sprites yet</span>
                         <span style={{ fontSize: 10 }}>Click "Add Sprite" to get started</span>
                     </div>

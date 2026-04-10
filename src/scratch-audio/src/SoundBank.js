@@ -8,11 +8,11 @@ export class SoundBank {
 
         // Setup initial assets mapping directly to leapblocks assets
         this.assets = {
-            grunt: "/assets/sounds/grunt.mp3",
-            bark: "/assets/sounds/dog.mp3.mp3",
-            meow: "/assets/sounds/cat.mp3.mp3",
-            laugh: "/assets/sounds/laugh.mp3",
-            robot: "/assets/sounds/robot.mp3.mp3"
+            grunt: "assets/sounds/grunt.mp3",
+            bark: "assets/sounds/dog.mp3.mp3",
+            meow: "assets/sounds/cat.mp3.mp3",
+            laugh: "assets/sounds/laugh.mp3",
+            robot: "assets/sounds/robot.mp3.mp3"
         };
 
         // For music loop tracking
