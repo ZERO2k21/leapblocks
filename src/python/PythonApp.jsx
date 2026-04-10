@@ -2652,7 +2652,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 position: "sticky",
                 top: 0,
                 height: 60,
-                background: "#5A2D82",
+                background:"#0a015a",//"#080a25",
                 display: "flex",
                 alignItems: "center",
                 padding: "0 8px",

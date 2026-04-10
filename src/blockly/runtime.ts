@@ -337,6 +337,26 @@ if (Blockly.BlockSvg && !(Blockly.BlockSvg.prototype as any)._leapContextMenuPat
     (Blockly.BlockSvg.prototype as any)._leapContextMenuPatched = true;
 }
 
+// 5. SAFE EVENT UNBINDING
+// Prevents "Cannot read properties of undefined (reading '2')" in browser_events.unbind
+// which can occur during rapid workspace switching or disposal of flyout items.
+const browserEvents = (Blockly as any).browserEvents || (Blockly as any).Binder;
+if (browserEvents && typeof browserEvents.unbind === 'function' && !browserEvents._unbindPatched) {
+    const origUnbind = browserEvents.unbind;
+    browserEvents.unbind = function (bindData: any) {
+        if (!Array.isArray(bindData) || bindData.length < 3 || !bindData[0] || !bindData[2]) {
+            // Silently skip if invalid. Logging every skip might be too noisy in some edge cases.
+            return;
+        }
+        try {
+            origUnbind(bindData);
+        } catch (err) {
+            console.warn('[Blockly Patch] Error during browserEvents.unbind:', err);
+        }
+    };
+    browserEvents._unbindPatched = true;
+}
+
 export * from 'blockly/core';
 export { javascriptGenerator } from 'blockly/javascript';
 export default Blockly;

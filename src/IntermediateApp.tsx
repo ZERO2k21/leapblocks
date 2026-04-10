@@ -616,17 +616,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     // ═══════════════════════════════════════════════════════════════════════
 
     const handleBackdropSelect = async (name: string, src: string) => {
-
         await stageManager.addBackdrop(name, src);
-
         stageManager.setBackdrop(name); // Force the stage to switch to this backdrop
 
+        // Synchronize with the stage sprite so backdrops are saved in the project
+        const stageSprite = sprites.find(s => s.id === 'stage');
+        if (stageSprite) {
+            await stageSprite.addCostume(name, src);
+        }
+
         setShowBackdropLibrary(false);
-
         setBackdropRefresh(prev => prev + 1);
-
         window.dispatchEvent(new Event('leap-stage-update')); // Ensure canvas repaints
-
     };
 
 
@@ -2049,10 +2050,22 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             Blockly.Events.enable();
 
             const toolbox = workspaceRef.current.getToolbox() as any;
-            if (toolbox?.getSelectedItem?.()) {
-                workspaceRef.current.refreshToolboxSelection();
-            } else if (toolbox && typeof toolbox.selectItemByPosition === 'function') {
-                toolbox.selectItemByPosition(0);
+            if (toolbox) {
+                // Use a small timeout to allow Blockly to finish internal disposal 
+                // and serialization before we trigger a toolbox/flyout refresh.
+                // This prevents race conditions in item disposal.
+                setTimeout(() => {
+                    if (!workspaceRef.current) return;
+                    try {
+                        if (toolbox.getSelectedItem?.()) {
+                            workspaceRef.current.refreshToolboxSelection();
+                        } else if (typeof toolbox.selectItemByPosition === 'function') {
+                            toolbox.selectItemByPosition(0);
+                        }
+                    } catch (e) {
+                        console.warn('[APP] Safe recovery from toolbox refresh error:', e);
+                    }
+                }, 20);
             }
 
             const flyout = workspaceRef.current.getFlyout() as any;
@@ -2608,6 +2621,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         const payload = {
             sprites: spritesData,
             workspaces: workspacesData,
+            currentBackdropIndex: stageManager.getCurrentBackdropIndex(),
             monitors: {
                 variables: variableMonitors,
                 lists: listMonitors,
@@ -2674,12 +2688,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                 // Full Reset before loading
-
                 sprites.forEach(s => animationVM.unregisterSprite(s.id));
-
                 spriteWorkspacesRef.current.clear();
-
                 if (workspaceRef.current) workspaceRef.current.clear();
+
+                // Clear stage engine
+                stageManager.clearBackdrops();
+                stageManager.clearSounds();
 
 
 
@@ -2720,9 +2735,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
                     for (const cData of sData.costumes) {
-
                         await s.addCostume(cData.name, cData.src);
-
+                        if (sData.id === 'stage') {
+                            await stageManager.addBackdrop(cData.name, cData.src);
+                        }
                     }
 
                     if (Array.isArray(sData.sounds)) {
@@ -2769,8 +2785,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 setSprites(newSprites);
 
                 const firstId = newSprites.length > 0 ? newSprites[0].id : null;
-
                 setSelectedSpriteId(firstId);
+
+                // Restore current backdrop
+                if (typeof data.currentBackdropIndex === 'number') {
+                    stageManager.setBackdrop(data.currentBackdropIndex);
+                }
 
 
 
@@ -2787,6 +2807,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             loadSpriteWorkspace(firstId);
                             triggerUpdate();
                             addLog('Project loaded successfully');
+                            // Ensure stage repaints after backdrop loading
+                            window.dispatchEvent(new Event('leap-stage-update'));
                         } else if (attempts < 10) {
                             attempts++;
                             setTimeout(tryLoad, 200);
