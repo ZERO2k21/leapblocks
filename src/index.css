@@ -533,6 +533,20 @@ body,
   font-size: 10px !important;
 }
 
+/* Extension button refinement */
+.add-extension-btn-container {
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.add-extension-btn-container:hover {
+  transform: translateY(-2px);
+}
+
+/* Ensure the flyout scroll area doesn't get hidden behind the button */
+.blocklyFlyout .blocklyScrollbarVertical {
+  margin-bottom: 100px !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    WORKSPACE
    ═══════════════════════════════════════════════════════════════════════════ */

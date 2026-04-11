@@ -68,11 +68,13 @@ import WorkspaceControls from './components/WorkspaceControls';
 import WorkspaceTrash from './components/WorkspaceTrash';
 
 import UnsavedWarningModal from './junior/components/UnsavedWarningModal';
+import JuniorExtensionLibrary from './junior/components/JuniorExtensionLibrary';
+
 
 import { fileService } from './services/FileService';
 import { registerLeapRenderer } from './junior/blocks/LeapRenderer';
 
-import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
+import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
 
 import { registerPictoBloxCategory } from './custom-toolbox';
 
@@ -585,7 +587,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // Sprite Library state
 
+
     const [showSpriteLibrary, setShowSpriteLibrary] = useState(false);
+
+    // Extension Library state
+    const [showExtensionLibrary, setShowExtensionLibrary] = useState(false);
+
 
     const lastToolboxJsonRef = useRef<string>('');
 
@@ -5070,6 +5077,27 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 style={styles.blockly}
                             />
 
+                            {/* Add Extension Button - Positioned exactly as requested */}
+                            {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
+                                <div className="absolute bottom-4 left-4 z-[100] w-[280px] add-extension-btn-container">
+                                    <div className="pt-4 border-t border-gray-300">
+                                        <button
+                                            onClick={() => setShowExtensionLibrary(true)}
+                                            className="w-full flex items-center gap-4 p-3 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all group"
+                                        >
+                                            <div className="w-12 h-12 bg-[#855CD6] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
+                                                <Library size={24} />
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="text-sm font-bold text-gray-700">Add Extension</div>
+                                                <div className="text-[10px] text-gray-400">Add more blocks</div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+
                             <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={undefined} style={undefined} />
 
                             <WorkspaceTrash workspaceRef={workspaceRef} />
@@ -6078,7 +6106,19 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             />
 
+
+            {/* Extension Library Modal */}
+            {showExtensionLibrary && (
+                <JuniorExtensionLibrary
+                    onClose={() => setShowExtensionLibrary(false)}
+                    onSelectExtension={(id) => {
+                        console.log('Selected extension:', id);
+                        setShowExtensionLibrary(false);
+                    }}
+                />
+            )}
         </div >
+
 
     );
 
