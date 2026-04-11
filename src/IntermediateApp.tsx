@@ -6111,7 +6111,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             {showExtensionLibrary && (
                 <JuniorExtensionLibrary
                     onClose={() => setShowExtensionLibrary(false)}
-                    onSelectExtension={(id) => {
+                    onSelectExtension={(id: string) => {
                         console.log('Selected extension:', id);
                         setShowExtensionLibrary(false);
                     }}
