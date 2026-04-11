@@ -127,7 +127,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.removeAllListeners('serial-data');
         ipcRenderer.removeAllListeners('connection-change');
         ipcRenderer.removeAllListeners('upload-progress');
-        ['python-output','python-error','python-exit','python-repl-output','python-repl-error','python-repl-exit','python-pip-output','python-pip-error','python-pip-exit'].forEach(e => ipcRenderer.removeAllListeners(e));
+        ['python-output', 'python-error', 'python-exit', 'python-repl-output', 'python-repl-error', 'python-repl-exit', 'python-pip-output', 'python-pip-error', 'python-pip-exit'].forEach(e => ipcRenderer.removeAllListeners(e));
     },
 
     removeBackground: (imagePath: string): Promise<{ success: boolean; error?: string; stdout?: string; stderr?: string, base64?: string }> => {
@@ -170,7 +170,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onPythonPipOutput: (callback: (data: string) => void) => ipcRenderer.on('python-pip-output', (_, msg) => callback(msg)),
     onPythonPipError: (callback: (data: string) => void) => ipcRenderer.on('python-pip-error', (_, msg) => callback(msg)),
     onPythonPipExit: (callback: (code: number) => void) => ipcRenderer.on('python-pip-exit', (_, code) => callback(code)),
-    
+
     /**
      * Generic invoke for flexible IPC calls
      */
@@ -200,8 +200,8 @@ declare global {
             onUploadProgress: (callback: (progress: number, message: string) => void) => void;
             removeAllListeners: () => void;
             removeBackground: (imagePath: string) => Promise<{ success: boolean; error?: string; stdout?: string; stderr?: string; base64?: string }>;
-            
-            buildApk: (appState: any) => Promise<{success: boolean, outputPath?: string, error?: string}>;
+
+            buildApk: (appState: any) => Promise<{ success: boolean, outputPath?: string, error?: string }>;
             onBuildLog: (cb: (msg: string) => void) => void;
             removeBuildLogListener: () => void;
             showInFolder: (p: string) => void;
@@ -214,13 +214,13 @@ declare global {
             forgeLibCacheInfo: () => Promise<{ cachePath: string; manifest: { version: string; libraries: { name: string; version: string; cachedAt: string }[] } }>;
             getDefaultProjectPath: () => Promise<string>;
             isElectron: boolean;
-            
+
             pythonRun: (code: string) => Promise<void>;
             pythonReplStart: () => Promise<void>;
             pythonReplSend: (input: string) => Promise<void>;
             pythonStop: () => Promise<void>;
             pythonPipInstall: (pkg: string) => Promise<void>;
-            
+
             onPythonOutput: (callback: (data: string) => void) => void;
             onPythonError: (callback: (data: string) => void) => void;
             onPythonExit: (callback: (code: number) => void) => void;
@@ -230,7 +230,7 @@ declare global {
             onPythonPipOutput: (callback: (data: string) => void) => void;
             onPythonPipError: (callback: (data: string) => void) => void;
             onPythonPipExit: (callback: (code: number) => void) => void;
-            
+
             invoke: (channel: string, ...args: any[]) => Promise<any>;
         };
     }

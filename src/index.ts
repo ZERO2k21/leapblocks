@@ -162,19 +162,19 @@ ipcMain.handle('get-default-project-path', async () => {
   const appRoot = app.isPackaged
     ? path.dirname(app.getPath('exe'))
     : process.cwd();
-  
+
   const forgeLibDir = path.join(appRoot, 'forge-lib');
   log('IPC', `Checking/Creating forge-lib dir at: ${forgeLibDir}`);
-  
+
   if (!fs.existsSync(forgeLibDir)) {
     fs.mkdirSync(forgeLibDir, { recursive: true });
   }
-  
+
   const libsDir = path.join(forgeLibDir, 'libs');
   if (!fs.existsSync(libsDir)) {
     fs.mkdirSync(libsDir, { recursive: true });
   }
-  
+
   return forgeLibDir;
 });
 
