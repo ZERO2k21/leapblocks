@@ -135,8 +135,16 @@ export class AnimationCompiler {
         const variable = ws.getVariableById(id);
         if (variable) return (variable as any).name;
 
-        // Fallback: If ID not found, try to get the human-readable text from the field itself.
-        // This is critical if the variable was recreated and the block still points to a ghost ID.
+        // Fallback: The stored value might be the variable name instead of the ID
+        // (e.g. if the block was created from a checkbox reporter replacement).
+        // Try to find the variable by name across all types.
+        const byName = ws.getVariable(id, 'Number')
+            || ws.getVariable(id, 'String')
+            || ws.getVariable(id, '')
+            || ws.getVariable(id);
+        if (byName) return (byName as any).name;
+
+        // Last resort: get the human-readable text from the field itself.
         const field = block.getField('VARIABLE') || block.getField('VAR') || block.getField('LIST');
         const nameFallback = field ? field.getText() : id;
 
@@ -165,10 +173,68 @@ export class AnimationCompiler {
                 const name = this.getVariableName(valueBlock);
                 return () => animationVM.getVariable(name);
             }
+            // Checkbox reporters from the flyout that weren't replaced with data_variable
+            case 'variable_reporter_checkbox': {
+                const name = valueBlock.getFieldValue('VARIABLE');
+                return () => animationVM.getVariable(name);
+            }
             case 'data_itemoflist': {
                 const list = this.getVariableName(valueBlock);
                 const idxFunc = this.compileNumberValue(valueBlock, 'INDEX');
                 return () => animationVM.getListItem(list, idxFunc());
+            }
+            // Operator blocks should always resolve as numbers
+            case 'operator_add':
+            case 'operator_subtract':
+            case 'operator_multiply':
+            case 'operator_divide':
+            case 'operator_random':
+            case 'operator_mod':
+            case 'operator_round':
+            case 'operator_round_to_decimals':
+            case 'operator_mathop':
+            case 'operator_length':
+            case 'math_number':
+            case 'arduino_number':
+            case 'sensing_timer':
+            case 'sensing_loudness':
+            case 'sensing_days_since_2000':
+            case 'sensing_current':
+            case 'sensing_distance_to':
+            case 'sensing_mouse_x':
+            case 'sensing_mouse_y':
+            case 'motion_x_position':
+            case 'motion_y_position':
+            case 'motion_direction':
+            case 'looks_size':
+            case 'looks_costume_number':
+            case 'looks_backdrop_number':
+            case 'sound_volume':
+            case 'data_lengthoflist':
+            case 'data_itemnumoflist': {
+                const numFunc = this.compileNumberValue(block, inputName);
+                return () => numFunc();
+            }
+            // String-producing blocks
+            case 'operator_join':
+            case 'operator_letter_of':
+            case 'text':
+            case 'looks_costume_name':
+            case 'looks_backdrop_name':
+            case 'data_listcontents':
+            case 'data_tablecontents':
+            case 'data_getvalueattable':
+            case 'sensing_username': {
+                const strFunc = this.compileStringValue(block, inputName);
+                return () => strFunc();
+            }
+            // sensing_answer can be string or number depending on context — return raw value
+            case 'sensing_answer': {
+                return () => {
+                    const ans = animationVM.getAnswer();
+                    const num = Number(ans);
+                    return isNaN(num) ? ans : num;
+                };
             }
             default: {
                 const outputChecks = valueBlock.outputConnection?.getCheck() || [];
@@ -234,6 +300,11 @@ export class AnimationCompiler {
             }
             case 'data_variable': {
                 const name = this.getVariableName(valueBlock);
+                return () => String(animationVM.getVariable(name));
+            }
+            // Checkbox reporters from the flyout that weren't replaced with data_variable
+            case 'variable_reporter_checkbox': {
+                const name = valueBlock.getFieldValue('VARIABLE');
                 return () => String(animationVM.getVariable(name));
             }
             case 'operator_join': {
@@ -439,6 +510,15 @@ export class AnimationCompiler {
                         return 0;
                     }
                     return num;
+                };
+            }
+            // Checkbox reporters from the flyout that weren't replaced with data_variable
+            case 'variable_reporter_checkbox': {
+                const vrName = valueBlock.getFieldValue('VARIABLE');
+                return () => {
+                    const value = animationVM.getVariable(vrName);
+                    const num = Number(value);
+                    return isNaN(num) ? 0 : num;
                 };
             }
             case 'operator_add': {

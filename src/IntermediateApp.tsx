@@ -442,6 +442,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     const isLoadingWorkspaceRef = useRef(false);
 
+    const syncAllWorkspacesRef = useRef<(() => CompiledScript[]) | null>(null);
+
 
 
     // Hardware
@@ -2129,6 +2131,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const handleSpriteSelect = useCallback((newId: string) => {
         if (newId === selectedSpriteId) {
 
+            // Compile scripts so the sprite has up-to-date scripts
+            syncAllWorkspacesRef.current?.();
+
             // Trigger click event even if already selected (Scratch behavior)
 
             animationVM.triggerSpriteClick(newId);
@@ -2163,12 +2168,36 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             handleSpriteSelect(id);
         }
 
-        // Trigger click event in the animation VM. 
-        // The VM now scans its own internally synced sprite scripts.
+        // Compile all scripts so the clicked sprite has up-to-date scripts
+        syncAllWorkspacesRef.current?.();
+
+        // Trigger click event in the animation VM.
         animationVM.triggerSpriteClick(id);
     }, [selectedSpriteId, handleSpriteSelect]);
 
+    // Map sprite tags/category/name to an appropriate default sound
+    const getDefaultSoundForSprite = useCallback((tags?: string[], name?: string): { name: string; src: string } => {
+        const t = (tags || []).map(s => s.toLowerCase());
+        const n = (name || '').toLowerCase();
 
+        // Animals
+        if (t.includes('cat') || n.includes('cat')) return { name: 'Meow', src: 'assets/sounds/83c36d806dc92327b9e7049a565c6bff.wav' };
+        if (t.includes('dog') || n.includes('dog')) return { name: 'Bark', src: 'assets/sounds/cd8fa8390b0efdd281882533fbfcfcfb.wav' };
+        if (t.includes('bird') || n.includes('bird') || n.includes('parrot') || n.includes('toucan') || n.includes('duck')) return { name: 'Chirp', src: 'assets/sounds/3b8236bbb288019d93ae38362e865972.wav' };
+        if (t.includes('animals') || t.includes('animal')) return { name: 'Pop', src: 'assets/sounds/83a9787d4cb6f3b7632b4ddfebf74367.wav' };
+
+        // People/Dance/Fantasy
+        if (t.includes('people') || t.includes('person') || t.includes('dance') || t.includes('dancing')) return { name: 'Pop', src: 'assets/sounds/83a9787d4cb6f3b7632b4ddfebf74367.wav' };
+
+        // Sports
+        if (t.includes('sports') || t.includes('sport')) return { name: 'Boing', src: 'assets/sounds/53a3c2e27d1fb5fdb14aaf0cb41e7889.wav' };
+
+        // Built-in sprite types
+        if (n.includes('robot')) return { name: 'Meow', src: 'assets/sounds/meow.wav' };
+
+        // Default: Pop
+        return { name: 'Pop', src: 'assets/sounds/83a9787d4cb6f3b7632b4ddfebf74367.wav' };
+    }, []);
 
     const addSprite = useCallback((spriteType: SpriteType = 'cat') => {
 
@@ -2264,7 +2293,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         animationVM.registerSprite(newSprite);
 
-
+        // Add a default sound based on sprite type
+        const defaultSound = getDefaultSoundForSprite([], name);
+        newSprite.addSound(defaultSound.name, defaultSound.src);
 
         // 1. Explicitly initialize an empty workspace for the new sprite in our map
 
@@ -2900,6 +2931,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         return allScripts;
     }, [selectedSpriteId]);
+
+    // Keep ref in sync so earlier-declared callbacks can call syncAllWorkspaces
+    syncAllWorkspacesRef.current = syncAllWorkspaces;
 
     useEffect(() => {
         animationVM.onBeforeBroadcast = (message) => {
@@ -3762,11 +3796,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             ? currentToolbox.getSelectedItem().getName()
             : null;
 
+        // Always update the toolbox when the sprite changes so dynamic dropdowns
+        // (e.g. sound, costume) refresh with the new sprite's values.
         if (nextToolboxJson !== lastToolboxJsonRef.current) {
             console.log('[APP] Updating toolbox dynamically (Sprite:', selectedSpriteId, ')');
             lastToolboxJsonRef.current = nextToolboxJson;
-            workspaceRef.current.updateToolbox(nextToolboxConfig);
         }
+        workspaceRef.current.updateToolbox(nextToolboxConfig);
 
         const refreshedToolbox = workspaceRef.current.getToolbox() as any;
         const toolboxItems = typeof refreshedToolbox?.getToolboxItems === 'function'
@@ -3907,8 +3943,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     }
                                 }
 
-                                // Record position before disposal
+                                // Record position and parent connection before disposal
                                 const xy = block.getRelativeToSurfaceXY();
+                                // Save the parent input connection so we can reconnect the replacement block
+                                const parentConnection = block.outputConnection?.targetConnection || null;
 
                                 // New block logic - resolve the real variable ID
                                 // We use setTimeout to ensure we don't interfere with the current event loop/gesture
@@ -3922,14 +3960,30 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                         if (!isSensing) {
                                             // Find real variable ID for the name
-                                            const variable = blocksWorkspace.getVariable(name, varType);
+                                            // Try all variable types since variables may be created with 'Number', 'String', or ''
+                                            const variable = blocksWorkspace.getVariable(name, varType)
+                                                || blocksWorkspace.getVariable(name, 'Number')
+                                                || blocksWorkspace.getVariable(name, 'String')
+                                                || blocksWorkspace.getVariable(name, '');
                                             const valueToSet = variable ? variable.getId() : name;
                                             newBlock.setFieldValue(valueToSet, nameField);
                                         }
 
                                         newBlock.initSvg();
                                         newBlock.render();
-                                        newBlock.moveBy(xy.x, xy.y);
+
+                                        // Reconnect to parent input if the old block was connected
+                                        if (parentConnection && newBlock.outputConnection) {
+                                            try {
+                                                parentConnection.connect(newBlock.outputConnection);
+                                            } catch (connectErr) {
+                                                // If reconnection fails, fall back to positioning
+                                                console.warn('[BlockReplace] Could not reconnect to parent:', connectErr);
+                                                newBlock.moveBy(xy.x, xy.y);
+                                            }
+                                        } else {
+                                            newBlock.moveBy(xy.x, xy.y);
+                                        }
                                         newBlock.select();
                                     } finally {
                                         Blockly.Events.enable();
@@ -4043,9 +4097,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                    // Keep the flyout pinned open, but let Blockly manage its own
-                    // scale and transform. Overriding those internals can leave the
-                    // Intermediate palette blank after recent Blockly updates.
+                    // Keep the flyout pinned open and at a fixed scale so it
+                    // does not zoom with the workspace viewport.
                     if (blocksWorkspace) {
 
                         const flyout = blocksWorkspace.getFlyout() as any;
@@ -4053,6 +4106,24 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         if (flyout) {
 
                             flyout.autoClose = false;
+
+                            // Lock the flyout scale so blocks inside don't zoom
+                            // with the main workspace viewport.
+                            const FIXED_FLYOUT_SCALE = 1.0;
+                            flyout.getFlyoutScale = () => FIXED_FLYOUT_SCALE;
+                            if (flyout.getWorkspace()) {
+                                flyout.getWorkspace().setScale(FIXED_FLYOUT_SCALE);
+                            }
+
+                            // Reset flyout scale after any viewport change (wheel zoom, pinch, etc.)
+                            blocksWorkspace.addChangeListener((event: any) => {
+                                if (event.type === Blockly.Events.VIEWPORT_CHANGE) {
+                                    const flyoutWs = flyout.getWorkspace();
+                                    if (flyoutWs && flyoutWs.getScale() !== FIXED_FLYOUT_SCALE) {
+                                        flyoutWs.setScale(FIXED_FLYOUT_SCALE);
+                                    }
+                                }
+                            });
 
                         }
                         // 4. FLYOUT BLOCK PREVIEW (Click to Preview)
@@ -4076,6 +4147,32 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             });
 
                         }
+
+                        // 5. KEEP FLYOUT ALWAYS OPEN
+                        // Re-select a toolbox category whenever the flyout gets closed
+                        // (e.g. by clicking on the workspace background).
+                        blocksWorkspace.addChangeListener((event: any) => {
+                            if (event.type === Blockly.Events.TOOLBOX_ITEM_SELECT) {
+                                // If the toolbox selection was cleared (flyout closing),
+                                // re-select the previously active category.
+                                if (!(event as any).newItem) {
+                                    const toolbox = blocksWorkspace.getToolbox() as any;
+                                    if (toolbox) {
+                                        // Re-select old item or default to first
+                                        const oldId = (event as any).oldItem;
+                                        if (oldId) {
+                                            const items = toolbox.getToolboxItems?.() || [];
+                                            const prev = items.find((i: any) => i.getId?.() === oldId);
+                                            if (prev) {
+                                                toolbox.setSelectedItem(prev);
+                                                return;
+                                            }
+                                        }
+                                        toolbox.selectItemByPosition(0);
+                                    }
+                                }
+                            }
+                        });
 
                     }
 
@@ -5098,7 +5195,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             )}
 
 
-                            <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={undefined} style={undefined} />
+                            <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={() => {
+                                const flyout = workspaceRef.current?.getFlyout() as any;
+                                if (flyout?.getWorkspace()) {
+                                    flyout.getWorkspace().setScale(1.0);
+                                }
+                            }} style={undefined} />
 
                             <WorkspaceTrash workspaceRef={workspaceRef} />
 
@@ -5992,9 +6094,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             }
 
-                            // Add default sound
-
-                            await newSprite.addSound('Meow', 'assets/sounds/meow.wav');
+                            // Add default sound based on sprite tags/name
+                            const defaultSound = getDefaultSoundForSprite(
+                                (entry as any).tags || [],
+                                entry.name
+                            );
+                            await newSprite.addSound(defaultSound.name, defaultSound.src);
 
 
 
@@ -6042,7 +6147,16 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     animationVM.registerSprite(newSprite);
 
-
+                    // Add default sound based on sprite tags/name
+                    // (Image-based sprites already get a sound in their async loader above,
+                    //  but emoji-only sprites don't — this covers both as a fallback.)
+                    if (newSprite.sounds.length === 0) {
+                        const defaultSound = getDefaultSoundForSprite(
+                            (entry as any).tags || [],
+                            entry.name
+                        );
+                        newSprite.addSound(defaultSound.name, defaultSound.src);
+                    }
 
                     // Initialize empty workspace for the new sprite
 
