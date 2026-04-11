@@ -33,7 +33,7 @@ export function getComponentPins(type: string): PinEntry[] {
     let xPercent = 0;
     let yPercent = 0;
 
-    const isSvgComponent = ['led', 'rgb-led', 'pushbutton', 'pushbutton-6mm'].includes(type);
+    const isSvgComponent = ['led', 'rgb-led', 'pushbutton', 'pushbutton-6mm', 'led-bar-graph'].includes(type);
 
     if (isSvgComponent) {
         // SVG components define pin coordinates in leur internal viewBox space.

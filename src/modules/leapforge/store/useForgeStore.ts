@@ -8,6 +8,7 @@ export interface ForgeState {
   nodes: Node[];
   edges: Edge[];
   selectedNodeId: string | null;
+  selectedEdgeId: string | null;
   projectName: string;
 
   // Actions
@@ -18,8 +19,10 @@ export interface ForgeState {
 
   addEdge: (edge: Edge | Connection) => void;
   removeEdge: (id: string) => void;
+  updateEdgeData: (id: string, data: any) => void;
 
   setSelectedNode: (id: string | null) => void;
+  setSelectedEdge: (id: string | null) => void;
   clearWorkspace: () => void;
   setNodes: (nodes: Node[]) => void;
   setEdges: (edges: Edge[]) => void;
@@ -49,7 +52,7 @@ export interface ForgeState {
   importedLibraries: string[];
   setImportedLibraries: (libs: string[]) => void;
   addImportedLibrary: (lib: string) => void;
-  
+
   // Library Search Persistence
   librarySearchQuery: string;
   librarySearchResults: any[];
@@ -60,6 +63,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   nodes: [],
   edges: [],
   selectedNodeId: null,
+  selectedEdgeId: null,
   projectName: 'Untitled Project',
   isSimulating: false,
   serialOutput: '',
@@ -92,9 +96,9 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     return { board };
   }),
 
-  setLibrarySearch: (query, results) => set({ 
-    librarySearchQuery: query, 
-    librarySearchResults: results 
+  setLibrarySearch: (query, results) => set({
+    librarySearchQuery: query,
+    librarySearchResults: results
   }),
 
   startSimulation: (hexString) => set((state) => {
@@ -167,17 +171,31 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     nodes: state.nodes.map(n => n.id === id ? { ...n, data: { ...n.data, ...data } } : n)
   })),
 
-  addEdge: (connection) => set((state) => ({
-    edges: rfAddEdge(connection, state.edges)
-  })),
+  addEdge: (connection) => set((state) => {
+    const edge = {
+      ...connection,
+      id: `e-${uuidv4()}`,
+      type: 'wire',
+      data: { color: '#22c55e' } // Default Green
+    };
+    return {
+      edges: rfAddEdge(edge as any, state.edges)
+    };
+  }),
 
   removeEdge: (id) => set((state) => ({
-    edges: state.edges.filter(e => e.id !== id)
+    edges: state.edges.filter(e => e.id !== id),
+    selectedEdgeId: state.selectedEdgeId === id ? null : state.selectedEdgeId
   })),
 
-  setSelectedNode: (id) => set({ selectedNodeId: id }),
+  updateEdgeData: (id, data) => set((state) => ({
+    edges: state.edges.map(e => e.id === id ? { ...e, data: { ...e.data, ...data } } : e)
+  })),
 
-  clearWorkspace: () => set({ nodes: [], edges: [], selectedNodeId: null }),
+  setSelectedNode: (id) => set({ selectedNodeId: id, selectedEdgeId: null }),
+  setSelectedEdge: (id) => set({ selectedEdgeId: id, selectedNodeId: null }),
+
+  clearWorkspace: () => set({ nodes: [], edges: [], selectedNodeId: null, selectedEdgeId: null }),
 
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
