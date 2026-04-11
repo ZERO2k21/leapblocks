@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Download, Trash2, Library, CheckCircle2, Loader2, ExternalLink, FolderOpen, Cloud, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
+import { Search, Download, Trash2, Library, CheckCircle2, Loader2, ExternalLink, FolderOpen, Sparkles } from 'lucide-react';
 import { useForgeStore } from '../../store/useForgeStore';
 
 interface ArduinoLib {
@@ -15,15 +15,223 @@ interface LibraryManagerProps {
   onInitializeProject?: () => void;
 }
 
+// ── MEMOIZED SUB-COMPONENTS ──────────────────────────────────────────────────
+
+const LibraryCard = memo(({ 
+  lib, 
+  projectPath, 
+  isImported, 
+  isInstalling, 
+  handleImport, 
+  handleUninstall 
+}: { 
+  lib: ArduinoLib, 
+  projectPath: string | null, 
+  isImported: boolean, 
+  isInstalling: boolean, 
+  handleImport: (lib: ArduinoLib) => void,
+  handleUninstall: (name: string) => void
+}) => {
+  return (
+    <div key={lib.name} style={{
+      background: '#1e293b',
+      border: '1px solid #334155',
+      borderRadius: '16px',
+      padding: '20px',
+      marginBottom: '16px',
+      transition: 'all 0.2s ease',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+        <div style={{ flex: 1, paddingRight: '20px' }}>
+          <h3 style={{ fontSize: '17px', fontWeight: 600, color: '#f8fafc', margin: '0 0 6px 0' }}>
+            {lib.name}
+          </h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '12px', color: '#94a3b8' }}>
+            <span style={{
+              background: 'rgba(190, 242, 100, 0.1)',
+              color: '#BEF264',
+              padding: '2px 8px',
+              borderRadius: '6px',
+              fontWeight: 600
+            }}>v{lib.version}</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              by <span style={{ color: '#cbd5e1' }}>{lib.author}</span>
+            </span>
+          </div>
+        </div>
+
+        <div style={{ flexShrink: 0 }}>
+          {isImported ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: '#10b981',
+                fontSize: '13px',
+                fontWeight: 700,
+                background: 'rgba(16, 185, 129, 0.1)',
+                padding: '6px 12px',
+                borderRadius: '10px'
+              }}>
+                <CheckCircle2 size={16} /> Imported
+              </div>
+              <button
+                onClick={() => handleUninstall(lib.name)}
+                style={{
+                  background: 'rgba(248, 81, 73, 0.1)',
+                  border: 'none',
+                  color: '#f85149',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  display: 'flex',
+                  borderRadius: '10px',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(248, 81, 73, 0.2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(248, 81, 73, 0.1)'}
+                title="Uninstall"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => handleImport(lib)}
+              disabled={isInstalling || !projectPath}
+              style={{
+                background: '#BEF264',
+                color: '#0f172a',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '10px 18px',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: isInstalling || !projectPath ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'transform 0.2s, opacity 0.2s',
+                opacity: isInstalling || !projectPath ? 0.6 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!isInstalling && projectPath) e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              {isInstalling ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
+              {isInstalling ? 'Installing...' : 'Import'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.6', margin: '0 0 16px 0' }}>
+        {lib.sentence}
+      </p>
+
+      {lib.website && (
+        <a
+          href={lib.website}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            fontSize: '12px',
+            color: '#3b82f6',
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontWeight: 500
+          }}
+        >
+          <ExternalLink size={14} /> Documentation <Sparkles size={12} style={{ opacity: 0.6 }} />
+        </a>
+      )}
+    </div>
+  );
+});
+
+const LibrarySearchForm = ({ 
+  initialValue, 
+  onSearch, 
+  isSearching 
+}: { 
+  initialValue: string, 
+  onSearch: (q: string) => void, 
+  isSearching: boolean 
+}) => {
+  const [val, setVal] = useState(initialValue);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSearch(val);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexShrink: 0 }}>
+      <div style={{ flex: 1, position: 'relative' }}>
+        <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+        <input
+          type="text"
+          placeholder="Search peripherals (e.g. WiFi, OLED, BME280)..."
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          style={{
+            width: '100%',
+            background: '#1e293b',
+            border: '1px solid #334155',
+            borderRadius: '12px',
+            padding: '12px 16px 12px 46px',
+            color: '#f8fafc',
+            fontSize: '14px',
+            outline: 'none',
+            transition: 'border-color 0.2s',
+            boxSizing: 'border-box'
+          }}
+          onFocus={(e) => (e.target.style.borderColor = '#3b82f6')}
+          onBlur={(e) => (e.target.style.borderColor = '#334155')}
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={isSearching}
+        style={{
+          background: '#3b82f6',
+          color: 'white',
+          border: 'none',
+          borderRadius: '12px',
+          padding: '0 24px',
+          fontSize: '14px',
+          fontWeight: 600,
+          cursor: isSearching ? 'not-allowed' : 'pointer',
+          transition: 'background 0.2s',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: '100px'
+        }}
+      >
+        {isSearching ? <Loader2 className="animate-spin" size={20} /> : 'Search'}
+      </button>
+    </form>
+  );
+};
+
 export const LibraryManager: React.FC<LibraryManagerProps> = ({ onInitializeProject }) => {
-  const { 
-    projectPath, 
-    importedLibraries, 
-    addImportedLibrary, 
+  const {
+    projectPath,
+    importedLibraries,
+    addImportedLibrary,
     setImportedLibraries,
     librarySearchQuery,
     librarySearchResults,
-    setLibrarySearch
+    setLibrarySearch,
+    setProjectPath
   } = useForgeStore();
 
   const [searchQuery, setSearchQuery] = useState(librarySearchQuery);
@@ -37,34 +245,34 @@ export const LibraryManager: React.FC<LibraryManagerProps> = ({ onInitializeProj
   const fetchProjectLibs = useCallback(async () => {
     if (!projectPath || !isElectron) return;
     try {
+      console.log(`[FORGE LIB] Syncing project libraries for: ${projectPath}`);
       const libs = await (window as any).electronAPI.libraryListProject(projectPath);
+      console.log(`[FORGE LIB] Project libraries synced: [${libs.join(', ')}]`);
       setImportedLibraries(libs);
     } catch (err) {
-      console.error('Failed to fetch project libs:', err);
+      console.error('[FORGE LIB] Failed to fetch project libs:', err);
     }
   }, [projectPath, isElectron, setImportedLibraries]);
 
   const performSearch = useCallback(async (query: string) => {
     setIsSearching(true);
     try {
-      // Library search uses a public API, so it works on both Web and Electron
-      // However, it might be proxied via Electron IPC in the current setup.
       if (isElectron) {
+        console.log(`[FORGE LIB] Triggering search for: "${query}"`);
         const data = await (window as any).electronAPI.librarySearch(query);
         const libs = data.libraries || [];
+        console.log(`[FORGE LIB] Search returned ${libs.length} results.`);
         setResults(libs);
         setLibrarySearch(query, libs);
       } else {
-        // Fallback for Web mode search (mock or direct API call if available)
-        // For now, let's keep it as is or show empty.
         setResults([]);
       }
     } catch (err) {
-      console.error('Search failed:', err);
+      console.error('[FORGE LIB] Search failed:', err);
     } finally {
       setIsSearching(false);
     }
-  }, [isElectron]);
+  }, [isElectron, setLibrarySearch]);
 
   useEffect(() => {
     if (projectPath && isElectron) {
@@ -74,7 +282,7 @@ export const LibraryManager: React.FC<LibraryManagerProps> = ({ onInitializeProj
     if (results.length === 0 && !searchQuery) {
       performSearch('');
     }
-  }, [fetchProjectLibs, projectPath, isElectron]); // Removed performSearch, results, searchQuery from deps to prevent loops
+  }, [fetchProjectLibs, projectPath, isElectron]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,307 +307,174 @@ export const LibraryManager: React.FC<LibraryManagerProps> = ({ onInitializeProj
   };
 
   const handleImport = async (lib: ArduinoLib) => {
-    if (!projectPath) return; // Should not happen with the setup guard
+    if (!projectPath) {
+      // Automatic path initialization fallback if somehow called without path
+      if (window.electronAPI?.getDefaultProjectPath) {
+        const defaultPath = await window.electronAPI.getDefaultProjectPath();
+        setProjectPath(defaultPath);
+        // Continue with the newly set path
+      } else {
+        return;
+      }
+    }
 
     if (!isElectron) {
-      alert('Cloud library management is coming soon to the web version!');
+      alert('Cloud library management is available in the desktop version!');
       return;
     }
 
     setInstallingLib(lib.name);
     try {
-      const res = await (window as any).electronAPI.libraryInstall(lib.name, projectPath);
+      console.log(`[FORGE LIB] Starting installation for: ${lib.name}`);
+      const res = await (window as any).electronAPI.libraryInstall(lib.name, projectPath || '');
       if (res.success) {
+        console.log(`[FORGE LIB] Successfully installed: ${lib.name}`);
         addImportedLibrary(lib.name);
-        // Sync with disk immediately to get the actual folder name
         fetchProjectLibs();
       } else {
+        console.error(`[FORGE LIB] Installation failed for ${lib.name}: ${res.error}`);
         alert(`Failed to install ${lib.name}: ${res.error}`);
       }
     } catch (err) {
-      console.error('Import failed:', err);
+      console.error('[FORGE LIB] Import exception:', err);
     } finally {
       setInstallingLib(null);
     }
   };
 
-  // ── SETUP NEEDED VIEW ──────────────────────────────────────────────────
-  if (!projectPath) {
-    return (
-      <div className="library-setup-state" style={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#0f172a',
-        color: '#e2e8f0',
-        padding: '40px',
-        textAlign: 'center'
-      }}>
-        <div style={{
-          position: 'relative',
-          marginBottom: '32px'
-        }}>
-          {isElectron ? (
-            <div style={{
-              width: '80px',
-              height: '80px',
-              background: 'rgba(59, 130, 246, 0.1)',
-              borderRadius: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#3b82f6',
-              boxShadow: '0 0 40px rgba(59, 130, 246, 0.15)'
-            }}>
-              <FolderOpen size={40} />
-            </div>
-          ) : (
-            <div style={{
-              width: '80px',
-              height: '80px',
-              background: 'rgba(168, 85, 247, 0.1)',
-              borderRadius: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#a855f7',
-              boxShadow: '0 0 40px rgba(168, 85, 247, 0.15)'
-            }}>
-              <Cloud size={40} />
-            </div>
-          )}
-          <div style={{
-            position: 'absolute',
-            bottom: '-4px',
-            right: '-4px',
-            background: '#BEF264',
-            color: '#1a1a1b',
-            padding: '4px',
-            borderRadius: '50%',
-            display: 'flex',
-            border: '4px solid #0f172a'
-          }}>
-            <Sparkles size={12} />
-          </div>
-        </div>
-
-        <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px', color: '#f8fafc' }}>
-          {isElectron ? 'Project Folder Required' : 'Cloud Project Required'}
-        </h2>
-        
-        <p style={{ 
-          fontSize: '14px', 
-          color: '#94a3b8', 
-          maxWidth: '320px', 
-          lineHeight: '1.6',
-          marginBottom: '32px' 
-        }}>
-          {isElectron 
-            ? 'Arduino libraries are installed locally within your project folder to keep your build isolated and portable.'
-            : 'To use the library marketplace on the web, please save your project to the cloud to enable library tracking.'
-          }
-        </p>
-
-        <button
-          onClick={onInitializeProject}
-          style={{
-            background: '#BEF264',
-            color: '#1a1a1b',
-            border: 'none',
-            borderRadius: '12px',
-            padding: '12px 24px',
-            fontSize: '14px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-            boxShadow: '0 4px 20px rgba(190, 242, 100, 0.2)'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-        >
-          {isElectron ? <FolderOpen size={18} /> : <Cloud size={18} />}
-          {isElectron ? 'Select Project Folder' : 'Save to Cloud'}
-        </button>
-
-        <p style={{ marginTop: '24px', fontSize: '12px', color: '#475569' }}>
-          This folder will store all your circuit designs, code, and libraries.
-        </p>
-      </div>
-    );
-  }
-
-  // ── MAIN LIBRARY VIEW ──────────────────────────────────────────────────
   return (
     <div className="library-manager-root" style={{
-      padding: '20px',
-      height: '100%',
       display: 'flex',
       flexDirection: 'column',
+      height: '100%',
+      width: '100%',
+      overflow: 'hidden',
+      flex: '1 1 0%',
+      minHeight: 0,
       background: '#0f172a',
-      color: '#e2e8f0'
+      color: '#e2e8f0',
+      padding: '24px',
+      boxSizing: 'border-box'
     }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', color: '#BEF264' }}>
-          <Library size={20} /> Library Marketplace
+      <style>{`
+        .lib-scroll-container::-webkit-scrollbar {
+          width: 8px;
+        }
+        .lib-scroll-container::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 4px;
+        }
+        .lib-scroll-container::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+          border: 2px solid transparent;
+          background-clip: content-box;
+        }
+        .lib-scroll-container::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(255, 255, 255, 0.2);
+        }
+      `}</style>
+
+      <div style={{ flexShrink: 0, marginBottom: '24px' }}>
+
+        <h2 style={{ fontSize: '20px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px', color: '#BEF264', margin: 0 }}>
+          <Library size={24} /> Library Marketplace
         </h2>
-        <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
-          Manage project-specific libraries. Changes are isolated to this project.
+        <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '6px' }}>
+          Enhance your sketches with over 5,000 community-contributed hardware drivers.
         </p>
       </div>
 
-      {/* Search Bar */}
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-        <div style={{ flex: 1, position: 'relative' }}>
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
-          <input
-            type="text"
-            placeholder="Browse hardware libraries (e.g. Servo, DHT11, NeoPixel)..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              background: '#1e293b',
-              border: '1px solid #334155',
-              borderRadius: '8px',
-              padding: '10px 12px 10px 36px',
-              color: '#f8fafc',
-              fontSize: '13px',
-              outline: 'none',
-              transition: 'border-color 0.2s'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-            onBlur={(e) => e.target.style.borderColor = '#334155'}
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={isSearching}
-          style={{
-            background: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '0 16px',
-            fontSize: '13px',
-            fontWeight: 500,
-            cursor: 'pointer',
-            transition: 'opacity 0.2s'
-          }}
-        >
-          {isSearching ? <Loader2 className="animate-spin" size={18} /> : 'Search'}
-        </button>
-      </form>
-
-      {/* Results List */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
-        {results.length === 0 && !isSearching && (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
-            <Library size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
-            <p>Search for hardware libraries to add to your project.</p>
+        {!projectPath && (
+          <div style={{
+            background: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.2)',
+            padding: '12px 16px',
+            borderRadius: '10px',
+            marginTop: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <FolderOpen size={18} color="#3b82f6" />
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '13px', color: '#f8fafc', fontWeight: 600, margin: 0 }}>Isolated Workspace Required</p>
+              <p style={{ fontSize: '12px', color: '#94a3b8', margin: '2px 0 0 0' }}>Installations are saved locally to your project directory.</p>
+            </div>
+            <button
+              onClick={onInitializeProject}
+              style={{
+                background: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                padding: '6px 14px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'opacity 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            >
+              Configure
+            </button>
           </div>
         )}
 
-        {results.map((lib) => {
-          // Normalize names for robust matching (e.g. 107-Arduino vs 107_Arduino)
-          const normalize = (name: string) => name.toLowerCase().replace(/[- ]/g, '_');
-          const isImported = importedLibraries.some(imported => 
-            normalize(imported) === normalize(lib.name)
-          );
-          const isInstalling = installingLib === lib.name;
 
-          return (
-            <div key={lib.name} style={{
-              background: '#1e293b',
-              border: '1px solid #334155',
-              borderRadius: '12px',
-              padding: '16px',
-              marginBottom: '12px',
-              transition: 'transform 0.2s, border-color 0.2s'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#f8fafc', marginBottom: '4px' }}>
-                    {lib.name}
-                  </h3>
-                  <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#94a3b8', marginBottom: '8px' }}>
-                    <span style={{ background: '#334155', padding: '2px 6px', borderRadius: '4px' }}>v{lib.version}</span>
-                    <span>by {lib.author}</span>
-                  </div>
-                </div>
+      <LibrarySearchForm 
+        initialValue={librarySearchQuery} 
+        onSearch={performSearch} 
+        isSearching={isSearching} 
+      />
 
-                {isImported ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontSize: '12px', fontWeight: 600 }}>
-                      <CheckCircle2 size={16} /> Imported
-                    </div>
-                    <button
-                      onClick={() => handleUninstall(lib.name)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#f85149',
-                        cursor: 'pointer',
-                        padding: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '4px',
-                        transition: 'background 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(248, 81, 73, 0.1)'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                      title="Uninstall Library"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleImport(lib)}
-                    disabled={isInstalling}
-                    style={{
-                      background: '#BEF264',
-                      color: '#1a1a1b',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '6px 12px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    {isInstalling ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />}
-                    {isInstalling ? 'Installing...' : 'Import'}
-                  </button>
-                )}
-              </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
+        <p style={{ fontSize: '12px', color: '#64748b' }}>
+          {results.length > 0 ? `Showing ${Math.min(results.length, 100)} of ${results.length} results` : ''}
+        </p>
+      </div>
 
-              <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.6', margin: '8px 0' }}>
-                {lib.sentence}
-              </p>
-
-              {lib.website && (
-                <a
-                  href={lib.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: '11px', color: '#3b82f6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
-                >
-                  <ExternalLink size={12} /> Documentation
-                </a>
-              )}
+      {/* Resilient Scroll Container: Uses absolute positioning within a flex parent to fix height calculation issues */}
+      <div style={{ flex: 1, position: 'relative', minHeight: 0, marginTop: '8px' }}>
+        <div className="lib-scroll-container" style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          paddingRight: '12px',
+          scrollBehavior: 'smooth'
+        }}>
+          {results.length === 0 && !isSearching && (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
+              <Library size={64} style={{ opacity: 0.1, marginBottom: '20px', marginInline: 'auto' }} />
+              <p style={{ fontSize: '15px' }}>Discover and import hardware libraries for your project.</p>
             </div>
-          );
-        })}
+          )}
+
+          {results.slice(0, 100).map((lib) => {
+            const normalize = (name: string) => name.toLowerCase().replace(/[- ]/g, '_');
+            const isImported = importedLibraries.some(imported =>
+              normalize(imported) === normalize(lib.name)
+            );
+            return (
+              <LibraryCard
+                key={lib.name}
+                lib={lib}
+                projectPath={projectPath}
+                isImported={isImported}
+                isInstalling={installingLib === lib.name}
+                handleImport={handleImport}
+                handleUninstall={handleUninstall}
+              />
+            );
+          })}
       </div>
     </div>
-  );
+  </div>
+);
 };
+

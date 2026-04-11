@@ -44,14 +44,7 @@ export class LEDElement extends LitElement {
         width: 40px;
       }
 
-      .led-label {
-        font-size: 10px;
-        text-align: center;
-        color: gray;
-        position: relative;
-        line-height: 1;
-        top: -8px;
-      }
+    
     `;
   }
 
@@ -171,7 +164,6 @@ export class LEDElement extends LitElement {
     return html`
       <div class="led-container">
         ${this.renderSVG()}
-        <span class="led-label">${this.label}</span>
       </div>
     `;
   }

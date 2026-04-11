@@ -17,7 +17,7 @@ class CircuitEngine {
   private i2cBusManager = new I2CBusManager();
   private dhtEmulators = new Map<string, DHT>();
   private isInitialized = false;
-  
+
   /**
    * Traces an electrical net from a starting point (board pin) and returns all 
    * reachable endpoints (LEDs, Buzzers, etc.) along with the total resistance in the path.
@@ -39,33 +39,35 @@ class CircuitEngine {
 
       const nodeType = node.data?.type;
 
-      if (['led', 'buzzer'].includes(nodeType)) {
+      if (['led', 'buzzer', 'rgb-led'].includes(nodeType)) {
+        console.log(`[FORGE CIRCUIT] Net trace found sink: ${nodeType} (${current.id}) via ${current.pin}`);
         targets.push({ nodeId: current.id, pinName: current.pin, resistance: current.resistance, type: nodeType });
       } else if (nodeType === 'resistor') {
         const rValue = Number(node.data?.sensorValues?.value ?? 0);
-        
+        console.log(`[FORGE CIRCUIT] Net trace through resistor (${current.id}): +${rValue} ohms`);
+
         // Find the other pin of the resistor
         let exitPin = '';
         if (current.pin === '1' || current.pin === 'pin_1' || current.pin === 'IN') {
-           exitPin = node.data?.pinOUT ? 'OUT' : '2'; 
+          exitPin = node.data?.pinOUT ? 'OUT' : '2';
         } else {
-           exitPin = node.data?.pinIN ? 'IN' : '1';
+          exitPin = node.data?.pinIN ? 'IN' : '1';
         }
-        
+
         // Robust fallback: if we don't know the pins, check if they are 'IN'/'OUT'
         if (current.pin === 'IN') exitPin = 'OUT';
         else if (current.pin === 'OUT') exitPin = 'IN';
         else if (current.pin === '1' || current.pin === 'pin_1') exitPin = '2';
         else if (current.pin === '2' || current.pin === 'pin_2') exitPin = '1';
 
-        const downstreamEdges = edges.filter(e => 
-          (e.source === current.id && e.sourceHandle === exitPin) || 
+        const downstreamEdges = edges.filter(e =>
+          (e.source === current.id && e.sourceHandle === exitPin) ||
           (e.target === current.id && e.targetHandle === exitPin)
         );
 
         for (const edge of downstreamEdges) {
           const nextId = edge.source === current.id ? edge.target : edge.source;
-          const nextPin = edge.source === current.id ? edge.targetHandle : edge.sourceHandle;
+          const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
           queue.push({ id: nextId, pin: nextPin, resistance: current.resistance + rValue });
         }
       }
@@ -113,7 +115,7 @@ class CircuitEngine {
     nodes.forEach(node => {
       // Reset damaged/visual states on sync (e.g. simulation start)
       if (node.data?.damaged || node.data?.pinStates) {
-          updateNodeData(node.id, { damaged: false, pinStates: {} });
+        updateNodeData(node.id, { damaged: false, pinStates: {} });
       }
 
       if (node.data?.type === 'lcd1602' || node.data?.type === 'lcd2004') {
@@ -181,7 +183,7 @@ class CircuitEngine {
 
           // 1. Trace the electrical network to find all connected "Loads" (LEDs, Buzzers, etc.)
           const reachableTargets = this.traceNet(peripheralId, peripheralPinName);
-          
+
           reachableTargets.forEach(target => {
             const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
             if (!targetNode) return;
@@ -195,14 +197,14 @@ class CircuitEngine {
               };
 
               const intensity = isHigh ? 1.0 : 0.0;
-              
+
               if (target.type === 'led') updates.brightness = intensity;
               else if (target.type === 'rgb-led') updates[`intensity_${target.pinName}`] = intensity;
               else if (target.type === 'buzzer') {
                 updates.intensity = intensity;
                 updates.hasSignal = isHigh;
               }
-              
+
               updates.damaged = false;
 
               updateNodeData(target.nodeId, updates);

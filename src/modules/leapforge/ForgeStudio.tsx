@@ -57,6 +57,18 @@ void loop() {
   const [isCompiling, setIsCompiling] = useState(false);
   const [compileError, setCompileError] = useState<string | null>(null);
 
+  // Auto-initialize projectPath to the codebase's default forge-lib directory
+  useEffect(() => {
+    if (!projectPath && window.electronAPI?.getDefaultProjectPath) {
+      window.electronAPI.getDefaultProjectPath().then((defaultPath) => {
+        console.log('[FORGE UI] Auto-initialized projectPath to:', defaultPath);
+        setProjectPath(defaultPath);
+      }).catch((err) => {
+        console.warn('[FORGE UI] Could not get default project path:', err);
+      });
+    }
+  }, []); // Run once on mount
+
   const handleToggleSimulation = async () => {
     console.log('[FORGE UI] Simulation button clicked. Currently simulating:', isSimulating);
     if (isSimulating) {
@@ -104,28 +116,32 @@ void loop() {
     };
 
     try {
+      console.log('[FORGE UI] Requesting save-project...');
       const result = await window.electronAPI.invoke('save-project', projectData, projectPath);
       if (result.success && result.projectPath) {
+        console.log(`[FORGE UI] Project saved successfully to: ${result.projectPath}`);
         setProjectPath(result.projectPath);
-        console.log('[FORGE UI] Project saved to:', result.projectPath);
       }
     } catch (err) {
-      console.error('Failed to save project:', err);
+      console.error('[FORGE UI] Project save failed:', err);
     }
   };
 
   const handleOpenProject = async () => {
     try {
+      console.log('[FORGE UI] Requesting open-project...');
       const result = await window.electronAPI.invoke('open-project');
       if (result && result.data) {
+        console.log(`[FORGE UI] Opening project: ${result.projectPath}`);
         setNodes(result.data.nodes || []);
         setEdges(result.data.edges || []);
         if (result.data.code) setCode(result.data.code);
         setProjectPath(result.projectPath);
-        console.log('[FORGE UI] Project opened from:', result.projectPath);
+      } else {
+        console.log('[FORGE UI] Open project cancelled or empty.');
       }
     } catch (err) {
-      console.error('Failed to open project:', err);
+      console.error('[FORGE UI] Project open failed:', err);
     }
   };
 
@@ -143,9 +159,9 @@ void loop() {
       />
 
       {/* ── MAIN SPLIT LAYOUT ────────────────── */}
-      <div className="forge-main-split" style={{ flex: 1, display: 'flex', background: '#0f172a' }}>
+      <div className="forge-main-split" style={{ flex: 1, display: 'flex', background: '#0f172a', minHeight: 0, minWidth: 0 }}>
         {/* Left: Code Editor */}
-        <div className="editor-pane" style={{ flex: 1, borderRight: '1px solid #2d2d2d', display: 'flex', flexDirection: 'column' }}>
+        <div className="editor-pane" style={{ flex: 1, borderRight: '1px solid #2d2d2d', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           {/* ── EDITOR / MONITOR TABS ────────────────── */}
           <div style={{
             height: '36px',
@@ -213,7 +229,7 @@ void loop() {
             </button>
           </div>
 
-          <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             {activeTab === 'code' ? (
               <Suspense fallback={<div className="p-4 text-white">Loading Editor...</div>}>
                 <ForgeEditor code={code} onChange={(val) => setCode(val || '')} />

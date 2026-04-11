@@ -26,8 +26,9 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   const mappedProps: any = { ...data };
 
   if (data.type === 'led') {
-    mappedProps.value = data.pinStates?.pin_A === true;
-    mappedProps.brightness = data.brightness ?? 1.0;
+    // Hardware pins are "Anode" and "Cathode". Using pin_Anode for state.
+    mappedProps.value = data.pinStates?.pin_Anode === true || data.pinStates?.pin_A === true;
+    mappedProps.brightness = data.brightness ?? (mappedProps.value ? 1.0 : 0.0);
     mappedProps.damaged = false;
   } else if (data.type === 'rgb-led') {
     // RGB LED uses Red, Green, and Blue channels relative to Common pin (COM)
@@ -38,7 +39,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.damaged = false;
   } else if (data.type === 'buzzer') {
     // Buzzers use Pin 2 as Positive (Red) signal pin as per spec
-    if (data.pinStates?.pin_PIEZO === true || data.pinStates?.pin_1 === true || data.pinStates?.pin_2 === true) {
+    if (data.pinStates?.pin_PIEZO === true || data.pinStates?.pin_1 === true || data.pinStates?.pin_2 === true || data.pinStates?.pin_SIG === true) {
       mappedProps.hasSignal = true;
       mappedProps.intensity = data.intensity ?? 1.0;
       mappedProps.damaged = false;
@@ -66,6 +67,13 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       mappedProps.blink = state.blink;
       mappedProps.backlight = state.backlight;
     }
+  } else if (data.type === 'led-bar-graph') {
+    // LED Bar Graph has 10 segments controlled by pins A1 to A10
+    const values = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    for (let i = 0; i < 10; i++) {
+      values[i] = data.pinStates?.[`pin_A${i + 1}`] === true ? 1 : 0;
+    }
+    mappedProps.values = values;
   }
 
   // Optional: Fallback for generic elements that listen to 'value'

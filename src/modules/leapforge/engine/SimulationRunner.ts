@@ -105,10 +105,12 @@ class SimulationRunner {
     // Attach EEPROM
     this.eepromBackend = new EEPROMMemoryBackend(config.eepromSize);
     this.eeprom = new AVREEPROM(this.cpu!, this.eepromBackend);
+    console.log(`[FORGE ENGINE] EEPROM attached (${config.eepromSize} bytes)`);
 
     // Attach Clock & Watchdog
     this.clock = new AVRClock(this.cpu!, config.frequency, clockConfig);
     this.watchdog = new AVRWatchdog(this.cpu!, watchdogConfig, this.clock);
+    console.log(`[FORGE ENGINE] MCU peripherals (Clock, Watchdog, ADC, Timers) initialized.`);
   }
 
   public setBoard(boardId: string) {

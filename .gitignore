@@ -121,3 +121,6 @@ test_*.js
 
 # Archives
 *.zip
+
+# LeapForge local library cache
+forge-lib/

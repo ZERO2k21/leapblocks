@@ -16,11 +16,17 @@ import { useForgeStore } from '../store/useForgeStore';
 import { LeapNode } from './Nodes/LeapNode';
 import { PartPicker } from './Library/PartPicker';
 import { SelectionToolbar } from './SelectionToolbar';
+import { WireEdge } from './Edges/WireEdge';
+import { PhysicalConnectionLine } from './Edges/PhysicalConnectionLine';
 import { Plus, Play, Square, CircleHelp, RotateCcw } from 'lucide-react';
 
 // Define custom node types outside component to prevent re-renders
 const nodeTypes = {
   leap: LeapNode,
+};
+
+const edgeTypes = {
+  wire: WireEdge,
 };
 
 interface ForgeCanvasProps {
@@ -80,6 +86,12 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
   // Record pane click to clear selection
   const onPaneClick = useCallback(() => {
     store.setSelectedNode(null);
+    store.setSelectedEdge(null);
+  }, [store]);
+
+  // Handle edge clicks
+  const onEdgeClick = useCallback((_: any, edge: Edge) => {
+    store.setSelectedEdge(edge.id);
   }, [store]);
 
   // Handle drag and drop from sidebar (kept for backward compatibility)
@@ -132,11 +144,15 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
         onConnect={onConnect}
         onNodeDragStop={onNodeDragStop}
         onNodeClick={onNodeClick}
+        onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        defaultEdgeOptions={{ type: 'wire' }}
         fitView
         snapToGrid
         snapGrid={[20, 20]}
+        connectionLineComponent={PhysicalConnectionLine}
         connectionMode={ConnectionMode.Loose}
         style={{ background: '#0f172a' }}
       >
@@ -147,6 +163,14 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
           nodeColor={(n: any) => n.data?.type === 'boards' ? '#BEF264' : '#64748b'}
         />
       </ReactFlow>
+
+      <style>{`
+        .react-flow__edges { z-index: 1000 !important; }
+        .react-flow__connectionline { z-index: 1001 !important; pointer-events: none; }
+        .react-flow__edge { pointer-events: all; }
+        .react-flow__nodes { z-index: 50 !important; }
+        .react-flow__handle { z-index: 10 !important; }
+      `}</style>
 
       {/* ── SELECTION TOOLBAR ─────────────────────────── */}
       <SelectionToolbar />
@@ -162,7 +186,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
         zIndex: 100
       }}>
         {/* Play/Stop Toggle */}
-        <button 
+        <button
           onClick={onToggleSimulation || toggleStoreSimulation}
           disabled={isCompiling}
           title={isSimulating ? 'Stop Simulation' : 'Start Simulation'}

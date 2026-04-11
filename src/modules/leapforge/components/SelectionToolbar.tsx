@@ -3,20 +3,27 @@ import { useForgeStore } from '../store/useForgeStore';
 import { Trash2, Settings2, Sliders } from 'lucide-react';
 
 export const SelectionToolbar: React.FC = () => {
-  const { 
-    selectedNodeId, 
-    nodes, 
-    removeNode, 
+  const {
+    selectedNodeId,
+    selectedEdgeId,
+    nodes,
+    edges,
+    removeNode,
+    removeEdge,
     setSelectedNode,
-    updateNodeData 
+    setSelectedEdge,
+    updateNodeData,
+    updateEdgeData
   } = useForgeStore();
 
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
-  
-  if (!selectedNode) return null;
+  const selectedEdge = edges.find(e => e.id === selectedEdgeId);
 
-  const nodeType = selectedNode.data.type;
-  const currentValues = selectedNode.data.sensorValues;
+  if (!selectedNode && !selectedEdge) return null;
+
+  // Basic properties with defensive checks
+  const nodeType = selectedNode?.data?.type;
+  const currentValues = selectedNode?.data?.sensorValues;
 
   // --- Configuration Mapping (Standard Sensors) ---
   const isDistanceSensor = nodeType === 'hc-sr04';
@@ -27,6 +34,9 @@ export const SelectionToolbar: React.FC = () => {
     if (selectedNodeId) {
       removeNode(selectedNodeId);
       setSelectedNode(null);
+    } else if (selectedEdgeId) {
+      removeEdge(selectedEdgeId);
+      setSelectedEdge(null);
     }
   };
 
@@ -50,8 +60,8 @@ export const SelectionToolbar: React.FC = () => {
       config = { label: 'Value', unit: '', min: 0, max: 1023, key: 'value' };
     }
 
-    const currentValue = config.isTopLevel 
-      ? (selectedNode.data[config.key] ?? config.min)
+    const currentValue = config.isTopLevel
+      ? (selectedNode?.data?.[config.key] ?? config.min)
       : (currentValues?.[config.key] ?? config.min);
 
     const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,7 +75,7 @@ export const SelectionToolbar: React.FC = () => {
       }
 
       // Proactively notify engine if it's an analog input
-      if (isAnalogSensor) {
+      if (isAnalogSensor && selectedNode?.id) {
         import('../engine/CircuitEngine').then(({ circuitEngine }) => {
           circuitEngine.pushInputSignal(selectedNode.id, 'SIG', true);
         });
@@ -76,18 +86,56 @@ export const SelectionToolbar: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#1e293b', padding: '4px 12px', borderRadius: '8px', border: '1px solid #334155' }}>
         <Sliders size={14} className="text-slate-400" />
         <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', minWidth: '70px' }}>{config.label}</span>
-        <input 
-          type="range" 
-          min={config.min} 
-          max={config.max} 
+        <input
+          type="range"
+          min={config.min}
+          max={config.max}
           step={config.min < 1 ? 0.01 : 1}
-          value={currentValue} 
+          value={currentValue}
           onChange={handleSliderChange}
-          style={{ width: '120px', accentColor: '#BEF264' }} 
+          style={{ width: '120px', accentColor: '#BEF264' }}
         />
         <span style={{ fontSize: '11px', fontWeight: 700, color: '#BEF264', fontFamily: 'monospace', minWidth: '50px' }}>
           {currentValue >= 1000 ? `${(currentValue / 1000).toFixed(1)}k` : currentValue.toString().slice(0, 5)} {config.unit}
         </span>
+      </div>
+    );
+  };
+
+  const WIRE_COLORS = [
+    { name: 'Red', color: '#ef4444' },
+    { name: 'Black', color: '#000000' },
+    { name: 'Green', color: '#22c55e' },
+    { name: 'Blue', color: '#3b82f6' },
+    { name: 'Yellow', color: '#eab308' },
+    { name: 'Orange', color: '#f59e0b' },
+    { name: 'White', color: '#ffffff' },
+    { name: 'Brown', color: '#78350f' },
+  ];
+
+  const renderColorPalette = () => {
+    if (!selectedEdge) return null;
+    return (
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        {WIRE_COLORS.map((wc) => (
+          <button
+            key={wc.color}
+            onClick={() => updateEdgeData(selectedEdge.id, { color: wc.color })}
+            title={wc.name}
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              backgroundColor: wc.color,
+              border: selectedEdge.data?.color === wc.color ? '2px solid #bef264' : '1px solid rgba(255,255,255,0.2)',
+              cursor: 'pointer',
+              transition: 'transform 0.1s',
+              boxShadow: wc.color === '#ffffff' ? 'inset 0 0 0 1px #ccc' : 'none'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.2)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          />
+        ))}
       </div>
     );
   };
@@ -116,20 +164,35 @@ export const SelectionToolbar: React.FC = () => {
           to { transform: translate(-50%, 0); opacity: 1; }
         }
       `}</style>
-      
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid #334155', paddingRight: '16px' }}>
-        <Settings2 size={16} className="text-lime-400" />
-        <span style={{ fontSize: '12px', fontWeight: 800, color: '#fff', letterSpacing: '0.02em' }}>
-          {nodeType.replace(/-/g, ' ').toUpperCase()}
-        </span>
-      </div>
 
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-        {renderSlider()}
-      </div>
+      {selectedNode ? (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid #334155', paddingRight: '16px' }}>
+            <Settings2 size={16} className="text-lime-400" />
+            <span style={{ fontSize: '12px', fontWeight: 800, color: '#fff', letterSpacing: '0.02em' }}>
+              {selectedNode?.data?.type.replace(/-/g, ' ').toUpperCase()}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {renderSlider()}
+          </div>
+        </>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid #334155', paddingRight: '16px' }}>
+            <Settings2 size={16} className="text-lime-400" />
+            <span style={{ fontSize: '12px', fontWeight: 800, color: '#fff', letterSpacing: '0.02em' }}>
+              WIRE COLOR
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {renderColorPalette()}
+          </div>
+        </>
+      )}
 
       <div style={{ display: 'flex', gap: '8px', paddingLeft: '8px', borderLeft: '1px solid #334155' }}>
-        <button 
+        <button
           onClick={handleDelete}
           title="Delete Component"
           style={{

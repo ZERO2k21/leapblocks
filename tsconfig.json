@@ -18,6 +18,8 @@
     "resolveJsonModule": true,
     "jsx": "react-jsx",
     "strict": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "noEmit": true,
     "paths": {
       "@blockly-runtime": [

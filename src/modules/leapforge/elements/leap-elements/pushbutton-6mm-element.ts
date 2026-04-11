@@ -53,16 +53,7 @@ export class Pushbutton6mmElement extends LitElement {
         cursor: pointer;
       }
 
-      .label {
-        width: 0;
-        min-width: 100%;
-        font-size: 12px;
-        text-align: center;
-        color: gray;
-        position: relative;
-        line-height: 1;
-        top: -2px;
-      }
+    
     `;
   }
 
@@ -224,7 +215,6 @@ export class Pushbutton6mmElement extends LitElement {
       >
         ${this.renderSVG()}
       </button>
-      <span class="label">${this.label}</span>
     `;
   }
 
