@@ -158,7 +158,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           </div>
           <div className="splash-text-container">
             <div className="splash-text-welcome">Welcome to the</div>
-            <div className="splash-text">Leaplab</div>
+            <img src="assets/splash_logo_b.png" alt="Leaplab Logo" className="splash-logo" />
             <div className="splash-powered-by">
               <span>Powered by</span>
               <img src="assets/topbar_logo.svg" alt="LeapLab" />
@@ -255,11 +255,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   color: rgba(0, 0, 0, 0.6); letter-spacing: 0.1em;
   text-transform: uppercase; margin-bottom: -15px;
 }
-.splash-text {
-  font-size: clamp(3rem, 12vw, 5.5rem); font-weight: 900; letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #7a5af8 0%, #38bdf8 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  line-height: 1.1;
+.splash-logo {
+  height: clamp(60px, 15vw, 120px);
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 30px rgba(124, 92, 252, 0.4));
 }
 @keyframes splash-text-reveal {
   0%   { opacity: 0; transform: scale(0.8) translateY(20px); filter: blur(10px); }
@@ -583,6 +583,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   filter: drop-shadow(0 15px 15px rgba(0,0,0,0.25));
   z-index: 20;
 }
+.landing-page-container .tc-cat-logo {
+  height: clamp(10px, 1.5vh, 16px);
+  width: auto;
+  object-fit: contain;
+  margin-bottom: 0.4vh;
+  opacity: 0.75;
+  display: block;
+}
 .landing-page-container .tc-cat {
   font-size: min(0.8rem, 1.2vw); font-weight: 900; letter-spacing: 0.05em;
   text-transform: uppercase; color: #0a0328ff; margin-bottom: 0.5vh; line-height: 1.1; opacity: 0.65;
@@ -703,7 +711,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/ignite_icon.png" alt="Ignite Robot" />
                 </div>
                 <div>
-                  <div className="tc-cat">Leaplab</div>
+                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
                   <div className="tc-name">Ignite</div>
                   <div className="tc-desc">Scratch & block coding</div>
                 </div>
@@ -715,7 +723,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/arduino_icon.png" alt="Circuit Icon" />
                 </div>
                 <div>
-                  <div className="tc-cat">Leaplab</div>
+                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
                   <div className="tc-name">Embed</div>
                   <div className="tc-desc">Block Coding, Arduino & Embedded Systems</div>
                 </div>
@@ -727,7 +735,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/python_icon.png" alt="Codex Icon" />
                 </div>
                 <div>
-                  <div className="tc-cat">Leaplab</div>
+                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
                   <div className="tc-name">Codex</div>
                   <div className="tc-desc">Python Programming</div>
                 </div>
@@ -739,7 +747,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/ml_brain_icon.png" alt="Neura Icon" />
                 </div>
                 <div>
-                  <div className="tc-cat">Leaplab</div>
+                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
                   <div className="tc-name">Neura</div>
                   <div className="tc-desc">AI Logic & Advanced Block Programming</div>
                 </div>
@@ -751,7 +759,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/creocad_icon.png" alt="Forge Icon" />
                 </div>
                 <div>
-                  <div className="tc-cat">Leaplab</div>
+                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
                   <div className="tc-name">Electra</div>
                   <div className="tc-desc">Circuit Design & Simulation</div>
                 </div>
@@ -763,7 +771,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/vision3d_icon.png" alt="Vision3D Icon" />
                 </div>
                 <div>
-                  <div className="tc-cat">Leaplab</div>
+                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
                   <div className="tc-name">Vision3D</div>
                   <div className="tc-desc">3D Design & Modeling </div>
                 </div>
@@ -775,7 +783,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/app_game_dev_icon.png" alt="Studio Icon" />
                 </div>
                 <div>
-                  <div className="tc-cat">Leaplab</div>
+                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
                   <div className="tc-name">Studio</div>
                   <div className="tc-desc">App & Game Development</div>
                 </div>
@@ -787,7 +795,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/quiz_icon.png" alt="Quiz Icon" />
                 </div>
                 <div>
-                  <div className="tc-cat">Leaplab</div>
+                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
                   <div className="tc-name">Pulse</div>
                   <div className="tc-desc">Assessment & Quiz Creation</div>
                 </div>
