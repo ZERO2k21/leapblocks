@@ -7,7 +7,7 @@ export function registerPictoBloxCategory(): void {
     _registered = true;
 
     /**
-     * PictoBlox-style Category with circular icons and vertical layout
+style Category with circular icons and vertical layout
      */
     class PictoBloxCategory extends Blockly.ToolboxCategory {
         private customIconDom_: HTMLElement | null = null;

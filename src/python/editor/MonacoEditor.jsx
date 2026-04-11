@@ -110,7 +110,7 @@ export default function MonacoEditor({
             <Editor
                 height="100%"
                 language={editorLanguage}
-                theme="vs"
+                theme={"vs"}
                 value={projectFiles[activeFile] || ""}
                 onChange={(val) => setProjectFiles(prev => ({ ...prev, [activeFile]: val || "" }))}
                 onMount={(editor, monaco) => {

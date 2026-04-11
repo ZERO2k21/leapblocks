@@ -50,6 +50,8 @@ import EditorPanel from "./panels/EditorPanel";
 import StagePanel from "./panels/StagePanel";
 import PythonIDEGuide from "./PythonIDEGuide";
 import MonacoEditor from "./editor/MonacoEditor";
+import StatusBar from "./editor/StatusBar";
+import TerminalPanel from "./terminal/TerminalPanel";
 
 // ─── Dropdown Menu (Glassmorphism) ────────────────────────────────────────────
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
@@ -263,10 +265,7 @@ function getBoardNameById() {
 
 
 // ─── Default Files ─────────────────────────────────────────────────────────────
-const DEFAULT_FILES = {
-    "sprite.py": ``,
-    "stage.py": ``
-};
+const DEFAULT_FILES = {};
 
 
 const BOARD_UPLOAD_CONFIG = {
@@ -696,8 +695,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
     // Editor state
     const [projectName, setProjectName] = useState("My Project");
-    const [workflowMode, setWorkflowMode] = useState("stage");
-    const [activeFile, setActiveFile] = useState("sprite.py");
+    const [workflowMode, setWorkflowMode] = useState("ide");
+    const [activeFile, setActiveFile] = useState("");
     const [projectFiles, setProjectFiles] = useState(DEFAULT_FILES);
     const [editorCursor, setEditorCursor] = useState({ line: 1, col: 1 });
     const [showGuide, setShowGuide] = useState(false);
@@ -733,7 +732,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         if (!window.confirm("Create a new project? All unsaved work will be lost.")) return;
         setProjectName("My Project");
         setProjectFiles(DEFAULT_FILES);
-        setActiveFile("sprite.py");
+        setActiveFile("");
         resetStage();
     };
 
@@ -768,8 +767,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
             setProjectName(data.projectName || "My Project");
             setProjectFiles(data.projectFiles || DEFAULT_FILES);
-            setActiveFile(data.activeFile || "sprite.py");
-            
+            setActiveFile(data.activeFile || "");
+
             if (data.sprites && Array.isArray(data.sprites) && data.sprites.length > 0) {
                 setSprites(data.sprites);
                 setSelectedSpriteId(data.sprites[0].id);
@@ -777,7 +776,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 resetStage();
             }
             if (data.backdrop) setBackdropImg(data.backdrop);
-            
+
         } catch (err) {
             alert('Failed to load project: ' + err.message);
         } finally {
@@ -808,10 +807,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         { text: "║  ▶ Press Ctrl+S to save project                             ║", type: "info", ts: new Date() },
         { text: "╚══════════════════════════════════════════════════════════════╝", type: "info", ts: new Date() },
         { text: "", type: "info", ts: new Date() },
-        { text: _isWebMode
-            ? "🌐 Web Mode — Python runs in-browser via Skulpt. No install needed!"
-            : "🖥 Desktop Mode — Native Python connected. Ready!",
-          type: "success", ts: new Date() },
+        {
+            text: _isWebMode
+                ? "🌐 Web Mode — Python runs in-browser via Skulpt. No install needed!"
+                : "🖥 Desktop Mode — Native Python connected. Ready!",
+            type: "success", ts: new Date()
+        },
     ]);
     const [replInput, setReplInput] = useState("");
     const [replHistory, setReplHistory] = useState([]);
@@ -2138,7 +2139,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const handleWorkflowModeChange = (nextMode) => {
         if (nextMode === workflowMode) return;
         setWorkflowMode(nextMode);
-        addUploadMessage(`Switched to ${nextMode === "upload" ? "Upload" : "Stage"} mode.`, "info");
+        const modeLabels = { stage: "Stage", upload: "Upload", ide: "IDE" };
+        addUploadMessage(`Switched to ${modeLabels[nextMode] || nextMode} mode.`, "info");
     };
 
     const handleUploadViewChange = (nextView) => {
@@ -2652,7 +2654,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 position: "sticky",
                 top: 0,
                 height: 60,
-                background:"#0a015a",//"#080a25",
+                background: "#0a015a",//"#080a25",
                 display: "flex",
                 alignItems: "center",
                 padding: "0 8px",
@@ -2660,6 +2662,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 color: "#fff",
                 zIndex: 100,
                 flexShrink: 0,
+                overflow: "hidden",
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <button
@@ -2692,7 +2695,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     </button>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }} onClick={onBack}>
                         <Logo height={50} />
-                        <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em", fontFamily:"'sego ui',Inter,system-ui,sans-serif" }}>CODEX</span>
+                        <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em", fontFamily: "'sego ui',Inter,system-ui,sans-serif" }}>CODEX</span>
                     </div>
                     <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
 
@@ -2751,15 +2754,29 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         />
                         <Save size={15} style={{ opacity: 0.8, cursor: "pointer" }} onClick={handleSaveProject} title="Save Project" />
                     </div>
-                    {/* Mode/Stage/Upload buttons */}
+                    {/* Mode/IDE/Stage/Upload buttons */}
                     <div style={{ display: "flex", background: "rgba(0,0,0,0.2)", borderRadius: 4, overflow: "hidden" }}>
                         <div style={{ padding: "5px 10px", background: "rgba(255,255,255,0.2)", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>Mode</div>
+                        <button
+                            onClick={() => handleWorkflowModeChange("ide")}
+                            style={{
+                                padding: "5px 10px",
+                                background: workflowMode === "ide" ? "#7C3AED" : "transparent",
+                                color: workflowMode === "ide" ? "#fff" : "rgba(255,255,255,0.8)",
+                                fontSize: 15,
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                border: "none",
+                            }}
+                        >
+                            IDE
+                        </button>
                         <button
                             onClick={() => handleWorkflowModeChange("stage")}
                             style={{
                                 padding: "5px 10px",
                                 background: workflowMode === "stage" ? "#4CAF50" : "transparent",
-                                color: "#fff",
+                                color: workflowMode === "stage" ? "#fff" : "rgba(255,255,255,0.8)",
                                 fontSize: 15,
                                 fontWeight: 600,
                                 cursor: "pointer",
@@ -2875,7 +2892,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <div title="Paste (Ctrl+V)" onClick={() => editorRef.current?.trigger('keyboard', 'editor.action.clipboardPasteAction', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <span style={{ fontSize: 14 }}>📄</span>
                             </div>
-                            <div title="Delete" onClick={() => { if(window.confirm('Clear active file?')) { const ed = editorRef.current; if(ed) { ed.setValue(''); } } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                            <div title="Delete" onClick={() => { if (window.confirm('Clear active file?')) { const ed = editorRef.current; if (ed) { ed.setValue(''); } } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <Trash2 size={16} />
                             </div>
                         </div>
@@ -2968,7 +2985,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         </div>
                     </div>
                 </div>
-            ) : (
+            ) : workflowMode === "upload" ? (
                 <div style={{
                     position: "sticky",
                     top: 44,
@@ -3120,6 +3137,95 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         </div>
                     </div>
                 </div>
+            ) : (
+                /* IDE Mode Toolbar — VS Code inspired dark theme */
+                <div style={{
+                    position: "relative",
+                    height: 42,
+                    background: "#1e1e2e",
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "0 12px",
+                    justifyContent: "space-between",
+                    borderBottom: "1px solid #313244",
+                    zIndex: 100,
+                    flexShrink: 0,
+                }}>
+                    {/* Left: File tabs */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 0, overflow: "hidden" }}>
+                        {Object.keys(projectFiles).map((fname) => (
+                            <div
+                                key={fname}
+                                onClick={() => setActiveFile(fname)}
+                                style={{
+                                    padding: "6px 14px",
+                                    background: activeFile === fname ? "#2d2d3f" : "transparent",
+                                    color: activeFile === fname ? "#cdd6f4" : "#6c7086",
+                                    fontSize: 12,
+                                    fontWeight: activeFile === fname ? 600 : 400,
+                                    cursor: "pointer",
+                                    borderRight: "1px solid #313244",
+                                    borderBottom: activeFile === fname ? "2px solid #7C3AED" : "2px solid transparent",
+                                    transition: "all 0.15s",
+                                    whiteSpace: "nowrap",
+                                    fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace",
+                                }}
+                            >
+                                {fname}
+                            </div>
+                        ))}
+                    </div>
+                    {/* Right: Editing tools + Run/Stop */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div style={{ display: "flex", gap: 2 }}>
+                            <button title="Undo" onClick={() => { if (editorRef.current) editorRef.current.trigger('keyboard', 'undo', null); }} style={{ cursor: "pointer", padding: "4px 6px", color: "#6c7086", borderRadius: 4, background: "transparent", border: "none", display: "flex", alignItems: "center" }}>
+                                <Undo size={15} />
+                            </button>
+                            <button title="Redo" onClick={() => { if (editorRef.current) editorRef.current.trigger('keyboard', 'redo', null); }} style={{ cursor: "pointer", padding: "4px 6px", color: "#6c7086", borderRadius: 4, background: "transparent", border: "none", display: "flex", alignItems: "center" }}>
+                                <Redo size={15} />
+                            </button>
+                        </div>
+                        <div style={{ width: 1, height: 20, background: "#313244" }} />
+                        <button onClick={() => handleRun()} title="Run (Ctrl+Enter)" disabled={isRunning}
+                            style={{
+                                cursor: isRunning ? "not-allowed" : "pointer",
+                                padding: "5px 12px",
+                                background: isRunning ? "#45475a" : "#4CAF50",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 4,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                fontSize: 12,
+                                fontWeight: 600,
+                                transition: "all 0.2s",
+                            }}>
+                            {isRunning ? (
+                                <><span style={{ animation: "spin 1s linear infinite" }}>&#x2699;</span> Running...</>
+                            ) : (
+                                <><Play size={12} fill="#fff" /> Run</>
+                            )}
+                        </button>
+                        <button onClick={() => handleStop()} title="Stop (Escape)"
+                            style={{
+                                cursor: "pointer",
+                                padding: "5px 10px",
+                                background: "#45475a",
+                                color: "#f38ba8",
+                                border: "none",
+                                borderRadius: 4,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                fontSize: 12,
+                                fontWeight: 600,
+                                transition: "all 0.2s",
+                            }}>
+                            <Square size={10} fill="#f38ba8" /> Stop
+                        </button>
+                    </div>
+                </div>
             )}
 
             {/* ══ MAIN WORKSPACE ═══════════════════════════════════════════════ */}
@@ -3214,8 +3320,129 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         onOpenAssetLibrary={onOpenAssetLibrary}
                     />
                 </div>
-            ) : (
+            ) : workflowMode === "upload" ? (
                 renderUploadWorkspace()
+            ) : (
+                /* IDE Mode Workspace — SidePanel + Editor (left) + Terminal (right) */
+                <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0, background: "#1e1e2e" }}>
+
+                    {/* ── LEFT SIDEBAR (File Explorer) ── */}
+                    <SidePanel
+                        sidePanel={sidePanel}
+                        setSidePanel={setSidePanel}
+                        projectFiles={projectFiles}
+                        activeFile={activeFile}
+                        setActiveFile={setActiveFile}
+                        handleAddPythonFiles={handleAddPythonFiles}
+                        handleAddImageFiles={handleAddImageFiles}
+                        handleAddTextFiles={handleAddTextFiles}
+                        handleAddCsvFiles={handleAddCsvFiles}
+                        handleDeleteFile={handleDeleteFile}
+                        onAddNewFile={handleCreateNewFile}
+                        spriteFilter={spriteFilter}
+                        setSpriteFilter={setSpriteFilter}
+                        addSpriteFromLibrary={addSpriteFromLibrary}
+                        SPRITE_LIBRARY={getSpriteLibrary()}
+                        BACKDROP_LIBRARY={BACKDROP_LIBRARY}
+                        backdrop={backdrop}
+                        handleSetBackdrop={handleSetBackdrop}
+                        EXTENSIONS={EXTENSIONS}
+                        installedExtensions={installedExtensions}
+                        installExtension={installExtension}
+                        packages={packages}
+                        pipFilter={pipFilter}
+                        setPipFilter={setPipFilter}
+                        handleInstall={handleInstall}
+                    />
+
+                    {/* ── CENTER: Code Editor ── */}
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", borderRight: "1px solid #313244" }}>
+                        {Object.keys(projectFiles).length === 0 ? (
+                            <div style={{
+                                flex: 1,
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "#6c7086",
+                                gap: 16,
+                                fontFamily: "'Cascadia Code', 'Fira Code', Consolas, monospace",
+                            }}>
+                                <FileCode2 size={48} strokeWidth={1.2} style={{ opacity: 0.4 }} />
+                                <div style={{ fontSize: 16, fontWeight: 500, color: "#8b8fa3" }}>No files yet</div>
+                                <div style={{ fontSize: 13, color: "#585b70" }}>Create a new file from the sidebar to get started</div>
+                                <button
+                                    onClick={() => handleCreateNewFile()}
+                                    style={{
+                                        marginTop: 8,
+                                        padding: "8px 20px",
+                                        background: "#7C3AED",
+                                        color: "#fff",
+                                        border: "none",
+                                        borderRadius: 6,
+                                        fontSize: 13,
+                                        fontWeight: 600,
+                                        cursor: "pointer",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                        transition: "background 0.2s",
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = "#6D28D9"}
+                                    onMouseLeave={e => e.currentTarget.style.background = "#7C3AED"}
+                                >
+                                    <Plus size={14} /> New File
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <MonacoEditor
+                                    projectFiles={projectFiles}
+                                    activeFile={activeFile}
+                                    setProjectFiles={setProjectFiles}
+                                    editorRef={editorRef}
+                                    monacoRef={monacoRef}
+                                    editorCursor={editorCursor}
+                                    isRunning={isRunning}
+                                    onRun={handleRun}
+                                    onCursorChange={setEditorCursor}
+                                    editorOptions={{ theme: "vs-dark" }}
+                                />
+                                <StatusBar
+                                    editorCursor={editorCursor}
+                                    isRunning={isRunning}
+                                    activeFile={activeFile}
+                                />
+                            </>
+                        )}
+                    </div>
+
+                    {/* ── RIGHT: Terminal / REPL (full height) ── */}
+                    <div style={{ width: 380, display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0 }}>
+                        <style>{`.ide-terminal-full > div:first-child { height: 100% !important; flex: 1 !important; }`}</style>
+                        <div className="ide-terminal-full" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                            <TerminalPanel
+                                activePanel={activePanel}
+                                setActivePanel={setActivePanel}
+                                terminalOutput={terminalOutput}
+                                replInput={replInput}
+                                setReplInput={setReplInput}
+                                handleReplSubmit={handleReplSubmit}
+                                handleReplKey={handleReplKey}
+                                terminalEndRef={terminalEndRef}
+                                replInputRef={replInputRef}
+                                isRunning={isRunning}
+                                onRun={handleRun}
+                                onStop={handleStop}
+                                onClear={handleClear}
+                                packages={packages}
+                                pipFilter={pipFilter}
+                                setPipFilter={setPipFilter}
+                                handleInstall={handleInstall}
+                            />
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Custom Prompt Modal */}
@@ -3421,7 +3648,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     </div>
                 </div>
             )}
-            
+
             <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileLoad} accept=".leap,.lbproject,application/json" />
         </div>
     );
