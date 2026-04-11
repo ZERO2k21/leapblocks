@@ -441,7 +441,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* ─── FLOATING SHAPES ─── */
 .shape { position: absolute; z-index: 0; filter: blur(40px); opacity: 0.4; animation: float-slow 10s ease-in-out infinite; }
 .shape-1 { width: 300px; height: 300px; background: var(--accent); top: 10%; left: -5%; }
-.shape-2 { width: 400px; height: 400px; background: var(--brand-primary); top: 40%; right: -10%; animation-delay: -2s; }
+.shape-2 { width: 400px; height: 400px; background: linear-gradient(135deg, #4e42c0 0%, #1a24af 100%); top: 40%; right: -10%; animation-delay: -2s; }
 .shape-3 { width: 250px; height: 250px; background: var(--accent-secondary); bottom: 10%; left: 20%; animation-delay: -5s; }
 @keyframes float-slow {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
