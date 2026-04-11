@@ -440,6 +440,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     const isLoadingWorkspaceRef = useRef(false);
 
+    const syncAllWorkspacesRef = useRef<(() => CompiledScript[]) | null>(null);
+
 
 
     // Hardware
@@ -2122,6 +2124,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const handleSpriteSelect = useCallback((newId: string) => {
         if (newId === selectedSpriteId) {
 
+            // Compile scripts so the sprite has up-to-date scripts
+            syncAllWorkspacesRef.current?.();
+
             // Trigger click event even if already selected (Scratch behavior)
 
             animationVM.triggerSpriteClick(newId);
@@ -2156,12 +2161,36 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             handleSpriteSelect(id);
         }
 
-        // Trigger click event in the animation VM. 
-        // The VM now scans its own internally synced sprite scripts.
+        // Compile all scripts so the clicked sprite has up-to-date scripts
+        syncAllWorkspacesRef.current?.();
+
+        // Trigger click event in the animation VM.
         animationVM.triggerSpriteClick(id);
     }, [selectedSpriteId, handleSpriteSelect]);
 
+    // Map sprite tags/category/name to an appropriate default sound
+    const getDefaultSoundForSprite = useCallback((tags?: string[], name?: string): { name: string; src: string } => {
+        const t = (tags || []).map(s => s.toLowerCase());
+        const n = (name || '').toLowerCase();
 
+        // Animals
+        if (t.includes('cat') || n.includes('cat')) return { name: 'Meow', src: 'assets/sounds/83c36d806dc92327b9e7049a565c6bff.wav' };
+        if (t.includes('dog') || n.includes('dog')) return { name: 'Bark', src: 'assets/sounds/cd8fa8390b0efdd281882533fbfcfcfb.wav' };
+        if (t.includes('bird') || n.includes('bird') || n.includes('parrot') || n.includes('toucan') || n.includes('duck')) return { name: 'Chirp', src: 'assets/sounds/3b8236bbb288019d93ae38362e865972.wav' };
+        if (t.includes('animals') || t.includes('animal')) return { name: 'Pop', src: 'assets/sounds/83a9787d4cb6f3b7632b4ddfebf74367.wav' };
+
+        // People/Dance/Fantasy
+        if (t.includes('people') || t.includes('person') || t.includes('dance') || t.includes('dancing')) return { name: 'Pop', src: 'assets/sounds/83a9787d4cb6f3b7632b4ddfebf74367.wav' };
+
+        // Sports
+        if (t.includes('sports') || t.includes('sport')) return { name: 'Boing', src: 'assets/sounds/53a3c2e27d1fb5fdb14aaf0cb41e7889.wav' };
+
+        // Built-in sprite types
+        if (n.includes('robot')) return { name: 'Meow', src: 'assets/sounds/meow.wav' };
+
+        // Default: Pop
+        return { name: 'Pop', src: 'assets/sounds/83a9787d4cb6f3b7632b4ddfebf74367.wav' };
+    }, []);
 
     const addSprite = useCallback((spriteType: SpriteType = 'cat') => {
 
@@ -2257,7 +2286,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         animationVM.registerSprite(newSprite);
 
-
+        // Add a default sound based on sprite type
+        const defaultSound = getDefaultSoundForSprite([], name);
+        newSprite.addSound(defaultSound.name, defaultSound.src);
 
         // 1. Explicitly initialize an empty workspace for the new sprite in our map
 
@@ -2893,6 +2924,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         return allScripts;
     }, [selectedSpriteId]);
+
+    // Keep ref in sync so earlier-declared callbacks can call syncAllWorkspaces
+    syncAllWorkspacesRef.current = syncAllWorkspaces;
 
     useEffect(() => {
         animationVM.onBeforeBroadcast = (message) => {
@@ -3755,11 +3789,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             ? currentToolbox.getSelectedItem().getName()
             : null;
 
+        // Always update the toolbox when the sprite changes so dynamic dropdowns
+        // (e.g. sound, costume) refresh with the new sprite's values.
         if (nextToolboxJson !== lastToolboxJsonRef.current) {
             console.log('[APP] Updating toolbox dynamically (Sprite:', selectedSpriteId, ')');
             lastToolboxJsonRef.current = nextToolboxJson;
-            workspaceRef.current.updateToolbox(nextToolboxConfig);
         }
+        workspaceRef.current.updateToolbox(nextToolboxConfig);
 
         const refreshedToolbox = workspaceRef.current.getToolbox() as any;
         const toolboxItems = typeof refreshedToolbox?.getToolboxItems === 'function'
@@ -6030,9 +6066,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             }
 
-                            // Add default sound
-
-                            await newSprite.addSound('Meow', 'assets/sounds/meow.wav');
+                            // Add default sound based on sprite tags/name
+                            const defaultSound = getDefaultSoundForSprite(
+                                (entry as any).tags || [],
+                                entry.name
+                            );
+                            await newSprite.addSound(defaultSound.name, defaultSound.src);
 
 
 
@@ -6080,7 +6119,16 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     animationVM.registerSprite(newSprite);
 
-
+                    // Add default sound based on sprite tags/name
+                    // (Image-based sprites already get a sound in their async loader above,
+                    //  but emoji-only sprites don't — this covers both as a fallback.)
+                    if (newSprite.sounds.length === 0) {
+                        const defaultSound = getDefaultSoundForSprite(
+                            (entry as any).tags || [],
+                            entry.name
+                        );
+                        newSprite.addSound(defaultSound.name, defaultSound.src);
+                    }
 
                     // Initialize empty workspace for the new sprite
 
