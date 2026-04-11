@@ -3900,8 +3900,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     }
                                 }
 
-                                // Record position before disposal
+                                // Record position and parent connection before disposal
                                 const xy = block.getRelativeToSurfaceXY();
+                                // Save the parent input connection so we can reconnect the replacement block
+                                const parentConnection = block.outputConnection?.targetConnection || null;
 
                                 // New block logic - resolve the real variable ID
                                 // We use setTimeout to ensure we don't interfere with the current event loop/gesture
@@ -3915,14 +3917,30 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                         if (!isSensing) {
                                             // Find real variable ID for the name
-                                            const variable = blocksWorkspace.getVariable(name, varType);
+                                            // Try all variable types since variables may be created with 'Number', 'String', or ''
+                                            const variable = blocksWorkspace.getVariable(name, varType)
+                                                || blocksWorkspace.getVariable(name, 'Number')
+                                                || blocksWorkspace.getVariable(name, 'String')
+                                                || blocksWorkspace.getVariable(name, '');
                                             const valueToSet = variable ? variable.getId() : name;
                                             newBlock.setFieldValue(valueToSet, nameField);
                                         }
 
                                         newBlock.initSvg();
                                         newBlock.render();
-                                        newBlock.moveBy(xy.x, xy.y);
+
+                                        // Reconnect to parent input if the old block was connected
+                                        if (parentConnection && newBlock.outputConnection) {
+                                            try {
+                                                parentConnection.connect(newBlock.outputConnection);
+                                            } catch (connectErr) {
+                                                // If reconnection fails, fall back to positioning
+                                                console.warn('[BlockReplace] Could not reconnect to parent:', connectErr);
+                                                newBlock.moveBy(xy.x, xy.y);
+                                            }
+                                        } else {
+                                            newBlock.moveBy(xy.x, xy.y);
+                                        }
                                         newBlock.select();
                                     } finally {
                                         Blockly.Events.enable();
@@ -4036,9 +4054,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                    // Keep the flyout pinned open, but let Blockly manage its own
-                    // scale and transform. Overriding those internals can leave the
-                    // Intermediate palette blank after recent Blockly updates.
+                    // Keep the flyout pinned open and at a fixed scale so it
+                    // does not zoom with the workspace viewport.
                     if (blocksWorkspace) {
 
                         const flyout = blocksWorkspace.getFlyout() as any;
@@ -4046,6 +4063,24 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         if (flyout) {
 
                             flyout.autoClose = false;
+
+                            // Lock the flyout scale so blocks inside don't zoom
+                            // with the main workspace viewport.
+                            const FIXED_FLYOUT_SCALE = 1.0;
+                            flyout.getFlyoutScale = () => FIXED_FLYOUT_SCALE;
+                            if (flyout.getWorkspace()) {
+                                flyout.getWorkspace().setScale(FIXED_FLYOUT_SCALE);
+                            }
+
+                            // Reset flyout scale after any viewport change (wheel zoom, pinch, etc.)
+                            blocksWorkspace.addChangeListener((event: any) => {
+                                if (event.type === Blockly.Events.VIEWPORT_CHANGE) {
+                                    const flyoutWs = flyout.getWorkspace();
+                                    if (flyoutWs && flyoutWs.getScale() !== FIXED_FLYOUT_SCALE) {
+                                        flyoutWs.setScale(FIXED_FLYOUT_SCALE);
+                                    }
+                                }
+                            });
 
                         }
                         // 4. FLYOUT BLOCK PREVIEW (Click to Preview)
@@ -4069,6 +4104,32 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             });
 
                         }
+
+                        // 5. KEEP FLYOUT ALWAYS OPEN
+                        // Re-select a toolbox category whenever the flyout gets closed
+                        // (e.g. by clicking on the workspace background).
+                        blocksWorkspace.addChangeListener((event: any) => {
+                            if (event.type === Blockly.Events.TOOLBOX_ITEM_SELECT) {
+                                // If the toolbox selection was cleared (flyout closing),
+                                // re-select the previously active category.
+                                if (!(event as any).newItem) {
+                                    const toolbox = blocksWorkspace.getToolbox() as any;
+                                    if (toolbox) {
+                                        // Re-select old item or default to first
+                                        const oldId = (event as any).oldItem;
+                                        if (oldId) {
+                                            const items = toolbox.getToolboxItems?.() || [];
+                                            const prev = items.find((i: any) => i.getId?.() === oldId);
+                                            if (prev) {
+                                                toolbox.setSelectedItem(prev);
+                                                return;
+                                            }
+                                        }
+                                        toolbox.selectItemByPosition(0);
+                                    }
+                                }
+                            }
+                        });
 
                     }
 
@@ -5070,7 +5131,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 style={styles.blockly}
                             />
 
-                            <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={undefined} style={undefined} />
+                            <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={() => {
+                                const flyout = workspaceRef.current?.getFlyout() as any;
+                                if (flyout?.getWorkspace()) {
+                                    flyout.getWorkspace().setScale(1.0);
+                                }
+                            }} style={undefined} />
 
                             <WorkspaceTrash workspaceRef={workspaceRef} />
 
