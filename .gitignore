@@ -100,3 +100,17 @@ build/
 
 *storybook.log
 storybook-static
+
+# Build/lint output logs
+build_*.txt
+lint*.txt
+lint*.json
+tsc_*.txt
+ts_errors.txt
+ts_out.txt
+eslint_errors.txt
+full_eslint_errors.txt
+out.txt
+dev_error.txt
+icon_error.txt
+intermediate_diff.txt
