@@ -35,7 +35,7 @@ export default defineConfig({
     rollupOptions: {
       input: path.resolve(__dirname, 'index.html'),
       // Mark Electron/Node-only modules as external so they're stripped
-      external: ['electron', 'serialport', 'child_process', 'fs', 'fs-extra', 'path', 'os', 'crypto', 'adm-zip'],
+      external: ['electron', 'serialport', 'child_process', 'fs', 'fs-extra', 'path', 'os', 'crypto'],
     },
   },
   optimizeDeps: {
