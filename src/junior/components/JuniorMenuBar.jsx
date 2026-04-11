@@ -199,8 +199,8 @@ export default function JuniorMenuBar({
             justifyContent: 'space-between',
             height: 64,
             padding: '0 18px',
-            background: 'linear-gradient(135deg, #0F1923 0%, #162033 30%, #1A2744 60%, #1E2D4F 100%)',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.45), inset 0 -1px 0 rgba(255,255,255,0.06)',
+            background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
+            boxShadow: '0 4px 20px rgba(8,10,37,0.45), inset 0 -1px 0 rgba(255,255,255,0.06)',
             zIndex: 100,
             borderBottom: '1px solid rgba(100,180,255,0.1)',
         }}>

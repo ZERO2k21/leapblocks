@@ -4,8 +4,8 @@ import Logo, { CreoleapLogo } from "../../components/Logo";
 
 // ─── Theme (PictoBlox Colors) ─────────────────────────────────────────────────
 const C = {
-    PURPLE: "#5A2D82",  // PictoBlox header purple
-    DARK_PURPLE: "#4A1D72",
+    PURPLE: "#0a015a",  // Updated header color
+    DARK_PURPLE: "#080a25",
     LIGHT_PURPLE: "#EDE9FE",
     BORDER: "#E5E7EB",
     TEXT: "#1F2937",
@@ -16,12 +16,12 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
     return (
         <header style={{
             height: 54,
-            background: C.PURPLE,
+            background: `linear-gradient(135deg, ${C.PURPLE} 0%, ${C.DARK_PURPLE} 100%)`,
             display: "flex",
             alignItems: "center", padding: "0 12px",
             justifyContent: "space-between", color: "#fff", zIndex: 100,
             flexShrink: 0,
-            boxShadow: '0 2px 12px rgba(78,42,132,0.35)',
+            boxShadow: '0 2px 12px rgba(8,10,37,0.35)',
             borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}>
             {/* Left Side: LeapLab Logo + App Name + Blocks/Python Tabs */}

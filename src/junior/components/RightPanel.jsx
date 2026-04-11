@@ -91,7 +91,7 @@ export default function RightPanel({
                         {isFullscreen && (
                             <div style={{
                                 position: 'absolute', top: 0, left: 0, width: '100%', height: '64px',
-                                background: '#6400a1ff', borderBottom: '1px solid #d1d5db',
+                                background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)', borderBottom: '1px solid rgba(255,255,255,0.08)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                 padding: '0 16px', zIndex: 100,
                             }}>

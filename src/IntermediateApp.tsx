@@ -5188,7 +5188,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                 height: '54px',
 
-                                backgroundColor: 'rgba(9, 9, 11, 0.7)',
+                                background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
 
                                 backdropFilter: 'blur(12px)',
 

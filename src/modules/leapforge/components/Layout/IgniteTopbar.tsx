@@ -36,8 +36,8 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
       justifyContent: 'space-between',
       height: '64px',
       padding: '0px 18px',
-      background: 'linear-gradient(135deg, rgb(15, 25, 35) 0%, rgb(22, 32, 51) 30%, rgb(26, 39, 68) 60%, rgb(30, 45, 79) 100%)',
-      boxShadow: 'rgba(0, 0, 0, 0.45) 0px 4px 20px, rgba(255, 255, 255, 0.06) 0px -1px 0px inset',
+      background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
+      boxShadow: 'rgba(8, 10, 37, 0.45) 0px 4px 20px, rgba(255, 255, 255, 0.06) 0px -1px 0px inset',
       zIndex: 100,
       borderBottom: '1px solid rgba(100, 180, 255, 0.1)',
       userSelect: 'none'
