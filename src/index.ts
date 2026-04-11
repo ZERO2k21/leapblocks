@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as path from 'path';
+import * as fs from 'fs';
 import { SerialManager } from './serial/SerialManager';
 import { ArduinoUploader } from './upload/ArduinoUploader';
 import { PythonManager } from './pythonBackend/PythonManager';
@@ -127,7 +128,9 @@ ipcMain.handle('upload-code', async (event, code: string, selectedPort: string, 
 });
 
 ipcMain.handle('compile-code', async (event, code: string, fqbn: string, libraryPath?: string) => {
+  log('IPC', `compile-code request received. FQBN: ${fqbn}, LibPath: ${libraryPath || 'None'}`);
   const result = await arduinoUploader.compileForSimulation(code, fqbn, libraryPath);
+  log('IPC', `compile-code completed. Result: ${result.success ? 'Success' : 'Failure'}`);
   return result;
 });
 
@@ -137,7 +140,10 @@ ipcMain.handle('library-search', async (event, query: string) => {
 });
 
 ipcMain.handle('library-install', async (event, libName: string, projectPath: string) => {
-  return await arduinoUploader.installLibrary(libName, projectPath);
+  log('IPC', `library-install request: ${libName} to ${projectPath}`);
+  const result = await arduinoUploader.installLibrary(libName, projectPath);
+  log('IPC', `library-install finished: ${result.success ? 'Success' : 'Failure'}`);
+  return result;
 });
 
 ipcMain.handle('library-list-project', async (event, projectPath: string) => {
@@ -145,7 +151,35 @@ ipcMain.handle('library-list-project', async (event, projectPath: string) => {
 });
 
 ipcMain.handle('library-uninstall', async (event, libName: string, projectPath: string) => {
-  return await arduinoUploader.uninstallLibrary(libName, projectPath);
+  log('IPC', `library-uninstall request: ${libName} from ${projectPath}`);
+  const result = await arduinoUploader.uninstallLibrary(libName, projectPath);
+  log('IPC', `library-uninstall finished: ${result.success ? 'Success' : 'Failure'}`);
+  return result;
+});
+
+ipcMain.handle('get-default-project-path', async () => {
+  log('IPC', 'get-default-project-path request received');
+  const appRoot = app.isPackaged
+    ? path.dirname(app.getPath('exe'))
+    : process.cwd();
+  
+  const forgeLibDir = path.join(appRoot, 'forge-lib');
+  log('IPC', `Checking/Creating forge-lib dir at: ${forgeLibDir}`);
+  
+  if (!fs.existsSync(forgeLibDir)) {
+    fs.mkdirSync(forgeLibDir, { recursive: true });
+  }
+  
+  const libsDir = path.join(forgeLibDir, 'libs');
+  if (!fs.existsSync(libsDir)) {
+    fs.mkdirSync(libsDir, { recursive: true });
+  }
+  
+  return forgeLibDir;
+});
+
+ipcMain.handle('forge-lib-cache-info', async () => {
+  return arduinoUploader.getForgeLibCacheInfo();
 });
 
 // Python Handlers
@@ -232,7 +266,7 @@ ipcMain.handle('build-apk', async (event, appState) => {
     return { success: false, error: `Build script not found at ${buildApkPath}` };
   }
 
-  
+
   const logCallback = (msg: string) => {
     try {
       if (!event.sender.isDestroyed()) {
@@ -257,9 +291,9 @@ ipcMain.handle('show-in-folder', (_, filePath) => {
 
 ipcMain.handle('save-project', async (_, data, existingPath?: string) => {
   if (!mainWindow) return { success: false };
-  
+
   let targetPath = existingPath;
-  
+
   if (!targetPath) {
     const { filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Save LeapBlocks Project Folder',
@@ -275,29 +309,34 @@ ipcMain.handle('save-project', async (_, data, existingPath?: string) => {
 
   try {
     if (!fsMod.existsSync(targetPath)) {
+      log('PROJECT', `Creating project directory: ${targetPath}`);
       fsMod.mkdirSync(targetPath, { recursive: true });
     }
-    
+
     // Save the .lbp file inside the folder
     const projectName = pathMod.basename(targetPath);
     const lbpPath = pathMod.join(targetPath, `${projectName}.lbp`);
+    log('PROJECT', `Saving project file: ${lbpPath}`);
     fsMod.writeFileSync(lbpPath, JSON.stringify(data, null, 2));
 
     // Ensure libs folder exists
     const libsDir = pathMod.join(targetPath, 'libs');
     if (!fsMod.existsSync(libsDir)) {
+      log('PROJECT', `Ensuring libraries folder exists: ${libsDir}`);
       fsMod.mkdirSync(libsDir, { recursive: true });
     }
 
+    log('PROJECT', `Project successfully saved to: ${targetPath}`);
     return { success: true, projectPath: targetPath };
   } catch (err: any) {
+    log('PROJECT', `Failed to save project: ${err.message}`, err);
     return { success: false, error: err.message };
   }
 });
 
 ipcMain.handle('open-project', async () => {
   if (!mainWindow) return null;
-  
+
   // Choose Folder Mode
   const { filePaths } = await dialog.showOpenDialog(mainWindow, {
     title: 'Select LeapBlocks Project Folder',
@@ -308,17 +347,17 @@ ipcMain.handle('open-project', async () => {
     const projectPath = filePaths[0];
     const fsMod = require('fs');
     const pathMod = require('path');
-    
+
     // Look for any .lbp file in the root
     const files = fsMod.readdirSync(projectPath);
     const lbpFile = files.find((f: string) => f.endsWith('.lbp'));
-    
+
     if (lbpFile) {
       const content = fsMod.readFileSync(pathMod.join(projectPath, lbpFile), 'utf-8');
       try {
         const data = JSON.parse(content);
         return { data, projectPath };
-      } catch(e) {
+      } catch (e) {
         console.error("Invalid project file", e);
         return null;
       }

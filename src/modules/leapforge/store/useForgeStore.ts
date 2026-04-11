@@ -8,6 +8,7 @@ export interface ForgeState {
   nodes: Node[];
   edges: Edge[];
   selectedNodeId: string | null;
+  projectName: string;
 
   // Actions
   addNode: (type: string, position: { x: number; y: number }, data?: any) => void;
@@ -22,6 +23,7 @@ export interface ForgeState {
   clearWorkspace: () => void;
   setNodes: (nodes: Node[]) => void;
   setEdges: (edges: Edge[]) => void;
+  setProjectName: (name: string) => void;
 
   // Simulation
   isSimulating: boolean;
@@ -58,6 +60,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   nodes: [],
   edges: [],
   selectedNodeId: null,
+  projectName: 'Untitled Project',
   isSimulating: false,
   serialOutput: '',
   board: 'arduino-uno',
@@ -66,13 +69,23 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   librarySearchQuery: '',
   librarySearchResults: [],
 
-  setProjectPath: (path) => set({ projectPath: path }),
-  setImportedLibraries: (libs) => set({ importedLibraries: libs }),
-  addImportedLibrary: (lib) => set((state) => ({
-    importedLibraries: state.importedLibraries.includes(lib)
-      ? state.importedLibraries
-      : [...state.importedLibraries, lib]
-  })),
+  setProjectPath: (path) => {
+    console.log(`[FORGE STORE] projectPath updated to: ${path}`);
+    set({ projectPath: path });
+  },
+  setImportedLibraries: (libs) => {
+    console.log(`[FORGE STORE] importedLibraries list updated (${libs.length} items)`);
+    set({ importedLibraries: libs });
+  },
+  addImportedLibrary: (lib) => set((state) => {
+    if (state.importedLibraries.includes(lib)) {
+      return state;
+    }
+    console.log(`[FORGE STORE] Adding library to project: ${lib}`);
+    return {
+      importedLibraries: [...state.importedLibraries, lib]
+    };
+  }),
 
   setBoard: (board) => set(() => {
     simulationRunner.setBoard(board);
@@ -107,7 +120,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   }),
 
   resetSimulation: () => set(() => {
-    console.log('[FORGE STORE] resetSimulation triggered.');
+    console.log('[FORGE STORE] resetSimulation triggered (Clear Canvas/States).');
     simulationRunner.reset();
     return { isSimulating: false, serialOutput: '' };
   }),
@@ -168,4 +181,5 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
+  setProjectName: (name) => set({ projectName: name }),
 }));

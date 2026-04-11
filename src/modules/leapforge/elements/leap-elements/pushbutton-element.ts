@@ -55,16 +55,7 @@ export class PushbuttonElement extends LitElement {
         cursor: pointer;
       }
 
-      .label {
-        width: 0;
-        min-width: 100%;
-        font-size: 12px;
-        text-align: center;
-        color: gray;
-        position: relative;
-        line-height: 1;
-        top: -2px;
-      }
+    
     `;
   }
 
@@ -173,7 +164,6 @@ export class PushbuttonElement extends LitElement {
       >
         ${this.renderSVG()}
       </button>
-      <span class="label">${this.label}</span>
     `;
   }
 
