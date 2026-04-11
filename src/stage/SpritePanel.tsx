@@ -224,9 +224,9 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
       }}>
 
         {/* Main Sprites Area */}
-        <div style={{ 
-          ...styles.spriteListContainer, 
-          flex: 1, 
+        <div style={{
+          ...styles.spriteListContainer,
+          flex: 1,
           borderRight: isFullscreen ? "1px solid rgba(255,255,255,0.05)" : "1px solid #d9d9d9",
           backgroundColor: isFullscreen ? "#111116" : "#F9F9F9",
         }}>
@@ -260,7 +260,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
             {sprites.filter(s => s.id !== 'stage' && !s.id.includes('_clone_')).map((sprite) => {
               const isSelected = selectedSpriteId === sprite.id;
               const cloneCount = sprites.filter(s => s.id.startsWith(`${sprite.id}_clone_`)).length;
-              
+
               return (
                 <div
                   key={sprite.id}
@@ -282,7 +282,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                       🗑️
                     </button>
                   )}
-                  
+
                   {cloneCount > 0 && (
                     <div style={styles.cloneBadge} title={`${cloneCount} clones active`}>
                       {cloneCount}
@@ -317,7 +317,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 </div>
               );
             })}
-            
+
           </div>
 
           {/* Floating Add Sprite Button - Scratch 3.0 style */}

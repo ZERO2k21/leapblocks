@@ -365,7 +365,7 @@ export class Sprite {
 
     // ═══════════════════════════════════════════════════════════════════════
     // LOOKS - Say / Think / Bubble System
-// ═══════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════════
 
     say(text: string, secs?: number): void {
         this.state.sayText = String(text || '').trim();
@@ -510,7 +510,7 @@ export class Sprite {
             ctx.rotate((this.state.direction - 90) * Math.PI / 180 + animRotate);
         } else {
             ctx.rotate(animRotate);
-            if (this.state.rotationStyle === 'left-right' && 
+            if (this.state.rotationStyle === 'left-right' &&
                 (this.state.direction > 180 || this.state.direction < 0)) {
                 ctx.scale(-1, 1);
             }
@@ -659,7 +659,7 @@ export class Sprite {
         ctx.fillStyle = '#ced4da';
         ctx.strokeStyle = '#495057';
         ctx.lineWidth = 2;
-        
+
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(-25, -40, 50, 40, 8);
         else ctx.rect(-25, -40, 50, 40);
@@ -694,10 +694,10 @@ export class Sprite {
     }
 
     private renderSpeechBubble(
-        ctx: CanvasRenderingContext2D, 
-        x: number, 
-        y: number, 
-        text: string, 
+        ctx: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        text: string,
         type: 'say' | 'think' = 'say'
     ): void {
         ctx.save();
