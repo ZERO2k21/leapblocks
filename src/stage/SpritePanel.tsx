@@ -109,7 +109,8 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
             <input
               type="text"
               value={selectedSprite ? selectedSprite.name : ""}
-              readOnly
+              onChange={(e) => selectedSprite?.setName(e.target.value)}
+              disabled={!selectedSprite || selectedSpriteId === 'stage'}
               style={{ ...styles.propertyInput, width: '100%', minWidth: '60px' }}
             />
           </div>
@@ -212,12 +213,12 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
       </div>
 
       {/* Bottom Area: Sprites and Stage Lists */}
-      <div style={{ 
-        display: "flex", 
-        flex: 1, 
-        backgroundColor: isFullscreen ? "#111116" : "#F9F9F9", 
-        height: "180px",
-        overflow: "visible",
+      <div style={{
+        display: "flex",
+        flex: 1,
+        backgroundColor: isFullscreen ? "#111116" : "#F9F9F9",
+        minHeight: "180px",
+        overflow: "hidden",
         position: "relative",
         zIndex: 10
       }}>
@@ -370,22 +371,25 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
         </div>
 
         {/* Stage Area */}
-        <div className="slim-scrollbar" style={{ 
-          width: "92px", 
-          padding: "16px 8px", 
-          display: "flex", 
-          flexDirection: "column", 
-          alignItems: "center", 
+        <div className="slim-scrollbar" style={{
+          width: "108px",
+          padding: "12px 8px",
+          paddingBottom: "56px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
           position: "relative",
           height: "100%",
           overflowY: "auto",
+          boxSizing: "border-box",
+          flexShrink: 0,
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', width: '100%', justifyContent: 'center' }}>
-              <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#575E75' }}>Stage</div>
-              <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#4c97ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '10px' }}>🖼️</span>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', width: '100%', justifyContent: 'center' }}>
+            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#575E75' }}>Stage</div>
+            <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#4c97ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '10px' }}>🖼️</span>
             </div>
+          </div>
           {sprites.filter(s => s.id === 'stage').map((stageSprite) => {
             const isSelected = selectedSpriteId === 'stage';
             return (
@@ -394,27 +398,27 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 style={{
                   ...styles.spriteItem,
                   ...(isSelected ? styles.spriteItemSelected : {}),
-                  borderColor: isSelected ? '#3498DB' : '#d9d9d9', // Differentiate Stage color slightly
-                  width: '64px',
-                  height: '76px',
+                  borderColor: isSelected ? '#3498DB' : '#d9d9d9',
+                  width: '80px',
+                  height: '80px',
                 }}
                 onClick={() => onSelectSprite('stage')}
               >
-                <div style={{ ...styles.spriteThumbnail, height: '48px', backgroundColor: 'transparent', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ ...styles.spriteThumbnail, height: '52px', backgroundColor: 'transparent', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                   {stageManager.getCurrentBackdrop()?.src ? (
                     <img
                       src={stageManager.getCurrentBackdrop()?.src}
                       alt="Backdrop"
-                      style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "cover" }}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}
                     />
                   ) : (
-                    <div style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }} />
+                    <div style={{ width: '100%', height: '100%', backgroundColor: '#e8e8e8' }} />
                   )}
                 </div>
                 <div style={{
                   ...styles.spriteName,
-                  padding: '4px 0',
-                  fontSize: '10px',
+                  padding: '4px 2px',
+                  fontSize: '9px',
                   fontWeight: 'bold',
                   ...(isSelected ? { backgroundColor: '#3498DB', color: '#fff' } : {})
                 }}>
@@ -484,7 +488,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: "#fff",
     borderRadius: "8px",
     border: "1px solid #d9d9d9",
-    width: "450px",
+    width: "466px",
   },
   propertyPanel: {
     padding: "8px 16px",

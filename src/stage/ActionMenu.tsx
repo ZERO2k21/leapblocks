@@ -34,6 +34,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({ mainIcon, color, tooltip
                 {actions.map((action, index) => (
                     <div
                         key={action.id}
+                        className="menu-item-wrapper"
                         style={styles.menuItemWrapper}
                         onClick={(e) => {
                             e.stopPropagation();

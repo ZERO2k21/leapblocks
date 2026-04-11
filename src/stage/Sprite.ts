@@ -131,6 +131,7 @@ export class Sprite {
     // ═══════════════════════════════════════════════════════════════════════
     // STATE MODIFIERS
     // ═══════════════════════════════════════════════════════════════════════
+    setName(name: string) { this.state.name = name; this.onUpdate(); }
     setX(x: number) { this.state.x = Math.max(STAGE_CONFIG.MIN_X, Math.min(STAGE_CONFIG.MAX_X, x)); this.onUpdate(); }
     setY(y: number) { this.state.y = Math.max(STAGE_CONFIG.MIN_Y, Math.min(STAGE_CONFIG.MAX_Y, y)); this.onUpdate(); }
 
