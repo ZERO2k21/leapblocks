@@ -114,3 +114,10 @@ out.txt
 dev_error.txt
 icon_error.txt
 intermediate_diff.txt
+
+# Test scratch files
+test_*.ts
+test_*.js
+
+# Archives
+*.zip

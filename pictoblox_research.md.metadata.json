@@ -1,5 +1,0 @@
-{
-  "artifactType": "ARTIFACT_TYPE_OTHER",
-  "summary": "Comprehensive research report on PictoBlox block programming platform. Documents the architecture (based on Scratch 3.0), animation system (sprites, costumes, motion blocks, looks blocks), hardware integration modes (Stage Mode for real-time control, Upload Mode for standalone operation), hardware block specifications, and comparison with current LeetBlocks implementation with recommendations for what features to add.",
-  "updatedAt": "2025-12-19T03:56:10.549189Z"
-}
