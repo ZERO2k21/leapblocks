@@ -768,7 +768,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             setProjectName(data.projectName || "My Project");
             setProjectFiles(data.projectFiles || DEFAULT_FILES);
             setActiveFile(data.activeFile || "");
-            
+
             if (data.sprites && Array.isArray(data.sprites) && data.sprites.length > 0) {
                 setSprites(data.sprites);
                 setSelectedSpriteId(data.sprites[0].id);
@@ -776,7 +776,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 resetStage();
             }
             if (data.backdrop) setBackdropImg(data.backdrop);
-            
+
         } catch (err) {
             alert('Failed to load project: ' + err.message);
         } finally {
@@ -807,10 +807,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         { text: "║  ▶ Press Ctrl+S to save project                             ║", type: "info", ts: new Date() },
         { text: "╚══════════════════════════════════════════════════════════════╝", type: "info", ts: new Date() },
         { text: "", type: "info", ts: new Date() },
-        { text: _isWebMode
-            ? "🌐 Web Mode — Python runs in-browser via Skulpt. No install needed!"
-            : "🖥 Desktop Mode — Native Python connected. Ready!",
-          type: "success", ts: new Date() },
+        {
+            text: _isWebMode
+                ? "🌐 Web Mode — Python runs in-browser via Skulpt. No install needed!"
+                : "🖥 Desktop Mode — Native Python connected. Ready!",
+            type: "success", ts: new Date()
+        },
     ]);
     const [replInput, setReplInput] = useState("");
     const [replHistory, setReplHistory] = useState([]);
@@ -2652,7 +2654,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 position: "sticky",
                 top: 0,
                 height: 60,
-                background:"#0a015a",//"#080a25",
+                background: "#0a015a",//"#080a25",
                 display: "flex",
                 alignItems: "center",
                 padding: "0 8px",
@@ -2693,7 +2695,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     </button>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }} onClick={onBack}>
                         <Logo height={50} />
-                        <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em", fontFamily:"'sego ui',Inter,system-ui,sans-serif" }}>CODEX</span>
+                        <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em", fontFamily: "'sego ui',Inter,system-ui,sans-serif" }}>CODEX</span>
                     </div>
                     <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
 
@@ -2890,7 +2892,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <div title="Paste (Ctrl+V)" onClick={() => editorRef.current?.trigger('keyboard', 'editor.action.clipboardPasteAction', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <span style={{ fontSize: 14 }}>📄</span>
                             </div>
-                            <div title="Delete" onClick={() => { if(window.confirm('Clear active file?')) { const ed = editorRef.current; if(ed) { ed.setValue(''); } } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                            <div title="Delete" onClick={() => { if (window.confirm('Clear active file?')) { const ed = editorRef.current; if (ed) { ed.setValue(''); } } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <Trash2 size={16} />
                             </div>
                         </div>
@@ -3419,25 +3421,25 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     <div style={{ width: 380, display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0 }}>
                         <style>{`.ide-terminal-full > div:first-child { height: 100% !important; flex: 1 !important; }`}</style>
                         <div className="ide-terminal-full" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                        <TerminalPanel
-                            activePanel={activePanel}
-                            setActivePanel={setActivePanel}
-                            terminalOutput={terminalOutput}
-                            replInput={replInput}
-                            setReplInput={setReplInput}
-                            handleReplSubmit={handleReplSubmit}
-                            handleReplKey={handleReplKey}
-                            terminalEndRef={terminalEndRef}
-                            replInputRef={replInputRef}
-                            isRunning={isRunning}
-                            onRun={handleRun}
-                            onStop={handleStop}
-                            onClear={handleClear}
-                            packages={packages}
-                            pipFilter={pipFilter}
-                            setPipFilter={setPipFilter}
-                            handleInstall={handleInstall}
-                        />
+                            <TerminalPanel
+                                activePanel={activePanel}
+                                setActivePanel={setActivePanel}
+                                terminalOutput={terminalOutput}
+                                replInput={replInput}
+                                setReplInput={setReplInput}
+                                handleReplSubmit={handleReplSubmit}
+                                handleReplKey={handleReplKey}
+                                terminalEndRef={terminalEndRef}
+                                replInputRef={replInputRef}
+                                isRunning={isRunning}
+                                onRun={handleRun}
+                                onStop={handleStop}
+                                onClear={handleClear}
+                                packages={packages}
+                                pipFilter={pipFilter}
+                                setPipFilter={setPipFilter}
+                                handleInstall={handleInstall}
+                            />
                         </div>
                     </div>
                 </div>
@@ -3646,7 +3648,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     </div>
                 </div>
             )}
-            
+
             <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileLoad} accept=".leap,.lbproject,application/json" />
         </div>
     );
