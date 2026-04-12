@@ -145,11 +145,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveProject: (data: any, path?: string) => ipcRenderer.invoke("save-project", data, path),
     openProject: () => ipcRenderer.invoke("open-project"),
     librarySearch: (query: string) => ipcRenderer.invoke('library-search', query),
-    libraryInstall: (libName: string, projectPath: string) => ipcRenderer.invoke('library-install', libName, projectPath),
-    libraryListProject: (projectPath: string) => ipcRenderer.invoke('library-list-project', projectPath),
-    libraryUninstall: (libName: string, projectPath: string) => ipcRenderer.invoke('library-uninstall', libName, projectPath),
-    forgeLibCacheInfo: () => ipcRenderer.invoke('forge-lib-cache-info'),
-    getDefaultProjectPath: (): Promise<string> => ipcRenderer.invoke('get-default-project-path'),
+    libraryInstall: (libName: string) => ipcRenderer.invoke('library-install', libName),
+    libraryUninstall: (libName: string) => ipcRenderer.invoke('library-uninstall', libName),
+    getInstalledLibraries: () => ipcRenderer.invoke('get-installed-libraries'),
+    getForgeLibPath: () => ipcRenderer.invoke('get-forge-lib-path'),
     isElectron: true,
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -208,11 +207,10 @@ declare global {
             saveProject: (d: any, path?: string) => Promise<{ success: boolean; projectPath?: string; error?: string }>;
             openProject: () => Promise<any>;
             librarySearch: (query: string) => Promise<{ libraries: ArduinoLib[] }>;
-            libraryInstall: (libName: string, projectPath: string) => Promise<{ success: boolean; error?: string }>;
-            libraryListProject: (projectPath: string) => Promise<string[]>;
-            libraryUninstall: (libName: string, projectPath: string) => Promise<{ success: boolean; error?: string }>;
-            forgeLibCacheInfo: () => Promise<{ cachePath: string; manifest: { version: string; libraries: { name: string; version: string; cachedAt: string }[] } }>;
-            getDefaultProjectPath: () => Promise<string>;
+            libraryInstall: (libName: string) => Promise<{ success: boolean; error?: string }>;
+            libraryUninstall: (libName: string) => Promise<{ success: boolean; error?: string }>;
+            getInstalledLibraries: () => Promise<ArduinoLib[]>;
+            getForgeLibPath: () => Promise<string>;
             isElectron: boolean;
 
             pythonRun: (code: string) => Promise<void>;

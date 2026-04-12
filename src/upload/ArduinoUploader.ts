@@ -53,15 +53,45 @@ export class ArduinoUploader {
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Returns the path to the shared forge-lib cache directory.
-     * Located at: {userData}/forge-lib/
+     * Returns the path to the centralized forge-lib marketplace directory.
+     * Located at: [AppRoot]/forge-lib/
      */
     getForgeLibCachePath(): string {
-        const cachePath = path.join(app.getPath('userData'), 'forge-lib');
+        const appRoot = app.isPackaged 
+            ? path.dirname(app.getPath('exe')) 
+            : process.cwd();
+        const cachePath = path.join(appRoot, 'forge-lib');
         if (!fs.existsSync(cachePath)) {
             fs.mkdirSync(cachePath, { recursive: true });
         }
         return cachePath;
+    }
+
+    private getLibrariesPath(): string {
+        const p = path.join(this.getForgeLibCachePath(), 'libraries');
+        if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+        return p;
+    }
+
+    private getArduinoCliConfigPath(): string {
+        return path.join(this.getForgeLibCachePath(), 'arduino-cli.yaml');
+    }
+
+    /**
+     * Ensures the arduino-cli.yaml exists and points to our centralized forge-lib.
+     */
+    private ensureArduinoCliConfig() {
+        const configPath = this.getArduinoCliConfigPath();
+        const forgePath = this.getForgeLibCachePath();
+        
+        const configContent = `
+directories:
+  data: ${path.join(forgePath, 'data').replace(/\\/g, '/')}
+  downloads: ${path.join(forgePath, 'staging').replace(/\\/g, '/')}
+  user: ${forgePath.replace(/\\/g, '/')}
+`;
+        fs.writeFileSync(configPath, configContent.trim(), 'utf-8');
+        return configPath;
     }
 
     /**
@@ -264,7 +294,6 @@ export class ArduinoUploader {
             
             // ── Phase 1: Check Featured/Cache ─────────────────────────────
             if (!searchTerm) {
-                console.log('[FORGE UPLOADER] Returning FEATURED_LIBRARIES');
                 return { libraries: FEATURED_LIBRARIES };
             }
 
@@ -275,9 +304,10 @@ export class ArduinoUploader {
             }
 
             const arduinoCliPath = await this.getArduinoCliPath();
+            const configPath = this.ensureArduinoCliConfig();
 
             // USE maxBuffer and omit-releases-details to prevent crashes and keep it fast
-            const cmd = `"${arduinoCliPath}" lib search "${searchTerm}" --format json --omit-releases-details`;
+            const cmd = `"${arduinoCliPath}" --config-file "${configPath}" lib search "${searchTerm}" --format json --omit-releases-details`;
             console.log(`[FORGE UPLOADER] Searching libraries with: ${cmd}`);
             const { stdout } = await execAsync(cmd, {
                 maxBuffer: 10 * 1024 * 1024 // 10MB buffer to prevent overflow
@@ -310,141 +340,69 @@ export class ArduinoUploader {
         }
     }
 
-    async installLibrary(libName: string, projectPath: string) {
+    async installLibrary(libName: string) {
         try {
             const arduinoCliPath = await this.getArduinoCliPath();
-            const libsDir = path.join(projectPath, 'libs');
-            const fsExtra = require('fs-extra');
+            const configPath = this.ensureArduinoCliConfig();
 
-            if (!fs.existsSync(libsDir)) {
-                fs.mkdirSync(libsDir, { recursive: true });
-            }
+            console.log(`[FORGE-LIB] Installing "${libName}" globally to forge-lib...`);
 
-            // ── Step 1: Check forge-lib cache first ───────────────────────
-            const cachePath = this.getForgeLibCachePath();
-            const cachedLibPath = path.join(cachePath, libName);
-
-            if (fs.existsSync(cachedLibPath)) {
-                console.log(`[FORGE-LIB] Cache HIT for "${libName}" — copying from cache`);
-                const destPath = path.join(libsDir, libName);
-                await fsExtra.copy(cachedLibPath, destPath, { overwrite: true });
-                return { success: true, cached: true };
-            }
-
-            console.log(`[FORGE-LIB] Cache MISS for "${libName}" — downloading via arduino-cli`);
-
-            // ── Step 2: Download via arduino-cli (existing flow) ──────────
-            // Throttled Index Update: Only run once every 24 hours
+            // Throttled Index Update
             const manifest = this.getForgeLibManifest();
-            const now = Date.now();
-            const oneDayMs = 24 * 60 * 60 * 1000;
+            if (!manifest.lastIndexUpdate || (Date.now() - manifest.lastIndexUpdate > 24 * 60 * 60 * 1000)) {
+                await execAsync(`"${arduinoCliPath}" --config-file "${configPath}" lib update-index`);
+                manifest.lastIndexUpdate = Date.now();
+                this.updateForgeLibManifest(manifest);
+            }
+
+            // Install globally via config-file redirection
+            await execAsync(`"${arduinoCliPath}" --config-file "${configPath}" lib install "${libName}"`);
             
-            if (!manifest.lastIndexUpdate || (now - manifest.lastIndexUpdate > oneDayMs)) {
-                console.log('[FORGE-LIB] Updating library index (Throttled)...');
-                await execAsync(`"${arduinoCliPath}" lib update-index`);
-                manifest.lastIndexUpdate = now;
-                this.updateForgeLibManifest(manifest);
-            } else {
-                console.log('[FORGE-LIB] Skipping library index update (Already updated recently).');
-            }
-
-            // Create a temporary staging area for the installation
-            const tempUserDir = path.join(os.tmpdir(), `leapblocks_install_${Date.now()}`);
-            if (!fs.existsSync(tempUserDir)) fs.mkdirSync(tempUserDir, { recursive: true });
-
-            try {
-                // Install the library into the temporary user directory
-                const env = { ...process.env, ARDUINO_DIRECTORIES_USER: tempUserDir };
-                await execAsync(`"${arduinoCliPath}" lib install "${libName}"`, { env });
-
-                // Find the installed library folder
-                const installedLibsPath = path.join(tempUserDir, 'libraries');
-                if (!fs.existsSync(installedLibsPath)) {
-                    throw new Error('Library installation failed: directory not created');
-                }
-
-                const libFolders = fs.readdirSync(installedLibsPath);
-
-                // Move all downloaded libraries to the project libs/ folder
-                // AND copy them into the forge-lib cache
-                for (const folder of libFolders) {
-                    const sourcePath = path.join(installedLibsPath, folder);
-                    const destPath = path.join(libsDir, folder);
-                    const cacheDestPath = path.join(cachePath, folder);
-
-                    // Move to project
-                    await fsExtra.copy(sourcePath, destPath, { overwrite: true });
-
-                    // Save to forge-lib cache
-                    await fsExtra.copy(sourcePath, cacheDestPath, { overwrite: true });
-                    console.log(`[FORGE-LIB] Cached "${folder}" to forge-lib/`);
-                }
-
-                // ── Step 3: Update manifest.json ──────────────────────────
-                const manifest = this.getForgeLibManifest();
-                for (const folder of libFolders) {
-                    // Try to read version from library.properties if available
-                    let version = 'unknown';
-                    const propsPath = path.join(cachePath, folder, 'library.properties');
-                    if (fs.existsSync(propsPath)) {
-                        const propsContent = fs.readFileSync(propsPath, 'utf-8');
-                        const versionMatch = propsContent.match(/^version\s*=\s*(.+)$/m);
-                        if (versionMatch) version = versionMatch[1].trim();
-                    }
-
-                    // Upsert entry in manifest
-                    const existingIdx = manifest.libraries.findIndex(
-                        (e) => e.name.toLowerCase() === folder.toLowerCase()
-                    );
-                    const entry = {
-                        name: folder,
-                        version,
-                        cachedAt: new Date().toISOString(),
-                    };
-                    if (existingIdx >= 0) {
-                        manifest.libraries[existingIdx] = entry;
-                    } else {
-                        manifest.libraries.push(entry);
-                    }
-                }
-                this.updateForgeLibManifest(manifest);
-
-                return { success: true, cached: false };
-            } finally {
-                // Cleanup temp directory
-                await fsExtra.remove(tempUserDir);
-            }
+            return { success: true };
         } catch (error: any) {
             console.error('Library installation failed:', error);
             return { success: false, error: error.message };
         }
     }
 
-    async listProjectLibraries(projectPath: string) {
-        const libsDir = path.join(projectPath, 'libs');
+    async getInstalledLibraries(): Promise<any[]> {
+        const libsDir = this.getLibrariesPath();
         if (!fs.existsSync(libsDir)) return [];
 
         try {
-            const dirs = fs.readdirSync(libsDir, { withFileTypes: true })
-                .filter(dirent => dirent.isDirectory())
-                .map(dirent => dirent.name);
-            return dirs;
+            const folders = fs.readdirSync(libsDir, { withFileTypes: true })
+                .filter(d => d.isDirectory())
+                .map(d => d.name);
+
+            const results = [];
+            for (const folder of folders) {
+                const propsPath = path.join(libsDir, folder, 'library.properties');
+                if (fs.existsSync(propsPath)) {
+                    const content = fs.readFileSync(propsPath, 'utf-8');
+                    results.push({
+                        name: folder,
+                        author: content.match(/^author\s*=\s*(.+)$/m)?.[1]?.trim() || 'Unknown',
+                        version: content.match(/^version\s*=\s*(.+)$/m)?.[1]?.trim() || 'Unknown',
+                        description: content.match(/^sentence\s*=\s*(.+)$/m)?.[1]?.trim() || 'No description',
+                        isInstalled: true
+                    });
+                }
+            }
+            return results;
         } catch (error) {
             return [];
         }
     }
 
-    async uninstallLibrary(libName: string, projectPath: string) {
+    async uninstallLibrary(libName: string) {
         try {
-            const libsDir = path.join(projectPath, 'libs');
-            const libPath = path.join(libsDir, libName);
-
-            if (fs.existsSync(libPath)) {
-                // Recursively delete the library folder
-                fs.rmSync(libPath, { recursive: true, force: true });
-                return { success: true };
-            }
-            return { success: false, error: 'Library folder not found' };
+            const arduinoCliPath = await this.getArduinoCliPath();
+            const configPath = this.ensureArduinoCliConfig();
+            
+            console.log(`[FORGE-LIB] Uninstalling "${libName}" from forge-lib...`);
+            await execAsync(`"${arduinoCliPath}" --config-file "${configPath}" lib uninstall "${libName}"`);
+            
+            return { success: true };
         } catch (error: any) {
             return { success: false, error: error.message };
         }

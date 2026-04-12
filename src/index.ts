@@ -134,27 +134,25 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
   return result;
 });
 
-// Library Handlers
+// Library Handlers (Wokwi Centralized Management)
 ipcMain.handle('library-search', async (event, query: string) => {
   return await arduinoUploader.searchLibraries(query);
 });
 
-ipcMain.handle('library-install', async (event, libName: string, projectPath: string) => {
-  log('IPC', `library-install request: ${libName} to ${projectPath}`);
-  const result = await arduinoUploader.installLibrary(libName, projectPath);
-  log('IPC', `library-install finished: ${result.success ? 'Success' : 'Failure'}`);
-  return result;
+ipcMain.handle('library-install', async (event, libName: string) => {
+  return await arduinoUploader.installLibrary(libName);
 });
 
-ipcMain.handle('library-list-project', async (event, projectPath: string) => {
-  return await arduinoUploader.listProjectLibraries(projectPath);
+ipcMain.handle('library-uninstall', async (event, libName: string) => {
+  return await arduinoUploader.uninstallLibrary(libName);
 });
 
-ipcMain.handle('library-uninstall', async (event, libName: string, projectPath: string) => {
-  log('IPC', `library-uninstall request: ${libName} from ${projectPath}`);
-  const result = await arduinoUploader.uninstallLibrary(libName, projectPath);
-  log('IPC', `library-uninstall finished: ${result.success ? 'Success' : 'Failure'}`);
-  return result;
+ipcMain.handle('get-installed-libraries', async () => {
+  return await arduinoUploader.getInstalledLibraries();
+});
+
+ipcMain.handle('get-forge-lib-path', async () => {
+  return arduinoUploader.getForgeLibCachePath();
 });
 
 ipcMain.handle('get-default-project-path', async () => {
