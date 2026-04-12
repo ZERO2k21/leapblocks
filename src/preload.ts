@@ -144,9 +144,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     showInFolder: (p: string) => ipcRenderer.invoke("show-in-folder", p),
     saveProject: (data: any, path?: string) => ipcRenderer.invoke("save-project", data, path),
     openProject: () => ipcRenderer.invoke("open-project"),
-    librarySearch: (query: string) => ipcRenderer.invoke('library-search', query),
-    libraryInstall: (libName: string) => ipcRenderer.invoke('library-install', libName),
-    libraryUninstall: (libName: string) => ipcRenderer.invoke('library-uninstall', libName),
+    searchLibrary: (query: string) => ipcRenderer.invoke('search-library', query),
+    installLibrary: (libName: string) => ipcRenderer.invoke('install-library', libName),
+    removeLibrary: (libName: string) => ipcRenderer.invoke('remove-library', libName),
     getInstalledLibraries: () => ipcRenderer.invoke('get-installed-libraries'),
     getForgeLibPath: () => ipcRenderer.invoke('get-forge-lib-path'),
     isElectron: true,
@@ -206,9 +206,9 @@ declare global {
             showInFolder: (p: string) => void;
             saveProject: (d: any, path?: string) => Promise<{ success: boolean; projectPath?: string; error?: string }>;
             openProject: () => Promise<any>;
-            librarySearch: (query: string) => Promise<{ libraries: ArduinoLib[] }>;
-            libraryInstall: (libName: string) => Promise<{ success: boolean; error?: string }>;
-            libraryUninstall: (libName: string) => Promise<{ success: boolean; error?: string }>;
+            searchLibrary: (query: string) => Promise<{ libraries: ArduinoLib[] }>;
+            installLibrary: (libName: string) => Promise<{ success: boolean; error?: string }>;
+            removeLibrary: (libName: string) => Promise<{ success: boolean; error?: string }>;
             getInstalledLibraries: () => Promise<ArduinoLib[]>;
             getForgeLibPath: () => Promise<string>;
             isElectron: boolean;

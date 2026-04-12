@@ -144,7 +144,7 @@ directories:
         fs.writeFileSync(this.getSearchCachePath(), JSON.stringify(cache, null, 2), 'utf-8');
     }
 
-    async upload(code: string, port: string, fqbn: string, libraryPath?: string) {
+    async upload(code: string, port: string, fqbn: string) {
         if (!port) {
             return {
                 success: false,
@@ -175,10 +175,8 @@ directories:
             this.sendProgress(25, 'Starting compilation...');
             this.sendProgress(30, 'Compiling code...');
             try {
-                let compileCmd = `"${arduinoCliPath}" compile --fqbn ${fqbn} "${sketchDir}"`;
-                if (libraryPath && fs.existsSync(libraryPath)) {
-                    compileCmd += ` --libraries "${libraryPath}"`;
-                }
+                const libsFolder = this.getLibrariesPath();
+                let compileCmd = `"${arduinoCliPath}" compile --fqbn ${fqbn} --libraries "${libsFolder}" "${sketchDir}"`;
                 await execAsync(compileCmd, { timeout: 120000 });
                 this.sendProgress(60, 'Compilation successful');
             } catch (compileError: any) {
@@ -212,7 +210,7 @@ directories:
         }
     }
 
-    async compileForSimulation(code: string, fqbn: string, libraryPath?: string): Promise<{ success: boolean; hexContent?: string; error?: string }> {
+    async compileForSimulation(code: string, fqbn: string): Promise<{ success: boolean; hexContent?: string; error?: string }> {
         try {
             const arduinoCliPath = await this.getArduinoCliPath();
 
@@ -231,10 +229,8 @@ directories:
                     fs.mkdirSync(buildPath, { recursive: true });
                 }
 
-                let compileCmd = `"${arduinoCliPath}" compile --fqbn ${fqbn} --export-binaries --build-path "${buildPath}" "${sketchDir}"`;
-                if (libraryPath && fs.existsSync(libraryPath)) {
-                    compileCmd += ` --libraries "${libraryPath}"`;
-                }
+                const libsFolder = this.getLibrariesPath();
+                let compileCmd = `"${arduinoCliPath}" compile --fqbn ${fqbn} --export-binaries --build-path "${buildPath}" --libraries "${libsFolder}" "${sketchDir}"`;
 
                 console.log(`[FORGE UPLOADER] Running compile for simulation: ${compileCmd}`);
                 await execAsync(compileCmd, { timeout: 120000 });

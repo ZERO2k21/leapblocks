@@ -13,6 +13,7 @@ const ForgeEditor = lazy(() => import('./components/Editor/ForgeEditor'));
 import { LibraryManager } from './components/Library/LibraryManager';
 import { Library as LibraryIcon } from 'lucide-react';
 import { IgniteTopbar } from './components/Layout/IgniteTopbar';
+import { compileCode } from '../../services/CompilerService';
 
 interface ForgeStudioProps {
   onBack: () => void;
@@ -57,17 +58,7 @@ void loop() {
   const [isCompiling, setIsCompiling] = useState(false);
   const [compileError, setCompileError] = useState<string | null>(null);
 
-  // Auto-initialize projectPath to the codebase's default forge-lib directory
-  useEffect(() => {
-    if (!projectPath && window.electronAPI?.getDefaultProjectPath) {
-      window.electronAPI.getDefaultProjectPath().then((defaultPath) => {
-        console.log('[FORGE UI] Auto-initialized projectPath to:', defaultPath);
-        setProjectPath(defaultPath);
-      }).catch((err) => {
-        console.warn('[FORGE UI] Could not get default project path:', err);
-      });
-    }
-  }, []); // Run once on mount
+  // Auto-initialized state removed to enforce global-only forge-lib management.
 
   const handleToggleSimulation = async () => {
     console.log('[FORGE UI] Simulation button clicked. Currently simulating:', isSimulating);
@@ -83,11 +74,14 @@ void loop() {
     clearSerial();
 
     try {
-      console.log('[FORGE UI] Sending IPC request to compileCode...');
-      // Pass the libs folder path from the projectPath
-      const libsFolder = projectPath ? `${projectPath}/libs` : undefined;
-      const result = await window.electronAPI.compileCode(code, 'arduino:avr:uno', libsFolder);
-      console.log('[FORGE UI] IPC returned:', result.success ? 'Success' : 'Failed');
+      console.log('[FORGE UI] Sending quest to CompilerService...');
+      // Compilation and Simulation strictly use the global forge-lib cache
+      const result = await compileCode({
+        code,
+        board: 'arduino:avr:uno',
+        libraries: useForgeStore.getState().importedLibraries
+      });
+      console.log('[FORGE UI] Compiler result:', result.success ? 'Success' : 'Failed');
 
       if (result.success && result.hexContent) {
         console.log('[FORGE UI] Starting simulation with new hex code.');
@@ -240,7 +234,7 @@ void loop() {
                 onClear={() => clearSerial()}
               />
             ) : (
-              <LibraryManager onInitializeProject={handleSaveProject} />
+              <LibraryManager />
             )}
           </div>
         </div>

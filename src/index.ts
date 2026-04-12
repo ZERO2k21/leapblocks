@@ -135,15 +135,15 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
 });
 
 // Library Handlers (Wokwi Centralized Management)
-ipcMain.handle('library-search', async (event, query: string) => {
+ipcMain.handle('search-library', async (event, query: string) => {
   return await arduinoUploader.searchLibraries(query);
 });
 
-ipcMain.handle('library-install', async (event, libName: string) => {
+ipcMain.handle('install-library', async (event, libName: string) => {
   return await arduinoUploader.installLibrary(libName);
 });
 
-ipcMain.handle('library-uninstall', async (event, libName: string) => {
+ipcMain.handle('remove-library', async (event, libName: string) => {
   return await arduinoUploader.uninstallLibrary(libName);
 });
 

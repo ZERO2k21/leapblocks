@@ -1,0 +1,32 @@
+// const isElectronEnv = (): boolean => {
+//   try {
+//     return !!(window as any).electronAPI?.isElectron;
+//   } catch {
+//     return false;
+//   }
+// };
+
+// export const IS_ELECTRON = isElectronEnv();
+// export const IS_WEB = !IS_ELECTRON;
+
+// export type PlatformMode = 'electron' | 'web';
+// export const PLATFORM: PlatformMode = IS_ELECTRON ? 'electron' : 'web';
+
+// // Cloud compiler endpoint
+// //export const CLOUD_COMPILER_URL = 'https://compiler.leapforge.dev';
+// export const CLOUD_COMPILER_URL = 'http://localhost:3001';
+
+const isElectronEnv = (): boolean => {
+  try {
+    return !!(window as any).electronAPI?.isElectron;
+  } catch {
+    return false;
+  }
+};
+
+export const IS_ELECTRON = isElectronEnv();
+export const IS_WEB = !IS_ELECTRON;
+
+export type PlatformMode = 'electron' | 'web';
+export const PLATFORM: PlatformMode = IS_ELECTRON ? 'electron' : 'web';
+export const CLOUD_COMPILER_URL = 'http://localhost:3001';

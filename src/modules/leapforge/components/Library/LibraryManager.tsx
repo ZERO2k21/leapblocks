@@ -1,12 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Download, Trash2, Library, CheckCircle, Info, Loader2, Package, X } from 'lucide-react';
+import { IS_ELECTRON } from '../../../../config/platform';
+import { 
+  searchLibraries, 
+  getLibraries, 
+  installLibrary, 
+  removeLibrary 
+} from '../../../../services/LibraryService';
 
 interface Library {
   name: string;
   author: string;
   description: string;
   version: string;
-  isInstalled: boolean;
+  isInstalled?: boolean;
 }
 
 export const LibraryManager: React.FC = () => {
@@ -16,27 +23,23 @@ export const LibraryManager: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isInstalling, setIsInstalling] = useState<{ [key: string]: boolean }>({});
   const [forgeLibPath, setForgeLibPath] = useState<string>('');
+
   const refreshInstalled = useCallback(async () => {
     try {
-      const installed = await window.electronAPI.getInstalledLibraries();
-      setInstalledLibraries(installed);
+      const libs = await getLibraries();
+      setInstalledLibraries(libs);
     } catch (err) {
-      console.error('[FORGE] Failed to fetch installed libraries:', err);
+      console.error('[FORGE] Failed to fetch libraries:', err);
     }
   }, []);
-
-  // ── HANDLERS ───────────────────────────────────────────────────────────────
 
   const performSearch = useCallback(async (query: string) => {
     setIsSearching(true);
     try {
-      const data = await window.electronAPI.librarySearch(query);
+      const libs = await searchLibraries(query);
       
-      const mapped = data.libraries.map((lib: any) => ({
-        name: lib.name,
-        author: lib.author,
-        description: lib.sentence || lib.description,
-        version: lib.version,
+      const mapped = libs.map((lib: any) => ({
+        ...lib,
         isInstalled: installedLibraries.some(i => i.name.toLowerCase() === lib.name.toLowerCase())
       }));
       
@@ -55,28 +58,24 @@ export const LibraryManager: React.FC = () => {
 
   useEffect(() => {
     refreshInstalled();
-    window.electronAPI.getForgeLibPath().then(setForgeLibPath);
-    performSearch(''); // Initial fetch of featured libraries
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only on mount
+    if (IS_ELECTRON && (window as any).electronAPI) {
+      (window as any).electronAPI.getForgeLibPath().then(setForgeLibPath);
+    }
+    performSearch('');
+  }, [refreshInstalled, performSearch]);
 
-  const handleInstall = async (name: string) => {
-    setIsInstalling(prev => ({ ...prev, [name]: true }));
+  const handleInstall = async (lib: Library) => {
+    setIsInstalling(prev => ({ ...prev, [lib.name]: true }));
     try {
-      const res = await window.electronAPI.libraryInstall(name);
-      if (res.success) {
-        await refreshInstalled();
-        // Update search results state to show "Installed" badge
-        setSearchResults(prev => prev.map(l => 
-          l.name === name ? { ...l, isInstalled: true } : l
-        ));
-      } else {
-        alert(`Installation failed: ${res.error}`);
-      }
+      await installLibrary(lib);
+      await refreshInstalled();
+      setSearchResults(prev => prev.map(l => 
+        l.name === lib.name ? { ...l, isInstalled: true } : l
+      ));
     } catch (err) {
       console.error('[FORGE] Installation error:', err);
     } finally {
-      setIsInstalling(prev => ({ ...prev, [name]: false }));
+      setIsInstalling(prev => ({ ...prev, [lib.name]: false }));
     }
   };
 
@@ -84,20 +83,15 @@ export const LibraryManager: React.FC = () => {
     if (!confirm(`Are you sure you want to remove "${name}"?`)) return;
     
     try {
-      const res = await window.electronAPI.libraryUninstall(name);
-      if (res.success) {
-        await refreshInstalled();
-        // Update search results state to clear "Installed" badge
-        setSearchResults(prev => prev.map(l => 
-          l.name === name ? { ...l, isInstalled: false } : l
-        ));
-      }
+      await removeLibrary(name);
+      await refreshInstalled();
+      setSearchResults(prev => prev.map(l => 
+        l.name === name ? { ...l, isInstalled: false } : l
+      ));
     } catch (err) {
       console.error('[FORGE] Removal error:', err);
     }
   };
-
-  // ── STYLES ─────────────────────────────────────────────────────────────────
 
   const theme = {
     bg: '#0d1117',
@@ -105,8 +99,8 @@ export const LibraryManager: React.FC = () => {
     border: '#30363d',
     text: '#c9d1d9',
     textDim: '#8b949e',
-    accent: '#00ff9d',
-    accentDim: 'rgba(0, 255, 157, 0.1)',
+    accent: IS_ELECTRON ? '#00ff9d' : '#58a6ff',
+    accentDim: IS_ELECTRON ? 'rgba(0, 255, 157, 0.1)' : 'rgba(88, 166, 255, 0.1)',
     danger: '#f85149',
     white: '#f0f6fc'
   };
@@ -121,7 +115,6 @@ export const LibraryManager: React.FC = () => {
       fontFamily: 'system-ui, -apple-system, sans-serif',
       overflow: 'hidden'
     }}>
-      {/* ── HEADER ────────────────────────────────────────────────────────── */}
       <div style={{ padding: '24px 32px', borderBottom: `1px solid ${theme.border}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
           <Library size={32} color={theme.accent} />
@@ -132,7 +125,6 @@ export const LibraryManager: React.FC = () => {
         </p>
       </div>
 
-      {/* ── INFO BANNER ───────────────────────────────────────────────────── */}
       <div style={{
         margin: '20px 32px 0 32px',
         background: theme.accentDim,
@@ -146,19 +138,21 @@ export const LibraryManager: React.FC = () => {
         color: theme.accent
       }}>
         <Info size={16} />
-        <span>Libraries are cached in <strong>forge-lib</strong> — shared across all projects.</span>
+        <span>
+          {IS_ELECTRON 
+            ? "Libraries are cached in forge-lib — shared across all projects."
+            : "Libraries are bundled at compile time via cloud."}
+        </span>
       </div>
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', padding: '20px 32px' }}>
-        
-        {/* ── LEFT COLUMN: SEARCH & MARKETPLACE ────────────────────────────── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, borderRight: `1px solid ${theme.border}`, paddingRight: '24px' }}>
           <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
             <div style={{ flex: 1, position: 'relative' }}>
               <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: theme.textDim }} />
               <input
                 type="text"
-                placeholder="Search peripherals (e.g. WiFi, OLED, BME280)..."
+                placeholder="Search peripherals..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
@@ -208,8 +202,7 @@ export const LibraryManager: React.FC = () => {
                   border: `1px solid ${theme.border}`,
                   borderRadius: '8px',
                   padding: '16px',
-                  marginBottom: '12px',
-                  transition: 'border-color 0.2s'
+                  marginBottom: '12px'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                     <div style={{ flex: 1 }}>
@@ -220,11 +213,11 @@ export const LibraryManager: React.FC = () => {
                       <span style={{ fontSize: '11px', color: theme.textDim, background: '#21262d', padding: '2px 6px', borderRadius: '4px' }}>v{lib.version}</span>
                       {lib.isInstalled ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: theme.accent, fontSize: '12px', fontWeight: 600 }}>
-                          <CheckCircle size={14} /> Installed
+                          <CheckCircle size={14} /> {IS_ELECTRON ? "Cached" : "Added"}
                         </div>
                       ) : (
                         <button
-                          onClick={() => handleInstall(lib.name)}
+                          onClick={() => handleInstall(lib)}
                           disabled={isInstalling[lib.name]}
                           style={{
                             background: 'transparent',
@@ -253,7 +246,6 @@ export const LibraryManager: React.FC = () => {
           </div>
         </div>
 
-        {/* ── RIGHT COLUMN: INSTALLED LIBRARIES ───────────────────────────── */}
         <div style={{ width: '320px', paddingLeft: '24px', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
             <Package size={20} color={theme.accent} />
@@ -297,11 +289,8 @@ export const LibraryManager: React.FC = () => {
                       cursor: 'pointer',
                       padding: '4px',
                       display: 'flex',
-                      alignItems: 'center',
-                      transition: 'color 0.2s'
+                      alignItems: 'center'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = theme.danger}
-                    onMouseLeave={(e) => e.currentTarget.style.color = theme.textDim}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -310,10 +299,8 @@ export const LibraryManager: React.FC = () => {
             )}
           </div>
         </div>
-
       </div>
 
-      {/* ── FOOTER ────────────────────────────────────────────────────────── */}
       <div style={{ 
         padding: '8px 32px', 
         borderTop: `1px solid ${theme.border}`, 
@@ -322,31 +309,15 @@ export const LibraryManager: React.FC = () => {
         display: 'flex',
         justifyContent: 'space-between'
       }}>
-        <span>Marketplace Path: <code style={{ color: theme.accent }}>{forgeLibPath}</code></span>
-        <span>Ready</span>
+        <span>Environment: <b style={{ color: theme.accent }}>{IS_ELECTRON ? 'Desktop' : 'Web'}</b></span>
+        {IS_ELECTRON && <span>Path: {forgeLibPath}</span>}
       </div>
 
       <style>{`
-        .animate-spin {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        ::-webkit-scrollbar {
-          width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: #30363d;
-          border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: #484f58;
-        }
+        .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
       `}</style>
     </div>
   );
