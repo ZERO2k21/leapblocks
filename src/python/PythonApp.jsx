@@ -48,7 +48,6 @@ import BoardSelectionModal, { getBoards } from "../junior/components/BoardSelect
 import SidePanel from "./panels/SidePanel";
 import EditorPanel from "./panels/EditorPanel";
 import StagePanel from "./panels/StagePanel";
-import PythonIDEGuide from "./PythonIDEGuide";
 import MonacoEditor from "./editor/MonacoEditor";
 import StatusBar from "./editor/StatusBar";
 import TerminalPanel from "./terminal/TerminalPanel";
@@ -699,7 +698,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const [activeFile, setActiveFile] = useState("");
     const [projectFiles, setProjectFiles] = useState(DEFAULT_FILES);
     const [editorCursor, setEditorCursor] = useState({ line: 1, col: 1 });
-    const [showGuide, setShowGuide] = useState(false);
     const monacoRef = useRef(null);
     const editorRef = useRef(null);
     const [uploadView, setUploadView] = useState("project");
@@ -3231,17 +3229,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             {/* ══ MAIN WORKSPACE ═══════════════════════════════════════════════ */}
             {workflowMode === "stage" ? (
                 <div style={{ flex: 1, display: "flex", overflow: "auto", minHeight: 0 }}>
-
-                    {/* ── GUIDE PANEL (slide in from right) ── */}
-                    {showGuide && (
-                        <div style={{
-                            position: "absolute", top: 48, right: 0, bottom: 0,
-                            width: 440, zIndex: 200, boxShadow: "-4px 0 24px rgba(0,0,0,0.25)",
-                            borderLeft: "1px solid #312e5a",
-                        }}>
-                            <PythonIDEGuide onClose={() => setShowGuide(false)} />
-                        </div>
-                    )}
 
 
 
