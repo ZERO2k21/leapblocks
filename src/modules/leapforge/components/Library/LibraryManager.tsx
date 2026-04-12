@@ -278,8 +278,10 @@ export const LibraryManager: React.FC<LibraryManagerProps> = ({ onInitializeProj
     if (projectPath && isElectron) {
       fetchProjectLibs();
     }
-    // Only auto-fetch featured libraries if there are no persisted results
+    // Only auto-fetch featured libraries if there are no results at all.
+    // The backend now returns featured libraries instantly for empty queries.
     if (results.length === 0 && !searchQuery) {
+      console.log('[FORGE LIB] No results detected, fetching featured libraries.');
       performSearch('');
     }
   }, [fetchProjectLibs, projectPath, isElectron]);
@@ -425,7 +427,10 @@ export const LibraryManager: React.FC<LibraryManagerProps> = ({ onInitializeProj
 
       <LibrarySearchForm 
         initialValue={librarySearchQuery} 
-        onSearch={performSearch} 
+        onSearch={(q) => {
+          setSearchQuery(q);
+          performSearch(q);
+        }} 
         isSearching={isSearching} 
       />
 

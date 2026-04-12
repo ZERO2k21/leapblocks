@@ -17,7 +17,19 @@ interface ForgeLibManifestEntry {
 interface ForgeLibManifest {
     version: '1.0';
     libraries: ForgeLibManifestEntry[];
+    lastIndexUpdate?: number; // timestamp
 }
+
+const FEATURED_LIBRARIES = [
+    { name: "WiFi", author: "Arduino", version: "1.2.7", sentence: "Enables network connection (local and Internet) using the Arduino WiFi Shield.", website: "http://www.arduino.cc/en/Reference/WiFi" },
+    { name: "LiquidCrystal", author: "Arduino", version: "1.0.7", sentence: "Allows communication with alphabetical and numerical liquid crystal displays (LCDs).", website: "http://www.arduino.cc/en/Reference/LiquidCrystal" },
+    { name: "Servo", author: "Arduino", version: "1.2.1", sentence: "Allows Arduino boards to control a variety of servo motors.", website: "http://www.arduino.cc/en/Reference/Servo" },
+    { name: "DHT sensor library", author: "Adafruit", version: "1.4.6", sentence: "Arduino library for DHT11, DHT22, etc Temperature & Humidity Sensors.", website: "https://github.com/adafruit/DHT-sensor-library" },
+    { name: "Adafruit NeoPixel", author: "Adafruit", version: "1.12.0", sentence: "Arduino library for controlling Adafruit NeoPixel strips and arrays.", website: "https://github.com/adafruit/Adafruit_NeoPixel" },
+    { name: "LiquidCrystal I2C", author: "Frank de Brabander", version: "1.1.2", sentence: "A library for I2C LCD displays.", website: "https://github.com/johnrickman/LiquidCrystal_I2C" },
+    { name: "Keypad", author: "Mark Stanley, Alexander Brevig", version: "3.1.1", sentence: "A library for using matrix style keypads with Arduino.", website: "http://playground.arduino.cc/Code/Keypad" },
+    { name: "Wire", author: "Arduino", version: "1.0", sentence: "Allows communication with I2C / TWI devices.", website: "http://www.arduino.cc/en/Reference/Wire" }
+];
 
 export class ArduinoUploader {
     private mainWindow: BrowserWindow | null = null;
@@ -84,6 +96,22 @@ export class ArduinoUploader {
             cachePath: this.getForgeLibCachePath(),
             manifest: this.getForgeLibManifest(),
         };
+    }
+
+    private getSearchCachePath(): string {
+        return path.join(this.getForgeLibCachePath(), 'search_cache.json');
+    }
+
+    private getSearchCache(): Record<string, any[]> {
+        const p = this.getSearchCachePath();
+        if (fs.existsSync(p)) {
+            try { return JSON.parse(fs.readFileSync(p, 'utf-8')); } catch { return {}; }
+        }
+        return {};
+    }
+
+    private saveSearchCache(cache: Record<string, any[]>) {
+        fs.writeFileSync(this.getSearchCachePath(), JSON.stringify(cache, null, 2), 'utf-8');
     }
 
     async upload(code: string, port: string, fqbn: string, libraryPath?: string) {
@@ -232,9 +260,21 @@ export class ArduinoUploader {
 
     async searchLibraries(query: string) {
         try {
+            const searchTerm = query.trim().toLowerCase();
+            
+            // ── Phase 1: Check Featured/Cache ─────────────────────────────
+            if (!searchTerm) {
+                console.log('[FORGE UPLOADER] Returning FEATURED_LIBRARIES');
+                return { libraries: FEATURED_LIBRARIES };
+            }
+
+            const cache = this.getSearchCache();
+            if (cache[searchTerm]) {
+                console.log(`[FORGE UPLOADER] Cache HIT for search: "${searchTerm}"`);
+                return { libraries: cache[searchTerm] };
+            }
+
             const arduinoCliPath = await this.getArduinoCliPath();
-            // If query is empty, use a broad default search term to show "Featured" libraries
-            const searchTerm = query.trim() || 'arduino';
 
             // USE maxBuffer and omit-releases-details to prevent crashes and keep it fast
             const cmd = `"${arduinoCliPath}" lib search "${searchTerm}" --format json --omit-releases-details`;
@@ -258,6 +298,10 @@ export class ArduinoUploader {
                     website: latest?.website || ''
                 };
             });
+
+            // Save to cache
+            cache[searchTerm] = flattened;
+            this.saveSearchCache(cache);
 
             return { libraries: flattened };
         } catch (error: any) {
@@ -290,8 +334,19 @@ export class ArduinoUploader {
             console.log(`[FORGE-LIB] Cache MISS for "${libName}" — downloading via arduino-cli`);
 
             // ── Step 2: Download via arduino-cli (existing flow) ──────────
-            // Update index to ensure we can find the library
-            await execAsync(`"${arduinoCliPath}" lib update-index`);
+            // Throttled Index Update: Only run once every 24 hours
+            const manifest = this.getForgeLibManifest();
+            const now = Date.now();
+            const oneDayMs = 24 * 60 * 60 * 1000;
+            
+            if (!manifest.lastIndexUpdate || (now - manifest.lastIndexUpdate > oneDayMs)) {
+                console.log('[FORGE-LIB] Updating library index (Throttled)...');
+                await execAsync(`"${arduinoCliPath}" lib update-index`);
+                manifest.lastIndexUpdate = now;
+                this.updateForgeLibManifest(manifest);
+            } else {
+                console.log('[FORGE-LIB] Skipping library index update (Already updated recently).');
+            }
 
             // Create a temporary staging area for the installation
             const tempUserDir = path.join(os.tmpdir(), `leapblocks_install_${Date.now()}`);
