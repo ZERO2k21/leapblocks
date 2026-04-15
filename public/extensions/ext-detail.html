@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Extension Detail</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    overflow: hidden;
+  }
+
+  .detail-card {
+    max-width: 480px;
+    width: 100%;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.12);
+    overflow: hidden;
+    animation: slideUp 0.4s ease-out;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .detail-banner {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .detail-banner::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.08));
+  }
+
+  .detail-emoji {
+    font-size: 80px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
+    animation: float 3s ease-in-out infinite;
+    position: relative;
+    z-index: 2;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .detail-body {
+    padding: 28px 32px 32px;
+    text-align: center;
+  }
+
+  .detail-body h1 {
+    font-size: 26px;
+    font-weight: 900;
+    color: #1a1a2e;
+    margin-bottom: 12px;
+    letter-spacing: -0.3px;
+  }
+
+  .detail-body p {
+    font-size: 15px;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 8px;
+  }
+
+  .detail-tags {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 16px 0 24px;
+  }
+
+  .detail-tag {
+    background: #f0f0f5;
+    color: #555;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 14px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+  }
+
+  .detail-tag.requires {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 44px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    letter-spacing: 0.3px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+  }
+
+  .add-btn:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 10px 32px rgba(0,0,0,0.22);
+  }
+
+  .add-btn:active {
+    transform: scale(0.97);
+  }
+
+  .add-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .added-state {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+
+  .added-state .add-btn {
+    background: #6c757d !important;
+  }
+</style>
+</head>
+<body>
+
+<div class="detail-card" id="card">
+  <div class="detail-banner" id="banner">
+    <span class="detail-emoji" id="emoji"></span>
+  </div>
+  <div class="detail-body">
+    <h1 id="ext-name"></h1>
+    <p id="ext-desc"></p>
+    <div class="detail-tags" id="tags"></div>
+    <button class="add-btn" id="addBtn" onclick="addExtension()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      Add to Project
+    </button>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const extId = params.get('id') || 'unknown';
+  const extName = params.get('name') || 'Extension';
+  const extDesc = params.get('desc') || 'Add this extension to unlock new blocks.';
+  const extEmoji = decodeURIComponent(params.get('emoji') || '🧩');
+  const extColor = decodeURIComponent(params.get('color') || 'linear-gradient(135deg,#6a1b9a,#ce93d8)');
+  const extCat = params.get('cat') || '';
+  const extRequires = params.get('requires') || '';
+
+  document.getElementById('ext-name').textContent = extName;
+  document.getElementById('ext-desc').textContent = extDesc;
+  document.getElementById('emoji').textContent = extEmoji;
+  document.getElementById('banner').style.background = extColor;
+  document.title = extName + ' — Extension';
+
+  // Set button color based on banner
+  const btn = document.getElementById('addBtn');
+  btn.style.background = extColor;
+
+  // Body background
+  document.body.style.background = '#f5f0fa';
+
+  // Tags
+  const tagsEl = document.getElementById('tags');
+  if (extCat) {
+    const tag = document.createElement('span');
+    tag.className = 'detail-tag';
+    tag.textContent = extCat;
+    tagsEl.appendChild(tag);
+  }
+  if (extRequires) {
+    extRequires.split(',').forEach(r => {
+      const tag = document.createElement('span');
+      tag.className = 'detail-tag requires';
+      tag.textContent = r.trim();
+      tagsEl.appendChild(tag);
+    });
+  }
+
+  function addExtension() {
+    // Send message to parent window
+    window.parent.postMessage({
+      type: 'ADD_EXTENSION',
+      extensionId: extId,
+      extensionName: extName
+    }, '*');
+
+    // Visual feedback
+    btn.innerHTML = '✓ Added!';
+    document.getElementById('card').classList.add('added-state');
+  }
+</script>
+</body>
+</html>

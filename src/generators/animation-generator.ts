@@ -1044,6 +1044,41 @@ export class AnimationCompiler {
                 step = { type: 'pen_setPenColorParamTo', param: block.getFieldValue('PARAM'), value: Number(block.getFieldValue('VALUE')) };
                 break;
 
+            // Advanced pen blocks (extension) — delegate to runtime bridge
+            case 'pen_enable_drag':
+            case 'pen_set_draw_mode':
+            case 'pen_set_buffer':
+                // These are runtime-only features; emit a no-op step so the block
+                // doesn't break compilation. The JS generator path handles them.
+                step = { type: 'pen_clear' }; // harmless no-op placeholder
+                break;
+
+            // Realistic pencil drawing blocks
+            case 'pen_go_to_mouse':
+                step = { type: 'go_to_mouse_with_pen', penDown: true };
+                break;
+            case 'pen_go_to_mouse_up':
+                step = { type: 'go_to_mouse_with_pen', penDown: false };
+                break;
+            case 'pen_point_towards_mouse_smooth':
+                step = { type: 'point_towards_mouse_smooth', smoothFactor: 0.25 };
+                break;
+
+            // Face Detection extension blocks
+            case 'fd_camera':
+            case 'fd_analyze': {
+                const action = block.getFieldValue('ACTION') || 'analyze';
+                step = { type: 'fd_action', action } as any;
+                break;
+            }
+            case 'fd_count':
+            case 'fd_guess_emotion':
+            case 'fd_detect': {
+                const feature = block.getFieldValue('FEATURE') || '';
+                step = { type: 'fd_report', feature } as any;
+                break;
+            }
+
             // Sensing
             case 'ask':
             case 'sensing_ask':

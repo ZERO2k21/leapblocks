@@ -7,6 +7,7 @@ import VariableMonitor from '../components/VariableMonitor';
 import ListMonitor from '../components/ListMonitor';
 import TableMonitor from '../components/TableMonitor';
 import { animationVM } from '../vm/AnimationVM';
+import { setFaceVideoElement } from '../runtime/RuntimeBridge';
 
 // Monitor interfaces (matching IntermediateApp)
 interface VariableMonitorState {
@@ -122,6 +123,8 @@ export const Stage: React.FC<StageProps> = ({
                     stream = s;
                     if (videoRef.current) {
                         videoRef.current.srcObject = s;
+                        // Give FaceRuntime access to the live video element
+                        setFaceVideoElement(videoRef.current);
                     }
                 })
                 .catch((err) => console.error("Error accessing camera:", err));
@@ -131,6 +134,8 @@ export const Stage: React.FC<StageProps> = ({
                 tracks.forEach(track => track.stop());
                 videoRef.current.srcObject = null;
             }
+            // Detach from FaceRuntime when camera is off
+            setFaceVideoElement(null);
         }
         return () => {
             if (stream) {
@@ -287,31 +292,28 @@ export const Stage: React.FC<StageProps> = ({
         if (penCanvas) {
             const penCtx = penCanvas.getContext('2d');
             if (penCtx) {
-                // Draw lines for sprites with pen down
                 for (const sprite of sprites) {
                     if (sprite.isPenDown && sprite.visible) {
+                        // Use the tip position, not the sprite center
+                        const tip = sprite.getPenTipPosition();
+                        const cx = width / 2 + tip.x;
+                        const cy = height / 2 - tip.y;
+
                         const prevPos = prevPositionsRef.current.get(sprite.id);
-                        const cx = width / 2 + sprite.x;
-                        const cy = height / 2 - sprite.y;
-
                         if (prevPos) {
-                            // Draw line from previous to current position
-                            penCtx.beginPath();
-                            penCtx.moveTo(width / 2 + prevPos.x, height / 2 - prevPos.y);
-                            penCtx.lineTo(cx, cy);
-                            penCtx.strokeStyle = sprite.penColor;
-                            penCtx.lineWidth = sprite.penSize;
-                            penCtx.lineCap = 'round';
-                            penCtx.stroke();
+                            penManager.drawLine(
+                                prevPos.x, prevPos.y,
+                                cx, cy,
+                                sprite.penColor,
+                                sprite.penSize
+                            );
                         }
 
-                        // Update previous position
-                        prevPositionsRef.current.set(sprite.id, { x: sprite.x, y: sprite.y });
+                        // Store canvas coords directly so we don't re-convert next frame
+                        prevPositionsRef.current.set(sprite.id, { x: cx, y: cy });
                     } else {
-                        // Remove from tracking if pen is up
-                        if (prevPositionsRef.current.has(sprite.id)) {
-                            prevPositionsRef.current.delete(sprite.id);
-                        }
+                        // Pen lifted — clear tracking so next penDown starts fresh
+                        prevPositionsRef.current.delete(sprite.id);
                     }
                 }
             }

@@ -145,6 +145,9 @@ export type ScriptStep = (
     // Pen color params
     | { type: 'pen_changePenColorParamBy'; param: string; change: number }
     | { type: 'pen_setPenColorParamTo'; param: string; value: number }
+    // Pencil / realistic drawing steps
+    | { type: 'go_to_mouse_with_pen'; penDown?: boolean }
+    | { type: 'point_towards_mouse_smooth'; smoothFactor?: number }
     // Procedures / My Blocks
     | { type: 'procedures_call'; proccode: string; args?: Record<string, any> }
 ) & { blockId?: string };
@@ -807,6 +810,11 @@ export class AnimationVM {
             return;
         }
 
+        // Keep window.__activeSpriteId in sync so window.runtime.pen targets this sprite
+        if (typeof window !== 'undefined') {
+            (window as any).__activeSpriteId = script.spriteId;
+        }
+
         const id = `${script.spriteId}-${Date.now()}-${Math.random()}`;
         const controller = new AbortController();
         this.runningScripts.set(id, {
@@ -1306,6 +1314,18 @@ export class AnimationVM {
             }
             case 'pen_penDown':
                 sprite.setPenDown(true);
+                // Stamp a dot at the tip so single-click leaves a mark
+                if (penManager.isReady()) {
+                    const tip = sprite.getPenTipPosition();
+                    const sw = STAGE_CONFIG.WIDTH;
+                    const sh = STAGE_CONFIG.HEIGHT;
+                    (penManager as any).drawDot(
+                        sw / 2 + tip.x,
+                        sh / 2 - tip.y,
+                        sprite.penColor,
+                        sprite.penSize
+                    );
+                }
                 break;
             case 'pen_penUp':
                 sprite.setPenDown(false);
@@ -1332,6 +1352,93 @@ export class AnimationVM {
             case 'pen_setPenColorParamTo': {
                 console.log(`[AnimationVM] set pen ${step.param} to ${step.value}`);
                 // For a full implementation, convert pen color to HSL, set param, convert back
+                break;
+            }
+
+            // ── Realistic pencil drawing steps ──────────────────────────────
+            case 'go_to_mouse_with_pen': {
+                const shouldDraw = step.penDown !== false;
+
+                // Compute where the tip currently is (before moving)
+                const prevTip = sprite.getPenTipPosition();
+
+                // Position the sprite so its TIP lands on the mouse, not its center.
+                // getCenterForTipAt() back-calculates the center offset.
+                const center = sprite.getCenterForTipAt(this.mouseX, this.mouseY);
+                sprite.setX(center.x);
+                sprite.setY(center.y);
+
+                // After moving, the tip is now at mouse position
+                const newTip = sprite.getPenTipPosition();
+
+                if (shouldDraw) {
+                    sprite.setPenDown(true);
+                    if (penManager.isReady()) {
+                        const stageW = STAGE_CONFIG.WIDTH;
+                        const stageH = STAGE_CONFIG.HEIGHT;
+                        // Draw from previous tip to new tip (both in canvas coords)
+                        penManager.drawLine(
+                            stageW / 2 + prevTip.x, stageH / 2 - prevTip.y,
+                            stageW / 2 + newTip.x, stageH / 2 - newTip.y,
+                            sprite.penColor,
+                            sprite.penSize
+                        );
+                    }
+                } else {
+                    sprite.setPenDown(false);
+                }
+                break;
+            }
+
+            case 'point_towards_mouse_smooth': {
+                // Tilt the pencil so it leans toward the direction of travel.
+                // The pencil tip should point in the direction of mouse movement.
+                const smoothFactor = step.smoothFactor ?? 0.3;
+                const dx = this.mouseX - sprite.getPenTipPosition().x;
+                const dy = this.mouseY - sprite.getPenTipPosition().y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance > 2) {
+                    // atan2(dy, dx) gives math angle (0=right, CCW positive)
+                    // Scratch direction: 90=right, 0=up → scratchDir = 90 - mathDeg
+                    // But for a pencil leaning toward movement: tip points in travel direction
+                    // Pencil image has tip at bottom → when direction=135 (down-left), tip points down-left
+                    // So target direction = direction of travel = atan2(-dy, dx) * 180/π + 90
+                    // (negative dy because Scratch y is flipped vs canvas)
+                    const targetAngle = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
+                    const currentDir = sprite.direction;
+
+                    // Shortest-path interpolation
+                    let delta = targetAngle - currentDir;
+                    while (delta > 180) delta -= 360;
+                    while (delta < -180) delta += 360;
+
+                    let newDir = currentDir + delta * smoothFactor;
+                    while (newDir > 180) newDir -= 360;
+                    while (newDir < -180) newDir += 360;
+
+                    sprite.pointInDirection(newDir);
+                }
+                break;
+            }
+
+            // Face Detection extension steps
+            case 'fd_action' as any: {
+                const fdAction = (step as any).action;
+                if (typeof window !== 'undefined' && (window as any).runtime?.face) {
+                    (window as any).runtime.face.analyse(fdAction);
+                }
+                break;
+            }
+            case 'fd_report' as any: {
+                // Reporter blocks used as statements — say the result
+                if (typeof window !== 'undefined' && (window as any).runtime?.face) {
+                    const face = (window as any).runtime.face;
+                    const result = (step as any).feature
+                        ? face.detectFeature((step as any).feature)
+                        : face.getFaceCount();
+                    sprite.say(String(result ?? ''));
+                }
                 break;
             }
 
@@ -1751,8 +1858,8 @@ export class AnimationVM {
      */
     private colorMatches(r: number, g: number, b: number, target: [number, number, number], tolerance = 30): boolean {
         return Math.abs(r - target[0]) <= tolerance &&
-               Math.abs(g - target[1]) <= tolerance &&
-               Math.abs(b - target[2]) <= tolerance;
+            Math.abs(g - target[1]) <= tolerance &&
+            Math.abs(b - target[2]) <= tolerance;
     }
 
     /**

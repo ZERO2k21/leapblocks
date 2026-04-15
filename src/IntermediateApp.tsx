@@ -54,6 +54,7 @@ import BackdropLibrary from './components/BackdropLibrary';
 import { stageManager } from './engine/StageManager';
 import { spriteManager } from './engine/SpriteManager';
 import { leapRuntime } from './runtime/leapRuntime';
+import { initRuntime, setActiveSpriteId, setFaceVideoElement } from './runtime/RuntimeBridge';
 import { hardwareAdapter } from './hardware/HardwareAdapter';
 
 import SerialMonitor from './components/SerialMonitor';
@@ -96,7 +97,15 @@ import TableMonitor from './components/TableMonitor';
 let blocksInitialized = false;
 let originalCheckboxSetValue: any = null;
 
+// Initialize Extension Runtime mapping — delegates to RuntimeBridge
+// which wires pen → PenManager and face → FaceRuntime (browser FaceDetector API)
+if (typeof window !== 'undefined') {
+    initRuntime();
+}
+
+
 // ═══════════════════════════════════════════════════════════════════════════
+
 
 
 // LOGGING UTILITY
@@ -477,6 +486,183 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const [isCameraOn, setIsCameraOn] = useState(false);
 
     const [showGrid, setShowGrid] = useState(false);
+
+    // Tracks which extension categories have been installed (pen, face_detection, etc.)
+    // Used by getCurrentToolbox() to inject them after "My Blocks"
+    const [installedExtensions, setInstalledExtensions] = useState<Set<string>>(new Set());
+    const installedExtensionsRef = useRef<Set<string>>(new Set());
+
+    // ─── PEN EXTENSION ────────────────────────────────────────────────────────
+    const addPenExtension = useCallback(() => {
+        if (!workspaceRef.current) return;
+
+        // 1. Register block definitions (idempotent — skip already-registered types)
+        // Uses canonical AnimationVM block types so compiled scripts execute natively.
+        const penBlockDefs = [
+            { type: 'pen_clear', message0: 'erase all', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
+            { type: 'pen_stamp', message0: 'stamp', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
+            { type: 'pen_penDown', message0: 'pen down', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
+            { type: 'pen_penUp', message0: 'pen up', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
+            {
+                type: 'pen_setPenColorToColor', message0: 'set pen color to %1',
+                args0: [{ type: 'field_colour', name: 'COLOR', colour: '#2c2c2c' }],
+                previousStatement: null, nextStatement: null, colour: '#3dba7e'
+            },
+            {
+                type: 'pen_changePenColorParamBy', message0: 'change pen %1 by %2',
+                args0: [
+                    { type: 'field_dropdown', name: 'PARAM', options: [['color', 'color'], ['saturation', 'saturation'], ['brightness', 'brightness'], ['transparency', 'transparency']] },
+                    { type: 'field_number', name: 'CHANGE', value: 10 }
+                ], previousStatement: null, nextStatement: null, colour: '#3dba7e'
+            },
+            {
+                type: 'pen_setPenColorParamTo', message0: 'set pen %1 to %2',
+                args0: [
+                    { type: 'field_dropdown', name: 'PARAM', options: [['color', 'color'], ['saturation', 'saturation'], ['brightness', 'brightness'], ['transparency', 'transparency']] },
+                    { type: 'field_number', name: 'VALUE', value: 50 }
+                ], previousStatement: null, nextStatement: null, colour: '#3dba7e'
+            },
+            {
+                type: 'pen_changePenSizeBy', message0: 'change pen size by %1',
+                args0: [{ type: 'field_number', name: 'SIZE', value: 1 }],
+                previousStatement: null, nextStatement: null, colour: '#3dba7e'
+            },
+            {
+                type: 'pen_setPenSizeTo', message0: 'set pen size to %1',
+                args0: [{ type: 'field_number', name: 'SIZE', value: 1 }],
+                previousStatement: null, nextStatement: null, colour: '#3dba7e'
+            },
+            // Advanced Pen
+            {
+                type: 'pen_enable_drag', message0: 'enable %1',
+                args0: [{ type: 'field_dropdown', name: 'ENABLE', options: [['drag and draw', 'drag and draw']] }],
+                previousStatement: null, nextStatement: null, colour: '#2e7d32'
+            },
+            {
+                type: 'pen_set_draw_mode', message0: 'set draw mode: %1',
+                args0: [{ type: 'field_dropdown', name: 'MODE', options: [['default', 'default'], ['smooth', 'smooth']] }],
+                previousStatement: null, nextStatement: null, colour: '#2e7d32'
+            },
+            {
+                type: 'pen_set_buffer', message0: 'set point buffer size: %1',
+                args0: [{ type: 'field_number', name: 'VALUE', value: 1 }],
+                previousStatement: null, nextStatement: null, colour: '#2e7d32'
+            },
+            // ── Realistic pencil drawing ──
+            { type: 'pen_go_to_mouse', message0: 'go to mouse ✏️ (pen down)', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
+            { type: 'pen_go_to_mouse_up', message0: 'go to mouse (pen up)', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
+            { type: 'pen_point_towards_mouse_smooth', message0: 'point towards mouse (smooth)', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
+        ];
+        const newPenDefs = penBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+        if (newPenDefs.length > 0) Blockly.defineBlocksWithJsonArray(newPenDefs);
+
+        // 2. JS generators (runtime bridge path)
+        const jsGen = (window as any).Blockly?.JavaScript;
+        if (jsGen) {
+            jsGen['pen_clear'] = () => 'if(window.runtime?.pen) window.runtime.pen.eraseAll();\n';
+            jsGen['pen_stamp'] = () => 'if(window.runtime?.pen) window.runtime.pen.stamp();\n';
+            jsGen['pen_penDown'] = () => 'if(window.runtime?.pen) window.runtime.pen.penDown();\n';
+            jsGen['pen_penUp'] = () => 'if(window.runtime?.pen) window.runtime.pen.penUp();\n';
+            jsGen['pen_setPenColorToColor'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.setColor('${b.getFieldValue('COLOR')}');\n`;
+            jsGen['pen_changePenColorParamBy'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.changeColorBy(${b.getFieldValue('CHANGE')});\n`;
+            jsGen['pen_setPenColorParamTo'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.setColorTo(${b.getFieldValue('VALUE')});\n`;
+            jsGen['pen_changePenSizeBy'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.changeSize(${b.getFieldValue('SIZE')});\n`;
+            jsGen['pen_setPenSizeTo'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.setSize(${b.getFieldValue('SIZE')});\n`;
+            jsGen['pen_enable_drag'] = () => 'if(window.runtime?.pen) window.runtime.pen.enableDragAndDraw();\n';
+            jsGen['pen_set_draw_mode'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.setDrawMode('${b.getFieldValue('MODE')}');\n`;
+            jsGen['pen_set_buffer'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.setPointBufferSize(${b.getFieldValue('VALUE')});\n`;
+            jsGen['pen_go_to_mouse'] = () => '/* go_to_mouse_with_pen handled by AnimationVM */\n';
+            jsGen['pen_go_to_mouse_up'] = () => '/* go_to_mouse_with_pen(up) handled by AnimationVM */\n';
+            jsGen['pen_point_towards_mouse_smooth'] = () => '/* smooth tilt handled by AnimationVM */\n';
+        }
+
+        // 3. Mark installed → getCurrentToolbox() will inject the category after My Blocks
+        if (!installedExtensionsRef.current.has('pen')) {
+            installedExtensionsRef.current = new Set([...installedExtensionsRef.current, 'pen']);
+            setInstalledExtensions(new Set(installedExtensionsRef.current));
+        }
+    }, [workspaceRef]);
+
+    // ─── FACE DETECTION EXTENSION ─────────────────────────────────────────────
+    const addFaceDetectionExtension = useCallback(() => {
+        if (!workspaceRef.current) return;
+
+        // 1. Register block definitions
+        const fdBlockDefs = [
+            {
+                type: 'fd_camera', message0: '📷 camera %1',
+                args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off'], ['flip', 'flip']] }],
+                previousStatement: null, nextStatement: null, colour: '#D43D41'
+            },
+            {
+                type: 'fd_analyze', message0: '👤 %1 face',
+                args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['analyze', 'analyze'], ['show detection', 'show'], ['hide detection', 'hide']] }],
+                previousStatement: null, nextStatement: null, colour: '#D43D41'
+            },
+            { type: 'fd_count', message0: '👥 count faces', previousStatement: null, nextStatement: null, colour: '#D43D41' },
+            { type: 'fd_guess_emotion', message0: '🙂 guess emotion', previousStatement: null, nextStatement: null, colour: '#D43D41' },
+            {
+                type: 'fd_detect', message0: '👁️ detect %1',
+                args0: [{ type: 'field_dropdown', name: 'FEATURE', options: [['Left Eye', 'left_eye'], ['Right Eye', 'right_eye'], ['Nose', 'nose'], ['Mouth', 'mouth']] }],
+                previousStatement: null, nextStatement: null, colour: '#D43D41'
+            },
+            // Reporter blocks
+            {
+                type: 'fd_face_x', message0: 'face %1 x position',
+                args0: [{ type: 'field_number', name: 'N', value: 1 }],
+                output: 'Number', colour: '#b71c1c'
+            },
+            {
+                type: 'fd_face_y', message0: 'face %1 y position',
+                args0: [{ type: 'field_number', name: 'N', value: 1 }],
+                output: 'Number', colour: '#b71c1c'
+            },
+            { type: 'fd_face_count', message0: 'face count', output: 'Number', colour: '#b71c1c' },
+            { type: 'fd_emotion', message0: 'emotion', output: 'String', colour: '#b71c1c' },
+        ];
+        const newFdDefs = fdBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+        if (newFdDefs.length > 0) Blockly.defineBlocksWithJsonArray(newFdDefs);
+
+        // 2. JS generators
+        const jsGen = (window as any).Blockly?.JavaScript;
+        if (jsGen) {
+            jsGen['fd_camera'] = (b: any) => `if(window.runtime?.face) window.runtime.face.analyse('${b.getFieldValue("ACTION")}');\n`;
+            jsGen['fd_analyze'] = (b: any) => `if(window.runtime?.face) window.runtime.face.analyse('${b.getFieldValue("ACTION")}');\n`;
+            jsGen['fd_count'] = () => `if(window.runtime?.face){const s=window.__activeSpriteId;if(s&&window.spriteManager)window.spriteManager.getSprite(s)?.say(window.runtime.face.getFaceCount()+" faces");}\n`;
+            jsGen['fd_guess_emotion'] = () => `if(window.runtime?.face){const s=window.__activeSpriteId;if(s&&window.spriteManager)window.spriteManager.getSprite(s)?.say("Emotion: "+window.runtime.face.getEmotion());}\n`;
+            jsGen['fd_detect'] = (b: any) => `if(window.runtime?.face) window.runtime.face.detectFeature('${b.getFieldValue("FEATURE")}');\n`;
+            jsGen['fd_face_x'] = (b: any) => [`window.runtime?.face?.getX(${b.getFieldValue('N')})||0`, 0];
+            jsGen['fd_face_y'] = (b: any) => [`window.runtime?.face?.getY(${b.getFieldValue('N')})||0`, 0];
+            jsGen['fd_face_count'] = () => [`window.runtime?.face?.getFaceCount()||0`, 0];
+            jsGen['fd_emotion'] = () => [`window.runtime?.face?.getEmotion()||''`, 0];
+        }
+
+        // 3. Mark installed
+        if (!installedExtensionsRef.current.has('face_detection')) {
+            installedExtensionsRef.current = new Set([...installedExtensionsRef.current, 'face_detection']);
+            setInstalledExtensions(new Set(installedExtensionsRef.current));
+        }
+    }, [workspaceRef]);
+
+    // Listen for extension iframe messages
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data && event.data.type === 'ADD_EXTENSION') {
+                const extId = event.data.extension || event.data.extensionId;
+                if (extId === 'pen') {
+                    addPenExtension();
+                    setShowExtensionLibrary(false);
+                } else if (extId === 'face-detection' || extId === 'face_detection') {
+                    addFaceDetectionExtension();
+                    setShowExtensionLibrary(false);
+                }
+            }
+        };
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [addPenExtension, addFaceDetectionExtension]);
+
+
 
     const [isDraggingSprite, setIsDraggingSprite] = useState(false);
 
@@ -1168,10 +1354,73 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     const getCurrentToolbox = useCallback(() => {
 
+        // Build the extension categories to inject after "My Blocks"
+        const extensionCategories: any[] = [];
+        const ext = installedExtensionsRef.current;
+
+        if (ext.has('pen')) {
+            extensionCategories.push({
+                kind: 'pictobloxCategory',
+                name: 'Pen',
+                colour: '#3dba7e',
+                contents: [
+                    { kind: 'block', type: 'pen_clear' },
+                    { kind: 'block', type: 'pen_stamp' },
+                    { kind: 'block', type: 'pen_penDown' },
+                    { kind: 'block', type: 'pen_penUp' },
+                    { kind: 'block', type: 'pen_setPenColorToColor' },
+                    { kind: 'block', type: 'pen_changePenColorParamBy' },
+                    { kind: 'block', type: 'pen_setPenColorParamTo' },
+                    { kind: 'block', type: 'pen_changePenSizeBy' },
+                    { kind: 'block', type: 'pen_setPenSizeTo' },
+                    { kind: 'label', text: 'Advanced Pen' },
+                    { kind: 'block', type: 'pen_enable_drag' },
+                    { kind: 'block', type: 'pen_set_draw_mode' },
+                    { kind: 'block', type: 'pen_set_buffer' },
+                    { kind: 'label', text: 'Pencil Drawing' },
+                    { kind: 'block', type: 'pen_go_to_mouse' },
+                    { kind: 'block', type: 'pen_go_to_mouse_up' },
+                    { kind: 'block', type: 'pen_point_towards_mouse_smooth' },
+                ],
+            });
+        }
+
+        if (ext.has('face_detection')) {
+            extensionCategories.push({
+                kind: 'pictobloxCategory',
+                name: 'Face Detection',
+                colour: '#D43D41',
+                contents: [
+                    { kind: 'block', type: 'fd_camera' },
+                    { kind: 'block', type: 'fd_analyze' },
+                    { kind: 'label', text: 'Reporters' },
+                    { kind: 'block', type: 'fd_face_count' },
+                    { kind: 'block', type: 'fd_emotion' },
+                    { kind: 'block', type: 'fd_face_x' },
+                    { kind: 'block', type: 'fd_face_y' },
+                    { kind: 'label', text: 'Actions' },
+                    { kind: 'block', type: 'fd_count' },
+                    { kind: 'block', type: 'fd_guess_emotion' },
+                    { kind: 'block', type: 'fd_detect' },
+                ],
+            });
+        }
+
+        // Helper: inject extension categories immediately after "My Blocks"
+        const injectExtensions = (contents: any[]) => {
+            if (extensionCategories.length === 0) return contents;
+            const myBlocksIdx = contents.findIndex((c: any) => c.name === 'My Blocks');
+            if (myBlocksIdx === -1) return [...contents, ...extensionCategories];
+            return [
+                ...contents.slice(0, myBlocksIdx + 1),
+                ...extensionCategories,
+                ...contents.slice(myBlocksIdx + 1),
+            ];
+        };
+
         if (editorMode === 'stage') {
 
-            // Remove Pen category from intermediate session
-
+            // Always strip the built-in Pen category — extensions inject their own
             const filteredContents = animationToolbox.contents.filter((cat: any) => cat.name !== 'Pen');
 
 
@@ -1183,7 +1432,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     ...animationToolbox,
 
                     contents: withCategoryHeaders(
-                        filteredContents
+                        injectExtensions(filteredContents
 
                             .filter((cat: any) => cat.name !== 'Motion')
 
@@ -1255,7 +1504,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 return { ...cat, contents };
 
                             })
-                    )
+                        ))
 
                 };
 
@@ -1267,7 +1516,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 ...animationToolbox,
 
-                contents: withCategoryHeaders(filteredContents)
+                contents: withCategoryHeaders(injectExtensions(filteredContents))
 
             };
 
@@ -1280,7 +1529,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             contents: withCategoryHeaders(hardwareToolbox.contents)
         };
 
-    }, [editorMode, selectedBoard, selectedSpriteId]);
+    }, [editorMode, selectedBoard, selectedSpriteId, installedExtensions]);
 
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -1751,6 +2000,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 saveCurrentSpriteWorkspace();
                 syncAllWorkspaces(); // Sync everything to the VM so broadcasts work across sprites
 
+                // Update active sprite for window.runtime.pen / window.runtime.sprite
+                if (selectedSpriteId) setActiveSpriteId(selectedSpriteId);
+
                 // Compile and execute via AnimationVM for correct operator/variable handling
                 const compiler = new AnimationCompiler(selectedSpriteId || '');
                 const script = compiler.compileStack(block);
@@ -1990,6 +2242,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         // ALWAYS update the true owner tracking
         activeSpriteIdRef.current = spriteId;
 
+        // Auto-detect pen tip when switching to a pencil/pen sprite
+        const sprite = spriteManager.getSprite(spriteId);
+        if (sprite) {
+            const sName = sprite.name.toLowerCase();
+            if (sName.includes('pencil') || sName.includes('pen')) {
+                sprite.autoDetectPenTip();
+            }
+        }
+
         if (!workspaceRef.current) {
             console.log('[APP] Workspace unmounted, deferred loading for sprite:', spriteId);
             return;
@@ -2167,6 +2428,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         if (id !== selectedSpriteId) {
             handleSpriteSelect(id);
         }
+
+        // Update active sprite for window.runtime.pen / window.runtime.sprite
+        setActiveSpriteId(id);
 
         // Compile all scripts so the clicked sprite has up-to-date scripts
         syncAllWorkspacesRef.current?.();
@@ -2974,6 +3238,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 setIsRunning(true);
                 // Load workspace data into leapRuntime for broadcast bridging only
                 leapRuntime.loadProject(spriteWorkspacesRef.current);
+                // Set the active sprite for window.runtime.pen / window.runtime.sprite
+                if (selectedSpriteId) setActiveSpriteId(selectedSpriteId);
                 // Only trigger AnimationVM - it has the proper compiler that handles
                 // operators, variables, and all block types correctly.
                 // leapRuntime.triggerFlag() is NOT called because it uses an incomplete
@@ -2986,7 +3252,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         } catch (e) {
             console.error(`[APP] Error during multi-sprite compilation:`, e);
         }
-    }, [addLog, syncAllWorkspaces]);
+    }, [addLog, syncAllWorkspaces, selectedSpriteId]);
 
 
 
@@ -3478,6 +3744,27 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         (window as any).getBroadcastMessages = () => {
             return animationVM.getBroadcastMessages();
         };
+
+        // ── Pen tip calibration helpers (accessible from browser console) ──
+        // Usage: window.setPenTip(nx, ny)  e.g. window.setPenTip(-0.3, 0.45)
+        // Usage: window.autoDetectPenTip()
+        (window as any).setPenTip = (nx: number, ny: number) => {
+            const id = activeSpriteIdRef.current;
+            if (!id) { console.warn('[PenTip] No active sprite'); return; }
+            const sprite = spriteManager.getSprite(id);
+            if (!sprite) { console.warn('[PenTip] Sprite not found:', id); return; }
+            sprite.setPenTipOffset(nx, ny);
+            console.log(`[PenTip] Set tip offset for "${sprite.name}" to (${nx}, ${ny})`);
+        };
+        (window as any).autoDetectPenTip = () => {
+            const id = activeSpriteIdRef.current;
+            if (!id) { console.warn('[PenTip] No active sprite'); return; }
+            const sprite = spriteManager.getSprite(id);
+            if (!sprite) { console.warn('[PenTip] Sprite not found:', id); return; }
+            sprite.autoDetectPenTip();
+        };
+        // Expose spriteManager for fd_count/fd_guess_emotion generators
+        (window as any).spriteManager = spriteManager;
 
         (window as any).createNewBroadcast = (callback: (name: string | null) => void) => {
             const name = window.prompt('New message name:');

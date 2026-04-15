@@ -126,6 +126,172 @@ export class Sprite {
     get penColor() { return this.state.penColor; }
     get penSize() { return this.state.penSize; }
 
+    /** Alias used by RuntimeBridge pen.stamp() */
+    getCurrentCostumeImage(): HTMLImageElement | null {
+        return this.state.costumes[this.state.currentCostumeIndex]?.image ?? null;
+    }
+
+    /**
+     * Compute the canvas-space position of the pen tip.
+     *
+     * The pencil costume image has its graphite tip at the BOTTOM-CENTER
+     * of the image (before any rotation). The sprite's (x,y) is the image
+     * center. So the tip is offset by (0, +h/2) in local image space.
+     *
+     * After rotation by the sprite's direction, this offset moves to wherever
+     * the tip visually appears on screen.
+     *
+     * tipNX / tipNY are normalized fractions of the rendered w/h:
+     *   0     = center axis
+     *   +0.5  = right edge (x) or bottom edge (y)
+     *   -0.5  = left edge  (x) or top edge    (y)
+     *
+     * Returns { x, y } in Scratch stage coordinates.
+     */
+    getPenTipPosition(): { x: number; y: number } {
+        const costume = this.currentCostume;
+        if (!costume) return { x: this.state.x, y: this.state.y };
+
+        const scale = this.state.size / 100;
+        const w = costume.width * scale;
+        const h = costume.height * scale;
+
+        // Use detected tip offset if available, otherwise default to bottom-center.
+        // tipNX/tipNY are normalized fractions of the RENDERED (scaled) dimensions.
+        const tipNX: number = (this.state as any).penTipNX !== undefined
+            ? (this.state as any).penTipNX : 0;
+        const tipNY: number = (this.state as any).penTipNY !== undefined
+            ? (this.state as any).penTipNY : 0.5;
+
+        // Local offset in canvas pixels (before rotation).
+        // tipNY = 0.5 → bottom edge of the rendered image.
+        const tipLocalX = w * tipNX;
+        const tipLocalY = h * tipNY;
+
+        // Rotate by sprite direction.
+        // Scratch: 90=right, 0=up → canvas rotation = (dir - 90) * π/180
+        const rad = (this.state.direction - 90) * Math.PI / 180;
+        const cosR = Math.cos(rad);
+        const sinR = Math.sin(rad);
+
+        const rotX = tipLocalX * cosR - tipLocalY * sinR;
+        const rotY = tipLocalX * sinR + tipLocalY * cosR;
+
+        // canvas y+ = Scratch y-
+        return {
+            x: this.state.x + rotX,
+            y: this.state.y - rotY,
+        };
+    }
+
+    /**
+     * Set the pen tip offset as normalized fractions of costume dimensions.
+     * @param nx  -0.5=left edge … 0=center … +0.5=right edge
+     * @param ny  -0.5=top edge  … 0=center … +0.5=bottom edge
+     */
+    setPenTipOffset(nx: number, ny: number): void {
+        (this.state as any).penTipNX = nx;
+        (this.state as any).penTipNY = ny;
+        console.log(`[Sprite "${this.state.name}"] Pen tip offset set to (${nx}, ${ny})`);
+    }
+
+    /**
+     * Auto-detect the pen tip pixel by scanning the costume image.
+     *
+     * Strategy: find the LOWEST opaque pixel in the image — that's the
+     * graphite tip for any pencil/pen sprite regardless of color.
+     * "Lowest" = highest Y value in canvas space = bottom of image.
+     *
+     * Falls back to (0, 0.48) = near-bottom-center if detection fails.
+     */
+    autoDetectPenTip(): void {
+        const costume = this.currentCostume;
+        if (!costume?.image) {
+            (this.state as any).penTipNX = 0;
+            (this.state as any).penTipNY = 0.5;
+            return;
+        }
+
+        try {
+            const img = costume.image;
+            const iw = img.naturalWidth || img.width;
+            const ih = img.naturalHeight || img.height;
+
+            if (!iw || !ih) {
+                (this.state as any).penTipNX = 0;
+                (this.state as any).penTipNY = 0.5;
+                return;
+            }
+
+            const oc = document.createElement('canvas');
+            oc.width = iw;
+            oc.height = ih;
+            const octx = oc.getContext('2d', { willReadFrequently: true });
+            if (!octx) throw new Error('no ctx');
+
+            octx.drawImage(img, 0, 0);
+            const { data } = octx.getImageData(0, 0, iw, ih);
+
+            // Find the lowest (highest Y) opaque pixel — that's the tip.
+            // Scan from bottom up, stop at first row with opaque pixels.
+            let lowestY = -1;
+            let tipPxX = iw / 2;
+
+            for (let py = ih - 1; py >= 0; py--) {
+                let sumX = 0;
+                let count = 0;
+                for (let px = 0; px < iw; px++) {
+                    const i = (py * iw + px) * 4;
+                    if (data[i + 3] > 128) {
+                        sumX += px;
+                        count++;
+                    }
+                }
+                if (count > 0) {
+                    lowestY = py;
+                    tipPxX = sumX / count; // centroid X of the bottom-most row
+                    break;
+                }
+            }
+
+            if (lowestY === -1) {
+                (this.state as any).penTipNX = 0;
+                (this.state as any).penTipNY = 0.5;
+                return;
+            }
+
+            // IMPORTANT: normalize against the ORIGINAL image dimensions,
+            // because getPenTipPosition multiplies by costume.width/height
+            // which are already scaled from the original image.
+            // costume.width  = iw * scaleFactor
+            // costume.height = ih * scaleFactor
+            // So tipNX = (tipPxX - iw/2) / iw  and  tipNY = (lowestY - ih/2) / ih
+            // gives the same fraction regardless of scaleFactor. ✓
+            const nx = (tipPxX - iw / 2) / iw;
+            const ny = (lowestY - ih / 2) / ih;
+
+            (this.state as any).penTipNX = nx;
+            (this.state as any).penTipNY = ny;
+
+            console.log(`[Sprite "${this.state.name}"] Pen tip: pixel(${Math.round(tipPxX)},${lowestY}) of (${iw}×${ih}) → norm(${nx.toFixed(3)},${ny.toFixed(3)})`);
+        } catch (e) {
+            console.warn('[Sprite] autoDetectPenTip failed:', e);
+            (this.state as any).penTipNX = 0;
+            (this.state as any).penTipNY = 0.5;
+        }
+    }
+
+    /**
+     * Given a desired tip position in Scratch coords, compute where the
+     * sprite center must be so the tip lands exactly there.
+     */
+    getCenterForTipAt(tipX: number, tipY: number): { x: number; y: number } {
+        const tip = this.getPenTipPosition();
+        const dx = tip.x - this.state.x;
+        const dy = tip.y - this.state.y;
+        return { x: tipX - dx, y: tipY - dy };
+    }
+
     getState(): SpriteState { return { ...this.state }; }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -263,6 +429,8 @@ export class Sprite {
     async addCostume(name: string, src: string): Promise<void> {
         return new Promise((resolve) => {
             const img = new Image();
+            // Allow pixel-level access for autoDetectPenTip (needed for SVG assets)
+            img.crossOrigin = 'anonymous';
             img.onload = () => {
                 const maxDim = Math.max(img.width, img.height) || 100;
                 const logicalBase = 150;
@@ -275,11 +443,38 @@ export class Sprite {
                     height: img.height * scaleFactor,
                 });
                 this.onUpdate();
+
+                // Auto-detect pen tip for pencil/pen sprites — run immediately
+                // (image is fully loaded at this point so pixel data is available)
+                const spriteName = this.state.name.toLowerCase();
+                const costumeName = name.toLowerCase();
+                if (spriteName.includes('pencil') || spriteName.includes('pen') ||
+                    costumeName.includes('pencil') || costumeName.includes('pen')) {
+                    this.autoDetectPenTip();
+                }
+
                 resolve();
             };
             img.onerror = () => {
-                console.warn(`[Sprite] Failed to load costume: ${name} (${src})`);
-                resolve(); // Resolve anyway to proceed with initialization
+                // Retry without crossOrigin (some servers don't support CORS headers)
+                const imgFallback = new Image();
+                imgFallback.onload = () => {
+                    const maxDim = Math.max(imgFallback.width, imgFallback.height) || 100;
+                    const scaleFactor = 150 / maxDim;
+                    this.state.costumes.push({
+                        name,
+                        image: imgFallback,
+                        width: imgFallback.width * scaleFactor,
+                        height: imgFallback.height * scaleFactor,
+                    });
+                    this.onUpdate();
+                    resolve();
+                };
+                imgFallback.onerror = () => {
+                    console.warn(`[Sprite] Failed to load costume: ${name} (${src})`);
+                    resolve();
+                };
+                imgFallback.src = src;
             };
             img.src = src;
         });
