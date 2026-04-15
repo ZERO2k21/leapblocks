@@ -12,142 +12,195 @@ interface SensorOverlayProps {
   currentValues: any;
 }
 
+// ── Single-value slider row ───────────────────────────────────────────────────
+interface SliderRowProps {
+  label: string;
+  unit: string;
+  min: number;
+  max: number;
+  step?: number;
+  value: number;
+  color?: string;
+  onChange: (v: number) => void;
+}
+
+const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, value, color = '#BEF264', onChange }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+      <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em', fontFamily: 'system-ui' }}>
+        {label}
+      </span>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+        <input
+          type="number"
+          value={value}
+          min={min}
+          max={max}
+          step={step}
+          onChange={e => onChange(parseFloat(e.target.value) || 0)}
+          style={{
+            width: '56px',
+            background: 'transparent',
+            border: 'none',
+            borderBottom: `1px dotted ${color}80`,
+            color,
+            fontSize: '13px',
+            fontWeight: 800,
+            fontFamily: 'monospace',
+            textAlign: 'right',
+            outline: 'none',
+            padding: '0 2px',
+          }}
+        />
+        <span style={{ fontSize: '11px', color, fontWeight: 800, fontFamily: 'monospace' }}>{unit}</span>
+      </div>
+    </div>
+    <input
+      type="range"
+      min={min}
+      max={max}
+      step={step}
+      value={value}
+      onChange={e => onChange(parseFloat(e.target.value))}
+      style={{ width: '100%', accentColor: color, height: '4px', cursor: 'pointer', borderRadius: '2px' }}
+    />
+  </div>
+);
+
+// ── Main overlay ──────────────────────────────────────────────────────────────
 export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, currentValues }) => {
-  const setSelectedNode = useForgeStore(state => state.setSelectedNode);
   const updateNodeData = useForgeStore(state => state.updateNodeData);
-  const timerRef = React.useRef<any>(null);
 
-  const resetTimer = React.useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setSelectedNode(null);
-    }, 5000); // 5 seconds
-  }, [setSelectedNode]);
+  const isDHT       = type === 'dht22' || type === 'dht11';
+  const isDistance  = type === 'hc-sr04';
+  const isAnalog    = ['potentiometer', 'photoresistor', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(type);
 
-  // Start/Reset timer on mount and activity
-  React.useEffect(() => {
-    resetTimer();
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+  if (!isDHT && !isDistance && !isAnalog) return null;
+
+  // ── DHT: two sliders ─────────────────────────────────────────────────────
+  if (isDHT) {
+    const temp     = currentValues?.temperature ?? 25;
+    const humidity = currentValues?.humidity    ?? 50;
+
+    const update = (key: 'temperature' | 'humidity', val: number) => {
+      updateNodeData(nodeId, {
+        sensorValues: { ...currentValues, [key]: val },
+      });
     };
-  }, [resetTimer]);
 
-  // --- Configuration Mapping ---
-  const isDistanceSensor = type === 'hc-sr04';
-  const isAnalogSensor = ['potentiometer', 'photoresistor', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(type);
+    return (
+      <div
+        onPointerDown={e => e.stopPropagation()}
+        onMouseDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
+        className="nodrag nopan"
+        style={{
+          position: 'absolute',
+          bottom: '-130px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '200px',
+          background: 'rgba(15, 23, 42, 0.95)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(186, 242, 100, 0.3)',
+          borderRadius: '12px',
+          padding: '12px 14px',
+          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+        }}
+      >
+        {/* Header */}
+        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', textAlign: 'center', fontFamily: 'system-ui' }}>
+          {type.toUpperCase()} SENSOR
+        </div>
 
-  if (!isDistanceSensor && !isAnalogSensor) return null;
+        <SliderRow
+          label="TEMPERATURE"
+          unit="°C"
+          min={type === 'dht11' ? 0 : -40}
+          max={type === 'dht11' ? 50 : 80}
+          step={0.1}
+          value={temp}
+          color="#f97316"
+          onChange={v => update('temperature', v)}
+        />
 
-  // Configuration for display
-  const config = isDistanceSensor 
-    ? { label: 'DISTANCE', unit: 'cm', min: 2, max: 400, key: 'distance' }
-    : type === 'potentiometer' ? { label: 'RESISTANCE', unit: '%', min: 0, max: 100, key: 'value' }
-    : type === 'resistor' ? { label: 'RESISTANCE', unit: 'Ω', min: 0, max: 1000000, key: 'value' } 
-    : type === 'photoresistor' ? { label: 'LIGHT', unit: 'lux', min: 0, max: 1000, key: 'value' }
-    : type === 'ntc-temperature-sensor' ? { label: 'TEMP', unit: '°C', min: -40, max: 125, key: 'value' }
-    : { label: 'VALUE', unit: '', min: 0, max: 1023, key: 'value' };
+        <SliderRow
+          label="HUMIDITY"
+          unit="%"
+          min={0}
+          max={100}
+          step={1}
+          value={humidity}
+          color="#38bdf8"
+          onChange={v => update('humidity', v)}
+        />
+      </div>
+    );
+  }
+
+  // ── Single-value sensors ─────────────────────────────────────────────────
+  const config = isDistance
+    ? { label: 'DISTANCE', unit: 'cm',  min: 2,   max: 400,     step: 1,   key: 'distance', color: '#BEF264' }
+    : type === 'potentiometer'
+    ? { label: 'POSITION',  unit: '%',   min: 0,   max: 100,     step: 1,   key: 'value',    color: '#BEF264' }
+    : type === 'resistor'
+    ? { label: 'RESISTANCE',unit: 'Ω',   min: 0,   max: 1000000, step: 100, key: 'value',    color: '#BEF264' }
+    : type === 'photoresistor'
+    ? { label: 'LIGHT',     unit: 'lux', min: 0,   max: 1000,    step: 1,   key: 'value',    color: '#fbbf24' }
+    : type === 'ntc-temperature-sensor'
+    ? { label: 'TEMP',      unit: '°C',  min: -40, max: 125,     step: 0.1, key: 'value',    color: '#f97316' }
+    : { label: 'VALUE',     unit: '',    min: 0,   max: 1023,    step: 1,   key: 'value',    color: '#BEF264' };
 
   const currentValue = currentValues?.[config.key] ?? config.min;
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    resetTimer();
-    const newValue = parseFloat(e.target.value);
-    
-    updateNodeData(nodeId, {
-      sensorValues: {
-        ...currentValues,
-        [config.key]: newValue
-      }
-    });
 
-    // Proactively push to simulation engine if it's an analog input
-    if (isAnalogSensor) {
+  const handleChange = (val: number) => {
+    updateNodeData(nodeId, {
+      sensorValues: { ...currentValues, [config.key]: val },
+    });
+    if (isAnalog) {
       import('../../engine/CircuitEngine').then(({ circuitEngine }) => {
-        // We push 'true' as a dummy for digital, the engine will pull the analog value from store
-        circuitEngine.pushInputSignal(nodeId, 'SIG', true); 
+        circuitEngine.pushInputSignal(nodeId, 'SIG', true);
       });
     }
   };
 
   return (
-    <div 
-      onPointerDown={(e) => e.stopPropagation()}
-      onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
+    <div
+      onPointerDown={e => e.stopPropagation()}
+      onMouseDown={e => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
       className="nodrag nopan"
       style={{
         position: 'absolute',
-        bottom: '-70px',
+        bottom: '-80px',
         left: '50%',
         transform: 'translateX(-50%)',
-        width: '180px',
-        background: 'rgba(15, 23, 42, 0.9)',
+        width: '190px',
+        background: 'rgba(15, 23, 42, 0.95)',
         backdropFilter: 'blur(16px)',
         border: '1px solid rgba(186, 242, 100, 0.3)',
         borderRadius: '12px',
         padding: '10px 14px',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)',
+        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
         zIndex: 1000,
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
-        cursor: 'default'
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em', fontFamily: 'system-ui' }}>{config.label}</span>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-          <input 
-            type="number" 
-            value={currentValue}
-            onChange={(e) => {
-              const val = parseFloat(e.target.value) || 0;
-              updateNodeData(nodeId, {
-                sensorValues: {
-                  ...currentValues,
-                  [config.key]: val
-                }
-              });
-              
-              // Proactively push to simulation engine
-              if (isAnalogSensor) {
-                import('../../engine/CircuitEngine').then(({ circuitEngine }) => {
-                  circuitEngine.pushInputSignal(nodeId, 'SIG', true); 
-                });
-              }
-            }}
-            style={{
-              width: '80px',
-              background: 'transparent',
-              border: 'none',
-              borderBottom: '1px dotted rgba(190, 242, 100, 0.5)',
-              color: '#BEF264',
-              fontSize: '13px',
-              fontWeight: 800,
-              fontFamily: 'monospace',
-              textAlign: 'right',
-              outline: 'none',
-              padding: '0 2px'
-            }}
-          />
-          <span style={{ fontSize: '12px', color: '#BEF264', fontWeight: 800, fontFamily: 'monospace' }}>
-            {config.unit}
-          </span>
-        </div>
-      </div>
-      <input 
-        type="range" 
-        min={config.min} 
-        max={config.max} 
-        value={currentValue} 
+      <SliderRow
+        label={config.label}
+        unit={config.unit}
+        min={config.min}
+        max={config.max}
+        step={config.step}
+        value={currentValue}
+        color={config.color}
         onChange={handleChange}
-        style={{
-          width: '100%',
-          accentColor: '#BEF264',
-          height: '4px',
-          cursor: 'pointer',
-          borderRadius: '2px'
-        }}
       />
     </div>
   );

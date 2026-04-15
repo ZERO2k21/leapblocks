@@ -2269,17 +2269,17 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "GND",
         "x": 0,
-        "y": 50
+        "y": 150
       },
       {
         "name": "V+",
         "x": 0,
-        "y": 59.5
+        "y": 200
       },
       {
         "name": "PWM",
         "x": 0,
-        "y": 69
+        "y": 250
       }
     ]
   },
@@ -2356,6 +2356,48 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
         "x": 141.2,
         "y": 286
       }
+    ]
+  },
+  "neopixel": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 5.6631,
+      "height": 5
+    },
+    "pins": [
+      { "name": "VDD", "x": 1, "y": 3.5 },
+      { "name": "DOUT", "x": 1, "y": 14 },
+      { "name": "VSS", "x": 21, "y": 14 },
+      { "name": "DIN", "x": 21, "y": 3.5 }
+    ]
+  },
+  "neopixel-matrix": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 197.60,
+      "height": 181.42
+    },
+    "pins": [
+      { "name": "GND",  "x": 86.27,  "y": 181.42 },
+      { "name": "VCC",  "x": 95.87,  "y": 181.42 },
+      { "name": "DIN",  "x": 105.47, "y": 181.42 },
+      { "name": "DOUT", "x": 115.07, "y": 181.42 }
+    ]
+  },
+  "led-ring": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 141.62,
+      "height": 152.94
+    },
+    "pins": [
+      { "name": "GND",  "x": 56.41, "y": 152.94 },
+      { "name": "VCC",  "x": 66.01, "y": 152.94 },
+      { "name": "DIN",  "x": 75.61, "y": 152.94 },
+      { "name": "DOUT", "x": 85.21, "y": 152.94 }
     ]
   }
 };

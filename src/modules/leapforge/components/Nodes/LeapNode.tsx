@@ -3,10 +3,11 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { memo } from 'react';
+import React, { memo, useRef, useEffect } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { getComponentPins } from '../../lib/PinMap';
 import { useForgeStore } from '../../store/useForgeStore';
+import { SensorOverlay } from './SensorOverlay';
 
 // This is a generic wrapper for our internalized Leap elements (rebranded Leap)
 export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
@@ -79,7 +80,51 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       values[i] = data.pinStates?.[`pin_A${i + 1}`] === true ? 1 : 0;
     }
     mappedProps.values = values;
+  } else if (data.type === 'neopixel') {
+    // Single NeoPixel: map decoded WS2812B RGB values (0-1 range)
+    mappedProps.r = data.neopixelR ?? 0;
+    mappedProps.g = data.neopixelG ?? 0;
+    mappedProps.b = data.neopixelB ?? 0;
+  } else if (data.type === 'neopixel-matrix' || data.type === 'led-ring') {
+    // NeoPixel Matrix / LED Ring: pass through configuration
+    if (data.type === 'neopixel-matrix') {
+      mappedProps.rows = data.rows ?? 8;
+      mappedProps.cols = data.cols ?? 8;
+    } else {
+      mappedProps.pixels = data.pixels ?? 16;
+    }
   }
+
+  // ── Ref for NeoPixel DOM access (setPixel requires DOM methods) ──
+  const elementRef = useRef<any>(null);
+
+  // Push pixel data to matrix/ring elements via DOM setPixel() method
+  useEffect(() => {
+    if (!elementRef.current || !data.neopixelPixels) return;
+    const el = elementRef.current;
+    const pixels = data.neopixelPixels;
+
+    if (data.type === 'neopixel-matrix' && typeof el.setPixel === 'function') {
+      const cols = data.cols ?? 8;
+      for (let i = 0; i < pixels.length; i++) {
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+        el.setPixel(row, col, {
+          r: pixels[i].r / 255,
+          g: pixels[i].g / 255,
+          b: pixels[i].b / 255,
+        });
+      }
+    } else if (data.type === 'led-ring' && typeof el.setPixel === 'function') {
+      for (let i = 0; i < pixels.length; i++) {
+        el.setPixel(i, {
+          r: pixels[i].r / 255,
+          g: pixels[i].g / 255,
+          b: pixels[i].b / 255,
+        });
+      }
+    }
+  }, [data.neopixelPixels, data.type, data.cols]);
 
   // Optional: Fallback for generic elements that listen to 'value'
   if (mappedProps.value === undefined && data.value !== undefined) {
@@ -92,6 +137,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       <div style={{ position: 'relative', display: 'inline-block' }}>
         {/* Dynamic Leap Element */}
         <Tag
+          ref={elementRef}
           {...mappedProps}
           onPinStateChange={(pinName: string, state: boolean) => {
             console.log(`[LEAP NODE] Interaction event fired on Node ${data.id}, pin ${pinName} = ${state}`);
@@ -159,6 +205,15 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
         }}>
           {data.label}
         </div>
+      )}
+
+      {/* ── SENSOR OVERLAY (sliders shown when node is selected) ── */}
+      {isSelected && (
+        <SensorOverlay
+          nodeId={id}
+          type={data.type}
+          currentValues={data.sensorValues}
+        />
       )}
     </div>
   );

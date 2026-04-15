@@ -5,7 +5,33 @@ const { spawn } = require('child_process');
 const buildApk = require('./buildApk');
 
 const isDev = !app.isPackaged;
-const APP_ROOT = app.getAppPath(); // Base path for resources
+const APP_ROOT = app.getAppPath();
+
+// ── forge-lib paths ────────────────────────
+const FORGE_LIB_DIR = isDev
+  ? path.join(APP_ROOT, 'forge-lib')
+  : path.join(process.resourcesPath, 'forge-lib');
+
+const FORGE_LIB_LIBRARIES = path.join(FORGE_LIB_DIR, 'libraries');
+const FORGE_CLI_YAML      = path.join(FORGE_LIB_DIR, 'arduino-cli.yaml');
+
+const CLI_PATH = isDev
+  ? path.join(APP_ROOT, 'arduino-cli', 'arduino-cli.exe')
+  : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe');
+
+/** Run arduino-cli with the forge-lib config and return { stdout, stderr, code } */
+function runCLI(args) {
+  return new Promise((resolve) => {
+    const proc = spawn(CLI_PATH, ['--config-file', FORGE_CLI_YAML, ...args], {
+      env: { ...process.env }
+    });
+    let stdout = '', stderr = '';
+    proc.stdout.on('data', d => { stdout += d.toString(); });
+    proc.stderr.on('data', d => { stderr += d.toString(); });
+    proc.on('close', code => resolve({ stdout, stderr, code }));
+    proc.on('error', err => resolve({ stdout: '', stderr: err.message, code: -1 }));
+  });
+}
 
 // ── Local Build Server Management ─────────
 let buildServerProcess = null;
@@ -198,4 +224,94 @@ ipcMain.handle('open-project', async () => {
     }
   }
   return null;
+});
+
+// ── forge-lib: install a library via arduino-cli ──────────────────────────
+ipcMain.handle('forge-lib-install', async (_, libraryName) => {
+  console.log(`[FORGE-LIB] Installing: ${libraryName}`);
+  fs.mkdirSync(FORGE_LIB_LIBRARIES, { recursive: true });
+
+  const { stdout, stderr, code } = await runCLI([
+    'lib', 'install', libraryName
+  ]);
+
+  console.log(`[FORGE-LIB] install exit ${code}\n${stdout}\n${stderr}`);
+
+  if (code === 0) {
+    return { success: true };
+  } else {
+    return { success: false, error: stderr || stdout };
+  }
+});
+
+// ── forge-lib: list installed libraries ──────────────────────────────────
+ipcMain.handle('forge-lib-list', async () => {
+  if (!fs.existsSync(FORGE_LIB_LIBRARIES)) return [];
+
+  const entries = fs.readdirSync(FORGE_LIB_LIBRARIES, { withFileTypes: true });
+  const libs = [];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const libDir = path.join(FORGE_LIB_LIBRARIES, entry.name);
+    const propFile = path.join(libDir, 'library.properties');
+    if (fs.existsSync(propFile)) {
+      const props = {};
+      fs.readFileSync(propFile, 'utf-8').split('\n').forEach(line => {
+        const [k, ...v] = line.split('=');
+        if (k && v.length) props[k.trim()] = v.join('=').trim();
+      });
+      libs.push({
+        name: props.name || entry.name,
+        version: props.version || '?',
+        author: props.author || '',
+        description: props.sentence || '',
+      });
+    } else {
+      libs.push({ name: entry.name, version: '?', author: '', description: '' });
+    }
+  }
+
+  return libs;
+});
+
+// ── forge-lib: remove a library ──────────────────────────────────────────
+ipcMain.handle('forge-lib-remove', async (_, libraryName) => {
+  console.log(`[FORGE-LIB] Removing: ${libraryName}`);
+  const { code, stderr } = await runCLI(['lib', 'uninstall', libraryName]);
+  return code === 0 ? { success: true } : { success: false, error: stderr };
+});
+
+// ── forge-compile: compile sketch with forge-lib libraries ────────────────
+ipcMain.handle('forge-compile', async (_, { code, board }) => {
+  const tempDir = path.join(app.getPath('temp'), `forge_sketch_${Date.now()}`);
+  const sketchPath = path.join(tempDir, 'sketch.ino');
+
+  try {
+    fs.mkdirSync(tempDir, { recursive: true });
+    fs.writeFileSync(sketchPath, code);
+
+    const { stdout, stderr, code: exitCode } = await runCLI([
+      'compile',
+      '--fqbn', board || 'arduino:avr:uno',
+      '--libraries', FORGE_LIB_LIBRARIES,
+      '--output-dir', tempDir,
+      sketchPath
+    ]);
+
+    if (exitCode === 0) {
+      const hexPath = path.join(tempDir, 'sketch.ino.hex');
+      if (fs.existsSync(hexPath)) {
+        const hexContent = fs.readFileSync(hexPath, 'utf-8');
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) {}
+        return { success: true, hex: hexContent };
+      }
+      return { success: false, error: 'HEX file not generated' };
+    } else {
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) {}
+      return { success: false, error: stderr || stdout };
+    }
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 });

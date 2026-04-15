@@ -9,6 +9,7 @@ import { HD44780 } from './HD44780';
 import { I2CBusManager } from './I2CBusManager';
 import { PCF8574 } from './PCF8574';
 import { DHT } from './DHT';
+import { NeoPixelEmulator } from './NeoPixelEmulator';
 
 /**
  * CircuitEngine
@@ -21,6 +22,7 @@ class CircuitEngine {
   private peripheralPinBuffers = new Map<string, Record<string, boolean>>();
   private i2cBusManager = new I2CBusManager();
   private dhtEmulators = new Map<string, DHT>();
+  private neoPixelEmulators = new Map<string, NeoPixelEmulator>();
   private isInitialized = false;
 
   /**
@@ -44,7 +46,7 @@ class CircuitEngine {
 
       const nodeType = node.data?.type;
 
-      if (['led', 'buzzer', 'rgb-led'].includes(nodeType)) {
+      if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring'].includes(nodeType)) {
         console.log(`[FORGE CIRCUIT] Net trace found sink: ${nodeType} (${current.id}) via ${current.pin}`);
         targets.push({ nodeId: current.id, pinName: current.pin, resistance: current.resistance, type: nodeType });
       } else if (nodeType === 'resistor') {
@@ -112,6 +114,7 @@ class CircuitEngine {
     this.peripheralPinBuffers.clear();
     this.i2cBusManager.clear();
     this.dhtEmulators.clear();
+    this.neoPixelEmulators.clear();
 
     const { nodes, edges, updateNodeData } = useForgeStore.getState();
     const currentStateStore = useForgeStore.getState();
@@ -293,12 +296,16 @@ class CircuitEngine {
             if (peripheralNode.data?.type === 'dht22' || peripheralNode.data?.type === 'dht11') {
               if (peripheralPinName === 'SDA' || peripheralPinName === 'DATA') {
                 if (!this.dhtEmulators.has(peripheralId)) {
-                  this.dhtEmulators.set(peripheralId, new DHT(avrPin, peripheralNode.data.type));
+                  // Pass nodeId so the emulator reads from the correct node's sensorValues
+                  this.dhtEmulators.set(peripheralId, new DHT(avrPin, peripheralNode.data.type, peripheralId));
                 }
                 const emulator = this.dhtEmulators.get(peripheralId)!;
                 emulator.processSignal(state);
               }
             }
+
+            // --- NeoPixel Emulation (WS2812B protocol) ---
+            // Handled via addRawListener above — every edge is captured without deduplication.
 
             // Update the target peripheral's UI state so standard Leap Elements react
             const currentPinStates = peripheralNode.data?.pinStates || {};
@@ -318,9 +325,43 @@ class CircuitEngine {
         // Attach to the simulation runner
         simulationRunner.addListener(avrPin, listener);
 
+        // For NeoPixel DIN pins: also attach a RAW listener that fires on every edge
+        // (WS2812B protocol requires every HIGH/LOW transition, dedup breaks it)
+        let neoRawListener: ((portLetter: string, bit: number, isHigh: boolean, cycles: number) => void) | null = null;
+        const peripheralNodeForNeo = nodes.find(n => n.id === peripheralId);
+        if (
+          peripheralNodeForNeo &&
+          ['neopixel', 'neopixel-matrix', 'led-ring'].includes(peripheralNodeForNeo.data?.type) &&
+          peripheralPinName === 'DIN'
+        ) {
+          const neoType = peripheralNodeForNeo.data.type;
+          const numPixels = neoType === 'neopixel' ? 1
+            : neoType === 'led-ring' ? (peripheralNodeForNeo.data?.pixels ?? 16)
+            : (peripheralNodeForNeo.data?.rows ?? 8) * (peripheralNodeForNeo.data?.cols ?? 8);
+
+          const emitter = new NeoPixelEmulator(numPixels, 16, (pixels) => {
+            if (neoType === 'neopixel' && pixels.length > 0) {
+              updateNodeData(peripheralId, {
+                neopixelR: pixels[0].r / 255,
+                neopixelG: pixels[0].g / 255,
+                neopixelB: pixels[0].b / 255,
+              });
+            } else {
+              updateNodeData(peripheralId, { neopixelPixels: pixels });
+            }
+          });
+          this.neoPixelEmulators.set(peripheralId, emitter);
+
+          neoRawListener = (_portLetter, _bit, isHigh, cycles) => {
+            emitter.processSignal(isHigh, cycles);
+          };
+          simulationRunner.addRawListener(avrPin, neoRawListener);
+        }
+
         // Store the unsubscribe thunk to clean up if the wire is deleted
         this.activeSubscriptions.set(edge.id, () => {
           simulationRunner.removeListener(avrPin, listener);
+          if (neoRawListener) simulationRunner.removeRawListener(avrPin, neoRawListener);
         });
       });
     });
