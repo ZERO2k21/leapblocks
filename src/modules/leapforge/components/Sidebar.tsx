@@ -38,6 +38,7 @@ const COMPONENTS = [
   { id: 'neopixel', name: 'NeoPixel', category: 'outputs', desc: 'Addressable RGB LED' },
   { id: 'buzzer', name: 'Buzzer', category: 'outputs', desc: 'Piezo sounder' },
   { id: 'servo', name: 'Servo Motor', category: 'outputs', desc: 'Positionable motor' },
+  { id: 'stepper-motor', name: 'Stepper Motor', category: 'outputs', desc: 'NEMA bipolar stepper' },
 
   // DISPLAYS
   { id: 'lcd1602', name: 'LCD 1602', category: 'displays', desc: '16x2 Character display' },

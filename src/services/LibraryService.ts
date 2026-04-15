@@ -18,7 +18,7 @@
  */
 
 import { IS_ELECTRON } from '../config/platform';
-
+import { CLOUD_COMPILER_URL } from '../config/platform';
 const WEB_LIBS_KEY = 'leapforge_selected_libs';
 const LIBRARY_INDEX_URL = 'https://downloads.arduino.cc/libraries/library_index.json';
 
@@ -115,8 +115,15 @@ export const getLibraries = async (): Promise<Library[]> => {
       return [];
     }
   }
-  const stored = safeLS.get(WEB_LIBS_KEY);
-  return stored ? JSON.parse(stored) : [];
+  // Web: ask the local compile server
+  try {
+    const res = await fetch(`${CLOUD_COMPILER_URL}/libraries/installed`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error('[LibraryService] /libraries/installed failed:', err);
+    return [];
+  }
 };
 
 export const installLibrary = async (lib: Library): Promise<{ success: boolean; error?: string }> => {
@@ -126,11 +133,17 @@ export const installLibrary = async (lib: Library): Promise<{ success: boolean; 
     const result = await (window as any).electronAPI.installLibrary(lib.name);
     return result ?? { success: false, error: 'No response from installer' };
   }
-  const current = await getLibraries();
-  if (!current.find(l => l.name === lib.name)) {
-    safeLS.set(WEB_LIBS_KEY, JSON.stringify([...current, lib]));
+  // Web: ask the local compile server to install into forge-lib/libraries/
+  try {
+    const res = await fetch(`${CLOUD_COMPILER_URL}/libraries/install`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: lib.name }),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: err.message };
   }
-  return { success: true };
 };
 
 export const removeLibrary = async (name: string): Promise<void> => {
@@ -139,6 +152,14 @@ export const removeLibrary = async (name: string): Promise<void> => {
     await (window as any).electronAPI.removeLibrary(name);
     return;
   }
-  const current = await getLibraries();
-  safeLS.set(WEB_LIBS_KEY, JSON.stringify(current.filter(l => l.name !== name)));
+  // Web: ask the local compile server to uninstall
+  try {
+    await fetch(`${CLOUD_COMPILER_URL}/libraries/remove`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+  } catch (err) {
+    console.error('[LibraryService] /libraries/remove failed:', err);
+  }
 };

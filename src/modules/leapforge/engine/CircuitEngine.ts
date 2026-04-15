@@ -10,6 +10,7 @@ import { I2CBusManager } from './I2CBusManager';
 import { PCF8574 } from './PCF8574';
 import { DHT } from './DHT';
 import { NeoPixelEmulator } from './NeoPixelEmulator';
+import { StepperEmulator } from './StepperEmulator';
 
 /**
  * CircuitEngine
@@ -23,6 +24,7 @@ class CircuitEngine {
   private i2cBusManager = new I2CBusManager();
   private dhtEmulators = new Map<string, DHT>();
   private neoPixelEmulators = new Map<string, NeoPixelEmulator>();
+  private stepperEmulators = new Map<string, StepperEmulator>();
   private isInitialized = false;
 
   /**
@@ -46,7 +48,7 @@ class CircuitEngine {
 
       const nodeType = node.data?.type;
 
-      if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring'].includes(nodeType)) {
+      if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'stepper-motor'].includes(nodeType)) {
         console.log(`[FORGE CIRCUIT] Net trace found sink: ${nodeType} (${current.id}) via ${current.pin}`);
         targets.push({ nodeId: current.id, pinName: current.pin, resistance: current.resistance, type: nodeType });
       } else if (nodeType === 'resistor') {
@@ -115,6 +117,7 @@ class CircuitEngine {
     this.i2cBusManager.clear();
     this.dhtEmulators.clear();
     this.neoPixelEmulators.clear();
+    this.stepperEmulators.clear();
 
     const { nodes, edges, updateNodeData } = useForgeStore.getState();
     const currentStateStore = useForgeStore.getState();
@@ -301,6 +304,40 @@ class CircuitEngine {
                 }
                 const emulator = this.dhtEmulators.get(peripheralId)!;
                 emulator.processSignal(state);
+              }
+            }
+
+            // --- Stepper Motor Emulation ---
+            // Supports both wiring modes:
+            //   4-wire (A+, A-, B+, B-) — Arduino Stepper.h / ULN2003
+            //   STEP+DIR (A4988 / DRV8825)
+            if (peripheralNode.data?.type === 'stepper-motor') {
+              if (!this.stepperEmulators.has(peripheralId)) {
+                this.stepperEmulators.set(peripheralId, new StepperEmulator(200, (angle, stepCount, energized) => {
+                  updateNodeData(peripheralId, {
+                    angle,
+                    value: `${angle.toFixed(1)}°`,
+                    units: `${stepCount > 0 ? '+' : ''}${stepCount} steps`,
+                    arrow: energized ? '#BEF264' : '',
+                  });
+                }));
+              }
+              const stepper = this.stepperEmulators.get(peripheralId)!;
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              buf[peripheralPinName] = isHigh;
+
+              if (peripheralPinName === 'STEP') {
+                stepper.processStep(isHigh);
+              } else if (peripheralPinName === 'DIR') {
+                stepper.setDirection(isHigh);
+              } else {
+                // 4-wire mode: feed all coil states on any pin change
+                stepper.processCoils(
+                  !!buf['A+'],
+                  !!buf['A-'],
+                  !!buf['B+'],
+                  !!buf['B-'],
+                );
               }
             }
 

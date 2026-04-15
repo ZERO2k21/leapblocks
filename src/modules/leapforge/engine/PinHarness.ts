@@ -920,6 +920,20 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     },
     "pins": []
   },
+  "stepper-motor": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 220.3,
+      "height": 239.2
+    },
+    "pins": [
+      { "name": "A+", "x": 95.1,  "y": 235.5 },
+      { "name": "A-", "x": 104.7, "y": 235.5 },
+      { "name": "B+", "x": 114.3, "y": 235.5 },
+      { "name": "B-", "x": 123.9, "y": 235.5 }
+    ]
+  },
   "big-sound-sensor": {
     "viewBox": {
       "minX": 0,

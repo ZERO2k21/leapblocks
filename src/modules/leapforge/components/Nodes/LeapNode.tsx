@@ -59,6 +59,11 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   } else if (data.type === 'servo') {
     // Servos use the 'angle' property calculated in CircuitEngine
     mappedProps.angle = data.angle ?? 0;
+  } else if (data.type === 'stepper-motor') {
+    mappedProps.angle = data.angle ?? 0;
+    mappedProps.value = data.value ?? '0.0°';
+    mappedProps.units = data.units ?? '0 steps';
+    mappedProps.arrow = data.arrow ?? '';
   } else if (['potentiometer', 'photoresistor', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(data.type)) {
     // Analog sensors (and resistors) use the 'value' from sensorValues
     mappedProps.value = data.sensorValues?.value ?? 0;
