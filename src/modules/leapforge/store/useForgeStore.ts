@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import { create } from 'zustand';
 import { Node, Edge, Connection, addEdge as rfAddEdge } from 'reactflow';
 import { v4 as uuidv4 } from 'uuid';

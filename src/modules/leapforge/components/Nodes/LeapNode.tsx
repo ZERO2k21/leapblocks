@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { getComponentPins } from '../../lib/PinMap';

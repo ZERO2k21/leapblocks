@@ -1,35 +1,35 @@
 # Proprietary Transition Verification Checklist
 
-Follow these steps to safely transition the project to a proprietary license model.
+Please follow this checklist to verify the successful transition of the codebase to closed-source proprietary under Creoleap Technologies Pvt. Ltd.
 
-## Phase 1: Pre-Run (Preparation)
-- [ ] **Git Backup**: Ensure all current changes are committed or stashed.
-- [ ] **Node.js**: Confirm Node.js is installed (`node -v`).
-- [ ] **Script Location**: Confirm `proprietary-transition.js` is in the project root.
+### Phase 1: Pre-run
+- [ ] **Git Backup:** Ensure your working tree is clean or create a branch: `git checkout -b chore/proprietary-transition`
+- [ ] **Node.js:** Verify Node.js is available: `node -v`
+- [ ] **Script Location:** Confirm `proprietary-transition.js` is at the project root (`d:\Creoleap Company\leapLap\leapblocks\proprietary-transition.js`).
 
-## Phase 2: Execution
-- [ ] **Dry Run**: Execute the preview command first:
+### Phase 2: Execution
+- [ ] **Dry Run:** Execute the script in dry run mode to verify targets and exclusions:
   ```bash
   node proprietary-transition.js --dry-run
   ```
-- [ ] **Audit Output**: Confirm the console log shows correct targets (src/, server/ root) and skips the excluded paths (`arduino-cli/`, `cp210x_drivers/`, `avr8js`, etc.).
-- [ ] **Live Run**: Execute the actual transition:
+  *Confirm the console output correctly targets `src/`, `server/` root files, and skips excluded paths.*
+- [ ] **Live Run:** If the dry run looks correct, execute the script:
   ```bash
   node proprietary-transition.js
   ```
 
-## Phase 3: Post-Run Verification
-- [ ] **Root Package**: Verify `package.json` has `"license": "UNLICENSED"` and `"private": true`.
-- [ ] **Server Package**: Verify `server/package.json` has `"license": "UNLICENSED"` and `"private": true`.
-- [ ] **Source Check (src/)**: Open a random file in `src/` (e.g., `src/App.tsx`) and confirm the 2026 proprietary header is at the top.
-- [ ] **Source Check (server/)**: Open a root file in `server/` (e.g., `server/index.ts`) and confirm the proprietary header is present.
-- [ ] **Vendor Headers**: Verify `src/modules/leapforge/lib/avr8js/index.ts` still contains the original **Uri Shaked** copyright.
-- [ ] **Exclusion Check**: Confirm `arduino-cli/` and `cp210x_drivers/` folders do not contain the new proprietary headers.
-- [ ] **Compliance File**: Confirm `THIRD_PARTY_LICENSES.md` exists at the project root with correct MIT attributions.
+### Phase 3: Post-run Verification
+- [ ] **Package Verification:** Check that both `package.json` and `server/package.json` have `"license": "UNLICENSED"` and `"private": true`.
+- [ ] **Source Verification (src/):** Spot-check at least one `.ts` or `.tsx` file inside `src/` to ensure the Creoleap copyright header was injected at the top.
+- [ ] **Source Verification (server/ root):** Spot-check `server/index.ts` to ensure the Creoleap copyright header was injected at the top.
+- [ ] **Vendor Verification (avr8js):** Ensure files inside `src/modules/leapforge/lib/avr8js/` are untouched.
+- [ ] **Vendor Verification (leap-elements):** Ensure files inside `src/modules/leapforge/elements/leap-elements/` are untouched.
+- [ ] **Exclusion Verification:** Confirm `arduino-cli/` and `cp210x_drivers/` were not modified.
+- [ ] **Licenses Document:** Confirm `THIRD_PARTY_LICENSES.md` exists exactly at the project root with the MIT credits.
 
-## Phase 4: Finalize
-- [ ] **Commit**: Run the following command to finalize the transition:
-  ```bash
-  git add .
-  git commit -m "chore: transition project to proprietary (Creoleap Technologies Pvt. Ltd.)"
-  ```
+### Final Step: Git Commit
+Once verified, commit the changes using the following exact message:
+```bash
+git add .
+git commit -m "chore: transition project to proprietary (Creoleap Technologies Pvt. Ltd.)"
+```

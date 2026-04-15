@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';

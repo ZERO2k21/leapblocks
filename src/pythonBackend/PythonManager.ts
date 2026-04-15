@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import { BrowserWindow, app } from 'electron';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import * as fs from 'fs';

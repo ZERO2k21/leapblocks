@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
  * HD44780 Emulator
  * Simulates the internal state of a Hitachi HD44780 LCD controller.
  * Focuses on 4-bit parallel mode as used by the Arduino LiquidCrystal library.

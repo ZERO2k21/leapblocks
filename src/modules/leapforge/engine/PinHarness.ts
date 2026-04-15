@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, width: number, height: number }, pins: { name: string, x: number, y: number }[] }> = {
   "slide-potentiometer": {
     "viewBox": {

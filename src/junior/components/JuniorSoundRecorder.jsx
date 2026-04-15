@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import AudioRecorder from '../../scratch-gui/src/lib/audio/audio-recorder';
 import { Play, X, RotateCcw, ChevronLeft } from 'lucide-react';

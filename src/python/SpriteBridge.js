@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
  * SpriteBridge - Bridges intermediate blocks sprite functions with Python IDE
  * This allows intermediate blocks to call sprite panel functions effectively
  * without changing the Python IDE structure.

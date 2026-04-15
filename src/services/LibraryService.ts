@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import { IS_ELECTRON, CLOUD_COMPILER_URL } from '../config/platform';
 
 const WEB_LIBS_KEY = 'leapforge_selected_libs';

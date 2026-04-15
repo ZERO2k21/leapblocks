@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
  * DS1307Emulator.ts
  * Emulates the DS1307 Real-Time Clock via I2C (address 0x68).
  * Provides BCD-encoded time registers that the AVR reads via TWI.

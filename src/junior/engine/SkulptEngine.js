@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
  * SkulptEngine – in-browser Python execution.
  * Skulpt is imported directly from the npm package (bundled by webpack).
  * No CDN or dynamic script tags needed.

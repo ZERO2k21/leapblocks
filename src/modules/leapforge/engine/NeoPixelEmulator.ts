@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
  * NeoPixelEmulator.ts
  * Decodes WS2812B data protocol from a single data pin.
  * Each LED = 24 bits (GRB order): 8 green, 8 red, 8 blue.

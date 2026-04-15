@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
  * SimulationRunner - The heart of the circuit simulation.
  * Decouples logic execution from UI rendering.
  * Provides a high-frequency tick loop and pin-state management mapped dynamically to AVR8js.

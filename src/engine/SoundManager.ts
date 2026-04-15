@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 // SoundManager.ts - Handles sound playback for animation VM
 
 import { ADPCMSoundDecoder } from '../scratch-audio/src/ADPCMSoundDecoder';

@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
  * SSD1306Emulator.ts
  * Emulates the SSD1306 128x64 OLED display via I2C.
  * Decodes I2C command/data bytes into a pixel buffer.

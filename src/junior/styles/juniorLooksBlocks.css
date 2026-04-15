@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 /* Shared puzzle shape refinement for looks */
 .blocklyBlock[data-category="looks"] .blocklyPath {
     stroke: #7B44C7;

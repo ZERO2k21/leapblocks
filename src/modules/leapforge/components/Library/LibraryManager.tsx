@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Download, Trash2, Library, CheckCircle, Info, Loader2, Package, X } from 'lucide-react';
 import { IS_ELECTRON } from '../../../../config/platform';
