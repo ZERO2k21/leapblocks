@@ -239,6 +239,82 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     );
   }
 
+  // ── MPU6050 — 7 sliders (accel X/Y/Z, gyro X/Y/Z, temp) ────────────────
+  if (isMPU6050) {
+    const sv = currentValues ?? {};
+    const accelX = sv.accelX ?? 0;
+    const accelY = sv.accelY ?? 0;
+    const accelZ = sv.accelZ ?? 1;
+    const gyroX  = sv.gyroX  ?? 0;
+    const gyroY  = sv.gyroY  ?? 0;
+    const gyroZ  = sv.gyroZ  ?? 0;
+    const temp   = sv.temp   ?? 25;
+
+    const update = (key: string, val: number) => {
+      const next = { accelX, accelY, accelZ, gyroX, gyroY, gyroZ, temp, [key]: val };
+      updateNodeData(nodeId, { sensorValues: next });
+      // Push live into the I2C emulator
+      import('../../engine/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushMPU6050Values(nodeId, next);
+      });
+    };
+
+    return (
+      <div
+        onPointerDown={e => e.stopPropagation()}
+        onPointerUp={e => e.stopPropagation()}
+        onMouseDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
+        className="nodrag nopan"
+        style={{
+          position: 'absolute',
+          bottom: '-340px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '220px',
+          background: 'rgba(15, 23, 42, 0.97)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(186, 242, 100, 0.3)',
+          borderRadius: '12px',
+          padding: '12px 14px',
+          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          userSelect: 'none',
+        }}
+      >
+        {/* Header */}
+        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', textAlign: 'center', fontFamily: 'system-ui' }}>
+          MPU-6050 IMU
+        </div>
+
+        {/* Accelerometer group */}
+        <div style={{ fontSize: '9px', color: '#38bdf8', fontWeight: 800, letterSpacing: '0.06em', fontFamily: 'system-ui', borderBottom: '1px solid rgba(56,189,248,0.2)', paddingBottom: '2px' }}>
+          ACCELEROMETER (g)
+        </div>
+        <SliderRow label="ACCEL X" unit="g"   min={-2}   max={2}   step={0.01} value={accelX} color="#38bdf8" onChange={v => update('accelX', v)} />
+        <SliderRow label="ACCEL Y" unit="g"   min={-2}   max={2}   step={0.01} value={accelY} color="#38bdf8" onChange={v => update('accelY', v)} />
+        <SliderRow label="ACCEL Z" unit="g"   min={-2}   max={2}   step={0.01} value={accelZ} color="#38bdf8" onChange={v => update('accelZ', v)} />
+
+        {/* Gyroscope group */}
+        <div style={{ fontSize: '9px', color: '#a78bfa', fontWeight: 800, letterSpacing: '0.06em', fontFamily: 'system-ui', borderBottom: '1px solid rgba(167,139,250,0.2)', paddingBottom: '2px' }}>
+          GYROSCOPE (°/s)
+        </div>
+        <SliderRow label="GYRO X"  unit="°/s" min={-250} max={250} step={1}    value={gyroX}  color="#a78bfa" onChange={v => update('gyroX',  v)} />
+        <SliderRow label="GYRO Y"  unit="°/s" min={-250} max={250} step={1}    value={gyroY}  color="#a78bfa" onChange={v => update('gyroY',  v)} />
+        <SliderRow label="GYRO Z"  unit="°/s" min={-250} max={250} step={1}    value={gyroZ}  color="#a78bfa" onChange={v => update('gyroZ',  v)} />
+
+        {/* Temperature */}
+        <div style={{ fontSize: '9px', color: '#f97316', fontWeight: 800, letterSpacing: '0.06em', fontFamily: 'system-ui', borderBottom: '1px solid rgba(249,115,22,0.2)', paddingBottom: '2px' }}>
+          TEMPERATURE
+        </div>
+        <SliderRow label="TEMP"    unit="°C"  min={-40}  max={85}  step={0.1}  value={temp}   color="#f97316" onChange={v => update('temp',   v)} />
+      </div>
+    );
+  }
+
   // ── Single-value sensors ─────────────────────────────────────────────────
   const config = isDistance
     ? { label: 'DISTANCE', unit: 'cm',  min: 2,   max: 400,     step: 1,   key: 'distance', color: '#BEF264' }
