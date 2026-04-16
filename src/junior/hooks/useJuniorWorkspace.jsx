@@ -9,12 +9,12 @@ import { javascriptGenerator } from "@blockly-runtime";
 import defineLeapBlocks from "../blocks/blocks";
 import defineLooksBlocks from "../blocks/looksBlocks";
 import defineSoundBlocks from "../blocks/soundBlocks";
-import defineExtensionBlocks from "../blocks/extensionBlocks";
 import { registerLeapRenderer } from "../blocks/LeapRenderer";
 import { getLessonConfig } from "../engine/LessonConfig";
 import { WorkspaceValidator } from "../engine/WorkspaceValidator";
 import { previewActions } from "../engine/previewActions";
 import { looksPreview } from "../engine/looksPreview";
+import { EXTENSIONS, registerExtensions } from "../../extensions/extensionDefinitions";
 
 // Robot Assets
 const robotIdle = "assets/sprites/robot/robot_idle.svg";
@@ -171,48 +171,40 @@ export function useJuniorWorkspace({
     const handleAddExtension = (extId) => {
         setIsExtensionLibraryOpen(false);
 
-        let newCategory = null;
-        let newBlocks = [];
+        // Normalize ID (face-detection -> face_detection)
+        const id = extId.replace(/-/g, '_');
+        const ext = EXTENSIONS[id];
 
-        if (extId === 'face_detection') {
-            if (!categories.find(c => c.id === 'face_detection')) {
-                newCategory = { id: "face_detection", name: "Face Detection", color: "#D43D41", icon: <span>👤</span> };
-                newBlocks = [
-                    { kind: "block", type: "fd_camera" },
-                    { kind: "block", type: "fd_analyze" },
-                    { kind: "block", type: "fd_count" },
-                    { kind: "block", type: "fd_guess_emotion" },
-                    { kind: "block", type: "fd_feature" },
-                    { kind: "block", type: "fd_when_emotion" }
-                ];
+        if (ext) {
+            // Already added? Just switch category
+            if (categories.find(c => c.id === id)) {
+                handleCategoryClick(id);
+                return;
             }
-        } else if (extId === 'hand_pose') {
-            if (!categories.find(c => c.id === 'hand_pose')) {
-                newCategory = { id: "hand_pose", name: "Hand Pose", color: "#D43D41", icon: <span>✋</span> };
-                newBlocks = [
-                    { kind: "block", type: "hp_camera" },
-                    { kind: "block", type: "hp_analyze" },
-                    { kind: "block", type: "hp_move_with" },
-                    { kind: "block", type: "hp_guess_sign" },
-                    { kind: "block", type: "hp_when_sign" }
-                ];
-            }
-        }
 
-        if (newCategory) {
+            // 1. Register blocks and generators (if not already done)
+            registerExtensions(Blockly, [id]);
+
+            // 2. Add to categories and toolbox state
+            const newCategory = {
+                id: id,
+                name: ext.name,
+                color: ext.color,
+                icon: <span>{ext.icon || '🧩'}</span>
+            };
+
             const nextCategories = [...categories, newCategory];
-            const nextCategoryBlocks = { ...categoryBlocks, [extId]: newBlocks };
+            const nextCategoryBlocks = { ...categoryBlocks, [id]: ext.getToolbox() };
+
             setCategories(nextCategories);
             setCategoryBlocks(nextCategoryBlocks);
 
+            // 3. Switch to it
             setTimeout(() => {
-                setActiveCategory(extId);
-                if (workspaceRef.current) {
-                    workspaceRef.current.updateToolbox(getToolboxXml(extId, nextCategoryBlocks));
-                    resetFlyoutScale();
-                    setTimeout(() => workspaceRef.current?.resize(), 50);
-                }
+                handleCategoryClick(id);
             }, 50);
+        } else {
+            console.warn(`[JuniorWorkspace] Unknown extension ID: ${extId}`);
         }
     };
 
@@ -220,7 +212,6 @@ export function useJuniorWorkspace({
         defineLeapBlocks(Blockly, javascriptGenerator);
         defineLooksBlocks(Blockly, javascriptGenerator);
         defineSoundBlocks(Blockly, javascriptGenerator);
-        defineExtensionBlocks(Blockly, javascriptGenerator);
 
         // Dynamic Dropdown Colors
         if (!Blockly.FieldDropdown.prototype._originalShowEditor) {
