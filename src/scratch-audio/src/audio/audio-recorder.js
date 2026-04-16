@@ -1,10 +1,3 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
-import 'get-float-time-domain-data';
-import getUserMedia from 'get-user-media-promise';
 import SharedAudioContext from './shared-audio-context.js';
 import {computeRMS, computeChunkedRMS} from './audio-util.js';
 
@@ -28,7 +21,7 @@ class AudioRecorder {
 
     startListening (onStarted, onUpdate, onError) {
         try {
-            getUserMedia({audio: true})
+            navigator.mediaDevices.getUserMedia({audio: true})
                 .then(userMediaStream => {
                     if (!this.disposed) {
                         this.started = true;
