@@ -1,13 +1,9 @@
-<<<<<<< HEAD
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-export const scratchSounds: any[] = [
-=======
 export const leapSounds: any[] = [
->>>>>>> 6b15f725eb9104361d7d904575eff29a664202ff
   {
     "name": "A Bass",
     "tags": [
