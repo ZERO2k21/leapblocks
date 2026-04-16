@@ -5013,6 +5013,153 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     return (
 
         <div>
+            {/* Responsive Styles */}
+            <style>{`
+                /* Desktop - Default styles */
+                @media (min-width: 1025px) {
+                    .add-extension-btn-container {
+                        bottom: 16px !important;
+                        left: 16px !important;
+                    }
+                }
+                
+                /* Tablet - Medium screens */
+                @media (max-width: 1024px) {
+                    .add-extension-btn-container {
+                        bottom: 12px !important;
+                        left: 12px !important;
+                    }
+                    
+                    /* Adjust right panel width */
+                    .right-panel-responsive {
+                        width: 380px !important;
+                        min-width: 320px !important;
+                    }
+                    
+                    /* Adjust stage size */
+                    .stage-container-responsive {
+                        width: 360px !important;
+                    }
+                }
+                
+                /* Mobile - Small screens */
+                @media (max-width: 768px) {
+                    .add-extension-btn-container {
+                        bottom: 8px !important;
+                        left: 8px !important;
+                    }
+                    
+                    /* Stack layout on mobile */
+                    .main-container-responsive {
+                        flex-direction: column !important;
+                        height: auto !important;
+                        min-height: 100vh !important;
+                    }
+                    
+                    /* Full width workspace on mobile */
+                    .workspace-container-responsive {
+                        width: 100% !important;
+                        min-width: 100% !important;
+                        height: 60vh !important;
+                        min-height: 400px !important;
+                    }
+                    
+                    /* Full width right panel on mobile */
+                    .right-panel-responsive {
+                        width: 100% !important;
+                        min-width: 100% !important;
+                        max-width: 100% !important;
+                        border-left: none !important;
+                        border-top: 1px solid #d9d9d9 !important;
+                    }
+                    
+                    /* Adjust stage for mobile */
+                    .stage-container-responsive {
+                        width: 100% !important;
+                        max-width: 450px !important;
+                        margin: 0 auto !important;
+                    }
+                    
+                    /* Compact extension button on mobile */
+                    .add-extension-btn-container button {
+                        width: 48px !important;
+                    }
+                    
+                    .add-extension-btn-container button:hover {
+                        width: 48px !important;
+                    }
+                }
+                
+                /* Extra small mobile */
+                @media (max-width: 480px) {
+                    .add-extension-btn-container {
+                        bottom: 4px !important;
+                        left: 4px !important;
+                    }
+                    
+                    .workspace-container-responsive {
+                        height: 50vh !important;
+                        min-height: 350px !important;
+                    }
+                    
+                    /* Smaller stage on very small screens */
+                    .stage-container-responsive {
+                        max-width: 100% !important;
+                    }
+                }
+                
+                /* Ensure workspace scales properly */
+                .blocklyWorkspace {
+                    min-height: 350px !important;
+                }
+                
+                /* Code preview responsive height */
+                @media (max-height: 900px) {
+                    .code-preview-area {
+                        max-height: calc(35vh - 80px) !important;
+                        min-height: 150px !important;
+                    }
+                }
+                
+                @media (max-height: 768px) {
+                    .code-preview-area {
+                        max-height: 200px !important;
+                        min-height: 120px !important;
+                    }
+                }
+                
+                @media (max-height: 600px) {
+                    .code-preview-area {
+                        max-height: 150px !important;
+                        min-height: 100px !important;
+                    }
+                }
+                
+                /* Log area responsive height */
+                @media (max-height: 768px) {
+                    .log-area-responsive {
+                        height: 150px !important;
+                    }
+                }
+                
+                /* Landscape mobile optimization */
+                @media (max-width: 768px) and (orientation: landscape) {
+                    .main-container-responsive {
+                        flex-direction: row !important;
+                    }
+                    
+                    .workspace-container-responsive {
+                        width: 60% !important;
+                        height: calc(100vh - 120px) !important;
+                    }
+                    
+                    .right-panel-responsive {
+                        width: 40% !important;
+                        border-left: 1px solid #d9d9d9 !important;
+                        border-top: none !important;
+                    }
+                }
+            `}</style>
 
             {/* Premium Menu Bar */}
 
@@ -5274,11 +5421,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             {/* Main Content */}
 
-            <div style={styles.main}>
+            <div style={styles.main} className="main-container-responsive">
 
                 {/* Blockly Workspace */}
 
-                <div style={styles.workspaceContainer}>
+                <div style={styles.workspaceContainer} className="workspace-container-responsive">
 
 
 
@@ -5302,20 +5449,23 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 style={styles.blockly}
                             />
 
-                            {/* Add Extension Button - Positioned exactly as requested */}
+                            {/* Add Extension Button - Compact icon that expands on hover */}
                             {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
-                                <div className="absolute bottom-4 left-4 z-[100] w-[280px] add-extension-btn-container">
+                                <div className="absolute bottom-4 left-4 z-[100] add-extension-btn-container">
                                     <div className="pt-4 border-t border-gray-300">
                                         <button
                                             onClick={() => setShowExtensionLibrary(true)}
-                                            className="w-full flex items-center gap-4 p-3 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all group"
+                                            className="group flex items-center gap-3 p-2 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all hover:pr-4 overflow-hidden"
+                                            style={{ width: '56px', transition: 'width 0.3s ease' }}
+                                            onMouseEnter={(e) => e.currentTarget.style.width = '200px'}
+                                            onMouseLeave={(e) => e.currentTarget.style.width = '56px'}
                                         >
-                                            <div className="w-12 h-12 bg-[#855CD6] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
-                                                <Library size={24} />
+                                            <div className="w-10 h-10 bg-[#855CD6] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform flex-shrink-0">
+                                                <Library size={20} />
                                             </div>
-                                            <div className="text-left">
-                                                <div className="text-sm font-bold text-gray-700">Add Extension</div>
-                                                <div className="text-[10px] text-gray-400">Add more blocks</div>
+                                            <div className="text-left whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                <div className="text-xs font-bold text-gray-700">Add Extension</div>
+                                                <div className="text-[9px] text-gray-400">More blocks</div>
                                             </div>
                                         </button>
                                     </div>
@@ -5415,10 +5565,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     transition: 'width 0.2s ease-in-out',
 
-                }}>
+                }} className="right-panel-responsive">
 
                     {/* Stage Container - Always rendered, conditionally visible to keep ref valid */}
-                    <div ref={stageContainerRef} style={{
+                    <div ref={stageContainerRef} className="stage-container-responsive" style={{
                         ...(!isFullscreen ? styles.stageContainer : {}),
                         width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '225px' : '450px'),
                         height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '155px' : (editorMode === 'stage' ? 'auto' : '310px')),
@@ -5703,7 +5853,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             </div>
 
-                            <div style={styles.codeArea}>
+                            <div style={styles.codeArea} className="code-preview-area">
 
                                 <pre style={styles.codeContent}>
 
@@ -5755,7 +5905,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             </div>
 
-                            <div style={styles.logArea}>
+                            <div style={styles.logArea} className="log-area-responsive">
 
                                 {activeTab === 'log' ? (
 
@@ -6630,15 +6780,33 @@ const styles: { [key: string]: React.CSSProperties } = {
 
 
 
-    main: { flex: 1, display: 'flex', overflow: 'hidden' },
+    main: {
+        flex: 1,
+        display: 'flex',
+        overflow: 'hidden',
+        height: 'calc(100vh - 120px)',
+        minHeight: '500px',
+        position: 'relative'
+    },
 
 
 
     // Workspace
 
-    workspaceContainer: { flex: 1, position: 'relative', display: 'flex', flexDirection: 'column' },
+    workspaceContainer: {
+        flex: 1,
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        minWidth: '350px',
+        overflow: 'hidden'
+    },
 
-    blockly: { flex: 1, width: '100%' },
+    blockly: {
+        flex: 1,
+        width: '100%',
+        minHeight: '350px'
+    },
 
 
 
@@ -6816,7 +6984,9 @@ const styles: { [key: string]: React.CSSProperties } = {
 
     rightPanel: {
 
-        width: '500px',
+        width: '450px',
+        minWidth: '320px',
+        maxWidth: '500px',
 
         backgroundColor: '#f5f5f5',
 
@@ -6829,6 +6999,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         gap: '8px',
 
         padding: '8px',
+        overflow: 'auto',
 
     },
 
@@ -6974,6 +7145,9 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderRight: '1px solid #eee',
 
         borderTop: 'none',
+
+        maxHeight: 'calc(50vh - 100px)',
+        minHeight: '200px',
 
     },
 
