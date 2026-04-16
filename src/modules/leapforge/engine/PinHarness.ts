@@ -951,16 +951,10 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 50.4
     },
     "pins": [
-      {
-        "name": "AOUT",
-        "x": 0,
-        "y": 20.5
-      },
-      {
-        "name": "VCC",
-        "x": 0,
-        "y": 40.5
-      }
+      { "name": "AOUT", "x": 0, "y": 11   },
+      { "name": "GND",  "x": 0, "y": 20.5 },
+      { "name": "VCC",  "x": 0, "y": 30.5 },
+      { "name": "DOUT", "x": 0, "y": 40.5 }
     ]
   },
   "buzzer": {
@@ -1251,16 +1245,10 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 61.5
     },
     "pins": [
-      {
-        "name": "VCC",
-        "x": 199,
-        "y": 24.3
-      },
-      {
-        "name": "DOUT",
-        "x": 199,
-        "y": 43.7
-      }
+      { "name": "VCC",  "x": 199, "y": 14.6 },
+      { "name": "GND",  "x": 199, "y": 24.3 },
+      { "name": "DOUT", "x": 199, "y": 34   },
+      { "name": "AOUT", "x": 199, "y": 43.7 }
     ]
   },
   "franzininho": {
@@ -1336,16 +1324,10 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 59.5
     },
     "pins": [
-      {
-        "name": "AOUT",
-        "x": 137,
-        "y": 26.4
-      },
-      {
-        "name": "GND",
-        "x": 137,
-        "y": 46.2
-      }
+      { "name": "AOUT", "x": 137, "y": 16.5 },
+      { "name": "DOUT", "x": 137, "y": 26.4 },
+      { "name": "GND",  "x": 137, "y": 36.5 },
+      { "name": "VCC",  "x": 137, "y": 46.2 }
     ]
   },
   "hc-sr04": {
@@ -1386,11 +1368,9 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 79.2
     },
     "pins": [
-      {
-        "name": "GND",
-        "x": 87,
-        "y": 27.5
-      }
+      { "name": "GND", "x": 87, "y": 17.8 },
+      { "name": "VCC", "x": 87, "y": 27.5 },
+      { "name": "OUT", "x": 87, "y": 37.5 }
     ]
   },
   "ili9341": {
@@ -1959,11 +1939,9 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 71.782
     },
     "pins": [
-      {
-        "name": "GND",
-        "x": 135,
-        "y": 35.8
-      }
+      { "name": "GND", "x": 135, "y": 26.2 },
+      { "name": "VCC", "x": 135, "y": 35.8 },
+      { "name": "OUT", "x": 135, "y": 45.5 }
     ]
   },
   "photoresistor-sensor": {
@@ -2004,9 +1982,9 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 92.4
     },
     "pins": [
-      { "name": "VCC", "x": 135,  "y": 300 },
-      { "name": "OUT", "x": 175, "y": 300 },
-      { "name": "GND", "x": 210, "y": 300 }
+      { "name": "VCC", "x": 36.178,  "y": 92 },
+      { "name": "OUT", "x": 45.9175, "y": 92 },
+      { "name": "GND", "x": 55.6415, "y": 92 }
     ]
   },
   "potentiometer": {
@@ -2203,20 +2181,14 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "viewBox": {
       "minX": 0,
       "minY": 0,
-      "width": 30,
-      "height": 30
+      "width": 580,
+      "height": 430
     },
     "pins": [
-      {
-        "name": "VCC",
-        "x": 7,
-        "y": 36.3
-      },
-      {
-        "name": "SCK",
-        "x": 7,
-        "y": 26.5
-      }
+      { "name": "VCC", "x": 7, "y": 55   },
+      { "name": "DT",  "x": 7, "y": 36.3 },
+      { "name": "SCK", "x": 7, "y": 46.2 },
+      { "name": "GND", "x": 7, "y": 26.5 }
     ]
   },
   "rotary-dialer": {
