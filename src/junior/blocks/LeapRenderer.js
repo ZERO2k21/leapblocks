@@ -6,7 +6,7 @@ export function registerLeapRenderer(blocklyInstance) {
     if (_registered) return;
     _registered = true;
 
-    // We inherit from zelos to get the Scratch block styling
+    // We inherit from zelos to get the leap block styling
     // Class definitions are inside this function to avoid TDZ errors
     // when webpack chunk splitting evaluates this module before Blockly.
     const BaseConstantProvider = blocklyInstance.zelos.ConstantProvider;
@@ -17,7 +17,7 @@ export function registerLeapRenderer(blocklyInstance) {
             super();
 
             // Toy-like overrides (Junior Style)
-            this.CORNER_RADIUS = 8; // Match PictoBlox/ScratchJr (less round than 24)
+            this.CORNER_RADIUS = 8; // Match PictoBlox/leapJr (less round than 24)
             this.notchOffsetLeft_ = 12; // Standard
             this.MIN_BLOCK_HEIGHT = 48; // Chunky but not huge (Horizontal layout handles width)
             this.TOP_ROW_MIN_HEIGHT = 10;

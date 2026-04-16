@@ -14,7 +14,7 @@ const WaveformDisplay = ({ buffer }) => {
         ctx.clearRect(0, 0, width, height);
 
         // Draw background
-        ctx.fillStyle = '#dbf2ec'; // Light green Scratch background
+        ctx.fillStyle = '#dbf2ec'; // Light green leap background
         ctx.fillRect(0, 0, width, height);
 
         const data = buffer.getChannelData(0); // Use mono channel 0 for display

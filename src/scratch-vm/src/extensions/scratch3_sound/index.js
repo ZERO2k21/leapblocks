@@ -1,11 +1,11 @@
-export class Scratch3SoundBlocks {
+export class leap3SoundBlocks {
     constructor(runtime) {
         this.runtime = runtime;
     }
 
     /**
      * Play a sound and wait for it to finish, or just play it.
-     * In Scratch, this usually takes a SOUND_MENU arg.
+     * In leap, this usually takes a SOUND_MENU arg.
      * @param {object} args - The block arguments.
      * @param {object} util - The block utility.
      */

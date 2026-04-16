@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Blockly from '@blockly-runtime';
 
 /**
- * Argument types supported by Scratch 3.0
+ * Argument types supported by leap 3.0
  */
 export type ArgumentType = 'input' | 'boolean' | 'label';
 
@@ -63,7 +63,7 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
     const handleSubmit = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         const trimmedName = blockName.trim();
-        
+
         if (!trimmedName) {
             setError('Block name cannot be empty');
             return;
@@ -92,13 +92,13 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
                 </div>
 
                 <div style={styles.content}>
-                    {/* Block Preview Area - Scratch Style */}
+                    {/* Block Preview Area - leap Style */}
                     <div style={styles.previewSection}>
                         <div style={styles.previewBlock}>
                             <span style={styles.previewText}>{blockName || 'my block'}</span>
                             {args.map((arg) => (
-                                <span 
-                                    key={arg.id} 
+                                <span
+                                    key={arg.id}
                                     style={{
                                         ...styles.previewArg,
                                         backgroundColor: arg.type === 'boolean' ? '#4C97FF' : 'white',
@@ -119,14 +119,14 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
                     <div style={styles.addButtonsRow}>
                         <button type="button" style={styles.addBtn} onClick={() => addArgument('input')}>
                             <div style={styles.iconBox}>123</div>
-                            <span style={styles.addBtnText}>Add an input<br/>number or text</span>
+                            <span style={styles.addBtnText}>Add an input<br />number or text</span>
                         </button>
                         <button type="button" style={styles.addBtn} onClick={() => addArgument('boolean')}>
-                            <div style={{...styles.iconBox, borderRadius: '20px', width: '30px', height: '18px'}}></div>
-                            <span style={styles.addBtnText}>Add an input<br/>boolean</span>
+                            <div style={{ ...styles.iconBox, borderRadius: '20px', width: '30px', height: '18px' }}></div>
+                            <span style={styles.addBtnText}>Add an input<br />boolean</span>
                         </button>
                         <button type="button" style={styles.addBtn} onClick={() => addArgument('label')}>
-                            <div style={{...styles.iconBox, border: 'none', fontWeight: 'bold'}}>label</div>
+                            <div style={{ ...styles.iconBox, border: 'none', fontWeight: 'bold' }}>label</div>
                             <span style={styles.addBtnText}>Add a label</span>
                         </button>
                     </div>

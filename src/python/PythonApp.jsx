@@ -928,7 +928,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 if (updates.x !== undefined || updates.y !== undefined) {
                     newProps.position = { ...(s.position || { x: s.x || 0, y: s.y || 0 }) };
 
-                    // Convert pixel coordinates to scratch coordinates
+                    // Convert pixel coordinates to leap coordinates
                     const scaleX = stageSize.w / 480;
                     const scaleY = stageSize.h / 360;
                     const centerX = stageSize.w / 2;
@@ -936,12 +936,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     const offset = 40; // sprite half-size
 
                     if (updates.x !== undefined) {
-                        // scratchX = (pixelX - centerX + offset) / scaleX
+                        // leapX = (pixelX - centerX + offset) / scaleX
                         newProps.position.x = (updates.x - centerX + offset) / scaleX;
                         newProps.x = newProps.position.x; // Also set legacy property
                     }
                     if (updates.y !== undefined) {
-                        // Y is inverted: scratchY = (centerY - pixelY - offset) / scaleY
+                        // Y is inverted: leapY = (centerY - pixelY - offset) / scaleY
                         newProps.position.y = (centerY - updates.y - offset) / scaleY;
                         newProps.y = newProps.position.y; // Also set legacy property
                     }
@@ -961,17 +961,17 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             }));
         };
 
-        // Helper to convert pixel coordinates to scratch coordinates
-        window.pixelToScratch = (pixelX, pixelY) => {
-            const scratchX = (pixelX - stageSize.w / 2 + 40) / (stageSize.w / 480);
-            const scratchY = (stageSize.h / 2 - pixelY - 40) / (stageSize.h / 360);
-            return { x: scratchX, y: scratchY };
+        // Helper to convert pixel coordinates to leap coordinates
+        window.pixelToleap = (pixelX, pixelY) => {
+            const leapX = (pixelX - stageSize.w / 2 + 40) / (stageSize.w / 480);
+            const leapY = (stageSize.h / 2 - pixelY - 40) / (stageSize.h / 360);
+            return { x: leapX, y: leapY };
         };
 
-        // Helper to convert scratch coordinates to pixel coordinates
-        window.scratchToPixel = (scratchX, scratchY) => {
-            const pixelX = (stageSize.w / 2) + (scratchX * (stageSize.w / 480)) - 40;
-            const pixelY = (stageSize.h / 2) - (scratchY * (stageSize.h / 360)) - 40;
+        // Helper to convert leap coordinates to pixel coordinates
+        window.leapToPixel = (leapX, leapY) => {
+            const pixelX = (stageSize.w / 2) + (leapX * (stageSize.w / 480)) - 40;
+            const pixelY = (stageSize.h / 2) - (leapY * (stageSize.h / 360)) - 40;
             return { x: pixelX, y: pixelY };
         };
 
@@ -1016,8 +1016,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         let dx = 0, dy = 0;
                         if (dir === "RIGHT") dx = d;
                         if (dir === "LEFT") dx = -d;
-                        if (dir === "UP") dy = d;  // In Scratch, UP increases Y
-                        if (dir === "DOWN") dy = -d; // In Scratch, DOWN decreases Y
+                        if (dir === "UP") dy = d;  // In leap, UP increases Y
+                        if (dir === "DOWN") dy = -d; // In leap, DOWN decreases Y
                         const pos = s.position || { x: s.x || 0, y: s.y || 0 };
                         addLog(`➡️ ${name}: Move ${dir} ${d} steps`, 'info');
                         return {

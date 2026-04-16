@@ -73,12 +73,12 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({ mainIcon, color, tooltip
                     }}
                     onClick={(e) => {
                         e.stopPropagation();
-                        // Also trigger the primary action (first in list usually, but in Scratch it's search)
+                        // Also trigger the primary action (first in list usually, but in leap it's search)
                         actions.find(a => a.id === 'search')?.onClick();
                     }}
                 >
                     {mainIcon}
-                    {/* SVG Plus Overlay standard in Scratch */}
+                    {/* SVG Plus Overlay standard in leap */}
                     <div style={styles.plusOverlay}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>

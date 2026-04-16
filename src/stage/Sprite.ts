@@ -146,7 +146,7 @@ export class Sprite {
      *   +0.5  = right edge (x) or bottom edge (y)
      *   -0.5  = left edge  (x) or top edge    (y)
      *
-     * Returns { x, y } in Scratch stage coordinates.
+     * Returns { x, y } in leap stage coordinates.
      */
     getPenTipPosition(): { x: number; y: number } {
         const costume = this.currentCostume;
@@ -169,7 +169,7 @@ export class Sprite {
         const tipLocalY = h * tipNY;
 
         // Rotate by sprite direction.
-        // Scratch: 90=right, 0=up → canvas rotation = (dir - 90) * π/180
+        // leap: 90=right, 0=up → canvas rotation = (dir - 90) * π/180
         const rad = (this.state.direction - 90) * Math.PI / 180;
         const cosR = Math.cos(rad);
         const sinR = Math.sin(rad);
@@ -177,7 +177,7 @@ export class Sprite {
         const rotX = tipLocalX * cosR - tipLocalY * sinR;
         const rotY = tipLocalX * sinR + tipLocalY * cosR;
 
-        // canvas y+ = Scratch y-
+        // canvas y+ = leap y-
         return {
             x: this.state.x + rotX,
             y: this.state.y - rotY,
@@ -282,7 +282,7 @@ export class Sprite {
     }
 
     /**
-     * Given a desired tip position in Scratch coords, compute where the
+     * Given a desired tip position in leap coords, compute where the
      * sprite center must be so the tip lands exactly there.
      */
     getCenterForTipAt(tipX: number, tipY: number): { x: number; y: number } {
@@ -940,7 +940,7 @@ export class Sprite {
     // HIT TESTING
     // ═══════════════════════════════════════════════════════════════════════════
 
-    isPointInSprite(scratchX: number, scratchY: number): boolean {
+    isPointInSprite(leapX: number, leapY: number): boolean {
         const costume = this.currentCostume;
         const scale = this.state.size / 100;
 
@@ -950,8 +950,8 @@ export class Sprite {
         const halfWidth = spriteWidth / 2;
         const halfHeight = spriteHeight / 2;
 
-        const dx = scratchX - this.state.x;
-        const dy = scratchY - this.state.y;
+        const dx = leapX - this.state.x;
+        const dy = leapY - this.state.y;
 
         return Math.abs(dx) <= halfWidth && Math.abs(dy) <= halfHeight;
     }

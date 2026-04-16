@@ -56,17 +56,17 @@
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 14px; padding: 20px;
   }
-  .scratch-block {
+  .leap-block {
     background: var(--green); color: white; border-radius: 8px;
     padding: 12px 16px; font-weight: 700; font-size: 15px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.18);
     display: flex; align-items: center; gap: 8px;
   }
-  .scratch-block input, .scratch-block select {
+  .leap-block input, .leap-block select {
     background: #fff; color: #222; border: none; border-radius: 6px;
     padding: 4px 8px; width: 64px; text-align: center; font-size: 14px;
   }
-  .scratch-block select { width: auto; }
+  .leap-block select { width: auto; }
   .advanced { background: var(--dark-green); }
   .section-title {
     grid-column: 1 / -1; margin: 16px 0 6px;
@@ -91,20 +91,20 @@
 </div>
 
 <div class="block-grid">
-  <div class="scratch-block"><span>🧼</span> erase all</div>
-  <div class="scratch-block"><span>📌</span> stamp</div>
-  <div class="scratch-block"><span>⬇️</span> pen down</div>
-  <div class="scratch-block"><span>⬆️</span> pen up</div>
-  <div class="scratch-block">set pen color to <input type="color" value="#2c2c2c"></div>
-  <div class="scratch-block">change pen <select><option>color</option><option>saturation</option><option>brightness</option><option>transparency</option></select> by <input value="10"></div>
-  <div class="scratch-block">set pen <select><option>color</option><option>saturation</option><option>brightness</option><option>transparency</option></select> to <input value="50"></div>
-  <div class="scratch-block">change pen size by <input value="1"></div>
-  <div class="scratch-block">set pen size to <input value="1"></div>
+  <div class="leap-block"><span>🧼</span> erase all</div>
+  <div class="leap-block"><span>📌</span> stamp</div>
+  <div class="leap-block"><span>⬇️</span> pen down</div>
+  <div class="leap-block"><span>⬆️</span> pen up</div>
+  <div class="leap-block">set pen color to <input type="color" value="#2c2c2c"></div>
+  <div class="leap-block">change pen <select><option>color</option><option>saturation</option><option>brightness</option><option>transparency</option></select> by <input value="10"></div>
+  <div class="leap-block">set pen <select><option>color</option><option>saturation</option><option>brightness</option><option>transparency</option></select> to <input value="50"></div>
+  <div class="leap-block">change pen size by <input value="1"></div>
+  <div class="leap-block">set pen size to <input value="1"></div>
 
   <div class="section-title">Advanced Pen</div>
-  <div class="scratch-block advanced">enable <select><option>drag and draw</option></select></div>
-  <div class="scratch-block advanced">set draw mode: <select><option>default</option><option>smooth</option></select></div>
-  <div class="scratch-block advanced">set point buffer size: <input value="1"></div>
+  <div class="leap-block advanced">enable <select><option>drag and draw</option></select></div>
+  <div class="leap-block advanced">set draw mode: <select><option>default</option><option>smooth</option></select></div>
+  <div class="leap-block advanced">set point buffer size: <input value="1"></div>
 </div>
 
 <script>

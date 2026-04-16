@@ -258,7 +258,7 @@ export class AnimationCompiler {
 
         if (!input || !input.connection) {
             // Fallback: check if the name corresponds to a direct field (field_input)
-            // e.g. scratchBlocks.ts defines looks_say with field_input named MESSAGE
+            // e.g. leapBlocks.ts defines looks_say with field_input named MESSAGE
             const fieldVal = block.getFieldValue(inputName);
             if (fieldVal !== null && fieldVal !== undefined) {
                 const capturedVal = String(fieldVal);
@@ -684,7 +684,7 @@ export class AnimationCompiler {
         compilerLog.block(block.type, 'checking trigger type...');
 
         switch (block.type) {
-            // Green flag — support both old internal name and Scratch-standard name
+            // Green flag — support both old internal name and leap-standard name
             case 'event_flag_clicked':
             case 'event_whenflagclicked':
             case 'arduino_setup':
@@ -762,7 +762,7 @@ export class AnimationCompiler {
     private compileBlock(block: Blockly.Block): ScriptStep | null {
         let step: ScriptStep | null = null;
         switch (block.type) {
-            // Motion (support both internal underscore names and Scratch-standard concatenated names)
+            // Motion (support both internal underscore names and leap-standard concatenated names)
             case 'motion_move_steps':
             case 'motion_movesteps':
                 step = { type: 'move_steps', steps: this.compileNumberValue(block, 'STEPS'), blockId: block.id };
@@ -840,7 +840,7 @@ export class AnimationCompiler {
                 step = { type: 'set_rotation_style', style: block.getFieldValue('STYLE') as 'left-right' | 'all around' | 'none' };
                 break;
 
-            // Looks (support both internal and Scratch-standard names)
+            // Looks (support both internal and leap-standard names)
             case 'looks_say':
                 step = { type: 'say', message: this.compileStringValue(block, 'MESSAGE') };
                 break;
@@ -915,7 +915,7 @@ export class AnimationCompiler {
             // Control & Arduino Control
             case 'control_wait':
             case 'arduino_delay': {
-                // scratchBlocks uses DURATION, animation-blocks uses SECS
+                // leapBlocks uses DURATION, animation-blocks uses SECS
                 const secs = this.compileNumberValue(block, 'SECS') || this.compileNumberValue(block, 'DURATION');
                 step = { type: 'wait', secs };
                 break;
@@ -1076,6 +1076,50 @@ export class AnimationCompiler {
             case 'fd_detect': {
                 const feature = block.getFieldValue('FEATURE') || '';
                 step = { type: 'fd_report', feature } as any;
+                break;
+            }
+
+            // Object Detection extension blocks
+            case 'object_detect':
+                step = { type: 'object_detect' } as any;
+                break;
+            case 'object_when_detected': {
+                const objectType = block.getFieldValue('OBJECT') || 'cat';
+                step = { type: 'object_when_detected', objectType } as any;
+                break;
+            }
+
+            // Music extension blocks
+            case 'music_play_note': {
+                const note = Number(block.getFieldValue('NOTE') || 60);
+                const beats = Number(block.getFieldValue('BEATS') || 0.25);
+                step = { type: 'music_play_note', note, beats } as any;
+                break;
+            }
+            case 'music_set_instrument': {
+                const instrument = Number(block.getFieldValue('INST') || 1);
+                step = { type: 'music_set_instrument', instrument } as any;
+                break;
+            }
+            case 'music_play_drum': {
+                const drum = Number(block.getFieldValue('DRUM') || 1);
+                const beats = Number(block.getFieldValue('BEATS') || 0.25);
+                step = { type: 'music_play_drum', drum, beats } as any;
+                break;
+            }
+            case 'music_set_tempo': {
+                const bpm = Number(block.getFieldValue('BPM') || 60);
+                step = { type: 'music_set_tempo', bpm } as any;
+                break;
+            }
+            case 'music_change_tempo': {
+                const amount = Number(block.getFieldValue('AMOUNT') || 20);
+                step = { type: 'music_change_tempo', amount } as any;
+                break;
+            }
+            case 'music_rest': {
+                const beats = Number(block.getFieldValue('BEATS') || 0.25);
+                step = { type: 'music_rest', beats } as any;
                 break;
             }
 

@@ -1073,7 +1073,7 @@ body #root .blocklyFlyoutButton .blocklyText,
   display: none !important;
 }
 
-/* Scratch 3.0-like checkbox styling for flyout reporters */
+/* leap 3.0-like checkbox styling for flyout reporters */
 .variable-checkbox-container,
 .list-checkbox-container,
 .sensing-checkbox-container {

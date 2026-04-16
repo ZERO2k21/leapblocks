@@ -7,6 +7,8 @@
  *   window.runtime.pen   → PenManager (canvas drawing)
  *   window.runtime.face  → FaceRuntime (camera + face detection)
  *   window.runtime.sprite → helpers for the active sprite
+ *   window.runtime.objectDetection → Object Detection AI
+ *   window.runtime.music → Music playback with Web Audio
  *
  * Call `initRuntime(spriteGetter)` once during app mount.
  * Call `updateRuntimeSprite(spriteId)` whenever the active sprite changes.
@@ -14,6 +16,8 @@
 
 import { penManager } from '../engine/PenManager';
 import { spriteManager } from '../engine/SpriteManager';
+import { ObjectDetectionRuntime } from '../extensions/ObjectDetectionExtension';
+import { MusicRuntime } from '../extensions/MusicExtension';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FACE RUNTIME
@@ -64,16 +68,16 @@ class FaceRuntime {
         return this.faces.length;
     }
 
-    /** Get X position of face N (1-based) in Scratch coordinates */
+    /** Get X position of face N (1-based) in leap coordinates */
     getX(n: number): number {
         const face = this.faces[n - 1];
         if (!face) return 0;
-        // Convert from video pixel coords to Scratch stage coords (-240..240)
+        // Convert from video pixel coords to leap stage coords (-240..240)
         const videoW = this.videoEl?.videoWidth || 480;
         return Math.round(((face.x + face.width / 2) / videoW) * 480 - 240);
     }
 
-    /** Get Y position of face N (1-based) in Scratch coordinates */
+    /** Get Y position of face N (1-based) in leap coordinates */
     getY(n: number): number {
         const face = this.faces[n - 1];
         if (!face) return 0;
@@ -228,13 +232,19 @@ const spriteRuntime = {
 export function initRuntime() {
     if ((window as any).runtime) return; // already initialized
 
+    // Initialize extension runtimes
+    const objectDetectionRuntime = new ObjectDetectionRuntime();
+    const musicRuntime = new MusicRuntime();
+
     (window as any).runtime = {
         pen: penRuntime,
         face: faceRuntime,
         sprite: spriteRuntime,
+        objectDetection: objectDetectionRuntime,
+        music: musicRuntime,
     };
 
-    console.log('[RuntimeBridge] window.runtime initialized');
+    console.log('[RuntimeBridge] window.runtime initialized with extensions');
 }
 
 /**

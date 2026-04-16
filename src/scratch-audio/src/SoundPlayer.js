@@ -34,7 +34,7 @@ export class SoundPlayer {
     }
 
     /**
-     * Set playback effects natively (e.g pitch and volume matching Scratch).
+     * Set playback effects natively (e.g pitch and volume matching leap).
      */
     setPitch(value) {
         this.playbackRate = value;

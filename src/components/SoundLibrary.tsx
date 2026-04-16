@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Volume2, Play, Square } from 'lucide-react';
 
-// Load the scratch sounds metadata
+// Load the leap sounds metadata
 import soundsData from '../lib/libraries/sounds.json';
 import { ADPCMSoundDecoder } from '../scratch-audio/src/ADPCMSoundDecoder';
 
@@ -143,7 +143,7 @@ export const SoundLibrary: React.FC<SoundLibraryProps> = ({
                     audioSourceRef.current = null;
                 }
             };
-            
+
             audioSourceRef.current = source;
             setPlayingId(sound.md5ext);
             source.start(0);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import AudioRecorder from '../../scratch-gui/src/lib/audio/audio-recorder';
+import AudioRecorder from '../../leap-gui/src/lib/audio/audio-recorder';
 import { Play, X, RotateCcw, ChevronLeft } from 'lucide-react';
 
 // --- SUB-COMPONENTS ---

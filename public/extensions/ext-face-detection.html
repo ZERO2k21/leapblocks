@@ -56,17 +56,17 @@
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 14px; padding: 20px;
   }
-  .scratch-block {
+  .leap-block {
     background: var(--red); color: white; border-radius: 8px;
     padding: 12px 16px; font-weight: 700; font-size: 15px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.18);
     display: flex; align-items: center; gap: 8px;
   }
-  .scratch-block input, .scratch-block select {
+  .leap-block input, .leap-block select {
     background: #fff; color: #222; border: none; border-radius: 6px;
     padding: 4px 8px; width: 64px; text-align: center; font-size: 14px;
   }
-  .scratch-block select { width: auto; }
+  .leap-block select { width: auto; }
   .reporter {
     background: var(--dark-red); border-radius: 20px;
     padding: 10px 18px;
@@ -103,32 +103,32 @@
 
 <div class="block-grid">
   <div class="section-title">Camera Control</div>
-  <div class="scratch-block">
+  <div class="leap-block">
     <span>📷</span> camera
     <select><option>on</option><option>off</option><option>flip</option></select>
   </div>
-  <div class="scratch-block">
+  <div class="leap-block">
     <span>👤</span>
     <select><option>analyze</option><option>show detection</option><option>hide detection</option></select>
     face
   </div>
 
   <div class="section-title">Detection Reporters</div>
-  <div class="scratch-block reporter">👥 count faces</div>
-  <div class="scratch-block reporter">🙂 guess emotion</div>
-  <div class="scratch-block reporter">
+  <div class="leap-block reporter">👥 count faces</div>
+  <div class="leap-block reporter">🙂 guess emotion</div>
+  <div class="leap-block reporter">
     📍 face
     <input value="1" style="width:40px">
     x position
   </div>
-  <div class="scratch-block reporter">
+  <div class="leap-block reporter">
     📍 face
     <input value="1" style="width:40px">
     y position
   </div>
 
   <div class="section-title">Feature Detection</div>
-  <div class="scratch-block">
+  <div class="leap-block">
     <span>👁️</span> detect
     <select>
       <option>Left Eye</option>

@@ -1,4 +1,4 @@
-export const scratchSounds: any[] = [
+export const leapSounds: any[] = [
   {
     "name": "A Bass",
     "tags": [
@@ -3325,7 +3325,7 @@ export const scratchSounds: any[] = [
     "rate": 22050
   },
   {
-    "name": "Scratch Beatbox",
+    "name": "leap Beatbox",
     "tags": [],
     "assetId": "859249563a7b1fc0f6e92e36d1db81c7",
     "dataFormat": "",
@@ -3334,7 +3334,7 @@ export const scratchSounds: any[] = [
     "rate": 44100
   },
   {
-    "name": "Scratchy Beat",
+    "name": "leapy Beat",
     "tags": [
       "music",
       "loops",

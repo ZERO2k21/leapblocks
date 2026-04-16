@@ -1,4 +1,4 @@
-export const scratchBackdrops: any[] = [
+export const leapBackdrops: any[] = [
   {
     "name": "Arctic",
     "tags": [

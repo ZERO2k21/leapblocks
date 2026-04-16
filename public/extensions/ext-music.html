@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Extension</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #c62828 0%, #7f0000 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #c62828, #b71c1c);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .icon { font-size: 64px; margin-bottom: 10px; }
+        h1 { font-size: 28px; margin-bottom: 8px; }
+        .subtitle { opacity: 0.9; font-size: 14px; }
+        .content { padding: 30px; }
+        .add-btn {
+            background: linear-gradient(135deg, #c62828, #b71c1c);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 30px;
+            transition: transform 0.2s;
+        }
+        .add-btn:hover { transform: translateY(-2px); }
+        .section { margin-bottom: 30px; }
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #333;
+        }
+        .block-item {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid #c62828;
+        }
+        .block-code {
+            font-family: 'Courier New', monospace;
+            background: #c62828;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .block-desc {
+            color: #666;
+            font-size: 14px;
+        }
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="window.history.back()">← Back</button>
+            <div class="icon">🎹</div>
+            <h1>Music</h1>
+            <div class="subtitle">Games & Animation • Play instruments, drums, and compose musical sequences</div>
+        </div>
+        
+        <div class="content">
+            <button class="add-btn" onclick="addExtension()">➕ Add Blocks</button>
+            
+            <div class="section">
+                <div class="section-title">📦 Available Blocks</div>
+                
+                <div class="block-item">
+                    <div class="block-code">play note [60] for [0.25] beats</div>
+                    <div class="block-desc">Play a MIDI note for the specified number of beats.</div>
+                </div>
+                
+                <div class="block-item">
+                    <div class="block-code">set instrument [1]</div>
+                    <div class="block-desc">Set the current instrument (1–21 options).</div>
+                </div>
+                
+                <div class="block-item">
+                    <div class="block-code">play drum [1] for [0.25] beats</div>
+                    <div class="block-desc">Play a drum sound for the specified beats.</div>
+                </div>
+                
+                <div class="block-item">
+                    <div class="block-code">set tempo [60] bpm</div>
+                    <div class="block-desc">Set the musical tempo in beats per minute.</div>
+                </div>
+                
+                <div class="block-item">
+                    <div class="block-code">change tempo by [20]</div>
+                    <div class="block-desc">Speed up or slow down the current tempo.</div>
+                </div>
+                
+                <div class="block-item">
+                    <div class="block-code">tempo</div>
+                    <div class="block-desc">Returns the current tempo in BPM.</div>
+                </div>
+                
+                <div class="block-item">
+                    <div class="block-code">rest for [0.25] beats</div>
+                    <div class="block-desc">Pause music playback for the specified beats.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addExtension() {
+            // Send message to parent window to add the extension
+            window.parent.postMessage({
+                type: 'ADD_EXTENSION',
+                extension: 'music',
+                extensionId: 'music',
+                title: 'Music'
+            }, '*');
+            
+            alert('✅ Music blocks added successfully!\n\nCheck the toolbox for the new "Music" category.');
+        }
+    </script>
+</body>
+</html>

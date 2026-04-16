@@ -115,7 +115,7 @@ dev_error.txt
 icon_error.txt
 intermediate_diff.txt
 
-# Test scratch files
+# Test leap files
 test_*.ts
 test_*.js
 

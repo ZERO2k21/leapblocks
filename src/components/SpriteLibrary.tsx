@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { scratchSprites } from './generated_scratch_sprites';
+import { leapSprites } from './generated_scratch_sprites';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SPRITE CATALOG — All available sprites organized by category
@@ -44,7 +44,7 @@ const CATEGORIES = [
     { id: 'Transport', color: '#4CBFE6' },
 ];
 
-const mappedScratchSprites = scratchSprites.map((sprite: any) => {
+const mappedleapSprites = leapSprites.map((sprite: any) => {
     const tags = Array.isArray(sprite.tags) ? sprite.tags.map((t: string) => t.toLowerCase()) : [];
 
     let category = 'Objects';
@@ -60,10 +60,19 @@ const mappedScratchSprites = scratchSprites.map((sprite: any) => {
     else if (tags.includes('letters')) category = 'Letters';
     else if (tags.includes('transportation') || tags.includes('vehicles')) category = 'Transport';
 
-    return { ...sprite, category } as SpriteEntry;
+    // Fix image paths: add leading '/' for proper public directory resolution
+    const fixedImage = sprite.image ? `/${sprite.image}` : undefined;
+    const fixedCostumes = sprite.costumes ? sprite.costumes.map((c: string) => `/${c}`) : undefined;
+
+    return {
+        ...sprite,
+        category,
+        image: fixedImage,
+        costumes: fixedCostumes
+    } as SpriteEntry;
 });
 
-export const FULL_CATALOG = [...LEAPBLOCKS_SPRITES, ...mappedScratchSprites];
+export const FULL_CATALOG = [...LEAPBLOCKS_SPRITES, ...mappedleapSprites];
 
 // ═══════════════════════════════════════════════════════════════════════════
 // EMOJI PICKER DATA

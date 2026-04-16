@@ -83,13 +83,21 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
 
     // Build iframe URL from extension data
     const getIframeUrl = (ext) => {
+        // Direct mappings for extensions with custom HTML files
         if (ext.id === 'pen') {
             return `/extensions/ext-pen.html`;
         }
         if (ext.id === 'face_detection' || ext.id === 'face-detection') {
             return `/extensions/ext-face-detection.html`;
         }
+        if (ext.id === 'object_detection') {
+            return `/extensions/ext-object-detection.html`;
+        }
+        if (ext.id === 'music') {
+            return `/extensions/ext-music.html`;
+        }
 
+        // Generic detail page for other extensions
         const params = new URLSearchParams({
             id: ext.id,
             name: ext.name,

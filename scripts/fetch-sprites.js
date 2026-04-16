@@ -2,12 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const ASSETS_DIR = path.join(__dirname, '../public/assets/sprites/scratch');
+const ASSETS_DIR = path.join(__dirname, '../public/assets/sprites/leap');
 if (!fs.existsSync(ASSETS_DIR)) {
     fs.mkdirSync(ASSETS_DIR, { recursive: true });
 }
 
-const TS_FILE = path.join(__dirname, '../src/components/generated_scratch_sprites.ts');
+const TS_FILE = path.join(__dirname, '../src/components/generated_leap_sprites.ts');
 
 const downloadFile = (url, dest) => {
     return new Promise((resolve, reject) => {
@@ -45,7 +45,7 @@ async function main() {
         for (const c of s.costumes) {
             if (!c.md5ext) continue;
 
-            const url = `https://cdn.assets.scratch.mit.edu/internalapi/asset/${c.md5ext}/get/`;
+            const url = `https://cdn.assets.leap.mit.edu/internalapi/asset/${c.md5ext}/get/`;
             const safeSpriteName = s.name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
             const safeCostumeName = c.name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
             const ext = path.extname(c.md5ext) || '.' + c.dataFormat || '.svg';
@@ -59,24 +59,24 @@ async function main() {
                     console.error(`Failed to download ${url}`);
                 }
             });
-            localCostumes.push(`/assets/sprites/scratch/${filename}`);
+            localCostumes.push(`/assets/sprites/leap/${filename}`);
         }
 
         if (localCostumes.length > 0) {
             entries.push({
-                id: `scratch_${s.name.replace(/\s+/g, '_').toLowerCase()}`,
+                id: `leap_${s.name.replace(/\s+/g, '_').toLowerCase()}`,
                 name: s.name,
                 emoji: '🤖', // default fallback emoji
                 image: localCostumes[0],
                 costumes: localCostumes,
                 tags: s.tags || [],
-                category: 'Scratch'
+                category: 'leap'
             });
         }
     }
 
     // Pre-write the TS file so it's not missing
-    fs.writeFileSync(TS_FILE, `export const scratchSprites: any[] = ${JSON.stringify(entries, null, 2)};`);
+    fs.writeFileSync(TS_FILE, `export const leapSprites: any[] = ${JSON.stringify(entries, null, 2)};`);
 
     // Run tasks concurrently
     const CONCURRENCY = 20;

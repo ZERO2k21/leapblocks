@@ -1,5 +1,5 @@
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   VariableWatcher - Scratch-style variable display
+   VariableWatcher - leap-style variable display
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .variable-watcher {
@@ -99,7 +99,7 @@
   animation: pulse 0.3s ease-out;
 }
 
-/* Make it look like Scratch's variable display */
+/* Make it look like leap's variable display */
 .variable-watcher::before {
   content: '';
   position: absolute;

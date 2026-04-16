@@ -5,18 +5,18 @@ import Blockly from '@blockly-runtime';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const COLORS = {
-    motion: '#4C97FF',       // Scratch Blue - Motion blocks
-    looks: '#9966FF',        // Scratch Purple - Looks blocks
-    sound: '#CF63CF',        // Scratch Magenta - Sound blocks
-    events: '#FFBF00',       // Scratch Yellow - Events
-    control: '#FFAB19',      // Scratch Orange - Control blocks
-    sensing: '#5CB1D6',      // Scratch Cyan - Sensing
-    operators: '#59C059',    // Scratch Green - Operators
-    data: '#FF8C1A',         // Scratch Orange - Variables
+    motion: '#4C97FF',       // leap Blue - Motion blocks
+    looks: '#9966FF',        // leap Purple - Looks blocks
+    sound: '#CF63CF',        // leap Magenta - Sound blocks
+    events: '#FFBF00',       // leap Yellow - Events
+    control: '#FFAB19',      // leap Orange - Control blocks
+    sensing: '#5CB1D6',      // leap Cyan - Sensing
+    operators: '#59C059',    // leap Green - Operators
+    data: '#FF8C1A',         // leap Orange - Variables
     variables: '#FF8C1A',    // Alias
     list: '#FF8C1A',         // Unified orange
-    myblocks: '#FF6680',     // Scratch Pink - My Blocks
-    pen: '#0FBD8C',          // Scratch Green - Pen blocks
+    myblocks: '#FF6680',     // leap Pink - My Blocks
+    pen: '#0FBD8C',          // leap Green - Pen blocks
 };
 
 export const animationBlocks = [
@@ -266,7 +266,7 @@ export const animationBlocks = [
         helpUrl: '',
     },
 
-    // Additional Scratch-style motion blocks
+    // Additional leap-style motion blocks
     {
         type: 'motion_point_towards',
         message0: '👉 point towards %1',
@@ -665,7 +665,7 @@ export const animationBlocks = [
         helpUrl: '',
     },
 
-    // Additional Scratch-style looks blocks
+    // Additional leap-style looks blocks
     {
         type: 'looks_set_brightness',
         message0: '💡 set brightness to %1',
@@ -989,7 +989,7 @@ export const animationBlocks = [
         helpUrl: '',
     },
 
-    // Additional Scratch-style sensing blocks
+    // Additional leap-style sensing blocks
     {
         type: 'sensing_loudness',
         message0: 'loudness',
@@ -1142,7 +1142,7 @@ export const animationBlocks = [
         helpUrl: '',
     },
 
-    // Variable Reporter block (Scratch style)
+    // Variable Reporter block (leap style)
     {
         type: 'data_variable',
         message0: '%1',

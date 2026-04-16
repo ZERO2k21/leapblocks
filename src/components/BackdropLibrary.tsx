@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { scratchBackdrops } from './generated_scratch_backdrops';
+import { leapBackdrops } from './generated_scratch_backdrops';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // BACKDROP CATALOG
@@ -23,7 +23,7 @@ const CATEGORIES = [
     { id: 'Patterns', color: '#F97316' },
 ];
 
-const mappedScratchBackdrops = scratchBackdrops.map((backdrop: any) => {
+const mappedleapBackdrops = leapBackdrops.map((backdrop: any) => {
     const tags = Array.isArray(backdrop.tags) ? backdrop.tags.map((t: string) => t.toLowerCase()) : [];
     let category = 'Outdoors';
 
@@ -54,7 +54,7 @@ const PRESET_BACKDROPS: BackdropEntry[] = [
     { id: 'space_photo', name: 'Galaxy', image: 'assets/backdrops/Space.png', category: 'Space' },
 ];
 
-const FULL_CATALOG = [...PRESET_BACKDROPS, ...mappedScratchBackdrops];
+const FULL_CATALOG = [...PRESET_BACKDROPS, ...mappedleapBackdrops];
 
 // ═══════════════════════════════════════════════════════════════════════════
 // COMPONENT
@@ -94,7 +94,7 @@ export const BackdropLibrary: React.FC<BackdropLibraryProps> = ({
         reader.onload = (event) => {
             const dataUrl = event.target?.result as string;
             const customBackdrop: BackdropEntry = {
-                id: `custom_${Date.now()} `,
+                id: `custom_${Date.now()}`,
                 name: file.name.replace(/\.[^/.]+$/, ''),
                 image: dataUrl,
                 category: 'Outdoors'

@@ -13,7 +13,7 @@ class LeapRuntime {
         this.isRunning = false;
         this.activeScripts = new Set();
         this.spritesBlocks = new Map();
-        
+
         // Monitor callbacks
         this.onShowVariable = null;
         this.onHideVariable = null;
@@ -376,7 +376,7 @@ class LeapRuntime {
                 // SENSING
                 // ═══════════════════════════════════════════════════════════════════════
                 case 'sensing_resettimer':
-                    window.scratchTimerStart = Date.now();
+                    window.leapTimerStart = Date.now();
                     break;
 
                 default:
@@ -398,11 +398,11 @@ class LeapRuntime {
     async getInputValue(input, spriteId) {
         if (!input) return 0;
         if (typeof input !== 'object') return input;
-        
+
         if (input.opcode || input.type) {
             return await this.executeReporter(input, spriteId);
         }
-        
+
         // Handle direct values from Blockly (e.g., shadow blocks)
         if (input.block && input.block.fields && input.block.fields.NUM) {
             return Number(input.block.fields.NUM.value);
@@ -470,7 +470,7 @@ class LeapRuntime {
                     case 'tan': return Math.tan(num * Math.PI / 180);
                     default: return num;
                 }
-            
+
             // MOTION REPORTERS
             case 'motion_xposition':
                 return sprite?.x || 0;
@@ -487,7 +487,7 @@ class LeapRuntime {
 
             // SENSING REPORTERS
             case 'sensing_timer':
-                return (Date.now() - (window.scratchTimerStart || Date.now())) / 1000;
+                return (Date.now() - (window.leapTimerStart || Date.now())) / 1000;
             case 'sensing_username':
                 return window.sessionStorage.getItem('username') || 'LeapUser';
             case 'sensing_mousex':
@@ -534,23 +534,23 @@ class LeapRuntime {
                 return;
             }
         }
-        
+
         const promises = [];
         for (const [spriteId, blocks] of this.spritesBlocks.entries()) {
             if (spriteIdOnly && spriteId !== spriteIdOnly) continue;
-            
+
             const sprite = spriteManager.getSprite(spriteId);
             if (!sprite) continue;
 
             for (const block of blocks) {
-                // Support both standard Scratch opcodes and modernized aliases
+                // Support both standard leap opcodes and modernized aliases
                 const blockOpcode = block.opcode;
-                const isMatch = blockOpcode === opcode || 
-                              (opcode === 'event_whenflagclicked' && blockOpcode === 'event_flag_clicked') ||
-                              (opcode === 'event_whenbroadcastreceived' && blockOpcode === 'event_receive') ||
-                              (opcode === 'event_whenthisspriteclicked' && blockOpcode === 'event_sprite_clicked') ||
-                              (opcode === 'event_whenbackdropswitchesto' && blockOpcode === 'event_backdrop_switch') ||
-                              (opcode === 'event_whengreaterthan' && blockOpcode === 'event_greater_than');
+                const isMatch = blockOpcode === opcode ||
+                    (opcode === 'event_whenflagclicked' && blockOpcode === 'event_flag_clicked') ||
+                    (opcode === 'event_whenbroadcastreceived' && blockOpcode === 'event_receive') ||
+                    (opcode === 'event_whenthisspriteclicked' && blockOpcode === 'event_sprite_clicked') ||
+                    (opcode === 'event_whenbackdropswitchesto' && blockOpcode === 'event_backdrop_switch') ||
+                    (opcode === 'event_whengreaterthan' && blockOpcode === 'event_greater_than');
 
                 if (isMatch) {
                     let match = true;

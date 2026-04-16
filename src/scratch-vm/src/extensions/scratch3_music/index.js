@@ -1,4 +1,4 @@
-export class Scratch3MusicBlocks {
+export class leap3MusicBlocks {
     constructor(runtime) {
         this.runtime = runtime;
     }

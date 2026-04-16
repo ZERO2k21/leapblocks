@@ -153,10 +153,10 @@ export const Stage: React.FC<StageProps> = ({
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
 
-        // Convert to Scratch coordinates (-240 to 240, -180 to 180)
+        // Convert to leap coordinates (-240 to 240, -180 to 180)
         // Correct math using rect.width/height to handle scaled/responsive canvas
-        const scratchX = ((x / rect.width) * width) - width / 2;
-        const scratchY = height / 2 - ((y / rect.height) * height);
+        const leapX = ((x / rect.width) * width) - width / 2;
+        const leapY = height / 2 - ((y / rect.height) * height);
 
         // Resume audio context on user interaction (required by browser autoplay policy)
         const soundManager = (window as any).soundManager;
@@ -171,7 +171,7 @@ export const Stage: React.FC<StageProps> = ({
         // Check if clicking on a sprite
         let clickedSprite = null;
         for (const sprite of sprites) {
-            if (sprite.visible && sprite.isPointInSprite(scratchX, scratchY)) {
+            if (sprite.visible && sprite.isPointInSprite(leapX, leapY)) {
                 clickedSprite = sprite;
                 break;
             }
@@ -180,7 +180,7 @@ export const Stage: React.FC<StageProps> = ({
         if (clickedSprite && onSpriteSelect) {
             onSpriteSelect(clickedSprite.id);
         } else if (onStageClick) {
-            onStageClick(scratchX, scratchY);
+            onStageClick(leapX, leapY);
         }
     }, [width, height, sprites, onSpriteSelect, onStageClick]);
 

@@ -20,55 +20,55 @@ const C = {
 };
 
 // ─── Coordinate Conversion Helpers ─────────────────────────────────────────
-// Scratch coordinates: center is (0,0), X ranges -240 to 240, Y ranges -180 to 180
+// leap coordinates: center is (0,0), X ranges -240 to 240, Y ranges -180 to 180
 // Pixel coordinates: top-left is (0,0), Y increases downward
 
-const scratchToPixel = (scratchX, scratchY, stageW, stageH, spriteSize = 60) => {
-    // Scale factor: 480 Scratch units = stageW pixels
+const leapToPixel = (leapX, leapY, stageW, stageH, spriteSize = 60) => {
+    // Scale factor: 480 leap units = stageW pixels
     const scaleX = stageW / 480;
     const scaleY = stageH / 360;
-    
-    // Convert: pixelX = centerX + (scratchX * scaleX) - halfSpriteSize
-    // Convert: pixelY = centerY - (scratchY * scaleY) - halfSpriteSize (Y is inverted)
-    const pixelX = (stageW / 2) + (scratchX * scaleX) - (spriteSize / 2);
-    const pixelY = (stageH / 2) - (scratchY * scaleY) - (spriteSize / 2);
-    
+
+    // Convert: pixelX = centerX + (leapX * scaleX) - halfSpriteSize
+    // Convert: pixelY = centerY - (leapY * scaleY) - halfSpriteSize (Y is inverted)
+    const pixelX = (stageW / 2) + (leapX * scaleX) - (spriteSize / 2);
+    const pixelY = (stageH / 2) - (leapY * scaleY) - (spriteSize / 2);
+
     return { pixelX, pixelY };
 };
 
-const pixelToScratch = (pixelX, pixelY, stageW, stageH, spriteSize = 60) => {
+const pixelToleap = (pixelX, pixelY, stageW, stageH, spriteSize = 60) => {
     const scaleX = stageW / 480;
     const scaleY = stageH / 360;
-    
-    // Solve for scratchX: scratchX = (pixelX - centerX + halfSpriteSize) / scaleX
-    // Solve for scratchY: scratchY = (centerY - pixelY - halfSpriteSize) / scaleY
-    const scratchX = (pixelX - (stageW / 2) + (spriteSize / 2)) / scaleX;
-    const scratchY = ((stageH / 2) - pixelY - (spriteSize / 2)) / scaleY;
-    
-    return { scratchX, scratchY };
+
+    // Solve for leapX: leapX = (pixelX - centerX + halfSpriteSize) / scaleX
+    // Solve for leapY: leapY = (centerY - pixelY - halfSpriteSize) / scaleY
+    const leapX = (pixelX - (stageW / 2) + (spriteSize / 2)) / scaleX;
+    const leapY = ((stageH / 2) - pixelY - (spriteSize / 2)) / scaleY;
+
+    return { leapX, leapY };
 };
 
 // Simple sprite renderer for Python IDE
 const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight, isDragging, setIsDragging, setDraggingSpriteId, draggingSpriteId }) => {
-    const scratchX = sprite.position?.x ?? sprite.x ?? 0;
-    const scratchY = sprite.position?.y ?? sprite.y ?? 0;
+    const leapX = sprite.position?.x ?? sprite.x ?? 0;
+    const leapY = sprite.position?.y ?? sprite.y ?? 0;
     const angle = sprite.direction ?? sprite.angle ?? 0;
     const size = sprite.size ?? 100;
     const isVisible = sprite.visible !== false;
-    
-    // Convert Scratch coords to pixel coords
-    const { pixelX, pixelY } = scratchToPixel(scratchX, scratchY, stageWidth, stageHeight);
-    
+
+    // Convert leap coords to pixel coords
+    const { pixelX, pixelY } = leapToPixel(leapX, leapY, stageWidth, stageHeight);
+
     // Get current costume
     const costumes = sprite.costumes || {};
     const currentCostume = sprite.currentCostume || 'default';
     const costumeValue = costumes[currentCostume] || costumes.default || 'assets/sprites/robot/robot_idle.svg';
-    
+
     // Determine if it's an image path or emoji
     const isImage = costumeValue.includes('/') || costumeValue.endsWith('.png') || costumeValue.endsWith('.svg') || costumeValue.endsWith('.jpg');
-    
+
     if (!isVisible) return null;
-    
+
     const handleMouseDown = (e) => {
         e.stopPropagation();
         setIsDragging(true);
@@ -98,8 +98,8 @@ const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight, 
             }}
         >
             {isImage ? (
-                <img 
-                    src={costumeValue} 
+                <img
+                    src={costumeValue}
                     alt={sprite.name}
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                     onError={(e) => { e.target.style.display = 'none'; }}
@@ -153,14 +153,14 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
         setIsDragging(false);
         setDraggingSpriteId(null);
     };
-    
+
     return (
-        <div 
-            style={{ 
-                width: '100%', 
-                height: '100%', 
-                position: "relative", 
-                background: backdrop ? "transparent" : "#F5F5F5", 
+        <div
+            style={{
+                width: '100%',
+                height: '100%',
+                position: "relative",
+                background: backdrop ? "transparent" : "#F5F5F5",
                 overflow: "hidden",
                 borderRadius: 8
             }}
@@ -170,9 +170,9 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
         >
             {/* Backdrop image */}
             {backdrop && (
-                <img 
-                    src={backdrop} 
-                    alt="backdrop" 
+                <img
+                    src={backdrop}
+                    alt="backdrop"
                     style={{
                         position: "absolute",
                         inset: 0,
@@ -180,16 +180,16 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
                         height: "100%",
                         objectFit: "cover",
                         zIndex: 0
-                    }} 
+                    }}
                 />
             )}
-            
+
             {/* Stage coordinate grid (subtle) */}
             <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1, opacity: 0.2 }}>
                 <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: 1, background: "#999" }} />
                 <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: "#999" }} />
             </div>
-            
+
             {/* Sprites */}
             <div style={{ position: "absolute", inset: 0, zIndex: 2 }}>
                 {sprites.map(sp => (
@@ -206,15 +206,15 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
                         draggingSpriteId={draggingSpriteId}
                     />
                 ))}
-                
+
                 {/* Empty state message when no sprites */}
                 {sprites.length === 0 && (
-                    <div style={{ 
-                        position: "absolute", 
-                        inset: 0, 
-                        display: "flex", 
+                    <div style={{
+                        position: "absolute",
+                        inset: 0,
+                        display: "flex",
                         flexDirection: "column",
-                        alignItems: "center", 
+                        alignItems: "center",
                         justifyContent: "center",
                         color: "#999",
                         fontSize: 12
@@ -230,4 +230,4 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
 }
 
 // Export helpers for use in other components
-export { scratchToPixel, pixelToScratch };
+export { leapToPixel, pixelToleap };

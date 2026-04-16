@@ -55,13 +55,13 @@ async function main() {
     // Use a small concurrent pool or sequential downloading to avoid overwhelming the server
     for (let i = 0; i < sounds.length; i++) {
         const sound = sounds[i];
-        const md5 = sound.md5ext || sound.md5; // scratch-gui sometimes uses md5ext
+        const md5 = sound.md5ext || sound.md5; // leap-gui sometimes uses md5ext
         if (!md5) {
             console.error(`Sound index ${i} has no md5 string. Skipping.`);
             continue;
         }
 
-        const url = `https://assets.scratch.mit.edu/internalapi/asset/${md5}/get/`;
+        const url = `https://assets.leap.mit.edu/internalapi/asset/${md5}/get/`;
         // Use lowercase md5 for consistent local storage
         const dest = path.join(SOUNDS_DIR, `${md5}`);
 

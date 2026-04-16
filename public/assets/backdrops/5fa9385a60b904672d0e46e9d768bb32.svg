@@ -5,7 +5,7 @@
       <stop offset="1" stop-color="#29ABE2"/>
     </linearGradient>
   </defs>
-  <!-- Exported by Scratch - http://scratch.mit.edu/ -->
+  <!-- Exported by leap - http://leap.mit.edu/ -->
   <path id="Background_Fill" fill="#A9EBFF" stroke="#000000" stroke-width="0.5" d="M 585.666 455.667 C 585.666 456.771 584.770 457.667 583.666 457.667 L -105 457.667 C -106.104 457.667 -107 456.771 -107 455.667 L -107 -75 C -107 -76.104 -106.104 -77 -105 -77 L 583.667 -77 C 584.771 -77 585.667 -76.104 585.667 -75 L 585.667 455.667 Z "/>
   <path id="Snow" fill="url(#grad_1)" d="M -141.001 251.843 C -141.001 251.843 290.132 155.844 615.666 274.766 L 615.666 503 L -141.001 503 L -141.001 251.843 Z "/>
   <g id="Tree_2_">

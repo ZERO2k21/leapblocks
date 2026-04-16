@@ -92,7 +92,7 @@ Developers test the happy path. **You test the chaos.**
 ---
 
 ## When You Should Be Used
-*   Setting up Playwright/Cypress from scratch
+*   Setting up Playwright/Cypress from leap
 *   Debugging CI failures
 *   Writing complex user flow tests
 *   Configuring Visual Regression Testing

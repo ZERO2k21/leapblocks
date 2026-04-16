@@ -148,6 +148,16 @@ export type ScriptStep = (
     // Pencil / realistic drawing steps
     | { type: 'go_to_mouse_with_pen'; penDown?: boolean }
     | { type: 'point_towards_mouse_smooth'; smoothFactor?: number }
+    // Object Detection extension
+    | { type: 'object_detect' }
+    | { type: 'object_when_detected'; objectType: string }
+    // Music extension
+    | { type: 'music_play_note'; note: number; beats: number }
+    | { type: 'music_set_instrument'; instrument: number }
+    | { type: 'music_play_drum'; drum: number; beats: number }
+    | { type: 'music_set_tempo'; bpm: number }
+    | { type: 'music_change_tempo'; amount: number }
+    | { type: 'music_rest'; beats: number }
     // Procedures / My Blocks
     | { type: 'procedures_call'; proccode: string; args?: Record<string, any> }
 ) & { blockId?: string };
@@ -212,7 +222,7 @@ export class AnimationVM {
 
     // Broadcast system
     private broadcastListeners: Map<string, CompiledScript[]> = new Map();
-    private broadcasts: Set<string> = new Set(['message1']); // Default message like Scratch
+    private broadcasts: Set<string> = new Set(['message1']); // Default message like leap
     // Refactor: stageScripts is redundant if the stage is registered as a sprite,
     // but we'll keep it as a proxy for the stage's scripts for backward compatibility if needed.
     public stageScripts: CompiledScript[] = [];
@@ -374,7 +384,7 @@ export class AnimationVM {
 
     getListItem(name: string, index: number): string {
         const list = this.getList(name);
-        // Scratch uses 1-based indexing. 'last' is also supported but I'll stick to numeric for now.
+        // leap uses 1-based indexing. 'last' is also supported but I'll stick to numeric for now.
         // TODO: Handle 'last', 'random' string inputs if block allows them.
         // My block definition uses 'math_number' for index, so usually 1-based integer.
         if (index < 1 || index > list.length) return '';
@@ -383,8 +393,8 @@ export class AnimationVM {
 
     getListItemNum(name: string, item: string): number {
         const list = this.getList(name);
-        // Returns 0 if not found (Scratch behavior?) - Scratch returns 0.
-        // Note: list items can be numbers. loose comparison? Scratch is loose.
+        // Returns 0 if not found (leap behavior?) - leap returns 0.
+        // Note: list items can be numbers. loose comparison? leap is loose.
         const idx = list.findIndex(i => String(i) === item);
         return idx + 1; // 0 if not found (-1 + 1)
     }
@@ -623,7 +633,7 @@ export class AnimationVM {
 
         for (const sprite of allSprites) {
             // We scan all sprites because multiple sprites (clones) might share the same ID logic 
-            // or we might want global listeners. In standard Scratch, only the clicked sprite responds.
+            // or we might want global listeners. In standard leap, only the clicked sprite responds.
             if (sprite.id !== spriteId) continue;
 
             const scripts = (sprite.scripts as CompiledScript[]) || [];
@@ -632,7 +642,7 @@ export class AnimationVM {
                     matched++;
                     this.setRunning(true);
 
-                    // Scratch behavior: clicking the sprite restarts its onclick scripts
+                    // leap behavior: clicking the sprite restarts its onclick scripts
                     if (script.hatBlockId) {
                         this.stopScriptByHat(sprite.id, script.hatBlockId);
                     }
@@ -751,7 +761,7 @@ export class AnimationVM {
 
     /**
      * Stop a specific script identified by its hat block.
-     * Standard Scratch behavior: if a broadcast is received, the script for it restarts.
+     * Standard leap behavior: if a broadcast is received, the script for it restarts.
      */
     stopScriptByHat(spriteId: string, hatBlockId: string): void {
         const toStop: string[] = [];
@@ -977,7 +987,7 @@ export class AnimationVM {
                 if (step.towards === 'mouse') {
                     const dx = this.mouseX - sprite.x;
                     const dy = this.mouseY - sprite.y;
-                    const angle = Math.atan2(dy, dx) * 180 / Math.PI + 90; // Convert to Scratch direction (0=up, 90=right)
+                    const angle = Math.atan2(dy, dx) * 180 / Math.PI + 90; // Convert to leap direction (0=up, 90=right)
                     sprite.pointInDirection(angle);
                 } else if (step.towards === 'random') {
                     const randomDir = Math.random() * 360;
@@ -1400,11 +1410,11 @@ export class AnimationVM {
 
                 if (distance > 2) {
                     // atan2(dy, dx) gives math angle (0=right, CCW positive)
-                    // Scratch direction: 90=right, 0=up → scratchDir = 90 - mathDeg
+                    // leap direction: 90=right, 0=up → leapDir = 90 - mathDeg
                     // But for a pencil leaning toward movement: tip points in travel direction
                     // Pencil image has tip at bottom → when direction=135 (down-left), tip points down-left
                     // So target direction = direction of travel = atan2(-dy, dx) * 180/π + 90
-                    // (negative dy because Scratch y is flipped vs canvas)
+                    // (negative dy because leap y is flipped vs canvas)
                     const targetAngle = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
                     const currentDir = sprite.direction;
 
@@ -1438,6 +1448,76 @@ export class AnimationVM {
                         ? face.detectFeature((step as any).feature)
                         : face.getFaceCount();
                     sprite.say(String(result ?? ''));
+                }
+                break;
+            }
+
+            // Object Detection extension steps
+            case 'object_detect' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.objectDetection) {
+                    await (window as any).runtime.objectDetection.detectObjects();
+                    vmLog.info('Object detection executed');
+                }
+                break;
+            }
+            case 'object_when_detected' as any: {
+                // Event-style block - check if object is detected
+                const objectType = (step as any).objectType;
+                if (typeof window !== 'undefined' && (window as any).runtime?.objectDetection) {
+                    const isDetected = (window as any).runtime.objectDetection.isObjectDetected(objectType);
+                    if (isDetected) {
+                        vmLog.info(`Object detected: ${objectType}`);
+                    }
+                }
+                break;
+            }
+
+            // Music extension steps
+            case 'music_play_note' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.music) {
+                    const { note, beats } = step as any;
+                    await (window as any).runtime.music.playNote(note, beats);
+                    vmLog.info(`Played note ${note} for ${beats} beats`);
+                }
+                break;
+            }
+            case 'music_set_instrument' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.music) {
+                    const { instrument } = step as any;
+                    (window as any).runtime.music.setInstrument(instrument);
+                    vmLog.info(`Set instrument to ${instrument}`);
+                }
+                break;
+            }
+            case 'music_play_drum' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.music) {
+                    const { drum, beats } = step as any;
+                    await (window as any).runtime.music.playDrum(drum, beats);
+                    vmLog.info(`Played drum ${drum} for ${beats} beats`);
+                }
+                break;
+            }
+            case 'music_set_tempo' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.music) {
+                    const { bpm } = step as any;
+                    (window as any).runtime.music.setTempo(bpm);
+                    vmLog.info(`Set tempo to ${bpm} BPM`);
+                }
+                break;
+            }
+            case 'music_change_tempo' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.music) {
+                    const { amount } = step as any;
+                    (window as any).runtime.music.changeTempoBy(amount);
+                    vmLog.info(`Changed tempo by ${amount}`);
+                }
+                break;
+            }
+            case 'music_rest' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.music) {
+                    const { beats } = step as any;
+                    await (window as any).runtime.music.rest(beats);
+                    vmLog.info(`Rested for ${beats} beats`);
                 }
                 break;
             }
@@ -1722,7 +1802,7 @@ export class AnimationVM {
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Normalize browser KeyboardEvent values to Scratch block values.
+     * Normalize browser KeyboardEvent values to leap block values.
      * Maps ' ' to 'space', 'ArrowUp' to 'ArrowUp', etc.
      */
     private normalizeKey(e: KeyboardEvent): string {

@@ -223,7 +223,7 @@ User clicks RUN ▶
 
 ## Sprite API (PictoBlox-Compatible)
 
-The `Sprite` class provides a Scratch/PictoBlox-compatible API:
+The `Sprite` class provides a leap/PictoBlox-compatible API:
 
 ```python
 # Create a sprite

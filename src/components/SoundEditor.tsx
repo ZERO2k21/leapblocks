@@ -250,7 +250,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
             setAudioBuffer(buffer);
             setHistory([buffer]);
             setHistoryIndex(0);
-            
+
             // Also update sidebar cache for the active sound
             setSidebarBuffers(prev => {
                 const next = new Map(prev);
@@ -462,13 +462,13 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
         try {
             const source = audioContext.createBufferSource();
             const gainNode = audioContext.createGain();
-            
+
             source.buffer = audioBuffer;
             gainNode.gain.value = volume / 100;
-            
+
             source.connect(gainNode);
             gainNode.connect(audioContext.destination);
-            
+
             source.onended = () => setIsPlaying(false);
             source.start();
             currentSoundPlayer.current = source;
@@ -544,9 +544,9 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                                 <span className="absolute top-1 left-1.5 text-[10px] text-gray-400 font-bold">{i + 1}</span>
                                 <div className="flex-1 w-full flex items-center justify-center overflow-hidden">
                                     {sidebarBuffers.has(i) ? (
-                                        <MiniWaveform 
-                                            buffer={sidebarBuffers.get(i)!} 
-                                            width={60} 
+                                        <MiniWaveform
+                                            buffer={sidebarBuffers.get(i)!}
+                                            width={60}
                                             height={40}
                                             color={activeSoundIndex === i ? '#855CD6' : '#999'}
                                         />
@@ -696,7 +696,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                             {/* 3. PROPERTIES PANEL (Right Sidebar) */}
                             <div className="w-64 border-l border-gray-200 bg-white p-6 flex flex-col gap-8 shadow-sm">
                                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Properties</h3>
-                                
+
                                 {/* Sound Name */}
                                 <div className="flex flex-col gap-2">
                                     <label className="text-xs font-bold text-gray-500 uppercase">Sound Name</label>

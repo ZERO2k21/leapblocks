@@ -3,7 +3,7 @@ import { STAGE_CONFIG } from './engine/StageConfig';
 
 import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
 
-import './styles/Leaplab-blocks.css'; // Import Scratch-style blocks CSS
+import './styles/Leaplab-blocks.css'; // Import leap-style blocks CSS
 import './junior/styles/juniorBlocks.css';
 import './junior/styles/juniorLooksBlocks.css';
 
@@ -14,7 +14,7 @@ import { esp32Blocks, esp32Toolbox } from './blocks/esp32-blocks';
 
 import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
 import { COLORS } from './blocks/blockDefinitions';
-import { registerScratchBlocks } from './blocks/scratchBlocks';
+import { registerleapBlocks } from './blocks/leapBlocks';
 
 import { hardwareBlocks } from './blocks/hardware-blocks';
 
@@ -99,8 +99,10 @@ let originalCheckboxSetValue: any = null;
 
 // Initialize Extension Runtime mapping — delegates to RuntimeBridge
 // which wires pen → PenManager and face → FaceRuntime (browser FaceDetector API)
+// and extension runtimes → ObjectDetection, Music, etc.
 if (typeof window !== 'undefined') {
     initRuntime();
+    // Extensions are initialized lazily when added via the Extension Library
 }
 
 
@@ -127,13 +129,13 @@ const log = {
 // Register all blocks
 
 const registerBlocks = () => {
-    // 1. Register Scratch 3.0 compatible blocks (100+ blocks)
+    // 1. Register leap 3.0 compatible blocks (100+ blocks)
     try {
-        registerScratchBlocks();
-        log.app('Registered Scratch 3.0 blocks (100+ blocks)');
+        registerleapBlocks();
+        log.app('Registered leap 3.0 blocks (100+ blocks)');
     } catch (e) {
         const errorMessage = e instanceof Error ? e.message : String(e);
-        log.app(`Error registering Scratch blocks: ${errorMessage}`);
+        log.app(`Error registering leap blocks: ${errorMessage}`);
     }
 
     // 2. Register other platform-specific blocks (Arduino, ESP32, Hardware, Animation)
@@ -644,6 +646,92 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         }
     }, [workspaceRef]);
 
+    // ─── OBJECT DETECTION EXTENSION ───────────────────────────────────────────
+    const addObjectDetectionExtension = useCallback(() => {
+        if (!workspaceRef.current) return;
+
+        console.log('[Extension] Adding Object Detection extension...');
+
+        // 1. Register block definitions
+        const odBlockDefs = [
+            { type: 'object_detect', message0: 'detect objects in camera', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
+            { type: 'object_when_detected', message0: 'when %1 detected', args0: [{ type: 'field_dropdown', name: 'OBJECT', options: [['cat', 'cat'], ['dog', 'dog'], ['person', 'person'], ['car', 'car'], ['ball', 'ball']] }], previousStatement: null, nextStatement: null, colour: '#3dba7e' },
+            { type: 'object_label', message0: 'label of object %1', args0: [{ type: 'field_number', name: 'N', value: 1, min: 1 }], output: 'String', colour: '#2e9e66' },
+            { type: 'object_confidence', message0: 'confidence of object %1', args0: [{ type: 'field_number', name: 'N', value: 1, min: 1 }], output: 'Number', colour: '#2e9e66' },
+            { type: 'object_x', message0: 'x of object %1', args0: [{ type: 'field_number', name: 'N', value: 1, min: 1 }], output: 'Number', colour: '#1e7e50' },
+            { type: 'object_y', message0: 'y of object %1', args0: [{ type: 'field_number', name: 'N', value: 1, min: 1 }], output: 'Number', colour: '#1e7e50' },
+            { type: 'object_count', message0: 'number of objects', output: 'Number', colour: '#1e7e50' }
+        ];
+        const newOdDefs = odBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+        if (newOdDefs.length > 0) {
+            Blockly.defineBlocksWithJsonArray(newOdDefs);
+            console.log(`[Extension] Registered ${newOdDefs.length} Object Detection blocks`);
+        }
+
+        // 2. JS generators
+        const jsGen = (window as any).Blockly?.JavaScript;
+        if (jsGen) {
+            jsGen['object_detect'] = () => 'if(window.runtime?.objectDetection) await window.runtime.objectDetection.detectObjects();\n';
+            jsGen['object_when_detected'] = (b: any) => `// when ${b.getFieldValue("OBJECT")} detected\n`;
+            jsGen['object_label'] = (b: any) => [`window.runtime?.objectDetection?.getLabel(${b.getFieldValue('N')})||''`, 0];
+            jsGen['object_confidence'] = (b: any) => [`window.runtime?.objectDetection?.getConfidence(${b.getFieldValue('N')})||0`, 0];
+            jsGen['object_x'] = (b: any) => [`window.runtime?.objectDetection?.getX(${b.getFieldValue('N')})||0`, 0];
+            jsGen['object_y'] = (b: any) => [`window.runtime?.objectDetection?.getY(${b.getFieldValue('N')})||0`, 0];
+            jsGen['object_count'] = () => [`window.runtime?.objectDetection?.getNumberOfObjects()||0`, 0];
+            console.log('[Extension] Registered Object Detection generators');
+        }
+
+        // 3. Mark installed
+        if (!installedExtensionsRef.current.has('object_detection')) {
+            installedExtensionsRef.current = new Set([...installedExtensionsRef.current, 'object_detection']);
+            setInstalledExtensions(new Set(installedExtensionsRef.current));
+            console.log('[Extension] Object Detection marked as installed. Installed extensions:', Array.from(installedExtensionsRef.current));
+        }
+    }, [workspaceRef]);
+
+    // ─── MUSIC EXTENSION ──────────────────────────────────────────────────────
+    const addMusicExtension = useCallback(() => {
+        if (!workspaceRef.current) return;
+
+        console.log('[Extension] Adding Music extension...');
+
+        // 1. Register block definitions
+        const musicBlockDefs = [
+            { type: 'music_play_note', message0: 'play note %1 for %2 beats', args0: [{ type: 'field_number', name: 'NOTE', value: 60, min: 0, max: 127 }, { type: 'field_number', name: 'BEATS', value: 0.25, min: 0 }], previousStatement: null, nextStatement: null, colour: '#c62828' },
+            { type: 'music_set_instrument', message0: 'set instrument %1', args0: [{ type: 'field_number', name: 'INST', value: 1, min: 1, max: 21 }], previousStatement: null, nextStatement: null, colour: '#c62828' },
+            { type: 'music_play_drum', message0: 'play drum %1 for %2 beats', args0: [{ type: 'field_number', name: 'DRUM', value: 1, min: 1, max: 18 }, { type: 'field_number', name: 'BEATS', value: 0.25, min: 0 }], previousStatement: null, nextStatement: null, colour: '#b71c1c' },
+            { type: 'music_set_tempo', message0: 'set tempo %1 bpm', args0: [{ type: 'field_number', name: 'BPM', value: 60, min: 20, max: 500 }], previousStatement: null, nextStatement: null, colour: '#b71c1c' },
+            { type: 'music_change_tempo', message0: 'change tempo by %1', args0: [{ type: 'field_number', name: 'AMOUNT', value: 20 }], previousStatement: null, nextStatement: null, colour: '#7f0000' },
+            { type: 'music_get_tempo', message0: 'tempo', output: 'Number', colour: '#7f0000' },
+            { type: 'music_rest', message0: 'rest for %1 beats', args0: [{ type: 'field_number', name: 'BEATS', value: 0.25, min: 0 }], previousStatement: null, nextStatement: null, colour: '#c62828' }
+        ];
+        const newMusicDefs = musicBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+        if (newMusicDefs.length > 0) {
+            Blockly.defineBlocksWithJsonArray(newMusicDefs);
+            console.log(`[Extension] Registered ${newMusicDefs.length} Music blocks`);
+        }
+
+        // 2. JS generators
+        const jsGen = (window as any).Blockly?.JavaScript;
+        if (jsGen) {
+            jsGen['music_play_note'] = (b: any) => `if(window.runtime?.music) await window.runtime.music.playNote(${b.getFieldValue('NOTE')}, ${b.getFieldValue('BEATS')});\n`;
+            jsGen['music_set_instrument'] = (b: any) => `if(window.runtime?.music) window.runtime.music.setInstrument(${b.getFieldValue('INST')});\n`;
+            jsGen['music_play_drum'] = (b: any) => `if(window.runtime?.music) await window.runtime.music.playDrum(${b.getFieldValue('DRUM')}, ${b.getFieldValue('BEATS')});\n`;
+            jsGen['music_set_tempo'] = (b: any) => `if(window.runtime?.music) window.runtime.music.setTempo(${b.getFieldValue('BPM')});\n`;
+            jsGen['music_change_tempo'] = (b: any) => `if(window.runtime?.music) window.runtime.music.changeTempoBy(${b.getFieldValue('AMOUNT')});\n`;
+            jsGen['music_get_tempo'] = () => [`window.runtime?.music?.getTempo()||60`, 0];
+            jsGen['music_rest'] = (b: any) => `if(window.runtime?.music) await window.runtime.music.rest(${b.getFieldValue('BEATS')});\n`;
+            console.log('[Extension] Registered Music generators');
+        }
+
+        // 3. Mark installed
+        if (!installedExtensionsRef.current.has('music')) {
+            installedExtensionsRef.current = new Set([...installedExtensionsRef.current, 'music']);
+            setInstalledExtensions(new Set(installedExtensionsRef.current));
+            console.log('[Extension] Music marked as installed. Installed extensions:', Array.from(installedExtensionsRef.current));
+        }
+    }, [workspaceRef]);
+
     // Listen for extension iframe messages
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
@@ -655,12 +743,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 } else if (extId === 'face-detection' || extId === 'face_detection') {
                     addFaceDetectionExtension();
                     setShowExtensionLibrary(false);
+                } else if (extId === 'object_detection') {
+                    addObjectDetectionExtension();
+                    setShowExtensionLibrary(false);
+                } else if (extId === 'music') {
+                    addMusicExtension();
+                    setShowExtensionLibrary(false);
                 }
             }
         };
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [addPenExtension, addFaceDetectionExtension]);
+    }, [addPenExtension, addFaceDetectionExtension, addObjectDetectionExtension, addMusicExtension]);
 
 
 
@@ -1260,7 +1354,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         Blockly.Events.setGroup(true);
         try {
-            // Scratch-style procedure codes: %s for string/number, %b for boolean
+            // leap-style procedure codes: %s for string/number, %b for boolean
             let proccode = block.name;
             const argumentnames: string[] = [];
             const argumentids: string[] = [];
@@ -1275,7 +1369,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 }
             });
 
-            // Using procedures_definition for Scratch parity
+            // Using procedures_definition for leap parity
             const xmlText = `
                 <xml>
                     <block type="procedures_definition" x="50" y="50">
@@ -1298,7 +1392,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             addLog(`Created custom block: ${block.name}`);
         } catch (e) {
             console.error('Failed to create custom block', e);
-            // Fallback for non-scratch renderers
+            // Fallback for non-leap renderers
             try {
                 let mutationXml = `<mutation>`;
                 block.arguments.forEach(arg => {
@@ -1358,6 +1452,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         const extensionCategories: any[] = [];
         const ext = installedExtensionsRef.current;
 
+        console.log('[Toolbox] Building toolbox. Installed extensions:', Array.from(ext));
+
         if (ext.has('pen')) {
             extensionCategories.push({
                 kind: 'pictobloxCategory',
@@ -1402,6 +1498,42 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     { kind: 'block', type: 'fd_count' },
                     { kind: 'block', type: 'fd_guess_emotion' },
                     { kind: 'block', type: 'fd_detect' },
+                ],
+            });
+        }
+
+        if (ext.has('object_detection')) {
+            extensionCategories.push({
+                kind: 'pictobloxCategory',
+                name: 'Object Detection',
+                colour: '#3dba7e',
+                contents: [
+                    { kind: 'block', type: 'object_detect' },
+                    { kind: 'block', type: 'object_when_detected' },
+                    { kind: 'label', text: 'Reporters' },
+                    { kind: 'block', type: 'object_count' },
+                    { kind: 'block', type: 'object_label' },
+                    { kind: 'block', type: 'object_confidence' },
+                    { kind: 'block', type: 'object_x' },
+                    { kind: 'block', type: 'object_y' },
+                ],
+            });
+        }
+
+        if (ext.has('music')) {
+            extensionCategories.push({
+                kind: 'pictobloxCategory',
+                name: 'Music',
+                colour: '#c62828',
+                contents: [
+                    { kind: 'block', type: 'music_play_note' },
+                    { kind: 'block', type: 'music_set_instrument' },
+                    { kind: 'block', type: 'music_play_drum' },
+                    { kind: 'block', type: 'music_rest' },
+                    { kind: 'label', text: 'Tempo' },
+                    { kind: 'block', type: 'music_set_tempo' },
+                    { kind: 'block', type: 'music_change_tempo' },
+                    { kind: 'block', type: 'music_get_tempo' },
                 ],
             });
         }
@@ -1991,7 +2123,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         // Animation block interaction on click
 
         if (event.type === Blockly.Events.CLICK) {
-            // Use AnimationVM compiler for Scratch blocks (supports operators, variables, etc.)
+            // Use AnimationVM compiler for leap blocks (supports operators, variables, etc.)
             if (!block.type.startsWith('arduino_')) {
                 console.log(`[APP] Running stack with AnimationVM for sprite ${selectedSpriteId}`);
                 setIsRunning(true);
@@ -2370,7 +2502,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-        // In Scratch-like UX, tabs maintain the current selection.
+        // In leap-like UX, tabs maintain the current selection.
 
         // Costumes/Sounds tabs will dynamically show content for the selected target.
 
@@ -2395,7 +2527,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             // Compile scripts so the sprite has up-to-date scripts
             syncAllWorkspacesRef.current?.();
 
-            // Trigger click event even if already selected (Scratch behavior)
+            // Trigger click event even if already selected (leap behavior)
 
             animationVM.triggerSpriteClick(newId);
             return;
@@ -2481,7 +2613,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-        // Set unique position in Scratch coords (-240..240, -180..180)
+        // Set unique position in leap coords (-240..240, -180..180)
 
         // Predefined spread-out positions across the stage
 
@@ -2755,7 +2887,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         const robotSprite = new Sprite(robotId, 'Robot', triggerUpdate, 'robot');
 
-        robotSprite.setX(0); // Center of Scratch-like stage
+        robotSprite.setX(0); // Center of leap-like stage
 
         robotSprite.setY(0);
 
@@ -3621,7 +3753,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             const defaultSprite = new Sprite('sprite_default', 'Robot', triggerUpdate, 'robot');
 
-            // Scratch coords: (0,0) is center of stage
+            // leap coords: (0,0) is center of stage
 
             defaultSprite.setX(0);
 
@@ -4704,7 +4836,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         });
                         contents.push({ kind: 'block', type: 'sensing_answer' });
 
-                        const sensingReporters = ['answer', 'loudness', 'timer'];
+                        const sensingReporters = ['answer', 'loudness'];
                         sensingReporters.forEach(name => {
                             const monitor = sensingMonitorsRef.current.find(m => m.name === name);
                             contents.push(createMonitorReporterPlaceholder(
@@ -4715,6 +4847,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             ));
                         });
 
+                        // Add timer block without checkbox
+                        contents.push({ kind: 'block', type: 'sensing_timer' });
                         contents.push({ kind: 'block', type: 'sensing_reset_timer' });
 
                         contents.push({ kind: 'sep', gap: 20 });
@@ -5221,7 +5355,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             {/* Unified Toolbar - Tabs on left, Stage controls on right */}
 
-            {appMode === 'blocks' && (
+            {appMode === 'blocks' && editorMode === 'stage' && (
 
                 <div style={styles.unifiedToolbar}>
 

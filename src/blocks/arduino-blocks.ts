@@ -2,25 +2,25 @@ import Blockly from '@blockly-runtime';
 
 
 
-// Block colors matching Scratch style
+// Block colors matching leap style
 
 const COLORS = {
 
-    control: '#FFAB19',      // Scratch Orange - Control blocks
+    control: '#FFAB19',      // leap Orange - Control blocks
 
-    operators: '#59C059',    // Scratch Green - Operators/Math
+    operators: '#59C059',    // leap Green - Operators/Math
 
-    arduino: '#4C97FF',      // Scratch Blue - Arduino blocks
+    arduino: '#4C97FF',      // leap Blue - Arduino blocks
 
-    sensors: '#5CB1D6',      // Scratch Cyan - Sensors
+    sensors: '#5CB1D6',      // leap Cyan - Sensors
 
-    actuators: '#0FBD8C',    // Scratch Green - Actuators
+    actuators: '#0FBD8C',    // leap Green - Actuators
 
-    variables: '#FF8C1A',    // Scratch Orange - Variables
+    variables: '#FF8C1A',    // leap Orange - Variables
 
-    events: '#FFBF00',       // Scratch Yellow - Events
+    events: '#FFBF00',       // leap Yellow - Events
 
-    serial: '#9966FF',       // Scratch Purple - Serial
+    serial: '#9966FF',       // leap Purple - Serial
 
 };
 
@@ -63,7 +63,7 @@ const ALL_PINS = [...DIGITAL_PINS, ...ANALOG_PINS];
 export const arduinoBlocks = [
 
     // Arduino-specific blocks (excluding standard Blockly variables which are already defined)
-    
+
     // Arduino-specific variable block for distance
     {
         type: 'set_distance',

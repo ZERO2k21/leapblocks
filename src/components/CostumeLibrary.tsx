@@ -27,8 +27,8 @@ const DEFAULT_COSTUMES = [
     { name: 'Robot Wave 2', src: 'assets/sprites/robot/robot_wave1.svg', category: 'Fantasy' },
     { name: 'Robot Wave 3', src: 'assets/sprites/robot/image-Photoroom.png', category: 'Fantasy' },
     { name: 'Robot Wave 4', src: 'assets/sprites/robot/robot_wave2.svg', category: 'Fantasy' },
-    // Scratch default cat (if available)
-    { name: 'Cat', src: 'assets/sprites/scratch/cat.svg', category: 'Animals' },
+    // leap default cat (if available)
+    { name: 'Cat', src: 'assets/sprites/leap/cat.svg', category: 'Animals' },
     // Add more as needed
 ];
 

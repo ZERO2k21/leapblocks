@@ -655,7 +655,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           <div className="nav-actions">
             <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="nav-logo" style={{ height: 'clamp(40px, 5vw, 50px)' }} />
           </div>
-          
+
         </nav>
 
         {/* Gradient Divider Line */}
@@ -713,7 +713,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <div>
                   <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
                   <div className="tc-name">Ignite</div>
-                  <div className="tc-desc">Scratch & block coding</div>
+                  <div className="tc-desc">leap & block coding</div>
                 </div>
               </div>
 

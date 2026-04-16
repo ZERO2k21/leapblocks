@@ -28,8 +28,8 @@ import { getLessonConfig } from "./engine/LessonConfig";
 import { GoalManager } from "./engine/GoalManager";
 import { HintManager } from "./engine/HintManager";
 import { AudioEngine } from "../scratch-audio/src/AudioEngine";
-import { Scratch3SoundBlocks } from "../scratch-vm/src/extensions/scratch3_sound/index.js";
-import { Scratch3MusicBlocks } from "../scratch-vm/src/extensions/scratch3_music/index.js";
+import { leap3SoundBlocks } from "../leap-vm/src/extensions/leap3_sound/index.js";
+import { leap3MusicBlocks } from "../leap-vm/src/extensions/leap3_music/index.js";
 import { gettingStartedTutorial } from "./tutorials/gettingStarted";
 import { moveRoboTutorial } from "./tutorials/moveRobo";
 import { makeSoundsTutorial } from "./tutorials/makeSounds";
@@ -69,7 +69,7 @@ function getAudioEngine() {
 function getSoundBlocksExt() {
     if (!_soundBlocksExt) {
         const engine = getAudioEngine();
-        _soundBlocksExt = new Scratch3SoundBlocks({ audioEngine: engine });
+        _soundBlocksExt = new leap3SoundBlocks({ audioEngine: engine });
     }
     return _soundBlocksExt;
 }
@@ -77,7 +77,7 @@ function getSoundBlocksExt() {
 function getMusicBlocksExt() {
     if (!_musicBlocksExt) {
         const engine = getAudioEngine();
-        _musicBlocksExt = new Scratch3MusicBlocks({ audioEngine: engine });
+        _musicBlocksExt = new leap3MusicBlocks({ audioEngine: engine });
     }
     return _musicBlocksExt;
 }
