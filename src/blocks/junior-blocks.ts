@@ -14,7 +14,7 @@ const COLORS = {
     looks: '#8B5CF6',        // Vibrant Violet
     sound: '#D946EF',        // Bright Fuchsia
     events: '#FACC15',       // Sun Yellow
-    control: '#F59E0B',      // Warm Amber.
+    control: '#F59E0B',      // Warm Amber.//
 };
 
 // Junior Block Definitions
