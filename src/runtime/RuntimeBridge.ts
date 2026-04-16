@@ -151,28 +151,23 @@ class PenRuntime {
     }
 
     penDown() {
-        const sprite = this._activeSprite();
-        if (sprite) sprite.penDown = true;
+        const s = spriteManager.getSprite((window as any).__activeSpriteId || ''); if (s) s.setPenDown(true);
     }
 
     penUp() {
-        const sprite = this._activeSprite();
-        if (sprite) sprite.penDown = false;
+        const s = spriteManager.getSprite((window as any).__activeSpriteId || ''); if (s) s.setPenDown(false);
     }
 
     setColor(color: string) {
-        const sprite = this._activeSprite();
-        if (sprite) sprite.penColor = color;
+        const s = spriteManager.getSprite((window as any).__activeSpriteId || ''); if (s) s.setPenColor(color);
     }
 
     setSize(size: number) {
-        const sprite = this._activeSprite();
-        if (sprite) sprite.penSize = size;
+        const s = spriteManager.getSprite((window as any).__activeSpriteId || ''); if (s) s.setPenSize(size);
     }
 
     changeSize(delta: number) {
-        const sprite = this._activeSprite();
-        if (sprite) sprite.penSize = Math.max(1, (sprite.penSize || 1) + delta);
+        const s = spriteManager.getSprite((window as any).__activeSpriteId || ''); if (s) s.setPenSize(s.penSize + delta);
     }
 
     stamp() {
@@ -222,6 +217,29 @@ const spriteRuntime = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// HAND POSE RUNTIME
+// ─────────────────────────────────────────────────────────────────────────────
+
+class HandPoseRuntime {
+    private lastSign = 'none';
+
+    analyse(action: string) {
+        console.log(`[HandPoseRuntime] analyse: ${action}`);
+        // Implementation delegates to underlying ML model
+    }
+
+    getSign(): string {
+        return this.lastSign;
+    }
+
+    moveSpriteToFinger(finger: string) {
+        console.log(`[HandPoseRuntime] Moving sprite to finger: ${finger}`);
+    }
+}
+
+export const handPoseRuntime = new HandPoseRuntime();
+
+// ─────────────────────────────────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -239,6 +257,7 @@ export function initRuntime() {
     (window as any).runtime = {
         pen: penRuntime,
         face: faceRuntime,
+        handPose: handPoseRuntime,
         sprite: spriteRuntime,
         objectDetection: objectDetectionRuntime,
         music: musicRuntime,

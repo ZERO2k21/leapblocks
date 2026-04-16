@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useRef } from 'react';
-import { leapBackdrops } from './generated_scratch_backdrops';
+import { leapBackdrops } from './generated_leap_backdrops';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // BACKDROP CATALOG
