@@ -73,11 +73,12 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
   const isDHT       = type === 'dht22' || type === 'dht11';
   const isDistance  = type === 'hc-sr04';
-  const isAnalog    = ['potentiometer', 'photoresistor', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(type);
+  const isAnalog    = ['potentiometer', 'photoresistor', 'mq2', 'resistor'].includes(type);
+  const isNTC       = type === 'ntc-temperature-sensor';
   const isPIR       = type === 'pir-motion-sensor';
   const isMPU6050   = type === 'mpu6050';
 
-  if (!isDHT && !isDistance && !isAnalog && !isPIR && !isMPU6050) return null;
+  if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isMPU6050) return null;
 
   // ── DHT: two sliders ─────────────────────────────────────────────────────
   if (isDHT) {
@@ -315,6 +316,77 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     );
   }
 
+  // ── NTC Temperature Sensor ───────────────────────────────────────────────
+  if (isNTC) {
+    const tempC = currentValues?.value ?? 25;
+
+    // NTC voltage-divider formula (same as CircuitEngine) — shown live in the overlay
+    const R0 = 10000, B = 3950, T0 = 298.15, Rs = 10000, VCC = 5.0;
+    const T = tempC + 273.15;
+    const R_ntc = R0 * Math.exp(B * (1 / T - 1 / T0));
+    const voltage = VCC * R_ntc / (Rs + R_ntc);
+    const adcRaw  = Math.round((voltage / VCC) * 1023);
+
+    const handleChange = (val: number) => {
+      updateNodeData(nodeId, { sensorValues: { ...currentValues, value: val } });
+      import('../../engine/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushInputSignal(nodeId, 'OUT', true);
+      });
+    };
+
+    return (
+      <div
+        onPointerDown={e => e.stopPropagation()}
+        onPointerUp={e => e.stopPropagation()}
+        onMouseDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
+        className="nodrag nopan"
+        style={{
+          position: 'absolute',
+          bottom: '-140px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '200px',
+          background: 'rgba(15, 23, 42, 0.97)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(249,115,22,0.4)',
+          borderRadius: '12px',
+          padding: '12px 14px',
+          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          userSelect: 'none',
+        }}
+      >
+        {/* Header */}
+        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', textAlign: 'center', fontFamily: 'system-ui' }}>
+          NTC THERMISTOR
+        </div>
+
+        <SliderRow
+          label="TEMPERATURE"
+          unit="°C"
+          min={-40}
+          max={125}
+          step={0.5}
+          value={tempC}
+          color="#f97316"
+          onChange={handleChange}
+        />
+
+        {/* Live readout row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontFamily: 'monospace', fontWeight: 700 }}>
+          <span style={{ color: '#64748b' }}>V<sub>out</sub></span>
+          <span style={{ color: '#bef264' }}>{voltage.toFixed(3)} V</span>
+          <span style={{ color: '#64748b' }}>ADC</span>
+          <span style={{ color: '#bef264' }}>{adcRaw}</span>
+        </div>
+      </div>
+    );
+  }
+
   // ── Single-value sensors ─────────────────────────────────────────────────
   const config = isDistance
     ? { label: 'DISTANCE', unit: 'cm',  min: 2,   max: 400,     step: 1,   key: 'distance', color: '#BEF264' }
@@ -335,8 +407,12 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       sensorValues: { ...currentValues, [config.key]: val },
     });
     if (isAnalog) {
+      // Determine the correct output pin name for this sensor type
+      const outPin = type === 'photoresistor' || type === 'photoresistor-sensor' ? 'AO'
+                   : type === 'potentiometer' ? 'SIG'
+                   : 'OUT';
       import('../../engine/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(nodeId, 'SIG', true);
+        circuitEngine.pushInputSignal(nodeId, outPin, true);
       });
     }
   };

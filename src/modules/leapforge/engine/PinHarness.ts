@@ -1959,11 +1959,9 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 71.782
     },
     "pins": [
-      {
-        "name": "GND",
-        "x": 135,
-        "y": 35.8
-      }
+      { "name": "GND", "x": 135, "y": 26.2 },
+      { "name": "VCC", "x": 135, "y": 35.8 },
+      { "name": "OUT", "x": 135, "y": 45.5 }
     ]
   },
   "photoresistor-sensor": {
@@ -2004,9 +2002,9 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 92.4
     },
     "pins": [
-      { "name": "VCC", "x": 135,  "y": 300 },
-      { "name": "OUT", "x": 175, "y": 300 },
-      { "name": "GND", "x": 210, "y": 300 }
+      { "name": "VCC", "x": 36.178,  "y": 92 },
+      { "name": "OUT", "x": 45.9175, "y": 92 },
+      { "name": "GND", "x": 55.6415, "y": 92 }
     ]
   },
   "potentiometer": {

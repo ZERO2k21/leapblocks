@@ -878,10 +878,34 @@ class CircuitEngine {
       if (mapping.adcChannel !== undefined) {
         // --- Analog Mapping ---
         const peripheralNode = nodes.find(n => n.id === nodeId);
-        const sensorValue = peripheralNode?.data?.sensorValues?.value ?? 0;
-        const voltage = sensorValue > 5 ? (sensorValue / 1023) * 5.0 : sensorValue;
+        const pType = peripheralNode?.data?.type;
+        const sv = peripheralNode?.data?.sensorValues;
+        let voltage = 0;
+
+        if (pType === 'ntc-temperature-sensor') {
+          // NTC thermistor voltage-divider: V_out = VCC × R_NTC / (R_series + R_NTC)
+          // R_NTC = R0 × exp(B × (1/T - 1/T0))  — 10kΩ NTC, B=3950, series=10kΩ
+          const tempC  = sv?.value ?? 25;
+          const R0     = 10000;
+          const B      = 3950;
+          const T0     = 298.15;
+          const Rs     = 10000;
+          const VCC    = 5.0;
+          const T      = tempC + 273.15;
+          const R_ntc  = R0 * Math.exp(B * (1 / T - 1 / T0));
+          voltage = VCC * R_ntc / (Rs + R_ntc);
+        } else if (pType === 'photoresistor' || pType === 'photoresistor-sensor') {
+          // Photoresistor: lux 0–1000 → voltage 0–5V (linear approximation)
+          const lux = sv?.value ?? 0;
+          voltage = (lux / 1000) * 5.0;
+        } else {
+          // Generic: value is 0–100 (percentage) → 0–5V, or raw 0–1023 → 0–5V
+          const sensorValue = sv?.value ?? 0;
+          voltage = sensorValue > 5 ? (sensorValue / 1023) * 5.0 : sensorValue;
+        }
+
         simulationRunner.setAnalogInput(mapping.adcChannel, voltage);
-        console.log(`[FORGE CIRCUIT] Analog Signal: Peripheral[${nodeId}] pin ${pinName} -> ${voltage.toFixed(2)}V on channel ${mapping.adcChannel}`);
+        console.log(`[FORGE CIRCUIT] Analog Signal: Peripheral[${nodeId}] pin ${pinName} -> ${voltage.toFixed(3)}V on ADC ch${mapping.adcChannel}`);
       } else {
         // --- Digital Mapping ---
         simulationRunner.setVirtualInput(mapping.avrPin, isHigh);

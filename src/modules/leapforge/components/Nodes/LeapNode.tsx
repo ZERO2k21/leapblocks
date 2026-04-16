@@ -83,7 +83,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.innerHandLength = data.innerHandLength ?? 30;
   } else if (['potentiometer', 'photoresistor', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(data.type)) {
     // Analog sensors (and resistors) use the 'value' from sensorValues
-    mappedProps.value = data.sensorValues?.value ?? 0;
+    mappedProps.value = data.sensorValues?.value ?? (data.type === 'ntc-temperature-sensor' ? 25 : 0);
   } else if (data.type === 'lcd1602' || data.type === 'lcd2004' || data.type === 'lcd1602-i2c' || data.type === 'lcd2004-i2c') {
     // LCD Displays map the internal emulator state to visual properties
     const state = data.lcdState;
