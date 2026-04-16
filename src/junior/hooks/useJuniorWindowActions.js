@@ -14,8 +14,6 @@ export function useJuniorWindowActions({
     timeoutRefs,
     canvasRef,
     audioEngine,
-    soundBlocksExt,
-    musicBlocksExt,
     setWinMessage
 }) {
     // --- EFFECT 1: STATIC ACTIONS (Run Once/Rarely) ---
@@ -71,23 +69,19 @@ export function useJuniorWindowActions({
             window.speechSynthesis.cancel();
             if (audioEngine) {
                 audioEngine.stopAllSounds();
-            } else {
-                soundBlocksExt.stopAllSounds();
             }
         };
 
         window.stopMusic = () => {
             if (audioEngine && audioEngine.soundBank) {
                 audioEngine.soundBank.stopMusic();
-            } else {
-                musicBlocksExt.stopMusic();
             }
         };
 
         return () => {
             staticKeys.forEach(key => delete window[key]);
         };
-    }, [spriteActions, audioEngine, soundBlocksExt, musicBlocksExt, setWinMessage]);
+    }, [spriteActions, audioEngine, setWinMessage]);
 
     // --- EFFECT 2: CONTEXT-DEPENDENT ACTIONS (Depends on Ref or specific callbacks) ---
     useEffect(() => {
@@ -281,37 +275,29 @@ export function useJuniorWindowActions({
             const tid = getCurrentID();
             if (audioEngine) {
                 audioEngine.playSound(name, tid);
-            } else {
-                soundBlocksExt.playSound({ SOUND_MENU: name }, { target: { id: tid } });
             }
         };
 
         window.playNote = (note, octave) => {
             if (audioEngine && audioEngine.instrumentPlayer) {
                 audioEngine.instrumentPlayer.playNoteForDuration(note, octave, 0.5);
-            } else {
-                musicBlocksExt.playNoteForDuration({ NOTE: note, OCTAVE: octave, DURATION: 0.5 });
             }
         };
 
         window.setInstrument = (inst) => {
             if (audioEngine && audioEngine.instrumentPlayer) {
                 audioEngine.instrumentPlayer.setInstrument(inst);
-            } else {
-                musicBlocksExt.setInstrument({ INSTRUMENT: inst });
             }
         };
 
         window.playMusic = (name) => {
             if (audioEngine && audioEngine.soundBank) {
                 audioEngine.soundBank.playMusic(name);
-            } else {
-                musicBlocksExt.playMusic({ MUSIC: name });
             }
         };
 
         return () => {
             contextKeys.forEach(key => delete window[key]);
         };
-    }, [scenes, currentSceneId, sprites, spriteActions, handleSceneSelect, handleNextScene, handleSpriteSelect, timeoutRefs, canvasRef, audioEngine, soundBlocksExt, musicBlocksExt]);
+    }, [scenes, currentSceneId, sprites, spriteActions, handleSceneSelect, handleNextScene, handleSpriteSelect, timeoutRefs, canvasRef, audioEngine]);
 }

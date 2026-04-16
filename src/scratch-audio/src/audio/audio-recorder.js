@@ -1,5 +1,3 @@
-import 'get-float-time-domain-data';
-import getUserMedia from 'get-user-media-promise';
 import SharedAudioContext from './shared-audio-context.js';
 import {computeRMS, computeChunkedRMS} from './audio-util.js';
 
@@ -23,7 +21,7 @@ class AudioRecorder {
 
     startListening (onStarted, onUpdate, onError) {
         try {
-            getUserMedia({audio: true})
+            navigator.mediaDevices.getUserMedia({audio: true})
                 .then(userMediaStream => {
                     if (!this.disposed) {
                         this.started = true;

@@ -28,8 +28,7 @@ import { getLessonConfig } from "./engine/LessonConfig";
 import { GoalManager } from "./engine/GoalManager";
 import { HintManager } from "./engine/HintManager";
 import { AudioEngine } from "../scratch-audio/src/AudioEngine";
-import { leap3SoundBlocks } from "../leap-vm/src/extensions/leap3_sound/index.js";
-import { leap3MusicBlocks } from "../leap-vm/src/extensions/leap3_music/index.js";
+import { initRuntime } from "../runtime/RuntimeBridge";
 import { gettingStartedTutorial } from "./tutorials/gettingStarted";
 import { moveRoboTutorial } from "./tutorials/moveRobo";
 import { makeSoundsTutorial } from "./tutorials/makeSounds";
@@ -54,32 +53,13 @@ const robotWave2 = "assets/sprites/robot/image-removebg-preview (1).png";
 const robotTalk1 = "assets/sprites/robot/image-removebg-preview.png";
 
 // ─── Lazy initialization to avoid TDZ errors in production builds ─────────
-// Webpack's ModuleConcatenationPlugin (scope hoisting) can reorder const/class
-// declarations, causing "Cannot access 'X' before initialization" at runtime.
-// Using lazy init ensures these run only after all module bindings exist.
-let _audioEngine, _soundBlocksExt, _musicBlocksExt, _blocksRegistered;
+let _audioEngine, _blocksRegistered;
 
 function getAudioEngine() {
     if (!_audioEngine) {
         _audioEngine = new AudioEngine();
     }
     return _audioEngine;
-}
-
-function getSoundBlocksExt() {
-    if (!_soundBlocksExt) {
-        const engine = getAudioEngine();
-        _soundBlocksExt = new leap3SoundBlocks({ audioEngine: engine });
-    }
-    return _soundBlocksExt;
-}
-
-function getMusicBlocksExt() {
-    if (!_musicBlocksExt) {
-        const engine = getAudioEngine();
-        _musicBlocksExt = new leap3MusicBlocks({ audioEngine: engine });
-    }
-    return _musicBlocksExt;
 }
 
 function ensureBlocksRegistered() {
@@ -98,8 +78,11 @@ export default function JuniorApp({ onBack }) {
 
     // Get lazily-initialized singletons
     const audioEngine = getAudioEngine();
-    const soundBlocksExt = getSoundBlocksExt();
-    const musicBlocksExt = getMusicBlocksExt();
+
+    // Initialize modular runtime on mount
+    useEffect(() => {
+        initRuntime();
+    }, []);
 
     // Refs
     const workspaceRef = useRef(null);
@@ -529,8 +512,6 @@ export default function JuniorApp({ onBack }) {
         timeoutRefs,
         canvasRef,
         audioEngine,
-        soundBlocksExt,
-        musicBlocksExt,
         setWinMessage
     });
 
@@ -715,7 +696,9 @@ export default function JuniorApp({ onBack }) {
                     onPick={(inst) => {
                         if (wp.activeBlock) {
                             wp.activeBlock.setFieldValue(inst, "INSTRUMENT");
-                            musicBlocksExt.setInstrument({ INSTRUMENT: inst });
+                            if (audioEngine.instrumentPlayer) {
+                                audioEngine.instrumentPlayer.setInstrument(inst);
+                            }
                         }
                     }}
                 />
@@ -728,7 +711,9 @@ export default function JuniorApp({ onBack }) {
                     initialOctave={parseInt(wp.activeBlock?.getFieldValue("OCTAVE") || "4")}
                     onClose={() => wp.setShowPianoPicker(false)}
                     onPreview={(note, octave) => {
-                        musicBlocksExt.playNoteForDuration({ NOTE: note, OCTAVE: octave, DURATION: 0.3 });
+                        if (audioEngine.instrumentPlayer) {
+                            audioEngine.instrumentPlayer.playNoteForDuration(note, octave, 0.3);
+                        }
                     }}
                     onPick={(note, octave) => {
                         if (wp.activeBlock) {
