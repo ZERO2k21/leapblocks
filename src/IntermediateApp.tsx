@@ -52,7 +52,10 @@ import { PythonEditorTab } from './components/PythonEditorTab';
 
 // import StagePanel from './stage/StagePanel'; // Temporarily disabled - component needs to be created
 
-import BackdropLibrary from './components/BackdropLibrary';
+// Lazy load large components for better performance
+const BackdropLibrary = React.lazy(() => import('./components/BackdropLibrary'));
+const SpriteLibrary = React.lazy(() => import('./components/SpriteLibrary').then(m => ({ default: m.SpriteLibrary })));
+const JuniorExtensionLibrary = React.lazy(() => import('./junior/components/JuniorExtensionLibrary'));
 
 // import BackdropEditor from './components/BackdropEditor'; // Temporarily disabled
 
@@ -66,7 +69,6 @@ import SerialMonitor from './components/SerialMonitor';
 
 import UploadModal from './components/UploadModal';
 
-import { SpriteLibrary } from './components/SpriteLibrary';
 import type { SpriteEntry } from './components/SpriteLibrary';
 
 import WorkspaceControls from './components/WorkspaceControls';
@@ -75,7 +77,6 @@ import WorkspaceTrash from './components/WorkspaceTrash';
 
 import UnsavedWarningModal from './junior/components/UnsavedWarningModal';
 import { EXTENSIONS, registerExtensions } from './extensions/extensionDefinitions';
-import JuniorExtensionLibrary from './junior/components/JuniorExtensionLibrary';
 
 
 import { fileService } from './services/FileService';
@@ -5011,7 +5012,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     return (
 
-        <div style={styles.container}>
+        <div>
 
             {/* Premium Menu Bar */}
 
@@ -5248,34 +5249,28 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
             {/* Sprite Library Modal */}
+            {showSpriteLibrary && (
+                <React.Suspense fallback={<div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px', color: '#855CD6' }}>Loading...</div>}>
+                    <SpriteLibrary
+                        isOpen={showSpriteLibrary}
+                        onClose={() => setShowSpriteLibrary(false)}
+                        onSelectSprite={(sprite: any) => {
+                            addSprite(sprite.id as any); // Adapt as needed
+                            setShowSpriteLibrary(false);
+                        }}
+                    />
+                </React.Suspense>
+            )}
 
-            <SpriteLibrary
-
-                isOpen={showSpriteLibrary}
-
-                onClose={() => setShowSpriteLibrary(false)}
-
-                onSelectSprite={(sprite: any) => {
-
-                    addSprite(sprite.id as any); // Adapt as needed
-
-                    setShowSpriteLibrary(false);
-
-                }}
-
-            />
-
-
-
-            <BackdropLibrary
-
-                isOpen={showBackdropLibrary}
-
-                onClose={() => setShowBackdropLibrary(false)}
-
-                onSelectBackdrop={(backdrop) => handleBackdropSelect(backdrop.name, backdrop.image)}
-
-            />
+            {showBackdropLibrary && (
+                <React.Suspense fallback={<div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px', color: '#855CD6' }}>Loading...</div>}>
+                    <BackdropLibrary
+                        isOpen={showBackdropLibrary}
+                        onClose={() => setShowBackdropLibrary(false)}
+                        onSelectBackdrop={(backdrop) => handleBackdropSelect(backdrop.name, backdrop.image)}
+                    />
+                </React.Suspense>
+            )}
 
             {/* Main Content */}
 
@@ -6108,240 +6103,238 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
             {/* Sprite Library Modal */}
+            {showSpriteLibrary && (
+                <React.Suspense fallback={<div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px', color: '#855CD6' }}>Loading...</div>}>
+                    <SpriteLibrary
+                        isOpen={showSpriteLibrary}
+                        onClose={() => setShowSpriteLibrary(false)}
+                        onSelectSprite={(entry: SpriteEntry) => {
 
-            <SpriteLibrary
+                            // Save current sprite workspace before adding new one
 
-                isOpen={showSpriteLibrary}
-
-                onClose={() => setShowSpriteLibrary(false)}
-
-                onSelectSprite={(entry: SpriteEntry) => {
-
-                    // Save current sprite workspace before adding new one
-
-                    saveCurrentSpriteWorkspace();
+                            saveCurrentSpriteWorkspace();
 
 
 
-                    const id = `sprite_${Date.now()}`;
+                            const id = `sprite_${Date.now()}`;
 
-                    const newSprite = new Sprite(id, entry.name, triggerUpdate, 'cat');
-
-
-
-                    // Predefined spread-out positions across the stage
-
-                    const spreadPositions = [
-
-                        { x: 120, y: 0 },      // Right area
-
-                        { x: -120, y: 0 },     // Left area
-
-                        { x: 0, y: 80 },       // Top center
-
-                        { x: 0, y: -80 },      // Bottom center
-
-                        { x: -160, y: 100 },   // Top-left
-
-                        { x: 160, y: 100 },    // Top-right
-
-                        { x: -160, y: -100 },  // Bottom-left
-
-                        { x: 160, y: -100 },   // Bottom-right
-
-                    ];
+                            const newSprite = new Sprite(id, entry.name, triggerUpdate, 'cat');
 
 
 
-                    const MIN_DIST = 80;
+                            // Predefined spread-out positions across the stage
 
-                    let assigned = false;
+                            const spreadPositions = [
 
-                    for (const pos of spreadPositions) {
+                                { x: 120, y: 0 },      // Right area
 
-                        const tooClose = sprites.some(s => {
+                                { x: -120, y: 0 },     // Left area
 
-                            const dx = Math.abs(s.x - pos.x);
+                                { x: 0, y: 80 },       // Top center
 
-                            const dy = Math.abs(s.y - pos.y);
+                                { x: 0, y: -80 },      // Bottom center
 
-                            return dx < MIN_DIST && dy < MIN_DIST;
+                                { x: -160, y: 100 },   // Top-left
 
-                        });
+                                { x: 160, y: 100 },    // Top-right
 
-                        if (!tooClose) {
+                                { x: -160, y: -100 },  // Bottom-left
 
-                            newSprite.setX(pos.x);
+                                { x: 160, y: -100 },   // Bottom-right
 
-                            newSprite.setY(pos.y);
-
-                            assigned = true;
-
-                            break;
-
-                        }
-
-                    }
-
-                    if (!assigned) {
-
-                        // Generate a small random offset explicitly close to the center 
-
-                        // instead of completely scattering them across the stage
-
-                        const offsetX = Math.floor(Math.random() * 60) - 30;
-
-                        const offsetY = Math.floor(Math.random() * 60) - 30;
-
-                        newSprite.setX(offsetX);
-
-                        newSprite.setY(offsetY);
-
-                    }
+                            ];
 
 
 
-                    // If the sprite has an image or costumes, use them
+                            const MIN_DIST = 80;
 
-                    const costumesToLoad = entry.costumes && entry.costumes.length > 0
+                            let assigned = false;
 
-                        ? entry.costumes
+                            for (const pos of spreadPositions) {
 
-                        : (entry.image ? [entry.image] : []);
+                                const tooClose = sprites.some(s => {
 
+                                    const dx = Math.abs(s.x - pos.x);
 
+                                    const dy = Math.abs(s.y - pos.y);
 
-                    if (costumesToLoad.length > 0) {
+                                    return dx < MIN_DIST && dy < MIN_DIST;
 
-                        // Load all costumes sequentially to maintain order and wait for completion
+                                });
 
-                        (async () => {
+                                if (!tooClose) {
 
-                            for (let i = 0; i < costumesToLoad.length; i++) {
+                                    newSprite.setX(pos.x);
 
-                                const costumeSrc = costumesToLoad[i];
+                                    newSprite.setY(pos.y);
 
-                                const costumeName = i === 0 ? entry.name : `${entry.name} ${i + 1}`;
+                                    assigned = true;
 
-                                await newSprite.addCostume(costumeName, costumeSrc);
+                                    break;
+
+                                }
 
                             }
 
+                            if (!assigned) {
+
+                                // Generate a small random offset explicitly close to the center 
+
+                                // instead of completely scattering them across the stage
+
+                                const offsetX = Math.floor(Math.random() * 60) - 30;
+
+                                const offsetY = Math.floor(Math.random() * 60) - 30;
+
+                                newSprite.setX(offsetX);
+
+                                newSprite.setY(offsetY);
+
+                            }
+
+
+
+                            // If the sprite has an image or costumes, use them
+
+                            const costumesToLoad = entry.costumes && entry.costumes.length > 0
+
+                                ? entry.costumes
+
+                                : (entry.image ? [entry.image] : []);
+
+
+
+                            if (costumesToLoad.length > 0) {
+
+                                // Load all costumes sequentially to maintain order and wait for completion
+
+                                (async () => {
+
+                                    for (let i = 0; i < costumesToLoad.length; i++) {
+
+                                        const costumeSrc = costumesToLoad[i];
+
+                                        const costumeName = i === 0 ? entry.name : `${entry.name} ${i + 1}`;
+
+                                        await newSprite.addCostume(costumeName, costumeSrc);
+
+                                    }
+
+                                    // Add default sound based on sprite tags/name
+                                    const defaultSound = getDefaultSoundForSprite(
+                                        (entry as any).tags || [],
+                                        entry.name
+                                    );
+                                    await newSprite.addSound(defaultSound.name, defaultSound.src);
+
+
+
+                                    // Set initial costume
+
+                                    newSprite.switchCostume(0);
+
+                                    triggerUpdate();
+
+                                })();
+
+                            } else if (entry.emoji) {
+
+                                // Create costume from emoji by drawing on canvas
+
+                                const canvas = document.createElement('canvas');
+
+                                canvas.width = 200;
+
+                                canvas.height = 200;
+
+                                const ctx = canvas.getContext('2d');
+
+                                if (ctx) {
+
+                                    ctx.font = '120px Arial';
+
+                                    ctx.textAlign = 'center';
+
+                                    ctx.textBaseline = 'middle';
+
+                                    ctx.fillText(entry.emoji, 100, 100);
+
+                                    newSprite.addCostume(entry.name, canvas.toDataURL()).then(() => {
+
+                                        newSprite.switchCostume(entry.name);
+
+                                        triggerUpdate();
+
+                                    });
+
+                                }
+
+                            }
+
+                            animationVM.registerSprite(newSprite);
+
                             // Add default sound based on sprite tags/name
-                            const defaultSound = getDefaultSoundForSprite(
-                                (entry as any).tags || [],
-                                entry.name
-                            );
-                            await newSprite.addSound(defaultSound.name, defaultSound.src);
+                            // (Image-based sprites already get a sound in their async loader above,
+                            //  but emoji-only sprites don't — this covers both as a fallback.)
+                            if (newSprite.sounds.length === 0) {
+                                const defaultSound = getDefaultSoundForSprite(
+                                    (entry as any).tags || [],
+                                    entry.name
+                                );
+                                newSprite.addSound(defaultSound.name, defaultSound.src);
+                            }
+
+                            // Initialize empty workspace for the new sprite
+
+                            spriteWorkspacesRef.current.set(id, {});
 
 
 
-                            // Set initial costume
+                            // Silently clear workspace to prevent event bleed
 
-                            newSprite.switchCostume(0);
+                            if (workspaceRef.current) {
 
-                            triggerUpdate();
+                                isLoadingWorkspaceRef.current = true;
+                                Blockly.Events.disable();
+                                console.log('[APP] Initializing empty workspace for new sprite:', id);
 
-                        })();
+                                workspaceRef.current.clear();
 
-                    } else if (entry.emoji) {
+                                Blockly.Events.enable();
 
-                        // Create costume from emoji by drawing on canvas
+                                // Allow layout events to fizzle before accepting changes
 
-                        const canvas = document.createElement('canvas');
+                                setTimeout(() => {
 
-                        canvas.width = 200;
+                                    isLoadingWorkspaceRef.current = false;
 
-                        canvas.height = 200;
+                                }, 50);
 
-                        const ctx = canvas.getContext('2d');
-
-                        if (ctx) {
-
-                            ctx.font = '120px Arial';
-
-                            ctx.textAlign = 'center';
-
-                            ctx.textBaseline = 'middle';
-
-                            ctx.fillText(entry.emoji, 100, 100);
-
-                            newSprite.addCostume(entry.name, canvas.toDataURL()).then(() => {
-
-                                newSprite.switchCostume(entry.name);
-
-                                triggerUpdate();
-
-                            });
-
-                        }
-
-                    }
-
-                    animationVM.registerSprite(newSprite);
-
-                    // Add default sound based on sprite tags/name
-                    // (Image-based sprites already get a sound in their async loader above,
-                    //  but emoji-only sprites don't — this covers both as a fallback.)
-                    if (newSprite.sounds.length === 0) {
-                        const defaultSound = getDefaultSoundForSprite(
-                            (entry as any).tags || [],
-                            entry.name
-                        );
-                        newSprite.addSound(defaultSound.name, defaultSound.src);
-                    }
-
-                    // Initialize empty workspace for the new sprite
-
-                    spriteWorkspacesRef.current.set(id, {});
+                            }
 
 
 
-                    // Silently clear workspace to prevent event bleed
+                            activeSpriteIdRef.current = id;
 
-                    if (workspaceRef.current) {
+                            setSelectedSpriteId(id);
 
-                        isLoadingWorkspaceRef.current = true;
-                        Blockly.Events.disable();
-                        console.log('[APP] Initializing empty workspace for new sprite:', id);
+                            setShowSpriteLibrary(false);
 
-                        workspaceRef.current.clear();
+                            addLog(`Added sprite: ${entry.name}`);
 
-                        Blockly.Events.enable();
+                        }}
 
-                        // Allow layout events to fizzle before accepting changes
+                        onPaintSprite={() => {
 
-                        setTimeout(() => {
+                            setShowSpriteLibrary(false);
 
-                            isLoadingWorkspaceRef.current = false;
+                            alert('Paint editor - select a sprite first, then edit its costume');
 
-                        }, 50);
+                        }}
 
-                    }
-
-
-
-                    activeSpriteIdRef.current = id;
-
-                    setSelectedSpriteId(id);
-
-                    setShowSpriteLibrary(false);
-
-                    addLog(`Added sprite: ${entry.name}`);
-
-                }}
-
-                onPaintSprite={() => {
-
-                    setShowSpriteLibrary(false);
-
-                    alert('Paint editor - select a sprite first, then edit its costume');
-
-                }}
-
-            />
-
-
+                    />
+                </React.Suspense>
+            )}
 
             {/* Premium Upload Modal */}
 
@@ -6356,17 +6349,17 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             {/* Extension Library Modal */}
             {showExtensionLibrary && (
-                <JuniorExtensionLibrary
-                    onClose={() => setShowExtensionLibrary(false)}
-                    onSelectExtension={(id: string) => {
-                        handleAddExtension(id);
-                        setShowExtensionLibrary(false);
-                    }}
-                />
+                <React.Suspense fallback={<div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px', color: '#855CD6' }}>Loading...</div>}>
+                    <JuniorExtensionLibrary
+                        onClose={() => setShowExtensionLibrary(false)}
+                        onSelectExtension={(id: string) => {
+                            handleAddExtension(id);
+                            setShowExtensionLibrary(false);
+                        }}
+                    />
+                </React.Suspense>
             )}
-        </div >
-
-
+        </div>
     );
 
 };

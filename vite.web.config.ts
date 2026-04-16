@@ -32,10 +32,55 @@ export default defineConfig({
     emptyOutDir: true,
     minify: true,
     sourcemap: true,
+    chunkSizeWarningLimit: 1000, // Increase warning limit to 1000 kB
     rollupOptions: {
       input: path.resolve(__dirname, 'index.html'),
       // Mark Electron/Node-only modules as external so they're stripped
       external: ['electron', 'serialport', 'child_process', 'fs', 'fs-extra', 'path', 'os', 'crypto'],
+      output: {
+        manualChunks: {
+          // Vendor chunks - separate large libraries
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-blockly': ['blockly'],
+
+          // UI components
+          'ui-components': [
+            './src/components/SpriteLibrary.tsx',
+            './src/components/BackdropLibrary.tsx',
+            './src/components/SoundLibrary.tsx',
+            './src/junior/components/JuniorExtensionLibrary.jsx',
+          ],
+
+          // Extensions - lazy load these
+          'extensions': [
+            './src/extensions/ExtensionManager.ts',
+            './src/extensions/ObjectDetectionExtension.ts',
+            './src/extensions/MusicExtension.ts',
+            './src/extensions/extensionDefinitions.ts',
+          ],
+
+          // VM and generators
+          'vm-engine': [
+            './src/vm/AnimationVM.ts',
+            './src/generators/animation-generator.ts',
+            './src/generators/arduino-generator.ts',
+          ],
+
+          // Blocks definitions
+          'blocks': [
+            './src/blocks/animation-blocks.ts',
+            './src/blocks/arduino-blocks.ts',
+            './src/blocks/esp32-blocks.ts',
+            './src/blocks/leapBlocks.ts',
+          ],
+
+          // Audio engine
+          'audio': [
+            './src/scratch-audio/src/AudioEngine.js',
+            './src/scratch-audio/src/SoundBank.js',
+          ],
+        },
+      },
     },
   },
   optimizeDeps: {
