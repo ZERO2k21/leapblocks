@@ -23,7 +23,7 @@ export class SoundManager {
     private masterGain: GainNode | null = null;
     private volume: number = 1; // 0-1
 
-    private constructor() {}
+    private constructor() { }
 
     static getInstance(): SoundManager {
         if (!SoundManager.instance) {
@@ -106,7 +106,7 @@ export class SoundManager {
         try {
             const response = await fetch(src);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            
+
             // Safety check: if we got HTML instead of audio (common 404 behavior), fail early
             const contentType = response.headers.get('Content-Type');
             if (contentType && contentType.includes('text/html')) {
@@ -207,7 +207,7 @@ export class SoundManager {
      * Preload a sound without playing it
      */
     preload(name: string, src: string) {
-        this.loadSound(name, src).catch(() => {});
+        this.loadSound(name, src).catch(() => { });
     }
 }
 

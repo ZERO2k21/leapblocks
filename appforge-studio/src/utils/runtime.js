@@ -5,13 +5,13 @@
 
 // This will be initialized with the variable state from VariablesContext
 let runtimeState = {
-  globalVariablesById: {}, 
+  globalVariablesById: {},
   localVariablesById: {},
   globalListsById: {},
   localListsById: {},
   globalTablesById: {},
   localTablesById: {},
-  
+
   globalVariablesByName: {},
   localVariablesByName: {},
   globalListsByName: {},
@@ -109,7 +109,7 @@ export function getVariable(variableName) {
     return runtimeState.globalVariablesByName[variableName].value;
   }
 
-  // Variable not found - create with default 0 (Scratch-like behavior)
+  // Variable not found - create with default 0 (leap-like behavior)
   console.warn(`[Runtime] Variable '${variableName}' not found, creating with value 0`);
   const newVar = { name: variableName, value: 0, scope: 'global' };
   runtimeState.globalVariablesByName[variableName] = newVar;

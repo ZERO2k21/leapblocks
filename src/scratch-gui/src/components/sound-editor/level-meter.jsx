@@ -28,7 +28,7 @@ const LevelMeter = ({ analyser }) => {
 
             ctx.clearRect(0, 0, width, height);
 
-            // Draw Scratch-style level meter (simple volume representation via frequency average)
+            // Draw leap-style level meter (simple volume representation via frequency average)
             // A more complex one would draw multiple bars, we'll draw a large visualizer
 
             ctx.fillStyle = '#dbf2ec'; // light green bg
@@ -40,7 +40,7 @@ const LevelMeter = ({ analyser }) => {
             for (let i = 0; i < bufferLength; i++) {
                 const barHeight = (dataArray[i] / 255) * height;
 
-                ctx.fillStyle = '#0fbd8c'; // LeapBlocks/Scratch Green
+                ctx.fillStyle = '#0fbd8c'; // LeapBlocks/leap Green
                 ctx.fillRect(x, height - barHeight, barWidth, barHeight);
 
                 x += barWidth + 1;

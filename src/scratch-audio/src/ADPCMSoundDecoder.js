@@ -1,4 +1,5 @@
 /**
+<<<<<<< HEAD
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
@@ -6,18 +7,22 @@
 /**
  * IMA ADPCM decoder for Scratch 3.0 sounds.
  * ADPCM is a 4-bit compression format used in many legacy Scratch assets.
+=======
+ * IMA ADPCM decoder for leap 3.0 sounds.
+ * ADPCM is a 4-bit compression format used in many legacy leap assets.
+>>>>>>> 6b15f725eb9104361d7d904575eff29a664202ff
  * Browsers do not always support this natively in decodeAudioData.
  */
 
 const STEP_SIZE_TABLE = [
-    7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 
-    19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 
-    50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 
-    130, 143, 157, 173, 190, 209, 230, 253, 279, 307, 
-    337, 371, 408, 449, 494, 544, 598, 658, 724, 796, 
-    876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066, 
-    2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358, 
-    5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899, 
+    7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
+    19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
+    50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
+    130, 143, 157, 173, 190, 209, 230, 253, 279, 307,
+    337, 371, 408, 449, 494, 544, 598, 658, 724, 796,
+    876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066,
+    2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358,
+    5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
     15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
 ];
 
@@ -52,7 +57,7 @@ export class ADPCMSoundDecoder {
     _decodeSoftware(audioData) {
         const view = new DataView(audioData);
         const length = view.byteLength;
-        
+
         // Basic WAV header check
         if (length < 12) throw new Error('File too short');
         if (view.getUint32(0, true) !== 0x46464952) throw new Error('Not a RIFF file'); // "RIFF"
@@ -86,7 +91,7 @@ export class ADPCMSoundDecoder {
                 dataOffset = offset;
                 dataLength = chunkSize;
             }
-            
+
             offset += chunkSize;
             if (chunkSize % 2 !== 0) offset++; // Padding byte
         }
@@ -96,7 +101,7 @@ export class ADPCMSoundDecoder {
             // (e.g. strange sample rate or bit depth)
             throw new Error(`Unsupported WAV format: 0x${format.toString(16)}`);
         }
-        
+
         if (dataOffset === 0 || dataLength === 0) {
             throw new Error('Data chunk not found');
         }
@@ -109,7 +114,7 @@ export class ADPCMSoundDecoder {
         const samplesPerBlock = ((blockAlign / channels) - 4) * 8 / bitsPerSample + 1;
         const totalBlocks = Math.floor(dataLength / blockAlign);
         const totalSamples = totalBlocks * samplesPerBlock;
-        
+
         const decodedData = new Float32Array(totalSamples);
         let sampleIndex = 0;
 
@@ -134,18 +139,18 @@ export class ADPCMSoundDecoder {
             // Decode the rest of the block
             const samplesInPayload = samplesPerBlock - 1;
             // IMA ADPCM packed bytes: 4 bytes per channel (8 samples of 4-bits)
-            const bytesPerChannelPayload = 4; 
-            
+            const bytesPerChannelPayload = 4;
+
             // This loop assumes 4-bit IMA ADPCM
             for (let i = 0; i < samplesInPayload; i += 8) {
                 for (let c = 0; c < channels; c++) {
                     for (let j = 0; j < 4; j++) {
                         const byte = view.getUint8(blockOffset++);
-                        
+
                         // Lower nibble
                         let sample = this._decodeSample(byte & 0x0F, states[c]);
                         decodedData[sampleIndex + (i + j * 2 + 1) * channels + c] = sample;
-                        
+
                         // Upper nibble
                         sample = this._decodeSample((byte >> 4) & 0x0F, states[c]);
                         decodedData[sampleIndex + (i + j * 2 + 2) * channels + c] = sample;
@@ -159,7 +164,7 @@ export class ADPCMSoundDecoder {
         if (channels === 1) {
             audioBuffer.getChannelData(0).set(decodedData);
         } else {
-            // De-interleave if needed (though Scratch ADPCM is almost always mono)
+            // De-interleave if needed (though leap ADPCM is almost always mono)
             for (let c = 0; c < channels; c++) {
                 const channelData = audioBuffer.getChannelData(c);
                 for (let i = 0; i < totalSamples; i++) {

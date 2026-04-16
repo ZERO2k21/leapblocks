@@ -8,7 +8,7 @@ export default class AudioRecorder {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.analyserNode = this.audioContext.createAnalyser();
 
-        // Settings analogous to Scratch
+        // Settings analogous to leap
         this.analyserNode.fftSize = 256;
 
         this.mediaStream = null;

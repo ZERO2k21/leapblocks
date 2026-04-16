@@ -1,9 +1,13 @@
+<<<<<<< HEAD
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 export const scratchSounds: any[] = [
+=======
+export const leapSounds: any[] = [
+>>>>>>> 6b15f725eb9104361d7d904575eff29a664202ff
   {
     "name": "A Bass",
     "tags": [
@@ -3330,7 +3334,7 @@ export const scratchSounds: any[] = [
     "rate": 22050
   },
   {
-    "name": "Scratch Beatbox",
+    "name": "leap Beatbox",
     "tags": [],
     "assetId": "859249563a7b1fc0f6e92e36d1db81c7",
     "dataFormat": "",
@@ -3339,7 +3343,7 @@ export const scratchSounds: any[] = [
     "rate": 44100
   },
   {
-    "name": "Scratchy Beat",
+    "name": "leapy Beat",
     "tags": [
       "music",
       "loops",

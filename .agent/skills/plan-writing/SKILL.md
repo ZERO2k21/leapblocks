@@ -146,7 +146,7 @@ One sentence: What are we building/fixing?
 
 ## When to Use
 
-- New project from scratch
+- New project from leap
 - Adding a feature
 - Fixing a bug (if complex)
 - Refactoring multiple files

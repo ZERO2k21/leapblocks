@@ -20,10 +20,10 @@ import HSBColorPicker from './HSBColorPicker';
 // Built-in costumes for "Surprise" feature
 const BUILTIN_COSTUMES = [
     { name: 'Robot Idle', src: 'assets/sprites/robot/robot_idle.svg' },
-    { name: 'Cat', src: 'assets/sprites/scratch/cat.svg' },
-    { name: 'Butterfly', src: 'assets/sprites/scratch/butterfly.svg' },
-    { name: 'Dolphin', src: 'assets/sprites/scratch/dolphin.svg' },
-    { name: 'Elephant', src: 'assets/sprites/scratch/elephant.svg' },
+    { name: 'Cat', src: 'assets/sprites/leap/cat.svg' },
+    { name: 'Butterfly', src: 'assets/sprites/leap/butterfly.svg' },
+    { name: 'Dolphin', src: 'assets/sprites/leap/dolphin.svg' },
+    { name: 'Elephant', src: 'assets/sprites/leap/elephant.svg' },
 ];
 
 interface Costume {
@@ -545,73 +545,73 @@ function PaintEditor({
             <div className="flex flex-1 overflow-hidden w-full h-full">
                 {/* 1. LEFT SIDEBAR (Costumes/Backdrops) */}
                 {!hideCostumeSidebar && (
-                <div className="w-[100px] border-r border-gray-200 flex flex-col bg-[#EDF1F7] overflow-hidden">
-                    <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-3 no-scrollbar relative pb-20">
-                        {costumes.map((c, i) => (
-                            <div key={c.id || i} className="relative group">
-                                <div
-                                    onClick={() => {
-                                        setActiveCostumeIndex(i);
-                                        if (onSwitchCostume) onSwitchCostume(i);
-                                    }}
-                                    className={`w-[80px] h-[80px] rounded-lg border-2 flex flex-col items-center justify-center p-1 bg-white cursor-pointer relative ${activeCostumeIndex === i ? 'border-[#855CD6] shadow-sm' : 'border-gray-200'}`}
-                                >
-                                    <span className="absolute top-1 left-1.5 text-[10px] text-gray-500 font-bold">{i + 1}</span>
-                                    <div className="flex-1 w-full flex items-center justify-center overflow-hidden">
-                                        <img src={c.image} className="max-w-full max-h-[50px] object-contain" alt={c.name} />
+                    <div className="w-[100px] border-r border-gray-200 flex flex-col bg-[#EDF1F7] overflow-hidden">
+                        <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-3 no-scrollbar relative pb-20">
+                            {costumes.map((c, i) => (
+                                <div key={c.id || i} className="relative group">
+                                    <div
+                                        onClick={() => {
+                                            setActiveCostumeIndex(i);
+                                            if (onSwitchCostume) onSwitchCostume(i);
+                                        }}
+                                        className={`w-[80px] h-[80px] rounded-lg border-2 flex flex-col items-center justify-center p-1 bg-white cursor-pointer relative ${activeCostumeIndex === i ? 'border-[#855CD6] shadow-sm' : 'border-gray-200'}`}
+                                    >
+                                        <span className="absolute top-1 left-1.5 text-[10px] text-gray-500 font-bold">{i + 1}</span>
+                                        <div className="flex-1 w-full flex items-center justify-center overflow-hidden">
+                                            <img src={c.image} className="max-w-full max-h-[50px] object-contain" alt={c.name} />
+                                        </div>
+                                        <div className="w-full text-[10px] text-center truncate text-gray-700 font-medium px-0.5 mt-0.5" title={c.name}>{c.name}</div>
                                     </div>
-                                    <div className="w-full text-[10px] text-center truncate text-gray-700 font-medium px-0.5 mt-0.5" title={c.name}>{c.name}</div>
-                                </div>
 
-                                {/* Context Actions (Hover) */}
-                                <div className={`absolute -top-2 -right-2 flex-col gap-1 z-10 hidden group-hover:flex ${activeCostumeIndex === i ? 'flex' : ''}`}>
-                                    <button
-                                        className="w-6 h-6 bg-white border border-gray-200 text-gray-500 hover:text-rose-500 rounded-full flex items-center justify-center shadow-md transition-colors"
-                                        title="Delete"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (onDeleteSound) onDeleteSound(i);
-                                        }}
-                                    >
-                                        <Trash2 size={12} />
-                                    </button>
-                                    <button
-                                        className="w-6 h-6 bg-white border border-gray-200 text-gray-500 hover:text-[#855CD6] rounded-full flex items-center justify-center shadow-md transition-colors"
-                                        title="Duplicate"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (onDuplicateSound) onDuplicateSound(i);
-                                        }}
-                                    >
-                                        <Copy size={12} />
-                                    </button>
+                                    {/* Context Actions (Hover) */}
+                                    <div className={`absolute -top-2 -right-2 flex-col gap-1 z-10 hidden group-hover:flex ${activeCostumeIndex === i ? 'flex' : ''}`}>
+                                        <button
+                                            className="w-6 h-6 bg-white border border-gray-200 text-gray-500 hover:text-rose-500 rounded-full flex items-center justify-center shadow-md transition-colors"
+                                            title="Delete"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (onDeleteSound) onDeleteSound(i);
+                                            }}
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                        <button
+                                            className="w-6 h-6 bg-white border border-gray-200 text-gray-500 hover:text-[#855CD6] rounded-full flex items-center justify-center shadow-md transition-colors"
+                                            title="Duplicate"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (onDuplicateSound) onDuplicateSound(i);
+                                            }}
+                                        >
+                                            <Copy size={12} />
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
 
-                    {/* Action Menu (Floating Bottom Left) */}
-                    <div className="absolute bottom-4 left-4 z-50">
-                        <ActionMenu
-                            mainIcon={<ImageIcon size={20} />}
-                            color="#855CD6"
-                            tooltipLabel="Choose a Costume"
-                            actions={[
-                                { id: 'upload', icon: '📁', label: 'Upload Costume', onClick: triggerUpload },
-                                {
-                                    id: 'surprise', icon: '✨', label: 'Surprise', onClick: () => {
-                                        // Pick a random costume from built-in library
-                                        const idx = Math.floor(Math.random() * BUILTIN_COSTUMES.length);
-                                        const costume = BUILTIN_COSTUMES[idx];
-                                        onSave(costume.src, undefined, costume.name);
-                                    }
-                                },
-                                { id: 'paint', icon: '🖌️', label: 'Paint', onClick: () => { /* already in editor */ } },
-                                { id: 'search', icon: '🔍', label: 'Choose a Costume', onClick: () => onOpenLibrary ? onOpenLibrary() : setIsLibraryOpen(true) },
-                            ]}
-                        />
+                        {/* Action Menu (Floating Bottom Left) */}
+                        <div className="absolute bottom-4 left-4 z-50">
+                            <ActionMenu
+                                mainIcon={<ImageIcon size={20} />}
+                                color="#855CD6"
+                                tooltipLabel="Choose a Costume"
+                                actions={[
+                                    { id: 'upload', icon: '📁', label: 'Upload Costume', onClick: triggerUpload },
+                                    {
+                                        id: 'surprise', icon: '✨', label: 'Surprise', onClick: () => {
+                                            // Pick a random costume from built-in library
+                                            const idx = Math.floor(Math.random() * BUILTIN_COSTUMES.length);
+                                            const costume = BUILTIN_COSTUMES[idx];
+                                            onSave(costume.src, undefined, costume.name);
+                                        }
+                                    },
+                                    { id: 'paint', icon: '🖌️', label: 'Paint', onClick: () => { /* already in editor */ } },
+                                    { id: 'search', icon: '🔍', label: 'Choose a Costume', onClick: () => onOpenLibrary ? onOpenLibrary() : setIsLibraryOpen(true) },
+                                ]}
+                            />
+                        </div>
                     </div>
-                </div>
                 )}
 
                 {/* 2. MAIN EDITOR AREA */}
@@ -783,7 +783,7 @@ function PaintEditor({
                     </div>
 
                     <div className="flex-1 flex relative bg-[#E9EEF2]">
-                        {/* DRAWING TOOLS (2-COLUMN GRID matching Scratch) */}
+                        {/* DRAWING TOOLS (2-COLUMN GRID matching leap) */}
                         <div className="w-[100px] border-r border-[#d9e1e8] bg-white flex flex-col p-2 gap-2 shadow-sm z-10">
                             <div className="grid grid-cols-2 gap-2">
                                 <DrawTool active={activeTool === 'select'} onClick={() => setActiveTool('select')} icon={<MousePointer2 size={20} className={activeTool === 'select' ? "fill-white" : ""} />} label="Select" />

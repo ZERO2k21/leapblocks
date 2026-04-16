@@ -10,7 +10,7 @@ export class PenManager {
     private penCanvas: HTMLCanvasElement | null = null;
     private penCtx: CanvasRenderingContext2D | null = null;
 
-    private constructor() {}
+    private constructor() { }
 
     static getInstance(): PenManager {
         if (!PenManager.instance) {
@@ -50,7 +50,20 @@ export class PenManager {
         this.penCtx.lineTo(toX, toY);
         this.penCtx.strokeStyle = color;
         this.penCtx.lineWidth = size;
+        this.penCtx.lineCap = 'round';
+        this.penCtx.lineJoin = 'round';
         this.penCtx.stroke();
+    }
+
+    /**
+     * Draw a single dot (for pen-down stamp and single-click marks)
+     */
+    drawDot(x: number, y: number, color: string, size: number) {
+        if (!this.penCtx) return;
+        this.penCtx.beginPath();
+        this.penCtx.arc(x, y, size / 2, 0, Math.PI * 2);
+        this.penCtx.fillStyle = color;
+        this.penCtx.fill();
     }
 
     /**

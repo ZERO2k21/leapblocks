@@ -2,7 +2,7 @@ import * as Blockly from 'blockly';
 
 /**
  * Custom category for Variables and Lists that adds checkboxes
- * to toggle visibility on the stage (Scratch-like behavior).
+ * to toggle visibility on the stage (leap-like behavior).
  */
 export class CustomDataCategory extends Blockly.ToolboxCategory {
   /** @override */
@@ -28,16 +28,16 @@ export class CustomDataCategory extends Blockly.ToolboxCategory {
 export const registerCustomFlyoutBlocks = () => {
   // Define a special 'reporter' block with a checkbox for the flyout
   Blockly.Blocks['variable_reporter_checkbox'] = {
-    init: function() {
+    init: function () {
       this.appendDummyInput()
-          .appendField(new Blockly.FieldCheckbox('FALSE', (newValue) => {
-            // Trigger visibility toggle
-            const varName = this.getFieldValue('VAR');
-            if (window.onToggleVisibility) {
-              window.onToggleVisibility(varName, newValue === 'TRUE', 'variable');
-            }
-          }), 'CHECKBOX')
-          .appendField(new Blockly.FieldLabelSerializable(''), 'VAR');
+        .appendField(new Blockly.FieldCheckbox('FALSE', (newValue) => {
+          // Trigger visibility toggle
+          const varName = this.getFieldValue('VAR');
+          if (window.onToggleVisibility) {
+            window.onToggleVisibility(varName, newValue === 'TRUE', 'variable');
+          }
+        }), 'CHECKBOX')
+        .appendField(new Blockly.FieldLabelSerializable(''), 'VAR');
       this.setOutput(true, null);
       this.setColour(300, '#FFBF00');
       this.setEditable(false);
@@ -45,15 +45,15 @@ export const registerCustomFlyoutBlocks = () => {
   };
 
   Blockly.Blocks['list_reporter_checkbox'] = {
-    init: function() {
+    init: function () {
       this.appendDummyInput()
-          .appendField(new Blockly.FieldCheckbox('FALSE', (newValue) => {
-            const listName = this.getFieldValue('VAR');
-            if (window.onToggleVisibility) {
-              window.onToggleVisibility(listName, newValue === 'TRUE', 'list');
-            }
-          }), 'CHECKBOX')
-          .appendField(new Blockly.FieldLabelSerializable(''), 'VAR');
+        .appendField(new Blockly.FieldCheckbox('FALSE', (newValue) => {
+          const listName = this.getFieldValue('VAR');
+          if (window.onToggleVisibility) {
+            window.onToggleVisibility(listName, newValue === 'TRUE', 'list');
+          }
+        }), 'CHECKBOX')
+        .appendField(new Blockly.FieldLabelSerializable(''), 'VAR');
       this.setOutput(true, null);
       this.setColour(330, '#FF661A');
       this.setEditable(false);
@@ -78,10 +78,10 @@ export const variableFlyoutCallback = (workspace) => {
   variableList.forEach(variable => {
     const block = Blockly.utils.xml.createElement('block');
     block.setAttribute('type', 'variable_reporter_checkbox');
-    
+
     // Set checked state from actual visibility (need a way to get this!)
     const isVisible = window.getVariableVisibility ? window.getVariableVisibility(variable.name, 'variable') : false;
-    
+
     const fieldVar = Blockly.utils.xml.createElement('field');
     fieldVar.setAttribute('name', 'VAR');
     fieldVar.textContent = variable.name;
@@ -107,7 +107,7 @@ export const variableFlyoutCallback = (workspace) => {
     const changeBlock = Blockly.utils.xml.createElement('block');
     changeBlock.setAttribute('type', 'variable_change');
     xmlList.push(changeBlock);
-    
+
     const showBlock = Blockly.utils.xml.createElement('block');
     showBlock.setAttribute('type', 'variable_show');
     xmlList.push(showBlock);
@@ -135,7 +135,7 @@ export const listFlyoutCallback = (workspace) => {
   listVariables.forEach(list => {
     const block = Blockly.utils.xml.createElement('block');
     block.setAttribute('type', 'list_reporter_checkbox');
-    
+
     const isVisible = window.getVariableVisibility ? window.getVariableVisibility(list.name, 'list') : false;
 
     const fieldVar = Blockly.utils.xml.createElement('field');

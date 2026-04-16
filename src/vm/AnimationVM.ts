@@ -150,6 +150,19 @@ export type ScriptStep = (
     // Pen color params
     | { type: 'pen_changePenColorParamBy'; param: string; change: number }
     | { type: 'pen_setPenColorParamTo'; param: string; value: number }
+    // Pencil / realistic drawing steps
+    | { type: 'go_to_mouse_with_pen'; penDown?: boolean }
+    | { type: 'point_towards_mouse_smooth'; smoothFactor?: number }
+    // Object Detection extension
+    | { type: 'object_detect' }
+    | { type: 'object_when_detected'; objectType: string }
+    // Music extension
+    | { type: 'music_play_note'; note: number; beats: number }
+    | { type: 'music_set_instrument'; instrument: number }
+    | { type: 'music_play_drum'; drum: number; beats: number }
+    | { type: 'music_set_tempo'; bpm: number }
+    | { type: 'music_change_tempo'; amount: number }
+    | { type: 'music_rest'; beats: number }
     // Procedures / My Blocks
     | { type: 'procedures_call'; proccode: string; args?: Record<string, any> }
 ) & { blockId?: string };
@@ -214,7 +227,7 @@ export class AnimationVM {
 
     // Broadcast system
     private broadcastListeners: Map<string, CompiledScript[]> = new Map();
-    private broadcasts: Set<string> = new Set(['message1']); // Default message like Scratch
+    private broadcasts: Set<string> = new Set(['message1']); // Default message like leap
     // Refactor: stageScripts is redundant if the stage is registered as a sprite,
     // but we'll keep it as a proxy for the stage's scripts for backward compatibility if needed.
     public stageScripts: CompiledScript[] = [];
@@ -376,7 +389,7 @@ export class AnimationVM {
 
     getListItem(name: string, index: number): string {
         const list = this.getList(name);
-        // Scratch uses 1-based indexing. 'last' is also supported but I'll stick to numeric for now.
+        // leap uses 1-based indexing. 'last' is also supported but I'll stick to numeric for now.
         // TODO: Handle 'last', 'random' string inputs if block allows them.
         // My block definition uses 'math_number' for index, so usually 1-based integer.
         if (index < 1 || index > list.length) return '';
@@ -385,8 +398,8 @@ export class AnimationVM {
 
     getListItemNum(name: string, item: string): number {
         const list = this.getList(name);
-        // Returns 0 if not found (Scratch behavior?) - Scratch returns 0.
-        // Note: list items can be numbers. loose comparison? Scratch is loose.
+        // Returns 0 if not found (leap behavior?) - leap returns 0.
+        // Note: list items can be numbers. loose comparison? leap is loose.
         const idx = list.findIndex(i => String(i) === item);
         return idx + 1; // 0 if not found (-1 + 1)
     }
@@ -625,7 +638,7 @@ export class AnimationVM {
 
         for (const sprite of allSprites) {
             // We scan all sprites because multiple sprites (clones) might share the same ID logic 
-            // or we might want global listeners. In standard Scratch, only the clicked sprite responds.
+            // or we might want global listeners. In standard leap, only the clicked sprite responds.
             if (sprite.id !== spriteId) continue;
 
             const scripts = (sprite.scripts as CompiledScript[]) || [];
@@ -634,7 +647,7 @@ export class AnimationVM {
                     matched++;
                     this.setRunning(true);
 
-                    // Scratch behavior: clicking the sprite restarts its onclick scripts
+                    // leap behavior: clicking the sprite restarts its onclick scripts
                     if (script.hatBlockId) {
                         this.stopScriptByHat(sprite.id, script.hatBlockId);
                     }
@@ -753,7 +766,7 @@ export class AnimationVM {
 
     /**
      * Stop a specific script identified by its hat block.
-     * Standard Scratch behavior: if a broadcast is received, the script for it restarts.
+     * Standard leap behavior: if a broadcast is received, the script for it restarts.
      */
     stopScriptByHat(spriteId: string, hatBlockId: string): void {
         const toStop: string[] = [];
@@ -810,6 +823,11 @@ export class AnimationVM {
         if (!sprite) {
             vmLog.error(`Sprite not found: ${script.spriteId}`);
             return;
+        }
+
+        // Keep window.__activeSpriteId in sync so window.runtime.pen targets this sprite
+        if (typeof window !== 'undefined') {
+            (window as any).__activeSpriteId = script.spriteId;
         }
 
         const id = `${script.spriteId}-${Date.now()}-${Math.random()}`;
@@ -974,7 +992,7 @@ export class AnimationVM {
                 if (step.towards === 'mouse') {
                     const dx = this.mouseX - sprite.x;
                     const dy = this.mouseY - sprite.y;
-                    const angle = Math.atan2(dy, dx) * 180 / Math.PI + 90; // Convert to Scratch direction (0=up, 90=right)
+                    const angle = Math.atan2(dy, dx) * 180 / Math.PI + 90; // Convert to leap direction (0=up, 90=right)
                     sprite.pointInDirection(angle);
                 } else if (step.towards === 'random') {
                     const randomDir = Math.random() * 360;
@@ -1311,6 +1329,18 @@ export class AnimationVM {
             }
             case 'pen_penDown':
                 sprite.setPenDown(true);
+                // Stamp a dot at the tip so single-click leaves a mark
+                if (penManager.isReady()) {
+                    const tip = sprite.getPenTipPosition();
+                    const sw = STAGE_CONFIG.WIDTH;
+                    const sh = STAGE_CONFIG.HEIGHT;
+                    (penManager as any).drawDot(
+                        sw / 2 + tip.x,
+                        sh / 2 - tip.y,
+                        sprite.penColor,
+                        sprite.penSize
+                    );
+                }
                 break;
             case 'pen_penUp':
                 sprite.setPenDown(false);
@@ -1337,6 +1367,163 @@ export class AnimationVM {
             case 'pen_setPenColorParamTo': {
                 console.log(`[AnimationVM] set pen ${step.param} to ${step.value}`);
                 // For a full implementation, convert pen color to HSL, set param, convert back
+                break;
+            }
+
+            // ── Realistic pencil drawing steps ──────────────────────────────
+            case 'go_to_mouse_with_pen': {
+                const shouldDraw = step.penDown !== false;
+
+                // Compute where the tip currently is (before moving)
+                const prevTip = sprite.getPenTipPosition();
+
+                // Position the sprite so its TIP lands on the mouse, not its center.
+                // getCenterForTipAt() back-calculates the center offset.
+                const center = sprite.getCenterForTipAt(this.mouseX, this.mouseY);
+                sprite.setX(center.x);
+                sprite.setY(center.y);
+
+                // After moving, the tip is now at mouse position
+                const newTip = sprite.getPenTipPosition();
+
+                if (shouldDraw) {
+                    sprite.setPenDown(true);
+                    if (penManager.isReady()) {
+                        const stageW = STAGE_CONFIG.WIDTH;
+                        const stageH = STAGE_CONFIG.HEIGHT;
+                        // Draw from previous tip to new tip (both in canvas coords)
+                        penManager.drawLine(
+                            stageW / 2 + prevTip.x, stageH / 2 - prevTip.y,
+                            stageW / 2 + newTip.x, stageH / 2 - newTip.y,
+                            sprite.penColor,
+                            sprite.penSize
+                        );
+                    }
+                } else {
+                    sprite.setPenDown(false);
+                }
+                break;
+            }
+
+            case 'point_towards_mouse_smooth': {
+                // Tilt the pencil so it leans toward the direction of travel.
+                // The pencil tip should point in the direction of mouse movement.
+                const smoothFactor = step.smoothFactor ?? 0.3;
+                const dx = this.mouseX - sprite.getPenTipPosition().x;
+                const dy = this.mouseY - sprite.getPenTipPosition().y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance > 2) {
+                    // atan2(dy, dx) gives math angle (0=right, CCW positive)
+                    // leap direction: 90=right, 0=up → leapDir = 90 - mathDeg
+                    // But for a pencil leaning toward movement: tip points in travel direction
+                    // Pencil image has tip at bottom → when direction=135 (down-left), tip points down-left
+                    // So target direction = direction of travel = atan2(-dy, dx) * 180/π + 90
+                    // (negative dy because leap y is flipped vs canvas)
+                    const targetAngle = Math.atan2(-dy, dx) * (180 / Math.PI) + 90;
+                    const currentDir = sprite.direction;
+
+                    // Shortest-path interpolation
+                    let delta = targetAngle - currentDir;
+                    while (delta > 180) delta -= 360;
+                    while (delta < -180) delta += 360;
+
+                    let newDir = currentDir + delta * smoothFactor;
+                    while (newDir > 180) newDir -= 360;
+                    while (newDir < -180) newDir += 360;
+
+                    sprite.pointInDirection(newDir);
+                }
+                break;
+            }
+
+            // Face Detection extension steps
+            case 'fd_action' as any: {
+                const fdAction = (step as any).action;
+                if (typeof window !== 'undefined' && (window as any).runtime?.face) {
+                    (window as any).runtime.face.analyse(fdAction);
+                }
+                break;
+            }
+            case 'fd_report' as any: {
+                // Reporter blocks used as statements — say the result
+                if (typeof window !== 'undefined' && (window as any).runtime?.face) {
+                    const face = (window as any).runtime.face;
+                    const result = (step as any).feature
+                        ? face.detectFeature((step as any).feature)
+                        : face.getFaceCount();
+                    sprite.say(String(result ?? ''));
+                }
+                break;
+            }
+
+            // Object Detection extension steps
+            case 'object_detect' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.objectDetection) {
+                    await (window as any).runtime.objectDetection.detectObjects();
+                    vmLog.info('Object detection executed');
+                }
+                break;
+            }
+            case 'object_when_detected' as any: {
+                // Event-style block - check if object is detected
+                const objectType = (step as any).objectType;
+                if (typeof window !== 'undefined' && (window as any).runtime?.objectDetection) {
+                    const isDetected = (window as any).runtime.objectDetection.isObjectDetected(objectType);
+                    if (isDetected) {
+                        vmLog.info(`Object detected: ${objectType}`);
+                    }
+                }
+                break;
+            }
+
+            // Music extension steps
+            case 'music_play_note' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.music) {
+                    const { note, beats } = step as any;
+                    await (window as any).runtime.music.playNote(note, beats);
+                    vmLog.info(`Played note ${note} for ${beats} beats`);
+                }
+                break;
+            }
+            case 'music_set_instrument' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.music) {
+                    const { instrument } = step as any;
+                    (window as any).runtime.music.setInstrument(instrument);
+                    vmLog.info(`Set instrument to ${instrument}`);
+                }
+                break;
+            }
+            case 'music_play_drum' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.music) {
+                    const { drum, beats } = step as any;
+                    await (window as any).runtime.music.playDrum(drum, beats);
+                    vmLog.info(`Played drum ${drum} for ${beats} beats`);
+                }
+                break;
+            }
+            case 'music_set_tempo' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.music) {
+                    const { bpm } = step as any;
+                    (window as any).runtime.music.setTempo(bpm);
+                    vmLog.info(`Set tempo to ${bpm} BPM`);
+                }
+                break;
+            }
+            case 'music_change_tempo' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.music) {
+                    const { amount } = step as any;
+                    (window as any).runtime.music.changeTempoBy(amount);
+                    vmLog.info(`Changed tempo by ${amount}`);
+                }
+                break;
+            }
+            case 'music_rest' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.music) {
+                    const { beats } = step as any;
+                    await (window as any).runtime.music.rest(beats);
+                    vmLog.info(`Rested for ${beats} beats`);
+                }
                 break;
             }
 
@@ -1620,7 +1807,7 @@ export class AnimationVM {
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Normalize browser KeyboardEvent values to Scratch block values.
+     * Normalize browser KeyboardEvent values to leap block values.
      * Maps ' ' to 'space', 'ArrowUp' to 'ArrowUp', etc.
      */
     private normalizeKey(e: KeyboardEvent): string {
@@ -1756,8 +1943,8 @@ export class AnimationVM {
      */
     private colorMatches(r: number, g: number, b: number, target: [number, number, number], tolerance = 30): boolean {
         return Math.abs(r - target[0]) <= tolerance &&
-               Math.abs(g - target[1]) <= tolerance &&
-               Math.abs(b - target[2]) <= tolerance;
+            Math.abs(g - target[1]) <= tolerance &&
+            Math.abs(b - target[2]) <= tolerance;
     }
 
     /**

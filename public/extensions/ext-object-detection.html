@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object Detection Extension</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #3dba7e, #2e9e66);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .icon { font-size: 64px; margin-bottom: 10px; }
+        h1 { font-size: 28px; margin-bottom: 8px; }
+        .subtitle { opacity: 0.9; font-size: 14px; }
+        .content { padding: 30px; }
+        .add-btn {
+            background: linear-gradient(135deg, #3dba7e, #2e9e66);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 30px;
+            transition: transform 0.2s;
+        }
+        .add-btn:hover { transform: translateY(-2px); }
+        .section { margin-bottom: 30px; }
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #333;
+        }
+        .block-item {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid #3dba7e;
+        }
+        .block-code {
+            font-family: 'Courier New', monospace;
+            background: #3dba7e;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .block-desc {
+            color: #666;
+            font-size: 14px;
+        }
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="window.history.back()">← Back</button>
+            <div class="icon">🐱</div>
+            <h1>Object Detection</h1>
+            <div class="subtitle">AI & ML • Identify objects from images or live camera</div>
+        </div>
+        
+        <div class="content">
+            <button class="add-btn" onclick="addExtension()">➕ Add Blocks</button>
+            
+            <div class="section">
+                <div class="section-title">📦 Available Blocks</div>
+                
+                <div class="block-item">
+                    <div class="block-code">detect objects in camera</div>
+                    <div class="block-desc">Runs the object detection model on current camera frame.</div>
+                </div>
+                
+                <div class="block-item">
+                    <div class="block-code">when [object ▾] detected</div>
+                    <div class="block-desc">Fires when the specified object is found.</div>
+                </div>
+                
+                <div class="block-item">
+                    <div class="block-code">label of object (1)</div>
+                    <div class="block-desc">Returns the label name of the nth detected object.</div>
+                </div>
+                
+                <div class="block-item">
+                    <div class="block-code">confidence of object (1)</div>
+                    <div class="block-desc">Returns the confidence score (0–100) of the nth object.</div>
+                </div>
+                
+                <div class="block-item">
+                    <div class="block-code">x of object (1)</div>
+                    <div class="block-desc">Returns the X coordinate of the nth detected object.</div>
+                </div>
+                
+                <div class="block-item">
+                    <div class="block-code">y of object (1)</div>
+                    <div class="block-desc">Returns the Y coordinate of the nth detected object.</div>
+                </div>
+                
+                <div class="block-item">
+                    <div class="block-code">number of objects</div>
+                    <div class="block-desc">Returns total number of objects detected in current frame.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addExtension() {
+            // Send message to parent window to add the extension
+            window.parent.postMessage({
+                type: 'ADD_EXTENSION',
+                extension: 'object_detection',
+                extensionId: 'object_detection',
+                title: 'Object Detection'
+            }, '*');
+            
+            alert('✅ Object Detection blocks added successfully!\n\nCheck the toolbox for the new "Object Detection" category.');
+        }
+    </script>
+</body>
+</html>

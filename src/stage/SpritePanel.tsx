@@ -10,7 +10,7 @@ import { SpriteLibrary, SpriteEntry } from "../components/SpriteLibrary";
 import type { StageManager } from '../engine/StageManager';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SPRITE PANEL - Match Scratch 3.0 Look
+// SPRITE PANEL - Match leap 3.0 Look
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SPRITE_TYPES: {
@@ -325,7 +325,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
           </div>
 
-          {/* Floating Add Sprite Button - Scratch 3.0 style */}
+          {/* Floating Add Sprite Button - leap 3.0 style */}
           <div style={{ position: 'absolute', bottom: '12px', right: '12px', zIndex: 20 }}>
             <ActionMenu
               mainIcon="➕"

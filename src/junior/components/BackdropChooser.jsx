@@ -5,7 +5,7 @@
  */
 import React, { useState } from 'react';
 import { X, Paintbrush, Image } from 'lucide-react';
-import { scratchBackdrops } from '../../components/generated_scratch_backdrops';
+import { leapBackdrops } from '../../components/generated_leap_backdrops';
 
 // Pre-built backdrops available in the library
 const PRESET_BACKDROPS = [
@@ -20,14 +20,14 @@ const PRESET_BACKDROPS = [
     { id: 'space_photo', name: 'Galaxy', src: 'assets/backdrops/Space.png', color: '#0D0D2B' },
 ];
 
-const mappedScratchBackdrops = scratchBackdrops.map(bg => ({
+const mappedleapBackdrops = leapBackdrops.map(bg => ({
     id: bg.name.toLowerCase().replace(/[^a-z0-9]/g, '_'),
     name: bg.name,
     src: `/assets/backdrops/${bg.md5ext || bg.md5}`,
     color: '#E0E0E0'
 }));
 
-const BACKDROP_LIBRARY = [...PRESET_BACKDROPS, ...mappedScratchBackdrops];
+const BACKDROP_LIBRARY = [...PRESET_BACKDROPS, ...mappedleapBackdrops];
 
 const SOLID_COLORS = [
     { name: 'White', color: '#FFFFFF' },

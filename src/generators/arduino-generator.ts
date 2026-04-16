@@ -694,7 +694,7 @@ arduinoGenerator.forBlock['variables_set'] = function (block, generator) {
 
 
 
-// PictoBlox/Scratch-style variable blocks used by LEAP_VARIABLES category
+// PictoBlox/leap-style variable blocks used by LEAP_VARIABLES category
 
 arduinoGenerator.forBlock['data_setvariableto'] = function (block, generator) {
 

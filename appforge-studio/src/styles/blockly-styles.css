@@ -144,7 +144,7 @@
   font-family: 'Roboto', sans-serif !important;
   font-size: 13px !important;
 }
-/* Checkbox styling within blocks (Scratch-like) */
+/* Checkbox styling within blocks (leap-like) */
 .blocklyCheckBox {
   fill: #fff !important;
   stroke: rgba(0,0,0,0.15) !important;

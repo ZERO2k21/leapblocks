@@ -5,12 +5,12 @@
  */
 /**
  * Block Definition Registry for LeapBlocks Intermediate
- * Full parity with Scratch 3.0 blocks
+ * Full parity with leap 3.0 blocks
  *
  * Each block is defined with:
- * - opcode: The unique identifier (Scratch VM compatible)
+ * - opcode: The unique identifier (leap VM compatible)
  * - category: The category name
- * - color: Hex color code matching Scratch 3.0
+ * - color: Hex color code matching leap 3.0
  * - shape: hat | stack | reporter | boolean | cap | c-block
  * - message: The display text (with %1, %2 placeholders for inputs)
  * - inputs: Array of input definitions (type, name, default)
@@ -582,7 +582,7 @@ const blockDefinitions = {
         color: COLORS.events,
         shape: 'hat',
         message: 'when %1 clicked',
-        inputs: [{ type: 'image', src: 'https://scratch.mit.edu/static/assets/40a08e64c22e43f55050f22495914a27.svg', width: 24, height: 24, alt: 'flag' }]
+        inputs: [{ type: 'image', src: 'https://leap.mit.edu/static/assets/40a08e64c22e43f55050f22495914a27.svg', width: 24, height: 24, alt: 'flag' }]
     },
     'event_whenkeypressed': {
         opcode: 'event_whenkeypressed',

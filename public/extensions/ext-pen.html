@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pen Extension</title>
+<style>
+  :root { --green: #3dba7e; --dark-green: #2e7d32; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Nunito', sans-serif; margin: 0; background: #f0f0f0; }
+
+  .hero {
+    background: linear-gradient(135deg, var(--dark-green), #66bb6a);
+    color: white; padding: 40px 20px; text-align: center;
+  }
+  .hero h1 { font-size: 28px; margin: 0 0 8px; }
+  .category {
+    background: #fff; color: var(--dark-green); padding: 4px 14px;
+    border-radius: 30px; display: inline-block; font-weight: 700;
+    font-size: 13px; margin-bottom: 10px;
+  }
+  .hero p { max-width: 600px; margin: 10px auto 0; font-size: 17px; opacity: 0.92; }
+
+  /* ── Add button ── */
+  .add-btn {
+    background: var(--green); color: white; border: none;
+    padding: 14px 36px; font-size: 18px; font-weight: 800;
+    border-radius: 50px; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(61,186,126,0.45);
+    margin-top: 22px; transition: transform 0.15s, box-shadow 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .add-btn:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(61,186,126,0.55); }
+  .add-btn:active { transform: scale(0.98); }
+  .add-btn:disabled { opacity: 0.6; cursor: default; transform: none; }
+
+  /* ── Success banner ── */
+  .success-banner {
+    display: none;
+    align-items: center; justify-content: center; gap: 10px;
+    background: #e8f5e9; border: 2px solid var(--green);
+    color: var(--dark-green); border-radius: 12px;
+    padding: 14px 24px; margin: 18px auto 0;
+    max-width: 480px; font-size: 16px; font-weight: 700;
+    animation: slideIn 0.3s ease;
+  }
+  .success-banner.visible { display: flex; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .success-icon { font-size: 22px; }
+
+  /* ── Block grid ── */
+  .block-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px; padding: 20px;
+  }
+  .leap-block {
+    background: var(--green); color: white; border-radius: 8px;
+    padding: 12px 16px; font-weight: 700; font-size: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .leap-block input, .leap-block select {
+    background: #fff; color: #222; border: none; border-radius: 6px;
+    padding: 4px 8px; width: 64px; text-align: center; font-size: 14px;
+  }
+  .leap-block select { width: auto; }
+  .advanced { background: var(--dark-green); }
+  .section-title {
+    grid-column: 1 / -1; margin: 16px 0 6px;
+    font-size: 18px; font-weight: 800; color: var(--dark-green);
+  }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="hero">
+  <div class="category">🎮 Games &amp; Animation</div>
+  <h1>✏️ Pen</h1>
+  <p>Draw trails, patterns and shapes with your sprites.</p>
+  <button class="add-btn" id="addBtn" onclick="addExtension()">
+    ➕ Add to Project
+  </button>
+  <div class="success-banner" id="successBanner">
+    <span class="success-icon">✅</span>
+    Pen blocks added to your toolbox!
+  </div>
+</div>
+
+<div class="block-grid">
+  <div class="leap-block"><span>🧼</span> erase all</div>
+  <div class="leap-block"><span>📌</span> stamp</div>
+  <div class="leap-block"><span>⬇️</span> pen down</div>
+  <div class="leap-block"><span>⬆️</span> pen up</div>
+  <div class="leap-block">set pen color to <input type="color" value="#2c2c2c"></div>
+  <div class="leap-block">change pen <select><option>color</option><option>saturation</option><option>brightness</option><option>transparency</option></select> by <input value="10"></div>
+  <div class="leap-block">set pen <select><option>color</option><option>saturation</option><option>brightness</option><option>transparency</option></select> to <input value="50"></div>
+  <div class="leap-block">change pen size by <input value="1"></div>
+  <div class="leap-block">set pen size to <input value="1"></div>
+
+  <div class="section-title">Advanced Pen</div>
+  <div class="leap-block advanced">enable <select><option>drag and draw</option></select></div>
+  <div class="leap-block advanced">set draw mode: <select><option>default</option><option>smooth</option></select></div>
+  <div class="leap-block advanced">set point buffer size: <input value="1"></div>
+</div>
+
+<script>
+function addExtension() {
+  // Send message to parent (works even in sandboxed iframe — postMessage is always allowed)
+  window.parent.postMessage({
+    type: 'ADD_EXTENSION',
+    extensionId: 'pen',
+    extension: 'pen'
+  }, '*');
+
+  // Show in-page success feedback (no alert needed)
+  var btn = document.getElementById('addBtn');
+  var banner = document.getElementById('successBanner');
+  btn.disabled = true;
+  btn.textContent = '✓ Added!';
+  banner.classList.add('visible');
+
+  // Re-enable after 3 s so user can re-add if needed
+  setTimeout(function() {
+    btn.disabled = false;
+    btn.innerHTML = '➕ Add to Project';
+  }, 3000);
+}
+</script>
+</body>
+</html>

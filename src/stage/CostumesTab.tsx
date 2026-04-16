@@ -142,10 +142,10 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
     const addSurpriseCostume = async () => {
         if (!selectedSprite) return;
         const randomAssets = [
-            'assets/sprites/scratch/cat.svg',
-            'assets/sprites/scratch/butterfly.svg',
-            'assets/sprites/scratch/dolphin.svg',
-            'assets/sprites/scratch/elephant.svg',
+            'assets/sprites/leap/cat.svg',
+            'assets/sprites/leap/butterfly.svg',
+            'assets/sprites/leap/dolphin.svg',
+            'assets/sprites/leap/elephant.svg',
             'assets/sprites/robot/robot_idle.svg'
         ];
         const src = randomAssets[Math.floor(Math.random() * randomAssets.length)];
@@ -338,19 +338,19 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                         </div>
                     </div>
                     <div style={styles.rightPanel}>
-                <PaintEditor
-                    key={`editor-${activeCostumeIndex}-${refreshTick}`}
-                    mode="intermediate"
-                    title="Costume Editor"
-                    spriteName={selectedSprite.name}
-                    initialImage={currentCostume}
-                    costumes={[allCostumes[activeCostumeIndex]].filter(Boolean)}
-                    onSave={updateCurrentCostumeFromEditor}
-                    onDeleteSound={() => deleteCostume(activeCostumeIndex)}
-                    onDuplicateSound={() => duplicateCostume(activeCostumeIndex)}
-                    onClose={() => {}}
-                    hideCostumeSidebar={true}
-                />
+                        <PaintEditor
+                            key={`editor-${activeCostumeIndex}-${refreshTick}`}
+                            mode="intermediate"
+                            title="Costume Editor"
+                            spriteName={selectedSprite.name}
+                            initialImage={currentCostume}
+                            costumes={[allCostumes[activeCostumeIndex]].filter(Boolean)}
+                            onSave={updateCurrentCostumeFromEditor}
+                            onDeleteSound={() => deleteCostume(activeCostumeIndex)}
+                            onDuplicateSound={() => duplicateCostume(activeCostumeIndex)}
+                            onClose={() => { }}
+                            hideCostumeSidebar={true}
+                        />
                     </div>
                 </div>
                 {contextMenu && (

@@ -24,7 +24,7 @@ const SoundRecorder = ({ isOpen, onClose, onSave }) => {
                 setAudioData(data);
             };
 
-            // Request mic access immediately or on first interaction (Scratch requests on open)
+            // Request mic access immediately or on first interaction (leap requests on open)
             recorderRef.current.requestDevice().then(success => {
                 if (success) {
                     setAnalyser(recorderRef.current.getAnalyser());

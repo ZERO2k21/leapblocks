@@ -5,10 +5,10 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as Blockly from 'blockly';
 import { useVariables } from '../../context/VariablesContext';
 import Toolbox from './Toolbox';
-import { 
-  registerCustomFlyoutBlocks, 
-  variableFlyoutCallback, 
-  listFlyoutCallback 
+import {
+  registerCustomFlyoutBlocks,
+  variableFlyoutCallback,
+  listFlyoutCallback
 } from './custom-toolbox';
 import VariableMakerModal from './VariableMakerModal';
 import CustomBlockModal from './CustomBlockModal';
@@ -162,7 +162,7 @@ const BlockEditor = () => {
       const xml = Blockly.Xml.workspaceToDom(workspace);
       const xmlString = new XMLSerializer().serializeToString(xml);
       actions.updateSpriteBlocks(currentSpriteIdRef.current, xmlString);
-      
+
       // 2. Load the new sprite's blocks
       workspace.clear();
       const newBlocks = state.sprites[state.currentSpriteId]?.blocks;
@@ -171,7 +171,7 @@ const BlockEditor = () => {
         const xmlDoc = parser.parseFromString(newBlocks, 'text/xml');
         Blockly.Xml.domToWorkspace(xmlDoc.documentElement, workspace);
       }
-      
+
       currentSpriteIdRef.current = state.currentSpriteId;
     }
   }, [state.currentSpriteId, blocklyInitialized, state.sprites, actions]);
@@ -198,7 +198,7 @@ const BlockEditor = () => {
     // Variable: name, scope
     // List: name, scope
     // Table: name, columns, scope
-    
+
     if (showModal === 'variable') {
       actions.createVariable(name, arg2, 0);
     } else if (showModal === 'list') {
@@ -206,7 +206,7 @@ const BlockEditor = () => {
     } else if (showModal === 'table') {
       actions.createTable(name, arg2, arg3);
     }
-    
+
     setShowModal(null);
   }, [showModal, actions]);
 
@@ -214,11 +214,11 @@ const BlockEditor = () => {
   const handleCreateCustomBlock = useCallback((data) => {
     if (!blocklyWorkspaceRef.current) return;
     const workspace = blocklyWorkspaceRef.current;
-    
-    // In Scratch/Blockly, we create a procedure definition block
+
+    // In leap/Blockly, we create a procedure definition block
     // This is a bit complex as it requires building the block XML or JSON
     // For now, we'll use a simplified version that adds a definition block
-    
+
     Blockly.Events.setGroup(true);
     try {
       const topBlocks = workspace.getTopBlocks(true);
@@ -227,16 +227,16 @@ const BlockEditor = () => {
 
       // 1. Create the definition block
       const defBlock = workspace.newBlock('procedures_defnoreturn');
-      
+
       // 2. Set the name
       defBlock.setFieldValue(data.name, 'NAME');
-      
+
       // 3. Set arguments (this is for standard Blockly)
       // data.inputs: [{ type: 'number', name: 'arg1' }, ...]
       const argNames = data.inputs
         .filter(i => i.type !== 'label')
         .map(i => i.name);
-      
+
       if (defBlock.updateParams_) {
         defBlock.arguments_ = [...argNames];
         defBlock.updateParams_();
@@ -245,7 +245,7 @@ const BlockEditor = () => {
       }
 
       // 4. Handle 'Run without screen refresh' (warp)
-      // In Scratch-Blocks this is a checkbox in the mutation
+      // In leap-Blocks this is a checkbox in the mutation
       if (data.noRefresh) {
         // This is a custom property we'll check during execution
         defBlock.customProperties_ = { warp: true };
@@ -254,10 +254,10 @@ const BlockEditor = () => {
       defBlock.initSvg();
       defBlock.render();
       defBlock.moveBy(x, y);
-      
+
       // Update toolbox to show the new 'call' block
       workspace.getToolbox().refreshSelection();
-      
+
       setShowModal(null);
     } catch (err) {
       console.error('Error creating custom block:', err);
