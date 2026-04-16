@@ -449,3 +449,22 @@
   display: flex;
   align-items: center;
 }
+
+/* ── MONACO EDITOR CURSOR FIX ── */
+/* Prevent global animation/transition resets from killing the cursor blink */
+.forge-editor-container .view-cursor {
+  visibility: visible !important;
+  animation-play-state: running !important;
+}
+
+/* Ensure the editor container doesn't clip the blinking cursor */
+.forge-editor-container .monaco-editor,
+.forge-editor-container .monaco-editor .overflow-guard {
+  overflow: visible !important;
+}
+
+/* Keep cursor color visible against dark background */
+.forge-editor-container .monaco-editor .cursor {
+  background-color: #aeafad !important;
+  border-color: #aeafad !important;
+}
