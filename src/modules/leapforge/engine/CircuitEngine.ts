@@ -15,6 +15,55 @@ import { SSD1306I2CSlave } from './SSD1306I2CSlave';
 import { ILI9341SPISlave } from './ILI9341SPISlave';
 import { MPU6050I2CSlave } from './MPU6050I2CSlave';
 
+/** Simplified ECG pulse shape used by the heart-beat sensor emulator. Returns -1..+1 for phase 0..1 */
+function heartEcgPulse(phase: number): number {
+  if (phase < 0.15) return 0.3 * Math.sin(Math.PI * phase / 0.15);
+  if (phase < 0.25) return 0;
+  if (phase < 0.28) return -0.3 * (phase - 0.25) / 0.03;
+  if (phase < 0.32) return 1.0 * (phase - 0.28) / 0.04;
+  if (phase < 0.36) return 1.0 - 1.3 * (phase - 0.32) / 0.04;
+  if (phase < 0.40) return -0.3 + 0.3 * (phase - 0.36) / 0.04;
+  if (phase < 0.55) return 0;
+  if (phase < 0.75) return 0.4 * Math.sin(Math.PI * (phase - 0.55) / 0.20);
+  return 0;
+}
+
+/**
+ * Real PulseSensor.com ADC output model.
+ * Returns a raw ADC value (0–1023) that matches what analogRead() sees:
+ *   - Baseline between beats: ~512 (mid-supply, 2.5V)
+ *   - Slow breathing oscillation: ±50 ADC
+ *   - Beat peak (QRS): spikes to ~750–900
+ *   - Post-beat dip: drops to ~350–450
+ *   - Noise: ±10 ADC
+ */
+function pulseSensorADC(phase: number): number {
+  // Slow baseline drift from breathing (~0.2 Hz, much slower than heartbeat)
+  const breathingDrift = 40 * Math.sin(2 * Math.PI * phase * 0.15);
+
+  // Beat waveform — sharp systolic peak followed by diastolic notch
+  let beat = 0;
+  if (phase < 0.05) {
+    // Rising edge of QRS
+    beat = 380 * (phase / 0.05);
+  } else if (phase < 0.10) {
+    // Peak and falling edge
+    beat = 380 * (1 - (phase - 0.05) / 0.05);
+  } else if (phase < 0.18) {
+    // Diastolic notch (dip below baseline)
+    beat = -80 * Math.sin(Math.PI * (phase - 0.10) / 0.08);
+  } else if (phase < 0.35) {
+    // T-wave: gentle positive bump
+    beat = 60 * Math.sin(Math.PI * (phase - 0.18) / 0.17);
+  }
+  // else: diastole — flat at baseline
+
+  // Small random noise (deterministic pseudo-noise based on phase)
+  const noise = 8 * Math.sin(phase * 137.5) + 5 * Math.sin(phase * 251.3);
+
+  return Math.round(512 + breathingDrift + beat + noise);
+}
+
 /**
  * CircuitEngine
  * Bridges the abstract ReactFlow graph (nodes/edges) with the low-level AVR SimulationRunner.
@@ -30,6 +79,7 @@ class CircuitEngine {
   private stepperEmulators = new Map<string, StepperEmulator>();
   private ili9341Slaves = new Map<string, ILI9341SPISlave>();
   private mpu6050Slaves = new Map<string, MPU6050I2CSlave>();
+  private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
   private isInitialized = false;
 
   /**
@@ -150,6 +200,9 @@ class CircuitEngine {
     this.ili9341Slaves.forEach(s => s.detach());
     this.ili9341Slaves.clear();
     this.mpu6050Slaves.clear();
+    // Cancel all heart-beat animation timers
+    this.heartBeatTimers.forEach(id => cancelAnimationFrame(id));
+    this.heartBeatTimers.clear();
 
     const { nodes, edges, updateNodeData } = useForgeStore.getState();
     const currentStateStore = useForgeStore.getState();
@@ -249,6 +302,68 @@ class CircuitEngine {
         this.mpu6050Slaves.set(nodeId, slave);
         console.log(`[FORGE CIRCUIT] MPU6050 (${nodeId}) registered at I2C 0x${i2cAddr.toString(16)}`);
       }
+
+      // Register heart-beat sensor — drives OUT ADC channel with a time-varying pulse voltage
+      if (node.data?.type === 'heart-beat-sensor') {
+        const nodeId = node.id;
+        let phase = 0;
+        let lastTime = performance.now();
+
+        const tick = () => {
+          const now = performance.now();
+          const dt  = (now - lastTime) / 1000; // seconds
+          lastTime  = now;
+
+          // Read current BPM from store (slider may have changed)
+          const currentNode = useForgeStore.getState().nodes.find(n => n.id === nodeId);
+          if (!currentNode) return;
+
+          const bpm = currentNode.data?.sensorValues?.bpm ?? 72;
+          const freq = bpm / 60; // beats per second
+
+          // Advance phase
+          phase = (phase + freq * dt) % 1;
+
+          // Compute pulse sensor ADC value matching real PulseSensor.com output:
+          // Baseline ~512, beat peak ~750–900, diastolic dip ~350–450
+          const adcValue = Math.max(0, Math.min(1023, pulseSensorADC(phase)));
+          const voltage  = (adcValue / 1023) * 5.0;
+
+          // Push to ADC — find the OUT wire
+          const { edges } = useForgeStore.getState();
+          const outWire = edges.find(e => {
+            const srcMatch = e.source === nodeId && (e.sourceHandle === 'OUT' || e.sourceHandle === 'OUT__target');
+            const tgtMatch = e.target === nodeId && (e.targetHandle === 'OUT' || e.targetHandle === 'OUT__target');
+            return srcMatch || tgtMatch;
+          });
+
+          if (outWire) {
+            const boardPin = (outWire.source === nodeId ? outWire.targetHandle : outWire.sourceHandle) ?? '';
+            const cleanPin = boardPin.replace(/__target$/, '');
+            const mapping  = simulationRunner.convertArduinoPin(cleanPin);
+            if (mapping && mapping.adcChannel !== undefined) {
+              simulationRunner.setAnalogInput(mapping.adcChannel, voltage);
+            }
+          }
+
+          // Update beatPhase and current ADC value in store for visual element
+          updateNodeData(nodeId, {
+            sensorValues: {
+              ...useForgeStore.getState().nodes.find(n => n.id === nodeId)?.data?.sensorValues,
+              beatPhase: phase,
+              adcValue,
+            },
+          });
+
+          // Schedule next tick
+          const rafId = requestAnimationFrame(tick);
+          this.heartBeatTimers.set(nodeId, rafId);
+        };
+
+        const rafId = requestAnimationFrame(tick);
+        this.heartBeatTimers.set(nodeId, rafId);
+        console.log(`[FORGE CIRCUIT] Heart-beat sensor (${nodeId}) timer started`);
+      }
     });
 
     // 2.2 Attach Bus Manager to Master
@@ -298,7 +413,7 @@ class CircuitEngine {
           const pType = currentStateStore.nodes.find(n => n.id === peripheralId)?.data?.type;
           const isComplexPeripheral = ['stepper-motor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
             'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5',
-            '7segment', 'ili9341', 'pir-motion-sensor'].includes(pType);
+            '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711'].includes(pType);
 
           // 1. Trace the electrical network — only for simple output peripherals
           if (!isComplexPeripheral) {
@@ -894,8 +1009,30 @@ class CircuitEngine {
           const T      = tempC + 273.15;
           const R_ntc  = R0 * Math.exp(B * (1 / T - 1 / T0));
           voltage = VCC * R_ntc / (Rs + R_ntc);
+        } else if (pType === 'photoresistor-sensor') {
+          // LDR voltage-divider: R_ldr ≈ 500000/lux, series=10kΩ
+          // V_ao = VCC × R_series / (R_ldr + R_series)
+          const lux    = sv?.value ?? 500;
+          const R_ldr  = 500000 / Math.max(1, lux);
+          const Rs     = 10000;
+          voltage = 5.0 * Rs / (R_ldr + Rs);
+        } else if (pType === 'flame-sensor') {
+          // Flame sensor: V_aout = VCC × (1 - intensity/100)
+          // High voltage = no flame, low voltage = flame detected
+          const intensity = sv?.value ?? 0;
+          voltage = 5.0 * (1 - Math.max(0, Math.min(100, intensity)) / 100);
+        } else if (pType === 'gas-sensor') {
+          // Gas sensor: V_aout = VCC × (concentration/100)
+          // Low voltage = clean air, high voltage = gas detected
+          const concentration = sv?.value ?? 0;
+          voltage = 5.0 * Math.max(0, Math.min(100, concentration)) / 100;
+        } else if (pType === 'big-sound-sensor' || pType === 'small-sound-sensor') {
+          // Sound sensor: V_aout = VCC × (level/100)
+          // Low voltage = silent, high voltage = loud sound
+          const level = sv?.value ?? 0;
+          voltage = 5.0 * Math.max(0, Math.min(100, level)) / 100;
         } else if (pType === 'photoresistor' || pType === 'photoresistor-sensor') {
-          // Photoresistor: lux 0–1000 → voltage 0–5V (linear approximation)
+          // Legacy fallback
           const lux = sv?.value ?? 0;
           voltage = (lux / 1000) * 5.0;
         } else {
@@ -906,6 +1043,90 @@ class CircuitEngine {
 
         simulationRunner.setAnalogInput(mapping.adcChannel, voltage);
         console.log(`[FORGE CIRCUIT] Analog Signal: Peripheral[${nodeId}] pin ${pinName} -> ${voltage.toFixed(3)}V on ADC ch${mapping.adcChannel}`);
+
+        // For photoresistor: also drive the DO pin based on threshold comparison
+        if (pType === 'photoresistor-sensor') {
+          const lux       = sv?.value     ?? 500;
+          const threshold = sv?.threshold ?? 500;
+          const doHigh    = lux >= threshold; // DO is active-LOW: HIGH = bright, LOW = dark
+          // Find the DO wire and inject the digital signal
+          const doWire = edges.find(e => {
+            const srcMatch = e.source === nodeId && (e.sourceHandle === 'DO' || e.sourceHandle === 'DO__target');
+            const tgtMatch = e.target === nodeId && (e.targetHandle === 'DO' || e.targetHandle === 'DO__target');
+            return srcMatch || tgtMatch;
+          });
+          if (doWire) {
+            const doBoardPin = (doWire.source === nodeId ? doWire.targetHandle : doWire.sourceHandle) ?? '';
+            const cleanDOPin = doBoardPin.replace(/__target$/, '');
+            const doMapping  = simulationRunner.convertArduinoPin(cleanDOPin);
+            if (doMapping && doMapping.adcChannel === undefined) {
+              simulationRunner.setVirtualInput(doMapping.avrPin, doHigh);
+              console.log(`[FORGE CIRCUIT] LDR DO: ${doHigh ? 'HIGH' : 'LOW'} on AVR ${doMapping.avrPin}`);
+            }
+          }
+        }
+
+        // For gas sensor: also drive the DOUT pin based on threshold comparison
+        if (pType === 'gas-sensor') {
+          const concentration = sv?.value     ?? 0;
+          const threshold     = sv?.threshold ?? 50;
+          const doutHigh      = concentration <= threshold; // DOUT active-LOW: LOW when gas detected
+          const doutWire      = edges.find(e => {
+            const srcMatch = e.source === nodeId && (e.sourceHandle === 'DOUT' || e.sourceHandle === 'DOUT__target');
+            const tgtMatch = e.target === nodeId && (e.targetHandle === 'DOUT' || e.targetHandle === 'DOUT__target');
+            return srcMatch || tgtMatch;
+          });
+          if (doutWire) {
+            const doutBoardPin = (doutWire.source === nodeId ? doutWire.targetHandle : doutWire.sourceHandle) ?? '';
+            const cleanDOUT    = doutBoardPin.replace(/__target$/, '');
+            const doutMapping  = simulationRunner.convertArduinoPin(cleanDOUT);
+            if (doutMapping && doutMapping.adcChannel === undefined) {
+              simulationRunner.setVirtualInput(doutMapping.avrPin, doutHigh);
+              console.log(`[FORGE CIRCUIT] Gas DOUT: ${doutHigh ? 'HIGH' : 'LOW'} on AVR ${doutMapping.avrPin}`);
+            }
+          }
+        }
+        // For flame sensor: also drive the DOUT pin based on threshold comparison
+        if (pType === 'flame-sensor') {
+          const intensity = sv?.value     ?? 0;
+          const threshold = sv?.threshold ?? 50;
+          const doutHigh  = intensity <= threshold; // DOUT active-LOW: LOW when flame detected
+          const doutWire  = edges.find(e => {
+            const srcMatch = e.source === nodeId && (e.sourceHandle === 'DOUT' || e.sourceHandle === 'DOUT__target');
+            const tgtMatch = e.target === nodeId && (e.targetHandle === 'DOUT' || e.targetHandle === 'DOUT__target');
+            return srcMatch || tgtMatch;
+          });
+          if (doutWire) {
+            const doutBoardPin = (doutWire.source === nodeId ? doutWire.targetHandle : doutWire.sourceHandle) ?? '';
+            const cleanDOUT    = doutBoardPin.replace(/__target$/, '');
+            const doutMapping  = simulationRunner.convertArduinoPin(cleanDOUT);
+            if (doutMapping && doutMapping.adcChannel === undefined) {
+              simulationRunner.setVirtualInput(doutMapping.avrPin, doutHigh);
+              console.log(`[FORGE CIRCUIT] Flame DOUT: ${doutHigh ? 'HIGH' : 'LOW'} on AVR ${doutMapping.avrPin}`);
+            }
+          }
+        }
+
+        // For big-sound-sensor / small-sound-sensor: also drive the DOUT pin based on threshold comparison
+        if (pType === 'big-sound-sensor' || pType === 'small-sound-sensor') {
+          const level     = sv?.value     ?? 0;
+          const threshold = sv?.threshold ?? 50;
+          const doutHigh  = level <= threshold; // DOUT active-LOW: LOW when sound detected
+          const doutWire  = edges.find(e => {
+            const srcMatch = e.source === nodeId && (e.sourceHandle === 'DOUT' || e.sourceHandle === 'DOUT__target');
+            const tgtMatch = e.target === nodeId && (e.targetHandle === 'DOUT' || e.targetHandle === 'DOUT__target');
+            return srcMatch || tgtMatch;
+          });
+          if (doutWire) {
+            const doutBoardPin = (doutWire.source === nodeId ? doutWire.targetHandle : doutWire.sourceHandle) ?? '';
+            const cleanDOUT    = doutBoardPin.replace(/__target$/, '');
+            const doutMapping  = simulationRunner.convertArduinoPin(cleanDOUT);
+            if (doutMapping && doutMapping.adcChannel === undefined) {
+              simulationRunner.setVirtualInput(doutMapping.avrPin, doutHigh);
+              console.log(`[FORGE CIRCUIT] Sound DOUT: ${doutHigh ? 'HIGH' : 'LOW'} on AVR ${doutMapping.avrPin}`);
+            }
+          }
+        }
       } else {
         // --- Digital Mapping ---
         simulationRunner.setVirtualInput(mapping.avrPin, isHigh);

@@ -6,9 +6,15 @@ import { ElementPin, GND, VCC } from './pin';
 export class HX711Element extends LitElement {
   @property() type: '5kg' | '50kg' | 'gauge' | undefined;
 
+  /** Simulated weight in grams (0 – maxWeight) */
+  @property({ type: Number }) weight = 0;
+
+  /** Maximum weight capacity in grams (default 5000g = 5kg) */
+  @property({ type: Number }) maxWeight = 5000;
+
   readonly pinInfo: ElementPin[] = [
-    { name: 'VCC', y: 55, x: 7, number: 1, signals: [VCC()] },
-    { name: 'DT', y: 36.3, x: 7, number: 2, signals: [] },
+    { name: 'VCC', y: 55,   x: 7, number: 1, signals: [VCC()] },
+    { name: 'DT',  y: 36.3, x: 7, number: 2, signals: [] },
     { name: 'SCK', y: 46.2, x: 7, number: 3, signals: [] },
     { name: 'GND', y: 26.5, x: 7, number: 4, signals: [GND()] },
   ];
@@ -234,6 +240,11 @@ export class HX711Element extends LitElement {
 
   render() {
     const { width, height } = this.dimension;
+    const weight    = Number(this.weight)    || 0;
+    const maxWeight = Number(this.maxWeight) || 5000;
+    const weightKg  = (weight / 1000).toFixed(3);
+    const rawValue  = Math.round((weight / maxWeight) * 8388607); // 24-bit signed max
+
     return html`
       <svg
         width="${+width / 10}mm"
@@ -420,6 +431,12 @@ export class HX711Element extends LitElement {
           </g>
           ${this.renderSensor()}
         </g>
+
+        <!-- Live weight readout overlay -->
+        <text font-family="monospace" font-size="18" font-weight="bold" text-anchor="middle">
+          <tspan x="${width / 2}" y="${height - 20}" fill="#bef264">${weightKg} kg</tspan>
+          <tspan x="${width / 2}" y="${height - 2}" fill="#64748b" font-size="13">raw: ${rawValue}</tspan>
+        </text>
       </svg>
     `;
   }

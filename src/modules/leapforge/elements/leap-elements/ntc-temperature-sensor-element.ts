@@ -51,27 +51,28 @@ export class NTCTemperatureSensorElement extends LitElement {
 
   /** Compute the NTC output voltage for a given temperature (°C). */
   private _tempToVoltage(tempC: number): number {
-    const R0 = 10000;   // 10kΩ nominal at 25°C
-    const B  = 3950;    // Beta coefficient
-    const T0 = 298.15;  // 25°C in Kelvin
-    const Rs = 10000;   // Series resistor 10kΩ
+    const t = isFinite(tempC) ? tempC : 25;
+    const R0 = 10000;
+    const B  = 3950;
+    const T0 = 298.15;
+    const Rs = 10000;
     const VCC = 5.0;
-
-    const T = tempC + 273.15;
+    const T = t + 273.15;
     const R_ntc = R0 * Math.exp(B * (1 / T - 1 / T0));
     return VCC * R_ntc / (Rs + R_ntc);
   }
 
   /** Colour-code the thermistor body based on temperature */
   private _bodyColor(tempC: number): string {
-    if (tempC < 0)   return '#6ee7f7'; // cold — cyan
-    if (tempC < 40)  return '#151312'; // normal — dark
-    if (tempC < 80)  return '#f97316'; // warm — orange
-    return '#ef4444';                  // hot — red
+    const t = isFinite(tempC) ? tempC : 25;
+    if (t < 0)   return '#6ee7f7';
+    if (t < 40)  return '#151312';
+    if (t < 80)  return '#f97316';
+    return '#ef4444';
   }
 
   render() {
-    const temp = this.value;
+    const temp = Number(this.value) || 25;  // coerce — PartPicker passes value=true (boolean)
     const voltage = this._tempToVoltage(temp);
     const bodyColor = this._bodyColor(temp);
     const tempLabel = `${temp >= 0 ? '+' : ''}${temp.toFixed(1)}°C`;

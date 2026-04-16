@@ -81,9 +81,62 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.innerHandShape = data.innerHandShape ?? 'plain';
     mappedProps.outerHandLength = data.outerHandLength ?? 30;
     mappedProps.innerHandLength = data.innerHandLength ?? 30;
-  } else if (['potentiometer', 'photoresistor', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(data.type)) {
+  } else if (['potentiometer', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(data.type)) {
     // Analog sensors (and resistors) use the 'value' from sensorValues
     mappedProps.value = data.sensorValues?.value ?? (data.type === 'ntc-temperature-sensor' ? 25 : 0);
+  } else if (data.type === 'photoresistor-sensor') {
+    // Photoresistor: pass lux value, threshold, and LED states
+    const sv = data.sensorValues ?? {};
+    const lux       = Number(sv.value     ?? 500);
+    const threshold = Number(sv.threshold ?? 500);
+    mappedProps.value     = lux;
+    mappedProps.threshold = threshold;
+    mappedProps.ledPower  = true;                  // always on when placed
+    mappedProps.ledDO     = lux < threshold;       // DO LED mirrors comparator output
+  } else if (data.type === 'flame-sensor') {
+    // Flame sensor: pass intensity, threshold, and LED states
+    const sv = data.sensorValues ?? {};
+    const intensity = Number(sv.value     ?? 0);
+    const threshold = Number(sv.threshold ?? 50);
+    const flameOn   = intensity > threshold;
+    mappedProps.value     = intensity;
+    mappedProps.threshold = threshold;
+    mappedProps.ledPower  = true;                  // always on when placed
+    mappedProps.ledSignal = flameOn;               // signal LED on when flame detected
+  } else if (data.type === 'gas-sensor') {
+    // Gas sensor: pass concentration, threshold, and LED states
+    const sv = data.sensorValues ?? {};
+    const concentration = Number(sv.value     ?? 0);
+    const threshold     = Number(sv.threshold ?? 50);
+    const gasDetected   = concentration > threshold;
+    mappedProps.value     = concentration;
+    mappedProps.threshold = threshold;
+    mappedProps.ledPower  = true;
+    mappedProps.ledD0     = gasDetected;
+  } else if (data.type === 'heart-beat-sensor') {
+    // Heart rate sensor: pass BPM, current beat phase, and live ADC value
+    mappedProps.bpm       = data.sensorValues?.bpm       ?? 72;
+    mappedProps.beatPhase = data.sensorValues?.beatPhase ?? 0;
+    mappedProps.adcValue  = data.sensorValues?.adcValue  ?? 512;
+  } else if (data.type === 'big-sound-sensor' || data.type === 'small-sound-sensor') {
+    // Sound sensors: pass level, threshold, and LED states
+    const sv = data.sensorValues ?? {};
+    const level     = Number(sv.value     ?? 0);
+    const threshold = Number(sv.threshold ?? 50);
+    const soundOn   = level > threshold;
+    mappedProps.value     = level;
+    mappedProps.threshold = threshold;
+    if (data.type === 'big-sound-sensor') {
+      mappedProps.led1 = true;      // power LED
+      mappedProps.led2 = soundOn;   // signal LED
+    } else {
+      mappedProps.ledPower  = true;
+      mappedProps.ledSignal = soundOn;
+    }
+  } else if (data.type === 'hx711') {
+    // HX711 load cell amplifier: pass weight and max capacity
+    mappedProps.weight    = data.sensorValues?.weight    ?? 0;
+    mappedProps.maxWeight = data.sensorValues?.maxWeight ?? 5000;
   } else if (data.type === 'lcd1602' || data.type === 'lcd2004' || data.type === 'lcd1602-i2c' || data.type === 'lcd2004-i2c') {
     // LCD Displays map the internal emulator state to visual properties
     const state = data.lcdState;
