@@ -5012,7 +5012,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     return (
 
-        <div style={styles.container}>
+        <div>
 
             {/* Premium Menu Bar */}
 
@@ -6333,1135 +6333,1133 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         }}
 
                     />
+                </React.Suspense>
+            )}
+
+            {/* Premium Upload Modal */}
+
+            <UploadModal
+
+                isOpen={isUploading}
+
+                progress={uploadProgress}
+
+            />
 
 
-
-                    {/* Premium Upload Modal */}
-
-                    <UploadModal
-
-                        isOpen={isUploading}
-
-                        progress={uploadProgress}
-
+            {/* Extension Library Modal */}
+            {showExtensionLibrary && (
+                <React.Suspense fallback={<div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px', color: '#855CD6' }}>Loading...</div>}>
+                    <JuniorExtensionLibrary
+                        onClose={() => setShowExtensionLibrary(false)}
+                        onSelectExtension={(id: string) => {
+                            handleAddExtension(id);
+                            setShowExtensionLibrary(false);
+                        }}
                     />
-
-
-                    {/* Extension Library Modal */}
-                    {showExtensionLibrary && (
-                        <React.Suspense fallback={<div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px', color: '#855CD6' }}>Loading...</div>}>
-                            <JuniorExtensionLibrary
-                                onClose={() => setShowExtensionLibrary(false)}
-                                onSelectExtension={(id: string) => {
-                                    handleAddExtension(id);
-                                    setShowExtensionLibrary(false);
-                                }}
-                            />
-                        </React.Suspense>
-                    )}
-                </div >
-
-
-            );
+                </React.Suspense>
+            )}
+        </div>
+    );
 
 };
 
 
 
-            // ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 
-            // STYLES
+// STYLES
 
-            // ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 
-            const styles: {[key: string]: React.CSSProperties } = {
+const styles: { [key: string]: React.CSSProperties } = {
 
-                container: {
+    container: {
 
-                display: 'flex',
+        display: 'flex',
 
-            flexDirection: 'column',
+        flexDirection: 'column',
 
-            height: '100vh',
+        height: '100vh',
 
-            backgroundColor: '#f5f5f5',
+        backgroundColor: '#f5f5f5',
 
-            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-
-    },
-
-            header: {
-
-                display: 'flex',
-
-            justifyContent: 'space-between',
-
-            alignItems: 'center',
-
-            padding: '0 12px',
-
-            height: '48px',
-
-            backgroundColor: '#855CD6',
-
-            color: 'white',
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
 
     },
 
-            headerLeft: {display: 'flex', alignItems: 'center', gap: '16px' },
+    header: {
 
-            logo: {fontSize: '18px', fontWeight: 'bold' },
+        display: 'flex',
 
-            nav: {display: 'flex', gap: '16px', marginLeft: '24px' },
+        justifyContent: 'space-between',
 
-            navItem: {fontSize: '13px', cursor: 'pointer', opacity: 0.9 },
+        alignItems: 'center',
 
-            projectName: {
+        padding: '0 12px',
 
-                display: 'flex',
+        height: '48px',
 
-            alignItems: 'center',
+        backgroundColor: '#855CD6',
 
-            gap: '6px',
-
-            backgroundColor: 'rgba(255,255,255,0.15)',
-
-            padding: '4px 12px',
-
-            borderRadius: '4px',
-
-            marginLeft: '16px',
+        color: 'white',
 
     },
 
-            projectInput: {background: 'transparent', border: 'none', color: 'white', fontSize: '13px', width: '100px' },
+    headerLeft: { display: 'flex', alignItems: 'center', gap: '16px' },
 
-            headerRight: {display: 'flex', alignItems: 'center', gap: '8px' },
+    logo: { fontSize: '18px', fontWeight: 'bold' },
 
-            headerDivider: {width: '1px', height: '24px', backgroundColor: 'rgba(255,255,255,0.3)', margin: '0 4px' },
+    nav: { display: 'flex', gap: '16px', marginLeft: '24px' },
 
-            modeButton: {
+    navItem: { fontSize: '13px', cursor: 'pointer', opacity: 0.9 },
 
-                padding: '6px 12px',
+    projectName: {
 
-            backgroundColor: 'rgba(255,255,255,0.2)',
+        display: 'flex',
 
-            border: 'none',
+        alignItems: 'center',
 
-            borderRadius: '4px',
+        gap: '6px',
 
-            color: 'white',
+        backgroundColor: 'rgba(255,255,255,0.15)',
 
-            fontSize: '12px',
+        padding: '4px 12px',
 
-            cursor: 'pointer'
+        borderRadius: '4px',
 
-    },
-
-            modeButtonActive: {
-
-                padding: '6px 12px',
-
-            backgroundColor: '#4C97FF',
-
-            border: 'none',
-
-            borderRadius: '4px',
-
-            color: 'white',
-
-            fontSize: '12px',
-
-            cursor: 'pointer',
-
-            fontWeight: 'bold',
+        marginLeft: '16px',
 
     },
 
-            portSelect: {
+    projectInput: { background: 'transparent', border: 'none', color: 'white', fontSize: '13px', width: '100px' },
 
-                padding: '4px 8px',
+    headerRight: { display: 'flex', alignItems: 'center', gap: '8px' },
 
-            borderRadius: '4px',
+    headerDivider: { width: '1px', height: '24px', backgroundColor: 'rgba(255,255,255,0.3)', margin: '0 4px' },
 
-            border: 'none',
+    modeButton: {
 
-            fontSize: '12px',
+        padding: '6px 12px',
 
-    },
+        backgroundColor: 'rgba(255,255,255,0.2)',
 
-            uploadButton: {
+        border: 'none',
 
-                padding: '6px 14px',
+        borderRadius: '4px',
 
-            backgroundColor: '#4C97FF',
+        color: 'white',
 
-            border: 'none',
+        fontSize: '12px',
 
-            borderRadius: '4px',
-
-            color: 'white',
-
-            fontSize: '12px',
-
-            fontWeight: 'bold',
-
-            cursor: 'pointer'
+        cursor: 'pointer'
 
     },
 
-            headerIcon: {cursor: 'pointer', opacity: 0.9, fontSize: '14px' },
+    modeButtonActive: {
 
+        padding: '6px 12px',
 
+        backgroundColor: '#4C97FF',
 
-            unifiedToolbar: {
+        border: 'none',
 
-                display: 'flex',
+        borderRadius: '4px',
 
-            alignItems: 'flex-end',
+        color: 'white',
 
-            backgroundColor: '#fff',
+        fontSize: '12px',
 
-            borderBottom: '1px solid #ddd',
+        cursor: 'pointer',
 
-            height: '44px',
-
-            padding: '0',
-
-    },
-
-            actionButtons: {display: 'flex', gap: '6px', alignItems: 'center' },
-
-            iconBtn: {
-
-                background: 'transparent',
-
-            border: 'none',
-
-            cursor: 'pointer',
-
-            display: 'flex',
-
-            alignItems: 'center',
-
-            justifyContent: 'center',
-
-            padding: '5px',
-
-            borderRadius: '4px',
-
-            color: '#575E75',
-
-            transition: 'background 0.2s',
-
-            outline: 'none',
+        fontWeight: 'bold',
 
     },
 
-            iconBtnActive: {
+    portSelect: {
 
-                background: '#e0d6ff',
+        padding: '4px 8px',
 
-            color: '#855CD6'
+        borderRadius: '4px',
 
-    },
+        border: 'none',
 
-            runButtonTop: {
-
-                backgroundColor: 'transparent',
-
-            border: 'none',
-
-            cursor: 'pointer',
-
-            display: 'flex',
-
-            justifyContent: 'center',
-
-            alignItems: 'center',
-
-            padding: '4px',
+        fontSize: '12px',
 
     },
 
-            stopButtonTop: {
+    uploadButton: {
 
-                backgroundColor: 'transparent',
+        padding: '6px 14px',
 
-            border: 'none',
+        backgroundColor: '#4C97FF',
 
-            cursor: 'pointer',
+        border: 'none',
 
-            display: 'flex',
+        borderRadius: '4px',
 
-            justifyContent: 'center',
+        color: 'white',
 
-            alignItems: 'center',
+        fontSize: '12px',
 
-            padding: '4px',
+        fontWeight: 'bold',
 
-    },
-
-            undoRedoBtn: {
-
-                backgroundColor: '#fff',
-
-            border: '1px solid #ddd',
-
-            borderRadius: '50%',
-
-            width: '32px',
-
-            height: '32px',
-
-            display: 'flex',
-
-            alignItems: 'center',
-
-            justifyContent: 'center',
-
-            cursor: 'pointer',
-
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-
-            transition: 'all 0.2s',
-
-            outline: 'none',
+        cursor: 'pointer'
 
     },
 
-
-
-            main: {flex: 1, display: 'flex', overflow: 'hidden' },
-
-
-
-            // Workspace
-
-            workspaceContainer: {flex: 1, position: 'relative', display: 'flex', flexDirection: 'column' },
-
-            blockly: {flex: 1, width: '100%' },
+    headerIcon: { cursor: 'pointer', opacity: 0.9, fontSize: '14px' },
 
 
 
-            // Leapblocks-style tabs
+    unifiedToolbar: {
 
-            tabBar: {
+        display: 'flex',
 
-                display: 'flex',
+        alignItems: 'flex-end',
 
-            justifyContent: 'flex-start',
+        backgroundColor: '#fff',
 
-            alignItems: 'end',
+        borderBottom: '1px solid #ddd',
 
-            backgroundColor: '#fff',
+        height: '44px',
 
-            borderBottom: '1px solid #ddd',
-
-            padding: '0 20px',
-
-            height: '44px',
-
-            gap: '4px',
+        padding: '0',
 
     },
 
-            tab: {
+    actionButtons: { display: 'flex', gap: '6px', alignItems: 'center' },
 
-                padding: '8px 24px',
+    iconBtn: {
 
-            borderTop: '1px solid #ddd',
+        background: 'transparent',
 
-            borderLeft: '1px solid #ddd',
+        border: 'none',
 
-            borderRight: '1px solid #ddd',
+        cursor: 'pointer',
 
-            borderBottom: 'none',
+        display: 'flex',
 
-            backgroundColor: '#f9f9f9',
+        alignItems: 'center',
 
-            cursor: 'pointer',
+        justifyContent: 'center',
 
-            fontSize: '13px',
+        padding: '5px',
 
-            fontWeight: 600,
+        borderRadius: '4px',
 
-            color: '#999',
+        color: '#575E75',
 
-            borderTopLeftRadius: '10px',
+        transition: 'background 0.2s',
 
-            borderTopRightRadius: '10px',
-
-            display: 'flex',
-
-            alignItems: 'center',
-
-            gap: '10px',
-
-            transition: 'all 0.2s',
+        outline: 'none',
 
     },
 
-            tabActive: {
+    iconBtnActive: {
 
-                padding: '10px 24px',
+        background: '#e0d6ff',
 
-            borderTop: '1px solid #ddd',
+        color: '#855CD6'
 
-            borderLeft: '1px solid #ddd',
+    },
 
-            borderRight: '1px solid #ddd',
+    runButtonTop: {
 
-            borderBottom: '1px solid #fff',
+        backgroundColor: 'transparent',
 
-            backgroundColor: '#fff',
+        border: 'none',
 
-            cursor: 'pointer',
+        cursor: 'pointer',
 
-            fontSize: '13px',
+        display: 'flex',
 
-            fontWeight: 600,
+        justifyContent: 'center',
 
-            color: '#855CD6',
+        alignItems: 'center',
 
-            marginBottom: '-1px',
+        padding: '4px',
 
-            borderTopLeftRadius: '10px',
+    },
 
-            borderTopRightRadius: '10px',
+    stopButtonTop: {
 
-            display: 'flex',
+        backgroundColor: 'transparent',
 
-            alignItems: 'center',
+        border: 'none',
 
-            gap: '8px',
+        cursor: 'pointer',
 
-            zIndex: 5,
+        display: 'flex',
 
-            boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
+        justifyContent: 'center',
+
+        alignItems: 'center',
+
+        padding: '4px',
+
+    },
+
+    undoRedoBtn: {
+
+        backgroundColor: '#fff',
+
+        border: '1px solid #ddd',
+
+        borderRadius: '50%',
+
+        width: '32px',
+
+        height: '32px',
+
+        display: 'flex',
+
+        alignItems: 'center',
+
+        justifyContent: 'center',
+
+        cursor: 'pointer',
+
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+
+        transition: 'all 0.2s',
+
+        outline: 'none',
 
     },
 
 
 
-            // Placeholder editors
+    main: { flex: 1, display: 'flex', overflow: 'hidden' },
 
-            pythonEditor: {
 
-                flex: 1,
 
-            display: 'flex',
+    // Workspace
 
-            flexDirection: 'column',
+    workspaceContainer: { flex: 1, position: 'relative', display: 'flex', flexDirection: 'column' },
 
-            backgroundColor: '#1e1e1e',
+    blockly: { flex: 1, width: '100%' },
 
-            overflow: 'hidden'
 
-    },
 
-            pythonPlaceholder: {
+    // Leapblocks-style tabs
 
-                textAlign: 'center',
+    tabBar: {
 
-            color: '#888',
+        display: 'flex',
 
-    },
+        justifyContent: 'flex-start',
 
-            costumesEditor: {
+        alignItems: 'end',
 
-                flex: 1,
+        backgroundColor: '#fff',
 
-            display: 'flex',
+        borderBottom: '1px solid #ddd',
 
-            alignItems: 'center',
+        padding: '0 20px',
 
-            justifyContent: 'center',
+        height: '44px',
 
-            backgroundColor: '#fff',
+        gap: '4px',
 
     },
 
-            costumePlaceholder: {
+    tab: {
 
-                textAlign: 'center',
+        padding: '8px 24px',
 
-            color: '#666',
+        borderTop: '1px solid #ddd',
 
-    },
+        borderLeft: '1px solid #ddd',
 
-            soundsEditor: {
+        borderRight: '1px solid #ddd',
 
-                flex: 1,
+        borderBottom: 'none',
 
-            display: 'flex',
+        backgroundColor: '#f9f9f9',
 
-            alignItems: 'center',
+        cursor: 'pointer',
 
-            justifyContent: 'center',
+        fontSize: '13px',
 
-            backgroundColor: '#f9f9f9',
+        fontWeight: 600,
 
-    },
+        color: '#999',
 
-            soundPlaceholder: {
+        borderTopLeftRadius: '10px',
 
-                textAlign: 'center',
+        borderTopRightRadius: '10px',
 
-            color: '#666',
+        display: 'flex',
 
-    },
+        alignItems: 'center',
 
+        gap: '10px',
 
-
-            // Right Panel
-
-            rightPanel: {
-
-                width: '500px',
-
-            backgroundColor: '#f5f5f5',
-
-            borderLeft: '1px solid #d9d9d9',
-
-            display: 'flex',
-
-            flexDirection: 'column',
-
-            gap: '8px',
-
-            padding: '8px',
+        transition: 'all 0.2s',
 
     },
 
-            assetsContainer: {
+    tabActive: {
 
-                display: 'flex',
+        padding: '10px 24px',
 
-            gap: '8px',
+        borderTop: '1px solid #ddd',
 
-            alignItems: 'center',
+        borderLeft: '1px solid #ddd',
 
-            justifyContent: 'center',
+        borderRight: '1px solid #ddd',
 
-    },
+        borderBottom: '1px solid #fff',
 
+        backgroundColor: '#fff',
 
+        cursor: 'pointer',
 
-            // Stage
+        fontSize: '13px',
 
-            stageContainer: {
+        fontWeight: 600,
 
-                backgroundColor: 'white',
+        color: '#855CD6',
 
-            borderRadius: '8px',
+        marginBottom: '-1px',
 
-            overflow: 'hidden',
+        borderTopLeftRadius: '10px',
 
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        borderTopRightRadius: '10px',
 
-    },
+        display: 'flex',
 
-            stageHeader: {
+        alignItems: 'center',
 
-                display: 'flex',
+        gap: '8px',
 
-            justifyContent: 'space-between',
+        zIndex: 5,
 
-            alignItems: 'center',
-
-            padding: '6px 10px',
-
-            backgroundColor: '#f8f8f8',
-
-            borderBottom: '1px solid #e0e0e0',
-
-            fontSize: '12px',
-
-            fontWeight: 500,
-
-    },
-
-            flagButton: {
-
-                padding: '4px 8px',
-
-            border: '1px solid #4CAF50',
-
-            borderRadius: '4px',
-
-            backgroundColor: 'white',
-
-            cursor: 'pointer',
-
-            fontSize: '15px',
-
-            marginRight: '4px',
-
-    },
-
-            stopButtonSmall: {
-
-                padding: '4px 8px',
-
-            border: '1px solid #f44336',
-
-            borderRadius: '4px',
-
-            backgroundColor: 'white',
-
-            cursor: 'pointer',
-
-            fontSize: '15px',
-
-    },
-
-
-            // Code Panel (Upload Mode)
-
-            codeHeader: {
-
-                display: 'flex',
-
-            justifyContent: 'space-between',
-
-            alignItems: 'center',
-
-            padding: '8px 12px',
-
-            borderBottom: '1px solid #eee',
-
-            backgroundColor: '#f9f9f9',
-
-            fontSize: '13px',
-
-            fontWeight: 500,
-
-            borderRadius: '8px 8px 0 0',
-
-    },
-
-            uploadCodeBtn: {
-
-                padding: '6px 12px',
-
-            backgroundColor: '#4C97FF',
-
-            border: 'none',
-
-            borderRadius: '4px',
-
-            color: 'white',
-
-            fontSize: '11px',
-
-            cursor: 'pointer'
-
-    },
-
-            codeArea: {
-
-                flex: 1,
-
-            overflow: 'auto',
-
-            backgroundColor: '#fafafa',
-
-            borderRadius: '0 0 8px 8px',
-
-            borderBottom: '1px solid #eee',
-
-            borderLeft: '1px solid #eee',
-
-            borderRight: '1px solid #eee',
-
-            borderTop: 'none',
-
-    },
-
-            codeContent: {
-
-                margin: 0,
-
-            padding: '12px',
-
-            fontFamily: "'Consolas', 'Monaco', 'Courier New', monospace",
-
-            fontSize: '12px',
-
-            lineHeight: '1.6',
-
-            color: '#333',
-
-    },
-
-            codeLine: {display: 'flex' },
-
-            lineNumber: {
-
-                width: '35px',
-
-            paddingRight: '10px',
-
-            textAlign: 'right',
-
-            color: '#999',
-
-            userSelect: 'none'
+        boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
 
     },
 
 
 
-            bottomTabs: {display: 'flex', borderTop: '1px solid #ddd', marginTop: 'auto' },
+    // Placeholder editors
 
-            bottomTab: {
+    pythonEditor: {
 
-                padding: '8px 16px',
+        flex: 1,
 
-            backgroundColor: '#f5f5f5',
+        display: 'flex',
 
-            borderTop: 'none',
+        flexDirection: 'column',
 
-            borderLeft: 'none',
+        backgroundColor: '#1e1e1e',
 
-            borderRight: 'none',
-
-            borderBottom: '2px solid transparent',
-
-            fontSize: '12px',
-
-            cursor: 'pointer',
-
-            color: '#666'
+        overflow: 'hidden'
 
     },
 
-            bottomTabActive: {
+    pythonPlaceholder: {
 
-                padding: '8px 16px',
+        textAlign: 'center',
 
-            backgroundColor: '#ffffff',
-
-            borderTop: 'none',
-
-            borderLeft: 'none',
-
-            borderRight: 'none',
-
-            borderBottom: '2px solid #4C97FF',
-
-            fontSize: '12px',
-
-            cursor: 'pointer',
-
-            color: '#4C97FF',
-
-            fontWeight: 'bold'
+        color: '#888',
 
     },
 
-            logArea: {
+    costumesEditor: {
 
-                height: '250px',
+        flex: 1,
 
-            overflow: 'auto',
+        display: 'flex',
 
-            padding: '8px 12px',
+        alignItems: 'center',
 
-            backgroundColor: '#fff',
+        justifyContent: 'center',
 
-            fontSize: '11px',
-
-            fontFamily: 'monospace',
-
-            borderRadius: '0 0 8px 8px',
+        backgroundColor: '#fff',
 
     },
 
-            logLine: {color: '#666', marginBottom: '2px' },
+    costumePlaceholder: {
 
+        textAlign: 'center',
 
-
-            // Hardware controls
-
-            refreshButton: {
-
-                padding: '4px 8px',
-
-            backgroundColor: 'rgba(255,255,255,0.2)',
-
-            border: 'none',
-
-            borderRadius: '4px',
-
-            color: 'white',
-
-            fontSize: '12px',
-
-            cursor: 'pointer',
+        color: '#666',
 
     },
 
-            connectButton: {
+    soundsEditor: {
 
-                padding: '6px 12px',
+        flex: 1,
 
-            backgroundColor: 'rgba(255,255,255,0.2)',
+        display: 'flex',
 
-            border: 'none',
+        alignItems: 'center',
 
-            borderRadius: '4px',
+        justifyContent: 'center',
 
-            color: 'white',
-
-            fontSize: '12px',
-
-            cursor: 'pointer',
+        backgroundColor: '#f9f9f9',
 
     },
 
-            connectedButton: {
+    soundPlaceholder: {
 
-                padding: '6px 12px',
+        textAlign: 'center',
 
-            backgroundColor: '#4CAF50',
-
-            border: 'none',
-
-            borderRadius: '4px',
-
-            color: 'white',
-
-            fontSize: '12px',
-
-            cursor: 'pointer',
-
-            fontWeight: 'bold',
-
-    },
-
-            uploadButtonDisabled: {
-
-                padding: '6px 14px',
-
-            backgroundColor: '#999',
-
-            border: 'none',
-
-            borderRadius: '4px',
-
-            color: 'white',
-
-            fontSize: '12px',
-
-            cursor: 'not-allowed',
-
-    },
-
-            uploadStatus: {
-
-                fontSize: '11px',
-
-            color: '#4CAF50',
+        color: '#666',
 
     },
 
 
 
-            // Serial monitor
+    // Right Panel
 
-            serialContainer: {
+    rightPanel: {
 
-                display: 'flex',
+        width: '500px',
 
-            flexDirection: 'column',
+        backgroundColor: '#f5f5f5',
 
-            height: '100%',
+        borderLeft: '1px solid #d9d9d9',
 
-    },
+        display: 'flex',
 
-            serialMessages: {
+        flexDirection: 'column',
 
-                flex: 1,
+        gap: '8px',
 
-            overflow: 'auto',
-
-            paddingBottom: '4px',
+        padding: '8px',
 
     },
 
-            serialLine: {
+    assetsContainer: {
 
-                color: '#333',
+        display: 'flex',
 
-            marginBottom: '1px',
+        gap: '8px',
 
-            fontFamily: 'monospace',
+        alignItems: 'center',
 
-            fontSize: '11px',
-
-            whiteSpace: 'pre-wrap',
-
-            wordBreak: 'break-all',
-
-    },
-
-            serialHeader: {
-
-                display: 'flex',
-
-            justifyContent: 'space-between',
-
-            alignItems: 'center',
-
-            padding: '4px 8px',
-
-            borderTop: 'none',
-
-            borderLeft: 'none',
-
-            borderRight: 'none',
-
-            borderBottom: '1px solid #eee',
-
-            backgroundColor: '#f9f9f9',
-
-    },
-
-            serialSelect: {
-
-                padding: '2px 4px',
-
-            fontSize: '10px',
-
-            border: '1px solid #ddd',
-
-            borderRadius: '3px',
-
-            outline: 'none',
-
-    },
-
-            clearButton: {
-
-                padding: '2px 6px',
-
-            backgroundColor: 'transparent',
-
-            border: 'none',
-
-            cursor: 'pointer',
-
-            fontSize: '12px',
-
-            opacity: 0.7,
-
-            transition: 'opacity 0.2s',
-
-    },
-
-            serialPlaceholder: {
-
-                color: '#999',
-
-            textAlign: 'center',
-
-            padding: '12px',
-
-            fontSize: '11px',
-
-    },
-
-            serialInputRow: {
-
-                display: 'flex',
-
-            gap: '4px',
-
-            paddingTop: '4px',
-
-            borderBottom: 'none',
-
-            borderLeft: 'none',
-
-            borderRight: 'none',
-
-            borderTop: '1px solid #eee',
-
-    },
-
-            serialInput: {
-
-                flex: 1,
-
-            padding: '4px 8px',
-
-            border: '1px solid #ddd',
-
-            borderRadius: '4px',
-
-            fontSize: '11px',
-
-            fontFamily: 'monospace',
-
-    },
-
-            sendButton: {
-
-                padding: '4px 12px',
-
-            backgroundColor: '#4C97FF',
-
-            border: 'none',
-
-            borderRadius: '4px',
-
-            color: 'white',
-
-            fontSize: '11px',
-
-            cursor: 'pointer',
+        justifyContent: 'center',
 
     },
 
 
 
-            // Modal Styles
+    // Stage
 
-            modalOverlay: {
+    stageContainer: {
 
-                position: 'fixed',
+        backgroundColor: 'white',
 
-            top: 0,
+        borderRadius: '8px',
 
-            left: 0,
+        overflow: 'hidden',
 
-            right: 0,
-
-            bottom: 0,
-
-            backgroundColor: 'rgba(0,0,0,0.5)',
-
-            display: 'flex',
-
-            alignItems: 'center',
-
-            justifyContent: 'center',
-
-            zIndex: 9999,
-
-            backdropFilter: 'blur(2px)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
 
     },
 
-            modalContent: {
+    stageHeader: {
 
-                backgroundColor: 'white',
+        display: 'flex',
 
-            borderRadius: '8px',
+        justifyContent: 'space-between',
 
-            width: '400px',
+        alignItems: 'center',
 
-            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+        padding: '6px 10px',
 
-            overflow: 'hidden',
+        backgroundColor: '#f8f8f8',
 
-            display: 'flex',
+        borderBottom: '1px solid #e0e0e0',
 
-            flexDirection: 'column',
+        fontSize: '12px',
 
-            gap: '16px',
-
-            animation: 'popIn 0.2s ease-out',
+        fontWeight: 500,
 
     },
 
-            modalTitle: {
+    flagButton: {
 
-                backgroundColor: '#855CD6',
+        padding: '4px 8px',
 
-            color: 'white',
+        border: '1px solid #4CAF50',
 
-            padding: '12px 16px',
+        borderRadius: '4px',
 
-            fontSize: '16px',
+        backgroundColor: 'white',
 
-            fontWeight: 'bold',
+        cursor: 'pointer',
 
-            display: 'flex',
+        fontSize: '15px',
 
-            justifyContent: 'space-between',
-
-            alignItems: 'center',
+        marginRight: '4px',
 
     },
 
-            modalInput: {
+    stopButtonSmall: {
 
-                padding: '12px',
+        padding: '4px 8px',
 
-            fontSize: '16px',
+        border: '1px solid #f44336',
 
-            borderRadius: '8px',
+        borderRadius: '4px',
 
-            border: '1px solid #ddd',
+        backgroundColor: 'white',
 
-            width: '100%',
+        cursor: 'pointer',
 
-            fontFamily: 'inherit',
-
-            outline: 'none',
-
-            transition: 'border-color 0.2s',
+        fontSize: '15px',
 
     },
 
-            modalButtons: {
 
-                display: 'flex',
+    // Code Panel (Upload Mode)
 
-            justifyContent: 'flex-end',
+    codeHeader: {
 
-            gap: '12px',
+        display: 'flex',
 
-    },
+        justifyContent: 'space-between',
 
-            modalCancel: {
+        alignItems: 'center',
 
-                padding: '8px 16px',
+        padding: '8px 12px',
 
-            borderRadius: '6px',
+        borderBottom: '1px solid #eee',
 
-            border: '1px solid #ddd',
+        backgroundColor: '#f9f9f9',
 
-            backgroundColor: 'white',
+        fontSize: '13px',
 
-            cursor: 'pointer',
+        fontWeight: 500,
 
-            fontSize: '14px',
-
-            color: '#666',
+        borderRadius: '8px 8px 0 0',
 
     },
 
-            modalSubmit: {
+    uploadCodeBtn: {
 
-                padding: '8px 16px',
+        padding: '6px 12px',
 
-            borderRadius: '6px',
+        backgroundColor: '#4C97FF',
 
-            border: 'none',
+        border: 'none',
 
-            backgroundColor: '#4C97FF',
+        borderRadius: '4px',
 
-            color: 'white',
+        color: 'white',
 
-            cursor: 'pointer',
+        fontSize: '11px',
 
-            fontWeight: 'bold',
+        cursor: 'pointer'
 
-            fontSize: '14px',
+    },
+
+    codeArea: {
+
+        flex: 1,
+
+        overflow: 'auto',
+
+        backgroundColor: '#fafafa',
+
+        borderRadius: '0 0 8px 8px',
+
+        borderBottom: '1px solid #eee',
+
+        borderLeft: '1px solid #eee',
+
+        borderRight: '1px solid #eee',
+
+        borderTop: 'none',
+
+    },
+
+    codeContent: {
+
+        margin: 0,
+
+        padding: '12px',
+
+        fontFamily: "'Consolas', 'Monaco', 'Courier New', monospace",
+
+        fontSize: '12px',
+
+        lineHeight: '1.6',
+
+        color: '#333',
+
+    },
+
+    codeLine: { display: 'flex' },
+
+    lineNumber: {
+
+        width: '35px',
+
+        paddingRight: '10px',
+
+        textAlign: 'right',
+
+        color: '#999',
+
+        userSelect: 'none'
+
+    },
+
+
+
+    bottomTabs: { display: 'flex', borderTop: '1px solid #ddd', marginTop: 'auto' },
+
+    bottomTab: {
+
+        padding: '8px 16px',
+
+        backgroundColor: '#f5f5f5',
+
+        borderTop: 'none',
+
+        borderLeft: 'none',
+
+        borderRight: 'none',
+
+        borderBottom: '2px solid transparent',
+
+        fontSize: '12px',
+
+        cursor: 'pointer',
+
+        color: '#666'
+
+    },
+
+    bottomTabActive: {
+
+        padding: '8px 16px',
+
+        backgroundColor: '#ffffff',
+
+        borderTop: 'none',
+
+        borderLeft: 'none',
+
+        borderRight: 'none',
+
+        borderBottom: '2px solid #4C97FF',
+
+        fontSize: '12px',
+
+        cursor: 'pointer',
+
+        color: '#4C97FF',
+
+        fontWeight: 'bold'
+
+    },
+
+    logArea: {
+
+        height: '250px',
+
+        overflow: 'auto',
+
+        padding: '8px 12px',
+
+        backgroundColor: '#fff',
+
+        fontSize: '11px',
+
+        fontFamily: 'monospace',
+
+        borderRadius: '0 0 8px 8px',
+
+    },
+
+    logLine: { color: '#666', marginBottom: '2px' },
+
+
+
+    // Hardware controls
+
+    refreshButton: {
+
+        padding: '4px 8px',
+
+        backgroundColor: 'rgba(255,255,255,0.2)',
+
+        border: 'none',
+
+        borderRadius: '4px',
+
+        color: 'white',
+
+        fontSize: '12px',
+
+        cursor: 'pointer',
+
+    },
+
+    connectButton: {
+
+        padding: '6px 12px',
+
+        backgroundColor: 'rgba(255,255,255,0.2)',
+
+        border: 'none',
+
+        borderRadius: '4px',
+
+        color: 'white',
+
+        fontSize: '12px',
+
+        cursor: 'pointer',
+
+    },
+
+    connectedButton: {
+
+        padding: '6px 12px',
+
+        backgroundColor: '#4CAF50',
+
+        border: 'none',
+
+        borderRadius: '4px',
+
+        color: 'white',
+
+        fontSize: '12px',
+
+        cursor: 'pointer',
+
+        fontWeight: 'bold',
+
+    },
+
+    uploadButtonDisabled: {
+
+        padding: '6px 14px',
+
+        backgroundColor: '#999',
+
+        border: 'none',
+
+        borderRadius: '4px',
+
+        color: 'white',
+
+        fontSize: '12px',
+
+        cursor: 'not-allowed',
+
+    },
+
+    uploadStatus: {
+
+        fontSize: '11px',
+
+        color: '#4CAF50',
+
+    },
+
+
+
+    // Serial monitor
+
+    serialContainer: {
+
+        display: 'flex',
+
+        flexDirection: 'column',
+
+        height: '100%',
+
+    },
+
+    serialMessages: {
+
+        flex: 1,
+
+        overflow: 'auto',
+
+        paddingBottom: '4px',
+
+    },
+
+    serialLine: {
+
+        color: '#333',
+
+        marginBottom: '1px',
+
+        fontFamily: 'monospace',
+
+        fontSize: '11px',
+
+        whiteSpace: 'pre-wrap',
+
+        wordBreak: 'break-all',
+
+    },
+
+    serialHeader: {
+
+        display: 'flex',
+
+        justifyContent: 'space-between',
+
+        alignItems: 'center',
+
+        padding: '4px 8px',
+
+        borderTop: 'none',
+
+        borderLeft: 'none',
+
+        borderRight: 'none',
+
+        borderBottom: '1px solid #eee',
+
+        backgroundColor: '#f9f9f9',
+
+    },
+
+    serialSelect: {
+
+        padding: '2px 4px',
+
+        fontSize: '10px',
+
+        border: '1px solid #ddd',
+
+        borderRadius: '3px',
+
+        outline: 'none',
+
+    },
+
+    clearButton: {
+
+        padding: '2px 6px',
+
+        backgroundColor: 'transparent',
+
+        border: 'none',
+
+        cursor: 'pointer',
+
+        fontSize: '12px',
+
+        opacity: 0.7,
+
+        transition: 'opacity 0.2s',
+
+    },
+
+    serialPlaceholder: {
+
+        color: '#999',
+
+        textAlign: 'center',
+
+        padding: '12px',
+
+        fontSize: '11px',
+
+    },
+
+    serialInputRow: {
+
+        display: 'flex',
+
+        gap: '4px',
+
+        paddingTop: '4px',
+
+        borderBottom: 'none',
+
+        borderLeft: 'none',
+
+        borderRight: 'none',
+
+        borderTop: '1px solid #eee',
+
+    },
+
+    serialInput: {
+
+        flex: 1,
+
+        padding: '4px 8px',
+
+        border: '1px solid #ddd',
+
+        borderRadius: '4px',
+
+        fontSize: '11px',
+
+        fontFamily: 'monospace',
+
+    },
+
+    sendButton: {
+
+        padding: '4px 12px',
+
+        backgroundColor: '#4C97FF',
+
+        border: 'none',
+
+        borderRadius: '4px',
+
+        color: 'white',
+
+        fontSize: '11px',
+
+        cursor: 'pointer',
+
+    },
+
+
+
+    // Modal Styles
+
+    modalOverlay: {
+
+        position: 'fixed',
+
+        top: 0,
+
+        left: 0,
+
+        right: 0,
+
+        bottom: 0,
+
+        backgroundColor: 'rgba(0,0,0,0.5)',
+
+        display: 'flex',
+
+        alignItems: 'center',
+
+        justifyContent: 'center',
+
+        zIndex: 9999,
+
+        backdropFilter: 'blur(2px)',
+
+    },
+
+    modalContent: {
+
+        backgroundColor: 'white',
+
+        borderRadius: '8px',
+
+        width: '400px',
+
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+
+        overflow: 'hidden',
+
+        display: 'flex',
+
+        flexDirection: 'column',
+
+        gap: '16px',
+
+        animation: 'popIn 0.2s ease-out',
+
+    },
+
+    modalTitle: {
+
+        backgroundColor: '#855CD6',
+
+        color: 'white',
+
+        padding: '12px 16px',
+
+        fontSize: '16px',
+
+        fontWeight: 'bold',
+
+        display: 'flex',
+
+        justifyContent: 'space-between',
+
+        alignItems: 'center',
+
+    },
+
+    modalInput: {
+
+        padding: '12px',
+
+        fontSize: '16px',
+
+        borderRadius: '8px',
+
+        border: '1px solid #ddd',
+
+        width: '100%',
+
+        fontFamily: 'inherit',
+
+        outline: 'none',
+
+        transition: 'border-color 0.2s',
+
+    },
+
+    modalButtons: {
+
+        display: 'flex',
+
+        justifyContent: 'flex-end',
+
+        gap: '12px',
+
+    },
+
+    modalCancel: {
+
+        padding: '8px 16px',
+
+        borderRadius: '6px',
+
+        border: '1px solid #ddd',
+
+        backgroundColor: 'white',
+
+        cursor: 'pointer',
+
+        fontSize: '14px',
+
+        color: '#666',
+
+    },
+
+    modalSubmit: {
+
+        padding: '8px 16px',
+
+        borderRadius: '6px',
+
+        border: 'none',
+
+        backgroundColor: '#4C97FF',
+
+        color: 'white',
+
+        cursor: 'pointer',
+
+        fontWeight: 'bold',
+
+        fontSize: '14px',
 
     },
 
@@ -7469,5 +7467,5 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-            export default IntermediateApp;
+export default IntermediateApp;
 
