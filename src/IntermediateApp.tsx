@@ -69,6 +69,7 @@ import WorkspaceControls from './components/WorkspaceControls';
 import WorkspaceTrash from './components/WorkspaceTrash';
 
 import UnsavedWarningModal from './junior/components/UnsavedWarningModal';
+import { EXTENSIONS, registerExtensions } from './extensions/extensionDefinitions';
 import JuniorExtensionLibrary from './junior/components/JuniorExtensionLibrary';
 
 
@@ -494,241 +495,28 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const [installedExtensions, setInstalledExtensions] = useState<Set<string>>(new Set());
     const installedExtensionsRef = useRef<Set<string>>(new Set());
 
-    // ─── PEN EXTENSION ────────────────────────────────────────────────────────
-    const addPenExtension = useCallback(() => {
+    // ─── EXTENSIONS ──────────────────────────────────────────────────────────
+    const handleAddExtension = useCallback((extId: string) => {
         if (!workspaceRef.current) return;
 
-        // 1. Register block definitions (idempotent — skip already-registered types)
-        // Uses canonical AnimationVM block types so compiled scripts execute natively.
-        const penBlockDefs = [
-            { type: 'pen_clear', message0: 'erase all', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
-            { type: 'pen_stamp', message0: 'stamp', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
-            { type: 'pen_penDown', message0: 'pen down', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
-            { type: 'pen_penUp', message0: 'pen up', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
-            {
-                type: 'pen_setPenColorToColor', message0: 'set pen color to %1',
-                args0: [{ type: 'field_colour', name: 'COLOR', colour: '#2c2c2c' }],
-                previousStatement: null, nextStatement: null, colour: '#3dba7e'
-            },
-            {
-                type: 'pen_changePenColorParamBy', message0: 'change pen %1 by %2',
-                args0: [
-                    { type: 'field_dropdown', name: 'PARAM', options: [['color', 'color'], ['saturation', 'saturation'], ['brightness', 'brightness'], ['transparency', 'transparency']] },
-                    { type: 'field_number', name: 'CHANGE', value: 10 }
-                ], previousStatement: null, nextStatement: null, colour: '#3dba7e'
-            },
-            {
-                type: 'pen_setPenColorParamTo', message0: 'set pen %1 to %2',
-                args0: [
-                    { type: 'field_dropdown', name: 'PARAM', options: [['color', 'color'], ['saturation', 'saturation'], ['brightness', 'brightness'], ['transparency', 'transparency']] },
-                    { type: 'field_number', name: 'VALUE', value: 50 }
-                ], previousStatement: null, nextStatement: null, colour: '#3dba7e'
-            },
-            {
-                type: 'pen_changePenSizeBy', message0: 'change pen size by %1',
-                args0: [{ type: 'field_number', name: 'SIZE', value: 1 }],
-                previousStatement: null, nextStatement: null, colour: '#3dba7e'
-            },
-            {
-                type: 'pen_setPenSizeTo', message0: 'set pen size to %1',
-                args0: [{ type: 'field_number', name: 'SIZE', value: 1 }],
-                previousStatement: null, nextStatement: null, colour: '#3dba7e'
-            },
-            // Advanced Pen
-            {
-                type: 'pen_enable_drag', message0: 'enable %1',
-                args0: [{ type: 'field_dropdown', name: 'ENABLE', options: [['drag and draw', 'drag and draw']] }],
-                previousStatement: null, nextStatement: null, colour: '#2e7d32'
-            },
-            {
-                type: 'pen_set_draw_mode', message0: 'set draw mode: %1',
-                args0: [{ type: 'field_dropdown', name: 'MODE', options: [['default', 'default'], ['smooth', 'smooth']] }],
-                previousStatement: null, nextStatement: null, colour: '#2e7d32'
-            },
-            {
-                type: 'pen_set_buffer', message0: 'set point buffer size: %1',
-                args0: [{ type: 'field_number', name: 'VALUE', value: 1 }],
-                previousStatement: null, nextStatement: null, colour: '#2e7d32'
-            },
-            // ── Realistic pencil drawing ──
-            { type: 'pen_go_to_mouse', message0: 'go to mouse ✏️ (pen down)', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
-            { type: 'pen_go_to_mouse_up', message0: 'go to mouse (pen up)', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
-            { type: 'pen_point_towards_mouse_smooth', message0: 'point towards mouse (smooth)', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
-        ];
-        const newPenDefs = penBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
-        if (newPenDefs.length > 0) Blockly.defineBlocksWithJsonArray(newPenDefs);
+        console.log(`[Extension] Adding extension: ${extId}`);
 
-        // 2. JS generators (runtime bridge path)
-        const jsGen = (window as any).Blockly?.JavaScript;
-        if (jsGen) {
-            jsGen['pen_clear'] = () => 'if(window.runtime?.pen) window.runtime.pen.eraseAll();\n';
-            jsGen['pen_stamp'] = () => 'if(window.runtime?.pen) window.runtime.pen.stamp();\n';
-            jsGen['pen_penDown'] = () => 'if(window.runtime?.pen) window.runtime.pen.penDown();\n';
-            jsGen['pen_penUp'] = () => 'if(window.runtime?.pen) window.runtime.pen.penUp();\n';
-            jsGen['pen_setPenColorToColor'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.setColor('${b.getFieldValue('COLOR')}');\n`;
-            jsGen['pen_changePenColorParamBy'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.changeColorBy(${b.getFieldValue('CHANGE')});\n`;
-            jsGen['pen_setPenColorParamTo'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.setColorTo(${b.getFieldValue('VALUE')});\n`;
-            jsGen['pen_changePenSizeBy'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.changeSize(${b.getFieldValue('SIZE')});\n`;
-            jsGen['pen_setPenSizeTo'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.setSize(${b.getFieldValue('SIZE')});\n`;
-            jsGen['pen_enable_drag'] = () => 'if(window.runtime?.pen) window.runtime.pen.enableDragAndDraw();\n';
-            jsGen['pen_set_draw_mode'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.setDrawMode('${b.getFieldValue('MODE')}');\n`;
-            jsGen['pen_set_buffer'] = (b: any) => `if(window.runtime?.pen) window.runtime.pen.setPointBufferSize(${b.getFieldValue('VALUE')});\n`;
-            jsGen['pen_go_to_mouse'] = () => '/* go_to_mouse_with_pen handled by AnimationVM */\n';
-            jsGen['pen_go_to_mouse_up'] = () => '/* go_to_mouse_with_pen(up) handled by AnimationVM */\n';
-            jsGen['pen_point_towards_mouse_smooth'] = () => '/* smooth tilt handled by AnimationVM */\n';
-        }
+        // Normalize ID (face-detection -> face_detection)
+        const id = extId.replace(/-/g, '_');
+        const ext = EXTENSIONS[id];
 
-        // 3. Mark installed → getCurrentToolbox() will inject the category after My Blocks
-        if (!installedExtensionsRef.current.has('pen')) {
-            installedExtensionsRef.current = new Set([...installedExtensionsRef.current, 'pen']);
-            setInstalledExtensions(new Set(installedExtensionsRef.current));
-        }
-    }, [workspaceRef]);
+        if (ext) {
+            // 1. Register blocks and generators
+            registerExtensions(Blockly, [id]);
 
-    // ─── FACE DETECTION EXTENSION ─────────────────────────────────────────────
-    const addFaceDetectionExtension = useCallback(() => {
-        if (!workspaceRef.current) return;
-
-        // 1. Register block definitions
-        const fdBlockDefs = [
-            {
-                type: 'fd_camera', message0: '📷 camera %1',
-                args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off'], ['flip', 'flip']] }],
-                previousStatement: null, nextStatement: null, colour: '#D43D41'
-            },
-            {
-                type: 'fd_analyze', message0: '👤 %1 face',
-                args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['analyze', 'analyze'], ['show detection', 'show'], ['hide detection', 'hide']] }],
-                previousStatement: null, nextStatement: null, colour: '#D43D41'
-            },
-            { type: 'fd_count', message0: '👥 count faces', previousStatement: null, nextStatement: null, colour: '#D43D41' },
-            { type: 'fd_guess_emotion', message0: '🙂 guess emotion', previousStatement: null, nextStatement: null, colour: '#D43D41' },
-            {
-                type: 'fd_detect', message0: '👁️ detect %1',
-                args0: [{ type: 'field_dropdown', name: 'FEATURE', options: [['Left Eye', 'left_eye'], ['Right Eye', 'right_eye'], ['Nose', 'nose'], ['Mouth', 'mouth']] }],
-                previousStatement: null, nextStatement: null, colour: '#D43D41'
-            },
-            // Reporter blocks
-            {
-                type: 'fd_face_x', message0: 'face %1 x position',
-                args0: [{ type: 'field_number', name: 'N', value: 1 }],
-                output: 'Number', colour: '#b71c1c'
-            },
-            {
-                type: 'fd_face_y', message0: 'face %1 y position',
-                args0: [{ type: 'field_number', name: 'N', value: 1 }],
-                output: 'Number', colour: '#b71c1c'
-            },
-            { type: 'fd_face_count', message0: 'face count', output: 'Number', colour: '#b71c1c' },
-            { type: 'fd_emotion', message0: 'emotion', output: 'String', colour: '#b71c1c' },
-        ];
-        const newFdDefs = fdBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
-        if (newFdDefs.length > 0) Blockly.defineBlocksWithJsonArray(newFdDefs);
-
-        // 2. JS generators
-        const jsGen = (window as any).Blockly?.JavaScript;
-        if (jsGen) {
-            jsGen['fd_camera'] = (b: any) => `if(window.runtime?.face) window.runtime.face.analyse('${b.getFieldValue("ACTION")}');\n`;
-            jsGen['fd_analyze'] = (b: any) => `if(window.runtime?.face) window.runtime.face.analyse('${b.getFieldValue("ACTION")}');\n`;
-            jsGen['fd_count'] = () => `if(window.runtime?.face){const s=window.__activeSpriteId;if(s&&window.spriteManager)window.spriteManager.getSprite(s)?.say(window.runtime.face.getFaceCount()+" faces");}\n`;
-            jsGen['fd_guess_emotion'] = () => `if(window.runtime?.face){const s=window.__activeSpriteId;if(s&&window.spriteManager)window.spriteManager.getSprite(s)?.say("Emotion: "+window.runtime.face.getEmotion());}\n`;
-            jsGen['fd_detect'] = (b: any) => `if(window.runtime?.face) window.runtime.face.detectFeature('${b.getFieldValue("FEATURE")}');\n`;
-            jsGen['fd_face_x'] = (b: any) => [`window.runtime?.face?.getX(${b.getFieldValue('N')})||0`, 0];
-            jsGen['fd_face_y'] = (b: any) => [`window.runtime?.face?.getY(${b.getFieldValue('N')})||0`, 0];
-            jsGen['fd_face_count'] = () => [`window.runtime?.face?.getFaceCount()||0`, 0];
-            jsGen['fd_emotion'] = () => [`window.runtime?.face?.getEmotion()||''`, 0];
-        }
-
-        // 3. Mark installed
-        if (!installedExtensionsRef.current.has('face_detection')) {
-            installedExtensionsRef.current = new Set([...installedExtensionsRef.current, 'face_detection']);
-            setInstalledExtensions(new Set(installedExtensionsRef.current));
-        }
-    }, [workspaceRef]);
-
-    // ─── OBJECT DETECTION EXTENSION ───────────────────────────────────────────
-    const addObjectDetectionExtension = useCallback(() => {
-        if (!workspaceRef.current) return;
-
-        console.log('[Extension] Adding Object Detection extension...');
-
-        // 1. Register block definitions
-        const odBlockDefs = [
-            { type: 'object_detect', message0: 'detect objects in camera', previousStatement: null, nextStatement: null, colour: '#3dba7e' },
-            { type: 'object_when_detected', message0: 'when %1 detected', args0: [{ type: 'field_dropdown', name: 'OBJECT', options: [['cat', 'cat'], ['dog', 'dog'], ['person', 'person'], ['car', 'car'], ['ball', 'ball']] }], previousStatement: null, nextStatement: null, colour: '#3dba7e' },
-            { type: 'object_label', message0: 'label of object %1', args0: [{ type: 'field_number', name: 'N', value: 1, min: 1 }], output: 'String', colour: '#2e9e66' },
-            { type: 'object_confidence', message0: 'confidence of object %1', args0: [{ type: 'field_number', name: 'N', value: 1, min: 1 }], output: 'Number', colour: '#2e9e66' },
-            { type: 'object_x', message0: 'x of object %1', args0: [{ type: 'field_number', name: 'N', value: 1, min: 1 }], output: 'Number', colour: '#1e7e50' },
-            { type: 'object_y', message0: 'y of object %1', args0: [{ type: 'field_number', name: 'N', value: 1, min: 1 }], output: 'Number', colour: '#1e7e50' },
-            { type: 'object_count', message0: 'number of objects', output: 'Number', colour: '#1e7e50' }
-        ];
-        const newOdDefs = odBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
-        if (newOdDefs.length > 0) {
-            Blockly.defineBlocksWithJsonArray(newOdDefs);
-            console.log(`[Extension] Registered ${newOdDefs.length} Object Detection blocks`);
-        }
-
-        // 2. JS generators
-        const jsGen = (window as any).Blockly?.JavaScript;
-        if (jsGen) {
-            jsGen['object_detect'] = () => 'if(window.runtime?.objectDetection) await window.runtime.objectDetection.detectObjects();\n';
-            jsGen['object_when_detected'] = (b: any) => `// when ${b.getFieldValue("OBJECT")} detected\n`;
-            jsGen['object_label'] = (b: any) => [`window.runtime?.objectDetection?.getLabel(${b.getFieldValue('N')})||''`, 0];
-            jsGen['object_confidence'] = (b: any) => [`window.runtime?.objectDetection?.getConfidence(${b.getFieldValue('N')})||0`, 0];
-            jsGen['object_x'] = (b: any) => [`window.runtime?.objectDetection?.getX(${b.getFieldValue('N')})||0`, 0];
-            jsGen['object_y'] = (b: any) => [`window.runtime?.objectDetection?.getY(${b.getFieldValue('N')})||0`, 0];
-            jsGen['object_count'] = () => [`window.runtime?.objectDetection?.getNumberOfObjects()||0`, 0];
-            console.log('[Extension] Registered Object Detection generators');
-        }
-
-        // 3. Mark installed
-        if (!installedExtensionsRef.current.has('object_detection')) {
-            installedExtensionsRef.current = new Set([...installedExtensionsRef.current, 'object_detection']);
-            setInstalledExtensions(new Set(installedExtensionsRef.current));
-            console.log('[Extension] Object Detection marked as installed. Installed extensions:', Array.from(installedExtensionsRef.current));
-        }
-    }, [workspaceRef]);
-
-    // ─── MUSIC EXTENSION ──────────────────────────────────────────────────────
-    const addMusicExtension = useCallback(() => {
-        if (!workspaceRef.current) return;
-
-        console.log('[Extension] Adding Music extension...');
-
-        // 1. Register block definitions
-        const musicBlockDefs = [
-            { type: 'music_play_note', message0: 'play note %1 for %2 beats', args0: [{ type: 'field_number', name: 'NOTE', value: 60, min: 0, max: 127 }, { type: 'field_number', name: 'BEATS', value: 0.25, min: 0 }], previousStatement: null, nextStatement: null, colour: '#c62828' },
-            { type: 'music_set_instrument', message0: 'set instrument %1', args0: [{ type: 'field_number', name: 'INST', value: 1, min: 1, max: 21 }], previousStatement: null, nextStatement: null, colour: '#c62828' },
-            { type: 'music_play_drum', message0: 'play drum %1 for %2 beats', args0: [{ type: 'field_number', name: 'DRUM', value: 1, min: 1, max: 18 }, { type: 'field_number', name: 'BEATS', value: 0.25, min: 0 }], previousStatement: null, nextStatement: null, colour: '#b71c1c' },
-            { type: 'music_set_tempo', message0: 'set tempo %1 bpm', args0: [{ type: 'field_number', name: 'BPM', value: 60, min: 20, max: 500 }], previousStatement: null, nextStatement: null, colour: '#b71c1c' },
-            { type: 'music_change_tempo', message0: 'change tempo by %1', args0: [{ type: 'field_number', name: 'AMOUNT', value: 20 }], previousStatement: null, nextStatement: null, colour: '#7f0000' },
-            { type: 'music_get_tempo', message0: 'tempo', output: 'Number', colour: '#7f0000' },
-            { type: 'music_rest', message0: 'rest for %1 beats', args0: [{ type: 'field_number', name: 'BEATS', value: 0.25, min: 0 }], previousStatement: null, nextStatement: null, colour: '#c62828' }
-        ];
-        const newMusicDefs = musicBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
-        if (newMusicDefs.length > 0) {
-            Blockly.defineBlocksWithJsonArray(newMusicDefs);
-            console.log(`[Extension] Registered ${newMusicDefs.length} Music blocks`);
-        }
-
-        // 2. JS generators
-        const jsGen = (window as any).Blockly?.JavaScript;
-        if (jsGen) {
-            jsGen['music_play_note'] = (b: any) => `if(window.runtime?.music) await window.runtime.music.playNote(${b.getFieldValue('NOTE')}, ${b.getFieldValue('BEATS')});\n`;
-            jsGen['music_set_instrument'] = (b: any) => `if(window.runtime?.music) window.runtime.music.setInstrument(${b.getFieldValue('INST')});\n`;
-            jsGen['music_play_drum'] = (b: any) => `if(window.runtime?.music) await window.runtime.music.playDrum(${b.getFieldValue('DRUM')}, ${b.getFieldValue('BEATS')});\n`;
-            jsGen['music_set_tempo'] = (b: any) => `if(window.runtime?.music) window.runtime.music.setTempo(${b.getFieldValue('BPM')});\n`;
-            jsGen['music_change_tempo'] = (b: any) => `if(window.runtime?.music) window.runtime.music.changeTempoBy(${b.getFieldValue('AMOUNT')});\n`;
-            jsGen['music_get_tempo'] = () => [`window.runtime?.music?.getTempo()||60`, 0];
-            jsGen['music_rest'] = (b: any) => `if(window.runtime?.music) await window.runtime.music.rest(${b.getFieldValue('BEATS')});\n`;
-            console.log('[Extension] Registered Music generators');
-        }
-
-        // 3. Mark installed
-        if (!installedExtensionsRef.current.has('music')) {
-            installedExtensionsRef.current = new Set([...installedExtensionsRef.current, 'music']);
-            setInstalledExtensions(new Set(installedExtensionsRef.current));
-            console.log('[Extension] Music marked as installed. Installed extensions:', Array.from(installedExtensionsRef.current));
+            // 2. Mark installed
+            if (!installedExtensionsRef.current.has(id)) {
+                installedExtensionsRef.current = new Set([...installedExtensionsRef.current, id]);
+                setInstalledExtensions(new Set(installedExtensionsRef.current));
+                console.log(`[Extension] ${ext.name} marked as installed.`);
+            }
+        } else {
+            console.warn(`[Extension] Unknown extension ID: ${extId}`);
         }
     }, [workspaceRef]);
 
@@ -737,24 +525,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         const handleMessage = (event: MessageEvent) => {
             if (event.data && event.data.type === 'ADD_EXTENSION') {
                 const extId = event.data.extension || event.data.extensionId;
-                if (extId === 'pen') {
-                    addPenExtension();
-                    setShowExtensionLibrary(false);
-                } else if (extId === 'face-detection' || extId === 'face_detection') {
-                    addFaceDetectionExtension();
-                    setShowExtensionLibrary(false);
-                } else if (extId === 'object_detection') {
-                    addObjectDetectionExtension();
-                    setShowExtensionLibrary(false);
-                } else if (extId === 'music') {
-                    addMusicExtension();
+                if (extId) {
+                    handleAddExtension(extId);
                     setShowExtensionLibrary(false);
                 }
             }
         };
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [addPenExtension, addFaceDetectionExtension, addObjectDetectionExtension, addMusicExtension]);
+    }, [handleAddExtension]);
 
 
 
@@ -1454,89 +1233,17 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         console.log('[Toolbox] Building toolbox. Installed extensions:', Array.from(ext));
 
-        if (ext.has('pen')) {
-            extensionCategories.push({
-                kind: 'pictobloxCategory',
-                name: 'Pen',
-                colour: '#3dba7e',
-                contents: [
-                    { kind: 'block', type: 'pen_clear' },
-                    { kind: 'block', type: 'pen_stamp' },
-                    { kind: 'block', type: 'pen_penDown' },
-                    { kind: 'block', type: 'pen_penUp' },
-                    { kind: 'block', type: 'pen_setPenColorToColor' },
-                    { kind: 'block', type: 'pen_changePenColorParamBy' },
-                    { kind: 'block', type: 'pen_setPenColorParamTo' },
-                    { kind: 'block', type: 'pen_changePenSizeBy' },
-                    { kind: 'block', type: 'pen_setPenSizeTo' },
-                    { kind: 'label', text: 'Advanced Pen' },
-                    { kind: 'block', type: 'pen_enable_drag' },
-                    { kind: 'block', type: 'pen_set_draw_mode' },
-                    { kind: 'block', type: 'pen_set_buffer' },
-                    { kind: 'label', text: 'Pencil Drawing' },
-                    { kind: 'block', type: 'pen_go_to_mouse' },
-                    { kind: 'block', type: 'pen_go_to_mouse_up' },
-                    { kind: 'block', type: 'pen_point_towards_mouse_smooth' },
-                ],
-            });
-        }
-
-        if (ext.has('face_detection')) {
-            extensionCategories.push({
-                kind: 'pictobloxCategory',
-                name: 'Face Detection',
-                colour: '#D43D41',
-                contents: [
-                    { kind: 'block', type: 'fd_camera' },
-                    { kind: 'block', type: 'fd_analyze' },
-                    { kind: 'label', text: 'Reporters' },
-                    { kind: 'block', type: 'fd_face_count' },
-                    { kind: 'block', type: 'fd_emotion' },
-                    { kind: 'block', type: 'fd_face_x' },
-                    { kind: 'block', type: 'fd_face_y' },
-                    { kind: 'label', text: 'Actions' },
-                    { kind: 'block', type: 'fd_count' },
-                    { kind: 'block', type: 'fd_guess_emotion' },
-                    { kind: 'block', type: 'fd_detect' },
-                ],
-            });
-        }
-
-        if (ext.has('object_detection')) {
-            extensionCategories.push({
-                kind: 'pictobloxCategory',
-                name: 'Object Detection',
-                colour: '#3dba7e',
-                contents: [
-                    { kind: 'block', type: 'object_detect' },
-                    { kind: 'block', type: 'object_when_detected' },
-                    { kind: 'label', text: 'Reporters' },
-                    { kind: 'block', type: 'object_count' },
-                    { kind: 'block', type: 'object_label' },
-                    { kind: 'block', type: 'object_confidence' },
-                    { kind: 'block', type: 'object_x' },
-                    { kind: 'block', type: 'object_y' },
-                ],
-            });
-        }
-
-        if (ext.has('music')) {
-            extensionCategories.push({
-                kind: 'pictobloxCategory',
-                name: 'Music',
-                colour: '#c62828',
-                contents: [
-                    { kind: 'block', type: 'music_play_note' },
-                    { kind: 'block', type: 'music_set_instrument' },
-                    { kind: 'block', type: 'music_play_drum' },
-                    { kind: 'block', type: 'music_rest' },
-                    { kind: 'label', text: 'Tempo' },
-                    { kind: 'block', type: 'music_set_tempo' },
-                    { kind: 'block', type: 'music_change_tempo' },
-                    { kind: 'block', type: 'music_get_tempo' },
-                ],
-            });
-        }
+        ext.forEach(id => {
+            const definition = EXTENSIONS[id];
+            if (definition) {
+                extensionCategories.push({
+                    kind: 'pictobloxCategory',
+                    name: definition.name,
+                    colour: definition.color,
+                    contents: definition.getToolbox(),
+                });
+            }
+        });
 
         // Helper: inject extension categories immediately after "My Blocks"
         const injectExtensions = (contents: any[]) => {
@@ -6647,7 +6354,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 <JuniorExtensionLibrary
                     onClose={() => setShowExtensionLibrary(false)}
                     onSelectExtension={(id: string) => {
-                        console.log('Selected extension:', id);
+                        handleAddExtension(id);
                         setShowExtensionLibrary(false);
                     }}
                 />
