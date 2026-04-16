@@ -1,6 +1,16 @@
 /**
+<<<<<<< HEAD
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
+ * IMA ADPCM decoder for Scratch 3.0 sounds.
+ * ADPCM is a 4-bit compression format used in many legacy Scratch assets.
+=======
  * IMA ADPCM decoder for leap 3.0 sounds.
  * ADPCM is a 4-bit compression format used in many legacy leap assets.
+>>>>>>> 6b15f725eb9104361d7d904575eff29a664202ff
  * Browsers do not always support this natively in decodeAudioData.
  */
 

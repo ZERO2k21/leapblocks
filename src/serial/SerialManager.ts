@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import { BrowserWindow } from 'electron';
 // Use standard require for serialport loaded as a native module
 const { SerialPort } = require('serialport');

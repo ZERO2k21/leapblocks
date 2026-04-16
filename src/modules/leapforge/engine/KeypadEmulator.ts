@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
  * KeypadEmulator.ts
  * Emulates a 4x4 membrane keypad matrix scanning.
  * Row pins are output (scanned by Arduino), Column pins are input (read by Arduino).

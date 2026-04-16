@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
  * RotaryEncoderEmulator.ts
  * Emulates the KY-040 rotary encoder.
  * Generates quadrature A/B signals and switch press from UI interaction.

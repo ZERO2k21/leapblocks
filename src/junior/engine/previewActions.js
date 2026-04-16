@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 export const previewActions = {
     move_right: (b) => window.moveRelative(window.activeSpriteId || "robot_default", "RIGHT", Number(b?.getFieldValue("STEPS") || 1)),
     move_left: (b) => window.moveRelative(window.activeSpriteId || "robot_default", "LEFT", Number(b?.getFieldValue("STEPS") || 1)),

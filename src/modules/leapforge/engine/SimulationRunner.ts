@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
  * SimulationRunner - The heart of the circuit simulation.
  * Decouples logic execution from UI rendering.
  * Provides a high-frequency tick loop and pin-state management mapped dynamically to AVR8js.
@@ -11,6 +16,7 @@ import { BOARDS, MCUConfig } from './BoardConfig';
 
 export type PinState = 'HIGH' | 'LOW' | 'FLOATING';
 export type PinListener = (state: PinState) => void;
+export type RawPortListener = (portLetter: string, bit: number, isHigh: boolean, cycles: number) => void;
 
 export interface PinMapping {
   avrPin: string;
@@ -20,6 +26,7 @@ export interface PinMapping {
 class SimulationRunner {
   private pinStates: Map<string, PinState> = new Map();
   private listeners: Map<string, Set<PinListener>> = new Map();
+  private rawPortListeners: Map<string, Set<RawPortListener>> = new Map(); // pin-keyed, fires every edge
   
   private cpu: CPU | null = null;
   private usart: AVRUSART | null = null;
@@ -175,11 +182,18 @@ class SimulationRunner {
    */
   public scheduleEvent(cyclesInFuture: number, callback: () => void) {
     if (!this.cpu) return;
-    this.scheduledEvents.push({
-      targetCycles: this.cpu.cycles + cyclesInFuture,
-      callback
-    });
-    // Sort so the soonest event is always index 0
+    const targetCycles = this.cpu.cycles + Math.max(0, cyclesInFuture);
+    this.scheduledEvents.push({ targetCycles, callback });
+    this.scheduledEvents.sort((a, b) => a.targetCycles - b.targetCycles);
+  }
+
+  /**
+   * Schedule a callback at an absolute CPU cycle count.
+   * Preferred for DHT/NeoPixel emulators that pre-compute a full event timeline.
+   */
+  public scheduleAt(absoluteCycles: number, callback: () => void) {
+    if (!this.cpu) return;
+    this.scheduledEvents.push({ targetCycles: absoluteCycles, callback });
     this.scheduledEvents.sort((a, b) => a.targetCycles - b.targetCycles);
   }
 
@@ -233,9 +247,6 @@ class SimulationRunner {
     const currentState = this.pinStates.get(pinId);
     if (currentState === state) return;
 
-    // Uncomment the following for verbose tracing of every specific pin toggle dynamically.
-    console.log(`[FORGE ENGINE] Pin ${pinId} state toggled to ${state}`);
-
     this.pinStates.set(pinId, state);
     this.notifyListeners(pinId, state);
   }
@@ -264,6 +275,22 @@ class SimulationRunner {
     }
   }
 
+  /**
+   * Raw listener — fires on EVERY port write for this pin, no deduplication.
+   * Required for WS2812B / NeoPixel protocol decoding where every edge matters.
+   */
+  addRawListener(pinId: string, listener: RawPortListener) {
+    if (!this.rawPortListeners.has(pinId)) {
+      this.rawPortListeners.set(pinId, new Set());
+    }
+    this.rawPortListeners.get(pinId)!.add(listener);
+  }
+
+  removeRawListener(pinId: string, listener: RawPortListener) {
+    const set = this.rawPortListeners.get(pinId);
+    if (set) set.delete(listener);
+  }
+
   private notifyListeners(pinId: string, state: PinState) {
     const set = this.listeners.get(pinId);
     if (set) {
@@ -275,9 +302,15 @@ class SimulationRunner {
    * Translates the 8-bit port logic state onto discrete UI pin channels.
    */
   private pushPortState(portLetter: string, state: number) {
+    const cycles = this.cpu?.cycles ?? 0;
     for (let bit = 0; bit < 8; bit++) {
       const isHigh = (state & (1 << bit)) !== 0;
-      this.setPinState(`P${portLetter}${bit}`, isHigh ? 'HIGH' : 'LOW');
+      const pinId = `P${portLetter}${bit}`;
+      // Fire raw listeners on EVERY write (no dedup) — needed for WS2812B timing
+      const rawSet = this.rawPortListeners.get(pinId);
+      if (rawSet) rawSet.forEach(l => l(portLetter, bit, isHigh, cycles));
+      // Deduped listeners for normal LED/buzzer etc.
+      this.setPinState(pinId, isHigh ? 'HIGH' : 'LOW');
     }
   }
 
@@ -287,9 +320,6 @@ class SimulationRunner {
    */
   setVirtualInput(pinId: string, isHigh: boolean) {
     if (!this.cpu) return;
-    console.log(`[FORGE ENGINE] Virtual Input injected on ${pinId} => ${isHigh ? 'HIGH' : 'LOW'}`);
-    
-    // Matches patterns like "PB5", "PD2"
     const portLetter = pinId.charAt(1);
     const bit = parseInt(pinId.charAt(2), 10);
     

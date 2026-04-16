@@ -22,7 +22,7 @@
     "name": "chris jaron",
     "email": "chrisjaron99@gmail.com"
   },
-  "license": "MIT",
+  "license": "UNLICENSED",
   "devDependencies": {
     "@chromatic-com/storybook": "^5.1.1",
     "@storybook/addon-a11y": "^10.3.5",
@@ -82,5 +82,6 @@
     "wav-encoder": "^1.3.0",
     "xml2js": "^0.6.2",
     "zustand": "^5.0.12"
-  }
+  },
+  "private": true
 }

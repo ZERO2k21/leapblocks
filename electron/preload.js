@@ -8,6 +8,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   saveProject: (d) => ipcRenderer.invoke("save-project", d),
   openProject: () => ipcRenderer.invoke("open-project"),
   compileArduino: (code) => ipcRenderer.invoke("compile-arduino", code),
+  // forge-lib
+  forgeLibInstall: (name) => ipcRenderer.invoke("forge-lib-install", name),
+  forgeLibList: ()         => ipcRenderer.invoke("forge-lib-list"),
+  forgeLibRemove: (name)   => ipcRenderer.invoke("forge-lib-remove", name),
+  forgeCompile: (req)      => ipcRenderer.invoke("forge-compile", req),
   invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
   platform: process.platform,
   isElectron: true

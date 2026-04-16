@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
  * SSD1306I2CSlave.ts
  * Wraps SSD1306Emulator as an I2C slave for the I2CBusManager.
  * I2C address: 0x3C (default) or 0x3D.

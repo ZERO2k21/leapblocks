@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
  * Lesson Configuration Service
  * Controls the UI layout and constraints based on the current "Lesson" or Mode.
  * In a full app, this would be fetched from a backend server.

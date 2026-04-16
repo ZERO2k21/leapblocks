@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Sprite } from './Sprite';
 import { gameLoop } from '../engine/GameLoop';

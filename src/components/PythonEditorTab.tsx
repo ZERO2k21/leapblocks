@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import React, { useEffect, useState } from 'react';
 import Blockly from '@blockly-runtime';
 import { pythonGenerator } from '../generators/python-generator';

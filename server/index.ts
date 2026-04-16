@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import express from 'express';
 import cors from 'cors';
 import { exec } from 'child_process';
@@ -176,6 +181,77 @@ app.get('/libraries/search', async (req, res) => {
     res.json(libs);
   } catch (err) {
     res.json([]);
+  }
+});
+
+// POST /libraries/install  { name: string }
+app.post('/libraries/install', async (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ success: false, error: 'Library name required' });
+
+  console.log(`[LIB] Installing: ${name}`);
+  try {
+    // Throttled index update — only once per 24h
+    const manifestPath = path.join(FORGE.userDir, 'manifest.json');
+    let manifest: any = {};
+    try { manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')); } catch (_) {}
+    if (!manifest.lastIndexUpdate || Date.now() - manifest.lastIndexUpdate > 24 * 60 * 60 * 1000) {
+      await runCommand(`${CLI_BIN} lib update-index --config-file "${FORGE.configFile}"`);
+      manifest.lastIndexUpdate = Date.now();
+      fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+    }
+
+    await runCommand(`${CLI_BIN} lib install "${name}" --config-file "${FORGE.configFile}"`);
+    console.log(`[LIB] Installed: ${name}`);
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error(`[LIB] Install failed: ${err.message}`);
+    res.json({ success: false, error: err.message });
+  }
+});
+
+// GET /libraries/installed
+app.get('/libraries/installed', (_req, res) => {
+  const libsDir = path.join(FORGE.userDir, 'libraries');
+  if (!fs.existsSync(libsDir)) return res.json([]);
+
+  try {
+    const entries = fs.readdirSync(libsDir, { withFileTypes: true });
+    const libs = entries
+      .filter(e => e.isDirectory())
+      .map(e => {
+        const propFile = path.join(libsDir, e.name, 'library.properties');
+        const props: Record<string, string> = {};
+        if (fs.existsSync(propFile)) {
+          fs.readFileSync(propFile, 'utf8').split('\n').forEach(line => {
+            const [k, ...v] = line.split('=');
+            if (k && v.length) props[k.trim()] = v.join('=').trim();
+          });
+        }
+        return {
+          name:        props.name        || e.name,
+          version:     props.version     || '?',
+          author:      props.author      || '',
+          description: props.sentence    || '',
+        };
+      });
+    res.json(libs);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /libraries/remove  { name: string }
+app.delete('/libraries/remove', async (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ success: false, error: 'Library name required' });
+
+  console.log(`[LIB] Removing: ${name}`);
+  try {
+    await runCommand(`${CLI_BIN} lib uninstall "${name}" --config-file "${FORGE.configFile}"`);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.json({ success: false, error: err.message });
   }
 });
 

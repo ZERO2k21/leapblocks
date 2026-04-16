@@ -26,11 +26,20 @@ const defaultSize = 23;
 
 @customElement('leap-stepper-motor')
 export class StepperMotorElement extends LitElement {
+  /**
+   * Display angle 0–360° (modulo). We convert this to a cumulative angle
+   * internally so CSS transition always takes the short arc.
+   */
   @property({ type: Number }) angle = 0;
   @property() arrow = '';
   @property() value = '';
   @property() units = '';
   @property() size: 8 | 11 | 14 | 17 | 23 | 34 = defaultSize;
+
+  /** Cumulative angle (unbounded) used for CSS transform — avoids wrap-around flips */
+  private _cumulativeAngle = 0;
+  /** Last modulo angle received so we can compute the shortest-arc delta */
+  private _lastModAngle = 0;
 
   get pinInfo(): ElementPin[] {
     const spec = this.nemaSpecMap[this.size] ?? this.nemaSpecMap[defaultSize];
@@ -128,6 +137,14 @@ export class StepperMotorElement extends LitElement {
     if (changedProperties.has('size')) {
       this.dispatchEvent(new CustomEvent('pininfo-change'));
     }
+    if (changedProperties.has('angle')) {
+      // Compute shortest-arc delta to avoid wrap-around flips in CSS transition
+      let delta = this.angle - this._lastModAngle;
+      if (delta > 180)  delta -= 360;
+      if (delta < -180) delta += 360;
+      this._cumulativeAngle += delta;
+      this._lastModAngle = this.angle;
+    }
     super.update(changedProperties);
   }
 
@@ -150,7 +167,25 @@ export class StepperMotorElement extends LitElement {
     // shaft radius offset, needed for transform
     const rOff = Math.sqrt(0.75 * Math.pow(shaftRadius, 2));
 
-    return html`<svg
+    // Speed-adaptive transition: faster steps → shorter transition so it looks smooth
+    // but never faster than 16ms (one frame) or slower than 300ms
+    const stepsPerSec = 200; // default; visual only — keeps motion fluid
+    const stepAngle = 360 / 200;
+    const stepDurationMs = Math.min(300, Math.max(16, Math.round((stepAngle / 360) * (1000 / (stepsPerSec / 200)))));
+
+    const energized = !!this.arrow;
+    const glowColor = energized ? '#BEF264' : 'none';
+    const glowFilter = energized ? 'drop-shadow(0 0 3px #BEF264)' : 'none';
+
+    return html`
+      <style>
+        #rotator {
+          transform-box: fill-box;
+          transform-origin: center;
+          transition: transform ${stepDurationMs}ms linear;
+        }
+      </style>
+      <svg
       width="${frameSize + 1}mm"
       height="${frameSize + 5}mm"
       version="1.1"
@@ -219,51 +254,16 @@ export class StepperMotorElement extends LitElement {
               stroke-width=".3245"
             />
             <circle cx="${cornerOffset}" cy="${cornerOffset}" r="${outerHoleRadius}" fill="#666" />
-            <circle
-              cx="${cornerOffset}"
-              cy="${cornerOffset}"
-              r="${innerHoleRadius}"
-              fill="#e6e6e6"
-            />
-            <circle
-              cx="${frameSize - cornerOffset}"
-              cy="${cornerOffset}"
-              r="${outerHoleRadius}"
-              fill="#666"
-            />
-            <circle
-              cx="${frameSize - cornerOffset}"
-              cy="${cornerOffset}"
-              r="${innerHoleRadius}"
-              fill="#e6e6e6"
-            />
-            <circle
-              cx="${cornerOffset}"
-              cy="${frameSize - cornerOffset}"
-              r="${outerHoleRadius}"
-              fill="#666"
-            />
-            <circle
-              cx="${cornerOffset}"
-              cy="${frameSize - cornerOffset}"
-              r="${innerHoleRadius}"
-              fill="#e6e6e6"
-            />
-            <circle
-              cx="${frameSize - cornerOffset}"
-              cy="${frameSize - cornerOffset}"
-              r="${outerHoleRadius}"
-              fill="#666"
-            />
-            <circle
-              cx="${frameSize - cornerOffset}"
-              cy="${frameSize - cornerOffset}"
-              r="${innerHoleRadius}"
-              fill="#e6e6e6"
-            />
+            <circle cx="${cornerOffset}" cy="${cornerOffset}" r="${innerHoleRadius}" fill="#e6e6e6" />
+            <circle cx="${frameSize - cornerOffset}" cy="${cornerOffset}" r="${outerHoleRadius}" fill="#666" />
+            <circle cx="${frameSize - cornerOffset}" cy="${cornerOffset}" r="${innerHoleRadius}" fill="#e6e6e6" />
+            <circle cx="${cornerOffset}" cy="${frameSize - cornerOffset}" r="${outerHoleRadius}" fill="#666" />
+            <circle cx="${cornerOffset}" cy="${frameSize - cornerOffset}" r="${innerHoleRadius}" fill="#e6e6e6" />
+            <circle cx="${frameSize - cornerOffset}" cy="${frameSize - cornerOffset}" r="${outerHoleRadius}" fill="#666" />
+            <circle cx="${frameSize - cornerOffset}" cy="${frameSize - cornerOffset}" r="${innerHoleRadius}" fill="#e6e6e6" />
           </g>
 
-          <!-- motor body -->
+          <!-- motor body with energization glow -->
           <circle
             cx="${halfFrame}"
             cy="${halfFrame}"
@@ -273,24 +273,35 @@ export class StepperMotorElement extends LitElement {
             opacity=".73"
             stroke="url(#body-gradient)"
             stroke-width="1.41429"
+            style="filter: ${glowFilter}; transition: filter 80ms ease"
           />
-          <!-- Rotator -->
-          <g>
+
+          <!-- Energization ring — lights up when coils are active -->
+          <circle
+            cx="${halfFrame}"
+            cy="${halfFrame}"
+            r="${bodyRadius - 1}"
+            fill="none"
+            stroke="${glowColor}"
+            stroke-width="0.8"
+            stroke-opacity="${energized ? '0.6' : '0'}"
+            style="transition: stroke-opacity 80ms ease, stroke 80ms ease"
+          />
+
+          <!-- Rotator group — CSS transition handles smooth sweep -->
+          <g
+            id="rotator"
+            style="transform: rotate(${this._cumulativeAngle}deg); transform-origin: ${halfFrame}mm ${halfFrame}mm; transition: transform ${stepDurationMs}ms linear"
+          >
+            <!-- Direction arrow -->
             <path
-              id="arrow-path"
-              transform="
-                rotate(${this.angle}, ${halfFrame},${halfFrame}) 
-                translate(${halfFrame} ${halfFrame})"
-              fill="${this.arrow || 'transparent'}"
-              d="m 0 0 l -${shaftRadius} 0 l ${shaftRadius} 
-                -${halfFrame - 3} l ${shaftRadius} ${halfFrame - 3} z"
+              transform="translate(${halfFrame} ${halfFrame})"
+              fill="${this.arrow || 'rgba(255,255,255,0.15)'}"
+              d="m 0 0 l -${shaftRadius} 0 l ${shaftRadius} -${halfFrame - 3} l ${shaftRadius} ${halfFrame - 3} z"
             />
+            <!-- D-cut shaft -->
             <path
-              id="shaft-path"
-              transform="
-                translate(${halfFrame}, ${halfFrame}) 
-                rotate(${this.angle}) 
-                translate(0, 0)"
+              transform="translate(${halfFrame}, ${halfFrame})"
               d="m -${halfShaft} -${rOff} a ${shaftRadius} ${shaftRadius} 0 1 0 ${shaftRadius} 0 z"
               fill="#4d4d4d"
               stroke="url(#shaft-gradient)"

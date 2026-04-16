@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 export const BLINK_HEX = `
 :100000000C9434000C9446000C9446000C9446008E
 :100010000C9446000C9446000C9446000C9446006E

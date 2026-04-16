@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+/**
  * HD44780 Emulator
  * Simulates the internal state of a Hitachi HD44780 LCD controller.
  * Focuses on 4-bit parallel mode as used by the Arduino LiquidCrystal library.
@@ -84,15 +89,30 @@ export class HD44780 {
 
   private writeChar(char: number) {
     // Map DDRAM address to memory index
-    // 16x2: Row 0 is 0x00-0x0F, Row 1 is 0x40-0x4F
-    let memIndex = 0;
+    // HD44780 DDRAM layout:
+    //   Row 0: 0x00–0x27  (cols 0..cols-1)
+    //   Row 1: 0x40–0x67  (cols 0..cols-1)
+    //   Row 2: 0x14–0x27  (only for 4-row displays, same physical RAM as row 0 upper half)
+    //   Row 3: 0x54–0x67  (only for 4-row displays, same physical RAM as row 1 upper half)
+    let row: number;
+    let col: number;
     if (this.ddramAddress < 0x40) {
-      memIndex = this.ddramAddress;
+      if (this.ddramAddress < this.cols) {
+        row = 0; col = this.ddramAddress;
+      } else {
+        row = 2; col = this.ddramAddress - this.cols;
+      }
     } else {
-      memIndex = this.cols + (this.ddramAddress - 0x40);
+      const offset = this.ddramAddress - 0x40;
+      if (offset < this.cols) {
+        row = 1; col = offset;
+      } else {
+        row = 3; col = offset - this.cols;
+      }
     }
 
-    if (memIndex < this.displayMemory.length) {
+    const memIndex = row * this.cols + col;
+    if (memIndex >= 0 && memIndex < this.displayMemory.length) {
       this.displayMemory[memIndex] = char;
     }
 
@@ -106,11 +126,22 @@ export class HD44780 {
 
   private updateCursorCoords() {
     if (this.ddramAddress < 0x40) {
-      this.cursorX = this.ddramAddress;
-      this.cursorY = 0;
+      if (this.ddramAddress < this.cols) {
+        this.cursorX = this.ddramAddress;
+        this.cursorY = 0;
+      } else {
+        this.cursorX = this.ddramAddress - this.cols;
+        this.cursorY = 2;
+      }
     } else {
-      this.cursorX = this.ddramAddress - 0x40;
-      this.cursorY = 1;
+      const offset = this.ddramAddress - 0x40;
+      if (offset < this.cols) {
+        this.cursorX = offset;
+        this.cursorY = 1;
+      } else {
+        this.cursorX = offset - this.cols;
+        this.cursorY = 3;
+      }
     }
   }
 

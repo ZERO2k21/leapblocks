@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import React, { useState } from 'react';
 import { PALETTE } from '../data/paletteComponents';
 import { Search, ChevronDown, ChevronRight } from 'lucide-react';

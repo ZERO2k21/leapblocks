@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import { LEAP_PINS } from '../engine/PinHarness';
 
 export interface PinEntry {
@@ -33,7 +38,7 @@ export function getComponentPins(type: string): PinEntry[] {
     let xPercent = 0;
     let yPercent = 0;
 
-    const isSvgComponent = ['led', 'rgb-led', 'pushbutton', 'pushbutton-6mm', 'led-bar-graph'].includes(type);
+    const isSvgComponent = ['led', 'rgb-led', 'pushbutton', 'pushbutton-6mm', 'led-bar-graph', 'neopixel', 'neopixel-matrix', 'led-ring', 'stepper-motor', 'a4988', 'biaxial-stepper', 'ks2e-m-dc5'].includes(type);
 
     if (isSvgComponent) {
         // SVG components define pin coordinates in leur internal viewBox space.

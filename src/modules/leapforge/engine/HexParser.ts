@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 export function parseHexString(hex: string): Uint16Array {
   // ATmega328p has 32KB flash memory max
   const progData = new Uint8Array(0x8000);

@@ -1,7 +1,6 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, svg } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
-import musicNoteImg from '../../Assets/musical-note-black-icon-symbol-transparent-png-7017516950335268jb4vzed5z.png';
 
 /**
  * Renders a piezo electric buzzer.
@@ -37,16 +36,15 @@ export class BuzzerElement extends LitElement {
 
       .music-note {
         position: relative;
-        left: 31px;
-        width: 14px;
-        height: 14px;
+        left: 28px;
+        width: 18px;
+        height: 18px;
         z-index: 100;
         pointer-events: none;
         animation-duration: 1.5s;
         animation-name: animate-note;
         animation-iteration-count: infinite;
         animation-timing-function: linear;
-        filter: invert(36%) sepia(87%) saturate(1450%) hue-rotate(215deg) brightness(96%) contrast(101%);
         offset-path: path(
           'm0 0c-0.9-0.92-1.8-1.8-2.4-2.8-0.56-0.92-0.78-1.8-0.58-2.8 0.2-0.92 0.82-1.8 1.6-2.8'
         );
@@ -120,11 +118,23 @@ export class BuzzerElement extends LitElement {
 
     return html`
       <div class="buzzer-container">
-        <img
+        <svg
           class="music-note"
-          src="${musicNoteImg}"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
           style="visibility: ${buzzerOn ? '' : 'hidden'}; animation-duration: ${animationDuration}s; opacity: ${0.7 + effectiveIntensity * 0.3}"
-        />
+        >
+          <path
+            d="M9 18V5l12-2v13"
+            fill="none"
+            stroke="#7c3aed"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <circle cx="6" cy="18" r="3" fill="#7c3aed" />
+          <circle cx="18" cy="16" r="3" fill="#7c3aed" />
+        </svg>
         ${this.renderSVG()}
       </div>
     `;

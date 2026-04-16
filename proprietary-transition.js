@@ -1,145 +1,169 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
-
+// proprietary-transition.js
 const fs = require('fs');
 const path = require('path');
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
-const HEADER = `/**
+const headerText = `/**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-
 `;
 
-const EXCLUDED_PATHS = [
-  'src/modules/leapforge/lib/avr8js',
-  'src/modules/leapforge/elements/leap-elements',
-  'arduino-cli',
-  'cp210x_drivers',
-  'node_modules',
-  'server/node_modules',
-  'dist',
-  'build',
-  '.git'
+const excludedPaths = [
+    path.normalize('src/modules/leapforge/lib/avr8js'),
+    path.normalize('src/modules/leapforge/elements/leap-elements'),
+    path.normalize('arduino-cli'),
+    path.normalize('cp210x_drivers'),
+    path.normalize('node_modules'),
+    path.normalize('server/node_modules'),
+    path.normalize('dist'),
+    path.normalize('build'),
+    path.normalize('.git')
 ];
 
-const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.css'];
-
-const stats = {
-  packageJsonUpdated: 0,
-  filesPatched: 0,
-  alreadyTagged: 0,
-  skipped: 0
+let stats = {
+    pkgJsonUpdated: 0,
+    filesPatched: 0,
+    alreadyTagged: 0,
+    skipped: 0
 };
 
-function isExcluded(filePath) {
-  const relativePath = path.relative(process.cwd(), filePath).replace(/\\/g, '/');
-  return EXCLUDED_PATHS.some(excluded => 
-    relativePath === excluded || relativePath.startsWith(excluded + '/')
-  );
+// Check if a path should be excluded based on our excludedPaths list
+function isExcluded(targetPath) {
+    const normalizedPath = path.normalize(targetPath);
+    for (const excluded of excludedPaths) {
+        if (normalizedPath.includes(excluded)) {
+            return true;
+        }
+    }
+    return false;
 }
 
-function updatePackageJson(pkgPath) {
-  if (!fs.existsSync(pkgPath)) return;
-  
-  if (isExcluded(pkgPath)) {
-    console.log(`[SKIP] Excluded: ${pkgPath}`);
-    stats.skipped++;
-    return;
-  }
+// Ensure the header doesn't already exist
+function hasHeader(content) {
+    return content.includes('Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.');
+}
 
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-  let changed = false;
-
-  if (pkg.license !== 'UNLICENSED') {
-    pkg.license = 'UNLICENSED';
-    changed = true;
-  }
-  if (pkg.private !== true) {
-    pkg.private = true;
-    changed = true;
-  }
-
-  if (changed) {
+// Update a package.json file
+function updatePackageJson(filePath) {
+    if (!fs.existsSync(filePath)) {
+        console.log(`[SKIP] Missing: ${filePath}`);
+        return;
+    }
     if (DRY_RUN) {
-      console.log(`[DRY-RUN] Would update: ${pkgPath}`);
-    } else {
-      fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-      console.log(`[UPDATED] ${pkgPath}`);
+        console.log(`[DRY RUN] Would update: ${filePath}`);
+        stats.pkgJsonUpdated++;
+        return;
     }
-    stats.packageJsonUpdated++;
-  } else {
-    console.log(`[OK] Already updated: ${pkgPath}`);
-  }
+
+    try {
+        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        let modified = false;
+        
+        if (data.license !== "UNLICENSED") {
+            data.license = "UNLICENSED";
+            modified = true;
+        }
+        if (data.private !== true) {
+            data.private = true;
+            modified = true;
+        }
+        
+        if (modified) {
+            fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n', 'utf8');
+            console.log(`[UPDATED] ${filePath}`);
+            stats.pkgJsonUpdated++;
+        } else {
+            console.log(`[ALREADY SET] ${filePath}`);
+        }
+    } catch (e) {
+        console.error(`[ERROR] Failed to process ${filePath}:`, e.message);
+    }
 }
 
-function patchFile(filePath) {
-  if (isExcluded(filePath)) {
-    console.log(`[SKIP] Excluded: ${filePath}`);
-    stats.skipped++;
-    return;
-  }
-
-  const content = fs.readFileSync(filePath, 'utf8');
-  
-  if (content.includes('Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.')) {
-    console.log(`[OK] Already tagged: ${filePath}`);
-    stats.alreadyTagged++;
-    return;
-  }
-
-  if (DRY_RUN) {
-    console.log(`[DRY-RUN] Would patch: ${filePath}`);
-  } else {
-    const newContent = HEADER + content;
-    fs.writeFileSync(filePath, newContent);
-    console.log(`[PATCHED] ${filePath}`);
-  }
-  stats.filesPatched++;
-}
-
-function walkDir(dir, recursive = true) {
-  if (!fs.existsSync(dir)) return;
-  const files = fs.readdirSync(dir);
-
-  for (const file of files) {
-    const fullPath = path.join(dir, file);
-    const stat = fs.statSync(fullPath);
-
-    if (stat.isDirectory()) {
-      if (recursive && !isExcluded(fullPath)) {
-        walkDir(fullPath, true);
-      } else if (isExcluded(fullPath)) {
-        console.log(`[SKIP] Directory excluded: ${fullPath}`);
+// Prepend header to a source file
+function processSourceFile(filePath) {
+    if (isExcluded(filePath)) {
+        console.log(`[EXCLUDED] ${filePath}`);
         stats.skipped++;
-      }
-    } else if (EXTENSIONS.includes(path.extname(fullPath))) {
-      patchFile(fullPath);
+        return;
     }
-  }
+
+    const ext = path.extname(filePath).toLowerCase();
+    if (!['.ts', '.tsx', '.js', '.jsx', '.css'].includes(ext)) {
+        return; // ignore non-targeted files safely
+    }
+
+    const content = fs.readFileSync(filePath, 'utf8');
+    if (hasHeader(content)) {
+        console.log(`[ALREADY TAGGED] ${filePath}`);
+        stats.alreadyTagged++;
+        return;
+    }
+
+    if (DRY_RUN) {
+        console.log(`[DRY RUN] Would patch: ${filePath}`);
+        stats.filesPatched++;
+        return;
+    }
+
+    try {
+        fs.writeFileSync(filePath, headerText + content, 'utf8');
+        console.log(`[PATCHED] ${filePath}`);
+        stats.filesPatched++;
+    } catch (e) {
+        console.error(`[ERROR] Failed to patch ${filePath}:`, e.message);
+    }
 }
 
-console.log(DRY_RUN ? '--- RUNNING IN DRY-RUN MODE ---' : '--- RUNNING LIVE TRANSITION ---');
+function processDirectory(dirPath, recursive = true) {
+    if (!fs.existsSync(dirPath)) return;
 
-// 1. Update package.json files
-updatePackageJson(path.join(process.cwd(), 'package.json'));
-updatePackageJson(path.join(process.cwd(), 'server', 'package.json'));
+    if (isExcluded(dirPath)) {
+        console.log(`[EXCLUDED DIR] ${dirPath}`);
+        return;
+    }
 
-// 2. Scan src/ recursively
-walkDir(path.join(process.cwd(), 'src'), true);
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
 
-// 3. Scan server/ root level only
-walkDir(path.join(process.cwd(), 'server'), false);
-
-console.log('\n--- SUMMARY ---');
-console.log(`package.json files updated: ${stats.packageJsonUpdated} | files patched: ${stats.filesPatched} | already tagged: ${stats.alreadyTagged} | skipped: ${stats.skipped}`);
-
-if (DRY_RUN) {
-  console.log('\nNOTE: No changes were written. Remove --dry-run to apply.');
+    for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry.name);
+        
+        if (entry.isDirectory()) {
+            if (recursive && !isExcluded(fullPath)) {
+                processDirectory(fullPath, recursive);
+            }
+        } else if (entry.isFile()) {
+            processSourceFile(fullPath);
+        }
+    }
 }
+
+function run() {
+    console.log(`=== Creoleap Technologies - Proprietary Copyright Injector ===`);
+    if (DRY_RUN) console.log(`!!! RUNNING IN DRY-RUN MODE (No files will be modified) !!!`);
+    
+    // 1. Update package.json files
+    updatePackageJson('package.json');
+    updatePackageJson(path.join('server', 'package.json'));
+    
+    // 2. Process root server directory (Non-recursive)
+    console.log(`\nScanning server/ root...`);
+    processDirectory('server', false);
+
+    // 3. Process src directory (Recursive)
+    console.log(`\nScanning src/ recursively...`);
+    processDirectory('src', true);
+
+    // 4. Print Summary
+    console.log(`\n=== Execution Summary ===`);
+    console.log(`package.json files updated : ${stats.pkgJsonUpdated}`);
+    console.log(`files patched              : ${stats.filesPatched}`);
+    console.log(`already tagged             : ${stats.alreadyTagged}`);
+    console.log(`skipped                    : ${stats.skipped}`);
+    console.log(`=========================`);
+}
+
+run();

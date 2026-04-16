@@ -1,4 +1,13 @@
+<<<<<<< HEAD
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+export class Scratch3MusicBlocks {
+=======
 export class leap3MusicBlocks {
+>>>>>>> 6b15f725eb9104361d7d904575eff29a664202ff
     constructor(runtime) {
         this.runtime = runtime;
     }

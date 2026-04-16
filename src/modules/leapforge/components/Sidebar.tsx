@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
 import React, { useState } from 'react';
 import {
   Search,
@@ -33,10 +38,14 @@ const COMPONENTS = [
   { id: 'neopixel', name: 'NeoPixel', category: 'outputs', desc: 'Addressable RGB LED' },
   { id: 'buzzer', name: 'Buzzer', category: 'outputs', desc: 'Piezo sounder' },
   { id: 'servo', name: 'Servo Motor', category: 'outputs', desc: 'Positionable motor' },
+  { id: 'stepper-motor', name: 'Stepper Motor', category: 'outputs', desc: 'NEMA bipolar stepper' },
+  { id: 'a4988', name: 'A4988 Driver', category: 'outputs', desc: 'Stepper motor driver' },
 
   // DISPLAYS
-  { id: 'lcd1602', name: 'LCD 1602', category: 'displays', desc: '16x2 Character display' },
-  { id: 'lcd2004', name: 'LCD 2004', category: 'displays', desc: '20x4 Character display' },
+  { id: 'lcd1602',     name: 'LCD 1602',         category: 'displays', desc: '16x2 Character display (parallel)' },
+  { id: 'lcd1602-i2c', name: 'LCD 1602 I²C',     category: 'displays', desc: '16x2 Character display (I²C)' },
+  { id: 'lcd2004',     name: 'LCD 2004',         category: 'displays', desc: '20x4 Character display (parallel)' },
+  { id: 'lcd2004-i2c', name: 'LCD 2004 I²C',     category: 'displays', desc: '20x4 Character display (I²C)' },
   { id: '7segment', name: '7-Segment', category: 'displays', desc: 'Numeric display' },
   { id: 'ssd1306', name: 'OLED SSD1306', category: 'displays', desc: '128x64 Graphics display' },
 
