@@ -104,6 +104,33 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       values[i] = data.pinStates?.[`pin_A${i + 1}`] === true ? 1 : 0;
     }
     mappedProps.values = values;
+  } else if (data.type === '7segment') {
+    // 7-segment: map segValues [A,B,C,D,E,F,G,DP] written by CircuitEngine
+    // Falls back to all-off if no simulation data yet
+    mappedProps.values = data.segValues ?? [0, 0, 0, 0, 0, 0, 0, 0];
+  } else if (data.type === 'ssd1306') {
+    // SSD1306 OLED: pass ImageData decoded by CircuitEngine from the I2C pixel buffer
+    if (data.oledImageData) {
+      mappedProps.imageData = data.oledImageData;
+    }
+  } else if (data.type === 'ili9341') {
+    // ILI9341 TFT: pass RGBA ImageData decoded by CircuitEngine from the SPI pixel stream
+    if (data.tftImageData) {
+      mappedProps.imageData = data.tftImageData;
+    }
+  } else if (data.type === 'pir-motion-sensor') {
+    // PIR: reflect the simulated motion state onto the visual element
+    mappedProps.motionDetected = data.sensorValues?.motionDetected ?? false;
+  } else if (data.type === 'mpu6050') {
+    // MPU6050: pass all 7 sensor values to the visual element
+    const sv = data.sensorValues ?? {};
+    mappedProps.accelX = sv.accelX ?? 0;
+    mappedProps.accelY = sv.accelY ?? 0;
+    mappedProps.accelZ = sv.accelZ ?? 1;
+    mappedProps.gyroX  = sv.gyroX  ?? 0;
+    mappedProps.gyroY  = sv.gyroY  ?? 0;
+    mappedProps.gyroZ  = sv.gyroZ  ?? 0;
+    mappedProps.temp   = sv.temp   ?? 25;
   } else if (data.type === 'neopixel') {
     // Single NeoPixel: map decoded WS2812B RGB values (0-1 range)
     mappedProps.r = data.neopixelR ?? 0;
@@ -121,6 +148,17 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
   // ── Ref for NeoPixel DOM access (setPixel requires DOM methods) ──
   const elementRef = useRef<any>(null);
+
+  // Push ImageData to ILI9341 / SSD1306 canvas elements via DOM property assignment
+  // (React JSX spread doesn't reliably set complex object properties on Web Components)
+  useEffect(() => {
+    if (!elementRef.current) return;
+    if (data.type === 'ili9341' && data.tftImageData) {
+      elementRef.current.imageData = data.tftImageData;
+    } else if (data.type === 'ssd1306' && data.oledImageData) {
+      elementRef.current.imageData = data.oledImageData;
+    }
+  }, [data.tftImageData, data.oledImageData, data.type]);
 
   // Push pixel data to matrix/ring elements via DOM setPixel() method
   useEffect(() => {

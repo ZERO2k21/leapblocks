@@ -1,52 +1,77 @@
-// Reference: https://cdn-learn.adafruit.com/assets/assets/000/036/494/original/lcds___displays_fabprint.png?1476374574
+// Reference: leapblocks/src/assets/oled.svg
+// Monochrome 128x64 OLED display with I2C interface
+// Default I2C address: 0x3C (60). Some modules use 0x3D.
 import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ElementPin, i2c } from './pin';
 
 type CanvasContext = CanvasRenderingContext2D | null | undefined;
+
+// SVG viewBox is "0 0 27.7 22.6" (mm).
+// We render it at 4× scale → 110.8 × 90.4 px (rounded to 111 × 91).
+const SCALE      = 4;
+const SVG_W      = 27.7;
+const SVG_H      = 22.6;
+const PX_W       = Math.round(SVG_W * SCALE); // 111
+const PX_H       = Math.round(SVG_H * SCALE); // 91
+
+// Inner screen rect in SVG units: x=1.46 y=5.27 w=24.8 h=12.4
+const SCREEN_X   = Math.round(1.46  * SCALE); // 6
+const SCREEN_Y   = Math.round(5.27  * SCALE); // 21
+const SCREEN_W   = Math.round(24.8  * SCALE); // 99
+const SCREEN_H   = Math.round(12.4  * SCALE); // 50
+
+// Pin positions in SVG units (cy=1.71, cx = 10.1 / 12.6 / 15.1 / 17.7)
+// Scaled to px for pinInfo handles
+const PIN_Y_PX   = Math.round(1.71  * SCALE); // 7
+const PIN_XS_PX  = [10.1, 12.6, 15.1, 17.7].map(x => Math.round(x * SCALE)); // 40,50,60,71
+
 @customElement('leap-ssd1306')
 export class SSD1306Element extends LitElement {
   /**
-   * The pixel data to draw on the element's internal &lt;canvas&gt;.
-   * If you change the underlaying pixel data without updating the
-   * `imageData` reference, call the `redraw()` method to update the
-   * screen with your changes.
+   * The pixel data to draw on the element's internal <canvas>.
+   * Call redraw() if you mutate the underlying data without changing the reference.
    */
   @property() imageData: ImageData;
 
-  readonly width = 150;
-  readonly height = 116;
-  private screenWidth = 128;
+  readonly width  = PX_W;
+  readonly height = PX_H;
+
+  private screenWidth  = 128;
   private screenHeight = 64;
+
   private canvas: HTMLCanvasElement | null | undefined = void 0;
   private ctx: CanvasContext = null;
 
+  // I2C pinout: GND, VCC, SCL, SDA — matches the 4 pin circles in the SVG
   readonly pinInfo: ElementPin[] = [
-    { name: 'DATA', x: 36.5, y: 12.5, signals: [i2c('SDA')] },
-    { name: 'CLK', x: 45.5, y: 12.5, signals: [i2c('SCL')] },
-    { name: 'DC', x: 54.5, y: 12.5, signals: [] },
-    { name: 'RST', x: 64.5, y: 12.5, signals: [] },
-    { name: 'CS', x: 74.5, y: 12.5, signals: [] },
-    { name: '3V3', x: 83.5, y: 12.5, signals: [{ type: 'power', signal: 'VCC', voltage: 3.3 }] },
-    { name: 'VIN', x: 93.5, y: 12.5, signals: [{ type: 'power', signal: 'VCC' }] },
-    { name: 'GND', x: 103.5, y: 12, signals: [{ type: 'power', signal: 'GND' }] },
+    { name: 'GND', x: PIN_XS_PX[0], y: PIN_Y_PX, number: 1, signals: [{ type: 'power', signal: 'GND' }] },
+    { name: 'VCC', x: PIN_XS_PX[1], y: PIN_Y_PX, number: 2, signals: [{ type: 'power', signal: 'VCC' }] },
+    { name: 'SCL', x: PIN_XS_PX[2], y: PIN_Y_PX, number: 3, signals: [i2c('SCL')] },
+    { name: 'SDA', x: PIN_XS_PX[3], y: PIN_Y_PX, number: 4, signals: [i2c('SDA')] },
   ];
 
   static get styles() {
     return css`
-      .container {
+      :host { display: inline-block; }
+      .oled-wrap {
         position: relative;
+        display: inline-block;
+        line-height: 0;
       }
-
-      .container > canvas {
+      .oled-wrap img {
+        display: block;
+        width: ${PX_W}px;
+        height: ${PX_H}px;
+      }
+      .oled-wrap canvas {
         position: absolute;
-        left: 11.5px;
-        top: 27px;
-      }
-
-      .pixelated {
-        image-rendering: crisp-edges; /* firefox */
-        image-rendering: pixelated; /* chrome/webkit */
+        left: ${SCREEN_X}px;
+        top:  ${SCREEN_Y}px;
+        width:  ${SCREEN_W}px;
+        height: ${SCREEN_H}px;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
       }
     `;
   }
@@ -56,17 +81,13 @@ export class SSD1306Element extends LitElement {
     this.imageData = new ImageData(this.screenWidth, this.screenHeight);
   }
 
-  /**
-   * Used for initiating update of an imageData data which its reference wasn't changed
-   */
   public redraw() {
     this.ctx?.putImageData(this.imageData, 0, 0);
   }
 
   private initContext() {
     this.canvas = this.shadowRoot?.querySelector('canvas');
-    // No need to clear canvas rect - all images will have full opacity
-    this.ctx = this.canvas?.getContext('2d');
+    this.ctx = this.canvas?.getContext('2d') ?? null;
   }
 
   firstUpdated() {
@@ -75,71 +96,24 @@ export class SSD1306Element extends LitElement {
   }
 
   updated() {
-    if (this.imageData) {
-      this.redraw();
-    }
-  }
-
-  renderSVG() {
-    const { width, height, screenWidth, screenHeight } = this;
-    return html`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-      <rect stroke="#BE9B72" fill="#025CAF" x=".5" y=".5" width="148" height="114" rx="13" />
-
-      <g transform="translate(6 6)" fill="#59340A" stroke="#BE9B72" stroke-width="0.6px">
-        <circle cx="130" cy="6" r="5.5" />
-        <circle cx="6" cy="6" r="5.5" />
-        <circle cx="130" cy="96" r="5.5" />
-        <circle cx="6" cy="96" r="5.5" />
-      </g>
-
-      <!-- 128 x 64 screen -->
-      <rect x="11.4" y="26" fill="#1A1A1A" width="${screenWidth}" height="${screenHeight}" />
-
-      <!-- All texts -->
-      <text
-        fill="#FFF"
-        text-anchor="middle"
-        font-size="5"
-        font-weight="300"
-        font-family="monospace"
-      >
-        <tspan x="37" y="8">Data</tspan>
-        <tspan x="56" y="8">SA0</tspan>
-        <tspan x="78" y="8">CS</tspan>
-        <tspan x="97" y="8">Vin</tspan>
-        <tspan x="41" y="23">C1k</tspan>
-        <tspan x="53" y="23">DC</tspan>
-        <tspan x="64" y="23">Rst</tspan>
-        <tspan x="80" y="23">3v3</tspan>
-        <tspan x="99" y="23">Gnd</tspan>
-      </text>
-
-      <!-- Star -->
-      <path
-        fill="#FFF"
-        d="M115.5 10.06l-1.59 2.974-3.453.464 2.495 2.245-.6 3.229 3.148-1.528 3.148 1.528-.6-3.23 2.495-2.244-3.453-.464-1.59-2.974z"
-        stroke="#FFF"
-      />
-
-      <!-- PINS -->
-      <g transform="translate(33 9)" fill="#9D9D9A" stroke-width="0.4">
-        <circle stroke="#262626" cx="70.5" cy="3.5" r="3.5" />
-        <circle stroke="#007ADB" cx="60.5" cy="3.5" r="3.5" />
-        <circle stroke="#9D5B96" cx="50.5" cy="3.5" r="3.5" />
-        <circle stroke="#009E9B" cx="41.5" cy="3.5" r="3.5" />
-        <circle stroke="#E8D977" cx="31.5" cy="3.5" r="3.5" />
-        <circle stroke="#C08540" cx="21.5" cy="3.5" r="3.5" />
-        <circle stroke="#B4AEAB" cx="12.5" cy="3.5" r="3.5" />
-        <circle stroke="#E7DBDB" cx="3.5" cy="3.5" r="3.5" />
-      </g>
-    </svg>`;
+    if (this.imageData) this.redraw();
   }
 
   render() {
-    const { screenWidth, screenHeight } = this;
-    return html` <div class="container">
-      ${this.renderSVG()}
-      <canvas width="${screenWidth}" height="${screenHeight}" class="pixelated"></canvas>
-    </div>`;
+    return html`
+      <div class="oled-wrap">
+        <!-- The oled.svg asset rendered as an <img> at 4× scale -->
+        <img
+          src="/src/assets/oled.svg"
+          alt="SSD1306 OLED"
+          draggable="false"
+        />
+        <!-- Canvas overlaid exactly on the inner screen rect -->
+        <canvas
+          width="${this.screenWidth}"
+          height="${this.screenHeight}"
+        ></canvas>
+      </div>
+    `;
   }
 }

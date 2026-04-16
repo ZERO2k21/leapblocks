@@ -48,11 +48,17 @@ export const ForgeEditor: React.FC<ForgeEditorProps> = ({ code, onChange }) => {
           minimap: { enabled: false },
           scrollBeyondLastLine: false,
           fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-          cursorBlinking: "smooth",
+          fontLigatures: true,
+          cursorStyle: 'line',
+          cursorWidth: 2,
+          cursorBlinking: 'smooth',
+          cursorSmoothCaretAnimation: 'on',
           padding: { top: 10 },
-          lineNumbers: "on",
+          lineNumbers: 'on',
           roundedSelection: true,
           automaticLayout: true,
+          renderLineHighlight: 'all',
+          smoothScrolling: true,
         }}
       />
     </div>

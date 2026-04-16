@@ -11,6 +11,9 @@ import { PCF8574 } from './PCF8574';
 import { DHT } from './DHT';
 import { NeoPixelEmulator } from './NeoPixelEmulator';
 import { StepperEmulator } from './StepperEmulator';
+import { SSD1306I2CSlave } from './SSD1306I2CSlave';
+import { ILI9341SPISlave } from './ILI9341SPISlave';
+import { MPU6050I2CSlave } from './MPU6050I2CSlave';
 
 /**
  * CircuitEngine
@@ -25,6 +28,8 @@ class CircuitEngine {
   private dhtEmulators = new Map<string, DHT>();
   private neoPixelEmulators = new Map<string, NeoPixelEmulator>();
   private stepperEmulators = new Map<string, StepperEmulator>();
+  private ili9341Slaves = new Map<string, ILI9341SPISlave>();
+  private mpu6050Slaves = new Map<string, MPU6050I2CSlave>();
   private isInitialized = false;
 
   /**
@@ -142,6 +147,9 @@ class CircuitEngine {
     this.neoPixelEmulators.clear();
     this.stepperEmulators.forEach(e => e.destroy());
     this.stepperEmulators.clear();
+    this.ili9341Slaves.forEach(s => s.detach());
+    this.ili9341Slaves.clear();
+    this.mpu6050Slaves.clear();
 
     const { nodes, edges, updateNodeData } = useForgeStore.getState();
     const currentStateStore = useForgeStore.getState();
@@ -171,6 +179,75 @@ class CircuitEngine {
           });
           this.i2cBusManager.registerSlave(backpack);
         }
+      }
+
+      // Register SSD1306 OLED as I2C slave (default address 0x3C)
+      if (node.data?.type === 'ssd1306') {
+        const i2cAddr = node.data?.i2cAddress ?? 0x3C;
+        const slave = new SSD1306I2CSlave(i2cAddr, (pixels, displayOn) => {
+          // Convert the page-addressed pixel buffer to RGBA ImageData
+          const imageData = new ImageData(128, 64);
+          for (let page = 0; page < 8; page++) {
+            for (let col = 0; col < 128; col++) {
+              const byte = pixels[page * 128 + col];
+              for (let bit = 0; bit < 8; bit++) {
+                const row = page * 8 + bit;
+                const idx = (row * 128 + col) * 4;
+                const on = displayOn && ((byte >> bit) & 1) === 1;
+                imageData.data[idx]     = on ? 0   : 0;    // R
+                imageData.data[idx + 1] = on ? 255 : 0;    // G  (white-on-black)
+                imageData.data[idx + 2] = on ? 255 : 0;    // B
+                imageData.data[idx + 3] = 255;              // A
+              }
+            }
+          }
+          updateNodeData(node.id, { oledImageData: imageData });
+        });
+        this.i2cBusManager.registerSlave(slave);
+      }
+
+      // Register ILI9341 TFT as SPI peripheral
+      // The slave is created here; pin listeners (D/C, CS) are wired in the edge-scan loop below.
+      if (node.data?.type === 'ili9341') {
+        const nodeId = node.id;
+        const spi = simulationRunner.SPI;
+        if (spi) {
+          const slave = new ILI9341SPISlave(spi, (pixels, displayOn) => {
+            // Build an ImageData from the RGBA pixel buffer and push to the node
+            const imageData = new ImageData(new Uint8ClampedArray(pixels), 240, 320);
+            updateNodeData(nodeId, { tftImageData: imageData, tftDisplayOn: displayOn });
+          });
+          slave.attach();
+          this.ili9341Slaves.set(nodeId, slave);
+          console.log(`[FORGE CIRCUIT] ILI9341 (${nodeId}) registered on SPI bus`);
+        } else {
+          console.warn(`[FORGE CIRCUIT] ILI9341 (${nodeId}): SPI bus not available on this board`);
+        }
+      }
+
+      // Register MPU6050 as I2C slave (default address 0x68, AD0=LOW)
+      if (node.data?.type === 'mpu6050') {
+        const nodeId = node.id;
+        const i2cAddr = node.data?.i2cAddress ?? 0x68;
+        const slave = new MPU6050I2CSlave(i2cAddr);
+
+        // Push current sensor values from store into the emulator immediately
+        const sv = node.data?.sensorValues;
+        if (sv) {
+          slave.setSensorValues({
+            accelX: sv.accelX ?? 0,
+            accelY: sv.accelY ?? 0,
+            accelZ: sv.accelZ ?? 1,
+            gyroX:  sv.gyroX  ?? 0,
+            gyroY:  sv.gyroY  ?? 0,
+            gyroZ:  sv.gyroZ  ?? 0,
+            temp:   sv.temp   ?? 25,
+          });
+        }
+
+        this.i2cBusManager.registerSlave(slave);
+        this.mpu6050Slaves.set(nodeId, slave);
+        console.log(`[FORGE CIRCUIT] MPU6050 (${nodeId}) registered at I2C 0x${i2cAddr.toString(16)}`);
       }
     });
 
@@ -220,7 +297,8 @@ class CircuitEngine {
           // Identify peripheral type once
           const pType = currentStateStore.nodes.find(n => n.id === peripheralId)?.data?.type;
           const isComplexPeripheral = ['stepper-motor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
-            'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5'].includes(pType);
+            'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5',
+            '7segment', 'ili9341', 'pir-motion-sensor'].includes(pType);
 
           // 1. Trace the electrical network — only for simple output peripherals
           if (!isComplexPeripheral) {
@@ -326,6 +404,22 @@ class CircuitEngine {
               }
             }
 
+            // --- 7-Segment Display Emulation ---
+            // Segment order in values[]: A=0, B=1, C=2, D=3, E=4, F=5, G=6, DP=7
+            // Common-cathode: segment is ON when pin is HIGH.
+            if (peripheralNode.data?.type === '7segment') {
+              const buffer = this.peripheralPinBuffers.get(peripheralId)!;
+              buffer[peripheralPinName] = isHigh;
+
+              const segOrder = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'DP'];
+              const values = segOrder.map(seg => (buffer[seg] ? 1 : 0));
+              const currentValues = peripheralNode.data?.segValues;
+              // Only update if something changed
+              if (!currentValues || values.some((v, i) => v !== currentValues[i])) {
+                updateNodeData(peripheralId, { segValues: values });
+              }
+            }
+
             // --- DHT Sensor Emulation ---
             if (peripheralNode.data?.type === 'dht22' || peripheralNode.data?.type === 'dht11') {
               if (peripheralPinName === 'SDA' || peripheralPinName === 'DATA') {
@@ -337,6 +431,27 @@ class CircuitEngine {
                 emulator.processSignal(state);
               }
             }
+
+            // --- ILI9341 TFT SPI Display Emulation ---
+            // D/C pin controls command vs data mode; CS pin enables/disables the chip.
+            if (peripheralNode.data?.type === 'ili9341') {
+              const slave = this.ili9341Slaves.get(peripheralId);
+              if (slave) {
+                if (peripheralPinName === 'D/C') {
+                  slave.setDC(isHigh);
+                } else if (peripheralPinName === 'CS') {
+                  // CS is active-LOW: chip is selected when the pin is LOW
+                  slave.setCS(!isHigh);
+                }
+                // MOSI/SCK are handled by the SPI bus hardware (simulationRunner.SPI.onByte)
+              }
+            }
+
+            // --- PIR Motion Sensor Emulation ---
+            // PIR is a pure INPUT sensor — signal flows from sensor → Arduino, never the reverse.
+            // The listener here fires when the AVR writes to Port D (output direction).
+            // We must NOT call setVirtualInput here — that would fight against user-injected signals.
+            // Initial state injection is handled below, outside this listener, after registration.
 
             // --- Relay Emulation (KS2E-M-DC5 DPDT) ---
             // COIL1 = signal pin (HIGH = energized), COIL2 = GND reference.
@@ -683,25 +798,70 @@ class CircuitEngine {
           simulationRunner.removeListener(avrPin, listener);
           if (neoRawListener) simulationRunner.removeRawListener(avrPin, neoRawListener);
         });
+
+        // PIR: inject the initial pin state once after the AVR has had a chance to
+        // run setup() and configure DDR. We defer by one event-loop turn so the
+        // AVR tick loop starts first and the sketch's pinMode() runs before we set
+        // the external pin value.
+        const peripheralNodeForPIR = nodes.find(n => n.id === peripheralId);
+        if (
+          peripheralNodeForPIR?.data?.type === 'pir-motion-sensor' &&
+          peripheralPinName === 'OUT'
+        ) {
+          const initialMotion = peripheralNodeForPIR.data?.sensorValues?.motionDetected ?? false;
+          // Delay 200ms — enough for setup() to run and configure pinMode
+          setTimeout(() => {
+            simulationRunner.setVirtualInput(avrPin, initialMotion);
+            console.log(`[FORGE CIRCUIT] PIR (${peripheralId}) initial state injected: ${initialMotion ? 'HIGH' : 'LOW'} on ${avrPin}`);
+          }, 200);
+        }
       });
     });
   }
 
   /**
-   * Called by interactive UI nodes (e.g. Buttons) to push signals backwards into the board
+   * Push live MPU6050 sensor values from the SensorOverlay sliders into the I2C emulator.
+   * Called whenever any slider changes.
+   */
+  public pushMPU6050Values(nodeId: string, values: {
+    accelX: number; accelY: number; accelZ: number;
+    gyroX: number;  gyroY: number;  gyroZ: number;
+    temp: number;
+  }) {
+    const slave = this.mpu6050Slaves.get(nodeId);
+    if (slave) {
+      slave.setSensorValues(values);
+    }
+  }
+
+  /**
+   * Called by interactive UI nodes (e.g. Buttons, PIR sensors) to push signals backwards into the board.
+   * Finds the wire connected to the given peripheral pin and injects the signal into the AVR.
    */
   public pushInputSignal(nodeId: string, pinName: string, isHigh: boolean) {
     console.log(`[FORGE CIRCUIT] Peripheral Node ${nodeId} requesting inject on pin ${pinName} to ${isHigh ? 'HIGH' : 'LOW'}`);
     const { edges, nodes } = useForgeStore.getState();
 
-    // Find the wire attached to this input peripheral pin
-    const wire = edges.find(e =>
-      (e.source === nodeId && e.sourceHandle === pinName) ||
-      (e.target === nodeId && e.targetHandle === pinName)
-    );
+    // Find the wire attached to this input peripheral pin.
+    // LeapNode renders two handles per pin:
+    //   source handle id = pinName          (e.g. "OUT")
+    //   target handle id = pinName__target  (e.g. "OUT__target")
+    // ReactFlow stores whichever handle the user connected from/to.
+    // We must match both variants.
+    const wire = edges.find(e => {
+      const srcMatch = e.source === nodeId &&
+        (e.sourceHandle === pinName || e.sourceHandle === `${pinName}__target`);
+      const tgtMatch = e.target === nodeId &&
+        (e.targetHandle === pinName || e.targetHandle === `${pinName}__target`);
+      return srcMatch || tgtMatch;
+    });
 
-    if (!wire) return; // Not wired to anything
+    if (!wire) {
+      console.warn(`[FORGE CIRCUIT] PIR/Input: no wire found for node ${nodeId} pin ${pinName}`);
+      return;
+    }
 
+    // The board is the OTHER end of the wire
     const boardNodeId = wire.source === nodeId ? wire.target : wire.source;
     const boardPinName = wire.source === nodeId ? wire.targetHandle : wire.sourceHandle;
 
@@ -709,27 +869,26 @@ class CircuitEngine {
     const boardNode = nodes.find(n => n.id === boardNodeId);
     if (!boardNode) return;
 
+    // Strip the __target suffix if present — convertArduinoPin expects the bare pin number
+    const cleanBoardPin = boardPinName.replace(/__target$/, '');
+
     // Convert back to AVR mapping
-    const mapping = simulationRunner.convertArduinoPin(boardPinName);
+    const mapping = simulationRunner.convertArduinoPin(cleanBoardPin);
     if (mapping) {
       if (mapping.adcChannel !== undefined) {
         // --- Analog Mapping ---
-        // Fetch the simulated sensor value from the node
         const peripheralNode = nodes.find(n => n.id === nodeId);
-        const sensorValue = peripheralNode?.data?.sensorValues?.value ?? 0; // expected 0-100 or 0-1023?
-
-        // For standard Leap sensors, we assume value is 0-1023 (raw ADC) or 0-100 (percentage)
-        // Let's normalize it to 0-5V.
-        // If the node data indicates it's an analog sensor, we use the value.
-        // For now, assume value is 0-5.0V directly for simplicity, or 0-1023.
+        const sensorValue = peripheralNode?.data?.sensorValues?.value ?? 0;
         const voltage = sensorValue > 5 ? (sensorValue / 1023) * 5.0 : sensorValue;
         simulationRunner.setAnalogInput(mapping.adcChannel, voltage);
-
         console.log(`[FORGE CIRCUIT] Analog Signal: Peripheral[${nodeId}] pin ${pinName} -> ${voltage.toFixed(2)}V on channel ${mapping.adcChannel}`);
       } else {
         // --- Digital Mapping ---
         simulationRunner.setVirtualInput(mapping.avrPin, isHigh);
+        console.log(`[FORGE CIRCUIT] Digital Signal: Peripheral[${nodeId}] pin ${pinName} -> ${isHigh ? 'HIGH' : 'LOW'} on AVR ${mapping.avrPin}`);
       }
+    } else {
+      console.warn(`[FORGE CIRCUIT] pushInputSignal: could not map board pin '${cleanBoardPin}' to AVR pin`);
     }
   }
 }

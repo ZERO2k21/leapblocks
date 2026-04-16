@@ -39,10 +39,10 @@ export const WireEdge: React.FC<EdgeProps> = ({
           id={`${id}_glow`}
           style={{ 
             stroke: wireColor, 
-            strokeWidth: 16, 
+            strokeWidth: 8, 
             opacity: 0.2, 
             fill: 'none',
-            filter: 'blur(8px)'
+            filter: 'blur(4px)'
           }}
           className="react-flow__edge-path"
           d={edgePath}
@@ -54,11 +54,11 @@ export const WireEdge: React.FC<EdgeProps> = ({
         id={`${id}_ground_shadow`}
         style={{ 
           stroke: 'rgba(0,0,0,0.45)', 
-          strokeWidth: 12, 
+          strokeWidth: 5, 
           fill: 'none',
           strokeLinecap: 'round',
-          transform: 'translate(4px, 5px)',
-          filter: 'blur(2px)'
+          transform: 'translate(2px, 2.5px)',
+          filter: 'blur(1px)'
         }}
         className="react-flow__edge-path"
         d={edgePath}
@@ -70,7 +70,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
         style={{ 
           ...style, 
           stroke: wireColor, 
-          strokeWidth: 10, 
+          strokeWidth: 4, 
           fill: 'none',
           strokeLinecap: 'round'
         }}
@@ -79,15 +79,14 @@ export const WireEdge: React.FC<EdgeProps> = ({
       />
 
       {/* 4. THE WHITE CORE (Highest Contrast Detail) */}
-      {/* Matches the bright central stripe in the reference image */}
       <path
         id={`${id}_central_core`}
         style={{ 
           stroke: '#ffffff', 
-          strokeWidth: 4, 
+          strokeWidth: 1.5, 
           fill: 'none',
           strokeLinecap: 'round',
-          opacity: 0.85,
+          opacity: 0.75,
         }}
         className="react-flow__edge-path"
         d={edgePath}
@@ -97,11 +96,11 @@ export const WireEdge: React.FC<EdgeProps> = ({
       <path
         id={`${id}_edge_gloss`}
         style={{ 
-          stroke: 'rgba(255,255,255,0.4)', 
-          strokeWidth: 2, 
+          stroke: 'rgba(255,255,255,0.3)', 
+          strokeWidth: 1, 
           fill: 'none',
           strokeLinecap: 'round',
-          transform: 'translate(-1.5px, -2px)'
+          transform: 'translate(-0.5px, -1px)'
         }}
         className="react-flow__edge-path"
         d={edgePath}
@@ -112,7 +111,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
         id={`${id}_interaction`}
         style={{ 
           stroke: 'transparent', 
-          strokeWidth: 25, 
+          strokeWidth: 14, 
           fill: 'none',
           cursor: 'pointer'
         }}
@@ -120,15 +119,13 @@ export const WireEdge: React.FC<EdgeProps> = ({
         d={edgePath}
       />
 
-      {/* 7. PLUG TERMINALS (Now rendered ON TOP of pins) */}
+      {/* 7. PLUG TERMINALS */}
       <g className="wire-terminal">
-        {/* Outer casing */}
-        <circle cx={sourceX} cy={sourceY} r={5} fill="#0a0a0a" stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
-        {/* Inner wire core */}
-        <circle cx={sourceX} cy={sourceY} r={2.5} fill="#fff" opacity={0.9} />
+        <circle cx={sourceX} cy={sourceY} r={3} fill="#0a0a0a" stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
+        <circle cx={sourceX} cy={sourceY} r={1.5} fill="#fff" opacity={0.9} />
         
-        <circle cx={targetX} cy={targetY} r={5} fill="#0a0a0a" stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
-        <circle cx={targetX} cy={targetY} r={2.5} fill="#fff" opacity={0.9} />
+        <circle cx={targetX} cy={targetY} r={3} fill="#0a0a0a" stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
+        <circle cx={targetX} cy={targetY} r={1.5} fill="#fff" opacity={0.9} />
       </g>
     </>
   );
