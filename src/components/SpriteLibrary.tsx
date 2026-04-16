@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useRef, useCallback } from 'react';
-import { leapSprites } from './generated_scratch_sprites';
+import { leapSprites } from './generated_leap_sprites';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SPRITE CATALOG — All available sprites organized by category
