@@ -46,8 +46,10 @@ const COMPONENTS = [
   { id: 'ks2e-m-dc5', name: 'Relay', category: 'outputs', desc: '5V Relay' },
   
   // DISPLAYS
-  { id: 'lcd1602', name: 'LCD 1602', category: 'displays', desc: '16x2 Character display' },
-  { id: 'lcd2004', name: 'LCD 2004', category: 'displays', desc: '20x4 Character display' },
+  { id: 'lcd1602',     name: 'LCD 1602',     category: 'displays', desc: '16x2 Character display (parallel)' },
+  { id: 'lcd1602-i2c', name: 'LCD 1602 I²C', category: 'displays', desc: '16x2 Character display (I²C)' },
+  { id: 'lcd2004',     name: 'LCD 2004',     category: 'displays', desc: '20x4 Character display (parallel)' },
+  { id: 'lcd2004-i2c', name: 'LCD 2004 I²C', category: 'displays', desc: '20x4 Character display (I²C)' },
   { id: '7segment', name: '7-Segment', category: 'displays', desc: 'Numeric display' },
   { id: 'ssd1306', name: 'OLED SSD1306', category: 'displays', desc: '128x64 Graphics OLED' },
   { id: 'ili9341', name: 'ILI9341 TFT', category: 'displays', desc: '2.8" SPI TFT display' },
@@ -253,8 +255,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
                   {React.createElement(`leap-${comp.id}` as any, { 
                     color: comp.id === 'led' ? 'red' : undefined,
                     value: true 
-                  })}
-                </div>
+                  })}                </div>
               </div>
 
               <span style={{ 

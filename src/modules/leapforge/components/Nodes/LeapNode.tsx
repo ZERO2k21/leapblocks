@@ -13,7 +13,12 @@ import { SensorOverlay } from './SensorOverlay';
 export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   const selectedNodeId = useForgeStore((state) => state.selectedNodeId);
   const isSelected = selected || selectedNodeId === id;
-  const Tag = `leap-${data.type}` as any;
+
+  // I2C variants map to the same element as their parallel counterpart
+  const elementType = data.type === 'lcd1602-i2c' ? 'lcd1602'
+                    : data.type === 'lcd2004-i2c'  ? 'lcd2004'
+                    : data.type;
+  const Tag = `leap-${elementType}` as any;
   const pins = getComponentPins(data.type);
 
   // Custom styling for the node container
@@ -64,12 +69,26 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.value = data.value ?? '0.0°';
     mappedProps.units = data.units ?? '0 steps';
     mappedProps.arrow = data.arrow ?? '';
+  } else if (data.type === 'ks2e-m-dc5') {
+    // Relay: energized when COIL1 is HIGH (COIL2 is typically GND)
+    mappedProps.energized = data.relayEnergized ?? false;
+  } else if (data.type === 'biaxial-stepper') {
+    mappedProps.outerHandAngle = data.outerHandAngle ?? 0;
+    mappedProps.innerHandAngle = data.innerHandAngle ?? 0;
+    mappedProps.outerHandColor = data.outerHandColor ?? 'gold';
+    mappedProps.innerHandColor = data.innerHandColor ?? 'silver';
+    mappedProps.outerHandShape = data.outerHandShape ?? 'plain';
+    mappedProps.innerHandShape = data.innerHandShape ?? 'plain';
+    mappedProps.outerHandLength = data.outerHandLength ?? 30;
+    mappedProps.innerHandLength = data.innerHandLength ?? 30;
   } else if (['potentiometer', 'photoresistor', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(data.type)) {
     // Analog sensors (and resistors) use the 'value' from sensorValues
     mappedProps.value = data.sensorValues?.value ?? 0;
-  } else if (data.type === 'lcd1602' || data.type === 'lcd2004') {
+  } else if (data.type === 'lcd1602' || data.type === 'lcd2004' || data.type === 'lcd1602-i2c' || data.type === 'lcd2004-i2c') {
     // LCD Displays map the internal emulator state to visual properties
     const state = data.lcdState;
+    // I2C variants render with i2c pins, parallel variants with full pins
+    mappedProps.pins = (data.type === 'lcd1602-i2c' || data.type === 'lcd2004-i2c') ? 'i2c' : 'full';
     if (state) {
       mappedProps.characters = new Uint8Array(state.characters);
       mappedProps.cursorX = state.cursorX;

@@ -916,9 +916,18 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "minX": 0,
       "minY": 0,
       "width": 212,
-      "height": 255
+      "height": 285
     },
-    "pins": []
+    "pins": [
+      { "name": "A1-", "x": 45, "y": 217 },
+      { "name": "A1+", "x": 45, "y": 226 },
+      { "name": "B1+", "x": 45, "y": 236 },
+      { "name": "B1-", "x": 45, "y": 246 },
+      { "name": "A2-", "x": 45, "y": 255 },
+      { "name": "A2+", "x": 45, "y": 265 },
+      { "name": "B2+", "x": 45, "y": 274 },
+      { "name": "B2-", "x": 45, "y": 284 }
+    ]
   },
   "stepper-motor": {
     "viewBox": {
@@ -1470,7 +1479,16 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "width": 21,
       "height": 10
     },
-    "pins": []
+    "pins": [
+      { "name": "NO2",   "x": 1.45,  "y": 1.35 },
+      { "name": "NC2",   "x": 6.61,  "y": 1.35 },
+      { "name": "P2",    "x": 11.9,  "y": 1.35 },
+      { "name": "COIL2", "x": 19.58, "y": 1.35 },
+      { "name": "NO1",   "x": 1.45,  "y": 8.65 },
+      { "name": "NC1",   "x": 6.61,  "y": 8.65 },
+      { "name": "P1",    "x": 11.9,  "y": 8.65 },
+      { "name": "COIL1", "x": 19.58, "y": 8.65 }
+    ]
   },
   "ky-040": {
     "viewBox": {
@@ -1526,30 +1544,54 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "viewBox": {
       "minX": 0,
       "minY": 0,
+      "width": 94,
+      "height": 47.5
+    },
+    "pins": [
+      { "name": "VSS", "x": 32, "y": 45 },
+      { "name": "VDD", "x": 41.5, "y": 45 },
+      { "name": "V0",  "x": 51.5, "y": 45 },
+      { "name": "RS",  "x": 60.5, "y": 45 },
+      { "name": "RW",  "x": 70.5, "y": 45 },
+      { "name": "E",   "x": 80,   "y": 45 },
+      { "name": "D0",  "x": 89.5, "y": 45 },
+      { "name": "D1",  "x": 99.5, "y": 45 },
+      { "name": "D2",  "x": 109,  "y": 45 },
+      { "name": "D3",  "x": 118.5,"y": 45 },
+      { "name": "D4",  "x": 128,  "y": 45 },
+      { "name": "D5",  "x": 137.5,"y": 45 },
+      { "name": "D6",  "x": 147,  "y": 45 },
+      { "name": "D7",  "x": 156.5,"y": 45 },
+      { "name": "A",   "x": 166.5,"y": 45 },
+      { "name": "K",   "x": 176,  "y": 45 }
+    ]
+  },
+  "lcd1602-i2c": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
       "width": 50,
       "height": 50
     },
     "pins": [
-      {
-        "name": "GND",
-        "x": 4,
-        "y": 32
-      },
-      {
-        "name": "VCC",
-        "x": 4,
-        "y": 41.5
-      },
-      {
-        "name": "SDA",
-        "x": 4,
-        "y": 51
-      },
-      {
-        "name": "SCL",
-        "x": 4,
-        "y": 60.5
-      }
+      { "name": "GND", "x": 4,   "y": 32   },
+      { "name": "VCC", "x": 4,   "y": 41.5 },
+      { "name": "SDA", "x": 4,   "y": 51   },
+      { "name": "SCL", "x": 4,   "y": 60.5 }
+    ]
+  },
+  "lcd2004-i2c": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 50,
+      "height": 50
+    },
+    "pins": [
+      { "name": "GND", "x": 4,   "y": 32   },
+      { "name": "VCC", "x": 4,   "y": 41.5 },
+      { "name": "SDA", "x": 4,   "y": 51   },
+      { "name": "SCL", "x": 4,   "y": 60.5 }
     ]
   },
   "lcd2004": {
@@ -2398,6 +2440,27 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       { "name": "VCC",  "x": 95.87,  "y": 181.42 },
       { "name": "DIN",  "x": 105.47, "y": 181.42 },
       { "name": "DOUT", "x": 115.07, "y": 181.42 }
+    ]
+  },
+  "a4988": {
+    "viewBox": { "minX": 0, "minY": 0, "width": 113.39, "height": 325.04 },
+    "pins": [
+      { "name": "ENABLE", "x": 0,      "y": 35.91  },
+      { "name": "MS1",    "x": 0,      "y": 71.81  },
+      { "name": "MS2",    "x": 0,      "y": 107.72 },
+      { "name": "MS3",    "x": 0,      "y": 143.62 },
+      { "name": "RESET",  "x": 0,      "y": 179.53 },
+      { "name": "SLEEP",  "x": 0,      "y": 215.43 },
+      { "name": "STEP",   "x": 0,      "y": 251.34 },
+      { "name": "DIR",    "x": 0,      "y": 287.24 },
+      { "name": "VDD",    "x": 113.39, "y": 35.91  },
+      { "name": "GND",    "x": 113.39, "y": 71.81  },
+      { "name": "2B",     "x": 113.39, "y": 107.72 },
+      { "name": "2A",     "x": 113.39, "y": 143.62 },
+      { "name": "1A",     "x": 113.39, "y": 179.53 },
+      { "name": "1B",     "x": 113.39, "y": 215.43 },
+      { "name": "VMOT",   "x": 113.39, "y": 251.34 },
+      { "name": "GND2",   "x": 113.39, "y": 287.24 }
     ]
   },
   "led-ring": {
