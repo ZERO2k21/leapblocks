@@ -18,48 +18,48 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         icon: '✏️',
         registerBlocks: (Blockly: any) => {
             const penBlockDefs = [
-                { type: 'pen_clear', message0: '🏷️ erase all', previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
-                { type: 'pen_stamp', message0: '🖼️ stamp', previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
-                { type: 'pen_down', message0: '🖋️ pen down', previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
-                { type: 'pen_up', message0: '🖋️ pen up', previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
-                { type: 'pen_set_color', message0: '🎨 set pen color to %1', args0: [{ type: 'input_value', name: 'COLOR' }], previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
-                { type: 'pen_change_size', message0: '📏 change pen size by %1', args0: [{ type: 'input_value', name: 'SIZE' }], previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
-                { type: 'pen_set_size', message0: '📏 set pen size to %1', args0: [{ type: 'input_value', name: 'SIZE' }], previousStatement: null, nextStatement: null, colour: '#0FBD8C' }
+                { type: 'pen_clear', message0: 'erase all', previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
+                { type: 'pen_stamp', message0: 'stamp', previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
+                { type: 'pen_penDown', message0: 'pen down', previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
+                { type: 'pen_penUp', message0: 'pen up', previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
+                { type: 'pen_setPenColorToColor', message0: 'set pen color to %1', args0: [{ type: 'field_colour', name: 'COLOR', colour: '#ff0000' }], previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
+                { type: 'pen_changePenSizeBy', message0: 'change pen size by %1', args0: [{ type: 'field_number', name: 'SIZE', value: 1 }], previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
+                { type: 'pen_setPenSizeTo', message0: 'set pen size to %1', args0: [{ type: 'field_number', name: 'SIZE', value: 1 }], previousStatement: null, nextStatement: null, colour: '#0FBD8C' }
             ];
             const newPenDefs = penBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
             if (newPenDefs.length > 0) {
                 Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newPenDefs));
             }
         },
-        registerGenerators: (Blockly: any) => {
-            const jsGen = (Blockly as any).JavaScript || (Blockly as any).javascriptGenerator;
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
             if (!jsGen) return;
 
-            jsGen.forBlock['pen_clear'] = () => 'if(window.runtime?.pen) window.runtime.pen.clear();\n';
+            jsGen.forBlock['pen_clear'] = () => 'if(window.runtime?.pen) window.runtime.pen.eraseAll();\n';
             jsGen.forBlock['pen_stamp'] = () => 'if(window.runtime?.pen) window.runtime.pen.stamp();\n';
-            jsGen.forBlock['pen_down'] = () => 'if(window.runtime?.pen) window.runtime.pen.down();\n';
-            jsGen.forBlock['pen_up'] = () => 'if(window.runtime?.pen) window.runtime.pen.up();\n';
-            jsGen.forBlock['pen_set_color'] = (b: any) => {
-                const color = jsGen.valueToCode(b, 'COLOR', 0) || "'#000000'";
-                return `if(window.runtime?.pen) window.runtime.pen.setColor(${color});\n`;
+            jsGen.forBlock['pen_penDown'] = () => 'if(window.runtime?.pen) window.runtime.pen.penDown();\n';
+            jsGen.forBlock['pen_penUp'] = () => 'if(window.runtime?.pen) window.runtime.pen.penUp();\n';
+            jsGen.forBlock['pen_setPenColorToColor'] = (b: any) => {
+                const color = b.getFieldValue('COLOR') || '#000000';
+                return `if(window.runtime?.pen) window.runtime.pen.setColor('${color}');\n`;
             };
-            jsGen.forBlock['pen_change_size'] = (b: any) => {
-                const size = jsGen.valueToCode(b, 'SIZE', 0) || '1';
+            jsGen.forBlock['pen_changePenSizeBy'] = (b: any) => {
+                const size = b.getFieldValue('SIZE') || 1;
                 return `if(window.runtime?.pen) window.runtime.pen.changeSize(${size});\n`;
             };
-            jsGen.forBlock['pen_set_size'] = (b: any) => {
-                const size = jsGen.valueToCode(b, 'SIZE', 0) || '1';
+            jsGen.forBlock['pen_setPenSizeTo'] = (b: any) => {
+                const size = b.getFieldValue('SIZE') || 1;
                 return `if(window.runtime?.pen) window.runtime.pen.setSize(${size});\n`;
             };
         },
         getToolbox: () => [
             { kind: 'block', type: 'pen_clear' },
             { kind: 'block', type: 'pen_stamp' },
-            { kind: 'block', type: 'pen_down' },
-            { kind: 'block', type: 'pen_up' },
-            { kind: 'block', type: 'pen_set_color', inputs: { COLOR: { shadow: { type: 'colour_picker', fields: { COLOUR: '#ff0000' } } } } },
-            { kind: 'block', type: 'pen_change_size', inputs: { SIZE: { shadow: { type: 'math_number', fields: { NUM: 1 } } } } },
-            { kind: 'block', type: 'pen_set_size', inputs: { SIZE: { shadow: { type: 'math_number', fields: { NUM: 1 } } } } }
+            { kind: 'block', type: 'pen_penDown' },
+            { kind: 'block', type: 'pen_penUp' },
+            { kind: 'block', type: 'pen_setPenColorToColor' },
+            { kind: 'block', type: 'pen_changePenSizeBy' },
+            { kind: 'block', type: 'pen_setPenSizeTo' }
         ]
     },
     face_detection: {
@@ -70,24 +70,24 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         registerBlocks: (Blockly: any) => {
             const fdBlockDefs = [
                 {
-                    type: 'fd_camera', message0: '📷 camera %1',
+                    type: 'fd_camera', message0: 'camera %1',
                     args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off'], ['flip', 'flip']] }],
                     previousStatement: null, nextStatement: null, colour: '#D43D41'
                 },
                 {
-                    type: 'fd_analyze', message0: '👤 %1 face',
+                    type: 'fd_analyze', message0: '%1 face',
                     args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['analyze', 'analyze'], ['show detection', 'show'], ['hide detection', 'hide']] }],
                     previousStatement: null, nextStatement: null, colour: '#D43D41'
                 },
-                { type: 'fd_count', message0: '👥 count faces', previousStatement: null, nextStatement: null, colour: '#D43D41' },
-                { type: 'fd_guess_emotion', message0: '🙂 guess emotion', previousStatement: null, nextStatement: null, colour: '#D43D41' },
+                { type: 'fd_count', message0: 'count faces', previousStatement: null, nextStatement: null, colour: '#D43D41' },
+                { type: 'fd_guess_emotion', message0: 'guess emotion', previousStatement: null, nextStatement: null, colour: '#D43D41' },
                 {
-                    type: 'fd_feature', message0: '👁️ %1',
-                    args0: [{ type: 'field_dropdown', name: 'FEATURE', options: [['Eye L', 'left_eye'], ['Eye R', 'right_eye'], ['Smile', 'smile'], ['Nose', 'nose'], ['Face', 'face']] }],
+                    type: 'fd_feature', message0: 'detect %1',
+                    args0: [{ type: 'field_dropdown', name: 'FEATURE', options: [['Left Eye', 'left_eye'], ['Right Eye', 'right_eye'], ['Smile', 'smile'], ['Nose', 'nose'], ['Face', 'face']] }],
                     previousStatement: null, nextStatement: null, colour: '#D43D41'
                 },
                 {
-                    type: 'fd_when_emotion', message0: '🎭 when emotion %1',
+                    type: 'fd_when_emotion', message0: 'when emotion %1',
                     args0: [{ type: 'field_dropdown', name: 'EMOTION', options: [['Smile', 'smile'], ['Angry', 'angry'], ['Sad', 'sad'], ['Neutral', 'neutral']] }],
                     nextStatement: true, colour: '#D43D41'
                 },
@@ -109,8 +109,8 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newFdDefs));
             }
         },
-        registerGenerators: (Blockly: any) => {
-            const jsGen = (Blockly as any).JavaScript || (Blockly as any).javascriptGenerator;
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
             if (!jsGen) return;
 
             jsGen.forBlock['fd_camera'] = (b: any) => `if(window.runtime?.face) window.runtime.face.analyse('${b.getFieldValue("ACTION")}');\n`;
@@ -157,8 +157,8 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newOdDefs));
             }
         },
-        registerGenerators: (Blockly: any) => {
-            const jsGen = (Blockly as any).JavaScript || (Blockly as any).javascriptGenerator;
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
             if (!jsGen) return;
 
             jsGen.forBlock['object_detect'] = () => 'if(window.runtime?.objectDetection) await window.runtime.objectDetection.detectObjects();\n';
@@ -199,8 +199,8 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newMusicDefs));
             }
         },
-        registerGenerators: (Blockly: any) => {
-            const jsGen = (Blockly as any).JavaScript || (Blockly as any).javascriptGenerator;
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
             if (!jsGen) return;
 
             jsGen.forBlock['music_play_note'] = (b: any) => `if(window.runtime?.music) await window.runtime.music.playNote(${b.getFieldValue('NOTE')}, ${b.getFieldValue('BEATS')});\n`;
@@ -229,26 +229,25 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         registerBlocks: (Blockly: any) => {
             const hpBlockDefs = [
                 {
-                    type: 'hp_camera', message0: '📷 camera %1',
+                    type: 'hp_camera', message0: 'camera %1',
                     args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off'], ['flip', 'flip']] }],
                     previousStatement: null, nextStatement: null, colour: '#D43D41'
                 },
                 {
-                    type: 'hp_analyze', message0: '✋ %1 hand',
+                    type: 'hp_analyze', message0: '%1 hand',
                     args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['analyze', 'analyze'], ['show detection', 'show'], ['hide detection', 'hide']] }],
                     previousStatement: null, nextStatement: null, colour: '#D43D41'
                 },
                 {
-                    type: 'hp_move_with', message0: '👆 move %1 with %2',
+                    type: 'hp_move_with', message0: 'move sprite with %1',
                     args0: [
-                        { type: 'field_label', text: 'sprite' },
                         { type: 'field_dropdown', name: 'FINGER', options: [['Thumb', 'thumb'], ['Index', 'index'], ['Middle', 'middle'], ['Ring', 'ring'], ['Pinky', 'pinky'], ['Base', 'base']] }
                     ],
                     previousStatement: null, nextStatement: null, colour: '#D43D41'
                 },
-                { type: 'hp_guess_sign', message0: '✌️ guess sign', previousStatement: null, nextStatement: null, colour: '#D43D41' },
+                { type: 'hp_guess_sign', message0: 'guess sign', previousStatement: null, nextStatement: null, colour: '#D43D41' },
                 {
-                    type: 'hp_when_sign', message0: '🖐️ when hand sign %1',
+                    type: 'hp_when_sign', message0: 'when hand sign %1',
                     args0: [{ type: 'field_dropdown', name: 'SIGN', options: [['Peace', '2'], ['Open', '5'], ['Thumbs Up', 'thumbs_up']] }],
                     nextStatement: true, colour: '#D43D41'
                 }
@@ -258,8 +257,8 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newHpDefs));
             }
         },
-        registerGenerators: (Blockly: any) => {
-            const jsGen = (Blockly as any).JavaScript || (Blockly as any).javascriptGenerator;
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
             if (!jsGen) return;
 
             jsGen.forBlock['hp_camera'] = (b: any) => `if(window.runtime?.handPose) window.runtime.handPose.analyse('${b.getFieldValue("ACTION")}');\n`;
