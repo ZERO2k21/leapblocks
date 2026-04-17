@@ -10,5 +10,6 @@
     "**/build": true
   },
   "css.lint.unknownAtRules": "ignore",
-  "kiroAgent.configureMCP": "Disabled"
+  "kiroAgent.configureMCP": "Disabled",
+  "javascript.autoClosingTags": false
 }

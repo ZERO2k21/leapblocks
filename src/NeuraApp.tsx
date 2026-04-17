@@ -9,6 +9,12 @@ import EmptyStateIllustration from './components/neura/dashboard/EmptyStateIllus
 import ProjectCard from './components/neura/dashboard/ProjectCard';
 import CreateProjectModal from './components/neura/create-project/CreateProjectModal';
 import ImageClassifier from './components/neura/project-types/image-classifier/ImageClassifier';
+import ObjectDetection from './components/neura/project-types/object-detection/ObjectDetection';
+import PoseClassifier from './components/neura/project-types/pose-classifier/PoseClassifier';
+import HandPoseClassifier from './components/neura/project-types/hand-pose-classifier/HandPoseClassifier';
+import AudioClassifier from './components/neura/project-types/audio-classifier/AudioClassifier';
+import NumbersCR from './components/neura/project-types/numbers-cr/NumbersCR';
+import TextClassifier from './components/neura/project-types/text-classifier/TextClassifier';
 import { NeuraProject, ProjectType } from './types/neura.types';
 import './styles/neura-theme.css';
 
@@ -49,45 +55,19 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
     const renderProjectComponent = () => {
         switch (currentProjectType) {
             case 'image-classifier':
-                return <ImageClassifier />;
+                return <ImageClassifier onBack={handleBackToDashboard} />;
             case 'object-detection':
-                return (
-                    <div className="h-screen flex items-center justify-center bg-gray-50">
-                        <div className="text-center">
-                            <div className="text-6xl mb-4">🐱</div>
-                            <h2 className="text-2xl font-bold text-gray-800 mb-2">Object Detection</h2>
-                            <p className="text-gray-600">Coming soon...</p>
-                            <button
-                                onClick={handleBackToDashboard}
-                                className="mt-6 neura-button-primary"
-                            >
-                                ← Back to Dashboard
-                            </button>
-                        </div>
-                    </div>
-                );
+                return <ObjectDetection onBack={handleBackToDashboard} />;
             case 'pose-classifier':
+                return <PoseClassifier onBack={handleBackToDashboard} />;
             case 'hand-pose-classifier':
+                return <HandPoseClassifier onBack={handleBackToDashboard} />;
             case 'audio-classifier':
+                return <AudioClassifier onBack={handleBackToDashboard} />;
             case 'numbers-cr':
+                return <NumbersCR onBack={handleBackToDashboard} />;
             case 'text-classifier':
-                return (
-                    <div className="h-screen flex items-center justify-center bg-gray-50">
-                        <div className="text-center">
-                            <div className="text-6xl mb-4">🚧</div>
-                            <h2 className="text-2xl font-bold text-gray-800 mb-2 capitalize">
-                                {currentProjectType.replace('-', ' ')}
-                            </h2>
-                            <p className="text-gray-600">Coming soon...</p>
-                            <button
-                                onClick={handleBackToDashboard}
-                                className="mt-6 neura-button-primary"
-                            >
-                                ← Back to Dashboard
-                            </button>
-                        </div>
-                    </div>
-                );
+                return <TextClassifier onBack={handleBackToDashboard} />;
             default:
                 return null;
         }
