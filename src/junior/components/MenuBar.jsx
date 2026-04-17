@@ -1,33 +1,26 @@
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
+ * All rights reserved.
  */
 import React, { useState, useRef, useEffect } from 'react';
 import {
     ChevronDown, File, FolderOpen, Save, Share,
     Undo, Redo, Cpu, Bluetooth, Usb, Wifi,
-    Play, Upload, Settings, HelpCircle, Home, RotateCcw,
-    Monitor, Rocket
+    Upload, Home, RotateCcw, Monitor, Rocket
 } from 'lucide-react';
-import Logo, { CreoleapLogo } from '../../components/Logo';
+import Logo from '../../components/Logo';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// DROPDOWN MENU — Glassmorphism + slide-in animation
-// ═══════════════════════════════════════════════════════════════════════════
+// DropdownMenu Component (Converted to Tailwind)
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     const menuRef = useRef(null);
-    const onCloseRef = useRef(onClose);
-    onCloseRef.current = onClose;
 
     useEffect(() => {
         if (!isOpen) return;
         const handleClickOutside = (e) => {
             if (menuRef.current && !menuRef.current.contains(e.target)) {
-                onCloseRef.current();
+                onClose();
             }
         };
-        // Use setTimeout to avoid the same click that opened the menu from closing it
         const timer = setTimeout(() => {
             document.addEventListener('mousedown', handleClickOutside, true);
         }, 0);
@@ -35,122 +28,44 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
             clearTimeout(timer);
             document.removeEventListener('mousedown', handleClickOutside, true);
         };
-    }, [isOpen]);
+    }, [isOpen, onClose]);
 
     return (
-        <div ref={menuRef} style={{ position: 'relative' }}>
+        <div ref={menuRef} className="relative">
             <button
                 onClick={onToggle}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    padding: '6px 12px',
-                    border: 'none',
-                    color: '#fff',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    cursor: 'pointer',
-                    borderRadius: 8,
-                    transition: 'all 0.2s ease',
-                    background: isOpen ? 'rgba(255,255,255,0.18)' : 'transparent',
-                    backdropFilter: isOpen ? 'blur(4px)' : 'none',
-                    letterSpacing: '0.02em',
-                }}
-                onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent'; }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-white rounded-xl transition-all duration-200 ${isOpen ? 'bg-white/20 backdrop-blur-md' : 'hover:bg-white/10'
+                    }`}
             >
-                {Icon && <Icon size={15} strokeWidth={2.2} style={{ opacity: 0.9 }} />}
+                {Icon && <Icon size={16} strokeWidth={2.2} />}
                 {label}
                 <ChevronDown
-                    size={13}
-                    strokeWidth={2.5}
-                    style={{
-                        opacity: 0.6,
-                        transition: 'transform 0.2s ease',
-                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    }}
+                    size={14}
+                    className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
                 />
             </button>
 
             {isOpen && (
-                <div style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 6px)',
-                    left: 0,
-                    background: 'rgba(255,255,255,0.92)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    borderRadius: 12,
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)',
-                    border: '1px solid rgba(255,255,255,0.6)',
-                    minWidth: 200,
-                    overflow: 'hidden',
-                    zIndex: 1000,
-                    padding: '6px 0',
-                    animation: 'menuSlideIn 0.18s ease-out',
-                }}>
-                    <style>{`
-                        @keyframes menuSlideIn {
-                            from { opacity: 0; transform: translateY(-6px) scale(0.98); }
-                            to { opacity: 1; transform: translateY(0) scale(1); }
-                        }
-                    `}</style>
+                <div className="absolute top-[calc(100%+8px)] left-0 bg-white/95 backdrop-blur-2xl border border-white/60 rounded-2xl shadow-2xl py-1.5 min-w-[200px] z-50">
                     {items.map((item, idx) => (
                         item.divider ? (
-                            <div key={idx} style={{
-                                height: 1,
-                                background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.08), transparent)',
-                                margin: '5px 12px',
-                            }} />
+                            <div
+                                key={idx}
+                                className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent my-2 mx-4"
+                            />
                         ) : (
                             <button
                                 key={idx}
                                 onClick={() => { item.onClick?.(); onClose(); }}
                                 disabled={item.disabled}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 10,
-                                    width: '100%',
-                                    padding: '9px 14px',
-                                    border: 'none',
-                                    background: 'transparent',
-                                    fontSize: 13,
-                                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                                    fontWeight: 500,
-                                    textAlign: 'left',
-                                    cursor: item.disabled ? 'not-allowed' : 'pointer',
-                                    color: item.disabled ? '#bbb' : '#374151',
-                                    transition: 'all 0.12s ease',
-                                    borderRadius: 0,
-                                    position: 'relative',
-                                    letterSpacing: '0.01em',
-                                }}
-                                onMouseEnter={e => {
-                                    if (!item.disabled) {
-                                        e.currentTarget.style.background = 'rgba(107,70,193,0.08)';
-                                        e.currentTarget.style.color = '#6B46C1';
-                                    }
-                                }}
-                                onMouseLeave={e => {
-                                    e.currentTarget.style.background = 'transparent';
-                                    e.currentTarget.style.color = item.disabled ? '#bbb' : '#374151';
-                                }}
+                                className="w-full px-4 py-2.5 text-left flex items-center gap-3 text-sm text-gray-700 hover:bg-violet-50 hover:text-violet-700 disabled:opacity-50 transition-colors"
                             >
-                                {item.icon && <item.icon size={16} color="#7C3AED" strokeWidth={2} style={{ opacity: 0.85, flexShrink: 0 }} />}
-                                <span style={{ flex: 1 }}>{item.label}</span>
+                                {item.icon && <item.icon size={17} className="text-violet-600" />}
+                                <span className="flex-1">{item.label}</span>
                                 {item.shortcut && (
-                                    <span style={{
-                                        fontSize: 11,
-                                        color: '#aaa',
-                                        fontWeight: 500,
-                                        background: 'rgba(0,0,0,0.04)',
-                                        padding: '2px 6px',
-                                        borderRadius: 4,
-                                        fontFamily: "'Segoe UI', monospace",
-                                    }}>{item.shortcut}</span>
+                                    <span className="text-xs text-gray-400 font-mono bg-gray-100 px-2 py-0.5 rounded">
+                                        {item.shortcut}
+                                    </span>
                                 )}
                             </button>
                         )
@@ -161,88 +76,42 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// MODE TOGGLE — Premium sliding pill (Stage / Upload)
-// ═══════════════════════════════════════════════════════════════════════════
+// Modern Sliding Toggle Switch for Stage / Upload
 function ModeToggle({ mode, onModeChange }) {
     return (
-        <div style={{
-            display: 'flex',
-            position: 'relative',
-            background: 'rgba(0,0,0,0.25)',
-            borderRadius: 22,
-            padding: 3,
-            border: '1px solid rgba(255,255,255,0.08)',
-        }}>
-            {/* Sliding indicator */}
-            <div style={{
-                position: 'absolute',
-                top: 3,
-                left: mode === 'stage' ? 3 : 'calc(50% + 1px)',
-                width: 'calc(50% - 4px)',
-                height: 'calc(100% - 6px)',
-                borderRadius: 19,
-                background: mode === 'stage'
-                    ? 'linear-gradient(135deg, #10B981, #059669)'
-                    : 'linear-gradient(135deg, #3B82F6, #2563EB)',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-            }} />
-            <button
-                onClick={() => onModeChange('stage')}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    padding: '6px 16px',
-                    border: 'none',
-                    borderRadius: 19,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    cursor: 'pointer',
-                    background: 'transparent',
-                    color: mode === 'stage' ? '#fff' : 'rgba(255,255,255,0.55)',
-                    position: 'relative',
-                    zIndex: 1,
-                    transition: 'color 0.2s ease',
-                    letterSpacing: '0.03em',
-                }}
+        <div
+            onClick={() => onModeChange(mode === 'stage' ? 'upload' : 'stage')}
+            className="relative flex items-center bg-zinc-900/80 border border-white/10 rounded-3xl p-1 cursor-pointer w-[152px] h-9 hover:border-white/20 transition-all"
+        >
+            {/* Sliding Background */}
+            <div
+                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-3xl transition-all duration-300 shadow-md ${mode === 'stage'
+                    ? 'left-1 bg-gradient-to-r from-emerald-500 to-teal-600'
+                    : 'left-1/2 bg-gradient-to-r from-blue-600 to-indigo-600'
+                    }`}
+            />
+
+            {/* Stage Label */}
+            <div
+                className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold z-10 transition-colors ${mode === 'stage' ? 'text-white' : 'text-white/60'
+                    }`}
             >
-                <Monitor size={13} strokeWidth={2.5} />
-                Stage
-            </button>
-            <button
-                onClick={() => onModeChange('upload')}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    padding: '6px 16px',
-                    border: 'none',
-                    borderRadius: 19,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    cursor: 'pointer',
-                    background: 'transparent',
-                    color: mode === 'upload' ? '#fff' : 'rgba(255,255,255,0.55)',
-                    position: 'relative',
-                    zIndex: 1,
-                    transition: 'color 0.2s ease',
-                    letterSpacing: '0.03em',
-                }}
+                <Monitor size={15} strokeWidth={2.5} />
+                <span className="hidden sm:inline">Stage</span>
+            </div>
+
+            {/* Upload Label */}
+            <div
+                className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold z-10 transition-colors ${mode === 'upload' ? 'text-white' : 'text-white/60'
+                    }`}
             >
-                <Rocket size={13} strokeWidth={2.5} />
-                Upload
-            </button>
+                <Rocket size={15} strokeWidth={2.5} />
+                <span className="hidden sm:inline">Upload</span>
+            </div>
         </div>
     );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// MAIN MENUBAR
-// ═══════════════════════════════════════════════════════════════════════════
 export default function MenuBar({
     projectName = "Untitled Project",
     onProjectNameChange,
@@ -263,19 +132,24 @@ export default function MenuBar({
     onBack,
 }) {
     const [openMenu, setOpenMenu] = useState(null);
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1920);
 
-    const toggleMenu = (menu) => {
-        setOpenMenu(openMenu === menu ? null : menu);
-    };
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
+    const toggleMenu = (menu) => setOpenMenu(openMenu === menu ? null : menu);
     const closeMenu = () => setOpenMenu(null);
+    const isConnected = connectionStatus === 'connected';
 
     const fileMenuItems = [
         { label: 'New Project', icon: File, shortcut: 'Ctrl+N', onClick: () => onFileAction?.('new') },
         { label: 'Open Project', icon: FolderOpen, shortcut: 'Ctrl+O', onClick: () => onFileAction?.('open') },
         { divider: true },
         { label: 'Save', icon: Save, shortcut: 'Ctrl+S', onClick: () => onFileAction?.('save') },
-        { label: 'Share', icon: Share, onClick: () => onFileAction?.('share to') },
+        { label: 'Share', icon: Share, onClick: () => onFileAction?.('share') },
     ];
 
     const editMenuItems = [
@@ -289,98 +163,27 @@ export default function MenuBar({
         { label: selectedBoard || 'No Board Selected', disabled: true },
     ];
 
-    const connectMenuItems = [
-        { label: 'Serial', icon: Usb, onClick: () => onConnect?.('serial') },
-        { label: 'Bluetooth', icon: Bluetooth, onClick: () => onConnect?.('bluetooth') },
-        { label: 'WiFi', icon: Wifi, onClick: () => onConnect?.('wifi'), disabled: true },
-    ];
-
-    const isConnected = connectionStatus === 'connected';
-
     return (
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            height: 56,
-            padding: '0 18px',
-            gap: 6,
-            background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
-            boxShadow: '0 4px 20px rgba(8,10,37,0.45), inset 0 -1px 0 rgba(255,255,255,0.06)',
-            zIndex: 100,
-            borderBottom: '1px solid rgba(100,180,255,0.1)',
-            position: 'relative',
-        }}>
-
-            {/* Home Button */}
+        <div className="flex items-center h-14 px-5 gap-4 bg-gradient-to-r from-[#0a015a] to-[#080a25] border-b border-white/10 shadow-xl z-50">
+            {/* Left Side */}
             <button
                 onClick={onBack}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 36,
-                    height: 36,
-                    background: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: 10,
-                    color: '#fff',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    marginRight: 8,
-                    flexShrink: 0,
-                }}
-                onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                }}
-                onMouseLeave={e => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                    e.currentTarget.style.transform = 'scale(1)';
-                }}
+                className="w-9 h-9 flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-all active:scale-95"
                 title="Back to Home"
             >
-                <Home size={18} strokeWidth={2.2} />
+                <Home size={19} />
             </button>
 
-            {/* LeapLab Logo — Massive Premium Left */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                marginRight: 14,
-                flexShrink: 0,
-                filter: 'drop-shadow(0 0 12px rgba(36, 0, 85, 1)) drop-shadow(0 2px 6px rgba(0,0,0,0.3))',
-            }}>
-                <Logo height={44} />
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    marginLeft: 10,
-                    lineHeight: 1.1,
-                }}>
-                    <span style={{
-                        color: '#FFD500',
-                        fontSize: 8,
-                        fontWeight: 900,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.18em',
-                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    }}>LEAPLAB</span>
-                    <span style={{
-                        color: '#fff',
-                        fontSize: 14,
-                        fontWeight: 900,
-                        letterSpacing: '0.08em',
-                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    }}>EMBED</span>
+            <div className="flex items-center gap-3">
+                <Logo height={42} />
+                <div className="leading-tight">
+                    <div className="text-[#FFD500] text-[10px] font-black tracking-[0.12em] uppercase">LEAPLAB</div>
+                    <div className="text-white text-[15px] font-black tracking-wider">EMBED</div>
                 </div>
             </div>
 
-            {/* Separator */}
-            <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.12)', margin: '0 4px', flexShrink: 0 }} />
-
             {/* Menu Dropdowns */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <div className="flex items-center gap-1 ml-6">
                 <DropdownMenu
                     label="File"
                     items={fileMenuItems}
@@ -405,266 +208,95 @@ export default function MenuBar({
                 />
             </div>
 
-            {/* Separator */}
-            <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.12)', margin: '0 6px', flexShrink: 0 }} />
-
             {/* Hardware Port Section */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                background: 'rgba(0,0,0,0.2)',
-                padding: '4px 10px',
-                borderRadius: 10,
-                border: '1px solid rgba(255,255,255,0.06)',
-            }}>
+            <div className="flex items-center gap-2 bg-black/30 border border-white/10 rounded-2xl px-4 py-1.5 ml-4">
                 <button
                     onClick={onRefreshPorts}
-                    title="Refresh Ports"
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'rgba(255,255,255,0.7)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: 4,
-                        borderRadius: 6,
-                        transition: 'all 0.2s ease',
-                    }}
-                    onMouseEnter={e => {
-                        e.currentTarget.style.color = '#fff';
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                    }}
-                    onMouseLeave={e => {
-                        e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
-                        e.currentTarget.style.background = 'transparent';
-                    }}
+                    className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
                 >
-                    <RotateCcw size={13} strokeWidth={2.5} />
+                    <RotateCcw size={15} />
                 </button>
                 <select
                     value={selectedPort}
                     onChange={(e) => onPortSelect?.(e.target.value)}
-                    style={{
-                        background: 'rgba(255,255,255,0.08)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 6,
-                        color: '#fff',
-                        fontSize: 11,
-                        fontWeight: 500,
-                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        outline: 'none',
-                        cursor: 'pointer',
-                        padding: '4px 8px',
-                        maxWidth: 130,
-                        appearance: 'none',
-                        WebkitAppearance: 'none',
-                    }}
+                    className="bg-white/10 border border-white/20 rounded-xl text-white text-xs px-3 py-1.5 outline-none cursor-pointer max-w-[140px]"
                 >
-                    <option value="" style={{ color: '#374151', background: '#fff' }}>
-                        {ports.length === 0 ? 'No Ports' : 'Select Port'}
-                    </option>
+                    <option value="">{ports.length === 0 ? 'No Ports' : 'Select Port'}</option>
                     {ports.map(p => (
-                        <option
-                            key={p.path}
-                            value={p.path}
-                            style={{
-                                color: p.path === 'BRIDGE_DETECTED' ? '#EF4444' : '#374151',
-                                background: '#fff',
-                            }}
-                        >
-                            {p.path === 'BRIDGE_DETECTED'
-                                ? `⚠ Driver: ${p.manufacturer}`
-                                : `${p.path} (${p.manufacturer || '?'})`}
-                        </option>
+                        <option key={p.path} value={p.path}>{p.path}</option>
                     ))}
                 </select>
                 <button
                     onClick={onConnect}
-                    style={{
-                        border: 'none',
-                        borderRadius: 7,
-                        color: '#fff',
-                        padding: '4px 12px',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        background: isConnected
-                            ? 'linear-gradient(135deg, #10B981, #059669)'
-                            : 'rgba(255,255,255,0.12)',
-                        letterSpacing: '0.04em',
-                        textTransform: 'uppercase',
-                    }}
-                    onMouseEnter={e => {
-                        if (!isConnected) e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-                    }}
-                    onMouseLeave={e => {
-                        if (!isConnected) e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
-                    }}
+                    className={`px-4 py-1.5 text-xs font-bold rounded-xl transition-all ${isConnected ? 'bg-emerald-600 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
+                        }`}
                 >
                     {isConnected ? '● Connected' : 'Connect'}
                 </button>
             </div>
 
-            {/* Upload Button — Upload Mode Only */}
-            {mode === 'upload' && (
-                <button
-                    onClick={onUpload}
-                    disabled={isUploading}
-                    style={{
-                        border: 'none',
-                        borderRadius: 20,
-                        padding: '7px 18px',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        cursor: isUploading ? 'not-allowed' : 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        boxShadow: isUploading ? 'none' : '0 2px 10px rgba(255,213,0,0.35)',
-                        transition: 'all 0.2s ease',
-                        background: isUploading
-                            ? 'rgba(255,255,255,0.15)'
-                            : 'linear-gradient(135deg, #FFD500, #FFB800)',
-                        color: isUploading ? 'rgba(255,255,255,0.7)' : '#1a1a2e',
-                        letterSpacing: '0.03em',
-                        marginLeft: 4,
-                    }}
-                >
-                    <Upload size={14} strokeWidth={2.5} />
-                    {isUploading ? 'UPLOADING...' : 'UPLOAD'}
-                </button>
-            )}
-
-            {/* Spacer */}
-            <div style={{ flex: 1 }} />
+            <div className="flex-1" />
 
             {/* Project Name */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: 'rgba(0,0,0,0.2)',
-                borderRadius: 10,
-                padding: '0 4px 0 12px',
-                border: '1px solid rgba(255,255,255,0.08)',
-                height: 32,
-                gap: 6,
-            }}>
-                <span style={{ fontSize: 14, opacity: 0.5 }}>📁</span>
+            <div className="flex items-center bg-black/30 border border-white/10 rounded-2xl px-4 h-9 gap-3">
+                <span>📁</span>
                 <input
                     type="text"
                     value={projectName}
                     onChange={(e) => onProjectNameChange?.(e.target.value)}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#fff',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        width: 140,
-                        outline: 'none',
-                        letterSpacing: '0.01em',
-                    }}
+                    className="bg-transparent text-white text-sm font-medium outline-none w-40"
                     placeholder="Project Name"
                 />
                 <button
                     onClick={() => onFileAction?.('save')}
-                    style={{
-                        background: 'linear-gradient(135deg, #10B981, #059669)',
-                        border: 'none',
-                        borderRadius: 7,
-                        width: 28,
-                        height: 28,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        color: '#fff',
-                        transition: 'all 0.15s ease',
-                        flexShrink: 0,
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                    title="Save Project"
+                    className="w-8 h-8 bg-emerald-600 hover:bg-emerald-500 rounded-xl flex items-center justify-center transition-all active:scale-95"
                 >
-                    <Save size={14} strokeWidth={2.5} />
+                    <Save size={16} />
                 </button>
             </div>
 
-            {/* Spacer */}
-            <div style={{ flex: 1 }} />
+            <div className="flex-1" />
 
-            {/* Connection Status Indicator */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                marginRight: 10,
-            }}>
-                <div style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    background: isConnected ? '#10B981' : '#EF4444',
-                    boxShadow: isConnected ? '0 0 8px rgba(16,185,129,0.5)' : '0 0 8px rgba(239,68,68,0.4)',
-                    animation: isConnected ? 'none' : undefined,
-                }} />
-                <span style={{
-                    color: 'rgba(255,255,255,0.6)',
-                    fontSize: 11,
-                    fontWeight: 500,
-                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                }}>
-                    {isConnected ? 'Connected' : 'Disconnected'}
-                </span>
-            </div>
+            {/* ==================== RIGHT PANEL WITH MASSIVE LOGO ==================== */}
+            <div className="flex items-center gap-3 pr-4">
+                {/* Connection Status */}
+                <div className="flex items-center gap-2 text-sm font-medium text-white/70">
+                    <div
+                        className={`w-3 h-3 rounded-full ${isConnected ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-red-500 shadow-red-500/50'
+                            }`}
+                    />
+                    <span className="hidden sm:inline">
+                        {isConnected ? 'Connected' : 'Disconnected'}
+                    </span>
+                </div>
 
-            {/* Mode Toggle */}
-            <ModeToggle mode={mode} onModeChange={onModeChange} />
+                {/* Stage / Upload Toggle Switch */}
+                <ModeToggle mode={mode} onModeChange={onModeChange} />
 
-            {/* Help Button */}
-            <button
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 34,
-                    height: 34,
-                    marginLeft: 8,
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '50%',
-                    cursor: 'pointer',
-                    color: 'rgba(255,255,255,0.7)',
-                    transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.18)';
-                    e.currentTarget.style.color = '#fff';
-                }}
-                onMouseLeave={e => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                    e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
-                }}
-                title="Help"
-            >
-                <HelpCircle size={17} strokeWidth={2.2} />
-            </button>
+                {/* Upload Button - Only visible in Upload mode */}
+                {mode === 'upload' && (
+                    <button
+                        onClick={onUpload}
+                        disabled={isUploading}
+                        className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 disabled:from-gray-500 disabled:to-gray-600 text-[#1a1a2e] font-bold text-sm rounded-2xl transition-all active:scale-95 shadow-md disabled:cursor-not-allowed"
+                    >
+                        <Upload size={17} />
+                        {isUploading ? 'UPLOADING...' : 'UPLOAD'}
+                    </button>
+                )}
 
-            {/* CREOLEAP Right Logo — Premium Fit */}
-            <div style={{
-                marginLeft: 10,
-                display: 'flex',
-                alignItems: 'center',
-                flexShrink: 0,
-                filter: 'drop-shadow(0 0 14px rgba(255,255,255,0.15)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))',
-            }}>
-                <CreoleapLogo height={150} />
+                {/* CREOLEAP Logo - MASSIVE PREMIUM FIT */}
+                <div className="flex items-center pl-4 border-l border-white/20">
+                    <img
+                        src="/assets/creoleap_logo.svg"
+                        alt="CREOLEAP"
+                        className="h-14 md:h-16 lg:h-[68px] xl:h-20 w-auto object-contain"
+                        style={{
+                            filter: 'drop-shadow(0 0 24px rgba(255,255,255,0.6))',
+                            maxWidth: '320px'
+                        }}
+                    />
+                </div>
             </div>
         </div>
     );

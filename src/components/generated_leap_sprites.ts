@@ -689,9 +689,9 @@ export const leapSprites: any[] = [
     "id": "leap_cat",
     "name": "Cat",
     "emoji": "🤖",
-    "image": "assets/sprites/leap/cat_cat-a.svg",
+    "image": "assets/sprites/leap/cat_cat_a.svg",
     "costumes": [
-      "assets/sprites/leap/cat_cat-a.svg",
+      "assets/sprites/leap/cat_cat_a.svg",
       "assets/sprites/leap/cat_cat-b.svg"
     ],
     "tags": [

@@ -20,8 +20,9 @@ const AppInventor = lazy(() => import('./modules/AppInventor'));
 const AppForgeStudio = lazy(() => import('./modules/appforge/AppForgeStudio'));
 // @ts-ignore
 const LeapForgeStudio = lazy(() => import('./modules/leapforge/ForgeStudio'));
+const NeuraApp = lazy(() => import('./NeuraApp'));
 
-type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'appinventor' | 'appforge' | 'leapforge';
+type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'appinventor' | 'appforge' | 'leapforge' | 'neura';
 
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
@@ -94,6 +95,7 @@ export default function App() {
                 {mode === 'appinventor' && <AppInventor {...({ onBack: () => setMode('home') } as any)} />}
                 {mode === 'appforge' && <AppForgeStudio {...({ onBack: () => setMode('home') } as any)} />}
                 {mode === 'leapforge' && <LeapForgeStudio {...({ onBack: () => setMode('home') } as any)} />}
+                {mode === 'neura' && <NeuraApp onBack={() => setMode('home')} />}
                 {mode === 'home' && <LandingPage onSelect={setMode} />}
             </Suspense>
 

@@ -747,7 +747,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 4 NEURA */}
-              <div className={`tc tc-neura ${tcClass(3)}`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Neura'))}>
+              <div className={`tc tc-neura ${tcClass(3)}`} onClick={() => handleCardClick(() => onSelect('neura'))}>
                 <div className="tc-icon">
                   <img src="assets/ml_brain_icon.png" alt="Neura Icon" />
                 </div>

@@ -5015,19 +5015,34 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         <div>
             {/* Responsive Styles */}
             <style>{`
+                /* Ensure MenuBar is always visible and responsive */
+                @media (max-width: 768px) {
+                    /* MenuBar responsive - ensure logo/home button visible */
+                    .menubar-container {
+                        padding: 0 8px !important;
+                        height: 52px !important;
+                    }
+                    
+                    /* Ensure home button and logo are visible */
+                    .menubar-container button:first-child {
+                        display: flex !important;
+                        flex-shrink: 0 !important;
+                    }
+                }
+                
                 /* Desktop - Default styles */
                 @media (min-width: 1025px) {
                     .add-extension-btn-container {
-                        bottom: 16px !important;
-                        left: 16px !important;
+                        bottom: 12px !important;
+                        left: 12px !important;
                     }
                 }
                 
                 /* Tablet - Medium screens */
                 @media (max-width: 1024px) {
                     .add-extension-btn-container {
-                        bottom: 12px !important;
-                        left: 12px !important;
+                        bottom: 10px !important;
+                        left: 10px !important;
                     }
                     
                     /* Adjust right panel width */
@@ -5040,6 +5055,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     .stage-container-responsive {
                         width: 360px !important;
                     }
+                    
+                    /* Bottom panels fit properly */
+                    .log-area-responsive {
+                        height: 180px !important;
+                        max-height: 180px !important;
+                    }
                 }
                 
                 /* Mobile - Small screens */
@@ -5049,11 +5070,22 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         left: 8px !important;
                     }
                     
+                    /* Compact button on mobile - no expansion */
+                    .add-extension-btn-container button {
+                        width: 44px !important;
+                        padding: 8px !important;
+                    }
+                    
+                    .add-extension-btn-container button:hover {
+                        width: 44px !important;
+                        padding: 8px !important;
+                    }
+                    
                     /* Stack layout on mobile */
                     .main-container-responsive {
                         flex-direction: column !important;
                         height: auto !important;
-                        min-height: 100vh !important;
+                        min-height: calc(100vh - 52px) !important;
                     }
                     
                     /* Full width workspace on mobile */
@@ -5071,6 +5103,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         max-width: 100% !important;
                         border-left: none !important;
                         border-top: 1px solid #d9d9d9 !important;
+                        height: auto !important;
+                        max-height: 40vh !important;
                     }
                     
                     /* Adjust stage for mobile */
@@ -5080,21 +5114,24 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         margin: 0 auto !important;
                     }
                     
-                    /* Compact extension button on mobile */
-                    .add-extension-btn-container button {
-                        width: 48px !important;
-                    }
-                    
-                    .add-extension-btn-container button:hover {
-                        width: 48px !important;
+                    /* Bottom panels fit properly on mobile */
+                    .log-area-responsive {
+                        height: 150px !important;
+                        max-height: 150px !important;
                     }
                 }
                 
                 /* Extra small mobile */
                 @media (max-width: 480px) {
                     .add-extension-btn-container {
-                        bottom: 4px !important;
-                        left: 4px !important;
+                        bottom: 6px !important;
+                        left: 6px !important;
+                    }
+                    
+                    .add-extension-btn-container button {
+                        width: 40px !important;
+                        height: 40px !important;
+                        padding: 6px !important;
                     }
                     
                     .workspace-container-responsive {
@@ -5106,6 +5143,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     .stage-container-responsive {
                         max-width: 100% !important;
                     }
+                    
+                    /* Bottom panels compact on extra small */
+                    .log-area-responsive {
+                        height: 120px !important;
+                        max-height: 120px !important;
+                    }
                 }
                 
                 /* Ensure workspace scales properly */
@@ -5113,11 +5156,38 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     min-height: 350px !important;
                 }
                 
+                /* Right panel responsive - ensure proper height distribution */
+                .right-panel-responsive {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    overflow: hidden !important;
+                }
+                
+                /* Upload mode - ensure code preview and log fit within viewport */
+                @media (min-width: 769px) {
+                    .right-panel-responsive {
+                        height: calc(100vh - 120px) !important;
+                        max-height: calc(100vh - 120px) !important;
+                    }
+                }
+                
+                /* Stage container responsive sizing */
+                .stage-container-responsive {
+                    flex-shrink: 0 !important;
+                }
+                
                 /* Code preview responsive height */
+                .code-preview-area {
+                    flex: 1 1 auto !important;
+                    min-height: 150px !important;
+                    max-height: calc(50vh - 200px) !important;
+                    overflow-y: auto !important;
+                }
+                
                 @media (max-height: 900px) {
                     .code-preview-area {
-                        max-height: calc(35vh - 80px) !important;
-                        min-height: 150px !important;
+                        max-height: calc(40vh - 150px) !important;
+                        min-height: 140px !important;
                     }
                 }
                 
@@ -5135,11 +5205,34 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     }
                 }
                 
-                /* Log area responsive height */
+                /* Log area responsive height - better fitting */
+                .log-area-responsive {
+                    height: 180px !important;
+                    max-height: 180px !important;
+                    min-height: 120px !important;
+                    flex-shrink: 0 !important;
+                }
+                
+                @media (max-height: 900px) {
+                    .log-area-responsive {
+                        height: 160px !important;
+                        max-height: 160px !important;
+                    }
+                }
+                
                 @media (max-height: 768px) {
                     .log-area-responsive {
-                        height: 150px !important;
+                        height: 140px !important;
+                        max-height: 140px !important;
                     }
+                }
+                
+                @media (max-height: 600px) {
+                    .log-area-responsive {
+                        height: 120px !important;
+                        max-height: 120px !important;
+                    }
+                }
                 }
                 
                 /* Landscape mobile optimization */
@@ -5150,14 +5243,52 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     
                     .workspace-container-responsive {
                         width: 60% !important;
-                        height: calc(100vh - 120px) !important;
+                        height: calc(100vh - 52px) !important;
                     }
                     
                     .right-panel-responsive {
                         width: 40% !important;
                         border-left: 1px solid #d9d9d9 !important;
                         border-top: none !important;
+                        height: calc(100vh - 52px) !important;
+                        max-height: none !important;
                     }
+                    
+                    .log-area-responsive {
+                        height: 120px !important;
+                        max-height: 120px !important;
+                    }
+                }
+                
+                /* Premium button animations */
+                .add-extension-btn-container button {
+                    position: relative;
+                    overflow: hidden;
+                }
+                
+                .add-extension-btn-container button::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: -100%;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+                    transition: left 0.5s;
+                }
+                
+                .add-extension-btn-container button:hover::before {
+                    left: 100%;
+                }
+                
+                /* Ensure bottom panels don't overflow */
+                .right-panel-responsive {
+                    display: flex !important;
+                    flex-direction: column !important;
+                }
+                
+                .right-panel-responsive > * {
+                    flex-shrink: 0 !important;
                 }
             `}</style>
 
@@ -5449,26 +5580,35 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 style={styles.blockly}
                             />
 
-                            {/* Add Extension Button - Compact icon that expands on hover */}
+                            {/* Add Extension Button - Premium integrated design */}
                             {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
-                                <div className="absolute bottom-4 left-4 z-[100] add-extension-btn-container">
-                                    <div className="pt-4 border-t border-gray-300">
-                                        <button
-                                            onClick={() => setShowExtensionLibrary(true)}
-                                            className="group flex items-center gap-3 p-2 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all hover:pr-4 overflow-hidden"
-                                            style={{ width: '56px', transition: 'width 0.3s ease' }}
-                                            onMouseEnter={(e) => e.currentTarget.style.width = '200px'}
-                                            onMouseLeave={(e) => e.currentTarget.style.width = '56px'}
-                                        >
-                                            <div className="w-10 h-10 bg-[#855CD6] rounded-lg flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform flex-shrink-0">
-                                                <Library size={20} />
-                                            </div>
-                                            <div className="text-left whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                <div className="text-xs font-bold text-gray-700">Add Extension</div>
-                                                <div className="text-[9px] text-gray-400">More blocks</div>
-                                            </div>
-                                        </button>
-                                    </div>
+                                <div className="absolute bottom-3 left-3 z-[100] add-extension-btn-container">
+                                    <button
+                                        onClick={() => setShowExtensionLibrary(true)}
+                                        className="group flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#855CD6] to-[#9B6FE8] hover:from-[#7348C4] hover:to-[#8A5DD6] rounded-xl border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                                        style={{
+                                            width: '52px',
+                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            backdropFilter: 'blur(10px)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.width = '180px';
+                                            e.currentTarget.style.paddingRight = '16px';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.width = '52px';
+                                            e.currentTarget.style.paddingRight = '12px';
+                                        }}
+                                        title="Add Extension"
+                                    >
+                                        <div className="w-8 h-8 flex items-center justify-center text-white flex-shrink-0">
+                                            <Library size={20} strokeWidth={2.5} />
+                                        </div>
+                                        <div className="text-left whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75">
+                                            <div className="text-xs font-semibold text-white leading-tight">Extensions</div>
+                                            <div className="text-[10px] text-white/80 leading-tight">Add blocks</div>
+                                        </div>
+                                    </button>
                                 </div>
                             )}
 
@@ -6999,7 +7139,8 @@ const styles: { [key: string]: React.CSSProperties } = {
         gap: '8px',
 
         padding: '8px',
-        overflow: 'auto',
+        overflow: 'hidden',
+        height: '100%',
 
     },
 
@@ -7107,6 +7248,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontWeight: 500,
 
         borderRadius: '8px 8px 0 0',
+        flexShrink: 0,
 
     },
 
@@ -7130,7 +7272,8 @@ const styles: { [key: string]: React.CSSProperties } = {
 
     codeArea: {
 
-        flex: 1,
+        flex: '1 1 auto',
+        minHeight: '150px',
 
         overflow: 'auto',
 
@@ -7146,8 +7289,7 @@ const styles: { [key: string]: React.CSSProperties } = {
 
         borderTop: 'none',
 
-        maxHeight: 'calc(50vh - 100px)',
-        minHeight: '200px',
+        maxHeight: 'calc(50vh - 200px)',
 
     },
 
@@ -7185,7 +7327,12 @@ const styles: { [key: string]: React.CSSProperties } = {
 
 
 
-    bottomTabs: { display: 'flex', borderTop: '1px solid #ddd', marginTop: 'auto' },
+    bottomTabs: {
+        display: 'flex',
+        borderTop: '1px solid #ddd',
+        marginTop: 'auto',
+        flexShrink: 0
+    },
 
     bottomTab: {
 
@@ -7235,7 +7382,9 @@ const styles: { [key: string]: React.CSSProperties } = {
 
     logArea: {
 
-        height: '250px',
+        height: '180px',
+        maxHeight: '180px',
+        minHeight: '120px',
 
         overflow: 'auto',
 
@@ -7248,6 +7397,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontFamily: 'monospace',
 
         borderRadius: '0 0 8px 8px',
+        flexShrink: 0,
 
     },
 
