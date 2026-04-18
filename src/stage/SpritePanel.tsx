@@ -21,9 +21,11 @@ interface SpritePanelProps {
   onSelectSprite: (id: string) => void;
   onAddSprite: (type: SpriteType) => void;
   onDeleteSprite: (id: string) => void;
+  onRemoveBackground?: (spriteId: string) => void;
   onOpenSpriteLibrary?: () => void;
   onOpenBackdropLibrary?: () => void;
   stageManager: StageManager;
+  backdropVersion?: number;
   isFullscreen?: boolean;
 }
 
@@ -36,6 +38,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   onOpenSpriteLibrary,
   onOpenBackdropLibrary,
   stageManager,
+  backdropVersion,
   isFullscreen = false,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
@@ -44,7 +47,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   const isStageSelected = selectedSpriteId === 'stage';
 
   const normalSprites = sprites.filter(s => s.id !== 'stage' && !s.id.includes('_clone_'));
-  
+
   const cloneCounts = sprites.reduce((acc: Record<string, number>, s) => {
     if (s.id.includes('_clone_')) {
       const base = s.id.split('_clone_')[0];
@@ -213,10 +216,10 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           <div className="flex-1 p-4 flex flex-col items-center justify-center">
             <div className="w-full aspect-square bg-white border-2 border-gray-200 rounded-2xl overflow-hidden shadow-inner mb-4">
               {currentBackdropSrc ? (
-                <img 
-                  src={currentBackdropSrc} 
-                  alt="Backdrop" 
-                  className="w-full h-full object-cover" 
+                <img
+                  src={currentBackdropSrc}
+                  alt="Backdrop"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-sky-50 to-indigo-50 flex items-center justify-center">
