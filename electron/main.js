@@ -13,7 +13,7 @@ const FORGE_LIB_DIR = isDev
   : path.join(process.resourcesPath, 'forge-lib');
 
 const FORGE_LIB_LIBRARIES = path.join(FORGE_LIB_DIR, 'libraries');
-const FORGE_CLI_YAML      = path.join(FORGE_LIB_DIR, 'arduino-cli.yaml');
+const FORGE_CLI_YAML = path.join(FORGE_LIB_DIR, 'arduino-cli.yaml');
 
 const CLI_PATH = isDev
   ? path.join(APP_ROOT, 'arduino-cli', 'arduino-cli.exe')
@@ -144,7 +144,7 @@ ipcMain.handle('build-apk', async (event, appState) => {
 ipcMain.handle('compile-arduino', async (_, code) => {
   const tempDir = path.join(app.getPath('temp'), `sketch_${Date.now()}`);
   const sketchPath = path.join(tempDir, 'sketch.ino');
-  const cliPath = isDev 
+  const cliPath = isDev
     ? path.join(APP_ROOT, 'arduino-cli', 'arduino-cli.exe')
     : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe');
 
@@ -162,7 +162,7 @@ ipcMain.handle('compile-arduino', async (_, code) => {
 
       let errorOutput = '';
       compile.stderr.on('data', (data) => errorOutput += data.toString());
-      
+
       compile.on('close', (code) => {
         if (code === 0) {
           const hexPath = path.join(tempDir, 'sketch.ino.hex');
@@ -176,7 +176,7 @@ ipcMain.handle('compile-arduino', async (_, code) => {
           resolve({ success: false, error: errorOutput || `Compiler exited with code ${code}` });
         }
         // Cleanup
-        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch(e) {}
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (e) { }
       });
     });
   } catch (err) {
@@ -287,6 +287,11 @@ ipcMain.handle('forge-compile', async (_, { code, board }) => {
   const tempDir = path.join(app.getPath('temp'), `forge_sketch_${Date.now()}`);
   const sketchPath = path.join(tempDir, 'sketch.ino');
 
+  // Ensure ESP32 core is installed on first use
+  if (board && board.startsWith('esp32:')) {
+    await ensureESP32Core();
+  }
+
   try {
     fs.mkdirSync(tempDir, { recursive: true });
     fs.writeFileSync(sketchPath, code);
@@ -303,15 +308,37 @@ ipcMain.handle('forge-compile', async (_, { code, board }) => {
       const hexPath = path.join(tempDir, 'sketch.ino.hex');
       if (fs.existsSync(hexPath)) {
         const hexContent = fs.readFileSync(hexPath, 'utf-8');
-        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) {}
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
         return { success: true, hex: hexContent };
       }
       return { success: false, error: 'HEX file not generated' };
     } else {
-      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) {}
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
       return { success: false, error: stderr || stdout };
     }
   } catch (err) {
     return { success: false, error: err.message };
   }
 });
+
+// ── ensureESP32Core: install ESP32 arduino core on first use ─────────────
+async function ensureESP32Core() {
+  const ESP32_URL = 'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json';
+  try {
+    const { code } = await runCLI([
+      'core', 'list', '--format', 'json'
+    ]);
+    // Try to install; arduino-cli is idempotent — safe to call if already installed
+    await runCLI([
+      'core', 'update-index',
+      '--additional-urls', ESP32_URL
+    ]);
+    await runCLI([
+      'core', 'install', 'esp32:esp32',
+      '--additional-urls', ESP32_URL
+    ]);
+    console.log('[FORGE] ESP32 core ready.');
+  } catch (err) {
+    console.warn('[FORGE] ESP32 core install warning:', err.message);
+  }
+}

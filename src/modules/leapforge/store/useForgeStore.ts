@@ -45,6 +45,11 @@ export interface ForgeState {
   appendSerial: (data: string) => void;
   clearSerial: () => void;
 
+  // WiFi Log (ESP32 only)
+  wifiLog: string[];
+  appendWiFiLog: (msg: string) => void;
+  clearWiFiLog: () => void;
+
   // Board Configuration
   board: string;
   setBoard: (board: string) => void;
@@ -72,6 +77,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   projectName: 'Untitled Project',
   isSimulating: false,
   serialOutput: '',
+  wifiLog: [],
   board: 'arduino-uno',
   projectPath: null,
   importedLibraries: [],
@@ -111,6 +117,9 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     // Force simulation engine refresh (Ideal Mode - Ver 1.0.1)
     circuitEngine.init();
 
+    // Sync board selection before init
+    simulationRunner.setBoard(state.board);
+
     // Pass the downloaded compiled hex into the CPU
     console.log('[FORGE STORE] Initializing CPU and syncing graph...');
     simulationRunner.initCPU(hexString);
@@ -119,7 +128,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     console.log('[FORGE STORE] Firing simulationRunner.start()');
     simulationRunner.start();
 
-    return { isSimulating: true, serialOutput: '' };
+    return { isSimulating: true, serialOutput: '', wifiLog: [] };
   }),
 
   stopSimulation: () => set(() => {
@@ -149,6 +158,12 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   })),
 
   clearSerial: () => set({ serialOutput: '' }),
+
+  appendWiFiLog: (msg) => set((state) => ({
+    wifiLog: [...state.wifiLog.slice(-199), msg], // keep last 200 lines
+  })),
+
+  clearWiFiLog: () => set({ wifiLog: [] }),
 
   addNode: (type, position, data = {}) => set((state) => ({
     nodes: [

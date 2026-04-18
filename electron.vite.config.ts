@@ -31,6 +31,7 @@ export default defineConfig({
     base: './',
     plugins: [react()],
     publicDir: 'public',
+    assetsInclude: ['**/*.wasm'],
     resolve: {
       alias: {
         '@blockly-runtime': path.resolve(__dirname, 'src/blockly/runtime.ts'),

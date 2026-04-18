@@ -24,14 +24,14 @@ app.use(express.json({ limit: '10mb' }));
 const getCLIBinary = () => {
   const isWindows = os.platform() === 'win32';
   const binaryName = isWindows ? 'arduino-cli.exe' : 'arduino-cli';
-  
+
   const localBundledPath = path.resolve(__dirname, '..', 'arduino-cli', binaryName);
-  
+
   if (fs.existsSync(localBundledPath)) {
     console.log(`[SERVER] Using bundled CLI: ${localBundledPath}`);
     return `"${localBundledPath}"`;
   }
-  
+
   console.log(`[SERVER] Bundled CLI not found. Falling back to global command.`);
   return 'arduino-cli';
 };
@@ -42,7 +42,7 @@ const getCLIBinary = () => {
 const getForgePaths = () => {
   const localForgeLib = path.resolve(__dirname, '..', 'forge-lib');
   const localConfig = path.join(localForgeLib, 'arduino-cli.yaml');
-  
+
   if (fs.existsSync(localConfig)) {
     return {
       userDir: localForgeLib,
@@ -69,9 +69,9 @@ const runCommand = (cmd: string): Promise<{ stdout: string; stderr: string }> =>
         console.error(`[EXEC ERROR] Code: ${err.code}`);
         let errorMessage = stderr || stdout || err.message;
         try {
-           const parsed = JSON.parse(stdout || stderr);
-           if (parsed.errors) errorMessage = parsed.errors.map((e: any) => e.message).join('\n');
-        } catch (e) {}
+          const parsed = JSON.parse(stdout || stderr);
+          if (parsed.errors) errorMessage = parsed.errors.map((e: any) => e.message).join('\n');
+        } catch (e) { }
         reject(new Error(errorMessage));
       } else {
         resolve({ stdout, stderr });
@@ -87,15 +87,15 @@ const initCores = async () => {
   try {
     console.log('[SERVER] Checking for arduino:avr core...');
     const result = await runCommand(`${CLI_BIN} core list --format json --config-file "${FORGE.configFile}"`);
-    
+
     let data;
     try {
       data = JSON.parse(result.stdout);
     } catch (e) {
       data = [];
     }
-    
-    const hasAvr = Array.isArray(data) && data.some((c: any) => 
+
+    const hasAvr = Array.isArray(data) && data.some((c: any) =>
       (c.platform?.architecture === 'avr') || (c.id === 'arduino:avr')
     );
 
@@ -107,6 +107,26 @@ const initCores = async () => {
     } else {
       console.log('[SERVER] Core arduino:avr is already installed.');
     }
+
+    // Install ESP32 core if not present
+    const hasEsp32 = Array.isArray(data) && data.some((c: any) =>
+      (c.platform?.id === 'esp32:esp32') || (c.id === 'esp32:esp32')
+    );
+    if (!hasEsp32) {
+      console.log('[SERVER] Core esp32:esp32 not found. Installing (this may take a few minutes)...');
+      await runCommand(
+        `${CLI_BIN} core update-index --config-file "${FORGE.configFile}" --additional-urls ` +
+        `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
+      );
+      await runCommand(
+        `${CLI_BIN} core install esp32:esp32 --config-file "${FORGE.configFile}" --additional-urls ` +
+        `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
+      );
+      console.log('[SERVER] Core esp32:esp32 installed successfully.');
+    } else {
+      console.log('[SERVER] Core esp32:esp32 is already installed.');
+    }
+
     isInitialized = true;
   } catch (err: any) {
     console.warn('[SERVER WARNING] Core initialization skip/fail:', err.message);
@@ -139,7 +159,7 @@ app.post('/compile', async (req, res) => {
     for (const lib of libraries) {
       try {
         await runCommand(`${CLI_BIN} lib install "${lib}" --config-file "${FORGE.configFile}"`);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const result = await runCommand(`${CLI_BIN} compile --fqbn ${board} --format json --config-file "${FORGE.configFile}" --output-dir "${sketchDir}" ${sketchDir}`);
@@ -161,7 +181,7 @@ app.post('/compile', async (req, res) => {
   } finally {
     try {
       if (fs.existsSync(sketchDir)) fs.rmSync(sketchDir, { recursive: true, force: true });
-    } catch (e) {}
+    } catch (e) { }
   }
 });
 
@@ -194,7 +214,7 @@ app.post('/libraries/install', async (req, res) => {
     // Throttled index update — only once per 24h
     const manifestPath = path.join(FORGE.userDir, 'manifest.json');
     let manifest: any = {};
-    try { manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')); } catch (_) {}
+    try { manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')); } catch (_) { }
     if (!manifest.lastIndexUpdate || Date.now() - manifest.lastIndexUpdate > 24 * 60 * 60 * 1000) {
       await runCommand(`${CLI_BIN} lib update-index --config-file "${FORGE.configFile}"`);
       manifest.lastIndexUpdate = Date.now();
@@ -229,10 +249,10 @@ app.get('/libraries/installed', (_req, res) => {
           });
         }
         return {
-          name:        props.name        || e.name,
-          version:     props.version     || '?',
-          author:      props.author      || '',
-          description: props.sentence    || '',
+          name: props.name || e.name,
+          version: props.version || '?',
+          author: props.author || '',
+          description: props.sentence || '',
         };
       });
     res.json(libs);
