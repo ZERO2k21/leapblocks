@@ -8,7 +8,7 @@ import TestingPanel from '../../components/TestingPanel';
  * Mic record per class
  * Audio classification using microphone input
  */
-function AudioClassifier({ project }) {
+function AudioClassifier({ project, onBack }) {
     const [classes, setClasses] = useState([
         { id: 0, name: 'Sound 1', samples: [], color: '#FF6B6B' },
         { id: 1, name: 'Sound 2', samples: [], color: '#4ECDC4' },
@@ -68,7 +68,7 @@ function AudioClassifier({ project }) {
     };
 
     return (
-        <ClassifierLayout project={project}>
+        <ClassifierLayout project={project} onBack={onBack}>
             <div className="audio-classifier three-panel-layout">
                 <div className="panel classes-panel">
                     <div className="panel-header">

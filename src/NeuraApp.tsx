@@ -78,17 +78,49 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
             {/* Dashboard view */}
             {view === 'dashboard' && (
                 <div className="h-full flex flex-col">
-                    {/* Top bar */}
-                    <div className="bg-[#6b21a8] text-white px-6 py-4 flex items-center justify-between shadow-lg">
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={onBack}
-                                className="hover:bg-white/20 p-2 rounded-lg transition-colors"
-                            >
-                                ← Back
-                            </button>
-                            <span className="text-2xl">🧠</span>
-                            <h1 className="font-semibold text-xl">Neura ML Studio</h1>
+                    {/* Top bar - Updated to match new design */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        height: '64px',
+                        padding: '0px 18px',
+                        background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
+                        boxShadow: 'rgba(8, 10, 37, 0.45) 0px 4px 20px, rgba(255, 255, 255, 0.06) 0px -1px 0px inset',
+                        zIndex: 100,
+                        borderBottom: '1px solid rgba(100, 180, 255, 0.1)',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {onBack && (
+                                <button
+                                    onClick={onBack}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '40px',
+                                        height: '40px',
+                                        background: 'rgba(255, 255, 255, 0.1)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        borderRadius: '12px',
+                                        color: '#fff',
+                                        cursor: 'pointer',
+                                        transition: '0.2s',
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+                                >
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                    </svg>
+                                </button>
+                            )}
+                            <div style={{ height: '32px', width: '1px', background: 'rgba(255, 255, 255, 0.1)' }}></div>
+                            <img src="assets/leaplab_logo_transparent.png" alt="LeapLab" style={{ height: '52px' }} />
+                            <div style={{ display: 'flex', flexDirection: 'column', marginLeft: '10px', lineHeight: '1.1' }}>
+                                <span style={{ color: '#FFD500', fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.18em' }}>LEAPLAB</span>
+                                <span style={{ color: '#fff', fontSize: '16px', fontWeight: 900, letterSpacing: '0.08em' }}>NEURA ML</span>
+                            </div>
                         </div>
                     </div>
 

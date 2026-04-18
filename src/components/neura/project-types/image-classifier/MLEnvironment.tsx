@@ -411,7 +411,7 @@ function TrainingPanel({ classes, status, progress, accuracy, onTrain, showAdvan
                 <Icon.Zap />{status === "training" ? "Training…" : trained ? "Retrain Model" : "Train Model"}
             </button>
 
-            <button onClick={() => setShowAdvanced(a => !a)} style={{ background: "none", border: "none", color: "#555", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, padding: 0 }}>
+            <button onClick={() => setShowAdvanced(!showAdvanced)} style={{ background: "none", border: "none", color: "#555", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, padding: 0 }}>
                 <Icon.Settings /><span>Advanced settings</span>
                 <span style={{ marginLeft: "auto", transition: "transform 0.2s", transform: showAdvanced ? "rotate(180deg)" : "none" }}>▾</span>
             </button>

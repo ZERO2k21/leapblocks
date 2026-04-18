@@ -90,7 +90,7 @@ export default function CreateProjectPage({ onBack, onCreate }) {
 
     return (
         <div className="min-h-screen bg-gray-100 font-sans">
-            <NeuraHeader onBack={onBack} />
+            <NeuraHeader onBack={onBack} showProjectInput={false} />
 
             <div className="max-w-4xl mx-auto mt-8 px-4 pb-12">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">

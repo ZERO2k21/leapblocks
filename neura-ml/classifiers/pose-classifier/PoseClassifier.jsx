@@ -8,7 +8,7 @@ import TestingPanel from '../../components/TestingPanel';
  * MoveNet keypoints
  * Body pose classification using MoveNet model
  */
-function PoseClassifier({ project }) {
+function PoseClassifier({ project, onBack }) {
     const [classes, setClasses] = useState([
         { id: 0, name: 'Pose 1', samples: [], color: '#FF6B6B' },
         { id: 1, name: 'Pose 2', samples: [], color: '#4ECDC4' },
@@ -22,7 +22,7 @@ function PoseClassifier({ project }) {
     };
 
     return (
-        <ClassifierLayout project={project}>
+        <ClassifierLayout project={project} onBack={onBack}>
             <div className="pose-classifier three-panel-layout">
                 <div className="panel classes-panel">
                     <div className="panel-header">

@@ -5012,9 +5012,26 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     return (
 
-        <div>
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100vh',
+            overflow: 'hidden',
+            backgroundColor: '#f5f5f5',
+            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        }}>
             {/* Responsive Styles */}
             <style>{`
+                /* Fix Blockly toolbox overlap with MenuBar */
+                .blocklyToolboxDiv {
+                    top: 0 !important;
+                    padding-top: 0 !important;
+                }
+                
+                .blocklyFlyout {
+                    top: 0 !important;
+                }
+                
                 /* Ensure MenuBar is always visible and responsive */
                 @media (max-width: 768px) {
                     /* MenuBar responsive - ensure logo/home button visible */
@@ -5032,15 +5049,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 
                 /* Desktop - Default styles */
                 @media (min-width: 1025px) {
-                    .add-extension-btn-container {
-                        bottom: 12px !important;
-                        left: 12px !important;
-                    }
+                    /* Styles for desktop */
                 }
                 
                 /* Tablet - Medium screens */
                 @media (max-width: 1024px) {
-                    .add-extension-btn-container {
                         bottom: 10px !important;
                         left: 10px !important;
                     }
@@ -5065,22 +5078,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 
                 /* Mobile - Small screens */
                 @media (max-width: 768px) {
-                    .add-extension-btn-container {
-                        bottom: 8px !important;
-                        left: 8px !important;
-                    }
-                    
-                    /* Compact button on mobile - no expansion */
-                    .add-extension-btn-container button {
-                        width: 44px !important;
-                        padding: 8px !important;
-                    }
-                    
-                    .add-extension-btn-container button:hover {
-                        width: 44px !important;
-                        padding: 8px !important;
-                    }
-                    
                     /* Stack layout on mobile */
                     .main-container-responsive {
                         flex-direction: column !important;
@@ -5123,17 +5120,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 
                 /* Extra small mobile */
                 @media (max-width: 480px) {
-                    .add-extension-btn-container {
-                        bottom: 6px !important;
-                        left: 6px !important;
-                    }
-                    
-                    .add-extension-btn-container button {
-                        width: 40px !important;
-                        height: 40px !important;
-                        padding: 6px !important;
-                    }
-                    
                     .workspace-container-responsive {
                         height: 50vh !important;
                         min-height: 350px !important;
@@ -5258,27 +5244,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         height: 120px !important;
                         max-height: 120px !important;
                     }
-                }
-                
-                /* Premium button animations */
-                .add-extension-btn-container button {
-                    position: relative;
-                    overflow: hidden;
-                }
-                
-                .add-extension-btn-container button::before {
-                    content: '';
-                    position: absolute;
-                    top: 0;
-                    left: -100%;
-                    width: 100%;
-                    height: 100%;
-                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-                    transition: left 0.5s;
-                }
-                
-                .add-extension-btn-container button:hover::before {
-                    left: 100%;
                 }
                 
                 /* Ensure bottom panels don't overflow */
@@ -5611,7 +5576,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     </button>
                                 </div>
                             )}
-
 
                             <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={() => {
                                 const flyout = workspaceRef.current?.getFlyout() as any;
@@ -6923,9 +6887,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     main: {
         flex: 1,
         display: 'flex',
-        overflow: 'hidden',
-        height: 'calc(100vh - 120px)',
-        minHeight: '500px',
+        overflow: 'hidden',           // ← KEY FIX: Prevents page scroll
         position: 'relative'
     },
 
@@ -6945,7 +6907,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     blockly: {
         flex: 1,
         width: '100%',
-        minHeight: '350px'
+        minHeight: 0                // ← Allows flex shrinking
     },
 
 
