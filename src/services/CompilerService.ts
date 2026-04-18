@@ -27,9 +27,8 @@ export interface CompileResult {
 export const compileCode = async (req: CompileRequest): Promise<CompileResult> => {
   if (IS_ELECTRON) {
     try {
-      // electronAPI.compileCode is already in preload.ts:
-      //   compileCode: (code, fqbn, libraryPath) => ipcRenderer.invoke('compile-code', ...)
-      // ArduinoUploader.compileForSimulation already passes --libraries forge-lib/libraries/
+      // Routes through the unified 'compile-code' IPC handler in main.js
+      // which handles both AVR (.hex) and ESP32 (.bin → hex) compilation.
       const result = await (window as any).electronAPI.compileCode(
         req.code,
         req.board,

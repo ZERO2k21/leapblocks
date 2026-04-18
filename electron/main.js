@@ -282,15 +282,128 @@ ipcMain.handle('forge-lib-remove', async (_, libraryName) => {
   return code === 0 ? { success: true } : { success: false, error: stderr };
 });
 
-// ── forge-compile: compile sketch with forge-lib libraries ────────────────
+// ── compile-code: unified handler called by CompilerService (Electron path) ──
+// Routes to AVR (.hex) or ESP32 (.bin) compilation based on FQBN.
+ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _libraryPath) => {
+  const isESP32 = typeof fqbn === 'string' && fqbn.startsWith('esp32:');
+  const tempDir = path.join(app.getPath('temp'), `forge_sketch_${Date.now()}`);
+  // arduino-cli requires the sketch file to have the same name as its folder
+  const sketchDir = path.join(tempDir, 'sketch');
+  const sketchPath = path.join(sketchDir, 'sketch.ino');
+
+  // Ensure ESP32 core is installed on first use (cached after first run)
+  if (isESP32) {
+    await ensureESP32Core();
+  }
+
+  try {
+    fs.mkdirSync(sketchDir, { recursive: true });
+    fs.writeFileSync(sketchPath, code);
+
+    // Only pass --libraries if the directory actually exists (avoids cli errors)
+    const cliArgs = [
+      'compile',
+      '--fqbn', fqbn,
+      '--output-dir', tempDir,
+    ];
+    if (fs.existsSync(FORGE_LIB_LIBRARIES)) {
+      cliArgs.push('--libraries', FORGE_LIB_LIBRARIES);
+    }
+    cliArgs.push(sketchDir);
+
+    const { stdout, stderr, code: exitCode } = await runCLI(cliArgs);
+
+    console.log(`[compile-code] exit=${exitCode} fqbn=${fqbn}`);
+    // Log full output for debugging
+    if (stdout) console.log(`[compile-code] stdout: ${stdout.slice(0, 500)}`);
+    if (stderr) console.log(`[compile-code] stderr: ${stderr.slice(0, 500)}`);
+
+    if (exitCode !== 0) {
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+      // Return the actual compiler error so the user sees it in serial monitor
+      const errMsg = stderr || stdout || `Compiler exited with code ${exitCode}`;
+      return { success: false, error: errMsg };
+    }
+
+    // Scan output dir for the compiled artifact
+    const files = fs.readdirSync(tempDir);
+    console.log(`[compile-code] output files: ${files.join(', ')}`);
+
+    if (isESP32) {
+      // arduino-cli outputs: sketch.ino.bin (app binary)
+      // Also may output: sketch.ino.bootloader.bin, sketch.ino.partitions.bin
+      // We want the main app binary — prefer sketch.ino.bin
+      const binFile = files.find(f => f === 'sketch.ino.bin')
+        ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
+      if (binFile) {
+        const binContent = fs.readFileSync(path.join(tempDir, binFile));
+        const hexContent = binToIntelHex(binContent);
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+        return { success: true, hexContent };
+      }
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+      return { success: false, error: `ESP32 compiled (exit 0) but no .bin found. Files: ${files.join(', ')}` };
+    } else {
+      const hexFile = files.find(f => f.endsWith('.hex'));
+      if (hexFile) {
+        const hexContent = fs.readFileSync(path.join(tempDir, hexFile), 'utf-8');
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+        return { success: true, hexContent };
+      }
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+      return { success: false, error: `Compiled (exit 0) but no .hex found. Files: ${files.join(', ')}` };
+    }
+  } catch (err) {
+    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+    return { success: false, error: err.message };
+  }
+});
+
+/**
+ * Convert a raw binary Buffer to a minimal Intel HEX string.
+ * The ESP32Engine's parseHex() will decode this back to bytes.
+ * Uses 16-byte data records (type 00) with correct checksums.
+ */
+function binToIntelHex(buf) {
+  const RECORD_SIZE = 16;
+  let hex = '';
+
+  for (let offset = 0; offset < buf.length; offset += RECORD_SIZE) {
+    const chunk = buf.slice(offset, Math.min(offset + RECORD_SIZE, buf.length));
+    const len = chunk.length;
+    const addr = offset & 0xFFFF;
+
+    // Extended Linear Address record every 64KB
+    if (offset > 0 && (offset & 0xFFFF) === 0) {
+      const seg = (offset >> 16) & 0xFFFF;
+      const segHi = (seg >> 8) & 0xFF;
+      const segLo = seg & 0xFF;
+      const segCheck = (0x100 - ((2 + 0 + 4 + segHi + segLo) & 0xFF)) & 0xFF;
+      hex += `:02000004${segHi.toString(16).padStart(2, '0').toUpperCase()}${segLo.toString(16).padStart(2, '0').toUpperCase()}${segCheck.toString(16).padStart(2, '0').toUpperCase()}\n`;
+    }
+
+    let sum = len + ((addr >> 8) & 0xFF) + (addr & 0xFF) + 0x00;
+    let data = '';
+    for (let i = 0; i < len; i++) {
+      sum += chunk[i];
+      data += chunk[i].toString(16).padStart(2, '0').toUpperCase();
+    }
+    const checksum = (0x100 - (sum & 0xFF)) & 0xFF;
+
+    hex += `:${len.toString(16).padStart(2, '0').toUpperCase()}${addr.toString(16).padStart(4, '0').toUpperCase()}00${data}${checksum.toString(16).padStart(2, '0').toUpperCase()}\n`;
+  }
+
+  hex += ':00000001FF\n'; // EOF record
+  return hex;
+}
+
+// ── forge-compile: kept for backward compat, delegates to compile-code logic ─
 ipcMain.handle('forge-compile', async (_, { code, board }) => {
+  const isESP32 = board && board.startsWith('esp32:');
   const tempDir = path.join(app.getPath('temp'), `forge_sketch_${Date.now()}`);
   const sketchPath = path.join(tempDir, 'sketch.ino');
 
-  // Ensure ESP32 core is installed on first use
-  if (board && board.startsWith('esp32:')) {
-    await ensureESP32Core();
-  }
+  if (isESP32) await ensureESP32Core();
 
   try {
     fs.mkdirSync(tempDir, { recursive: true });
@@ -304,17 +417,31 @@ ipcMain.handle('forge-compile', async (_, { code, board }) => {
       sketchPath
     ]);
 
-    if (exitCode === 0) {
-      const hexPath = path.join(tempDir, 'sketch.ino.hex');
-      if (fs.existsSync(hexPath)) {
-        const hexContent = fs.readFileSync(hexPath, 'utf-8');
+    if (exitCode !== 0) {
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+      return { success: false, error: stderr || stdout };
+    }
+
+    const files = fs.readdirSync(tempDir);
+
+    if (isESP32) {
+      const binFile = files.find(f => f.endsWith('.bin'));
+      if (binFile) {
+        const hexContent = binToIntelHex(fs.readFileSync(path.join(tempDir, binFile)));
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+        return { success: true, hexContent };
+      }
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+      return { success: false, error: 'No .bin output found.' };
+    } else {
+      const hexFile = files.find(f => f.endsWith('.hex'));
+      if (hexFile) {
+        const hexContent = fs.readFileSync(path.join(tempDir, hexFile), 'utf-8');
         try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
         return { success: true, hex: hexContent };
       }
-      return { success: false, error: 'HEX file not generated' };
-    } else {
       try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
-      return { success: false, error: stderr || stdout };
+      return { success: false, error: 'HEX file not generated' };
     }
   } catch (err) {
     return { success: false, error: err.message };
@@ -322,23 +449,33 @@ ipcMain.handle('forge-compile', async (_, { code, board }) => {
 });
 
 // ── ensureESP32Core: install ESP32 arduino core on first use ─────────────
+let esp32CoreReady = false;
 async function ensureESP32Core() {
+  if (esp32CoreReady) return; // already verified this session
+
   const ESP32_URL = 'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json';
   try {
-    const { code } = await runCLI([
-      'core', 'list', '--format', 'json'
-    ]);
-    // Try to install; arduino-cli is idempotent — safe to call if already installed
-    await runCLI([
-      'core', 'update-index',
-      '--additional-urls', ESP32_URL
-    ]);
-    await runCLI([
-      'core', 'install', 'esp32:esp32',
-      '--additional-urls', ESP32_URL
-    ]);
-    console.log('[FORGE] ESP32 core ready.');
+    // Check if already installed first (fast path)
+    const { stdout } = await runCLI(['core', 'list', '--format', 'json']);
+    let cores = [];
+    try { cores = JSON.parse(stdout); } catch (_) { }
+    const installed = Array.isArray(cores) && cores.some(c =>
+      (c.id && c.id.startsWith('esp32:')) ||
+      (c.platform && c.platform.id && c.platform.id.startsWith('esp32:'))
+    );
+
+    if (!installed) {
+      console.log('[FORGE] ESP32 core not found — installing (this may take a few minutes)...');
+      await runCLI(['core', 'update-index', '--additional-urls', ESP32_URL]);
+      await runCLI(['core', 'install', 'esp32:esp32', '--additional-urls', ESP32_URL]);
+      console.log('[FORGE] ESP32 core installed.');
+    } else {
+      console.log('[FORGE] ESP32 core already installed.');
+    }
+    esp32CoreReady = true;
   } catch (err) {
-    console.warn('[FORGE] ESP32 core install warning:', err.message);
+    console.warn('[FORGE] ESP32 core check/install warning:', err.message);
+    // Don't block compilation — attempt anyway
+    esp32CoreReady = true;
   }
 }

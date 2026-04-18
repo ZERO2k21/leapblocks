@@ -51,6 +51,7 @@ class SimulationRunner {
   // ── ESP32 engine (parallel to AVR) ──────────────────────────────────────
   private esp32Engine: ESP32Engine | null = null;
   private esp32Running = false;
+  private pendingSketchSource = '';
 
   private selectedBoard: string = 'arduino-uno';
 
@@ -85,6 +86,7 @@ class SimulationRunner {
     this.esp32Engine = new ESP32Engine({
       tcpProxyUrl: TCP_PROXY_URL,
       simulatedIP: '192.168.1.100',
+      sketchSource: this.pendingSketchSource,
       onWiFiLog: (msg) => {
         import('../store/useForgeStore').then(({ useForgeStore }) => {
           useForgeStore.getState().appendSerial(msg + '\n');
@@ -177,6 +179,11 @@ class SimulationRunner {
     if (this.isRunning || this.esp32Running) {
       this.reset();
     }
+  }
+
+  /** Store the sketch source so ESP32 stub mode can simulate Serial/WiFi output */
+  public setSketchSource(source: string): void {
+    this.pendingSketchSource = source;
   }
 
   /**

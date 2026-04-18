@@ -119,6 +119,8 @@ void loop() {
 
       if (result.success && result.hexContent) {
         console.log('[FORGE UI] Starting simulation with new hex code.');
+        // Give stub mode the sketch source so it can simulate Serial/WiFi output
+        simulationRunner.setSketchSource(code);
         startSimulation(result.hexContent);
         appendSerial("Compilation successful. Simulation running...\n");
       } else {

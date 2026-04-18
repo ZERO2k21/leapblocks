@@ -62,8 +62,8 @@ export class ArduinoUploader {
      * Located at: [AppRoot]/forge-lib/
      */
     getForgeLibCachePath(): string {
-        const appRoot = app.isPackaged 
-            ? path.dirname(app.getPath('exe')) 
+        const appRoot = app.isPackaged
+            ? path.dirname(app.getPath('exe'))
             : process.cwd();
         const cachePath = path.join(appRoot, 'forge-lib');
         if (!fs.existsSync(cachePath)) {
@@ -88,7 +88,7 @@ export class ArduinoUploader {
     private ensureArduinoCliConfig() {
         const configPath = this.getArduinoCliConfigPath();
         const forgePath = this.getForgeLibCachePath();
-        
+
         const configContent = `
 directories:
   data: ${path.join(forgePath, 'data').replace(/\\/g, '/')}
@@ -216,6 +216,7 @@ directories:
     }
 
     async compileForSimulation(code: string, fqbn: string): Promise<{ success: boolean; hexContent?: string; error?: string }> {
+        const isESP32 = fqbn.startsWith('esp32:');
         try {
             const arduinoCliPath = await this.getArduinoCliPath();
 
@@ -235,19 +236,32 @@ directories:
                 }
 
                 const libsFolder = this.getLibrariesPath();
-                let compileCmd = `"${arduinoCliPath}" compile --fqbn ${fqbn} --export-binaries --build-path "${buildPath}" --libraries "${libsFolder}" "${sketchDir}"`;
+                const libsArg = fs.existsSync(libsFolder) ? `--libraries "${libsFolder}"` : '';
+                const compileCmd = `"${arduinoCliPath}" compile --fqbn ${fqbn} --export-binaries --build-path "${buildPath}" ${libsArg} "${sketchDir}"`;
 
                 console.log(`[FORGE UPLOADER] Running compile for simulation: ${compileCmd}`);
                 await execAsync(compileCmd, { timeout: 120000 });
 
-                // The hex file is usually named sketch_name.ino.hex OR sketch_name.ino.with_bootloader.hex
-                const hexFilePath = path.join(buildPath, 'leapblocks_sketch.ino.hex');
-                if (fs.existsSync(hexFilePath)) {
-                    const hexContent = fs.readFileSync(hexFilePath, 'utf-8');
-                    return { success: true, hexContent };
+                const files = fs.readdirSync(buildPath);
+                console.log(`[FORGE UPLOADER] Build output files: ${files.join(', ')}`);
+
+                if (isESP32) {
+                    // ESP32 outputs .bin — prefer the main app binary (not bootloader/partitions)
+                    const binFile = files.find(f => f === 'leapblocks_sketch.ino.bin')
+                        ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
+                    if (binFile) {
+                        const binBuf = fs.readFileSync(path.join(buildPath, binFile));
+                        const hexContent = this.binToIntelHex(binBuf);
+                        return { success: true, hexContent };
+                    }
+                    return { success: false, error: `ESP32 compiled but no .bin found. Files: ${files.join(', ')}` };
                 } else {
-                    // Try finding any .hex file in the build path
-                    const files = fs.readdirSync(buildPath);
+                    // AVR: look for .hex
+                    const hexFilePath = path.join(buildPath, 'leapblocks_sketch.ino.hex');
+                    if (fs.existsSync(hexFilePath)) {
+                        const hexContent = fs.readFileSync(hexFilePath, 'utf-8');
+                        return { success: true, hexContent };
+                    }
                     const hexFile = files.find(f => f.endsWith('.hex'));
                     if (hexFile) {
                         const hexContent = fs.readFileSync(path.join(buildPath, hexFile), 'utf-8');
@@ -264,6 +278,35 @@ directories:
         } catch (err: any) {
             return { success: false, error: err.message };
         }
+    }
+
+    /** Convert a raw binary Buffer to Intel HEX format for the ESP32Engine parser */
+    private binToIntelHex(buf: Buffer): string {
+        const RECORD_SIZE = 16;
+        let hex = '';
+        for (let offset = 0; offset < buf.length; offset += RECORD_SIZE) {
+            const chunk = buf.slice(offset, Math.min(offset + RECORD_SIZE, buf.length));
+            const len = chunk.length;
+            const addr = offset & 0xFFFF;
+            // Extended Linear Address record every 64KB boundary
+            if (offset > 0 && (offset & 0xFFFF) === 0) {
+                const seg = (offset >> 16) & 0xFFFF;
+                const segHi = (seg >> 8) & 0xFF;
+                const segLo = seg & 0xFF;
+                const segChk = (0x100 - ((2 + 0 + 4 + segHi + segLo) & 0xFF)) & 0xFF;
+                hex += `:02000004${segHi.toString(16).padStart(2, '0').toUpperCase()}${segLo.toString(16).padStart(2, '0').toUpperCase()}${segChk.toString(16).padStart(2, '0').toUpperCase()}\n`;
+            }
+            let sum = len + ((addr >> 8) & 0xFF) + (addr & 0xFF);
+            let data = '';
+            for (let i = 0; i < len; i++) {
+                sum += chunk[i];
+                data += chunk[i].toString(16).padStart(2, '0').toUpperCase();
+            }
+            const chk = (0x100 - (sum & 0xFF)) & 0xFF;
+            hex += `:${len.toString(16).padStart(2, '0').toUpperCase()}${addr.toString(16).padStart(4, '0').toUpperCase()}00${data}${chk.toString(16).padStart(2, '0').toUpperCase()}\n`;
+        }
+        hex += ':00000001FF\n';
+        return hex;
     }
 
     private async getArduinoCliPath(): Promise<string> {
@@ -292,7 +335,7 @@ directories:
     async searchLibraries(query: string) {
         try {
             const searchTerm = query.trim().toLowerCase();
-            
+
             // ── Phase 1: Check Featured/Cache ─────────────────────────────
             if (!searchTerm) {
                 return { libraries: FEATURED_LIBRARIES };
@@ -358,7 +401,7 @@ directories:
 
             // Install globally via config-file redirection
             await execAsync(`"${arduinoCliPath}" --config-file "${configPath}" lib install "${libName}"`);
-            
+
             return { success: true };
         } catch (error: any) {
             console.error('Library installation failed:', error);
@@ -399,10 +442,10 @@ directories:
         try {
             const arduinoCliPath = await this.getArduinoCliPath();
             const configPath = this.ensureArduinoCliConfig();
-            
+
             console.log(`[FORGE-LIB] Uninstalling "${libName}" from forge-lib...`);
             await execAsync(`"${arduinoCliPath}" --config-file "${configPath}" lib uninstall "${libName}"`);
-            
+
             return { success: true };
         } catch (error: any) {
             return { success: false, error: error.message };
