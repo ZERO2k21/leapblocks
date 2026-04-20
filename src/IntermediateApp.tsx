@@ -5016,222 +5016,122 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             display: 'flex',
             flexDirection: 'column',
             height: '100vh',
+            width: '100vw',           // ← FIX 5: explicit width anchors children
             overflow: 'hidden',
             backgroundColor: '#f5f5f5',
             fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         }}>
             {/* Responsive Styles */}
             <style>{`
-                /* Fix Blockly toolbox overlap with MenuBar */
+                /* ── Blockly toolbox: flush with top of workspace ─────────── */
                 .blocklyToolboxDiv {
                     top: 0 !important;
                     padding-top: 0 !important;
                 }
-                
                 .blocklyFlyout {
                     top: 0 !important;
                 }
-                
-                /* Ensure MenuBar is always visible and responsive */
+
+                /* ── MenuBar always visible ───────────────────────────────── */
                 @media (max-width: 768px) {
-                    /* MenuBar responsive - ensure logo/home button visible */
                     .menubar-container {
                         padding: 0 8px !important;
                         height: 52px !important;
                     }
-                    
-                    /* Ensure home button and logo are visible */
                     .menubar-container button:first-child {
                         display: flex !important;
                         flex-shrink: 0 !important;
                     }
                 }
-                
-                /* Desktop - Default styles */
-                @media (min-width: 1025px) {
-                    /* Styles for desktop */
+
+                /* ── RIGHT PANEL: flex column, fills its allocated width ──── */
+                /* NEVER set height/max-height here — the flex parent controls  */
+                /* height. NEVER set min-width — flexShrink:0 + explicit width  */
+                /* on the inline style is the correct pattern.                  */
+                .right-panel-responsive {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    overflow: hidden !important;
+                    /* height is controlled by the flex parent — do NOT set it */
                 }
-                
-                /* Tablet - Medium screens */
+
+                /* ── STAGE CONTAINER: fixed size, never shrinks ───────────── */
+                .stage-container-responsive {
+                    flex-shrink: 0 !important;
+                }
+
+                /* ── Tablet (≤ 1024px): narrow the right panel ───────────── */
                 @media (max-width: 1024px) {
-                        bottom: 10px !important;
-                        left: 10px !important;
-                    }
-                    
-                    /* Adjust right panel width */
                     .right-panel-responsive {
                         width: 380px !important;
-                        min-width: 320px !important;
+                        /* NO min-width override — inline flexShrink:0 handles it */
                     }
-                    
-                    /* Adjust stage size */
                     .stage-container-responsive {
-                        width: 360px !important;
+                        /* width stays 100% — right panel width controls the size */
                     }
-                    
-                    /* Bottom panels fit properly */
                     .log-area-responsive {
                         height: 180px !important;
                         max-height: 180px !important;
                     }
                 }
-                
-                /* Mobile - Small screens */
+
+                /* ── Mobile (≤ 768px): stack vertically ──────────────────── */
                 @media (max-width: 768px) {
-                    /* Stack layout on mobile */
                     .main-container-responsive {
                         flex-direction: column !important;
                         height: auto !important;
                         min-height: calc(100vh - 52px) !important;
                     }
-                    
-                    /* Full width workspace on mobile */
                     .workspace-container-responsive {
                         width: 100% !important;
-                        min-width: 100% !important;
+                        min-width: 0 !important;
                         height: 60vh !important;
                         min-height: 400px !important;
                     }
-                    
-                    /* Full width right panel on mobile */
                     .right-panel-responsive {
                         width: 100% !important;
-                        min-width: 100% !important;
-                        max-width: 100% !important;
+                        flex-shrink: 1 !important;
                         border-left: none !important;
                         border-top: 1px solid #d9d9d9 !important;
                         height: auto !important;
                         max-height: 40vh !important;
                     }
-                    
-                    /* Adjust stage for mobile */
                     .stage-container-responsive {
                         width: 100% !important;
                         max-width: 450px !important;
                         margin: 0 auto !important;
                     }
-                    
-                    /* Bottom panels fit properly on mobile */
                     .log-area-responsive {
                         height: 150px !important;
                         max-height: 150px !important;
                     }
                 }
-                
-                /* Extra small mobile */
+
+                /* ── Extra small (≤ 480px) ────────────────────────────────── */
                 @media (max-width: 480px) {
                     .workspace-container-responsive {
                         height: 50vh !important;
                         min-height: 350px !important;
                     }
-                    
-                    /* Smaller stage on very small screens */
                     .stage-container-responsive {
                         max-width: 100% !important;
                     }
-                    
-                    /* Bottom panels compact on extra small */
                     .log-area-responsive {
                         height: 120px !important;
                         max-height: 120px !important;
                     }
                 }
-                
-                /* Ensure workspace scales properly */
-                .blocklyWorkspace {
-                    min-height: 350px !important;
-                }
-                
-                /* Right panel responsive - ensure proper height distribution */
-                .right-panel-responsive {
-                    display: flex !important;
-                    flex-direction: column !important;
-                    overflow: hidden !important;
-                }
-                
-                /* Upload mode - ensure code preview and log fit within viewport */
-                @media (min-width: 769px) {
-                    .right-panel-responsive {
-                        height: calc(100vh - 120px) !important;
-                        max-height: calc(100vh - 120px) !important;
-                    }
-                }
-                
-                /* Stage container responsive sizing */
-                .stage-container-responsive {
-                    flex-shrink: 0 !important;
-                }
-                
-                /* Code preview responsive height */
-                .code-preview-area {
-                    flex: 1 1 auto !important;
-                    min-height: 150px !important;
-                    max-height: calc(50vh - 200px) !important;
-                    overflow-y: auto !important;
-                }
-                
-                @media (max-height: 900px) {
-                    .code-preview-area {
-                        max-height: calc(40vh - 150px) !important;
-                        min-height: 140px !important;
-                    }
-                }
-                
-                @media (max-height: 768px) {
-                    .code-preview-area {
-                        max-height: 200px !important;
-                        min-height: 120px !important;
-                    }
-                }
-                
-                @media (max-height: 600px) {
-                    .code-preview-area {
-                        max-height: 150px !important;
-                        min-height: 100px !important;
-                    }
-                }
-                
-                /* Log area responsive height - better fitting */
-                .log-area-responsive {
-                    height: 180px !important;
-                    max-height: 180px !important;
-                    min-height: 120px !important;
-                    flex-shrink: 0 !important;
-                }
-                
-                @media (max-height: 900px) {
-                    .log-area-responsive {
-                        height: 160px !important;
-                        max-height: 160px !important;
-                    }
-                }
-                
-                @media (max-height: 768px) {
-                    .log-area-responsive {
-                        height: 140px !important;
-                        max-height: 140px !important;
-                    }
-                }
-                
-                @media (max-height: 600px) {
-                    .log-area-responsive {
-                        height: 120px !important;
-                        max-height: 120px !important;
-                    }
-                }
-                }
-                
-                /* Landscape mobile optimization */
+
+                /* ── Landscape mobile ─────────────────────────────────────── */
                 @media (max-width: 768px) and (orientation: landscape) {
                     .main-container-responsive {
                         flex-direction: row !important;
                     }
-                    
                     .workspace-container-responsive {
                         width: 60% !important;
+                        min-width: 0 !important;
                         height: calc(100vh - 52px) !important;
                     }
-                    
                     .right-panel-responsive {
                         width: 40% !important;
                         border-left: 1px solid #d9d9d9 !important;
@@ -5239,21 +5139,49 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         height: calc(100vh - 52px) !important;
                         max-height: none !important;
                     }
-                    
                     .log-area-responsive {
                         height: 120px !important;
                         max-height: 120px !important;
                     }
                 }
-                
-                /* Ensure bottom panels don't overflow */
-                .right-panel-responsive {
-                    display: flex !important;
-                    flex-direction: column !important;
+
+                /* ── Code preview (upload mode) ───────────────────────────── */
+                .code-preview-area {
+                    flex: 1 1 auto !important;
+                    min-height: 150px !important;
+                    max-height: calc(50vh - 200px) !important;
+                    overflow-y: auto !important;
                 }
-                
-                .right-panel-responsive > * {
+                @media (max-height: 900px) {
+                    .code-preview-area { max-height: calc(40vh - 150px) !important; min-height: 140px !important; }
+                }
+                @media (max-height: 768px) {
+                    .code-preview-area { max-height: 200px !important; min-height: 120px !important; }
+                }
+                @media (max-height: 600px) {
+                    .code-preview-area { max-height: 150px !important; min-height: 100px !important; }
+                }
+
+                /* ── Log area ─────────────────────────────────────────────── */
+                .log-area-responsive {
+                    height: 180px !important;
+                    max-height: 180px !important;
+                    min-height: 120px !important;
                     flex-shrink: 0 !important;
+                }
+                @media (max-height: 900px) {
+                    .log-area-responsive { height: 160px !important; max-height: 160px !important; }
+                }
+                @media (max-height: 768px) {
+                    .log-area-responsive { height: 140px !important; max-height: 140px !important; }
+                }
+                @media (max-height: 600px) {
+                    .log-area-responsive { height: 120px !important; max-height: 120px !important; }
+                }
+
+                /* ── Blockly workspace min-height ─────────────────────────── */
+                .blocklyWorkspace {
+                    min-height: 350px !important;
                 }
             `}</style>
 
@@ -5674,7 +5602,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {/* Stage Container - Always rendered, conditionally visible to keep ref valid */}
                     <div ref={stageContainerRef} className="stage-container-responsive" style={{
                         ...(!isFullscreen ? styles.stageContainer : {}),
-                        width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '225px' : '450px'),
+                        width: isFullscreen ? '100vw' : '100%',
                         height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '155px' : (editorMode === 'stage' ? 'auto' : '310px')),
                         transition: 'all 0.2s ease-in-out',
                         position: isFullscreen ? 'fixed' : 'relative',
@@ -5728,7 +5656,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                     <button style={{ ...styles.runButtonTop, background: 'rgba(76, 187, 23, 0.15)', border: '1px solid rgba(76, 187, 23, 0.3)', borderRadius: '8px', padding: '6px 12px', transition: 'all 0.2s' }} onClick={handleRunClick} title="Run" onMouseOver={(e) => e.currentTarget.style.background = 'rgba(76, 187, 23, 0.25)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(76, 187, 23, 0.15)'}>
 
-                                        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4ce01b" d="M5 3v18M19 8l-14-5v10l14 5V8z" stroke="#4ce01b" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+                                        <svg viewBox="0 0 24 24" width="20" height="25"><path fill="#4ce01b" d="M5 3v18M19 8l-14-5v10l14 5V8z" stroke="#4ce01b" strokeWidth="1.5" strokeLinejoin="round" /></svg>
 
                                     </button>
 
@@ -5841,22 +5769,23 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     width: '100%',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: isFullscreen ? 'flex-start' : 'center',
+                                    alignItems: 'stretch',
+                                    justifyContent: 'flex-start',
                                     position: 'relative',
                                     transform: isFullscreen ? `scale(${fullscreenScale})` : 'none',
                                     transformOrigin: isFullscreen ? 'top center' : 'center center',
                                     padding: isFullscreen ? '10px 0' : '0',
                                     transition: 'all 0.2s ease-in-out',
+                                    overflow: 'visible',
                                 }}>
                                     {/* Stage Unit */}
                                     <div style={{
-                                        width: `${CANVAS_WIDTH}px`,
+                                        width: '100%',
                                         height: `${CANVAS_HEIGHT}px`,
                                         background: 'transparent',
                                         boxShadow: isFullscreen ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' : 'none',
                                         borderRadius: isFullscreen ? '10px' : '0',
-                                        overflow: 'visible',
+                                        overflow: 'hidden',
                                         position: 'relative',
                                         flex: '0 0 auto',
                                     }}>
@@ -5912,12 +5841,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     {(editorMode === 'stage' || isFullscreen) && (
                                         <div style={{
                                             ...styles.assetsContainer,
-                                            width: `${CANVAS_WIDTH}px`,
-                                            flex: '0 0 auto',
-                                            marginTop: '8px',
+                                            width: '100%',
+                                            flex: '1 1 auto',
+                                            minHeight: 0,
                                             display: 'flex',
-                                            justifyContent: 'center',
-                                            alignItems: 'flex-start',
+                                            flexDirection: 'column',
+                                            justifyContent: 'flex-start',
+                                            alignItems: 'stretch',
                                             overflow: 'visible',
                                         }}>
                                             <SpritePanel
@@ -6888,6 +6818,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         flex: 1,
         display: 'flex',
         overflow: 'hidden',           // ← KEY FIX: Prevents page scroll
+        minHeight: 0,                 // ← FIX 4: Allows row to shrink below content height
         position: 'relative'
     },
 
@@ -6900,7 +6831,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        minWidth: '350px',
+        minWidth: 0,                  // ← FIX 1 (ROOT CAUSE): Overrides min-width:auto so workspace compresses
         overflow: 'hidden'
     },
 
@@ -7087,8 +7018,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     rightPanel: {
 
         width: '450px',
-        minWidth: '320px',
-        maxWidth: '500px',
+        flexShrink: 0,                // ← FIX 2: Column never squishes; workspace absorbs all size changes
+        // minWidth/maxWidth removed — flexShrink:0 + explicit width is the correct pattern
 
         backgroundColor: '#f5f5f5',
 

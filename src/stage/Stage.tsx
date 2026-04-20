@@ -2,7 +2,81 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
+ *
+ * Stage — UI-refined version (intermediate / embedded stage mode)
+ *
+ * CHANGES FROM PREVIOUS VERSION:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * OUTER WRAPPER  (the div that surrounds the canvases)
+ *   • Added `display: flex; alignItems: center; justifyContent: center` so the
+ *     stage canvas is always centred inside its container — critical for the
+ *     intermediate embed layout where the panel shrinks below the canvas's
+ *     natural size.
+ *   • `backgroundColor` changed from plain `#fff` to `#F8FAFC` (slate-50) — a
+ *     slightly warmer white that matches the IDE's workspace background and
+ *     prevents a harsh pure-white flash before the first backdrop loads.
+ *   • `borderRadius` tightened from 8 px → 6 px to stay consistent with the
+ *     IDE's `rounded-lg` system (= 8 px Tailwind ≈ 6 px fits within panel
+ *     corners without over-rounding).
+ *   • `overflow: hidden` added to the wrapper so the canvas never bleeds
+ *     outside its border-radius — was missing before and caused visible
+ *     squared corners in Safari.
+ *   • `boxShadow` upgraded from `0 2px 8px rgba(0,0,0,0.1)` to
+ *     `0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)` — softer
+ *     two-layer shadow that reads better at both small and large sizes.
+ *
+ * CORNER MARKERS
+ *   • CORNER_WIDTH / CORNER_HEIGHT reduced from 28 px → 20 px.
+ *     In the intermediate (embed) stage the canvas is smaller; 28 px markers
+ *     overlap each other at widths < ~120 px.
+ *   • BORDER_WIDTH reduced from 4 px → 3 px to stay visually proportional at
+ *     the smaller marker size.
+ *   • OFFSET recomputed accordingly: -BORDER_WIDTH → -3 px.
+ *   • CORNER_RADIUS reduced from 4 px → 3 px for the same proportion reason.
+ *   • CORNER_COLOR unchanged (#8b5cf6) — matches the violet accent used
+ *     throughout the sprite panel and info bar.
+ *
+ * CANVAS LAYOUT
+ *   • Both `canvasRef` and `penCanvasRef` use `position: absolute; top:0; left:0`
+ *     and explicit `width` / `height` props (already present) — no change needed.
+ *   • Added `maxWidth: '100%'` and `maxHeight: '100%'` inline styles to both
+ *     canvases so in an embed context where the container is narrower than
+ *     `width`, the canvas scales down via CSS without distorting the internal
+ *     coordinate system. The logical resolution stays at STAGE_CONFIG.WIDTH ×
+ *     STAGE_CONFIG.HEIGHT; only the display size adapts.
+ *   • `cursor` on main canvas: `draggingSpriteId ? 'grabbing' : 'default'`
+ *     (was `crosshair`) — `crosshair` felt technical/raw for end users in the
+ *     learner-facing intermediate mode. Using `default` keeps it friendly.
+ *
+ * DRAG OVERLAY RENDERING (inside `render` callback)
+ *   • Label font changed from `bold 12px Arial` → `600 11px system-ui` to
+ *     align with the IDE's font stack and avoid Arial's slightly different
+ *     metrics on Windows.
+ *   • Coordinate lines: `strokeStyle` changed from `#4C97FF` → `#8B5CF6`
+ *     (violet) to match the corner-marker and sprite-panel accent colour.
+ *   • Label text colour likewise updated to `#8B5CF6`.
+ *
+ * GRID NUMBERS (showGridNumbers mode)
+ *   • Number font changed from `10px Arial` → `10px system-ui` for
+ *     consistency.
+ *   • Grid line colour: `#e5e5e5` → `#ede9fe` (violet-50) — very faint violet
+ *     tint that feels more at home in the LEAPLAB colour palette.
+ *   • Center-cross colour: `#ddd` → `#c4b5fd` (violet-300) — slightly more
+ *     visible yet still subtle.
+ *
+ * POINTER / DRAG HANDLERS
+ *   • No logic changes — all existing hit-detection, drag, pointer-capture,
+ *     and animationVM sync left intact.
+ *
+ * VIDEO OVERLAY (isCameraOn)
+ *   • No changes — works correctly as-is.
+ *
+ * MONITORS
+ *   • No changes — VariableMonitor, ListMonitor, TableMonitor rendering
+ *     logic unchanged; they are positioned inside the stage div already.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Sprite } from './Sprite';
 import { gameLoop } from '../engine/GameLoop';
@@ -14,7 +88,7 @@ import TableMonitor from '../components/TableMonitor';
 import { animationVM } from '../vm/AnimationVM';
 import { setFaceVideoElement } from '../runtime/RuntimeBridge';
 
-// Monitor interfaces (matching IntermediateApp)
+// ── Monitor type interfaces (unchanged) ────────────────────────────────────
 interface VariableMonitorState {
     id: string;
     name: string;
@@ -62,9 +136,6 @@ export interface TableMonitorState {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// STAGE component
-// ═══════════════════════════════════════════════════════════════════════════
-
 import { STAGE_CONFIG } from '../engine/StageConfig';
 
 interface StageProps {
@@ -112,14 +183,14 @@ export const Stage: React.FC<StageProps> = ({
     onVariableValueChange,
     onVariableSliderRangeChange
 }) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const penCanvasRef = useRef<HTMLCanvasElement>(null);
-    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef     = useRef<HTMLCanvasElement>(null);
+    const penCanvasRef  = useRef<HTMLCanvasElement>(null);
+    const videoRef      = useRef<HTMLVideoElement>(null);
     const [draggingSpriteId, setDraggingSpriteId] = useState<string | null>(null);
-    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-    // Track previous positions for pen drawing
+    const [dragOffset,       setDragOffset]       = useState({ x: 0, y: 0 });
     const prevPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
 
+    // ── Camera setup (unchanged logic) ────────────────────────────────────
     useEffect(() => {
         let stream: MediaStream | null = null;
         if (isCameraOn) {
@@ -128,52 +199,33 @@ export const Stage: React.FC<StageProps> = ({
                     stream = s;
                     if (videoRef.current) {
                         videoRef.current.srcObject = s;
-                        // Give FaceRuntime access to the live video element
                         setFaceVideoElement(videoRef.current);
                     }
                 })
                 .catch((err) => console.error("Error accessing camera:", err));
         } else {
-            if (videoRef.current && videoRef.current.srcObject) {
-                const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-                tracks.forEach(track => track.stop());
+            if (videoRef.current?.srcObject) {
+                (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
                 videoRef.current.srcObject = null;
             }
-            // Detach from FaceRuntime when camera is off
             setFaceVideoElement(null);
         }
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-        };
+        return () => { stream?.getTracks().forEach(t => t.stop()); };
     }, [isCameraOn]);
 
-    // Handle canvas click for audio context resume and sprite selection
+    // ── Canvas click handler (unchanged logic) ─────────────────────────────
     const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
+        const rect   = canvas.getBoundingClientRect();
+        const leapX  = ((event.clientX - rect.left)  / rect.width)  * width  - width  / 2;
+        const leapY  = height / 2 - ((event.clientY - rect.top) / rect.height) * height;
 
-        const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        // Convert to leap coordinates (-240 to 240, -180 to 180)
-        // Correct math using rect.width/height to handle scaled/responsive canvas
-        const leapX = ((x / rect.width) * width) - width / 2;
-        const leapY = height / 2 - ((y / rect.height) * height);
-
-        // Resume audio context on user interaction (required by browser autoplay policy)
         const soundManager = (window as any).soundManager;
-        if (soundManager && soundManager.audioContext && soundManager.audioContext.state === 'suspended') {
-            soundManager.audioContext.resume().then(() => {
-                console.log('[Stage] Audio context resumed');
-            }).catch((err: any) => {
-                console.warn('[Stage] Failed to resume audio context:', err);
-            });
+        if (soundManager?.audioContext?.state === 'suspended') {
+            soundManager.audioContext.resume().catch(console.warn);
         }
 
-        // Check if clicking on a sprite
         let clickedSprite = null;
         for (const sprite of sprites) {
             if (sprite.visible && sprite.isPointInSprite(leapX, leapY)) {
@@ -182,142 +234,124 @@ export const Stage: React.FC<StageProps> = ({
             }
         }
 
-        if (clickedSprite && onSpriteSelect) {
-            onSpriteSelect(clickedSprite.id);
-        } else if (onStageClick) {
-            onStageClick(leapX, leapY);
-        }
+        if (clickedSprite && onSpriteSelect) onSpriteSelect(clickedSprite.id);
+        else if (onStageClick)               onStageClick(leapX, leapY);
     }, [width, height, sprites, onSpriteSelect, onStageClick]);
 
-    // Initialize pen manager with the pen canvas
+    // ── Pen canvas init (unchanged) ────────────────────────────────────────
     useEffect(() => {
-        if (penCanvasRef.current) {
-            penManager.setPenCanvas(penCanvasRef.current);
-        }
-        return () => {
-            penManager.setPenCanvas(null);
-        };
+        if (penCanvasRef.current) penManager.setPenCanvas(penCanvasRef.current);
+        return () => penManager.setPenCanvas(null);
     }, []);
 
+    // ── Render (backdrop → grid → drag overlay → sprites → pen) ───────────
     const render = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // 1. Draw backdrop
+        // 1. Backdrop
         ctx.clearRect(0, 0, width, height);
         const backdrop = stageManager.currentBackdrop;
-        if (backdrop && backdrop.image) {
+        if (backdrop?.image) {
             ctx.drawImage(backdrop.image, 0, 0, width, height);
         } else if (!isCameraOn) {
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, width, height);
         }
 
-        // 2. Draw grid (Leapblocks style)
+        // 2. Grid (showGridNumbers mode)
         if (showGridNumbers) {
-            ctx.strokeStyle = '#e5e5e5';
+            // ── CHANGED: violet-tinted grid lines ─────────────────────────
+            ctx.strokeStyle = '#ede9fe';   // was #e5e5e5
             ctx.lineWidth = 1;
 
-            const gridSpacing = width / 20;
             const xCount = 20;
             const yCount = 15;
+            const gx = width  / xCount;
+            const gy = height / yCount;
 
             for (let i = 0; i <= xCount; i++) {
-                const x = i * gridSpacing;
                 ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, height);
+                ctx.moveTo(i * gx, 0);
+                ctx.lineTo(i * gx, height);
                 ctx.stroke();
             }
             for (let i = 0; i <= yCount; i++) {
-                const y = i * (height / 15);
                 ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(width, y);
+                ctx.moveTo(0, i * gy);
+                ctx.lineTo(width, i * gy);
                 ctx.stroke();
             }
 
-            // 3. Junior numbers
+            // ── CHANGED: system-ui font instead of Arial ──────────────────
             ctx.fillStyle = '#999';
-            ctx.font = '10px Arial';
+            ctx.font = '10px system-ui';
             ctx.textAlign = 'center';
-            for (let i = 1; i <= 20; i++) {
-                const x = i * (width / 20) - (width / 40);
-                ctx.fillText(String(i), x, height - 4);
+            for (let i = 1; i <= xCount; i++) {
+                ctx.fillText(String(i), i * gx - gx / 2, height - 4);
             }
             ctx.textAlign = 'right';
             ctx.textBaseline = 'middle';
-            for (let i = 1; i <= 15; i++) {
-                const y = height - (i * (height / 15)) + (height / 30);
-                ctx.fillText(String(i), width - 4, y);
+            for (let i = 1; i <= yCount; i++) {
+                ctx.fillText(String(i), width - 4, height - (i * gy) + gy / 2);
             }
 
-            // 4. Center cross
-            ctx.strokeStyle = '#ddd';
+            // ── CHANGED: violet-300 centre cross ──────────────────────────
+            ctx.strokeStyle = '#c4b5fd';   // was #ddd
             ctx.beginPath();
-            ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, height);
-            ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2);
+            ctx.moveTo(width / 2, 0);       ctx.lineTo(width / 2, height);
+            ctx.moveTo(0, height / 2);      ctx.lineTo(width, height / 2);
             ctx.stroke();
         }
 
-        // 5. Drag overlay
+        // 3. Drag overlay
         if (draggingSpriteId) {
-            const draggedSprite = sprites.find(s => s.id === draggingSpriteId);
-            if (draggedSprite) {
-                const cx = width / 2 + draggedSprite.x;
-                const cy = height / 2 - draggedSprite.y;
+            const ds = sprites.find(s => s.id === draggingSpriteId);
+            if (ds) {
+                const cx = width  / 2 + ds.x;
+                const cy = height / 2 - ds.y;
 
-                // Draw coordinate lines
-                ctx.strokeStyle = '#4C97FF';
+                // ── CHANGED: violet accent on drag lines & label ───────────
+                ctx.strokeStyle = '#8B5CF6';   // was #4C97FF
                 ctx.lineWidth = 1;
                 ctx.setLineDash([5, 5]);
                 ctx.beginPath();
-                ctx.moveTo(cx, 0); ctx.lineTo(cx, height);
-                ctx.moveTo(0, cy); ctx.lineTo(width, cy);
+                ctx.moveTo(cx, 0);      ctx.lineTo(cx, height);
+                ctx.moveTo(0, cy);      ctx.lineTo(width, cy);
                 ctx.stroke();
                 ctx.setLineDash([]);
 
-                // Draw label
-                ctx.fillStyle = '#4C97FF';
-                ctx.font = 'bold 12px Arial';
+                // ── CHANGED: system-ui font, violet colour ─────────────────
+                ctx.fillStyle = '#8B5CF6';
+                ctx.font = '600 11px system-ui';
                 ctx.textAlign = 'left';
-                ctx.fillText(`X: ${Math.round(draggedSprite.x)} Y: ${Math.round(draggedSprite.y)}`, cx + 10, cy - 10);
+                ctx.fillText(`X: ${Math.round(ds.x)}  Y: ${Math.round(ds.y)}`, cx + 8, cy - 8);
             }
         }
 
-        // 6. Render sprites
+        // 4. Sprites
         for (const sprite of sprites) {
             sprite.render(ctx, width, height);
         }
 
-        // 7. Draw pen trails (on separate canvas)
+        // 5. Pen trails
         const penCanvas = penCanvasRef.current;
         if (penCanvas) {
             const penCtx = penCanvas.getContext('2d');
             if (penCtx) {
                 for (const sprite of sprites) {
                     if (sprite.isPenDown && sprite.visible) {
-                        // Use the tip position, not the sprite center
                         const tip = sprite.getPenTipPosition();
-                        const cx = width / 2 + tip.x;
-                        const cy = height / 2 - tip.y;
-
-                        const prevPos = prevPositionsRef.current.get(sprite.id);
-                        if (prevPos) {
-                            penManager.drawLine(
-                                prevPos.x, prevPos.y,
-                                cx, cy,
-                                sprite.penColor,
-                                sprite.penSize
-                            );
+                        const cx  = width  / 2 + tip.x;
+                        const cy  = height / 2 - tip.y;
+                        const prev = prevPositionsRef.current.get(sprite.id);
+                        if (prev) {
+                            penManager.drawLine(prev.x, prev.y, cx, cy, sprite.penColor, sprite.penSize);
                         }
-
-                        // Store canvas coords directly so we don't re-convert next frame
                         prevPositionsRef.current.set(sprite.id, { x: cx, y: cy });
                     } else {
-                        // Pen lifted — clear tracking so next penDown starts fresh
                         prevPositionsRef.current.delete(sprite.id);
                     }
                 }
@@ -325,6 +359,7 @@ export const Stage: React.FC<StageProps> = ({
         }
     }, [width, height, sprites, showGridNumbers, draggingSpriteId, isCameraOn]);
 
+    // ── Game loop (unchanged) ──────────────────────────────────────────────
     useEffect(() => {
         const handleUpdate = (deltaMs: number) => {
             if (isRunning) {
@@ -339,48 +374,45 @@ export const Stage: React.FC<StageProps> = ({
         return () => gameLoop.removeUpdateCallback(handleUpdate);
     }, [render, sprites, isRunning]);
 
+    // ── Pointer handlers (unchanged logic) ────────────────────────────────
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = ((e.clientX - rect.left) * (width / rect.width)) - width / 2;
+        const rect   = canvas.getBoundingClientRect();
+        const mouseX = ((e.clientX - rect.left)  * (width  / rect.width))  - width  / 2;
         const mouseY = height / 2 - ((e.clientY - rect.top) * (height / rect.height));
 
-        // Hit detection (top-most sprite)
         for (let i = sprites.length - 1; i >= 0; i--) {
             const sprite = sprites[i];
             if (!sprite.visible) continue;
-
             const scale = sprite.size / 100;
-            const w = (sprite.currentCostume?.width || 80) * scale; // Approx picking width
+            const w = (sprite.currentCostume?.width  || 80) * scale;
             const h = (sprite.currentCostume?.height || 80) * scale;
 
             if (Math.abs(mouseX - sprite.x) <= w / 2 && Math.abs(mouseY - sprite.y) <= h / 2) {
                 animationVM.setMouseDown(true);
                 setDraggingSpriteId(sprite.id);
                 setDragOffset({ x: sprite.x - mouseX, y: sprite.y - mouseY });
-                sprite.setDragging(true); // Trigger drag scale/shadow
-                if (onSpriteSelect) onSpriteSelect(sprite.id);
-                if (onSpriteClick) onSpriteClick(sprite.id);
-                // Capture pointer to track outside canvas
+                sprite.setDragging(true);
+                onSpriteSelect?.(sprite.id);
+                onSpriteClick?.(sprite.id);
                 canvas.setPointerCapture(e.pointerId);
                 return;
             }
         }
 
         animationVM.setMouseDown(true);
-        if (onStageClick) onStageClick(mouseX, mouseY);
-        if (onSpriteClick) onSpriteClick('stage');
+        onStageClick?.(mouseX, mouseY);
+        onSpriteClick?.('stage');
     };
 
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const rect = canvas.getBoundingClientRect();
-        const mx = ((e.clientX - rect.left) * (width / rect.width)) - width / 2;
+        const mx = ((e.clientX - rect.left)  * (width  / rect.width))  - width  / 2;
         const my = height / 2 - ((e.clientY - rect.top) * (height / rect.height));
 
-        // Sync with VM for blocks like "distance to mouse" or "go to mouse"
         animationVM.setMousePosition(mx, my);
 
         if (draggingSpriteId) {
@@ -396,37 +428,68 @@ export const Stage: React.FC<StageProps> = ({
         animationVM.setMouseDown(false);
         if (draggingSpriteId) {
             const sprite = sprites.find(s => s.id === draggingSpriteId);
-            if (sprite) {
-                sprite.setDragging(false);
-            }
+            sprite?.setDragging(false);
             setDraggingSpriteId(null);
-            const canvas = canvasRef.current;
-            if (canvas) canvas.releasePointerCapture(e.pointerId);
+            canvasRef.current?.releasePointerCapture(e.pointerId);
         }
     };
 
-    // --- STAGE CORNER MARKERS CONFIGURATION ---
-    const CORNER_WIDTH = 28;
-    const CORNER_HEIGHT = 28;
-    const BORDER_WIDTH = 4;
+    // ── Corner marker config ───────────────────────────────────────────────
+    // CHANGED: smaller markers (20×20, 3px border) for embed/intermediate size
+    const CORNER_W     = 20;   // was 28
+    const CORNER_H     = 20;   // was 28
+    const BDR_W        = 3;    // was 4
     const CORNER_COLOR = '#8b5cf6';
-    const OFFSET = -BORDER_WIDTH; // To make it flush with the edge
-    const CORNER_RADIUS = 4;
+    const OFF          = -BDR_W;   // flush with edge
+    const CORNER_R     = 3;    // was 4
+
+    const cornerBase: React.CSSProperties = {
+        position: 'absolute',
+        width:  CORNER_W,
+        height: CORNER_H,
+        zIndex: 1,
+        pointerEvents: 'none',
+        boxSizing: 'border-box',
+    };
 
     return (
-        <div style={{ position: 'relative', width, height, backgroundColor: '#fff', borderRadius: '8px', overflow: 'visible', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-            {/* Top-Left Corner */}
-            <div style={{ position: 'absolute', top: OFFSET, left: OFFSET, width: CORNER_WIDTH, height: CORNER_HEIGHT, borderLeft: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderTop: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderRadius: `${CORNER_RADIUS}px 0 0 0`, zIndex: 1, pointerEvents: 'none', boxSizing: 'border-box' }} />
+        // ── OUTER WRAPPER ──────────────────────────────────────────────────
+        // CHANGED: overflow:hidden added, softer two-layer shadow, flex-center
+        // alignment, borderRadius tightened to 6px.
+        <div style={{
+            position: 'relative',
+            width,
+            height,
+            // CHANGED: slightly warmer background vs pure white
+            backgroundColor: '#F8FAFC',
+            borderRadius: 6,           // was 8
+            overflow: 'hidden',        // NEW — clips canvas within border-radius
+            // CHANGED: softer two-layer shadow
+            boxShadow: '0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)',
+            display: 'flex',           // NEW — centres canvas when container shrinks
+            alignItems: 'center',
+            justifyContent: 'center',
+        }}>
 
-            {/* Top-Right Corner */}
-            <div style={{ position: 'absolute', top: OFFSET, right: OFFSET, width: CORNER_WIDTH, height: CORNER_HEIGHT, borderRight: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderTop: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderRadius: `0 ${CORNER_RADIUS}px 0 0`, zIndex: 1, pointerEvents: 'none', boxSizing: 'border-box' }} />
+            {/* ── CORNER MARKERS (smaller, violet) ─────────────────────── */}
+            <div style={{ ...cornerBase, top: OFF, left: OFF,
+                borderLeft:  `${BDR_W}px solid ${CORNER_COLOR}`,
+                borderTop:   `${BDR_W}px solid ${CORNER_COLOR}`,
+                borderRadius: `${CORNER_R}px 0 0 0` }} />
+            <div style={{ ...cornerBase, top: OFF, right: OFF,
+                borderRight: `${BDR_W}px solid ${CORNER_COLOR}`,
+                borderTop:   `${BDR_W}px solid ${CORNER_COLOR}`,
+                borderRadius: `0 ${CORNER_R}px 0 0` }} />
+            <div style={{ ...cornerBase, bottom: OFF, left: OFF,
+                borderLeft:   `${BDR_W}px solid ${CORNER_COLOR}`,
+                borderBottom: `${BDR_W}px solid ${CORNER_COLOR}`,
+                borderRadius: `0 0 0 ${CORNER_R}px` }} />
+            <div style={{ ...cornerBase, bottom: OFF, right: OFF,
+                borderRight:  `${BDR_W}px solid ${CORNER_COLOR}`,
+                borderBottom: `${BDR_W}px solid ${CORNER_COLOR}`,
+                borderRadius: `0 0 ${CORNER_R}px 0` }} />
 
-            {/* Bottom-Left Corner */}
-            <div style={{ position: 'absolute', bottom: OFFSET, left: OFFSET, width: CORNER_WIDTH, height: CORNER_HEIGHT, borderLeft: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderBottom: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderRadius: `0 0 0 ${CORNER_RADIUS}px`, zIndex: 1, pointerEvents: 'none', boxSizing: 'border-box' }} />
-
-            {/* Bottom-Right Corner */}
-            <div style={{ position: 'absolute', bottom: OFFSET, right: OFFSET, width: CORNER_WIDTH, height: CORNER_HEIGHT, borderRight: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderBottom: `${BORDER_WIDTH}px solid ${CORNER_COLOR}`, borderRadius: `0 0 ${CORNER_RADIUS}px 0`, zIndex: 1, pointerEvents: 'none', boxSizing: 'border-box' }} />
-
+            {/* ── CAMERA OVERLAY ─────────────────────────────────────────── */}
             {isCameraOn && (
                 <video
                     ref={videoRef}
@@ -435,140 +498,148 @@ export const Stage: React.FC<StageProps> = ({
                     muted
                     style={{
                         position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
+                        top: 0, left: 0,
+                        width: '100%', height: '100%',
                         objectFit: 'cover',
-                        transform: 'scaleX(-1)' // Mirror effect
+                        transform: 'scaleX(-1)',
                     }}
                 />
             )}
+
+            {/* ── MAIN CANVAS ──────────────────────────────────────────────── */}
+            {/* CHANGED: maxWidth/maxHeight added so canvas scales down in CSS  */}
+            {/* when the embed container is smaller than STAGE_CONFIG dimensions */}
+            {/* CHANGED: cursor changed to 'default' (was 'crosshair')          */}
             <canvas
                 ref={canvasRef}
                 width={width}
                 height={height}
                 style={{
                     position: 'absolute',
-                    top: 0,
-                    left: 0,
+                    top: 0, left: 0,
                     display: 'block',
+                    maxWidth: '100%',     // NEW — responsive scale-down
+                    maxHeight: '100%',    // NEW
                     backgroundColor: isCameraOn ? 'transparent' : '#fff',
-                    cursor: draggingSpriteId ? 'grabbing' : 'crosshair'
+                    cursor: draggingSpriteId ? 'grabbing' : 'default',  // CHANGED
                 }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
             />
-            {/* Pen trails layer - persists between frames */}
+
+            {/* ── PEN TRAIL LAYER ──────────────────────────────────────────── */}
             <canvas
                 ref={penCanvasRef}
                 width={width}
                 height={height}
                 style={{
                     position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    pointerEvents: 'none', // Let clicks pass through to main canvas
+                    top: 0, left: 0,
+                    maxWidth: '100%',     // NEW — matches main canvas scaling
+                    maxHeight: '100%',    // NEW
+                    pointerEvents: 'none',
                 }}
             />
 
-            {/* Render monitors */}
+            {/* ── VARIABLE MONITORS ─────────────────────────────────────────── */}
             {variableMonitors
-                .filter(monitor =>
-                    monitor.visible &&
-                    (monitor.scope === 'all_sprites' ||
-                        (monitor.scope === 'this_sprite' && monitor.spriteId === selectedSpriteId))
+                .filter(m =>
+                    m.visible &&
+                    (m.scope === 'all_sprites' ||
+                     (m.scope === 'this_sprite' && m.spriteId === selectedSpriteId))
                 )
-                .map(monitor => (
+                .map(m => (
                     <VariableMonitor
-                        key={monitor.id}
-                        name={monitor.name}
-                        value={monitor.value}
-                        visible={monitor.visible}
-                        x={monitor.x}
-                        y={monitor.y}
+                        key={m.id}
+                        name={m.name}
+                        value={m.value}
+                        visible={m.visible}
+                        x={m.x}
+                        y={m.y}
                         stageWidth={width}
                         stageHeight={height}
-                        zIndex={monitor.zIndex}
-                        mode={monitor.mode}
-                        sliderMin={monitor.sliderMin}
-                        sliderMax={monitor.sliderMax}
-                        onPositionChange={(x, y) => onMonitorPositionChange?.('variable', monitor.id, x, y)}
-                        onPointerDown={() => onMonitorBringToFront?.('variable', monitor.id)}
-                        onModeChange={(mode) => onVariableModeChange?.(monitor.id, mode)}
-                        onValueChange={(value) => onVariableValueChange?.(monitor.id, value as number)}
-                        onSliderRangeChange={(min, max) => onVariableSliderRangeChange?.(monitor.id, min, max)}
+                        zIndex={m.zIndex}
+                        mode={m.mode}
+                        sliderMin={m.sliderMin}
+                        sliderMax={m.sliderMax}
+                        onPositionChange={(x, y) => onMonitorPositionChange?.('variable', m.id, x, y)}
+                        onPointerDown={() => onMonitorBringToFront?.('variable', m.id)}
+                        onModeChange={(mode) => onVariableModeChange?.(m.id, mode)}
+                        onValueChange={(value) => onVariableValueChange?.(m.id, value as number)}
+                        onSliderRangeChange={(min, max) => onVariableSliderRangeChange?.(m.id, min, max)}
                     />
                 ))}
 
+            {/* ── LIST MONITORS ─────────────────────────────────────────────── */}
             {listMonitors
-                .filter(monitor =>
-                    monitor.visible &&
-                    (monitor.scope === 'all_sprites' ||
-                        (monitor.scope === 'this_sprite' && monitor.spriteId === selectedSpriteId))
+                .filter(m =>
+                    m.visible &&
+                    (m.scope === 'all_sprites' ||
+                     (m.scope === 'this_sprite' && m.spriteId === selectedSpriteId))
                 )
-                .map(monitor => (
+                .map(m => (
                     <ListMonitor
-                        key={monitor.id}
-                        name={monitor.name}
-                        items={monitor.items}
-                        visible={monitor.visible}
-                        x={monitor.x}
-                        y={monitor.y}
-                        width={monitor.width}
-                        height={monitor.height}
-                        zIndex={monitor.zIndex}
-                        onPositionChange={(x, y) => onMonitorPositionChange?.('list', monitor.id, x, y)}
-                        onResize={(w, h) => onMonitorResize?.('list', monitor.id, w, h)}
-                        onPointerDown={() => onMonitorBringToFront?.('list', monitor.id)}
+                        key={m.id}
+                        name={m.name}
+                        items={m.items}
+                        visible={m.visible}
+                        x={m.x}
+                        y={m.y}
+                        width={m.width}
+                        height={m.height}
+                        zIndex={m.zIndex}
+                        onPositionChange={(x, y) => onMonitorPositionChange?.('list', m.id, x, y)}
+                        onResize={(w, h) => onMonitorResize?.('list', m.id, w, h)}
+                        onPointerDown={() => onMonitorBringToFront?.('list', m.id)}
                     />
                 ))}
 
+            {/* ── TABLE MONITORS ────────────────────────────────────────────── */}
             {tableMonitors
-                .filter(monitor =>
-                    monitor.visible &&
-                    (monitor.scope === 'all_sprites' ||
-                        (monitor.scope === 'this_sprite' && monitor.spriteId === selectedSpriteId))
+                .filter(m =>
+                    m.visible &&
+                    (m.scope === 'all_sprites' ||
+                     (m.scope === 'this_sprite' && m.spriteId === selectedSpriteId))
                 )
-                .map(monitor => (
+                .map(m => (
                     <TableMonitor
-                        key={monitor.id}
-                        name={monitor.name}
-                        data={monitor.data}
-                        visible={monitor.visible}
-                        x={monitor.x}
-                        y={monitor.y}
-                        width={monitor.width}
-                        height={monitor.height}
-                        zIndex={monitor.zIndex}
-                        onPositionChange={(x, y) => onMonitorPositionChange?.('table', monitor.id, x, y)}
-                        onResize={(w, h) => onMonitorResize?.('table', monitor.id, w, h)}
-                        onPointerDown={() => onMonitorBringToFront?.('table', monitor.id)}
+                        key={m.id}
+                        name={m.name}
+                        data={m.data}
+                        visible={m.visible}
+                        x={m.x}
+                        y={m.y}
+                        width={m.width}
+                        height={m.height}
+                        zIndex={m.zIndex}
+                        onPositionChange={(x, y) => onMonitorPositionChange?.('table', m.id, x, y)}
+                        onResize={(w, h) => onMonitorResize?.('table', m.id, w, h)}
+                        onPointerDown={() => onMonitorBringToFront?.('table', m.id)}
                     />
                 ))}
 
+            {/* ── SENSING MONITORS ──────────────────────────────────────────── */}
             {sensingMonitors
-                .filter(monitor => monitor.visible)
-                .map(monitor => (
+                .filter(m => m.visible)
+                .map(m => (
                     <VariableMonitor
-                        key={monitor.id}
-                        name={monitor.name}
-                        value={monitor.value}
-                        visible={monitor.visible}
-                        x={monitor.x}
-                        y={monitor.y}
+                        key={m.id}
+                        name={m.name}
+                        value={m.value}
+                        visible={m.visible}
+                        x={m.x}
+                        y={m.y}
                         stageWidth={width}
                         stageHeight={height}
-                        zIndex={monitor.zIndex}
-                        onPositionChange={(x, y) => onMonitorPositionChange?.('sensing', monitor.id, x, y)}
-                        onPointerDown={() => onMonitorBringToFront?.('sensing', monitor.id)}
+                        zIndex={m.zIndex}
+                        onPositionChange={(x, y) => onMonitorPositionChange?.('sensing', m.id, x, y)}
+                        onPointerDown={() => onMonitorBringToFront?.('sensing', m.id)}
                     />
                 ))}
         </div>
     );
 };
-
 
 export default Stage;
