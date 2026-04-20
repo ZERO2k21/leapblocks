@@ -340,9 +340,18 @@ class CircuitEngine {
           if (outWire) {
             const boardPin = (outWire.source === nodeId ? outWire.targetHandle : outWire.sourceHandle) ?? '';
             const cleanPin = boardPin.replace(/__target$/, '');
-            const mapping = simulationRunner.convertArduinoPin(cleanPin);
-            if (mapping && mapping.adcChannel !== undefined) {
-              simulationRunner.setAnalogInput(mapping.adcChannel, voltage);
+
+            // Try ESP32 first, then AVR
+            const esp32Mapping = simulationRunner.convertESP32Pin(cleanPin);
+            if (esp32Mapping && esp32Mapping.avrPin.startsWith('ESP')) {
+              const gpio = parseInt(esp32Mapping.avrPin.replace('ESP', ''), 10);
+              // Scale to 3.3V for ESP32 ADC
+              simulationRunner.setESP32AnalogInput(gpio, (adcValue / 1023) * 3.3);
+            } else {
+              const mapping = simulationRunner.convertArduinoPin(cleanPin);
+              if (mapping && mapping.adcChannel !== undefined) {
+                simulationRunner.setAnalogInput(mapping.adcChannel, voltage);
+              }
             }
           }
 
@@ -368,16 +377,38 @@ class CircuitEngine {
 
     // 2.2 Attach Bus Manager to Master
     if (simulationRunner.TWI) {
+      // Arduino/AVR: attach via hardware TWI
       simulationRunner.TWI.eventHandler = this.i2cBusManager;
     }
+    // ESP32: attach I2C bus manager via the stub's Wire call interception
+    // The SketchStub parses lcd.print/display.println and calls updateNodeData directly,
+    // but for proper I2C protocol emulation we also wire the bus manager here so
+    // MPU6050 slider values are pushed into the emulator on every syncCircuitGraph.
+    if (simulationRunner.isESP32Board) {
+      // Push current MPU6050 values immediately (slider may have changed)
+      nodes.forEach(node => {
+        if (node.data?.type === 'mpu6050') {
+          const slave = this.mpu6050Slaves.get(node.id);
+          if (slave) {
+            const sv = node.data?.sensorValues ?? {};
+            slave.setSensorValues({
+              accelX: sv.accelX ?? 0, accelY: sv.accelY ?? 0, accelZ: sv.accelZ ?? 1,
+              gyroX: sv.gyroX ?? 0, gyroY: sv.gyroY ?? 0, gyroZ: sv.gyroZ ?? 0,
+              temp: sv.temp ?? 25,
+            });
+          }
+        }
+      });
+    }
 
-    // 2. Map board nodes (Arduino) and their connected peripherals
+    // 2. Map board nodes (Arduino/ESP32) and their connected peripherals
     const boardNodes = nodes.filter(n =>
       n.data?.type === 'arduino-uno' ||
       n.data?.type === 'arduino-nano' ||
       n.data?.type === 'arduino-mega' ||
       n.data?.type === 'boards' ||
-      n.data?.type === 'esp32'
+      n.data?.type === 'esp32' ||
+      n.data?.type === 'esp32-devkit-v1'
     );
 
     boardNodes.forEach(board => {
@@ -388,22 +419,25 @@ class CircuitEngine {
         // Determine the flow direction (Assuming Board -> Peripheral for now, Phase 3 propagation)
         // If the Arduino is the source of the edge (e.g., standard digital output)
         const isOutput = edge.source === board.id;
-        const arduinoPinName = isOutput ? edge.sourceHandle : edge.targetHandle;
+        // Strip ReactFlow's __target suffix — handles are stored as "PIN" or "PIN__target"
+        const arduinoPinName = (isOutput ? edge.sourceHandle : edge.targetHandle)?.replace(/__target$/, '');
         const peripheralId = isOutput ? edge.target : edge.source;
-        const peripheralPinName = isOutput ? edge.targetHandle : edge.sourceHandle;
+        const peripheralPinName = (isOutput ? edge.targetHandle : edge.sourceHandle)?.replace(/__target$/, '');
 
         if (!arduinoPinName || !peripheralPinName) return;
 
         // For ESP32: GPIO numbers map directly to ESP{n} pin IDs.
         // For AVR boards: convert Arduino pin number to AVR port pin (e.g. "13" → "PB5").
-        const isESP32Board = board.data?.type === 'esp32';
+        const isESP32Board = board.data?.type === 'esp32' || board.data?.type === 'esp32-devkit-v1';
         let pinId: string;
 
         if (isESP32Board) {
-          const gpioNum = parseInt(String(arduinoPinName).replace(/[^0-9]/g, ''), 10);
-          if (isNaN(gpioNum)) return;
-          pinId = `ESP${gpioNum}`;
-          console.log(`[FORGE CIRCUIT] ESP32 Wired: Board[GPIO${gpioNum}] <==> ${pinId} <==> Peripheral[${peripheralPinName}]`);
+          // Use the full ESP32 pin map — handles D{n}, VP, VN, RX2, TX2 etc.
+          // Power/GND pins return null and are silently skipped.
+          const esp32Mapping = simulationRunner.convertESP32Pin(arduinoPinName);
+          if (!esp32Mapping) return;
+          pinId = esp32Mapping.avrPin;
+          console.log(`[FORGE CIRCUIT] ESP32 Wired: Board[${arduinoPinName}→${pinId}] <==> Peripheral[${peripheralPinName}]`);
         } else {
           const mapping = simulationRunner.convertArduinoPin(arduinoPinName);
           if (!mapping) return;
@@ -477,17 +511,36 @@ class CircuitEngine {
               if (isHigh) {
                 trigStartCycles = simulationRunner.getCycles();
               } else {
-                const pulseCycles = simulationRunner.getCycles() - trigStartCycles;
-                const durationUs = pulseCycles / 16;
-                if (durationUs >= 2) {
-                  const distStr = peripheralNode.data?.sensorValues?.distance;
-                  const distParam = distStr !== undefined ? parseFloat(distStr) : 100;
-                  const echoPulseUs = distParam * 58;
-                  const echoPulseCycles = Math.floor(echoPulseUs * 16);
-                  const echoWire = currentStateStore.edges.find(e => (e.source === peripheralId && e.sourceHandle === 'ECHO') || (e.target === peripheralId && e.targetHandle === 'ECHO'));
-                  if (echoWire) {
-                    const _boardPinName = echoWire.source === peripheralId ? echoWire.targetHandle : echoWire.sourceHandle;
-                    // @ts-ignore
+                const distStr = peripheralNode.data?.sensorValues?.distance;
+                const distParam = distStr !== undefined ? parseFloat(distStr) : 100;
+                const echoPulseUs = distParam * 58;
+
+                const echoWire = currentStateStore.edges.find(e =>
+                  (e.source === peripheralId && (e.sourceHandle === 'ECHO' || e.sourceHandle === 'ECHO__target')) ||
+                  (e.target === peripheralId && (e.targetHandle === 'ECHO' || e.targetHandle === 'ECHO__target'))
+                );
+                if (!echoWire) return;
+
+                const _boardPinName = (echoWire.source === peripheralId ? echoWire.targetHandle : echoWire.sourceHandle)
+                  ?.replace(/__target$/, '') ?? '';
+
+                if (isESP32Board) {
+                  // ESP32: use setTimeout (no CPU cycles available)
+                  const echoMapping = simulationRunner.convertESP32Pin(_boardPinName);
+                  if (echoMapping) {
+                    setTimeout(() => {
+                      simulationRunner.setVirtualInput(echoMapping.avrPin, true);
+                      setTimeout(() => {
+                        simulationRunner.setVirtualInput(echoMapping.avrPin, false);
+                      }, echoPulseUs / 1000); // µs → ms
+                    }, 0.5);
+                  }
+                } else {
+                  // AVR: use cycle-accurate scheduleEvent
+                  const pulseCycles = simulationRunner.getCycles() - trigStartCycles;
+                  const durationUs = pulseCycles / 16;
+                  if (durationUs >= 2) {
+                    const echoPulseCycles = Math.floor(echoPulseUs * 16);
                     const _echoMapping = simulationRunner.convertArduinoPin(_boardPinName);
                     if (_echoMapping) {
                       simulationRunner.scheduleEvent(500, () => {
@@ -503,7 +556,9 @@ class CircuitEngine {
             }
 
             // Emulate Servo PWM Physics
-            if (peripheralNode.data?.type === 'servo' && peripheralPinName === 'PWM') {
+            // AVR: measure pulse width in CPU cycles → angle
+            // ESP32: servo angle is driven directly by the stub's servoWrite action — skip cycle math
+            if (peripheralNode.data?.type === 'servo' && peripheralPinName === 'PWM' && !isESP32Board) {
               if (isHigh) {
                 pwmStartCycles = simulationRunner.getCycles();
               } else {
@@ -970,18 +1025,12 @@ class CircuitEngine {
 
   /**
    * Called by interactive UI nodes (e.g. Buttons, PIR sensors) to push signals backwards into the board.
-   * Finds the wire connected to the given peripheral pin and injects the signal into the AVR.
+   * Handles both AVR (Arduino) and ESP32 boards.
    */
   public pushInputSignal(nodeId: string, pinName: string, isHigh: boolean) {
     console.log(`[FORGE CIRCUIT] Peripheral Node ${nodeId} requesting inject on pin ${pinName} to ${isHigh ? 'HIGH' : 'LOW'}`);
     const { edges, nodes } = useForgeStore.getState();
 
-    // Find the wire attached to this input peripheral pin.
-    // LeapNode renders two handles per pin:
-    //   source handle id = pinName          (e.g. "OUT")
-    //   target handle id = pinName__target  (e.g. "OUT__target")
-    // ReactFlow stores whichever handle the user connected from/to.
-    // We must match both variants.
     const wire = edges.find(e => {
       const srcMatch = e.source === nodeId &&
         (e.sourceHandle === pinName || e.sourceHandle === `${pinName}__target`);
@@ -991,168 +1040,163 @@ class CircuitEngine {
     });
 
     if (!wire) {
-      console.warn(`[FORGE CIRCUIT] PIR/Input: no wire found for node ${nodeId} pin ${pinName}`);
+      console.warn(`[FORGE CIRCUIT] Input: no wire found for node ${nodeId} pin ${pinName}`);
       return;
     }
 
-    // The board is the OTHER end of the wire
     const boardNodeId = wire.source === nodeId ? wire.target : wire.source;
     const boardPinName = wire.source === nodeId ? wire.targetHandle : wire.sourceHandle;
-
     if (!boardPinName) return;
+
     const boardNode = nodes.find(n => n.id === boardNodeId);
     if (!boardNode) return;
 
-    // Strip the __target suffix if present — convertArduinoPin expects the bare pin number
     const cleanBoardPin = boardPinName.replace(/__target$/, '');
+    const isESP32 = boardNode.data?.type === 'esp32' || boardNode.data?.type === 'esp32-devkit-v1';
 
-    // Convert back to AVR mapping
-    const mapping = simulationRunner.convertArduinoPin(cleanBoardPin);
+    // ── ESP32 path ────────────────────────────────────────────────────────
+    if (isESP32) {
+      const peripheralNode = nodes.find(n => n.id === nodeId);
+      const pType = peripheralNode?.data?.type;
+      const sv = peripheralNode?.data?.sensorValues;
+
+      // Use full ESP32 pin map (handles D{n}, VP, VN, ADC pins etc.)
+      const esp32Mapping = simulationRunner.convertESP32Pin(cleanBoardPin);
+      if (!esp32Mapping) return; // power/GND pin — skip
+
+      const gpioNum = parseInt(esp32Mapping.avrPin.replace('ESP', ''), 10);
+
+      // Analog sensors → inject voltage into ESP32 ADC (3.3V reference)
+      const analogSensors = [
+        'ntc-temperature-sensor', 'photoresistor-sensor', 'flame-sensor',
+        'gas-sensor', 'big-sound-sensor', 'small-sound-sensor', 'photoresistor',
+        'heart-beat-sensor',
+      ];
+      if (analogSensors.includes(pType) || esp32Mapping.adcChannel !== undefined) {
+        const voltage = this.computeSensorVoltage(pType, sv, 3.3);
+        simulationRunner.setESP32AnalogInput(gpioNum, voltage);
+        console.log(`[FORGE CIRCUIT] ESP32 Analog: ${esp32Mapping.avrPin} = ${voltage.toFixed(3)}V (${pType})`);
+
+        // Also inject threshold digital output pins (DO/DOUT) for dual-output sensors
+        const injectESP32Threshold = (pinHandle: string, high: boolean, label: string) => {
+          const w = edges.find(e => {
+            const s = e.source === nodeId && (e.sourceHandle === pinHandle || e.sourceHandle === `${pinHandle}__target`);
+            const t = e.target === nodeId && (e.targetHandle === pinHandle || e.targetHandle === `${pinHandle}__target`);
+            return s || t;
+          });
+          if (!w) return;
+          const bp = ((w.source === nodeId ? w.targetHandle : w.sourceHandle) ?? '').replace(/__target$/, '');
+          const m = simulationRunner.convertESP32Pin(bp);
+          if (m) { simulationRunner.setVirtualInput(m.avrPin, high); console.log(`[FORGE CIRCUIT] ESP32 ${label}: ${m.avrPin} = ${high ? 'HIGH' : 'LOW'}`); }
+        };
+
+        if (pType === 'photoresistor-sensor') {
+          injectESP32Threshold('DO', (sv?.value ?? 500) >= (sv?.threshold ?? 500), 'LDR DO');
+        } else if (pType === 'gas-sensor') {
+          injectESP32Threshold('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Gas DOUT');
+        } else if (pType === 'flame-sensor') {
+          injectESP32Threshold('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Flame DOUT');
+        } else if (pType === 'big-sound-sensor' || pType === 'small-sound-sensor') {
+          injectESP32Threshold('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Sound DOUT');
+        }
+        return;
+      }
+
+      // Digital sensors → inject HIGH/LOW
+      simulationRunner.setVirtualInput(esp32Mapping.avrPin, isHigh);
+      console.log(`[FORGE CIRCUIT] ESP32 Digital: ${esp32Mapping.avrPin} = ${isHigh ? 'HIGH' : 'LOW'}`);
+      return;
+    }
+
+    // ── AVR path — now unified via convertPin ────────────────────────────
+    const mapping = simulationRunner.convertPin(cleanBoardPin, false);
     if (mapping) {
-      if (mapping.adcChannel !== undefined) {
+      if (mapping.adcChannel !== undefined || mapping.avrPin.startsWith('ESP')) {
         // --- Analog Mapping ---
         const peripheralNode = nodes.find(n => n.id === nodeId);
         const pType = peripheralNode?.data?.type;
         const sv = peripheralNode?.data?.sensorValues;
-        let voltage = 0;
 
-        if (pType === 'ntc-temperature-sensor') {
-          // NTC thermistor voltage-divider: V_out = VCC × R_NTC / (R_series + R_NTC)
-          // R_NTC = R0 × exp(B × (1/T - 1/T0))  — 10kΩ NTC, B=3950, series=10kΩ
-          const tempC = sv?.value ?? 25;
-          const R0 = 10000;
-          const B = 3950;
-          const T0 = 298.15;
-          const Rs = 10000;
-          const VCC = 5.0;
-          const T = tempC + 273.15;
-          const R_ntc = R0 * Math.exp(B * (1 / T - 1 / T0));
-          voltage = VCC * R_ntc / (Rs + R_ntc);
-        } else if (pType === 'photoresistor-sensor') {
-          // LDR voltage-divider: R_ldr ≈ 500000/lux, series=10kΩ
-          // V_ao = VCC × R_series / (R_ldr + R_series)
-          const lux = sv?.value ?? 500;
-          const R_ldr = 500000 / Math.max(1, lux);
-          const Rs = 10000;
-          voltage = 5.0 * Rs / (R_ldr + Rs);
-        } else if (pType === 'flame-sensor') {
-          // Flame sensor: V_aout = VCC × (1 - intensity/100)
-          // High voltage = no flame, low voltage = flame detected
-          const intensity = sv?.value ?? 0;
-          voltage = 5.0 * (1 - Math.max(0, Math.min(100, intensity)) / 100);
-        } else if (pType === 'gas-sensor') {
-          // Gas sensor: V_aout = VCC × (concentration/100)
-          // Low voltage = clean air, high voltage = gas detected
-          const concentration = sv?.value ?? 0;
-          voltage = 5.0 * Math.max(0, Math.min(100, concentration)) / 100;
-        } else if (pType === 'big-sound-sensor' || pType === 'small-sound-sensor') {
-          // Sound sensor: V_aout = VCC × (level/100)
-          // Low voltage = silent, high voltage = loud sound
-          const level = sv?.value ?? 0;
-          voltage = 5.0 * Math.max(0, Math.min(100, level)) / 100;
-        } else if (pType === 'photoresistor' || pType === 'photoresistor-sensor') {
-          // Legacy fallback
-          const lux = sv?.value ?? 0;
-          voltage = (lux / 1000) * 5.0;
-        } else {
-          // Generic: value is 0–100 (percentage) → 0–5V, or raw 0–1023 → 0–5V
-          const sensorValue = sv?.value ?? 0;
-          voltage = sensorValue > 5 ? (sensorValue / 1023) * 5.0 : sensorValue;
-        }
+        // Use shared voltage computation (5V for AVR)
+        const voltage = this.computeSensorVoltage(pType, sv, 5.0);
 
-        simulationRunner.setAnalogInput(mapping.adcChannel, voltage);
+        simulationRunner.setAnalogInput(mapping.adcChannel!, voltage);
         console.log(`[FORGE CIRCUIT] Analog Signal: Peripheral[${nodeId}] pin ${pinName} -> ${voltage.toFixed(3)}V on ADC ch${mapping.adcChannel}`);
 
-        // For photoresistor: also drive the DO pin based on threshold comparison
+        // Helper: inject a digital threshold output pin (DO/DOUT) for dual-output sensors
+        const injectThresholdPin = (pinHandle: string, isHigh: boolean, label: string) => {
+          const wire = edges.find(e => {
+            const s = e.source === nodeId && (e.sourceHandle === pinHandle || e.sourceHandle === `${pinHandle}__target`);
+            const t = e.target === nodeId && (e.targetHandle === pinHandle || e.targetHandle === `${pinHandle}__target`);
+            return s || t;
+          });
+          if (!wire) return;
+          const boardPin = ((wire.source === nodeId ? wire.targetHandle : wire.sourceHandle) ?? '').replace(/__target$/, '');
+          const m = simulationRunner.convertPin(boardPin, isESP32);
+          if (m && m.adcChannel === undefined) {
+            simulationRunner.setVirtualInput(m.avrPin, isHigh);
+            console.log(`[FORGE CIRCUIT] ${label}: ${isHigh ? 'HIGH' : 'LOW'} on ${m.avrPin}`);
+          }
+        };
+
         if (pType === 'photoresistor-sensor') {
-          const lux = sv?.value ?? 500;
-          const threshold = sv?.threshold ?? 500;
-          const doHigh = lux >= threshold; // DO is active-LOW: HIGH = bright, LOW = dark
-          // Find the DO wire and inject the digital signal
-          const doWire = edges.find(e => {
-            const srcMatch = e.source === nodeId && (e.sourceHandle === 'DO' || e.sourceHandle === 'DO__target');
-            const tgtMatch = e.target === nodeId && (e.targetHandle === 'DO' || e.targetHandle === 'DO__target');
-            return srcMatch || tgtMatch;
-          });
-          if (doWire) {
-            const doBoardPin = (doWire.source === nodeId ? doWire.targetHandle : doWire.sourceHandle) ?? '';
-            const cleanDOPin = doBoardPin.replace(/__target$/, '');
-            const doMapping = simulationRunner.convertArduinoPin(cleanDOPin);
-            if (doMapping && doMapping.adcChannel === undefined) {
-              simulationRunner.setVirtualInput(doMapping.avrPin, doHigh);
-              console.log(`[FORGE CIRCUIT] LDR DO: ${doHigh ? 'HIGH' : 'LOW'} on AVR ${doMapping.avrPin}`);
-            }
-          }
+          injectThresholdPin('DO', (sv?.value ?? 500) >= (sv?.threshold ?? 500), 'LDR DO');
         }
-
-        // For gas sensor: also drive the DOUT pin based on threshold comparison
         if (pType === 'gas-sensor') {
-          const concentration = sv?.value ?? 0;
-          const threshold = sv?.threshold ?? 50;
-          const doutHigh = concentration <= threshold; // DOUT active-LOW: LOW when gas detected
-          const doutWire = edges.find(e => {
-            const srcMatch = e.source === nodeId && (e.sourceHandle === 'DOUT' || e.sourceHandle === 'DOUT__target');
-            const tgtMatch = e.target === nodeId && (e.targetHandle === 'DOUT' || e.targetHandle === 'DOUT__target');
-            return srcMatch || tgtMatch;
-          });
-          if (doutWire) {
-            const doutBoardPin = (doutWire.source === nodeId ? doutWire.targetHandle : doutWire.sourceHandle) ?? '';
-            const cleanDOUT = doutBoardPin.replace(/__target$/, '');
-            const doutMapping = simulationRunner.convertArduinoPin(cleanDOUT);
-            if (doutMapping && doutMapping.adcChannel === undefined) {
-              simulationRunner.setVirtualInput(doutMapping.avrPin, doutHigh);
-              console.log(`[FORGE CIRCUIT] Gas DOUT: ${doutHigh ? 'HIGH' : 'LOW'} on AVR ${doutMapping.avrPin}`);
-            }
-          }
+          injectThresholdPin('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Gas DOUT');
         }
-        // For flame sensor: also drive the DOUT pin based on threshold comparison
         if (pType === 'flame-sensor') {
-          const intensity = sv?.value ?? 0;
-          const threshold = sv?.threshold ?? 50;
-          const doutHigh = intensity <= threshold; // DOUT active-LOW: LOW when flame detected
-          const doutWire = edges.find(e => {
-            const srcMatch = e.source === nodeId && (e.sourceHandle === 'DOUT' || e.sourceHandle === 'DOUT__target');
-            const tgtMatch = e.target === nodeId && (e.targetHandle === 'DOUT' || e.targetHandle === 'DOUT__target');
-            return srcMatch || tgtMatch;
-          });
-          if (doutWire) {
-            const doutBoardPin = (doutWire.source === nodeId ? doutWire.targetHandle : doutWire.sourceHandle) ?? '';
-            const cleanDOUT = doutBoardPin.replace(/__target$/, '');
-            const doutMapping = simulationRunner.convertArduinoPin(cleanDOUT);
-            if (doutMapping && doutMapping.adcChannel === undefined) {
-              simulationRunner.setVirtualInput(doutMapping.avrPin, doutHigh);
-              console.log(`[FORGE CIRCUIT] Flame DOUT: ${doutHigh ? 'HIGH' : 'LOW'} on AVR ${doutMapping.avrPin}`);
-            }
-          }
+          injectThresholdPin('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Flame DOUT');
         }
-
-        // For big-sound-sensor / small-sound-sensor: also drive the DOUT pin based on threshold comparison
         if (pType === 'big-sound-sensor' || pType === 'small-sound-sensor') {
-          const level = sv?.value ?? 0;
-          const threshold = sv?.threshold ?? 50;
-          const doutHigh = level <= threshold; // DOUT active-LOW: LOW when sound detected
-          const doutWire = edges.find(e => {
-            const srcMatch = e.source === nodeId && (e.sourceHandle === 'DOUT' || e.sourceHandle === 'DOUT__target');
-            const tgtMatch = e.target === nodeId && (e.targetHandle === 'DOUT' || e.targetHandle === 'DOUT__target');
-            return srcMatch || tgtMatch;
-          });
-          if (doutWire) {
-            const doutBoardPin = (doutWire.source === nodeId ? doutWire.targetHandle : doutWire.sourceHandle) ?? '';
-            const cleanDOUT = doutBoardPin.replace(/__target$/, '');
-            const doutMapping = simulationRunner.convertArduinoPin(cleanDOUT);
-            if (doutMapping && doutMapping.adcChannel === undefined) {
-              simulationRunner.setVirtualInput(doutMapping.avrPin, doutHigh);
-              console.log(`[FORGE CIRCUIT] Sound DOUT: ${doutHigh ? 'HIGH' : 'LOW'} on AVR ${doutMapping.avrPin}`);
-            }
-          }
+          injectThresholdPin('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Sound DOUT');
         }
       } else {
         // --- Digital Mapping ---
         simulationRunner.setVirtualInput(mapping.avrPin, isHigh);
-        console.log(`[FORGE CIRCUIT] Digital Signal: Peripheral[${nodeId}] pin ${pinName} -> ${isHigh ? 'HIGH' : 'LOW'} on AVR ${mapping.avrPin}`);
+        console.log(`[FORGE CIRCUIT] Digital Signal: Peripheral[${nodeId}] pin ${pinName} -> ${isHigh ? 'HIGH' : 'LOW'} on ${mapping.avrPin}`);
       }
     } else {
-      console.warn(`[FORGE CIRCUIT] pushInputSignal: could not map board pin '${cleanBoardPin}' to AVR pin`);
+      console.warn(`[FORGE CIRCUIT] pushInputSignal: could not map board pin '${cleanBoardPin}' to pin`);
+    }
+  }
+
+  /**
+   * Compute the analog output voltage for a sensor given its type and current sensorValues.
+   * vcc: supply voltage (5.0 for Arduino, 3.3 for ESP32)
+   */
+  private computeSensorVoltage(pType: string, sv: any, vcc = 5.0): number {
+    switch (pType) {
+      case 'ntc-temperature-sensor': {
+        const tempC = sv?.value ?? 25;
+        const R0 = 10000, B = 3950, T0 = 298.15, Rs = 10000;
+        const T = tempC + 273.15;
+        const R_ntc = R0 * Math.exp(B * (1 / T - 1 / T0));
+        return vcc * R_ntc / (Rs + R_ntc);
+      }
+      case 'photoresistor-sensor':
+      case 'photoresistor': {
+        const lux = sv?.value ?? 500;
+        const R_ldr = 500000 / Math.max(1, lux);
+        return vcc * 10000 / (R_ldr + 10000);
+      }
+      case 'flame-sensor': {
+        const intensity = sv?.value ?? 0;
+        return vcc * (1 - Math.max(0, Math.min(100, intensity)) / 100);
+      }
+      case 'gas-sensor': {
+        const concentration = sv?.value ?? 0;
+        return vcc * Math.max(0, Math.min(100, concentration)) / 100;
+      }
+      case 'big-sound-sensor':
+      case 'small-sound-sensor': {
+        const level = sv?.value ?? 0;
+        return vcc * Math.max(0, Math.min(100, level)) / 100;
+      }
+      default: {
+        const val = sv?.value ?? 0;
+        return val > vcc ? (val / 1023) * vcc : val;
+      }
     }
   }
 }

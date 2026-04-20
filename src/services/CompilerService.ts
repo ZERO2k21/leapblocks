@@ -10,7 +10,7 @@
  *     → arduino-cli compile --libraries forge-lib/libraries/ ...
  *     → returns { success, hexContent }
  */
-import { IS_ELECTRON, CLOUD_COMPILER_URL } from '../config/platform';
+import { IS_ELECTRON, isElectron, CLOUD_COMPILER_URL } from '../config/platform';
 
 export interface CompileRequest {
   code: string;
@@ -25,10 +25,9 @@ export interface CompileResult {
 }
 
 export const compileCode = async (req: CompileRequest): Promise<CompileResult> => {
-  if (IS_ELECTRON) {
+  // Use runtime check — IS_ELECTRON may be stale if preload loaded after module init
+  if (IS_ELECTRON || isElectron()) {
     try {
-      // Routes through the unified 'compile-code' IPC handler in main.js
-      // which handles both AVR (.hex) and ESP32 (.bin → hex) compilation.
       const result = await (window as any).electronAPI.compileCode(
         req.code,
         req.board,

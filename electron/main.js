@@ -287,26 +287,33 @@ ipcMain.handle('forge-lib-remove', async (_, libraryName) => {
 ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _libraryPath) => {
   const isESP32 = typeof fqbn === 'string' && fqbn.startsWith('esp32:');
   const tempDir = path.join(app.getPath('temp'), `forge_sketch_${Date.now()}`);
-  // arduino-cli requires the sketch file to have the same name as its folder
   const sketchDir = path.join(tempDir, 'sketch');
   const sketchPath = path.join(sketchDir, 'sketch.ino');
 
-  // Ensure ESP32 core is installed on first use (cached after first run)
   if (isESP32) {
     await ensureESP32Core();
   }
 
   try {
     fs.mkdirSync(sketchDir, { recursive: true });
-    fs.writeFileSync(sketchPath, code);
 
-    // Only pass --libraries if the directory actually exists (avoids cli errors)
-    const cliArgs = [
-      'compile',
-      '--fqbn', fqbn,
-      '--output-dir', tempDir,
-    ];
-    if (fs.existsSync(FORGE_LIB_LIBRARIES)) {
+    // ── ESP32 sketch preprocessing ──────────────────────────────────────────
+    // Replace AVR-only Servo.h with ESP32Servo.h (incompatible with ESP32 core v3+)
+    // Also migrate LEDC API from v2 (ledcSetup/ledcAttachPin) to v3 (ledcAttach)
+    let processedCode = code;
+    if (isESP32) {
+      processedCode = processedCode.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
+      await ensureESP32Library('ESP32Servo');
+      // Migrate LEDC API v2 → v3
+      processedCode = migrateESP32LedcAPI(processedCode);
+    }
+
+    fs.writeFileSync(sketchPath, processedCode);
+
+    const cliArgs = ['compile', '--fqbn', fqbn, '--output-dir', tempDir];
+
+    // For ESP32: skip forge-lib/libraries to avoid AVR-only library conflicts
+    if (!isESP32 && fs.existsSync(FORGE_LIB_LIBRARIES)) {
       cliArgs.push('--libraries', FORGE_LIB_LIBRARIES);
     }
     cliArgs.push(sketchDir);
@@ -448,14 +455,79 @@ ipcMain.handle('forge-compile', async (_, { code, board }) => {
   }
 });
 
+// ── migrateESP32LedcAPI: rewrite old LEDC v2 API to v3 ───────────────────
+// ESP32 core v3 removed ledcSetup() and ledcAttachPin().
+// Old: ledcSetup(ch, freq, res) + ledcAttachPin(pin, ch) + ledcWrite(ch, duty)
+// New: ledcAttach(pin, freq, res) + ledcWrite(pin, duty)
+function migrateESP32LedcAPI(code) {
+  const chMap = new Map();
+
+  // Collect ledcSetup(ch, freq, res)
+  for (const m of code.matchAll(/ledcSetup\s*\(\s*(\w+)\s*,\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/g)) {
+    const [, ch, freq, res] = m;
+    const entry = chMap.get(ch) ?? { freq: freq.trim(), res: res.trim(), pin: '' };
+    entry.freq = freq.trim(); entry.res = res.trim();
+    chMap.set(ch, entry);
+  }
+  // Collect ledcAttachPin(pin, ch)
+  for (const m of code.matchAll(/ledcAttachPin\s*\(\s*([^,]+?)\s*,\s*(\w+)\s*\)/g)) {
+    const [, pin, ch] = m;
+    const entry = chMap.get(ch) ?? { freq: '5000', res: '8', pin: '' };
+    entry.pin = pin.trim();
+    chMap.set(ch, entry);
+  }
+
+  if (chMap.size === 0) return code; // nothing to migrate
+
+  console.log('[FORGE] Migrating LEDC API v2 → v3:', [...chMap.entries()].map(([ch, v]) => `ch${ch}→pin${v.pin}`).join(', '));
+
+  let result = code;
+  // Remove old calls
+  result = result.replace(/[ \t]*ledcSetup\s*\([^)]*\)\s*;[ \t]*\n?/g, '');
+  result = result.replace(/[ \t]*ledcAttachPin\s*\([^)]*\)\s*;[ \t]*\n?/g, '');
+
+  // Insert ledcAttach() calls at start of setup()
+  const attachCalls = [...chMap.entries()]
+    .filter(([, v]) => v.pin)
+    .map(([, v]) => `  ledcAttach(${v.pin}, ${v.freq}, ${v.res});`)
+    .join('\n');
+  if (attachCalls) {
+    result = result.replace(/(void\s+setup\s*\(\s*\)\s*\{)/, `$1\n${attachCalls}`);
+  }
+
+  // Replace ledcWrite(ch, duty) → ledcWrite(pin, duty)
+  result = result.replace(/ledcWrite\s*\(\s*(\w+)\s*,\s*([^)]+)\s*\)/g, (match, ch, duty) => {
+    const entry = chMap.get(ch);
+    return entry?.pin ? `ledcWrite(${entry.pin}, ${duty.trim()})` : match;
+  });
+
+  return result;
+}
+
 // ── ensureESP32Core: install ESP32 arduino core on first use ─────────────
 let esp32CoreReady = false;
 async function ensureESP32Core() {
-  if (esp32CoreReady) return; // already verified this session
+  if (esp32CoreReady) return;
 
-  const ESP32_URL = 'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json';
+  // Both URLs — Espressif CDN (primary) + GitHub fallback
+  const ESP32_URLS = [
+    'https://dl.espressif.com/dl/package_esp32_index.json',
+    'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json',
+  ];
+
+  // Ensure the config file has the board manager URLs
   try {
-    // Check if already installed first (fast path)
+    const configContent = fs.readFileSync(FORGE_CLI_YAML, 'utf-8');
+    if (!configContent.includes('dl.espressif.com') && !configContent.includes('espressif/arduino-esp32')) {
+      const updatedConfig = configContent.trimEnd() + `\n\nboard_manager:\n  additional_urls:\n${ESP32_URLS.map(u => `    - ${u}`).join('\n')}\n`;
+      fs.writeFileSync(FORGE_CLI_YAML, updatedConfig, 'utf-8');
+      console.log('[FORGE] Added ESP32 board manager URLs to arduino-cli.yaml');
+    }
+  } catch (err) {
+    console.warn('[FORGE] Could not update arduino-cli.yaml:', err.message);
+  }
+
+  try {
     const { stdout } = await runCLI(['core', 'list', '--format', 'json']);
     let cores = [];
     try { cores = JSON.parse(stdout); } catch (_) { }
@@ -466,16 +538,52 @@ async function ensureESP32Core() {
 
     if (!installed) {
       console.log('[FORGE] ESP32 core not found — installing (this may take a few minutes)...');
-      await runCLI(['core', 'update-index', '--additional-urls', ESP32_URL]);
-      await runCLI(['core', 'install', 'esp32:esp32', '--additional-urls', ESP32_URL]);
-      console.log('[FORGE] ESP32 core installed.');
+      // Update index with both URLs
+      await runCLI(['core', 'update-index', '--additional-urls', ESP32_URLS.join(',')]);
+      // Try primary URL first, fall back to secondary
+      let installOk = false;
+      for (const url of ESP32_URLS) {
+        try {
+          await runCLI(['core', 'install', 'esp32:esp32', '--additional-urls', url]);
+          installOk = true;
+          console.log(`[FORGE] ESP32 core installed via ${url}`);
+          break;
+        } catch (e) {
+          console.warn(`[FORGE] Install attempt failed with ${url}:`, e.message);
+        }
+      }
+      if (!installOk) {
+        console.error('[FORGE] All ESP32 core install attempts failed.');
+      }
     } else {
       console.log('[FORGE] ESP32 core already installed.');
     }
     esp32CoreReady = true;
   } catch (err) {
     console.warn('[FORGE] ESP32 core check/install warning:', err.message);
-    // Don't block compilation — attempt anyway
     esp32CoreReady = true;
+  }
+}
+
+// ── ensureESP32Library: install an ESP32-compatible library ───────────────
+const esp32LibsInstalled = new Set();
+async function ensureESP32Library(libName) {
+  if (esp32LibsInstalled.has(libName)) return;
+  try {
+    const { stdout } = await runCLI(['lib', 'list', '--format', 'json']);
+    let libs = [];
+    try { libs = JSON.parse(stdout || '[]'); } catch (_) { }
+    const found = libs.some(l =>
+      (l.library?.name ?? l.name ?? '').toLowerCase() === libName.toLowerCase()
+    );
+    if (!found) {
+      console.log(`[FORGE] Installing ESP32 library: ${libName}`);
+      await runCLI(['lib', 'install', libName]);
+      console.log(`[FORGE] Installed: ${libName}`);
+    }
+    esp32LibsInstalled.add(libName);
+  } catch (err) {
+    console.warn(`[FORGE] Library install warning (${libName}):`, err.message);
+    esp32LibsInstalled.add(libName); // don't retry
   }
 }

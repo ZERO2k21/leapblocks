@@ -69,6 +69,25 @@ export interface ForgeState {
   setLibrarySearch: (query: string, results: any[]) => void;
 }
 
+/** Map canvas node data.type → store board ID */
+const BOARD_NODE_TO_BOARD_ID: Record<string, string> = {
+  'esp32-devkit-v1': 'esp32',
+  'esp32': 'esp32',
+  'arduino-uno': 'arduino-uno',
+  'arduino-nano': 'arduino-nano',
+  'arduino-mega': 'arduino-mega',
+  'attiny85': 'attiny85',
+};
+
+/** Detect the board from a list of nodes — returns the first board node found, or null */
+function detectBoardFromNodes(nodes: Node[]): string | null {
+  for (const node of nodes) {
+    const boardId = BOARD_NODE_TO_BOARD_ID[node.data?.type];
+    if (boardId) return boardId;
+  }
+  return null;
+}
+
 export const useForgeStore = create<ForgeState>((set, get) => ({
   nodes: [],
   edges: [],
@@ -165,23 +184,44 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   clearWiFiLog: () => set({ wifiLog: [] }),
 
-  addNode: (type, position, data = {}) => set((state) => ({
-    nodes: [
-      ...state.nodes,
-      {
-        id: uuidv4(),
-        type: 'leap', // Use our custom generic node
-        position,
-        data: { ...data, type } // The real leap element type
-      }
-    ]
-  })),
+  addNode: (type, position, data = {}) => set((state) => {
+    const newNode = {
+      id: uuidv4(),
+      type: 'leap',
+      position,
+      data: { ...data, type }
+    };
+    const newNodes = [...state.nodes, newNode];
+    // Auto-switch engine when a board node is placed
+    const boardId = BOARD_NODE_TO_BOARD_ID[type];
+    if (boardId && boardId !== state.board) {
+      console.log(`[FORGE STORE] Board node "${type}" added → switching to "${boardId}"`);
+      simulationRunner.setBoard(boardId);
+      return { nodes: newNodes, board: boardId };
+    }
+    return { nodes: newNodes };
+  }),
 
-  removeNode: (id) => set((state) => ({
-    nodes: state.nodes.filter(n => n.id !== id),
-    edges: state.edges.filter(e => e.source !== id && e.target !== id),
-    selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId
-  })),
+  removeNode: (id) => set((state) => {
+    const removedNode = state.nodes.find(n => n.id === id);
+    const newNodes = state.nodes.filter(n => n.id !== id);
+    // If a board node was removed, detect remaining board or revert to default
+    let newBoard = state.board;
+    if (removedNode && BOARD_NODE_TO_BOARD_ID[removedNode.data?.type]) {
+      const detected = detectBoardFromNodes(newNodes);
+      newBoard = detected ?? 'arduino-uno';
+      if (newBoard !== state.board) {
+        console.log(`[FORGE STORE] Board node removed → switching to "${newBoard}"`);
+        simulationRunner.setBoard(newBoard);
+      }
+    }
+    return {
+      nodes: newNodes,
+      edges: state.edges.filter(e => e.source !== id && e.target !== id),
+      selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId,
+      board: newBoard,
+    };
+  }),
 
   updateNodePosition: (id, position) => set((state) => ({
     nodes: state.nodes.map(n => n.id === id ? { ...n, position } : n)
@@ -217,7 +257,16 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   clearWorkspace: () => set({ nodes: [], edges: [], selectedNodeId: null, selectedEdgeId: null }),
 
-  setNodes: (nodes) => set({ nodes }),
+  setNodes: (nodes) => set((state) => {
+    // Auto-detect board from loaded nodes
+    const detected = detectBoardFromNodes(nodes);
+    if (detected && detected !== state.board) {
+      console.log(`[FORGE STORE] setNodes: detected board "${detected}" → switching engine`);
+      simulationRunner.setBoard(detected);
+      return { nodes, board: detected };
+    }
+    return { nodes };
+  }),
   setEdges: (edges) => set({ edges }),
   setProjectName: (name) => set({ projectName: name }),
 }));

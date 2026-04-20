@@ -175,8 +175,18 @@ void loop() {
     }
   };
 
-  // The new SimulationEngine (Phase 1-5) manages the loop internally via useForgeStore!
-  // No need for duplicate useEffect mounts.
+  // Sync BoardSelector with canvas board node — if user places a board node,
+  // the store.board updates automatically; the selector just reflects it.
+  // If user changes selector manually, update the store (no canvas node change needed
+  // since CircuitEngine detects board type from the canvas node, not the store.board).
+
+  const handleBoardChange = (b: BoardType) => {
+    if (isSimulating) {
+      stopSimulation();
+      setWifiStatus('');
+    }
+    setBoard(b);
+  };
 
   return (
     <div className="forge-root dark" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -206,13 +216,7 @@ void loop() {
             {/* Board selector */}
             <BoardSelector
               selected={board as BoardType}
-              onChange={(b) => {
-                if (isSimulating) {
-                  stopSimulation();
-                  setWifiStatus('');
-                }
-                setBoard(b);
-              }}
+              onChange={handleBoardChange}
               disabled={isSimulating}
             />
 
