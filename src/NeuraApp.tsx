@@ -9,6 +9,12 @@ import EmptyStateIllustration from './components/neura/dashboard/EmptyStateIllus
 import ProjectCard from './components/neura/dashboard/ProjectCard';
 import CreateProjectModal from './components/neura/create-project/CreateProjectModal';
 import ImageClassifier from './components/neura/project-types/image-classifier/ImageClassifier';
+import ObjectDetection from './components/neura/project-types/object-detection/ObjectDetection';
+import PoseClassifier from './components/neura/project-types/pose-classifier/PoseClassifier';
+import HandPoseClassifier from './components/neura/project-types/hand-pose-classifier/HandPoseClassifier';
+import AudioClassifier from './components/neura/project-types/audio-classifier/AudioClassifier';
+import NumbersCR from './components/neura/project-types/numbers-cr/NumbersCR';
+import TextClassifier from './components/neura/project-types/text-classifier/TextClassifier';
 import { NeuraProject, ProjectType } from './types/neura.types';
 import './styles/neura-theme.css';
 
@@ -49,45 +55,19 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
     const renderProjectComponent = () => {
         switch (currentProjectType) {
             case 'image-classifier':
-                return <ImageClassifier />;
+                return <ImageClassifier onBack={handleBackToDashboard} />;
             case 'object-detection':
-                return (
-                    <div className="h-screen flex items-center justify-center bg-gray-50">
-                        <div className="text-center">
-                            <div className="text-6xl mb-4">🐱</div>
-                            <h2 className="text-2xl font-bold text-gray-800 mb-2">Object Detection</h2>
-                            <p className="text-gray-600">Coming soon...</p>
-                            <button
-                                onClick={handleBackToDashboard}
-                                className="mt-6 neura-button-primary"
-                            >
-                                ← Back to Dashboard
-                            </button>
-                        </div>
-                    </div>
-                );
+                return <ObjectDetection onBack={handleBackToDashboard} />;
             case 'pose-classifier':
+                return <PoseClassifier onBack={handleBackToDashboard} />;
             case 'hand-pose-classifier':
+                return <HandPoseClassifier onBack={handleBackToDashboard} />;
             case 'audio-classifier':
+                return <AudioClassifier onBack={handleBackToDashboard} />;
             case 'numbers-cr':
+                return <NumbersCR onBack={handleBackToDashboard} />;
             case 'text-classifier':
-                return (
-                    <div className="h-screen flex items-center justify-center bg-gray-50">
-                        <div className="text-center">
-                            <div className="text-6xl mb-4">🚧</div>
-                            <h2 className="text-2xl font-bold text-gray-800 mb-2 capitalize">
-                                {currentProjectType.replace('-', ' ')}
-                            </h2>
-                            <p className="text-gray-600">Coming soon...</p>
-                            <button
-                                onClick={handleBackToDashboard}
-                                className="mt-6 neura-button-primary"
-                            >
-                                ← Back to Dashboard
-                            </button>
-                        </div>
-                    </div>
-                );
+                return <TextClassifier onBack={handleBackToDashboard} />;
             default:
                 return null;
         }
@@ -98,17 +78,49 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
             {/* Dashboard view */}
             {view === 'dashboard' && (
                 <div className="h-full flex flex-col">
-                    {/* Top bar */}
-                    <div className="bg-[#6b21a8] text-white px-6 py-4 flex items-center justify-between shadow-lg">
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={onBack}
-                                className="hover:bg-white/20 p-2 rounded-lg transition-colors"
-                            >
-                                ← Back
-                            </button>
-                            <span className="text-2xl">🧠</span>
-                            <h1 className="font-semibold text-xl">Neura ML Studio</h1>
+                    {/* Top bar - Updated to match new design */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        height: '64px',
+                        padding: '0px 18px',
+                        background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
+                        boxShadow: 'rgba(8, 10, 37, 0.45) 0px 4px 20px, rgba(255, 255, 255, 0.06) 0px -1px 0px inset',
+                        zIndex: 100,
+                        borderBottom: '1px solid rgba(100, 180, 255, 0.1)',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {onBack && (
+                                <button
+                                    onClick={onBack}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '40px',
+                                        height: '40px',
+                                        background: 'rgba(255, 255, 255, 0.1)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        borderRadius: '12px',
+                                        color: '#fff',
+                                        cursor: 'pointer',
+                                        transition: '0.2s',
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+                                >
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                    </svg>
+                                </button>
+                            )}
+                            <div style={{ height: '32px', width: '1px', background: 'rgba(255, 255, 255, 0.1)' }}></div>
+                            <img src="assets/leaplab_logo_transparent.png" alt="LeapLab" style={{ height: '52px' }} />
+                            <div style={{ display: 'flex', flexDirection: 'column', marginLeft: '10px', lineHeight: '1.1' }}>
+                                <span style={{ color: '#FFD500', fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.18em' }}>LEAPLAB</span>
+                                <span style={{ color: '#fff', fontSize: '16px', fontWeight: 900, letterSpacing: '0.08em' }}>NEURA ML</span>
+                            </div>
                         </div>
                     </div>
 
