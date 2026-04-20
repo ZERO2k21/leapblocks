@@ -437,7 +437,7 @@ class CircuitEngine {
           const esp32Mapping = simulationRunner.convertESP32Pin(arduinoPinName);
           if (!esp32Mapping) return;
           pinId = esp32Mapping.avrPin;
-          console.log(`[FORGE CIRCUIT] ESP32 Wired: Board[${arduinoPinName}→${pinId}] <==> Peripheral[${peripheralPinName}]`);
+          console.log(`[FORGE CIRCUIT 7SEG] ESP32 Wired: Board[${arduinoPinName}→${pinId}] <==> Peripheral[${peripheralPinName}] (${pType})`);
         } else {
           const mapping = simulationRunner.convertArduinoPin(arduinoPinName);
           if (!mapping) return;
@@ -464,6 +464,12 @@ class CircuitEngine {
 
           // Identify peripheral type once
           const pType = currentStateStore.nodes.find(n => n.id === peripheralId)?.data?.type;
+
+          // Log 7-segment related activity
+          if (pType === '7segment') {
+            console.log(`[CIRCUIT 7SEG] Listener triggered: ${avrPin} = ${state}, peripheral pin: ${peripheralPinName}`);
+          }
+
           const isComplexPeripheral = ['stepper-motor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
             'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5',
             '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711'].includes(pType);
@@ -599,12 +605,15 @@ class CircuitEngine {
             if (peripheralNode.data?.type === '7segment') {
               const buffer = this.peripheralPinBuffers.get(peripheralId)!;
               buffer[peripheralPinName] = isHigh;
+              console.log(`[7SEG] Pin ${peripheralPinName} = ${isHigh ? 'HIGH' : 'LOW'}, buffer:`, buffer);
 
               const segOrder = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'DP'];
               const values = segOrder.map(seg => (buffer[seg] ? 1 : 0));
               const currentValues = peripheralNode.data?.segValues;
+              console.log(`[7SEG] Computed values:`, values, 'current:', currentValues);
               // Only update if something changed
               if (!currentValues || values.some((v, i) => v !== currentValues[i])) {
+                console.log(`[7SEG] Updating node ${peripheralId} with segValues:`, values);
                 updateNodeData(peripheralId, { segValues: values });
               }
             }
@@ -948,6 +957,12 @@ class CircuitEngine {
 
         // Attach to the simulation runner
         simulationRunner.addListener(avrPin, listener);
+
+        // Log 7-segment listener registration
+        const pType = nodes.find(n => n.id === peripheralId)?.data?.type;
+        if (pType === '7segment') {
+          console.log(`[CIRCUIT 7SEG] Registered listener for ${avrPin} → peripheral pin ${peripheralPinName}`);
+        }
 
         // For NeoPixel DIN pins: also attach a RAW listener that fires on every edge
         // (WS2812B protocol requires every HIGH/LOW transition, dedup breaks it)

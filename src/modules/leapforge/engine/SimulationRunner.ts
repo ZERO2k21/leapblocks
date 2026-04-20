@@ -13,7 +13,7 @@ import { parseHexString } from './HexParser';
 import { BLINK_HEX } from './TestSketches';
 import { USARTEmulator } from './USARTEmulator';
 import { BOARDS, MCUConfig } from './BoardConfig';
-import { ESP32Engine } from './esp32/ESP32Engine';
+import { ESP32Engine, injectStoreRef } from './esp32/ESP32Engine';
 
 /** Board IDs that use the ESP32 engine instead of AVR */
 const ESP32_BOARDS = new Set(['esp32', 'esp32-devkit-v1', 'esp32-s2', 'esp32-s3', 'esp32-c3']);
@@ -341,6 +341,11 @@ class SimulationRunner {
     const currentState = this.pinStates.get(pinId);
     if (currentState === state) return;
 
+    // Log 7-segment related pin changes
+    if (pinId.startsWith('ESP')) {
+      console.log(`[SIM RUNNER 7SEG] setPinState: ${pinId} = ${state} (was ${currentState})`);
+    }
+
     this.pinStates.set(pinId, state);
     this.notifyListeners(pinId, state);
   }
@@ -388,7 +393,13 @@ class SimulationRunner {
   private notifyListeners(pinId: string, state: PinState) {
     const set = this.listeners.get(pinId);
     if (set) {
+      // Log when ESP32 pins have listeners
+      if (pinId.startsWith('ESP')) {
+        console.log(`[SIM RUNNER 7SEG] notifyListeners: ${pinId} = ${state}, ${set.size} listeners`);
+      }
       set.forEach(l => l(state));
+    } else if (pinId.startsWith('ESP')) {
+      console.log(`[SIM RUNNER 7SEG] No listeners for ${pinId} = ${state}`);
     }
   }
 

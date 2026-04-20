@@ -26,7 +26,12 @@ export interface ESP32EngineOptions extends NetworkBridgeOptions {
 let _runnerRef: { setPinState: (id: string, state: PinState) => void; getPinState: (id: string) => PinState; getESP32AnalogVoltage: (gpio: number) => number } | null = null;
 
 // Cache the store reference for synchronous reads (sensor values, node data)
-let _storeRef: { getState: () => { nodes: any[] } } | null = null;
+let _storeRef: { getState: () => { nodes: any[]; updateNodeData: (id: string, data: any) => void } } | null = null;
+
+/** Inject the store reference synchronously — called by SimulationRunner before engine.init() */
+export function injectStoreRef(store: { getState: () => { nodes: any[]; updateNodeData: (id: string, data: any) => void } }): void {
+    _storeRef = store;
+}
 
 function resolveRunner(): void {
     if (_runnerRef) return;
@@ -44,16 +49,7 @@ function resolveStore(): void {
 
 /** Read a sensor node's sensorValues synchronously — always reads live store state */
 function getSensorValue(type: string, key: string, fallback: number): number {
-    // Ensure store ref is populated
-    if (!_storeRef) {
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            const mod = require('../../store/useForgeStore');
-            _storeRef = mod.useForgeStore ?? mod.default;
-        } catch { /* ignore */ }
-    }
     if (!_storeRef) return fallback;
-
     // Always read fresh state (not cached) so slider changes are reflected immediately
     const nodes = (_storeRef as any).getState().nodes as any[];
     const node = nodes.find((n: any) => n.data?.type === type);
@@ -66,11 +62,13 @@ function getSensorValue(type: string, key: string, fallback: number): number {
 
 /** Drive an ESP32 GPIO pin state into SimulationRunner synchronously once resolved */
 function setESP32Pin(gpio: number, high: boolean): void {
+    console.log(`[ESP32 7SEG] setESP32Pin: ESP${gpio} = ${high ? 'HIGH' : 'LOW'}`);
     if (_runnerRef) {
         _runnerRef.setPinState(`ESP${gpio}`, high ? 'HIGH' : 'LOW');
     } else {
         import('../SimulationRunner').then(({ simulationRunner }) => {
             _runnerRef = simulationRunner;
+            console.log(`[ESP32 7SEG] Late setPinState: ESP${gpio} = ${high ? 'HIGH' : 'LOW'}`);
             simulationRunner.setPinState(`ESP${gpio}`, high ? 'HIGH' : 'LOW');
         });
     }
@@ -87,12 +85,13 @@ function floatESP32Pin(gpio: number): void {
     }
 }
 
-/** Get store state synchronously — uses cached ref, falls back to dynamic import */
+/** Get store state synchronously — uses injected ref (set before engine starts) */
 function withStore(fn: (nodes: any[], updateNodeData: (id: string, data: any) => void) => void): void {
     if (_storeRef) {
         const { nodes, updateNodeData } = (_storeRef as any).getState();
         fn(nodes, updateNodeData);
     } else {
+        // Fallback: dynamic import (only on very first call before injection)
         import('../../store/useForgeStore').then(({ useForgeStore }) => {
             _storeRef = useForgeStore;
             const { nodes, updateNodeData } = useForgeStore.getState();
@@ -161,20 +160,34 @@ class SketchStub {
     }
 
     private drivePin(gpio: number, high: boolean): void {
+        console.log(`[ESP32 7SEG] drivePin: GPIO${gpio} = ${high ? 'HIGH' : 'LOW'}`);
         this.touchedPins.add(gpio);
         setESP32Pin(gpio, high);
     }
 
     private parseAndSchedule(): void {
         const src = this.source;
+        console.log('[ESP32 Stub] parseAndSchedule() — source length:', src.length);
 
         // ── Resolve #define / const constants ────────────────────────────────
+        // Strip single-line comments first to avoid matching commented-out defines
+        const srcNoComments = src.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
         const defines = new Map<string, number>();
-        for (const m of src.matchAll(/#define\s+(\w+)\s+(\d+)/g)) {
+        for (const m of srcNoComments.matchAll(/#define\s+(\w+)\s+(\d+)/g)) {
             defines.set(m[1], parseInt(m[2], 10));
         }
-        for (const m of src.matchAll(/(?:const\s+\w+|int|uint8_t)\s+(\w+)\s*=\s*(\d+)/g)) {
+        for (const m of srcNoComments.matchAll(/(?:const\s+\w+|int|uint8_t)\s+(\w+)\s*=\s*(\d+)/g)) {
             defines.set(m[1], parseInt(m[2], 10));
+        }
+        console.log('[ESP32 Stub] defines:', [...defines.entries()].map(([k, v]) => `${k}=${v}`).join(', '));
+
+        // ── Parse String variables: String name = "text" ──────────────────────
+        const strings = new Map<string, string>();
+        for (const m of srcNoComments.matchAll(/String\s+(\w+)\s*=\s*["']([^"']*)["']/g)) {
+            strings.set(m[1], m[2]);
+        }
+        if (strings.size > 0) {
+            console.log('[ESP32 Stub] strings:', [...strings.entries()].map(([k, v]) => `${k}="${v}"`).join(', '));
         }
 
         const resolvePin = (token: string): number | null => {
@@ -182,6 +195,97 @@ class SketchStub {
             if (!isNaN(n)) return n;
             const v = defines.get(token);
             return v !== undefined ? v : null;
+        };
+
+        // ── Parse array declarations: int leds[] = {13, 12, 14, ...} ─────────
+        const arrays = new Map<string, number[]>(); // name → values
+        for (const m of srcNoComments.matchAll(/(?:int|uint8_t|byte)\s+(\w+)\s*\[\s*\]\s*=\s*\{([^}]+)\}/g)) {
+            const name = m[1];
+            const values = m[2].split(',').map(v => parseInt(v.trim(), 10)).filter(n => !isNaN(n));
+            arrays.set(name, values);
+        }
+        if (arrays.size > 0) {
+            console.log('[ESP32 Stub] arrays:', [...arrays.entries()].map(([k, v]) => `${k}=[${v.join(',')}]`).join(', '));
+        }
+
+        /** Resolve array[index] access */
+        const resolveArrayAccess = (expr: string): number | null => {
+            const m = expr.match(/^(\w+)\s*\[\s*(\d+)\s*\]$/);
+            if (m) {
+                const arr = arrays.get(m[1]);
+                const idx = parseInt(m[2], 10);
+                if (arr && idx >= 0 && idx < arr.length) return arr[idx];
+            }
+            return null;
+        };
+
+        /** Resolve pin — handles literals, defines, and array[n] access */
+        const resolvePinFull = (token: string): number | null => {
+            const direct = resolvePin(token);
+            if (direct !== null) return direct;
+            return resolveArrayAccess(token);
+        };
+
+        /**
+         * Expand a for loop body by unrolling it.
+         * Handles: for (int i = start; i < end; i++) { body }
+         * Returns the unrolled body as a string, or null if not parseable.
+         */
+        const expandForLoop = (forLine: string, body: string): string | null => {
+            // Match: for (int i = START; i < END; i++) or for (int i = START; i >= END; i--)
+            const m = forLine.match(/for\s*\(\s*(?:int|uint8_t|byte)?\s*(\w+)\s*=\s*(-?\d+|\w+(?:\s*[-+]\s*\d+)?)\s*;\s*\1\s*([<>]=?)\s*(-?\d+|\w+(?:\s*[-+]\s*\d+)?|[\w.]+\(\s*\))\s*;\s*\1\s*(\+\+|--|\+=\s*\d+|-=\s*\d+)\s*\)/);
+            if (!m) return null;
+
+            const varName = m[1];
+
+            // Resolve an expression like "totalLEDs - 1", "8", or "strip.numPixels()"
+            const resolveExpr = (expr: string): number => {
+                const trimmed = expr.trim();
+                // strip.numPixels() / pixels.numPixels() — use LED_COUNT define or fallback 16
+                if (/\w+\.numPixels\s*\(\s*\)/.test(trimmed)) {
+                    return defines.get('LED_COUNT') ?? defines.get('NUM_LEDS') ?? defines.get('NUMPIXELS') ?? 16;
+                }
+                // name.length() — resolve from strings map
+                const lenMatch = trimmed.match(/^(\w+)\.length\s*\(\s*\)$/);
+                if (lenMatch) {
+                    const str = strings.get(lenMatch[1]);
+                    if (str !== undefined) return str.length;
+                    return 0;
+                }
+                // Simple arithmetic: X OP N
+                const arith = trimmed.match(/^(\w+)\s*([-+])\s*(\d+)$/);
+                if (arith) {
+                    const base = resolvePin(arith[1]) ?? 0;
+                    const n = parseInt(arith[3], 10);
+                    return arith[2] === '-' ? base - n : base + n;
+                }
+                return resolvePin(trimmed) ?? 0;
+            };
+
+            let start = resolveExpr(m[2]);
+            const op = m[3];
+            let end = resolveExpr(m[4]);
+            const step = m[5].includes('--') ? -1 : m[5].includes('-=') ? -(parseInt(m[5].replace('-=', '').trim()) || 1) : (parseInt(m[5].replace('+=', '').trim()) || 1);
+
+            const iterations: string[] = [];
+            let i = start;
+            let safety = 0;
+            while (safety++ < 200) {
+                const cond = op === '<' ? i < end : op === '<=' ? i <= end : op === '>' ? i > end : op === '>=' ? i >= end : false;
+                if (!cond) break;
+                // Substitute loop variable in body — also resolve array[i] access
+                let iterBody = body.replace(new RegExp(`\\b${varName}\\b`, 'g'), String(i));
+                // Resolve array[literal] access: leds[13] → 13 (the value at that index)
+                iterBody = iterBody.replace(/(\w+)\[(\d+)\]/g, (_match, arrName, idxStr) => {
+                    const arr = arrays.get(arrName);
+                    const idx = parseInt(idxStr, 10);
+                    if (arr && idx >= 0 && idx < arr.length) return String(arr[idx]);
+                    return _match;
+                });
+                iterations.push(iterBody);
+                i += step;
+            }
+            return iterations.join('\n');
         };
 
         // ── Build LEDC channel → GPIO pin map from ledcSetup/ledcAttachPin ──
@@ -202,7 +306,8 @@ class SketchStub {
 
         // ── Extract a function body by name ───────────────────────────────────
         const extractBody = (fnName: string): string => {
-            const re = new RegExp(`void\\s+${fnName}\\s*\\(\\s*\\)\\s*\\{`);
+            // Match both parameterless and parameterized functions
+            const re = new RegExp(`(?:void|uint32_t|int|long|float)\\s+${fnName}\\s*\\([^)]*\\)\\s*\\{`);
             const m = src.match(re);
             if (!m || m.index === undefined) return '';
             let depth = 0;
@@ -226,7 +331,7 @@ class SketchStub {
             | 'varAssign' | 'printVar' | 'neopixelSet' | 'neopixelShow'
             | 'dhtRead'
             // ── New sensor actions ────────────────────────────────────────
-            | 'lcdPrint' | 'lcdClear' | 'lcdSetCursor'
+            | 'lcdPrint' | 'lcdClear' | 'lcdSetCursor' | 'lcdInit' | 'lcdBacklight' | 'lcdPrintExpr'
             | 'oledClear' | 'oledPrint' | 'oledDisplay'
             | 'stepperStep' | 'stepperSetSpeed' | 'stepperSetDir'
             | 'tonePlay' | 'toneStop'
@@ -245,6 +350,7 @@ class SketchStub {
             dhtType?: 'temp' | 'humidity';
             // lcd
             col?: number; row?: number;
+            lcdExpr?: string;  // raw expression for lcdPrintExpr (e.g. name.substring(i, i+16))
             // stepper
             steps?: string; speed?: string; dir?: string;
             // tone
@@ -266,15 +372,74 @@ class SketchStub {
         // ── Parse a function body into an ordered action list ─────────────────
         const parseActions = (body: string): Action[] => {
             const result: Action[] = [];
-            const lines = body.split(/[;\n]/).map(l => l.trim()).filter(Boolean);
+
+            // Pre-process: expand for loops before line-by-line parsing
+            const expandForLoops = (src: string): string => {
+                let out = src;
+                // Match for(...) { body } — use balanced-paren scan to handle
+                // conditions like name.length() or strip.numPixels() inside the for header
+                let searchFrom = 0;
+                while (true) {
+                    const forIdx = out.indexOf('for', searchFrom);
+                    if (forIdx === -1) break;
+
+                    // Skip if 'for' is part of a longer word
+                    const charBefore = forIdx > 0 ? out[forIdx - 1] : ' ';
+                    if (/\w/.test(charBefore)) { searchFrom = forIdx + 1; continue; }
+
+                    // Find the opening paren of the for(...)
+                    let k = forIdx + 3;
+                    while (k < out.length && out[k] === ' ') k++;
+                    if (out[k] !== '(') { searchFrom = forIdx + 1; continue; }
+
+                    // Scan to find the matching closing paren of for(...)
+                    let depth = 1;
+                    let headerEnd = k + 1;
+                    while (headerEnd < out.length && depth > 0) {
+                        if (out[headerEnd] === '(') depth++;
+                        else if (out[headerEnd] === ')') depth--;
+                        headerEnd++;
+                    }
+                    // headerEnd now points just past the closing ')'
+
+                    // Skip whitespace to find '{'
+                    let braceIdx = headerEnd;
+                    while (braceIdx < out.length && /\s/.test(out[braceIdx])) braceIdx++;
+                    if (out[braceIdx] !== '{') { searchFrom = forIdx + 1; continue; }
+
+                    const forLine = out.slice(forIdx, headerEnd).trim();
+                    const bodyStart = braceIdx + 1;
+                    let bdepth = 1, j = bodyStart;
+                    while (j < out.length && bdepth > 0) {
+                        if (out[j] === '{') bdepth++;
+                        else if (out[j] === '}') bdepth--;
+                        j++;
+                    }
+                    const loopBody = out.slice(bodyStart, j - 1);
+                    const expanded = expandForLoop(forLine, loopBody);
+                    if (expanded !== null) {
+                        out = out.slice(0, forIdx) + expanded + out.slice(j);
+                        searchFrom = forIdx; // re-scan from same position
+                    } else {
+                        searchFrom = forIdx + 1;
+                    }
+                }
+                return out;
+            };
+
+            const expandedBody = expandForLoops(body);
+            const lines = expandedBody.split(/[;\n]/).map(l => l.trim()).filter(Boolean);
             for (const line of lines) {
                 if (line.startsWith('//') || line.startsWith('/*')) continue;
 
                 // ── digitalWrite ──────────────────────────────────────────────
-                const dw = line.match(/\bdigitalWrite\s*\(\s*(\w+)\s*,\s*(HIGH|LOW|1|0)\s*\)/);
+                const dw = line.match(/\bdigitalWrite\s*\(\s*([^,]+?)\s*,\s*(HIGH|LOW|1|0)\s*\)/);
                 if (dw) {
-                    const gpio = resolvePin(dw[1]);
-                    if (gpio !== null) result.push({ type: 'digitalWrite', gpio, high: dw[2] === 'HIGH' || dw[2] === '1' });
+                    const gpio = resolvePinFull(dw[1].trim());
+                    if (gpio !== null) {
+                        console.log(`[ESP32 7SEG] Parsed digitalWrite: pin ${dw[1].trim()} → GPIO${gpio} = ${dw[2]}`);
+                        result.push({ type: 'digitalWrite', gpio, high: dw[2] === 'HIGH' || dw[2] === '1' });
+                    }
                     continue;
                 }
 
@@ -440,10 +605,33 @@ class SketchStub {
                 // The pulseIn() handler reads distance directly from the sensor node
 
                 // ── LCD: lcd.print("text") / lcd.setCursor(col,row) / lcd.clear() ──
+                // lcd.init() / lcd.begin() / lcd.begin(cols, rows) — initialise display
+                if (/\w+\.init\s*\(\s*\)/.test(line) || /\w+\.begin\s*\(/.test(line)) {
+                    // Skip Wire.begin() — it has arguments and is not an LCD call
+                    if (!/Wire\.begin/.test(line)) {
+                        result.push({ type: 'lcdInit' }); continue;
+                    }
+                }
+                // lcd.backlight() / lcd.noBacklight()
+                if (/\w+\.backlight\s*\(\s*\)/.test(line)) { result.push({ type: 'lcdBacklight' }); continue; }
+
                 const lcdPrint = line.match(/\w+\.print\s*\(\s*["']([^"']*)['"]\s*\)/);
                 if (lcdPrint) { result.push({ type: 'lcdPrint', text: lcdPrint[1] }); continue; }
-                const lcdPrintVar = line.match(/\w+\.print\s*\(\s*(\w+)\s*\)/);
-                if (lcdPrintVar && lcdPrintVar[1] !== 'Serial') { result.push({ type: 'lcdPrint', varName: lcdPrintVar[1] }); continue; }
+
+                // lcd.print(name.substring(i, i+16)) — complex expression
+                const lcdPrintExpr = line.match(/\w+\.print\s*\((.+)\)/);
+                if (lcdPrintExpr) {
+                    const expr = lcdPrintExpr[1].trim();
+                    // Simple variable: lcd.print(varName)
+                    if (/^\w+$/.test(expr) && expr !== 'Serial') {
+                        result.push({ type: 'lcdPrint', varName: expr });
+                    } else {
+                        // Complex expression — store raw for runtime evaluation
+                        result.push({ type: 'lcdPrintExpr', lcdExpr: expr });
+                    }
+                    continue;
+                }
+
                 const lcdCursor = line.match(/\w+\.setCursor\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)/);
                 if (lcdCursor) { result.push({ type: 'lcdSetCursor', col: parseInt(lcdCursor[1]), row: parseInt(lcdCursor[2]) }); continue; }
                 if (/\w+\.clear\s*\(\s*\)/.test(line) && !/oled|display|u8g/i.test(line)) {
@@ -551,9 +739,11 @@ class SketchStub {
 
                 case 'printVar': {
                     const v = resolveValue(action.varName!);
-                    // Round to 2 decimal places for cleaner output
-                    const text = v !== null
-                        ? (Number.isInteger(v) ? String(v) : String(Math.round(v * 100) / 100))
+                    // Also try array access resolution (e.g. leds[0])
+                    const arrVal = v === null ? resolveArrayAccess(action.varName!) : null;
+                    const resolved = v !== null ? v : arrVal;
+                    const text = resolved !== null
+                        ? (Number.isInteger(resolved) ? String(resolved) : String(Math.round(resolved * 100) / 100))
                         : action.varName!;
                     this.emit(action.newline ? text + '\n' : text);
                     break;
@@ -575,14 +765,17 @@ class SketchStub {
                     const clamped = Math.max(0, Math.min(180, angle));
                     withStore((nodes, updateNodeData) => {
                         const servoNode = nodes.find((n: any) => n.data?.type === 'servo');
-                        if (servoNode) updateNodeData(servoNode.id, { angle: clamped });
+                        if (!servoNode) return;
+                        // Only update if angle actually changed (avoid flooding store)
+                        if (servoNode.data?.angle === clamped) return;
+                        updateNodeData(servoNode.id, { angle: clamped });
                     });
                     break;
                 }
 
                 case 'neopixelSet': {
                     const idx = Math.round(resolveValue(action.pixelIndex!) ?? 0);
-                    // Resolve r/g/b — may be direct values or __packed_r/g/b_ markers
+                    const fillAll = action.pixelIndex === '__all';
                     const r = Math.round(resolveValue(action.r!) ?? runtimeVars.get(action.r!) ?? 0);
                     const g = Math.round(resolveValue(action.g!) ?? runtimeVars.get(action.g!) ?? 0);
                     const b = Math.round(resolveValue(action.b!) ?? runtimeVars.get(action.b!) ?? 0);
@@ -590,13 +783,44 @@ class SketchStub {
                         const neoNode = nodes.find((n: any) =>
                             n.data?.type === 'neopixel' || n.data?.type === 'neopixel-matrix' || n.data?.type === 'led-ring'
                         );
-                        if (!neoNode) return;
-                        if (neoNode.data?.type === 'neopixel' && idx === 0) {
+                        if (!neoNode) {
+                            console.warn('[ESP32 NeoPixel] No neopixel node found in store!');
+                            return;
+                        }
+                        const neoType = neoNode.data?.type;
+
+                        if (neoType === 'neopixel') {
+                            // Single NeoPixel — always update with the current color
                             updateNodeData(neoNode.id, { neopixelR: r / 255, neopixelG: g / 255, neopixelB: b / 255 });
-                        } else {
-                            const pixels = [...(neoNode.data?.neopixelPixels ?? [])];
-                            pixels[idx] = { r, g, b };
-                            updateNodeData(neoNode.id, { neopixelPixels: pixels });
+
+                        } else if (neoType === 'led-ring') {
+                            const count = neoNode.data?.pixels ?? 16;
+                            if (fillAll) {
+                                // Fill ALL pixels
+                                const pixels = Array.from({ length: count }, () => ({ r, g, b }));
+                                updateNodeData(neoNode.id, { neopixelPixels: pixels });
+                            } else {
+                                // Update specific pixel (colorWipe style)
+                                const pixels = [...(neoNode.data?.neopixelPixels ?? Array.from({ length: count }, () => ({ r: 0, g: 0, b: 0 })))];
+                                if (idx < count) pixels[idx] = { r, g, b };
+                                updateNodeData(neoNode.id, { neopixelPixels: [...pixels] });
+                            }
+
+                        } else if (neoType === 'neopixel-matrix') {
+                            const rows = neoNode.data?.rows ?? 8;
+                            const cols = neoNode.data?.cols ?? 8;
+                            const total = rows * cols;
+
+                            if (fillAll) {
+                                // Fill entire matrix with this color
+                                const pixels = Array.from({ length: total }, () => ({ r, g, b }));
+                                updateNodeData(neoNode.id, { neopixelPixels: pixels });
+                            } else {
+                                // Update specific pixel
+                                const pixels = [...(neoNode.data?.neopixelPixels ?? Array.from({ length: total }, () => ({ r: 0, g: 0, b: 0 })))];
+                                if (idx < total) pixels[idx] = { r, g, b };
+                                updateNodeData(neoNode.id, { neopixelPixels: pixels });
+                            }
                         }
                     });
                     break;
@@ -605,6 +829,43 @@ class SketchStub {
                 case 'neopixelShow': break;
 
                 // ── LCD ───────────────────────────────────────────────────────
+                case 'lcdInit': {
+                    // Initialise LCD: turn on backlight, clear display
+                    withStore((nodes, updateNodeData) => {
+                        const lcd = nodes.find((n: any) =>
+                            n.data?.type === 'lcd1602' || n.data?.type === 'lcd2004' ||
+                            n.data?.type === 'lcd1602-i2c' || n.data?.type === 'lcd2004-i2c'
+                        );
+                        if (lcd) {
+                            const cols = (lcd.data?.type === 'lcd2004' || lcd.data?.type === 'lcd2004-i2c') ? 20 : 16;
+                            const rows = (lcd.data?.type === 'lcd2004' || lcd.data?.type === 'lcd2004-i2c') ? 4 : 2;
+                            console.log(`[LCD] lcdInit: found node id=${lcd.id} type=${lcd.data?.type} cols=${cols} rows=${rows}`);
+                            updateNodeData(lcd.id, {
+                                lcdState: {
+                                    characters: new Array(cols * rows).fill(32),
+                                    cursorX: 0, cursorY: 0,
+                                    cursor: false, blink: false, backlight: true
+                                }
+                            });
+                        } else {
+                            console.warn('[LCD] lcdInit: no LCD node found! nodes:', nodes.map((n: any) => n.data?.type).join(', '));
+                        }
+                    });
+                    break;
+                }
+                case 'lcdBacklight': {
+                    withStore((nodes, updateNodeData) => {
+                        const lcd = nodes.find((n: any) =>
+                            n.data?.type === 'lcd1602' || n.data?.type === 'lcd2004' ||
+                            n.data?.type === 'lcd1602-i2c' || n.data?.type === 'lcd2004-i2c'
+                        );
+                        if (lcd) {
+                            const prev = lcd.data?.lcdState ?? {};
+                            updateNodeData(lcd.id, { lcdState: { ...prev, backlight: true } });
+                        }
+                    });
+                    break;
+                }
                 case 'lcdClear': {
                     withStore((nodes, updateNodeData) => {
                         const lcd = nodes.find((n: any) => n.data?.type === 'lcd1602' || n.data?.type === 'lcd2004' || n.data?.type === 'lcd1602-i2c' || n.data?.type === 'lcd2004-i2c');
@@ -636,12 +897,116 @@ class SketchStub {
                             if (pos < chars.length) chars[pos++] = ch.charCodeAt(0);
                         }
                         runtimeVars.set('__lcdCol', Math.min(col + text.length, cols - 1));
-                        updateNodeData(lcd.id, { lcdState: { ...prev, characters: chars } });
+                        updateNodeData(lcd.id, {
+                            lcdState: {
+                                characters: chars,
+                                cursorX: col,
+                                cursorY: row,
+                                cursor: prev.cursor ?? false,
+                                blink: prev.blink ?? false,
+                                backlight: true,
+                            }
+                        });
                     });
                     break;
                 }
 
-                // ── OLED ──────────────────────────────────────────────────────
+                case 'lcdPrintExpr': {
+                    // Evaluate complex expressions like name.substring(i, i+16)
+                    const expr = action.lcdExpr ?? '';
+                    let text = '';
+
+                    // name.substring(start, end) — extract substring from strings map
+                    const substrMatch = expr.match(/^(\w+)\.substring\s*\(\s*(.+?)\s*,\s*(.+?)\s*\)$/);
+                    if (substrMatch) {
+                        console.log(`[LCD] substrMatch: varName="${substrMatch[1]}" arg1="${substrMatch[2]}" arg2="${substrMatch[3]}"`);
+                        const strVar = strings.get(substrMatch[1]) ?? '';
+                        // Evaluate start/end — may be expressions like "i+16" or "0 + 16"
+                        const evalExpr = (e: string): number => {
+                            const trimmed = e.trim();
+                            console.log(`[LCD evalExpr] evaluating "${trimmed}"`);
+
+                            // Check if it contains arithmetic operators first
+                            const arith = trimmed.match(/^(.+?)\s*([+\-*/])\s*(.+?)$/);
+                            if (arith) {
+                                const leftStr = arith[1].trim();
+                                const op = arith[2];
+                                const rightStr = arith[3].trim();
+                                console.log(`[LCD evalExpr] arithmetic: left="${leftStr}" op="${op}" right="${rightStr}"`);
+
+                                // Try to resolve both sides (handles variables, defines, and literals)
+                                let a = resolveValue(leftStr);
+                                if (a === null) a = parseFloat(leftStr);
+
+                                let b = resolveValue(rightStr);
+                                if (b === null) b = parseFloat(rightStr);
+
+                                console.log(`[LCD evalExpr] → a=${a}, b=${b}`);
+
+                                if (!isNaN(a) && !isNaN(b)) {
+                                    const result = op === '+' ? a + b : op === '-' ? a - b : op === '*' ? a * b : b ? a / b : 0;
+                                    console.log(`[LCD evalExpr] → result=${result}`);
+                                    return result;
+                                }
+                            }
+
+                            // No arithmetic - try direct resolution
+                            const simple = resolveValue(trimmed);
+                            if (simple !== null) {
+                                console.log(`[LCD evalExpr] → direct resolve: ${simple}`);
+                                return simple;
+                            }
+
+                            console.log(`[LCD evalExpr] → fallback to 0`);
+                            return 0;
+                        };
+                        const start = evalExpr(substrMatch[2]);
+                        const end = evalExpr(substrMatch[3]);
+                        text = strVar.substring(start, end);
+                        console.log(`[LCD] expr="${expr}" → strVar="${strVar}" start=${start} end=${end} text="${text}"`);
+                    } else {
+                        console.warn(`[LCD] lcdPrintExpr: no substrMatch for expr="${expr}"`);
+                        // Fallback: try resolving as a variable
+                        const v = resolveValue(expr);
+                        text = v !== null ? String(v) : expr;
+                    }
+
+                    withStore((nodes, updateNodeData) => {
+                        const lcd = nodes.find((n: any) =>
+                            n.data?.type === 'lcd1602' || n.data?.type === 'lcd2004' ||
+                            n.data?.type === 'lcd1602-i2c' || n.data?.type === 'lcd2004-i2c'
+                        );
+                        if (!lcd) {
+                            console.warn('[LCD] lcdPrintExpr: no LCD node found! nodes:', nodes.map((n: any) => n.data?.type).join(', '));
+                            return;
+                        }
+                        const cols = (lcd.data?.type === 'lcd2004' || lcd.data?.type === 'lcd2004-i2c') ? 20 : 16;
+                        const rows = (lcd.data?.type === 'lcd2004' || lcd.data?.type === 'lcd2004-i2c') ? 4 : 2;
+                        const prev = lcd.data?.lcdState ?? {};
+                        const chars: number[] = prev.characters ? [...prev.characters] : new Array(cols * rows).fill(32);
+                        const col = runtimeVars.get('__lcdCol') ?? 0;
+                        const row = runtimeVars.get('__lcdRow') ?? 0;
+                        let pos = row * cols + col;
+                        // Pad/truncate to fill the row
+                        const padded = text.padEnd(cols, ' ').slice(0, cols);
+                        for (const ch of padded) {
+                            if (pos < chars.length) chars[pos++] = ch.charCodeAt(0);
+                        }
+                        console.log(`[LCD] updateNodeData id=${lcd.id} type=${lcd.data?.type} col=${col} row=${row} text="${text}"`);
+                        // Always write a complete lcdState so LeapNode has all required fields
+                        updateNodeData(lcd.id, {
+                            lcdState: {
+                                characters: chars,
+                                cursorX: col,
+                                cursorY: row,
+                                cursor: prev.cursor ?? false,
+                                blink: prev.blink ?? false,
+                                backlight: true,
+                            }
+                        });
+                    });
+                    break;
+                }
                 case 'oledClear': {
                     withStore((nodes, updateNodeData) => {
                         const oled = nodes.find((n: any) => n.data?.type === 'ssd1306');
@@ -759,9 +1124,109 @@ class SketchStub {
         }
 
         // ── Run setup() once immediately ──────────────────────────────────────
-        const setupActions = parseActions(extractBody('setup'));
-        // Execute setup actions sequentially with their delays
+        // inlineUserFunctions is defined below but we need it here — use a forward ref
+        // Solution: define inlineUserFunctions first, then parse setup
+        // (moved to after inlineUserFunctions definition — see below)
+        const setupActionsHolder: Action[] = [];
         let setupDelay = 0;
+
+        // ── Schedule loop() to repeat ─────────────────────────────────────────
+        // Inline user-defined functions called from loop() with argument substitution
+        const inlineUserFunctions = (body: string): string => {
+            // Match all user-defined functions (void or returning a value, with any params)
+            const fnDefRegex = /(?:void|uint32_t|int|long|float)\s+(\w+)\s*\(([^)]*)\)\s*\{/g;
+            let m: RegExpExecArray | null;
+            const userFns = new Map<string, { params: string[]; body: string }>();
+
+            while ((m = fnDefRegex.exec(src)) !== null) {
+                const fnName = m[1];
+                if (fnName === 'setup' || fnName === 'loop') continue;
+                // Extract parameter names (last word of each "type name" pair)
+                const params = m[2]
+                    .split(',')
+                    .map(p => p.trim().split(/\s+/).pop()!)
+                    .filter(Boolean);
+                const fnBody = extractBody(fnName);
+                if (fnBody) {
+                    userFns.set(fnName, { params, body: fnBody });
+                    console.log(`[ESP32 Stub] Found user fn: ${fnName}(${params.join(', ')}) — body length: ${fnBody.length}`);
+                }
+            }
+
+            let result = body;
+            userFns.forEach(({ params, body: fnBody }, fnName) => {
+                // Match calls: fnName(arg1, arg2, ...) — args may contain nested parens like strip.Color(r,g,b)
+                // Use a simple approach: match fnName( then capture until balanced )
+                const callRe = new RegExp(`\\b${fnName}\\s*\\(`, 'g');
+                result = result.replace(callRe, (openMatch, offset) => {
+                    // Find the matching closing paren
+                    const afterOpen = result.slice(offset + openMatch.length);
+                    let depth = 1;
+                    let j = 0;
+                    while (j < afterOpen.length && depth > 0) {
+                        if (afterOpen[j] === '(') depth++;
+                        else if (afterOpen[j] === ')') depth--;
+                        j++;
+                    }
+                    return openMatch; // return unchanged — we handle below
+                });
+
+                // Simpler: regex that captures args including nested parens up to 2 levels
+                const callRe2 = new RegExp(
+                    `\\b${fnName}\\s*\\(\\s*([^()]*(?:\\([^()]*\\)[^()]*)*)\\s*\\)\\s*;?`,
+                    'g'
+                );
+                result = result.replace(callRe2, (_match, argsStr) => {
+                    const args = argsStr.split(',').map((a: string) => a.trim());
+                    console.log(`[ESP32 Stub] Inlining ${fnName}(${args.join(', ')}) — params: [${params.join(', ')}]`);
+                    let inlined = fnBody;
+                    params.forEach((param, i) => {
+                        if (args[i] !== undefined && args[i] !== '') {
+                            const paramRe = new RegExp(`\\b${param}\\b`, 'g');
+                            inlined = inlined.replace(paramRe, args[i]);
+                        }
+                    });
+                    return inlined;
+                });
+            });
+            return result;
+        };
+
+        const loopActions = parseActions(inlineUserFunctions(extractBody('loop')));
+        console.log('[ESP32 Stub] loop() actions count:', loopActions.length);
+        console.log('[ESP32 Stub] loop() actions:', loopActions.map(a => `${a.type}(${a.gpio ?? a.varName ?? a.pixelIndex ?? a.text ?? ''})`).join(', '));
+
+        // Now parse and execute setup() with full inlining
+        const setupActions = parseActions(inlineUserFunctions(extractBody('setup')));
+        console.log('[ESP32 Stub] setup() actions (inlined) count:', setupActions.length);
+        // Copy into holder so fallback check works
+        setupActionsHolder.push(...setupActions);
+
+        // ── LCD pre-init: if sketch uses LCD, initialize lcdState immediately ──
+        // This ensures the Lit web component has a valid state before the loop runs,
+        // even if lcd.init() wasn't parsed (e.g. due to async store resolution)
+        const hasLcdInSource = /LiquidCrystal|lcd\s*\.|LCD/i.test(src);
+        if (hasLcdInSource) {
+            withStore((nodes, updateNodeData) => {
+                const lcd = nodes.find((n: any) =>
+                    n.data?.type === 'lcd1602' || n.data?.type === 'lcd2004' ||
+                    n.data?.type === 'lcd1602-i2c' || n.data?.type === 'lcd2004-i2c'
+                );
+                if (lcd && !lcd.data?.lcdState) {
+                    const cols = (lcd.data?.type === 'lcd2004' || lcd.data?.type === 'lcd2004-i2c') ? 20 : 16;
+                    const rows = (lcd.data?.type === 'lcd2004' || lcd.data?.type === 'lcd2004-i2c') ? 4 : 2;
+                    updateNodeData(lcd.id, {
+                        lcdState: {
+                            characters: new Array(cols * rows).fill(32),
+                            cursorX: 0, cursorY: 0,
+                            cursor: false, blink: false, backlight: true
+                        }
+                    });
+                }
+            });
+        }
+
+        // Execute setup actions with their delays
         for (const action of setupActions) {
             if (action.type === 'delay') {
                 setupDelay += action.ms!;
@@ -779,8 +1244,51 @@ class SketchStub {
             }
         }
 
-        // ── Schedule loop() to repeat ─────────────────────────────────────────
-        const loopActions = parseActions(extractBody('loop'));
+        // ── Fallback: scan entire source for NeoPixel color patterns ─────────
+        // If no neopixelSet actions were generated (e.g. colorWipe inlining failed),
+        // extract colors directly from the source as a reliable fallback
+        const hasNeoInLoop = loopActions.some(a => a.type === 'neopixelSet');
+        const hasNeoInSetup = setupActionsHolder.some(a => a.type === 'neopixelSet');
+
+        if (!hasNeoInLoop && !hasNeoInSetup) {
+            console.log('[ESP32 Stub] No neopixelSet actions found — using direct source scan fallback');
+            // Find all strip.Color(r,g,b) calls in setup body (not loop)
+            const setupBody = extractBody('setup');
+            const colorCallsInSetup = [...setupBody.matchAll(/\w+\.Color\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/g)];
+            const colorCallsInLoop = [...extractBody('loop').matchAll(/\w+\.Color\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/g)];
+
+            if (colorCallsInSetup.length > 0) {
+                // Colors are in setup — run once with delays, then hold last color
+                colorCallsInSetup.forEach((m, i) => {
+                    const r = parseInt(m[1]), g = parseInt(m[2]), b = parseInt(m[3]);
+                    const action: Action = { type: 'neopixelSet', pixelIndex: '__all', r: String(r), g: String(g), b: String(b) };
+                    const delayAction: Action = { type: 'delay', ms: 500 };
+                    setupActionsHolder.push(action, delayAction);
+                    // Execute immediately with cumulative delay
+                    const d = setupDelay;
+                    if (d === 0) { execAction(action); }
+                    else { setTimeout(() => { if (this.running) execAction(action); }, d); }
+                    setupDelay += 500;
+                    console.log(`[ESP32 Stub] Fallback setup color ${i}: rgb(${r},${g},${b})`);
+                });
+            } else if (colorCallsInLoop.length > 0) {
+                colorCallsInLoop.forEach((m, i) => {
+                    const r = parseInt(m[1]), g = parseInt(m[2]), b = parseInt(m[3]);
+                    loopActions.push({ type: 'neopixelSet', pixelIndex: '__all', r: String(r), g: String(g), b: String(b) });
+                    loopActions.push({ type: 'delay', ms: 1000 });
+                    console.log(`[ESP32 Stub] Fallback loop color ${i}: rgb(${r},${g},${b})`);
+                });
+            } else {
+                // Scan entire source as last resort
+                const allColors = [...src.matchAll(/\w+\.Color\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/g)];
+                allColors.forEach((m, i) => {
+                    const r = parseInt(m[1]), g = parseInt(m[2]), b = parseInt(m[3]);
+                    loopActions.push({ type: 'neopixelSet', pixelIndex: '__all', r: String(r), g: String(g), b: String(b) });
+                    loopActions.push({ type: 'delay', ms: 1000 });
+                    console.log(`[ESP32 Stub] Fallback color ${i}: rgb(${r},${g},${b})`);
+                });
+            }
+        }
 
         if (loopActions.length === 0) {
             // Fallback heartbeat
@@ -803,27 +1311,34 @@ class SketchStub {
 
         // Offset loop start by however long setup() takes
         let loopStart = performance.now() + setupDelay;
-        let fired = new Set<number>();
+        // Index of the next action to fire (sequential, one per tick)
+        let nextActionIdx = 0;
+        // Wall-clock time when the next action should fire
+        let nextActionTime = loopStart + (schedule[0]?.offsetMs ?? 0);
 
         this.tasks.push({
             intervalMs: 8,
             lastRun: performance.now(),
             fn: () => {
-                const elapsed = performance.now() - loopStart;
-                if (elapsed < 0) return; // still in setup delay
+                const now = performance.now();
+                if (now < loopStart) return; // still in setup delay
 
-                for (let i = 0; i < schedule.length; i++) {
-                    const { offsetMs, action } = schedule[i];
-                    if (!fired.has(i) && elapsed >= offsetMs) {
-                        fired.add(i);
-                        execAction(action);
+                // Fire at most ONE action per tick so React can repaint between updates
+                if (nextActionIdx < schedule.length && now >= nextActionTime) {
+                    const { action } = schedule[nextActionIdx];
+                    execAction(action);
+                    nextActionIdx++;
+
+                    if (nextActionIdx < schedule.length) {
+                        // Schedule next action at its offset from loop start
+                        nextActionTime = loopStart + schedule[nextActionIdx].offsetMs;
+                    } else {
+                        // Loop complete — restart after the full loop duration (including final delay)
+                        // This ensures the last delay() in the loop is respected before restarting
+                        loopStart = loopStart + totalMs;
+                        nextActionIdx = 0;
+                        nextActionTime = loopStart + (schedule[0]?.offsetMs ?? 0);
                     }
-                }
-
-                // Restart loop
-                if (elapsed >= totalMs) {
-                    loopStart = performance.now();
-                    fired = new Set<number>();
                 }
             },
         });

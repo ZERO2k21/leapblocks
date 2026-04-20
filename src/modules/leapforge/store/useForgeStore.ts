@@ -8,6 +8,7 @@ import { Node, Edge, Connection, addEdge as rfAddEdge } from 'reactflow';
 import { v4 as uuidv4 } from 'uuid';
 import { simulationRunner } from '../engine/SimulationRunner';
 import { circuitEngine } from '../engine/CircuitEngine';
+import { injectStoreRef } from '../engine/esp32/ESP32Engine';
 
 export interface ForgeState {
   nodes: Node[];
@@ -138,6 +139,10 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
     // Sync board selection before init
     simulationRunner.setBoard(state.board);
+
+    // Inject store reference into ESP32Engine synchronously before initCPU
+    // so withStore() works immediately during parseAndSchedule()
+    injectStoreRef(useForgeStore);
 
     // Pass the downloaded compiled hex into the CPU
     console.log('[FORGE STORE] Initializing CPU and syncing graph...');
