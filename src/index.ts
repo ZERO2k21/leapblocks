@@ -13,8 +13,28 @@ import { PythonManager } from './pythonBackend/PythonManager';
 import { join } from 'path';
 
 // ── ESP32 QEMU simulation imports ────────────────────────────────────────
-const qemuManager = require(join(__dirname, '../electron/qemuManager.js'));
-const { makeESP32Compiler, cleanupESP32Build } = require(join(__dirname, '../electron/esp32Compiler.js'));
+// electron/ files live at the repo root, not inside dist/main/.
+// Use app.getAppPath() at call time — app may not be ready at module load.
+// We lazy-require inside a getter to avoid the timing issue.
+let _qemuManager: any = null;
+let _cleanupESP32Build: ((dir: string) => void) | null = null;
+
+function getQemuManager() {
+  if (!_qemuManager) {
+    const root = app.getAppPath();
+    _qemuManager = require(join(root, 'electron', 'qemuManager.js'));
+  }
+  return _qemuManager;
+}
+
+function getCleanupESP32Build(): (dir: string) => void {
+  if (!_cleanupESP32Build) {
+    const root = app.getAppPath();
+    const mod = require(join(root, 'electron', 'esp32Compiler.js'));
+    _cleanupESP32Build = mod.cleanupESP32Build;
+  }
+  return _cleanupESP32Build!;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL STATE & SERVICES
@@ -215,6 +235,74 @@ async function ensureESP32Core(): Promise<boolean> {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// FLASH IMAGE BUILDER
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Merges the three ESP32 flash regions into a single raw image that QEMU
+ * accepts via  -drive file=<image>,if=mtd,format=raw
+ *
+ * Flash layout (default ESP32 single_factory partition scheme):
+ *   0x001000  bootloader.bin   (max ~28 KB)
+ *   0x008000  partitions.bin   (max ~3 KB)
+ *   0x010000  app.bin          (rest of flash)
+ *
+ * The image is zero-padded to exactly 4 MB — the smallest QEMU-supported
+ * size that fits the default ESP32 DevKit V1 flash.
+ */
+function buildMergedFlashImage(
+  tempDir: string,
+  files: string[],
+  appBinPath: string,
+  outPath: string,
+): void {
+  const FLASH_SIZE = 4 * 1024 * 1024; // 4 MB
+  const BOOTLOADER_OFFSET = 0x1000;
+  const PARTITIONS_OFFSET = 0x8000;
+  const APP_OFFSET = 0x10000;
+
+  // Allocate a 4 MB buffer filled with 0xFF (erased flash state)
+  const image = Buffer.alloc(FLASH_SIZE, 0xff);
+
+  // ── Bootloader ────────────────────────────────────────────────────────────
+  const bootFile = files.find(f => f.includes('bootloader') && f.endsWith('.bin'));
+  if (bootFile) {
+    const bootBin = fs.readFileSync(path.join(tempDir, bootFile));
+    if (BOOTLOADER_OFFSET + bootBin.length > PARTITIONS_OFFSET) {
+      throw new Error(`Bootloader too large: ${bootBin.length} bytes overflows partition table region`);
+    }
+    bootBin.copy(image, BOOTLOADER_OFFSET);
+    log('FLASH', `Bootloader @ 0x${BOOTLOADER_OFFSET.toString(16)}: ${bootBin.length} bytes`);
+  } else {
+    log('FLASH', 'No bootloader.bin found — region left as 0xFF (erased)');
+  }
+
+  // ── Partition table ───────────────────────────────────────────────────────
+  const partFile = files.find(f => (f.includes('partition') || f.includes('partitions')) && f.endsWith('.bin'));
+  if (partFile) {
+    const partBin = fs.readFileSync(path.join(tempDir, partFile));
+    if (PARTITIONS_OFFSET + partBin.length > APP_OFFSET) {
+      throw new Error(`Partition table too large: ${partBin.length} bytes overflows app region`);
+    }
+    partBin.copy(image, PARTITIONS_OFFSET);
+    log('FLASH', `Partitions @ 0x${PARTITIONS_OFFSET.toString(16)}: ${partBin.length} bytes`);
+  } else {
+    log('FLASH', 'No partitions.bin found — region left as 0xFF (erased)');
+  }
+
+  // ── Application binary ────────────────────────────────────────────────────
+  const appBin = fs.readFileSync(appBinPath);
+  if (APP_OFFSET + appBin.length > FLASH_SIZE) {
+    throw new Error(`App binary too large: ${appBin.length} bytes exceeds 4 MB flash`);
+  }
+  appBin.copy(image, APP_OFFSET);
+  log('FLASH', `App @ 0x${APP_OFFSET.toString(16)}: ${appBin.length} bytes`);
+
+  fs.writeFileSync(outPath, image);
+  log('FLASH', `✓ Merged flash image: ${outPath} (${(FLASH_SIZE / 1024 / 1024).toFixed(0)} MB)`);
+}
+
 app.on('ready', createWindow);
 
 app.on('window-all-closed', () => {
@@ -236,6 +324,8 @@ app.on('before-quit', () => {
   if (pythonManager) {
     pythonManager.stopAll();
   }
+  // Stop QEMU if running
+  try { getQemuManager().stopQemu(); } catch (_) { }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -283,12 +373,10 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
   log('IPC', `compile-code request received. FQBN: ${fqbn}`);
 
   const isESP32 = typeof fqbn === 'string' && fqbn.startsWith('esp32:');
+  log('IPC', `isESP32: ${isESP32}`);
 
   if (isESP32) {
     // ── ESP32 QEMU path ─────────────────────────────────────────────────────
-    // Ensure the ESP32 core is installed, then compile to .bin and return binPath.
-    // The temp dir is kept alive so QEMU can load the .bin.
-    // Cleanup happens when esp32-stop is called.
     log('IPC', 'ESP32 detected — using QEMU compile path');
 
     if (mainWindow?.webContents) {
@@ -296,6 +384,7 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
     }
 
     const coreOk = await ensureESP32Core();
+    log('IPC', `ensureESP32Core returned: ${coreOk}`);
     if (!coreOk) {
       return {
         success: false,
@@ -306,6 +395,9 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
     const tempDir = path.join(app.getPath('temp'), `forge_esp32_${Date.now()}`);
     const sketchDir = path.join(tempDir, 'sketch');
     const sketchPath = path.join(sketchDir, 'sketch.ino');
+
+    log('IPC', `tempDir: ${tempDir}`);
+    log('IPC', `sketchDir: ${sketchDir}`);
 
     try {
       fs.mkdirSync(sketchDir, { recursive: true });
@@ -335,6 +427,9 @@ static void __lf_digitalWrite(uint8_t pin, uint8_t val) {
         ? path.join(APP_ROOT, 'arduino-cli', 'arduino-cli.exe')
         : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe');
 
+      log('IPC', `CLI_PATH: ${CLI_PATH}`);
+      log('IPC', `FORGE_CLI_YAML: ${FORGE_CLI_YAML}`);
+
       const { stdout, stderr, code: exitCode } = await runCLI(CLI_PATH, FORGE_CLI_YAML, [
         'compile', '--fqbn', fqbn, '--output-dir', tempDir, sketchDir,
       ]);
@@ -351,26 +446,52 @@ static void __lf_digitalWrite(uint8_t pin, uint8_t val) {
       const files = fs.readdirSync(tempDir);
       log('IPC', `output files: ${files.join(', ')}`);
 
-      const binFile = files.find(f => f === 'sketch.ino.bin')
-        ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition') && !f.includes('merged'));
+      // arduino-cli (esp32 core v2+) emits sketch.ino.merged.bin — a ready-to-use
+      // 4 MB flash image with bootloader + partitions + app already merged.
+      // Prefer it directly; fall back to building our own merge if absent.
+      const mergedReady = files.find(f => f === 'sketch.ino.merged.bin');
 
-      if (!binFile) {
-        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
-        return { success: false, error: `ESP32 compiled but no .bin found. Files: ${files.join(', ')}` };
+      let finalBinPath: string;
+
+      if (mergedReady) {
+        finalBinPath = path.join(tempDir, mergedReady);
+        log('IPC', `Using arduino-cli merged image: ${finalBinPath}`);
+      } else {
+        // Older arduino-cli: merge manually from the three separate files
+        const binFile = files.find(f => f === 'sketch.ino.bin')
+          ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
+
+        log('IPC', `binFile found: ${binFile}`);
+
+        if (!binFile) {
+          try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+          return { success: false, error: `ESP32 compiled but no .bin found. Files: ${files.join(', ')}` };
+        }
+
+        const appBinPath = path.join(tempDir, binFile);
+        const mergedPath = path.join(tempDir, 'flash_image.bin');
+        try {
+          buildMergedFlashImage(tempDir, files, appBinPath, mergedPath);
+          log('IPC', `Flash image merged manually: ${mergedPath}`);
+        } catch (mergeErr: any) {
+          log('IPC', `Flash merge failed: ${mergeErr.message}`);
+          try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+          return { success: false, error: `Flash image merge failed: ${mergeErr.message}` };
+        }
+        finalBinPath = mergedPath;
       }
-
-      const binPath = path.join(tempDir, binFile);
 
       // Clean up previous build temp dir
       if (lastESP32BinTempDir) {
-        cleanupESP32Build(lastESP32BinTempDir);
+        getCleanupESP32Build()(lastESP32BinTempDir);
       }
       lastESP32BinTempDir = tempDir;
 
-      log('IPC', `compile-code ESP32 success, binPath: ${binPath}`);
-      return { success: true, binPath };
+      log('IPC', `compile-code ESP32 returning: { success: true, binPath: "${finalBinPath}" }`);
+      return { success: true, binPath: finalBinPath };
 
     } catch (err: any) {
+      log('IPC', `compile-code ESP32 exception: ${err.message}`);
       try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
       return { success: false, error: err.message };
     }
@@ -378,7 +499,7 @@ static void __lf_digitalWrite(uint8_t pin, uint8_t val) {
 
   // ── AVR path ─────────────────────────────────────────────────────────────
   log('IPC', `compile-code AVR path, FQBN: ${fqbn}`);
-  const result = await arduinoUploader.compileForSimulation(code, fqbn, libraryPath);
+  const result = await arduinoUploader.compileForSimulation(code, fqbn);
   log('IPC', `compile-code completed. Result: ${result.success ? 'Success' : 'Failure'}`);
   return result;
 });
@@ -386,23 +507,23 @@ static void __lf_digitalWrite(uint8_t pin, uint8_t val) {
 // ── ESP32 QEMU simulation IPC handlers ───────────────────────────────────
 
 ipcMain.handle('esp32-start', async (_, binPath: string) => {
-  await qemuManager.startQemu(binPath, mainWindow);
+  await getQemuManager().startQemu(binPath, mainWindow);
   return { ok: true };
 });
 
 ipcMain.handle('esp32-stop', async () => {
-  qemuManager.stopQemu();
+  getQemuManager().stopQemu();
   if (lastESP32BinTempDir) {
-    cleanupESP32Build(lastESP32BinTempDir);
+    getCleanupESP32Build()(lastESP32BinTempDir);
     lastESP32BinTempDir = null;
   }
   return { ok: true };
 });
 
 ipcMain.handle('esp32-gpio-set', async (_, pin: number, high: boolean) => {
-  const socket = await qemuManager.connectQMP();
+  const socket = await getQemuManager().connectQMP();
   if (socket) {
-    await qemuManager.sendQMPCommand(socket, {
+    await getQemuManager().sendQMPCommand(socket, {
       execute: 'gpio-set',
       arguments: { name: `GPIO${pin}`, level: high ? 1 : 0 },
     });
@@ -411,9 +532,9 @@ ipcMain.handle('esp32-gpio-set', async (_, pin: number, high: boolean) => {
 });
 
 ipcMain.handle('esp32-adc-set', async (_, channel: number, voltage: number) => {
-  const socket = await qemuManager.connectQMP();
+  const socket = await getQemuManager().connectQMP();
   if (socket) {
-    await qemuManager.sendQMPCommand(socket, {
+    await getQemuManager().sendQMPCommand(socket, {
       execute: 'qom-set',
       arguments: {
         path: `/machine/soc/adc/channel[${channel}]`,

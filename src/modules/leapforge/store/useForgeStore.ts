@@ -158,6 +158,16 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       // AVR path and the LED never responds to GPIO output.
       console.log('[FORGE STORE] QEMU ESP32 path — creating ESP32SimulationRunner before syncCircuitGraph...');
       simulationRunner.initCPU(''); // creates esp32Runner, no AVR hex needed
+
+      // Wire ESP32 serial output → store.appendSerial so the serial monitor shows QEMU output.
+      // The ESP32SimulationRunner forwards non-GPIO lines char-by-char via serialListeners.
+      const esp32Runner = simulationRunner.ESP32Runner;
+      if (esp32Runner) {
+        esp32Runner.addSerialListener((char: string) => {
+          useForgeStore.getState().appendSerial(char);
+        });
+        console.log('[FORGE STORE] ESP32 serial listener wired to store.appendSerial');
+      }
     }
 
     circuitEngine.syncCircuitGraph();

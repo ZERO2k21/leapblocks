@@ -125,7 +125,6 @@ app.whenReady().then(async () => {
   // Fire-and-forget background warmup tasks — run concurrently, never block the UI
   await Promise.allSettled([
     warmupESP32Core(),
-    warmupQemu(),
   ]);
 
   app.on('activate', () => {
@@ -385,14 +384,23 @@ ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _librar
       if (binFile) {
         const binPath = path.join(tempDir, binFile);
         if (isESP32QEMU) {
-          // QEMU path: return the .bin file path on disk — do NOT delete tempDir.
-          // QEMU needs the file to still exist when startQemu() is called.
-          // Cleanup happens in esp32-stop via cleanupESP32Build().
-          if (lastESP32BinTempDir) {
-            cleanupESP32Build(lastESP32BinTempDir);
+          // QEMU requires a merged flash image (bootloader + partitions + app)
+          // padded to a supported size (2/4/8/16 MB).
+          // arduino-cli also emits sketch.ino.bootloader.bin and sketch.ino.partitions.bin
+          // alongside the app binary — merge them at their correct flash offsets.
+          try {
+            const mergedPath = path.join(tempDir, 'flash_image.bin');
+            buildMergedFlashImage(tempDir, files, binPath, mergedPath);
+            if (lastESP32BinTempDir) {
+              cleanupESP32Build(lastESP32BinTempDir);
+            }
+            lastESP32BinTempDir = tempDir;
+            return { success: true, binPath: mergedPath };
+          } catch (mergeErr) {
+            console.error('[compile-code] Flash merge failed:', mergeErr.message);
+            try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+            return { success: false, error: `Flash image merge failed: ${mergeErr.message}` };
           }
-          lastESP32BinTempDir = tempDir;
-          return { success: true, binPath };
         }
         // Legacy esp32: path — convert to Intel HEX for the old simulation path
         const binContent = fs.readFileSync(binPath);
@@ -417,6 +425,71 @@ ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _librar
     return { success: false, error: err.message };
   }
 });
+
+/**
+ * buildMergedFlashImage(tempDir, files, appBinPath, outPath)
+ *
+ * Merges the three ESP32 flash regions into a single raw image that QEMU
+ * accepts via  -drive file=<image>,if=mtd,format=raw
+ *
+ * Flash layout (default ESP32 single_factory partition scheme):
+ *   0x001000  bootloader.bin   (max ~28 KB)
+ *   0x008000  partitions.bin   (max ~3 KB)
+ *   0x010000  app.bin          (rest of flash)
+ *
+ * The image is zero-padded to exactly 4 MB (0x400000 bytes) — the smallest
+ * QEMU-supported size that fits the default ESP32 DevKit V1 flash.
+ *
+ * If the bootloader or partition table files are missing (older arduino-cli
+ * versions that don't emit them), the corresponding region is left as 0xFF
+ * (erased flash) so QEMU can still boot from the ROM bootloader.
+ */
+function buildMergedFlashImage(tempDir, files, appBinPath, outPath) {
+  const FLASH_SIZE = 4 * 1024 * 1024; // 4 MB — supported by QEMU esp32 machine
+  const BOOTLOADER_OFFSET = 0x1000;
+  const PARTITIONS_OFFSET = 0x8000;
+  const APP_OFFSET = 0x10000;
+
+  // Allocate a 4 MB buffer filled with 0xFF (erased flash state)
+  const image = Buffer.alloc(FLASH_SIZE, 0xff);
+
+  // ── Bootloader ────────────────────────────────────────────────────────────
+  const bootFile = files.find(f => f.includes('bootloader') && f.endsWith('.bin'));
+  if (bootFile) {
+    const bootBin = fs.readFileSync(path.join(tempDir, bootFile));
+    if (BOOTLOADER_OFFSET + bootBin.length > PARTITIONS_OFFSET) {
+      throw new Error(`Bootloader too large: ${bootBin.length} bytes overflows partition table region`);
+    }
+    bootBin.copy(image, BOOTLOADER_OFFSET);
+    console.log(`[Flash Merge] Bootloader @ 0x${BOOTLOADER_OFFSET.toString(16)}: ${bootBin.length} bytes`);
+  } else {
+    console.warn('[Flash Merge] No bootloader.bin found — region left as 0xFF (erased)');
+  }
+
+  // ── Partition table ───────────────────────────────────────────────────────
+  const partFile = files.find(f => (f.includes('partition') || f.includes('partitions')) && f.endsWith('.bin'));
+  if (partFile) {
+    const partBin = fs.readFileSync(path.join(tempDir, partFile));
+    if (PARTITIONS_OFFSET + partBin.length > APP_OFFSET) {
+      throw new Error(`Partition table too large: ${partBin.length} bytes overflows app region`);
+    }
+    partBin.copy(image, PARTITIONS_OFFSET);
+    console.log(`[Flash Merge] Partitions @ 0x${PARTITIONS_OFFSET.toString(16)}: ${partBin.length} bytes`);
+  } else {
+    console.warn('[Flash Merge] No partitions.bin found — region left as 0xFF (erased)');
+  }
+
+  // ── Application binary ────────────────────────────────────────────────────
+  const appBin = fs.readFileSync(appBinPath);
+  if (APP_OFFSET + appBin.length > FLASH_SIZE) {
+    throw new Error(`App binary too large: ${appBin.length} bytes exceeds 4 MB flash`);
+  }
+  appBin.copy(image, APP_OFFSET);
+  console.log(`[Flash Merge] App @ 0x${APP_OFFSET.toString(16)}: ${appBin.length} bytes`);
+
+  fs.writeFileSync(outPath, image);
+  console.log(`[Flash Merge] ✓ Merged flash image written: ${outPath} (${(FLASH_SIZE / 1024 / 1024).toFixed(0)} MB)`);
+}
 
 /**
  * Convert a raw binary Buffer to a minimal Intel HEX string.

@@ -110,6 +110,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     /**
+     * Remove all serial-data listeners (used by ESP32SimulationRunner.stop())
+     */
+    removeSerialDataListener: (): void => {
+        ipcRenderer.removeAllListeners('serial-data');
+    },
+
+    /**
      * Listen for connection status changes
      */
     onConnectionChange: (callback: (connected: boolean) => void): void => {
@@ -212,6 +219,7 @@ declare global {
             uploadCode: (code: string, port?: string, fqbn?: string) => Promise<UploadResult>;
             compileCode: (code: string, fqbn?: string, libraryPath?: string) => Promise<{ success: boolean; hexContent?: string; binPath?: string; error?: string }>;
             onSerialData: (callback: (data: string) => void) => void;
+            removeSerialDataListener: () => void;
             onConnectionChange: (callback: (connected: boolean) => void) => void;
             onUploadProgress: (callback: (progress: number, message: string) => void) => void;
             removeAllListeners: () => void;

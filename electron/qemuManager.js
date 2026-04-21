@@ -165,7 +165,83 @@ Write-Host "Extracted OK"
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ensureQemu(mainWindow) → Promise<string>
+// ROM ELF config — required by Espressif QEMU 9.x to boot the ESP32
+// ─────────────────────────────────────────────────────────────────────────────
+const ROM_ELF_RELEASE = '20260313';
+const ROM_ELF_NAME = 'esp32_rev0_rom.elf';
+const ROM_ELF_TARBALL_URL = `https://github.com/espressif/esp-rom-elfs/releases/download/${ROM_ELF_RELEASE}/esp-rom-elfs-${ROM_ELF_RELEASE}.tar.gz`;
+
+function getRomElfPath() {
+    return path.join(getResourcesDir(), ROM_ELF_NAME);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ensureRomElf(mainWindow) → Promise<string>
+//
+// Downloads the ESP32 ROM ELF file if not already present.
+// Required by Espressif QEMU 9.x — passed as -bios <path>.
+// ─────────────────────────────────────────────────────────────────────────────
+async function ensureRomElf(mainWindow) {
+    const romPath = getRomElfPath();
+    const resourcesDir = getResourcesDir();
+
+    const send = (msg) => {
+        console.log(msg);
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('serial-data', msg + '\n');
+        }
+    };
+
+    if (fs.existsSync(romPath)) {
+        const size = fs.statSync(romPath).size;
+        if (size > 100 * 1024) { // ROM ELF is ~845 KB
+            console.log(`[QEMU] ✓ ROM ELF found: ${romPath} (${(size / 1024).toFixed(0)} KB)`);
+            return romPath;
+        }
+        send(`[QEMU] ROM ELF too small (${size} bytes) — re-downloading`);
+        fs.unlinkSync(romPath);
+    }
+
+    send(`[QEMU] Downloading ESP32 ROM ELF (one-time, ~4 MB tarball)...`);
+    if (!fs.existsSync(resourcesDir)) fs.mkdirSync(resourcesDir, { recursive: true });
+
+    const tarPath = path.join(resourcesDir, 'esp-rom-elfs.tar.gz');
+    try { fs.unlinkSync(tarPath); } catch (_) { }
+
+    await downloadFile(ROM_ELF_TARBALL_URL, tarPath, (downloaded, total) => {
+        const pct = Math.floor((downloaded / total) * 100);
+        if (pct % 25 === 0) send(`[QEMU] ROM ELF download... ${pct}%`);
+    });
+
+    send(`[QEMU] Extracting ${ROM_ELF_NAME}...`);
+
+    // Extract esp32_rev0_rom.elf from the tarball using tar
+    const result = spawnSync('tar', ['xzf', tarPath, '-C', resourcesDir, ROM_ELF_NAME], {
+        encoding: 'utf8',
+        timeout: 30_000,
+    });
+
+    try { fs.unlinkSync(tarPath); } catch (_) { }
+
+    if (result.status !== 0) {
+        throw new Error(`[QEMU] ROM ELF extraction failed:\n${result.stderr || result.stdout}`);
+    }
+
+    if (!fs.existsSync(romPath)) {
+        throw new Error(`[QEMU] ROM ELF extraction succeeded but file not found at: ${romPath}`);
+    }
+
+    const finalSize = fs.statSync(romPath).size;
+    if (finalSize < 100 * 1024) {
+        fs.unlinkSync(romPath);
+        throw new Error(`[QEMU] ROM ELF too small after extraction (${finalSize} bytes)`);
+    }
+
+    send(`[QEMU] ✓ ROM ELF installed: ${romPath} (${(finalSize / 1024).toFixed(0)} KB)`);
+    return romPath;
+}
+
+
 //
 // Checks whether qemu-system-xtensa is present in resources/.
 // Downloads and extracts it if missing, sending progress to the renderer.
@@ -462,6 +538,19 @@ async function startQemu(binPath, mainWindow) {
         return;
     }
 
+    // Ensure ROM ELF is present (required by Espressif QEMU 9.x)
+    let romElfPath;
+    try {
+        romElfPath = await ensureRomElf(mainWindow);
+    } catch (err) {
+        const msg = `[QEMU] Failed to download ROM ELF: ${err.message}`;
+        console.error(msg);
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('serial-data', msg + '\n');
+        }
+        return;
+    }
+
     if (!fs.existsSync(binPath)) {
         const msg = `[QEMU] .bin file not found: ${binPath}`;
         console.error(msg);
@@ -474,6 +563,7 @@ async function startQemu(binPath, mainWindow) {
     const args = [
         '-nographic',
         '-machine', 'esp32',
+        '-bios', romElfPath,
         '-drive', `file=${binPath},if=mtd,format=raw`,
         '-serial', 'tcp::5555,server,nowait',
         '-monitor', 'tcp::5556,server,nowait',
@@ -522,6 +612,27 @@ async function startQemu(binPath, mainWindow) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Port management — find free ports dynamically to avoid conflicts
+// ─────────────────────────────────────────────────────────────────────────────
+let activeSerialPort = 5555;
+let activeMonitorPort = 5556;
+
+async function findFreePort(startPort) {
+    return new Promise((resolve) => {
+        const server = require('net').createServer();
+        server.listen(startPort, '127.0.0.1', () => {
+            const port = server.address().port;
+            server.close(() => resolve(port));
+        });
+        server.on('error', () => {
+            // Port in use, try next
+            resolve(findFreePort(startPort + 1));
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // stopQemu()
 // ─────────────────────────────────────────────────────────────────────────────
 function stopQemu() {
@@ -534,7 +645,14 @@ function stopQemu() {
         qmpSocket = null;
     }
     if (qemuProcess) {
-        try { qemuProcess.kill(); } catch (_) { }
+        const pid = qemuProcess.pid;
+        try { qemuProcess.kill('SIGKILL'); } catch (_) { }
+        // On Windows, also use taskkill to ensure the process tree is terminated
+        if (process.platform === 'win32' && pid) {
+            try {
+                spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { timeout: 3000 });
+            } catch (_) { }
+        }
         qemuProcess = null;
     }
     console.log('[QEMU] Stopped');
