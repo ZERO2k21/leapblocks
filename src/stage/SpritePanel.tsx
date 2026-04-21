@@ -352,23 +352,34 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           </div>
         </div>
 
-        {/* ── RIGHT: stage sidebar — same 220px total height ──────────── */}
+        {/* ── RIGHT: stage sidebar ──────────────────────────────────── */}
         <div className={`w-[90px] flex-shrink-0 border-l ${borderCol}
           ${sidebarBg} flex flex-col`} style={{ overflow: 'visible' }}>
 
-          {/* Sidebar content — fills remaining space above FAB footer */}
+          {/* Sidebar content — clickable, highlights when stage is selected */}
           <div className="flex-1 min-h-0 flex flex-col">
-            {/* "Stage" plain text header */}
-            <div className={`text-center text-xs font-bold py-2 flex-shrink-0
-              ${dk ? "text-gray-300" : "text-gray-700"}`}>
-              Stage
-            </div>
 
-            {/* Backdrop thumbnail */}
-            <div className="px-2 pb-1 flex-shrink-0">
+            {/* Stage card — clicking selects the stage, highlights with violet border */}
+            <div
+              onClick={() => onSelectSprite('stage')}
+              className={`mx-2 mt-2 mb-1 rounded-xl cursor-pointer transition-all duration-150 overflow-hidden border-2
+                ${isStageSelected
+                  ? `border-violet-600 ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-sm`
+                  : `${borderCol} ${dk ? "bg-[#1c1c21]" : "bg-white"} hover:border-violet-300`
+                }`}
+            >
+              {/* "Stage" header — violet bg when selected */}
+              <div className={`text-center text-[10px] font-bold py-1 transition-colors
+                ${isStageSelected
+                  ? "bg-violet-600 text-white"
+                  : `${dk ? "bg-[#26262d] text-gray-300" : "bg-gray-100 text-gray-600"}`
+                }`}>
+                Stage
+              </div>
+
+              {/* Backdrop thumbnail */}
               <div
-                className={`w-full rounded-lg overflow-hidden border
-                  ${dk ? "border-gray-700" : "border-gray-200"}`}
+                className={`w-full overflow-hidden ${dk ? "bg-[#26262d]" : "bg-gray-50"}`}
                 style={{ aspectRatio: '4/3' }}
               >
                 {currentBackdropSrc ? (
@@ -376,11 +387,11 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                     src={currentBackdropSrc}
                     alt="backdrop"
                     className="w-full h-full object-cover"
+                    draggable={false}
                   />
                 ) : (
-                  <div className={`w-full h-full flex items-center justify-center
-                    ${dk ? "bg-[#26262d]" : "bg-gray-50"}`}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  <div className={`w-full h-full flex items-center justify-center`}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                       stroke={dk ? "#4b5563" : "#c4c9d4"} strokeWidth="1.5">
                       <rect x="3" y="3" width="18" height="14" rx="2" />
                       <polyline points="3 15 8 10 13 14" />
@@ -392,11 +403,11 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
             </div>
 
             {/* Backdrops count */}
-            <div className="text-center flex-shrink-0">
+            <div className="text-center flex-shrink-0 pb-1">
               <p className={`text-[10px] leading-tight ${dk ? "text-gray-400" : "text-gray-500"}`}>
                 Backdrops
               </p>
-              <p className={`text-lg font-bold leading-tight
+              <p className={`text-base font-bold leading-tight
                 ${dk ? "text-violet-400" : "text-violet-600"}`}>
                 {backdropCount}
               </p>

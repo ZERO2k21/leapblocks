@@ -376,6 +376,52 @@ export class AnimationCompiler {
                     return backdrop ? backdrop.name : '';
                 };
             }
+
+            // ── Face Detection string reporters ────────────────────────────
+            case 'fd_emotion':
+                return () => (window as any).runtime?.face?.getEmotion() ?? '';
+            case 'fd_face_count':
+                return () => String((window as any).runtime?.face?.getFaceCount() ?? 0);
+            case 'fd_face_x': {
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => String((window as any).runtime?.face?.getX(n) ?? 0);
+            }
+            case 'fd_face_y': {
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => String((window as any).runtime?.face?.getY(n) ?? 0);
+            }
+            case 'fd_is_expression': {
+                const expr = valueBlock.getFieldValue('EXPRESSION') ?? 'happy';
+                return () => {
+                    const emotion = (window as any).runtime?.face?.getEmotion() ?? '';
+                    return emotion.toLowerCase() === expr ? 'true' : 'false';
+                };
+            }
+            case 'fd_get_class_detected': {
+                const faceN = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => (window as any).runtime?.face?.getClassOfFace?.(faceN) ?? '';
+            }
+
+            // ── Object Detection string reporters ──────────────────────────
+            case 'object_label': {
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => (window as any).runtime?.objectDetection?.getLabel(n) ?? '';
+            }
+            case 'object_count':
+                return () => String((window as any).runtime?.objectDetection?.getNumberOfObjects() ?? 0);
+            case 'object_x': {
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => String((window as any).runtime?.objectDetection?.getX(n) ?? 0);
+            }
+            case 'object_y': {
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => String((window as any).runtime?.objectDetection?.getY(n) ?? 0);
+            }
+            case 'object_confidence': {
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => String((window as any).runtime?.objectDetection?.getConfidence(n) ?? 0);
+            }
+
             default: {
                 console.warn(`[Compiler] Unknown string block type: ${valueBlock.type} - trying numFunc fallback`);
                 // Try compileNumberValue as fallback, convert to string
@@ -648,6 +694,85 @@ export class AnimationCompiler {
                     return isNaN(num) ? 0 : num;
                 };
             }
+
+            // ── Face Detection reporter blocks ─────────────────────────────
+            case 'fd_face_count':
+                return () => (window as any).runtime?.face?.getFaceCount() ?? 0;
+            case 'fd_face_x': {
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => (window as any).runtime?.face?.getX(n) ?? 0;
+            }
+            case 'fd_face_y': {
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => (window as any).runtime?.face?.getY(n) ?? 0;
+            }
+            case 'fd_emotion': {
+                // emotion is a string — convert to number (0 if not numeric)
+                return () => {
+                    const e = (window as any).runtime?.face?.getEmotion() ?? '';
+                    const n = Number(e);
+                    return isNaN(n) ? 0 : n;
+                };
+            }
+            case 'fd_is_expression': {
+                const expr = valueBlock.getFieldValue('EXPRESSION') ?? 'happy';
+                const faceN = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => {
+                    const emotion = (window as any).runtime?.face?.getEmotion() ?? '';
+                    return emotion.toLowerCase() === expr ? 1 : 0;
+                };
+            }
+            case 'fd_get_x_position': {
+                const axis = valueBlock.getFieldValue('AXIS') ?? 'x';
+                const faceN = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => axis === 'x'
+                    ? ((window as any).runtime?.face?.getX(faceN) ?? 0)
+                    : ((window as any).runtime?.face?.getY(faceN) ?? 0);
+            }
+            case 'fd_get_landmark_pos': {
+                const axis2 = valueBlock.getFieldValue('AXIS') ?? 'x';
+                const lm = valueBlock.getFieldValue('LANDMARK') ?? 'left_eye';
+                const faceN2 = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => (window as any).runtime?.face?.getLandmark?.(lm, faceN2, axis2) ?? 0;
+            }
+            case 'fd_get_landmark_num': {
+                const axis3 = valueBlock.getFieldValue('AXIS') ?? 'x';
+                const lmN = Number(valueBlock.getFieldValue('LANDMARK_N') ?? 1);
+                const faceN3 = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => (window as any).runtime?.face?.getLandmarkByIndex?.(lmN, faceN3, axis3) ?? 0;
+            }
+            case 'fd_get_xy_position': {
+                const axis4 = valueBlock.getFieldValue('AXIS') ?? 'x';
+                const faceN4 = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => axis4 === 'x'
+                    ? ((window as any).runtime?.face?.getX(faceN4) ?? 0)
+                    : ((window as any).runtime?.face?.getY(faceN4) ?? 0);
+            }
+            case 'fd_is_class_detected': {
+                const classN = Number(valueBlock.getFieldValue('CLASS_N') ?? 1);
+                return () => (window as any).runtime?.face?.isClassDetected?.(classN) ? 1 : 0;
+            }
+
+            // ── Object Detection reporter blocks ───────────────────────────
+            case 'object_count':
+                return () => (window as any).runtime?.objectDetection?.getNumberOfObjects() ?? 0;
+            case 'object_x': {
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => (window as any).runtime?.objectDetection?.getX(n) ?? 0;
+            }
+            case 'object_y': {
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => (window as any).runtime?.objectDetection?.getY(n) ?? 0;
+            }
+            case 'object_confidence': {
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => (window as any).runtime?.objectDetection?.getConfidence(n) ?? 0;
+            }
+            case 'object_label': {
+                // label is a string — return 0 as number fallback
+                return () => 0;
+            }
+
             default:
                 compilerLog.warn(`Unknown value block: ${valueBlock.type}`);
                 return () => 0;
@@ -1076,8 +1201,31 @@ export class AnimationCompiler {
                 step = { type: 'fd_action', action } as any;
                 break;
             }
+            // New reference-style blocks
+            case 'fd_video_on_stage': {
+                const state = block.getFieldValue('STATE') || 'on';
+                step = { type: 'fd_action', action: state } as any;
+                break;
+            }
+            case 'fd_analyse_image': {
+                const src = block.getFieldValue('SOURCE') || 'camera';
+                step = { type: 'fd_action', action: src === 'camera' ? 'on' : 'analyze' } as any;
+                break;
+            }
+            case 'fd_show_bounding_box':
+            case 'fd_set_threshold':
+            case 'fd_add_class':
+            case 'fd_reset_class':
+            case 'fd_do_face_matching': {
+                // These are runtime-only operations — execute via fd_report step
+                step = { type: 'fd_report', feature: block.type } as any;
+                break;
+            }
             case 'fd_count':
+            case 'fd_get_num_faces':
+            case 'fd_get_expression':
             case 'fd_guess_emotion':
+            case 'fd_feature':
             case 'fd_detect': {
                 const feature = block.getFieldValue('FEATURE') || '';
                 step = { type: 'fd_report', feature } as any;

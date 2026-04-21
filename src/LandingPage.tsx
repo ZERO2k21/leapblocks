@@ -812,18 +812,47 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           {/* FOOTER */}
           <footer style={{
             textAlign: 'center',
-            height: '4vh',
+            padding: '12px 24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#05001eff',
-            fontSize: 'min(1.5rem, 2vh)',
-            fontFamily: '"Poppins", sans-serif',
-            opacity: 1,
-            letterSpacing: '0.5px',
-            flexShrink: 0
+            gap: '8px',
+            flexShrink: 0,
+            background: 'linear-gradient(90deg, rgba(10,1,90,0.04) 0%, rgba(99,102,241,0.07) 50%, rgba(10,1,90,0.04) 100%)',
+            borderTop: '1px solid rgba(99,102,241,0.12)',
           }}>
-            LeapLab v1.0 © Creoleap Technologies Pvt. Ltd.
+            {/* Ambient glow dot */}
+            <span style={{
+              display: 'inline-block',
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, #6366f1, #a855f7)',
+              boxShadow: '0 0 8px 2px rgba(99,102,241,0.5)',
+              flexShrink: 0,
+            }} />
+            <span style={{
+              fontSize: 'clamp(0.7rem, 1.2vw, 0.85rem)',
+              fontFamily: '"Poppins", sans-serif',
+              fontWeight: 500,
+              letterSpacing: '0.04em',
+              background: 'linear-gradient(90deg, #0a015a 0%, #6366f1 50%, #a855f7 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              LeapLab v1.0 &copy; 2026 Creoleap Technologies Pvt. Ltd. — All rights reserved.
+            </span>
+            {/* Ambient glow dot */}
+            <span style={{
+              display: 'inline-block',
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, #a855f7, #6366f1)',
+              boxShadow: '0 0 8px 2px rgba(168,85,247,0.5)',
+              flexShrink: 0,
+            }} />
           </footer>
 
         </div>

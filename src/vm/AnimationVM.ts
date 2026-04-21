@@ -1440,19 +1440,53 @@ export class AnimationVM {
             // Face Detection extension steps
             case 'fd_action' as any: {
                 const fdAction = (step as any).action;
-                if (typeof window !== 'undefined' && (window as any).runtime?.face) {
-                    (window as any).runtime.face.analyse(fdAction);
+                // Turn camera on/off via React state callback
+                if (typeof window !== 'undefined') {
+                    if (fdAction === 'on' || fdAction === 'analyze') {
+                        (window as any).__setCameraOn?.(true);
+                    } else if (fdAction === 'off') {
+                        (window as any).__setCameraOn?.(false);
+                    }
+                    // Also call face runtime to start/stop detection loop
+                    if ((window as any).runtime?.face) {
+                        (window as any).runtime.face.analyse(fdAction);
+                    }
                 }
                 break;
             }
             case 'fd_report' as any: {
-                // Reporter blocks used as statements — say the result
+                // Statement reporter blocks — execute runtime action and say result
                 if (typeof window !== 'undefined' && (window as any).runtime?.face) {
                     const face = (window as any).runtime.face;
-                    const result = (step as any).feature
-                        ? face.detectFeature((step as any).feature)
-                        : face.getFaceCount();
-                    sprite.say(String(result ?? ''));
+                    const feature = (step as any).feature;
+                    let result: string;
+
+                    switch (feature) {
+                        case 'fd_show_bounding_box':
+                            face.setBoundingBox?.('show');
+                            result = '';
+                            break;
+                        case 'fd_set_threshold':
+                            result = '';
+                            break;
+                        case 'fd_add_class':
+                            result = '';
+                            break;
+                        case 'fd_reset_class':
+                            face.resetClasses?.();
+                            result = '';
+                            break;
+                        case 'fd_do_face_matching':
+                            await face.doFaceMatching?.('camera');
+                            result = '';
+                            break;
+                        default:
+                            // get # faces / get expression
+                            result = feature
+                                ? String(face.detectFeature(feature) ?? '')
+                                : String(face.getFaceCount());
+                            sprite.say(result);
+                    }
                 }
                 break;
             }

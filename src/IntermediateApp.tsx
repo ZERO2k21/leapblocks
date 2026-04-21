@@ -3028,6 +3028,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         animationVM.stopAll();
         leapRuntime.stopAll();
 
+        // Expose camera toggle so fd_camera blocks can turn camera on/off
+        (window as any).__setCameraOn = (on: boolean) => setIsCameraOn(on);
+
         try {
             const allScripts = syncAllWorkspaces();
             if (allScripts.length > 0 || spriteWorkspacesRef.current.size > 0) {
