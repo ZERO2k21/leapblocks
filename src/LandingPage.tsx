@@ -389,14 +389,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 2vh; color: #0F172A;
 }
 .landing-page-container .hero-title .hw-code {
+  color: transparent; -webkit-text-stroke: 2px #6366F1;
+  -webkit-text-fill-color: transparent; letter-spacing: -0.02em;
+}
+.landing-page-container .hero-title .hw-bold {
   font-style: italic; color: transparent;
   background: linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #8B5CF6 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   letter-spacing: 0.02em; padding: 0 4px;
-}
-.landing-page-container .hero-title .hw-bold {
-  color: transparent; -webkit-text-stroke: 2px #6366F1;
-  -webkit-text-fill-color: transparent; letter-spacing: -0.02em;
 }
 .landing-page-container .hero-tagline {
   display: inline-block; font-size: min(0.7rem, 1.4vh);
