@@ -16,6 +16,37 @@ let serialSocket = null;
 let qmpSocket = null;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Startup cleanup — kill any orphaned qemu-system-xtensa processes from
+// previous app sessions. Runs once when this module is first require()'d.
+// ─────────────────────────────────────────────────────────────────────────────
+if (process.platform === 'win32') {
+    try {
+        spawnSync('taskkill', ['/F', '/IM', 'qemu-system-xtensa.exe'], {
+            timeout: 3000,
+            stdio: 'ignore',
+        });
+        console.log('[QEMU] Startup cleanup: killed any orphaned qemu-system-xtensa processes');
+    } catch (_) { /* non-fatal */ }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Port management — dynamic ports avoid conflicts with stale QEMU processes
+// ─────────────────────────────────────────────────────────────────────────────
+let activeSerialPort = 5555;
+let activeMonitorPort = 5556;
+
+async function findFreePort(startPort) {
+    return new Promise((resolve) => {
+        const server = net.createServer();
+        server.listen(startPort, '127.0.0.1', () => {
+            const port = server.address().port;
+            server.close(() => resolve(port));
+        });
+        server.on('error', () => resolve(findFreePort(startPort + 1)));
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // QEMU binary download config
 // Source: Espressif's official QEMU fork (only build with esp32 machine target)
 // https://github.com/espressif/qemu/releases
@@ -181,7 +212,7 @@ function getRomElfPath() {
 // Downloads the ESP32 ROM ELF file if not already present.
 // Required by Espressif QEMU 9.x — passed as -bios <path>.
 // ─────────────────────────────────────────────────────────────────────────────
-async function ensureRomElf(mainWindow) {
+async function ensureRomElf(mainWindow, sendStatus) {
     const romPath = getRomElfPath();
     const resourcesDir = getResourcesDir();
 
@@ -194,7 +225,7 @@ async function ensureRomElf(mainWindow) {
 
     if (fs.existsSync(romPath)) {
         const size = fs.statSync(romPath).size;
-        if (size > 100 * 1024) { // ROM ELF is ~845 KB
+        if (size > 100 * 1024) {
             console.log(`[QEMU] ✓ ROM ELF found: ${romPath} (${(size / 1024).toFixed(0)} KB)`);
             return romPath;
         }
@@ -203,19 +234,27 @@ async function ensureRomElf(mainWindow) {
     }
 
     send(`[QEMU] Downloading ESP32 ROM ELF (one-time, ~4 MB tarball)...`);
+    if (sendStatus) sendStatus('downloading-rom', { progress: 0 });
     if (!fs.existsSync(resourcesDir)) fs.mkdirSync(resourcesDir, { recursive: true });
 
     const tarPath = path.join(resourcesDir, 'esp-rom-elfs.tar.gz');
     try { fs.unlinkSync(tarPath); } catch (_) { }
 
-    await downloadFile(ROM_ELF_TARBALL_URL, tarPath, (downloaded, total) => {
-        const pct = Math.floor((downloaded / total) * 100);
-        if (pct % 25 === 0) send(`[QEMU] ROM ELF download... ${pct}%`);
-    });
+    try {
+        await downloadFile(ROM_ELF_TARBALL_URL, tarPath, (downloaded, total) => {
+            const pct = Math.floor((downloaded / total) * 100);
+            if (pct % 10 === 0) {
+                send(`[QEMU] ROM ELF download... ${pct}%`);
+                if (sendStatus) sendStatus('downloading-rom', { progress: pct });
+            }
+        });
+    } catch (err) {
+        try { fs.unlinkSync(tarPath); } catch (_) { }
+        throw err;
+    }
 
     send(`[QEMU] Extracting ${ROM_ELF_NAME}...`);
 
-    // Extract esp32_rev0_rom.elf from the tarball using tar
     const result = spawnSync('tar', ['xzf', tarPath, '-C', resourcesDir, ROM_ELF_NAME], {
         encoding: 'utf8',
         timeout: 30_000,
@@ -238,16 +277,12 @@ async function ensureRomElf(mainWindow) {
     }
 
     send(`[QEMU] ✓ ROM ELF installed: ${romPath} (${(finalSize / 1024).toFixed(0)} KB)`);
+    if (sendStatus) sendStatus('downloading-rom', { progress: 100 });
     return romPath;
 }
 
 
-//
-// Checks whether qemu-system-xtensa is present in resources/.
-// Downloads and extracts it if missing, sending progress to the renderer.
-// Returns the resolved binary path on success, throws on failure.
-// ─────────────────────────────────────────────────────────────────────────────
-async function ensureQemu(mainWindow) {
+async function ensureQemu(mainWindow, sendStatus) {
     const config = QEMU_DOWNLOAD_CONFIG[process.platform];
     if (!config) throw new Error(`[QEMU] Unsupported platform: ${process.platform}`);
 
@@ -261,7 +296,6 @@ async function ensureQemu(mainWindow) {
         }
     };
 
-    // Already installed?
     if (fs.existsSync(binPath)) {
         const size = fs.statSync(binPath).size;
         if (size > 1024 * 1024) {
@@ -275,6 +309,7 @@ async function ensureQemu(mainWindow) {
     send(`[QEMU] Binary not found — downloading Espressif QEMU...`);
     send(`[QEMU] Source: ${config.url}`);
     send(`[QEMU] This is a one-time download (~50–80 MB). Please wait...`);
+    if (sendStatus) sendStatus('downloading-qemu', { progress: 0 });
 
     if (!fs.existsSync(resourcesDir)) fs.mkdirSync(resourcesDir, { recursive: true });
 
@@ -282,13 +317,19 @@ async function ensureQemu(mainWindow) {
     try { fs.unlinkSync(archivePath); } catch (_) { }
 
     let lastPct = -1;
-    await downloadFile(config.url, archivePath, (downloaded, total) => {
-        const pct = Math.floor((downloaded / total) * 100);
-        if (pct !== lastPct && pct % 10 === 0) {
-            send(`[QEMU] Downloading... ${pct}% (${(downloaded / 1024 / 1024).toFixed(1)} / ${(total / 1024 / 1024).toFixed(1)} MB)`);
-            lastPct = pct;
-        }
-    });
+    try {
+        await downloadFile(config.url, archivePath, (downloaded, total) => {
+            const pct = Math.floor((downloaded / total) * 100);
+            if (pct !== lastPct && pct % 10 === 0) {
+                send(`[QEMU] Downloading... ${pct}% (${(downloaded / 1024 / 1024).toFixed(1)} / ${(total / 1024 / 1024).toFixed(1)} MB)`);
+                if (sendStatus) sendStatus('downloading-qemu', { progress: pct });
+                lastPct = pct;
+            }
+        });
+    } catch (err) {
+        try { fs.unlinkSync(archivePath); } catch (_) { }
+        throw err;
+    }
 
     send(`[QEMU] Download complete. Extracting binary...`);
 
@@ -309,6 +350,7 @@ async function ensureQemu(mainWindow) {
     }
 
     send(`[QEMU] ✓ qemu-system-xtensa installed: ${binPath} (${(finalSize / 1024 / 1024).toFixed(1)} MB)`);
+    if (sendStatus) sendStatus('downloading-qemu', { progress: 100 });
     return binPath;
 }
 
@@ -364,8 +406,15 @@ async function connectQMP() {
         let buffer = '';
         let greeted = false;
 
-        sock.connect(5556, '127.0.0.1', () => {
-            console.log('[QMP] Connected to 127.0.0.1:5556');
+        // 5-second timeout — if QMP doesn't respond, resolve null so CPU cont is skipped
+        const timeout = setTimeout(() => {
+            console.error('[QMP] Handshake timed out after 5s');
+            sock.destroy();
+            resolve(null);
+        }, 5000);
+
+        sock.connect(activeMonitorPort, '127.0.0.1', () => {
+            console.log(`[QMP] Connected to 127.0.0.1:${activeMonitorPort}`);
         });
 
         sock.on('data', (chunk) => {
@@ -389,6 +438,7 @@ async function connectQMP() {
 
                 if (greeted && msg.return !== undefined) {
                     console.log('[QMP] Handshake complete');
+                    clearTimeout(timeout);
                     qmpSocket = sock;
                     resolve(sock);
                 }
@@ -397,6 +447,7 @@ async function connectQMP() {
 
         sock.on('error', (err) => {
             console.error('[QMP] Socket error:', err.message);
+            clearTimeout(timeout);
             resolve(null);
         });
 
@@ -447,24 +498,27 @@ async function sendQMPCommand(socket, cmd) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// waitForTcpPort(port, host, timeoutMs) → Promise<void>
+// waitForTcpPort(port, host, timeoutMs) → Promise<net.Socket>
 //
-// Polls until the TCP port is accepting connections, or throws on timeout.
-// Replaces the fixed setTimeout before connectSerial.
+// Polls until the TCP port is accepting connections, returns the live socket.
+// Throws on timeout. Returns the connected socket directly to avoid TOCTOU.
 // ─────────────────────────────────────────────────────────────────────────────
-async function waitForTcpPort(port, host, timeoutMs = 5000) {
+async function waitForTcpPort(port, host, timeoutMs = 10000) {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
-        const open = await new Promise((resolve) => {
+        const result = await new Promise((resolve) => {
             const sock = new net.Socket();
-            sock.setTimeout(200);
-            sock.once('connect', () => { sock.destroy(); resolve(true); });
-            sock.once('error', () => { sock.destroy(); resolve(false); });
-            sock.once('timeout', () => { sock.destroy(); resolve(false); });
+            sock.setTimeout(500);
+            sock.once('connect', () => {
+                sock.setTimeout(0);
+                resolve({ connected: true, sock });
+            });
+            sock.once('error', () => { sock.destroy(); resolve({ connected: false }); });
+            sock.once('timeout', () => { sock.destroy(); resolve({ connected: false }); });
             sock.connect(port, host);
         });
-        if (open) return;
-        await sleep(100);
+        if (result.connected) return result.sock;
+        await sleep(200);
     }
     throw new Error(`[QEMU] TCP port ${port} on ${host} did not open within ${timeoutMs}ms`);
 }
@@ -472,21 +526,20 @@ async function waitForTcpPort(port, host, timeoutMs = 5000) {
 // ─────────────────────────────────────────────────────────────────────────────
 // connectSerial(mainWindow) → Promise<void>
 //
-// Connects to QEMU's serial TCP port (:5555), forwards data to the renderer,
+// Connects to QEMU's serial TCP port, forwards data to the renderer,
 // then performs the QMP handshake and sends 'cont' to resume the CPU.
 // ─────────────────────────────────────────────────────────────────────────────
 async function connectSerial(mainWindow) {
-    // Wait until QEMU has opened its serial TCP server
-    await waitForTcpPort(5555, '127.0.0.1', 8000);
+    const send = (msg) => {
+        console.log(msg);
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('serial-data', msg + '\n');
+        }
+    };
 
-    const sock = new net.Socket();
-
-    await new Promise((resolve, reject) => {
-        sock.connect(5555, '127.0.0.1', () => resolve());
-        sock.once('error', reject);
-    });
-
-    console.log('[Serial] Connected to 127.0.0.1:5555');
+    send(`[QEMU] Waiting for serial port ${activeSerialPort}...`);
+    const sock = await waitForTcpPort(activeSerialPort, '127.0.0.1', 15000);
+    send(`[Serial] Connected to 127.0.0.1:${activeSerialPort}`);
 
     sock.on('data', (data) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
@@ -503,12 +556,28 @@ async function connectSerial(mainWindow) {
     serialSocket = sock;
 
     // QMP handshake → resume CPU
+    send(`[QEMU] Connecting QMP on port ${activeMonitorPort}...`);
+    // Poll until QMP port is open (opens slightly after serial port)
+    const qmpDeadline = Date.now() + 5000;
+    while (Date.now() < qmpDeadline) {
+        const open = await new Promise((resolve) => {
+            const s = new net.Socket();
+            s.setTimeout(300);
+            s.once('connect', () => { s.destroy(); resolve(true); });
+            s.once('error', () => { s.destroy(); resolve(false); });
+            s.once('timeout', () => { s.destroy(); resolve(false); });
+            s.connect(activeMonitorPort, '127.0.0.1');
+        });
+        if (open) break;
+        await sleep(200);
+    }
     const qmp = await connectQMP();
     if (qmp) {
+        send(`[QEMU] QMP connected — sending cont to resume CPU...`);
         await sendQMPCommand(qmp, { execute: 'cont' });
-        console.log('[QEMU] CPU resumed via QMP cont');
+        send(`[QEMU] CPU running — sketch started`);
     } else {
-        console.error('[QEMU] QMP unavailable — CPU may remain paused');
+        send(`[QEMU] WARNING: QMP unavailable — CPU remains paused, sketch will not run`);
     }
 }
 
@@ -522,18 +591,23 @@ async function connectSerial(mainWindow) {
 async function startQemu(binPath, mainWindow) {
     stopQemu();
 
+    const sendStatus = (stage, extra = {}) => {
+        console.log(`[QEMU] status: ${stage}`, extra);
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('esp32-status', { stage, ...extra });
+        }
+    };
+
     // Ensure QEMU binary is present
     let qemuBin;
     try {
-        qemuBin = await ensureQemu(mainWindow);
+        qemuBin = await ensureQemu(mainWindow, sendStatus);
     } catch (err) {
         const msg = `[QEMU] Failed to install QEMU: ${err.message}`;
         console.error(msg);
+        sendStatus('error', { message: err.message });
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('serial-data', msg + '\n');
-            mainWindow.webContents.send('serial-data',
-                '[QEMU] Manual install: https://github.com/espressif/qemu/releases\n'
-            );
         }
         return;
     }
@@ -541,10 +615,11 @@ async function startQemu(binPath, mainWindow) {
     // Ensure ROM ELF is present (required by Espressif QEMU 9.x)
     let romElfPath;
     try {
-        romElfPath = await ensureRomElf(mainWindow);
+        romElfPath = await ensureRomElf(mainWindow, sendStatus);
     } catch (err) {
         const msg = `[QEMU] Failed to download ROM ELF: ${err.message}`;
         console.error(msg);
+        sendStatus('error', { message: err.message });
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('serial-data', msg + '\n');
         }
@@ -560,13 +635,26 @@ async function startQemu(binPath, mainWindow) {
         return;
     }
 
+    // Find free ports dynamically to avoid conflicts with stale QEMU processes
+    activeSerialPort = await findFreePort(5555);
+    activeMonitorPort = await findFreePort(activeSerialPort + 1);
+
+    const send = (msg) => {
+        console.log(msg);
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('serial-data', msg + '\n');
+        }
+    };
+
+    send(`[QEMU] Using ports: serial=${activeSerialPort}, monitor=${activeMonitorPort}`);
+
     const args = [
         '-nographic',
         '-machine', 'esp32',
         '-bios', romElfPath,
         '-drive', `file=${binPath},if=mtd,format=raw`,
-        '-serial', 'tcp::5555,server,nowait',
-        '-monitor', 'tcp::5556,server,nowait',
+        '-serial', `tcp::${activeSerialPort},server,nowait`,
+        '-qmp', `tcp::${activeMonitorPort},server,nowait`,
         '-S', // start CPU paused — 'cont' sent after serial+QMP connect
     ];
 
@@ -587,6 +675,9 @@ async function startQemu(binPath, mainWindow) {
 
     qemuProcess.on('close', (code) => {
         console.log(`[QEMU] Process exited with code ${code}`);
+        if (code !== 0 && mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('serial-data', `[QEMU] Process exited with code ${code}\n`);
+        }
         qemuProcess = null;
     });
 
@@ -599,7 +690,11 @@ async function startQemu(binPath, mainWindow) {
         qemuProcess = null;
     });
 
-    // Await TCP readiness then connect — no more fixed setTimeout
+    // Give QEMU 1 second to initialize before polling for the TCP port.
+    // Without this, the first poll attempt hits before QEMU's TCP server is ready.
+    await sleep(1000);
+
+    // Await TCP readiness then connect — returns the live socket directly
     try {
         await connectSerial(mainWindow);
     } catch (err) {
@@ -609,27 +704,6 @@ async function startQemu(binPath, mainWindow) {
             mainWindow.webContents.send('serial-data', msg + '\n');
         }
     }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-// Port management — find free ports dynamically to avoid conflicts
-// ─────────────────────────────────────────────────────────────────────────────
-let activeSerialPort = 5555;
-let activeMonitorPort = 5556;
-
-async function findFreePort(startPort) {
-    return new Promise((resolve) => {
-        const server = require('net').createServer();
-        server.listen(startPort, '127.0.0.1', () => {
-            const port = server.address().port;
-            server.close(() => resolve(port));
-        });
-        server.on('error', () => {
-            // Port in use, try next
-            resolve(findFreePort(startPort + 1));
-        });
-    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -647,13 +721,17 @@ function stopQemu() {
     if (qemuProcess) {
         const pid = qemuProcess.pid;
         try { qemuProcess.kill('SIGKILL'); } catch (_) { }
-        // On Windows, also use taskkill to ensure the process tree is terminated
         if (process.platform === 'win32' && pid) {
-            try {
-                spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { timeout: 3000 });
-            } catch (_) { }
+            try { spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { timeout: 3000 }); } catch (_) { }
         }
         qemuProcess = null;
+    }
+    // On Windows, also kill any orphaned qemu-system-xtensa processes
+    // that weren't tracked (e.g. from a previous app session).
+    if (process.platform === 'win32') {
+        try {
+            spawnSync('taskkill', ['/F', '/IM', 'qemu-system-xtensa.exe'], { timeout: 3000 });
+        } catch (_) { }
     }
     console.log('[QEMU] Stopped');
 }

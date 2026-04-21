@@ -11,7 +11,16 @@ import './elements/leap-elements';
 import './ForgeStudio.css';
 import { useForgeStore } from './store/useForgeStore';
 import { BoardSelector, BoardType } from './components/BoardSelector';
-import { simulationRunner } from './engine/SimulationRunner';
+
+// Lazy-load simulation runner only when needed
+let simulationRunner: any = null;
+async function getSimulationRunner() {
+  if (!simulationRunner) {
+    const module = await import('./engine/SimulationRunner');
+    simulationRunner = module.simulationRunner;
+  }
+  return simulationRunner;
+}
 
 // Lazy load complex inner components
 const ForgeCanvas = lazy(() => import('./components/ForgeCanvas'));
@@ -131,7 +140,8 @@ void loop() {
         }
 
         // Pass binPath to SimulationRunner via setBoard, then start QEMU
-        simulationRunner.setBoard(board, binPath);
+        const runner = await getSimulationRunner();
+        runner.setBoard(board, binPath);
         startSimulation('__esp32_qemu__');
         appendSerial('ESP32 compiled. Starting QEMU simulation...\n');
         return;

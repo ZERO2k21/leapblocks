@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import JSZip from 'jszip';
+// JSZip lazy-loaded only when Lottie animation needs to be parsed
 
 interface LandingPageProps {
   onSelect: (mode: 'intermediate' | 'junior' | 'python' | 'appinventor' | any) => void;
@@ -120,7 +120,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         const response = await fetch('assets/robot.lottie');
         if (!response.ok) throw new Error(`Failed to fetch .lottie (${response.status})`);
         const buffer = await response.arrayBuffer();
+
+        // Lazy-load JSZip only when needed for Lottie parsing
+        const { default: JSZip } = await import('jszip');
         const zip = await JSZip.loadAsync(buffer);
+
         const manifestFile = zip.file('manifest.json');
         if (!manifestFile) throw new Error('Missing manifest.json in .lottie');
         const manifestText = await manifestFile.async('text');

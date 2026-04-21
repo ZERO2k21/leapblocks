@@ -965,21 +965,25 @@ class CircuitEngine {
         // inputs through ESP32SimulationRunner instead of the AVR addListener path.
         // Uses ESP32_BOARD_CONFIG pin map (FQBN-style boards only).
         const qemuRunner = simulationRunner.ESP32Runner;
+        console.log(`[FORGE CIRCUIT] syncCircuitGraph: qemuRunner exists? ${!!qemuRunner}, isESP32Board? ${isESP32Board}`);
         if (qemuRunner) {
           let pinInfo: ESP32PinInfo | null = null;
           try {
             pinInfo = this.convertESP32Pin(arduinoPinName!);
-          } catch {
+            console.log(`[FORGE CIRCUIT] convertESP32Pin('${arduinoPinName}') → pinInfo:`, pinInfo);
+          } catch (err) {
+            console.warn(`[FORGE CIRCUIT] convertESP32Pin('${arduinoPinName}') threw error:`, err);
             // Pin label not in ESP32_BOARD_CONFIG (power/GND/special) — skip silently
           }
 
           if (pinInfo) {
             const { gpioNum, adcChannel } = pinInfo;
+            console.log(`[FORGE CIRCUIT] pinInfo exists: gpioNum=${gpioNum}, adcChannel=${adcChannel}, isOutput=${adcChannel === undefined}`);
 
             if (adcChannel !== undefined) {
               // ── Analog input: sensor → ADC channel ─────────────────────────
-              // Drive the ADC channel with the sensor's current voltage.
-              // Re-inject on every syncCircuitGraph (slider may have changed).
+              // Inject current voltage immediately, then subscribe to sensorValues
+              // changes so slider drags push live updates into QEMU.
               const peripheralNodeForADC = nodes.find(n => n.id === peripheralId);
               const pTypeADC = peripheralNodeForADC?.data?.type;
               const svADC = peripheralNodeForADC?.data?.sensorValues;
@@ -988,47 +992,86 @@ class CircuitEngine {
                 console.error(`[FORGE CIRCUIT] QEMU ADC inject error (ch${adcChannel}):`, err);
               });
               console.log(`[FORGE CIRCUIT] QEMU ADC: pin ${arduinoPinName} → ADC1_CH${adcChannel} = ${voltageADC.toFixed(3)}V`);
+
+              // Live subscription — fires on any store change, checks sensorValues
+              let lastSv = svADC;
+              const adcUnsub = useForgeStore.subscribe((state) => {
+                const newSv = state.nodes.find(n => n.id === peripheralId)?.data?.sensorValues;
+                if (newSv !== lastSv) {
+                  lastSv = newSv;
+                  const currentNode = state.nodes.find(n => n.id === peripheralId);
+                  const pType = currentNode?.data?.type;
+                  const v = this.computeSensorVoltage(pType, newSv, 3.3);
+                  qemuRunner.setAnalogInput(adcChannel, v).catch(() => { });
+                }
+              });
+              const existingAdcUnsub = this.activeSubscriptions.get(`adc-${edge.id}`);
+              existingAdcUnsub?.();
+              this.activeSubscriptions.set(`adc-${edge.id}`, adcUnsub);
             } else {
               // ── Digital output: GPIO → LED / buzzer / etc. ──────────────────
-              // Register a pin listener on the QEMU runner that fires whenever
-              // the sketch drives the GPIO (detected via __LF_GPIO serial lines).
               const qemuPinListener = (high: boolean) => {
-                const result = this.traceNet(peripheralId, peripheralPinName!);
-                result.forEach(target => {
-                  const { nodes: currentNodes, updateNodeData: upd } = useForgeStore.getState();
-                  const targetNode = currentNodes.find(n => n.id === target.nodeId);
-                  if (!targetNode) return;
+                const { nodes: currentNodes, updateNodeData: upd } = useForgeStore.getState();
+                const peripheralNode = currentNodes.find(n => n.id === peripheralId);
+                if (!peripheralNode) return;
 
-                  const currentPinStates = targetNode.data?.pinStates || {};
-                  const pinKey = `pin_${target.pinName}`;
-                  const intensity = high ? 1.0 : 0.0;
+                const pType = peripheralNode.data?.type;
+                const currentPinStates = peripheralNode.data?.pinStates || {};
+                const pinKey = `pin_${peripheralPinName}`;
+                const intensity = high ? 1.0 : 0.0;
 
-                  const updates: Record<string, any> = {
-                    pinStates: { ...currentPinStates, [pinKey]: high },
-                    damaged: false,
-                  };
+                const updates: Record<string, any> = {
+                  pinStates: { ...currentPinStates, [pinKey]: high },
+                  damaged: false,
+                };
 
-                  // Type-specific visual updates — same logic as the AVR listener
-                  if (target.type === 'led') {
-                    updates.brightness = intensity;
-                  } else if (target.type === 'rgb-led') {
-                    updates[`intensity_${target.pinName}`] = intensity;
-                  } else if (target.type === 'buzzer') {
-                    updates.intensity = intensity;
-                    updates.hasSignal = high;
-                  }
+                if (pType === 'led') {
+                  updates.brightness = intensity;
+                } else if (pType === 'rgb-led') {
+                  updates[`intensity_${peripheralPinName}`] = intensity;
+                } else if (pType === 'buzzer') {
+                  updates.intensity = intensity;
+                  updates.hasSignal = high;
+                } else if (pType === '7segment') {
+                  const buffer = this.peripheralPinBuffers.get(peripheralId) || {};
+                  buffer[peripheralPinName!] = high;
+                  this.peripheralPinBuffers.set(peripheralId, buffer);
+                  const segOrder = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'DP'];
+                  const values = segOrder.map(seg => (buffer[seg] ? 1 : 0));
+                  updates.segValues = values;
+                }
 
-                  upd(target.nodeId, updates);
-                });
+                upd(peripheralId, updates);
               };
-              qemuRunner.addPinListener(gpioNum, qemuPinListener);
-              console.log(`[FORGE CIRCUIT] QEMU GPIO: pin ${arduinoPinName} → GPIO${gpioNum} → peripheral ${peripheralId}[${peripheralPinName}]`);
 
-              // Store cleanup thunk alongside the AVR one
+              // Get peripheral type for logging and PWM handling
+              const { nodes: currentNodes } = useForgeStore.getState();
+              const peripheralNode = currentNodes.find(n => n.id === peripheralId);
+              const pType = peripheralNode?.data?.type;
+
+              qemuRunner.addPinListener(gpioNum, qemuPinListener);
+              console.log(`[FORGE CIRCUIT] QEMU GPIO listener registered: pin ${arduinoPinName} → GPIO${gpioNum} → peripheral ${peripheralId}[${peripheralPinName}], pType=${pType}`);
+
+              // ── PWM listener (analogWrite → brightness / pwmValue) ──────────
+              const qemuPwmListener = (value: number) => {
+                const { nodes: currentNodes, updateNodeData: upd } = useForgeStore.getState();
+                const peripheralNode = currentNodes.find(n => n.id === peripheralId);
+                if (!peripheralNode) return;
+                const pType = peripheralNode.data?.type;
+                const updates: Record<string, any> = { pwmValue: value, damaged: false };
+                if (pType === 'led') updates.brightness = value / 255;
+                else if (pType === 'rgb-led') updates[`intensity_${peripheralPinName}`] = value / 255;
+                else if (pType === 'buzzer') { updates.intensity = value / 255; updates.hasSignal = value > 0; }
+                upd(peripheralId, updates);
+              };
+              qemuRunner.addPwmListener(gpioNum, qemuPwmListener);
+
+              // Store cleanup thunk
               const existingUnsub = this.activeSubscriptions.get(edge.id);
               this.activeSubscriptions.set(edge.id, () => {
                 existingUnsub?.();
                 qemuRunner.removePinListener(gpioNum, qemuPinListener);
+                qemuRunner.removePwmListener(gpioNum, qemuPwmListener);
               });
             }
           }

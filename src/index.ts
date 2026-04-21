@@ -22,7 +22,10 @@ let _cleanupESP32Build: ((dir: string) => void) | null = null;
 function getQemuManager() {
   if (!_qemuManager) {
     const root = app.getAppPath();
-    _qemuManager = require(join(root, 'electron', 'qemuManager.js'));
+    const modPath = join(root, 'electron', 'qemuManager.js');
+    // Clear require cache so dev-mode changes to qemuManager.js are picked up
+    delete require.cache[require.resolve(modPath)];
+    _qemuManager = require(modPath);
   }
   return _qemuManager;
 }
@@ -54,18 +57,29 @@ const log = (category: string, msg: string, data?: any) => {
 };
 
 console.log('[MAIN] Starting LeapBlocks main process...');
+const STARTUP_TIME = Date.now();
+const logTiming = (label: string) => {
+  const elapsed = Date.now() - STARTUP_TIME;
+  console.log(`[TIMING] ${elapsed}ms - ${label}`);
+};
+
+logTiming('Main process script loaded');
 
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
 const createWindow = (): void => {
+  logTiming('createWindow() called');
+
   mainWindow = new BrowserWindow({
     height: 800,
     width: 1400,
     minHeight: 600,
     minWidth: 1000,
-    title: 'LeetBlocks - Block Programming IDE',
+    title: 'LeapBlocks - Block Programming IDE',
+    show: false, // hidden until ready-to-show fires — eliminates blank white flash
+    backgroundColor: '#f8fafc', // matches app background so no flicker on show
     webPreferences: {
       preload: join(__dirname, '../preload/preload.js'),
       nodeIntegration: false,
@@ -73,21 +87,64 @@ const createWindow = (): void => {
     },
   });
 
+  logTiming('BrowserWindow created');
+
   // electron-vite: use env var for dev server URL, file path for production
   if (process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+    logTiming('Started loading dev server URL');
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    logTiming('Started loading renderer HTML');
   }
 
   if (process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools();
+    logTiming('DevTools opened');
+
+    // Suppress harmless DevTools autofill warnings
+    mainWindow.webContents.on('console-message', (event, level, message) => {
+      if (message.includes('Autofill.enable') || message.includes('Autofill.setAddresses')) {
+        event.preventDefault();
+      }
+    });
   }
 
+  // Track when renderer is ready
+  mainWindow.webContents.on('did-finish-load', () => {
+    logTiming('Renderer finished loading (did-finish-load)');
+  });
+
+  mainWindow.webContents.on('dom-ready', () => {
+    logTiming('DOM ready');
+  });
+
+  mainWindow.once('ready-to-show', () => {
+    logTiming('Window ready to show');
+    mainWindow?.show();
+  });
+
+  // Safety fallback: show the window after 3 seconds regardless, so a stalled
+  // renderer never leaves the user staring at nothing.
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isVisible()) {
+      logTiming('Fallback show triggered (ready-to-show did not fire in time)');
+      mainWindow.show();
+    }
+  }, 3000);
+
   // Initialize service instances with current window
+  logTiming('Initializing SerialManager');
   serialManager = new SerialManager(mainWindow);
+  logTiming('SerialManager initialized');
+
+  logTiming('Initializing ArduinoUploader');
   arduinoUploader = new ArduinoUploader(mainWindow);
+  logTiming('ArduinoUploader initialized');
+
+  logTiming('Initializing PythonManager');
   pythonManager = new PythonManager(mainWindow);
+  logTiming('PythonManager initialized');
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -303,21 +360,30 @@ function buildMergedFlashImage(
   log('FLASH', `✓ Merged flash image: ${outPath} (${(FLASH_SIZE / 1024 / 1024).toFixed(0)} MB)`);
 }
 
-app.on('ready', createWindow);
+app.on('ready', () => {
+  logTiming('Electron app ready event fired');
+  createWindow();
+  logTiming('createWindow() completed');
+  // ESP32 core check removed from startup — now runs on-demand during first ESP32 compile
+  // This prevents blocking the app startup with a 7+ second installation
+});
 
 app.on('window-all-closed', () => {
+  logTiming('All windows closed');
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
 app.on('activate', () => {
+  logTiming('App activated');
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
 });
 
 app.on('before-quit', () => {
+  logTiming('App before-quit event');
   if (serialManager) {
     serialManager.disconnect();
   }
@@ -402,19 +468,85 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
     try {
       fs.mkdirSync(sketchDir, { recursive: true });
 
-      // Inject GPIO monitor header so QEMU serial output carries __LF_GPIO lines
+      // Inject GPIO monitor header so QEMU serial output carries __LF_ tagged lines
       const GPIO_MONITOR_HEADER = `\
-// ---- LeapForge GPIO monitor (auto-injected) ----
+// ---- LeapForge monitor (auto-injected, do not remove) ----
+#include <Wire.h>
+#include <WiFi.h>
+
+// ── GPIO ──────────────────────────────────────────────────────────────────
 static void __lf_digitalWrite(uint8_t pin, uint8_t val) {
   digitalWrite(pin, val);
   Serial.printf("__LF_GPIO:%d:%d\\n", pin, (int)val);
 }
 #define digitalWrite(p,v) __lf_digitalWrite((p),(v))
+
+// ── PWM / analogWrite ─────────────────────────────────────────────────────
+static void __lf_analogWrite(uint8_t pin, uint32_t val) {
+  analogWrite(pin, val);
+  Serial.printf("__LF_PWM:%d:%d\\n", pin, (int)val);
+}
+#define analogWrite(p,v) __lf_analogWrite((p),(v))
+
+// ── I2C / Wire ────────────────────────────────────────────────────────────
+static uint8_t  __lf_i2c_addr = 0;
+static uint8_t  __lf_i2c_buf[256];
+static int      __lf_i2c_len  = 0;
+
+struct __LFWireClass {
+  void begin() { Wire.begin(); }
+  void begin(uint8_t sda, uint8_t scl) { Wire.begin(sda, scl); }
+  void setClock(uint32_t freq) { Wire.setClock(freq); }
+  void beginTransmission(uint8_t addr) {
+    __lf_i2c_addr = addr; __lf_i2c_len = 0;
+    Wire.beginTransmission(addr);
+    Serial.printf("__LF_I2C_S:%d\\n", (int)addr);
+  }
+  size_t write(uint8_t b) {
+    __lf_i2c_buf[__lf_i2c_len < 256 ? __lf_i2c_len++ : 255] = b;
+    Wire.write(b);
+    Serial.printf("__LF_I2C_B:%d\\n", (int)b);
+    return 1;
+  }
+  size_t write(const uint8_t* data, size_t len) {
+    for (size_t i = 0; i < len; i++) write(data[i]);
+    return len;
+  }
+  uint8_t endTransmission(bool stop = true) {
+    uint8_t r = Wire.endTransmission(stop);
+    Serial.printf("__LF_I2C_E:%d\\n", (int)r);
+    return r;
+  }
+  uint8_t requestFrom(uint8_t addr, uint8_t qty, bool stop = true) {
+    return Wire.requestFrom(addr, qty, stop);
+  }
+  int available() { return Wire.available(); }
+  int read()      { return Wire.read(); }
+  void onReceive(void (*fn)(int)) { Wire.onReceive(fn); }
+  void onRequest(void (*fn)())    { Wire.onRequest(fn); }
+} __lf_wire;
+#define Wire __lf_wire
+
+// ── WiFi events ───────────────────────────────────────────────────────────
+static void __lf_wifi_event(WiFiEvent_t event) {
+  switch (event) {
+    case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+      Serial.printf("__LF_WIFI:connected\\n"); break;
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+      Serial.printf("__LF_WIFI:disconnected\\n"); break;
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+      Serial.printf("__LF_WIFI:ip:%s\\n", WiFi.localIP().toString().c_str()); break;
+    default: break;
+  }
+}
+static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
 // ---- end LeapForge injection ----
 `;
-      // Preprocess: replace Servo.h, migrate LEDC API
+      // Preprocess: replace Servo.h, migrate LEDC API, inject WiFi event hook
       let processedCode = code.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
       processedCode = migrateESP32LedcAPI(processedCode);
+      // Inject WiFi event hook at start of setup()
+      processedCode = processedCode.replace(/(void\s+setup\s*\(\s*\)\s*\{)/, '$1\n  __lf_setup_wifi();');
       fs.writeFileSync(sketchPath, GPIO_MONITOR_HEADER + '\n' + processedCode, 'utf-8');
 
       const isDev = !app.isPackaged;
@@ -507,6 +639,8 @@ static void __lf_digitalWrite(uint8_t pin, uint8_t val) {
 // ── ESP32 QEMU simulation IPC handlers ───────────────────────────────────
 
 ipcMain.handle('esp32-start', async (_, binPath: string) => {
+  // Reset cached qemuManager so latest version of qemuManager.js is always used
+  _qemuManager = null;
   await getQemuManager().startQemu(binPath, mainWindow);
   return { ok: true };
 });

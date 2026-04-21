@@ -16,9 +16,15 @@ const path = require('path');
 // wrapper itself can call the real digitalWrite() without infinite recursion.
 const GPIO_MONITOR_HEADER = `\
 // ---- LeapForge GPIO monitor (auto-injected, do not remove) ----
+static bool __lf_serial_init = false;
 static void __lf_digitalWrite(uint8_t pin, uint8_t val) {
+  if (!__lf_serial_init) {
+    Serial.begin(115200);
+    __lf_serial_init = true;
+  }
   digitalWrite(pin, val);
   Serial.printf("__LF_GPIO:%d:%d\\n", pin, (int)val);
+  Serial.flush();
 }
 #define digitalWrite(p,v) __lf_digitalWrite((p),(v))
 // ---- end LeapForge injection ----
