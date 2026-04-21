@@ -89,7 +89,7 @@ function makeESP32Compiler({ runCLI, forgeLibDir } = {}) {
             if (!binFile) {
                 return {
                     success: false,
-                    error: 'Compiler produced no .bin output. Is espressif:esp32 core installed?'
+                    error: 'Compiler produced no .bin output. Is esp32:esp32 core installed?'
                 };
             }
 

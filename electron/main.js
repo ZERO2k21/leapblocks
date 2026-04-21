@@ -23,7 +23,7 @@ const CLI_PATH = isDev
   : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe');
 
 /** Run arduino-cli with the forge-lib config and return { stdout, stderr, code } */
-function runCLI(args) {
+async function runCLI(args) {
   return new Promise((resolve) => {
     const proc = spawn(CLI_PATH, ['--config-file', FORGE_CLI_YAML, ...args], {
       env: { ...process.env }
@@ -89,27 +89,46 @@ function createWindow() {
     minHeight: 700,
     icon: path.join(__dirname, '../public/icon.png'),
     title: "LeapBlocks",
+    // Hide until content is painted — eliminates the white flash on startup
+    show: false,
+    backgroundColor: '#f8fafc', // matches the app background so no flicker
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      // Enable background throttling suppression for smoother startup
+      backgroundThrottling: false,
     }
+  });
+
+  // Show the window only when the renderer has finished its first paint
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
   });
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:3000');
-    // Open the DevTools.
     // mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, '../build/index.html'));
   }
 }
 
-app.whenReady().then(() => {
-  startBuildServer();
+app.whenReady().then(async () => {
+  // ── Parallel startup: show window immediately, run background tasks concurrently ──
+  // createWindow() is called first so the UI appears as fast as possible.
+  // All heavy background work (build server, ESP32 core check, QEMU check) runs
+  // in parallel without blocking the window from loading.
   createWindow();
+  startBuildServer();
 
-  app.on('activate', function () {
+  // Fire-and-forget background warmup tasks — run concurrently, never block the UI
+  await Promise.allSettled([
+    warmupESP32Core(),
+    warmupQemu(),
+  ]);
+
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
@@ -148,43 +167,32 @@ ipcMain.handle('build-apk', async (event, appState) => {
 ipcMain.handle('compile-arduino', async (_, code) => {
   const tempDir = path.join(app.getPath('temp'), `sketch_${Date.now()}`);
   const sketchPath = path.join(tempDir, 'sketch.ino');
-  const cliPath = isDev
-    ? path.join(APP_ROOT, 'arduino-cli', 'arduino-cli.exe')
-    : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe');
 
   try {
     fs.mkdirSync(tempDir, { recursive: true });
     fs.writeFileSync(sketchPath, code);
 
-    return new Promise((resolve) => {
-      const compile = spawn(cliPath, [
-        'compile',
-        '--fqbn', 'arduino:avr:uno',
-        '--output-dir', tempDir,
-        sketchPath
-      ]);
+    const { stdout, stderr, code: exitCode } = await runCLI([
+      'compile',
+      '--fqbn', 'arduino:avr:uno',
+      '--output-dir', tempDir,
+      sketchPath,
+    ]);
 
-      let errorOutput = '';
-      compile.stderr.on('data', (data) => errorOutput += data.toString());
-
-      compile.on('close', (code) => {
-        if (code === 0) {
-          const hexPath = path.join(tempDir, 'sketch.ino.hex');
-          if (fs.existsSync(hexPath)) {
-            const hexContent = fs.readFileSync(hexPath, 'utf-8');
-            resolve({ success: true, hex: hexContent });
-          } else {
-            resolve({ success: false, error: 'HEX file not generated' });
-          }
-        } else {
-          resolve({ success: false, error: errorOutput || `Compiler exited with code ${code}` });
-        }
-        // Cleanup
-        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (e) { }
-      });
-    });
+    if (exitCode === 0) {
+      const hexPath = path.join(tempDir, 'sketch.ino.hex');
+      if (fs.existsSync(hexPath)) {
+        const hexContent = fs.readFileSync(hexPath, 'utf-8');
+        return { success: true, hex: hexContent };
+      }
+      return { success: false, error: 'HEX file not generated' };
+    } else {
+      return { success: false, error: stderr || `Compiler exited with code ${exitCode}` };
+    }
   } catch (err) {
     return { success: false, error: err.message };
+  } finally {
+    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
   }
 });
 
@@ -288,17 +296,17 @@ ipcMain.handle('forge-lib-remove', async (_, libraryName) => {
 
 // ── compile-code: unified handler called by CompilerService (Electron path) ──
 // Routes to AVR (.hex) or ESP32 (.bin) compilation based on FQBN.
-// For espressif:esp32:* FQBNs, returns { success, binPath } and keeps the
+// For esp32:esp32:* FQBNs, returns { success, binPath } and keeps the
 // temp dir alive so QEMU can load the .bin.  Cleanup happens on esp32-stop.
 ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _libraryPath) => {
   console.log(`[compile-code] ========== COMPILE START ==========`);
   console.log(`[compile-code] FQBN: ${fqbn}`);
 
-  const isESP32Legacy = typeof fqbn === 'string' && fqbn.startsWith('esp32:');
-  const isESP32QEMU = typeof fqbn === 'string' && fqbn.startsWith('espressif:');
-  const isESP32 = isESP32Legacy || isESP32QEMU;
+  // All esp32:* FQBNs use the QEMU path — return binPath, keep tempDir alive.
+  const isESP32 = typeof fqbn === 'string' && fqbn.startsWith('esp32:');
+  const isESP32QEMU = isESP32; // all ESP32 boards use QEMU simulation
 
-  console.log(`[compile-code] isESP32Legacy: ${isESP32Legacy}, isESP32QEMU: ${isESP32QEMU}, isESP32: ${isESP32}`);
+  console.log(`[compile-code] isESP32: ${isESP32}, isESP32QEMU: ${isESP32QEMU}`);
 
   const tempDir = path.join(app.getPath('temp'), `forge_sketch_${Date.now()}`);
   const sketchDir = path.join(tempDir, 'sketch');
@@ -316,7 +324,7 @@ ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _librar
     console.log(`[compile-code] ensureESP32Core() returned: ${coreInstalled}`);
 
     if (!coreInstalled) {
-      const errorMsg = 'ESP32 core installation failed. Please install manually:\narduino-cli core install espressif:esp32 --additional-urls https://dl.espressif.com/dl/package_esp32_index.json';
+      const errorMsg = 'ESP32 core installation failed. Please install manually:\narduino-cli core install esp32:esp32 --additional-urls https://dl.espressif.com/dl/package_esp32_index.json';
       console.error(`[compile-code] ${errorMsg}`);
       return {
         success: false,
@@ -549,7 +557,7 @@ function migrateESP32LedcAPI(code) {
 }
 
 // ── ESP32 QEMU simulation pipeline ───────────────────────────────────────
-const ESP32_FQBNS = ['espressif:esp32:esp32', 'espressif:esp32:esp32s3'];
+const ESP32_FQBNS = ['esp32:esp32:esp32', 'esp32:esp32:esp32s3'];
 const { compileESP32 } = makeESP32Compiler({ runCLI, forgeLibDir: FORGE_LIB_DIR });
 
 // Track the last binPath so we can clean it up after QEMU stops
@@ -567,7 +575,7 @@ ipcMain.handle('compile-esp32-sim', async (_, code, fqbn) => {
     lastESP32BinTempDir = null;
   }
 
-  const result = await compileESP32(code, fqbn || 'espressif:esp32:esp32');
+  const result = await compileESP32(code, fqbn || 'esp32:esp32:esp32');
   if (result.success) {
     // Remember the temp dir so we can clean it up on stop
     lastESP32BinTempDir = require('path').dirname(result.binPath);
@@ -614,6 +622,44 @@ ipcMain.handle('esp32-adc-set', async (_, channel, voltage) => {
 
 // ── ensureESP32Core: install ESP32 arduino core on first use ─────────────
 let esp32CoreReady = false;
+
+// ── warmupESP32Core: silent background pre-check at app startup ──────────
+// Runs once after the window opens. If the core is already installed this
+// takes ~200 ms (one arduino-cli core list call) and sets esp32CoreReady=true
+// so the first compile skips the check entirely.
+async function warmupESP32Core() {
+  try {
+    const { stdout, code } = await runCLI(['core', 'list', '--format', 'json']);
+    if (code !== 0) return;
+    let cores = [];
+    try { cores = JSON.parse(stdout); } catch (_) { return; }
+    const installed = Array.isArray(cores) && cores.some(c =>
+      (c.id && (c.id.startsWith('esp32:') || c.id.startsWith('espressif:'))) ||
+      (c.platform?.id && (c.platform.id.startsWith('esp32:') || c.platform.id.startsWith('espressif:')))
+    );
+    if (installed) {
+      esp32CoreReady = true;
+      console.log('[STARTUP] ESP32 core pre-check: ✓ already installed');
+    } else {
+      console.log('[STARTUP] ESP32 core pre-check: not installed (will install on first compile)');
+    }
+  } catch (err) {
+    console.warn('[STARTUP] ESP32 core pre-check failed (non-fatal):', err.message);
+  }
+}
+
+// ── warmupQemu: verify QEMU binary exists at startup ─────────────────────
+// Ensures the binary is present so the first ESP32 simulation doesn't stall
+// on a download. If missing, triggers the download in the background.
+async function warmupQemu() {
+  try {
+    await qemuManager.ensureQemuSilent();
+    console.log('[STARTUP] QEMU pre-check: ✓ binary ready');
+  } catch (err) {
+    console.warn('[STARTUP] QEMU pre-check failed (non-fatal):', err.message);
+  }
+}
+
 async function ensureESP32Core() {
   if (esp32CoreReady) return true;
 
@@ -688,7 +734,7 @@ async function ensureESP32Core() {
         sendProgress(`Attempting install via ${urlShort}...`);
 
         const { code: installCode, stdout: installOut, stderr: installErr } = await runCLI([
-          'core', 'install', 'espressif:esp32',
+          'core', 'install', 'esp32:esp32',
           '--additional-urls', url
         ]);
 
@@ -707,7 +753,7 @@ async function ensureESP32Core() {
       if (!installOk) {
         console.error('[FORGE] ✗ All ESP32 core install attempts failed.');
         sendProgress('ERROR: All ESP32 core install attempts failed');
-        sendProgress('Please install manually: arduino-cli core install espressif:esp32');
+        sendProgress('Please install manually: arduino-cli core install esp32:esp32');
         return false;
       }
     } else {

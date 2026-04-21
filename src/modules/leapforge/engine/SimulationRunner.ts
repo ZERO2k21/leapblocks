@@ -41,7 +41,7 @@ class SimulationRunner {
   private watchdog: AVRWatchdog | null = null;
   private clock: AVRClock | null = null;
 
-  // ── ESP32 QEMU runner (FQBN-based boards: espressif:esp32:*) ─────────────
+  // ── ESP32 QEMU runner (FQBN-based boards: esp32:esp32:*) ─────────────
   private esp32Runner: ESP32SimulationRunner | null = null;
   // binPath is set by setBoard(boardId, binPath) when ForgeStudio receives the
   // compiled .bin from the main process.  It is consumed by start() to launch QEMU.
@@ -65,10 +65,10 @@ class SimulationRunner {
 
   /**
    * Initializes the inner AVR CPU with a compiled Hex buffer.
-   * For QEMU ESP32 boards (espressif:esp32:*), creates the QEMU runner instead.
+   * For QEMU ESP32 boards (esp32:esp32:*), creates the QEMU runner instead.
    */
   initCPU(hexString: string = BLINK_HEX) {
-    // ── QEMU ESP32 path (FQBN-style board IDs: espressif:esp32:*) ────────────
+    // ── QEMU ESP32 path (FQBN-style board IDs: esp32:esp32:*) ────────────
     if (ESP32_QEMU_BOARDS.has(this.selectedBoard)) {
       this.esp32Runner = new ESP32SimulationRunner();
       return;
@@ -154,7 +154,7 @@ class SimulationRunner {
    * Start the simulation loop
    */
   async start() {
-    // ── QEMU ESP32 path (espressif:esp32:*) ──────────────────────
+    // ── QEMU ESP32 path (esp32:esp32:*) ──────────────────────
     if (ESP32_QEMU_BOARDS.has(this.selectedBoard)) {
       if (!this.binPath) {
         throw new Error(
@@ -189,7 +189,7 @@ class SimulationRunner {
    * Stop the simulation
    */
   stop() {
-    // ── QEMU ESP32 path (espressif:esp32:*) ──────────────────────
+    // ── QEMU ESP32 path (esp32:esp32:*) ──────────────────────
     if (ESP32_QEMU_BOARDS.has(this.selectedBoard)) {
       this.esp32Runner?.stop();
       this.binPath = null; // clear so a stale path can't be reused
@@ -531,7 +531,7 @@ class SimulationRunner {
 
   // ── ESP32 status getters ─────────────────────────────────────────────────
 
-  /** Access the QEMU-backed ESP32 runner (espressif:esp32:* boards only) */
+  /** Access the QEMU-backed ESP32 runner (esp32:esp32:* boards only) */
   public get ESP32Runner(): ESP32SimulationRunner | null {
     return this.esp32Runner;
   }

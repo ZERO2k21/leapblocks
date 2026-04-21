@@ -468,7 +468,7 @@ directories:
                 for (const url of ESP32_URLS) {
                     try {
                         await execAsync(
-                            `"${arduinoCliPath}" core install espressif:esp32 --config-file "${configPath}" --additional-urls ${url}`,
+                            `"${arduinoCliPath}" core install esp32:esp32 --config-file "${configPath}" --additional-urls ${url}`,
                             { timeout: 300000 }
                         );
                         ok = true;

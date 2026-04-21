@@ -960,7 +960,7 @@ class CircuitEngine {
         };
 
         // Attach to the simulation runner
-        // ── QEMU ESP32 branch (espressif:esp32:* boards) ─────────────────────
+        // ── QEMU ESP32 branch (esp32:esp32:* boards) ─────────────────────
         // When the QEMU runner is active, wire GPIO output listeners and ADC
         // inputs through ESP32SimulationRunner instead of the AVR addListener path.
         // Uses ESP32_BOARD_CONFIG pin map (FQBN-style boards only).
@@ -995,8 +995,30 @@ class CircuitEngine {
               const qemuPinListener = (high: boolean) => {
                 const result = this.traceNet(peripheralId, peripheralPinName!);
                 result.forEach(target => {
-                  const { updateNodeData: upd } = useForgeStore.getState();
-                  upd(target.nodeId, { pinState: high ? 'HIGH' : 'LOW' });
+                  const { nodes: currentNodes, updateNodeData: upd } = useForgeStore.getState();
+                  const targetNode = currentNodes.find(n => n.id === target.nodeId);
+                  if (!targetNode) return;
+
+                  const currentPinStates = targetNode.data?.pinStates || {};
+                  const pinKey = `pin_${target.pinName}`;
+                  const intensity = high ? 1.0 : 0.0;
+
+                  const updates: Record<string, any> = {
+                    pinStates: { ...currentPinStates, [pinKey]: high },
+                    damaged: false,
+                  };
+
+                  // Type-specific visual updates — same logic as the AVR listener
+                  if (target.type === 'led') {
+                    updates.brightness = intensity;
+                  } else if (target.type === 'rgb-led') {
+                    updates[`intensity_${target.pinName}`] = intensity;
+                  } else if (target.type === 'buzzer') {
+                    updates.intensity = intensity;
+                    updates.hasSignal = high;
+                  }
+
+                  upd(target.nodeId, updates);
                 });
               };
               qemuRunner.addPinListener(gpioNum, qemuPinListener);

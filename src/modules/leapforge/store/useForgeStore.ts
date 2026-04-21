@@ -135,7 +135,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     console.log('[FORGE STORE] startSimulation triggered. Hex length:', hexString.length);
     circuitEngine.init();
 
-    // ── QEMU ESP32 boards (espressif:esp32:*) ─────────────────────────────
+    // ── QEMU ESP32 boards (esp32:esp32:*) ─────────────────────────────
     // The sentinel '__esp32_qemu__' is passed when ForgeStudio has already
     // called simulationRunner.setBoard(board, binPath) with the compiled .bin.
     // We must NOT call simulationRunner.setBoard() again here — that would
@@ -150,8 +150,14 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       console.log('[FORGE STORE] Initializing AVR CPU with hex...');
       simulationRunner.initCPU(hexString);
     } else {
-      // QEMU path: board + binPath already set by ForgeStudio — do not overwrite
-      console.log('[FORGE STORE] QEMU ESP32 path — binPath already set, skipping setBoard/initCPU.');
+      // QEMU path: board + binPath already set by ForgeStudio.
+      // We MUST call initCPU() here so it creates the ESP32SimulationRunner
+      // instance BEFORE syncCircuitGraph() runs. CircuitEngine checks
+      // simulationRunner.ESP32Runner to decide whether to wire QEMU pin
+      // listeners — if the runner doesn't exist yet, it falls back to the
+      // AVR path and the LED never responds to GPIO output.
+      console.log('[FORGE STORE] QEMU ESP32 path — creating ESP32SimulationRunner before syncCircuitGraph...');
+      simulationRunner.initCPU(''); // creates esp32Runner, no AVR hex needed
     }
 
     circuitEngine.syncCircuitGraph();

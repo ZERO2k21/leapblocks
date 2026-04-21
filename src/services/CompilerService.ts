@@ -21,7 +21,7 @@ export interface CompileRequest {
 export interface CompileResult {
   success: boolean;
   hexContent?: string;
-  binPath?: string;   // returned for espressif:esp32:* FQBNs (QEMU path)
+  binPath?: string;   // returned for esp32:esp32:* FQBNs (QEMU path)
   error?: string;
 }
 

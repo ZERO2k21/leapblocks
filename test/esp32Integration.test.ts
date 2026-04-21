@@ -67,7 +67,7 @@ void loop()  { digitalWrite(13, HIGH); delay(500); digitalWrite(13, LOW); delay(
 `;
 
         // ── Act ───────────────────────────────────────────────────────────────────
-        const result = await compileESP32(sketchCode, 'espressif:esp32:esp32');
+        const result = await compileESP32(sketchCode, 'esp32:esp32:esp32');
 
         // ── Assert ────────────────────────────────────────────────────────────────
         expect(result.success).toBe(true);
@@ -106,7 +106,7 @@ void loop()  { digitalWrite(13, HIGH); delay(500); digitalWrite(13, LOW); delay(
 
         const { compileESP32 } = makeESP32Compiler({ runCLI: fakeRunCLI });
 
-        const result = await compileESP32('bad code', 'espressif:esp32:esp32');
+        const result = await compileESP32('bad code', 'esp32:esp32:esp32');
 
         expect(result.success).toBe(false);
         if (result.success) return;
@@ -124,7 +124,7 @@ void loop()  { digitalWrite(13, HIGH); delay(500); digitalWrite(13, LOW); delay(
         }));
 
         const { compileESP32 } = makeESP32Compiler({ runCLI: fakeRunCLI });
-        const result = await compileESP32('void setup(){} void loop(){}', 'espressif:esp32:esp32');
+        const result = await compileESP32('void setup(){} void loop(){}', 'esp32:esp32:esp32');
 
         expect(result.success).toBe(false);
         if (result.success) return;
@@ -347,8 +347,8 @@ describe('T5 — convertESP32Pin maps Arduino labels to GPIO numbers', () => {
 
     it('ESP32_BOARDS set contains the expected FQBN strings', async () => {
         const { ESP32_BOARDS } = await import('../src/simulation/ESP32BoardConfig');
-        expect(ESP32_BOARDS.has('espressif:esp32:esp32')).toBe(true);
-        expect(ESP32_BOARDS.has('espressif:esp32:esp32s3')).toBe(true);
+        expect(ESP32_BOARDS.has('esp32:esp32:esp32')).toBe(true);
+        expect(ESP32_BOARDS.has('esp32:esp32:esp32s3')).toBe(true);
         expect(ESP32_BOARDS.has('arduino:avr:uno')).toBe(false);
     });
 });

@@ -60,7 +60,7 @@ export type ESP32BoardConfig = {
 export const ESP32_BOARD_CONFIG: ESP32BoardConfig = {
     id: 'esp32-devkit',
     name: 'ESP32 DevKit V1',
-    fqbn: 'espressif:esp32:esp32',
+    fqbn: 'esp32:esp32:esp32',
     frequency: 240_000_000,          // 240 MHz dual-core Xtensa LX6
     flashSize: 4 * 1024 * 1024,      // 4 MB
     sramSize: 520 * 1024,           // 520 KB (internal SRAM)

@@ -90,11 +90,11 @@ void loop() {
       'arduino-nano': 'arduino:avr:nano:cpu=atmega328old',
       'arduino-mega': 'arduino:avr:mega',
       'attiny85': 'attiny:avr:ATtinyX5:cpu=attiny85,clock=internal8',
-      'esp32': 'espressif:esp32:esp32',
-      'esp32-devkit-v1': 'espressif:esp32:esp32',
-      'esp32-s2': 'espressif:esp32:esp32s2',
-      'esp32-s3': 'espressif:esp32:esp32s3',
-      'esp32-c3': 'espressif:esp32:esp32c3',
+      'esp32': 'esp32:esp32:esp32',
+      'esp32-devkit-v1': 'esp32:esp32:esp32',
+      'esp32-s2': 'esp32:esp32:esp32s2',
+      'esp32-s3': 'esp32:esp32:esp32s3',
+      'esp32-c3': 'esp32:esp32:esp32c3',
     };
 
     const isESP32 = ESP32_BOARD_IDS.has(board);
@@ -108,7 +108,7 @@ void loop() {
       // ── ESP32 QEMU path ────────────────────────────────────────────────────
       if (isESP32) {
         console.log('[FORGE UI] ESP32 board detected — using QEMU compile path...');
-        const fqbn = FQBN[board] ?? 'espressif:esp32:esp32';
+        const fqbn = FQBN[board] ?? 'esp32:esp32:esp32';
         const result = await compileCode({
           code,
           board: fqbn,

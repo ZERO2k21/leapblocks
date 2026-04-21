@@ -76,12 +76,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     /**
-     * Compile code to hex for simulation
+     * Compile code to hex/bin for simulation.
+     * Returns { success, hexContent } for AVR boards.
+     * Returns { success, binPath }   for ESP32 boards (QEMU path).
      */
-    compileCode: (code: string, fqbn?: string, libraryPath?: string): Promise<{ success: boolean; hexContent?: string; error?: string }> => {
+    compileCode: (code: string, fqbn?: string, libraryPath?: string): Promise<{ success: boolean; hexContent?: string; binPath?: string; error?: string }> => {
         console.log('[PRELOAD] compileCode called', { codeLength: code.length, fqbn, libraryPath });
         return ipcRenderer.invoke('compile-code', code, fqbn || 'arduino:avr:uno', libraryPath);
     },
+
+    // ── ESP32 QEMU simulation ─────────────────────────────────────────────
+    /** Start QEMU with the compiled .bin file */
+    esp32Start: (binPath: string) => ipcRenderer.invoke('esp32-start', binPath),
+    /** Stop QEMU and clean up */
+    esp32Stop: () => ipcRenderer.invoke('esp32-stop'),
+    /** Drive a GPIO input pin HIGH or LOW */
+    esp32GpioSet: (pin: number, high: boolean) => ipcRenderer.invoke('esp32-gpio-set', pin, high),
+    /** Inject an analog voltage into an ADC channel */
+    esp32AdcSet: (channel: number, voltage: number) => ipcRenderer.invoke('esp32-adc-set', channel, voltage),
 
     // ═══════════════════════════════════════════════════════════════════════
     // EVENT LISTENERS
@@ -198,13 +210,17 @@ declare global {
             disconnectPort: () => Promise<ConnectResult>;
             sendSerial: (data: string) => Promise<void>;
             uploadCode: (code: string, port?: string, fqbn?: string) => Promise<UploadResult>;
-            compileCode: (code: string, fqbn?: string, libraryPath?: string) => Promise<{ success: boolean; hexContent?: string; error?: string }>;
+            compileCode: (code: string, fqbn?: string, libraryPath?: string) => Promise<{ success: boolean; hexContent?: string; binPath?: string; error?: string }>;
             onSerialData: (callback: (data: string) => void) => void;
             onConnectionChange: (callback: (connected: boolean) => void) => void;
             onUploadProgress: (callback: (progress: number, message: string) => void) => void;
             removeAllListeners: () => void;
             removeBackground: (imagePath: string) => Promise<{ success: boolean; error?: string; stdout?: string; stderr?: string; base64?: string }>;
-
+            // ESP32 QEMU
+            esp32Start: (binPath: string) => Promise<{ ok: boolean }>;
+            esp32Stop: () => Promise<{ ok: boolean }>;
+            esp32GpioSet: (pin: number, high: boolean) => Promise<void>;
+            esp32AdcSet: (channel: number, voltage: number) => Promise<void>;
             buildApk: (appState: any) => Promise<{ success: boolean, outputPath?: string, error?: string }>;
             onBuildLog: (cb: (msg: string) => void) => void;
             removeBuildLogListener: () => void;

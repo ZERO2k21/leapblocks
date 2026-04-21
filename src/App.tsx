@@ -53,9 +53,31 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 export default function App() {
     const [mode, setMode] = useState<AppMode>('home');
 
-    // Lazy load Blockly custom fields to keep main bundle small
+    // Defer Blockly custom field registration to idle time — doesn't block first paint
     React.useEffect(() => {
-        import('./blockly/registerCustomFields');
+        const register = () => import('./blockly/registerCustomFields');
+        if (typeof requestIdleCallback !== 'undefined') {
+            requestIdleCallback(register, { timeout: 3000 });
+        } else {
+            // Safari fallback
+            setTimeout(register, 500);
+        }
+    }, []);
+
+    // Prefetch the most-likely next screens after the landing page has painted.
+    // This queues the chunk downloads during idle time so navigation feels instant.
+    React.useEffect(() => {
+        const prefetch = () => {
+            // LeapForge (circuit simulator) — heaviest module, prefetch first
+            import('./modules/leapforge/ForgeStudio');
+            // Intermediate (Blockly) — most common entry point
+            import('./IntermediateApp');
+        };
+        if (typeof requestIdleCallback !== 'undefined') {
+            requestIdleCallback(prefetch, { timeout: 5000 });
+        } else {
+            setTimeout(prefetch, 1000);
+        }
     }, []);
 
     const [intermediateOpenTab, setIntermediateOpenTab] = useState<'blocks' | 'python' | 'costumes' | 'sounds'>('blocks');

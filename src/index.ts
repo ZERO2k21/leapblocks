@@ -6,10 +6,15 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import { spawn } from 'child_process';
 import { SerialManager } from './serial/SerialManager';
 import { ArduinoUploader } from './upload/ArduinoUploader';
 import { PythonManager } from './pythonBackend/PythonManager';
 import { join } from 'path';
+
+// ── ESP32 QEMU simulation imports ────────────────────────────────────────
+const qemuManager = require(join(__dirname, '../electron/qemuManager.js'));
+const { makeESP32Compiler, cleanupESP32Build } = require(join(__dirname, '../electron/esp32Compiler.js'));
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL STATE & SERVICES
@@ -18,6 +23,10 @@ let mainWindow: BrowserWindow | null = null;
 let serialManager: SerialManager;
 let arduinoUploader: ArduinoUploader;
 let pythonManager: PythonManager;
+
+// ── ESP32 QEMU state ─────────────────────────────────────────────────────
+let lastESP32BinTempDir: string | null = null;
+let esp32CoreReady = false;
 
 const log = (category: string, msg: string, data?: any) => {
   const timestamp = new Date().toISOString();
@@ -67,6 +76,144 @@ const createWindow = (): void => {
     if (pythonManager) pythonManager.setWindow(null);
   });
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ESP32 QEMU HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Run arduino-cli with a given config file and return { stdout, stderr, code } */
+function runCLI(cliPath: string, configYaml: string, args: string[]): Promise<{ stdout: string; stderr: string; code: number }> {
+  return new Promise((resolve) => {
+    const proc = spawn(cliPath, ['--config-file', configYaml, ...args], {
+      env: { ...process.env },
+    });
+    let stdout = '', stderr = '';
+    proc.stdout.on('data', (d: Buffer) => { stdout += d.toString(); });
+    proc.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
+    proc.on('close', (code: number) => resolve({ stdout, stderr, code }));
+    proc.on('error', (err: Error) => resolve({ stdout: '', stderr: err.message, code: -1 }));
+  });
+}
+
+/** Migrate ESP32 LEDC API v2 → v3 (ledcSetup/ledcAttachPin → ledcAttach) */
+function migrateESP32LedcAPI(code: string): string {
+  const chMap = new Map<string, { freq: string; res: string; pin: string }>();
+
+  for (const m of code.matchAll(/ledcSetup\s*\(\s*(\w+)\s*,\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/g)) {
+    const [, ch, freq, res] = m;
+    const entry = chMap.get(ch) ?? { freq: freq.trim(), res: res.trim(), pin: '' };
+    entry.freq = freq.trim(); entry.res = res.trim();
+    chMap.set(ch, entry);
+  }
+  for (const m of code.matchAll(/ledcAttachPin\s*\(\s*([^,]+?)\s*,\s*(\w+)\s*\)/g)) {
+    const [, pin, ch] = m;
+    const entry = chMap.get(ch) ?? { freq: '5000', res: '8', pin: '' };
+    entry.pin = pin.trim();
+    chMap.set(ch, entry);
+  }
+
+  if (chMap.size === 0) return code;
+
+  let result = code;
+  result = result.replace(/[ \t]*ledcSetup\s*\([^)]*\)\s*;[ \t]*\n?/g, '');
+  result = result.replace(/[ \t]*ledcAttachPin\s*\([^)]*\)\s*;[ \t]*\n?/g, '');
+
+  const attachCalls = [...chMap.entries()]
+    .filter(([, v]) => v.pin)
+    .map(([, v]) => `  ledcAttach(${v.pin}, ${v.freq}, ${v.res});`)
+    .join('\n');
+  if (attachCalls) {
+    result = result.replace(/(void\s+setup\s*\(\s*\)\s*\{)/, `$1\n${attachCalls}`);
+  }
+
+  result = result.replace(/ledcWrite\s*\(\s*(\w+)\s*,\s*([^)]+)\s*\)/g, (match, ch, duty) => {
+    const entry = chMap.get(ch);
+    return entry?.pin ? `ledcWrite(${entry.pin}, ${duty.trim()})` : match;
+  });
+
+  return result;
+}
+
+/** Ensure the ESP32 arduino core is installed. Caches result in esp32CoreReady. */
+async function ensureESP32Core(): Promise<boolean> {
+  if (esp32CoreReady) return true;
+
+  const isDev = !app.isPackaged;
+  const APP_ROOT = app.getAppPath();
+  const FORGE_LIB_DIR = isDev
+    ? path.join(APP_ROOT, 'forge-lib')
+    : path.join(process.resourcesPath, 'forge-lib');
+  const FORGE_CLI_YAML = path.join(FORGE_LIB_DIR, 'arduino-cli.yaml');
+  const CLI_PATH = isDev
+    ? path.join(APP_ROOT, 'arduino-cli', 'arduino-cli.exe')
+    : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe');
+
+  const send = (msg: string) => {
+    log('ESP32', msg);
+    if (mainWindow?.webContents) {
+      mainWindow.webContents.send('serial-data', `[ESP32 SETUP] ${msg}\n`);
+    }
+  };
+
+  const ESP32_URLS = [
+    'https://dl.espressif.com/dl/package_esp32_index.json',
+    'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json',
+  ];
+
+  // Ensure board manager URLs are in the config
+  try {
+    const cfg = fs.readFileSync(FORGE_CLI_YAML, 'utf-8');
+    if (!cfg.includes('dl.espressif.com') && !cfg.includes('espressif/arduino-esp32')) {
+      const updated = cfg.trimEnd() + `\n\nboard_manager:\n  additional_urls:\n${ESP32_URLS.map(u => `    - ${u}`).join('\n')}\n`;
+      fs.writeFileSync(FORGE_CLI_YAML, updated, 'utf-8');
+      send('Added ESP32 board manager URLs to config');
+    }
+  } catch (err: any) {
+    log('ESP32', `Could not update arduino-cli.yaml: ${err.message}`);
+  }
+
+  try {
+    send('Checking for ESP32 core installation...');
+    const { stdout, code: listCode } = await runCLI(CLI_PATH, FORGE_CLI_YAML, ['core', 'list', '--format', 'json']);
+    if (listCode !== 0) { send('ERROR: Failed to list installed cores'); return false; }
+
+    let cores: any[] = [];
+    try { cores = JSON.parse(stdout); } catch (_) { }
+
+    const installed = Array.isArray(cores) && cores.some((c: any) =>
+      (c.id && (c.id.startsWith('esp32:') || c.id.startsWith('espressif:'))) ||
+      (c.platform?.id && (c.platform.id.startsWith('esp32:') || c.platform.id.startsWith('espressif:')))
+    );
+
+    if (!installed) {
+      send('ESP32 core not found — installing (this may take 2-5 minutes)...');
+
+      const { code: updateCode } = await runCLI(CLI_PATH, FORGE_CLI_YAML, [
+        'core', 'update-index', '--additional-urls', ESP32_URLS.join(','),
+      ]);
+      if (updateCode !== 0) { send('ERROR: Failed to update package index'); return false; }
+
+      let installOk = false;
+      for (const url of ESP32_URLS) {
+        const { code: installCode } = await runCLI(CLI_PATH, FORGE_CLI_YAML, [
+          'core', 'install', 'esp32:esp32', '--additional-urls', url,
+        ]);
+        if (installCode === 0) { installOk = true; send('✓ ESP32 core installed!'); break; }
+        send(`Install via ${url.includes('espressif.com') ? 'CDN' : 'GitHub'} failed, trying next...`);
+      }
+
+      if (!installOk) { send('ERROR: All ESP32 core install attempts failed'); return false; }
+    } else {
+      send('✓ ESP32 core already installed');
+    }
+
+    esp32CoreReady = true;
+    return true;
+  } catch (err: any) {
+    send(`ERROR: ${err.message}`);
+    return false;
+  }
+}
 
 app.on('ready', createWindow);
 
@@ -133,10 +280,149 @@ ipcMain.handle('upload-code', async (event, code: string, selectedPort: string, 
 });
 
 ipcMain.handle('compile-code', async (event, code: string, fqbn: string, libraryPath?: string) => {
-  log('IPC', `compile-code request received. FQBN: ${fqbn}, LibPath: ${libraryPath || 'None'}`);
+  log('IPC', `compile-code request received. FQBN: ${fqbn}`);
+
+  const isESP32 = typeof fqbn === 'string' && fqbn.startsWith('esp32:');
+
+  if (isESP32) {
+    // ── ESP32 QEMU path ─────────────────────────────────────────────────────
+    // Ensure the ESP32 core is installed, then compile to .bin and return binPath.
+    // The temp dir is kept alive so QEMU can load the .bin.
+    // Cleanup happens when esp32-stop is called.
+    log('IPC', 'ESP32 detected — using QEMU compile path');
+
+    if (mainWindow?.webContents) {
+      mainWindow.webContents.send('serial-data', '[SYSTEM] Checking ESP32 platform installation...\n');
+    }
+
+    const coreOk = await ensureESP32Core();
+    if (!coreOk) {
+      return {
+        success: false,
+        error: 'ESP32 core installation failed. Please install manually:\narduino-cli core install esp32:esp32',
+      };
+    }
+
+    const tempDir = path.join(app.getPath('temp'), `forge_esp32_${Date.now()}`);
+    const sketchDir = path.join(tempDir, 'sketch');
+    const sketchPath = path.join(sketchDir, 'sketch.ino');
+
+    try {
+      fs.mkdirSync(sketchDir, { recursive: true });
+
+      // Inject GPIO monitor header so QEMU serial output carries __LF_GPIO lines
+      const GPIO_MONITOR_HEADER = `\
+// ---- LeapForge GPIO monitor (auto-injected) ----
+static void __lf_digitalWrite(uint8_t pin, uint8_t val) {
+  digitalWrite(pin, val);
+  Serial.printf("__LF_GPIO:%d:%d\\n", pin, (int)val);
+}
+#define digitalWrite(p,v) __lf_digitalWrite((p),(v))
+// ---- end LeapForge injection ----
+`;
+      // Preprocess: replace Servo.h, migrate LEDC API
+      let processedCode = code.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
+      processedCode = migrateESP32LedcAPI(processedCode);
+      fs.writeFileSync(sketchPath, GPIO_MONITOR_HEADER + '\n' + processedCode, 'utf-8');
+
+      const isDev = !app.isPackaged;
+      const APP_ROOT = app.getAppPath();
+      const FORGE_LIB_DIR = isDev
+        ? path.join(APP_ROOT, 'forge-lib')
+        : path.join(process.resourcesPath, 'forge-lib');
+      const FORGE_CLI_YAML = path.join(FORGE_LIB_DIR, 'arduino-cli.yaml');
+      const CLI_PATH = isDev
+        ? path.join(APP_ROOT, 'arduino-cli', 'arduino-cli.exe')
+        : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe');
+
+      const { stdout, stderr, code: exitCode } = await runCLI(CLI_PATH, FORGE_CLI_YAML, [
+        'compile', '--fqbn', fqbn, '--output-dir', tempDir, sketchDir,
+      ]);
+
+      log('IPC', `compile-code ESP32 exit=${exitCode}`);
+      if (stdout) log('IPC', `stdout: ${stdout.slice(0, 300)}`);
+      if (stderr) log('IPC', `stderr: ${stderr.slice(0, 300)}`);
+
+      if (exitCode !== 0) {
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+        return { success: false, error: stderr || stdout || `Compiler exited with code ${exitCode}` };
+      }
+
+      const files = fs.readdirSync(tempDir);
+      log('IPC', `output files: ${files.join(', ')}`);
+
+      const binFile = files.find(f => f === 'sketch.ino.bin')
+        ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition') && !f.includes('merged'));
+
+      if (!binFile) {
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+        return { success: false, error: `ESP32 compiled but no .bin found. Files: ${files.join(', ')}` };
+      }
+
+      const binPath = path.join(tempDir, binFile);
+
+      // Clean up previous build temp dir
+      if (lastESP32BinTempDir) {
+        cleanupESP32Build(lastESP32BinTempDir);
+      }
+      lastESP32BinTempDir = tempDir;
+
+      log('IPC', `compile-code ESP32 success, binPath: ${binPath}`);
+      return { success: true, binPath };
+
+    } catch (err: any) {
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+      return { success: false, error: err.message };
+    }
+  }
+
+  // ── AVR path ─────────────────────────────────────────────────────────────
+  log('IPC', `compile-code AVR path, FQBN: ${fqbn}`);
   const result = await arduinoUploader.compileForSimulation(code, fqbn, libraryPath);
   log('IPC', `compile-code completed. Result: ${result.success ? 'Success' : 'Failure'}`);
   return result;
+});
+
+// ── ESP32 QEMU simulation IPC handlers ───────────────────────────────────
+
+ipcMain.handle('esp32-start', async (_, binPath: string) => {
+  await qemuManager.startQemu(binPath, mainWindow);
+  return { ok: true };
+});
+
+ipcMain.handle('esp32-stop', async () => {
+  qemuManager.stopQemu();
+  if (lastESP32BinTempDir) {
+    cleanupESP32Build(lastESP32BinTempDir);
+    lastESP32BinTempDir = null;
+  }
+  return { ok: true };
+});
+
+ipcMain.handle('esp32-gpio-set', async (_, pin: number, high: boolean) => {
+  const socket = await qemuManager.connectQMP();
+  if (socket) {
+    await qemuManager.sendQMPCommand(socket, {
+      execute: 'gpio-set',
+      arguments: { name: `GPIO${pin}`, level: high ? 1 : 0 },
+    });
+    socket.destroy();
+  }
+});
+
+ipcMain.handle('esp32-adc-set', async (_, channel: number, voltage: number) => {
+  const socket = await qemuManager.connectQMP();
+  if (socket) {
+    await qemuManager.sendQMPCommand(socket, {
+      execute: 'qom-set',
+      arguments: {
+        path: `/machine/soc/adc/channel[${channel}]`,
+        property: 'voltage',
+        value: voltage,
+      },
+    });
+    socket.destroy();
+  }
 });
 
 // Library Handlers (Wokwi Centralized Management)

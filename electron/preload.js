@@ -19,7 +19,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Called by CompilerService.ts → electronAPI.compileCode(code, fqbn)
   // Routes to ipcMain.handle('compile-code') in main.js.
   // Returns { success, hexContent } for AVR boards.
-  // Returns { success, binPath }   for espressif:esp32:* boards (QEMU path).
+  // Returns { success, binPath }   for esp32:esp32:* boards (QEMU path).
   compileCode: (code, fqbn, libraryPath) =>
     ipcRenderer.invoke('compile-code', code, fqbn || 'arduino:avr:uno', libraryPath),
 
