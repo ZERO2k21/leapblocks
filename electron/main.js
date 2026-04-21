@@ -3,6 +3,9 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const buildApk = require('./buildApk');
+const { makeESP32Compiler, cleanupESP32Build } = require('./esp32Compiler');
+const qemuManager = require('./qemuManager');
+const { makeESP32Uploader } = require('./esp32Uploader');
 
 const isDev = !app.isPackaged;
 const APP_ROOT = app.getAppPath();
@@ -118,6 +121,7 @@ app.on('window-all-closed', function () {
 
 app.on('before-quit', () => {
   stopBuildServer();
+  qemuManager.stopQemu();
 });
 
 // IPC Handlers
@@ -284,14 +288,42 @@ ipcMain.handle('forge-lib-remove', async (_, libraryName) => {
 
 // ── compile-code: unified handler called by CompilerService (Electron path) ──
 // Routes to AVR (.hex) or ESP32 (.bin) compilation based on FQBN.
+// For espressif:esp32:* FQBNs, returns { success, binPath } and keeps the
+// temp dir alive so QEMU can load the .bin.  Cleanup happens on esp32-stop.
 ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _libraryPath) => {
-  const isESP32 = typeof fqbn === 'string' && fqbn.startsWith('esp32:');
+  console.log(`[compile-code] ========== COMPILE START ==========`);
+  console.log(`[compile-code] FQBN: ${fqbn}`);
+
+  const isESP32Legacy = typeof fqbn === 'string' && fqbn.startsWith('esp32:');
+  const isESP32QEMU = typeof fqbn === 'string' && fqbn.startsWith('espressif:');
+  const isESP32 = isESP32Legacy || isESP32QEMU;
+
+  console.log(`[compile-code] isESP32Legacy: ${isESP32Legacy}, isESP32QEMU: ${isESP32QEMU}, isESP32: ${isESP32}`);
+
   const tempDir = path.join(app.getPath('temp'), `forge_sketch_${Date.now()}`);
   const sketchDir = path.join(tempDir, 'sketch');
   const sketchPath = path.join(sketchDir, 'sketch.ino');
 
   if (isESP32) {
-    await ensureESP32Core();
+    console.log('[compile-code] *** ESP32 DETECTED - CALLING ensureESP32Core() ***');
+
+    // Send immediate feedback to user
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('serial-data', '[SYSTEM] Checking ESP32 platform installation...\n');
+    }
+
+    const coreInstalled = await ensureESP32Core();
+    console.log(`[compile-code] ensureESP32Core() returned: ${coreInstalled}`);
+
+    if (!coreInstalled) {
+      const errorMsg = 'ESP32 core installation failed. Please install manually:\narduino-cli core install espressif:esp32 --additional-urls https://dl.espressif.com/dl/package_esp32_index.json';
+      console.error(`[compile-code] ${errorMsg}`);
+      return {
+        success: false,
+        error: errorMsg
+      };
+    }
+    console.log('[compile-code] ESP32 core verified, proceeding with compilation...');
   }
 
   try {
@@ -343,7 +375,19 @@ ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _librar
       const binFile = files.find(f => f === 'sketch.ino.bin')
         ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
       if (binFile) {
-        const binContent = fs.readFileSync(path.join(tempDir, binFile));
+        const binPath = path.join(tempDir, binFile);
+        if (isESP32QEMU) {
+          // QEMU path: return the .bin file path on disk — do NOT delete tempDir.
+          // QEMU needs the file to still exist when startQemu() is called.
+          // Cleanup happens in esp32-stop via cleanupESP32Build().
+          if (lastESP32BinTempDir) {
+            cleanupESP32Build(lastESP32BinTempDir);
+          }
+          lastESP32BinTempDir = tempDir;
+          return { success: true, binPath };
+        }
+        // Legacy esp32: path — convert to Intel HEX for the old simulation path
+        const binContent = fs.readFileSync(binPath);
         const hexContent = binToIntelHex(binContent);
         try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
         return { success: true, hexContent };
@@ -504,10 +548,82 @@ function migrateESP32LedcAPI(code) {
   return result;
 }
 
+// ── ESP32 QEMU simulation pipeline ───────────────────────────────────────
+const ESP32_FQBNS = ['espressif:esp32:esp32', 'espressif:esp32:esp32s3'];
+const { compileESP32 } = makeESP32Compiler({ runCLI, forgeLibDir: FORGE_LIB_DIR });
+
+// Track the last binPath so we can clean it up after QEMU stops
+let lastESP32BinTempDir = null;
+
+/**
+ * compile-esp32-sim: compile an ESP32 sketch and return the .bin path on disk.
+ * The temp dir is NOT deleted — QEMU needs the file.
+ * Call esp32-stop to stop QEMU, then the temp dir is cleaned up automatically.
+ */
+ipcMain.handle('compile-esp32-sim', async (_, code, fqbn) => {
+  // Clean up previous build if still around
+  if (lastESP32BinTempDir) {
+    cleanupESP32Build(lastESP32BinTempDir);
+    lastESP32BinTempDir = null;
+  }
+
+  const result = await compileESP32(code, fqbn || 'espressif:esp32:esp32');
+  if (result.success) {
+    // Remember the temp dir so we can clean it up on stop
+    lastESP32BinTempDir = require('path').dirname(result.binPath);
+  }
+  return result; // { success, binPath } or { success: false, error }
+});
+
+ipcMain.handle('esp32-start', async (_, binPath) => {
+  await qemuManager.startQemu(binPath, mainWindow);
+  return { ok: true };
+});
+
+ipcMain.handle('esp32-stop', async () => {
+  qemuManager.stopQemu();
+  // Clean up the .bin temp dir now that QEMU has stopped
+  if (lastESP32BinTempDir) {
+    cleanupESP32Build(lastESP32BinTempDir);
+    lastESP32BinTempDir = null;
+  }
+  return { ok: true };
+});
+
+ipcMain.handle('esp32-gpio-set', async (_, pin, high) => {
+  const socket = await qemuManager.connectQMP();
+  await qemuManager.sendQMPCommand(socket, {
+    execute: 'gpio-set',
+    arguments: { name: `GPIO${pin}`, level: high ? 1 : 0 },
+  });
+  socket.destroy();
+});
+
+ipcMain.handle('esp32-adc-set', async (_, channel, voltage) => {
+  const socket = await qemuManager.connectQMP();
+  await qemuManager.sendQMPCommand(socket, {
+    execute: 'qom-set',
+    arguments: {
+      path: `/machine/soc/adc/channel[${channel}]`,
+      property: 'voltage',
+      value: voltage,
+    },
+  });
+  socket.destroy();
+});
+
 // ── ensureESP32Core: install ESP32 arduino core on first use ─────────────
 let esp32CoreReady = false;
 async function ensureESP32Core() {
-  if (esp32CoreReady) return;
+  if (esp32CoreReady) return true;
+
+  // Send progress to renderer
+  const sendProgress = (msg) => {
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('serial-data', `[ESP32 SETUP] ${msg}\n`);
+    }
+    console.log(`[FORGE] ${msg}`);
+  };
 
   // Both URLs — Espressif CDN (primary) + GitHub fallback
   const ESP32_URLS = [
@@ -521,47 +637,90 @@ async function ensureESP32Core() {
     if (!configContent.includes('dl.espressif.com') && !configContent.includes('espressif/arduino-esp32')) {
       const updatedConfig = configContent.trimEnd() + `\n\nboard_manager:\n  additional_urls:\n${ESP32_URLS.map(u => `    - ${u}`).join('\n')}\n`;
       fs.writeFileSync(FORGE_CLI_YAML, updatedConfig, 'utf-8');
-      console.log('[FORGE] Added ESP32 board manager URLs to arduino-cli.yaml');
+      sendProgress('Added ESP32 board manager URLs to config');
     }
   } catch (err) {
     console.warn('[FORGE] Could not update arduino-cli.yaml:', err.message);
   }
 
   try {
-    const { stdout } = await runCLI(['core', 'list', '--format', 'json']);
+    sendProgress('Checking for ESP32 core installation...');
+    const { stdout, stderr, code: listCode } = await runCLI(['core', 'list', '--format', 'json']);
+
+    if (listCode !== 0) {
+      console.error('[FORGE] Failed to list cores:', stderr);
+      sendProgress('ERROR: Failed to list installed cores');
+      return false;
+    }
+
     let cores = [];
-    try { cores = JSON.parse(stdout); } catch (_) { }
+    try { cores = JSON.parse(stdout); } catch (e) {
+      console.warn('[FORGE] Failed to parse core list:', e.message);
+    }
+
     const installed = Array.isArray(cores) && cores.some(c =>
-      (c.id && c.id.startsWith('esp32:')) ||
-      (c.platform && c.platform.id && c.platform.id.startsWith('esp32:'))
+      (c.id && (c.id.startsWith('esp32:') || c.id.startsWith('espressif:'))) ||
+      (c.platform && c.platform.id && (c.platform.id.startsWith('esp32:') || c.platform.id.startsWith('espressif:')))
     );
 
     if (!installed) {
-      console.log('[FORGE] ESP32 core not found — installing (this may take a few minutes)...');
+      sendProgress('ESP32 core not found — installing (this may take 2-5 minutes)...');
+      sendProgress('Please wait, downloading ESP32 platform...');
+
       // Update index with both URLs
-      await runCLI(['core', 'update-index', '--additional-urls', ESP32_URLS.join(',')]);
+      const { code: updateCode, stderr: updateErr } = await runCLI([
+        'core', 'update-index',
+        '--additional-urls', ESP32_URLS.join(',')
+      ]);
+
+      if (updateCode !== 0) {
+        console.error('[FORGE] Failed to update index:', updateErr);
+        sendProgress('ERROR: Failed to update package index');
+        return false;
+      }
+
+      sendProgress('Package index updated, installing ESP32 core...');
+
       // Try primary URL first, fall back to secondary
       let installOk = false;
       for (const url of ESP32_URLS) {
-        try {
-          await runCLI(['core', 'install', 'esp32:esp32', '--additional-urls', url]);
+        const urlShort = url.includes('dl.espressif.com') ? 'Espressif CDN' : 'GitHub';
+        sendProgress(`Attempting install via ${urlShort}...`);
+
+        const { code: installCode, stdout: installOut, stderr: installErr } = await runCLI([
+          'core', 'install', 'espressif:esp32',
+          '--additional-urls', url
+        ]);
+
+        if (installCode === 0) {
           installOk = true;
-          console.log(`[FORGE] ESP32 core installed via ${url}`);
+          sendProgress(`✓ ESP32 core installed successfully!`);
+          console.log(`[FORGE] ✓ ESP32 core installed successfully via ${url}`);
           break;
-        } catch (e) {
-          console.warn(`[FORGE] Install attempt failed with ${url}:`, e.message);
+        } else {
+          const errMsg = installErr || installOut || 'Unknown error';
+          console.warn(`[FORGE] Install attempt failed with ${url}:`, errMsg);
+          sendProgress(`Install via ${urlShort} failed, trying next...`);
         }
       }
+
       if (!installOk) {
-        console.error('[FORGE] All ESP32 core install attempts failed.');
+        console.error('[FORGE] ✗ All ESP32 core install attempts failed.');
+        sendProgress('ERROR: All ESP32 core install attempts failed');
+        sendProgress('Please install manually: arduino-cli core install espressif:esp32');
+        return false;
       }
     } else {
-      console.log('[FORGE] ESP32 core already installed.');
+      sendProgress('✓ ESP32 core already installed');
+      console.log('[FORGE] ✓ ESP32 core already installed.');
     }
+
     esp32CoreReady = true;
+    return true;
   } catch (err) {
-    console.warn('[FORGE] ESP32 core check/install warning:', err.message);
-    esp32CoreReady = true;
+    console.error('[FORGE] ESP32 core check/install error:', err.message);
+    sendProgress(`ERROR: ${err.message}`);
+    return false;
   }
 }
 

@@ -23,7 +23,10 @@ export interface ESP32EngineOptions extends NetworkBridgeOptions {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 // Cache the runner reference after first resolution to avoid per-call async overhead
-let _runnerRef: { setPinState: (id: string, state: PinState) => void; getPinState: (id: string) => PinState; getESP32AnalogVoltage: (gpio: number) => number } | null = null;
+let _runnerRef: { setPinState: (id: string, state: PinState) => void; getPinState: (id: string) => PinState } | null = null;
+
+// Local analog voltage store for stub mode — keyed by GPIO number (0–39), 0.0–3.3 V
+const _stubAnalogValues = new Map<number, number>();
 
 // Cache the store reference for synchronous reads (sensor values, node data)
 let _storeRef: { getState: () => { nodes: any[]; updateNodeData: (id: string, data: any) => void } } | null = null;
@@ -670,9 +673,7 @@ class SketchStub {
                     // analogRead marker — synchronous via cached runner ref
                     if (expr.startsWith('__ar_')) {
                         const gpio = parseInt(expr.replace('__ar_', ''), 10);
-                        const v = _runnerRef
-                            ? (_runnerRef as any).getESP32AnalogVoltage(gpio)
-                            : 0;
+                        const v = _stubAnalogValues.get(gpio) ?? 0;
                         runtimeVars.set(action.varName!, Math.round((v / 3.3) * 4095));
                         break;
                     }
@@ -1093,7 +1094,7 @@ class SketchStub {
                 }
 
                 case 'printAnalog': {
-                    const voltage = _runnerRef ? (_runnerRef as any).getESP32AnalogVoltage(action.gpio!) : 0;
+                    const voltage = _stubAnalogValues.get(action.gpio!) ?? 0;
                     const raw = Math.round((voltage / 3.3) * 4095);
                     this.emit(action.newline ? `${raw}\n` : `${raw}`);
                     break;
@@ -1511,6 +1512,8 @@ export class ESP32Engine {
     }
 
     setAnalogInput(pin: number, millivolts: number): void {
+        // Store in stub analog map (voltage = millivolts / 1000, clamped to 3.3V)
+        _stubAnalogValues.set(pin, Math.min(3.3, millivolts / 1000));
         const exports = this.wasmInstance?.exports as any;
         exports?.esp32_set_adc?.(pin, millivolts);
     }

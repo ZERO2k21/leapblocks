@@ -8,7 +8,6 @@ import { Node, Edge, Connection, addEdge as rfAddEdge } from 'reactflow';
 import { v4 as uuidv4 } from 'uuid';
 import { simulationRunner } from '../engine/SimulationRunner';
 import { circuitEngine } from '../engine/CircuitEngine';
-import { injectStoreRef } from '../engine/esp32/ESP32Engine';
 
 export interface ForgeState {
   nodes: Node[];
@@ -134,23 +133,33 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   startSimulation: (hexString) => set((state) => {
     console.log('[FORGE STORE] startSimulation triggered. Hex length:', hexString.length);
-    // Force simulation engine refresh (Ideal Mode - Ver 1.0.1)
     circuitEngine.init();
 
-    // Sync board selection before init
-    simulationRunner.setBoard(state.board);
+    // ── QEMU ESP32 boards (espressif:esp32:*) ─────────────────────────────
+    // The sentinel '__esp32_qemu__' is passed when ForgeStudio has already
+    // called simulationRunner.setBoard(board, binPath) with the compiled .bin.
+    // We must NOT call simulationRunner.setBoard() again here — that would
+    // overwrite the binPath that was just stored.
+    // We must NOT call initCPU() — there is no AVR hex to load.
+    // SimulationRunner.start() will call esp32Runner.start(this.binPath) directly.
+    const isQEMU = hexString === '__esp32_qemu__';
 
-    // Inject store reference into ESP32Engine synchronously before initCPU
-    // so withStore() works immediately during parseAndSchedule()
-    injectStoreRef(useForgeStore);
+    if (!isQEMU) {
+      // AVR path: sync board (no binPath) then load the compiled .hex
+      simulationRunner.setBoard(state.board);
+      console.log('[FORGE STORE] Initializing AVR CPU with hex...');
+      simulationRunner.initCPU(hexString);
+    } else {
+      // QEMU path: board + binPath already set by ForgeStudio — do not overwrite
+      console.log('[FORGE STORE] QEMU ESP32 path — binPath already set, skipping setBoard/initCPU.');
+    }
 
-    // Pass the downloaded compiled hex into the CPU
-    console.log('[FORGE STORE] Initializing CPU and syncing graph...');
-    simulationRunner.initCPU(hexString);
     circuitEngine.syncCircuitGraph();
 
     console.log('[FORGE STORE] Firing simulationRunner.start()');
-    simulationRunner.start();
+    simulationRunner.start().catch(err => {
+      console.error('[FORGE STORE] simulationRunner.start() failed:', err);
+    });
 
     return { isSimulating: true, serialOutput: '', wifiLog: [] };
   }),
