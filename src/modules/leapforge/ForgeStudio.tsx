@@ -11,7 +11,16 @@ import './elements/leap-elements';
 import './ForgeStudio.css';
 import { useForgeStore } from './store/useForgeStore';
 import { BoardSelector, BoardType } from './components/BoardSelector';
-import { simulationRunner } from './engine/SimulationRunner';
+
+// Lazy-load simulation runner only when needed
+let simulationRunner: any = null;
+async function getSimulationRunner() {
+  if (!simulationRunner) {
+    const module = await import('./engine/SimulationRunner');
+    simulationRunner = module.simulationRunner;
+  }
+  return simulationRunner;
+}
 
 // Lazy load complex inner components
 const ForgeCanvas = lazy(() => import('./components/ForgeCanvas'));
@@ -51,20 +60,8 @@ export default function ForgeStudio({ onBack }: ForgeStudioProps) {
 
   const [activeTab, setActiveTab] = useState<'code' | 'serial' | 'wifi' | 'libraries'>('code');
 
-  // WiFi status polling (ESP32 only)
+  // WiFi status polling removed — esp32WiFiConnected/esp32IPAddress were stub-engine only
   const [wifiStatus, setWifiStatus] = useState('');
-  useEffect(() => {
-    if (!isSimulating || board !== 'esp32') {
-      setWifiStatus('');
-      return;
-    }
-    const id = setInterval(() => {
-      if (simulationRunner.esp32WiFiConnected) {
-        setWifiStatus(`Connected · ${simulationRunner.esp32IPAddress}`);
-      }
-    }, 500);
-    return () => clearInterval(id);
-  }, [isSimulating, board]);
 
   const [code, setCode] = useState(`// LeapForge Serial Test
 void setup() {
@@ -86,6 +83,8 @@ void loop() {
 
   // Auto-initialized state removed to enforce global-only forge-lib management.
 
+  const ESP32_BOARD_IDS = new Set(['esp32', 'esp32-devkit-v1', 'esp32-s2', 'esp32-s3', 'esp32-c3']);
+
   const handleToggleSimulation = async () => {
     console.log('[FORGE UI] Simulation button clicked. Currently simulating:', isSimulating);
     if (isSimulating) {
@@ -101,7 +100,13 @@ void loop() {
       'arduino-mega': 'arduino:avr:mega',
       'attiny85': 'attiny:avr:ATtinyX5:cpu=attiny85,clock=internal8',
       'esp32': 'esp32:esp32:esp32',
+      'esp32-devkit-v1': 'esp32:esp32:esp32',
+      'esp32-s2': 'esp32:esp32:esp32s2',
+      'esp32-s3': 'esp32:esp32:esp32s3',
+      'esp32-c3': 'esp32:esp32:esp32c3',
     };
+
+    const isESP32 = ESP32_BOARD_IDS.has(board);
 
     console.log('[FORGE UI] Preparing to compile code...');
     setIsCompiling(true);
@@ -109,6 +114,40 @@ void loop() {
     clearSerial();
 
     try {
+      // ── ESP32 QEMU path ────────────────────────────────────────────────────
+      if (isESP32) {
+        console.log('[FORGE UI] ESP32 board detected — using QEMU compile path...');
+        const fqbn = FQBN[board] ?? 'esp32:esp32:esp32';
+        const result = await compileCode({
+          code,
+          board: fqbn,
+          libraries: useForgeStore.getState().importedLibraries,
+        });
+        console.log('[FORGE UI] ESP32 compile result:', result.success ? 'Success' : result.error);
+
+        if (!result.success) {
+          setCompileError(result.error || 'ESP32 compilation failed');
+          appendSerial(`[ERROR]: ${result.error || 'ESP32 compilation failed'}\n`);
+          return;
+        }
+
+        // compile-code returns binPath for espressif:* FQBNs
+        const binPath = result.binPath;
+        if (!binPath) {
+          setCompileError('ESP32 compile succeeded but no .bin path returned');
+          appendSerial('[ERROR]: No .bin path returned from compiler\n');
+          return;
+        }
+
+        // Pass binPath to SimulationRunner via setBoard, then start QEMU
+        const runner = await getSimulationRunner();
+        runner.setBoard(board, binPath);
+        startSimulation('__esp32_qemu__');
+        appendSerial('ESP32 compiled. Starting QEMU simulation...\n');
+        return;
+      }
+
+      // ── AVR path ───────────────────────────────────────────────────────────
       console.log('[FORGE UI] Sending quest to CompilerService...');
       const result = await compileCode({
         code,
@@ -119,8 +158,6 @@ void loop() {
 
       if (result.success && result.hexContent) {
         console.log('[FORGE UI] Starting simulation with new hex code.');
-        // Give stub mode the sketch source so it can simulate Serial/WiFi output
-        simulationRunner.setSketchSource(code);
         startSimulation(result.hexContent);
         appendSerial("Compilation successful. Simulation running...\n");
       } else {

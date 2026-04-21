@@ -21,6 +21,7 @@ export interface CompileRequest {
 export interface CompileResult {
   success: boolean;
   hexContent?: string;
+  binPath?: string;   // returned for esp32:esp32:* FQBNs (QEMU path)
   error?: string;
 }
 
@@ -35,6 +36,7 @@ export const compileCode = async (req: CompileRequest): Promise<CompileResult> =
       return {
         success: result.success,
         hexContent: result.hexContent,
+        binPath: result.binPath,
         error: result.error,
       };
     } catch (err: any) {

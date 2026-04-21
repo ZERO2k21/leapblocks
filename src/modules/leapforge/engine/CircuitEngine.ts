@@ -14,6 +14,7 @@ import { StepperEmulator } from './StepperEmulator';
 import { SSD1306I2CSlave } from './SSD1306I2CSlave';
 import { ILI9341SPISlave } from './ILI9341SPISlave';
 import { MPU6050I2CSlave } from './MPU6050I2CSlave';
+import { ESP32_BOARD_CONFIG, ESP32_BOARDS, type ESP32PinInfo } from '../../../simulation/ESP32BoardConfig';
 
 /** Simplified ECG pulse shape used by the heart-beat sensor emulator. Returns -1..+1 for phase 0..1 */
 function heartEcgPulse(phase: number): number {
@@ -161,6 +162,26 @@ class CircuitEngine {
   }
 
   constructor() { }
+
+  /**
+   * Resolve an Arduino-label pin (e.g. "21", "32") to its ESP32PinInfo using
+   * ESP32_BOARD_CONFIG.  Throws if the label is not in the GPIO map.
+   * Used by syncCircuitGraph to wire QEMU-backed GPIO/ADC listeners.
+   */
+  public convertESP32Pin(label: string): ESP32PinInfo {
+    const gpioNum = ESP32_BOARD_CONFIG.gpio[label];
+    if (gpioNum === undefined) {
+      throw new Error(`[CircuitEngine] Unknown ESP32 pin label: "${label}"`);
+    }
+    const adcChannel = ESP32_BOARD_CONFIG.adc[label];
+    const i2c = ESP32_BOARD_CONFIG.i2c;
+    return {
+      gpioNum,
+      adcChannel,
+      isI2CSDA: gpioNum === i2c.sda,
+      isI2CSCL: gpioNum === i2c.scl,
+    };
+  }
 
   public init() {
     if (this.isInitialized) return;
@@ -341,12 +362,15 @@ class CircuitEngine {
             const boardPin = (outWire.source === nodeId ? outWire.targetHandle : outWire.sourceHandle) ?? '';
             const cleanPin = boardPin.replace(/__target$/, '');
 
-            // Try ESP32 first, then AVR
+            // Try ESP32 QEMU runner first, then AVR
             const esp32Mapping = simulationRunner.convertESP32Pin(cleanPin);
             if (esp32Mapping && esp32Mapping.avrPin.startsWith('ESP')) {
-              const gpio = parseInt(esp32Mapping.avrPin.replace('ESP', ''), 10);
-              // Scale to 3.3V for ESP32 ADC
-              simulationRunner.setESP32AnalogInput(gpio, (adcValue / 1023) * 3.3);
+              const qemuRunner = simulationRunner.ESP32Runner;
+              if (qemuRunner && esp32Mapping.adcChannel !== undefined) {
+                // QEMU path: inject via ADC IPC
+                const scaledVoltage = (adcValue / 1023) * 3.3;
+                qemuRunner.setAnalogInput(esp32Mapping.adcChannel, scaledVoltage).catch(() => { });
+              }
             } else {
               const mapping = simulationRunner.convertArduinoPin(cleanPin);
               if (mapping && mapping.adcChannel !== undefined) {
@@ -379,26 +403,6 @@ class CircuitEngine {
     if (simulationRunner.TWI) {
       // Arduino/AVR: attach via hardware TWI
       simulationRunner.TWI.eventHandler = this.i2cBusManager;
-    }
-    // ESP32: attach I2C bus manager via the stub's Wire call interception
-    // The SketchStub parses lcd.print/display.println and calls updateNodeData directly,
-    // but for proper I2C protocol emulation we also wire the bus manager here so
-    // MPU6050 slider values are pushed into the emulator on every syncCircuitGraph.
-    if (simulationRunner.isESP32Board) {
-      // Push current MPU6050 values immediately (slider may have changed)
-      nodes.forEach(node => {
-        if (node.data?.type === 'mpu6050') {
-          const slave = this.mpu6050Slaves.get(node.id);
-          if (slave) {
-            const sv = node.data?.sensorValues ?? {};
-            slave.setSensorValues({
-              accelX: sv.accelX ?? 0, accelY: sv.accelY ?? 0, accelZ: sv.accelZ ?? 1,
-              gyroX: sv.gyroX ?? 0, gyroY: sv.gyroY ?? 0, gyroZ: sv.gyroZ ?? 0,
-              temp: sv.temp ?? 25,
-            });
-          }
-        }
-      });
     }
 
     // 2. Map board nodes (Arduino/ESP32) and their connected peripherals
@@ -437,7 +441,7 @@ class CircuitEngine {
           const esp32Mapping = simulationRunner.convertESP32Pin(arduinoPinName);
           if (!esp32Mapping) return;
           pinId = esp32Mapping.avrPin;
-          console.log(`[FORGE CIRCUIT 7SEG] ESP32 Wired: Board[${arduinoPinName}→${pinId}] <==> Peripheral[${peripheralPinName}] (${pType})`);
+          console.log(`[FORGE CIRCUIT 7SEG] ESP32 Wired: Board[${arduinoPinName}→${pinId}] <==> Peripheral[${peripheralPinName}]`);
         } else {
           const mapping = simulationRunner.convertArduinoPin(arduinoPinName);
           if (!mapping) return;
@@ -956,6 +960,126 @@ class CircuitEngine {
         };
 
         // Attach to the simulation runner
+        // ── QEMU ESP32 branch (esp32:esp32:* boards) ─────────────────────
+        // When the QEMU runner is active, wire GPIO output listeners and ADC
+        // inputs through ESP32SimulationRunner instead of the AVR addListener path.
+        // Uses ESP32_BOARD_CONFIG pin map (FQBN-style boards only).
+        const qemuRunner = simulationRunner.ESP32Runner;
+        console.log(`[FORGE CIRCUIT] syncCircuitGraph: qemuRunner exists? ${!!qemuRunner}, isESP32Board? ${isESP32Board}`);
+        if (qemuRunner) {
+          let pinInfo: ESP32PinInfo | null = null;
+          try {
+            pinInfo = this.convertESP32Pin(arduinoPinName!);
+            console.log(`[FORGE CIRCUIT] convertESP32Pin('${arduinoPinName}') → pinInfo:`, pinInfo);
+          } catch (err) {
+            console.warn(`[FORGE CIRCUIT] convertESP32Pin('${arduinoPinName}') threw error:`, err);
+            // Pin label not in ESP32_BOARD_CONFIG (power/GND/special) — skip silently
+          }
+
+          if (pinInfo) {
+            const { gpioNum, adcChannel } = pinInfo;
+            console.log(`[FORGE CIRCUIT] pinInfo exists: gpioNum=${gpioNum}, adcChannel=${adcChannel}, isOutput=${adcChannel === undefined}`);
+
+            if (adcChannel !== undefined) {
+              // ── Analog input: sensor → ADC channel ─────────────────────────
+              // Inject current voltage immediately, then subscribe to sensorValues
+              // changes so slider drags push live updates into QEMU.
+              const peripheralNodeForADC = nodes.find(n => n.id === peripheralId);
+              const pTypeADC = peripheralNodeForADC?.data?.type;
+              const svADC = peripheralNodeForADC?.data?.sensorValues;
+              const voltageADC = this.computeSensorVoltage(pTypeADC, svADC, 3.3);
+              qemuRunner.setAnalogInput(adcChannel, voltageADC).catch(err => {
+                console.error(`[FORGE CIRCUIT] QEMU ADC inject error (ch${adcChannel}):`, err);
+              });
+              console.log(`[FORGE CIRCUIT] QEMU ADC: pin ${arduinoPinName} → ADC1_CH${adcChannel} = ${voltageADC.toFixed(3)}V`);
+
+              // Live subscription — fires on any store change, checks sensorValues
+              let lastSv = svADC;
+              const adcUnsub = useForgeStore.subscribe((state) => {
+                const newSv = state.nodes.find(n => n.id === peripheralId)?.data?.sensorValues;
+                if (newSv !== lastSv) {
+                  lastSv = newSv;
+                  const currentNode = state.nodes.find(n => n.id === peripheralId);
+                  const pType = currentNode?.data?.type;
+                  const v = this.computeSensorVoltage(pType, newSv, 3.3);
+                  qemuRunner.setAnalogInput(adcChannel, v).catch(() => { });
+                }
+              });
+              const existingAdcUnsub = this.activeSubscriptions.get(`adc-${edge.id}`);
+              existingAdcUnsub?.();
+              this.activeSubscriptions.set(`adc-${edge.id}`, adcUnsub);
+            } else {
+              // ── Digital output: GPIO → LED / buzzer / etc. ──────────────────
+              const qemuPinListener = (high: boolean) => {
+                const { nodes: currentNodes, updateNodeData: upd } = useForgeStore.getState();
+                const peripheralNode = currentNodes.find(n => n.id === peripheralId);
+                if (!peripheralNode) return;
+
+                const pType = peripheralNode.data?.type;
+                const currentPinStates = peripheralNode.data?.pinStates || {};
+                const pinKey = `pin_${peripheralPinName}`;
+                const intensity = high ? 1.0 : 0.0;
+
+                const updates: Record<string, any> = {
+                  pinStates: { ...currentPinStates, [pinKey]: high },
+                  damaged: false,
+                };
+
+                if (pType === 'led') {
+                  updates.brightness = intensity;
+                } else if (pType === 'rgb-led') {
+                  updates[`intensity_${peripheralPinName}`] = intensity;
+                } else if (pType === 'buzzer') {
+                  updates.intensity = intensity;
+                  updates.hasSignal = high;
+                } else if (pType === '7segment') {
+                  const buffer = this.peripheralPinBuffers.get(peripheralId) || {};
+                  buffer[peripheralPinName!] = high;
+                  this.peripheralPinBuffers.set(peripheralId, buffer);
+                  const segOrder = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'DP'];
+                  const values = segOrder.map(seg => (buffer[seg] ? 1 : 0));
+                  updates.segValues = values;
+                }
+
+                upd(peripheralId, updates);
+              };
+
+              // Get peripheral type for logging and PWM handling
+              const { nodes: currentNodes } = useForgeStore.getState();
+              const peripheralNode = currentNodes.find(n => n.id === peripheralId);
+              const pType = peripheralNode?.data?.type;
+
+              qemuRunner.addPinListener(gpioNum, qemuPinListener);
+              console.log(`[FORGE CIRCUIT] QEMU GPIO listener registered: pin ${arduinoPinName} → GPIO${gpioNum} → peripheral ${peripheralId}[${peripheralPinName}], pType=${pType}`);
+
+              // ── PWM listener (analogWrite → brightness / pwmValue) ──────────
+              const qemuPwmListener = (value: number) => {
+                const { nodes: currentNodes, updateNodeData: upd } = useForgeStore.getState();
+                const peripheralNode = currentNodes.find(n => n.id === peripheralId);
+                if (!peripheralNode) return;
+                const pType = peripheralNode.data?.type;
+                const updates: Record<string, any> = { pwmValue: value, damaged: false };
+                if (pType === 'led') updates.brightness = value / 255;
+                else if (pType === 'rgb-led') updates[`intensity_${peripheralPinName}`] = value / 255;
+                else if (pType === 'buzzer') { updates.intensity = value / 255; updates.hasSignal = value > 0; }
+                upd(peripheralId, updates);
+              };
+              qemuRunner.addPwmListener(gpioNum, qemuPwmListener);
+
+              // Store cleanup thunk
+              const existingUnsub = this.activeSubscriptions.get(edge.id);
+              this.activeSubscriptions.set(edge.id, () => {
+                existingUnsub?.();
+                qemuRunner.removePinListener(gpioNum, qemuPinListener);
+                qemuRunner.removePwmListener(gpioNum, qemuPwmListener);
+              });
+            }
+          }
+          // QEMU path handled — skip AVR addListener below
+          return;
+        }
+
+        // ── AVR path ──────────────────────────────────────────────────────────
         simulationRunner.addListener(avrPin, listener);
 
         // Log 7-segment listener registration
@@ -1089,7 +1213,15 @@ class CircuitEngine {
       ];
       if (analogSensors.includes(pType) || esp32Mapping.adcChannel !== undefined) {
         const voltage = this.computeSensorVoltage(pType, sv, 3.3);
-        simulationRunner.setESP32AnalogInput(gpioNum, voltage);
+
+        // Route through QEMU runner if active, otherwise fall back to setVirtualInput
+        const qemuRunner = simulationRunner.ESP32Runner;
+        if (qemuRunner && esp32Mapping.adcChannel !== undefined) {
+          qemuRunner.setAnalogInput(esp32Mapping.adcChannel, voltage).catch(() => { });
+        } else {
+          // Non-QEMU ESP32 board: update pin state map so listeners fire
+          simulationRunner.setVirtualInput(esp32Mapping.avrPin, voltage > 0.1);
+        }
         console.log(`[FORGE CIRCUIT] ESP32 Analog: ${esp32Mapping.avrPin} = ${voltage.toFixed(3)}V (${pType})`);
 
         // Also inject threshold digital output pins (DO/DOUT) for dual-output sensors

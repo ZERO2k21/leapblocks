@@ -13,15 +13,8 @@ import { parseHexString } from './HexParser';
 import { BLINK_HEX } from './TestSketches';
 import { USARTEmulator } from './USARTEmulator';
 import { BOARDS, MCUConfig } from './BoardConfig';
-import { ESP32Engine, injectStoreRef } from './esp32/ESP32Engine';
-
-/** Board IDs that use the ESP32 engine instead of AVR */
-const ESP32_BOARDS = new Set(['esp32', 'esp32-devkit-v1', 'esp32-s2', 'esp32-s3', 'esp32-c3']);
-
-/** TCP proxy URL — override via VITE_TCP_PROXY_URL env var */
-const TCP_PROXY_URL =
-  (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_TCP_PROXY_URL) ||
-  'wss://leapforge-tcp-proxy.railway.app';
+import { ESP32SimulationRunner } from '../../../simulation/ESP32SimulationRunner';
+import { ESP32_BOARDS as ESP32_QEMU_BOARDS } from '../../../simulation/ESP32BoardConfig';
 
 export type PinState = 'HIGH' | 'LOW' | 'FLOATING';
 export type PinListener = (state: PinState) => void;
@@ -48,11 +41,11 @@ class SimulationRunner {
   private watchdog: AVRWatchdog | null = null;
   private clock: AVRClock | null = null;
 
-  // ── ESP32 engine (parallel to AVR) ──────────────────────────────────────
-  private esp32Engine: ESP32Engine | null = null;
-  private esp32Running = false;
-  private esp32InitPromise: Promise<void> | null = null;
-  private pendingSketchSource = '';
+  // ── ESP32 QEMU runner (FQBN-based boards: esp32:esp32:*) ─────────────
+  private esp32Runner: ESP32SimulationRunner | null = null;
+  // binPath is set by setBoard(boardId, binPath) when ForgeStudio receives the
+  // compiled .bin from the main process.  It is consumed by start() to launch QEMU.
+  private binPath: string | null = null;
 
   private selectedBoard: string = 'arduino-uno';
 
@@ -72,43 +65,15 @@ class SimulationRunner {
 
   /**
    * Initializes the inner AVR CPU with a compiled Hex buffer.
-   * For ESP32 boards, initialises the ESP32Engine instead.
+   * For QEMU ESP32 boards (esp32:esp32:*), creates the QEMU runner instead.
    */
   initCPU(hexString: string = BLINK_HEX) {
-    if (ESP32_BOARDS.has(this.selectedBoard)) {
-      this.initESP32CPU(hexString);
+    // ── QEMU ESP32 path (FQBN-style board IDs: esp32:esp32:*) ────────────
+    if (ESP32_QEMU_BOARDS.has(this.selectedBoard)) {
+      this.esp32Runner = new ESP32SimulationRunner();
       return;
     }
     this.initAVRCPU(hexString);
-  }
-
-  /** ESP32 path — waits for init to complete before starting */
-  private initESP32CPU(hexString: string) {
-    this.esp32Engine = new ESP32Engine({
-      tcpProxyUrl: TCP_PROXY_URL,
-      simulatedIP: '192.168.1.100',
-      sketchSource: this.pendingSketchSource,
-      onWiFiLog: (msg) => {
-        import('../store/useForgeStore').then(({ useForgeStore }) => {
-          useForgeStore.getState().appendSerial(msg + '\n');
-          useForgeStore.getState().appendWiFiLog?.(msg);
-        });
-      },
-      onPinChange: (pin, val) => {
-        this.setPinState(`ESP${pin}`, val ? 'HIGH' : 'LOW');
-      },
-      onUARTData: (char) => {
-        import('../store/useForgeStore').then(({ useForgeStore }) => {
-          useForgeStore.getState().appendSerial(char);
-        });
-      },
-    });
-
-    // Store the promise so start() can wait for it
-    this.esp32InitPromise = this.esp32Engine.init(hexString).catch(err => {
-      console.error('[FORGE ENGINE] ESP32 init failed:', err);
-    });
-    console.log('[FORGE ENGINE] ESP32 engine initialised.');
   }
 
   /** Original AVR path — unchanged */
@@ -174,38 +139,33 @@ class SimulationRunner {
     console.log(`[FORGE ENGINE] MCU peripherals (Clock, Watchdog, ADC, Timers) initialized.`);
   } // end initAVRCPU
 
-  public setBoard(boardId: string) {
+  public setBoard(boardId: string, binPath?: string) {
     this.selectedBoard = boardId;
-    if (this.isRunning || this.esp32Running) {
+    if (binPath) {
+      this.binPath = binPath;
+      console.log(`[SimulationRunner] binPath stored for QEMU: ${binPath}`);
+    }
+    if (this.isRunning) {
       this.reset();
     }
-  }
-
-  /** Store the sketch source so ESP32 stub mode can simulate Serial/WiFi output */
-  public setSketchSource(source: string): void {
-    this.pendingSketchSource = source;
   }
 
   /**
    * Start the simulation loop
    */
-  start() {
-    // ── ESP32 path ────────────────────────────────────────────────
-    if (ESP32_BOARDS.has(this.selectedBoard)) {
-      if (this.esp32Running) return;
-      this.esp32Running = true;
-      // Wait for async init (WASM fetch + stub setup) before starting the loop
-      const doStart = () => {
-        if (!this.esp32Running) return; // stopped before init finished
-        this.esp32Engine?.start();
-        console.log('[FORGE] ESP32 Simulator Engine started.');
-      };
-      if (this.esp32InitPromise) {
-        this.esp32InitPromise.then(doStart);
-      } else {
-        doStart();
+  async start() {
+    // ── QEMU ESP32 path (esp32:esp32:*) ──────────────────────
+    if (ESP32_QEMU_BOARDS.has(this.selectedBoard)) {
+      if (!this.binPath) {
+        throw new Error(
+          '[FORGE] binPath is required for QEMU ESP32 simulation. ' +
+          'Call setBoard(boardId, binPath) before start().'
+        );
       }
-      return;
+      if (!this.esp32Runner) this.esp32Runner = new ESP32SimulationRunner();
+      await this.esp32Runner.start(this.binPath);
+      console.log('[FORGE] QEMU ESP32 runner started, binPath:', this.binPath);
+      return; // no requestAnimationFrame loop for QEMU
     }
 
     // ── AVR path ──────────────────────────────────────────────────
@@ -229,12 +189,11 @@ class SimulationRunner {
    * Stop the simulation
    */
   stop() {
-    // ── ESP32 path ────────────────────────────────────────────────
-    if (ESP32_BOARDS.has(this.selectedBoard)) {
-      if (!this.esp32Running) return;
-      this.esp32Running = false;
-      this.esp32Engine?.stop();
-      console.log('[FORGE] ESP32 Simulator Engine stopped.');
+    // ── QEMU ESP32 path (esp32:esp32:*) ──────────────────────
+    if (ESP32_QEMU_BOARDS.has(this.selectedBoard)) {
+      this.esp32Runner?.stop();
+      this.binPath = null; // clear so a stale path can't be reused
+      console.log('[FORGE] QEMU ESP32 runner stopped.');
       return;
     }
 
@@ -252,11 +211,11 @@ class SimulationRunner {
    * Tears down the CPU instance and clears pin states.
    */
   reset() {
-    if (ESP32_BOARDS.has(this.selectedBoard)) {
-      this.esp32Engine?.stop();
-      this.esp32Engine = null;
-      this.esp32Running = false;
-      this.esp32InitPromise = null;
+    // ── QEMU ESP32 path ───────────────────────────────────────────
+    if (ESP32_QEMU_BOARDS.has(this.selectedBoard)) {
+      this.esp32Runner?.stop();
+      this.esp32Runner = null;
+      this.binPath = null; // force caller to supply a fresh binPath on next start
     } else {
       this.stop();
       this.cpu = null;
@@ -421,16 +380,9 @@ class SimulationRunner {
 
   /**
    * Inject an analog voltage into a specific ADC channel.
-   * For Arduino: channel = 0-5, voltage = 0-5V → writes to avr8js ADC.
-   * For ESP32: channel = GPIO number, voltage = 0-3.3V → writes to esp32AnalogValues.
+   * channel = 0-5, voltage = 0-5V → writes to avr8js ADC.
    */
   setAnalogInput(channel: number, voltage: number) {
-    // ESP32 boards route through the ESP32 analog store
-    if (ESP32_BOARDS.has(this.selectedBoard)) {
-      this.setESP32AnalogInput(channel, voltage);
-      return;
-    }
-    // AVR path
     if (!this.adc) return;
     if (channel < 0 || channel >= this.adc.channelValues.length) return;
     this.adc.channelValues[channel] = voltage;
@@ -544,14 +496,10 @@ class SimulationRunner {
   }
 
   /**
-   * Inject an analog voltage — works for both AVR (ADC channel) and ESP32 (GPIO map).
-   * For ESP32, the gpio number is derived from the avrPin string "ESP{n}".
+   * Inject an analog voltage — for AVR (ADC channel).
    */
   setAnalogInputForPin(mapping: PinMapping, voltage: number): void {
-    if (mapping.avrPin.startsWith('ESP')) {
-      const gpio = parseInt(mapping.avrPin.replace('ESP', ''), 10);
-      this.setESP32AnalogInput(gpio, voltage);
-    } else if (mapping.adcChannel !== undefined) {
+    if (mapping.adcChannel !== undefined) {
       this.setAnalogInput(mapping.adcChannel, voltage);
     }
   }
@@ -583,45 +531,14 @@ class SimulationRunner {
 
   // ── ESP32 status getters ─────────────────────────────────────────────────
 
+  /** Access the QEMU-backed ESP32 runner (esp32:esp32:* boards only) */
+  public get ESP32Runner(): ESP32SimulationRunner | null {
+    return this.esp32Runner;
+  }
+
   public get isESP32Board(): boolean {
-    return ESP32_BOARDS.has(this.selectedBoard);
+    return ESP32_QEMU_BOARDS.has(this.selectedBoard);
   }
-
-  public get esp32WiFiConnected(): boolean {
-    return this.esp32Engine?.networkConnected ?? false;
-  }
-
-  public get esp32IPAddress(): string {
-    return this.esp32Engine?.ipAddress ?? '';
-  }
-
-  /**
-   * Inject a digital signal into an ESP32 GPIO pin (stub mode).
-   * Equivalent to setVirtualInput() for AVR.
-   * pinId format: "ESP4", "ESP13", etc.
-   */
-  public setESP32DigitalInput(gpioNum: number, isHigh: boolean): void {
-    this.setPinState(`ESP${gpioNum}`, isHigh ? 'HIGH' : 'LOW');
-  }
-
-  /**
-   * Inject an analog voltage into an ESP32 ADC pin (stub mode).
-   * The stub's analogRead() parser will read from this map.
-   * gpioNum: the GPIO number (e.g. 34, 35, 32, 33, 36, 39)
-   * voltage: 0.0 – 3.3V (ESP32 ADC reference)
-   */
-  public setESP32AnalogInput(gpioNum: number, voltage: number): void {
-    this.esp32AnalogValues.set(gpioNum, voltage);
-    // Also notify any listeners watching this pin (for future WASM mode)
-    this.setPinState(`ESP${gpioNum}`, voltage > 0.1 ? 'HIGH' : 'LOW');
-  }
-
-  /** Read the last injected analog voltage for an ESP32 GPIO (used by stub analogRead parser) */
-  public getESP32AnalogVoltage(gpioNum: number): number {
-    return this.esp32AnalogValues.get(gpioNum) ?? 0;
-  }
-
-  private esp32AnalogValues = new Map<number, number>();
 }
 
 // Export a singleton instance

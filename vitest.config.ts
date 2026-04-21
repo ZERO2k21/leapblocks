@@ -14,11 +14,28 @@ const dirname =
 export default defineConfig({
   test: {
     projects: [
+      // ── Node environment — unit tests (no browser, no DOM) ──────────────
+      {
+        test: {
+          name: 'unit',
+          environment: 'node',
+          include: [
+            'src/simulation/__tests__/**/*.test.ts',
+            'test/**/*.test.ts',
+          ],
+          globals: true,
+        },
+        resolve: {
+          alias: {
+            // Stub out electron so imports don't crash in Node
+            electron: path.join(dirname, 'test/__mocks__/electron.ts'),
+          },
+        },
+      },
+      // ── Storybook browser tests ──────────────────────────────────────────
       {
         extends: true,
         plugins: [
-          // The plugin will run tests for the stories defined in your Storybook config
-          // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
           storybookTest({ configDir: path.join(dirname, '.storybook') }),
         ],
         test: {

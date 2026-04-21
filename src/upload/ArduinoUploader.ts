@@ -454,7 +454,8 @@ directories:
             let cores: any[] = [];
             try { cores = JSON.parse(stdout || '[]'); } catch (_) { }
             const installed = cores.some((c: any) =>
-                (c.id ?? c.platform?.id ?? '').startsWith('esp32:')
+                (c.id ?? c.platform?.id ?? '').startsWith('esp32:') ||
+                (c.id ?? c.platform?.id ?? '').startsWith('espressif:')
             );
 
             if (!installed) {

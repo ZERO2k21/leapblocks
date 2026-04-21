@@ -4,23 +4,97 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, lazy, Suspense } from 'react';
-import Loader from './components/Loader';
-const LandingPage = lazy(() => import('./LandingPage'));
 
-const IntermediateApp = lazy(() => import('./IntermediateApp'));
+const APP_LOAD_START = performance.now();
+const logAppTiming = (label: string) => {
+    const elapsed = (performance.now() - APP_LOAD_START).toFixed(2);
+    console.log(`[APP TIMING] ${elapsed}ms - ${label}`);
+};
+
+logAppTiming('App.tsx module loaded');
+
+import Loader from './components/Loader';
+logAppTiming('Loader imported');
+
+const LandingPage = lazy(() => {
+    logAppTiming('LandingPage lazy load started');
+    return import('./LandingPage').then(module => {
+        logAppTiming('LandingPage lazy load completed');
+        return module;
+    });
+});
+
+const IntermediateApp = lazy(() => {
+    logAppTiming('IntermediateApp lazy load started');
+    return import('./IntermediateApp').then(module => {
+        logAppTiming('IntermediateApp lazy load completed');
+        return module;
+    });
+});
+
 // @ts-ignore
-const JuniorApp = lazy(() => import('./junior/JuniorApp'));
+const JuniorApp = lazy(() => {
+    logAppTiming('JuniorApp lazy load started');
+    return import('./junior/JuniorApp').then(module => {
+        logAppTiming('JuniorApp lazy load completed');
+        return module;
+    });
+});
+
 // @ts-ignore
-const PythonApp = lazy(() => import('./python/PythonApp'));
+const PythonApp = lazy(() => {
+    logAppTiming('PythonApp lazy load started');
+    return import('./python/PythonApp').then(module => {
+        logAppTiming('PythonApp lazy load completed');
+        return module;
+    });
+});
+
 // @ts-ignore
-const PythonNotebook = lazy(() => import('./python/PythonNotebook'));
+const PythonNotebook = lazy(() => {
+    logAppTiming('PythonNotebook lazy load started');
+    return import('./python/PythonNotebook').then(module => {
+        logAppTiming('PythonNotebook lazy load completed');
+        return module;
+    });
+});
+
 // @ts-ignore
-const AppInventor = lazy(() => import('./modules/AppInventor'));
+const AppInventor = lazy(() => {
+    logAppTiming('AppInventor lazy load started');
+    return import('./modules/AppInventor').then(module => {
+        logAppTiming('AppInventor lazy load completed');
+        return module;
+    });
+});
+
 // @ts-ignore
-const AppForgeStudio = lazy(() => import('./modules/appforge/AppForgeStudio'));
+const AppForgeStudio = lazy(() => {
+    logAppTiming('AppForgeStudio lazy load started');
+    return import('./modules/appforge/AppForgeStudio').then(module => {
+        logAppTiming('AppForgeStudio lazy load completed');
+        return module;
+    });
+});
+
 // @ts-ignore
-const LeapForgeStudio = lazy(() => import('./modules/leapforge/ForgeStudio'));
-const NeuraApp = lazy(() => import('./NeuraApp'));
+const LeapForgeStudio = lazy(() => {
+    logAppTiming('LeapForgeStudio lazy load started');
+    return import('./modules/leapforge/ForgeStudio').then(module => {
+        logAppTiming('LeapForgeStudio lazy load completed');
+        return module;
+    });
+});
+
+const NeuraApp = lazy(() => {
+    logAppTiming('NeuraApp lazy load started');
+    return import('./NeuraApp').then(module => {
+        logAppTiming('NeuraApp lazy load completed');
+        return module;
+    });
+});
+
+logAppTiming('All lazy components defined');
 
 type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'appinventor' | 'appforge' | 'leapforge' | 'neura';
 
@@ -51,12 +125,43 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 }
 
 export default function App() {
+    logAppTiming('App component function called');
     const [mode, setMode] = useState<AppMode>('home');
 
-    // Lazy load Blockly custom fields to keep main bundle small
+    // Log when component mounts
     React.useEffect(() => {
-        import('./blockly/registerCustomFields');
+        logAppTiming('App component mounted');
     }, []);
+
+    // Log when mode changes
+    React.useEffect(() => {
+        logAppTiming(`Mode changed to: ${mode}`);
+    }, [mode]);
+
+    // Defer Blockly custom field registration to idle time — doesn't block first paint
+    // REMOVED: Only load when user actually navigates to Blockly mode
+    // React.useEffect(() => {
+    //     const register = () => import('./blockly/registerCustomFields');
+    //     if (typeof requestIdleCallback !== 'undefined') {
+    //         requestIdleCallback(register, { timeout: 3000 });
+    //     } else {
+    //         setTimeout(register, 500);
+    //     }
+    // }, []);
+
+    // REMOVED: Prefetch disabled - modules load only when user navigates to them
+    // This prevents loading heavy modules (LeapForge, Blockly) that user may never use
+    // React.useEffect(() => {
+    //     const prefetch = () => {
+    //         import('./modules/leapforge/ForgeStudio');
+    //         import('./IntermediateApp');
+    //     };
+    //     if (typeof requestIdleCallback !== 'undefined') {
+    //         requestIdleCallback(prefetch, { timeout: 5000 });
+    //     } else {
+    //         setTimeout(prefetch, 1000);
+    //     }
+    // }, []);
 
     const [intermediateOpenTab, setIntermediateOpenTab] = useState<'blocks' | 'python' | 'costumes' | 'sounds'>('blocks');
     const [switchPrompt, setSwitchPrompt] = useState<null | { from: AppMode; to: AppMode; tab?: 'blocks' | 'python' | 'costumes' | 'sounds' }>(null);
