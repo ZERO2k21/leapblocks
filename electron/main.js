@@ -695,6 +695,35 @@ ipcMain.handle('esp32-adc-set', async (_, channel, voltage) => {
   socket.destroy();
 });
 
+// ── read-bin-file: Read compiled ESP32 binary for RISC-V simulation ──────
+ipcMain.handle('read-bin-file', async (_, filePath) => {
+  console.log(`[MAIN:IPC] read-bin-file request: ${filePath}`);
+
+  try {
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      console.error(`[MAIN:IPC] File not found: ${filePath}`);
+      throw new Error(`Binary file not found: ${filePath}`);
+    }
+
+    // Read the file as a Buffer
+    const buffer = fs.readFileSync(filePath);
+    console.log(`[MAIN:IPC] Read ${buffer.length} bytes from ${filePath}`);
+
+    // Log first 16 bytes for debugging
+    const preview = Array.from(buffer.slice(0, Math.min(16, buffer.length)))
+      .map(b => '0x' + b.toString(16).padStart(2, '0'))
+      .join(' ');
+    console.log(`[MAIN:IPC] First bytes: ${preview}`);
+
+    // Return as ArrayBuffer (convert Node Buffer to ArrayBuffer)
+    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+  } catch (err) {
+    console.error(`[MAIN:IPC] read-bin-file error:`, err);
+    throw err;
+  }
+});
+
 // ── ensureESP32Core: install ESP32 arduino core on first use ─────────────
 let esp32CoreReady = false;
 

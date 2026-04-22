@@ -102,11 +102,11 @@ class RAMRegion implements MemoryRegion {
     return off;
   }
 
-  read8(addr: u32): u32  { return this.data[this.local(addr)]; }
+  read8(addr: u32): u32 { return this.data[this.local(addr)]; }
   read16(addr: u32): u32 { return this.view.getUint16(this.local(addr), true); }
   read32(addr: u32): u32 { return this.view.getUint32(this.local(addr), true); }
 
-  write8(addr: u32, val: u32): void  { this.data[this.local(addr)] = val & 0xFF; }
+  write8(addr: u32, val: u32): void { this.data[this.local(addr)] = val & 0xFF; }
   write16(addr: u32, val: u32): void { this.view.setUint16(this.local(addr), val & 0xFFFF, true); }
   write32(addr: u32, val: u32): void { this.view.setUint32(this.local(addr), val >>> 0, true); }
 }
@@ -126,11 +126,11 @@ export class MMIOBus {
     return this.regions.find(r => addr >= r.base && addr < r.base + r.size);
   }
 
-  read8(addr: u32): u32  { return this.find(addr)?.read8(addr)  ?? 0; }
+  read8(addr: u32): u32 { return this.find(addr)?.read8(addr) ?? 0; }
   read16(addr: u32): u32 { return this.find(addr)?.read16(addr) ?? 0; }
   read32(addr: u32): u32 { return this.find(addr)?.read32(addr) ?? 0; }
 
-  write8(addr: u32, v: u32): void  { this.find(addr)?.write8(addr, v); }
+  write8(addr: u32, v: u32): void { this.find(addr)?.write8(addr, v); }
   write16(addr: u32, v: u32): void { this.find(addr)?.write16(addr, v); }
   write32(addr: u32, v: u32): void { this.find(addr)?.write32(addr, v); }
 }
@@ -147,10 +147,10 @@ export class InterruptController {
   /** MIE bit in mstatus */
   globalEnable: boolean = false;
 
-  raise(irq: number): void  { this.pending |= (1 << irq); }
-  clear(irq: number): void  { this.pending &= ~(1 << irq); }
-  hasPending(): boolean     { return this.globalEnable && (this.pending & this.enabled) !== 0; }
-  nextPending(): number     {
+  raise(irq: number): void { this.pending |= (1 << irq); }
+  clear(irq: number): void { this.pending &= ~(1 << irq); }
+  hasPending(): boolean { return this.globalEnable && (this.pending & this.enabled) !== 0; }
+  nextPending(): number {
     const masked = this.pending & this.enabled;
     for (let i = 0; i < 32; i++) if (masked & (1 << i)) return i;
     return -1;
@@ -163,7 +163,7 @@ export class InterruptController {
 
 export class RiscVCore {
   // ----- architectural state -----
-  readonly regs: Int32Array  = new Int32Array(32);   // x0–x31 (signed for arithmetic)
+  readonly regs: Int32Array = new Int32Array(32);   // x0–x31 (signed for arithmetic)
   pc: u32 = 0;
   cycles: number = 0;
   halted: boolean = false;
@@ -182,11 +182,13 @@ export class RiscVCore {
   // ----- memory -----
   readonly iram: RAMRegion;
   readonly dram: RAMRegion;
+  readonly irom: RAMRegion;
+  readonly drom: RAMRegion;
   readonly mmio: MMIOBus = new MMIOBus();
   readonly irqCtrl: InterruptController = new InterruptController();
 
-  private readonly onEcall:   (c: RiscVCore) => boolean;
-  private readonly onEbreak:  (c: RiscVCore) => void;
+  private readonly onEcall: (c: RiscVCore) => boolean;
+  private readonly onEbreak: (c: RiscVCore) => void;
   private readonly onIllegal: (c: RiscVCore, insn: u32) => void;
 
   // ESP32-C3 memory map constants
@@ -194,14 +196,21 @@ export class RiscVCore {
   static readonly IRAM_SIZE = 0x00060000; // 384 KB
   static readonly DRAM_BASE = 0x3FC80000;
   static readonly DRAM_SIZE = 0x00060000; // 384 KB active
+  // Flash-mapped regions (MMU cache window) — sized to hold a full 4 MB app
+  static readonly IROM_BASE = 0x42000000;
+  static readonly IROM_SIZE = 0x00400000; // 4 MB (flash-mapped code)
+  static readonly DROM_BASE = 0x3C000000;
+  static readonly DROM_SIZE = 0x00400000; // 4 MB (flash-mapped read-only data)
   static readonly MMIO_BASE = 0x60000000;
   static readonly MMIO_SIZE = 0x00100000;
 
   constructor(opts: RiscVCoreOptions = {}) {
     this.iram = new RAMRegion(RiscVCore.IRAM_BASE, opts.dramBytes ?? RiscVCore.IRAM_SIZE);
     this.dram = new RAMRegion(RiscVCore.DRAM_BASE, opts.dramBytes ?? RiscVCore.DRAM_SIZE);
-    this.onEcall   = opts.onEcall   ?? (() => true);
-    this.onEbreak  = opts.onEbreak  ?? (() => {});
+    this.irom = new RAMRegion(RiscVCore.IROM_BASE, RiscVCore.IROM_SIZE);
+    this.drom = new RAMRegion(RiscVCore.DROM_BASE, RiscVCore.DROM_SIZE);
+    this.onEcall = opts.onEcall ?? (() => true);
+    this.onEbreak = opts.onEbreak ?? (() => { });
     this.onIllegal = opts.onIllegal ?? ((c, insn) => {
       console.warn(`[RiscVCore] Illegal instruction 0x${insn.toString(16)} at PC=0x${c.pc.toString(16)}`);
     });
@@ -256,7 +265,7 @@ export class RiscVCore {
   // Register helpers
   // ---------------------------------------------------------------------------
 
-  private regRead(r: number): i32  { return r === 0 ? 0 : this.regs[r]; }
+  private regRead(r: number): i32 { return r === 0 ? 0 : this.regs[r]; }
   private regWrite(r: number, v: i32): void { if (r !== 0) this.regs[r] = v; }
 
   // ---------------------------------------------------------------------------
@@ -298,7 +307,7 @@ export class RiscVCore {
   private handleInterrupt(): void {
     const irq = this.irqCtrl.nextPending();
     if (irq < 0) return;
-    this.mepc   = this.pc;
+    this.mepc = this.pc;
     this.mcause = u32m(0x80000000 | irq);
     this.mstatus = this.mstatus & ~0x8; // clear MIE
     this.irqCtrl.globalEnable = false;
@@ -322,7 +331,7 @@ export class RiscVCore {
   // ---------------------------------------------------------------------------
 
   private expandCompressed(insn16: u32): u32 | -1 {
-    const op  = insn16 & 0x3;
+    const op = insn16 & 0x3;
     if (op === 0x3) return -1; // not compressed
 
     const funct3 = (insn16 >> 13) & 0x7;
@@ -332,20 +341,20 @@ export class RiscVCore {
         if (funct3 === 0x0) {
           // C.ADDI4SPN → addi rd', x2, nzuimm
           const rd = 8 + ((insn16 >> 2) & 0x7);
-          const imm = ((insn16 >> 6) & 0x1) << 2  |
-                      ((insn16 >> 5) & 0x1) << 3  |
-                      ((insn16 >> 11) & 0x3) << 4 |
-                      ((insn16 >> 7) & 0xF) << 6;
+          const imm = ((insn16 >> 6) & 0x1) << 2 |
+            ((insn16 >> 5) & 0x1) << 3 |
+            ((insn16 >> 11) & 0x3) << 4 |
+            ((insn16 >> 7) & 0xF) << 6;
           if (imm === 0) return -1;
           return 0x00010013 | (rd << 7) | (2 << 15) | (imm << 20); // addi rd, x2, imm
         }
         if (funct3 === 0x2) {
           // C.LW → lw rd', offset(rs1')
-          const rd  = 8 + ((insn16 >> 2) & 0x7);
+          const rd = 8 + ((insn16 >> 2) & 0x7);
           const rs1 = 8 + ((insn16 >> 7) & 0x7);
           const imm = ((insn16 >> 6) & 0x1) << 2 |
-                      ((insn16 >> 10) & 0x7) << 3 |
-                      ((insn16 >> 5) & 0x1) << 6;
+            ((insn16 >> 10) & 0x7) << 3 |
+            ((insn16 >> 5) & 0x1) << 6;
           return 0x00002003 | (rd << 7) | (rs1 << 15) | (imm << 20);
         }
         if (funct3 === 0x6) {
@@ -353,10 +362,10 @@ export class RiscVCore {
           const rs2 = 8 + ((insn16 >> 2) & 0x7);
           const rs1 = 8 + ((insn16 >> 7) & 0x7);
           const imm = ((insn16 >> 6) & 0x1) << 2 |
-                      ((insn16 >> 10) & 0x7) << 3 |
-                      ((insn16 >> 5) & 0x1) << 6;
+            ((insn16 >> 10) & 0x7) << 3 |
+            ((insn16 >> 5) & 0x1) << 6;
           const imm11_5 = (imm >> 5) & 0x7F;
-          const imm4_0  = imm & 0x1F;
+          const imm4_0 = imm & 0x1F;
           return 0x00002023 | (imm11_5 << 25) | (rs2 << 20) | (rs1 << 15) | (imm4_0 << 7);
         }
         return -1;
@@ -365,7 +374,7 @@ export class RiscVCore {
       case 0x1: { // Quadrant 1
         if (funct3 === 0x0) {
           // C.ADDI / C.NOP
-          const rd  = (insn16 >> 7) & 0x1F;
+          const rd = (insn16 >> 7) & 0x1F;
           const imm = sext(((insn16 >> 12) & 0x1) << 5 | ((insn16 >> 2) & 0x1F), 6);
           return 0x00000013 | (rd << 7) | (rd << 15) | (u32m(imm) << 20);
         }
@@ -376,7 +385,7 @@ export class RiscVCore {
         }
         if (funct3 === 0x2) {
           // C.LI → addi rd, x0, imm
-          const rd  = (insn16 >> 7) & 0x1F;
+          const rd = (insn16 >> 7) & 0x1F;
           const imm = sext(((insn16 >> 12) & 0x1) << 5 | ((insn16 >> 2) & 0x1F), 6);
           return 0x00000013 | (rd << 7) | (u32m(imm) << 20);
         }
@@ -386,7 +395,7 @@ export class RiscVCore {
             // C.ADDI16SP
             const imm = sext(
               ((insn16 >> 12) & 0x1) << 9 | ((insn16 >> 6) & 0x1) << 4 |
-              ((insn16 >> 5) & 0x1) << 6  | ((insn16 >> 3) & 0x3) << 7 |
+              ((insn16 >> 5) & 0x1) << 6 | ((insn16 >> 3) & 0x3) << 7 |
               ((insn16 >> 2) & 0x1) << 5, 10);
             return 0x00010013 | (2 << 7) | (2 << 15) | (u32m(imm) << 20);
           } else {
@@ -397,7 +406,7 @@ export class RiscVCore {
         }
         if (funct3 === 0x4) {
           const funct2 = (insn16 >> 10) & 0x3;
-          const rd  = 8 + ((insn16 >> 7) & 0x7);
+          const rd = 8 + ((insn16 >> 7) & 0x7);
           const imm5 = (insn16 >> 12) & 0x1;
           const shamt = ((insn16 >> 2) & 0x1F) | (imm5 << 5);
           if (funct2 === 0x0) {
@@ -416,12 +425,12 @@ export class RiscVCore {
           if (funct2 === 0x3) {
             const funct6b = (insn16 >> 12) & 0x1;
             const rs2 = 8 + ((insn16 >> 2) & 0x7);
-            const op2  = (insn16 >> 5) & 0x3;
+            const op2 = (insn16 >> 5) & 0x3;
             if (funct6b === 0) {
-              if (op2 === 0x0) return 0x40000033 | (rd<<7)|(rd<<15)|(rs2<<20); // C.SUB
-              if (op2 === 0x1) return 0x00004033 | (rd<<7)|(rd<<15)|(rs2<<20); // C.XOR
-              if (op2 === 0x2) return 0x00006033 | (rd<<7)|(rd<<15)|(rs2<<20); // C.OR
-              if (op2 === 0x3) return 0x00007033 | (rd<<7)|(rd<<15)|(rs2<<20); // C.AND
+              if (op2 === 0x0) return 0x40000033 | (rd << 7) | (rd << 15) | (rs2 << 20); // C.SUB
+              if (op2 === 0x1) return 0x00004033 | (rd << 7) | (rd << 15) | (rs2 << 20); // C.XOR
+              if (op2 === 0x2) return 0x00006033 | (rd << 7) | (rd << 15) | (rs2 << 20); // C.OR
+              if (op2 === 0x3) return 0x00007033 | (rd << 7) | (rd << 15) | (rs2 << 20); // C.AND
             }
           }
         }
@@ -454,16 +463,16 @@ export class RiscVCore {
         }
         if (funct3 === 0x2) {
           // C.LWSP
-          const rd  = (insn16 >> 7) & 0x1F;
+          const rd = (insn16 >> 7) & 0x1F;
           const imm = ((insn16 >> 12) & 0x1) << 5 |
-                      ((insn16 >> 4) & 0x7) << 2  |
-                      ((insn16 >> 2) & 0x3) << 6;
+            ((insn16 >> 4) & 0x7) << 2 |
+            ((insn16 >> 2) & 0x3) << 6;
           return 0x00002003 | (rd << 7) | (2 << 15) | (imm << 20);
         }
         if (funct3 === 0x4) {
           const bit12 = (insn16 >> 12) & 0x1;
-          const rs1   = (insn16 >> 7)  & 0x1F;
-          const rs2   = (insn16 >> 2)  & 0x1F;
+          const rs1 = (insn16 >> 7) & 0x1F;
+          const rs2 = (insn16 >> 2) & 0x1F;
           if (bit12 === 0 && rs2 === 0) {
             // C.JR → jalr x0, 0(rs1)
             return 0x00000067 | (rs1 << 15);
@@ -490,7 +499,7 @@ export class RiscVCore {
           const rs2 = (insn16 >> 2) & 0x1F;
           const imm = ((insn16 >> 9) & 0xF) << 2 | ((insn16 >> 7) & 0x3) << 6;
           const imm11_5 = (imm >> 5) & 0x7F;
-          const imm4_0  = imm & 0x1F;
+          const imm4_0 = imm & 0x1F;
           return 0x00002023 | (imm11_5 << 25) | (rs2 << 20) | (2 << 15) | (imm4_0 << 7);
         }
         return -1;
@@ -501,22 +510,22 @@ export class RiscVCore {
 
   private cjImm(insn16: u32): i32 {
     return sext(
-      ((insn16 >> 3)  & 0x7) << 1  |
-      ((insn16 >> 11) & 0x1) << 4  |
-      ((insn16 >> 2)  & 0x1) << 5  |
-      ((insn16 >> 7)  & 0x1) << 6  |
-      ((insn16 >> 6)  & 0x1) << 7  |
-      ((insn16 >> 9)  & 0x3) << 8  |
-      ((insn16 >> 8)  & 0x1) << 10 |
+      ((insn16 >> 3) & 0x7) << 1 |
+      ((insn16 >> 11) & 0x1) << 4 |
+      ((insn16 >> 2) & 0x1) << 5 |
+      ((insn16 >> 7) & 0x1) << 6 |
+      ((insn16 >> 6) & 0x1) << 7 |
+      ((insn16 >> 9) & 0x3) << 8 |
+      ((insn16 >> 8) & 0x1) << 10 |
       ((insn16 >> 12) & 0x1) << 11, 12);
   }
 
   private cbImm(insn16: u32): i32 {
     return sext(
-      ((insn16 >> 3)  & 0x3) << 1 |
+      ((insn16 >> 3) & 0x3) << 1 |
       ((insn16 >> 10) & 0x3) << 3 |
-      ((insn16 >> 2)  & 0x1) << 5 |
-      ((insn16 >> 5)  & 0x3) << 6 |
+      ((insn16 >> 2) & 0x1) << 5 |
+      ((insn16 >> 5) & 0x3) << 6 |
       ((insn16 >> 12) & 0x1) << 8, 9);
   }
 
@@ -524,17 +533,17 @@ export class RiscVCore {
     const u = u32m(imm);
     return 0x0000006F | (rd << 7) |
       (((u >> 12) & 0xFF) << 12) |
-      (((u >> 11) & 0x1)  << 20) |
-      (((u >> 1)  & 0x3FF)<< 21) |
-      (((u >> 20) & 0x1)  << 31);
+      (((u >> 11) & 0x1) << 20) |
+      (((u >> 1) & 0x3FF) << 21) |
+      (((u >> 20) & 0x1) << 31);
   }
 
   private encodeB(funct3: number, rs1: number, rs2: number, imm: i32): u32 {
     const u = u32m(imm);
     return 0x00000063 | (funct3 << 12) | (rs1 << 15) | (rs2 << 20) |
       (((u >> 11) & 0x1) << 7) |
-      (((u >> 1)  & 0xF) << 8) |
-      (((u >> 5)  & 0x3F)<< 25) |
+      (((u >> 1) & 0xF) << 8) |
+      (((u >> 5) & 0x3F) << 25) |
       (((u >> 12) & 0x1) << 31);
   }
 
@@ -567,10 +576,10 @@ export class RiscVCore {
     }
 
     const opcode = insn & 0x7F;
-    const rd     = (insn >> 7)  & 0x1F;
+    const rd = (insn >> 7) & 0x1F;
     const funct3 = (insn >> 12) & 0x7;
-    const rs1    = (insn >> 15) & 0x1F;
-    const rs2    = (insn >> 20) & 0x1F;
+    const rs1 = (insn >> 15) & 0x1F;
+    const rs2 = (insn >> 20) & 0x1F;
     const funct7 = (insn >> 25) & 0x7F;
 
     let nextPC: u32 = u32m(this.pc + pcIncrement);
@@ -590,10 +599,10 @@ export class RiscVCore {
       // ------- JAL -------
       case 0x6F: {
         const imm = sext(
-          ((insn >> 21) & 0x3FF) << 1  |
-          ((insn >> 20) & 0x1)   << 11 |
-          ((insn >> 12) & 0xFF)  << 12 |
-          ((insn >> 31) & 0x1)   << 20, 21);
+          ((insn >> 21) & 0x3FF) << 1 |
+          ((insn >> 20) & 0x1) << 11 |
+          ((insn >> 12) & 0xFF) << 12 |
+          ((insn >> 31) & 0x1) << 20, 21);
         this.regWrite(rd, i32s(nextPC));
         nextPC = u32m(this.pc + imm);
         cycles = 3;
@@ -611,10 +620,10 @@ export class RiscVCore {
       // ------- BRANCH -------
       case 0x63: {
         const imm = sext(
-          ((insn >> 8)  & 0xF)  << 1  |
-          ((insn >> 25) & 0x3F) << 5  |
-          ((insn >> 7)  & 0x1)  << 11 |
-          ((insn >> 31) & 0x1)  << 12, 13);
+          ((insn >> 8) & 0xF) << 1 |
+          ((insn >> 25) & 0x3F) << 5 |
+          ((insn >> 7) & 0x1) << 11 |
+          ((insn >> 31) & 0x1) << 12, 13);
         const r1 = this.regRead(rs1);
         const r2 = this.regRead(rs2);
         let taken = false;
@@ -631,15 +640,15 @@ export class RiscVCore {
       }
       // ------- LOAD -------
       case 0x03: {
-        const imm  = sext((insn >> 20), 12);
+        const imm = sext((insn >> 20), 12);
         const addr = u32m(this.regRead(rs1) + imm);
         let val: i32 = 0;
         switch (funct3) {
-          case 0x0: val = sext(this.memRead8(addr), 8);   break; // LB
+          case 0x0: val = sext(this.memRead8(addr), 8); break; // LB
           case 0x1: val = sext(this.memRead16(addr), 16); break; // LH
-          case 0x2: val = i32s(this.memRead32(addr));     break; // LW
-          case 0x4: val = this.memRead8(addr);            break; // LBU
-          case 0x5: val = this.memRead16(addr);           break; // LHU
+          case 0x2: val = i32s(this.memRead32(addr)); break; // LW
+          case 0x4: val = this.memRead8(addr); break; // LBU
+          case 0x5: val = this.memRead16(addr); break; // LHU
         }
         this.regWrite(rd, val);
         cycles = 2;
@@ -647,11 +656,11 @@ export class RiscVCore {
       }
       // ------- STORE -------
       case 0x23: {
-        const imm  = sext(((insn >> 25) << 5) | ((insn >> 7) & 0x1F), 12);
+        const imm = sext(((insn >> 25) << 5) | ((insn >> 7) & 0x1F), 12);
         const addr = u32m(this.regRead(rs1) + imm);
-        const val  = u32m(this.regRead(rs2));
+        const val = u32m(this.regRead(rs2));
         switch (funct3) {
-          case 0x0: this.memWrite8(addr, val);  break; // SB
+          case 0x0: this.memWrite8(addr, val); break; // SB
           case 0x1: this.memWrite16(addr, val); break; // SH
           case 0x2: this.memWrite32(addr, val); break; // SW
         }
@@ -661,7 +670,7 @@ export class RiscVCore {
       // ------- OP-IMM (I-type arithmetic) -------
       case 0x13: {
         const imm = sext((insn >> 20), 12);
-        const r1  = this.regRead(rs1);
+        const r1 = this.regRead(rs1);
         let result: i32 = 0;
         switch (funct3) {
           case 0x0: result = i32s(r1 + imm); break;                              // ADDI
@@ -751,8 +760,8 @@ export class RiscVCore {
     }
 
     this.pc = nextPC;
-    this.cycles  += cycles;
-    this.mcycle  += cycles;
+    this.cycles += cycles;
+    this.mcycle += cycles;
     this.minstret++;
     this.regs[0] = 0; // x0 always reads 0
 
@@ -786,16 +795,16 @@ export class RiscVCore {
 
   reset(entryPoint: u32 = RiscVCore.IRAM_BASE): void {
     this.regs.fill(0);
-    this.pc      = entryPoint;
-    this.cycles  = 0;
-    this.halted  = false;
+    this.pc = entryPoint;
+    this.cycles = 0;
+    this.halted = false;
     this.mstatus = 0;
-    this.mie     = 0;
-    this.mip     = 0;
-    this.mepc    = 0;
-    this.mcause  = 0;
-    this.mtvec   = 0;
-    this.mcycle  = 0;
+    this.mie = 0;
+    this.mip = 0;
+    this.mepc = 0;
+    this.mcause = 0;
+    this.mtvec = 0;
+    this.mcycle = 0;
     this.minstret = 0;
     this.irqCtrl.pending = 0;
     this.irqCtrl.globalEnable = false;

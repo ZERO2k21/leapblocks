@@ -163,6 +163,8 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   setBoard: (board) => {
     getSimulationRunner().then(runner => {
+      // Don't pass binPath here — preserve any existing binPath already set
+      // by ForgeStudio after compilation. Only update the board ID.
       runner.setBoard(board);
       set({ board });
     });

@@ -153,11 +153,26 @@ class SimulationRunner {
 
   public setBoard(boardId: string, binPath?: string) {
     console.log(`[SimulationRunner] setBoard called: boardId="${boardId}", binPath="${binPath}"`);
+    const prevBoard = this.selectedBoard;
     this.selectedBoard = boardId;
+
     if (binPath) {
+      // Explicit binPath provided — always store it
       this.binPath = binPath;
       console.log(`[SimulationRunner] binPath stored for ESP32-C3: ${binPath}`);
+    } else {
+      // No binPath provided (e.g. canvas node added, board selector changed)
+      // Only clear binPath if switching AWAY from an ESP32 board
+      const ESP32_C3_BOARD_IDS = ['esp32-c3'];
+      const wasESP32 = ESP32_C3_BOARD_IDS.includes(prevBoard);
+      const isESP32 = ESP32_C3_BOARD_IDS.includes(boardId);
+      if (wasESP32 && !isESP32) {
+        this.binPath = null;
+        console.log(`[SimulationRunner] Cleared binPath (switched from ESP32 to ${boardId})`);
+      }
+      // If staying on ESP32 board, preserve existing binPath
     }
+
     if (this.isRunning) {
       this.reset();
     }
@@ -184,12 +199,24 @@ class SimulationRunner {
       // the __LF_GPIO strings injected by the GPIO monitor header.
       let firmwareBin: Uint8Array;
       try {
+        console.log(`[FORGE] Attempting to read binary from: ${this.binPath}`);
         const buffer = await (window as any).electronAPI.readBinFile(this.binPath);
         firmwareBin = new Uint8Array(buffer);
         console.log(`[FORGE] Loaded firmware: ${firmwareBin.length} bytes from ${this.binPath}`);
+
+        if (firmwareBin.length === 0) {
+          throw new Error(`Binary file is empty: ${this.binPath}`);
+        }
+
+        // Log first few bytes for debugging
+        const preview = Array.from(firmwareBin.slice(0, Math.min(16, firmwareBin.length)))
+          .map(b => '0x' + b.toString(16).padStart(2, '0'))
+          .join(' ');
+        console.log(`[FORGE] First bytes: ${preview}`);
+
       } catch (err) {
-        console.warn('[FORGE] Could not read .bin via IPC, using empty buffer:', err);
-        firmwareBin = new Uint8Array(0);
+        console.error('[FORGE] Could not read .bin via IPC:', err);
+        throw new Error(`Failed to load ESP32-C3 firmware from ${this.binPath}: ${err}`);
       }
 
       await this.esp32c3Runner.init(firmwareBin);
@@ -245,7 +272,7 @@ class SimulationRunner {
    */
   reset() {
     // ── ESP32-C3 RISC-V path (board IDs that map to ESP32-C3) ───────────────────────────────────────────
-    const ESP32_C3_BOARD_IDS = ['esp32', 'esp32-devkit-v1', 'esp32-c3'];
+    const ESP32_C3_BOARD_IDS = ['esp32-c3'];
     if (ESP32_C3_BOARD_IDS.includes(this.selectedBoard)) {
       this.esp32c3Runner?.stop();
       this.esp32c3Runner = null;
@@ -451,11 +478,11 @@ class SimulationRunner {
   }
 
   /**
-   * Convert an ESP32 DevKit V1 pin label to a synthetic PinMapping.
+   * Convert an ESP32-C3 pin label to a synthetic PinMapping.
    * avrPin = "ESP{gpio}" — used as the listener key in SimulationRunner.
    * adcChannel is set for ADC-capable pins so analog sensors work.
    *
-   * Pin map matches esp32-devkit-v1-element.ts pinInfo exactly.
+   * Pin map matches esp32-c3-element.ts pinInfo exactly.
    * Also supports A0-A7 aliases for analog sensor wiring.
    */
   convertESP32Pin(pinLabel: string): PinMapping | null {
