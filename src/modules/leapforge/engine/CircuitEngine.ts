@@ -14,7 +14,7 @@ import { StepperEmulator } from './StepperEmulator';
 import { SSD1306I2CSlave } from './SSD1306I2CSlave';
 import { ILI9341SPISlave } from './ILI9341SPISlave';
 import { MPU6050I2CSlave } from './MPU6050I2CSlave';
-import { ESP32_BOARD_CONFIG, ESP32_BOARDS, type ESP32PinInfo } from '../../../simulation/ESP32BoardConfig';
+import { ESP32_BOARD_CONFIG, ESP32_BOARDS, type ESP32PinInfo } from '../../../simulation/ESP32BoardConfig.js';
 
 /** Simplified ECG pulse shape used by the heart-beat sensor emulator. Returns -1..+1 for phase 0..1 */
 function heartEcgPulse(phase: number): number {
@@ -988,7 +988,7 @@ class CircuitEngine {
               const pTypeADC = peripheralNodeForADC?.data?.type;
               const svADC = peripheralNodeForADC?.data?.sensorValues;
               const voltageADC = this.computeSensorVoltage(pTypeADC, svADC, 3.3);
-              qemuRunner.setAnalogInput(adcChannel, voltageADC).catch(err => {
+              qemuRunner.setAnalogInput(adcChannel, voltageADC).catch((err: any) => {
                 console.error(`[FORGE CIRCUIT] QEMU ADC inject error (ch${adcChannel}):`, err);
               });
               console.log(`[FORGE CIRCUIT] QEMU ADC: pin ${arduinoPinName} → ADC1_CH${adcChannel} = ${voltageADC.toFixed(3)}V`);
@@ -1218,7 +1218,13 @@ class CircuitEngine {
         const qemuRunner = simulationRunner.ESP32Runner;
         if (qemuRunner && esp32Mapping.adcChannel !== undefined) {
           qemuRunner.setAnalogInput(esp32Mapping.adcChannel, voltage).catch(() => { });
-        } else {
+        }
+        // ESP32-C3 RISC-V path
+        else if (simulationRunner.isESP32C3Board && esp32Mapping.adcChannel !== undefined) {
+          const gpioNum = parseInt(esp32Mapping.avrPin.replace('ESP', ''), 10);
+          simulationRunner.setESP32C3AnalogInput(gpioNum, voltage);
+        }
+        else {
           // Non-QEMU ESP32 board: update pin state map so listeners fire
           simulationRunner.setVirtualInput(esp32Mapping.avrPin, voltage > 0.1);
         }

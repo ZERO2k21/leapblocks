@@ -1,172 +1,101 @@
 /**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- *
- * ESP32 board configuration — pure data, no simulator library dependencies.
+ * ESP32 Board Configuration
+ * 
+ * Defines pin mappings and board configurations for ESP32 boards
+ * used by the QEMU simulation path.
  */
 
-// ── Pin metadata type ─────────────────────────────────────────────────────────
-export type ESP32PinInfo = {
-    /** GPIO number on the ESP32 silicon */
+export interface ESP32PinInfo {
     gpioNum: number;
-    /** ADC1 channel index (0–9). Absent if pin has no ADC1 capability. */
     adcChannel?: number;
-    /** True if this pin is the default I²C SDA line */
     isI2CSDA?: boolean;
-    /** True if this pin is the default I²C SCL line */
     isI2CSCL?: boolean;
-};
+}
 
-// ── Board configuration type ──────────────────────────────────────────────────
-export type ESP32BoardConfig = {
-    /** Short machine identifier */
-    id: string;
-    /** Human-readable board name */
-    name: string;
-    /** arduino-cli fully-qualified board name */
-    fqbn: string;
-    /** CPU frequency in Hz */
-    frequency: number;
-    /** Flash size in bytes */
-    flashSize: number;
-    /** SRAM size in bytes */
-    sramSize: number;
-    /**
-     * Arduino pin label → GPIO number mapping.
-     * Only pins exposed on the DevKit V1 header are listed.
-     */
-    gpio: Record<string, number>;
-    /**
-     * Arduino pin label → ADC1 channel index.
-     * ADC2 pins (GPIO 0, 2, 4, 12–15) are intentionally omitted —
-     * ADC2 is shared with the Wi-Fi radio and unreliable when Wi-Fi is active.
-     */
-    adc: Record<string, number>;
-    /** Default I²C bus pin assignment */
-    i2c: { sda: number; scl: number };
-    /** Default SPI bus pin assignment */
-    spi: { mosi: number; miso: number; sck: number; ss: number };
-    /**
-     * UART port assignments.
-     * Index 0 = UART0 (Serial / USB console)
-     * Index 1 = UART1
-     * Index 2 = UART2
-     */
-    uart: Array<{ tx: number; rx: number }>;
-};
-
-// ── ESP32 DevKit V1 ───────────────────────────────────────────────────────────
-export const ESP32_BOARD_CONFIG: ESP32BoardConfig = {
-    id: 'esp32-devkit',
-    name: 'ESP32 DevKit V1',
-    fqbn: 'esp32:esp32:esp32',
-    frequency: 240_000_000,          // 240 MHz dual-core Xtensa LX6
-    flashSize: 4 * 1024 * 1024,      // 4 MB
-    sramSize: 520 * 1024,           // 520 KB (internal SRAM)
-
-    // ── GPIO map: Arduino label → GPIO number ──────────────────────────────
-    // Pins 6–11 (connected to internal flash SPI) are excluded.
-    // Pins 34, 35, 36, 39 are input-only and have no internal pull-up/down.
+// ESP32 DevKit V1 pin mapping
+export const ESP32_BOARD_CONFIG = {
     gpio: {
-        '0': 0,
-        '1': 1,
-        '2': 2,
-        '3': 3,
-        '4': 4,
-        '5': 5,
-        '12': 12,
-        '13': 13,
-        '14': 14,
-        '15': 15,
-        '16': 16,
-        '17': 17,
-        '18': 18,
-        '19': 19,
-        '21': 21,
-        '22': 22,
-        '23': 23,
-        '25': 25,
-        '26': 26,
-        '27': 27,
-        '32': 32,
-        '33': 33,
-        '34': 34,
-        '35': 35,
-        '36': 36,
-        '39': 39,
-    },
+        // Digital pins
+        'D0': 0, 'D2': 2, 'D4': 4, 'D5': 5,
+        'D12': 12, 'D13': 13, 'D14': 14, 'D15': 15,
+        'D18': 18, 'D19': 19, 'D21': 21, 'D22': 22, 'D23': 23,
+        'RX2': 16, 'TX2': 17, 'RX0': 3, 'TX0': 1,
 
-    // ── ADC1 map: Arduino pin label → ADC1 channel index ───────────────────
-    // ADC1 channels only — safe to use alongside Wi-Fi.
-    // ADC2 (GPIO 0, 2, 4, 12–15) is omitted due to Wi-Fi radio conflict.
-    //
-    // ADC1 channel assignments (from ESP32 TRM):
-    //   CH0 → GPIO36 (VP)   CH1 → GPIO37 (internal, not on header)
-    //   CH2 → GPIO38 (internal, not on header)
-    //   CH3 → GPIO39 (VN)   CH4 → GPIO32
-    //   CH5 → GPIO33        CH6 → GPIO34
-    //   CH7 → GPIO35        CH8 → GPIO25
-    //   CH9 → GPIO26
+        // Analog pins (ADC-capable)
+        'A0': 36, 'VP': 36,
+        'A1': 39, 'VN': 39,
+        'A2': 34, 'D34': 34,
+        'A3': 35, 'D35': 35,
+        'A4': 32, 'D32': 32,
+        'A5': 33, 'D33': 33,
+        'A6': 25, 'D25': 25,
+        'A7': 26, 'D26': 26,
+        'D27': 27,
+
+        // Raw GPIO numbers
+        '0': 0, '2': 2, '4': 4, '5': 5,
+        '12': 12, '13': 13, '14': 14, '15': 15,
+        '16': 16, '17': 17, '18': 18, '19': 19,
+        '21': 21, '22': 22, '23': 23, '25': 25,
+        '26': 26, '27': 27, '32': 32, '33': 33,
+        '34': 34, '35': 35, '36': 36, '39': 39,
+    } as Record<string, number>,
+
     adc: {
-        '36': 0,   // ADC1_CH0 — GPIO36 / VP  (input-only)
-        '39': 3,   // ADC1_CH3 — GPIO39 / VN  (input-only)
-        '34': 6,   // ADC1_CH6 — GPIO34       (input-only)
-        '35': 7,   // ADC1_CH7 — GPIO35       (input-only)
-        '32': 4,   // ADC1_CH4 — GPIO32
-        '33': 5,   // ADC1_CH5 — GPIO33
-        '25': 8,   // ADC1_CH8 — GPIO25
-        '26': 9,   // ADC1_CH9 — GPIO26
+        // ADC channel mapping
+        'A0': 0, 'VP': 0, '36': 0,
+        'A1': 1, 'VN': 1, '39': 1,
+        'A2': 2, 'D34': 2, '34': 2,
+        'A3': 3, 'D35': 3, '35': 3,
+        'A4': 4, 'D32': 4, '32': 4,
+        'A5': 5, 'D33': 5, '33': 5,
+        'A6': 6, 'D25': 6, '25': 6,
+        'A7': 7, 'D26': 7, '26': 7,
+        'D27': 7, '27': 7,
+    } as Record<string, number>,
+
+    i2c: {
+        sda: 21,
+        scl: 22,
     },
-
-    // ── I²C default bus ────────────────────────────────────────────────────
-    i2c: { sda: 21, scl: 22 },
-
-    // ── SPI default bus (VSPI) ─────────────────────────────────────────────
-    spi: { mosi: 23, miso: 19, sck: 18, ss: 5 },
-
-    // ── UART ports ─────────────────────────────────────────────────────────
-    uart: [
-        { tx: 1, rx: 3 },   // UART0 — Serial (USB console, shared with GPIO1/3)
-        { tx: 17, rx: 16 },   // UART1
-        { tx: 25, rx: 26 },   // UART2
-    ],
 };
 
-// ── Supported FQBN set ────────────────────────────────────────────────────────
-// Used by compile/upload routing and SimulationRunner board detection.
-// Includes both FQBN-style IDs (used by arduino-cli) and short store board IDs
-// (used by the canvas node type → store.board mapping).
-export const ESP32_BOARDS = new Set<string>([
-    // FQBN-style (arduino-cli) — platform ID is esp32:esp32, not espressif:esp32
+// Set of ESP32 board IDs that use QEMU simulation
+export const ESP32_BOARDS = new Set([
     'esp32:esp32:esp32',
+    'esp32:esp32:esp32s2',
     'esp32:esp32:esp32s3',
-    // Short store board IDs (set by BOARD_NODE_TO_BOARD_ID in useForgeStore)
-    'esp32',
-    'esp32-devkit-v1',
-    'esp32-s2',
-    'esp32-s3',
-    'esp32-c3',
+    // Note: esp32c3 uses RISC-V simulation, not QEMU
 ]);
 
-// ── Convenience lookup: GPIO number → ESP32PinInfo ───────────────────────────
-// Derived from ESP32_BOARD_CONFIG at module load time.
-// Useful for the simulation engine to quickly resolve pin capabilities.
-const _adcByGpio = new Map<number, number>(
-    Object.entries(ESP32_BOARD_CONFIG.adc).map(([label, ch]) => [
-        ESP32_BOARD_CONFIG.gpio[label] ?? parseInt(label, 10),
-        ch,
-    ])
-);
+// ESP32-C3 specific configuration (for reference)
+export const ESP32_C3_BOARD_CONFIG = {
+    gpio: {
+        // ESP32-C3 has fewer pins than ESP32
+        'D0': 0, 'D1': 1, 'D2': 2, 'D3': 3, 'D4': 4, 'D5': 5,
+        'D6': 6, 'D7': 7, 'D8': 8, 'D9': 9, 'D10': 10,
+        'D18': 18, 'D19': 19, 'D20': 20, 'D21': 21,
 
-export function getPinInfo(gpioNum: number): ESP32PinInfo {
-    const info: ESP32PinInfo = { gpioNum };
+        // ADC-capable pins (ADC1 only on ESP32-C3)
+        'A0': 0, 'A1': 1, 'A2': 2, 'A3': 3, 'A4': 4,
 
-    const adcCh = _adcByGpio.get(gpioNum);
-    if (adcCh !== undefined) info.adcChannel = adcCh;
+        // Raw GPIO numbers
+        '0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5,
+        '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
+        '18': 18, '19': 19, '20': 20, '21': 21,
+    } as Record<string, number>,
 
-    if (gpioNum === ESP32_BOARD_CONFIG.i2c.sda) info.isI2CSDA = true;
-    if (gpioNum === ESP32_BOARD_CONFIG.i2c.scl) info.isI2CSCL = true;
+    adc: {
+        // ESP32-C3 ADC1 channels (GPIO0-4)
+        'A0': 0, '0': 0,
+        'A1': 1, '1': 1,
+        'A2': 2, '2': 2,
+        'A3': 3, '3': 3,
+        'A4': 4, '4': 4,
+    } as Record<string, number>,
 
-    return info;
-}
+    i2c: {
+        sda: 8,  // Default I2C SDA for ESP32-C3
+        scl: 9,  // Default I2C SCL for ESP32-C3
+    },
+};

@@ -12,33 +12,6 @@ import { ArduinoUploader } from './upload/ArduinoUploader';
 import { PythonManager } from './pythonBackend/PythonManager';
 import { join } from 'path';
 
-// ── ESP32 QEMU simulation imports ────────────────────────────────────────
-// electron/ files live at the repo root, not inside dist/main/.
-// Use app.getAppPath() at call time — app may not be ready at module load.
-// We lazy-require inside a getter to avoid the timing issue.
-let _qemuManager: any = null;
-let _cleanupESP32Build: ((dir: string) => void) | null = null;
-
-function getQemuManager() {
-  if (!_qemuManager) {
-    const root = app.getAppPath();
-    const modPath = join(root, 'electron', 'qemuManager.js');
-    // Clear require cache so dev-mode changes to qemuManager.js are picked up
-    delete require.cache[require.resolve(modPath)];
-    _qemuManager = require(modPath);
-  }
-  return _qemuManager;
-}
-
-function getCleanupESP32Build(): (dir: string) => void {
-  if (!_cleanupESP32Build) {
-    const root = app.getAppPath();
-    const mod = require(join(root, 'electron', 'esp32Compiler.js'));
-    _cleanupESP32Build = mod.cleanupESP32Build;
-  }
-  return _cleanupESP32Build!;
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL STATE & SERVICES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -46,10 +19,6 @@ let mainWindow: BrowserWindow | null = null;
 let serialManager: SerialManager;
 let arduinoUploader: ArduinoUploader;
 let pythonManager: PythonManager;
-
-// ── ESP32 QEMU state ─────────────────────────────────────────────────────
-let lastESP32BinTempDir: string | null = null;
-let esp32CoreReady = false;
 
 const log = (category: string, msg: string, data?: any) => {
   const timestamp = new Date().toISOString();

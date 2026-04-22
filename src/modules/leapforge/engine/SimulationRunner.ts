@@ -13,8 +13,9 @@ import { parseHexString } from './HexParser';
 import { BLINK_HEX } from './TestSketches';
 import { USARTEmulator } from './USARTEmulator';
 import { BOARDS, MCUConfig } from './BoardConfig';
-import { ESP32SimulationRunner } from '../../../simulation/ESP32SimulationRunner';
-import { ESP32_BOARDS as ESP32_QEMU_BOARDS } from '../../../simulation/ESP32BoardConfig';
+import { ESP32SimulationRunner } from '../../../simulation/ESP32SimulationRunner.js';
+import { ESP32_BOARDS as ESP32_QEMU_BOARDS } from '../../../simulation/ESP32BoardConfig.js';
+import { ESP32C3SimulationRunner } from '../../../simulation/esp32c3/ESP32C3SimulationRunner';
 
 export type PinState = 'HIGH' | 'LOW' | 'FLOATING';
 export type PinListener = (state: PinState) => void;
@@ -43,6 +44,8 @@ class SimulationRunner {
 
   // ── ESP32 QEMU runner (FQBN-based boards: esp32:esp32:*) ─────────────
   private esp32Runner: ESP32SimulationRunner | null = null;
+  // ── ESP32-C3 RISC-V runner (FQBN-based boards: esp32:esp32:esp32c3) ──
+  private esp32c3Runner: ESP32C3SimulationRunner | null = null;
   // binPath is set by setBoard(boardId, binPath) when ForgeStudio receives the
   // compiled .bin from the main process.  It is consumed by start() to launch QEMU.
   private binPath: string | null = null;
@@ -66,8 +69,16 @@ class SimulationRunner {
   /**
    * Initializes the inner AVR CPU with a compiled Hex buffer.
    * For QEMU ESP32 boards (esp32:esp32:*), creates the QEMU runner instead.
+   * For ESP32-C3 boards (esp32:esp32:esp32c3), creates the RISC-V runner instead.
    */
   initCPU(hexString: string = BLINK_HEX) {
+    // ── ESP32-C3 RISC-V path (esp32:esp32:esp32c3) ──────────────────────
+    const ESP32_C3_BOARDS = ['esp32:esp32:esp32c3'];
+    if (ESP32_C3_BOARDS.includes(this.selectedBoard)) {
+      this.esp32c3Runner = new ESP32C3SimulationRunner();
+      return;
+    }
+
     // ── QEMU ESP32 path (FQBN-style board IDs: esp32:esp32:*) ────────────
     if (ESP32_QEMU_BOARDS.has(this.selectedBoard)) {
       this.esp32Runner = new ESP32SimulationRunner();
@@ -139,6 +150,15 @@ class SimulationRunner {
     console.log(`[FORGE ENGINE] MCU peripherals (Clock, Watchdog, ADC, Timers) initialized.`);
   } // end initAVRCPU
 
+  /** ESP32-C3 RISC-V initialization path */
+  private async initESP32C3CPU(firmwareBin: Uint8Array) {
+    if (!this.esp32c3Runner) {
+      this.esp32c3Runner = new ESP32C3SimulationRunner();
+    }
+    await this.esp32c3Runner.init(firmwareBin);
+    console.log('[FORGE ENGINE] ESP32-C3 RISC-V core initialized');
+  }
+
   public setBoard(boardId: string, binPath?: string) {
     this.selectedBoard = boardId;
     if (binPath) {
@@ -154,6 +174,29 @@ class SimulationRunner {
    * Start the simulation loop
    */
   async start() {
+    // ── ESP32-C3 RISC-V path (esp32:esp32:esp32c3) ──────────────────────
+    const ESP32_C3_BOARDS = ['esp32:esp32:esp32c3'];
+    if (ESP32_C3_BOARDS.includes(this.selectedBoard)) {
+      if (!this.binPath) {
+        throw new Error(
+          '[FORGE] binPath is required for ESP32-C3 RISC-V simulation. ' +
+          'Call setBoard(boardId, binPath) before start().'
+        );
+      }
+      if (!this.esp32c3Runner) this.esp32c3Runner = new ESP32C3SimulationRunner();
+
+      // Load firmware binary and start RISC-V simulation
+      // For now, use a mock binary since we're using a mock CPU
+      const firmwareBin = new Uint8Array(1024); // Mock 1KB binary
+      firmwareBin.fill(0x13); // Fill with NOP instructions (addi x0, x0, 0)
+
+      await this.esp32c3Runner.init(firmwareBin);
+      this.esp32c3Runner.start();
+
+      console.log('[FORGE] ESP32-C3 RISC-V runner started, binPath:', this.binPath);
+      return; // no additional requestAnimationFrame loop needed
+    }
+
     // ── QEMU ESP32 path (esp32:esp32:*) ──────────────────────
     if (ESP32_QEMU_BOARDS.has(this.selectedBoard)) {
       if (!this.binPath) {
@@ -189,6 +232,15 @@ class SimulationRunner {
    * Stop the simulation
    */
   stop() {
+    // ── ESP32-C3 RISC-V path (esp32:esp32:esp32c3) ──────────────────────
+    const ESP32_C3_BOARDS = ['esp32:esp32:esp32c3'];
+    if (ESP32_C3_BOARDS.includes(this.selectedBoard)) {
+      this.esp32c3Runner?.stop();
+      this.binPath = null; // clear so a stale path can't be reused
+      console.log('[FORGE] ESP32-C3 RISC-V runner stopped.');
+      return;
+    }
+
     // ── QEMU ESP32 path (esp32:esp32:*) ──────────────────────
     if (ESP32_QEMU_BOARDS.has(this.selectedBoard)) {
       this.esp32Runner?.stop();
@@ -536,8 +588,52 @@ class SimulationRunner {
     return this.esp32Runner;
   }
 
+  /** Access the RISC-V-backed ESP32-C3 runner (esp32:esp32:esp32c3 board only) */
+  public get ESP32C3Runner(): ESP32C3SimulationRunner | null {
+    return this.esp32c3Runner;
+  }
+
   public get isESP32Board(): boolean {
     return ESP32_QEMU_BOARDS.has(this.selectedBoard);
+  }
+
+  public get isESP32C3Board(): boolean {
+    const ESP32_C3_BOARDS = ['esp32:esp32:esp32c3'];
+    return ESP32_C3_BOARDS.includes(this.selectedBoard);
+  }
+
+  /**
+   * ESP32-C3 analog input support - converts voltage to ADC channel
+   * For ESP32-C3: GPIO0=CH0, GPIO1=CH1, GPIO2=CH2, GPIO3=CH3, GPIO4=CH4
+   */
+  setESP32C3AnalogInput(gpioNum: number, voltage: number): void {
+    if (!this.esp32c3Runner) return;
+
+    // ESP32-C3 ADC channel mapping
+    const adcChannelMap: Record<number, number> = {
+      0: 0, 1: 1, 2: 2, 3: 3, 4: 4
+    };
+
+    const channel = adcChannelMap[gpioNum];
+    if (channel !== undefined) {
+      this.esp32c3Runner.setAnalogInput(channel, voltage);
+    }
+  }
+
+  /**
+   * ESP32-C3 GPIO input support - sets digital input state
+   */
+  setESP32C3GPIOInput(gpioNum: number, high: boolean): void {
+    if (!this.esp32c3Runner) return;
+    this.esp32c3Runner.setGPIOInput(gpioNum, high);
+  }
+
+  /**
+   * ESP32-C3 pin listener support - adds callback for GPIO output changes
+   */
+  addESP32C3PinListener(gpioNum: number, callback: (high: boolean) => void): void {
+    if (!this.esp32c3Runner) return;
+    this.esp32c3Runner.addPinListener(gpioNum, callback);
   }
 }
 

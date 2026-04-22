@@ -630,7 +630,7 @@ function migrateESP32LedcAPI(code) {
 }
 
 // ── ESP32 QEMU simulation pipeline ───────────────────────────────────────
-const ESP32_FQBNS = ['esp32:esp32:esp32', 'esp32:esp32:esp32s3'];
+const ESP32_FQBNS = ['esp32:esp32:esp32', 'esp32:esp32:esp32s3', 'esp32:esp32:esp32c3'];
 const { compileESP32 } = makeESP32Compiler({ runCLI, forgeLibDir: FORGE_LIB_DIR });
 
 // Track the last binPath so we can clean it up after QEMU stops
