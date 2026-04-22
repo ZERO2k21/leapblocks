@@ -186,12 +186,18 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     Promise.all([getCircuitEngine(), getSimulationRunner()]).then(([engine, runner]) => {
       engine.init();
 
-      const isESP32C3 = hexString === '__esp32_c3_riscv__';
+      const isESP32Transpiled = hexString === '__esp32_c3_transpiled__';
+      const isESP32RiscV = hexString === '__esp32_c3_riscv__';
+      const isESP32 = isESP32Transpiled || isESP32RiscV;
 
-      if (!isESP32C3) {
+      if (!isESP32) {
         runner.setBoard(state.board);
         console.log('[FORGE STORE] Initializing AVR CPU with hex...');
         runner.initCPU(hexString);
+      } else if (isESP32Transpiled) {
+        // Transpiled JS path — ArduinoRuntime handles everything.
+        // Serial & GPIO wiring is done in SimulationRunner.start().
+        console.log('[FORGE STORE] ESP32-C3 transpiled path — runner.start() will init ArduinoRuntime');
       } else {
         console.log('[FORGE STORE] ESP32-C3 RISC-V path — initializing ESP32-C3 runner before syncCircuitGraph...');
         runner.initCPU(''); // triggers ESP32-C3 branch in initCPU (board already set via setBoard)
@@ -208,7 +214,6 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
               const pin = parseInt(gpioMatch[1], 10);
               const val = parseInt(gpioMatch[2], 10);
               runner.setPinState(`ESP${pin}`, val ? 'HIGH' : 'LOW');
-              console.log(`[FORGE STORE] GPIO parse: ESP${pin} = ${val ? 'HIGH' : 'LOW'}`);
             }
 
             // Parse __LF_PWM:pin:value lines
@@ -216,7 +221,6 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
             if (pwmMatch) {
               const pin = parseInt(pwmMatch[1], 10);
               const val = parseInt(pwmMatch[2], 10);
-              // Map PWM 0-255 to HIGH/LOW threshold at 50%
               runner.setPinState(`ESP${pin}`, val > 127 ? 'HIGH' : 'LOW');
             }
           });

@@ -37,6 +37,7 @@ import { ESP32C3I2C } from './peripherals/I2C';
 import { ESP32C3SPI } from './peripherals/SPI';
 import { ESP32C3SysTimer } from './peripherals/SysTimer';
 import { FirmwareLoader } from './compiler/FirmwareLoader';
+import { ArduinoRuntime } from './ArduinoRuntime';
 
 // ---------------------------------------------------------------------------
 // Types shared with the parent SimulationRunner
@@ -71,12 +72,25 @@ class ESP32C3Platform {
     readonly sysTimer: ESP32C3SysTimer;
 
     constructor() {
+        let illegalCount = 0;
         this.core = new RiscVCore({
             onIllegal: (c, insn) => {
-                console.error(`[ESP32-C3] Illegal insn 0x${insn.toString(16)} @ PC=0x${c.pc.toString(16)}`);
-                // Halt on illegal instruction 0x0 to prevent infinite loop
+                illegalCount++;
+                console.error(`[ESP32-C3] Illegal insn 0x${insn.toString(16)} @ PC=0x${c.pc.toString(16)} (count=${illegalCount})`);
                 if (insn === 0) {
-                    console.error('[ESP32-C3] Halting CPU due to illegal instruction 0x0 (uninitialized memory)');
+                    // Instruction 0x0 means fetching from uninitialised memory.
+                    // Try to recover by returning via ra (x1) — the function
+                    // that called/jumped here likely has a valid return address.
+                    const ra = c.regs[1] >>> 0;
+                    if (ra !== 0 && ra !== c.pc) {
+                        console.warn(`[ESP32-C3] Recovering from insn 0x0 — returning via ra=0x${ra.toString(16)}`);
+                        c.pc = ra;
+                        return; // don't halt
+                    }
+                }
+                // Halt after too many consecutive illegal instructions
+                if (illegalCount > 10) {
+                    console.error(`[ESP32-C3] Halting CPU — too many illegal instructions (${illegalCount})`);
                     c.halted = true;
                 }
             },
@@ -131,6 +145,10 @@ export class ESP32C3SimulationRunner {
     private rafHandle: number | null = null;
     private running: boolean = false;
 
+    // ── Arduino Runtime (transpiled JS path — recommended) ──
+    private arduinoRuntime: ArduinoRuntime | null = null;
+    private usingTranspiledPath: boolean = false;
+
     // Listeners registered by CircuitEngine / ForgeStudio
     private pinListeners: Map<string, PinListener[]> = new Map();
     private serialListeners: SerialListener[] = [];
@@ -184,6 +202,13 @@ export class ESP32C3SimulationRunner {
             console.error('[ESP32-C3] Check that the .bin file path is correct and the file is not empty.');
         }
 
+        // ── Diagnostic: Verify IRAM integrity at previously-crashing address ──
+        const KNOWN_CRASH_ADDR = 0x40386b86;
+        if (KNOWN_CRASH_ADDR >= 0x40380000 && KNOWN_CRASH_ADDR < 0x40380000 + 0x60000) {
+            const crashAddrInsn = this.platform.core.memRead32(KNOWN_CRASH_ADDR);
+            console.log(`[ESP32-C3] IRAM integrity check @ 0x${KNOWN_CRASH_ADDR.toString(16)}: insn=0x${crashAddrInsn.toString(16)} (${crashAddrInsn === 0 ? '⚠ STILL ZERO — fix did not help' : '✓ has valid data'})`);
+        }
+
         this.platform.core.reset(ep);
         this.platform.sysTimer.cpuCycles = 0;
 
@@ -209,11 +234,72 @@ export class ESP32C3SimulationRunner {
         );
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // TRANSPILED JS PATH (recommended — uses ArduinoRuntime instead of RV32IMC)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Initialize with transpiled JavaScript code (Arduino API-level simulation).
+     * This is the RECOMMENDED path — it bypasses RISC-V emulation entirely.
+     *
+     * @param jsCode  Transpiled JavaScript from the server/client transpiler
+     */
+    async initTranspiled(jsCode: string): Promise<void> {
+        this.stop();
+        this.usingTranspiledPath = true;
+
+        this.arduinoRuntime = new ArduinoRuntime();
+
+        // Wire GPIO pin changes to CircuitEngine
+        this.arduinoRuntime.onPinChanged((gpio, value, isAnalog) => {
+            const pin = gpioToPinName(gpio);
+            const state: PinState = isAnalog ? value : (value ? 'HIGH' : 'LOW');
+            this.setPinState(pin, state);
+        });
+
+        // Wire serial output to listeners
+        this.arduinoRuntime.onSerialOutput(line => {
+            this.serialListeners.forEach(cb => cb(line));
+        });
+
+        // Load the transpiled code
+        try {
+            this.arduinoRuntime.loadTranspiledCode(jsCode);
+            console.log('[ESP32-C3] Transpiled Arduino code loaded successfully.');
+        } catch (e: any) {
+            console.error('[ESP32-C3] Failed to load transpiled code:', e);
+            throw e;
+        }
+    }
+
+    /**
+     * Start the transpiled Arduino simulation.
+     */
+    async runTranspiled(): Promise<void> {
+        if (!this.arduinoRuntime) {
+            throw new Error('[ESP32-C3] ArduinoRuntime not initialized. Call initTranspiled() first.');
+        }
+        this.running = true;
+        console.log('[ESP32-C3] Starting Arduino API simulation...');
+        await this.arduinoRuntime.start();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // RISC-V PATH (experimental — kept for future use)
+    // ─────────────────────────────────────────────────────────────────────────
+
     /**
      * Start the simulation loop.
-     * Drives requestAnimationFrame in the browser; uses setInterval in Node/Electron.
+     * If using transpiled path, delegates to runTranspiled().
+     * Otherwise uses the RISC-V soft-core.
      */
     run(): void {
+        // If using transpiled path, delegate to runTranspiled
+        if (this.usingTranspiledPath) {
+            this.runTranspiled();
+            return;
+        }
+
         if (this.running || !this.platform) return;
         this.running = true;
         this.scheduleFrame();
@@ -221,6 +307,14 @@ export class ESP32C3SimulationRunner {
 
     stop(): void {
         this.running = false;
+
+        // Stop Arduino runtime if active
+        if (this.arduinoRuntime) {
+            this.arduinoRuntime.stop();
+            this.arduinoRuntime = null;
+        }
+        this.usingTranspiledPath = false;
+
         if (this.rafHandle !== null) {
             if (typeof cancelAnimationFrame !== 'undefined') {
                 cancelAnimationFrame(this.rafHandle);
@@ -262,6 +356,10 @@ export class ESP32C3SimulationRunner {
         }
     }
 
+    private frameCount: number = 0;
+    private lastPC: number = 0;
+    private stuckCount: number = 0;
+
     private executeTick(): void {
         if (!this.platform) return;
         const { core, sysTimer } = this.platform;
@@ -272,6 +370,34 @@ export class ESP32C3SimulationRunner {
         // Advance system timer
         sysTimer.cpuCycles += cyclesExecuted;
         sysTimer.tick();
+
+        // Diagnostic: log PC every 60 frames (~1 second)
+        this.frameCount++;
+        if (this.frameCount % 60 === 0) {
+            const snap = core.snapshot();
+            console.log(`[ESP32-C3] Frame ${this.frameCount}: PC=0x${snap.pc.toString(16)} cycles=${snap.cycles} sp=0x${(snap.regs[2] >>> 0).toString(16)}`);
+
+            // Detect stuck PC — read the instruction and surrounding memory
+            if (snap.pc === this.lastPC) {
+                this.stuckCount++;
+                if (this.stuckCount === 1) {
+                    // First time stuck — dump the instruction and nearby memory
+                    const pc = snap.pc;
+                    const insn0 = core.memRead32(pc);
+                    const insn1 = core.memRead32(pc + 4);
+                    const insn2 = core.memRead32(pc - 4);
+                    console.log(`[ESP32-C3] STUCK at 0x${pc.toString(16)}: insn[-4]=0x${insn2.toString(16)} insn[0]=0x${insn0.toString(16)} insn[+4]=0x${insn1.toString(16)}`);
+                    // Dump all registers
+                    const regs = snap.regs;
+                    for (let i = 0; i < 32; i += 4) {
+                        console.log(`[ESP32-C3] x${i}=0x${(regs[i] >>> 0).toString(16)} x${i + 1}=0x${(regs[i + 1] >>> 0).toString(16)} x${i + 2}=0x${(regs[i + 2] >>> 0).toString(16)} x${i + 3}=0x${(regs[i + 3] >>> 0).toString(16)}`);
+                    }
+                }
+            } else {
+                this.stuckCount = 0;
+            }
+            this.lastPC = snap.pc;
+        }
 
         if (core.halted) {
             console.log('[ESP32-C3] CPU halted');

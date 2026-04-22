@@ -4,7 +4,14 @@ const fs = require('fs');
 const { spawn } = require('child_process');
 const buildApk = require('./buildApk');
 const { makeESP32Compiler, cleanupESP32Build } = require('./esp32Compiler');
-const qemuManager = require('./qemuManager');
+// qemuManager removed — ESP32-C3 uses custom RISC-V emulator in renderer
+const qemuManager = {
+  stopQemu: () => { },
+  startQemu: async () => { },
+  connectQMP: async () => { throw new Error('QMP not available'); },
+  sendQMPCommand: async () => { },
+  ensureQemuSilent: async () => { },
+};
 const { makeESP32Uploader } = require('./esp32Uploader');
 
 const isDev = !app.isPackaged;

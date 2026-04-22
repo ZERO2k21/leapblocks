@@ -232,53 +232,30 @@ export class FirmwareLoader {
     const IRAM_END = IRAM_BASE + RiscVCore.IRAM_SIZE;
     const DRAM_BASE = RiscVCore.DRAM_BASE;   // 0x3FC80000
     const DRAM_END = DRAM_BASE + RiscVCore.DRAM_SIZE;
-
-    // ESP32-C3 flash-mapped regions (MMU-mapped via cache):
-    //   IROM: 0x42000000 – 0x42FFFFFF  (executable code in flash)
-    //   DROM: 0x3C000000 – 0x3CFFFFFF  (read-only data in flash)
-    // For simulation we load these into IRAM/DRAM respectively so the
-    // soft-core can execute/read them without a real MMU.
-    const IROM_BASE = 0x42000000;
-    const IROM_END = 0x43000000;
-    const DROM_BASE = 0x3C000000;
-    const DROM_END = 0x3D000000;
+    const IROM_BASE = RiscVCore.IROM_BASE;   // 0x42000000
+    const IROM_END = IROM_BASE + RiscVCore.IROM_SIZE;
+    const DROM_BASE = RiscVCore.DROM_BASE;   // 0x3C000000
+    const DROM_END = DROM_BASE + RiscVCore.DROM_SIZE;
 
     if (addr >= IRAM_BASE && addr < IRAM_END) {
       this.core.loadIRAM(data, addr - IRAM_BASE);
     } else if (addr >= DRAM_BASE && addr < DRAM_END) {
       this.core.loadDRAM(data, addr - DRAM_BASE);
     } else if (addr >= IROM_BASE && addr < IROM_END) {
-      // Flash-mapped code: load into IRAM at the same relative offset
-      // so PC-relative jumps into IROM still resolve correctly.
-      // We map IROM base -> IRAM base for the simulator.
-      const iramOffset = addr - IROM_BASE;
-      if (iramOffset + data.length <= RiscVCore.IRAM_SIZE) {
-        this.core.loadIRAM(data, iramOffset);
-        console.log(`[FirmwareLoader] IROM segment 0x${addr.toString(16)} -> IRAM offset 0x${iramOffset.toString(16)}`);
-      } else {
-        console.warn(`[FirmwareLoader] IROM segment 0x${addr.toString(16)} too large for IRAM, truncating`);
-        this.core.loadIRAM(data.subarray(0, RiscVCore.IRAM_SIZE - iramOffset), iramOffset);
-      }
+      this.core.loadIROM(data, addr - IROM_BASE);
+      console.log(`[FirmwareLoader] IROM segment 0x${addr.toString(16)} (${data.length} bytes)`);
     } else if (addr >= DROM_BASE && addr < DROM_END) {
-      // Flash-mapped data: load into DRAM
-      const dramOffset = addr - DROM_BASE;
-      if (dramOffset + data.length <= RiscVCore.DRAM_SIZE) {
-        this.core.loadDRAM(data, dramOffset);
-        console.log(`[FirmwareLoader] DROM segment 0x${addr.toString(16)} -> DRAM offset 0x${dramOffset.toString(16)}`);
-      } else {
-        console.warn(`[FirmwareLoader] DROM segment 0x${addr.toString(16)} too large for DRAM, truncating`);
-        this.core.loadDRAM(data.subarray(0, RiscVCore.DRAM_SIZE - dramOffset), dramOffset);
-      }
+      this.core.loadDROM(data, addr - DROM_BASE);
+      console.log(`[FirmwareLoader] DROM segment 0x${addr.toString(16)} (${data.length} bytes)`);
     } else if (addr >= 0x40000000 && addr < 0x40380000) {
-      // ROM region — map to IRAM start for simulation purposes
-      this.core.loadIRAM(data, 0);
-    } else if (addr === 0x50000000 || (addr >= 0x50000000 && addr < 0x50002000)) {
-      // RTC SLOW memory — small, ignore for simulation
+      // ROM region — the simulator has a stub ROM filled with RET instructions.
+      // Nothing to load here; the stub handles all ROM calls.
+      console.log(`[FirmwareLoader] ROM segment at 0x${addr.toString(16)} (${data.length} bytes) — using ROM stub`);
+    } else if (addr >= 0x50000000 && addr < 0x50002000) {
+      // RTC SLOW memory — skip
       console.log(`[FirmwareLoader] RTC segment at 0x${addr.toString(16)} (${data.length} bytes) — skipped`);
     } else {
-      console.warn(
-        `[FirmwareLoader] Segment at 0x${addr.toString(16)} outside known regions (${data.length} bytes) — skipped`
-      );
+      console.warn(`[FirmwareLoader] Segment at 0x${addr.toString(16)} outside known regions (${data.length} bytes) — skipped`);
     }
   }
 }

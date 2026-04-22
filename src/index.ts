@@ -619,7 +619,7 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
   return result;
 });
 
-// Library Handlers (Wokwi Centralized Management)
+
 ipcMain.handle('search-library', async (event, query: string) => {
   return await arduinoUploader.searchLibraries(query);
 });

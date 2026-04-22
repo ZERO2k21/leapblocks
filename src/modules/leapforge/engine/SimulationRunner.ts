@@ -46,6 +46,9 @@ class SimulationRunner {
   // compiled .bin from the main process.  It is consumed by start() to launch the simulation.
   private binPath: string | null = null;
 
+  // Transpiled JavaScript code for ArduinoRuntime-based simulation (recommended path)
+  private _transpiledJS: string | null = null;
+
   private selectedBoard: string = 'arduino-uno';
 
   // Custom Event Scheduler for Peripheral Emulation
@@ -179,51 +182,83 @@ class SimulationRunner {
   }
 
   /**
+   * Store transpiled JavaScript for ArduinoRuntime-based ESP32-C3 simulation.
+   * Call this instead of (or in addition to) setBoard() when using the transpiled path.
+   */
+  setTranspiledJS(jsCode: string): void {
+    this._transpiledJS = jsCode;
+    console.log(`[SimulationRunner] Transpiled JS stored (${jsCode.length} bytes)`);
+  }
+
+  /**
    * Start the simulation loop
    */
   async start() {
     console.log(`[SimulationRunner] start() called, selectedBoard="${this.selectedBoard}"`);
-    // ── ESP32-C3 RISC-V path ──────────────────────
+    // ── ESP32-C3 path ──────────────────────
     const ESP32_C3_BOARD_IDS = ['esp32-c3'];
     if (ESP32_C3_BOARD_IDS.includes(this.selectedBoard)) {
-      console.log('[SimulationRunner] ESP32-C3 board detected, entering RISC-V path');
-      if (!this.binPath) {
-        throw new Error(
-          '[FORGE] binPath is required for ESP32-C3 simulation. ' +
-          'Call setBoard(boardId, binPath) before start().'
-        );
+      console.log('[SimulationRunner] ESP32-C3 board detected');
+      if (!this.esp32c3Runner) {
+        this.esp32c3Runner = new ESP32C3SimulationRunner();
+        // Wire serial output from ESP32 runner to the Zustand store
+        this.esp32c3Runner.addSerialListener((text: string) => {
+          import('../store/useForgeStore').then(({ useForgeStore }) => {
+            useForgeStore.getState().appendSerial(text);
+          });
+        });
+        // Wire pin changes to the pin state map
+        this.esp32c3Runner.addPinListener('*', (pin, state) => {
+          // Map ESP pin names to the common format
+          const pinNum = pin.replace('ESP', '');
+          const isHigh = state === 'HIGH' || (typeof state === 'number' && state > 0);
+          this.setPinState(`ESP${pinNum}`, isHigh ? 'HIGH' : 'LOW');
+        });
       }
-      if (!this.esp32c3Runner) this.esp32c3Runner = new ESP32C3SimulationRunner();
 
-      // Load the actual compiled .bin via IPC so the firmware scanner can find
-      // the __LF_GPIO strings injected by the GPIO monitor header.
-      let firmwareBin: Uint8Array;
-      try {
-        console.log(`[FORGE] Attempting to read binary from: ${this.binPath}`);
-        const buffer = await (window as any).electronAPI.readBinFile(this.binPath);
-        firmwareBin = new Uint8Array(buffer);
-        console.log(`[FORGE] Loaded firmware: ${firmwareBin.length} bytes from ${this.binPath}`);
+      // ── Path A: Transpiled JS (recommended — works on web & Electron) ──
+      if (this._transpiledJS) {
+        console.log('[SimulationRunner] Using transpiled JS path (ArduinoRuntime)');
+        await this.esp32c3Runner.initTranspiled(this._transpiledJS);
+        this.esp32c3Runner.run();
+        console.log('[FORGE] ESP32-C3 transpiled simulation started');
+        return;
+      }
 
-        if (firmwareBin.length === 0) {
-          throw new Error(`Binary file is empty: ${this.binPath}`);
+      // ── Path B: RISC-V binary (Electron-only, experimental) ──
+      if (this.binPath) {
+        console.log('[SimulationRunner] Using RISC-V binary path (experimental)');
+        let firmwareBin: Uint8Array;
+        try {
+          console.log(`[FORGE] Attempting to read binary from: ${this.binPath}`);
+          const buffer = await (window as any).electronAPI.readBinFile(this.binPath);
+          firmwareBin = new Uint8Array(buffer);
+          console.log(`[FORGE] Loaded firmware: ${firmwareBin.length} bytes from ${this.binPath}`);
+
+          if (firmwareBin.length === 0) {
+            throw new Error(`Binary file is empty: ${this.binPath}`);
+          }
+
+          const preview = Array.from(firmwareBin.slice(0, Math.min(16, firmwareBin.length)))
+            .map(b => '0x' + b.toString(16).padStart(2, '0'))
+            .join(' ');
+          console.log(`[FORGE] First bytes: ${preview}`);
+
+        } catch (err) {
+          console.error('[FORGE] Could not read .bin via IPC:', err);
+          throw new Error(`Failed to load ESP32-C3 firmware from ${this.binPath}: ${err}`);
         }
 
-        // Log first few bytes for debugging
-        const preview = Array.from(firmwareBin.slice(0, Math.min(16, firmwareBin.length)))
-          .map(b => '0x' + b.toString(16).padStart(2, '0'))
-          .join(' ');
-        console.log(`[FORGE] First bytes: ${preview}`);
-
-      } catch (err) {
-        console.error('[FORGE] Could not read .bin via IPC:', err);
-        throw new Error(`Failed to load ESP32-C3 firmware from ${this.binPath}: ${err}`);
+        await this.esp32c3Runner.init(firmwareBin);
+        this.esp32c3Runner.run();
+        console.log('[FORGE] ESP32-C3 RISC-V runner started, binPath:', this.binPath);
+        return;
       }
 
-      await this.esp32c3Runner.init(firmwareBin);
-      this.esp32c3Runner.run();
-
-      console.log('[FORGE] ESP32-C3 runner started, binPath:', this.binPath);
-      return;
+      throw new Error(
+        '[FORGE] ESP32-C3 simulation requires either transpiled JS or a binPath. ' +
+        'Call setTranspiledJS() or setBoard(boardId, binPath) before start().'
+      );
     }
 
     console.log('[SimulationRunner] Not an ESP32-C3 board, entering AVR path');
@@ -248,11 +283,12 @@ class SimulationRunner {
    * Stop the simulation
    */
   stop() {
-    // ── ESP32-C3 RISC-V path ──────────────────────
+    // ── ESP32-C3 path ──────────────────────
     const ESP32_C3_BOARD_IDS = ['esp32-c3'];
     if (ESP32_C3_BOARD_IDS.includes(this.selectedBoard)) {
       this.esp32c3Runner?.stop();
-      this.binPath = null; // clear so a stale path can't be reused
+      this.binPath = null;
+      this._transpiledJS = null;
       console.log('[FORGE] ESP32-C3 RISC-V runner stopped.');
       return;
     }

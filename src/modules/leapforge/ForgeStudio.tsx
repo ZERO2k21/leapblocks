@@ -110,36 +110,25 @@ void loop() {
     clearSerial();
 
     try {
-      // ── ESP32 QEMU path ────────────────────────────────────────────────────
+      // ── ESP32 Arduino Transpilation path ────────────────────────────────────
       if (isESP32) {
-        console.log('[FORGE UI] ESP32-C3 board detected — using RISC-V compile path...');
-        const fqbn = FQBN[board] ?? 'esp32:esp32:esp32c3';
-        const result = await compileCode({
-          code,
-          board: fqbn,
-          libraries: useForgeStore.getState().importedLibraries,
-        });
-        console.log('[FORGE UI] ESP32 compile result:', result.success ? 'Success' : result.error);
+        console.log('[FORGE UI] ESP32-C3 board detected — using transpilation path...');
+        const { transpileCode } = await import('../../services/CompilerService');
+        const result = await transpileCode(code, 'esp32:esp32:esp32c3');
+        console.log('[FORGE UI] Transpile result:', result.success ? 'Success' : result.error);
 
-        if (!result.success) {
-          setCompileError(result.error || 'ESP32 compilation failed');
-          appendSerial(`[ERROR]: ${result.error || 'ESP32 compilation failed'}\n`);
+        if (!result.success || !result.jsCode) {
+          setCompileError(result.error || 'ESP32 transpilation failed');
+          appendSerial(`[ERROR]: ${result.error || 'ESP32 transpilation failed'}\n`);
           return;
         }
 
-        // compile-code returns binPath for espressif:* FQBNs
-        const binPath = result.binPath;
-        if (!binPath) {
-          setCompileError('ESP32 compile succeeded but no .bin path returned');
-          appendSerial('[ERROR]: No .bin path returned from compiler\n');
-          return;
-        }
-
-        // Pass binPath to SimulationRunner via setBoard, then start QEMU
+        // Pass transpiled JS to SimulationRunner
         const runner = await getSimulationRunner();
-        runner.setBoard(board, binPath);
-        startSimulation('__esp32_c3_riscv__');
-        appendSerial('ESP32-C3 compiled. Starting RISC-V simulation...\n');
+        runner.setBoard(board);
+        runner.setTranspiledJS(result.jsCode);
+        startSimulation('__esp32_c3_transpiled__');
+        appendSerial('ESP32-C3 compiled. Starting Arduino API simulation...\n');
         return;
       }
 

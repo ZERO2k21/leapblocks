@@ -34,22 +34,22 @@ import { MemoryRegion } from '../cpu/RiscVCore';
 
 type u32 = number;
 
-const SYSTIMER_CONF_REG       = 0x000;
-const SYSTIMER_UNIT0_OP_REG   = 0x004;
+const SYSTIMER_CONF_REG = 0x000;
+const SYSTIMER_UNIT0_OP_REG = 0x004;
 const SYSTIMER_UNIT0_VALUE_LO = 0x040;
 const SYSTIMER_UNIT0_VALUE_HI = 0x044;
 const SYSTIMER_UNIT1_VALUE_LO = 0x048;
 const SYSTIMER_UNIT1_VALUE_HI = 0x04C;
-const SYSTIMER_TARGET0_LO     = 0x050;
-const SYSTIMER_TARGET0_HI     = 0x054;
-const SYSTIMER_TARGET0_CONF   = 0x058;
-const SYSTIMER_TARGET1_LO     = 0x05C;
-const SYSTIMER_TARGET1_HI     = 0x060;
-const SYSTIMER_TARGET1_CONF   = 0x064;
-const SYSTIMER_INT_ENA_REG    = 0x07C;
-const SYSTIMER_INT_RAW_REG    = 0x080;
-const SYSTIMER_INT_CLR_REG    = 0x084;
-const SYSTIMER_INT_ST_REG     = 0x088;
+const SYSTIMER_TARGET0_LO = 0x050;
+const SYSTIMER_TARGET0_HI = 0x054;
+const SYSTIMER_TARGET0_CONF = 0x058;
+const SYSTIMER_TARGET1_LO = 0x05C;
+const SYSTIMER_TARGET1_HI = 0x060;
+const SYSTIMER_TARGET1_CONF = 0x064;
+const SYSTIMER_INT_ENA_REG = 0x07C;
+const SYSTIMER_INT_RAW_REG = 0x080;
+const SYSTIMER_INT_CLR_REG = 0x084;
+const SYSTIMER_INT_ST_REG = 0x088;
 
 /** ESP32-C3 SYSTIMER clock: 16 MHz */
 const SYSTIMER_CLOCK_HZ = 16_000_000;
@@ -91,8 +91,8 @@ export class ESP32C3SysTimer implements MemoryRegion {
 
   private latchUnit0(): void {
     const ticks = this.timerTicks();
-    this.unit0LatchLo = Number(ticks & 0xFFFFFFFFn) >>> 0;
-    this.unit0LatchHi = Number((ticks >> 32n) & 0xFFFFFn);   // 20-bit hi
+    this.unit0LatchLo = Number(ticks & BigInt(0xFFFFFFFF)) >>> 0;
+    this.unit0LatchHi = Number((ticks >> BigInt(32)) & BigInt(0xFFFFF));
   }
 
   /** Called by simulation runner each tick to check alarms */
@@ -101,33 +101,32 @@ export class ESP32C3SysTimer implements MemoryRegion {
 
     // Alarm 0
     if (this.target0Conf & 1) {
-      const target = (BigInt(this.target0Hi & 0xFFFFF) << 32n) | BigInt(this.target0Lo >>> 0);
+      const target = (BigInt(this.target0Hi & 0xFFFFF) << BigInt(32)) | BigInt(this.target0Lo >>> 0);
       if (ticks >= target) {
         this.intRaw |= 1;
         if (this.intEna & 1 && this.onIRQ) this.onIRQ(37);
-        // Auto-reload (periodic alarm)
         if (this.target0Conf & 2) {
-          const period = (BigInt((this.target0Conf >> 16) & 0xFFFF)) << 16n;
+          const period = (BigInt((this.target0Conf >> 16) & 0xFFFF)) << BigInt(16);
           const next = target + period;
-          this.target0Lo = Number(next & 0xFFFFFFFFn) >>> 0;
-          this.target0Hi = Number((next >> 32n) & 0xFFFFFn);
+          this.target0Lo = Number(next & BigInt(0xFFFFFFFF)) >>> 0;
+          this.target0Hi = Number((next >> BigInt(32)) & BigInt(0xFFFFF));
         } else {
-          this.target0Conf &= ~1; // one-shot: disable
+          this.target0Conf &= ~1;
         }
       }
     }
 
     // Alarm 1
     if (this.target1Conf & 1) {
-      const target = (BigInt(this.target1Hi & 0xFFFFF) << 32n) | BigInt(this.target1Lo >>> 0);
+      const target = (BigInt(this.target1Hi & 0xFFFFF) << BigInt(32)) | BigInt(this.target1Lo >>> 0);
       if (ticks >= target) {
         this.intRaw |= 2;
         if (this.intEna & 2 && this.onIRQ) this.onIRQ(38);
         if (this.target1Conf & 2) {
-          const period = (BigInt((this.target1Conf >> 16) & 0xFFFF)) << 16n;
+          const period = (BigInt((this.target1Conf >> 16) & 0xFFFF)) << BigInt(16);
           const next = target + period;
-          this.target1Lo = Number(next & 0xFFFFFFFFn) >>> 0;
-          this.target1Hi = Number((next >> 32n) & 0xFFFFFn);
+          this.target1Lo = Number(next & BigInt(0xFFFFFFFF)) >>> 0;
+          this.target1Hi = Number((next >> BigInt(32)) & BigInt(0xFFFFF));
         } else {
           this.target1Conf &= ~1;
         }
@@ -139,47 +138,47 @@ export class ESP32C3SysTimer implements MemoryRegion {
   // MemoryRegion
   // -----------------------------------------------------------------------
 
-  read8(addr: u32): u32  { return this.read32(addr) & 0xFF; }
+  read8(addr: u32): u32 { return this.read32(addr) & 0xFF; }
   read16(addr: u32): u32 { return this.read32(addr) & 0xFFFF; }
 
   read32(addr: u32): u32 {
     const off = (addr - this.base) >>> 0;
     switch (off) {
-      case SYSTIMER_CONF_REG:       return this.conf;
+      case SYSTIMER_CONF_REG: return this.conf;
       case SYSTIMER_UNIT0_VALUE_LO: return this.unit0LatchLo;
       case SYSTIMER_UNIT0_VALUE_HI: return this.unit0LatchHi;
       // Unit1 mirrors unit0 in our single-unit sim
       case SYSTIMER_UNIT1_VALUE_LO: return this.unit0LatchLo;
       case SYSTIMER_UNIT1_VALUE_HI: return this.unit0LatchHi;
-      case SYSTIMER_TARGET0_LO:     return this.target0Lo;
-      case SYSTIMER_TARGET0_HI:     return this.target0Hi;
-      case SYSTIMER_TARGET0_CONF:   return this.target0Conf;
-      case SYSTIMER_TARGET1_LO:     return this.target1Lo;
-      case SYSTIMER_TARGET1_HI:     return this.target1Hi;
-      case SYSTIMER_TARGET1_CONF:   return this.target1Conf;
-      case SYSTIMER_INT_ENA_REG:    return this.intEna;
-      case SYSTIMER_INT_RAW_REG:    return this.intRaw;
-      case SYSTIMER_INT_ST_REG:     return this.intRaw & this.intEna;
+      case SYSTIMER_TARGET0_LO: return this.target0Lo;
+      case SYSTIMER_TARGET0_HI: return this.target0Hi;
+      case SYSTIMER_TARGET0_CONF: return this.target0Conf;
+      case SYSTIMER_TARGET1_LO: return this.target1Lo;
+      case SYSTIMER_TARGET1_HI: return this.target1Hi;
+      case SYSTIMER_TARGET1_CONF: return this.target1Conf;
+      case SYSTIMER_INT_ENA_REG: return this.intEna;
+      case SYSTIMER_INT_RAW_REG: return this.intRaw;
+      case SYSTIMER_INT_ST_REG: return this.intRaw & this.intEna;
       default: return 0;
     }
   }
 
-  write8(addr: u32, val: u32): void  { this.write32(addr, val); }
+  write8(addr: u32, val: u32): void { this.write32(addr, val); }
   write16(addr: u32, val: u32): void { this.write32(addr, val); }
 
   write32(addr: u32, val: u32): void {
     const off = (addr - this.base) >>> 0;
     switch (off) {
-      case SYSTIMER_CONF_REG:       this.conf = val; break;
-      case SYSTIMER_UNIT0_OP_REG:   this.latchUnit0(); break; // trigger latch
-      case SYSTIMER_TARGET0_LO:     this.target0Lo = val; break;
-      case SYSTIMER_TARGET0_HI:     this.target0Hi = val; break;
-      case SYSTIMER_TARGET0_CONF:   this.target0Conf = val; break;
-      case SYSTIMER_TARGET1_LO:     this.target1Lo = val; break;
-      case SYSTIMER_TARGET1_HI:     this.target1Hi = val; break;
-      case SYSTIMER_TARGET1_CONF:   this.target1Conf = val; break;
-      case SYSTIMER_INT_ENA_REG:    this.intEna = val; break;
-      case SYSTIMER_INT_CLR_REG:    this.intRaw &= ~val; break;
+      case SYSTIMER_CONF_REG: this.conf = val; break;
+      case SYSTIMER_UNIT0_OP_REG: this.latchUnit0(); break; // trigger latch
+      case SYSTIMER_TARGET0_LO: this.target0Lo = val; break;
+      case SYSTIMER_TARGET0_HI: this.target0Hi = val; break;
+      case SYSTIMER_TARGET0_CONF: this.target0Conf = val; break;
+      case SYSTIMER_TARGET1_LO: this.target1Lo = val; break;
+      case SYSTIMER_TARGET1_HI: this.target1Hi = val; break;
+      case SYSTIMER_TARGET1_CONF: this.target1Conf = val; break;
+      case SYSTIMER_INT_ENA_REG: this.intEna = val; break;
+      case SYSTIMER_INT_CLR_REG: this.intRaw &= ~val; break;
     }
   }
 }

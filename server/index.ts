@@ -10,6 +10,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import { transpileArduinoToJS } from './transpiler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -182,6 +183,46 @@ app.post('/compile', async (req, res) => {
     try {
       if (fs.existsSync(sketchDir)) fs.rmSync(sketchDir, { recursive: true, force: true });
     } catch (e) { }
+  }
+});
+
+// POST /transpile — Arduino C++ → JavaScript for browser-side simulation
+app.post('/transpile', async (req, res) => {
+  const { code, board = 'esp32:esp32:esp32c3' } = req.body;
+
+  if (!code) {
+    return res.status(400).json({ success: false, errors: ['No code provided'] });
+  }
+
+  // Step 1: Validate the sketch by compiling with arduino-cli (catches syntax errors)
+  if (isInitialized) {
+    const sketchId = `transpile_${Date.now()}`;
+    const sketchDir = path.join(os.tmpdir(), 'leapforge', sketchId);
+    const sketchFile = path.join(sketchDir, `${sketchId}.ino`);
+    try {
+      fs.mkdirSync(sketchDir, { recursive: true });
+      fs.writeFileSync(sketchFile, code, 'utf8');
+      await runCommand(
+        `${CLI_BIN} compile --fqbn ${board} --format json ` +
+        `--config-file "${FORGE.configFile}" --output-dir "${sketchDir}" ${sketchDir}`
+      );
+    } catch (err: any) {
+      // If compilation fails, return the error — don't transpile invalid code
+      try { fs.rmSync(sketchDir, { recursive: true, force: true }); } catch (_) { }
+      return res.json({ success: false, errors: [err.message] });
+    } finally {
+      try { if (fs.existsSync(sketchDir)) fs.rmSync(sketchDir, { recursive: true, force: true }); } catch (_) { }
+    }
+  }
+
+  // Step 2: Transpile C++ → JavaScript
+  try {
+    const jsCode = transpileArduinoToJS(code);
+    console.log(`[TRANSPILE] Transpiled ${code.length} bytes → ${jsCode.length} bytes JS`);
+    return res.json({ success: true, jsCode });
+  } catch (err: any) {
+    console.error('[TRANSPILE] Error:', err.message);
+    return res.json({ success: false, errors: [err.message] });
   }
 });
 

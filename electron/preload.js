@@ -29,15 +29,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   removeSerialDataListener: () => ipcRenderer.removeAllListeners('serial-data'),
 
   // ── ESP32 status / progress events ───────────────────────────────────────
-  // Pushed from qemuManager.js → mainWindow.webContents.send('esp32-status', {...})
-  // stage: 'downloading-qemu' | 'downloading-rom' | 'error'
-  // progress: 0–100 (for downloading stages)
-  // message: string (for error stage)
   onESP32Status: (cb) => ipcRenderer.on('esp32-status', (_, payload) => cb(payload)),
   removeESP32StatusListener: () => ipcRenderer.removeAllListeners('esp32-status'),
 
   // ── ESP32 QEMU simulation lifecycle ──────────────────────────────────────
-  // compile-esp32-sim: compile sketch → .bin, return binPath (kept for compat)
   compileESP32Sim: (code, fqbn) => ipcRenderer.invoke('compile-esp32-sim', code, fqbn),
 
   // ── Read compiled .bin file for ESP32-C3 firmware scanner ────────────────

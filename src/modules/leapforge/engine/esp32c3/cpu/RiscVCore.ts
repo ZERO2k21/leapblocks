@@ -80,18 +80,31 @@ const i32s = (v: number): i32 => (v | 0) as i32;
 class RAMRegion implements MemoryRegion {
   base: u32;
   size: u32;
-  private data: Uint8Array;
-  private view: DataView;
+  protected data: Uint8Array;
+  protected view: DataView;
 
-  constructor(base: u32, size: u32) {
+  constructor(base: u32, size: u32, sharedBuffer?: ArrayBuffer) {
     this.base = base;
     this.size = size;
-    this.data = new Uint8Array(size);
-    this.view = new DataView(this.data.buffer);
+    if (sharedBuffer) {
+      if (sharedBuffer.byteLength < size) throw new Error('Shared buffer too small');
+      this.data = new Uint8Array(sharedBuffer, 0, size);
+    } else {
+      this.data = new Uint8Array(size);
+    }
+    this.view = new DataView(this.data.buffer, this.data.byteOffset, this.data.byteLength);
   }
 
   load(src: Uint8Array, offset: u32 = 0): void {
     this.data.set(src, offset);
+  }
+
+  /** Fill entire region with a repeated 32-bit word (little-endian) */
+  fill32(word: u32): void {
+    const view = new DataView(this.data.buffer, this.data.byteOffset, this.data.byteLength);
+    for (let i = 0; i < this.size; i += 4) {
+      view.setUint32(i, word, true);
+    }
   }
 
   private local(addr: u32): number {
@@ -117,6 +130,10 @@ class RAMRegion implements MemoryRegion {
 
 export class MMIOBus {
   private regions: MemoryRegion[] = [];
+  // Stub map: silently absorbs writes to unregistered MMIO, returns last written value on read.
+  // This covers WDT, SYSTEM, INTERRUPT MATRIX, and other init-time registers the firmware
+  // touches but the simulator doesn't need to fully implement.
+  private stubRegs = new Map<u32, u32>();
 
   register(region: MemoryRegion): void {
     this.regions.push(region);
@@ -126,13 +143,225 @@ export class MMIOBus {
     return this.regions.find(r => addr >= r.base && addr < r.base + r.size);
   }
 
-  read8(addr: u32): u32 { return this.find(addr)?.read8(addr) ?? 0; }
-  read16(addr: u32): u32 { return this.find(addr)?.read16(addr) ?? 0; }
-  read32(addr: u32): u32 { return this.find(addr)?.read32(addr) ?? 0; }
+  read8(addr: u32): u32 { return (this.find(addr)?.read8(addr) ?? this.stubRead(addr)) & 0xFF; }
+  read16(addr: u32): u32 { return (this.find(addr)?.read16(addr) ?? this.stubRead(addr)) & 0xFFFF; }
+  read32(addr: u32): u32 { return this.find(addr)?.read32(addr) ?? this.stubRead(addr); }
 
-  write8(addr: u32, v: u32): void { this.find(addr)?.write8(addr, v); }
-  write16(addr: u32, v: u32): void { this.find(addr)?.write16(addr, v); }
-  write32(addr: u32, v: u32): void { this.find(addr)?.write32(addr, v); }
+  write8(addr: u32, v: u32): void {
+    const r = this.find(addr);
+    if (r) { r.write8(addr, v); return; }
+    if (addr >= 0x60000000) this.stubRegs.set(addr, v);
+  }
+  write16(addr: u32, v: u32): void {
+    const r = this.find(addr);
+    if (r) { r.write16(addr, v); return; }
+    if (addr >= 0x60000000) this.stubRegs.set(addr, v);
+  }
+  write32(addr: u32, v: u32): void {
+    const r = this.find(addr);
+    if (r) { r.write32(addr, v); return; }
+    if (addr >= 0x60000000) this.stubRegs.set(addr, v);
+  }
+
+  private stubRead(addr: u32): u32 {
+    // SYSTEM peripheral (0x60002000-0x60002FFF): correct default values from system_reg.h
+    if (addr >= 0x60002000 && addr < 0x60003000) {
+      const off = addr - 0x60002000;
+      switch (off) {
+        case 0x000: return 0x00000000; // SYSTEM_CPU_PERI_CLK_EN_REG
+        case 0x004: return 0x000000C0; // SYSTEM_CPU_PERI_RST_EN_REG
+        case 0x008: return 0x0000000C; // SYSTEM_CPU_PER_CONF_REG
+        case 0x00C: return 0x00000001; // SYSTEM_MEM_PD_MASK_REG
+        case 0x010: return 0xFFFFFFFF; // SYSTEM_PERIP_CLK_EN0_REG (all clocks on)
+        case 0x014: return 0x00000600; // SYSTEM_PERIP_CLK_EN1_REG
+        case 0x018: return 0x00000000; // SYSTEM_PERIP_RST_EN0_REG (no resets = ready)
+        case 0x01C: return 0x000001C0; // SYSTEM_PERIP_RST_EN1_REG
+        case 0x03C: return 0x00000001; // SYSTEM_EDMA_CTRL_REG (EDMA_CLK_ON=1)
+        case 0x040: return 0x00000005; // SYSTEM_CACHE_CONTROL_REG (clocks on)
+        case 0x054: return 0x00000001; // SYSTEM_CLOCK_GATE_REG
+        case 0x058: return 0x00000001; // SYSTEM_SYSCLK_CONF_REG
+        default: return 0x00000000;
+      }
+    }
+
+    // TIMG0 (0x6001F000) and TIMG1 (0x60020000): Timer Group / Watchdog
+    // Startup waits for WDT status bits — return values indicating WDT is disabled/idle
+    if ((addr >= 0x6001F000 && addr < 0x60020000) ||
+      (addr >= 0x60020000 && addr < 0x60021000)) {
+      const off = addr & 0xFFF;
+      switch (off) {
+        case 0x048: return 0x00000000; // TIMG_WDTCONFIG0: WDT disabled
+        case 0x060: return 0x00000000; // TIMG_WDTFEED
+        case 0x064: return 0x50D83AA1; // TIMG_WDTWPROTECT: write-protect key
+        case 0x068: return 0x00008000; // TIMG_RTCCALICFG: RTC_CALI_RDY (bit 15) = 1 (calibration done)
+        case 0x06C: return 0x000FFF00; // TIMG_RTCCALICFG1: calibration result value
+        case 0x070: return 0x00000000; // TIMG_INT_ENA_TIMERS
+        case 0x074: return 0x00000000; // TIMG_INT_RAW_TIMERS
+        case 0x078: return 0x00000000; // TIMG_INT_ST_TIMERS
+        case 0x07C: return 0x00000000; // TIMG_INT_CLR_TIMERS
+        case 0x080: return 0x80000000; // TIMG_RTCCALICFG2: RDY bit set = calibration done
+        default: return 0x00000000;
+      }
+    }
+
+    // EXTMEM — Cache/MMU controller (0x600C4000)
+    // ESP-IDF startup enables the ICache and checks ready status here
+    if (addr >= 0x600C4000 && addr < 0x600C5000) {
+      const off = addr - 0x600C4000;
+      switch (off) {
+        case 0x000: return 0x00000001; // EXTMEM_ICACHE_CTRL_REG — ICACHE_ENABLE=1
+        case 0x004: return 0x00000001; // EXTMEM_ICACHE_CTRL1_REG — cache done / ready
+        case 0x008: return 0x00000003; // EXTMEM_ICACHE_TAG_POWER_CTRL — tag mem powered on
+        case 0x040: return 0x00000001; // EXTMEM_ICACHE_SYNC_CTRL — sync done
+        case 0x044: return 0x00000000; // EXTMEM_ICACHE_SYNC_SIZE
+        case 0x060: return 0x00000001; // EXTMEM_ICACHE_PRELOAD_CTRL — preload done
+        case 0x0A0: return 0x00000000; // EXTMEM_ICACHE_LOCK_CTRL — no lock
+        case 0x0AC: return 0x00000003; // EXTMEM_CACHE_STATE — cache idle/ready
+        default: return 0x00000000;
+      }
+    }
+
+    // SENSITIVE — Security/permission (0x600C1000)
+    if (addr >= 0x600C1000 && addr < 0x600C2000) {
+      return 0x00000000; // All permissions open / no security restrictions
+    }
+
+    // INTERRUPT_CORE0 — Interrupt matrix (0x600C2000)
+    if (addr >= 0x600C2000 && addr < 0x600C3000) {
+      const off = addr - 0x600C2000;
+      // 0x190: INTERRUPT_CORE0_CPU_INT_THRESH_REG (interrupt threshold)
+      if (off === 0x190) return 0x00000000;
+      // 0x194: INTERRUPT_CORE0_CPU_INT_CLEAR_REG
+      if (off === 0x194) return 0x00000000;
+      return 0x00000000; // All interrupt sources unmapped
+    }
+
+    // SYSTEM_BASE (0x600C0000) — per-bus registers
+    if (addr >= 0x600C0000 && addr < 0x600C1000) {
+      const off = addr - 0x600C0000;
+      switch (off) {
+        case 0x000: return 0xFFFFFFFF; // SYSTEM_CPU_PERI_CLK_EN_REG (all clocks on)
+        case 0x004: return 0x00000000; // SYSTEM_CPU_PERI_RST_EN_REG (no resets)
+        case 0x008: return 0x00000001; // SYSTEM_CPU_PER_CONF (PLL div ready)
+        case 0x00C: return 0x00000001; // SYSTEM_MEM_PD_MASK (powered up)
+        case 0x010: return 0xFFFFFFFF; // SYSTEM_PERIP_CLK_EN0 (all peripheral clocks on)
+        case 0x014: return 0x00000600; // SYSTEM_PERIP_CLK_EN1
+        case 0x018: return 0x00000000; // SYSTEM_PERIP_RST_EN0 (no resets active)
+        case 0x01C: return 0x00000000; // SYSTEM_PERIP_RST_EN1
+        case 0x03C: return 0x00000001; // SYSTEM_EDMA_CTRL (EDMA_CLK_ON)
+        case 0x040: return 0x00000005; // SYSTEM_CACHE_CONTROL (clocks on)
+        case 0x054: return 0x00000001; // SYSTEM_CLOCK_GATE
+        case 0x058: return 0x00000001; // SYSTEM_SYSCLK_CONF
+        default: return 0x00000000;
+      }
+    }
+
+    // ASSIST_DEBUG (0x600CE000) — debug controller
+    if (addr >= 0x600CE000 && addr < 0x600CF000) {
+      return 0x00000000; // Debug features disabled
+    }
+
+    // RTC_CNTL (0x60008000-0x600087FF): RTC controller — startup reads clock/reset status
+    if (addr >= 0x60008000 && addr < 0x60008800) {
+      const off = addr - 0x60008000;
+      switch (off) {
+        case 0x000: return 0x00000000; // RTC_CNTL_OPTIONS0_REG
+        case 0x01C: return 0x00000000; // RTC_CNTL_RESET_STATE_REG (no reset pending)
+        case 0x024: return 0x00000000; // RTC_CNTL_WDTCONFIG0: WDT disabled
+        case 0x028: return 0x00000000;
+        case 0x02C: return 0x00000000;
+        case 0x030: return 0x00000000;
+        case 0x034: return 0x00000000;
+        case 0x070: return 0x00000000; // RTC_CNTL_INT_ENA_REG
+        case 0x080: return 0x00000000; // RTC_CNTL_STORE0_REG
+        case 0x088: return 0x00000000; // RTC_CNTL_STORE1_REG
+        case 0x08C: return 0x00000000;
+        default: return 0x00000000;
+      }
+    }
+
+    // EFUSE controller (0x60008800)
+    if (addr >= 0x60008800 && addr < 0x60009000) {
+      const off = addr - 0x60008800;
+      // Return "fuse read done" and chip version info
+      if (off === 0x044) return 0x00000001; // EFUSE_STATUS — read_done=1
+      if (off === 0x01C) return 0x00050000; // EFUSE_RD_MAC_SPI_SYS_3 — chip version
+      return 0x00000000;
+    }
+
+    // USB_SERIAL_JTAG (0x60043000) 
+    if (addr >= 0x60043000 && addr < 0x60044000) {
+      const off = addr - 0x60043000;
+      // Return EP1_IN buffer ready to accept data
+      if (off === 0x004) return 0x00000002; // USB_SERIAL_JTAG_EP1_CONF — serial_IN_EP_DATA_FREE=1
+      if (off === 0x044) return 0x00000001; // USB_SERIAL_JTAG_JFIFO_ST — JTAG idle
+      return 0x00000000;
+    }
+
+    // GDMA (0x6003F000) — General DMA
+    if (addr >= 0x6003F000 && addr < 0x60040000) {
+      return 0x00000000; // DMA idle
+    }
+
+    // SPI0 / SPI_MEM (0x60003000) — cache/flash controller
+    // Firmware reads this during cache initialization; return "idle/ready" values
+    if (addr >= 0x60003000 && addr < 0x60004000) {
+      const off = addr - 0x60003000;
+      switch (off) {
+        case 0x000: return 0x00200000; // SPI_MEM_CMD — no command active
+        case 0x008: return 0x00000000; // SPI_MEM_CTRL — default
+        case 0x00C: return 0x00000000; // SPI_MEM_CTRL1
+        case 0x010: return 0x00000000; // SPI_MEM_CTRL2
+        case 0x02C: return 0x00000001; // SPI_MEM_FSM — idle
+        case 0x0DC: return 0x00000000; // SPI_MEM_TIMING_CALI — calibration complete
+        default: return 0x00000000;
+      }
+    }
+
+    // IO MUX (0x60009000) — GPIO function select / pull-up/down configuration
+    if (addr >= 0x60009000 && addr < 0x6000A000) {
+      const off = addr - 0x60009000;
+      if (off === 0x000) return 0x00000000; // IO_MUX_PIN_CTRL
+      // Per-pin MUX registers: 0x04, 0x08, 0x0C, ...  (GPIO0..21)
+      // Return a safe default: function 0, no pull-up/down
+      return 0x00000000;
+    }
+
+    // RTC_I2C (0x6000E000) — Real-time clock I2C controller
+    if (addr >= 0x6000E000 && addr < 0x6000F000) {
+      const off = addr - 0x6000E000;
+      switch (off) {
+        case 0x040: return 0x00000000; // RTC_I2C_SCL_LOW — default clock config
+        case 0x044: return 0x00000000; // RTC_I2C_CTRL
+        default: return 0x00000000;
+      }
+    }
+
+    // RF peripherals: FE2 (0x60005000), FE (0x60006000), NRX (0x6001CC00), BB (0x6001D000)
+    // These are RF frontend/baseband — return 0 (idle)
+    if ((addr >= 0x60005000 && addr < 0x60007000) ||
+        (addr >= 0x6001C000 && addr < 0x6001F000)) {
+      return 0x00000000;
+    }
+
+    // APB_CTRL / SYSCON (0x60026000): APB controller
+    if (addr >= 0x60026000 && addr < 0x60027000) {
+      const off = addr - 0x60026000;
+      switch (off) {
+        case 0x09C: return 0x00000000; // APB_CTRL_DATE_REG
+        case 0x0AC: return 0x00000000;
+        default: return 0x00000000;
+      }
+    }
+
+    const val = this.stubRegs.get(addr) ?? 0;
+    // Log first-time reads of unregistered MMIO
+    if (!this.stubRegs.has(addr) && addr >= 0x60000000) {
+      this.stubRegs.set(addr, val);
+      console.log(`[MMIO] First read @ 0x${addr.toString(16)} → 0x${val.toString(16)}`);
+    }
+    return val;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -180,10 +409,22 @@ export class RiscVCore {
   private mcycle: number = 0;
 
   // ----- memory -----
-  readonly iram: RAMRegion;
-  readonly dram: RAMRegion;
+  // On real ESP32-C3, IRAM (0x40380000) and DRAM (0x3FC80000) are aliases for
+  // the same 384KB physical SRAM.  However, in our simulation we use SEPARATE
+  // backing buffers.  Why?  Because ESP-IDF startup code zeroes the .bss section
+  // in DRAM, and those DRAM address ranges map to the same shared-buffer offsets
+  // that hold loaded IRAM code.  Zeroing BSS therefore corrupts the instruction
+  // memory, causing "illegal instruction 0x0" crashes.
+  //
+  // In practice the firmware's linker script ensures that IRAM code and DRAM
+  // data occupy non-overlapping physical regions, so separate buffers produce
+  // equivalent behaviour to the real hardware for well-linked firmware.
+  readonly iram: RAMRegion;  // IRAM — independent buffer
+  readonly dram: RAMRegion;  // DRAM — independent buffer
   readonly irom: RAMRegion;
   readonly drom: RAMRegion;
+  readonly rom: RAMRegion;       // ROM stub (0x40000000–0x4037FFFF), filled with RET
+  readonly nullGuard: RAMRegion; // Null-guard (0x0–0xFFF), filled with RET
   readonly mmio: MMIOBus = new MMIOBus();
   readonly irqCtrl: InterruptController = new InterruptController();
 
@@ -201,14 +442,35 @@ export class RiscVCore {
   static readonly IROM_SIZE = 0x00400000; // 4 MB (flash-mapped code)
   static readonly DROM_BASE = 0x3C000000;
   static readonly DROM_SIZE = 0x00400000; // 4 MB (flash-mapped read-only data)
+  // ROM stub: 0x40000000–0x4037FFFF (ESP32-C3 first-stage bootloader ROM)
+  // Filled with RET (jalr x0, 0(ra) = 0x00008067) so ROM calls return safely
+  static readonly ROM_BASE = 0x40000000;
+  static readonly ROM_SIZE = 0x00380000; // 3.5 MB covers full ROM window
+  // Null-guard: 0x00000000–0x00000FFF — returns RET so null-pointer jumps
+  // (e.g. mtvec=0 dispatch before app init) don't crash with illegal insn 0x0
+  static readonly NULL_GUARD_BASE = 0x00000000;
+  static readonly NULL_GUARD_SIZE = 0x00001000; // 4 KB
   static readonly MMIO_BASE = 0x60000000;
   static readonly MMIO_SIZE = 0x00100000;
 
   constructor(opts: RiscVCoreOptions = {}) {
-    this.iram = new RAMRegion(RiscVCore.IRAM_BASE, opts.dramBytes ?? RiscVCore.IRAM_SIZE);
-    this.dram = new RAMRegion(RiscVCore.DRAM_BASE, opts.dramBytes ?? RiscVCore.DRAM_SIZE);
+    // Allocate SEPARATE buffers for IRAM and DRAM.
+    // This prevents ESP-IDF BSS zeroing (via DRAM addresses) from corrupting
+    // loaded IRAM code.  See the memory comment block above.
+    const sramSize = opts.dramBytes ?? RiscVCore.IRAM_SIZE;
+    this.iram = new RAMRegion(RiscVCore.IRAM_BASE, sramSize);
+    this.dram = new RAMRegion(RiscVCore.DRAM_BASE, sramSize);
     this.irom = new RAMRegion(RiscVCore.IROM_BASE, RiscVCore.IROM_SIZE);
     this.drom = new RAMRegion(RiscVCore.DROM_BASE, RiscVCore.DROM_SIZE);
+
+    // Fill ROM stub with RET instructions (0x00008067 = jalr x0, 0(ra))
+    // so any call into ROM returns immediately without crashing.
+    this.rom = new RAMRegion(RiscVCore.ROM_BASE, RiscVCore.ROM_SIZE);
+    this.rom.fill32(0x00008067); // jalr x0, 0(ra) = RET
+
+    // Null-guard: cover address 0x0 so null-pointer jumps return safely
+    this.nullGuard = new RAMRegion(RiscVCore.NULL_GUARD_BASE, RiscVCore.NULL_GUARD_SIZE);
+    this.nullGuard.fill32(0x00008067); // jalr x0, 0(ra) = RET
     this.onEcall = opts.onEcall ?? (() => true);
     this.onEbreak = opts.onEbreak ?? (() => { });
     this.onIllegal = opts.onIllegal ?? ((c, insn) => {
@@ -222,41 +484,63 @@ export class RiscVCore {
 
   loadIRAM(data: Uint8Array, offset: u32 = 0): void { this.iram.load(data, offset); }
   loadDRAM(data: Uint8Array, offset: u32 = 0): void { this.dram.load(data, offset); }
+  /** Load into both IRAM and DRAM (since they no longer share a buffer but represent the same physical SRAM) */
+  loadSRAM(data: Uint8Array, offset: u32 = 0): void {
+    this.iram.load(data, offset);
+    this.dram.load(data, offset);
+  }
+  loadIROM(data: Uint8Array, offset: u32 = 0): void { this.irom.load(data, offset); }
+  loadDROM(data: Uint8Array, offset: u32 = 0): void { this.drom.load(data, offset); }
 
   // ---------------------------------------------------------------------------
-  // Unified memory access (routes to IRAM / DRAM / MMIO)
+  // Unified memory access (routes to IRAM / DRAM / IROM / DROM / MMIO)
   // ---------------------------------------------------------------------------
 
   memRead8(addr: u32): u32 {
     addr = u32m(addr);
     if (addr >= RiscVCore.IRAM_BASE && addr < RiscVCore.IRAM_BASE + RiscVCore.IRAM_SIZE) return this.iram.read8(addr);
     if (addr >= RiscVCore.DRAM_BASE && addr < RiscVCore.DRAM_BASE + RiscVCore.DRAM_SIZE) return this.dram.read8(addr);
+    if (addr >= RiscVCore.IROM_BASE && addr < RiscVCore.IROM_BASE + RiscVCore.IROM_SIZE) return this.irom.read8(addr);
+    if (addr >= RiscVCore.DROM_BASE && addr < RiscVCore.DROM_BASE + RiscVCore.DROM_SIZE) return this.drom.read8(addr);
+    if (addr >= RiscVCore.ROM_BASE && addr < RiscVCore.ROM_BASE + RiscVCore.ROM_SIZE) return this.rom.read8(addr);
+    if (addr < RiscVCore.NULL_GUARD_SIZE) return this.nullGuard.read8(addr);
     return this.mmio.read8(addr);
   }
   memRead16(addr: u32): u32 {
     addr = u32m(addr);
     if (addr >= RiscVCore.IRAM_BASE && addr < RiscVCore.IRAM_BASE + RiscVCore.IRAM_SIZE) return this.iram.read16(addr);
     if (addr >= RiscVCore.DRAM_BASE && addr < RiscVCore.DRAM_BASE + RiscVCore.DRAM_SIZE) return this.dram.read16(addr);
+    if (addr >= RiscVCore.IROM_BASE && addr < RiscVCore.IROM_BASE + RiscVCore.IROM_SIZE) return this.irom.read16(addr);
+    if (addr >= RiscVCore.DROM_BASE && addr < RiscVCore.DROM_BASE + RiscVCore.DROM_SIZE) return this.drom.read16(addr);
+    if (addr >= RiscVCore.ROM_BASE && addr < RiscVCore.ROM_BASE + RiscVCore.ROM_SIZE) return this.rom.read16(addr);
+    if (addr < RiscVCore.NULL_GUARD_SIZE) return this.nullGuard.read16(addr);
     return this.mmio.read16(addr);
   }
   memRead32(addr: u32): u32 {
     addr = u32m(addr);
     if (addr >= RiscVCore.IRAM_BASE && addr < RiscVCore.IRAM_BASE + RiscVCore.IRAM_SIZE) return this.iram.read32(addr);
     if (addr >= RiscVCore.DRAM_BASE && addr < RiscVCore.DRAM_BASE + RiscVCore.DRAM_SIZE) return this.dram.read32(addr);
+    if (addr >= RiscVCore.IROM_BASE && addr < RiscVCore.IROM_BASE + RiscVCore.IROM_SIZE) return this.irom.read32(addr);
+    if (addr >= RiscVCore.DROM_BASE && addr < RiscVCore.DROM_BASE + RiscVCore.DROM_SIZE) return this.drom.read32(addr);
+    if (addr >= RiscVCore.ROM_BASE && addr < RiscVCore.ROM_BASE + RiscVCore.ROM_SIZE) return this.rom.read32(addr);
+    if (addr < RiscVCore.NULL_GUARD_SIZE) return this.nullGuard.read32(addr);
     return this.mmio.read32(addr);
   }
   memWrite8(addr: u32, v: u32): void {
     addr = u32m(addr);
+    if (addr >= RiscVCore.IRAM_BASE && addr < RiscVCore.IRAM_BASE + RiscVCore.IRAM_SIZE) { this.iram.write8(addr, v); return; }
     if (addr >= RiscVCore.DRAM_BASE && addr < RiscVCore.DRAM_BASE + RiscVCore.DRAM_SIZE) { this.dram.write8(addr, v); return; }
     this.mmio.write8(addr, v);
   }
   memWrite16(addr: u32, v: u32): void {
     addr = u32m(addr);
+    if (addr >= RiscVCore.IRAM_BASE && addr < RiscVCore.IRAM_BASE + RiscVCore.IRAM_SIZE) { this.iram.write16(addr, v); return; }
     if (addr >= RiscVCore.DRAM_BASE && addr < RiscVCore.DRAM_BASE + RiscVCore.DRAM_SIZE) { this.dram.write16(addr, v); return; }
     this.mmio.write16(addr, v);
   }
   memWrite32(addr: u32, v: u32): void {
     addr = u32m(addr);
+    if (addr >= RiscVCore.IRAM_BASE && addr < RiscVCore.IRAM_BASE + RiscVCore.IRAM_SIZE) { this.iram.write32(addr, v); return; }
     if (addr >= RiscVCore.DRAM_BASE && addr < RiscVCore.DRAM_BASE + RiscVCore.DRAM_SIZE) { this.dram.write32(addr, v); return; }
     this.mmio.write32(addr, v);
   }
@@ -307,6 +591,9 @@ export class RiscVCore {
   private handleInterrupt(): void {
     const irq = this.irqCtrl.nextPending();
     if (irq < 0) return;
+    // Don't dispatch if mtvec hasn't been set yet (app startup hasn't run).
+    // Defer the interrupt — it will be retried on the next step().
+    if (this.mtvec === 0) return;
     this.mepc = this.pc;
     this.mcause = u32m(0x80000000 | irq);
     this.mstatus = this.mstatus & ~0x8; // clear MIE
@@ -561,16 +848,31 @@ export class RiscVCore {
       return 4;
     }
 
-    // Fetch
+    // Fetch — determine instruction width from bits [1:0] of the first halfword.
+    // In RISC-V, bits [1:0] = 0b11 → 32-bit instruction; anything else → 16-bit compressed.
     let insn: u32;
     let pcIncrement: u32;
     const raw16 = this.memRead16(this.pc);
-    const expanded = this.expandCompressed(raw16);
 
-    if (expanded !== -1) {
-      insn = expanded as u32;
+    if ((raw16 & 0x3) !== 0x3) {
+      // 16-bit compressed instruction (C extension)
       pcIncrement = 2;
+      const expanded = this.expandCompressed(raw16);
+      if (expanded !== -1) {
+        insn = expanded as u32;
+      } else {
+        // Unrecognised compressed instruction — signal illegal but still advance by 2.
+        // Pass the raw16 value so the default case in the switch fires onIllegal.
+        this.onIllegal(this, raw16);
+        this.pc = u32m(this.pc + 2);
+        this.cycles += 1;
+        this.mcycle += 1;
+        this.minstret++;
+        this.regs[0] = 0;
+        return 1;
+      }
     } else {
+      // 32-bit instruction
       insn = this.memRead32(this.pc);
       pcIncrement = 4;
     }
@@ -698,9 +1000,9 @@ export class RiscVCore {
           // M extension (multiply / divide)
           switch (funct3) {
             case 0x0: result = i32s(Math.imul(r1, r2)); break; // MUL
-            case 0x1: result = i32s(Number(BigInt(i32s(r1)) * BigInt(i32s(r2)) >> 32n)); break; // MULH
-            case 0x2: result = i32s(Number(BigInt(i32s(r1)) * BigInt(u32m(r2)) >> 32n)); break; // MULHSU
-            case 0x3: result = i32s(Number(BigInt(u32m(r1)) * BigInt(u32m(r2)) >> 32n)); break; // MULHU
+            case 0x1: result = i32s(Number(BigInt(i32s(r1)) * BigInt(i32s(r2)) >> BigInt(32))); break; // MULH
+            case 0x2: result = i32s(Number(BigInt(i32s(r1)) * BigInt(u32m(r2)) >> BigInt(32))); break; // MULHSU
+            case 0x3: result = i32s(Number(BigInt(u32m(r1)) * BigInt(u32m(r2)) >> BigInt(32))); break; // MULHU
             case 0x4: result = r2 === 0 ? -1 : i32s(Math.trunc(i32s(r1) / i32s(r2))); break;  // DIV
             case 0x5: result = r2 === 0 ? -1 : i32s(Math.trunc(u32m(r1) / u32m(r2))); break;  // DIVU
             case 0x6: result = r2 === 0 ? r1 : i32s(i32s(r1) % i32s(r2)); break; // REM
@@ -732,6 +1034,10 @@ export class RiscVCore {
             if (!this.onEcall(this)) { this.halted = true; }
           } else if (funct12 === 0x001) { // EBREAK
             this.onEbreak(this);
+          } else if (funct12 === 0x105) { // WFI — Wait For Interrupt
+            // In simulation, treat as a NOP.  If interrupts are enabled and
+            // nothing is pending, we just continue to the next instruction.
+            // A real core would stall until an interrupt arrives.
           } else if (funct12 === 0x302) { // MRET
             this.execMRET();
             nextPC = this.pc; // already updated in execMRET
@@ -754,7 +1060,12 @@ export class RiscVCore {
       case 0x0F: break;
 
       default: {
+        const pcBefore = this.pc;
         this.onIllegal(this, insn);
+        // If onIllegal changed the PC (e.g. recovery by jumping to ra), honour it.
+        if (this.pc !== pcBefore) {
+          nextPC = this.pc;
+        }
         break;
       }
     }
@@ -796,6 +1107,10 @@ export class RiscVCore {
   reset(entryPoint: u32 = RiscVCore.IRAM_BASE): void {
     this.regs.fill(0);
     this.pc = entryPoint;
+    // Initialize stack pointer (x2) to top of DRAM — matches ESP32-C3 linker script.
+    // Without this, the first stack push goes to 0xFFFFFFFC (wrap-around) and corrupts
+    // everything before setup() even runs.
+    this.regs[2] = u32m(RiscVCore.DRAM_BASE + RiscVCore.DRAM_SIZE - 16);
     this.cycles = 0;
     this.halted = false;
     this.mstatus = 0;
