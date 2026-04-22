@@ -679,7 +679,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 the <span className="hw-bold">bold</span> way
               </h1>
               <p className="hero-sub">
-                Seven unique tracks from junior picture-blocks all the way to AI,
+                Eight unique tracks from junior picture-blocks all the way to AI,
                 robotics, and machine vision. Pick your adventure.
               </p>
               <div className="hero-btns">
