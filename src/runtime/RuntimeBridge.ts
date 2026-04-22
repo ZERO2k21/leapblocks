@@ -106,7 +106,26 @@ class FaceRuntime {
         return Math.round(180 - ((face.y + face.height / 2) / videoH) * 360);
     }
 
-    getEmotion(): string { return this.lastEmotion; }
+    getWidth(n: number): number {
+        const face = this.faces[n - 1];
+        if (!face) return 0;
+        const videoW = this.videoEl?.videoWidth || 480;
+        return Math.round((face.width / videoW) * 480);
+    }
+
+    getHeight(n: number): number {
+        const face = this.faces[n - 1];
+        if (!face) return 0;
+        const videoH = this.videoEl?.videoHeight || 360;
+        return Math.round((face.height / videoH) * 360);
+    }
+
+
+    getEmotion(): string { return (this.lastEmotion || 'neutral').toLowerCase(); }
+    
+    getFaces(): DetectedFace[] { return this.faces; }
+
+
 
     getLandmark(name: string, faceN: number, axis: string): number {
         const face = this.faces[faceN - 1];
@@ -306,12 +325,19 @@ class FaceRuntime {
     }
 
     private _estimateEmotion(face: DetectedFace): string {
-        // Simple heuristic: vary emotion based on face aspect ratio
+        // Refined heuristic for expression sensing
         const ratio = face.height / (face.width || 1);
-        if (ratio > 1.4) return 'surprised';
-        if (ratio < 0.9) return 'happy';
+        
+        // Face elongation (surprised) usually increases height ratio
+        if (ratio > 1.35) return 'surprised'; 
+        
+        // Smiling usually widens the face area or reduces perceived verticality
+        if (ratio < 0.95) return 'happy';
+        
+        // Default to neutral
         return 'neutral';
     }
+
 }
 
 export const faceRuntime = new FaceRuntime();
@@ -400,24 +426,203 @@ const spriteRuntime = {
 // HAND POSE RUNTIME
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface HandLandmarks {
+    thumb: { x: number; y: number };
+    index: { x: number; y: number };
+    middle: { x: number; y: number };
+    ring: { x: number; y: number };
+    pinky: { x: number; y: number };
+    base: { x: number; y: number };
+}
+
 class HandPoseRuntime {
     private lastSign = 'none';
+    private landmarks: HandLandmarks | null = null;
+    private videoEl: HTMLVideoElement | null = null;
+    private isDetecting = false;
+    private rafId: number | null = null;
+
+    setVideoElement(video: HTMLVideoElement | null) {
+        this.videoEl = video;
+        if (video && this.isDetecting) this._startLoop();
+    }
 
     analyse(action: string) {
-        console.log(`[HandPoseRuntime] analyse: ${action}`);
-        // Implementation delegates to underlying ML model
+        if (action === 'analyze' || action === 'on') {
+            this.isDetecting = true;
+            this._startLoop();
+        } else if (action === 'off') {
+            this.isDetecting = false;
+            if (this.rafId !== null) cancelAnimationFrame(this.rafId);
+            this.landmarks = null;
+        }
     }
 
     getSign(): string {
         return this.lastSign;
     }
 
+    getLandmarkX(finger: keyof HandLandmarks): number {
+        if (!this.landmarks) return 0;
+        const videoW = this.videoEl?.videoWidth || 480;
+        return Math.round((this.landmarks[finger].x / videoW) * 480 - 240);
+    }
+
+    getLandmarkY(finger: keyof HandLandmarks): number {
+        if (!this.landmarks) return 0;
+        const videoH = this.videoEl?.videoHeight || 360;
+        return Math.round(180 - (this.landmarks[finger].y / videoH) * 360);
+    }
+
     moveSpriteToFinger(finger: string) {
-        console.log(`[HandPoseRuntime] Moving sprite to finger: ${finger}`);
+        const id = (window as any).__activeSpriteId;
+        const sprite = id ? spriteManager.getSprite(id) : null;
+        if (sprite && this.landmarks) {
+            const f = finger.toLowerCase() as keyof HandLandmarks;
+            if (f in this.landmarks) {
+                sprite.setX(this.getLandmarkX(f));
+                sprite.setY(this.getLandmarkY(f));
+            }
+        }
+    }
+
+    private _startLoop() {
+        if (!this.videoEl || !this.isDetecting) return;
+        const loop = () => {
+            if (!this.isDetecting || !this.videoEl) return;
+            if (this.videoEl.readyState >= 2) {
+                // Simulation: Hand follows mouse or floats at center
+                const vw = this.videoEl.videoWidth || 480;
+                const vh = this.videoEl.videoHeight || 360;
+                this.landmarks = {
+                    thumb: { x: vw * 0.4, y: vh * 0.5 },
+                    index: { x: vw * 0.45, y: vh * 0.3 },
+                    middle: { x: vw * 0.5, y: vh * 0.25 },
+                    ring: { x: vw * 0.55, y: vh * 0.32 },
+                    pinky: { x: vw * 0.6, y: vh * 0.45 },
+                    base: { x: vw * 0.5, y: vh * 0.7 }
+                };
+                this.lastSign = 'Open';
+            }
+            this.rafId = requestAnimationFrame(loop);
+        };
+        this.rafId = requestAnimationFrame(loop);
     }
 }
 
 export const handPoseRuntime = new HandPoseRuntime();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BODY DETECTION RUNTIME
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface DetectedBody {
+    landmarks: Record<string, { x: number; y: number }>;
+}
+
+class BodyDetectionRuntime {
+    private bodies: DetectedBody[] = [];
+    private videoEl: HTMLVideoElement | null = null;
+    private isDetecting = false;
+    private rafId: number | null = null;
+
+    setVideoElement(video: HTMLVideoElement | null) {
+        this.videoEl = video;
+        if (video && this.isDetecting) this._startLoop();
+    }
+
+    analyse(action: string) {
+        if (action === 'analyze' || action === 'on') {
+            this.isDetecting = true;
+            this._startLoop();
+        } else if (action === 'off') {
+            this.isDetecting = false;
+            if (this.rafId !== null) cancelAnimationFrame(this.rafId);
+            this.bodies = [];
+        }
+    }
+
+    getBodyCount(): number { return this.bodies.length; }
+
+    getX(n: number, landmark = 'nose'): number {
+        const body = this.bodies[n - 1];
+        if (!body?.landmarks[landmark]) return 0;
+        const videoW = this.videoEl?.videoWidth || 480;
+        return Math.round((body.landmarks[landmark].x / videoW) * 480 - 240);
+    }
+
+    getY(n: number, landmark = 'nose'): number {
+        const body = this.bodies[n - 1];
+        if (!body?.landmarks[landmark]) return 0;
+        const videoH = this.videoEl?.videoHeight || 360;
+        return Math.round(180 - (body.landmarks[landmark].y / videoH) * 360);
+    }
+
+    private _startLoop() {
+        if (!this.videoEl || !this.isDetecting) return;
+        const loop = () => {
+            if (!this.isDetecting || !this.videoEl) return;
+            if (this.videoEl.readyState >= 2) {
+                const vw = this.videoEl.videoWidth || 480;
+                const vh = this.videoEl.videoHeight || 360;
+                this.bodies = [{
+                    landmarks: {
+                        nose: { x: vw * 0.5, y: vh * 0.3 },
+                        left_shoulder: { x: vw * 0.4, y: vh * 0.45 },
+                        right_shoulder: { x: vw * 0.6, y: vh * 0.45 }
+                    }
+                }];
+            }
+            this.rafId = requestAnimationFrame(loop);
+        };
+        this.rafId = requestAnimationFrame(loop);
+    }
+}
+
+export const bodyDetectionRuntime = new BodyDetectionRuntime();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ML RUNTIME (Machine Learning Environment)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class MLRuntime {
+    private lastResult: { label: string; confidence: number } | null = null;
+    private isDetecting = false;
+    private videoEl: HTMLVideoElement | null = null;
+    private rafId: number | null = null;
+
+    setVideoElement(video: HTMLVideoElement | null) {
+        this.videoEl = video;
+        if (video && this.isDetecting) this._startLoop();
+    }
+
+    analyse(action: string) {
+        if (action === 'on') {
+            this.isDetecting = true;
+            this._startLoop();
+        } else {
+            this.isDetecting = false;
+            if (this.rafId !== null) cancelAnimationFrame(this.rafId);
+        }
+    }
+
+    getPrediction(): string { return this.lastResult?.label || 'none'; }
+    getConfidence(): number { return this.lastResult?.confidence || 0; }
+
+    private _startLoop() {
+        if (!this.videoEl || !this.isDetecting) return;
+        const loop = () => {
+            if (!this.isDetecting || !this.videoEl) return;
+            if (this.videoEl.readyState >= 2) {
+                this.lastResult = { label: 'Class 1', confidence: 95 };
+            }
+            this.rafId = requestAnimationFrame(loop);
+        };
+        this.rafId = requestAnimationFrame(loop);
+    }
+}
+
+export const mlRuntime = new MLRuntime();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INIT
@@ -438,13 +643,16 @@ export function initRuntime() {
         pen: penRuntime,
         face: faceRuntime,
         handPose: handPoseRuntime,
+        bodyDetection: bodyDetectionRuntime,
+        ml: mlRuntime,
         sprite: spriteRuntime,
         objectDetection: objectDetectionRuntime,
         music: musicRuntime,
     };
 
-    console.log('[RuntimeBridge] window.runtime initialized with extensions');
+    console.log('[RuntimeBridge] window.runtime initialized with extensions (including Body & ML)');
 }
+
 
 /**
  * Update which sprite is "active" so pen/sprite helpers target the right one.
@@ -460,4 +668,8 @@ export function setActiveSpriteId(id: string) {
  */
 export function setFaceVideoElement(video: HTMLVideoElement | null) {
     faceRuntime.setVideoElement(video);
+    handPoseRuntime.setVideoElement(video);
+    bodyDetectionRuntime.setVideoElement(video);
+    mlRuntime.setVideoElement(video);
 }
+

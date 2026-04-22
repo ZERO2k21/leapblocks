@@ -357,7 +357,32 @@ export const Stage: React.FC<StageProps> = ({
                 }
             }
         }
+
+        // 6. AI Detection Highlighting
+        if (isCameraOn) {
+            const faceRuntime = (window as any).runtime?.face;
+            const faces = faceRuntime?.getFaces() || [];
+            if (faces.length > 0) {
+                ctx.lineWidth = 2;
+                ctx.font = 'bold 12px system-ui';
+                ctx.textAlign = 'left';
+
+                faces.forEach((face: any, i: number) => {
+                    const { x, y, width: fW, height: fH } = face;
+                    // Mirror mapping: Raw detection coordinate -> Mirrored stage coordinate
+                    // Since the video is mirrored with scaleX(-1), we flip the X position.
+                    const mirroredX = width - x - fW;
+
+                    ctx.strokeStyle = '#10b981'; // Emerald-500
+                    ctx.strokeRect(mirroredX, y, fW, fH);
+                    
+                    ctx.fillStyle = '#10b981';
+                    ctx.fillText(`Face ${i + 1}`, mirroredX, y - 6);
+                });
+            }
+        }
     }, [width, height, sprites, showGridNumbers, draggingSpriteId, isCameraOn]);
+
 
     // ── Game loop (unchanged) ──────────────────────────────────────────────
     useEffect(() => {

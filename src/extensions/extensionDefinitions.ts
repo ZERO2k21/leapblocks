@@ -107,7 +107,16 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                     type: 'fd_get_expression',
                     message0: 'get expression of face %1',
                     args0: [{ type: 'field_number', name: 'N', value: 1, min: 1 }],
-                    previousStatement: null, nextStatement: null, colour: '#D43D41'
+                    output: 'String', colour: '#b71c1c'
+                },
+                {
+                    type: 'fd_get_dimension',
+                    message0: 'get %1 of face %2',
+                    args0: [
+                        { type: 'field_dropdown', name: 'DIM', options: [['width', 'width'], ['height', 'height']] },
+                        { type: 'field_number', name: 'N', value: 1, min: 1 }
+                    ],
+                    output: 'Number', colour: '#b71c1c'
                 },
                 {
                     type: 'fd_is_expression',
@@ -235,9 +244,12 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             };
             jsGen.forBlock['fd_get_num_faces'] = () =>
                 `if(window.runtime?.face){const _s=window.__activeSpriteId;if(_s&&window.spriteManager)window.spriteManager.getSprite(_s)?.say(window.runtime.face.getFaceCount()+" faces");}\n`;
-            jsGen.forBlock['fd_get_expression'] = (b: any) => {
+            jsGen.forBlock['fd_get_expression'] = (b: any) => [`window.runtime?.face?.getEmotion()||''`, 0];
+            jsGen.forBlock['fd_get_dimension'] = (b: any) => {
+                const dim = b.getFieldValue('DIM');
                 const n = b.getFieldValue('N') || 1;
-                return `if(window.runtime?.face){const _s=window.__activeSpriteId;if(_s&&window.spriteManager)window.spriteManager.getSprite(_s)?.say(window.runtime.face.getEmotion());}\n`;
+                const method = dim === 'width' ? 'getWidth' : 'getHeight';
+                return [`window.runtime?.face?.${method}(${n})||0`, 0];
             };
             jsGen.forBlock['fd_is_expression'] = (b: any) =>
                 [`(window.runtime?.face?.getEmotion()||'').toLowerCase()==='${b.getFieldValue("EXPRESSION")}'`, 0];
@@ -296,6 +308,7 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             { kind: 'block', type: 'fd_analyse_image' },
             { kind: 'block', type: 'fd_get_num_faces' },
             { kind: 'block', type: 'fd_get_expression' },
+            { kind: 'block', type: 'fd_get_dimension' },
             { kind: 'block', type: 'fd_is_expression' },
             { kind: 'block', type: 'fd_get_xy_position' },
             { kind: 'block', type: 'fd_get_landmark_pos' },
@@ -398,6 +411,15 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         name: 'Hand Pose',
         color: '#D43D41',
         icon: '✋',
+        getToolbox: () => [
+            { kind: 'block', type: 'hp_camera' },
+            { kind: 'block', type: 'hp_analyze' },
+            { kind: 'block', type: 'hp_move_with' },
+            { kind: 'block', type: 'hp_guess_sign' },
+            { kind: 'block', type: 'hp_when_sign' },
+            { kind: 'block', type: 'hp_finger_x' },
+            { kind: 'block', type: 'hp_finger_y' },
+        ],
         registerBlocks: (Blockly: any) => {
             const hpBlockDefs = [
                 {
@@ -422,6 +444,16 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                     type: 'hp_when_sign', message0: 'when hand sign %1',
                     args0: [{ type: 'field_dropdown', name: 'SIGN', options: [['Peace', '2'], ['Open', '5'], ['Thumbs Up', 'thumbs_up']] }],
                     nextStatement: true, colour: '#D43D41'
+                },
+                {
+                    type: 'hp_finger_x', message0: '%1 x position',
+                    args0: [{ type: 'field_dropdown', name: 'FINGER', options: [['Thumb', 'thumb'], ['Index', 'index'], ['Middle', 'middle'], ['Ring', 'ring'], ['Pinky', 'pinky'], ['Base', 'base']] }],
+                    output: 'Number', colour: '#b71c1c'
+                },
+                {
+                    type: 'hp_finger_y', message0: '%1 y position',
+                    args0: [{ type: 'field_dropdown', name: 'FINGER', options: [['Thumb', 'thumb'], ['Index', 'index'], ['Middle', 'middle'], ['Ring', 'ring'], ['Pinky', 'pinky'], ['Base', 'base']] }],
+                    output: 'Number', colour: '#b71c1c'
                 }
             ];
             const newHpDefs = hpBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
@@ -438,15 +470,75 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             jsGen.forBlock['hp_move_with'] = (b: any) => `if(window.runtime?.handPose) window.runtime.handPose.moveSpriteToFinger('${b.getFieldValue("FINGER")}');\n`;
             jsGen.forBlock['hp_guess_sign'] = () => `if(window.runtime?.handPose){const s=window.__activeSpriteId;if(s&&window.spriteManager)window.spriteManager.getSprite(s)?.say("Sign: "+window.runtime.handPose.getSign());}\n`;
             jsGen.forBlock['hp_when_sign'] = () => '// On Hand Sign\n';
+            jsGen.forBlock['hp_finger_x'] = (b: any) => [`window.runtime?.handPose?.getLandmarkX('${b.getFieldValue("FINGER")}')||0`, 0];
+            jsGen.forBlock['hp_finger_y'] = (b: any) => [`window.runtime?.handPose?.getLandmarkY('${b.getFieldValue("FINGER")}')||0`, 0];
+        }
+
+    },
+    body_detection: {
+        id: 'body_detection',
+        name: 'Body Detection',
+        color: '#D43D41',
+        icon: '🤸',
+        registerBlocks: (Blockly: any) => {
+            const bdBlockDefs = [
+                { type: 'bd_camera', message0: 'camera %1', args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41' },
+                { type: 'bd_analyze', message0: '%1 body', args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['analyze', 'analyze'], ['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41' },
+                { type: 'bd_body_count', message0: 'body count', output: 'Number', colour: '#b71c1c' },
+                { type: 'bd_get_x', message0: 'x position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'LANDMARK', options: [['nose', 'nose'], ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder']] }, { type: 'field_number', name: 'N', value: 1 }], output: 'Number', colour: '#b71c1c' },
+                { type: 'bd_get_y', message0: 'y position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'LANDMARK', options: [['nose', 'nose'], ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder']] }, { type: 'field_number', name: 'N', value: 1 }], output: 'Number', colour: '#b71c1c' }
+            ];
+            const newDefs = bdBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+            if (newDefs.length > 0) Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));
+        },
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
+            if (!jsGen) return;
+            jsGen.forBlock['bd_camera'] = (b: any) => `if(window.__setCameraOn) window.__setCameraOn(${b.getFieldValue('ACTION') === 'on'});\n`;
+            jsGen.forBlock['bd_analyze'] = (b: any) => `if(window.runtime?.bodyDetection) window.runtime.bodyDetection.analyse('${b.getFieldValue('ACTION')}');\n`;
+            jsGen.forBlock['bd_body_count'] = () => [`window.runtime?.bodyDetection?.getBodyCount()||0`, 0];
+            jsGen.forBlock['bd_get_x'] = (b: any) => [`window.runtime?.bodyDetection?.getX(${b.getFieldValue('N')},'${b.getFieldValue('LANDMARK')}')||0`, 0];
+            jsGen.forBlock['bd_get_y'] = (b: any) => [`window.runtime?.bodyDetection?.getY(${b.getFieldValue('N')},'${b.getFieldValue('LANDMARK')}')||0`, 0];
         },
         getToolbox: () => [
-            { kind: 'block', type: 'hp_camera' },
-            { kind: 'block', type: 'hp_analyze' },
-            { kind: 'block', type: 'hp_move_with' },
-            { kind: 'block', type: 'hp_guess_sign' },
-            { kind: 'block', type: 'hp_when_sign' },
+            { kind: 'block', type: 'bd_camera' },
+            { kind: 'block', type: 'bd_analyze' },
+            { kind: 'block', type: 'bd_body_count' },
+            { kind: 'block', type: 'bd_get_x' },
+            { kind: 'block', type: 'bd_get_y' },
+        ]
+    },
+    ml_machine_learning: {
+        id: 'ml_machine_learning',
+        name: 'ML Environment',
+        color: '#D43D41',
+        icon: '🤖',
+        registerBlocks: (Blockly: any) => {
+            const mlBlockDefs = [
+                { type: 'ml_analyze', message0: '%1 classification', args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41' },
+                { type: 'ml_get_prediction', message0: 'prediction', output: 'String', colour: '#b71c1c' },
+                { type: 'ml_get_confidence', message0: 'confidence', output: 'Number', colour: '#b71c1c' },
+                { type: 'ml_is_class', message0: 'prediction is %1?', args0: [{ type: 'field_input', name: 'CLASS', text: 'Class 1' }], output: 'Boolean', colour: '#b71c1c' }
+            ];
+            const newDefs = mlBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+            if (newDefs.length > 0) Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));
+        },
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
+            if (!jsGen) return;
+            jsGen.forBlock['ml_analyze'] = (b: any) => `if(window.runtime?.ml) window.runtime.ml.analyse('${b.getFieldValue('ACTION')}');\n`;
+            jsGen.forBlock['ml_get_prediction'] = () => [`window.runtime?.ml?.getPrediction()||''`, 0];
+            jsGen.forBlock['ml_get_confidence'] = () => [`window.runtime?.ml?.getConfidence()||0`, 0];
+            jsGen.forBlock['ml_is_class'] = (b: any) => [`window.runtime?.ml?.getPrediction()==='${b.getFieldValue('CLASS')}'`, 0];
+        },
+        getToolbox: () => [
+            { kind: 'block', type: 'ml_analyze' },
+            { kind: 'block', type: 'ml_get_prediction' },
+            { kind: 'block', type: 'ml_get_confidence' },
+            { kind: 'block', type: 'ml_is_class' },
         ]
     }
+
 };
 
 export function registerExtensions(Blockly: any, extensionIds: string[]) {

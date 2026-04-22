@@ -115,15 +115,26 @@ export class AnimationCompiler {
                 const sensor = conditionBlock.getFieldValue('SENSOR');
                 const pin = conditionBlock.getFieldValue('PIN');
                 return () => {
-                    // For now, we'll return false if not connected, or try to get latest state
-                    // In a full implementation, we'd have a background polling task in VM
-                    // that updates a state map.
-                    // For the "Live" feature to feel responsive, we'll assume the VM 
-                    // or hardwareAdapter provides a way to get the last known state.
                     console.log(`[AnimationVM] Checking digital sensor ${sensor} on pin ${pin}`);
                     return false; // Default to false for simulation
                 };
             }
+            case 'fd_is_expression': {
+                const expr = conditionBlock.getFieldValue('EXPRESSION') ?? 'happy';
+                return () => {
+                    const emotion = (window as any).runtime?.face?.getEmotion() ?? '';
+                    return emotion.toLowerCase() === expr;
+                };
+            }
+            case 'fd_is_class_detected': {
+                const className = conditionBlock.getFieldValue('CLASS') ?? '';
+                const n = Number(conditionBlock.getFieldValue('N') ?? 1);
+                return () => {
+                    const detectedClass = (window as any).runtime?.face?.getClassOfFace?.(n) ?? '';
+                    return detectedClass.toLowerCase() === className.toLowerCase();
+                };
+            }
+
             default:
                 console.warn('[AnimationCompiler] Unknown condition block:', conditionBlock.type);
                 return () => false;
@@ -378,6 +389,7 @@ export class AnimationCompiler {
             }
 
             // ── Face Detection string reporters ────────────────────────────
+            case 'fd_get_expression':
             case 'fd_emotion':
                 return () => (window as any).runtime?.face?.getEmotion() ?? '';
             case 'fd_face_count':
@@ -390,23 +402,52 @@ export class AnimationCompiler {
                 const n = Number(valueBlock.getFieldValue('N') ?? 1);
                 return () => String((window as any).runtime?.face?.getY(n) ?? 0);
             }
+            case 'fd_get_dimension': {
+                const dim = valueBlock.getFieldValue('DIM') || 'width';
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => {
+                    const face = (window as any).runtime?.face;
+                    if (!face) return '0';
+                    return String(dim === 'width' ? face.getWidth(n) : face.getHeight(n));
+                };
+            }
+            case 'fd_get_xy_position': {
+                const axis = (valueBlock.getFieldValue('AXIS') || 'x').toLowerCase();
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => {
+                    const face = (window as any).runtime?.face;
+                    if (!face) return '0';
+                    return String(axis === 'x' ? face.getX(n) : face.getY(n));
+                };
+            }
             case 'fd_is_expression': {
                 const expr = valueBlock.getFieldValue('EXPRESSION') ?? 'happy';
                 return () => {
                     const emotion = (window as any).runtime?.face?.getEmotion() ?? '';
-                    return emotion.toLowerCase() === expr ? 'true' : 'false';
+                    return emotion.toLowerCase() === expr; 
                 };
             }
+
             case 'fd_get_class_detected': {
                 const faceN = Number(valueBlock.getFieldValue('N') ?? 1);
                 return () => (window as any).runtime?.face?.getClassOfFace?.(faceN) ?? '';
             }
+
+
+            // ── Hand Pose string reporters ─────────────────────────────────
+            case 'hp_guess_sign':
+                return () => (window as any).runtime?.handPose?.getSign() ?? '';
+
+            // ── ML Environment string reporters ───────────────────────────
+            case 'ml_get_prediction':
+                return () => (window as any).runtime?.ml?.getPrediction() ?? '';
 
             // ── Object Detection string reporters ──────────────────────────
             case 'object_label': {
                 const n = Number(valueBlock.getFieldValue('N') ?? 1);
                 return () => (window as any).runtime?.objectDetection?.getLabel(n) ?? '';
             }
+
             case 'object_count':
                 return () => String((window as any).runtime?.objectDetection?.getNumberOfObjects() ?? 0);
             case 'object_x': {
@@ -753,7 +794,40 @@ export class AnimationCompiler {
                 return () => (window as any).runtime?.face?.isClassDetected?.(classN) ? 1 : 0;
             }
 
+            // ── Hand Pose reporter blocks ──────────────────────────────────
+            case 'hp_finger_x': {
+                const finger = valueBlock.getFieldValue('FINGER') || 'index';
+                return () => (window as any).runtime?.handPose?.getLandmarkX(finger) ?? 0;
+            }
+            case 'hp_finger_y': {
+                const finger = valueBlock.getFieldValue('FINGER') || 'index';
+                return () => (window as any).runtime?.handPose?.getLandmarkY(finger) ?? 0;
+            }
+
+            // ── Body Detection reporter blocks ─────────────────────────────
+            case 'bd_body_count':
+                return () => (window as any).runtime?.bodyDetection?.getBodyCount() ?? 0;
+            case 'bd_get_x': {
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                const lm = valueBlock.getFieldValue('LANDMARK') || 'nose';
+                return () => (window as any).runtime?.bodyDetection?.getX(n, lm) ?? 0;
+            }
+            case 'bd_get_y': {
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                const lm = valueBlock.getFieldValue('LANDMARK') || 'nose';
+                return () => (window as any).runtime?.bodyDetection?.getY(n, lm) ?? 0;
+            }
+
+            // ── ML Environment reporter blocks ─────────────────────────────
+            case 'ml_get_confidence':
+                return () => (window as any).runtime?.ml?.getConfidence() ?? 0;
+            case 'ml_is_class': {
+                const target = valueBlock.getFieldValue('CLASS') || '';
+                return () => (window as any).runtime?.ml?.getPrediction() === target ? 1 : 0;
+            }
+
             // ── Object Detection reporter blocks ───────────────────────────
+
             case 'object_count':
                 return () => (window as any).runtime?.objectDetection?.getNumberOfObjects() ?? 0;
             case 'object_x': {
@@ -1249,6 +1323,30 @@ export class AnimationCompiler {
                 step = { type: 'music_play_note', note, beats } as any;
                 break;
             }
+
+            // Hand Pose
+            case 'hp_camera':
+            case 'hp_analyze':
+                step = { type: 'hp_action', action: block.getFieldValue('ACTION') || 'analyze' } as any;
+                break;
+            case 'hp_move_with':
+                step = { type: 'hp_move_with', finger: block.getFieldValue('FINGER') } as any;
+                break;
+            case 'hp_guess_sign':
+                step = { type: 'hp_report', feature: 'sign' } as any;
+                break;
+
+            // Body Detection
+            case 'bd_camera':
+            case 'bd_analyze':
+                step = { type: 'bd_action', action: block.getFieldValue('ACTION') || 'analyze' } as any;
+                break;
+
+            // ML Environment
+            case 'ml_analyze':
+                step = { type: 'ml_action', action: block.getFieldValue('ACTION') || 'on' } as any;
+                break;
+
             case 'music_set_instrument': {
                 const instrument = Number(block.getFieldValue('INST') || 1);
                 step = { type: 'music_set_instrument', instrument } as any;
