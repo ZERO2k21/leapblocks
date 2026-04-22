@@ -69,28 +69,97 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         icon: '👤',
         registerBlocks: (Blockly: any) => {
             const fdBlockDefs = [
+                // ── Settings ──────────────────────────────────────────────
                 {
-                    type: 'fd_camera', message0: 'camera %1',
-                    args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off'], ['flip', 'flip']] }],
+                    type: 'fd_video_on_stage',
+                    message0: 'turn %1 video on stage with %2 % transparency',
+                    args0: [
+                        { type: 'field_dropdown', name: 'STATE', options: [['on', 'on'], ['off', 'off']] },
+                        { type: 'field_number', name: 'TRANSPARENCY', value: 0, min: 0, max: 100 }
+                    ],
                     previousStatement: null, nextStatement: null, colour: '#D43D41'
                 },
                 {
-                    type: 'fd_analyze', message0: '%1 face',
-                    args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['analyze', 'analyze'], ['show detection', 'show'], ['hide detection', 'hide']] }],
-                    previousStatement: null, nextStatement: null, colour: '#D43D41'
-                },
-                { type: 'fd_count', message0: 'count faces', previousStatement: null, nextStatement: null, colour: '#D43D41' },
-                { type: 'fd_guess_emotion', message0: 'guess emotion', previousStatement: null, nextStatement: null, colour: '#D43D41' },
-                {
-                    type: 'fd_feature', message0: 'detect %1',
-                    args0: [{ type: 'field_dropdown', name: 'FEATURE', options: [['Left Eye', 'left_eye'], ['Right Eye', 'right_eye'], ['Smile', 'smile'], ['Nose', 'nose'], ['Face', 'face']] }],
+                    type: 'fd_show_bounding_box',
+                    message0: '%1 bounding box',
+                    args0: [{ type: 'field_dropdown', name: 'STATE', options: [['show', 'show'], ['hide', 'hide']] }],
                     previousStatement: null, nextStatement: null, colour: '#D43D41'
                 },
                 {
-                    type: 'fd_when_emotion', message0: 'when emotion %1',
-                    args0: [{ type: 'field_dropdown', name: 'EMOTION', options: [['Smile', 'smile'], ['Angry', 'angry'], ['Sad', 'sad'], ['Neutral', 'neutral']] }],
-                    nextStatement: true, colour: '#D43D41'
+                    type: 'fd_set_threshold',
+                    message0: 'set detection threshold to %1',
+                    args0: [{ type: 'field_dropdown', name: 'THRESHOLD', options: [['0.5', '0.5'], ['0.6', '0.6'], ['0.7', '0.7'], ['0.8', '0.8'], ['0.9', '0.9']] }],
+                    previousStatement: null, nextStatement: null, colour: '#D43D41'
                 },
+                // ── Detection ─────────────────────────────────────────────
+                {
+                    type: 'fd_analyse_image',
+                    message0: 'analyse image from %1',
+                    args0: [{ type: 'field_dropdown', name: 'SOURCE', options: [['camera', 'camera'], ['image', 'image']] }],
+                    previousStatement: null, nextStatement: null, colour: '#D43D41'
+                },
+                {
+                    type: 'fd_get_num_faces',
+                    message0: 'get # faces',
+                    previousStatement: null, nextStatement: null, colour: '#D43D41'
+                },
+                {
+                    type: 'fd_get_expression',
+                    message0: 'get expression of face %1',
+                    args0: [{ type: 'field_number', name: 'N', value: 1, min: 1 }],
+                    output: 'String', colour: '#b71c1c'
+                },
+                {
+                    type: 'fd_get_dimension',
+                    message0: 'get %1 of face %2',
+                    args0: [
+                        { type: 'field_dropdown', name: 'DIM', options: [['width', 'width'], ['height', 'height']] },
+                        { type: 'field_number', name: 'N', value: 1, min: 1 }
+                    ],
+                    output: 'Number', colour: '#b71c1c'
+                },
+                {
+                    type: 'fd_is_expression',
+                    message0: 'is expression of face %1 %2',
+                    args0: [
+                        { type: 'field_number', name: 'N', value: 1, min: 1 },
+                        { type: 'field_dropdown', name: 'EXPRESSION', options: [['happy', 'happy'], ['sad', 'sad'], ['angry', 'angry'], ['surprised', 'surprised'], ['neutral', 'neutral']] }
+                    ],
+                    output: 'Boolean', colour: '#b71c1c'
+                },
+                {
+                    type: 'fd_get_xy_position',
+                    message0: 'get %1 position %2 of face %3',
+                    args0: [
+                        { type: 'field_dropdown', name: 'AXIS', options: [['x', 'x'], ['y', 'y']] },
+                        { type: 'field_dropdown', name: 'DUMMY', options: [['', '']] },
+                        { type: 'field_number', name: 'N', value: 1, min: 1 }
+                    ],
+                    output: 'Number', colour: '#b71c1c'
+                },
+                {
+                    type: 'fd_get_landmark_pos',
+                    message0: 'get %1 position of %2 of face %3',
+                    args0: [
+                        { type: 'field_dropdown', name: 'AXIS', options: [['x', 'x'], ['y', 'y']] },
+                        { type: 'field_dropdown', name: 'LANDMARK', options: [['left eye', 'left_eye'], ['right eye', 'right_eye'], ['nose', 'nose'], ['mouth', 'mouth'], ['left ear', 'left_ear'], ['right ear', 'right_ear']] },
+                        { type: 'field_number', name: 'N', value: 1, min: 1 }
+                    ],
+                    output: 'Number', colour: '#b71c1c'
+                },
+                {
+                    type: 'fd_get_landmark_num',
+                    message0: 'get %1 position of landmark %2 of face %3',
+                    args0: [
+                        { type: 'field_dropdown', name: 'AXIS', options: [['x', 'x'], ['y', 'y']] },
+                        { type: 'field_number', name: 'LANDMARK_N', value: 1, min: 1 },
+                        { type: 'field_number', name: 'N', value: 1, min: 1 }
+                    ],
+                    output: 'Number', colour: '#b71c1c'
+                },
+                // Reporter blocks
+                { type: 'fd_face_count', message0: 'face count', output: 'Number', colour: '#b71c1c' },
+                { type: 'fd_emotion', message0: 'emotion', output: 'String', colour: '#b71c1c' },
                 {
                     type: 'fd_face_x', message0: 'face %1 x position',
                     args0: [{ type: 'field_number', name: 'N', value: 1 }],
@@ -101,8 +170,52 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                     args0: [{ type: 'field_number', name: 'N', value: 1 }],
                     output: 'Number', colour: '#b71c1c'
                 },
-                { type: 'fd_face_count', message0: 'face count', output: 'Number', colour: '#b71c1c' },
-                { type: 'fd_emotion', message0: 'emotion', output: 'String', colour: '#b71c1c' },
+                // ── Face Recognition: Training ─────────────────────────────
+                {
+                    type: 'fd_add_class',
+                    message0: 'add class %1 as %2 from %3',
+                    args0: [
+                        { type: 'field_number', name: 'CLASS_N', value: 1, min: 1 },
+                        { type: 'field_input', name: 'CLASS_NAME', text: 'Jarvis' },
+                        { type: 'field_dropdown', name: 'SOURCE', options: [['camera', 'camera'], ['image', 'image']] }
+                    ],
+                    previousStatement: null, nextStatement: null, colour: '#D43D41'
+                },
+                {
+                    type: 'fd_reset_class',
+                    message0: 'reset class',
+                    previousStatement: null, nextStatement: null, colour: '#D43D41'
+                },
+                // ── Face Recognition: Testing ──────────────────────────────
+                {
+                    type: 'fd_do_face_matching',
+                    message0: 'do face matching on %1',
+                    args0: [{ type: 'field_dropdown', name: 'SOURCE', options: [['camera', 'camera'], ['image', 'image']] }],
+                    previousStatement: null, nextStatement: null, colour: '#D43D41'
+                },
+                {
+                    type: 'fd_is_class_detected',
+                    message0: 'is %1 class detected',
+                    args0: [{ type: 'field_number', name: 'CLASS_N', value: 1, min: 1 }],
+                    output: 'Boolean', colour: '#b71c1c'
+                },
+                {
+                    type: 'fd_get_class_detected',
+                    message0: 'get class of face %1 detected',
+                    args0: [{ type: 'field_number', name: 'N', value: 1, min: 1 }],
+                    output: 'String', colour: '#b71c1c'
+                },
+                // Legacy blocks (kept for backward compat)
+                {
+                    type: 'fd_camera', message0: 'camera %1',
+                    args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off'], ['flip', 'flip']] }],
+                    previousStatement: null, nextStatement: null, colour: '#D43D41'
+                },
+                {
+                    type: 'fd_analyze', message0: '%1 face',
+                    args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['analyze', 'analyze'], ['show detection', 'show'], ['hide detection', 'hide']] }],
+                    previousStatement: null, nextStatement: null, colour: '#D43D41'
+                },
             ];
             const newFdDefs = fdBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
             if (newFdDefs.length > 0) {
@@ -113,28 +226,100 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             const jsGen = javascriptGenerator;
             if (!jsGen) return;
 
-            jsGen.forBlock['fd_camera'] = (b: any) => `if(window.runtime?.face) window.runtime.face.analyse('${b.getFieldValue("ACTION")}');\n`;
-            jsGen.forBlock['fd_analyze'] = (b: any) => `if(window.runtime?.face) window.runtime.face.analyse('${b.getFieldValue("ACTION")}');\n`;
-            jsGen.forBlock['fd_count'] = () => `if(window.runtime?.face){const s=window.__activeSpriteId;if(s&&window.spriteManager)window.spriteManager.getSprite(s)?.say(window.runtime.face.getFaceCount()+" faces");}\n`;
-            jsGen.forBlock['fd_guess_emotion'] = () => `if(window.runtime?.face){const s=window.__activeSpriteId;if(s&&window.spriteManager)window.spriteManager.getSprite(s)?.say("Emotion: "+window.runtime.face.getEmotion());}\n`;
-            jsGen.forBlock['fd_feature'] = (b: any) => `if(window.runtime?.face) window.runtime.face.detectFeature('${b.getFieldValue("FEATURE")}');\n`;
-            jsGen.forBlock['fd_when_emotion'] = () => '// On Emotion\n';
-            jsGen.forBlock['fd_face_x'] = (b: any) => [`window.runtime?.face?.getX(${b.getFieldValue('N')})||0`, 0];
-            jsGen.forBlock['fd_face_y'] = (b: any) => [`window.runtime?.face?.getY(${b.getFieldValue('N')})||0`, 0];
+            // Settings
+            jsGen.forBlock['fd_video_on_stage'] = (b: any) => {
+                const state = b.getFieldValue('STATE');
+                const t = b.getFieldValue('TRANSPARENCY') || 0;
+                return `if(window.__setCameraOn) window.__setCameraOn(${state === 'on'});\nif(window.runtime?.face) window.runtime.face.setVideoTransparency?.(${t});\n`;
+            };
+            jsGen.forBlock['fd_show_bounding_box'] = (b: any) =>
+                `if(window.runtime?.face) window.runtime.face.setBoundingBox?.('${b.getFieldValue("STATE")}');\n`;
+            jsGen.forBlock['fd_set_threshold'] = (b: any) =>
+                `if(window.runtime?.face) window.runtime.face.setThreshold?.(${b.getFieldValue("THRESHOLD")});\n`;
+
+            // Detection
+            jsGen.forBlock['fd_analyse_image'] = (b: any) => {
+                const src = b.getFieldValue('SOURCE');
+                return `if(window.__setCameraOn) window.__setCameraOn(${src === 'camera'});\nif(window.runtime?.face) window.runtime.face.analyse('analyze');\n`;
+            };
+            jsGen.forBlock['fd_get_num_faces'] = () =>
+                `if(window.runtime?.face){const _s=window.__activeSpriteId;if(_s&&window.spriteManager)window.spriteManager.getSprite(_s)?.say(window.runtime.face.getFaceCount()+" faces");}\n`;
+            jsGen.forBlock['fd_get_expression'] = (b: any) => [`window.runtime?.face?.getEmotion()||''`, 0];
+            jsGen.forBlock['fd_get_dimension'] = (b: any) => {
+                const dim = b.getFieldValue('DIM');
+                const n = b.getFieldValue('N') || 1;
+                const method = dim === 'width' ? 'getWidth' : 'getHeight';
+                return [`window.runtime?.face?.${method}(${n})||0`, 0];
+            };
+            jsGen.forBlock['fd_is_expression'] = (b: any) =>
+                [`(window.runtime?.face?.getEmotion()||'').toLowerCase()==='${b.getFieldValue("EXPRESSION")}'`, 0];
+            jsGen.forBlock['fd_get_xy_position'] = (b: any) => {
+                const axis = b.getFieldValue('AXIS');
+                const n = b.getFieldValue('N') || 1;
+                return [`window.runtime?.face?.get${axis.toUpperCase()}(${n})||0`, 0];
+            };
+            jsGen.forBlock['fd_get_landmark_pos'] = (b: any) => {
+                const axis = b.getFieldValue('AXIS');
+                const lm = b.getFieldValue('LANDMARK');
+                const n = b.getFieldValue('N') || 1;
+                return [`window.runtime?.face?.getLandmark?.('${lm}',${n},'${axis}')||0`, 0];
+            };
+            jsGen.forBlock['fd_get_landmark_num'] = (b: any) => {
+                const axis = b.getFieldValue('AXIS');
+                const lmN = b.getFieldValue('LANDMARK_N') || 1;
+                const n = b.getFieldValue('N') || 1;
+                return [`window.runtime?.face?.getLandmarkByIndex?.(${lmN},${n},'${axis}')||0`, 0];
+            };
+
+            // Reporters
             jsGen.forBlock['fd_face_count'] = () => [`window.runtime?.face?.getFaceCount()||0`, 0];
             jsGen.forBlock['fd_emotion'] = () => [`window.runtime?.face?.getEmotion()||''`, 0];
+            jsGen.forBlock['fd_face_x'] = (b: any) => [`window.runtime?.face?.getX(${b.getFieldValue('N')})||0`, 0];
+            jsGen.forBlock['fd_face_y'] = (b: any) => [`window.runtime?.face?.getY(${b.getFieldValue('N')})||0`, 0];
+
+            // Face Recognition: Training
+            jsGen.forBlock['fd_add_class'] = (b: any) =>
+                `if(window.runtime?.face) window.runtime.face.addClass?.(${b.getFieldValue('CLASS_N')},'${b.getFieldValue('CLASS_NAME')}','${b.getFieldValue('SOURCE')}');\n`;
+            jsGen.forBlock['fd_reset_class'] = () =>
+                `if(window.runtime?.face) window.runtime.face.resetClasses?.();\n`;
+
+            // Face Recognition: Testing
+            jsGen.forBlock['fd_do_face_matching'] = (b: any) =>
+                `if(window.runtime?.face) await window.runtime.face.doFaceMatching?.('${b.getFieldValue('SOURCE')}');\n`;
+            jsGen.forBlock['fd_is_class_detected'] = (b: any) =>
+                [`window.runtime?.face?.isClassDetected?.(${b.getFieldValue('CLASS_N')})||false`, 0];
+            jsGen.forBlock['fd_get_class_detected'] = (b: any) =>
+                [`window.runtime?.face?.getClassOfFace?.(${b.getFieldValue('N')})||''`, 0];
+
+            // Legacy
+            jsGen.forBlock['fd_camera'] = (b: any) => {
+                const action = b.getFieldValue('ACTION');
+                return `if(window.__setCameraOn) window.__setCameraOn(${action === 'on'});\nif(window.runtime?.face) window.runtime.face.analyse('${action}');\n`;
+            };
+            jsGen.forBlock['fd_analyze'] = (b: any) =>
+                `if(window.runtime?.face) window.runtime.face.analyse('${b.getFieldValue("ACTION")}');\n`;
         },
         getToolbox: () => [
-            { kind: 'block', type: 'fd_camera' },
-            { kind: 'block', type: 'fd_analyze' },
-            { kind: 'block', type: 'fd_face_count' },
-            { kind: 'block', type: 'fd_emotion' },
-            { kind: 'block', type: 'fd_face_x' },
-            { kind: 'block', type: 'fd_face_y' },
-            { kind: 'block', type: 'fd_count' },
-            { kind: 'block', type: 'fd_guess_emotion' },
-            { kind: 'block', type: 'fd_feature' },
-            { kind: 'block', type: 'fd_when_emotion' },
+            { kind: 'label', text: 'Settings' },
+            { kind: 'block', type: 'fd_video_on_stage' },
+            { kind: 'block', type: 'fd_show_bounding_box' },
+            { kind: 'block', type: 'fd_set_threshold' },
+            { kind: 'label', text: 'Detection' },
+            { kind: 'block', type: 'fd_analyse_image' },
+            { kind: 'block', type: 'fd_get_num_faces' },
+            { kind: 'block', type: 'fd_get_expression' },
+            { kind: 'block', type: 'fd_get_dimension' },
+            { kind: 'block', type: 'fd_is_expression' },
+            { kind: 'block', type: 'fd_get_xy_position' },
+            { kind: 'block', type: 'fd_get_landmark_pos' },
+            { kind: 'block', type: 'fd_get_landmark_num' },
+            { kind: 'label', text: 'Face Recognition: Training' },
+            { kind: 'block', type: 'fd_add_class' },
+            { kind: 'block', type: 'fd_reset_class' },
+            { kind: 'label', text: 'Face Recognition: Testing' },
+            { kind: 'block', type: 'fd_do_face_matching' },
+            { kind: 'block', type: 'fd_is_class_detected' },
+            { kind: 'block', type: 'fd_get_class_detected' },
         ]
     },
     object_detection: {
@@ -226,6 +411,15 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         name: 'Hand Pose',
         color: '#D43D41',
         icon: '✋',
+        getToolbox: () => [
+            { kind: 'block', type: 'hp_camera' },
+            { kind: 'block', type: 'hp_analyze' },
+            { kind: 'block', type: 'hp_move_with' },
+            { kind: 'block', type: 'hp_guess_sign' },
+            { kind: 'block', type: 'hp_when_sign' },
+            { kind: 'block', type: 'hp_finger_x' },
+            { kind: 'block', type: 'hp_finger_y' },
+        ],
         registerBlocks: (Blockly: any) => {
             const hpBlockDefs = [
                 {
@@ -250,6 +444,16 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                     type: 'hp_when_sign', message0: 'when hand sign %1',
                     args0: [{ type: 'field_dropdown', name: 'SIGN', options: [['Peace', '2'], ['Open', '5'], ['Thumbs Up', 'thumbs_up']] }],
                     nextStatement: true, colour: '#D43D41'
+                },
+                {
+                    type: 'hp_finger_x', message0: '%1 x position',
+                    args0: [{ type: 'field_dropdown', name: 'FINGER', options: [['Thumb', 'thumb'], ['Index', 'index'], ['Middle', 'middle'], ['Ring', 'ring'], ['Pinky', 'pinky'], ['Base', 'base']] }],
+                    output: 'Number', colour: '#b71c1c'
+                },
+                {
+                    type: 'hp_finger_y', message0: '%1 y position',
+                    args0: [{ type: 'field_dropdown', name: 'FINGER', options: [['Thumb', 'thumb'], ['Index', 'index'], ['Middle', 'middle'], ['Ring', 'ring'], ['Pinky', 'pinky'], ['Base', 'base']] }],
+                    output: 'Number', colour: '#b71c1c'
                 }
             ];
             const newHpDefs = hpBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
@@ -266,15 +470,75 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             jsGen.forBlock['hp_move_with'] = (b: any) => `if(window.runtime?.handPose) window.runtime.handPose.moveSpriteToFinger('${b.getFieldValue("FINGER")}');\n`;
             jsGen.forBlock['hp_guess_sign'] = () => `if(window.runtime?.handPose){const s=window.__activeSpriteId;if(s&&window.spriteManager)window.spriteManager.getSprite(s)?.say("Sign: "+window.runtime.handPose.getSign());}\n`;
             jsGen.forBlock['hp_when_sign'] = () => '// On Hand Sign\n';
+            jsGen.forBlock['hp_finger_x'] = (b: any) => [`window.runtime?.handPose?.getLandmarkX('${b.getFieldValue("FINGER")}')||0`, 0];
+            jsGen.forBlock['hp_finger_y'] = (b: any) => [`window.runtime?.handPose?.getLandmarkY('${b.getFieldValue("FINGER")}')||0`, 0];
+        }
+
+    },
+    body_detection: {
+        id: 'body_detection',
+        name: 'Body Detection',
+        color: '#D43D41',
+        icon: '🤸',
+        registerBlocks: (Blockly: any) => {
+            const bdBlockDefs = [
+                { type: 'bd_camera', message0: 'camera %1', args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41' },
+                { type: 'bd_analyze', message0: '%1 body', args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['analyze', 'analyze'], ['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41' },
+                { type: 'bd_body_count', message0: 'body count', output: 'Number', colour: '#b71c1c' },
+                { type: 'bd_get_x', message0: 'x position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'LANDMARK', options: [['nose', 'nose'], ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder']] }, { type: 'field_number', name: 'N', value: 1 }], output: 'Number', colour: '#b71c1c' },
+                { type: 'bd_get_y', message0: 'y position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'LANDMARK', options: [['nose', 'nose'], ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder']] }, { type: 'field_number', name: 'N', value: 1 }], output: 'Number', colour: '#b71c1c' }
+            ];
+            const newDefs = bdBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+            if (newDefs.length > 0) Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));
+        },
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
+            if (!jsGen) return;
+            jsGen.forBlock['bd_camera'] = (b: any) => `if(window.__setCameraOn) window.__setCameraOn(${b.getFieldValue('ACTION') === 'on'});\n`;
+            jsGen.forBlock['bd_analyze'] = (b: any) => `if(window.runtime?.bodyDetection) window.runtime.bodyDetection.analyse('${b.getFieldValue('ACTION')}');\n`;
+            jsGen.forBlock['bd_body_count'] = () => [`window.runtime?.bodyDetection?.getBodyCount()||0`, 0];
+            jsGen.forBlock['bd_get_x'] = (b: any) => [`window.runtime?.bodyDetection?.getX(${b.getFieldValue('N')},'${b.getFieldValue('LANDMARK')}')||0`, 0];
+            jsGen.forBlock['bd_get_y'] = (b: any) => [`window.runtime?.bodyDetection?.getY(${b.getFieldValue('N')},'${b.getFieldValue('LANDMARK')}')||0`, 0];
         },
         getToolbox: () => [
-            { kind: 'block', type: 'hp_camera' },
-            { kind: 'block', type: 'hp_analyze' },
-            { kind: 'block', type: 'hp_move_with' },
-            { kind: 'block', type: 'hp_guess_sign' },
-            { kind: 'block', type: 'hp_when_sign' },
+            { kind: 'block', type: 'bd_camera' },
+            { kind: 'block', type: 'bd_analyze' },
+            { kind: 'block', type: 'bd_body_count' },
+            { kind: 'block', type: 'bd_get_x' },
+            { kind: 'block', type: 'bd_get_y' },
+        ]
+    },
+    ml_machine_learning: {
+        id: 'ml_machine_learning',
+        name: 'ML Environment',
+        color: '#D43D41',
+        icon: '🤖',
+        registerBlocks: (Blockly: any) => {
+            const mlBlockDefs = [
+                { type: 'ml_analyze', message0: '%1 classification', args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41' },
+                { type: 'ml_get_prediction', message0: 'prediction', output: 'String', colour: '#b71c1c' },
+                { type: 'ml_get_confidence', message0: 'confidence', output: 'Number', colour: '#b71c1c' },
+                { type: 'ml_is_class', message0: 'prediction is %1?', args0: [{ type: 'field_input', name: 'CLASS', text: 'Class 1' }], output: 'Boolean', colour: '#b71c1c' }
+            ];
+            const newDefs = mlBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+            if (newDefs.length > 0) Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));
+        },
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
+            if (!jsGen) return;
+            jsGen.forBlock['ml_analyze'] = (b: any) => `if(window.runtime?.ml) window.runtime.ml.analyse('${b.getFieldValue('ACTION')}');\n`;
+            jsGen.forBlock['ml_get_prediction'] = () => [`window.runtime?.ml?.getPrediction()||''`, 0];
+            jsGen.forBlock['ml_get_confidence'] = () => [`window.runtime?.ml?.getConfidence()||0`, 0];
+            jsGen.forBlock['ml_is_class'] = (b: any) => [`window.runtime?.ml?.getPrediction()==='${b.getFieldValue('CLASS')}'`, 0];
+        },
+        getToolbox: () => [
+            { kind: 'block', type: 'ml_analyze' },
+            { kind: 'block', type: 'ml_get_prediction' },
+            { kind: 'block', type: 'ml_get_confidence' },
+            { kind: 'block', type: 'ml_is_class' },
         ]
     }
+
 };
 
 export function registerExtensions(Blockly: any, extensionIds: string[]) {

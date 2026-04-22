@@ -489,8 +489,13 @@ export class Sprite {
         if (typeof nameOrIndex === 'number') {
             this.state.currentCostumeIndex = Math.max(0, Math.min(nameOrIndex, this.state.costumes.length - 1));
         } else {
-            const idx = this.state.costumes.findIndex(c => c.name === nameOrIndex);
-            if (idx >= 0) this.state.currentCostumeIndex = idx;
+            const searchName = String(nameOrIndex).toLowerCase();
+            const idx = this.state.costumes.findIndex(c => c.name.toLowerCase() === searchName);
+            if (idx >= 0) {
+                this.state.currentCostumeIndex = idx;
+            } else {
+                console.warn(`[Sprite "${this.state.name}"] Costume "${nameOrIndex}" not found (case-insensitive check failed)`);
+            }
         }
         this.onUpdate();
     }

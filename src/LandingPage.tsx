@@ -393,14 +393,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 2vh; color: #0F172A;
 }
 .landing-page-container .hero-title .hw-code {
+  color: transparent; -webkit-text-stroke: 2px #6366F1;
+  -webkit-text-fill-color: transparent; letter-spacing: -0.02em;
+}
+.landing-page-container .hero-title .hw-bold {
   font-style: italic; color: transparent;
   background: linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #8B5CF6 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   letter-spacing: 0.02em; padding: 0 4px;
-}
-.landing-page-container .hero-title .hw-bold {
-  color: transparent; -webkit-text-stroke: 2px #6366F1;
-  -webkit-text-fill-color: transparent; letter-spacing: -0.02em;
 }
 .landing-page-container .hero-tagline {
   display: inline-block; font-size: min(0.7rem, 1.4vh);
@@ -683,7 +683,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 the <span className="hw-bold">bold</span> way
               </h1>
               <p className="hero-sub">
-                Seven unique tracks from junior picture-blocks all the way to AI,
+                Eight unique tracks from junior picture-blocks all the way to AI,
                 robotics, and machine vision. Pick your adventure.
               </p>
               <div className="hero-btns">
@@ -816,18 +816,47 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           {/* FOOTER */}
           <footer style={{
             textAlign: 'center',
-            height: '4vh',
+            padding: '12px 24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#05001eff',
-            fontSize: 'min(1.5rem, 2vh)',
-            fontFamily: '"Poppins", sans-serif',
-            opacity: 1,
-            letterSpacing: '0.5px',
-            flexShrink: 0
+            gap: '8px',
+            flexShrink: 0,
+            background: 'linear-gradient(90deg, rgba(10,1,90,0.04) 0%, rgba(99,102,241,0.07) 50%, rgba(10,1,90,0.04) 100%)',
+            borderTop: '1px solid rgba(99,102,241,0.12)',
           }}>
-            LeapLab v1.0 © Creoleap Technologies Pvt. Ltd.
+            {/* Ambient glow dot */}
+            <span style={{
+              display: 'inline-block',
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, #6366f1, #a855f7)',
+              boxShadow: '0 0 8px 2px rgba(99,102,241,0.5)',
+              flexShrink: 0,
+            }} />
+            <span style={{
+              fontSize: 'clamp(0.7rem, 1.2vw, 0.85rem)',
+              fontFamily: '"Poppins", sans-serif',
+              fontWeight: 500,
+              letterSpacing: '0.04em',
+              background: 'linear-gradient(90deg, #0a015a 0%, #6366f1 50%, #a855f7 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              LeapLab v1.0 &copy; 2026 Creoleap Technologies Pvt. Ltd. — All rights reserved.
+            </span>
+            {/* Ambient glow dot */}
+            <span style={{
+              display: 'inline-block',
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, #a855f7, #6366f1)',
+              boxShadow: '0 0 8px 2px rgba(168,85,247,0.5)',
+              flexShrink: 0,
+            }} />
           </footer>
 
         </div>

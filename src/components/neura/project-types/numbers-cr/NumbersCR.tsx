@@ -6,7 +6,7 @@
 'use client';
 
 import React from 'react';
-import ProjectHeader from '../../common/ProjectHeader';
+
 
 interface NumbersCRProps {
     onBack?: () => void;
@@ -14,12 +14,8 @@ interface NumbersCRProps {
 
 export default function NumbersCR({ onBack }: NumbersCRProps) {
     return (
-        <div className="h-screen flex flex-col bg-gray-50">
-            <ProjectHeader
-                icon="🔢"
-                title="Numbers Character Recognition"
-                onBack={onBack}
-            />
+        <div className="bg-gray-50 flex-1 flex flex-col">
+
 
             <div className="flex-1 flex items-center justify-center">
                 <div className="text-center max-w-md">

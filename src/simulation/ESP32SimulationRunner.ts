@@ -94,12 +94,12 @@ export class ESP32SimulationRunner {
         }
 
         console.log('[ESP32Runner] Registering serial data listener...');
-        window.electronAPI.onSerialData((data: string) => {
+        (window as any).electronAPI.onSerialData((data: string) => {
             console.log('[ESP32Runner] Serial data received:', data.length, 'chars');
             this.onSerialData(data);
         });
 
-        await window.electronAPI.invoke('esp32-start', binPath);
+        await (window as any).electronAPI.invoke('esp32-start', binPath);
         this.isRunning = true;
         console.log('[ESP32Runner] QEMU started, binPath:', binPath);
     }
@@ -107,11 +107,11 @@ export class ESP32SimulationRunner {
     stop(): void {
         if (!this.isRunning) return;
 
-        window.electronAPI.invoke('esp32-stop').catch((err: unknown) => {
+        (window as any).electronAPI.invoke('esp32-stop').catch((err: unknown) => {
             console.error('[ESP32Runner] esp32-stop error:', err);
         });
 
-        window.electronAPI.removeSerialDataListener();
+        (window as any).electronAPI.removeSerialDataListener();
 
         this.isRunning = false;
         this.serialBuffer = '';
@@ -122,11 +122,11 @@ export class ESP32SimulationRunner {
     // ── GPIO / ADC injection ──────────────────────────────────────────────────
 
     async setGPIOInput(pin: number, high: boolean): Promise<void> {
-        await window.electronAPI.invoke('esp32-gpio-set', pin, high);
+        await (window as any).electronAPI.invoke('esp32-gpio-set', pin, high);
     }
 
     async setAnalogInput(channel: number, voltage: number): Promise<void> {
-        await window.electronAPI.invoke('esp32-adc-set', channel, voltage);
+        await (window as any).electronAPI.invoke('esp32-adc-set', channel, voltage);
     }
 
     // ── GPIO pin listeners ────────────────────────────────────────────────────

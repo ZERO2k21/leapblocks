@@ -1,9 +1,13 @@
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
+ * ActionMenu — vertical pill drop-up menu
+ *
+ * STATES:
+ *   Default  → purple FAB (#6c3fc5) matching the topbar colour
+ *   Hover/Open → crimson FAB (#E6194B) + dark purple pill slides up
  */
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 
 export interface ActionMenuItem {
     id: string;
@@ -14,47 +18,136 @@ export interface ActionMenuItem {
 
 interface ActionMenuProps {
     mainIcon: React.ReactNode;
-    color: string;
+    color?: string;
     tooltipLabel: string;
     actions: ActionMenuItem[];
 }
 
-export const ActionMenu: React.FC<ActionMenuProps> = ({ mainIcon, color, tooltipLabel, actions }) => {
-    const [isHovered, setIsHovered] = useState(false);
+export const ActionMenu: React.FC<ActionMenuProps> = ({
+    mainIcon,
+    tooltipLabel,
+    actions,
+}) => {
+    const [open, setOpen] = useState(false);
+    const [hoveredId, setHoveredId] = useState<string | null>(null);
+    const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleEnter = () => {
+        if (closeTimer.current) clearTimeout(closeTimer.current);
+        setOpen(true);
+    };
+
+    const handleLeave = () => {
+        closeTimer.current = setTimeout(() => {
+            setOpen(false);
+            setHoveredId(null);
+        }, 120);
+    };
+
+    // Default: purple (topbar colour). Active/hover: crimson.
+    const fabBg = open ? '#E6194B' : '#6c3fc5';
+    const fabShadow = open
+        ? '0 4px 14px rgba(230,25,75,0.5)'
+        : '0 4px 12px rgba(108,63,197,0.45)';
+    const glowBg = open
+        ? 'rgba(230,25,75,0.2)'
+        : 'rgba(139,92,246,0.22)';
 
     return (
         <div
-            style={styles.container}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', overflow: 'visible' }}
+            onMouseEnter={handleEnter}
+            onMouseLeave={handleLeave}
         >
-            {/* Expanded drop-up menu items */}
+            {/* ── Drop-up pill menu ──────────────────────────────────────── */}
             <div style={{
-                ...styles.menuFlyout,
-                backgroundColor: color,
-                opacity: isHovered ? 1 : 0,
-                visibility: isHovered ? 'visible' : 'hidden',
-                bottom: isHovered ? '44px' : '22px', // Slide up effect
+                position: 'absolute',
+                bottom: '52px',
+                left: '50%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '2px',
+                padding: '10px 0',
+                background: '#3D1A6E',
+                borderRadius: '22px',
+                width: '44px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+                opacity: open ? 1 : 0,
+                visibility: open ? 'visible' : 'hidden',
+                transform: open
+                    ? 'translateX(-50%) translateY(0)'
+                    : 'translateX(-50%) translateY(10px)',
+                transition: 'opacity 0.18s ease, transform 0.18s cubic-bezier(0.34,1.56,0.64,1), visibility 0.18s',
+                zIndex: 200,
+                pointerEvents: open ? 'auto' : 'none',
             }}>
-                {actions.map((action, index) => (
+                {actions.map((action) => (
                     <div
                         key={action.id}
-                        className="menu-item-wrapper"
-                        style={styles.menuItemWrapper}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setIsHovered(false);
-                            action.onClick();
-                        }}
+                        style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}
+                        onMouseEnter={() => setHoveredId(action.id)}
+                        onMouseLeave={() => setHoveredId(null)}
                     >
-                        {/* Tooltip for individual actions */}
-                        <div className="action-tooltip" style={styles.actionTooltip}>
+                        {/* Tooltip — crimson pill to the left */}
+                        <div style={{
+                            position: 'absolute',
+                            right: '52px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: '#E6194B',
+                            color: 'white',
+                            padding: '6px 14px',
+                            borderRadius: '20px',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap',
+                            pointerEvents: 'none',
+                            opacity: hoveredId === action.id ? 1 : 0,
+                            transition: 'opacity 0.15s ease',
+                            boxShadow: '0 2px 8px rgba(230,25,75,0.4)',
+                            zIndex: 201,
+                        }}>
                             {action.label}
+                            {/* Arrow pointing right */}
+                            <span style={{
+                                position: 'absolute',
+                                right: '-6px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                width: 0,
+                                height: 0,
+                                borderTop: '5px solid transparent',
+                                borderBottom: '5px solid transparent',
+                                borderLeft: '6px solid #E6194B',
+                            }} />
                         </div>
+
+                        {/* Icon button */}
                         <button
-                            className="action-menu-btn"
-                            style={styles.menuButton}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setOpen(false);
+                                setHoveredId(null);
+                                action.onClick();
+                            }}
                             title={action.label}
+                            style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '50%',
+                                background: hoveredId === action.id
+                                    ? 'rgba(255,255,255,0.15)'
+                                    : 'transparent',
+                                border: 'none',
+                                color: 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'background 0.15s',
+                                flexShrink: 0,
+                            }}
                         >
                             {action.icon}
                         </button>
@@ -62,165 +155,60 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({ mainIcon, color, tooltip
                 ))}
             </div>
 
-            {/* Primary floating action button */}
-            <div className="primary-button-wrapper" style={styles.primaryButtonWrapper}>
-                {/* Tooltip for main action */}
-                <div className="main-tooltip" style={{
-                    ...styles.mainTooltip
-                }}>
-                    {tooltipLabel}
-                </div>
+            {/* ── Main FAB ──────────────────────────────────────────────── */}
+            <div style={{
+                position: 'relative',
+                width: '44px',
+                height: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+            }}>
+                {/* Glow ring */}
+                <div style={{
+                    position: 'absolute',
+                    inset: '-5px',
+                    borderRadius: '50%',
+                    background: glowBg,
+                    transition: 'background 0.2s',
+                }} />
 
                 <button
-                    style={{
-                        ...styles.mainButton,
-                        backgroundColor: color,
-                    }}
                     onClick={(e) => {
                         e.stopPropagation();
-                        // Also trigger the primary action (first in list usually, but in leap it's search)
-                        actions.find(a => a.id === 'search')?.onClick();
+                        if (!open) {
+                            setOpen(true);
+                        } else {
+                            const primary = actions.find(a => a.id === 'library') ?? actions[0];
+                            primary?.onClick();
+                            setOpen(false);
+                        }
+                    }}
+                    title={tooltipLabel}
+                    style={{
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '50%',
+                        background: fabBg,
+                        border: 'none',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        boxShadow: fabShadow,
+                        transition: 'background 0.2s, box-shadow 0.2s, transform 0.15s',
+                        transform: open ? 'scale(1.08)' : 'scale(1)',
+                        position: 'relative',
+                        zIndex: 201,
+                        flexShrink: 0,
                     }}
                 >
                     {mainIcon}
-                    {/* SVG Plus Overlay standard in leap */}
-                    <div style={styles.plusOverlay}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    </div>
                 </button>
             </div>
-
-            <style>{`
-                .action-menu-btn {
-                    transition: background-color 0.2s;
-                }
-                .action-menu-btn:hover {
-                    background-color: rgba(0,0,0,0.15);
-                }
-                .menu-item-wrapper {
-                    position: relative;
-                }
-                .menu-item-wrapper:hover .action-tooltip {
-                    opacity: 1;
-                    visibility: visible;
-                    right: 45px;
-                }
-                .primary-button-wrapper:hover .main-tooltip {
-                    opacity: 1;
-                    visibility: visible;
-                    right: 65px;
-                }
-            `}</style>
         </div>
     );
 };
 
-const styles: { [key: string]: React.CSSProperties } = {
-    container: {
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-    },
-    menuFlyout: {
-        position: 'absolute',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: '10px 0',
-        borderRadius: '24px',
-        width: '36px',
-        transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 100,
-        gap: '8px'
-    },
-    menuItemWrapper: {
-        position: 'relative',
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-    },
-    menuButton: {
-        width: '28px',
-        height: '28px',
-        borderRadius: '50%',
-        backgroundColor: 'transparent',
-        border: 'none',
-        color: 'white',
-        fontSize: '16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-    },
-    primaryButtonWrapper: {
-        position: 'relative',
-        display: 'flex',
-        justifyContent: 'flex-end',
-        width: '34px',
-        height: '34px',
-    },
-    mainButton: {
-        width: '34px',
-        height: '34px',
-        borderRadius: '50%',
-        color: 'white',
-        border: '2px solid white',
-        fontSize: '16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-        position: 'relative',
-        zIndex: 101, // Above flyout
-    },
-    plusOverlay: {
-        position: "absolute",
-        top: "-2px",
-        right: "-2px",
-        color: "white",
-        display: "flex"
-    },
-    mainTooltip: {
-        position: 'absolute',
-        right: '48px', // Will animate to 58px via CSS
-        top: '50%',
-        transform: 'translateY(-50%)',
-        backgroundColor: '#855CD6',
-        color: 'white',
-        padding: '8px 16px',
-        borderRadius: '4px',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        whiteSpace: 'nowrap',
-        opacity: 0,
-        visibility: 'hidden',
-        transition: 'all 0.2s',
-        pointerEvents: 'none',
-        zIndex: 102,
-    },
-    actionTooltip: {
-        position: 'absolute',
-        right: '28px', // Will animate to 38px via CSS
-        top: '50%',
-        transform: 'translateY(-50%)',
-        backgroundColor: '#855CD6',
-        color: 'white',
-        padding: '6px 12px',
-        borderRadius: '4px',
-        fontSize: '12px',
-        fontWeight: 'bold',
-        whiteSpace: 'nowrap',
-        opacity: 0,
-        visibility: 'hidden',
-        transition: 'all 0.2s',
-        pointerEvents: 'none',
-    }
-};
+export default ActionMenu;
