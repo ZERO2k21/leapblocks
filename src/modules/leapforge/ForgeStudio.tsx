@@ -83,7 +83,7 @@ void loop() {
 
   // Auto-initialized state removed to enforce global-only forge-lib management.
 
-  const ESP32_BOARD_IDS = new Set(['esp32', 'esp32-devkit-v1', 'esp32-s2', 'esp32-s3', 'esp32-c3']);
+  const ESP32_BOARD_IDS = new Set(['esp32-c3']);
 
   const handleToggleSimulation = async () => {
     console.log('[FORGE UI] Simulation button clicked. Currently simulating:', isSimulating);
@@ -99,10 +99,6 @@ void loop() {
       'arduino-nano': 'arduino:avr:nano:cpu=atmega328old',
       'arduino-mega': 'arduino:avr:mega',
       'attiny85': 'attiny:avr:ATtinyX5:cpu=attiny85,clock=internal8',
-      'esp32': 'esp32:esp32:esp32',
-      'esp32-devkit-v1': 'esp32:esp32:esp32',
-      'esp32-s2': 'esp32:esp32:esp32s2',
-      'esp32-s3': 'esp32:esp32:esp32s3',
       'esp32-c3': 'esp32:esp32:esp32c3',
     };
 
@@ -116,8 +112,8 @@ void loop() {
     try {
       // ── ESP32 QEMU path ────────────────────────────────────────────────────
       if (isESP32) {
-        console.log('[FORGE UI] ESP32 board detected — using QEMU compile path...');
-        const fqbn = FQBN[board] ?? 'esp32:esp32:esp32';
+        console.log('[FORGE UI] ESP32-C3 board detected — using RISC-V compile path...');
+        const fqbn = FQBN[board] ?? 'esp32:esp32:esp32c3';
         const result = await compileCode({
           code,
           board: fqbn,
@@ -142,8 +138,8 @@ void loop() {
         // Pass binPath to SimulationRunner via setBoard, then start QEMU
         const runner = await getSimulationRunner();
         runner.setBoard(board, binPath);
-        startSimulation('__esp32_qemu__');
-        appendSerial('ESP32 compiled. Starting QEMU simulation...\n');
+        startSimulation('__esp32_c3_riscv__');
+        appendSerial('ESP32-C3 compiled. Starting RISC-V simulation...\n');
         return;
       }
 
@@ -300,7 +296,7 @@ void loop() {
               <Terminal size={14} /> SERIAL {serialOutput.length > 0 && <span style={{ background: '#f85149', width: '6px', height: '6px', borderRadius: '50%' }} />}
             </button>
 
-            {board === 'esp32' && (
+            {board === 'esp32-c3' && (
               <button
                 onClick={() => setActiveTab('wifi')}
                 style={{
@@ -345,7 +341,7 @@ void loop() {
             </button>
 
             {/* WiFi status pill */}
-            {board === 'esp32' && isSimulating && (
+            {board === 'esp32-c3' && isSimulating && (
               <div style={{
                 marginLeft: 'auto',
                 display: 'flex',
@@ -429,8 +425,8 @@ void loop() {
       }}>
         <div style={{ display: 'flex', gap: '15px' }}>
           <span>Engine: <b style={{ color: '#BEF264' }}>LeapLab Simulator v1.0</b></span>
-          {isSimulating && board !== 'esp32' && <span style={{ color: '#ef4444' }}>● AVR Simulation Live</span>}
-          {isSimulating && board === 'esp32' && (
+          {isSimulating && board !== 'esp32-c3' && <span style={{ color: '#ef4444' }}>● AVR Simulation Live</span>}
+          {isSimulating && board === 'esp32-c3' && (
             <span style={{ color: '#ef4444' }}>
               ● ESP32 Simulation Live
               {wifiStatus && <span style={{ color: '#4CAF50', marginLeft: 8 }}>· {wifiStatus}</span>}

@@ -20,6 +20,23 @@ let serialManager: SerialManager;
 let arduinoUploader: ArduinoUploader;
 let pythonManager: PythonManager;
 
+// ESP32-C3 related globals
+let esp32CoreReady = false;
+let lastESP32BinTempDir: string | null = null;
+
+function getCleanupESP32Build() {
+  return (tempDir: string) => {
+    log('ESP32', `Cleaning up build directory: ${tempDir}`);
+    try {
+      if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    } catch (error) {
+      log('ESP32', `Failed to cleanup build directory: ${error}`);
+    }
+  };
+}
+
 const log = (category: string, msg: string, data?: any) => {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] [MAIN:${category}] ${msg}`, data ?? '');
@@ -124,7 +141,7 @@ const createWindow = (): void => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ESP32 QEMU HELPERS
+// ESP32-C3 HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Run arduino-cli with a given config file and return { stdout, stderr, code } */
@@ -266,16 +283,15 @@ async function ensureESP32Core(): Promise<boolean> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Merges the three ESP32 flash regions into a single raw image that QEMU
- * accepts via  -drive file=<image>,if=mtd,format=raw
+ * Merges the three ESP32 flash regions into a single raw image for ESP32-C3
+ * simulation. This is used for ESP32-C3 RISC-V simulation.
  *
  * Flash layout (default ESP32 single_factory partition scheme):
  *   0x001000  bootloader.bin   (max ~28 KB)
  *   0x008000  partitions.bin   (max ~3 KB)
  *   0x010000  app.bin          (rest of flash)
  *
- * The image is zero-padded to exactly 4 MB — the smallest QEMU-supported
- * size that fits the default ESP32 DevKit V1 flash.
+ * The image is zero-padded to exactly 4 MB for ESP32-C3 simulation.
  */
 function buildMergedFlashImage(
   tempDir: string,
@@ -359,8 +375,6 @@ app.on('before-quit', () => {
   if (pythonManager) {
     pythonManager.stopAll();
   }
-  // Stop QEMU if running
-  try { getQemuManager().stopQemu(); } catch (_) { }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -411,8 +425,8 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
   log('IPC', `isESP32: ${isESP32}`);
 
   if (isESP32) {
-    // ── ESP32 QEMU path ─────────────────────────────────────────────────────
-    log('IPC', 'ESP32 detected — using QEMU compile path');
+    // ── ESP32-C3 RISC-V path ─────────────────────────────────────────────────────
+    log('IPC', 'ESP32-C3 detected — using RISC-V compile path');
 
     if (mainWindow?.webContents) {
       mainWindow.webContents.send('serial-data', '[SYSTEM] Checking ESP32 platform installation...\n');
@@ -437,7 +451,7 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
     try {
       fs.mkdirSync(sketchDir, { recursive: true });
 
-      // Inject GPIO monitor header so QEMU serial output carries __LF_ tagged lines
+      // Inject GPIO monitor header so ESP32-C3 serial output carries __LF_ tagged lines
       const GPIO_MONITOR_HEADER = `\
 // ---- LeapForge monitor (auto-injected, do not remove) ----
 #include <Wire.h>
@@ -605,50 +619,6 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
   return result;
 });
 
-// ── ESP32 QEMU simulation IPC handlers ───────────────────────────────────
-
-ipcMain.handle('esp32-start', async (_, binPath: string) => {
-  // Reset cached qemuManager so latest version of qemuManager.js is always used
-  _qemuManager = null;
-  await getQemuManager().startQemu(binPath, mainWindow);
-  return { ok: true };
-});
-
-ipcMain.handle('esp32-stop', async () => {
-  getQemuManager().stopQemu();
-  if (lastESP32BinTempDir) {
-    getCleanupESP32Build()(lastESP32BinTempDir);
-    lastESP32BinTempDir = null;
-  }
-  return { ok: true };
-});
-
-ipcMain.handle('esp32-gpio-set', async (_, pin: number, high: boolean) => {
-  const socket = await getQemuManager().connectQMP();
-  if (socket) {
-    await getQemuManager().sendQMPCommand(socket, {
-      execute: 'gpio-set',
-      arguments: { name: `GPIO${pin}`, level: high ? 1 : 0 },
-    });
-    socket.destroy();
-  }
-});
-
-ipcMain.handle('esp32-adc-set', async (_, channel: number, voltage: number) => {
-  const socket = await getQemuManager().connectQMP();
-  if (socket) {
-    await getQemuManager().sendQMPCommand(socket, {
-      execute: 'qom-set',
-      arguments: {
-        path: `/machine/soc/adc/channel[${channel}]`,
-        property: 'voltage',
-        value: voltage,
-      },
-    });
-    socket.destroy();
-  }
-});
-
 // Library Handlers (Wokwi Centralized Management)
 ipcMain.handle('search-library', async (event, query: string) => {
   return await arduinoUploader.searchLibraries(query);
@@ -800,6 +770,18 @@ ipcMain.handle('build-apk', async (event, appState) => {
 
 ipcMain.handle('show-in-folder', (_, filePath) => {
   shell.showItemInFolder(filePath);
+});
+
+// Read a compiled .bin file and return its contents as a Buffer
+// Used by SimulationRunner to load ESP32-C3 firmware for the GPIO scanner
+ipcMain.handle('read-bin-file', async (_, filePath: string) => {
+  try {
+    const data = fs.readFileSync(filePath);
+    return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+  } catch (err: any) {
+    log('IPC', `read-bin-file error: ${err.message}`);
+    throw err;
+  }
 });
 
 ipcMain.handle('save-project', async (_, data, existingPath?: string) => {

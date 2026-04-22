@@ -40,6 +40,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // compile-esp32-sim: compile sketch → .bin, return binPath (kept for compat)
   compileESP32Sim: (code, fqbn) => ipcRenderer.invoke('compile-esp32-sim', code, fqbn),
 
+  // ── Read compiled .bin file for ESP32-C3 firmware scanner ────────────────
+  readBinFile: (filePath) => ipcRenderer.invoke('read-bin-file', filePath),
+
   platform: process.platform,
   isElectron: true
 });

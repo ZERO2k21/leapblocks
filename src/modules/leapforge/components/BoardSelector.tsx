@@ -9,7 +9,7 @@ export type BoardType =
     | 'arduino-nano'
     | 'arduino-mega'
     | 'attiny85'
-    | 'esp32';
+    | 'esp32-c3';
 
 interface Props {
     selected: BoardType;
@@ -22,7 +22,7 @@ const BOARDS: { id: BoardType; label: string; chip: string; color: string; badge
     { id: 'arduino-nano', label: 'Arduino Nano', chip: 'ATmega328P', color: '#1565C0' },
     { id: 'arduino-mega', label: 'Arduino Mega', chip: 'ATmega2560', color: '#0D47A1' },
     { id: 'attiny85', label: 'ATtiny85', chip: 'ATtiny85', color: '#6A1B9A' },
-    { id: 'esp32', label: 'ESP32', chip: 'Xtensa LX6', color: '#E53935', badge: 'WiFi' },
+    { id: 'esp32-c3', label: 'ESP32-C3', chip: 'RISC-V', color: '#E53935', badge: 'WiFi' },
 ];
 
 export const BoardSelector: React.FC<Props> = ({ selected, onChange, disabled }) => (

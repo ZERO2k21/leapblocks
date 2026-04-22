@@ -111,8 +111,8 @@ export interface ForgeState {
 
 /** Map canvas node data.type → store board ID */
 const BOARD_NODE_TO_BOARD_ID: Record<string, string> = {
-  'esp32-devkit-v1': 'esp32',
-  'esp32': 'esp32',
+  'esp32-c3': 'esp32-c3',
+  'esp32': 'esp32-c3',
   'arduino-uno': 'arduino-uno',
   'arduino-nano': 'arduino-nano',
   'arduino-mega': 'arduino-mega',
@@ -184,22 +184,41 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     Promise.all([getCircuitEngine(), getSimulationRunner()]).then(([engine, runner]) => {
       engine.init();
 
-      const isQEMU = hexString === '__esp32_qemu__';
+      const isESP32C3 = hexString === '__esp32_c3_riscv__';
 
-      if (!isQEMU) {
+      if (!isESP32C3) {
         runner.setBoard(state.board);
         console.log('[FORGE STORE] Initializing AVR CPU with hex...');
         runner.initCPU(hexString);
       } else {
-        console.log('[FORGE STORE] QEMU ESP32 path — creating ESP32SimulationRunner before syncCircuitGraph...');
-        runner.initCPU('');
+        console.log('[FORGE STORE] ESP32-C3 RISC-V path — initializing ESP32-C3 runner before syncCircuitGraph...');
+        runner.initCPU(''); // triggers ESP32-C3 branch in initCPU (board already set via setBoard)
 
-        const esp32Runner = runner.ESP32Runner;
-        if (esp32Runner) {
-          esp32Runner.addSerialListener((char: string) => {
-            useForgeStore.getState().appendSerial(char);
+        // Wire ESP32-C3 serial output → store + GPIO pin parser
+        const esp32c3Runner = runner.ESP32C3Runner;
+        if (esp32c3Runner) {
+          esp32c3Runner.addSerialListener((line: string) => {
+            useForgeStore.getState().appendSerial(line);
+
+            // Parse __LF_GPIO:pin:value lines and drive SimulationRunner pin states
+            const gpioMatch = line.match(/__LF_GPIO:(\d+):(\d+)/);
+            if (gpioMatch) {
+              const pin = parseInt(gpioMatch[1], 10);
+              const val = parseInt(gpioMatch[2], 10);
+              runner.setPinState(`ESP${pin}`, val ? 'HIGH' : 'LOW');
+              console.log(`[FORGE STORE] GPIO parse: ESP${pin} = ${val ? 'HIGH' : 'LOW'}`);
+            }
+
+            // Parse __LF_PWM:pin:value lines
+            const pwmMatch = line.match(/__LF_PWM:(\d+):(\d+)/);
+            if (pwmMatch) {
+              const pin = parseInt(pwmMatch[1], 10);
+              const val = parseInt(pwmMatch[2], 10);
+              // Map PWM 0-255 to HIGH/LOW threshold at 50%
+              runner.setPinState(`ESP${pin}`, val > 127 ? 'HIGH' : 'LOW');
+            }
           });
-          console.log('[FORGE STORE] ESP32 serial listener wired to store.appendSerial');
+          console.log('[FORGE STORE] ESP32-C3 serial listener wired to store.appendSerial + GPIO parser');
         }
       }
 

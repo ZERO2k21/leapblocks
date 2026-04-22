@@ -93,7 +93,9 @@ function createWindow() {
     show: false,
     backgroundColor: '#f8fafc', // matches the app background so no flicker
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: isDev
+        ? path.join(__dirname, '../dist/preload/preload.js')
+        : path.join(__dirname, '../preload/preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       // Enable background throttling suppression for smoother startup
@@ -630,7 +632,7 @@ function migrateESP32LedcAPI(code) {
 }
 
 // ── ESP32 QEMU simulation pipeline ───────────────────────────────────────
-const ESP32_FQBNS = ['esp32:esp32:esp32', 'esp32:esp32:esp32s3', 'esp32:esp32:esp32c3'];
+const ESP32_FQBNS = ['esp32:esp32:esp32c3'];
 const { compileESP32 } = makeESP32Compiler({ runCLI, forgeLibDir: FORGE_LIB_DIR });
 
 // Track the last binPath so we can clean it up after QEMU stops
@@ -648,7 +650,7 @@ ipcMain.handle('compile-esp32-sim', async (_, code, fqbn) => {
     lastESP32BinTempDir = null;
   }
 
-  const result = await compileESP32(code, fqbn || 'esp32:esp32:esp32');
+  const result = await compileESP32(code, fqbn || 'esp32:esp32:esp32c3');
   if (result.success) {
     // Remember the temp dir so we can clean it up on stop
     lastESP32BinTempDir = require('path').dirname(result.binPath);

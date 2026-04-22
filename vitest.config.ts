@@ -20,7 +20,7 @@ export default defineConfig({
           name: 'unit',
           environment: 'node',
           include: [
-            'src/simulation/__tests__/**/*.test.ts',
+            'src/modules/leapforge/engine/__tests__/**/*.test.ts',
             'test/**/*.test.ts',
           ],
           globals: true,

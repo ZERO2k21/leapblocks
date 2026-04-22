@@ -4,10 +4,10 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState } from 'react';
-import { 
-  Search, 
-  Cpu, 
-  Lightbulb, 
+import {
+  Search,
+  Cpu,
+  Lightbulb,
   Smartphone,
   Gauge,
   MousePointer2,
@@ -28,10 +28,10 @@ const COMPONENTS = [
   { id: 'arduino-uno', name: 'Arduino Uno', category: 'boards', desc: 'Standard microcontroller' },
   { id: 'arduino-mega', name: 'Arduino Mega', category: 'boards', desc: 'Powerful microcontroller' },
   { id: 'arduino-nano', name: 'Arduino Nano', category: 'boards', desc: 'Compact microcontroller' },
-  { id: 'esp32-devkit-v1', name: 'ESP32 DevKit', category: 'boards', desc: 'WiFi & Bluetooth MCU' },
+  { id: 'esp32-c3', name: 'ESP32-C3', category: 'boards', desc: 'RISC-V WiFi & Bluetooth MCU' },
   { id: 'franzininho', name: 'Franzininho', category: 'boards', desc: 'ATtiny85 board' },
   { id: 'nano-rp2040-connect', name: 'Nano RP2040', category: 'boards', desc: 'RP2040 connected board' },
-  
+
   // OUTPUTS
   { id: 'led', name: 'LED', category: 'outputs', desc: 'Standard 5mm LED' },
   { id: 'rgb-led', name: 'RGB LED', category: 'outputs', desc: 'Multi-color LED' },
@@ -44,16 +44,16 @@ const COMPONENTS = [
   { id: 'stepper-motor', name: 'Stepper Motor', category: 'outputs', desc: 'Step motor' },
   { id: 'biaxial-stepper', name: 'Biaxial Stepper', category: 'outputs', desc: 'Dual-axis stepper' },
   { id: 'ks2e-m-dc5', name: 'Relay', category: 'outputs', desc: '5V Relay' },
-  
+
   // DISPLAYS
-  { id: 'lcd1602',     name: 'LCD 1602',     category: 'displays', desc: '16x2 Character display (parallel)' },
+  { id: 'lcd1602', name: 'LCD 1602', category: 'displays', desc: '16x2 Character display (parallel)' },
   { id: 'lcd1602-i2c', name: 'LCD 1602 I²C', category: 'displays', desc: '16x2 Character display (I²C)' },
-  { id: 'lcd2004',     name: 'LCD 2004',     category: 'displays', desc: '20x4 Character display (parallel)' },
+  { id: 'lcd2004', name: 'LCD 2004', category: 'displays', desc: '20x4 Character display (parallel)' },
   { id: 'lcd2004-i2c', name: 'LCD 2004 I²C', category: 'displays', desc: '20x4 Character display (I²C)' },
   { id: '7segment', name: '7-Segment', category: 'displays', desc: 'Numeric display' },
   { id: 'ssd1306', name: 'OLED SSD1306', category: 'displays', desc: '128x64 Graphics OLED' },
   { id: 'ili9341', name: 'ILI9341 TFT', category: 'displays', desc: '2.8" SPI TFT display' },
-  
+
   // SENSORS
   { id: 'dht22', name: 'DHT22', category: 'sensors', desc: 'Temp & Humidity' },
   { id: 'hc-sr04', name: 'HC-SR04', category: 'sensors', desc: 'Ultrasonic distance' },
@@ -70,7 +70,7 @@ const COMPONENTS = [
   { id: 'ir-receiver', name: 'IR Receiver', category: 'sensors', desc: 'Infrared receiver' },
   { id: 'ds1307', name: 'DS1307 RTC', category: 'sensors', desc: 'Real-time clock' },
   { id: 'microsd-card', name: 'MicroSD Card', category: 'sensors', desc: 'SD card module' },
-  
+
   // INPUTS / PASSIVES
   { id: 'pushbutton', name: 'Pushbutton', category: 'inputs', desc: 'Momentary switch' },
   { id: 'pushbutton-6mm', name: 'Pushbutton 6mm', category: 'inputs', desc: 'Small tactile button' },
@@ -127,10 +127,10 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
         justifyContent: 'space-between'
       }}>
         <span style={{ color: '#f8fafc', fontWeight: 600, fontSize: '14px' }}>Add Component</span>
-        <button onClick={onClose} style={{ 
-          background: 'transparent', 
-          border: 'none', 
-          color: '#94a3b8', 
+        <button onClick={onClose} style={{
+          background: 'transparent',
+          border: 'none',
+          color: '#94a3b8',
           cursor: 'pointer',
           padding: '4px'
         }}><X size={18} /></button>
@@ -145,9 +145,9 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
           padding: '0 10px'
         }}>
           <Search size={14} color="#64748b" />
-          <input 
-            type="text" 
-            placeholder="Search parts..." 
+          <input
+            type="text"
+            placeholder="Search parts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -171,7 +171,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
         scrollbarWidth: 'none'
       }}>
         {CATEGORIES.map(cat => (
-          <button 
+          <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
             style={{
@@ -191,7 +191,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
         ))}
       </div>
 
-    <div className="picker-list" style={{
+      <div className="picker-list" style={{
         flex: 1,
         overflowY: 'auto',
         padding: '8px',
@@ -199,8 +199,8 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
       }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           {filteredComponents.map(comp => (
-            <div 
-              key={comp.id} 
+            <div
+              key={comp.id}
               onClick={() => onSelect(comp.id)}
               style={{
                 background: 'rgba(51, 65, 85, 0.4)',
@@ -230,11 +230,11 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
               }}
             >
               {/* Component Preview Container */}
-              <div style={{ 
-                height: '54px', 
+              <div style={{
+                height: '54px',
                 width: '100%',
-                display: 'flex', 
-                alignItems: 'center', 
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: '4px',
                 pointerEvents: 'none',
@@ -242,25 +242,25 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
                 overflow: 'hidden'
               }}>
                 <div style={{
-                  transform: comp.id.includes('mega') ? 'scale(0.12)' : 
-                             comp.id.includes('uno') ? 'scale(0.18)' :
-                             comp.id.includes('esp32') ? 'scale(0.22)' :
-                             comp.category === 'boards' ? 'scale(0.25)' : 
-                             comp.category === 'displays' ? 'scale(0.3)' : 'scale(0.5)',
+                  transform: comp.id.includes('mega') ? 'scale(0.12)' :
+                    comp.id.includes('uno') ? 'scale(0.18)' :
+                      comp.id.includes('esp32') ? 'scale(0.22)' :
+                        comp.category === 'boards' ? 'scale(0.25)' :
+                          comp.category === 'displays' ? 'scale(0.3)' : 'scale(0.5)',
                   transformOrigin: 'center center',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  {React.createElement(`leap-${comp.id}` as any, { 
+                  {React.createElement(`leap-${comp.id}` as any, {
                     color: comp.id === 'led' ? 'red' : undefined,
-                    value: true 
+                    value: true
                   })}                </div>
               </div>
 
-              <span style={{ 
-                color: '#f8fafc', 
-                fontSize: '10px', 
+              <span style={{
+                color: '#f8fafc',
+                fontSize: '10px',
                 fontWeight: 600,
                 display: '-webkit-box',
                 WebkitLineClamp: 2,

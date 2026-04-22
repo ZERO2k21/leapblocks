@@ -827,7 +827,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "3",
         "x": 212,
-        "y":6
+        "y": 6
       },
       {
         "name": "2",
@@ -937,7 +937,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 239.2
     },
     "pins": [
-      { "name": "B-", "x": 95.1,  "y": 235.5 },
+      { "name": "B-", "x": 95.1, "y": 235.5 },
       { "name": "B+", "x": 104.7, "y": 235.5 },
       { "name": "A+", "x": 114.3, "y": 235.5 },
       { "name": "A-", "x": 123.9, "y": 235.5 }
@@ -951,9 +951,9 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 50.4
     },
     "pins": [
-      { "name": "AOUT", "x": 0, "y": 11   },
-      { "name": "GND",  "x": 0, "y": 20.5 },
-      { "name": "VCC",  "x": 0, "y": 30.5 },
+      { "name": "AOUT", "x": 0, "y": 11 },
+      { "name": "GND", "x": 0, "y": 20.5 },
+      { "name": "VCC", "x": 0, "y": 30.5 },
       { "name": "DOUT", "x": 0, "y": 40.5 }
     ]
   },
@@ -1077,7 +1077,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       }
     ]
   },
-  "esp32-devkit-v1": {
+  "esp32-c3": {
     "viewBox": {
       "minX": 0,
       "minY": 0,
@@ -1093,7 +1093,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "GND.2",
         "x": 18,
-        "y": 525                                
+        "y": 525
       },
       {
         "name": "D13",
@@ -1245,9 +1245,9 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 61.5
     },
     "pins": [
-      { "name": "VCC",  "x": 199, "y": 14.6 },
-      { "name": "GND",  "x": 199, "y": 24.3 },
-      { "name": "DOUT", "x": 199, "y": 34   },
+      { "name": "VCC", "x": 199, "y": 14.6 },
+      { "name": "GND", "x": 199, "y": 24.3 },
+      { "name": "DOUT", "x": 199, "y": 34 },
       { "name": "AOUT", "x": 199, "y": 43.7 }
     ]
   },
@@ -1326,8 +1326,8 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       { "name": "AOUT", "x": 137, "y": 16.5 },
       { "name": "DOUT", "x": 137, "y": 26.4 },
-      { "name": "GND",  "x": 137, "y": 36.5 },
-      { "name": "VCC",  "x": 137, "y": 46.2 }
+      { "name": "GND", "x": 137, "y": 36.5 },
+      { "name": "VCC", "x": 137, "y": 46.2 }
     ]
   },
   "hc-sr04": {
@@ -1381,15 +1381,15 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 77.6
     },
     "pins": [
-      { "name": "VCC",  "x": 11.8,   "y": 75.5 },
-      { "name": "GND",  "x": 14.34,  "y": 75.5 },
-      { "name": "CS",   "x": 16.88,  "y": 75.5 },
-      { "name": "RST",  "x": 19.42,  "y": 75.5 },
-      { "name": "D/C",  "x": 21.96,  "y": 75.5 },
-      { "name": "MOSI", "x": 24.5,   "y": 75.5 },
-      { "name": "SCK",  "x": 27.04,  "y": 75.5 },
-      { "name": "LED",  "x": 29.58,  "y": 75.5 },
-      { "name": "MISO", "x": 32.12,  "y": 75.5 }
+      { "name": "VCC", "x": 11.8, "y": 75.5 },
+      { "name": "GND", "x": 14.34, "y": 75.5 },
+      { "name": "CS", "x": 16.88, "y": 75.5 },
+      { "name": "RST", "x": 19.42, "y": 75.5 },
+      { "name": "D/C", "x": 21.96, "y": 75.5 },
+      { "name": "MOSI", "x": 24.5, "y": 75.5 },
+      { "name": "SCK", "x": 27.04, "y": 75.5 },
+      { "name": "LED", "x": 29.58, "y": 75.5 },
+      { "name": "MISO", "x": 32.12, "y": 75.5 }
     ]
   },
   "ir-receiver": {
@@ -1424,13 +1424,13 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 10
     },
     "pins": [
-      { "name": "NO2",   "x": 1.45,  "y": 1.35 },
-      { "name": "NC2",   "x": 6.61,  "y": 1.35 },
-      { "name": "P2",    "x": 11.9,  "y": 1.35 },
+      { "name": "NO2", "x": 1.45, "y": 1.35 },
+      { "name": "NC2", "x": 6.61, "y": 1.35 },
+      { "name": "P2", "x": 11.9, "y": 1.35 },
       { "name": "COIL2", "x": 19.58, "y": 1.35 },
-      { "name": "NO1",   "x": 1.45,  "y": 8.65 },
-      { "name": "NC1",   "x": 6.61,  "y": 8.65 },
-      { "name": "P1",    "x": 11.9,  "y": 8.65 },
+      { "name": "NO1", "x": 1.45, "y": 8.65 },
+      { "name": "NC1", "x": 6.61, "y": 8.65 },
+      { "name": "P1", "x": 11.9, "y": 8.65 },
       { "name": "COIL1", "x": 19.58, "y": 8.65 }
     ]
   },
@@ -1462,25 +1462,25 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 25.5
     },
     "pins": [
-      { "name": "A1",  "x": 1.27, "y": 0 },
-      { "name": "A2",  "x": 1.27, "y": 2.54 },
-      { "name": "A3",  "x": 1.27, "y": 5.08 },
-      { "name": "A4",  "x": 1.27, "y": 7.5 },
-      { "name": "A5",  "x": 1.27, "y": 9.9 },
-      { "name": "A6",  "x": 1.27, "y": 12.4 },
-      { "name": "A7",  "x": 1.27, "y": 14.8 },
-      { "name": "A8",  "x": 1.27, "y": 17 },
-      { "name": "A9",  "x": 1.27, "y": 19.5 },
+      { "name": "A1", "x": 1.27, "y": 0 },
+      { "name": "A2", "x": 1.27, "y": 2.54 },
+      { "name": "A3", "x": 1.27, "y": 5.08 },
+      { "name": "A4", "x": 1.27, "y": 7.5 },
+      { "name": "A5", "x": 1.27, "y": 9.9 },
+      { "name": "A6", "x": 1.27, "y": 12.4 },
+      { "name": "A7", "x": 1.27, "y": 14.8 },
+      { "name": "A8", "x": 1.27, "y": 17 },
+      { "name": "A9", "x": 1.27, "y": 19.5 },
       { "name": "A10", "x": 1.27, "y": 22 },
-      { "name": "C1",  "x": 8.83, "y": 0.3 },
-      { "name": "C2",  "x": 8.83, "y": 2.5 },
-      { "name": "C3",  "x": 8.83, "y": 5 },
-      { "name": "C4",  "x": 8.83, "y": 7.5 },
-      { "name": "C5",  "x": 8.83, "y": 9.8 },
-      { "name": "C6",  "x": 8.83, "y": 12.3 },
-      { "name": "C7",  "x": 8.83, "y": 14.8 },
-      { "name": "C8",  "x": 8.83, "y": 17 },
-      { "name": "C9",  "x": 8.83, "y": 19.5 },
+      { "name": "C1", "x": 8.83, "y": 0.3 },
+      { "name": "C2", "x": 8.83, "y": 2.5 },
+      { "name": "C3", "x": 8.83, "y": 5 },
+      { "name": "C4", "x": 8.83, "y": 7.5 },
+      { "name": "C5", "x": 8.83, "y": 9.8 },
+      { "name": "C6", "x": 8.83, "y": 12.3 },
+      { "name": "C7", "x": 8.83, "y": 14.8 },
+      { "name": "C8", "x": 8.83, "y": 17 },
+      { "name": "C9", "x": 8.83, "y": 19.5 },
       { "name": "C10", "x": 8.83, "y": 22 }
     ]
   },
@@ -1494,20 +1494,20 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       { "name": "VSS", "x": 36, "y": 160 },
       { "name": "VDD", "x": 48, "y": 160 },
-      { "name": "V0",  "x": 59, "y": 160 },
-      { "name": "RS",  "x": 70, "y": 160 },
-      { "name": "RW",  "x": 82, "y": 160 },
-      { "name": "E",   "x": 93,   "y": 160 },
-      { "name": "D0",  "x": 105, "y": 160 },
-      { "name": "D1",  "x": 116, "y": 160 },
-      { "name": "D2",  "x": 127,  "y": 160 },
-      { "name": "D3",  "x": 140,"y": 160 },
-      { "name": "D4",  "x": 150,  "y": 160 },
-      { "name": "D5",  "x": 162,"y": 160 },
-      { "name": "D6",  "x": 173,  "y": 160 },
-      { "name": "D7",  "x": 185,"y": 160 },
-      { "name": "A",   "x": 195,"y": 160 },
-      { "name": "K",   "x": 207,  "y": 160 }
+      { "name": "V0", "x": 59, "y": 160 },
+      { "name": "RS", "x": 70, "y": 160 },
+      { "name": "RW", "x": 82, "y": 160 },
+      { "name": "E", "x": 93, "y": 160 },
+      { "name": "D0", "x": 105, "y": 160 },
+      { "name": "D1", "x": 116, "y": 160 },
+      { "name": "D2", "x": 127, "y": 160 },
+      { "name": "D3", "x": 140, "y": 160 },
+      { "name": "D4", "x": 150, "y": 160 },
+      { "name": "D5", "x": 162, "y": 160 },
+      { "name": "D6", "x": 173, "y": 160 },
+      { "name": "D7", "x": 185, "y": 160 },
+      { "name": "A", "x": 195, "y": 160 },
+      { "name": "K", "x": 207, "y": 160 }
     ]
   },
   "lcd1602-i2c": {
@@ -1518,10 +1518,10 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 50
     },
     "pins": [
-      { "name": "GND", "x": 2,   "y": 37   },
-      { "name": "VCC", "x": 2,   "y": 50 },
-      { "name": "SDA", "x": 2,   "y": 64   },
-      { "name": "SCL", "x": 2,   "y": 75 }
+      { "name": "GND", "x": 2, "y": 37 },
+      { "name": "VCC", "x": 2, "y": 50 },
+      { "name": "SDA", "x": 2, "y": 64 },
+      { "name": "SCL", "x": 2, "y": 75 }
     ]
   },
   "lcd2004-i2c": {
@@ -1532,9 +1532,9 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 50
     },
     "pins": [
-      { "name": "GND", "x": 2, "y": 30   },
+      { "name": "GND", "x": 2, "y": 30 },
       { "name": "VCC", "x": 2, "y": 38 },
-      { "name": "SDA", "x": 2, "y": 48   },
+      { "name": "SDA", "x": 2, "y": 48 },
       { "name": "SCL", "x": 2, "y": 58 }
     ]
   },
@@ -1548,20 +1548,20 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       { "name": "VSS", "x": 32, "y": 165 },
       { "name": "VDD", "x": 42, "y": 165 },
-      { "name": "V0",  "x": 51, "y": 165 },
-      { "name": "RS",  "x": 61, "y": 165 },
-      { "name": "RW",  "x": 70, "y": 165 },
-      { "name": "E",   "x": 80,   "y": 165 },
-      { "name": "D0",  "x": 90, "y": 165 },
-      { "name": "D1",  "x": 99, "y": 165 },
-      { "name": "D2",  "x": 109,  "y": 165 },
-      { "name": "D3",  "x": 118,"y": 165 },
-      { "name": "D4",  "x": 129,  "y": 165 },
-      { "name": "D5",  "x": 138,"y": 165 },
-      { "name": "D6",  "x": 147,  "y": 165 },
-      { "name": "D7",  "x": 157,"y": 165 },
-      { "name": "A",   "x": 166,"y": 165 },
-      { "name": "K",   "x": 176,  "y": 165 }
+      { "name": "V0", "x": 51, "y": 165 },
+      { "name": "RS", "x": 61, "y": 165 },
+      { "name": "RW", "x": 70, "y": 165 },
+      { "name": "E", "x": 80, "y": 165 },
+      { "name": "D0", "x": 90, "y": 165 },
+      { "name": "D1", "x": 99, "y": 165 },
+      { "name": "D2", "x": 109, "y": 165 },
+      { "name": "D3", "x": 118, "y": 165 },
+      { "name": "D4", "x": 129, "y": 165 },
+      { "name": "D5", "x": 138, "y": 165 },
+      { "name": "D6", "x": 147, "y": 165 },
+      { "name": "D7", "x": 157, "y": 165 },
+      { "name": "A", "x": 166, "y": 165 },
+      { "name": "K", "x": 176, "y": 165 }
     ]
   },
   "led": {
@@ -1761,14 +1761,14 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 61.2
     },
     "pins": [
-      { "name": "INT", "x": 7.28,  "y": 5.78 },
-      { "name": "AD0", "x": 16.9,  "y": 5.78 },
-      { "name": "XCL", "x": 26.4,  "y": 5.78 },
-      { "name": "XDA", "x": 36.0,  "y": 5.78 },
-      { "name": "SDA", "x": 45.6,  "y": 5.78 },
-      { "name": "SCL", "x": 55.2,  "y": 5.78 },
-      { "name": "GND", "x": 64.8,  "y": 5.78 },
-      { "name": "VCC", "x": 74.4,  "y": 5.78 }
+      { "name": "INT", "x": 7.28, "y": 5.78 },
+      { "name": "AD0", "x": 16.9, "y": 5.78 },
+      { "name": "XCL", "x": 26.4, "y": 5.78 },
+      { "name": "XDA", "x": 36.0, "y": 5.78 },
+      { "name": "SDA", "x": 45.6, "y": 5.78 },
+      { "name": "SCL", "x": 55.2, "y": 5.78 },
+      { "name": "GND", "x": 64.8, "y": 5.78 },
+      { "name": "VCC", "x": 74.4, "y": 5.78 }
     ]
   },
   "nano-rp2040-connect": {
@@ -1982,7 +1982,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 92.4
     },
     "pins": [
-      { "name": "VCC", "x": 36.178,  "y": 92 },
+      { "name": "VCC", "x": 36.178, "y": 92 },
       { "name": "OUT", "x": 45.9175, "y": 92 },
       { "name": "GND", "x": 55.6415, "y": 92 }
     ]
@@ -2185,8 +2185,8 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 430
     },
     "pins": [
-      { "name": "VCC", "x": 7, "y": 55   },
-      { "name": "DT",  "x": 7, "y": 36.3 },
+      { "name": "VCC", "x": 7, "y": 55 },
+      { "name": "DT", "x": 7, "y": 36.3 },
       { "name": "SCK", "x": 7, "y": 46.2 },
       { "name": "GND", "x": 7, "y": 26.5 }
     ]
@@ -2238,31 +2238,31 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 181.42
     },
     "pins": [
-      { "name": "GND",  "x": 86.27,  "y": 181.42 },
-      { "name": "VCC",  "x": 95.87,  "y": 181.42 },
-      { "name": "DIN",  "x": 105.47, "y": 181.42 },
+      { "name": "GND", "x": 86.27, "y": 181.42 },
+      { "name": "VCC", "x": 95.87, "y": 181.42 },
+      { "name": "DIN", "x": 105.47, "y": 181.42 },
       { "name": "DOUT", "x": 115.07, "y": 181.42 }
     ]
   },
   "a4988": {
     "viewBox": { "minX": 0, "minY": 0, "width": 113.39, "height": 325.04 },
     "pins": [
-      { "name": "ENABLE", "x": 0,      "y": 35.91  },
-      { "name": "MS1",    "x": 0,      "y": 71.81  },
-      { "name": "MS2",    "x": 0,      "y": 107.72 },
-      { "name": "MS3",    "x": 0,      "y": 143.62 },
-      { "name": "RESET",  "x": 0,      "y": 179.53 },
-      { "name": "SLEEP",  "x": 0,      "y": 215.43 },
-      { "name": "STEP",   "x": 0,      "y": 251.34 },
-      { "name": "DIR",    "x": 0,      "y": 287.24 },
-      { "name": "VDD",    "x": 113.39, "y": 35.91  },
-      { "name": "GND",    "x": 113.39, "y": 71.81  },
-      { "name": "2B",     "x": 113.39, "y": 107.72 },
-      { "name": "2A",     "x": 113.39, "y": 143.62 },
-      { "name": "1A",     "x": 113.39, "y": 179.53 },
-      { "name": "1B",     "x": 113.39, "y": 215.43 },
-      { "name": "VMOT",   "x": 113.39, "y": 251.34 },
-      { "name": "GND2",   "x": 113.39, "y": 287.24 }
+      { "name": "ENABLE", "x": 0, "y": 35.91 },
+      { "name": "MS1", "x": 0, "y": 71.81 },
+      { "name": "MS2", "x": 0, "y": 107.72 },
+      { "name": "MS3", "x": 0, "y": 143.62 },
+      { "name": "RESET", "x": 0, "y": 179.53 },
+      { "name": "SLEEP", "x": 0, "y": 215.43 },
+      { "name": "STEP", "x": 0, "y": 251.34 },
+      { "name": "DIR", "x": 0, "y": 287.24 },
+      { "name": "VDD", "x": 113.39, "y": 35.91 },
+      { "name": "GND", "x": 113.39, "y": 71.81 },
+      { "name": "2B", "x": 113.39, "y": 107.72 },
+      { "name": "2A", "x": 113.39, "y": 143.62 },
+      { "name": "1A", "x": 113.39, "y": 179.53 },
+      { "name": "1B", "x": 113.39, "y": 215.43 },
+      { "name": "VMOT", "x": 113.39, "y": 251.34 },
+      { "name": "GND2", "x": 113.39, "y": 287.24 }
     ]
   },
   "led-ring": {
@@ -2273,9 +2273,9 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 152.94
     },
     "pins": [
-      { "name": "GND",  "x": 56.41, "y": 152.94 },
-      { "name": "VCC",  "x": 66.01, "y": 152.94 },
-      { "name": "DIN",  "x": 75.61, "y": 152.94 },
+      { "name": "GND", "x": 56.41, "y": 152.94 },
+      { "name": "VCC", "x": 66.01, "y": 152.94 },
+      { "name": "DIN", "x": 75.61, "y": 152.94 },
       { "name": "DOUT", "x": 85.21, "y": 152.94 }
     ]
   }

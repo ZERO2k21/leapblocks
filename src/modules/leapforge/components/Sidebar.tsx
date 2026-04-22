@@ -30,7 +30,7 @@ const COMPONENTS = [
   { id: 'arduino-mega', name: 'Arduino Mega', category: 'boards', desc: 'Powerful microcontroller' },
   { id: 'attiny85', name: 'ATtiny85', category: 'boards', desc: 'Mini 8-pin MCU' },
   { id: 'arduino-nano', name: 'Arduino Nano', category: 'boards', desc: 'Compact microcontroller' },
-  { id: 'esp32-devkit-v1', name: 'ESP32 DevKit', category: 'boards', desc: 'WiFi & Bluetooth MCU' },
+  { id: 'esp32-c3', name: 'ESP32-C3', category: 'boards', desc: 'RISC-V WiFi & Bluetooth MCU' },
 
   // OUTPUTS
   { id: 'led', name: 'LED', category: 'outputs', desc: 'Standard 5mm LED' },
@@ -42,10 +42,10 @@ const COMPONENTS = [
   { id: 'a4988', name: 'A4988 Driver', category: 'outputs', desc: 'Stepper motor driver' },
 
   // DISPLAYS
-  { id: 'lcd1602',     name: 'LCD 1602',         category: 'displays', desc: '16x2 Character display (parallel)' },
-  { id: 'lcd1602-i2c', name: 'LCD 1602 I²C',     category: 'displays', desc: '16x2 Character display (I²C)' },
-  { id: 'lcd2004',     name: 'LCD 2004',         category: 'displays', desc: '20x4 Character display (parallel)' },
-  { id: 'lcd2004-i2c', name: 'LCD 2004 I²C',     category: 'displays', desc: '20x4 Character display (I²C)' },
+  { id: 'lcd1602', name: 'LCD 1602', category: 'displays', desc: '16x2 Character display (parallel)' },
+  { id: 'lcd1602-i2c', name: 'LCD 1602 I²C', category: 'displays', desc: '16x2 Character display (I²C)' },
+  { id: 'lcd2004', name: 'LCD 2004', category: 'displays', desc: '20x4 Character display (parallel)' },
+  { id: 'lcd2004-i2c', name: 'LCD 2004 I²C', category: 'displays', desc: '20x4 Character display (I²C)' },
   { id: '7segment', name: '7-Segment', category: 'displays', desc: 'Numeric display' },
   { id: 'ssd1306', name: 'OLED SSD1306', category: 'displays', desc: '128x64 Graphics display' },
 
@@ -83,7 +83,7 @@ export default function Sidebar() {
         <label className="section-label">Target Board</label>
         <div className="board-selector">
           <Cpu size={14} />
-          <select 
+          <select
             value={useForgeStore((s) => s.board)}
             onChange={(e) => useForgeStore.getState().setBoard(e.target.value)}
           >

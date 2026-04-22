@@ -10,7 +10,7 @@ export { BuzzerElement } from './buzzer-element';
 export { DHT22Element as Dht22Element } from './dht22-element';
 export { DipSwitch8Element } from './dip-switch-8-element';
 export { Ds1307Element } from './ds1307-element';
-export { ESP32DevkitV1Element } from './esp32-devkit-v1-element';
+export { ESP32C3Element } from './esp32-c3-element';
 export { FlameSensorElement } from './flame-sensor-element';
 export { FranzininhoElement } from './franzininho-element';
 export { GasSensorElement } from './gas-sensor-element';

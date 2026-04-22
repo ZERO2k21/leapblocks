@@ -3,8 +3,8 @@ import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from '.';
 import { i2c, spi, usart } from './pin';
 
-@customElement('leap-esp32-devkit-v1')
-export class ESP32DevkitV1Element extends LitElement {
+@customElement('leap-esp32-c3')
+export class ESP32C3Element extends LitElement {
   @property() led1 = false;
   @property() ledPower = false;
 
@@ -155,7 +155,7 @@ export class ESP32DevkitV1Element extends LitElement {
           <rect x="35" y="108" width="3.83" height="9.3" fill="#e5e5e5" />
           <rect x="35" y="111" width="3.83" height="5.31" fill="#f5ecde" />
           ${ledPower &&
-          svg`<circle cx="37" cy="112.5" r="4" fill="red" filter="url(#ledFilter)" />`}
+      svg`<circle cx="37" cy="112.5" r="4" fill="red" filter="url(#ledFilter)" />`}
 
           <rect x="69.5" y="108" width="3.83" height="9.3" fill="#e5e5e5" />
           <rect x="69.5" y="110" width="3.83" height="5.31" fill="#f5ecde" />
@@ -222,7 +222,7 @@ export class ESP32DevkitV1Element extends LitElement {
           <tspan x="-36.582" y="96.012">D22</tspan>
           <tspan x="-26.250" y="95.903">D23</tspan>
         </text>
-        <text x="30" y="59" fill="#cecccb" font-family="sans-serif" font-size="15px">ESP32</text>
+        <text x="30" y="59" fill="#cecccb" font-family="sans-serif" font-size="15px">ESP32-C3</text>
 
         <!-- Antenna -->
         <path
