@@ -314,6 +314,193 @@ export const esp32Blocks = [
         helpUrl: '',
     },
 
+    // ── WiFi Blocks ───────────────────────────────────────────────────────────
+    {
+        type: 'esp32_wifi_connect',
+        message0: '📶 connect WiFi SSID %1 password %2',
+        args0: [
+            { type: 'input_value', name: 'SSID', check: 'String' },
+            { type: 'input_value', name: 'PASSWORD', check: 'String' },
+        ],
+        inputsInline: true,
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#E53935',
+        tooltip: 'Connect ESP32 to WiFi network',
+        helpUrl: '',
+    },
+    {
+        type: 'esp32_wifi_connected',
+        message0: '📶 WiFi connected?',
+        args0: [],
+        output: 'Boolean',
+        colour: '#E53935',
+        tooltip: 'Returns true if WiFi is connected',
+        helpUrl: '',
+    },
+    {
+        type: 'esp32_wifi_ip',
+        message0: '📶 WiFi IP address',
+        args0: [],
+        output: 'String',
+        colour: '#E53935',
+        tooltip: 'Get the local IP address',
+        helpUrl: '',
+    },
+    {
+        type: 'esp32_wifi_disconnect',
+        message0: '📶 disconnect WiFi',
+        args0: [],
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#E53935',
+        tooltip: 'Disconnect from WiFi',
+        helpUrl: '',
+    },
+
+    // ── HTTP Blocks ───────────────────────────────────────────────────────────
+    {
+        type: 'esp32_http_get',
+        message0: '🌐 HTTP GET %1',
+        args0: [{ type: 'input_value', name: 'URL', check: 'String' }],
+        inputsInline: true,
+        output: 'String',
+        colour: '#1565C0',
+        tooltip: 'Send HTTP GET request and return response body',
+        helpUrl: '',
+    },
+    {
+        type: 'esp32_http_post',
+        message0: '🌐 HTTP POST %1 body %2',
+        args0: [
+            { type: 'input_value', name: 'URL', check: 'String' },
+            { type: 'input_value', name: 'BODY', check: 'String' },
+        ],
+        inputsInline: true,
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#1565C0',
+        tooltip: 'Send HTTP POST request with JSON body',
+        helpUrl: '',
+    },
+    {
+        type: 'esp32_http_status',
+        message0: '🌐 HTTP GET status code %1',
+        args0: [{ type: 'input_value', name: 'URL', check: 'String' }],
+        inputsInline: true,
+        output: 'Number',
+        colour: '#1565C0',
+        tooltip: 'Get HTTP response status code',
+        helpUrl: '',
+    },
+
+    // ── MQTT Blocks ───────────────────────────────────────────────────────────
+    {
+        type: 'esp32_mqtt_connect',
+        message0: '📡 MQTT connect broker %1 port %2 id %3',
+        args0: [
+            { type: 'input_value', name: 'BROKER', check: 'String' },
+            { type: 'field_number', name: 'PORT', value: 1883 },
+            { type: 'input_value', name: 'CLIENT_ID', check: 'String' },
+        ],
+        inputsInline: true,
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#6A1B9A',
+        tooltip: 'Connect to MQTT broker',
+        helpUrl: '',
+    },
+    {
+        type: 'esp32_mqtt_publish',
+        message0: '📡 MQTT publish topic %1 message %2',
+        args0: [
+            { type: 'input_value', name: 'TOPIC', check: 'String' },
+            { type: 'input_value', name: 'PAYLOAD', check: 'String' },
+        ],
+        inputsInline: true,
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#6A1B9A',
+        tooltip: 'Publish message to MQTT topic',
+        helpUrl: '',
+    },
+    {
+        type: 'esp32_mqtt_subscribe',
+        message0: '📡 MQTT subscribe topic %1',
+        args0: [{ type: 'input_value', name: 'TOPIC', check: 'String' }],
+        inputsInline: true,
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#6A1B9A',
+        tooltip: 'Subscribe to MQTT topic',
+        helpUrl: '',
+    },
+    {
+        type: 'esp32_mqtt_loop',
+        message0: '📡 MQTT loop',
+        args0: [],
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#6A1B9A',
+        tooltip: 'Keep MQTT connection alive (call in loop)',
+        helpUrl: '',
+    },
+    {
+        type: 'esp32_mqtt_connected',
+        message0: '📡 MQTT connected?',
+        args0: [],
+        output: 'Boolean',
+        colour: '#6A1B9A',
+        tooltip: 'Returns true if MQTT client is connected',
+        helpUrl: '',
+    },
+
+    // ── WebSocket Blocks ──────────────────────────────────────────────────────
+    {
+        type: 'esp32_ws_connect',
+        message0: '🔌 WebSocket connect %1 port %2 path %3',
+        args0: [
+            { type: 'input_value', name: 'HOST', check: 'String' },
+            { type: 'field_number', name: 'PORT', value: 80 },
+            { type: 'input_value', name: 'PATH', check: 'String' },
+        ],
+        inputsInline: true,
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#00838F',
+        tooltip: 'Connect to a WebSocket server',
+        helpUrl: '',
+    },
+    {
+        type: 'esp32_ws_send',
+        message0: '🔌 WebSocket send %1',
+        args0: [{ type: 'input_value', name: 'MESSAGE', check: 'String' }],
+        inputsInline: true,
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#00838F',
+        tooltip: 'Send a text message over WebSocket',
+        helpUrl: '',
+    },
+    {
+        type: 'esp32_ws_connected',
+        message0: '🔌 WebSocket connected?',
+        args0: [],
+        output: 'Boolean',
+        colour: '#00838F',
+        tooltip: 'Returns true if WebSocket is connected',
+        helpUrl: '',
+    },
+    {
+        type: 'esp32_ws_loop',
+        message0: '🔌 WebSocket loop',
+        args0: [],
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#00838F',
+        tooltip: 'Keep WebSocket connection alive (call in loop)',
+        helpUrl: '',
+    },
 ];
 
 export const esp32Toolbox = {
@@ -488,6 +675,93 @@ export const esp32Toolbox = {
                 { kind: 'block', type: 'esp32_ldr' },
                 { kind: 'block', type: 'esp32_potentiometer' },
                 { kind: 'block', type: 'esp32_pir' },
+            ],
+        },
+        { kind: 'sep' },
+        {
+            kind: 'pictobloxCategory',
+            name: 'WiFi',
+            colour: '#E53935',
+            contents: [
+                {
+                    kind: 'block', type: 'esp32_wifi_connect',
+                    inputs: {
+                        SSID: { shadow: { type: 'arduino_text', fields: { TEXT: 'MyNetwork' } } },
+                        PASSWORD: { shadow: { type: 'arduino_text', fields: { TEXT: 'password123' } } },
+                    }
+                },
+                { kind: 'block', type: 'esp32_wifi_connected' },
+                { kind: 'block', type: 'esp32_wifi_ip' },
+                { kind: 'block', type: 'esp32_wifi_disconnect' },
+            ],
+        },
+        {
+            kind: 'pictobloxCategory',
+            name: 'HTTP',
+            colour: '#1565C0',
+            contents: [
+                {
+                    kind: 'block', type: 'esp32_http_get',
+                    inputs: { URL: { shadow: { type: 'arduino_text', fields: { TEXT: 'https://api.example.com/data' } } } }
+                },
+                {
+                    kind: 'block', type: 'esp32_http_post',
+                    inputs: {
+                        URL: { shadow: { type: 'arduino_text', fields: { TEXT: 'https://api.example.com/data' } } },
+                        BODY: { shadow: { type: 'arduino_text', fields: { TEXT: '{"key":"value"}' } } },
+                    }
+                },
+                {
+                    kind: 'block', type: 'esp32_http_status',
+                    inputs: { URL: { shadow: { type: 'arduino_text', fields: { TEXT: 'https://api.example.com' } } } }
+                },
+            ],
+        },
+        {
+            kind: 'pictobloxCategory',
+            name: 'MQTT',
+            colour: '#6A1B9A',
+            contents: [
+                {
+                    kind: 'block', type: 'esp32_mqtt_connect',
+                    inputs: {
+                        BROKER: { shadow: { type: 'arduino_text', fields: { TEXT: 'broker.hivemq.com' } } },
+                        CLIENT_ID: { shadow: { type: 'arduino_text', fields: { TEXT: 'esp32client' } } },
+                    }
+                },
+                {
+                    kind: 'block', type: 'esp32_mqtt_publish',
+                    inputs: {
+                        TOPIC: { shadow: { type: 'arduino_text', fields: { TEXT: 'leapforge/data' } } },
+                        PAYLOAD: { shadow: { type: 'arduino_text', fields: { TEXT: 'hello' } } },
+                    }
+                },
+                {
+                    kind: 'block', type: 'esp32_mqtt_subscribe',
+                    inputs: { TOPIC: { shadow: { type: 'arduino_text', fields: { TEXT: 'leapforge/cmd' } } } }
+                },
+                { kind: 'block', type: 'esp32_mqtt_loop' },
+                { kind: 'block', type: 'esp32_mqtt_connected' },
+            ],
+        },
+        {
+            kind: 'pictobloxCategory',
+            name: 'WebSocket',
+            colour: '#00838F',
+            contents: [
+                {
+                    kind: 'block', type: 'esp32_ws_connect',
+                    inputs: {
+                        HOST: { shadow: { type: 'arduino_text', fields: { TEXT: 'echo.websocket.org' } } },
+                        PATH: { shadow: { type: 'arduino_text', fields: { TEXT: '/' } } },
+                    }
+                },
+                {
+                    kind: 'block', type: 'esp32_ws_send',
+                    inputs: { MESSAGE: { shadow: { type: 'arduino_text', fields: { TEXT: 'hello' } } } }
+                },
+                { kind: 'block', type: 'esp32_ws_connected' },
+                { kind: 'block', type: 'esp32_ws_loop' },
             ],
         },
     ],

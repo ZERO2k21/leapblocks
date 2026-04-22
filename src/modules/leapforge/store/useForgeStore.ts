@@ -6,8 +6,48 @@
 import { create } from 'zustand';
 import { Node, Edge, Connection, addEdge as rfAddEdge } from 'reactflow';
 import { v4 as uuidv4 } from 'uuid';
-import { simulationRunner } from '../engine/SimulationRunner';
-import { circuitEngine } from '../engine/CircuitEngine';
+
+const STORE_LOAD_START = performance.now();
+const logStoreTiming = (label: string) => {
+  const elapsed = (performance.now() - STORE_LOAD_START).toFixed(2);
+  console.log(`[STORE TIMING] ${elapsed}ms - ${label}`);
+};
+
+logStoreTiming('Store module started loading');
+
+// Lazy-load engines only when needed — prevents blocking app startup
+let simulationRunner: any = null;
+let circuitEngine: any = null;
+
+async function getSimulationRunner() {
+  const start = performance.now();
+  logStoreTiming('getSimulationRunner() called');
+  if (!simulationRunner) {
+    const module = await import('../engine/SimulationRunner');
+    simulationRunner = module.simulationRunner;
+    const elapsed = (performance.now() - start).toFixed(2);
+    logStoreTiming(`SimulationRunner loaded in ${elapsed}ms`);
+  } else {
+    logStoreTiming('SimulationRunner already cached');
+  }
+  return simulationRunner;
+}
+
+async function getCircuitEngine() {
+  const start = performance.now();
+  logStoreTiming('getCircuitEngine() called');
+  if (!circuitEngine) {
+    const module = await import('../engine/CircuitEngine');
+    circuitEngine = module.circuitEngine;
+    const elapsed = (performance.now() - start).toFixed(2);
+    logStoreTiming(`CircuitEngine loaded in ${elapsed}ms`);
+  } else {
+    logStoreTiming('CircuitEngine already cached');
+  }
+  return circuitEngine;
+}
+
+logStoreTiming('Lazy loaders defined');
 
 export interface ForgeState {
   nodes: Node[];
@@ -46,6 +86,11 @@ export interface ForgeState {
   clearSerial: () => void;
   appendWiFiLog: (data: string) => void;
 
+  // WiFi Log (ESP32 only)
+  wifiLog: string[];
+  appendWiFiLog: (msg: string) => void;
+  clearWiFiLog: () => void;
+
   // Board Configuration
   board: string;
   setBoard: (board: string) => void;
@@ -65,6 +110,25 @@ export interface ForgeState {
   setLibrarySearch: (query: string, results: any[]) => void;
 }
 
+/** Map canvas node data.type → store board ID */
+const BOARD_NODE_TO_BOARD_ID: Record<string, string> = {
+  'esp32-devkit-v1': 'esp32',
+  'esp32': 'esp32',
+  'arduino-uno': 'arduino-uno',
+  'arduino-nano': 'arduino-nano',
+  'arduino-mega': 'arduino-mega',
+  'attiny85': 'attiny85',
+};
+
+/** Detect the board from a list of nodes — returns the first board node found, or null */
+function detectBoardFromNodes(nodes: Node[]): string | null {
+  for (const node of nodes) {
+    const boardId = BOARD_NODE_TO_BOARD_ID[node.data?.type];
+    if (boardId) return boardId;
+  }
+  return null;
+}
+
 export const useForgeStore = create<ForgeState>((set, get) => ({
   nodes: [],
   edges: [],
@@ -73,6 +137,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   projectName: 'Untitled Project',
   isSimulating: false,
   serialOutput: '',
+  wifiLog: [],
   board: 'arduino-uno',
   projectPath: null,
   importedLibraries: [],
@@ -97,43 +162,68 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     };
   }),
 
-  setBoard: (board) => set(() => {
-    simulationRunner.setBoard(board);
-    return { board };
-  }),
+  setBoard: (board) => {
+    getSimulationRunner().then(runner => {
+      runner.setBoard(board);
+      set({ board });
+    });
+  },
 
   setLibrarySearch: (query, results) => set({
     librarySearchQuery: query,
     librarySearchResults: results
   }),
 
-  startSimulation: (hexString) => set((state) => {
+  startSimulation: (hexString) => {
+    const state = useForgeStore.getState();
     console.log('[FORGE STORE] startSimulation triggered. Hex length:', hexString.length);
-    // Force simulation engine refresh (Ideal Mode - Ver 1.0.1)
-    circuitEngine.init();
 
-    // Pass the downloaded compiled hex into the CPU
-    console.log('[FORGE STORE] Initializing CPU and syncing graph...');
-    simulationRunner.initCPU(hexString);
-    circuitEngine.syncCircuitGraph();
+    // Set simulating immediately for UI feedback
+    set({ isSimulating: true, serialOutput: '', wifiLog: [] });
 
-    console.log('[FORGE STORE] Firing simulationRunner.start()');
-    simulationRunner.start();
+    // Load engines and start simulation asynchronously
+    Promise.all([getCircuitEngine(), getSimulationRunner()]).then(([engine, runner]) => {
+      engine.init();
 
-    return { isSimulating: true, serialOutput: '' };
-  }),
+      const isQEMU = hexString === '__esp32_qemu__';
 
-  stopSimulation: () => set(() => {
+      if (!isQEMU) {
+        runner.setBoard(state.board);
+        console.log('[FORGE STORE] Initializing AVR CPU with hex...');
+        runner.initCPU(hexString);
+      } else {
+        console.log('[FORGE STORE] QEMU ESP32 path — creating ESP32SimulationRunner before syncCircuitGraph...');
+        runner.initCPU('');
+
+        const esp32Runner = runner.ESP32Runner;
+        if (esp32Runner) {
+          esp32Runner.addSerialListener((char: string) => {
+            useForgeStore.getState().appendSerial(char);
+          });
+          console.log('[FORGE STORE] ESP32 serial listener wired to store.appendSerial');
+        }
+      }
+
+      engine.syncCircuitGraph();
+
+      console.log('[FORGE STORE] Firing simulationRunner.start()');
+      runner.start().catch((err: any) => {
+        console.error('[FORGE STORE] simulationRunner.start() failed:', err);
+      });
+    });
+  },
+
+  stopSimulation: () => {
     console.log('[FORGE STORE] stopSimulation triggered.');
-    simulationRunner.stop();
-    return { isSimulating: false };
-  }),
+    set({ isSimulating: false });
+    getSimulationRunner().then(runner => runner.stop());
+  },
 
-  resetSimulation: () => set(() => {
+  resetSimulation: () => {
     console.log('[FORGE STORE] resetSimulation triggered (Clear Canvas/States).');
-    simulationRunner.reset();
-    return { isSimulating: false, serialOutput: '' };
-  }),
+    set({ isSimulating: false, serialOutput: '' });
+    getSimulationRunner().then(runner => runner.reset());
+  },
 
   toggleSimulation: () => {
     const { isSimulating, stopSimulation } = get();
@@ -155,23 +245,56 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   clearSerial: () => set({ serialOutput: '' }),
 
-  addNode: (type, position, data = {}) => set((state) => ({
-    nodes: [
-      ...state.nodes,
-      {
-        id: uuidv4(),
-        type: 'leap', // Use our custom generic node
-        position,
-        data: { ...data, type } // The real leap element type
-      }
-    ]
+  appendWiFiLog: (msg) => set((state) => ({
+    wifiLog: [...state.wifiLog.slice(-199), msg], // keep last 200 lines
   })),
 
-  removeNode: (id) => set((state) => ({
-    nodes: state.nodes.filter(n => n.id !== id),
-    edges: state.edges.filter(e => e.source !== id && e.target !== id),
-    selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId
-  })),
+  clearWiFiLog: () => set({ wifiLog: [] }),
+
+  addNode: (type, position, data = {}) => {
+    const state = useForgeStore.getState();
+    const newNode = {
+      id: uuidv4(),
+      type: 'leap',
+      position,
+      data: { ...data, type }
+    };
+    const newNodes = [...state.nodes, newNode];
+
+    // Auto-switch engine when a board node is placed
+    const boardId = BOARD_NODE_TO_BOARD_ID[type];
+    if (boardId && boardId !== state.board) {
+      console.log(`[FORGE STORE] Board node "${type}" added → switching to "${boardId}"`);
+      set({ nodes: newNodes, board: boardId });
+      getSimulationRunner().then(runner => runner.setBoard(boardId));
+    } else {
+      set({ nodes: newNodes });
+    }
+  },
+
+  removeNode: (id) => {
+    const state = useForgeStore.getState();
+    const removedNode = state.nodes.find(n => n.id === id);
+    const newNodes = state.nodes.filter(n => n.id !== id);
+
+    // If a board node was removed, detect remaining board or revert to default
+    let newBoard = state.board;
+    if (removedNode && BOARD_NODE_TO_BOARD_ID[removedNode.data?.type]) {
+      const detected = detectBoardFromNodes(newNodes);
+      newBoard = detected ?? 'arduino-uno';
+      if (newBoard !== state.board) {
+        console.log(`[FORGE STORE] Board node removed → switching to "${newBoard}"`);
+        getSimulationRunner().then(runner => runner.setBoard(newBoard));
+      }
+    }
+
+    set({
+      nodes: newNodes,
+      edges: state.edges.filter(e => e.source !== id && e.target !== id),
+      selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId,
+      board: newBoard,
+    });
+  },
 
   updateNodePosition: (id, position) => set((state) => ({
     nodes: state.nodes.map(n => n.id === id ? { ...n, position } : n)
@@ -207,7 +330,18 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   clearWorkspace: () => set({ nodes: [], edges: [], selectedNodeId: null, selectedEdgeId: null }),
 
-  setNodes: (nodes) => set({ nodes }),
+  setNodes: (nodes) => {
+    const state = useForgeStore.getState();
+    // Auto-detect board from loaded nodes
+    const detected = detectBoardFromNodes(nodes);
+    if (detected && detected !== state.board) {
+      console.log(`[FORGE STORE] setNodes: detected board "${detected}" → switching engine`);
+      set({ nodes, board: detected });
+      getSimulationRunner().then(runner => runner.setBoard(detected));
+    } else {
+      set({ nodes });
+    }
+  },
   setEdges: (edges) => set({ edges }),
   setProjectName: (name) => set({ projectName: name }),
 }));

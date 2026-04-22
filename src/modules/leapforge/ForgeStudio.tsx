@@ -5,11 +5,22 @@
  */
 import React, { useState, lazy, Suspense, useRef, useEffect } from 'react';
 import { SerialMonitor } from './components/Editor/SerialMonitor';
-import { Home, Save, FolderOpen, Settings, Play, Square, Code, Terminal } from 'lucide-react';
+import { Home, Save, FolderOpen, Settings, Play, Square, Code, Terminal, Wifi } from 'lucide-react';
 // Register official leap elements
 import './elements/leap-elements';
 import './ForgeStudio.css';
 import { useForgeStore } from './store/useForgeStore';
+import { BoardSelector, BoardType } from './components/BoardSelector';
+
+// Lazy-load simulation runner only when needed
+let simulationRunner: any = null;
+async function getSimulationRunner() {
+  if (!simulationRunner) {
+    const module = await import('./engine/SimulationRunner');
+    simulationRunner = module.simulationRunner;
+  }
+  return simulationRunner;
+}
 
 // Lazy load complex inner components
 const ForgeCanvas = lazy(() => import('./components/ForgeCanvas'));
@@ -35,15 +46,22 @@ export default function ForgeStudio({ onBack }: ForgeStudioProps) {
     appendSerial,
     clearSerial,
     serialOutput,
+    wifiLog,
+    clearWiFiLog,
     projectPath,
     setProjectPath,
     setNodes,
     setEdges,
     projectName,
-    setProjectName
+    setProjectName,
+    board,
+    setBoard,
   } = useForgeStore();
 
-  const [activeTab, setActiveTab] = useState<'code' | 'serial' | 'libraries'>('code');
+  const [activeTab, setActiveTab] = useState<'code' | 'serial' | 'wifi' | 'libraries'>('code');
+
+  // WiFi status polling removed — esp32WiFiConnected/esp32IPAddress were stub-engine only
+  const [wifiStatus, setWifiStatus] = useState('');
 
   const [code, setCode] = useState(`// LeapForge Serial Test
 void setup() {
@@ -65,13 +83,30 @@ void loop() {
 
   // Auto-initialized state removed to enforce global-only forge-lib management.
 
+  const ESP32_BOARD_IDS = new Set(['esp32', 'esp32-devkit-v1', 'esp32-s2', 'esp32-s3', 'esp32-c3']);
+
   const handleToggleSimulation = async () => {
     console.log('[FORGE UI] Simulation button clicked. Currently simulating:', isSimulating);
     if (isSimulating) {
       console.log('[FORGE UI] Stopping simulation...');
       stopSimulation();
+      setWifiStatus('');
       return;
     }
+
+    const FQBN: Record<string, string> = {
+      'arduino-uno': 'arduino:avr:uno',
+      'arduino-nano': 'arduino:avr:nano:cpu=atmega328old',
+      'arduino-mega': 'arduino:avr:mega',
+      'attiny85': 'attiny:avr:ATtinyX5:cpu=attiny85,clock=internal8',
+      'esp32': 'esp32:esp32:esp32',
+      'esp32-devkit-v1': 'esp32:esp32:esp32',
+      'esp32-s2': 'esp32:esp32:esp32s2',
+      'esp32-s3': 'esp32:esp32:esp32s3',
+      'esp32-c3': 'esp32:esp32:esp32c3',
+    };
+
+    const isESP32 = ESP32_BOARD_IDS.has(board);
 
     console.log('[FORGE UI] Preparing to compile code...');
     setIsCompiling(true);
@@ -79,11 +114,44 @@ void loop() {
     clearSerial();
 
     try {
+      // ── ESP32 QEMU path ────────────────────────────────────────────────────
+      if (isESP32) {
+        console.log('[FORGE UI] ESP32 board detected — using QEMU compile path...');
+        const fqbn = FQBN[board] ?? 'esp32:esp32:esp32';
+        const result = await compileCode({
+          code,
+          board: fqbn,
+          libraries: useForgeStore.getState().importedLibraries,
+        });
+        console.log('[FORGE UI] ESP32 compile result:', result.success ? 'Success' : result.error);
+
+        if (!result.success) {
+          setCompileError(result.error || 'ESP32 compilation failed');
+          appendSerial(`[ERROR]: ${result.error || 'ESP32 compilation failed'}\n`);
+          return;
+        }
+
+        // compile-code returns binPath for espressif:* FQBNs
+        const binPath = result.binPath;
+        if (!binPath) {
+          setCompileError('ESP32 compile succeeded but no .bin path returned');
+          appendSerial('[ERROR]: No .bin path returned from compiler\n');
+          return;
+        }
+
+        // Pass binPath to SimulationRunner via setBoard, then start QEMU
+        const runner = await getSimulationRunner();
+        runner.setBoard(board, binPath);
+        startSimulation('__esp32_qemu__');
+        appendSerial('ESP32 compiled. Starting QEMU simulation...\n');
+        return;
+      }
+
+      // ── AVR path ───────────────────────────────────────────────────────────
       console.log('[FORGE UI] Sending quest to CompilerService...');
-      // Compilation and Simulation strictly use the global forge-lib cache
       const result = await compileCode({
         code,
-        board: 'arduino:avr:uno',
+        board: FQBN[board] ?? 'arduino:avr:uno',
         libraries: useForgeStore.getState().importedLibraries
       });
       console.log('[FORGE UI] Compiler result:', result.success ? 'Success' : 'Failed');
@@ -144,8 +212,18 @@ void loop() {
     }
   };
 
-  // The new SimulationEngine (Phase 1-5) manages the loop internally via useForgeStore!
-  // No need for duplicate useEffect mounts.
+  // Sync BoardSelector with canvas board node — if user places a board node,
+  // the store.board updates automatically; the selector just reflects it.
+  // If user changes selector manually, update the store (no canvas node change needed
+  // since CircuitEngine detects board type from the canvas node, not the store.board).
+
+  const handleBoardChange = (b: BoardType) => {
+    if (isSimulating) {
+      stopSimulation();
+      setWifiStatus('');
+    }
+    setBoard(b);
+  };
 
   return (
     <div className="forge-root dark" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -154,7 +232,7 @@ void loop() {
         title={projectName}
         onTitleChange={setProjectName}
         onBack={onBack}
-        onSave={handleSaveProject}  
+        onSave={handleSaveProject}
       />
 
       {/* ── MAIN SPLIT LAYOUT ────────────────── */}
@@ -163,19 +241,32 @@ void loop() {
         <div className="editor-pane" style={{ flex: 1, borderRight: '1px solid #2d2d2d', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           {/* ── EDITOR / MONITOR TABS ────────────────── */}
           <div style={{
-            height: '36px',
+            minHeight: '44px',
             background: '#161b22',
             borderBottom: '1px solid #30363d',
             display: 'flex',
-            padding: '0 16px'
+            padding: '0 8px',
+            alignItems: 'center',
+            gap: 2,
+            flexWrap: 'wrap',
           }}>
+            {/* Board selector */}
+            <BoardSelector
+              selected={board as BoardType}
+              onChange={handleBoardChange}
+              disabled={isSimulating}
+            />
+
+            <div style={{ width: 1, height: 20, background: '#30363d', margin: '0 4px' }} />
+
             <button
               onClick={() => setActiveTab('code')}
               style={{
-                background: activeTab === 'code' ? '#1f6feb' : 'transparent',
+                background: 'transparent',
                 color: activeTab === 'code' ? '#fff' : '#8b949e',
                 border: 'none',
-                padding: '0 20px',
+                padding: '0 14px',
+                height: '36px',
                 cursor: 'pointer',
                 fontSize: '11px',
                 fontWeight: 600,
@@ -183,7 +274,7 @@ void loop() {
                 alignItems: 'center',
                 gap: '6px',
                 transition: 'all 0.2s',
-                borderBottom: activeTab === 'code' ? '2px solid #58a6ff' : 'none'
+                borderBottom: activeTab === 'code' ? '2px solid #58a6ff' : '2px solid transparent',
               }}
             >
               <Code size={14} /> SKETCH
@@ -191,10 +282,11 @@ void loop() {
             <button
               onClick={() => setActiveTab('serial')}
               style={{
-                background: activeTab === 'serial' ? '#1f6feb' : 'transparent',
+                background: 'transparent',
                 color: activeTab === 'serial' ? '#fff' : '#8b949e',
                 border: 'none',
-                padding: '0 20px',
+                padding: '0 14px',
+                height: '36px',
                 cursor: 'pointer',
                 fontSize: '11px',
                 fontWeight: 600,
@@ -202,18 +294,43 @@ void loop() {
                 alignItems: 'center',
                 gap: '6px',
                 transition: 'all 0.2s',
-                borderBottom: activeTab === 'serial' ? '2px solid #58a6ff' : 'none'
+                borderBottom: activeTab === 'serial' ? '2px solid #58a6ff' : '2px solid transparent',
               }}
             >
-              <Terminal size={14} /> SERIAL MONITOR {serialOutput.length > 0 && <span style={{ background: '#f85149', width: '6px', height: '6px', borderRadius: '50%' }} />}
+              <Terminal size={14} /> SERIAL {serialOutput.length > 0 && <span style={{ background: '#f85149', width: '6px', height: '6px', borderRadius: '50%' }} />}
             </button>
+
+            {board === 'esp32' && (
+              <button
+                onClick={() => setActiveTab('wifi')}
+                style={{
+                  background: 'transparent',
+                  color: activeTab === 'wifi' ? '#fff' : '#8b949e',
+                  border: 'none',
+                  padding: '0 14px',
+                  height: '36px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.2s',
+                  borderBottom: activeTab === 'wifi' ? '2px solid #4CAF50' : '2px solid transparent',
+                }}
+              >
+                <Wifi size={14} /> WiFi {wifiLog.length > 0 && <span style={{ background: '#4CAF50', width: '6px', height: '6px', borderRadius: '50%' }} />}
+              </button>
+            )}
+
             <button
               onClick={() => setActiveTab('libraries')}
               style={{
-                background: activeTab === 'libraries' ? '#1f6feb' : 'transparent',
+                background: 'transparent',
                 color: activeTab === 'libraries' ? '#fff' : '#8b949e',
                 border: 'none',
-                padding: '0 20px',
+                padding: '0 14px',
+                height: '36px',
                 cursor: 'pointer',
                 fontSize: '11px',
                 fontWeight: 600,
@@ -221,11 +338,30 @@ void loop() {
                 alignItems: 'center',
                 gap: '6px',
                 transition: 'all 0.2s',
-                borderBottom: activeTab === 'libraries' ? '2px solid #58a6ff' : 'none'
+                borderBottom: activeTab === 'libraries' ? '2px solid #58a6ff' : '2px solid transparent',
               }}
             >
               <LibraryIcon size={14} /> LIBRARIES
             </button>
+
+            {/* WiFi status pill */}
+            {board === 'esp32' && isSimulating && (
+              <div style={{
+                marginLeft: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 11,
+                color: wifiStatus ? '#4CAF50' : '#8b949e',
+                paddingRight: 4,
+              }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: wifiStatus ? '#4CAF50' : '#555',
+                }} />
+                {wifiStatus || 'Connecting...'}
+              </div>
+            )}
           </div>
 
           <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -238,6 +374,33 @@ void loop() {
                 output={serialOutput}
                 onClear={() => clearSerial()}
               />
+            ) : activeTab === 'wifi' ? (
+              <div style={{ fontFamily: 'monospace', fontSize: 11, padding: 8, overflowY: 'auto', flex: 1, background: '#0d1117' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ color: '#8b949e' }}>WiFi / Network log</span>
+                  <button
+                    onClick={() => clearWiFiLog()}
+                    style={{ background: 'none', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: 10 }}
+                  >
+                    Clear
+                  </button>
+                </div>
+                {wifiLog.length === 0
+                  ? <div style={{ color: '#555' }}>No WiFi activity yet. Run an ESP32 sketch with WiFi.begin().</div>
+                  : wifiLog.map((line, i) => (
+                    <div key={i} style={{
+                      color: line.includes('ERROR') ? '#f85149'
+                        : line.includes('Connected') || line.includes('Got IP') ? '#3fb950'
+                          : line.includes('[HTTP]') ? '#79c0ff'
+                            : line.includes('[TCP]') ? '#d2a8ff'
+                              : '#8b949e',
+                      lineHeight: '1.6',
+                    }}>
+                      {line}
+                    </div>
+                  ))
+                }
+              </div>
             ) : (
               <LibraryManager />
             )}
@@ -266,7 +429,13 @@ void loop() {
       }}>
         <div style={{ display: 'flex', gap: '15px' }}>
           <span>Engine: <b style={{ color: '#BEF264' }}>LeapLab Simulator v1.0</b></span>
-          {isSimulating && <span style={{ color: '#ef4444' }}>● Simulation Live</span>}
+          {isSimulating && board !== 'esp32' && <span style={{ color: '#ef4444' }}>● AVR Simulation Live</span>}
+          {isSimulating && board === 'esp32' && (
+            <span style={{ color: '#ef4444' }}>
+              ● ESP32 Simulation Live
+              {wifiStatus && <span style={{ color: '#4CAF50', marginLeft: 8 }}>· {wifiStatus}</span>}
+            </span>
+          )}
         </div>
         <div>
           {new Date().toLocaleTimeString()}

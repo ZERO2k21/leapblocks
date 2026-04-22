@@ -15,7 +15,9 @@
     "build": "vite build --config vite.web.config.ts",
     "debug": "electron-vite dev --inspect=5858 --remote-debugging-port=9222",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "download-qemu": "node scripts/download-qemu.js",
+    "postinstall": "node scripts/download-qemu.js"
   },
   "keywords": [],
   "author": {

@@ -16,8 +16,8 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
   // I2C variants map to the same element as their parallel counterpart
   const elementType = data.type === 'lcd1602-i2c' ? 'lcd1602'
-                    : data.type === 'lcd2004-i2c'  ? 'lcd2004'
-                    : data.type;
+    : data.type === 'lcd2004-i2c' ? 'lcd2004'
+      : data.type;
   const Tag = `leap-${elementType}` as any;
   const pins = getComponentPins(data.type);
 
@@ -87,55 +87,55 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   } else if (data.type === 'photoresistor-sensor') {
     // Photoresistor: pass lux value, threshold, and LED states
     const sv = data.sensorValues ?? {};
-    const lux       = Number(sv.value     ?? 500);
+    const lux = Number(sv.value ?? 500);
     const threshold = Number(sv.threshold ?? 500);
-    mappedProps.value     = lux;
+    mappedProps.value = lux;
     mappedProps.threshold = threshold;
-    mappedProps.ledPower  = true;                  // always on when placed
-    mappedProps.ledDO     = lux < threshold;       // DO LED mirrors comparator output
+    mappedProps.ledPower = true;                  // always on when placed
+    mappedProps.ledDO = lux < threshold;       // DO LED mirrors comparator output
   } else if (data.type === 'flame-sensor') {
     // Flame sensor: pass intensity, threshold, and LED states
     const sv = data.sensorValues ?? {};
-    const intensity = Number(sv.value     ?? 0);
+    const intensity = Number(sv.value ?? 0);
     const threshold = Number(sv.threshold ?? 50);
-    const flameOn   = intensity > threshold;
-    mappedProps.value     = intensity;
+    const flameOn = intensity > threshold;
+    mappedProps.value = intensity;
     mappedProps.threshold = threshold;
-    mappedProps.ledPower  = true;                  // always on when placed
+    mappedProps.ledPower = true;                  // always on when placed
     mappedProps.ledSignal = flameOn;               // signal LED on when flame detected
   } else if (data.type === 'gas-sensor') {
     // Gas sensor: pass concentration, threshold, and LED states
     const sv = data.sensorValues ?? {};
-    const concentration = Number(sv.value     ?? 0);
-    const threshold     = Number(sv.threshold ?? 50);
-    const gasDetected   = concentration > threshold;
-    mappedProps.value     = concentration;
+    const concentration = Number(sv.value ?? 0);
+    const threshold = Number(sv.threshold ?? 50);
+    const gasDetected = concentration > threshold;
+    mappedProps.value = concentration;
     mappedProps.threshold = threshold;
-    mappedProps.ledPower  = true;
-    mappedProps.ledD0     = gasDetected;
+    mappedProps.ledPower = true;
+    mappedProps.ledD0 = gasDetected;
   } else if (data.type === 'heart-beat-sensor') {
     // Heart rate sensor: pass BPM, current beat phase, and live ADC value
-    mappedProps.bpm       = data.sensorValues?.bpm       ?? 72;
+    mappedProps.bpm = data.sensorValues?.bpm ?? 72;
     mappedProps.beatPhase = data.sensorValues?.beatPhase ?? 0;
-    mappedProps.adcValue  = data.sensorValues?.adcValue  ?? 512;
+    mappedProps.adcValue = data.sensorValues?.adcValue ?? 512;
   } else if (data.type === 'big-sound-sensor' || data.type === 'small-sound-sensor') {
     // Sound sensors: pass level, threshold, and LED states
     const sv = data.sensorValues ?? {};
-    const level     = Number(sv.value     ?? 0);
+    const level = Number(sv.value ?? 0);
     const threshold = Number(sv.threshold ?? 50);
-    const soundOn   = level > threshold;
-    mappedProps.value     = level;
+    const soundOn = level > threshold;
+    mappedProps.value = level;
     mappedProps.threshold = threshold;
     if (data.type === 'big-sound-sensor') {
       mappedProps.led1 = true;      // power LED
       mappedProps.led2 = soundOn;   // signal LED
     } else {
-      mappedProps.ledPower  = true;
+      mappedProps.ledPower = true;
       mappedProps.ledSignal = soundOn;
     }
   } else if (data.type === 'hx711') {
     // HX711 load cell amplifier: pass weight and max capacity
-    mappedProps.weight    = data.sensorValues?.weight    ?? 0;
+    mappedProps.weight = data.sensorValues?.weight ?? 0;
     mappedProps.maxWeight = data.sensorValues?.maxWeight ?? 5000;
   } else if (data.type === 'lcd1602' || data.type === 'lcd2004' || data.type === 'lcd1602-i2c' || data.type === 'lcd2004-i2c') {
     // LCD Displays map the internal emulator state to visual properties
@@ -160,7 +160,9 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   } else if (data.type === '7segment') {
     // 7-segment: map segValues [A,B,C,D,E,F,G,DP] written by CircuitEngine
     // Falls back to all-off if no simulation data yet
-    mappedProps.values = data.segValues ?? [0, 0, 0, 0, 0, 0, 0, 0];
+    const segValues = data.segValues ?? [0, 0, 0, 0, 0, 0, 0, 0];
+    console.log(`[LEAP NODE 7SEG] Rendering 7-segment with values:`, segValues);
+    mappedProps.values = segValues;
   } else if (data.type === 'ssd1306') {
     // SSD1306 OLED: pass ImageData decoded by CircuitEngine from the I2C pixel buffer
     if (data.oledImageData) {
@@ -180,10 +182,10 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.accelX = sv.accelX ?? 0;
     mappedProps.accelY = sv.accelY ?? 0;
     mappedProps.accelZ = sv.accelZ ?? 1;
-    mappedProps.gyroX  = sv.gyroX  ?? 0;
-    mappedProps.gyroY  = sv.gyroY  ?? 0;
-    mappedProps.gyroZ  = sv.gyroZ  ?? 0;
-    mappedProps.temp   = sv.temp   ?? 25;
+    mappedProps.gyroX = sv.gyroX ?? 0;
+    mappedProps.gyroY = sv.gyroY ?? 0;
+    mappedProps.gyroZ = sv.gyroZ ?? 0;
+    mappedProps.temp = sv.temp ?? 25;
   } else if (data.type === 'neopixel') {
     // Single NeoPixel: map decoded WS2812B RGB values (0-1 range)
     mappedProps.r = data.neopixelR ?? 0;
@@ -213,6 +215,60 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     }
   }, [data.tftImageData, data.oledImageData, data.type]);
 
+  // Imperatively set LCD characters as DOM property.
+  // Uint8Array / array props must be set directly — JSX spread stringifies them.
+  useEffect(() => {
+    const isLcd = data.type === 'lcd1602' || data.type === 'lcd2004' ||
+      data.type === 'lcd1602-i2c' || data.type === 'lcd2004-i2c';
+    if (!elementRef.current || !isLcd || !data.lcdState) return;
+    const el = elementRef.current;
+    const state = data.lcdState;
+    el.characters = new Uint8Array(state.characters);
+    el.cursorX = state.cursorX ?? 0;
+    el.cursorY = state.cursorY ?? 0;
+    el.cursor = state.cursor ?? false;
+    el.blink = state.blink ?? false;
+    el.backlight = state.backlight ?? true;
+  }, [data.type, data.lcdState]);
+
+  // Imperatively set LED value/brightness as DOM properties.
+  // React JSX sets boolean/number props as string attributes on Web Components,
+  // which breaks Lit's @property() binding. Direct assignment bypasses this.
+  useEffect(() => {
+    if (!elementRef.current || data.type !== 'led') return;
+    const el = elementRef.current;
+    const isOn = data.pinStates?.pin_Anode === true || data.pinStates?.pin_A === true;
+    el.value = isOn;
+    el.brightness = isOn ? (data.brightness ?? 1.0) : 0.0;
+  }, [data.type, data.pinStates, data.brightness]);
+
+  // Imperatively set RGB LED channel values as DOM properties.
+  useEffect(() => {
+    if (!elementRef.current || data.type !== 'rgb-led') return;
+    const el = elementRef.current;
+    el.ledRed = data.pinStates?.pin_R === true ? (data.intensity_R ?? 1.0) : 0;
+    el.ledGreen = data.pinStates?.pin_G === true ? (data.intensity_G ?? 1.0) : 0;
+    el.ledBlue = data.pinStates?.pin_B === true ? (data.intensity_B ?? 1.0) : 0;
+  }, [data.type, data.pinStates, data.intensity_R, data.intensity_G, data.intensity_B]);
+
+  // Imperatively set single NeoPixel r/g/b as DOM properties.
+  useEffect(() => {
+    if (!elementRef.current || data.type !== 'neopixel') return;
+    const el = elementRef.current;
+    el.r = data.neopixelR ?? 0;
+    el.g = data.neopixelG ?? 0;
+    el.b = data.neopixelB ?? 0;
+  }, [data.type, data.neopixelR, data.neopixelG, data.neopixelB]);
+
+  // Imperatively set servo angle as DOM property.
+  // React JSX sets number props as string attributes on Web Components.
+  useEffect(() => {
+    if (!elementRef.current || data.type !== 'servo') return;
+    const el = elementRef.current;
+    const angle = data.angle ?? 0;
+    el.angle = angle;
+  }, [data.type, data.angle]);
+
   // Push pixel data to matrix/ring elements via DOM setPixel() method
   useEffect(() => {
     if (!elementRef.current || !data.neopixelPixels) return;
@@ -230,6 +286,8 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
           b: pixels[i].b / 255,
         });
       }
+      // Trigger re-render after all pixels are set
+      if (typeof el.requestUpdate === 'function') el.requestUpdate();
     } else if (data.type === 'led-ring' && typeof el.setPixel === 'function') {
       for (let i = 0; i < pixels.length; i++) {
         el.setPixel(i, {
@@ -238,6 +296,8 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
           b: pixels[i].b / 255,
         });
       }
+      // Trigger re-render if the element has a render method
+      if (typeof el.requestUpdate === 'function') el.requestUpdate();
     }
   }, [data.neopixelPixels, data.type, data.cols]);
 

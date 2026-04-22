@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   root: '.',
   publicDir: 'public',
+  assetsInclude: ['**/*.wasm'],
   resolve: {
     alias: {
       '@blockly-runtime': path.resolve(__dirname, 'src/blockly/runtime.ts'),
@@ -86,5 +87,11 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom', 'blockly'],
     exclude: ['electron', 'serialport'],
+  },
+  server: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
   },
 });

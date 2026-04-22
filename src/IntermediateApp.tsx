@@ -44,10 +44,6 @@ import MenuBar from './junior/components/MenuBar';
 
 import BoardSelectionModal from './junior/components/BoardSelectionModal';
 
-import { CostumesTab } from './stage/CostumesTab';
-
-import { SoundsTab } from './stage/SoundsTab';
-
 import { PythonEditorTab } from './components/PythonEditorTab';
 
 // import StagePanel from './stage/StagePanel'; // Temporarily disabled - component needs to be created
@@ -56,6 +52,10 @@ import { PythonEditorTab } from './components/PythonEditorTab';
 const BackdropLibrary = React.lazy(() => import('./components/BackdropLibrary'));
 const SpriteLibrary = React.lazy(() => import('./components/SpriteLibrary').then(m => ({ default: m.SpriteLibrary })));
 const JuniorExtensionLibrary = React.lazy(() => import('./junior/components/JuniorExtensionLibrary'));
+
+// Lazy load heavy tabs that import fabric.js and wav-encoder - prevents 60s startup delay
+const CostumesTab = React.lazy(() => import('./stage/CostumesTab').then(m => ({ default: m.CostumesTab })));
+const SoundsTab = React.lazy(() => import('./stage/SoundsTab').then(m => ({ default: m.SoundsTab })));
 
 // import BackdropEditor from './components/BackdropEditor'; // Temporarily disabled
 
@@ -5496,23 +5496,23 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {editorMode === 'stage' && workspaceTab === 'costumes' && (
 
                         <div style={styles.costumesEditor}>
+                            <React.Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Loading Paint Editor...</div>}>
+                                <CostumesTab
 
-                            <CostumesTab
+                                    selectedSpriteId={selectedSpriteId}
 
-                                selectedSpriteId={selectedSpriteId}
+                                    sprites={sprites}
 
-                                sprites={sprites}
+                                    stageManager={stageManager}
 
-                                stageManager={stageManager}
+                                    addLog={addLog}
 
-                                addLog={addLog}
+                                    onClose={() => handleWorkspaceTabChange('blocks')}
 
-                                onClose={() => handleWorkspaceTabChange('blocks')}
+                                    onOpenLibrary={selectedSpriteId === 'stage' ? () => setShowBackdropLibrary(true) : undefined}
 
-                                onOpenLibrary={selectedSpriteId === 'stage' ? () => setShowBackdropLibrary(true) : undefined}
-
-                            />
-
+                                />
+                            </React.Suspense>
                         </div>
 
                     )}
@@ -5520,21 +5520,21 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {editorMode === 'stage' && workspaceTab === 'sounds' && (
 
                         <div style={styles.soundsEditor}>
+                            <React.Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Loading Sound Editor...</div>}>
+                                <SoundsTab
 
-                            <SoundsTab
+                                    selectedSpriteId={selectedSpriteId}
 
-                                selectedSpriteId={selectedSpriteId}
+                                    sprites={sprites}
 
-                                sprites={sprites}
+                                    stageManager={stageManager}
 
-                                stageManager={stageManager}
+                                    addLog={addLog}
 
-                                addLog={addLog}
+                                    onClose={() => handleWorkspaceTabChange('blocks')}
 
-                                onClose={() => handleWorkspaceTabChange('blocks')}
-
-                            />
-
+                                />
+                            </React.Suspense>
                         </div>
 
                     )}

@@ -1614,3 +1614,218 @@ arduinoGenerator.forBlock['esp32_map'] = function (block: any) {
 
 };
 
+// ── ESP32 Sensor / Actuator Generators ───────────────────────────────────────
+
+arduinoGenerator.forBlock['esp32_tone'] = function (block: any) {
+    const pin = block.getFieldValue('PIN');
+    const freq = block.getFieldValue('FREQ');
+    return `tone(${pin}, ${freq});\n`;
+};
+
+arduinoGenerator.forBlock['esp32_notone'] = function (block: any) {
+    const pin = block.getFieldValue('PIN');
+    return `noTone(${pin});\n`;
+};
+
+arduinoGenerator.forBlock['esp32_servo'] = function (block: any) {
+    const pin = block.getFieldValue('PIN');
+    const angle = block.getFieldValue('ANGLE');
+    (arduinoGenerator as any).addDefinition('servo_include', '#include <ESP32Servo.h>');
+    (arduinoGenerator as any).addDefinition(`servo_obj_${pin}`, `Servo _servo${pin};`);
+    (arduinoGenerator as any).addSetup(`servo_attach_${pin}`, `_servo${pin}.attach(${pin});`);
+    return `_servo${pin}.write(${angle});\n`;
+};
+
+arduinoGenerator.forBlock['esp32_led'] = function (block: any) {
+    const pin = block.getFieldValue('PIN');
+    const brightness = block.getFieldValue('BRIGHTNESS');
+    return `analogWrite(${pin}, ${brightness});\n`;
+};
+
+arduinoGenerator.forBlock['esp32_relay'] = function (block: any) {
+    const pin = block.getFieldValue('PIN');
+    const state = block.getFieldValue('STATE');
+    return `digitalWrite(${pin}, ${state});\n`;
+};
+
+arduinoGenerator.forBlock['esp32_ultrasonic'] = function (block: any) {
+    const trig = block.getFieldValue('TRIG');
+    const echo = block.getFieldValue('ECHO');
+    (arduinoGenerator as any).addDefinition('ultrasonic_fn',
+        `float _ultrasonicRead(int trig, int echo) {\n` +
+        `  pinMode(trig, OUTPUT); digitalWrite(trig, LOW); delayMicroseconds(2);\n` +
+        `  digitalWrite(trig, HIGH); delayMicroseconds(10); digitalWrite(trig, LOW);\n` +
+        `  pinMode(echo, INPUT);\n` +
+        `  return pulseIn(echo, HIGH) / 58.0;\n` +
+        `}`
+    );
+    return [`_ultrasonicRead(${trig}, ${echo})`, ORDER_ATOMIC];
+};
+
+arduinoGenerator.forBlock['esp32_dht_temp'] = function (block: any) {
+    const type = block.getFieldValue('TYPE');   // 'temperature' | 'humidity'
+    const pin = block.getFieldValue('PIN');
+    (arduinoGenerator as any).addDefinition('dht_include', '#include <DHT.h>');
+    (arduinoGenerator as any).addDefinition(`dht_obj_${pin}`, `DHT _dht${pin}(${pin}, DHT22);`);
+    (arduinoGenerator as any).addSetup(`dht_begin_${pin}`, `_dht${pin}.begin();`);
+    const call = type === 'temperature'
+        ? `_dht${pin}.readTemperature()`
+        : `_dht${pin}.readHumidity()`;
+    return [call, ORDER_ATOMIC];
+};
+
+arduinoGenerator.forBlock['esp32_button'] = function (block: any) {
+    const pin = block.getFieldValue('PIN');
+    (arduinoGenerator as any).addSetup(`btn_mode_${pin}`, `pinMode(${pin}, INPUT_PULLUP);`);
+    return [`(digitalRead(${pin}) == LOW)`, ORDER_ATOMIC];
+};
+
+arduinoGenerator.forBlock['esp32_ldr'] = function (block: any) {
+    const pin = block.getFieldValue('PIN');
+    return [`analogRead(${pin})`, ORDER_ATOMIC];
+};
+
+arduinoGenerator.forBlock['esp32_potentiometer'] = function (block: any) {
+    const pin = block.getFieldValue('PIN');
+    return [`analogRead(${pin})`, ORDER_ATOMIC];
+};
+
+arduinoGenerator.forBlock['esp32_pir'] = function (block: any) {
+    const pin = block.getFieldValue('PIN');
+    (arduinoGenerator as any).addSetup(`pir_mode_${pin}`, `pinMode(${pin}, INPUT);`);
+    return [`(digitalRead(${pin}) == HIGH)`, ORDER_ATOMIC];
+};
+
+arduinoGenerator.forBlock['esp32_digital_sensor'] = function (block: any) {
+    const pin = block.getFieldValue('PIN');
+    (arduinoGenerator as any).addSetup(`dsensor_mode_${pin}`, `pinMode(${pin}, INPUT);`);
+    return [`(digitalRead(${pin}) == HIGH)`, ORDER_ATOMIC];
+};
+
+// ── ESP32 WiFi Generators ─────────────────────────────────────────────────────
+
+arduinoGenerator.forBlock['esp32_wifi_connect'] = function (block: any) {
+    const ssid = arduinoGenerator.valueToCode(block, 'SSID', ORDER_ATOMIC) || '""';
+    const pass = arduinoGenerator.valueToCode(block, 'PASSWORD', ORDER_ATOMIC) || '""';
+    (arduinoGenerator as any).addDefinition('wifi_include', '#include <WiFi.h>');
+    return `WiFi.begin(${ssid}, ${pass});\nwhile (WiFi.status() != WL_CONNECTED) { delay(500); }\n`;
+};
+
+arduinoGenerator.forBlock['esp32_wifi_connected'] = function (_block: any) {
+    (arduinoGenerator as any).addDefinition('wifi_include', '#include <WiFi.h>');
+    return [`(WiFi.status() == WL_CONNECTED)`, ORDER_ATOMIC];
+};
+
+arduinoGenerator.forBlock['esp32_wifi_ip'] = function (_block: any) {
+    (arduinoGenerator as any).addDefinition('wifi_include', '#include <WiFi.h>');
+    return [`WiFi.localIP().toString()`, ORDER_ATOMIC];
+};
+
+arduinoGenerator.forBlock['esp32_wifi_disconnect'] = function (_block: any) {
+    (arduinoGenerator as any).addDefinition('wifi_include', '#include <WiFi.h>');
+    return `WiFi.disconnect();\n`;
+};
+
+// ── ESP32 HTTP Generators ─────────────────────────────────────────────────────
+
+arduinoGenerator.forBlock['esp32_http_get'] = function (block: any) {
+    const url = arduinoGenerator.valueToCode(block, 'URL', ORDER_ATOMIC) || '""';
+    (arduinoGenerator as any).addDefinition('wifi_include', '#include <WiFi.h>');
+    (arduinoGenerator as any).addDefinition('http_include', '#include <HTTPClient.h>');
+    return [
+        `([]() -> String {\n` +
+        `  HTTPClient http;\n` +
+        `  http.begin(${url});\n` +
+        `  int code = http.GET();\n` +
+        `  String body = (code > 0) ? http.getString() : "";\n` +
+        `  http.end();\n` +
+        `  return body;\n` +
+        `})()`,
+        ORDER_ATOMIC
+    ];
+};
+
+arduinoGenerator.forBlock['esp32_http_post'] = function (block: any) {
+    const url = arduinoGenerator.valueToCode(block, 'URL', ORDER_ATOMIC) || '""';
+    const body = arduinoGenerator.valueToCode(block, 'BODY', ORDER_ATOMIC) || '""';
+    (arduinoGenerator as any).addDefinition('wifi_include', '#include <WiFi.h>');
+    (arduinoGenerator as any).addDefinition('http_include', '#include <HTTPClient.h>');
+    return `{\n  HTTPClient http;\n  http.begin(${url});\n  http.addHeader("Content-Type", "application/json");\n  http.POST(${body});\n  http.end();\n}\n`;
+};
+
+arduinoGenerator.forBlock['esp32_http_status'] = function (block: any) {
+    const url = arduinoGenerator.valueToCode(block, 'URL', ORDER_ATOMIC) || '""';
+    (arduinoGenerator as any).addDefinition('wifi_include', '#include <WiFi.h>');
+    (arduinoGenerator as any).addDefinition('http_include', '#include <HTTPClient.h>');
+    return [
+        `([]() -> int {\n  HTTPClient http;\n  http.begin(${url});\n  int c = http.GET();\n  http.end();\n  return c;\n})()`,
+        ORDER_ATOMIC
+    ];
+};
+
+// ── ESP32 MQTT Generators ─────────────────────────────────────────────────────
+
+arduinoGenerator.forBlock['esp32_mqtt_connect'] = function (block: any) {
+    const broker = arduinoGenerator.valueToCode(block, 'BROKER', ORDER_ATOMIC) || '"broker.hivemq.com"';
+    const port = block.getFieldValue('PORT') || '1883';
+    const clientId = arduinoGenerator.valueToCode(block, 'CLIENT_ID', ORDER_ATOMIC) || '"esp32client"';
+    (arduinoGenerator as any).addDefinition('wifi_include', '#include <WiFi.h>');
+    (arduinoGenerator as any).addDefinition('mqtt_include', '#include <PubSubClient.h>');
+    (arduinoGenerator as any).addDefinition('mqtt_client_obj',
+        `WiFiClient _wifiClient;\nPubSubClient _mqttClient(_wifiClient);`);
+    (arduinoGenerator as any).addSetup('mqtt_server',
+        `_mqttClient.setServer(${broker}, ${port});`);
+    return `if (!_mqttClient.connected()) {\n  _mqttClient.connect(${clientId});\n}\n_mqttClient.loop();\n`;
+};
+
+arduinoGenerator.forBlock['esp32_mqtt_publish'] = function (block: any) {
+    const topic = arduinoGenerator.valueToCode(block, 'TOPIC', ORDER_ATOMIC) || '""';
+    const payload = arduinoGenerator.valueToCode(block, 'PAYLOAD', ORDER_ATOMIC) || '""';
+    (arduinoGenerator as any).addDefinition('mqtt_include', '#include <PubSubClient.h>');
+    return `_mqttClient.publish(${topic}, ${payload});\n`;
+};
+
+arduinoGenerator.forBlock['esp32_mqtt_subscribe'] = function (block: any) {
+    const topic = arduinoGenerator.valueToCode(block, 'TOPIC', ORDER_ATOMIC) || '""';
+    (arduinoGenerator as any).addDefinition('mqtt_include', '#include <PubSubClient.h>');
+    return `_mqttClient.subscribe(${topic});\n`;
+};
+
+arduinoGenerator.forBlock['esp32_mqtt_loop'] = function (_block: any) {
+    (arduinoGenerator as any).addDefinition('mqtt_include', '#include <PubSubClient.h>');
+    return `_mqttClient.loop();\n`;
+};
+
+arduinoGenerator.forBlock['esp32_mqtt_connected'] = function (_block: any) {
+    (arduinoGenerator as any).addDefinition('mqtt_include', '#include <PubSubClient.h>');
+    return [`_mqttClient.connected()`, ORDER_ATOMIC];
+};
+
+// ── ESP32 WebSocket Generators ────────────────────────────────────────────────
+
+arduinoGenerator.forBlock['esp32_ws_connect'] = function (block: any) {
+    const host = arduinoGenerator.valueToCode(block, 'HOST', ORDER_ATOMIC) || '"echo.websocket.org"';
+    const port = block.getFieldValue('PORT') || '80';
+    const path = arduinoGenerator.valueToCode(block, 'PATH', ORDER_ATOMIC) || '"/"';
+    (arduinoGenerator as any).addDefinition('ws_include', '#include <WebSocketsClient.h>');
+    (arduinoGenerator as any).addDefinition('ws_obj', 'WebSocketsClient _wsClient;');
+    (arduinoGenerator as any).addSetup('ws_begin', `_wsClient.begin(${host}, ${port}, ${path});`);
+    return `_wsClient.loop();\n`;
+};
+
+arduinoGenerator.forBlock['esp32_ws_send'] = function (block: any) {
+    const msg = arduinoGenerator.valueToCode(block, 'MESSAGE', ORDER_ATOMIC) || '""';
+    (arduinoGenerator as any).addDefinition('ws_include', '#include <WebSocketsClient.h>');
+    return `_wsClient.sendTXT(${msg});\n`;
+};
+
+arduinoGenerator.forBlock['esp32_ws_connected'] = function (_block: any) {
+    (arduinoGenerator as any).addDefinition('ws_include', '#include <WebSocketsClient.h>');
+    return [`_wsClient.isConnected()`, ORDER_ATOMIC];
+};
+
+arduinoGenerator.forBlock['esp32_ws_loop'] = function (_block: any) {
+    (arduinoGenerator as any).addDefinition('ws_include', '#include <WebSocketsClient.h>');
+    return `_wsClient.loop();\n`;
+};
+

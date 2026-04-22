@@ -10,7 +10,7 @@
  *     → arduino-cli compile --libraries forge-lib/libraries/ ...
  *     → returns { success, hexContent }
  */
-import { IS_ELECTRON, CLOUD_COMPILER_URL } from '../config/platform';
+import { IS_ELECTRON, isElectron, CLOUD_COMPILER_URL } from '../config/platform';
 
 export interface CompileRequest {
   code: string;
@@ -21,15 +21,14 @@ export interface CompileRequest {
 export interface CompileResult {
   success: boolean;
   hexContent?: string;
+  binPath?: string;   // returned for esp32:esp32:* FQBNs (QEMU path)
   error?: string;
 }
 
 export const compileCode = async (req: CompileRequest): Promise<CompileResult> => {
-  if (IS_ELECTRON) {
+  // Use runtime check — IS_ELECTRON may be stale if preload loaded after module init
+  if (IS_ELECTRON || isElectron()) {
     try {
-      // electronAPI.compileCode is already in preload.ts:
-      //   compileCode: (code, fqbn, libraryPath) => ipcRenderer.invoke('compile-code', ...)
-      // ArduinoUploader.compileForSimulation already passes --libraries forge-lib/libraries/
       const result = await (window as any).electronAPI.compileCode(
         req.code,
         req.board,
@@ -37,6 +36,7 @@ export const compileCode = async (req: CompileRequest): Promise<CompileResult> =
       return {
         success: result.success,
         hexContent: result.hexContent,
+        binPath: result.binPath,
         error: result.error,
       };
     } catch (err: any) {

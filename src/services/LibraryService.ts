@@ -17,7 +17,7 @@
  *               → ArduinoUploader.uninstallLibrary()
  */
 
-import { IS_ELECTRON } from '../config/platform';
+import { IS_ELECTRON, isElectron } from '../config/platform';
 import { CLOUD_COMPILER_URL } from '../config/platform';
 const WEB_LIBS_KEY = 'leapforge_selected_libs';
 const LIBRARY_INDEX_URL = 'https://downloads.arduino.cc/libraries/library_index.json';
@@ -100,9 +100,9 @@ export const searchLibraries = async (query: string): Promise<Library[]> => {
 };
 
 export const getLibraries = async (): Promise<Library[]> => {
-  if (IS_ELECTRON) {
+  // Use runtime check — IS_ELECTRON may be stale if preload loaded after module init
+  if (IS_ELECTRON || isElectron()) {
     try {
-      // Uses: IPC get-installed-libraries → ArduinoUploader.getInstalledLibraries()
       const libs = await (window as any).electronAPI.getInstalledLibraries();
       return (libs ?? []).map((l: any) => ({
         name: l.name ?? l.Name ?? '',
@@ -111,29 +111,31 @@ export const getLibraries = async (): Promise<Library[]> => {
         version: l.version ?? l.Version ?? '?',
       }));
     } catch (err) {
-      console.error('[LibraryService] getInstalledLibraries failed:', err);
+      console.warn('[LibraryService] getInstalledLibraries failed:', err);
       return [];
     }
   }
-  // Web: ask the local compile server
+  // Web: ask the local compile server — silently return [] if server not running
   try {
-    const res = await fetch(`${CLOUD_COMPILER_URL}/libraries/installed`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(`${CLOUD_COMPILER_URL}/libraries/installed`, { signal: controller.signal });
+    clearTimeout(timeout);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
-  } catch (err) {
-    console.error('[LibraryService] /libraries/installed failed:', err);
+  } catch (err: any) {
+    if (err?.name !== 'AbortError') {
+      console.warn('[LibraryService] /libraries/installed unavailable (server not running)');
+    }
     return [];
   }
 };
 
 export const installLibrary = async (lib: Library): Promise<{ success: boolean; error?: string }> => {
-  if (IS_ELECTRON) {
-    // Uses: IPC install-library → ArduinoUploader.installLibrary()
-    // Downloads and installs to forge-lib/libraries/
+  if (IS_ELECTRON || isElectron()) {
     const result = await (window as any).electronAPI.installLibrary(lib.name);
     return result ?? { success: false, error: 'No response from installer' };
   }
-  // Web: ask the local compile server to install into forge-lib/libraries/
   try {
     const res = await fetch(`${CLOUD_COMPILER_URL}/libraries/install`, {
       method: 'POST',
@@ -147,12 +149,10 @@ export const installLibrary = async (lib: Library): Promise<{ success: boolean; 
 };
 
 export const removeLibrary = async (name: string): Promise<void> => {
-  if (IS_ELECTRON) {
-    // Uses: IPC remove-library → ArduinoUploader.uninstallLibrary()
+  if (IS_ELECTRON || isElectron()) {
     await (window as any).electronAPI.removeLibrary(name);
     return;
   }
-  // Web: ask the local compile server to uninstall
   try {
     await fetch(`${CLOUD_COMPILER_URL}/libraries/remove`, {
       method: 'DELETE',
@@ -160,6 +160,6 @@ export const removeLibrary = async (name: string): Promise<void> => {
       body: JSON.stringify({ name }),
     });
   } catch (err) {
-    console.error('[LibraryService] /libraries/remove failed:', err);
+    console.warn('[LibraryService] /libraries/remove failed:', err);
   }
 };
