@@ -45,16 +45,7 @@
  */
 
 // ── IPC bridge ────────────────────────────────────────────────────────────────
-declare global {
-    interface Window {
-        electronAPI: {
-            invoke: (channel: string, ...args: unknown[]) => Promise<unknown>;
-            onSerialData: (cb: (data: string) => void) => void;
-            removeSerialDataListener: () => void;
-            isElectron?: boolean;
-        };
-    }
-}
+// Window.electronAPI is defined globally via src/preload.ts
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

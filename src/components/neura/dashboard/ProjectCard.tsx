@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { NeuraProject } from '@/types/neura.types';
+import { NeuraProject } from '../../../types/neura.types';
 
 interface ProjectCardProps {
     project: NeuraProject;
