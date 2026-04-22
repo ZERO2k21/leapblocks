@@ -1,68 +1,81 @@
 /**
- * Neura ML Theme - Purple accent colors matching PictoBlox style
+ * Neura ML Theme - Premium Deep Navy aesthetics matching the Topbar
  */
 
 @layer base {
   :root {
-    --neura-primary: #6b21a8;     /* Deep purple */
-    --neura-accent: #a855f7;      /* Light purple */
-    --neura-hover: #7c3aed;       /* Purple hover */
-    --neura-light: #f3e8ff;       /* Very light purple */
-    --neura-dark: #581c87;        /* Dark purple */
+    --neura-primary: #0a015a;     /* Deep navy blue matching topbar */
+    --neura-accent: #15027a;      /* Brighter navy */
+    --neura-hover: #1e05a3;       /* Hover navy */
+    --neura-light: #e0e7ff;       /* Light indigo */
+    --neura-dark: #080a25;        /* Very dark background */
   }
 }
 
 /* Neura custom component styles */
 .neura-gradient {
-  background: linear-gradient(135deg, #6b21a8 0%, #a855f7 100%);
+  background: linear-gradient(135deg, #0a015a 0%, #080a25 100%);
 }
 
 .neura-card {
   background-color: white;
   border-radius: 1.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s;
+  box-shadow: 0 4px 6px -1px rgba(10, 1, 90, 0.05), 0 2px 4px -2px rgba(10, 1, 90, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(10, 1, 90, 0.05);
 }
 
 .neura-card:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(10, 1, 90, 0.1), 0 8px 10px -6px rgba(10, 1, 90, 0.1);
+  border-color: rgba(10, 1, 90, 0.15);
 }
 
 .neura-button-primary {
-  background-color: #6b21a8;
+  background: linear-gradient(135deg, #0a015a 0%, #080a25 100%);
   color: white;
-  padding: 0.625rem 1.5rem;
-  border-radius: 1rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
+  padding: 0.75rem 1.75rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px 0 rgba(10, 1, 90, 0.39);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.025em;
 }
 
 .neura-button-primary:hover {
-  background-color: #7c3aed;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(10, 1, 90, 0.5);
+  background: linear-gradient(135deg, #15027a 0%, #0a0d33 100%);
 }
 
 .neura-button-secondary {
-  background-color: white;
-  color: #6b21a8;
-  padding: 0.625rem 1.5rem;
-  border-radius: 1rem;
-  font-weight: 500;
-  border: 2px solid #6b21a8;
-  transition: background-color 0.2s;
+  background-color: transparent;
+  color: #0a015a;
+  padding: 0.75rem 1.75rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  border: 2px solid #0a015a;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.025em;
 }
 
 .neura-button-secondary:hover {
-  background-color: #f3e8ff;
+  background-color: rgba(10, 1, 90, 0.05);
+  transform: translateY(-1px);
 }
 
 .neura-input {
-  border: 2px solid #d1d5db;
-  border-radius: 0.75rem;
-  padding: 0.5rem 1rem;
-  transition: border-color 0.2s;
+  border: 2px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 0.75rem 1.25rem;
+  transition: all 0.2s ease;
+  background-color: #f8fafc;
 }
 
 .neura-input:focus {
-  border-color: #6b21a8;
+  border-color: #0a015a;
+  background-color: white;
   outline: none;
+  box-shadow: 0 0 0 3px rgba(10, 1, 90, 0.1);
 }

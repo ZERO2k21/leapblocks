@@ -280,9 +280,10 @@ export class AnimationVM {
     }
 
     // Sound playback helper
-    private async playSound(sprite: Sprite, name: string, wait: boolean = false): Promise<void> {
-        // Look for sound in sprite's sounds first
-        const sound = sprite.sounds.find(s => s.name === name);
+    private async playSound(sprite: Sprite, name: string, wait: boolean = false, signal?: AbortSignal): Promise<void> {
+        // Look for sound in sprite's sounds first (case-insensitive)
+        const searchName = name.toLowerCase();
+        const sound = sprite.sounds.find(s => s.name.toLowerCase() === searchName);
         const playbackOptions = {
             pan: sprite.soundEffects.pan,
             pitch: sprite.soundEffects.pitch,
@@ -291,18 +292,19 @@ export class AnimationVM {
 
         if (sound) {
             if (wait) {
-                await soundManager.playAndWait(name, sound.src, playbackOptions);
+                await soundManager.playAndWait(name, sound.src, playbackOptions, signal);
             } else {
                 await soundManager.play(name, sound.src, playbackOptions);
             }
             return;
         }
 
-        // Look in stage sounds
-        const stageSound = stageManager.getAllSounds().find(s => s.name === name);
+        // Look in stage sounds (case-insensitive)
+        const stageSound = stageManager.getAllSounds().find(s => s.name.toLowerCase() === searchName);
         if (stageSound) {
+
             if (wait) {
-                await soundManager.playAndWait(name, stageSound.src, playbackOptions);
+                await soundManager.playAndWait(name, stageSound.src, playbackOptions, signal);
             } else {
                 await soundManager.play(name, stageSound.src, playbackOptions);
             }
@@ -1276,12 +1278,13 @@ export class AnimationVM {
 
             // Sound blocks
             case 'play_sound':
-                await this.playSound(ctx.sprite, step.sound, false);
+                await this.playSound(ctx.sprite, step.sound, false, signal);
                 break;
 
             case 'play_sound_until_done':
-                await this.playSound(ctx.sprite, step.sound, true);
+                await this.playSound(ctx.sprite, step.sound, true, signal);
                 break;
+
 
             case 'stop_all_sounds':
                 soundManager.stopAll();
@@ -1440,22 +1443,104 @@ export class AnimationVM {
             // Face Detection extension steps
             case 'fd_action' as any: {
                 const fdAction = (step as any).action;
-                if (typeof window !== 'undefined' && (window as any).runtime?.face) {
-                    (window as any).runtime.face.analyse(fdAction);
+                // Turn camera on/off via React state callback
+                if (typeof window !== 'undefined') {
+                    if (fdAction === 'on' || fdAction === 'analyze') {
+                        (window as any).__setCameraOn?.(true);
+                    } else if (fdAction === 'off') {
+                        (window as any).__setCameraOn?.(false);
+                    }
+                    // Also call face runtime to start/stop detection loop
+                    if ((window as any).runtime?.face) {
+                        (window as any).runtime.face.analyse(fdAction);
+                    }
                 }
                 break;
             }
             case 'fd_report' as any: {
-                // Reporter blocks used as statements — say the result
+                // Statement reporter blocks — execute runtime action and say result
                 if (typeof window !== 'undefined' && (window as any).runtime?.face) {
                     const face = (window as any).runtime.face;
-                    const result = (step as any).feature
-                        ? face.detectFeature((step as any).feature)
-                        : face.getFaceCount();
-                    sprite.say(String(result ?? ''));
+                    const feature = (step as any).feature;
+                    let result: string;
+
+                    switch (feature) {
+                        case 'fd_show_bounding_box':
+                            face.setBoundingBox?.('show');
+                            result = '';
+                            break;
+                        case 'fd_set_threshold':
+                            result = '';
+                            break;
+                        case 'fd_add_class':
+                            result = '';
+                            break;
+                        case 'fd_reset_class':
+                            face.resetClasses?.();
+                            result = '';
+                            break;
+                        case 'fd_do_face_matching':
+                            await face.doFaceMatching?.('camera');
+                            result = '';
+                            break;
+                        default:
+                            // get # faces / get expression
+                            result = feature
+                                ? String(face.detectFeature(feature) ?? '')
+                                : String(face.getFaceCount());
+                            sprite.say(result);
+                    }
                 }
                 break;
             }
+
+            // Hand Pose extension steps
+            case 'hp_action' as any: {
+                const hpAction = (step as any).action;
+                if (typeof window !== 'undefined') {
+                    if (hpAction === 'on' || hpAction === 'analyze') (window as any).__setCameraOn?.(true);
+                    else if (hpAction === 'off') (window as any).__setCameraOn?.(false);
+                    if ((window as any).runtime?.handPose) (window as any).runtime.handPose.analyse(hpAction);
+                }
+                break;
+            }
+            case 'hp_move_with' as any: {
+                const finger = (step as any).finger;
+                if (typeof window !== 'undefined' && (window as any).runtime?.handPose) {
+                    (window as any).runtime.handPose.moveSpriteToFinger(finger);
+                }
+                break;
+            }
+            case 'hp_report' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.handPose) {
+                    const sign = (window as any).runtime.handPose.getSign();
+                    sprite.say("Sign: " + sign);
+                }
+                break;
+            }
+
+
+
+            // Body Detection extension steps
+            case 'bd_action' as any: {
+                const bdAction = (step as any).action;
+                if (typeof window !== 'undefined') {
+                    if (bdAction === 'on' || bdAction === 'analyze') (window as any).__setCameraOn?.(true);
+                    else if (bdAction === 'off') (window as any).__setCameraOn?.(false);
+                    if ((window as any).runtime?.bodyDetection) (window as any).runtime.bodyDetection.analyse(bdAction);
+                }
+                break;
+            }
+
+            // ML Environment extension steps
+            case 'ml_action' as any: {
+                const mlAction = (step as any).action;
+                if (typeof window !== 'undefined' && (window as any).runtime?.ml) {
+                    (window as any).runtime.ml.analyse(mlAction);
+                }
+                break;
+            }
+
 
             // Object Detection extension steps
             case 'object_detect' as any: {

@@ -555,34 +555,17 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-    const handleFullscreen = async () => {
-
-        if (!document.fullscreenElement) {
-
-            if (stageContainerRef.current) {
-
-                try {
-
-                    await stageContainerRef.current.requestFullscreen();
-
-                } catch (err) {
-
-                    console.error("Error attempting to enable fullscreen:", err);
-
-                }
-
-            }
-
+    const handleFullscreen = () => {
+        if (!isFullscreen) {
+            setIsFullscreen(true);
+            // Calculate initial scale
+            const scaleX = window.innerWidth / 480;
+            const scaleY = (window.innerHeight - 54) / 360; // 54px toolbar
+            setFullscreenScale(Math.min(scaleX, scaleY));
         } else {
-
-            if (document.exitFullscreen) {
-
-                document.exitFullscreen();
-
-            }
-
+            setIsFullscreen(false);
+            setFullscreenScale(1);
         }
-
     };
 
 
@@ -590,55 +573,24 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     useEffect(() => {
 
         const updateScale = () => {
-
-            if (document.fullscreenElement) {
-                // Account for the entire workspace height (Stage + Sprite Panel + Spacing)
-                // Stage: 310, Panel: ~410, Spacing: 30, Toolbar: 60
-                const TOTAL_WORKSPACE_HEIGHT = 750;
-                const TOTAL_WORKSPACE_WIDTH = 450;
-
-                const toolbarHeight = 60;
-                const availableHeight = window.innerHeight - toolbarHeight;
-
-                const scaleX = window.innerWidth / TOTAL_WORKSPACE_WIDTH;
-                const scaleY = availableHeight / TOTAL_WORKSPACE_HEIGHT;
-
-                setFullscreenScale(Math.min(scaleX, scaleY)); // Removed 1.5x cap for full responsiveness
+            if (isFullscreen) {
+                // Scale stage canvas (480×360) to fill viewport minus toolbar (54px)
+                const scaleX = window.innerWidth / 480;
+                const scaleY = (window.innerHeight - 54) / 360;
+                setFullscreenScale(Math.min(scaleX, scaleY));
             } else {
-
                 setFullscreenScale(1);
-
             }
-
         };
 
-
-
-        const onFullscreenChange = () => {
-
-            setIsFullscreen(!!document.fullscreenElement);
-
-            updateScale();
-
-        };
-
-
-
-        document.addEventListener('fullscreenchange', onFullscreenChange);
-
+        updateScale();
         window.addEventListener('resize', updateScale);
 
-
-
         return () => {
-
-            document.removeEventListener('fullscreenchange', onFullscreenChange);
-
             window.removeEventListener('resize', updateScale);
-
         };
 
-    }, []);
+    }, [isFullscreen]);
 
 
 
@@ -3076,6 +3028,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         animationVM.stopAll();
         leapRuntime.stopAll();
 
+        // Expose camera toggle so fd_camera blocks can turn camera on/off
+        (window as any).__setCameraOn = (on: boolean) => setIsCameraOn(on);
+
         try {
             const allScripts = syncAllWorkspaces();
             if (allScripts.length > 0 || spriteWorkspacesRef.current.size > 0) {
@@ -5016,222 +4971,122 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             display: 'flex',
             flexDirection: 'column',
             height: '100vh',
+            width: '100vw',           // ← FIX 5: explicit width anchors children
             overflow: 'hidden',
             backgroundColor: '#f5f5f5',
             fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         }}>
             {/* Responsive Styles */}
             <style>{`
-                /* Fix Blockly toolbox overlap with MenuBar */
+                /* ── Blockly toolbox: flush with top of workspace ─────────── */
                 .blocklyToolboxDiv {
                     top: 0 !important;
                     padding-top: 0 !important;
                 }
-                
                 .blocklyFlyout {
                     top: 0 !important;
                 }
-                
-                /* Ensure MenuBar is always visible and responsive */
+
+                /* ── MenuBar always visible ───────────────────────────────── */
                 @media (max-width: 768px) {
-                    /* MenuBar responsive - ensure logo/home button visible */
                     .menubar-container {
                         padding: 0 8px !important;
                         height: 52px !important;
                     }
-                    
-                    /* Ensure home button and logo are visible */
                     .menubar-container button:first-child {
                         display: flex !important;
                         flex-shrink: 0 !important;
                     }
                 }
-                
-                /* Desktop - Default styles */
-                @media (min-width: 1025px) {
-                    /* Styles for desktop */
+
+                /* ── RIGHT PANEL: flex column, fills its allocated width ──── */
+                /* NEVER set height/max-height here — the flex parent controls  */
+                /* height. NEVER set min-width — flexShrink:0 + explicit width  */
+                /* on the inline style is the correct pattern.                  */
+                .right-panel-responsive {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    overflow: hidden !important;
+                    /* height is controlled by the flex parent — do NOT set it */
                 }
-                
-                /* Tablet - Medium screens */
+
+                /* ── STAGE CONTAINER: fixed size, never shrinks ───────────── */
+                .stage-container-responsive {
+                    flex-shrink: 0 !important;
+                }
+
+                /* ── Tablet (≤ 1024px): narrow the right panel ───────────── */
                 @media (max-width: 1024px) {
-                        bottom: 10px !important;
-                        left: 10px !important;
-                    }
-                    
-                    /* Adjust right panel width */
                     .right-panel-responsive {
                         width: 380px !important;
-                        min-width: 320px !important;
+                        /* NO min-width override — inline flexShrink:0 handles it */
                     }
-                    
-                    /* Adjust stage size */
                     .stage-container-responsive {
-                        width: 360px !important;
+                        /* width stays 100% — right panel width controls the size */
                     }
-                    
-                    /* Bottom panels fit properly */
                     .log-area-responsive {
                         height: 180px !important;
                         max-height: 180px !important;
                     }
                 }
-                
-                /* Mobile - Small screens */
+
+                /* ── Mobile (≤ 768px): stack vertically ──────────────────── */
                 @media (max-width: 768px) {
-                    /* Stack layout on mobile */
                     .main-container-responsive {
                         flex-direction: column !important;
                         height: auto !important;
                         min-height: calc(100vh - 52px) !important;
                     }
-                    
-                    /* Full width workspace on mobile */
                     .workspace-container-responsive {
                         width: 100% !important;
-                        min-width: 100% !important;
+                        min-width: 0 !important;
                         height: 60vh !important;
                         min-height: 400px !important;
                     }
-                    
-                    /* Full width right panel on mobile */
                     .right-panel-responsive {
                         width: 100% !important;
-                        min-width: 100% !important;
-                        max-width: 100% !important;
+                        flex-shrink: 1 !important;
                         border-left: none !important;
                         border-top: 1px solid #d9d9d9 !important;
                         height: auto !important;
                         max-height: 40vh !important;
                     }
-                    
-                    /* Adjust stage for mobile */
                     .stage-container-responsive {
                         width: 100% !important;
                         max-width: 450px !important;
                         margin: 0 auto !important;
                     }
-                    
-                    /* Bottom panels fit properly on mobile */
                     .log-area-responsive {
                         height: 150px !important;
                         max-height: 150px !important;
                     }
                 }
-                
-                /* Extra small mobile */
+
+                /* ── Extra small (≤ 480px) ────────────────────────────────── */
                 @media (max-width: 480px) {
                     .workspace-container-responsive {
                         height: 50vh !important;
                         min-height: 350px !important;
                     }
-                    
-                    /* Smaller stage on very small screens */
                     .stage-container-responsive {
                         max-width: 100% !important;
                     }
-                    
-                    /* Bottom panels compact on extra small */
                     .log-area-responsive {
                         height: 120px !important;
                         max-height: 120px !important;
                     }
                 }
-                
-                /* Ensure workspace scales properly */
-                .blocklyWorkspace {
-                    min-height: 350px !important;
-                }
-                
-                /* Right panel responsive - ensure proper height distribution */
-                .right-panel-responsive {
-                    display: flex !important;
-                    flex-direction: column !important;
-                    overflow: hidden !important;
-                }
-                
-                /* Upload mode - ensure code preview and log fit within viewport */
-                @media (min-width: 769px) {
-                    .right-panel-responsive {
-                        height: calc(100vh - 120px) !important;
-                        max-height: calc(100vh - 120px) !important;
-                    }
-                }
-                
-                /* Stage container responsive sizing */
-                .stage-container-responsive {
-                    flex-shrink: 0 !important;
-                }
-                
-                /* Code preview responsive height */
-                .code-preview-area {
-                    flex: 1 1 auto !important;
-                    min-height: 150px !important;
-                    max-height: calc(50vh - 200px) !important;
-                    overflow-y: auto !important;
-                }
-                
-                @media (max-height: 900px) {
-                    .code-preview-area {
-                        max-height: calc(40vh - 150px) !important;
-                        min-height: 140px !important;
-                    }
-                }
-                
-                @media (max-height: 768px) {
-                    .code-preview-area {
-                        max-height: 200px !important;
-                        min-height: 120px !important;
-                    }
-                }
-                
-                @media (max-height: 600px) {
-                    .code-preview-area {
-                        max-height: 150px !important;
-                        min-height: 100px !important;
-                    }
-                }
-                
-                /* Log area responsive height - better fitting */
-                .log-area-responsive {
-                    height: 180px !important;
-                    max-height: 180px !important;
-                    min-height: 120px !important;
-                    flex-shrink: 0 !important;
-                }
-                
-                @media (max-height: 900px) {
-                    .log-area-responsive {
-                        height: 160px !important;
-                        max-height: 160px !important;
-                    }
-                }
-                
-                @media (max-height: 768px) {
-                    .log-area-responsive {
-                        height: 140px !important;
-                        max-height: 140px !important;
-                    }
-                }
-                
-                @media (max-height: 600px) {
-                    .log-area-responsive {
-                        height: 120px !important;
-                        max-height: 120px !important;
-                    }
-                }
-                }
-                
-                /* Landscape mobile optimization */
+
+                /* ── Landscape mobile ─────────────────────────────────────── */
                 @media (max-width: 768px) and (orientation: landscape) {
                     .main-container-responsive {
                         flex-direction: row !important;
                     }
-                    
                     .workspace-container-responsive {
                         width: 60% !important;
+                        min-width: 0 !important;
                         height: calc(100vh - 52px) !important;
                     }
-                    
                     .right-panel-responsive {
                         width: 40% !important;
                         border-left: 1px solid #d9d9d9 !important;
@@ -5239,21 +5094,49 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         height: calc(100vh - 52px) !important;
                         max-height: none !important;
                     }
-                    
                     .log-area-responsive {
                         height: 120px !important;
                         max-height: 120px !important;
                     }
                 }
-                
-                /* Ensure bottom panels don't overflow */
-                .right-panel-responsive {
-                    display: flex !important;
-                    flex-direction: column !important;
+
+                /* ── Code preview (upload mode) ───────────────────────────── */
+                .code-preview-area {
+                    flex: 1 1 auto !important;
+                    min-height: 150px !important;
+                    max-height: calc(50vh - 200px) !important;
+                    overflow-y: auto !important;
                 }
-                
-                .right-panel-responsive > * {
+                @media (max-height: 900px) {
+                    .code-preview-area { max-height: calc(40vh - 150px) !important; min-height: 140px !important; }
+                }
+                @media (max-height: 768px) {
+                    .code-preview-area { max-height: 200px !important; min-height: 120px !important; }
+                }
+                @media (max-height: 600px) {
+                    .code-preview-area { max-height: 150px !important; min-height: 100px !important; }
+                }
+
+                /* ── Log area ─────────────────────────────────────────────── */
+                .log-area-responsive {
+                    height: 180px !important;
+                    max-height: 180px !important;
+                    min-height: 120px !important;
                     flex-shrink: 0 !important;
+                }
+                @media (max-height: 900px) {
+                    .log-area-responsive { height: 160px !important; max-height: 160px !important; }
+                }
+                @media (max-height: 768px) {
+                    .log-area-responsive { height: 140px !important; max-height: 140px !important; }
+                }
+                @media (max-height: 600px) {
+                    .log-area-responsive { height: 120px !important; max-height: 120px !important; }
+                }
+
+                /* ── Blockly workspace min-height ─────────────────────────── */
+                .blocklyWorkspace {
+                    min-height: 350px !important;
                 }
             `}</style>
 
@@ -5671,200 +5554,159 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 }} className="right-panel-responsive">
 
-                    {/* Stage Container - Always rendered, conditionally visible to keep ref valid */}
+                    {/* Stage Container */}
                     <div ref={stageContainerRef} className="stage-container-responsive" style={{
                         ...(!isFullscreen ? styles.stageContainer : {}),
-                        width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '225px' : '450px'),
+                        width: isFullscreen ? '100vw' : '100%',
                         height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '155px' : (editorMode === 'stage' ? 'auto' : '310px')),
-                        transition: 'all 0.2s ease-in-out',
+                        transition: isFullscreen ? 'none' : 'all 0.2s ease-in-out',
                         position: isFullscreen ? 'fixed' : 'relative',
-                        top: isFullscreen ? 0 : 'auto', left: isFullscreen ? 0 : 'auto',
+                        top: isFullscreen ? 0 : 'auto',
+                        left: isFullscreen ? 0 : 'auto',
                         zIndex: isFullscreen ? 9999 : 1,
                         display: (editorMode === 'stage' || isFullscreen) ? 'flex' : 'none',
                         flexDirection: 'column',
-                        alignItems: isFullscreen ? 'center' : 'stretch',
-                        justifyContent: isFullscreen ? 'flex-start' : 'flex-start',
-                        background: isFullscreen ? '#0c0c0e' : 'transparent',
+                        alignItems: 'center',
+                        justifyContent: 'flex-start',
+                        background: isFullscreen ? '#f0f0f0' : 'transparent',
                         overflowX: 'hidden',
                         overflowY: 'hidden',
-                        gap: isFullscreen ? '0' : '8px',
+                        gap: 0,
                     }}>
 
-                        {/* Fullscreen Toolbar - Premium Dark/Glass */}
-
+                        {/* Fullscreen Toolbar — light gray, matches reference images */}
                         {isFullscreen && (
-
                             <div style={{
-
                                 width: '100%',
-
-                                height: '54px',
-
-                                background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
-
-                                backdropFilter: 'blur(12px)',
-
-                                WebkitBackdropFilter: 'blur(12px)',
-
+                                height: '48px',
+                                background: '#f0f0f0',
                                 display: 'flex',
-
                                 alignItems: 'center',
-
                                 justifyContent: 'space-between',
-
-                                padding: '0 24px',
-
+                                padding: '0 16px',
                                 boxSizing: 'border-box',
-
-                                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-
-                                zIndex: 10
-
+                                borderBottom: '1px solid #ddd',
+                                flexShrink: 0,
+                                zIndex: 10,
                             }}>
-
-                                {/* Left: Run and Stop */}
-
-                                <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
-
-                                    <button style={{ ...styles.runButtonTop, background: 'rgba(76, 187, 23, 0.15)', border: '1px solid rgba(76, 187, 23, 0.3)', borderRadius: '8px', padding: '6px 12px', transition: 'all 0.2s' }} onClick={handleRunClick} title="Run" onMouseOver={(e) => e.currentTarget.style.background = 'rgba(76, 187, 23, 0.25)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(76, 187, 23, 0.15)'}>
-
-                                        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4ce01b" d="M5 3v18M19 8l-14-5v10l14 5V8z" stroke="#4ce01b" strokeWidth="1.5" strokeLinejoin="round" /></svg>
-
+                                {/* Left: Run + Stop */}
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <button
+                                        onClick={handleRunClick}
+                                        title="Run"
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                    >
+                                        <svg viewBox="0 0 24 24" width="28" height="28">
+                                            <circle cx="12" cy="12" r="11" fill="#4CAF50" />
+                                            <polygon fill="white" points="10,8 17,12 10,16" />
+                                        </svg>
                                     </button>
-
-                                    <button style={{ ...styles.stopButtonTop, background: 'rgba(236, 89, 89, 0.15)', border: '1px solid rgba(236, 89, 89, 0.3)', borderRadius: '8px', padding: '6px 12px', transition: 'all 0.2s' }} onClick={handleStopClick} title="Stop" onMouseOver={(e) => e.currentTarget.style.background = 'rgba(236, 89, 89, 0.25)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(236, 89, 89, 0.15)'}>
-
-                                        <svg viewBox="0 0 24 24" width="20" height="20"><polygon fill="#ff6b6b" points="7.3,2 16.7,2 22,7.3 22,16.7 16.7,22 7.3,22 2,16.7 2,7.3" /></svg>
-
+                                    <button
+                                        onClick={handleStopClick}
+                                        title="Stop"
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                    >
+                                        <svg viewBox="0 0 24 24" width="28" height="28">
+                                            <circle cx="12" cy="12" r="11" fill="#F44336" />
+                                            <rect x="8" y="8" width="8" height="8" fill="white" rx="1" />
+                                        </svg>
                                     </button>
-
                                 </div>
 
-
-
-                                {/* Middle: Custom Tools */}
-
-                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-
-                                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#a855f7', boxShadow: '0 0 8px #a855f7' }} title="Status"></div>
-
-                                    <button style={{ ...styles.iconBtn, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px' }} onClick={() => setIsCameraOn(!isCameraOn)} title="Toggle Camera">
-
-                                        {isCameraOn ? <Camera size={18} color="#e9d5ff" /> : <CameraOff size={18} color="#94a3b8" />}
-
+                                {/* Center: Camera, Image, Sound, Timer */}
+                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                    <button
+                                        onClick={() => setIsCameraOn(!isCameraOn)}
+                                        title="Toggle Camera"
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}
+                                    >
+                                        {isCameraOn ? <Camera size={20} /> : <CameraOff size={20} />}
                                     </button>
-
+                                    <button title="Screenshot" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                            <rect x="3" y="3" width="18" height="14" rx="2" />
+                                            <polyline points="3 13 8 8 13 12" />
+                                            <polyline points="13 12 16 9 21 13" />
+                                        </svg>
+                                    </button>
+                                    <button title="Sound" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}>
+                                        <Volume2 size={20} />
+                                    </button>
+                                    {/* Timer pill */}
                                     <div style={{
-
-                                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
-
-                                        border: '1px solid rgba(168, 85, 247, 0.4)',
-
-                                        color: '#f3e8ff',
-
-                                        padding: '4px 12px',
-
-                                        borderRadius: '16px',
-
+                                        background: '#6c3fc5',
+                                        color: 'white',
+                                        padding: '3px 12px',
+                                        borderRadius: '20px',
                                         fontSize: '13px',
-
-                                        fontWeight: '600',
-
+                                        fontWeight: 600,
                                         display: 'flex',
-
                                         alignItems: 'center',
-
-                                        gap: '8px',
-
-                                        letterSpacing: '0.5px'
-
+                                        gap: '6px',
                                     }}>
-
-                                        <Volume2 size={14} color="#d8b4fe" />
-
                                         <span>0 : 00</span>
-
                                     </div>
-
                                 </div>
 
-
-
-                                {/* Right: Exit Fullscreen */}
-
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', flex: 1 }}>
-
-                                    <button style={{ ...styles.iconBtn, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px', color: '#e2e8f0', transition: 'all 0.2s' }} onClick={handleFullscreen} title="Exit Fullscreen" onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}>
-
-                                        <Minimize size={18} strokeWidth={2.5} />
-
-                                    </button>
-
-                                </div>
-
+                                {/* Right: Exit fullscreen */}
+                                <button
+                                    onClick={handleFullscreen}
+                                    title="Exit Fullscreen"
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}
+                                >
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                                    </svg>
+                                </button>
                             </div>
-
                         )}
 
 
 
-                        {/* --- GLOBAL STAGE SIZE SETTINGS --- */}
-
-                        {/* Modify these values to easily control the size and scaling of the Stage in all layout modes! */}
-
+                        {/* --- STAGE RENDERING --- */}
                         {(() => {
-
-                            // 1. The Internal Canvas Resolution (Default 480x360)
-
                             const CANVAS_WIDTH = 480;
-
                             const CANVAS_HEIGHT = 360;
 
-
-
-                            // 2. Large Stage Mode Settings (Default)
-                            const LARGE_STAGE_WIDTH = 600;
-                            const LARGE_STAGE_HEIGHT = 450;
-                            const LARGE_STAGE_SCALE = 1.25;
-
-
-                            // 3. Small Stage Mode Settings
-                            const SMALL_STAGE_WIDTH = 250;
-                            const SMALL_STAGE_HEIGHT = 160;
-                            const SMALL_STAGE_SCALE = 0.5;
-
+                            // Fullscreen: scale canvas to fill viewport minus 48px toolbar
+                            const TOOLBAR_H = 48;
+                            const fsScale = isFullscreen
+                                ? Math.min(
+                                    window.innerWidth / CANVAS_WIDTH,
+                                    (window.innerHeight - TOOLBAR_H) / CANVAS_HEIGHT
+                                )
+                                : 1;
+                            const displayW = isFullscreen ? Math.round(CANVAS_WIDTH * fsScale) : CANVAS_WIDTH;
+                            const displayH = isFullscreen ? Math.round(CANVAS_HEIGHT * fsScale) : CANVAS_HEIGHT;
 
                             return (
-
                                 <div style={{
                                     flex: 1,
                                     width: '100%',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: isFullscreen ? 'flex-start' : 'center',
+                                    alignItems: isFullscreen ? 'center' : 'stretch',
+                                    justifyContent: isFullscreen ? 'center' : 'flex-start',
                                     position: 'relative',
-                                    transform: isFullscreen ? `scale(${fullscreenScale})` : 'none',
-                                    transformOrigin: isFullscreen ? 'top center' : 'center center',
-                                    padding: isFullscreen ? '10px 0' : '0',
-                                    transition: 'all 0.2s ease-in-out',
+                                    overflow: 'visible',
+                                    height: isFullscreen ? `calc(100vh - ${TOOLBAR_H}px)` : 'auto',
                                 }}>
-                                    {/* Stage Unit */}
+                                    {/* Stage canvas */}
                                     <div style={{
-                                        width: `${CANVAS_WIDTH}px`,
-                                        height: `${CANVAS_HEIGHT}px`,
-                                        background: 'transparent',
-                                        boxShadow: isFullscreen ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' : 'none',
-                                        borderRadius: isFullscreen ? '10px' : '0',
-                                        overflow: 'visible',
+                                        width: `${displayW}px`,
+                                        height: `${displayH}px`,
+                                        background: 'white',
+                                        boxShadow: isFullscreen ? '0 4px 32px rgba(0,0,0,0.18)' : 'none',
+                                        borderRadius: isFullscreen ? '4px' : '0',
+                                        overflow: 'hidden',
                                         position: 'relative',
                                         flex: '0 0 auto',
                                     }}>
                                         <Stage
 
-                                            width={CANVAS_WIDTH}
+                                            width={displayW}
 
-                                            height={CANVAS_HEIGHT}
+                                            height={displayH}
 
                                             sprites={sprites}
 
@@ -5908,16 +5750,17 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                         )}
                                     </div>
 
-                                    {/* Sprite & Stage Panel Unit */}
-                                    {(editorMode === 'stage' || isFullscreen) && (
+                                    {/* Sprite & Stage Panel Unit — hidden in fullscreen */}
+                                    {editorMode === 'stage' && !isFullscreen && (
                                         <div style={{
                                             ...styles.assetsContainer,
-                                            width: `${CANVAS_WIDTH}px`,
-                                            flex: '0 0 auto',
-                                            marginTop: '8px',
+                                            width: '100%',
+                                            flex: '1 1 auto',
+                                            minHeight: 0,
                                             display: 'flex',
-                                            justifyContent: 'center',
-                                            alignItems: 'flex-start',
+                                            flexDirection: 'column',
+                                            justifyContent: 'flex-start',
+                                            alignItems: 'stretch',
                                             overflow: 'visible',
                                         }}>
                                             <SpritePanel
@@ -6888,6 +6731,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         flex: 1,
         display: 'flex',
         overflow: 'hidden',           // ← KEY FIX: Prevents page scroll
+        minHeight: 0,                 // ← FIX 4: Allows row to shrink below content height
         position: 'relative'
     },
 
@@ -6900,7 +6744,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        minWidth: '350px',
+        minWidth: 0,                  // ← FIX 1 (ROOT CAUSE): Overrides min-width:auto so workspace compresses
         overflow: 'hidden'
     },
 
@@ -7087,8 +6931,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     rightPanel: {
 
         width: '450px',
-        minWidth: '320px',
-        maxWidth: '500px',
+        flexShrink: 0,                // ← FIX 2: Column never squishes; workspace absorbs all size changes
+        // minWidth/maxWidth removed — flexShrink:0 + explicit width is the correct pattern
 
         backgroundColor: '#f5f5f5',
 

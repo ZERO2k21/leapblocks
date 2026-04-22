@@ -116,10 +116,20 @@ export class SoundManager {
             const arrayBuffer = await response.arrayBuffer();
             if (arrayBuffer.byteLength === 0) throw new Error('Received empty audio data.');
 
-            const decoder = new ADPCMSoundDecoder(this.audioContext);
-            const audioBuffer = await decoder.decode(arrayBuffer);
+            let audioBuffer: AudioBuffer;
+            try {
+                // Try standard browser decoding (wav, mp3, etc)
+                // We use slice() because decodeAudioData might detach the buffer on some platforms
+                audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer.slice(0));
+            } catch (e) {
+                // Fallback to Scratch ADPCM decoder
+                const decoder = new ADPCMSoundDecoder(this.audioContext);
+                audioBuffer = await decoder.decode(arrayBuffer);
+            }
+            
             this.soundBuffers.set(bufferKey, audioBuffer);
             return audioBuffer;
+
         } catch (err) {
             console.error(`[SoundManager] Failed to load sound "${name}" from ${src}:`, err);
             return undefined;
@@ -149,9 +159,9 @@ export class SoundManager {
     }
 
     /**
-     * Play a sound and await until it finishes
+     * Play a sound and await until it finishes, unless aborted
      */
-    async playAndWait(name: string, src: string, options?: PlaybackOptions): Promise<void> {
+    async playAndWait(name: string, src: string, options?: PlaybackOptions, signal?: AbortSignal): Promise<void> {
         this.init();
         if (!this.audioContext || !this.masterGain) return;
 
@@ -162,16 +172,29 @@ export class SoundManager {
             if (!buffer) return;
         }
 
+        if (signal?.aborted) return;
+
         return new Promise((resolve) => {
             const source = this.audioContext!.createBufferSource();
-            source.buffer = buffer;
+            source.buffer = buffer as AudioBuffer;
             this.connectSource(source, options);
             source.start();
-            this.trackSource(source, resolve);
+
+            const onAbort = () => {
+                try { source.stop(); } catch (e) { /* ignore */ }
+                resolve();
+            };
+
+            if (signal) signal.addEventListener('abort', onAbort, { once: true });
+
+            this.trackSource(source, () => {
+                if (signal) signal.removeEventListener('abort', onAbort);
+                resolve();
+            });
         });
     }
 
-    async playSound(sprite: Sprite, name: string, wait = false): Promise<void> {
+    async playSound(sprite: Sprite, name: string, wait = false, signal?: AbortSignal): Promise<void> {
         const sound = sprite.sounds.find((entry) => entry.name === name);
         if (!sound) return;
 
@@ -183,11 +206,12 @@ export class SoundManager {
         };
 
         if (wait) {
-            await this.playAndWait(name, sound.src, options);
+            await this.playAndWait(name, sound.src, options, signal);
         } else {
             await this.play(name, sound.src, options);
         }
     }
+
 
     /**
      * Stop all currently playing sounds

@@ -7,16 +7,16 @@
 
 import React from 'react';
 import ProjectTypeCard from './ProjectTypeCard';
-import { ProjectTypeInfo } from '@/types/neura.types';
+import { ProjectTypeInfo } from '../../../types/neura.types';
 
 const projectTypes: ProjectTypeInfo[] = [
-    { id: 'image-classifier', name: 'Image Classifier', icon: '📸', color: 'bg-orange-100' },
-    { id: 'object-detection', name: 'Object Detection', icon: '🐱', color: 'bg-yellow-100' },
-    { id: 'pose-classifier', name: 'Pose Classifier', icon: '🤸', color: 'bg-blue-100' },
-    { id: 'hand-pose-classifier', name: 'Hand Pose Classifier', icon: '✋', color: 'bg-pink-100' },
-    { id: 'audio-classifier', name: 'Audio Classifier', icon: '🎵', color: 'bg-green-100' },
-    { id: 'numbers-cr', name: 'Numbers CR', icon: '🔢', color: 'bg-purple-100' },
-    { id: 'text-classifier', name: 'Text Classifier', icon: '📝', color: 'bg-red-100' },
+    { id: 'image-classifier', name: 'Image Classifier', icon: '📸', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
+    { id: 'object-detection', name: 'Object Detection', icon: '🐱', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
+    { id: 'pose-classifier', name: 'Pose Classifier', icon: '🤸', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
+    { id: 'hand-pose-classifier', name: 'Hand Pose Classifier', icon: '✋', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
+    { id: 'audio-classifier', name: 'Audio Classifier', icon: '🎵', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
+    { id: 'numbers-cr', name: 'Numbers CR', icon: '🔢', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
+    { id: 'text-classifier', name: 'Text Classifier', icon: '📝', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
 ];
 
 interface CreateProjectModalProps {
@@ -30,32 +30,25 @@ export default function CreateProjectModal({ onClose, onSelectType }: CreateProj
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-[950px] max-h-[90vh] overflow-hidden">
-                {/* Header */}
-                <div className="bg-[#6b21a8] text-white px-8 py-6 flex items-center justify-between">
-                    <h2 className="text-2xl font-semibold">Create New Project</h2>
-                    <button
-                        onClick={onClose}
-                        className="text-white hover:bg-white/20 px-4 py-2 rounded-2xl transition-colors flex items-center gap-2"
-                    >
-                        <span>←</span>
-                        <span>Back</span>
-                    </button>
-                </div>
+        <div className="w-full h-full flex flex-col px-6 sm:px-10 py-8 bg-gradient-to-br from-[#f5f7ff] via-white to-[#eef1ff]">
+            <div className="mb-10">
+                <h2 className="text-3xl font-bold text-[#0a015a] tracking-tight">
+                    Choose a Project Type
+                </h2>
+                <p className="text-slate-500 mt-2 text-sm sm:text-base">
+                    Select a machine learning model to start building.
+                </p>
+            </div>
 
-                {/* Project types grid */}
-                <div className="p-8 overflow-auto max-h-[calc(90vh-100px)]">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {projectTypes.map((type) => (
-                            <ProjectTypeCard
-                                key={type.id}
-                                type={type}
-                                onClick={() => handleSelectType(type.id)}
-                            />
-                        ))}
-                    </div>
-                </div>
+            {/* Project types grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-5 sm:gap-6">
+                {projectTypes.map((type) => (
+                    <ProjectTypeCard
+                        key={type.id}
+                        type={type}
+                        onClick={() => handleSelectType(type.id)}
+                    />
+                ))}
             </div>
         </div>
     );

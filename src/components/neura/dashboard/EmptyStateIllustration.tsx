@@ -5,7 +5,11 @@
 
 import React from 'react';
 
-export default function EmptyStateIllustration() {
+interface EmptyStateIllustrationProps {
+    onCreateNew?: () => void;
+}
+
+export default function EmptyStateIllustration({ onCreateNew }: EmptyStateIllustrationProps) {
     return (
         <div className="flex flex-col items-center justify-center py-16">
             {/* Central illustration - Boy with floating icons */}
@@ -37,7 +41,7 @@ export default function EmptyStateIllustration() {
             </p>
 
             {/* CTA Button */}
-            <button className="neura-button-primary text-lg px-8 py-3 flex items-center gap-2">
+            <button onClick={onCreateNew} className="neura-button-primary text-lg px-8 py-3 flex items-center gap-2">
                 <span className="text-xl">+</span>
                 <span>Create Your First Project</span>
             </button>
