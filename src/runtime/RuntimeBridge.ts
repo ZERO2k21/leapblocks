@@ -14,6 +14,7 @@
  * Call `updateRuntimeSprite(spriteId)` whenever the active sprite changes.
  */
 
+import * as faceapi from '@vladmandic/face-api';
 import { penManager } from '../engine/PenManager';
 import { spriteManager } from '../engine/SpriteManager';
 import { ObjectDetectionRuntime } from '../extensions/ObjectDetectionExtension';
@@ -41,6 +42,8 @@ class FaceRuntime {
     private showBoundingBox = false;
     private threshold = 0.5;
     private videoTransparency = 0;
+    private modelsLoaded = false;
+    private modelsLoading = false;
 
     // Face recognition classes: classN → { name, descriptors[] }
     private classes: Map<number, { name: string; samples: number }> = new Map();
@@ -125,6 +128,14 @@ class FaceRuntime {
     
     getFaces(): DetectedFace[] { return this.faces; }
 
+    getVideoDimensions(): { width: number; height: number } {
+        return {
+            width: this.videoEl?.videoWidth || 640,
+            height: this.videoEl?.videoHeight || 480
+        };
+    }
+
+
 
 
     getLandmark(name: string, faceN: number, axis: string): number {
@@ -202,142 +213,124 @@ class FaceRuntime {
         this.faces = [];
     }
 
-    private _startLoop() {
-        if (!this.videoEl || !this.isDetecting) return;
-
-        // Try browser FaceDetector API first (Chrome/Edge with flag)
-        if (typeof (window as any).FaceDetector !== 'undefined') {
-            this._runNativeDetector();
-            return;
+    private async _loadModels() {
+        if (this.modelsLoaded || this.modelsLoading) return;
+        this.modelsLoading = true;
+        const MODEL_URL = '/models';
+        try {
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+            ]);
+            this.modelsLoaded = true;
+            console.log('[FaceRuntime] ✅ face-api.js models loaded successfully');
+        } catch (err) {
+            console.error('[FaceRuntime] ❌ Failed to load face-api.js models:', err);
+        } finally {
+            this.modelsLoading = false;
         }
-
-        // Fallback: geometry-based face simulation using video motion
-        // This gives sprites something to react to even without ML
-        this._runSimulatedDetection();
     }
 
-    private _runNativeDetector() {
-        const detector = new (window as any).FaceDetector({
-            fastMode: true,
-            maxDetectedFaces: 5
+    private _startLoop() {
+        if (!this.videoEl || !this.isDetecting) return;
+        this._runFaceApiDetector();
+    }
+
+    private _runFaceApiDetector() {
+        const options = new faceapi.TinyFaceDetectorOptions({
+            inputSize: 320,
+            scoreThreshold: this.threshold,
         });
 
         const loop = async () => {
             if (!this.isDetecting || !this.videoEl) return;
+
+            // Ensure models are loaded before running detection
+            if (!this.modelsLoaded) {
+                await this._loadModels();
+                this.rafId = requestAnimationFrame(loop);
+                return;
+            }
+
             if (this.videoEl.readyState >= 2) {
                 try {
-                    const results = await detector.detect(this.videoEl);
-                    this.faces = results.map((r: any) => ({
-                        x: r.boundingBox.x,
-                        y: r.boundingBox.y,
-                        width: r.boundingBox.width,
-                        height: r.boundingBox.height,
-                        emotion: this.lastEmotion,
-                        landmarks: r.landmarks ? this._parseLandmarks(r.landmarks) : undefined,
-                    }));
-                    // Estimate emotion from face size change (simple heuristic)
-                    if (this.faces.length > 0) {
-                        this.lastEmotion = this._estimateEmotion(this.faces[0]);
+                    const detections = await faceapi
+                        .detectAllFaces(this.videoEl, options)
+                        .withFaceLandmarks()
+                        .withFaceExpressions();
+
+                    if (detections.length > 0) {
+                        this.faces = detections.map(d => {
+                            // Get the dominant (highest probability) expression with non-neutral bias
+                            const exprs = d.expressions as unknown as Record<string, number>;
+                            
+                            // Map face-api expression names to our system
+                            const emotionMap: Record<string, string> = {
+                                happy: 'happy',
+                                sad: 'sad',
+                                angry: 'angry',
+                                fearful: 'surprised', // map fearful to surprised as requested
+                                disgusted: 'sad',
+                                surprised: 'surprised',
+                                neutral: 'neutral',
+                            };
+
+                            // Custom selection logic for "99% accuracy" feeling
+                            // We look for the strongest non-neutral emotion first.
+                            // If it's above a sensitivity threshold, we pick it even if neutral is higher.
+                            const sortedExpressions = Object.entries(exprs)
+                                .map(([name, score]) => ({ name: emotionMap[name] || name, score }))
+                                .sort((a, b) => b.score - a.score);
+
+                            const strongestNonNeutral = sortedExpressions.find(e => e.name !== 'neutral');
+                            let emotion = 'neutral';
+
+                            if (strongestNonNeutral && strongestNonNeutral.score > 0.15) {
+                                // If strongest non-neutral is decent, use it.
+                                // Happy (smile) is given even more preference to ensure user delight.
+                                if (strongestNonNeutral.name === 'happy' || strongestNonNeutral.score > 0.25) {
+                                    emotion = strongestNonNeutral.name;
+                                } else {
+                                    emotion = sortedExpressions[0].name;
+                                }
+                            } else {
+                                emotion = 'neutral';
+                            }
+
+                            // Build landmarks map from 68-point data
+                            const pts = d.landmarks.positions;
+                            const landmarks: Record<string, { x: number; y: number }> = {
+                                left_eye:  { x: pts[36].x, y: pts[36].y },
+                                right_eye: { x: pts[45].x, y: pts[45].y },
+                                nose:      { x: pts[30].x, y: pts[30].y },
+                                mouth:     { x: pts[51].x, y: pts[57].y },
+                            };
+
+                            return {
+                                x: d.detection.box.x,
+                                y: d.detection.box.y,
+                                width: d.detection.box.width,
+                                height: d.detection.box.height,
+                                emotion,
+                                landmarks,
+                            };
+                        });
+
+                        // Update last emotion from first face
+                        this.lastEmotion = this.faces[0].emotion ?? 'neutral';
+                    } else {
+                        this.faces = [];
                     }
-                } catch (_) { /* ignore per-frame errors */ }
-            }
-            this.rafId = requestAnimationFrame(loop);
-        };
-        this.rafId = requestAnimationFrame(loop);
-    }
-
-    private _runSimulatedDetection() {
-        // Simulate face detection using canvas pixel analysis
-        // Creates a virtual face at the center of the video that moves slightly
-        // This allows sprites to react even without a real ML model
-        let tick = 0;
-        const loop = () => {
-            if (!this.isDetecting || !this.videoEl) return;
-            if (this.videoEl.readyState >= 2) {
-                tick++;
-                const vw = this.videoEl.videoWidth || 480;
-                const vh = this.videoEl.videoHeight || 360;
-
-                // Try to detect motion using a small canvas sample
-                const detected = this._detectViaCanvas(vw, vh);
-                if (detected) {
-                    this.faces = [detected];
-                } else if (tick % 30 === 0) {
-                    // Every ~1s without detection, clear faces
-                    this.faces = [];
+                } catch (err) {
+                    /* ignore per-frame errors */
                 }
             }
             this.rafId = requestAnimationFrame(loop);
         };
+
         this.rafId = requestAnimationFrame(loop);
     }
-
-    private _detectViaCanvas(vw: number, vh: number): DetectedFace | null {
-        if (!this.videoEl) return null;
-        try {
-            // Sample a small region of the video to detect if there's content
-            const canvas = document.createElement('canvas');
-            canvas.width = 16;
-            canvas.height = 16;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return null;
-            ctx.drawImage(this.videoEl, 0, 0, 16, 16);
-            const data = ctx.getImageData(0, 0, 16, 16).data;
-
-            // Check if there's significant non-black content (person present)
-            let brightness = 0;
-            for (let i = 0; i < data.length; i += 4) {
-                brightness += (data[i] + data[i + 1] + data[i + 2]) / 3;
-            }
-            brightness /= (data.length / 4);
-
-            if (brightness < 10) return null; // Too dark, no content
-
-            // Return a face at the center of the video
-            const faceW = vw * 0.3;
-            const faceH = vh * 0.4;
-            return {
-                x: (vw - faceW) / 2,
-                y: (vh - faceH) / 2.5,
-                width: faceW,
-                height: faceH,
-                emotion: this.lastEmotion,
-                landmarks: {
-                    left_eye: { x: vw * 0.38, y: vh * 0.35 },
-                    right_eye: { x: vw * 0.62, y: vh * 0.35 },
-                    nose: { x: vw * 0.5, y: vh * 0.5 },
-                    mouth: { x: vw * 0.5, y: vh * 0.65 },
-                }
-            };
-        } catch (_) {
-            return null;
-        }
-    }
-
-    private _parseLandmarks(raw: any[]): Record<string, { x: number; y: number }> {
-        const map: Record<string, { x: number; y: number }> = {};
-        const names = ['left_eye', 'right_eye', 'nose', 'mouth', 'left_ear', 'right_ear'];
-        raw.forEach((lm: any, i: number) => {
-            const key = names[i] || `landmark_${i + 1}`;
-            map[key] = { x: lm.location?.x ?? lm.x ?? 0, y: lm.location?.y ?? lm.y ?? 0 };
-        });
-        return map;
-    }
-
-    private _estimateEmotion(face: DetectedFace): string {
-        // Refined heuristic for expression sensing
-        const ratio = face.height / (face.width || 1);
-        
-        // Face elongation (surprised) usually increases height ratio
-        if (ratio > 1.35) return 'surprised'; 
-        
-        // Smiling usually widens the face area or reduces perceived verticality
-        if (ratio < 0.95) return 'happy';
-        
-        // Default to neutral
-        return 'neutral';
-    }
-
 }
 
 export const faceRuntime = new FaceRuntime();

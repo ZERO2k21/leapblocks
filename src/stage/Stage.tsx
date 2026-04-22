@@ -358,30 +358,59 @@ export const Stage: React.FC<StageProps> = ({
             }
         }
 
-        // 6. AI Detection Highlighting
+        // 6. AI Detection Highlighting (Dynamic Tracking)
         if (isCameraOn) {
             const faceRuntime = (window as any).runtime?.face;
             const faces = faceRuntime?.getFaces() || [];
+            const videoDim = faceRuntime?.getVideoDimensions() || { width: 640, height: 480 };
+
             if (faces.length > 0) {
                 ctx.lineWidth = 2;
-                ctx.font = 'bold 12px system-ui';
                 ctx.textAlign = 'left';
 
-                faces.forEach((face: any, i: number) => {
-                    const { x, y, width: fW, height: fH } = face;
-                    // Mirror mapping: Raw detection coordinate -> Mirrored stage coordinate
-                    // Since the video is mirrored with scaleX(-1), we flip the X position.
-                    const mirroredX = width - x - fW;
+                const scaleX = width / videoDim.width;
+                const scaleY = height / videoDim.height;
 
-                    ctx.strokeStyle = '#10b981'; // Emerald-500
-                    ctx.strokeRect(mirroredX, y, fW, fH);
-                    
-                    ctx.fillStyle = '#10b981';
-                    ctx.fillText(`Face ${i + 1}`, mirroredX, y - 6);
+                faces.forEach((face: any, i: number) => {
+                    const { x, y, width: fW, height: fH, emotion } = face;
+
+                    const stageX = x * scaleX;
+                    const stageY = y * scaleY;
+                    const stageW = fW * scaleX;
+                    const stageH = fH * scaleY;
+                    const mirroredX = width - stageX - stageW;
+
+                    // Color-code by emotion
+                    const colorMap: Record<string, string> = {
+                        happy:    '#10b981', // Emerald
+                        sad:      '#60a5fa', // Blue
+                        angry:    '#ef4444', // Red
+                        surprised:'#f59e0b', // Amber
+                        fearful:  '#a78bfa', // Violet
+                        disgusted:'#84cc16', // Lime
+                        neutral:  '#94a3b8', // Slate
+                    };
+                    const color = colorMap[emotion ?? 'neutral'] ?? '#10b981';
+
+                    ctx.strokeStyle = color;
+                    ctx.strokeRect(mirroredX, stageY, stageW, stageH);
+
+                    // Label: "Face 1 • happy"
+                    const label = `Face ${i + 1}${emotion ? ` • ${emotion}` : ''}`;
+                    ctx.font = 'bold 12px system-ui';
+                    const textW = ctx.measureText(label).width + 8;
+                    ctx.fillStyle = color;
+                    ctx.fillRect(mirroredX, stageY - 18, textW, 18);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(label, mirroredX + 4, stageY - 4);
                 });
             }
         }
     }, [width, height, sprites, showGridNumbers, draggingSpriteId, isCameraOn]);
+
+
+
+
 
 
     // ── Game loop (unchanged) ──────────────────────────────────────────────

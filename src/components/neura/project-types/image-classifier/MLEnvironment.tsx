@@ -699,46 +699,11 @@ export default function MLEnvironment({ onBack }: { onBack?: () => void }) {
     const webcamColor = webcamClass ? CLASS_COLORS[(classes.findIndex(c => c.id === webcamFor)) % CLASS_COLORS.length] : CLASS_COLORS[0];
 
     return (
-        <div style={{ minHeight: "100vh", background: "#0a0a12", color: "#e0e0f0", fontFamily: "'DM Sans', sans-serif" }}>
+        <div style={{ flex: 1, background: "#0a0a12", color: "#e0e0f0", fontFamily: "'DM Sans', sans-serif", overflowY: "auto" }}>
             {/* Google Fonts load */}
             <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;600&display=swap');`}</style>
 
-            {/* Header */}
-            <div style={{ background: "#0d0d1a", borderBottom: "1px solid #1e1e2e", padding: "0 28px", height: 56, display: "flex", alignItems: "center", gap: 16, position: "sticky", top: 0, zIndex: 100 }}>
-                {onBack && (
-                    <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "#555", padding: "6px 8px", borderRadius: 8, display: "flex", alignItems: "center", gap: 6, transition: "color 0.15s" }}
-                        onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = "#a78bfa"}
-                        onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = "#555"}>
-                        <Icon.ArrowLeft />
-                        <span style={{ fontSize: 14, fontWeight: 500 }}>Back</span>
-                    </button>
-                )}
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg, #7c3aed, #a855f7)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <Icon.Brain />
-                    </div>
-                    <div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "#f0f0fa", letterSpacing: "-0.02em" }}>Neura ML Environment</div>
-                        <div style={{ fontSize: 11, color: "#555", fontFamily: "'DM Mono', monospace" }}>Image Classifier · {projectName}</div>
-                    </div>
-                </div>
 
-                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-                    {!tfReady && !tfError && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#555", fontFamily: "'DM Mono', monospace" }}>
-                            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#f59e0b", animation: "pulse 1s infinite" }} />
-                            Loading TensorFlow.js…
-                        </div>
-                    )}
-                    {tfReady && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#2d6a4f", fontFamily: "'DM Mono', monospace" }}>
-                            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#20c997" }} />
-                            TF.js ready
-                        </div>
-                    )}
-                    {tfError && <div style={{ fontSize: 12, color: "#ff6b6b" }}>⚠ TF load failed</div>}
-                </div>
-            </div>
 
             {/* Main layout */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 280px 280px", gap: 20, padding: "24px 28px", maxWidth: 1300, margin: "0 auto" }}>
