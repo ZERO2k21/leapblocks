@@ -335,14 +335,16 @@ export class ArduinoRuntime {
             const sv = n.data?.sensorValues;
             if (!sv) continue;
 
-            // NTC temperature sensor → compute ADC from temperature using Beta formula
+            // NTC temperature sensor → exact inverse of common sketch formula:
+            //   celsius = 1/(log(1/(1023./adc - 1))/BETA + 1/298.15) - 273.15
+            // Inverse:  adc = 1023 * ratio / (1 + ratio)
+            //   where ratio = exp(BETA * (1/(tempC+273.15) - 1/298.15))
             if (t === 'ntc-temperature-sensor') {
               const tempC = sv.value ?? 25;
-              const R0 = 10000, B = 3950, T0 = 298.15, Rs = 10000, VCC = 5.0;
-              const T = tempC + 273.15;
-              const R_ntc = R0 * Math.exp(B * (1 / T - 1 / T0));
-              const voltage = VCC * R_ntc / (Rs + R_ntc);
-              return Math.round((voltage / VCC) * 1023);
+              const BETA = 3950;
+              const x = BETA * (1 / (tempC + 273.15) - 1 / 298.15);
+              const ratio = Math.exp(x);
+              return Math.round(1023 * ratio / (1 + ratio));
             }
 
             // Potentiometer / generic analog sensor → 0-1023
@@ -356,6 +358,38 @@ export class ArduinoRuntime {
               const R_ldr = 500000 / Math.max(1, lux);
               const voltage = 5.0 * 10000 / (R_ldr + 10000);
               return Math.round((voltage / 5.0) * 1023);
+            }
+
+            // Heart rate sensor → simulated pulse waveform based on BPM
+            if (t === 'heart-beat-sensor') {
+              const bpm = sv.bpm ?? 72;
+              const beatIntervalMs = 60000 / bpm;
+              const elapsed = performance.now() % beatIntervalMs;
+              const phase = elapsed / beatIntervalMs;
+              // Simulate a pulse: short spike (10% of cycle), rest is baseline
+              if (phase < 0.1) {
+                // During beat — sinusoidal spike 512→900→512
+                const beatPhase = phase / 0.1; // 0→1
+                return Math.round(512 + 388 * Math.sin(beatPhase * Math.PI));
+              }
+              // Between beats — baseline with slight noise
+              return Math.round(480 + Math.random() * 40);
+            }
+
+            // Flame sensor → inverse intensity (higher flame = lower voltage)
+            if (t === 'flame-sensor') {
+              const intensity = sv.value ?? 0;
+              return Math.round((1 - intensity / 100) * 1023);
+            }
+
+            // Gas sensor (MQ series)
+            if (t === 'gas-sensor') {
+              return Math.round(((sv.value ?? 0) / 100) * 1023);
+            }
+
+            // Sound sensor
+            if (t === 'big-sound-sensor' || t === 'small-sound-sensor') {
+              return Math.round(((sv.value ?? 0) / 100) * 1023);
             }
           }
         } catch (e) { /* store not available */ }

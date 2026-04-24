@@ -793,7 +793,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
         circuitEngine.pushInputSignal(nodeId, 'AOUT', true);
         const nowSound = (key === 'value' ? val : level) > (key === 'threshold' ? val : threshold);
-        circuitEngine.pushInputSignal(nodeId, 'DOUT', !nowSound); // DOUT active-LOW
+        circuitEngine.pushInputSignal(nodeId, 'DOUT', nowSound); // DOUT active-HIGH (KY-037/038 convention)
       });
     };
 

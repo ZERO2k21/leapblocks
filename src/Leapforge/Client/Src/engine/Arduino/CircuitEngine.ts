@@ -1603,7 +1603,7 @@ class CircuitEngine {
         } else if (pType === 'flame-sensor') {
           injectESP32Threshold('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Flame DOUT');
         } else if (pType === 'big-sound-sensor' || pType === 'small-sound-sensor') {
-          injectESP32Threshold('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Sound DOUT');
+          injectESP32Threshold('DOUT', (sv?.value ?? 0) > (sv?.threshold ?? 50), 'Sound DOUT');
         }
         return;
       }
