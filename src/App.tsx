@@ -71,7 +71,7 @@ const AppInventor = lazy(() => {
 // @ts-ignore
 const AppForgeStudio = lazy(() => {
     logAppTiming('AppForgeStudio lazy load started');
-    return import('./modules/appforge/AppForgeStudio').then(module => {
+    return import("./Leapforge/Client/Src/ForgeStudio").then(module => {
         logAppTiming('AppForgeStudio lazy load completed');
         return module;
     });
