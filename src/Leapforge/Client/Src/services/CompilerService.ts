@@ -117,6 +117,20 @@ function clientSideTranspile(code: string): TranspileResult {
     js = js.replace(/\/\*[\s\S]*?\*\//g, '');
     // Remove #include
     js = js.replace(/^\s*#include\s*[<"].*?[>"]\s*$/gm, '');
+    // Strip C++ const / volatile qualifiers (before type processing)
+    // Only strip when followed by a known C++ type so #define-generated `const X = Y;` is preserved
+    js = js.replace(/\b(const|volatile)\s+(?=(void|int|long|short|unsigned|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\b)/g, '');
+    // Strip standalone volatile (not followed by type)
+    js = js.replace(/\bvolatile\s+/g, '');
+    // C++ scope resolution operator :: → JS dot notation (e.g. DHTesp::DHT22 → DHTesp.DHT22)
+    js = js.replace(/::/g, '.');
+    // Strip C++ address-of operator & in function arguments: fn(&a, &b) → fn(a, b)
+    js = js.replace(/([,(]\s*)&(\w)/g, '$1$2');
+    // Handle lowercase custom struct types: sensors_event_t a, g, temp; → let a = {}; let g = {}; let temp = {};
+    js = js.replace(/^\s*(sensors_event_t|event_t)\s+(\w+(?:\s*,\s*\w+)*)\s*;/gm,
+      (_m: string, _type: string, vars: string) => {
+        return vars.split(',').map((v: string) => `let ${v.trim()} = {};`).join('\n');
+      });
     // Convert class-type variable declarations to JS instantiations
     // e.g. Adafruit_SSD1306 oled(128, 64, &Wire, -1); → var oled = new Adafruit_SSD1306(128, 64);
     // Must happen BEFORE function-type stripping so it doesn't match function signatures
@@ -149,6 +163,9 @@ function clientSideTranspile(code: string): TranspileResult {
       /^\s*([A-Z][A-Za-z0-9_]*)\s+(\w+)\s*;/gm,
       (_m: string, className: string, varName: string) => `var ${varName} = new ${className}();`
     );
+    // Fallback: Class-type variable with arbitrary RHS assignment
+    // e.g. TempAndHumidity data = dhtSensor.getTempAndHumidity();
+    js = js.replace(/^\s*([A-Z][A-Za-z0-9_]*)\s+(\w+)\s*=/gm, 'let $2 =');
     // #define → const
     js = js.replace(/^\s*#define\s+(\w+)\s+(.+)$/gm, (_m, n, v) => `const ${n} = ${v.trim()};`);
     // Type conversions
@@ -159,14 +176,21 @@ function clientSideTranspile(code: string): TranspileResult {
           .map((p: string) => p.trim().split(/\s+/).pop())
           .filter((p: any) => p && p !== 'void')
           .join(', ');
-        const prefix = (name === 'setup' || name === 'loop') ? 'async ' : '';
+        // All functions get async so that await __delay / await __delayMicroseconds / await pulseIn work everywhere
+        const prefix = 'async ';
         const jsName = name === 'setup' ? '__setup' : name === 'loop' ? '__loop' : name;
         return `${prefix}function ${jsName}(${jsParams}) {`;
       });
+    // Split comma-separated variable declarations into individual ones BEFORE type stripping.
+    // e.g.  "long duration_us, distance_cm;"  →  "long duration_us;\nlong distance_cm;"
+    js = js.replace(/^(\s*)((?:unsigned\s+long|unsigned\s+int|int|long|short|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool))\s+(\w+(?:\s*,\s*\w+)+)\s*;/gm,
+      (_m: string, indent: string, type: string, vars: string) => {
+        return vars.split(',').map((v: string) => `${indent}${type} ${v.trim()};`).join('\n');
+      });
     // Variable types
-    js = js.replace(/\b(int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s+(\w+)\s*=/g,
+    js = js.replace(/\b(int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s+([a-zA-Z0-9_]+)\s*=/g,
       (_m, _t, n) => `let ${n} =`);
-    js = js.replace(/\b(int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s+(\w+)\s*;/g,
+    js = js.replace(/\b(int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s+([a-zA-Z0-9_]+)\s*;/g,
       (_m, _t, n) => `let ${n} = 0;`);
     // for loop types
     js = js.replace(/for\s*\(\s*(int|byte|uint8_t|uint16_t|uint32_t|size_t|long|short)\s+/g, 'for (let ');
@@ -180,18 +204,25 @@ function clientSideTranspile(code: string): TranspileResult {
     js = js.replace(/\babs\s*\(/g, 'Math.abs(');
     js = js.replace(/\bmin\s*\(/g, 'Math.min(');
     js = js.replace(/\bmax\s*\(/g, 'Math.max(');
+    js = js.replace(/\bisnan\s*\(/g, 'Number.isNaN(');
     // F() macro — in Arduino it stores strings in flash; in JS just return the string
     js = js.replace(/\bF\s*\(\s*"([^"]*)"\s*\)/g, '"$1"');
     // Remove C++ type casts: (uint16_t)val → val
     js = js.replace(/\(\s*(uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|unsigned\s+\w+|int|long|short|float|double|byte|char|size_t)\s*\)/g, '');
     // `unsigned long` variable declarations (not caught by the main type regex)
-    js = js.replace(/\bunsigned\s+long\s+(\w+)\s*=/g, 'let $1 =');
-    js = js.replace(/\bunsigned\s+long\s+(\w+)\s*;/g, 'let $1 = 0;');
+    js = js.replace(/\bunsigned\s+long\s+([a-zA-Z0-9_]+)\s*=/g, 'let $1 =');
+    js = js.replace(/\bunsigned\s+long\s+([a-zA-Z0-9_]+)\s*;/g, 'let $1 = 0;');
     // for loop with unsigned
     js = js.replace(/for\s*\(\s*unsigned\s+\w+\s+/g, 'for (let ');
     // `yield` in delay contexts (rare but needed for async correctness)
     // Remove remaining stray `static` keyword
     js = js.replace(/\bstatic\s+/g, '');
+    // Convert C++ halt patterns to a catchable exception so the browser doesn't freeze
+    // for(;;);  or  for(;;) {}  or  while(1);  or  while(true) {}
+    js = js.replace(/\bfor\s*\(\s*;\s*;\s*\)\s*;/g, 'throw new Error("__ARDUINO_HALT__");');
+    js = js.replace(/\bfor\s*\(\s*;\s*;\s*\)\s*\{\s*\}/g, 'throw new Error("__ARDUINO_HALT__");');
+    js = js.replace(/\bwhile\s*\(\s*(1|true)\s*\)\s*;/g, 'throw new Error("__ARDUINO_HALT__");');
+    js = js.replace(/\bwhile\s*\(\s*(1|true)\s*\)\s*\{\s*\}/g, 'throw new Error("__ARDUINO_HALT__");');
 
     const wrapped = `
 // Auto-generated by LeapForge Client Transpiler
@@ -206,6 +237,25 @@ if (typeof LiquidCrystal_I2C === 'undefined') LiquidCrystal_I2C = class { constr
 if (typeof LiquidCrystal === 'undefined') LiquidCrystal = class { constructor(){} begin(){} print(){} println(){} setCursor(){} clear(){} };
 if (typeof Servo === 'undefined') Servo = class { constructor(){this._angle=90;} attach(){} write(a){this._angle=a;} read(){return this._angle;} detach(){} };
 if (typeof DHT === 'undefined') DHT = class { constructor(){} begin(){} readTemperature(){return 25.0;} readHumidity(){return 50.0;} };
+if (typeof DHTesp === 'undefined') DHTesp = class { constructor(){} setup(){} getTempAndHumidity(){ return { temperature: 25.0, humidity: 50.0 }; } getStatus(){ return 0; } getStatusString(){ return 'OK'; } static DHT22 = 22; static DHT11 = 11; };
+if (typeof TempAndHumidity === 'undefined') TempAndHumidity = class { constructor(){ this.temperature = 0; this.humidity = 0; } };
+if (typeof Adafruit_MPU6050 === 'undefined') Adafruit_MPU6050 = class { constructor(){} begin(){return true;} setAccelerometerRange(){} setGyroRange(){} setFilterBandwidth(){} getEvent(a,g,t){ if(a) a.acceleration={x:0,y:0,z:9.8}; if(g) g.gyro={x:0,y:0,z:0}; if(t) t.temperature=25.0; return true; } };
+if (typeof Adafruit_Sensor === 'undefined') Adafruit_Sensor = class { constructor(){} };
+if (typeof MPU6050_RANGE_2_G  === 'undefined') MPU6050_RANGE_2_G  = 0;
+if (typeof MPU6050_RANGE_4_G  === 'undefined') MPU6050_RANGE_4_G  = 1;
+if (typeof MPU6050_RANGE_8_G  === 'undefined') MPU6050_RANGE_8_G  = 2;
+if (typeof MPU6050_RANGE_16_G === 'undefined') MPU6050_RANGE_16_G = 3;
+if (typeof MPU6050_RANGE_250_DEG  === 'undefined') MPU6050_RANGE_250_DEG  = 0;
+if (typeof MPU6050_RANGE_500_DEG  === 'undefined') MPU6050_RANGE_500_DEG  = 1;
+if (typeof MPU6050_RANGE_1000_DEG === 'undefined') MPU6050_RANGE_1000_DEG = 2;
+if (typeof MPU6050_RANGE_2000_DEG === 'undefined') MPU6050_RANGE_2000_DEG = 3;
+if (typeof MPU6050_BAND_260_HZ === 'undefined') MPU6050_BAND_260_HZ = 0;
+if (typeof MPU6050_BAND_184_HZ === 'undefined') MPU6050_BAND_184_HZ = 1;
+if (typeof MPU6050_BAND_94_HZ  === 'undefined') MPU6050_BAND_94_HZ  = 2;
+if (typeof MPU6050_BAND_44_HZ  === 'undefined') MPU6050_BAND_44_HZ  = 3;
+if (typeof MPU6050_BAND_21_HZ  === 'undefined') MPU6050_BAND_21_HZ  = 4;
+if (typeof MPU6050_BAND_10_HZ  === 'undefined') MPU6050_BAND_10_HZ  = 5;
+if (typeof MPU6050_BAND_5_HZ   === 'undefined') MPU6050_BAND_5_HZ   = 6;
 if (typeof IRrecv === 'undefined') IRrecv = class { constructor(){} enableIRIn(){} decode(){return false;} resume(){} };
 if (typeof decode_results === 'undefined') decode_results = class { constructor(){} };
 if (typeof SoftwareSerial === 'undefined') SoftwareSerial = class { constructor(){} begin(){} print(){} println(){} available(){return 0;} read(){return -1;} };

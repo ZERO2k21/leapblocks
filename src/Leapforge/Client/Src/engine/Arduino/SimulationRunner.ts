@@ -220,6 +220,20 @@ class SimulationRunner {
       if (this._transpiledJS) {
         console.log('[SimulationRunner] Using transpiled JS path (ArduinoRuntime)');
         await this.esp32c3Runner.initTranspiled(this._transpiledJS);
+
+        // Reverse bridge: forward external pin changes (PIR, HC-SR04, etc.)
+        // from SimulationRunner into ArduinoRuntime so digitalRead() works.
+        const runtime = this.esp32c3Runner.runtime;
+        if (runtime) {
+          for (let gpio = 0; gpio <= 21; gpio++) {
+            const pinId = `ESP${gpio}`;
+            const g = gpio;
+            this.addListener(pinId, (state) => {
+              runtime.setDigitalInput(g, state === 'HIGH');
+            });
+          }
+        }
+
         this.esp32c3Runner.run();
         console.log('[FORGE] ESP32-C3 transpiled simulation started');
         return;

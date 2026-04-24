@@ -283,8 +283,7 @@ class CircuitEngine {
         }
 
         if (!this._slave) {
-          console.error(`[OLED] ✗ No slave found! Cannot initialize display.`);
-          return false;
+          console.warn(`[OLED] ⚠ No physical OLED on canvas — running in virtual mode (display calls will be no-ops).`);
         }
 
         this._displayOn = true;
@@ -380,8 +379,7 @@ class CircuitEngine {
       }
       private _flush() {
         if (!this._slave) {
-          console.error(`[OLED] _flush() FAILED — no slave reference! Call begin() first.`);
-          return;
+          return; // Virtual mode — no physical OLED to flush to
         }
         const em = this._slave.getEmulator();
         const pixBuf = em.getPixelBuffer();

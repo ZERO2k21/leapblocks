@@ -12,6 +12,8 @@
  *             runtime.stop()  → halts the loop
  */
 
+import { useForgeStore } from '../../../utlis/store/useForgeStore';
+
 export type PinMode = 'INPUT' | 'OUTPUT' | 'INPUT_PULLUP' | 'INPUT_PULLDOWN';
 export type PinValue = 0 | 1;
 export type PinChangeCallback = (pin: number, value: number, isAnalog: boolean) => void;
@@ -321,7 +323,44 @@ export class ArduinoRuntime {
       },
 
       analogRead(pin: number): number {
-        return self.analogInputs.get(pin) ?? 0;
+        // First check internal map (set by setAnalogInput)
+        const cached = self.analogInputs.get(pin);
+        if (cached !== undefined) return cached;
+
+        // Read live from store — find analog sensors and compute ADC
+        try {
+          const { nodes } = useForgeStore.getState();
+          for (const n of nodes) {
+            const t = n.data?.type;
+            const sv = n.data?.sensorValues;
+            if (!sv) continue;
+
+            // NTC temperature sensor → compute ADC from temperature using Beta formula
+            if (t === 'ntc-temperature-sensor') {
+              const tempC = sv.value ?? 25;
+              const R0 = 10000, B = 3950, T0 = 298.15, Rs = 10000, VCC = 5.0;
+              const T = tempC + 273.15;
+              const R_ntc = R0 * Math.exp(B * (1 / T - 1 / T0));
+              const voltage = VCC * R_ntc / (Rs + R_ntc);
+              return Math.round((voltage / VCC) * 1023);
+            }
+
+            // Potentiometer / generic analog sensor → 0-1023
+            if (t === 'potentiometer' || t === 'mq2' || t === 'resistor') {
+              return Math.round(((sv.value ?? 0) / 100) * 1023);
+            }
+
+            // Photoresistor (LDR)
+            if (t === 'photoresistor-sensor') {
+              const lux = sv.value ?? 500;
+              const R_ldr = 500000 / Math.max(1, lux);
+              const voltage = 5.0 * 10000 / (R_ldr + 10000);
+              return Math.round((voltage / 5.0) * 1023);
+            }
+          }
+        } catch (e) { /* store not available */ }
+
+        return 0;
       },
 
       analogWrite(pin: number, value: number): void {
@@ -351,6 +390,21 @@ export class ArduinoRuntime {
         }
       },
       touchRead(_pin: number): number { return 50; },
+      analogReadResolution(_bits: number): void { /* ESP32 ADC resolution — no-op in sim */ },
+      analogWriteResolution(_bits: number): void { /* PWM resolution — no-op */ },
+      analogSetAttenuation(_atten: number): void { /* ESP32 ADC attenuation — no-op */ },
+      analogSetPinAttenuation(_pin: number, _atten: number): void { },
+
+      // ── C math functions (not in Math.*) ────────────────────
+      log: Math.log,       // natural logarithm — used by NTC thermistor formulas
+      log10: Math.log10,
+      log2: Math.log2,
+      exp: Math.exp,
+      pow: Math.pow,
+      sqrt: Math.sqrt,
+      ceil: Math.ceil,
+      floor: Math.floor,
+      round: Math.round,
 
       // ── Interrupts ─────────────────────────────────────────
       attachInterrupt(pin: number, callback: () => void, mode: number): void {
@@ -429,6 +483,24 @@ export class ArduinoRuntime {
           await new Promise<void>(resolve => setTimeout(resolve, us / 1000));
         }
         // For short µs delays, just continue (browser can't do sub-ms timing)
+      },
+
+      // ── pulseIn — measures pulse duration on a pin (used by ultrasonic sensors) ──
+      pulseIn(pin: number, state: number, _timeout?: number): number {
+        // For HC-SR04 ultrasonic sensors: calculate duration from the sensor's distance value
+        // distance_cm = 0.017 * duration_us  →  duration_us = distance_cm / 0.017
+        try {
+          const { nodes } = useForgeStore.getState();
+          for (const n of nodes) {
+            if (n.data?.type === 'hc-sr04' || n.data?.type === 'ultrasonic') {
+              const distanceCm = n.data?.distance ?? n.data?.sensorValues?.distance ?? 6;
+              const duration_us = distanceCm / 0.017;
+              return Math.round(duration_us);
+            }
+          }
+        } catch (e) { /* store not available */ }
+        // Default: simulate ~17cm distance (1000µs round-trip)
+        return 1000;
       },
 
       // ── Math/Utility helpers ───────────────────────────────
@@ -533,9 +605,102 @@ export class ArduinoRuntime {
 
       // ── Builtin JS APIs (needed by transpiled code) ────────
       Math, String, Array, Number, parseInt, parseFloat,
+      isnan: Number.isNaN,
       console: {
         log: (...args: any[]) => self.onSerial?.(args.join(' ') + '\n'),
       },
+
+      // ── DHT / DHTesp sensor classes (read live from store) ──
+      DHT: class {
+        _type = 22;
+        constructor(_pin?: number, _type?: number) { if (_type) this._type = _type; }
+        begin(): void { }
+        readTemperature(): number {
+          try {
+            const { nodes } = useForgeStore.getState();
+            for (const n of nodes) {
+              if (n.data?.type === 'dht22' || n.data?.type === 'dht11') {
+                return n.data?.sensorValues?.temperature ?? 25.0;
+              }
+            }
+          } catch (e) { /* store not available */ }
+          return 25.0;
+        }
+        readHumidity(): number {
+          try {
+            const { nodes } = useForgeStore.getState();
+            for (const n of nodes) {
+              if (n.data?.type === 'dht22' || n.data?.type === 'dht11') {
+                return n.data?.sensorValues?.humidity ?? 50.0;
+              }
+            }
+          } catch (e) { /* store not available */ }
+          return 50.0;
+        }
+      },
+      DHTesp: class {
+        static DHT22 = 22;
+        static DHT11 = 11;
+        setup(_pin?: number, _type?: number): void { }
+        getTempAndHumidity(): { temperature: number; humidity: number } {
+          try {
+            const { nodes } = useForgeStore.getState();
+            for (const n of nodes) {
+              if (n.data?.type === 'dht22' || n.data?.type === 'dht11') {
+                return {
+                  temperature: n.data?.sensorValues?.temperature ?? 25.0,
+                  humidity: n.data?.sensorValues?.humidity ?? 50.0,
+                };
+              }
+            }
+          } catch (e) { /* store not available */ }
+          return { temperature: 25.0, humidity: 50.0 };
+        }
+        getStatus(): number { return 0; }
+        getStatusString(): string { return 'OK'; }
+      },
+
+      // ── MPU6050 sensor class (read live from store) ─────────
+      Adafruit_MPU6050: class {
+        begin(): boolean { return true; }
+        setAccelerometerRange(_r: number): void { }
+        setGyroRange(_r: number): void { }
+        setFilterBandwidth(_b: number): void { }
+        getEvent(accelEvt: any, gyroEvt: any, tempEvt: any): boolean {
+          let ax = 0, ay = 0, az = 9.8, gx = 0, gy = 0, gz = 0, t = 25;
+          try {
+            const { nodes } = useForgeStore.getState();
+            for (const n of nodes) {
+              if (n.data?.type === 'mpu6050') {
+                const sv = n.data?.sensorValues ?? {};
+                ax = sv.accelX ?? 0;
+                ay = sv.accelY ?? 0;
+                az = sv.accelZ ?? 9.8;
+                gx = sv.gyroX ?? 0;
+                gy = sv.gyroY ?? 0;
+                gz = sv.gyroZ ?? 0;
+                t  = sv.temp  ?? 25;
+                break;
+              }
+            }
+          } catch (e) { /* store not available */ }
+          if (accelEvt) accelEvt.acceleration = { x: ax, y: ay, z: az };
+          if (gyroEvt)  gyroEvt.gyro          = { x: gx, y: gy, z: gz };
+          if (tempEvt)  tempEvt.temperature    = t;
+          return true;
+        }
+      },
+      sensors_event_t: class {
+        acceleration = { x: 0, y: 0, z: 0 };
+        gyro = { x: 0, y: 0, z: 0 };
+        temperature = 0;
+      },
+
+      // ── MPU6050 constants ───────────────────────────────────
+      MPU6050_RANGE_2_G: 0, MPU6050_RANGE_4_G: 1, MPU6050_RANGE_8_G: 2, MPU6050_RANGE_16_G: 3,
+      MPU6050_RANGE_250_DEG: 0, MPU6050_RANGE_500_DEG: 1, MPU6050_RANGE_1000_DEG: 2, MPU6050_RANGE_2000_DEG: 3,
+      MPU6050_BAND_260_HZ: 0, MPU6050_BAND_184_HZ: 1, MPU6050_BAND_94_HZ: 2, MPU6050_BAND_44_HZ: 3,
+      MPU6050_BAND_21_HZ: 4, MPU6050_BAND_10_HZ: 5, MPU6050_BAND_5_HZ: 6,
     };
   }
 }
