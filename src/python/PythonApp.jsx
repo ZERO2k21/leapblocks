@@ -42,7 +42,7 @@ import {
     Share,
 } from "lucide-react";
 
-import { fileService } from "../services/FileService";
+import { fileService } from "../Leapforge/services/FileService";
 import { SkulptEngine } from "../junior/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
 import SerialMonitor from "../components/SerialMonitor";

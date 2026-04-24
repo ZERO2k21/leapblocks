@@ -86,6 +86,65 @@ function stopBuildServer() {
   }
 }
 
+// ── LeapForge Compile Server (Arduino compile + transpile) ─────────────────
+let compileServerProcess = null;
+
+function startCompileServer() {
+  const serverPath = isDev
+    ? path.join(__dirname, '..', 'compiler-server', 'server.js')
+    : path.join(process.resourcesPath, 'compiler-server', 'server.js');
+
+  if (!fs.existsSync(serverPath)) {
+    console.log('[COMPILE-SERVER] Server file not found at:', serverPath);
+    console.log('[COMPILE-SERVER] Run: cd compiler-server && npm install');
+    return;
+  }
+
+  // Check node_modules exist for the compiler-server
+  const nmPath = isDev
+    ? path.join(__dirname, '..', 'compiler-server', 'node_modules')
+    : path.join(process.resourcesPath, 'compiler-server', 'node_modules');
+
+  if (!fs.existsSync(nmPath)) {
+    console.log('[COMPILE-SERVER] node_modules missing — run: cd compiler-server && npm install');
+    return;
+  }
+
+  compileServerProcess = spawn('node', [serverPath], {
+    env: {
+      ...process.env,
+      PORT: '3001',
+      // Point arduino-cli to the bundled binary
+      ARDUINO_CLI_PATH: isDev
+        ? path.join(__dirname, '..', 'arduino-cli', 'arduino-cli.exe')
+        : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe'),
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    detached: false,
+  });
+
+  compileServerProcess.stdout.on('data', (data) => {
+    console.log(`[COMPILE-SERVER] ${data.toString().trim()}`);
+  });
+  compileServerProcess.stderr.on('data', (data) => {
+    console.error(`[COMPILE-SERVER ERROR] ${data.toString().trim()}`);
+  });
+  compileServerProcess.on('close', (code) => {
+    console.log(`[COMPILE-SERVER] Exited with code ${code}`);
+    compileServerProcess = null;
+  });
+
+  console.log('[COMPILE-SERVER] Started on http://localhost:3001');
+}
+
+function stopCompileServer() {
+  if (compileServerProcess) {
+    compileServerProcess.kill();
+    compileServerProcess = null;
+    console.log('[COMPILE-SERVER] Stopped');
+  }
+}
+
 let mainWindow;
 
 function createWindow() {

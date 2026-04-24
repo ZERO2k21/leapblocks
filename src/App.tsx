@@ -80,7 +80,7 @@ const AppForgeStudio = lazy(() => {
 // @ts-ignore
 const LeapForgeStudio = lazy(() => {
     logAppTiming('LeapForgeStudio lazy load started');
-    return import('./Leapforge/ForgeStudio').then(module => {
+    return import('./Leapforge/Client/Src/ForgeStudio').then(module => {
         logAppTiming('LeapForgeStudio lazy load completed');
         return module;
     });

@@ -79,7 +79,7 @@ import UnsavedWarningModal from './junior/components/UnsavedWarningModal';
 import { EXTENSIONS, registerExtensions } from './extensions/extensionDefinitions';
 
 
-import { fileService } from './services/FileService';
+import { fileService } from './Leapforge/services/FileService';
 import { registerLeapRenderer } from './junior/blocks/LeapRenderer';
 
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';

@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: leapforge-compile-server
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 3001
+    healthCheckPath: /health
+    autoDeploy: true

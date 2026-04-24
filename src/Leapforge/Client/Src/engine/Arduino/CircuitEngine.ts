@@ -1,0 +1,1242 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { simulationRunner, PinState } from './SimulationRunner';
+import { HD44780 } from './HD44780';
+import { I2CBusManager } from './I2CBusManager';
+import { PCF8574 } from './PCF8574';
+import { DHT } from './DHT';
+import { NeoPixelEmulator } from './NeoPixelEmulator';
+import { StepperEmulator } from './StepperEmulator';
+import { SSD1306I2CSlave } from './SSD1306I2CSlave';
+import { ILI9341SPISlave } from './ILI9341SPISlave';
+import { MPU6050I2CSlave } from './MPU6050I2CSlave';
+import { ESP32_BOARD_CONFIG, ESP32_BOARDS, type ESP32PinInfo } from './ESP32BoardConfig.js';
+
+/** Simplified ECG pulse shape used by the heart-beat sensor emulator. Returns -1..+1 for phase 0..1 */
+function heartEcgPulse(phase: number): number {
+  if (phase < 0.15) return 0.3 * Math.sin(Math.PI * phase / 0.15);
+  if (phase < 0.25) return 0;
+  if (phase < 0.28) return -0.3 * (phase - 0.25) / 0.03;
+  if (phase < 0.32) return 1.0 * (phase - 0.28) / 0.04;
+  if (phase < 0.36) return 1.0 - 1.3 * (phase - 0.32) / 0.04;
+  if (phase < 0.40) return -0.3 + 0.3 * (phase - 0.36) / 0.04;
+  if (phase < 0.55) return 0;
+  if (phase < 0.75) return 0.4 * Math.sin(Math.PI * (phase - 0.55) / 0.20);
+  return 0;
+}
+
+/**
+ * Real PulseSensor.com ADC output model.
+ * Returns a raw ADC value (0–1023) that matches what analogRead() sees:
+ *   - Baseline between beats: ~512 (mid-supply, 2.5V)
+ *   - Slow breathing oscillation: ±50 ADC
+ *   - Beat peak (QRS): spikes to ~750–900
+ *   - Post-beat dip: drops to ~350–450
+ *   - Noise: ±10 ADC
+ */
+function pulseSensorADC(phase: number): number {
+  // Slow baseline drift from breathing (~0.2 Hz, much slower than heartbeat)
+  const breathingDrift = 40 * Math.sin(2 * Math.PI * phase * 0.15);
+
+  // Beat waveform — sharp systolic peak followed by diastolic notch
+  let beat = 0;
+  if (phase < 0.05) {
+    // Rising edge of QRS
+    beat = 380 * (phase / 0.05);
+  } else if (phase < 0.10) {
+    // Peak and falling edge
+    beat = 380 * (1 - (phase - 0.05) / 0.05);
+  } else if (phase < 0.18) {
+    // Diastolic notch (dip below baseline)
+    beat = -80 * Math.sin(Math.PI * (phase - 0.10) / 0.08);
+  } else if (phase < 0.35) {
+    // T-wave: gentle positive bump
+    beat = 60 * Math.sin(Math.PI * (phase - 0.18) / 0.17);
+  }
+  // else: diastole — flat at baseline
+
+  // Small random noise (deterministic pseudo-noise based on phase)
+  const noise = 8 * Math.sin(phase * 137.5) + 5 * Math.sin(phase * 251.3);
+
+  return Math.round(512 + breathingDrift + beat + noise);
+}
+
+/**
+ * CircuitEngine
+ * Bridges the abstract ReactFlow graph (nodes/edges) with the low-level AVR SimulationRunner.
+ * Handles signal propagation across wires.
+ */
+class CircuitEngine {
+  private activeSubscriptions = new Map<string, () => void>();
+  private lcdEmulators = new Map<string, HD44780>();
+  private peripheralPinBuffers = new Map<string, Record<string, boolean>>();
+  private i2cBusManager = new I2CBusManager();
+  private dhtEmulators = new Map<string, DHT>();
+  private neoPixelEmulators = new Map<string, NeoPixelEmulator>();
+  private stepperEmulators = new Map<string, StepperEmulator>();
+  private ili9341Slaves = new Map<string, ILI9341SPISlave>();
+  private mpu6050Slaves = new Map<string, MPU6050I2CSlave>();
+  private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
+  private isInitialized = false;
+
+  /**
+   * Traces an electrical net from a starting point (board pin) and returns all 
+   * reachable endpoints (LEDs, Buzzers, etc.) along with the total resistance in the path.
+   */
+  private traceNet(startNodeId: string, startPin: string): { nodeId: string, pinName: string, resistance: number, type: string }[] {
+    const { nodes, edges } = useForgeStore.getState();
+    const targets: { nodeId: string, pinName: string, resistance: number, type: string }[] = [];
+    const queue = [{ id: startNodeId, pin: startPin, resistance: 0 }];
+    const visited = new Set<string>();
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const key = `${current.id}-${current.pin}`;
+      if (visited.has(key)) continue;
+      visited.add(key);
+
+      const node = nodes.find(n => n.id === current.id);
+      if (!node) continue;
+
+      const nodeType = node.data?.type;
+
+      if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring'].includes(nodeType)) {
+        targets.push({ nodeId: current.id, pinName: current.pin, resistance: current.resistance, type: nodeType });
+      } else if (nodeType === 'ks2e-m-dc5') {
+        // Relay contact traversal: signal enters on a pole pin (P1/P2) and exits via the active contact
+        const relayNode = nodes.find(n => n.id === current.id);
+        const energized = relayNode?.data?.relayEnergized ?? false;
+
+        // Map pole → active contact based on relay state
+        const contactMap: Record<string, string> = energized
+          ? { 'P1': 'NO1', 'P2': 'NO2' }
+          : { 'P1': 'NC1', 'P2': 'NC2' };
+
+        const exitPin = contactMap[current.pin];
+        if (exitPin) {
+          const downstreamEdges = edges.filter(e =>
+            (e.source === current.id && e.sourceHandle === exitPin) ||
+            (e.target === current.id && e.targetHandle === exitPin)
+          );
+          for (const edge of downstreamEdges) {
+            const nextId = edge.source === current.id ? edge.target : edge.source;
+            const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
+            queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
+          }
+        }
+      } else if (nodeType === 'resistor') {
+        const rValue = Number(node.data?.sensorValues?.value ?? 0);
+        console.log(`[FORGE CIRCUIT] Net trace through resistor (${current.id}): +${rValue} ohms`);
+
+        // Find the other pin of the resistor
+        let exitPin = '';
+        if (current.pin === '1' || current.pin === 'pin_1' || current.pin === 'IN') {
+          exitPin = node.data?.pinOUT ? 'OUT' : '2';
+        } else {
+          exitPin = node.data?.pinIN ? 'IN' : '1';
+        }
+
+        // Robust fallback: if we don't know the pins, check if they are 'IN'/'OUT'
+        if (current.pin === 'IN') exitPin = 'OUT';
+        else if (current.pin === 'OUT') exitPin = 'IN';
+        else if (current.pin === '1' || current.pin === 'pin_1') exitPin = '2';
+        else if (current.pin === '2' || current.pin === 'pin_2') exitPin = '1';
+
+        const downstreamEdges = edges.filter(e =>
+          (e.source === current.id && e.sourceHandle === exitPin) ||
+          (e.target === current.id && e.targetHandle === exitPin)
+        );
+
+        for (const edge of downstreamEdges) {
+          const nextId = edge.source === current.id ? edge.target : edge.source;
+          const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
+          queue.push({ id: nextId, pin: nextPin, resistance: current.resistance + rValue });
+        }
+      }
+    }
+    return targets;
+  }
+
+  constructor() { }
+
+  /**
+   * Resolve an Arduino-label pin (e.g. "21", "32") to its ESP32PinInfo using
+   * ESP32_BOARD_CONFIG.  Throws if the label is not in the GPIO map.
+   * Used by syncCircuitGraph to wire ESP32-C3 RISC-V GPIO/ADC listeners.
+   */
+  public convertESP32Pin(label: string): ESP32PinInfo {
+    const gpioNum = ESP32_BOARD_CONFIG.gpio[label];
+    if (gpioNum === undefined) {
+      throw new Error(`[CircuitEngine] Unknown ESP32-C3 pin label: "${label}"`);
+    }
+    const adcChannel = ESP32_BOARD_CONFIG.adc[label];
+    const i2c = ESP32_BOARD_CONFIG.i2c;
+    return {
+      gpioNum,
+      adcChannel,
+      isI2CSDA: gpioNum === i2c.sda,
+      isI2CSCL: gpioNum === i2c.scl,
+    };
+  }
+
+  public init() {
+    if (this.isInitialized) return;
+    this.isInitialized = true;
+    console.log('[FORGE CIRCUIT] Engine connected (Version: Ideal Mode - Indestructible)');
+
+    // Listen to changes in the visual circuit board
+    let previousEdgesCount = -1;
+    let previousIsSimulating = false;
+    useForgeStore.subscribe((state) => {
+      // Re-sync only when edges change while already simulating (not on the start transition)
+      const edgesChanged = state.edges.length !== previousEdgesCount;
+      const wasAlreadySimulating = previousIsSimulating && state.isSimulating;
+      previousEdgesCount = state.edges.length;
+      previousIsSimulating = state.isSimulating;
+      if (edgesChanged && wasAlreadySimulating) {
+        this.syncCircuitGraph();
+      }
+    });
+  }
+
+  /**
+   * Called whenever wires are drawn/removed. Rebuilds the routing table.
+   */
+  public syncCircuitGraph() {
+    console.log('[FORGE CIRCUIT] syncCircuitGraph triggered. Re-evaluating electrical routing table...');
+    // 1. Clear all old AVR listeners hooked by the circuit engine
+    this.activeSubscriptions.forEach((unsubscribe) => unsubscribe());
+    this.activeSubscriptions.clear();
+    this.lcdEmulators.clear();
+    this.peripheralPinBuffers.clear();
+    this.i2cBusManager.clear();
+    this.dhtEmulators.clear();
+    this.neoPixelEmulators.clear();
+    this.stepperEmulators.forEach(e => e.destroy());
+    this.stepperEmulators.clear();
+    this.ili9341Slaves.forEach(s => s.detach());
+    this.ili9341Slaves.clear();
+    this.mpu6050Slaves.clear();
+    // Cancel all heart-beat animation timers
+    this.heartBeatTimers.forEach(id => cancelAnimationFrame(id));
+    this.heartBeatTimers.clear();
+
+    const { nodes, edges, updateNodeData } = useForgeStore.getState();
+    const currentStateStore = useForgeStore.getState();
+
+    // 2.1 Register I2C Slaves and Reset States
+    nodes.forEach(node => {
+      // Reset damaged/visual states on sync (e.g. simulation start)
+      if (node.data?.damaged || node.data?.pinStates) {
+        updateNodeData(node.id, { damaged: false, pinStates: {} });
+      }
+
+      if (node.data?.type === 'lcd1602' || node.data?.type === 'lcd2004' ||
+        node.data?.type === 'lcd1602-i2c' || node.data?.type === 'lcd2004-i2c') {
+        // Create an emulator for the display
+        const isWide = node.data?.type === 'lcd2004' || node.data?.type === 'lcd2004-i2c';
+        const cols = isWide ? 20 : 16;
+        const rows = isWide ? 4 : 2;
+        const emulator = new HD44780(cols, rows);
+        this.lcdEmulators.set(node.id, emulator);
+
+        // I2C variants always use the PCF8574 backpack at 0x27
+        const isI2C = node.data?.type === 'lcd1602-i2c' || node.data?.type === 'lcd2004-i2c';
+        const i2cAddr = isI2C ? (node.data?.i2cAddress ?? 0x27) : node.data?.i2cAddress;
+        if (i2cAddr) {
+          const backpack = new PCF8574(i2cAddr, emulator, (state) => {
+            updateNodeData(node.id, { lcdState: state });
+          });
+          this.i2cBusManager.registerSlave(backpack);
+        }
+      }
+
+      // Register SSD1306 OLED as I2C slave (default address 0x3C)
+      if (node.data?.type === 'ssd1306') {
+        const i2cAddr = node.data?.i2cAddress ?? 0x3C;
+        const slave = new SSD1306I2CSlave(i2cAddr, (pixels, displayOn) => {
+          // Convert the page-addressed pixel buffer to RGBA ImageData
+          const imageData = new ImageData(128, 64);
+          for (let page = 0; page < 8; page++) {
+            for (let col = 0; col < 128; col++) {
+              const byte = pixels[page * 128 + col];
+              for (let bit = 0; bit < 8; bit++) {
+                const row = page * 8 + bit;
+                const idx = (row * 128 + col) * 4;
+                const on = displayOn && ((byte >> bit) & 1) === 1;
+                imageData.data[idx] = on ? 0 : 0;    // R
+                imageData.data[idx + 1] = on ? 255 : 0;    // G  (white-on-black)
+                imageData.data[idx + 2] = on ? 255 : 0;    // B
+                imageData.data[idx + 3] = 255;              // A
+              }
+            }
+          }
+          updateNodeData(node.id, { oledImageData: imageData });
+        });
+        this.i2cBusManager.registerSlave(slave);
+      }
+
+      // Register ILI9341 TFT as SPI peripheral
+      // The slave is created here; pin listeners (D/C, CS) are wired in the edge-scan loop below.
+      if (node.data?.type === 'ili9341') {
+        const nodeId = node.id;
+        const spi = simulationRunner.SPI;
+        if (spi) {
+          const slave = new ILI9341SPISlave(spi, (pixels, displayOn) => {
+            // Build an ImageData from the RGBA pixel buffer and push to the node
+            const imageData = new ImageData(new Uint8ClampedArray(pixels), 240, 320);
+            updateNodeData(nodeId, { tftImageData: imageData, tftDisplayOn: displayOn });
+          });
+          slave.attach();
+          this.ili9341Slaves.set(nodeId, slave);
+          console.log(`[FORGE CIRCUIT] ILI9341 (${nodeId}) registered on SPI bus`);
+        } else {
+          console.warn(`[FORGE CIRCUIT] ILI9341 (${nodeId}): SPI bus not available on this board`);
+        }
+      }
+
+      // Register MPU6050 as I2C slave (default address 0x68, AD0=LOW)
+      if (node.data?.type === 'mpu6050') {
+        const nodeId = node.id;
+        const i2cAddr = node.data?.i2cAddress ?? 0x68;
+        const slave = new MPU6050I2CSlave(i2cAddr);
+
+        // Push current sensor values from store into the emulator immediately
+        const sv = node.data?.sensorValues;
+        if (sv) {
+          slave.setSensorValues({
+            accelX: sv.accelX ?? 0,
+            accelY: sv.accelY ?? 0,
+            accelZ: sv.accelZ ?? 1,
+            gyroX: sv.gyroX ?? 0,
+            gyroY: sv.gyroY ?? 0,
+            gyroZ: sv.gyroZ ?? 0,
+            temp: sv.temp ?? 25,
+          });
+        }
+
+        this.i2cBusManager.registerSlave(slave);
+        this.mpu6050Slaves.set(nodeId, slave);
+        console.log(`[FORGE CIRCUIT] MPU6050 (${nodeId}) registered at I2C 0x${i2cAddr.toString(16)}`);
+      }
+
+      // Register heart-beat sensor — drives OUT ADC channel with a time-varying pulse voltage
+      if (node.data?.type === 'heart-beat-sensor') {
+        const nodeId = node.id;
+        let phase = 0;
+        let lastTime = performance.now();
+
+        const tick = () => {
+          const now = performance.now();
+          const dt = (now - lastTime) / 1000; // seconds
+          lastTime = now;
+
+          // Read current BPM from store (slider may have changed)
+          const currentNode = useForgeStore.getState().nodes.find(n => n.id === nodeId);
+          if (!currentNode) return;
+
+          const bpm = currentNode.data?.sensorValues?.bpm ?? 72;
+          const freq = bpm / 60; // beats per second
+
+          // Advance phase
+          phase = (phase + freq * dt) % 1;
+
+          // Compute pulse sensor ADC value matching real PulseSensor.com output:
+          // Baseline ~512, beat peak ~750–900, diastolic dip ~350–450
+          const adcValue = Math.max(0, Math.min(1023, pulseSensorADC(phase)));
+          const voltage = (adcValue / 1023) * 5.0;
+
+          // Push to ADC — find the OUT wire
+          const { edges } = useForgeStore.getState();
+          const outWire = edges.find(e => {
+            const srcMatch = e.source === nodeId && (e.sourceHandle === 'OUT' || e.sourceHandle === 'OUT__target');
+            const tgtMatch = e.target === nodeId && (e.targetHandle === 'OUT' || e.targetHandle === 'OUT__target');
+            return srcMatch || tgtMatch;
+          });
+
+          if (outWire) {
+            const boardPin = (outWire.source === nodeId ? outWire.targetHandle : outWire.sourceHandle) ?? '';
+            const cleanPin = boardPin.replace(/__target$/, '');
+
+            // Try ESP32-C3 RISC-V runner first, then AVR
+            const esp32Mapping = simulationRunner.convertESP32Pin(cleanPin);
+            if (esp32Mapping && esp32Mapping.avrPin.startsWith('ESP')) {
+              // ESP32-C3 RISC-V path
+              if (simulationRunner.isESP32C3Board && esp32Mapping.adcChannel !== undefined) {
+                const gpioNum = parseInt(esp32Mapping.avrPin.replace('ESP', ''), 10);
+                const scaledVoltage = (adcValue / 1023) * 3.3;
+                simulationRunner.setESP32C3AnalogInput(gpioNum, scaledVoltage);
+              }
+            } else {
+              const mapping = simulationRunner.convertArduinoPin(cleanPin);
+              if (mapping && mapping.adcChannel !== undefined) {
+                simulationRunner.setAnalogInput(mapping.adcChannel, voltage);
+              }
+            }
+          }
+
+          // Update beatPhase and current ADC value in store for visual element
+          updateNodeData(nodeId, {
+            sensorValues: {
+              ...useForgeStore.getState().nodes.find(n => n.id === nodeId)?.data?.sensorValues,
+              beatPhase: phase,
+              adcValue,
+            },
+          });
+
+          // Schedule next tick
+          const rafId = requestAnimationFrame(tick);
+          this.heartBeatTimers.set(nodeId, rafId);
+        };
+
+        const rafId = requestAnimationFrame(tick);
+        this.heartBeatTimers.set(nodeId, rafId);
+        console.log(`[FORGE CIRCUIT] Heart-beat sensor (${nodeId}) timer started`);
+      }
+    });
+
+    // 2.2 Attach Bus Manager to Master
+    if (simulationRunner.TWI) {
+      // Arduino/AVR: attach via hardware TWI
+      simulationRunner.TWI.eventHandler = this.i2cBusManager;
+    }
+
+    // 2. Map board nodes (Arduino/ESP32) and their connected peripherals
+    const boardNodes = nodes.filter(n =>
+      n.data?.type === 'arduino-uno' ||
+      n.data?.type === 'arduino-nano' ||
+      n.data?.type === 'arduino-mega' ||
+      n.data?.type === 'boards' ||
+      n.data?.type === 'esp32-c3'
+    );
+
+    boardNodes.forEach(board => {
+      // Find all wires connected to this Arduino
+      const connectedEdges = edges.filter(e => e.source === board.id || e.target === board.id);
+
+      connectedEdges.forEach(edge => {
+        // Determine the flow direction (Assuming Board -> Peripheral for now, Phase 3 propagation)
+        // If the Arduino is the source of the edge (e.g., standard digital output)
+        const isOutput = edge.source === board.id;
+        // Strip ReactFlow's __target suffix — handles are stored as "PIN" or "PIN__target"
+        const arduinoPinName = (isOutput ? edge.sourceHandle : edge.targetHandle)?.replace(/__target$/, '');
+        const peripheralId = isOutput ? edge.target : edge.source;
+        const peripheralPinName = (isOutput ? edge.targetHandle : edge.sourceHandle)?.replace(/__target$/, '');
+
+        if (!arduinoPinName || !peripheralPinName) return;
+
+        // For ESP32: GPIO numbers map directly to ESP{n} pin IDs.
+        // For AVR boards: convert Arduino pin number to AVR port pin (e.g. "13" → "PB5").
+        const isESP32Board = board.data?.type === 'esp32-c3';
+        let pinId: string;
+
+        if (isESP32Board) {
+          // Use the full ESP32 pin map — handles D{n}, VP, VN, RX2, TX2 etc.
+          // Power/GND pins return null and are silently skipped.
+          const esp32Mapping = simulationRunner.convertESP32Pin(arduinoPinName);
+          if (!esp32Mapping) return;
+          pinId = esp32Mapping.avrPin;
+          console.log(`[FORGE CIRCUIT 7SEG] ESP32 Wired: Board[${arduinoPinName}→${pinId}] <==> Peripheral[${peripheralPinName}]`);
+        } else {
+          const mapping = simulationRunner.convertArduinoPin(arduinoPinName);
+          if (!mapping) return;
+          pinId = mapping.avrPin;
+          console.log(`[FORGE CIRCUIT] Wired Logic Route: Board[${arduinoPinName}] <==> ${pinId} <==> Peripheral[${peripheralPinName}]`);
+        }
+
+        // Keep avrPin as an alias for the rest of the listener body (DHT, NeoPixel etc.)
+        const avrPin = pinId;
+
+        // --- Custom Peripheral Emulation ---
+        let trigStartCycles = 0;
+        let pwmStartCycles = 0;
+
+        // Ensure buffers exist for this peripheral
+        if (!this.peripheralPinBuffers.has(peripheralId)) {
+          this.peripheralPinBuffers.set(peripheralId, {});
+        }
+
+        // Create a dedicated listener that pushes the HIGH/LOW state across the wire to the target node
+        const listener = (state: PinState) => {
+          const isHigh = state === 'HIGH';
+          const currentStateStore = useForgeStore.getState();
+
+          // Identify peripheral type once
+          const pType = currentStateStore.nodes.find(n => n.id === peripheralId)?.data?.type;
+
+          // Log 7-segment related activity
+          if (pType === '7segment') {
+            console.log(`[CIRCUIT 7SEG] Listener triggered: ${avrPin} = ${state}, peripheral pin: ${peripheralPinName}`);
+          }
+
+          const isComplexPeripheral = ['stepper-motor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
+            'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5',
+            '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711'].includes(pType);
+
+          // 1. Trace the electrical network — only for simple output peripherals
+          if (!isComplexPeripheral) {
+            const reachableTargets = this.traceNet(peripheralId, peripheralPinName);
+            console.log(`[CIRCUIT LED] Traced from ${peripheralId}/${peripheralPinName}, found ${reachableTargets.length} targets:`, reachableTargets);
+            reachableTargets.forEach(target => {
+              const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
+              if (!targetNode) return;
+
+              const currentPinStates = targetNode.data?.pinStates || {};
+              const pinKey = `pin_${target.pinName}`;
+
+              console.log(`[CIRCUIT LED] Updating ${target.nodeId} pin ${pinKey} to ${isHigh ? 'HIGH' : 'LOW'}`);
+
+              if (currentPinStates[pinKey] !== isHigh) {
+                const updates: any = {
+                  pinStates: { ...currentPinStates, [pinKey]: isHigh }
+                };
+
+                const intensity = isHigh ? 1.0 : 0.0;
+
+                if (target.type === 'led') {
+                  updates.brightness = intensity;
+                  updates.value = isHigh;  // LED requires both brightness AND value to glow
+                  console.log(`[CIRCUIT LED] Setting LED brightness to ${intensity}, value to ${isHigh}`);
+                }
+                else if (target.type === 'rgb-led') updates[`intensity_${target.pinName}`] = intensity;
+                else if (target.type === 'buzzer') {
+                  updates.intensity = intensity;
+                  updates.hasSignal = isHigh;
+                }
+
+                updates.damaged = false;
+                console.log(`[CIRCUIT LED] Calling updateNodeData for ${target.nodeId}:`, updates);
+                updateNodeData(target.nodeId, updates);
+              } else {
+                console.log(`[CIRCUIT LED] Pin state unchanged, skipping update`);
+              }
+            });
+          }
+
+          // 2. Specialized Peripheral Emulation (Servo, LCD, etc. - keep original logic for these)
+          const peripheralNode = currentStateStore.nodes.find(n => n.id === peripheralId);
+
+          if (peripheralNode) {
+            // ... (rest of the specialized logic for HC-SR04, Servo, LCD, DHT)
+            // Note: We only keep the physics simulation here. 
+            // The pin state update for these complex peripherals is handled below.
+
+            // Emulate HC-SR04 Hardware Physics
+            if (peripheralNode.data?.type === 'hc-sr04' && peripheralPinName === 'TRIG') {
+              if (isHigh) {
+                trigStartCycles = simulationRunner.getCycles();
+              } else {
+                const distStr = peripheralNode.data?.sensorValues?.distance;
+                const distParam = distStr !== undefined ? parseFloat(distStr) : 100;
+                const echoPulseUs = distParam * 58;
+
+                const echoWire = currentStateStore.edges.find(e =>
+                  (e.source === peripheralId && (e.sourceHandle === 'ECHO' || e.sourceHandle === 'ECHO__target')) ||
+                  (e.target === peripheralId && (e.targetHandle === 'ECHO' || e.targetHandle === 'ECHO__target'))
+                );
+                if (!echoWire) return;
+
+                const _boardPinName = (echoWire.source === peripheralId ? echoWire.targetHandle : echoWire.sourceHandle)
+                  ?.replace(/__target$/, '') ?? '';
+
+                if (isESP32Board) {
+                  // ESP32: use setTimeout (no CPU cycles available)
+                  const echoMapping = simulationRunner.convertESP32Pin(_boardPinName);
+                  if (echoMapping) {
+                    setTimeout(() => {
+                      simulationRunner.setVirtualInput(echoMapping.avrPin, true);
+                      setTimeout(() => {
+                        simulationRunner.setVirtualInput(echoMapping.avrPin, false);
+                      }, echoPulseUs / 1000); // µs → ms
+                    }, 0.5);
+                  }
+                } else {
+                  // AVR: use cycle-accurate scheduleEvent
+                  const pulseCycles = simulationRunner.getCycles() - trigStartCycles;
+                  const durationUs = pulseCycles / 16;
+                  if (durationUs >= 2) {
+                    const echoPulseCycles = Math.floor(echoPulseUs * 16);
+                    const _echoMapping = simulationRunner.convertArduinoPin(_boardPinName);
+                    if (_echoMapping) {
+                      simulationRunner.scheduleEvent(500, () => {
+                        simulationRunner.setVirtualInput(_echoMapping.avrPin, true);
+                        simulationRunner.scheduleEvent(echoPulseCycles, () => {
+                          simulationRunner.setVirtualInput(_echoMapping.avrPin, false);
+                        });
+                      });
+                    }
+                  }
+                }
+              }
+            }
+
+            // Emulate Servo PWM Physics
+            // AVR: measure pulse width in CPU cycles → angle
+            // ESP32: servo angle is driven directly by the stub's servoWrite action — skip cycle math
+            if (peripheralNode.data?.type === 'servo' && peripheralPinName === 'PWM' && !isESP32Board) {
+              if (isHigh) {
+                pwmStartCycles = simulationRunner.getCycles();
+              } else {
+                const pulseCycles = simulationRunner.getCycles() - pwmStartCycles;
+                const durationUs = pulseCycles / 16;
+                if (durationUs >= 400 && durationUs <= 2600) {
+                  const angle = Math.max(0, Math.min(180, ((durationUs - 1000) / 1000) * 180));
+                  const currentAngle = peripheralNode.data?.angle ?? 0;
+                  if (Math.abs(currentAngle - angle) >= 0.5) {
+                    updateNodeData(peripheralId, { angle });
+                  }
+                }
+              }
+            }
+
+            // --- LCD Display Emulation (parallel mode only) ---
+            if ((peripheralNode.data?.type === 'lcd1602' || peripheralNode.data?.type === 'lcd2004') &&
+              peripheralNode.data?.type !== 'lcd1602-i2c' && peripheralNode.data?.type !== 'lcd2004-i2c') {
+              const buffer = this.peripheralPinBuffers.get(peripheralId)!;
+              const prevE = buffer['E'];
+              buffer[peripheralPinName] = isHigh;
+              if (prevE === true && isHigh === false && peripheralPinName === 'E') {
+                const emulator = this.lcdEmulators.get(peripheralId)!;
+                const rs = !!buffer['RS'];
+                let data = 0;
+                if (buffer['D4']) data |= 0x10;
+                if (buffer['D5']) data |= 0x20;
+                if (buffer['D6']) data |= 0x40;
+                if (buffer['D7']) data |= 0x80;
+                emulator.processPulse(rs, data);
+                updateNodeData(peripheralId, { lcdState: emulator.getState() });
+              }
+            }
+
+            // --- 7-Segment Display Emulation ---
+            // Segment order in values[]: A=0, B=1, C=2, D=3, E=4, F=5, G=6, DP=7
+            // Common-cathode: segment is ON when pin is HIGH.
+            if (peripheralNode.data?.type === '7segment') {
+              const buffer = this.peripheralPinBuffers.get(peripheralId)!;
+              buffer[peripheralPinName] = isHigh;
+              console.log(`[7SEG] Pin ${peripheralPinName} = ${isHigh ? 'HIGH' : 'LOW'}, buffer:`, buffer);
+
+              const segOrder = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'DP'];
+              const values = segOrder.map(seg => (buffer[seg] ? 1 : 0));
+              const currentValues = peripheralNode.data?.segValues;
+              console.log(`[7SEG] Computed values:`, values, 'current:', currentValues);
+              // Only update if something changed
+              if (!currentValues || values.some((v, i) => v !== currentValues[i])) {
+                console.log(`[7SEG] Updating node ${peripheralId} with segValues:`, values);
+                updateNodeData(peripheralId, { segValues: values });
+              }
+            }
+
+            // --- DHT Sensor Emulation ---
+            if (peripheralNode.data?.type === 'dht22' || peripheralNode.data?.type === 'dht11') {
+              if (peripheralPinName === 'SDA' || peripheralPinName === 'DATA') {
+                if (!this.dhtEmulators.has(peripheralId)) {
+                  // Pass nodeId so the emulator reads from the correct node's sensorValues
+                  this.dhtEmulators.set(peripheralId, new DHT(avrPin, peripheralNode.data.type, peripheralId));
+                }
+                const emulator = this.dhtEmulators.get(peripheralId)!;
+                emulator.processSignal(state);
+              }
+            }
+
+            // --- ILI9341 TFT SPI Display Emulation ---
+            // D/C pin controls command vs data mode; CS pin enables/disables the chip.
+            if (peripheralNode.data?.type === 'ili9341') {
+              const slave = this.ili9341Slaves.get(peripheralId);
+              if (slave) {
+                if (peripheralPinName === 'D/C') {
+                  slave.setDC(isHigh);
+                } else if (peripheralPinName === 'CS') {
+                  // CS is active-LOW: chip is selected when the pin is LOW
+                  slave.setCS(!isHigh);
+                }
+                // MOSI/SCK are handled by the SPI bus hardware (simulationRunner.SPI.onByte)
+              }
+            }
+
+            // --- PIR Motion Sensor Emulation ---
+            // PIR is a pure INPUT sensor — signal flows from sensor → Arduino, never the reverse.
+            // The listener here fires when the AVR writes to Port D (output direction).
+            // We must NOT call setVirtualInput here — that would fight against user-injected signals.
+            // Initial state injection is handled below, outside this listener, after registration.
+
+            // --- Relay Emulation (KS2E-M-DC5 DPDT) ---
+            // COIL1 = signal pin (HIGH = energized), COIL2 = GND reference.
+            // When energized: P1↔NO1, P2↔NO2 are closed; P1↔NC1, P2↔NC2 open.
+            // When de-energized: P1↔NC1, P2↔NC2 are closed; P1↔NO1, P2↔NO2 open.
+            if (peripheralNode.data?.type === 'ks2e-m-dc5') {
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              buf[peripheralPinName] = isHigh;
+
+              // Coil is energized when COIL1 is HIGH (COIL2 is GND)
+              const coil1High = !!buf['COIL1'];
+              const wasEnergized = peripheralNode.data?.relayEnergized ?? false;
+
+              if (coil1High !== wasEnergized) {
+                console.log(`[RELAY] Node ${peripheralId} — coil ${coil1High ? 'ENERGIZED' : 'DE-ENERGIZED'}`);
+                updateNodeData(peripheralId, { relayEnergized: coil1High });
+
+                // Re-propagate signals through the relay contacts
+                // Find what is connected to P1 and P2 and route to the active contact
+                const relayEdges = currentStateStore.edges.filter(e =>
+                  e.source === peripheralId || e.target === peripheralId
+                );
+
+                // For each pole (P1, P2), find the signal on P and push it to the active contact
+                for (const pole of ['P1', 'P2'] as const) {
+                  const suffix = pole === 'P1' ? '1' : '2';
+                  const activeContact = coil1High ? `NO${suffix}` : `NC${suffix}`;
+                  const inactiveContact = coil1High ? `NC${suffix}` : `NO${suffix}`;
+
+                  // Find the signal level on the pole pin
+                  const poleEdge = relayEdges.find(e =>
+                    (e.source === peripheralId && e.sourceHandle === pole) ||
+                    (e.target === peripheralId && e.targetHandle === pole)
+                  );
+
+                  if (poleEdge) {
+                    // Trace what's downstream of the active contact
+                    const activeTargets = this.traceNet(peripheralId, activeContact);
+                    const inactiveTargets = this.traceNet(peripheralId, inactiveContact);
+
+                    // Get the current signal level on the pole from the board
+                    const poleSignal = buf[pole] ?? false;
+
+                    // Push signal to newly-active contact targets
+                    activeTargets.forEach(target => {
+                      const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
+                      if (!targetNode) return;
+                      const pinStates = { ...(targetNode.data?.pinStates || {}), [`pin_${target.pinName}`]: poleSignal };
+                      updateNodeData(target.nodeId, { pinStates, damaged: false });
+                    });
+
+                    // Cut signal to newly-inactive contact targets
+                    inactiveTargets.forEach(target => {
+                      const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
+                      if (!targetNode) return;
+                      const pinStates = { ...(targetNode.data?.pinStates || {}), [`pin_${target.pinName}`]: false };
+                      updateNodeData(target.nodeId, { pinStates, damaged: false });
+                    });
+                  }
+                }
+              }
+            }
+
+            // --- Stepper Motor Emulation ---
+            // Supports both wiring modes:
+            //   4-wire (A+, B+, A-, B-) — Arduino Stepper.h / ULN2003
+            //   STEP+DIR (A4988 / DRV8825)
+            if (peripheralNode.data?.type === 'stepper-motor') {
+              if (!this.stepperEmulators.has(peripheralId)) {
+                console.log(`[STEPPER] Wiring 4-wire emulator for node ${peripheralId} — pin ${peripheralPinName} ← AVR ${avrPin}`);
+                let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
+                let rafScheduled = false;
+                this.stepperEmulators.set(peripheralId, new StepperEmulator(({ angle, stepCount, energized }) => {
+                  pendingUpdate = { angle, stepCount, energized };
+                  if (!rafScheduled) {
+                    rafScheduled = true;
+                    requestAnimationFrame(() => {
+                      rafScheduled = false;
+                      if (pendingUpdate) {
+                        const { angle: a, stepCount: s, energized: e } = pendingUpdate;
+                        pendingUpdate = null;
+                        updateNodeData(peripheralId, {
+                          angle: a,
+                          value: `${a.toFixed(1)}°`,
+                          units: `${s > 0 ? '+' : ''}${s} steps`,
+                          arrow: e ? '#BEF264' : '',
+                        });
+                      }
+                    });
+                  }
+                }, { stepsPerRev: 200 }, peripheralId));
+              }
+              const stepper = this.stepperEmulators.get(peripheralId)!;
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              buf[peripheralPinName] = isHigh;
+
+              if (peripheralPinName === 'STEP') {
+                stepper.processStep(isHigh);
+              } else if (peripheralPinName === 'DIR') {
+                stepper.setDirection(isHigh);
+              } else {
+                // 4-wire mode — order must match Stepper.h: processCoils(A+, B+, A-, B-)
+                stepper.processCoils(
+                  !!buf['A+'],
+                  !!buf['B+'],
+                  !!buf['A-'],
+                  !!buf['B-'],
+                );
+              }
+            }
+
+            // --- Biaxial Stepper Emulation ---
+            // Two independent 4-wire steppers in one body.
+            // Outer shaft: A1+, A1-, B1+, B1-
+            // Inner shaft: A2+, A2-, B2+, B2-
+            if (peripheralNode.data?.type === 'biaxial-stepper') {
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              buf[peripheralPinName] = isHigh;
+
+              const outerKey = `${peripheralId}__outer`;
+              const innerKey = `${peripheralId}__inner`;
+
+              // Create outer emulator (motor 1)
+              if (!this.stepperEmulators.has(outerKey)) {
+                console.log(`[BIAXIAL] Wiring outer emulator for node ${peripheralId}`);
+                let pending: { angle: number; energized: boolean } | null = null;
+                let rafPending = false;
+                this.stepperEmulators.set(outerKey, new StepperEmulator(({ angle, energized }) => {
+                  pending = { angle, energized };
+                  if (!rafPending) {
+                    rafPending = true;
+                    requestAnimationFrame(() => {
+                      rafPending = false;
+                      if (pending) {
+                        const { angle: a, energized: e } = pending;
+                        pending = null;
+                        updateNodeData(peripheralId, { outerHandAngle: a, outerEnergized: e });
+                      }
+                    });
+                  }
+                }, { stepsPerRev: 200 }, `${peripheralId}-outer`));
+              }
+
+              // Create inner emulator (motor 2)
+              if (!this.stepperEmulators.has(innerKey)) {
+                console.log(`[BIAXIAL] Wiring inner emulator for node ${peripheralId}`);
+                let pending: { angle: number; energized: boolean } | null = null;
+                let rafPending = false;
+                this.stepperEmulators.set(innerKey, new StepperEmulator(({ angle, energized }) => {
+                  pending = { angle, energized };
+                  if (!rafPending) {
+                    rafPending = true;
+                    requestAnimationFrame(() => {
+                      rafPending = false;
+                      if (pending) {
+                        const { angle: a, energized: e } = pending;
+                        pending = null;
+                        updateNodeData(peripheralId, { innerHandAngle: a, innerEnergized: e });
+                      }
+                    });
+                  }
+                }, { stepsPerRev: 200 }, `${peripheralId}-inner`));
+              }
+
+              const outerStepper = this.stepperEmulators.get(outerKey)!;
+              const innerStepper = this.stepperEmulators.get(innerKey)!;
+
+              // Route pins to the correct emulator
+              // Outer motor coils: A1+, A1-, B1+, B1-
+              if (['A1+', 'A1-', 'B1+', 'B1-'].includes(peripheralPinName)) {
+                outerStepper.processCoils(
+                  !!buf['A1+'],
+                  !!buf['B1+'],
+                  !!buf['A1-'],
+                  !!buf['B1-'],
+                );
+              }
+              // Inner motor coils: A2+, A2-, B2+, B2-
+              if (['A2+', 'A2-', 'B2+', 'B2-'].includes(peripheralPinName)) {
+                innerStepper.processCoils(
+                  !!buf['A2+'],
+                  !!buf['B2+'],
+                  !!buf['A2-'],
+                  !!buf['B2-'],
+                );
+              }
+            }
+
+            // --- NeoPixel Emulation (WS2812B protocol) ---
+            // Handled via addRawListener above — every edge is captured without deduplication.
+
+            // --- A4988 Stepper Driver Emulation ---
+            // Bridges STEP/DIR from Arduino to the stepper motor connected on 1A/1B/2A/2B
+            if (peripheralNode.data?.type === 'a4988') {
+              if (peripheralPinName === 'STEP' || peripheralPinName === 'DIR') {
+                const buf = this.peripheralPinBuffers.get(peripheralId)!;
+                buf[peripheralPinName] = isHigh;
+
+                // Find the stepper motor connected to this A4988's motor pins
+                const motorEdges = currentStateStore.edges.filter(e =>
+                  (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.sourceHandle || '')) ||
+                  (e.target === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.targetHandle || ''))
+                );
+
+                const motorNodeId = motorEdges.length > 0
+                  ? (motorEdges[0].source === peripheralId ? motorEdges[0].target : motorEdges[0].source)
+                  : null;
+
+                if (motorNodeId) {
+                  const motorNode = currentStateStore.nodes.find(n => n.id === motorNodeId);
+                  const isBiaxial = motorNode?.data?.type === 'biaxial-stepper';
+
+                  if (isBiaxial) {
+                    // Determine which shaft this A4988 drives by inspecting which biaxial pins are wired
+                    const biaxialEdges = currentStateStore.edges.filter(e =>
+                      (e.source === peripheralId && motorEdges.some(me => me === e)) ||
+                      (e.target === peripheralId && motorEdges.some(me => me === e))
+                    );
+                    const connectedBiaxialPins = biaxialEdges.map(e =>
+                      e.source === motorNodeId ? e.sourceHandle : e.targetHandle
+                    );
+                    const isInner = connectedBiaxialPins.some(p => p && ['A2+', 'A2-', 'B2+', 'B2-'].includes(p));
+                    const shaftKey = isInner ? `${motorNodeId}__inner` : `${motorNodeId}__outer`;
+                    const shaftLabel = isInner ? 'inner' : 'outer';
+
+                    if (!this.stepperEmulators.has(shaftKey)) {
+                      console.log(`[BIAXIAL] Wiring A4988 STEP/DIR emulator for ${shaftLabel} shaft of node ${motorNodeId}`);
+                      let pending: { angle: number; energized: boolean } | null = null;
+                      let rafPending = false;
+                      this.stepperEmulators.set(shaftKey, new StepperEmulator(({ angle, energized }) => {
+                        pending = { angle, energized };
+                        if (!rafPending) {
+                          rafPending = true;
+                          requestAnimationFrame(() => {
+                            rafPending = false;
+                            if (pending) {
+                              const { angle: a, energized: e } = pending;
+                              pending = null;
+                              const prop = isInner ? 'innerHandAngle' : 'outerHandAngle';
+                              const energizedProp = isInner ? 'innerEnergized' : 'outerEnergized';
+                              updateNodeData(motorNodeId, { [prop]: a, [energizedProp]: e });
+                            }
+                          });
+                        }
+                      }, { stepsPerRev: 200 }, `${motorNodeId}-${shaftLabel}`));
+                    }
+                    const stepper = this.stepperEmulators.get(shaftKey)!;
+                    if (peripheralPinName === 'DIR') {
+                      stepper.setDirection(isHigh);
+                    } else if (peripheralPinName === 'STEP') {
+                      stepper.processStep(isHigh);
+                    }
+                  } else {
+                    // Standard single stepper motor
+                    if (!this.stepperEmulators.has(motorNodeId)) {
+                      console.log(`[STEPPER] Wiring A4988 STEP/DIR emulator for motor node ${motorNodeId}`);
+                      let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
+                      let rafScheduled = false;
+                      this.stepperEmulators.set(motorNodeId, new StepperEmulator(({ angle, stepCount, energized }) => {
+                        pendingUpdate = { angle, stepCount, energized };
+                        if (!rafScheduled) {
+                          rafScheduled = true;
+                          requestAnimationFrame(() => {
+                            rafScheduled = false;
+                            if (pendingUpdate) {
+                              const { angle: a, stepCount: s, energized: e } = pendingUpdate;
+                              pendingUpdate = null;
+                              updateNodeData(motorNodeId, {
+                                angle: a,
+                                value: `${a.toFixed(1)}°`,
+                                units: `${s > 0 ? '+' : ''}${s} steps`,
+                                arrow: e ? '#BEF264' : '',
+                              });
+                            }
+                          });
+                        }
+                      }, { stepsPerRev: 200 }, motorNodeId));
+                    }
+                    const stepper = this.stepperEmulators.get(motorNodeId)!;
+                    if (peripheralPinName === 'DIR') {
+                      stepper.setDirection(isHigh);
+                    } else if (peripheralPinName === 'STEP') {
+                      stepper.processStep(isHigh);
+                    }
+                  }
+                }
+              }
+            }
+
+            // Update the target peripheral's UI state so standard Leap Elements react
+            // Skip for complex peripherals that manage their own state
+            if (!isComplexPeripheral) {
+              const currentPinStates = peripheralNode.data?.pinStates || {};
+              if (currentPinStates[`pin_${peripheralPinName}`] !== isHigh) {
+                updateNodeData(peripheralId, {
+                  pinStates: {
+                    ...currentPinStates,
+                    [`pin_${peripheralPinName}`]: isHigh
+                  }
+                });
+              }
+            }
+          }
+        };
+
+        // Attach to the simulation runner
+        // ── AVR path ──────────────────────────────────────────────────────────
+        simulationRunner.addListener(avrPin, listener);
+
+        // Log 7-segment listener registration
+        const pType = nodes.find(n => n.id === peripheralId)?.data?.type;
+        if (pType === '7segment') {
+          console.log(`[CIRCUIT 7SEG] Registered listener for ${avrPin} → peripheral pin ${peripheralPinName}`);
+        }
+
+        // For NeoPixel DIN pins: also attach a RAW listener that fires on every edge
+        // (WS2812B protocol requires every HIGH/LOW transition, dedup breaks it)
+        let neoRawListener: ((portLetter: string, bit: number, isHigh: boolean, cycles: number) => void) | null = null;
+        const peripheralNodeForNeo = nodes.find(n => n.id === peripheralId);
+        if (
+          peripheralNodeForNeo &&
+          ['neopixel', 'neopixel-matrix', 'led-ring'].includes(peripheralNodeForNeo.data?.type) &&
+          peripheralPinName === 'DIN'
+        ) {
+          const neoType = peripheralNodeForNeo.data.type;
+          const numPixels = neoType === 'neopixel' ? 1
+            : neoType === 'led-ring' ? (peripheralNodeForNeo.data?.pixels ?? 16)
+              : (peripheralNodeForNeo.data?.rows ?? 8) * (peripheralNodeForNeo.data?.cols ?? 8);
+
+          const emitter = new NeoPixelEmulator(numPixels, 16, (pixels) => {
+            if (neoType === 'neopixel' && pixels.length > 0) {
+              updateNodeData(peripheralId, {
+                neopixelR: pixels[0].r / 255,
+                neopixelG: pixels[0].g / 255,
+                neopixelB: pixels[0].b / 255,
+              });
+            } else {
+              updateNodeData(peripheralId, { neopixelPixels: pixels });
+            }
+          });
+          this.neoPixelEmulators.set(peripheralId, emitter);
+
+          neoRawListener = (_portLetter, _bit, isHigh, cycles) => {
+            emitter.processSignal(isHigh, cycles);
+          };
+          simulationRunner.addRawListener(avrPin, neoRawListener);
+        }
+
+        // Store the unsubscribe thunk to clean up if the wire is deleted
+        this.activeSubscriptions.set(edge.id, () => {
+          simulationRunner.removeListener(avrPin, listener);
+          if (neoRawListener) simulationRunner.removeRawListener(avrPin, neoRawListener);
+        });
+
+        // PIR: inject the initial pin state once after the AVR has had a chance to
+        // run setup() and configure DDR. We defer by one event-loop turn so the
+        // AVR tick loop starts first and the sketch's pinMode() runs before we set
+        // the external pin value.
+        const peripheralNodeForPIR = nodes.find(n => n.id === peripheralId);
+        if (
+          peripheralNodeForPIR?.data?.type === 'pir-motion-sensor' &&
+          peripheralPinName === 'OUT'
+        ) {
+          const initialMotion = peripheralNodeForPIR.data?.sensorValues?.motionDetected ?? false;
+          // Delay 200ms — enough for setup() to run and configure pinMode
+          setTimeout(() => {
+            simulationRunner.setVirtualInput(avrPin, initialMotion);
+            console.log(`[FORGE CIRCUIT] PIR (${peripheralId}) initial state injected: ${initialMotion ? 'HIGH' : 'LOW'} on ${avrPin}`);
+          }, 200);
+        }
+      });
+    });
+  }
+
+  /**
+   * Push live MPU6050 sensor values from the SensorOverlay sliders into the I2C emulator.
+   * Called whenever any slider changes.
+   */
+  public pushMPU6050Values(nodeId: string, values: {
+    accelX: number; accelY: number; accelZ: number;
+    gyroX: number; gyroY: number; gyroZ: number;
+    temp: number;
+  }) {
+    const slave = this.mpu6050Slaves.get(nodeId);
+    if (slave) {
+      slave.setSensorValues(values);
+    }
+  }
+
+  /**
+   * Called by interactive UI nodes (e.g. Buttons, PIR sensors) to push signals backwards into the board.
+   * Handles both AVR (Arduino) and ESP32 boards.
+   */
+  public pushInputSignal(nodeId: string, pinName: string, isHigh: boolean) {
+    console.log(`[FORGE CIRCUIT] Peripheral Node ${nodeId} requesting inject on pin ${pinName} to ${isHigh ? 'HIGH' : 'LOW'}`);
+    const { edges, nodes } = useForgeStore.getState();
+
+    const wire = edges.find(e => {
+      const srcMatch = e.source === nodeId &&
+        (e.sourceHandle === pinName || e.sourceHandle === `${pinName}__target`);
+      const tgtMatch = e.target === nodeId &&
+        (e.targetHandle === pinName || e.targetHandle === `${pinName}__target`);
+      return srcMatch || tgtMatch;
+    });
+
+    if (!wire) {
+      console.warn(`[FORGE CIRCUIT] Input: no wire found for node ${nodeId} pin ${pinName}`);
+      return;
+    }
+
+    const boardNodeId = wire.source === nodeId ? wire.target : wire.source;
+    const boardPinName = wire.source === nodeId ? wire.targetHandle : wire.sourceHandle;
+    if (!boardPinName) return;
+
+    const boardNode = nodes.find(n => n.id === boardNodeId);
+    if (!boardNode) return;
+
+    const cleanBoardPin = boardPinName.replace(/__target$/, '');
+    const isESP32 = boardNode.data?.type === 'esp32-c3';
+
+    // ── ESP32 path ────────────────────────────────────────────────────────
+    if (isESP32) {
+      const peripheralNode = nodes.find(n => n.id === nodeId);
+      const pType = peripheralNode?.data?.type;
+      const sv = peripheralNode?.data?.sensorValues;
+
+      // Use full ESP32 pin map (handles D{n}, VP, VN, ADC pins etc.)
+      const esp32Mapping = simulationRunner.convertESP32Pin(cleanBoardPin);
+      if (!esp32Mapping) return; // power/GND pin — skip
+
+      const gpioNum = parseInt(esp32Mapping.avrPin.replace('ESP', ''), 10);
+
+      // Analog sensors → inject voltage into ESP32 ADC (3.3V reference)
+      const analogSensors = [
+        'ntc-temperature-sensor', 'photoresistor-sensor', 'flame-sensor',
+        'gas-sensor', 'big-sound-sensor', 'small-sound-sensor', 'photoresistor',
+        'heart-beat-sensor',
+      ];
+      if (analogSensors.includes(pType) || esp32Mapping.adcChannel !== undefined) {
+        const voltage = this.computeSensorVoltage(pType, sv, 3.3);
+
+        // ESP32-C3 RISC-V path
+        if (simulationRunner.isESP32C3Board && esp32Mapping.adcChannel !== undefined) {
+          const gpioNum = parseInt(esp32Mapping.avrPin.replace('ESP', ''), 10);
+          simulationRunner.setESP32C3AnalogInput(gpioNum, voltage);
+        }
+        else {
+          // Non-ESP32-C3 board: update pin state map so listeners fire
+          simulationRunner.setVirtualInput(esp32Mapping.avrPin, voltage > 0.1);
+        }
+        console.log(`[FORGE CIRCUIT] ESP32 Analog: ${esp32Mapping.avrPin} = ${voltage.toFixed(3)}V (${pType})`);
+
+        // Also inject threshold digital output pins (DO/DOUT) for dual-output sensors
+        const injectESP32Threshold = (pinHandle: string, high: boolean, label: string) => {
+          const w = edges.find(e => {
+            const s = e.source === nodeId && (e.sourceHandle === pinHandle || e.sourceHandle === `${pinHandle}__target`);
+            const t = e.target === nodeId && (e.targetHandle === pinHandle || e.targetHandle === `${pinHandle}__target`);
+            return s || t;
+          });
+          if (!w) return;
+          const bp = ((w.source === nodeId ? w.targetHandle : w.sourceHandle) ?? '').replace(/__target$/, '');
+          const m = simulationRunner.convertESP32Pin(bp);
+          if (m) { simulationRunner.setVirtualInput(m.avrPin, high); console.log(`[FORGE CIRCUIT] ESP32 ${label}: ${m.avrPin} = ${high ? 'HIGH' : 'LOW'}`); }
+        };
+
+        if (pType === 'photoresistor-sensor') {
+          injectESP32Threshold('DO', (sv?.value ?? 500) >= (sv?.threshold ?? 500), 'LDR DO');
+        } else if (pType === 'gas-sensor') {
+          injectESP32Threshold('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Gas DOUT');
+        } else if (pType === 'flame-sensor') {
+          injectESP32Threshold('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Flame DOUT');
+        } else if (pType === 'big-sound-sensor' || pType === 'small-sound-sensor') {
+          injectESP32Threshold('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Sound DOUT');
+        }
+        return;
+      }
+
+      // Digital sensors → inject HIGH/LOW
+      simulationRunner.setVirtualInput(esp32Mapping.avrPin, isHigh);
+      console.log(`[FORGE CIRCUIT] ESP32 Digital: ${esp32Mapping.avrPin} = ${isHigh ? 'HIGH' : 'LOW'}`);
+      return;
+    }
+
+    // ── AVR path — now unified via convertPin ────────────────────────────
+    const mapping = simulationRunner.convertPin(cleanBoardPin, false);
+    if (mapping) {
+      if (mapping.adcChannel !== undefined || mapping.avrPin.startsWith('ESP')) {
+        // --- Analog Mapping ---
+        const peripheralNode = nodes.find(n => n.id === nodeId);
+        const pType = peripheralNode?.data?.type;
+        const sv = peripheralNode?.data?.sensorValues;
+
+        // Use shared voltage computation (5V for AVR)
+        const voltage = this.computeSensorVoltage(pType, sv, 5.0);
+
+        simulationRunner.setAnalogInput(mapping.adcChannel!, voltage);
+        console.log(`[FORGE CIRCUIT] Analog Signal: Peripheral[${nodeId}] pin ${pinName} -> ${voltage.toFixed(3)}V on ADC ch${mapping.adcChannel}`);
+
+        // Helper: inject a digital threshold output pin (DO/DOUT) for dual-output sensors
+        const injectThresholdPin = (pinHandle: string, isHigh: boolean, label: string) => {
+          const wire = edges.find(e => {
+            const s = e.source === nodeId && (e.sourceHandle === pinHandle || e.sourceHandle === `${pinHandle}__target`);
+            const t = e.target === nodeId && (e.targetHandle === pinHandle || e.targetHandle === `${pinHandle}__target`);
+            return s || t;
+          });
+          if (!wire) return;
+          const boardPin = ((wire.source === nodeId ? wire.targetHandle : wire.sourceHandle) ?? '').replace(/__target$/, '');
+          const m = simulationRunner.convertPin(boardPin, isESP32);
+          if (m && m.adcChannel === undefined) {
+            simulationRunner.setVirtualInput(m.avrPin, isHigh);
+            console.log(`[FORGE CIRCUIT] ${label}: ${isHigh ? 'HIGH' : 'LOW'} on ${m.avrPin}`);
+          }
+        };
+
+        if (pType === 'photoresistor-sensor') {
+          injectThresholdPin('DO', (sv?.value ?? 500) >= (sv?.threshold ?? 500), 'LDR DO');
+        }
+        if (pType === 'gas-sensor') {
+          injectThresholdPin('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Gas DOUT');
+        }
+        if (pType === 'flame-sensor') {
+          injectThresholdPin('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Flame DOUT');
+        }
+        if (pType === 'big-sound-sensor' || pType === 'small-sound-sensor') {
+          injectThresholdPin('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Sound DOUT');
+        }
+      } else {
+        // --- Digital Mapping ---
+        simulationRunner.setVirtualInput(mapping.avrPin, isHigh);
+        console.log(`[FORGE CIRCUIT] Digital Signal: Peripheral[${nodeId}] pin ${pinName} -> ${isHigh ? 'HIGH' : 'LOW'} on ${mapping.avrPin}`);
+      }
+    } else {
+      console.warn(`[FORGE CIRCUIT] pushInputSignal: could not map board pin '${cleanBoardPin}' to pin`);
+    }
+  }
+
+  /**
+   * Compute the analog output voltage for a sensor given its type and current sensorValues.
+   * vcc: supply voltage (5.0 for Arduino, 3.3 for ESP32)
+   */
+  private computeSensorVoltage(pType: string, sv: any, vcc = 5.0): number {
+    switch (pType) {
+      case 'ntc-temperature-sensor': {
+        const tempC = sv?.value ?? 25;
+        const R0 = 10000, B = 3950, T0 = 298.15, Rs = 10000;
+        const T = tempC + 273.15;
+        const R_ntc = R0 * Math.exp(B * (1 / T - 1 / T0));
+        return vcc * R_ntc / (Rs + R_ntc);
+      }
+      case 'photoresistor-sensor':
+      case 'photoresistor': {
+        const lux = sv?.value ?? 500;
+        const R_ldr = 500000 / Math.max(1, lux);
+        return vcc * 10000 / (R_ldr + 10000);
+      }
+      case 'flame-sensor': {
+        const intensity = sv?.value ?? 0;
+        return vcc * (1 - Math.max(0, Math.min(100, intensity)) / 100);
+      }
+      case 'gas-sensor': {
+        const concentration = sv?.value ?? 0;
+        return vcc * Math.max(0, Math.min(100, concentration)) / 100;
+      }
+      case 'big-sound-sensor':
+      case 'small-sound-sensor': {
+        const level = sv?.value ?? 0;
+        return vcc * Math.max(0, Math.min(100, level)) / 100;
+      }
+      default: {
+        const val = sv?.value ?? 0;
+        return val > vcc ? (val / 1023) * vcc : val;
+      }
+    }
+  }
+}
+
+export const circuitEngine = new CircuitEngine();
