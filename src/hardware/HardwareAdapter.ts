@@ -7,7 +7,7 @@
 // HARDWARE ADAPTER - Bridge between Stage/VM and hardware via serial
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { COMMANDS, parseResponse, buildCommand, FirmwareResponse } from '../firmware/firmware-protocol';
+import { COMMANDS, parseResponse, buildCommand, FirmwareResponse } from '../Leapforge/firmware/firmware-protocol';
 
 /**
  * HardwareAdapter provides a high-level API for controlling hardware

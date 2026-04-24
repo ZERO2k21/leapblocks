@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from "react";
+import './SpritePanel.css';
 import { Sprite, SpriteType } from "./Sprite";
 import { ActionMenu } from "./ActionMenu";
 import type { StageManager } from '../engine/StageManager';
@@ -241,8 +242,8 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
               color="#7C3AED"
               tooltipLabel="Add Backdrop"
               actions={[
-                { id: 'library', icon: '🔍', label: 'Choose Backdrop', onClick: onOpenBackdropLibrary },
-                { id: 'surprise', icon: '✨', label: 'Surprise' },
+                { id: 'library', icon: '🔍', label: 'Choose Backdrop', onClick: () => { if (onOpenBackdropLibrary) onOpenBackdropLibrary(); } },
+                { id: 'surprise', icon: '✨', label: 'Surprise', onClick: () => {} },
               ]}
             />
           </div>

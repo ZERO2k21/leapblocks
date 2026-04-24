@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { LEAP_PINS } from '../engine/PinHarness';
+import { LEAP_PINS } from '../engine/Arduino/PinHarness';
 
 export interface PinEntry {
   name: string;
@@ -30,7 +30,7 @@ export function getComponentPins(type: string): PinEntry[] {
   const { viewBox, pins } = componentData;
   const isArduino = type.includes('arduino') || type.includes('mega');
 
-  return pins.map(pin => {
+  return pins.map((pin: any) => {
     // Leap pin coordinates are usually in CSS pixels (96 DPI).
     // but the component itself defines width in mm inside its SVGs, rendering to native CSS pixels.
     // If the element renders at intrinsic size, its width in pixels is viewBox.width * PX_PER_MM.

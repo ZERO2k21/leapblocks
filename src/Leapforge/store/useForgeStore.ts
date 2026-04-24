@@ -23,7 +23,7 @@ async function getSimulationRunner() {
   const start = performance.now();
   logStoreTiming('getSimulationRunner() called');
   if (!simulationRunner) {
-    const module = await import('../engine/SimulationRunner');
+    const module = await import('../engine/Arduino/SimulationRunner');
     simulationRunner = module.simulationRunner;
     const elapsed = (performance.now() - start).toFixed(2);
     logStoreTiming(`SimulationRunner loaded in ${elapsed}ms`);
@@ -37,7 +37,7 @@ async function getCircuitEngine() {
   const start = performance.now();
   logStoreTiming('getCircuitEngine() called');
   if (!circuitEngine) {
-    const module = await import('../engine/CircuitEngine');
+    const module = await import('../engine/Arduino/CircuitEngine');
     circuitEngine = module.circuitEngine;
     const elapsed = (performance.now() - start).toFixed(2);
     logStoreTiming(`CircuitEngine loaded in ${elapsed}ms`);

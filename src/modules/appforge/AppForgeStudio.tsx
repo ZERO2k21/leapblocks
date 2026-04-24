@@ -11,7 +11,7 @@ import React, { useState, lazy, Suspense } from 'react';
 import { Home } from 'lucide-react';
 import Logo, { CreoleapLogo } from '../../components/Logo';
 import './AppForgeStudio.css';
-import { IgniteTopbar } from '../leapforge/components/Layout/IgniteTopbar';
+import { IgniteTopbar } from '../../Leapforge/components/Layout/IgniteTopbar';
 
 // Lazy load heavy panels
 const Designer = lazy(() => import('./components/Designer/Designer'));
@@ -99,7 +99,7 @@ export default function AppForgeStudio({ onBack }: AppForgeProps) {
     <div className="af-root">
       <IgniteTopbar 
         title={project.appName}
-        onTitleChange={(val) => updateProject({ appName: val })}
+        onTitleChange={(val: string) => updateProject({ appName: val })}
         onBack={onBack}
         onSave={handleSave}
         brandName="APPFORGE"
