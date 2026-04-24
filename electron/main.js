@@ -189,6 +189,7 @@ app.whenReady().then(async () => {
   // in parallel without blocking the window from loading.
   createWindow();
   startBuildServer();
+  startCompileServer();
 
   // Fire-and-forget background warmup tasks — run concurrently, never block the UI
   await Promise.allSettled([
@@ -202,11 +203,13 @@ app.whenReady().then(async () => {
 
 app.on('window-all-closed', function () {
   stopBuildServer();
+  stopCompileServer();
   if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('before-quit', () => {
   stopBuildServer();
+  stopCompileServer();
   qemuManager.stopQemu();
 });
 

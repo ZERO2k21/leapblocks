@@ -100,6 +100,16 @@ export class SSD1306Emulator {
     this.onUpdate(new Uint8Array(this.buffer), this.displayOn);
   }
 
+  /** Public flush — called by Adafruit_SSD1306 stub after display() */
+  public forceFlush(displayOn = true) {
+    this.displayOn = displayOn;
+    let nonZero = 0;
+    for (let i = 0; i < this.buffer.length; i++) if (this.buffer[i] !== 0) nonZero++;
+    console.log(`[SSD1306 EMULATOR] forceFlush(displayOn=${displayOn}): ${nonZero}/${this.buffer.length} non-zero bytes in buffer`);
+    this.onUpdate(new Uint8Array(this.buffer), this.displayOn);
+    console.log(`[SSD1306 EMULATOR] onUpdate callback invoked`);
+  }
+
   getPixelBuffer(): Uint8Array {
     return this.buffer;
   }

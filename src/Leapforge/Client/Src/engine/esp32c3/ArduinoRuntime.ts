@@ -59,6 +59,29 @@ export class ArduinoRuntime {
   // ── Delay control ────────────────────────────────────────────
   private _abortController: AbortController | null = null;
 
+  // ── I2C bus bridge (set by CircuitEngine after syncCircuitGraph) ──────────
+  private _i2cBus: {
+    startTransmission(addr: number): void;
+    write(val: number): void;
+    endTransmission(): void;
+    requestFrom(addr: number, qty: number): void;
+    available(): number;
+    read(): number;
+  } | null = null;
+
+  /** Wire ArduinoRuntime's Wire API to the real I2CBusManager */
+  setI2CBus(bus: typeof this._i2cBus): void {
+    this._i2cBus = bus;
+  }
+
+  /** Inject a real library class implementation to replace a stub in transpiled code.
+   *  Must be called before loadTranspiledCode(). */
+  private _injectedClasses: Map<string, any> = new Map();
+
+  injectLibraryClass(name: string, cls: any): void {
+    this._injectedClasses.set(name, cls);
+  }
+
   constructor() { }
 
   // ─── Public API ──────────────────────────────────────────────
@@ -86,9 +109,25 @@ export class ArduinoRuntime {
     // Build the Arduino API context that the transpiled code will use
     const context = this.buildContext(exports);
 
+    // Merge any injected library classes (override stubs in transpiled code)
+    const injectedNames: string[] = [];
+    for (const [name, cls] of this._injectedClasses) {
+      context[name] = cls;
+      injectedNames.push(name);
+    }
+    console.log(`[ARDUINO RUNTIME] loadTranspiledCode: injected classes = [${injectedNames.join(', ')}]`);
+    console.log(`[ARDUINO RUNTIME] context keys count = ${Object.keys(context).length}`);
+    console.log(`[ARDUINO RUNTIME] Adafruit_SSD1306 in context = ${!!context['Adafruit_SSD1306']}`);
+
     // Evaluate the transpiled code in a sandbox with Arduino APIs available
-    const fn = new Function(...Object.keys(context), jsCode);
-    fn(...Object.values(context));
+    try {
+      const fn = new Function(...Object.keys(context), jsCode);
+      fn(...Object.values(context));
+      console.log(`[ARDUINO RUNTIME] ✓ Code evaluated. setup=${!!exports.setup}, loop=${!!exports.loop}`);
+    } catch (e) {
+      console.error(`[ARDUINO RUNTIME] ✗ new Function() evaluation failed:`, e);
+      throw e;
+    }
 
     this.setupFn = exports.setup || null;
     this.loopFn = exports.loop || null;
@@ -180,6 +219,81 @@ export class ArduinoRuntime {
       D13: 13, D18: 18, D19: 19,
       // Interrupt modes
       RISING: 1, FALLING: 2, CHANGE: 3,
+
+      // ── Adafruit SSD1306 / display constants ───────────────
+      SSD1306_SWITCHCAPVCC: 0x02,
+      SSD1306_EXTERNALVCC: 0x01,
+      SSD1306_MEMORYMODE: 0x20,
+      SSD1306_COLUMNADDR: 0x21,
+      SSD1306_PAGEADDR: 0x22,
+      SSD1306_SETCONTRAST: 0x81,
+      SSD1306_DISPLAYALLON_RESUME: 0xA4,
+      SSD1306_DISPLAYALLON: 0xA5,
+      SSD1306_NORMALDISPLAY: 0xA6,
+      SSD1306_INVERTDISPLAY: 0xA7,
+      SSD1306_DISPLAYOFF: 0xAE,
+      SSD1306_DISPLAYON: 0xAF,
+      SSD1306_SETDISPLAYOFFSET: 0xD3,
+      SSD1306_SETCOMPINS: 0xDA,
+      SSD1306_SETVCOMDETECT: 0xDB,
+      SSD1306_SETDISPLAYCLOCKDIV: 0xD5,
+      SSD1306_SETPRECHARGE: 0xD9,
+      SSD1306_SETMULTIPLEX: 0xA8,
+      SSD1306_SETLOWCOLUMN: 0x00,
+      SSD1306_SETHIGHCOLUMN: 0x10,
+      SSD1306_SETSTARTLINE: 0x40,
+      SSD1306_COMSCANINC: 0xC0,
+      SSD1306_COMSCANDEC: 0xC8,
+      SSD1306_SEGREMAP: 0xA0,
+      SSD1306_CHARGEPUMP: 0x8D,
+      SSD1306_128_64: 1,
+      SSD1306_128_32: 2,
+      SSD1306_96_16: 3,
+
+      // ── Adafruit GFX / color constants ─────────────────────
+      BLACK: 0,
+      WHITE: 1,
+      INVERSE: 2,
+      RED: 0xF800,
+      GREEN: 0x07E0,
+      BLUE: 0x001F,
+      CYAN: 0x07FF,
+      MAGENTA: 0xF81F,
+      YELLOW: 0xFFE0,
+      ORANGE: 0xFC00,
+
+      // ── DHT sensor constants ────────────────────────────────
+      DHT11: 11,
+      DHT22: 22,
+      DHT21: 21,
+      AM2301: 21,
+
+      // ── Wire / I2C constants ────────────────────────────────
+      WIRE_HAS_END: 1,
+
+      // ── Serial constants ────────────────────────────────────
+      SERIAL_8N1: 0x06,
+      SERIAL_8N2: 0x0E,
+      SERIAL_8E1: 0x26,
+      SERIAL_8O1: 0x36,
+      DEC: 10,
+      HEX: 16,
+      OCT: 8,
+      BIN: 2,
+
+      // ── Misc Arduino constants ──────────────────────────────
+      PI: Math.PI,
+      HALF_PI: Math.PI / 2,
+      TWO_PI: Math.PI * 2,
+      DEG_TO_RAD: Math.PI / 180,
+      RAD_TO_DEG: 180 / Math.PI,
+      EULER: Math.E,
+      LSBFIRST: 0,
+      MSBFIRST: 1,
+      INPUT_ANALOG: 4,
+      OUTPUT_OPEN_DRAIN: 5,
+      WAKEUP_PULLUP: 0,
+      WAKEUP_PULLDOWN: 1,
 
       // ── GPIO ───────────────────────────────────────────────
       pinMode(pin: number, mode: number): void {
@@ -371,12 +485,36 @@ export class ArduinoRuntime {
       },
       Wire: {
         begin(_addr?: number): void { },
-        beginTransmission(_addr: number): void { },
-        write(_val: any): number { return 1; },
-        endTransmission(): number { return 0; },
-        requestFrom(_addr: number, qty: number): number { return qty; },
-        available(): number { return 0; },
-        read(): number { return 0; },
+        beginTransmission(addr: number): void {
+          if (self._i2cBus) self._i2cBus.startTransmission(addr);
+        },
+        write(val: any): number {
+          if (self._i2cBus) {
+            // Handle both single bytes and arrays/strings
+            if (typeof val === 'number') {
+              self._i2cBus.write(val & 0xFF);
+            } else if (typeof val === 'string') {
+              for (let i = 0; i < val.length; i++) self._i2cBus.write(val.charCodeAt(i) & 0xFF);
+            } else if (val && typeof val.length === 'number') {
+              for (let i = 0; i < val.length; i++) self._i2cBus.write(val[i] & 0xFF);
+            }
+          }
+          return 1;
+        },
+        endTransmission(_stop?: boolean): number {
+          if (self._i2cBus) self._i2cBus.endTransmission();
+          return 0;
+        },
+        requestFrom(addr: number, qty: number): number {
+          if (self._i2cBus) self._i2cBus.requestFrom(addr, qty);
+          return qty;
+        },
+        available(): number {
+          return self._i2cBus ? self._i2cBus.available() : 0;
+        },
+        read(): number {
+          return self._i2cBus ? self._i2cBus.read() : 0;
+        },
         end(): void { },
       },
 

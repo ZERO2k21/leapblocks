@@ -547,6 +547,9 @@ class SimulationRunner {
       'D0': 0, 'D2': 2, 'D4': 4, 'D5': 5,
       'D12': 12, 'D13': 13, 'D14': 14, 'D15': 15,
       'D18': 18, 'D19': 19, 'D21': 21, 'D22': 22, 'D23': 23,
+      // Pins present on ESP32 DevKit board element but previously missing
+      'D25': 25, 'D26': 26, 'D27': 27,
+      'D32': 32, 'D33': 33, 'D34': 34, 'D35': 35,
       'RX2': 16, 'TX2': 17, 'RX0': 3, 'TX0': 1,
     };
     if (digitalMap[p] !== undefined) {

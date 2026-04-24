@@ -211,7 +211,9 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     if (data.type === 'ili9341' && data.tftImageData) {
       elementRef.current.imageData = data.tftImageData;
     } else if (data.type === 'ssd1306' && data.oledImageData) {
+      console.log(`[LEAP NODE OLED] useEffect: setting imageData on element. ref=${!!elementRef.current}, imageData=${data.oledImageData?.width}×${data.oledImageData?.height}`);
       elementRef.current.imageData = data.oledImageData;
+      console.log(`[LEAP NODE OLED] imageData set ✓`);
     }
   }, [data.tftImageData, data.oledImageData, data.type]);
 

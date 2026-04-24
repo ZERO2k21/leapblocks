@@ -250,6 +250,34 @@ export class ESP32C3SimulationRunner {
 
         this.arduinoRuntime = new ArduinoRuntime();
 
+        // ── IMPORTANT ORDER OF OPERATIONS ──────────────────────────────────────
+        // 1. Call syncI2CBridge() FIRST — this creates the RealAdafruitSSD1306
+        //    class and stores it in _pendingLibraryClasses.
+        // 2. THEN read getPendingLibraryClasses() and inject into runtime.
+        // 3. THEN loadTranspiledCode() uses the injected classes.
+        //
+        // Previously this was reversed: classes were read before syncI2CBridge
+        // created them, so the OLED class was never injected.
+        try {
+            const { circuitEngine } = await import('../Arduino/CircuitEngine');
+
+            // Step 1: Wire the I2C bus — this creates RealAdafruitSSD1306 and
+            // stores it in _pendingLibraryClasses via syncI2CBridge()
+            console.log(`[ESP32 SIM] Calling syncI2CBridge() to create library classes...`);
+            circuitEngine.syncI2CBridge();
+
+            // Step 2: NOW read the pending classes (including the just-created
+            // RealAdafruitSSD1306) and inject them into the runtime
+            const pending = circuitEngine.getPendingLibraryClasses();
+            console.log(`[ESP32 SIM] initTranspiled: pending library classes = [${[...pending.keys()].join(', ')}]`);
+            for (const [name, cls] of pending) {
+                this.arduinoRuntime.injectLibraryClass(name, cls);
+                console.log(`[ESP32 SIM] ✓ Injected library class: ${name}`);
+            }
+        } catch (e) {
+            console.warn('[ESP32 SIM] Could not inject library classes:', e);
+        }
+
         // Wire GPIO pin changes to CircuitEngine
         this.arduinoRuntime.onPinChanged((gpio, value, isAnalog) => {
             const pin = gpioToPinName(gpio);
@@ -262,12 +290,12 @@ export class ESP32C3SimulationRunner {
             this.serialListeners.forEach(cb => cb(line));
         });
 
-        // Load the transpiled code
+        // Load the transpiled code (injected classes are now in context)
         try {
             this.arduinoRuntime.loadTranspiledCode(jsCode);
-            console.log('[ESP32-C3] Transpiled Arduino code loaded successfully.');
+            console.log('[ESP32 SIM] ✓ Transpiled Arduino code loaded successfully.');
         } catch (e: any) {
-            console.error('[ESP32-C3] Failed to load transpiled code:', e);
+            console.error('[ESP32 SIM] ✗ Failed to load transpiled code:', e);
             throw e;
         }
     }
@@ -282,6 +310,11 @@ export class ESP32C3SimulationRunner {
         this.running = true;
         console.log('[ESP32-C3] Starting Arduino API simulation...');
         await this.arduinoRuntime.start();
+    }
+
+    /** Expose ArduinoRuntime so CircuitEngine can wire the I2C bus bridge */
+    get runtime(): ArduinoRuntime | null {
+        return this.arduinoRuntime;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
