@@ -231,6 +231,191 @@ class CircuitEngine {
       private _displayOn = false;
 
       private static readonly FONT5X7: number[][] = [
+        [0x00, 0x00, 0x00, 0x00, 0x00], [0x00, 0x00, 0x5F, 0x00, 0x00], [0x00, 0x07, 0x00, 0x07, 0x00], [0x14, 0x7F, 0x14, 0x7F, 0x14],
+        [0x24, 0x2A, 0x7F, 0x2A, 0x12], [0x23, 0x13, 0x08, 0x64, 0x62], [0x36, 0x49, 0x55, 0x22, 0x50], [0x00, 0x05, 0x03, 0x00, 0x00],
+        [0x00, 0x1C, 0x22, 0x41, 0x00], [0x00, 0x41, 0x22, 0x1C, 0x00], [0x14, 0x08, 0x3E, 0x08, 0x14], [0x08, 0x08, 0x3E, 0x08, 0x08],
+        [0x00, 0x50, 0x30, 0x00, 0x00], [0x08, 0x08, 0x08, 0x08, 0x08], [0x00, 0x60, 0x60, 0x00, 0x00], [0x20, 0x10, 0x08, 0x04, 0x02],
+        [0x3E, 0x51, 0x49, 0x45, 0x3E], [0x00, 0x42, 0x7F, 0x40, 0x00], [0x42, 0x61, 0x51, 0x49, 0x46], [0x21, 0x41, 0x45, 0x4B, 0x31],
+        [0x18, 0x14, 0x12, 0x7F, 0x10], [0x27, 0x45, 0x45, 0x45, 0x39], [0x3C, 0x4A, 0x49, 0x49, 0x30], [0x01, 0x71, 0x09, 0x05, 0x03],
+        [0x36, 0x49, 0x49, 0x49, 0x36], [0x06, 0x49, 0x49, 0x29, 0x1E], [0x00, 0x36, 0x36, 0x00, 0x00], [0x00, 0x56, 0x36, 0x00, 0x00],
+        [0x08, 0x14, 0x22, 0x41, 0x00], [0x14, 0x14, 0x14, 0x14, 0x14], [0x00, 0x41, 0x22, 0x14, 0x08], [0x02, 0x01, 0x51, 0x09, 0x06],
+        [0x32, 0x49, 0x79, 0x41, 0x3E], [0x7E, 0x11, 0x11, 0x11, 0x7E], [0x7F, 0x49, 0x49, 0x49, 0x36], [0x3E, 0x41, 0x41, 0x41, 0x22],
+        [0x7F, 0x41, 0x41, 0x22, 0x1C], [0x7F, 0x49, 0x49, 0x49, 0x41], [0x7F, 0x09, 0x09, 0x09, 0x01], [0x3E, 0x41, 0x49, 0x49, 0x7A],
+        [0x7F, 0x08, 0x08, 0x08, 0x7F], [0x00, 0x41, 0x7F, 0x41, 0x00], [0x20, 0x40, 0x41, 0x3F, 0x01], [0x7F, 0x08, 0x14, 0x22, 0x41],
+        [0x7F, 0x40, 0x40, 0x40, 0x40], [0x7F, 0x02, 0x0C, 0x02, 0x7F], [0x7F, 0x04, 0x08, 0x10, 0x7F], [0x3E, 0x41, 0x41, 0x41, 0x3E],
+        [0x7F, 0x09, 0x09, 0x09, 0x06], [0x3E, 0x41, 0x51, 0x21, 0x5E], [0x7F, 0x09, 0x19, 0x29, 0x46], [0x46, 0x49, 0x49, 0x49, 0x31],
+        [0x01, 0x01, 0x7F, 0x01, 0x01], [0x3F, 0x40, 0x40, 0x40, 0x3F], [0x1F, 0x20, 0x40, 0x20, 0x1F], [0x3F, 0x40, 0x38, 0x40, 0x3F],
+        [0x63, 0x14, 0x08, 0x14, 0x63], [0x07, 0x08, 0x70, 0x08, 0x07], [0x61, 0x51, 0x49, 0x45, 0x43], [0x00, 0x7F, 0x41, 0x41, 0x00],
+        [0x02, 0x04, 0x08, 0x10, 0x20], [0x00, 0x41, 0x41, 0x7F, 0x00], [0x04, 0x02, 0x01, 0x02, 0x04], [0x40, 0x40, 0x40, 0x40, 0x40],
+        [0x00, 0x01, 0x02, 0x04, 0x00], [0x20, 0x54, 0x54, 0x54, 0x78], [0x7F, 0x48, 0x44, 0x44, 0x38], [0x38, 0x44, 0x44, 0x44, 0x20],
+        [0x38, 0x44, 0x44, 0x48, 0x7F], [0x38, 0x54, 0x54, 0x54, 0x18], [0x08, 0x7E, 0x09, 0x01, 0x02], [0x0C, 0x52, 0x52, 0x52, 0x3E],
+        [0x7F, 0x08, 0x04, 0x04, 0x78], [0x00, 0x44, 0x7D, 0x40, 0x00], [0x20, 0x40, 0x44, 0x3D, 0x00], [0x7F, 0x10, 0x28, 0x44, 0x00],
+        [0x00, 0x41, 0x7F, 0x40, 0x00], [0x7C, 0x04, 0x18, 0x04, 0x78], [0x7C, 0x08, 0x04, 0x04, 0x78], [0x38, 0x44, 0x44, 0x44, 0x38],
+        [0x7C, 0x14, 0x14, 0x14, 0x08], [0x08, 0x14, 0x14, 0x18, 0x7C], [0x7C, 0x08, 0x04, 0x04, 0x08], [0x48, 0x54, 0x54, 0x54, 0x20],
+        [0x04, 0x3F, 0x44, 0x40, 0x20], [0x3C, 0x40, 0x40, 0x40, 0x3C], [0x1C, 0x20, 0x40, 0x20, 0x1C], [0x3C, 0x40, 0x30, 0x40, 0x3C],
+        [0x44, 0x28, 0x10, 0x28, 0x44], [0x0C, 0x50, 0x50, 0x50, 0x3C], [0x44, 0x64, 0x54, 0x4C, 0x44], [0x00, 0x08, 0x36, 0x41, 0x00],
+        [0x00, 0x00, 0x7F, 0x00, 0x00], [0x00, 0x41, 0x36, 0x08, 0x00], [0x10, 0x08, 0x08, 0x10, 0x08],
+      ];
+
+      constructor(w: number, h: number, _wire?: any, _rst?: number) {
+        this._w = w || 128; this._h = h || 64; this._addr = 0x3C;
+        this._buf = new Uint8Array(Math.ceil((this._w * this._h) / 8));
+      }
+
+      begin(_vcc?: number, addr?: number): boolean {
+        this._addr = addr || 0x3C;
+        console.log(`[OLED] begin() called: addr=0x${this._addr.toString(16)}, ssd1306Slaves.size=${ssd1306Slaves.size}`);
+
+        // Find the matching slave by address
+        for (const [nodeId, slave] of ssd1306Slaves) {
+          console.log(`[OLED] Checking slave: nodeId=${nodeId}, i2cAddress=0x${slave.i2cAddress.toString(16)}`);
+          if (slave.i2cAddress === this._addr) {
+            this._slave = slave;
+            console.log(`[OLED] ✓ Found matching slave by address 0x${this._addr.toString(16)}`);
+            break;
+          }
+        }
+
+        // If only one OLED on canvas, use it regardless of address
+        if (!this._slave && ssd1306Slaves.size > 0) {
+          this._slave = ssd1306Slaves.values().next().value ?? null;
+          console.log(`[OLED] Using first available slave (fallback)`);
+        }
+
+        if (!this._slave) {
+          console.error(`[OLED] ✗ No slave found! Cannot initialize display.`);
+          return false;
+        }
+
+        this._displayOn = true;
+        this._buf.fill(0);
+        console.log(`[OLED] Buffer initialized: ${this._buf.length} bytes`);
+        this._flush();
+        console.log(`[OLED] begin() complete`);
+        return true;
+      }
+      clearDisplay() {
+        this._buf.fill(0);
+        console.log(`[OLED] clearDisplay()`);
+      }
+      display() {
+        console.log(`[OLED] display() called — flushing ${this._buf.length} bytes to emulator`);
+        this._flush();
+      }
+      setTextSize(s: number) { this._textsize = Math.max(1, s | 0); }
+      setTextColor(c: number) { this._textcolor = c; }
+      setCursor(x: number, y: number) { this._cursor_x = x | 0; this._cursor_y = y | 0; }
+      setRotation(_r: number) { } invertDisplay(_i: boolean) { }
+      startscrollright(_s: number, _e: number) { } stopscroll() { } dim(_d: boolean) { }
+      width() { return this._w; } height() { return this._h; }
+
+      drawPixel(x: number, y: number, color: number) {
+        x = x | 0; y = y | 0;
+        if (x < 0 || x >= this._w || y < 0 || y >= this._h) return;
+        const idx = Math.floor(y / 8) * this._w + x;
+        if (color) this._buf[idx] |= (1 << (y & 7));
+        else this._buf[idx] &= ~(1 << (y & 7));
+      }
+      fillScreen(c: number) { this._buf.fill(c ? 0xFF : 0x00); }
+      fillRect(x: number, y: number, w: number, h: number, c: number) {
+        for (let i = x; i < x + w; i++) for (let j = y; j < y + h; j++) this.drawPixel(i, j, c);
+      }
+      drawRect(x: number, y: number, w: number, h: number, c: number) {
+        for (let i = x; i < x + w; i++) { this.drawPixel(i, y, c); this.drawPixel(i, y + h - 1, c); }
+        for (let j = y + 1; j < y + h - 1; j++) { this.drawPixel(x, j, c); this.drawPixel(x + w - 1, j, c); }
+      }
+      drawCircle(x0: number, y0: number, r: number, c: number) {
+        let x = r, y = 0, err = 0;
+        while (x >= y) {
+          [x0 + x, x0 + y, x0 - y, x0 - x].forEach((px, i) => this.drawPixel(px, y0 + [y, x, x, y][i], c));
+          [x0 - x, x0 - y, x0 + y, x0 + x].forEach((px, i) => this.drawPixel(px, y0 - [y, x, x, y][i], c));
+          y++; err += 1 + 2 * y;
+          if (2 * (err - x) + 1 > 0) { x--; err += 1 - 2 * x; }
+        }
+      }
+      fillCircle(x0: number, y0: number, r: number, c: number) {
+        for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= r * r) this.drawPixel(x0 + dx, y0 + dy, c);
+      }
+      drawLine(x0: number, y0: number, x1: number, y1: number, c: number) {
+        const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+        let err = dx - dy;
+        for (; ;) { this.drawPixel(x0, y0, c); if (x0 === x1 && y0 === y1) break; const e2 = 2 * err; if (e2 > -dy) { err -= dy; x0 += sx; } if (e2 < dx) { err += dx; y0 += sy; } }
+      }
+      drawBitmap(x: number, y: number, bmp: number[], w: number, h: number, c: number) {
+        for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (bmp[Math.floor((j * w + i) / 8)] & (0x80 >> ((j * w + i) % 8))) this.drawPixel(x + i, y + j, c);
+      }
+      print(v: any, base?: number) {
+        const s = (typeof v === 'number' && base !== undefined && base !== 10) ? (v >>> 0).toString(base).toUpperCase() : String(v);
+        console.log(`[OLED] print("${s}")`);
+        this._writeStr(s);
+      }
+      println(v: any = '', base?: number) {
+        const s = (typeof v === 'number' && base !== undefined && base !== 10) ? (v >>> 0).toString(base).toUpperCase() : String(v);
+        console.log(`[OLED] println("${s}")`);
+        this._writeStr(s + '\n');
+      }
+      write(c: number) { this._writeChar(c); }
+
+      private _writeStr(s: string) {
+        for (let i = 0; i < s.length; i++) {
+          const c = s.charCodeAt(i);
+          if (c === 10) { this._cursor_x = 0; this._cursor_y += 8 * this._textsize; }
+          else this._writeChar(c);
+        }
+      }
+      private _writeChar(c: number) {
+        if (c < 32 || c > 126) return;
+        const g = (RealAdafruitSSD1306 as any).FONT5X7[c - 32];
+        if (!g) return;
+        for (let col = 0; col < 5; col++) {
+          let line = g[col];
+          for (let row = 0; row < 8; row++) {
+            if (line & 1) for (let sy = 0; sy < this._textsize; sy++) for (let sx = 0; sx < this._textsize; sx++)
+              this.drawPixel(this._cursor_x + col * this._textsize + sx, this._cursor_y + row * this._textsize + sy, this._textcolor);
+            line >>= 1;
+          }
+        }
+        this._cursor_x += 6 * this._textsize;
+        if (this._cursor_x > this._w - 6 * this._textsize) { this._cursor_x = 0; this._cursor_y += 8 * this._textsize; }
+      }
+      private _flush() {
+        if (!this._slave) {
+          console.error(`[OLED] _flush() FAILED — no slave reference! Call begin() first.`);
+          return;
+        }
+        const em = this._slave.getEmulator();
+        const pixBuf = em.getPixelBuffer();
+        pixBuf.set(this._buf);
+
+        // Count non-zero bytes to verify pixels were written
+        let nonZero = 0;
+        for (let i = 0; i < this._buf.length; i++) if (this._buf[i] !== 0) nonZero++;
+        console.log(`[OLED] _flush(): ${nonZero}/${this._buf.length} non-zero bytes → calling forceFlush(true)`);
+
+        em.forceFlush(true);
+        console.log(`[OLED] _flush() complete`);
+      }
+    };
+
+    // Store for use by initTranspiled (called after syncI2CBridge)
+    this._pendingLibraryClasses.set('Adafruit_SSD1306', RealAdafruitSSD1306);
+    console.log(`[OLED BRIDGE] RealAdafruitSSD1306 stored in _pendingLibraryClasses`);
+
+    // ── ILI9341 TFT emulator class ──────────────────────────────────────────────
+    // Captures Adafruit_ILI9341 API calls and renders to a 240×320 RGBA buffer,
+    // pushed to the component via updateNodeData — same pattern as the SSD1306 above.
+    const RealAdafruitILI9341 = class {
+      private _w = 240;
+      private _h = 320;
+      private _rotation = 0;
+      private _pixels: Uint8ClampedArray;  // RGBA flat buffer (240*320*4)
+      private _cursor_x = 0;
+      private _cursor_y = 0;
+      private _textsize = 1;
+      private _textcolor = 0xFFFF; // white RGB565
+      private _nodeId: string | null = null;
+
+      private static readonly FONT5X7: number[][] = [
         [0x00,0x00,0x00,0x00,0x00],[0x00,0x00,0x5F,0x00,0x00],[0x00,0x07,0x00,0x07,0x00],[0x14,0x7F,0x14,0x7F,0x14],
         [0x24,0x2A,0x7F,0x2A,0x12],[0x23,0x13,0x08,0x64,0x62],[0x36,0x49,0x55,0x22,0x50],[0x00,0x05,0x03,0x00,0x00],
         [0x00,0x1C,0x22,0x41,0x00],[0x00,0x41,0x22,0x1C,0x00],[0x14,0x08,0x3E,0x08,0x14],[0x08,0x08,0x3E,0x08,0x08],
@@ -257,102 +442,140 @@ class CircuitEngine {
         [0x00,0x00,0x7F,0x00,0x00],[0x00,0x41,0x36,0x08,0x00],[0x10,0x08,0x08,0x10,0x08],
       ];
 
-      constructor(w: number, h: number, _wire?: any, _rst?: number) {
-        this._w = w || 128; this._h = h || 64; this._addr = 0x3C;
-        this._buf = new Uint8Array(Math.ceil((this._w * this._h) / 8));
+      // Arduino-style value-to-string formatting (handles HEX, OCT, BIN, DEC bases)
+      private static _formatValue(v: any, base?: number): string {
+        if (typeof v === 'number' && base !== undefined && base !== 10) {
+          return (v >>> 0).toString(base).toUpperCase();
+        }
+        return String(v);
       }
 
-      begin(_vcc?: number, addr?: number): boolean {
-        this._addr = addr || 0x3C;
-        console.log(`[OLED] begin() called: addr=0x${this._addr.toString(16)}, ssd1306Slaves.size=${ssd1306Slaves.size}`);
-        
-        // Find the matching slave by address
-        for (const [nodeId, slave] of ssd1306Slaves) {
-          console.log(`[OLED] Checking slave: nodeId=${nodeId}, i2cAddress=0x${slave.i2cAddress.toString(16)}`);
-          if (slave.i2cAddress === this._addr) { 
-            this._slave = slave;
-            console.log(`[OLED] ✓ Found matching slave by address 0x${this._addr.toString(16)}`);
-            break; 
+      constructor(_cs?: number, _dc?: number, _mosi?: number, _sck?: number, _rst?: number, _miso?: number) {
+        this._pixels = new Uint8ClampedArray(240 * 320 * 4);
+        for (let i = 3; i < this._pixels.length; i += 4) this._pixels[i] = 255;
+
+        try {
+          const { nodes } = useForgeStore.getState();
+          for (const n of nodes) {
+            if (n.data?.type === 'ili9341') {
+              this._nodeId = n.id;
+              console.log(`[TFT] constructor: found ILI9341 node ${this._nodeId}`);
+              break;
+            }
           }
-        }
-        
-        // If only one OLED on canvas, use it regardless of address
-        if (!this._slave && ssd1306Slaves.size > 0) {
-          this._slave = ssd1306Slaves.values().next().value ?? null;
-          console.log(`[OLED] Using first available slave (fallback)`);
-        }
-        
-        if (!this._slave) {
-          console.error(`[OLED] ✗ No slave found! Cannot initialize display.`);
-          return false;
-        }
-        
-        this._displayOn = true; 
-        this._buf.fill(0);
-        console.log(`[OLED] Buffer initialized: ${this._buf.length} bytes`);
-        this._flush(); 
-        console.log(`[OLED] begin() complete`);
-        return true;
+        } catch (e) { /* store not available */ }
       }
-      clearDisplay() { 
-        this._buf.fill(0);
-        console.log(`[OLED] clearDisplay()`);
+
+      begin(_freq?: number) {
+        console.log(`[TFT] begin()`);
+        this.fillScreen(0x0000);
       }
-      display() { 
-        console.log(`[OLED] display() called — flushing ${this._buf.length} bytes to emulator`);
-        this._flush(); 
+
+      setRotation(r: number) {
+        this._rotation = r & 3;
+        if (this._rotation & 1) { this._w = 320; this._h = 240; }
+        else { this._w = 240; this._h = 320; }
       }
-      setTextSize(s: number) { this._textsize = Math.max(1, s | 0); }
-      setTextColor(c: number) { this._textcolor = c; }
-      setCursor(x: number, y: number) { this._cursor_x = x | 0; this._cursor_y = y | 0; }
-      setRotation(_r: number) {} invertDisplay(_i: boolean) {}
-      startscrollright(_s: number, _e: number) {} stopscroll() {} dim(_d: boolean) {}
-      width() { return this._w; } height() { return this._h; }
+
+      width() { return this._w; }
+      height() { return this._h; }
+      invertDisplay(_i: boolean) {}
+
+      private _rgb565toRGBA(c: number): [number, number, number] {
+        const r = ((c >> 11) & 0x1F) * 255 / 31;
+        const g = ((c >> 5) & 0x3F) * 255 / 63;
+        const b = (c & 0x1F) * 255 / 31;
+        return [r | 0, g | 0, b | 0];
+      }
+
+      private _mapXY(x: number, y: number): [number, number] {
+        switch (this._rotation) {
+          case 1: return [y, x];
+          case 2: return [239 - x, 319 - y];
+          case 3: return [239 - y, 319 - x];
+          default: return [x, y];
+        }
+      }
 
       drawPixel(x: number, y: number, color: number) {
         x = x | 0; y = y | 0;
         if (x < 0 || x >= this._w || y < 0 || y >= this._h) return;
-        const idx = Math.floor(y / 8) * this._w + x;
-        if (color) this._buf[idx] |= (1 << (y & 7));
-        else this._buf[idx] &= ~(1 << (y & 7));
+        const [nx, ny] = this._mapXY(x, y);
+        if (nx < 0 || nx >= 240 || ny < 0 || ny >= 320) return;
+        const [r, g, b] = this._rgb565toRGBA(color);
+        const idx = (ny * 240 + nx) * 4;
+        this._pixels[idx] = r; this._pixels[idx + 1] = g; this._pixels[idx + 2] = b; this._pixels[idx + 3] = 255;
       }
-      fillScreen(c: number) { this._buf.fill(c ? 0xFF : 0x00); }
+
+      fillScreen(color: number) {
+        const [r, g, b] = this._rgb565toRGBA(color);
+        for (let i = 0; i < this._pixels.length; i += 4) {
+          this._pixels[i] = r; this._pixels[i + 1] = g; this._pixels[i + 2] = b; this._pixels[i + 3] = 255;
+        }
+        this._flush();
+      }
+
       fillRect(x: number, y: number, w: number, h: number, c: number) {
-        for (let i = x; i < x + w; i++) for (let j = y; j < y + h; j++) this.drawPixel(i, j, c);
+        for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.drawPixel(i, j, c);
+        this._flush();
       }
       drawRect(x: number, y: number, w: number, h: number, c: number) {
-        for (let i = x; i < x + w; i++) { this.drawPixel(i, y, c); this.drawPixel(i, y + h - 1, c); }
-        for (let j = y + 1; j < y + h - 1; j++) { this.drawPixel(x, j, c); this.drawPixel(x + w - 1, j, c); }
-      }
-      drawCircle(x0: number, y0: number, r: number, c: number) {
-        let x = r, y = 0, err = 0;
-        while (x >= y) {
-          [x0+x,x0+y,x0-y,x0-x].forEach((px, i) => this.drawPixel(px, y0 + [y,x,x,y][i], c));
-          [x0-x,x0-y,x0+y,x0+x].forEach((px, i) => this.drawPixel(px, y0 - [y,x,x,y][i], c));
-          y++; err += 1 + 2 * y;
-          if (2 * (err - x) + 1 > 0) { x--; err += 1 - 2 * x; }
-        }
-      }
-      fillCircle(x0: number, y0: number, r: number, c: number) {
-        for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (dx*dx+dy*dy <= r*r) this.drawPixel(x0+dx, y0+dy, c);
+        this.drawLine(x, y, x + w - 1, y, c);
+        this.drawLine(x, y + h - 1, x + w - 1, y + h - 1, c);
+        this.drawLine(x, y, x, y + h - 1, c);
+        this.drawLine(x + w - 1, y, x + w - 1, y + h - 1, c);
       }
       drawLine(x0: number, y0: number, x1: number, y1: number, c: number) {
         const dx = Math.abs(x1-x0), dy = Math.abs(y1-y0), sx = x0<x1?1:-1, sy = y0<y1?1:-1;
         let err = dx - dy;
         for (;;) { this.drawPixel(x0, y0, c); if (x0===x1&&y0===y1) break; const e2=2*err; if(e2>-dy){err-=dy;x0+=sx;} if(e2<dx){err+=dx;y0+=sy;} }
       }
-      drawBitmap(x: number, y: number, bmp: number[], w: number, h: number, c: number) {
-        for (let j=0;j<h;j++) for (let i=0;i<w;i++) if (bmp[Math.floor((j*w+i)/8)]&(0x80>>((j*w+i)%8))) this.drawPixel(x+i,y+j,c);
+      drawCircle(x0: number, y0: number, r: number, c: number) {
+        let x = r, y = 0, err = 0;
+        while (x >= y) {
+          this.drawPixel(x0+x, y0+y, c); this.drawPixel(x0+y, y0+x, c);
+          this.drawPixel(x0-y, y0+x, c); this.drawPixel(x0-x, y0+y, c);
+          this.drawPixel(x0-x, y0-y, c); this.drawPixel(x0-y, y0-x, c);
+          this.drawPixel(x0+y, y0-x, c); this.drawPixel(x0+x, y0-y, c);
+          y++; err += 1 + 2 * y;
+          if (2 * (err - x) + 1 > 0) { x--; err += 1 - 2 * x; }
+        }
       }
-      print(v: any) { 
-        console.log(`[OLED] print("${v}")`);
-        this._writeStr(String(v)); 
+      fillCircle(x0: number, y0: number, r: number, c: number) {
+        for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (dx*dx+dy*dy <= r*r) this.drawPixel(x0+dx, y0+dy, c);
+        this._flush();
       }
-      println(v: any = '') { 
-        console.log(`[OLED] println("${v}")`);
-        this._writeStr(String(v) + '\n'); 
+      drawTriangle(x0: number,y0: number,x1: number,y1: number,x2: number,y2: number,c: number) {
+        this.drawLine(x0,y0,x1,y1,c); this.drawLine(x1,y1,x2,y2,c); this.drawLine(x2,y2,x0,y0,c);
       }
-      write(c: number) { this._writeChar(c); }
+      fillTriangle(x0: number,y0: number,x1: number,y1: number,x2: number,y2: number,c: number) {
+        const pts = [[x0,y0],[x1,y1],[x2,y2]].sort((a,b) => a[1]-b[1]);
+        for (let y = pts[0][1]; y <= pts[2][1]; y++) {
+          let xa = pts[0][1]!==pts[2][1] ? pts[0][0]+(y-pts[0][1])*(pts[2][0]-pts[0][0])/(pts[2][1]-pts[0][1]) : pts[0][0];
+          let xb: number;
+          if (y < pts[1][1]) xb = pts[0][1]!==pts[1][1] ? pts[0][0]+(y-pts[0][1])*(pts[1][0]-pts[0][0])/(pts[1][1]-pts[0][1]) : pts[0][0];
+          else xb = pts[1][1]!==pts[2][1] ? pts[1][0]+(y-pts[1][1])*(pts[2][0]-pts[1][0])/(pts[2][1]-pts[1][1]) : pts[1][0];
+          if (xa > xb) { const t = xa; xa = xb; xb = t; }
+          for (let x = Math.ceil(xa); x <= Math.floor(xb); x++) this.drawPixel(x, y, c);
+        }
+        this._flush();
+      }
+      drawRoundRect(x: number,y: number,w: number,h: number,_r: number,c: number) { this.drawRect(x,y,w,h,c); }
+      fillRoundRect(x: number,y: number,w: number,h: number,_r: number,c: number) { this.fillRect(x,y,w,h,c); }
+
+      // ── Text rendering ───────────────────────────────────────────────
+      setCursor(x: number, y: number) { this._cursor_x = x | 0; this._cursor_y = y | 0; }
+      setTextColor(c: number, _bg?: number) { this._textcolor = c; }
+      setTextSize(s: number) { this._textsize = Math.max(1, s | 0); }
+
+      print(v: any, base?: number) {
+        this._writeStr((RealAdafruitILI9341 as any)._formatValue(v, base));
+        this._flush();
+      }
+      println(v: any = '', base?: number) {
+        this._writeStr((RealAdafruitILI9341 as any)._formatValue(v, base) + '\n');
+        this._flush();
+      }
 
       private _writeStr(s: string) {
         for (let i = 0; i < s.length; i++) {
@@ -363,7 +586,7 @@ class CircuitEngine {
       }
       private _writeChar(c: number) {
         if (c < 32 || c > 126) return;
-        const g = (RealAdafruitSSD1306 as any).FONT5X7[c - 32];
+        const g = (RealAdafruitILI9341 as any).FONT5X7[c - 32];
         if (!g) return;
         for (let col = 0; col < 5; col++) {
           let line = g[col];
@@ -376,34 +599,28 @@ class CircuitEngine {
         this._cursor_x += 6 * this._textsize;
         if (this._cursor_x > this._w - 6 * this._textsize) { this._cursor_x = 0; this._cursor_y += 8 * this._textsize; }
       }
+
       private _flush() {
-        if (!this._slave) {
-          console.error(`[OLED] _flush() FAILED — no slave reference! Call begin() first.`);
-          return;
+        if (!this._nodeId) return;
+        try {
+          const imageData = new ImageData(new Uint8ClampedArray(this._pixels), 240, 320);
+          const { updateNodeData } = useForgeStore.getState();
+          updateNodeData(this._nodeId, { tftImageData: imageData, tftRotation: this._rotation });
+        } catch (e) {
+          console.warn('[TFT] _flush failed:', e);
         }
-        const em = this._slave.getEmulator();
-        const pixBuf = em.getPixelBuffer();
-        pixBuf.set(this._buf);
-        
-        // Count non-zero bytes to verify pixels were written
-        let nonZero = 0;
-        for (let i = 0; i < this._buf.length; i++) if (this._buf[i] !== 0) nonZero++;
-        console.log(`[OLED] _flush(): ${nonZero}/${this._buf.length} non-zero bytes → calling forceFlush(true)`);
-        
-        em.forceFlush(true);
-        console.log(`[OLED] _flush() complete`);
       }
     };
 
-    // Store for use by initTranspiled (called after syncI2CBridge)
-    this._pendingLibraryClasses.set('Adafruit_SSD1306', RealAdafruitSSD1306);
-    console.log(`[OLED BRIDGE] RealAdafruitSSD1306 stored in _pendingLibraryClasses`);
+    this._pendingLibraryClasses.set('Adafruit_ILI9341', RealAdafruitILI9341);
+    console.log(`[TFT BRIDGE] RealAdafruitILI9341 stored in _pendingLibraryClasses`);
 
     // If runtime already exists (re-sync case), inject immediately
     if (esp32Runtime) {
       esp32Runtime.injectLibraryClass('Adafruit_SSD1306', RealAdafruitSSD1306);
+      esp32Runtime.injectLibraryClass('Adafruit_ILI9341', RealAdafruitILI9341);
       this._wireI2CBus(esp32Runtime);
-      console.log('[OLED BRIDGE] ✓ Runtime exists — injected Adafruit_SSD1306 + wired I2C bus immediately');
+      console.log('[OLED BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + wired I2C bus');
     } else {
       console.log('[OLED BRIDGE] Runtime not yet created — classes queued for initTranspiled()');
     }
@@ -424,9 +641,9 @@ class CircuitEngine {
         console.log(`[I2C WIRE] beginTransmission(0x${addr.toString(16)})`);
         bus['activeSlave'] = null;
         const slave = bus['slaves']?.get(addr) ?? null;
-        if (slave) { 
-          slave.onStart(false); 
-          slave.onConnect(true); 
+        if (slave) {
+          slave.onStart(false);
+          slave.onConnect(true);
           bus['activeSlave'] = slave;
           console.log(`[I2C WIRE] ✓ Connected to slave at 0x${addr.toString(16)}`);
         } else {
@@ -434,15 +651,15 @@ class CircuitEngine {
         }
       },
       write(val: number) { const s = bus['activeSlave']; if (s) s.onWrite(val & 0xFF); },
-      endTransmission() { 
-        const s = bus['activeSlave']; 
-        if (s) s.onStop(); 
-        bus['activeSlave'] = null; 
+      endTransmission() {
+        const s = bus['activeSlave'];
+        if (s) s.onStop();
+        bus['activeSlave'] = null;
       },
       requestFrom(addr: number, qty: number) {
         _rxBuf = []; _rxPos = 0;
         const slave = bus['slaves']?.get(addr) ?? null;
-        if (slave) { slave.onStart(false); slave.onConnect(false); for (let i=0;i<qty;i++) _rxBuf.push(slave.onRead(i<qty-1)); slave.onStop(); }
+        if (slave) { slave.onStart(false); slave.onConnect(false); for (let i = 0; i < qty; i++) _rxBuf.push(slave.onRead(i < qty - 1)); slave.onStop(); }
       },
       available() { return _rxBuf.length - _rxPos; },
       read() { return _rxPos < _rxBuf.length ? _rxBuf[_rxPos++] : 0; },
@@ -520,7 +737,7 @@ class CircuitEngine {
                 const idx = (row * 128 + col) * 4;
                 const on = displayOn && ((byte >> bit) & 1) === 1;
                 if (on) litPixels++;
-                imageData.data[idx]     = on ? 255 : 0;   // R
+                imageData.data[idx] = on ? 255 : 0;   // R
                 imageData.data[idx + 1] = on ? 255 : 0;   // G
                 imageData.data[idx + 2] = on ? 255 : 0;   // B
                 imageData.data[idx + 3] = 255;             // A
