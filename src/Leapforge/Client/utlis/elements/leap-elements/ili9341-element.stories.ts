@@ -31,10 +31,10 @@ function drawLogo(canvas: HTMLCanvasElement) {
 
 export const Default = () => html`<leap-ili9341></leap-ili9341> `;
 
-export const Logo = ({ flipHorizontal, flipVertical }) => html`
-  <leap-ili9341
-    @canvas-ready=${(e) => drawLogo(e.target.canvas)}
-    .flipHorizontal=${flipHorizontal}
-    .flipVertical=${flipVertical}
-  ></leap-ili9341>
-`;
+// export const Logo = ({ Horizontal, Vertical }) => html`
+//   <leap-ili9341
+//     @canvas-ready=${(e) => drawLogo(e.target.canvas)}
+//     .flipHorizontal=${Horizontal}
+//     .flipVertical=${Vertical}
+//   ></leap-ili9341>
+// `;

@@ -471,14 +471,16 @@ class CircuitEngine {
         this.fillScreen(0x0000);
       }
 
+      // setRotation stores rotation value and adjusts width()/height() return values
+      // for API compatibility, but all pixel rendering always uses 240×320 native buffer.
       setRotation(r: number) {
         this._rotation = r & 3;
-        if (this._rotation & 1) { this._w = 320; this._h = 240; }
-        else { this._w = 240; this._h = 320; }
+        // width()/height() report rotated dimensions to the sketch
+        // but internal drawing always uses native 240×320
       }
 
-      width() { return this._w; }
-      height() { return this._h; }
+      width() { return (this._rotation & 1) ? 320 : 240; }
+      height() { return (this._rotation & 1) ? 240 : 320; }
       invertDisplay(_i: boolean) {}
 
       private _rgb565toRGBA(c: number): [number, number, number] {
@@ -488,22 +490,13 @@ class CircuitEngine {
         return [r | 0, g | 0, b | 0];
       }
 
-      private _mapXY(x: number, y: number): [number, number] {
-        switch (this._rotation) {
-          case 1: return [y, x];
-          case 2: return [239 - x, 319 - y];
-          case 3: return [239 - y, 319 - x];
-          default: return [x, y];
-        }
-      }
-
+      // Always draw in native 240×320 portrait coordinates — no rotation mapping.
+      // This ensures characters render upright and text flows left-to-right.
       drawPixel(x: number, y: number, color: number) {
         x = x | 0; y = y | 0;
-        if (x < 0 || x >= this._w || y < 0 || y >= this._h) return;
-        const [nx, ny] = this._mapXY(x, y);
-        if (nx < 0 || nx >= 240 || ny < 0 || ny >= 320) return;
+        if (x < 0 || x >= 240 || y < 0 || y >= 320) return;
         const [r, g, b] = this._rgb565toRGBA(color);
-        const idx = (ny * 240 + nx) * 4;
+        const idx = (y * 240 + x) * 4;
         this._pixels[idx] = r; this._pixels[idx + 1] = g; this._pixels[idx + 2] = b; this._pixels[idx + 3] = 255;
       }
 
