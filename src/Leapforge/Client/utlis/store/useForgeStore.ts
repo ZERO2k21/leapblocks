@@ -19,7 +19,7 @@ logStoreTiming('Store module started loading');
 let simulationRunner: any = null;
 let circuitEngine: any = null;
 
-async function getSimulationRunner() {
+export async function getSimulationRunner() {
   const start = performance.now();
   logStoreTiming('getSimulationRunner() called');
   if (!simulationRunner) {
@@ -162,12 +162,11 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   }),
 
   setBoard: (board) => {
-    getSimulationRunner().then(runner => {
-      // Don't pass binPath here — preserve any existing binPath already set
-      // by ForgeStudio after compilation. Only update the board ID.
-      runner.setBoard(board);
-      set({ board });
-    });
+    // Only update runner if already loaded — avoids triggering the 4s avr8js load
+    if (simulationRunner) {
+      simulationRunner.setBoard(board);
+    }
+    set({ board });
   },
 
   setLibrarySearch: (query, results) => set({
@@ -286,7 +285,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     if (boardId && boardId !== state.board) {
       console.log(`[FORGE STORE] Board node "${type}" added → switching to "${boardId}"`);
       set({ nodes: newNodes, board: boardId });
-      getSimulationRunner().then(runner => runner.setBoard(boardId));
+      if (simulationRunner) simulationRunner.setBoard(boardId);
     } else {
       set({ nodes: newNodes });
     }
@@ -304,7 +303,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       newBoard = detected ?? 'arduino-uno';
       if (newBoard !== state.board) {
         console.log(`[FORGE STORE] Board node removed → switching to "${newBoard}"`);
-        getSimulationRunner().then(runner => runner.setBoard(newBoard));
+        if (simulationRunner) simulationRunner.setBoard(newBoard);
       }
     }
 
@@ -357,7 +356,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     if (detected && detected !== state.board) {
       console.log(`[FORGE STORE] setNodes: detected board "${detected}" → switching engine`);
       set({ nodes, board: detected });
-      getSimulationRunner().then(runner => runner.setBoard(detected));
+      if (simulationRunner) simulationRunner.setBoard(detected);
     } else {
       set({ nodes });
     }

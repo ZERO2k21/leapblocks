@@ -14,6 +14,11 @@ import { StepperEmulator } from './StepperEmulator';
 import { SSD1306I2CSlave } from './SSD1306I2CSlave';
 import { ILI9341SPISlave } from './ILI9341SPISlave';
 import { MPU6050I2CSlave } from './MPU6050I2CSlave';
+import { DS1307Emulator } from './DS1307Emulator';
+import { KeypadEmulator } from './KeypadEmulator';
+import { RotaryDialerEmulator } from './RotaryDialerEmulator';
+import { TiltSwitchEmulator } from './TiltSwitchEmulator';
+import { RotaryEncoderEmulator } from './RotaryEncoderEmulator';
 import { ESP32_BOARD_CONFIG, ESP32_BOARDS, type ESP32PinInfo } from './ESP32BoardConfig.js';
 
 /** Simplified ECG pulse shape used by the heart-beat sensor emulator. Returns -1..+1 for phase 0..1 */
@@ -81,6 +86,10 @@ class CircuitEngine {
   private ili9341Slaves = new Map<string, ILI9341SPISlave>();
   private mpu6050Slaves = new Map<string, MPU6050I2CSlave>();
   private ssd1306Slaves = new Map<string, SSD1306I2CSlave>();
+  private keypadEmulators = new Map<string, KeypadEmulator>();
+  private rotaryDialerEmulators = new Map<string, RotaryDialerEmulator>();
+  private tiltSwitchEmulators = new Map<string, TiltSwitchEmulator>();
+  private rotaryEncoderEmulators = new Map<string, RotaryEncoderEmulator>();
   private _pendingLibraryClasses = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
   private isInitialized = false;
@@ -399,6 +408,68 @@ class CircuitEngine {
     this._pendingLibraryClasses.set('Adafruit_SSD1306', RealAdafruitSSD1306);
     console.log(`[OLED BRIDGE] RealAdafruitSSD1306 stored in _pendingLibraryClasses`);
 
+    // ── Inject real Keypad class ──────────────────────────────────────────────
+    // Reads from KeypadEmulator which is driven by pushKeypadKey() from the UI.
+    // Fixes: auto-repeat, double-print, stops after first press.
+    const keypadEmulators = this.keypadEmulators;
+
+    const RealKeypad = class {
+      private _keymap: string[][];
+      private _lastKey: string | null = null;
+      private _emulator: any = null;
+
+      constructor(keymap: any, _rowPins?: any, _colPins?: any, _rows?: number, _cols?: number) {
+        // keymap may be a 2D array from makeKeymap or the keys array directly
+        this._keymap = Array.isArray(keymap) ? keymap : [
+          ['1','2','3','A'],['4','5','6','B'],['7','8','9','C'],['*','0','#','D']
+        ];
+        // Find the first registered keypad emulator
+        if (keypadEmulators.size > 0) {
+          this._emulator = keypadEmulators.values().next().value;
+          console.log(`[KEYPAD] Keypad instance created, emulator found: ${!!this._emulator}`);
+        } else {
+          console.warn(`[KEYPAD] Keypad instance created but no emulator registered yet`);
+        }
+      }
+
+      getKey(): string | null {
+        // Re-find emulator if not set yet (lazy init)
+        if (!this._emulator && keypadEmulators.size > 0) {
+          this._emulator = keypadEmulators.values().next().value;
+        }
+        // Read current pressed key from emulator
+        const current = this._emulator?.currentKey ?? null;
+        // Edge-triggered: only return key on the transition from null → key
+        // This prevents auto-repeat on every loop() frame
+        if (current !== null && current !== this._lastKey) {
+          this._lastKey = current;
+          console.log(`[KEYPAD] getKey() → '${current}'`);
+          return current;
+        }
+        // Key released: reset so next press is detected
+        if (current === null) {
+          this._lastKey = null;
+        }
+        return null;
+      }
+
+      isPressed(key: string): boolean {
+        const current = this._emulator?.currentKey ?? null;
+        return current === key;
+      }
+
+      getState(): number { return 0; }
+      addEventListener(): void {}
+    };
+
+    const RealMakeKeymap = function(keymap: any, rowPins?: any, colPins?: any, rows?: number, cols?: number) {
+      return new RealKeypad(keymap, rowPins, colPins, rows, cols);
+    };
+
+    this._pendingLibraryClasses.set('Keypad', RealKeypad);
+    this._pendingLibraryClasses.set('makeKeymap', RealMakeKeymap);
+    console.log(`[KEYPAD] RealKeypad + makeKeymap stored in _pendingLibraryClasses`);
+
     // ── ILI9341 TFT emulator class ──────────────────────────────────────────────
     // Captures Adafruit_ILI9341 API calls and renders to a 240×320 RGBA buffer,
     // pushed to the component via updateNodeData — same pattern as the SSD1306 above.
@@ -677,6 +748,10 @@ class CircuitEngine {
     this.ili9341Slaves.clear();
     this.mpu6050Slaves.clear();
     this.ssd1306Slaves.clear();
+    this.keypadEmulators.clear();
+    this.rotaryDialerEmulators.clear();
+    this.tiltSwitchEmulators.clear();
+    this.rotaryEncoderEmulators.clear();
     // Cancel all heart-beat animation timers
     this.heartBeatTimers.forEach(id => cancelAnimationFrame(id));
     this.heartBeatTimers.clear();
@@ -744,6 +819,64 @@ class CircuitEngine {
         console.log(`[OLED] SSD1306 slave registered. Total slaves: ${this.ssd1306Slaves.size}`);
       }
 
+      // Register membrane-keypad emulator
+      if (node.data?.type === 'membrane-keypad') {
+        const nodeId = node.id;
+        const emulator = new KeypadEmulator(
+          [], [], // row/col pins — not used in transpiled path, UI drives via pushKeypadKey
+          (_pin: string, _high: boolean) => {} // no-op pin setter for transpiled path
+        );
+        this.keypadEmulators.set(nodeId, emulator);
+        console.log(`[KEYPAD] Registered membrane-keypad emulator: nodeId=${nodeId}`);
+      }
+
+      // Register rotary-dialer emulator
+      if (node.data?.type === 'rotary-dialer') {
+        const nodeId = node.id;
+        const emulator = new RotaryDialerEmulator(
+          'DIAL', 'PULSE',
+          (pin: string, high: boolean) => {
+            this.pushInputSignal(nodeId, pin, high);
+          }
+        );
+        this.rotaryDialerEmulators.set(nodeId, emulator);
+        console.log(`[ROTARY] Registered rotary-dialer emulator: nodeId=${nodeId}`);
+      }
+
+      // Register tilt-switch emulator
+      if (node.data?.type === 'tilt-switch') {
+        const nodeId = node.id;
+        const emulator = new TiltSwitchEmulator(
+          'OUT',
+          (pin: string, high: boolean) => {
+            this.pushInputSignal(nodeId, pin, high);
+          }
+        );
+        this.tiltSwitchEmulators.set(nodeId, emulator);
+        
+        // Set initial tilt state from node data
+        const initialTilted = node.data?.sensorValues?.tilted ?? false;
+        emulator.setTilted(initialTilted);
+        
+        console.log(`[TILT] Registered tilt-switch emulator: nodeId=${nodeId}, initial state=${initialTilted ? 'TILTED' : 'UPRIGHT'}`);
+      }
+
+      // Register KY-040 rotary encoder emulator
+      if (node.data?.type === 'ky-040') {
+        const nodeId = node.id;
+        const emulator = new RotaryEncoderEmulator(
+          'CLK', 'DT',
+          (pin: string, high: boolean) => {
+            this.pushInputSignal(nodeId, pin, high);
+          }
+        );
+        this.rotaryEncoderEmulators.set(nodeId, emulator);
+        
+        // Initialize SW button pin to HIGH (pull-up state) immediately
+        this.pushInputSignal(nodeId, 'SW', true);
+        console.log(`[KY-040] Registered rotary encoder emulator: nodeId=${nodeId}, SW initialized to HIGH`);
+      }
+
       // Register ILI9341 TFT as SPI peripheral
       // The slave is created here; pin listeners (D/C, CS) are wired in the edge-scan loop below.
       if (node.data?.type === 'ili9341') {
@@ -786,6 +919,14 @@ class CircuitEngine {
         this.i2cBusManager.registerSlave(slave);
         this.mpu6050Slaves.set(nodeId, slave);
         console.log(`[FORGE CIRCUIT] MPU6050 (${nodeId}) registered at I2C 0x${i2cAddr.toString(16)}`);
+      }
+
+      // Register DS1307 RTC as I2C slave (default address 0x68)
+      if (node.data?.type === 'ds1307') {
+        const nodeId = node.id;
+        const slave = new DS1307Emulator();
+        this.i2cBusManager.registerSlave(slave);
+        console.log(`[FORGE CIRCUIT] DS1307 (${nodeId}) registered at I2C 0x68`);
       }
 
       // Register heart-beat sensor — drives OUT ADC channel with a time-varying pulse voltage
@@ -943,7 +1084,7 @@ class CircuitEngine {
 
           const isComplexPeripheral = ['stepper-motor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
             'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5',
-            '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711'].includes(pType);
+            '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer'].includes(pType);
 
           // 1. Trace the electrical network — only for simple output peripherals
           if (!isComplexPeripheral) {
@@ -1521,6 +1662,91 @@ class CircuitEngine {
   }
 
   /**
+   * Push a key press/release into the membrane keypad emulator.
+   * Called by LeapNode when it receives 'button-press' / 'button-release' events.
+   */
+  public pushKeypadKey(nodeId: string, key: string | null) {
+    const emulator = this.keypadEmulators.get(nodeId);
+    if (emulator) {
+      emulator.pressKey(key);
+    }
+    // Persist pressed key in node data so transpiled sketch can read it
+    const { updateNodeData } = useForgeStore.getState();
+    updateNodeData(nodeId, { pressedKey: key });
+    console.log(`[FORGE CIRCUIT] Keypad (${nodeId}) key ${key ?? 'released'}`);
+  }
+
+  /**
+   * Push a dial digit into the rotary-dialer emulator.
+   * Called by LeapNode when it receives 'dial-start' events.
+   */
+  public pushRotaryDialerDigit(nodeId: string, digit: number) {
+    const emulator = this.rotaryDialerEmulators.get(nodeId);
+    if (emulator) {
+      emulator.dial(digit);
+    }
+    console.log(`[FORGE CIRCUIT] Rotary Dialer (${nodeId}) digit ${digit}`);
+  }
+
+  /**
+   * Toggle the tilt switch state.
+   * Called by LeapNode when it receives 'tilt-toggle' events.
+   */
+  public pushTiltSwitchState(nodeId: string, tilted: boolean) {
+    const emulator = this.tiltSwitchEmulators.get(nodeId);
+    if (emulator) {
+      emulator.setTilted(tilted);
+    }
+    // Persist tilt state in node data for UI visualization
+    const { updateNodeData } = useForgeStore.getState();
+    updateNodeData(nodeId, { 
+      sensorValues: { tilted }
+    });
+    console.log(`[FORGE CIRCUIT] Tilt Switch (${nodeId}) state: ${tilted ? 'TILTED' : 'UPRIGHT'}`);
+  }
+
+  /**
+   * Rotate the KY-040 encoder clockwise.
+   * Called by LeapNode when it receives 'rotate-cw' events.
+   */
+  public pushRotaryEncoderCW(nodeId: string) {
+    const emulator = this.rotaryEncoderEmulators.get(nodeId);
+    if (emulator) {
+      emulator.stepCW();
+    }
+    console.log(`[FORGE CIRCUIT] Rotary Encoder (${nodeId}) rotated CW`);
+  }
+
+  /**
+   * Rotate the KY-040 encoder counter-clockwise.
+   * Called by LeapNode when it receives 'rotate-ccw' events.
+   */
+  public pushRotaryEncoderCCW(nodeId: string) {
+    const emulator = this.rotaryEncoderEmulators.get(nodeId);
+    if (emulator) {
+      emulator.stepCCW();
+    }
+    console.log(`[FORGE CIRCUIT] Rotary Encoder (${nodeId}) rotated CCW`);
+  }
+
+  /**
+   * Push analog values from analog-joystick into CircuitEngine.
+   */
+  public pushJoystickAnalog(nodeId: string, x: number, y: number) {
+    const { updateNodeData, nodes } = useForgeStore.getState();
+    const peripheralNode = nodes.find(n => n.id === nodeId);
+    if (!peripheralNode) return;
+    
+    updateNodeData(nodeId, {
+      sensorValues: { ...peripheralNode.data?.sensorValues, xValue: x, yValue: y }
+    });
+    
+    // We trigger pushInputSignal, passing false for digital isHigh since it's analog
+    this.pushInputSignal(nodeId, 'HORZ', false);
+    this.pushInputSignal(nodeId, 'VERT', false);
+  }
+
+  /**
    * Called by interactive UI nodes (e.g. Buttons, PIR sensors) to push signals backwards into the board.
    * Handles both AVR (Arduino) and ESP32 boards.
    */
@@ -1565,12 +1791,22 @@ class CircuitEngine {
 
       // Analog sensors → inject voltage into ESP32 ADC (3.3V reference)
       const analogSensors = [
+        'potentiometer', 'slide-potentiometer', 'mq2',
         'ntc-temperature-sensor', 'photoresistor-sensor', 'flame-sensor',
         'gas-sensor', 'big-sound-sensor', 'small-sound-sensor', 'photoresistor',
         'heart-beat-sensor',
       ];
-      if (analogSensors.includes(pType) || esp32Mapping.adcChannel !== undefined) {
-        const voltage = this.computeSensorVoltage(pType, sv, 3.3);
+      
+      // Digital-only sensors that should never use analog path
+      const digitalOnlySensors = [
+        'tilt-switch', 'push-button', 'pushbutton-6mm', 'slide-switch', 
+        'dip-switch-8', 'pir-motion-sensor', 'membrane-keypad', 'rotary-dialer',
+        'ky-040'  // KY-040 rotary encoder (CLK, DT, SW are all digital)
+      ];
+      
+      // Only use analog path if it's an analog sensor AND not a digital-only sensor
+      if (analogSensors.includes(pType) && !digitalOnlySensors.includes(pType)) {
+        const voltage = this.computeSensorVoltage(pType, sv, 3.3, pinName);
 
         // ESP32-C3 RISC-V path
         if (simulationRunner.isESP32C3Board && esp32Mapping.adcChannel !== undefined) {
@@ -1624,7 +1860,7 @@ class CircuitEngine {
         const sv = peripheralNode?.data?.sensorValues;
 
         // Use shared voltage computation (5V for AVR)
-        const voltage = this.computeSensorVoltage(pType, sv, 5.0);
+        const voltage = this.computeSensorVoltage(pType, sv, 5.0, pinName);
 
         simulationRunner.setAnalogInput(mapping.adcChannel!, voltage);
         console.log(`[FORGE CIRCUIT] Analog Signal: Peripheral[${nodeId}] pin ${pinName} -> ${voltage.toFixed(3)}V on ADC ch${mapping.adcChannel}`);
@@ -1671,8 +1907,29 @@ class CircuitEngine {
    * Compute the analog output voltage for a sensor given its type and current sensorValues.
    * vcc: supply voltage (5.0 for Arduino, 3.3 for ESP32)
    */
-  private computeSensorVoltage(pType: string, sv: any, vcc = 5.0): number {
+  private computeSensorVoltage(pType: string, sv: any, vcc = 5.0, pinName?: string): number {
     switch (pType) {
+      case 'potentiometer':
+      case 'slide-potentiometer': {
+        // Potentiometer value is 0-100 (percentage)
+        // Map to 0..VCC voltage
+        const percentage = sv?.value ?? 0;
+        return (percentage / 100) * vcc;
+      }
+      case 'mq2': {
+        // MQ2 gas sensor value is 0-1023 (raw ADC)
+        // Map to 0..VCC voltage
+        const rawValue = sv?.value ?? 0;
+        return (rawValue / 1023) * vcc;
+      }
+      case 'analog-joystick': {
+        const x = sv?.xValue ?? 0;
+        const y = sv?.yValue ?? 0;
+        // x and y from element are -1 to 1.
+        // Map to 0..VCC, centered at VCC/2.
+        const val = pinName === 'HORZ' ? x : (pinName === 'VERT' ? y : 0);
+        return (vcc / 2) + (val * (vcc / 2));
+      }
       case 'ntc-temperature-sensor': {
         const tempC = sv?.value ?? 25;
         const R0 = 10000, B = 3950, T0 = 298.15, Rs = 10000;

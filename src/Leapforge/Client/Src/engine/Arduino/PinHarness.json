@@ -1,9 +1,4 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
-export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, width: number, height: number }, pins: { name: string, x: number, y: number }[] }> = {
+{
   "slide-potentiometer": {
     "viewBox": {
       "minX": 0,
@@ -1069,26 +1064,15 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
         "name": "GND",
         "x": 9.5,
         "y": 25
-      },
-      {
-        "name": "5V",
-        "x": 9.5,
-        "y": 35
-      },
-      {
+      },{
+        "name": "vcc",
+        "x": 9,
+        "y": 25
+      }
+      ,{
         "name": "SDA",
         "x": 9.5,
         "y": 44
-      },
-      {
-        "name": "SCL",
-        "x": 9.5,
-        "y": 54
-      },
-      {
-        "name": "SQW",
-        "x": 9.5,
-        "y": 64
       }
     ]
   },
@@ -1459,28 +1443,28 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "CLK",
-        "x": 425,
-        "y": 9
+        "x": 116,
+        "y": 7.9
       },
       {
         "name": "DT",
-        "x": 425,
-        "y": 47
+        "x": 116,
+        "y": 17.4
       },
       {
         "name": "SW",
-        "x": 425,
-        "y": 80
+        "x": 116,
+        "y": 27
       },
       {
         "name": "VCC",
-        "x": 425,
-        "y": 110
+        "x": 116,
+        "y": 36.3
       },
       {
         "name": "GND",
-        "x": 425,
-        "y": 140
+        "x": 116,
+        "y": 45.5
       }
     ]
   },
@@ -2170,18 +2154,18 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "GND",
-        "x":320 ,
-        "y": 40
+        "x": 88,
+        "y": 18
       },
       {
         "name": "VCC",
-        "x": 320,
-        "y": 80
+        "x": 88,
+        "y": 27.8
       },
       {
         "name": "OUT",
-        "x": 320,
-        "y": 118
+        "x": 88,
+        "y": 37.5
       }
     ]
   },
@@ -2287,4 +2271,4 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       { "name": "DOUT", "x": 85.21, "y": 152.94 }
     ]
   }
-};
+}

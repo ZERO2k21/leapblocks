@@ -6,10 +6,8 @@ import { GND, VCC } from './pin';
 @customElement('leap-ky-040')
 export class KY040Element extends LitElement {
   @property() angle = 0;
-  @property() stepSize = 18;
+  @property() stepSize = 1;  // Changed from 18 to 1 degree per click
   @property() private pressed = false;
-
-  private arrowTimer: ReturnType<typeof setInterval> | null = null;
 
   static get styles() {
     return css`
@@ -127,39 +125,35 @@ export class KY040Element extends LitElement {
             @mouseleave=${this.release}
           />
 
-          <!-- Counter Clockwise Arrow -->
-          <g
-            class="arrow-container"
-            @click=${this.counterClockwiseStep}
-            @mousedown=${this.counterclockwiseArrowPress}
-            @mouseup=${this.arrowRelease}
-            @mouseleave=${this.arrowRelease}
-          >
-            <circle cx="20" cy="43" r="12" fill="red" opacity="0" />
-            <path
-              d="m21 44.5c-5.17-1.78-7.55-5.53-6.6-11.2 0.0662-0.327 0.107-0.938 0.272-1.06 0.204-0.137 0.312-0.116 0.39-0.1 0.0775 0.0152 0.139 0.0274 0.189 0.102 0.846 3.81 3.13 6.84 6.57 7.59 0.304-0.787 0.461-3.32 0.826-3.24 0.428 0.0848 4.31 5.73 4.93 6.65-0.978 0.839-6.07 4.44-6.95 4.28 0 0 0.206-2.19 0.362-2.96z"
-              fill="#b3b3b3"
-              stroke="#000"
-              stroke-width=".0625px"
-              class="arrow"
-            />
-          </g>
-
-          <!-- Clockwise Arrow -->
+          <!-- Clockwise Arrow (Top) -->
           <g
             class="arrow-container"
             @click=${this.clockwiseStep}
-            @mousedown=${this.clockwiseArrowPress}
-            @mouseup=${this.arrowRelease}
-            @mouseleave=${this.arrowRelease}
           >
-            <circle cx="20" cy="15" r="12" fill="red" opacity="0" />
+            <circle cx="20" cy="15" r="10" fill="transparent" style="pointer-events: all;" />
             <path
               d="m21.2 12.1c-5.17 1.78-7.55 5.53-6.6 11.2 0.0662 0.327 0.107 0.938 0.272 1.06 0.204 0.137 0.312 0.116 0.39 0.1 0.0775-0.0152 0.139-0.0274 0.189-0.102 0.846-3.81 3.13-6.84 6.57-7.59 0.304 0.787 0.461 3.32 0.826 3.24 0.428-0.0848 4.31-5.73 4.93-6.65-0.978-0.839-6.07-4.44-6.95-4.28 0 0 0.206 2.19 0.362 2.96z"
               fill="#b3b3b3"
               stroke="#022"
               stroke-width=".0625px"
               class="arrow"
+              style="pointer-events: none;"
+            />
+          </g>
+
+          <!-- Counter Clockwise Arrow (Bottom) -->
+          <g
+            class="arrow-container"
+            @click=${this.counterClockwiseStep}
+          >
+            <circle cx="20" cy="43" r="10" fill="transparent" style="pointer-events: all;" />
+            <path
+              d="m21 44.5c-5.17-1.78-7.55-5.53-6.6-11.2 0.0662-0.327 0.107-0.938 0.272-1.06 0.204-0.137 0.312-0.116 0.39-0.1 0.0775 0.0152 0.139 0.0274 0.189 0.102 0.846 3.81 3.13 6.84 6.57 7.59 0.304-0.787 0.461-3.32 0.826-3.24 0.428 0.0848 4.31 5.73 4.93 6.65-0.978 0.839-6.07 4.44-6.95 4.28 0 0 0.206-2.19 0.362-2.96z"
+              fill="#b3b3b3"
+              stroke="#000"
+              stroke-width=".0625px"
+              class="arrow"
+              style="pointer-events: none;"
             />
           </g>
         </g>
@@ -208,14 +202,18 @@ export class KY040Element extends LitElement {
     `;
   }
 
-  private clockwiseStep() {
+  private clockwiseStep(e?: Event) {
+    e?.stopPropagation();
     this.angle = (this.angle + this.stepSize) % 360;
     this.dispatchEvent(new InputEvent('rotate-cw'));
+    console.log('[KY-040] Clockwise step triggered');
   }
 
-  private counterClockwiseStep() {
+  private counterClockwiseStep(e?: Event) {
+    e?.stopPropagation();
     this.angle = (this.angle - this.stepSize + 360) % 360;
     this.dispatchEvent(new InputEvent('rotate-ccw'));
+    console.log('[KY-040] Counter-clockwise step triggered');
   }
 
   private press() {
@@ -229,25 +227,6 @@ export class KY040Element extends LitElement {
     if (this.pressed) {
       this.dispatchEvent(new InputEvent('button-release'));
       this.pressed = false;
-    }
-  }
-
-  private counterclockwiseArrowPress() {
-    this.arrowTimer = setInterval(() => {
-      this.counterClockwiseStep();
-    }, 300);
-  }
-
-  private clockwiseArrowPress() {
-    this.arrowTimer = setInterval(() => {
-      this.clockwiseStep();
-    }, 300);
-  }
-
-  private arrowRelease() {
-    if (this.arrowTimer != null) {
-      clearInterval(this.arrowTimer);
-      this.arrowTimer = null;
     }
   }
 

@@ -73,7 +73,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
   const isDHT       = type === 'dht22' || type === 'dht11';
   const isDistance  = type === 'hc-sr04';
-  const isAnalog    = ['potentiometer', 'mq2', 'resistor'].includes(type);
+  const isAnalog    = ['potentiometer', 'slide-potentiometer', 'mq2', 'resistor'].includes(type);
   const isNTC       = type === 'ntc-temperature-sensor';
   const isPIR       = type === 'pir-motion-sensor';
   const isMPU6050   = type === 'mpu6050';
@@ -987,6 +987,8 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     ? { label: 'DISTANCE', unit: 'cm',  min: 2,   max: 400,     step: 1,   key: 'distance', color: '#BEF264' }
     : type === 'potentiometer'
     ? { label: 'POSITION',  unit: '%',   min: 0,   max: 100,     step: 1,   key: 'value',    color: '#BEF264' }
+    : type === 'slide-potentiometer'
+    ? { label: 'POSITION',  unit: '%',   min: 0,   max: 100,     step: 1,   key: 'value',    color: '#BEF264' }
     : type === 'resistor'
     ? { label: 'RESISTANCE',unit: 'Ω',   min: 0,   max: 1000000, step: 100, key: 'value',    color: '#BEF264' }
     : type === 'photoresistor'
@@ -1004,7 +1006,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     if (isAnalog) {
       // Determine the correct output pin name for this sensor type
       const outPin = type === 'photoresistor' || type === 'photoresistor-sensor' ? 'AO'
-                   : type === 'potentiometer' ? 'SIG'
+                   : type === 'potentiometer' || type === 'slide-potentiometer' ? 'SIG'
                    : 'OUT';
       import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
         circuitEngine.pushInputSignal(nodeId, outPin, true);

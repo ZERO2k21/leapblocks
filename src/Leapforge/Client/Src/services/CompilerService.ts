@@ -122,6 +122,13 @@ function clientSideTranspile(code: string): TranspileResult {
     js = js.replace(/\b(const|volatile)\s+(?=(void|int|long|short|unsigned|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\b)/g, '');
     // Strip standalone volatile (not followed by type)
     js = js.replace(/\bvolatile\s+/g, '');
+    // Strip ESP32/AVR function attributes that appear between return type and function name
+    // e.g. void IRAM_ATTR myFunc() → void myFunc()
+    // e.g. void ICACHE_RAM_ATTR myFunc() → void myFunc()
+    js = js.replace(/\b(IRAM_ATTR|ICACHE_RAM_ATTR|DRAM_ATTR|PROGMEM_ATTR|__attribute__\s*\(\([^)]*\)\))\s+/g, '');
+    // Replace Arduino macros that are identity functions on ESP32
+    // digitalPinToInterrupt(pin) → pin  (on ESP32, pin == interrupt number)
+    js = js.replace(/\bdigitalPinToInterrupt\s*\(/g, '(');
     // C++ scope resolution operator :: → JS dot notation (e.g. DHTesp::DHT22 → DHTesp.DHT22)
     js = js.replace(/::/g, '.');
     // Strip C++ address-of operator & in function arguments: fn(&a, &b) → fn(a, b)
@@ -131,11 +138,24 @@ function clientSideTranspile(code: string): TranspileResult {
       (_m: string, _type: string, vars: string) => {
         return vars.split(',').map((v: string) => `let ${v.trim()} = {};`).join('\n');
       });
-    // Convert class-type variable declarations to JS instantiations
+    // Strip C++ array dimensions from variable declarations BEFORE type stripping
+    // Handles both numeric: char keys[4][4] and named: char keys[ROWS][COLS]
+    // e.g. char keys[ROWS][COLS] = ... → char keys = ...
+    // e.g. byte rowPins[ROWS] = ...    → byte rowPins = ...
+    js = js.replace(/(\b(?:int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s+\w+)(\s*\[[\w\d]+\])+(\s*=)/g, '$1$3');
+    js = js.replace(/(\b(?:int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s+\w+)(\s*\[[\w\d]+\])+(\s*;)/g, '$1$3');
+    // Convert C++ nested brace array initializers to JS nested arrays
+    // e.g. = {{'1','2'},{'3','4'}} → = [['1','2'],['3','4']]
+    // First convert inner braces that contain char literals or identifiers
+    js = js.replace(/\{(\s*'[^']*'(?:\s*,\s*'[^']*')*\s*)\}/g, '[$1]');
+    // Then convert outer braces that now contain arrays or identifiers
+    js = js.replace(/=\s*\{(\s*(?:\[.*?\]|\w+)(?:\s*,\s*(?:\[.*?\]|\w+))*\s*)\}/g, '= [$1]');
+    // Convert remaining single-level brace initializers: = {1, 2, 3} → = [1, 2, 3]
+    js = js.replace(/=\s*\{([^{}]*)\}/g, '= [$1]');
     // e.g. Adafruit_SSD1306 oled(128, 64, &Wire, -1); → var oled = new Adafruit_SSD1306(128, 64);
     // Must happen BEFORE function-type stripping so it doesn't match function signatures
     js = js.replace(
-      /^\s*([A-Z][A-Za-z0-9_]*)\s+(\w+)\s*\(([^)]*)\)\s*;/gm,
+      /^\s*([A-Z][A-Za-z0-9_]*)\s+(\w+)\s*\(([^;]*)\)\s*;/gm,
       (_m: string, className: string, varName: string, args: string) => {
         const cleanArgs = args
           .split(',')
@@ -145,10 +165,11 @@ function clientSideTranspile(code: string): TranspileResult {
         return `var ${varName} = new ${className}(${cleanArgs});`;
       }
     );
-    // C++ copy-initialization: ClassName varName = ClassName(args);
+    // C++ copy-initialization: ClassName varName = ClassName(args);  OR  ClassName varName = ClassName(args);
     // e.g. Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
+    // e.g. Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
     js = js.replace(
-      /^\s*([A-Z][A-Za-z0-9_]*)\s+(\w+)\s*=\s*(?:new\s+)?([A-Z][A-Za-z0-9_]*)\s*\(([^)]*)\)\s*;/gm,
+      /^\s*([A-Z][A-Za-z0-9_]*)\s+(\w+)\s*=\s*(?:new\s+)?([A-Z][A-Za-z0-9_]*)\s*\(([^;]*)\)\s*;/gm,
       (_m: string, _className: string, varName: string, ctorName: string, args: string) => {
         const cleanArgs = args
           .split(',')
@@ -156,6 +177,19 @@ function clientSideTranspile(code: string): TranspileResult {
           .filter((a: string) => a.length > 0)
           .join(', ');
         return `var ${varName} = new ${ctorName}(${cleanArgs});`;
+      }
+    );
+    // C++ copy-initialization with lowercase function: ClassName varName = functionName(args);
+    // e.g. Keypad keypad = makeKeymap(keys, rowPins, colPins, ROWS, COLS);
+    js = js.replace(
+      /^\s*([A-Z][A-Za-z0-9_]*)\s+(\w+)\s*=\s*([a-z][A-Za-z0-9_]*)\s*\(([^;]*)\)\s*;/gm,
+      (_m: string, _className: string, varName: string, fnName: string, args: string) => {
+        const cleanArgs = args
+          .split(',')
+          .map((a: string) => a.trim().replace(/^&/, '').trim())
+          .filter((a: string) => a.length > 0)
+          .join(', ');
+        return `var ${varName} = ${fnName}(${cleanArgs});`;
       }
     );
     // C++ default-construction: ClassName varName;
@@ -227,65 +261,87 @@ function clientSideTranspile(code: string): TranspileResult {
     const wrapped = `
 // Auto-generated by LeapForge Client Transpiler
 // ── Library stubs ────────────────────────────────────────────────────────────
-// IMPORTANT: These use function-scoped assignment (not var declarations) so they
-// do NOT shadow injected parameters from ArduinoRuntime.buildContext().
-// If ArduinoRuntime already injected a real class (e.g. Adafruit_SSD1306),
-// the parameter takes precedence and these assignments are skipped.
-if (typeof Adafruit_SSD1306 === 'undefined') Adafruit_SSD1306 = class { constructor(){} begin(){return true;} clearDisplay(){} display(){} setTextSize(){} setTextColor(){} setCursor(){} print(){} println(){} drawPixel(){} fillRect(){} drawRect(){} drawCircle(){} fillCircle(){} setRotation(){} invertDisplay(){} startscrollright(){} stopscroll(){} };
-if (typeof Adafruit_GFX === 'undefined') Adafruit_GFX = class { constructor(){} };
-if (typeof LiquidCrystal_I2C === 'undefined') LiquidCrystal_I2C = class { constructor(){} begin(){} print(){} println(){} setCursor(){} clear(){} backlight(){} noBacklight(){} };
-if (typeof LiquidCrystal === 'undefined') LiquidCrystal = class { constructor(){} begin(){} print(){} println(){} setCursor(){} clear(){} };
-if (typeof Servo === 'undefined') Servo = class { constructor(){this._angle=90;} attach(){} write(a){this._angle=a;} read(){return this._angle;} detach(){} };
-if (typeof DHT === 'undefined') DHT = class { constructor(){} begin(){} readTemperature(){return 25.0;} readHumidity(){return 50.0;} };
-if (typeof DHTesp === 'undefined') DHTesp = class { constructor(){} setup(){} getTempAndHumidity(){ return { temperature: 25.0, humidity: 50.0 }; } getStatus(){ return 0; } getStatusString(){ return 'OK'; } static DHT22 = 22; static DHT11 = 11; };
-if (typeof TempAndHumidity === 'undefined') TempAndHumidity = class { constructor(){ this.temperature = 0; this.humidity = 0; } };
-if (typeof Adafruit_MPU6050 === 'undefined') Adafruit_MPU6050 = class { constructor(){} begin(){return true;} setAccelerometerRange(){} setGyroRange(){} setFilterBandwidth(){} getEvent(a,g,t){ if(a) a.acceleration={x:0,y:0,z:9.8}; if(g) g.gyro={x:0,y:0,z:0}; if(t) t.temperature=25.0; return true; } };
-if (typeof Adafruit_Sensor === 'undefined') Adafruit_Sensor = class { constructor(){} };
-if (typeof MPU6050_RANGE_2_G  === 'undefined') MPU6050_RANGE_2_G  = 0;
-if (typeof MPU6050_RANGE_4_G  === 'undefined') MPU6050_RANGE_4_G  = 1;
-if (typeof MPU6050_RANGE_8_G  === 'undefined') MPU6050_RANGE_8_G  = 2;
-if (typeof MPU6050_RANGE_16_G === 'undefined') MPU6050_RANGE_16_G = 3;
-if (typeof MPU6050_RANGE_250_DEG  === 'undefined') MPU6050_RANGE_250_DEG  = 0;
-if (typeof MPU6050_RANGE_500_DEG  === 'undefined') MPU6050_RANGE_500_DEG  = 1;
-if (typeof MPU6050_RANGE_1000_DEG === 'undefined') MPU6050_RANGE_1000_DEG = 2;
-if (typeof MPU6050_RANGE_2000_DEG === 'undefined') MPU6050_RANGE_2000_DEG = 3;
-if (typeof MPU6050_BAND_260_HZ === 'undefined') MPU6050_BAND_260_HZ = 0;
-if (typeof MPU6050_BAND_184_HZ === 'undefined') MPU6050_BAND_184_HZ = 1;
-if (typeof MPU6050_BAND_94_HZ  === 'undefined') MPU6050_BAND_94_HZ  = 2;
-if (typeof MPU6050_BAND_44_HZ  === 'undefined') MPU6050_BAND_44_HZ  = 3;
-if (typeof MPU6050_BAND_21_HZ  === 'undefined') MPU6050_BAND_21_HZ  = 4;
-if (typeof MPU6050_BAND_10_HZ  === 'undefined') MPU6050_BAND_10_HZ  = 5;
-if (typeof MPU6050_BAND_5_HZ   === 'undefined') MPU6050_BAND_5_HZ   = 6;
-if (typeof IRrecv === 'undefined') IRrecv = class { constructor(){} enableIRIn(){} decode(){return false;} resume(){} };
-if (typeof decode_results === 'undefined') decode_results = class { constructor(){} };
-if (typeof SoftwareSerial === 'undefined') SoftwareSerial = class { constructor(){} begin(){} print(){} println(){} available(){return 0;} read(){return -1;} };
-if (typeof Stepper === 'undefined') Stepper = class { constructor(){} setSpeed(){} step(){} };
-if (typeof MFRC522 === 'undefined') MFRC522 = class { constructor(){} PCD_Init(){} PICC_IsNewCardPresent(){return false;} PICC_ReadCardSerial(){return false;} };
-if (typeof Keypad === 'undefined') Keypad = class { constructor(){} getKey(){return null;} };
-if (typeof makeKeymap === 'undefined') makeKeymap = (k) => k;
-if (typeof U8g2_SSD1306_128X64_NONAME_F_HW_I2C === 'undefined') U8g2_SSD1306_128X64_NONAME_F_HW_I2C = class { constructor(){} begin(){} clearBuffer(){} sendBuffer(){} setFont(){} drawStr(){} setCursor(){} print(){} println(){} };
-if (typeof HX711 === 'undefined') HX711 = class { constructor(){} begin(){} set_scale(){} tare(){} get_units(){return 0;} read(){return 0;} is_ready(){return true;} power_down(){} power_up(){} };
-if (typeof Adafruit_NeoPixel === 'undefined') Adafruit_NeoPixel = class { constructor(){} begin(){} show(){} setPixelColor(){} setBrightness(){} clear(){} numPixels(){return 0;} Color(r,g,b){return (r<<16)|(g<<8)|b;} };
-if (typeof Adafruit_ILI9341 === 'undefined') Adafruit_ILI9341 = class { constructor(){} begin(){} setRotation(){} fillScreen(){} setCursor(){} setTextColor(){} setTextSize(){} print(){} println(){} drawPixel(){} drawLine(){} drawRect(){} fillRect(){} drawCircle(){} fillCircle(){} drawTriangle(){} fillTriangle(){} drawRoundRect(){} fillRoundRect(){} width(){return 320;} height(){return 240;} invertDisplay(){} };
-if (typeof SSD1306_SWITCHCAPVCC === 'undefined') SSD1306_SWITCHCAPVCC = 0x02;
-if (typeof SSD1306_EXTERNALVCC === 'undefined')  SSD1306_EXTERNALVCC  = 0x01;
-if (typeof BLACK   === 'undefined') BLACK   = 0;
-if (typeof WHITE   === 'undefined') WHITE   = 1;
-if (typeof INVERSE === 'undefined') INVERSE = 2;
-if (typeof RED     === 'undefined') RED     = 0xF800;
-if (typeof GREEN   === 'undefined') GREEN   = 0x07E0;
-if (typeof BLUE    === 'undefined') BLUE    = 0x001F;
-if (typeof CYAN    === 'undefined') CYAN    = 0x07FF;
-if (typeof MAGENTA === 'undefined') MAGENTA = 0xF81F;
-if (typeof YELLOW  === 'undefined') YELLOW  = 0xFFE0;
-if (typeof ORANGE  === 'undefined') ORANGE  = 0xFC00;
-if (typeof DHT11   === 'undefined') DHT11   = 11;
-if (typeof DHT22   === 'undefined') DHT22   = 22;
-if (typeof DHT21   === 'undefined') DHT21   = 21;
-if (typeof AM2301  === 'undefined') AM2301  = 21;
-if (typeof DEC     === 'undefined') DEC     = 10;
-if (typeof HEX     === 'undefined') HEX     = 16;
-if (typeof OCT     === 'undefined') OCT     = 8;
+// var declarations are hoisted but do NOT shadow injected parameters —
+// a parameter binding takes precedence over a var in the same function scope.
+// So if ArduinoRuntime injected Adafruit_SSD1306 as a parameter, the var
+// declaration below is a no-op and the real class is used.
+var Adafruit_SSD1306 = (typeof Adafruit_SSD1306 !== 'undefined' && Adafruit_SSD1306) || class { constructor(){} begin(){return true;} clearDisplay(){} display(){} setTextSize(){} setTextColor(){} setCursor(){} print(){} println(){} drawPixel(){} fillRect(){} drawRect(){} drawCircle(){} fillCircle(){} setRotation(){} invertDisplay(){} startscrollright(){} stopscroll(){} };
+var Adafruit_GFX = (typeof Adafruit_GFX !== 'undefined' && Adafruit_GFX) || class { constructor(){} };
+var LiquidCrystal_I2C = (typeof LiquidCrystal_I2C !== 'undefined' && LiquidCrystal_I2C) || class { constructor(){} begin(){} print(){} println(){} setCursor(){} clear(){} backlight(){} noBacklight(){} };
+var LiquidCrystal = (typeof LiquidCrystal !== 'undefined' && LiquidCrystal) || class { constructor(){} begin(){} print(){} println(){} setCursor(){} clear(){} };
+var Servo = (typeof Servo !== 'undefined' && Servo) || class { constructor(){this._angle=90;} attach(){} write(a){this._angle=a;} read(){return this._angle;} detach(){} };
+var DHT = (typeof DHT !== 'undefined' && DHT) || class { constructor(){} begin(){} readTemperature(){return 25.0;} readHumidity(){return 50.0;} };
+var DHTesp = (typeof DHTesp !== 'undefined' && DHTesp) || class { constructor(){} setup(){} getTempAndHumidity(){ return { temperature: 25.0, humidity: 50.0 }; } getStatus(){ return 0; } getStatusString(){ return 'OK'; } };
+var TempAndHumidity = (typeof TempAndHumidity !== 'undefined' && TempAndHumidity) || class { constructor(){ this.temperature = 0; this.humidity = 0; } };
+var Adafruit_MPU6050 = (typeof Adafruit_MPU6050 !== 'undefined' && Adafruit_MPU6050) || class { constructor(){} begin(){return true;} setAccelerometerRange(){} setGyroRange(){} setFilterBandwidth(){} getEvent(a,g,t){ if(a) a.acceleration={x:0,y:0,z:9.8}; if(g) g.gyro={x:0,y:0,z:0}; if(t) t.temperature=25.0; return true; } };
+var Adafruit_Sensor = (typeof Adafruit_Sensor !== 'undefined' && Adafruit_Sensor) || class { constructor(){} };
+var IRrecv = (typeof IRrecv !== 'undefined' && IRrecv) || class { constructor(){} enableIRIn(){} decode(){return false;} resume(){} };
+var decode_results = (typeof decode_results !== 'undefined' && decode_results) || class { constructor(){} };
+var SoftwareSerial = (typeof SoftwareSerial !== 'undefined' && SoftwareSerial) || class { constructor(){} begin(){} print(){} println(){} available(){return 0;} read(){return -1;} };
+var Stepper = (typeof Stepper !== 'undefined' && Stepper) || class { constructor(){} setSpeed(){} step(){} };
+var MFRC522 = (typeof MFRC522 !== 'undefined' && MFRC522) || class { constructor(){} PCD_Init(){} PICC_IsNewCardPresent(){return false;} PICC_ReadCardSerial(){return false;} };
+var Keypad = (typeof Keypad !== 'undefined' && Keypad) || class {
+  constructor(_keymap, _rowPins, _colPins, _rows, _cols) {
+    this._keymap = _keymap || [];
+    this._rowPins = _rowPins || [];
+    this._colPins = _colPins || [];
+    this._rows = _rows || 4;
+    this._cols = _cols || 4;
+    this._pressedKey = null;
+  }
+  getKey() {
+    const k = this._pressedKey;
+    this._pressedKey = null;
+    return k;
+  }
+  isPressed(key) { return this._pressedKey === key; }
+  getState() { return 0; }
+  addEventListener() {}
+  _simulatePress(key) { this._pressedKey = key; }
+};
+var makeKeymap = (typeof makeKeymap !== 'undefined' && makeKeymap) || function(keymap, rowPins, colPins, rows, cols) {
+  return new Keypad(keymap, rowPins, colPins, rows, cols);
+};
+var U8g2_SSD1306_128X64_NONAME_F_HW_I2C = (typeof U8g2_SSD1306_128X64_NONAME_F_HW_I2C !== 'undefined' && U8g2_SSD1306_128X64_NONAME_F_HW_I2C) || class { constructor(){} begin(){} clearBuffer(){} sendBuffer(){} setFont(){} drawStr(){} setCursor(){} print(){} println(){} };
+var HX711 = (typeof HX711 !== 'undefined' && HX711) || class { constructor(){} begin(){} set_scale(){} tare(){} get_units(){return 0;} read(){return 0;} is_ready(){return true;} power_down(){} power_up(){} };
+var RTC_DS1307 = (typeof RTC_DS1307 !== 'undefined' && RTC_DS1307) || class { constructor(){} begin(){return true;} adjust(){} now(){ return new DateTime(); } isrunning(){return true;} };
+var DateTime = (typeof DateTime !== 'undefined' && DateTime) || class { constructor(y,m,d,hh,mm,ss){ this._d = y!==undefined ? new Date(y,(m||1)-1,d||1,hh||0,mm||0,ss||0) : new Date(); } year(){return this._d.getFullYear();} month(){return this._d.getMonth()+1;} day(){return this._d.getDate();} hour(){return this._d.getHours();} minute(){return this._d.getMinutes();} second(){return this._d.getSeconds();} dayOfWeek(){return this._d.getDay()||7;} unixtime(){return Math.floor(this._d.getTime()/1000);} toString(){const p=function(n){return String(n).padStart(2,'0');}; return this.year()+'-'+p(this.month())+'-'+p(this.day())+' '+p(this.hour())+':'+p(this.minute())+':'+p(this.second());} };
+var Adafruit_NeoPixel = (typeof Adafruit_NeoPixel !== 'undefined' && Adafruit_NeoPixel) || class { constructor(){} begin(){} show(){} setPixelColor(){} setBrightness(){} clear(){} numPixels(){return 0;} Color(r,g,b){return (r<<16)|(g<<8)|b;} };
+var Adafruit_ILI9341 = (typeof Adafruit_ILI9341 !== 'undefined' && Adafruit_ILI9341) || class { constructor(){} begin(){} setRotation(){} fillScreen(){} setCursor(){} setTextColor(){} setTextSize(){} print(){} println(){} drawPixel(){} drawLine(){} drawRect(){} fillRect(){} drawCircle(){} fillCircle(){} drawTriangle(){} fillTriangle(){} drawRoundRect(){} fillRoundRect(){} width(){return 320;} height(){return 240;} invertDisplay(){} };
+var MPU6050_RANGE_2_G   = (typeof MPU6050_RANGE_2_G   !== 'undefined') ? MPU6050_RANGE_2_G   : 0;
+var MPU6050_RANGE_4_G   = (typeof MPU6050_RANGE_4_G   !== 'undefined') ? MPU6050_RANGE_4_G   : 1;
+var MPU6050_RANGE_8_G   = (typeof MPU6050_RANGE_8_G   !== 'undefined') ? MPU6050_RANGE_8_G   : 2;
+var MPU6050_RANGE_16_G  = (typeof MPU6050_RANGE_16_G  !== 'undefined') ? MPU6050_RANGE_16_G  : 3;
+var MPU6050_RANGE_250_DEG  = (typeof MPU6050_RANGE_250_DEG  !== 'undefined') ? MPU6050_RANGE_250_DEG  : 0;
+var MPU6050_RANGE_500_DEG  = (typeof MPU6050_RANGE_500_DEG  !== 'undefined') ? MPU6050_RANGE_500_DEG  : 1;
+var MPU6050_RANGE_1000_DEG = (typeof MPU6050_RANGE_1000_DEG !== 'undefined') ? MPU6050_RANGE_1000_DEG : 2;
+var MPU6050_RANGE_2000_DEG = (typeof MPU6050_RANGE_2000_DEG !== 'undefined') ? MPU6050_RANGE_2000_DEG : 3;
+var MPU6050_BAND_260_HZ = (typeof MPU6050_BAND_260_HZ !== 'undefined') ? MPU6050_BAND_260_HZ : 0;
+var MPU6050_BAND_184_HZ = (typeof MPU6050_BAND_184_HZ !== 'undefined') ? MPU6050_BAND_184_HZ : 1;
+var MPU6050_BAND_94_HZ  = (typeof MPU6050_BAND_94_HZ  !== 'undefined') ? MPU6050_BAND_94_HZ  : 2;
+var MPU6050_BAND_44_HZ  = (typeof MPU6050_BAND_44_HZ  !== 'undefined') ? MPU6050_BAND_44_HZ  : 3;
+var MPU6050_BAND_21_HZ  = (typeof MPU6050_BAND_21_HZ  !== 'undefined') ? MPU6050_BAND_21_HZ  : 4;
+var MPU6050_BAND_10_HZ  = (typeof MPU6050_BAND_10_HZ  !== 'undefined') ? MPU6050_BAND_10_HZ  : 5;
+var MPU6050_BAND_5_HZ   = (typeof MPU6050_BAND_5_HZ   !== 'undefined') ? MPU6050_BAND_5_HZ   : 6;
+var SSD1306_SWITCHCAPVCC = (typeof SSD1306_SWITCHCAPVCC !== 'undefined') ? SSD1306_SWITCHCAPVCC : 0x02;
+var SSD1306_EXTERNALVCC  = (typeof SSD1306_EXTERNALVCC  !== 'undefined') ? SSD1306_EXTERNALVCC  : 0x01;
+var BLACK   = (typeof BLACK   !== 'undefined') ? BLACK   : 0;
+var WHITE   = (typeof WHITE   !== 'undefined') ? WHITE   : 1;
+var INVERSE = (typeof INVERSE !== 'undefined') ? INVERSE : 2;
+var RED     = (typeof RED     !== 'undefined') ? RED     : 0xF800;
+var GREEN   = (typeof GREEN   !== 'undefined') ? GREEN   : 0x07E0;
+var BLUE    = (typeof BLUE    !== 'undefined') ? BLUE    : 0x001F;
+var CYAN    = (typeof CYAN    !== 'undefined') ? CYAN    : 0x07FF;
+var MAGENTA = (typeof MAGENTA !== 'undefined') ? MAGENTA : 0xF81F;
+var YELLOW  = (typeof YELLOW  !== 'undefined') ? YELLOW  : 0xFFE0;
+var ORANGE  = (typeof ORANGE  !== 'undefined') ? ORANGE  : 0xFC00;
+var DHT11   = (typeof DHT11   !== 'undefined') ? DHT11   : 11;
+var DHT22   = (typeof DHT22   !== 'undefined') ? DHT22   : 22;
+var DHT21   = (typeof DHT21   !== 'undefined') ? DHT21   : 21;
+var AM2301  = (typeof AM2301  !== 'undefined') ? AM2301  : 21;
+var DEC     = (typeof DEC     !== 'undefined') ? DEC     : 10;
+var HEX     = (typeof HEX     !== 'undefined') ? HEX     : 16;
+var OCT     = (typeof OCT     !== 'undefined') ? OCT     : 8;
 if (typeof BIN     === 'undefined') BIN     = 2;
 if (typeof PI      === 'undefined') PI      = Math.PI;
 if (typeof HALF_PI === 'undefined') HALF_PI = Math.PI / 2;

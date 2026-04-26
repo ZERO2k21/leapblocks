@@ -21,7 +21,7 @@ export class MembraneKeypadElement extends LitElement {
   /**
    * Whether to display a connector beneath the keypad
    */
-  @property() connector = false;
+  @property() connector = true;
 
   // prettier-ignore
   /**

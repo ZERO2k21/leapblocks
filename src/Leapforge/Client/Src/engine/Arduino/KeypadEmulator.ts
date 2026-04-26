@@ -16,6 +16,7 @@ export class KeypadEmulator {
     ['*', '0', '#', 'D']
   ];
   private pressedKey: string | null = null;
+  public get currentKey(): string | null { return this.pressedKey; }
   private rowPins: string[]; // AVR pins for rows
   private colPins: string[]; // AVR pins for columns
   private rowStates: boolean[] = [true, true, true, true]; // Current row output states

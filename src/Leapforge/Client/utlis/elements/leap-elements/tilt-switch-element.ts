@@ -1,15 +1,49 @@
-import { html, LitElement } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { html, LitElement, css } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from '.';
 import { GND, VCC } from './pin';
 
 @customElement('leap-tilt-switch')
 export class TiltSwitchElement extends LitElement {
+  @property({ type: Boolean }) tilted = false;
+
   readonly pinInfo: ElementPin[] = [
     { name: 'GND', y: 18, x: 88, number: 1, signals: [GND()] },
     { name: 'VCC', y: 27.8, x: 88, number: 2, signals: [VCC()] },
     { name: 'OUT', y: 37.5, x: 88, number: 3, signals: [] },
   ];
+
+  static get styles() {
+    return css`
+      :host {
+        display: inline-block;
+      }
+
+      svg {
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .ball {
+        transition: transform 0.3s ease;
+      }
+
+      .ball.tilted {
+        transform: translate(10px, 5px);
+      }
+    `;
+  }
+
+  private handleClick() {
+    this.tilted = !this.tilted;
+    this.dispatchEvent(
+      new CustomEvent('tilt-toggle', {
+        detail: { tilted: this.tilted },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
 
   render() {
     return html`
@@ -20,6 +54,7 @@ export class TiltSwitchElement extends LitElement {
         viewBox="0 0 88.4 55.6"
         font-family="sans-serif"
         xmlns="http://www.w3.org/2000/svg"
+        @click=${this.handleClick}
       >
         <path
           d="m71.2 0h-71.2v55.6h71.2zm-54.1 43.8c2.66 0 4.82 2.22 4.82 4.96s-2.16 4.96-4.82 4.96-4.82-2.22-4.82-4.96 2.16-4.96 4.82-4.96zm13.8-3.78c2.03 0 3.68 1.7 3.68 3.78s-1.65 3.78-3.68 3.78-3.68-1.7-3.68-3.78 1.65-3.78 3.68-3.78zm0-31.5c2.03 0 3.68 1.7 3.68 3.78 0 2.09-1.65 3.78-3.68 3.78s-3.68-1.7-3.68-3.78c0-2.09 1.65-3.78 3.68-3.78zm-13.8-6.6c2.66 0 4.82 2.22 4.82 4.96s-2.16 4.96-4.82 4.96-4.82-2.22-4.82-4.96 2.16-4.96 4.82-4.96z"
@@ -212,7 +247,8 @@ export class TiltSwitchElement extends LitElement {
         </g>
         <path
           d="m42.2 6.32c-0.256-0.299-0.705-0.334-1-0.078-3.3 2.82-20.7 17.7-24 20.5-0.299 0.255-0.334 0.705-0.078 1 1.83 2.14 8.55 9.99 10.4 12.1 0.256 0.299 0.706 0.334 1 0.078 3.3-2.82 20.7-17.7 24-20.5 0.299-0.256 0.334-0.705 0.078-1-1.83-2.14-8.55-9.99-10.4-12.1z"
-          fill="#4a91ce"
+          fill="${this.tilted ? '#ff6b6b' : '#4a91ce'}"
+          class="ball ${this.tilted ? 'tilted' : ''}"
         />
       </svg>
     `;

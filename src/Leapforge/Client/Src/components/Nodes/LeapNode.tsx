@@ -81,7 +81,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.innerHandShape = data.innerHandShape ?? 'plain';
     mappedProps.outerHandLength = data.outerHandLength ?? 30;
     mappedProps.innerHandLength = data.innerHandLength ?? 30;
-  } else if (['potentiometer', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(data.type)) {
+  } else if (['potentiometer', 'slide-potentiometer', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(data.type)) {
     // Analog sensors (and resistors) use the 'value' from sensorValues
     mappedProps.value = data.sensorValues?.value ?? (data.type === 'ntc-temperature-sensor' ? 25 : 0);
   } else if (data.type === 'photoresistor-sensor') {
@@ -302,6 +302,169 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       if (typeof el.requestUpdate === 'function') el.requestUpdate();
     }
   }, [data.neopixelPixels, data.type, data.cols]);
+
+  // Wire membrane-keypad DOM button-press/release events into the circuit engine
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el || data.type !== 'membrane-keypad') return;
+
+    const handlePress = (e: Event) => {
+      const key = (e as CustomEvent).detail?.key ?? null;
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushKeypadKey(id, key);
+      });
+    };
+    const handleRelease = () => {
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushKeypadKey(id, null);
+      });
+    };
+
+    el.addEventListener('button-press', handlePress);
+    el.addEventListener('button-release', handleRelease);
+    return () => {
+      el.removeEventListener('button-press', handlePress);
+      el.removeEventListener('button-release', handleRelease);
+    };
+  }, [data.type, id]);
+
+  // Wire rotary-dialer DOM dial-start events into the circuit engine
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el || data.type !== 'rotary-dialer') return;
+
+    const handleDialStart = (e: Event) => {
+      const digit = (e as CustomEvent).detail?.digit ?? 0;
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushRotaryDialerDigit(id, digit);
+      });
+    };
+
+    el.addEventListener('dial-start', handleDialStart);
+    return () => {
+      el.removeEventListener('dial-start', handleDialStart);
+    };
+  }, [data.type, id]);
+
+  // Wire tilt-switch DOM tilt-toggle events into the circuit engine
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el || data.type !== 'tilt-switch') return;
+
+    const handleTiltToggle = (e: Event) => {
+      const tilted = (e as CustomEvent).detail?.tilted ?? false;
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushTiltSwitchState(id, tilted);
+      });
+    };
+
+    el.addEventListener('tilt-toggle', handleTiltToggle);
+    
+    // Set initial state on mount
+    const initialTilted = data.sensorValues?.tilted ?? false;
+    import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+      circuitEngine.pushTiltSwitchState(id, initialTilted);
+    });
+
+    return () => {
+      el.removeEventListener('tilt-toggle', handleTiltToggle);
+    };
+  }, [data.type, id]);
+
+  // Wire KY-040 rotary encoder DOM events into the circuit engine
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el || data.type !== 'ky-040') return;
+
+    const handleRotateCW = () => {
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushRotaryEncoderCW(id);
+      });
+    };
+
+    const handleRotateCCW = () => {
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushRotaryEncoderCCW(id);
+      });
+    };
+
+    // SW button is handled by standard button-press/button-release events
+    const handlePress = () => {
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushInputSignal(id, 'SW', false); // Active LOW
+      });
+    };
+
+    const handleRelease = () => {
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushInputSignal(id, 'SW', true); // Pull-up HIGH
+      });
+    };
+
+    el.addEventListener('rotate-cw', handleRotateCW);
+    el.addEventListener('rotate-ccw', handleRotateCCW);
+    el.addEventListener('button-press', handlePress);
+    el.addEventListener('button-release', handleRelease);
+
+    // Set initial state (idle: CLK and DT HIGH with pull-ups, SW HIGH)
+    // Use setTimeout to ensure this happens after component is fully mounted
+    const initTimer = setTimeout(() => {
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushInputSignal(id, 'CLK', true);
+        circuitEngine.pushInputSignal(id, 'DT', true);
+        circuitEngine.pushInputSignal(id, 'SW', true);  // SW must start HIGH (pull-up)
+        console.log(`[KY-040] Initial state set: CLK=HIGH, DT=HIGH, SW=HIGH for node ${id}`);
+      });
+    }, 100);
+
+    return () => {
+      clearTimeout(initTimer);
+      el.removeEventListener('rotate-cw', handleRotateCW);
+      el.removeEventListener('rotate-ccw', handleRotateCCW);
+      el.removeEventListener('button-press', handlePress);
+      el.removeEventListener('button-release', handleRelease);
+    };
+  }, [data.type, id]);
+
+  // Wire analog-joystick DOM events into the circuit engine
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el || data.type !== 'analog-joystick') return;
+
+    const handleInput = () => {
+      const x = el.xValue ?? 0;
+      const y = el.yValue ?? 0;
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushJoystickAnalog(id, x, y);
+      });
+    };
+
+    // Joystick SEL button is typically pulled HIGH externally/internally, goes LOW on press
+    const handlePress = () => {
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushInputSignal(id, 'SEL', false);
+      });
+    };
+    const handleRelease = () => {
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushInputSignal(id, 'SEL', true);
+      });
+    };
+
+    el.addEventListener('input', handleInput);
+    el.addEventListener('button-press', handlePress);
+    el.addEventListener('button-release', handleRelease);
+    
+    // Inject the center resting state immediately on mount
+    handleInput();
+    handleRelease();
+
+    return () => {
+      el.removeEventListener('input', handleInput);
+      el.removeEventListener('button-press', handlePress);
+      el.removeEventListener('button-release', handleRelease);
+    };
+  }, [data.type, id]);
 
   // Optional: Fallback for generic elements that listen to 'value'
   if (mappedProps.value === undefined && data.value !== undefined) {

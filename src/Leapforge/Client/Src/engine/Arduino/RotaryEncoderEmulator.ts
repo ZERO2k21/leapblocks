@@ -18,6 +18,11 @@ export class RotaryEncoderEmulator {
     this.pinA = pinA;
     this.pinB = pinB;
     this.setPin = setPin;
+    
+    // Initialize encoder pins to idle state (both HIGH with pull-ups)
+    this.setPin(this.pinA, true);
+    this.setPin(this.pinB, true);
+    console.log(`[RotaryEncoderEmulator] Initialized: ${pinA}=HIGH, ${pinB}=HIGH`);
   }
 
   /** Simulate one click clockwise. Generates proper quadrature. */
@@ -34,9 +39,12 @@ export class RotaryEncoderEmulator {
 
   private generateQuadrature(clockwise: boolean) {
     // Quadrature encoding: 4-phase sequence
+    // KY-040 with pull-ups: idle = [HIGH, HIGH]
+    // Clockwise: [HIGH,HIGH] → [HIGH,LOW] → [LOW,LOW] → [LOW,HIGH] → [HIGH,HIGH]
+    // Counter-clockwise: [HIGH,HIGH] → [LOW,HIGH] → [LOW,LOW] → [HIGH,LOW] → [HIGH,HIGH]
     const phases = clockwise 
-      ? [[false, false], [true, false], [true, true], [false, true]]
-      : [[false, false], [false, true], [true, true], [true, false]];
+      ? [[true, false], [false, false], [false, true], [true, true]]  // CW: A leads B
+      : [[false, true], [false, false], [true, false], [true, true]]; // CCW: B leads A
 
     let step = 0;
     const interval = setInterval(() => {
@@ -45,10 +53,12 @@ export class RotaryEncoderEmulator {
         // Return to idle (both HIGH with pull-ups)
         this.setPin(this.pinA, true);
         this.setPin(this.pinB, true);
+        console.log(`[RotaryEncoderEmulator] Quadrature complete, returned to idle`);
         return;
       }
       this.setPin(this.pinA, phases[step][0]);
       this.setPin(this.pinB, phases[step][1]);
+      console.log(`[RotaryEncoderEmulator] Phase ${step}: CLK=${phases[step][0]}, DT=${phases[step][1]}`);
       step++;
     }, 1); // 1ms per phase = 4ms per detent
   }

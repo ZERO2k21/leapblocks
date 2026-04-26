@@ -466,9 +466,22 @@ export class ESP32C3SimulationRunner {
      * @param isAnalog true → inject into ADC channel
      */
     injectInput(pin: string, value: boolean | number, isAnalog: boolean = false): void {
-        if (!this.platform) return;
         const gpio = pinNameToGpio(pin);
         if (isNaN(gpio)) return;
+
+        // Route to Arduino API if using the transpiled path
+        if (this.usingTranspiledPath && this.arduinoRuntime) {
+            if (isAnalog) {
+                const v12 = typeof value === 'number' ? value : (value ? 4095 : 0);
+                this.arduinoRuntime.setAnalogInput(gpio, v12);
+            } else {
+                const high = typeof value === 'boolean' ? value : value > 0;
+                this.arduinoRuntime.setDigitalInput(gpio, high);
+            }
+            return;
+        }
+
+        if (!this.platform) return;
 
         if (isAnalog) {
             const v12 = typeof value === 'number' ? value : (value ? 4095 : 0);

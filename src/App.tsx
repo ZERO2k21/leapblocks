@@ -69,15 +69,6 @@ const AppInventor = lazy(() => {
 });
 
 // @ts-ignore
-const AppForgeStudio = lazy(() => {
-    logAppTiming('AppForgeStudio lazy load started');
-    return import("./Leapforge/Client/Src/ForgeStudio").then(module => {
-        logAppTiming('AppForgeStudio lazy load completed');
-        return module;
-    });
-});
-
-// @ts-ignore
 const LeapForgeStudio = lazy(() => {
     logAppTiming('LeapForgeStudio lazy load started');
     return import('./Leapforge/Client/Src/ForgeStudio').then(module => {
@@ -198,7 +189,7 @@ export default function App() {
                 />}
                 {mode === 'notebook' && <PythonNotebook onBack={() => setMode('home')} onSwitchToIDE={() => setMode('python')} />}
                 {mode === 'appinventor' && <AppInventor {...({ onBack: () => setMode('home') } as any)} />}
-                {mode === 'appforge' && <AppForgeStudio {...({ onBack: () => setMode('home') } as any)} />}
+                {mode === 'appforge' && <LeapForgeStudio {...({ onBack: () => setMode('home') } as any)} />}
                 {mode === 'leapforge' && <LeapForgeStudio {...({ onBack: () => setMode('home') } as any)} />}
                 {mode === 'neura' && <NeuraApp onBack={() => setMode('home')} />}
                 {mode === 'home' && <LandingPage onSelect={setMode} />}

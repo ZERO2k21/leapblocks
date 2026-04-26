@@ -9,18 +9,8 @@ import { Home, Save, FolderOpen, Settings, Play, Square, Code, Terminal, Wifi } 
 // Register official leap elements
 import '../utlis/elements/leap-elements';
 import './ForgeStudio.css';
-import { useForgeStore } from '../utlis/store/useForgeStore';
+import { useForgeStore, getSimulationRunner } from '../utlis/store/useForgeStore';
 import { BoardSelector, BoardType } from './components/BoardSelector';
-
-// Lazy-load simulation runner only when needed
-let simulationRunner: any = null;
-async function getSimulationRunner() {
-  if (!simulationRunner) {
-    const module = await import('./engine/Arduino/SimulationRunner');
-    simulationRunner = module.simulationRunner;
-  }
-  return simulationRunner;
-}
 
 // Lazy load complex inner components
 const ForgeCanvas = lazy(() => import('./components/ForgeCanvas'));

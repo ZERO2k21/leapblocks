@@ -101,7 +101,21 @@ export class ArduinoRuntime {
 
   /** Inject digital input (from CircuitEngine) */
   setDigitalInput(pin: number, high: boolean): void {
-    this.pinValues.set(pin, high ? HIGH : LOW);
+    const prev = this.pinValues.get(pin) ?? LOW;
+    const curr = high ? HIGH : LOW;
+    if (prev !== curr) {
+      this.pinValues.set(pin, curr);
+      const handler = this.interruptHandlers.get(pin);
+      if (handler) {
+        // Mode mapping: RISING: 1, FALLING: 2, CHANGE: 3
+        if (handler.mode === 3 || (handler.mode === 1 && curr === HIGH) || (handler.mode === 2 && curr === LOW)) {
+          handler.callback();
+        }
+      }
+      if (this.onPinChange) {
+        this.onPinChange(pin, curr, false);
+      }
+    }
   }
 
   /** Load transpiled JS and extract setup/loop */
@@ -128,6 +142,8 @@ export class ArduinoRuntime {
       console.log(`[ARDUINO RUNTIME] ✓ Code evaluated. setup=${!!exports.setup}, loop=${!!exports.loop}`);
     } catch (e) {
       console.error(`[ARDUINO RUNTIME] ✗ new Function() evaluation failed:`, e);
+      // Dump full transpiled code so we can see exactly what broke
+      console.error(`[ARDUINO RUNTIME] ── TRANSPILED CODE DUMP ──\n${jsCode}\n── END DUMP ──`);
       throw e;
     }
 
@@ -297,6 +313,35 @@ export class ArduinoRuntime {
       WAKEUP_PULLUP: 0,
       WAKEUP_PULLDOWN: 1,
 
+      // ── ESP32 function attribute macros (no-ops in JS) ─────
+      IRAM_ATTR: undefined,
+      ICACHE_RAM_ATTR: undefined,
+      DRAM_ATTR: undefined,
+
+      // ── Additional Arduino utility functions ───────────────
+      // shiftIn / shiftOut — used by some sensor libraries
+      shiftIn(_dataPin: number, _clockPin: number, _bitOrder: number): number { return 0; },
+      shiftOut(_dataPin: number, _clockPin: number, _bitOrder: number, _val: number): void {},
+      // pulseInLong — same as pulseIn but for longer pulses
+      pulseInLong(pin: number, state: number, timeout?: number): number {
+        return 0; // stub — real timing not available in browser
+      },
+      // noInterrupts / interrupts — no-ops in browser simulation
+      noInterrupts(): void {},
+      interrupts(): void {},
+      // yield — cooperative multitasking hint, no-op in async JS
+      yield(): void {},
+      // ESP32-specific
+      esp_get_free_heap_size(): number { return 200000; },
+      esp_get_minimum_free_heap_size(): number { return 100000; },
+      ESP: {
+        restart(): void { console.log('[ESP32] restart() called'); },
+        getFreeHeap(): number { return 200000; },
+        getChipRevision(): number { return 3; },
+        getCpuFreqMHz(): number { return 160; },
+        getFlashChipSize(): number { return 4194304; },
+      },
+
       // ── GPIO ───────────────────────────────────────────────
       pinMode(pin: number, mode: number): void {
         const modeStr: PinMode =
@@ -441,6 +486,9 @@ export class ArduinoRuntime {
       round: Math.round,
 
       // ── Interrupts ─────────────────────────────────────────
+      // digitalPinToInterrupt: on ESP32 all GPIO pins support interrupts,
+      // so this is an identity function (pin number = interrupt number)
+      digitalPinToInterrupt(pin: number): number { return pin; },
       attachInterrupt(pin: number, callback: () => void, mode: number): void {
         self.interruptHandlers.set(pin, { callback, mode });
       },
@@ -735,6 +783,233 @@ export class ArduinoRuntime {
       MPU6050_RANGE_250_DEG: 0, MPU6050_RANGE_500_DEG: 1, MPU6050_RANGE_1000_DEG: 2, MPU6050_RANGE_2000_DEG: 3,
       MPU6050_BAND_260_HZ: 0, MPU6050_BAND_184_HZ: 1, MPU6050_BAND_94_HZ: 2, MPU6050_BAND_44_HZ: 3,
       MPU6050_BAND_21_HZ: 4, MPU6050_BAND_10_HZ: 5, MPU6050_BAND_5_HZ: 6,
+
+      // ── HX711 load cell amplifier (read live from store) ────
+      HX711: class {
+        _dout = 0;
+        _sck = 0;
+        _scale = 1;
+        _offset = 0;
+        constructor() {}
+        begin(dout: number, sck: number): void {
+          this._dout = dout;
+          this._sck = sck;
+        }
+        set_scale(scale: number): void {
+          this._scale = scale || 1;
+        }
+        tare(_times?: number): void {
+          this._offset = this._readRaw();
+        }
+        get_units(_times?: number): number {
+          return (this._readRaw() - this._offset) / this._scale;
+        }
+        read(): number {
+          return this._readRaw();
+        }
+        is_ready(): boolean {
+          return true;
+        }
+        power_down(): void {}
+        power_up(): void {}
+        private _readRaw(): number {
+          try {
+            const { nodes } = useForgeStore.getState();
+            for (const n of nodes) {
+              if (n.data?.type === 'hx711') {
+                const w = n.data?.sensorValues?.weight ?? 0;
+                // Return raw ADC proportional to weight * scale,
+                // so get_units() / scale = weight in grams (matches slider)
+                return Math.round(w * this._scale);
+              }
+            }
+          } catch (e) { /* store not available */ }
+          return 0;
+        }
+      },
+
+      // ── RTC_DS1307 real-time clock (I2C @ 0x68 — bridged via CircuitEngine) ──
+      RTC_DS1307: class {
+        private _addr = 0x68;
+        begin(): boolean {
+          if (self._i2cBus) {
+            self._i2cBus.startTransmission(this._addr);
+            self._i2cBus.endTransmission();
+          }
+          return true;
+        }
+        adjust(dt: any): void {
+          // Write time registers (0x00-0x06) in BCD
+          const regs = [
+            this._toBCD(dt.second() ?? 0),
+            this._toBCD(dt.minute() ?? 0),
+            this._toBCD(dt.hour() ?? 12),
+            this._toBCD(dt.dayOfWeek() ?? 1),
+            this._toBCD(dt.day() ?? 1),
+            this._toBCD(dt.month() ?? 1),
+            this._toBCD(dt.year() % 100),
+          ];
+          if (self._i2cBus) {
+            self._i2cBus.startTransmission(this._addr);
+            self._i2cBus.write(0x00); // register pointer
+            for (const r of regs) self._i2cBus.write(r);
+            self._i2cBus.endTransmission();
+          }
+        }
+        now(): any {
+          const dt = self._i2cBus
+            ? this._readFromI2C()
+            : new Date();
+          // Return a duck-typed DateTime-compatible object
+          return {
+            year: () => dt.getFullYear(),
+            month: () => dt.getMonth() + 1,
+            day: () => dt.getDate(),
+            hour: () => dt.getHours(),
+            minute: () => dt.getMinutes(),
+            second: () => dt.getSeconds(),
+            dayOfWeek: () => dt.getDay() || 7,
+            unixtime: () => Math.floor(dt.getTime() / 1000),
+            toString: () => {
+              const pad = (n: number) => String(n).padStart(2, '0');
+              return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+            }
+          };
+        }
+        private _readFromI2C(): Date {
+          if (!self._i2cBus) return new Date();
+          self._i2cBus.startTransmission(this._addr);
+          self._i2cBus.write(0x00);
+          self._i2cBus.endTransmission();
+          self._i2cBus.requestFrom(this._addr, 7);
+          const sec  = this._fromBCD(self._i2cBus.read());
+          const min  = this._fromBCD(self._i2cBus.read());
+          const hour = this._fromBCD(self._i2cBus.read() & 0x3F);
+          const _dow = self._i2cBus.read();
+          const day  = this._fromBCD(self._i2cBus.read());
+          const mon  = this._fromBCD(self._i2cBus.read());
+          const year = this._fromBCD(self._i2cBus.read()) + 2000;
+          return new Date(year, mon - 1, day, hour, min, sec);
+        }
+        isrunning(): boolean { return true; }
+        private _toBCD(v: number): number {
+          return ((Math.floor(v / 10) & 0x0F) << 4) | (v % 10);
+        }
+        private _fromBCD(v: number): number {
+          return ((v >> 4) * 10) + (v & 0x0F);
+        }
+      },
+      DateTime: class DateTime {
+        private _date: Date;
+        constructor(y?: number, m?: number, d?: number, hh?: number, mm?: number, ss?: number) {
+          if (y !== undefined) {
+            this._date = new Date(y, (m ?? 1) - 1, d ?? 1, hh ?? 0, mm ?? 0, ss ?? 0);
+          } else {
+            this._date = new Date();
+          }
+        }
+        year(): number   { return this._date.getFullYear(); }
+        month(): number  { return this._date.getMonth() + 1; }
+        day(): number    { return this._date.getDate(); }
+        hour(): number   { return this._date.getHours(); }
+        minute(): number { return this._date.getMinutes(); }
+        second(): number { return this._date.getSeconds(); }
+        dayOfWeek(): number { return this._date.getDay() || 7; } // 1=Mon ... 7=Sun
+        unixtime(): number  { return Math.floor(this._date.getTime() / 1000); }
+        toString(): string {
+          const pad = (n: number) => String(n).padStart(2, '0');
+          return `${this.year()}-${pad(this.month())}-${pad(this.day())} ${pad(this.hour())}:${pad(this.minute())}:${pad(this.second())}`;
+        }
+      },
+
+      // ── Keypad library (matrix membrane keypad) ──
+      // Reads from the CircuitEngine keypad emulator via node data pressedKey state.
+      Keypad: class {
+        private _rowPins: number[];
+        private _colPins: number[];
+        private _keys: string[][];
+        private _rows: number;
+        private _cols: number;
+        // Edge-trigger tracking: only fire once per press, not every loop() frame
+        private _lastReportedKey: string | null = null;
+        private _lastRawKey: string | null = null;
+
+        constructor(userKeymap: any, rowPins: number[], colPins: number[], rows: number, cols: number) {
+          this._rowPins = rowPins || [];
+          this._colPins = colPins || [];
+          this._rows = rows || 4;
+          this._cols = cols || 4;
+          this._keys = [];
+          // userKeymap can be a flat string, 2D array, or the keys array itself
+          if (Array.isArray(userKeymap)) {
+            // Already a 2D array
+            this._keys = userKeymap;
+          } else if (typeof userKeymap === 'string') {
+            for (let r = 0; r < this._rows; r++) {
+              const row: string[] = [];
+              for (let c = 0; c < this._cols; c++) {
+                row.push(userKeymap[r * this._cols + c] ?? '?');
+              }
+              this._keys.push(row);
+            }
+          } else {
+            this._keys = [['1','2','3','A'],['4','5','6','B'],['7','8','9','C'],['*','0','#','D']];
+          }
+        }
+
+        private _getRawKey(): string | null {
+          try {
+            const { nodes } = useForgeStore.getState();
+            for (const n of nodes) {
+              if (n.data?.type === 'membrane-keypad') {
+                return n.data?.pressedKey ?? null;
+              }
+            }
+          } catch (e) { /* store not available */ }
+          return null;
+        }
+
+        getKey(): string | null {
+          const raw = this._getRawKey();
+          // Detect key-down edge: raw changed from null/different → new key
+          if (raw !== null && raw !== this._lastRawKey) {
+            this._lastRawKey = raw;
+            this._lastReportedKey = raw;
+            return raw;
+          }
+          // Key released: reset so next press is detected
+          if (raw === null) {
+            this._lastRawKey = null;
+            this._lastReportedKey = null;
+          }
+          // Same key still held or no key: return null (no repeat)
+          return null;
+        }
+
+        isPressed(key: string): boolean {
+          return this._getRawKey() === key;
+        }
+
+        getState(): number {
+          const key = this._getRawKey();
+          if (!key) return 0;
+          for (let r = 0; r < this._rows; r++) {
+            for (let c = 0; c < this._cols; c++) {
+              if (this._keys[r]?.[c] === key) return 1 << c;
+            }
+          }
+          return 0;
+        }
+
+        waitForKey(): string { return this.getKey() ?? ''; }
+        keyStateChanged(): boolean {
+          const raw = this._getRawKey();
+          return raw !== this._lastRawKey;
+        }
+        setHoldTime(_ms: number): void { }
+        setDebounceTime(_ms: number): void { }
+        addEventListener(_listener: any): void { }
+      },
     };
   }
 }

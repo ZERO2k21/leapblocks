@@ -550,6 +550,14 @@ class SimulationRunner {
       'A6': { gpio: 25, ch: 6 }, 'D25': { gpio: 25, ch: 6 },
       'A7': { gpio: 26, ch: 7 }, 'D26': { gpio: 26, ch: 7 },
       'D27': { gpio: 27, ch: 7 },  // ADC2_CH7
+      
+      // ESP32-C3 ADC capable pins
+      'D0': { gpio: 0, ch: 0 },
+      'D1': { gpio: 1, ch: 1 },
+      'D2': { gpio: 2, ch: 2 },
+      'D3': { gpio: 3, ch: 3 },
+      'D4': { gpio: 4, ch: 4 },
+      'D5': { gpio: 5, ch: 5 },
     };
     if (adcMap[p]) {
       const { gpio, ch } = adcMap[p];
@@ -662,8 +670,8 @@ class SimulationRunner {
   setESP32C3AnalogInput(gpioNum: number, voltage: number): void {
     if (!this.esp32c3Runner) return;
 
-    // Convert voltage (0-5V) to 12-bit ADC value (0-4095)
-    const adcValue = Math.round((voltage / 5.0) * 4095);
+    // Convert ESP32 voltage (0-3.3V) to 12-bit ADC value (0-4095)
+    const adcValue = Math.round(Math.min(4095, Math.max(0, (voltage / 3.3) * 4095)));
     const pinName = `ESP${gpioNum}`;
 
     this.esp32c3Runner.injectInput(pinName, adcValue, true);
