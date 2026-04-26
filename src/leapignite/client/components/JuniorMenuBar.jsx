@@ -10,7 +10,7 @@ import {
     MessageSquareWarning, Trophy, Settings,
     Share
 } from 'lucide-react';
-import Logo, { CreoleapLogo } from '../../components/Logo';
+import Logo, { CreoleapLogo } from '../../../components/Logo';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DROPDOWN MENU — Glassmorphism + slide-in animation (same design as Intermediate)

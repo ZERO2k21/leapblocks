@@ -6,15 +6,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import Blockly from "@blockly-runtime";
 import { javascriptGenerator } from "@blockly-runtime";
-import defineLeapBlocks from "../blocks/blocks";
-import defineLooksBlocks from "../blocks/looksBlocks";
-import defineSoundBlocks from "../blocks/soundBlocks";
-import { registerLeapRenderer } from "../blocks/LeapRenderer";
-import { getLessonConfig } from "../engine/LessonConfig";
-import { WorkspaceValidator } from "../engine/WorkspaceValidator";
-import { previewActions } from "../engine/previewActions";
-import { looksPreview } from "../engine/looksPreview";
-import { EXTENSIONS, registerExtensions } from "../../extensions/extensionDefinitions";
+import defineLeapBlocks from "../../server/blocks/blocks";
+import defineLooksBlocks from "../../server/blocks/looksBlocks";
+import defineSoundBlocks from "../../server/blocks/soundBlocks";
+import { registerLeapRenderer } from "../../server/blocks/LeapRenderer";
+import { getLessonConfig } from "../../server/engine/LessonConfig";
+import { WorkspaceValidator } from "../../server/engine/WorkspaceValidator";
+import { previewActions } from "../../server/engine/previewActions";
+import { looksPreview } from "../../server/engine/looksPreview";
+import { EXTENSIONS, registerExtensions } from "../../../extensions/extensionDefinitions";
 
 // Robot Assets
 const robotIdle = "assets/sprites/robot/robot_idle.svg";

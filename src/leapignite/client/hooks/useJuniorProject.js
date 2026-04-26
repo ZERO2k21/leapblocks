@@ -5,7 +5,7 @@
  */
 import { useState, useRef } from "react";
 import Blockly from "@blockly-runtime";
-import { fileService } from "../../services/FileService";
+import { fileService } from "../../../services/FileService";
 
 const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspaceJson || {}));
 

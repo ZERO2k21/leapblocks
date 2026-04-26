@@ -8,7 +8,7 @@ import {
     ChevronDown, File, FolderOpen, Save, Share,
     Undo, Redo, Cpu, RotateCcw, Home, Upload, Monitor, Rocket
 } from 'lucide-react';
-import Logo from '../../components/Logo';
+import Logo from '../../../components/Logo';
 
 // ─── Dropdown ────────────────────────────────────────────────────────────────
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {

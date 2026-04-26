@@ -43,11 +43,11 @@ import {
 } from "lucide-react";
 
 import { fileService } from "../services/FileService";
-import { SkulptEngine } from "../junior/engine/SkulptEngine";
+import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
 import SerialMonitor from "../components/SerialMonitor";
 import { createIntermediateBlocksBridge, useSpriteBridge, getDefaultSpritePresets } from "./SpriteBridge";
-import BoardSelectionModal, { getBoards } from "../junior/components/BoardSelectionModal";
+import BoardSelectionModal, { getBoards } from "../leapignite/client/components/BoardSelectionModal";
 
 // ─── Import Modular Components ─────────────────────────────────────────────────
 import SidePanel from "./panels/SidePanel";

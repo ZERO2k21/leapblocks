@@ -9,8 +9,8 @@ import { STAGE_CONFIG } from './engine/StageConfig';
 import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
 
 import './styles/Leaplab-blocks.css'; // Import leap-style blocks CSS
-import './junior/styles/juniorBlocks.css';
-import './junior/styles/juniorLooksBlocks.css';
+import './leapignite/client/styles/juniorBlocks.css';
+import './leapignite/client/styles/juniorLooksBlocks.css';
 
 
 import { arduinoBlocks, arduinoToolbox } from './blocks/arduino-blocks';
@@ -40,9 +40,9 @@ import AskBar from './components/AskBar';
 
 import SpritePanel from './stage/SpritePanel';
 
-import MenuBar from './junior/components/MenuBar';
+import MenuBar from './leapignite/client/components/MenuBar';
 
-import BoardSelectionModal from './junior/components/BoardSelectionModal';
+import BoardSelectionModal from './leapignite/client/components/BoardSelectionModal';
 
 import { PythonEditorTab } from './components/PythonEditorTab';
 
@@ -51,7 +51,7 @@ import { PythonEditorTab } from './components/PythonEditorTab';
 // Lazy load large components for better performance
 const BackdropLibrary = React.lazy(() => import('./components/BackdropLibrary'));
 const SpriteLibrary = React.lazy(() => import('./components/SpriteLibrary').then(m => ({ default: m.SpriteLibrary })));
-const JuniorExtensionLibrary = React.lazy(() => import('./junior/components/JuniorExtensionLibrary'));
+const JuniorExtensionLibrary = React.lazy(() => import('./leapignite/client/components/JuniorExtensionLibrary'));
 
 // Lazy load heavy tabs that import fabric.js and wav-encoder - prevents 60s startup delay
 const CostumesTab = React.lazy(() => import('./stage/CostumesTab').then(m => ({ default: m.CostumesTab })));
@@ -75,12 +75,12 @@ import WorkspaceControls from './components/WorkspaceControls';
 
 import WorkspaceTrash from './components/WorkspaceTrash';
 
-import UnsavedWarningModal from './junior/components/UnsavedWarningModal';
+import UnsavedWarningModal from './leapignite/client/components/UnsavedWarningModal';
 import { EXTENSIONS, registerExtensions } from './extensions/extensionDefinitions';
 
 
 import { fileService } from './services/FileService';
-import { registerLeapRenderer } from './junior/blocks/LeapRenderer';
+import { registerLeapRenderer } from './leapignite/server/blocks/LeapRenderer';
 
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
 

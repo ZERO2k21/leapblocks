@@ -11,7 +11,7 @@ import {
     Bell, User, FileText, Terminal, BookOpen, Zap, RotateCcw,
     Copy, Clipboard, MoreVertical, GripVertical
 } from "lucide-react";
-import { SkulptEngine } from "../junior/engine/SkulptEngine";
+import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
 import Logo, { CreoleapLogo } from "../components/Logo";
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
