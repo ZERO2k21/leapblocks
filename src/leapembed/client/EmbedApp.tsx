@@ -354,6 +354,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const blocklyDiv = useRef<HTMLDivElement>(null);
     const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
     const selectedSpriteIdRef = useRef<string | null>(null);
+    // Refs used by the Blockly workspace useEffect
+    const lastToolboxJsonRef = useRef<string>('');
+    const previewBlockActionRef = useRef<(block: Blockly.Block) => void>(() => {});
+    const monitorsRef = useRef<any>({});
 
     // â”€â”€â”€ Core UI state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [appMode, setAppMode] = useState<AppMode>('blocks');
@@ -1030,6 +1034,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             const timer = setTimeout(() => {
 
                 if (blocklyDiv.current) {
+
+                    // Ensure blocks, renderer, and custom toolbox category are registered before inject
+                    initBlocklyOnce();
 
                     // Inject Blockly
 
@@ -2050,236 +2057,51 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-    // Main Block Editor UI
-
+    // ─── Main Block Editor UI ─────────────────────────────────────────────────
     return (
-
         <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100vh',
-            width: '100vw',           // Î“Ã¥Ã‰ FIX 5: explicit width anchors children
-            overflow: 'hidden',
-            backgroundColor: '#f5f5f5',
+            display: 'flex', flexDirection: 'column',
+            height: '100vh', width: '100vw',
+            overflow: 'hidden', backgroundColor: '#f5f5f5',
             fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         }}>
-            {/* Responsive Styles */}
+            {/* ── Global CSS overrides ─────────────────────────────────────── */}
             <style>{`
-                /* Î“Ã¶Ã‡Î“Ã¶Ã‡ Blockly toolbox: flush with top of workspace Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡ */
-                .blocklyToolboxDiv {
-                    top: 0 !important;
-                    padding-top: 0 !important;
-                }
-                .blocklyFlyout {
-                    top: 0 !important;
-                }
-
-                /* Î“Ã¶Ã‡Î“Ã¶Ã‡ MenuBar always visible Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡ */
-                @media (max-width: 768px) {
-                    .menubar-container {
-                        padding: 0 8px !important;
-                        height: 52px !important;
-                    }
-                    .menubar-container button:first-child {
-                        display: flex !important;
-                        flex-shrink: 0 !important;
-                    }
-                }
-
-                /* Î“Ã¶Ã‡Î“Ã¶Ã‡ RIGHT PANEL: flex column, fills its allocated width Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡ */
-                /* NEVER set height/max-height here Î“Ã‡Ã¶ the flex parent controls  */
-                /* height. NEVER set min-width Î“Ã‡Ã¶ flexShrink:0 + explicit width  */
-                /* on the inline style is the correct pattern.                  */
-                .right-panel-responsive {
-                    display: flex !important;
-                    flex-direction: column !important;
-                    overflow: hidden !important;
-                    /* height is controlled by the flex parent Î“Ã‡Ã¶ do NOT set it */
-                }
-
-                /* Î“Ã¶Ã‡Î“Ã¶Ã‡ STAGE CONTAINER: fixed size, never shrinks Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡ */
-                .stage-container-responsive {
-                    flex-shrink: 0 !important;
-                }
-
-                /* Î“Ã¶Ã‡Î“Ã¶Ã‡ Tablet (Î“Ã«Ã± 1024px): narrow the right panel Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡ */
-                @media (max-width: 1024px) {
-                    .right-panel-responsive {
-                        width: 380px !important;
-                        /* NO min-width override Î“Ã‡Ã¶ inline flexShrink:0 handles it */
-                    }
-                    .stage-container-responsive {
-                        /* width stays 100% Î“Ã‡Ã¶ right panel width controls the size */
-                    }
-                    .log-area-responsive {
-                        height: 180px !important;
-                        max-height: 180px !important;
-                    }
-                }
-
-                /* Î“Ã¶Ã‡Î“Ã¶Ã‡ Mobile (Î“Ã«Ã± 768px): stack vertically Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡ */
-                @media (max-width: 768px) {
-                    .main-container-responsive {
-                        flex-direction: column !important;
-                        height: auto !important;
-                        min-height: calc(100vh - 52px) !important;
-                    }
-                    .workspace-container-responsive {
-                        width: 100% !important;
-                        min-width: 0 !important;
-                        height: 60vh !important;
-                        min-height: 400px !important;
-                    }
-                    .right-panel-responsive {
-                        width: 100% !important;
-                        flex-shrink: 1 !important;
-                        border-left: none !important;
-                        border-top: 1px solid #d9d9d9 !important;
-                        height: auto !important;
-                        max-height: 40vh !important;
-                    }
-                    .stage-container-responsive {
-                        width: 100% !important;
-                        max-width: 450px !important;
-                        margin: 0 auto !important;
-                    }
-                    .log-area-responsive {
-                        height: 150px !important;
-                        max-height: 150px !important;
-                    }
-                }
-
-                /* Î“Ã¶Ã‡Î“Ã¶Ã‡ Extra small (Î“Ã«Ã± 480px) Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡ */
-                @media (max-width: 480px) {
-                    .workspace-container-responsive {
-                        height: 50vh !important;
-                        min-height: 350px !important;
-                    }
-                    .stage-container-responsive {
-                        max-width: 100% !important;
-                    }
-                    .log-area-responsive {
-                        height: 120px !important;
-                        max-height: 120px !important;
-                    }
-                }
-
-                /* Î“Ã¶Ã‡Î“Ã¶Ã‡ Landscape mobile Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡ */
-                @media (max-width: 768px) and (orientation: landscape) {
-                    .main-container-responsive {
-                        flex-direction: row !important;
-                    }
-                    .workspace-container-responsive {
-                        width: 60% !important;
-                        min-width: 0 !important;
-                        height: calc(100vh - 52px) !important;
-                    }
-                    .right-panel-responsive {
-                        width: 40% !important;
-                        border-left: 1px solid #d9d9d9 !important;
-                        border-top: none !important;
-                        height: calc(100vh - 52px) !important;
-                        max-height: none !important;
-                    }
-                    .log-area-responsive {
-                        height: 120px !important;
-                        max-height: 120px !important;
-                    }
-                }
-
-                /* Î“Ã¶Ã‡Î“Ã¶Ã‡ Code preview (upload mode) Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡ */
-                .code-preview-area {
-                    flex: 1 1 auto !important;
-                    min-height: 150px !important;
-                    max-height: calc(50vh - 200px) !important;
-                    overflow-y: auto !important;
-                }
-                @media (max-height: 900px) {
-                    .code-preview-area { max-height: calc(40vh - 150px) !important; min-height: 140px !important; }
-                }
-                @media (max-height: 768px) {
-                    .code-preview-area { max-height: 200px !important; min-height: 120px !important; }
-                }
-                @media (max-height: 600px) {
-                    .code-preview-area { max-height: 150px !important; min-height: 100px !important; }
-                }
-
-                /* Î“Ã¶Ã‡Î“Ã¶Ã‡ Log area Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡ */
-                .log-area-responsive {
-                    height: 180px !important;
-                    max-height: 180px !important;
-                    min-height: 120px !important;
-                    flex-shrink: 0 !important;
-                }
-                @media (max-height: 900px) {
-                    .log-area-responsive { height: 160px !important; max-height: 160px !important; }
-                }
-                @media (max-height: 768px) {
-                    .log-area-responsive { height: 140px !important; max-height: 140px !important; }
-                }
-                @media (max-height: 600px) {
-                    .log-area-responsive { height: 120px !important; max-height: 120px !important; }
-                }
-
-                /* Î“Ã¶Ã‡Î“Ã¶Ã‡ Blockly workspace min-height Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡ */
-                .blocklyWorkspace {
-                    min-height: 350px !important;
-                }
+                .blocklyToolboxDiv { top: 0 !important; padding-top: 0 !important; }
+                .blocklyFlyout { top: 0 !important; }
+                .right-panel-responsive { display: flex !important; flex-direction: column !important; overflow: hidden !important; }
+                .stage-container-responsive { flex-shrink: 0 !important; }
+                .hide-flyout .blocklyFlyout { display: none !important; }
+                @media (max-width: 1024px) { .right-panel-responsive { width: 380px !important; } }
+                @media (max-width: 768px) { .main-container-responsive { flex-direction: column !important; } }
             `}</style>
 
-            {/* Premium Menu Bar */}
-
+            {/* ── Top MenuBar ──────────────────────────────────────────────── */}
             <MenuBar
-
                 onBack={onBack}
-
                 projectName={projectName}
-
                 onProjectNameChange={setProjectName}
-
                 mode={editorMode}
-
                 onModeChange={(m: string) => switchEditorMode(m as EditorMode)}
-
                 selectedBoard={selectedBoardName}
-
                 onBoardSelect={() => setIsBoardModalOpen(true)}
-
-                connectionStatus={isConnected ? "connected" : "disconnected"}
-
+                connectionStatus={isConnected ? 'connected' : 'disconnected'}
                 onConnect={handleConnect}
-
-                // @ts-ignore
-
                 ports={ports as any}
-
                 selectedPort={selectedPort}
-
                 onPortSelect={setSelectedPort}
-
                 onRefreshPorts={refreshPorts}
-
                 onUpload={handleUpload}
-
                 isUploading={isUploading}
-
                 onFileAction={(action: string) => {
-
                     if (action === 'new') handleNewProject();
-
                     if (action === 'save' || action === 'save_as') handleSaveProject();
-
                     if (action === 'open') handleOpenProject();
-
                 }}
-
-                onEditAction={(action: string) => addLog(`Edit action: ${action}`)}
-
+                onEditAction={(action: string) => addLog(`Edit: ${action}`)}
             />
 
-
-
-                        {/* Toolbar */}
+            {/* ── Workspace Tabs + Stage Controls toolbar ───────────────────── */}
             <EmbedToolbar
                 appMode={appMode}
                 editorMode={editorMode}
@@ -2303,85 +2125,39 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 onOpenPython={onOpenPython}
             />
 
-            {/* Sprite Library Modal */}
-            {showSpriteLibrary && (
-                <React.Suspense fallback={<div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px', color: '#855CD6' }}>Loading...</div>}>
-                    <SpriteLibrary
-                        isOpen={showSpriteLibrary}
-                        onClose={() => setShowSpriteLibrary(false)}
-                        onSelectSprite={(sprite: any) => {
-                            addSprite(sprite.id as any); // Adapt as needed
-                            setShowSpriteLibrary(false);
-                        }}
-                    />
-                </React.Suspense>
-            )}
-
-            {showBackdropLibrary && (
-                <React.Suspense fallback={<div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px', color: '#855CD6' }}>Loading...</div>}>
-                    <BackdropLibrary
-                        isOpen={showBackdropLibrary}
-                        onClose={() => setShowBackdropLibrary(false)}
-                        onSelectBackdrop={(backdrop) => handleBackdropSelect(backdrop.name, backdrop.image)}
-                    />
-                </React.Suspense>
-            )}
-
-            {/* Main Content */}
-
+            {/* ── Main content row: [Blockly workspace] + [Right panel] ─────── */}
             <div style={styles.main} className="main-container-responsive">
 
-                {/* Blockly Workspace */}
-
+                {/* ── LEFT: Blockly workspace ──────────────────────────────── */}
                 <div style={styles.workspaceContainer} className="workspace-container-responsive">
 
-
-
-                    {/* Workspace content */}
-
-                    {/* Show Blockly if:
-
-                        1. In Stage mode AND 'blocks' tab is active
-
-                        2. In Upload mode (always shows blocks)
-
-                    */}
-
+                    {/* Blockly canvas — shown in Blocks tab (both modes) */}
                     {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
-
                         <>
-
+                            {/* The Blockly div — toolbox auto-populates from getCurrentToolbox():
+                                • Stage mode  → animationToolbox (Events/Motion/Looks/Sound/Control/Sensing/Operators/Variables/My Blocks)
+                                • Upload mode → arduinoToolbox   (Events/Control/Digital/Analog/Sensors/Actuators/Serial/My Blocks) */}
                             <div
                                 ref={blocklyDiv}
                                 className={editorMode === 'stage' && workspaceTab !== 'blocks' ? 'hide-flyout' : ''}
                                 style={styles.blockly}
                             />
 
-                            {/* Add Extension Button - Premium integrated design */}
-                            {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
+                            {/* Add Extension button (stage mode only) */}
+                            {editorMode === 'stage' && (
                                 <div className="absolute bottom-3 left-3 z-[100] add-extension-btn-container">
                                     <button
                                         onClick={() => setShowExtensionLibrary(true)}
-                                        className="group flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#855CD6] to-[#9B6FE8] hover:from-[#7348C4] hover:to-[#8A5DD6] rounded-xl border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
-                                        style={{
-                                            width: '52px',
-                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                            backdropFilter: 'blur(10px)'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.width = '180px';
-                                            e.currentTarget.style.paddingRight = '16px';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.width = '52px';
-                                            e.currentTarget.style.paddingRight = '12px';
-                                        }}
+                                        className="group flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-violet-600 to-purple-600 rounded-full shadow-lg hover:shadow-xl"
+                                        style={{ width: '52px', transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)', backdropFilter: 'blur(10px)' }}
+                                        onMouseEnter={e => { e.currentTarget.style.width = '180px'; e.currentTarget.style.paddingRight = '16px'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.width = '52px'; e.currentTarget.style.paddingRight = '12px'; }}
                                         title="Add Extension"
                                     >
                                         <div className="w-8 h-8 flex items-center justify-center text-white flex-shrink-0">
                                             <Library size={20} strokeWidth={2.5} />
                                         </div>
-                                        <div className="text-left whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75">
+                                        <div className="text-left whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
                                             <div className="text-xs font-semibold text-white leading-tight">Extensions</div>
                                             <div className="text-[10px] text-white/80 leading-tight">Add blocks</div>
                                         </div>
@@ -2389,90 +2165,64 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 </div>
                             )}
 
-                            <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={() => {
-                                const flyout = workspaceRef.current?.getFlyout() as any;
-                                if (flyout?.getWorkspace()) {
-                                    flyout.getWorkspace().setScale(1.0);
-                                }
-                            }} style={undefined} />
-
-                            <WorkspaceTrash workspaceRef={workspaceRef} />
-
-                        </>
-
-                    )}
-
-
-
-                    {/* Other Tabs - Only relevant in Stage Mode */}
-
-                    {editorMode === 'stage' && workspaceTab === 'python' && (
-
-                        <div style={styles.pythonEditor}>
-
-                            <PythonEditorTab
-
-                                workspace={workspaceRef.current}
-
-                                onOpenFullIDE={() => setAppMode('python')}
-
+                            {/* Workspace zoom controls + trash */}
+                            <WorkspaceControls
+                                workspaceRef={workspaceRef}
+                                onAfterZoom={() => {
+                                    const flyout = workspaceRef.current?.getFlyout() as any;
+                                    if (flyout?.getWorkspace()) flyout.getWorkspace().setScale(1.0);
+                                }}
+                                style={undefined}
                             />
-
-                        </div>
-
+                            <WorkspaceTrash workspaceRef={workspaceRef} />
+                        </>
                     )}
 
+                    {/* Python tab — stage mode only */}
+                    {editorMode === 'stage' && workspaceTab === 'python' && (
+                        <div style={styles.pythonEditor}>
+                            <PythonEditorTab
+                                workspace={workspaceRef.current}
+                                onOpenFullIDE={() => setAppMode('python')}
+                            />
+                        </div>
+                    )}
+
+                    {/* Costumes tab — stage mode only */}
                     {editorMode === 'stage' && workspaceTab === 'costumes' && (
-
                         <div style={styles.costumesEditor}>
-                            <React.Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Loading Paint Editor...</div>}>
+                            <React.Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>}>
                                 <CostumesTab
-
                                     selectedSpriteId={selectedSpriteId}
-
                                     sprites={sprites}
-
                                     stageManager={stageManager}
-
                                     addLog={addLog}
-
                                     onClose={() => handleWorkspaceTabChange('blocks')}
-
-                                    onOpenLibrary={selectedSpriteId === 'stage' ? () => setShowBackdropLibrary(true) : undefined}
-
+                                    onOpenLibrary={selectedSpriteId === 'stage'
+                                        ? () => setShowBackdropLibrary(true)
+                                        : () => setShowSpriteLibrary(true)}
                                 />
                             </React.Suspense>
                         </div>
-
                     )}
 
+                    {/* Sounds tab — stage mode only */}
                     {editorMode === 'stage' && workspaceTab === 'sounds' && (
-
                         <div style={styles.soundsEditor}>
-                            <React.Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Loading Sound Editor...</div>}>
+                            <React.Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>}>
                                 <SoundsTab
-
                                     selectedSpriteId={selectedSpriteId}
-
                                     sprites={sprites}
-
                                     stageManager={stageManager}
-
                                     addLog={addLog}
-
                                     onClose={() => handleWorkspaceTabChange('blocks')}
-
                                 />
                             </React.Suspense>
                         </div>
-
                     )}
-
                 </div>
 
-
-
-                {/* Right Panel */}
+                {/* ── RIGHT: Stage canvas + SpritePanel (stage) OR Code panel (upload) ── */}
                 <EmbedRightPanel
                     editorMode={editorMode}
                     stageLayout={stageLayout}
@@ -2486,8 +2236,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     isCameraOn={isCameraOn}
                     showGrid={showGrid}
                     isRunning={isRunning}
-                    compiledScripts={compiledScripts}
-                    workspaceRef={workspaceRef}
                     askState={askState}
                     onAskSubmit={handleAskSubmit}
                     onSelectSprite={handleSpriteSelect}
@@ -2525,16 +2273,74 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     isConnected={isConnected}
                     onSendSerial={handleSendSerial}
                     onUpload={handleUpload}
-                    addLog={addLog}
                     onRun={handleRunClick}
                     onStop={handleStopClick}
                     onExitFullscreen={handleFullscreen}
                 />
-
             </div>
 
-        </div>
+            {/* ── All modals and dialogs ────────────────────────────────────── */}
+            <EmbedDialogs
+                workspace={workspaceRef.current}
+                selectedSpriteId={selectedSpriteId}
+                isMakeVariableOpen={isMakeVariableOpen}
+                setIsMakeVariableOpen={setIsMakeVariableOpen}
+                isMakeListOpen={isMakeListOpen}
+                setIsMakeListOpen={setIsMakeListOpen}
+                isMakeTableOpen={isMakeTableOpen}
+                setIsMakeTableOpen={setIsMakeTableOpen}
+                isMakeBlockOpen={isMakeBlockOpen}
+                setIsMakeBlockOpen={setIsMakeBlockOpen}
+                onCreateVariable={handleCreateVariable}
+                onCreateList={handleCreateList}
+                onCreateTable={handleCreateTable}
+                onCreateBlock={handleCreateBlock}
+                isBoardModalOpen={isBoardModalOpen}
+                setIsBoardModalOpen={setIsBoardModalOpen}
+                selectedBoard={selectedBoard}
+                onSelectBoard={(id, name) => { setSelectedBoard(id); setSelectedBoardName(name); setIsBoardModalOpen(false); }}
+                showSpriteLibrary={showSpriteLibrary}
+                setShowSpriteLibrary={setShowSpriteLibrary}
+                showBackdropLibrary={showBackdropLibrary}
+                setShowBackdropLibrary={setShowBackdropLibrary}
+                showExtensionLibrary={showExtensionLibrary}
+                setShowExtensionLibrary={setShowExtensionLibrary}
+                onSelectSprite={addSpriteFromLibrary}
+                onPaintSprite={() => setShowSpriteLibrary(false)}
+                onSelectBackdrop={handleBackdropSelect}
+                onAddExtension={handleAddExtension}
+                isUploading={isUploading}
+                uploadProgress={uploadProgress}
+                showUnsavedModal={showUnsavedModal}
+                onConfirmUnsaved={confirmUnsavedAction}
+                onCancelUnsaved={() => setShowUnsavedModal(false)}
+            />
 
+            {/* ── Custom Blockly prompt dialog ──────────────────────────────── */}
+            {promptState.isOpen && (
+                <div style={styles.modalOverlay}>
+                    <div style={styles.modalContent}>
+                        <div style={styles.modalTitle}>
+                            <span>{promptState.message}</span>
+                            <button onClick={handlePromptCancel} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: 18 }}>✕</button>
+                        </div>
+                        <div style={{ padding: '16px' }}>
+                            <input
+                                style={styles.modalInput}
+                                value={promptInput}
+                                onChange={e => setPromptInput(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') handlePromptSubmit(); if (e.key === 'Escape') handlePromptCancel(); }}
+                                autoFocus
+                            />
+                        </div>
+                        <div style={{ ...styles.modalButtons, padding: '0 16px 16px' }}>
+                            <button style={styles.modalCancel} onClick={handlePromptCancel}>Cancel</button>
+                            <button style={styles.modalSubmit} onClick={handlePromptSubmit}>OK</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 
 };

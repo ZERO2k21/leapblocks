@@ -16,7 +16,7 @@
  *   • Cards auto-align left-to-right, top-to-bottom
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Sprite, SpriteType } from "./Sprite";
 import { ActionMenu } from "./ActionMenu";
 import type { StageManager } from '../../server/engine/stageManager';
@@ -51,10 +51,13 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   onOpenSpriteLibrary,
   onOpenBackdropLibrary,
   stageManager,
-  backdropVersion: _backdropVersion,
+  backdropVersion,   // used to force re-render when backdrop changes
   isFullscreen = false,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
+  // Ref to the selected sprite card — used to scroll it into view on selection
+  const selectedCardRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const selectedSprite = sprites.find((s) => s.id === selectedSpriteId);
   const isStageSelected = selectedSpriteId === "stage";
@@ -68,8 +71,17 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
     return acc;
   }, {});
 
+  // Re-read backdrop on every backdropVersion change so the thumbnail updates
   const backdropCount = stageManager.getAllBackdrops().length;
-  const currentBackdropSrc = stageManager.getCurrentBackdrop()?.src;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const currentBackdropSrc = stageManager.getCurrentBackdrop()?.src ?? null;
+
+  // Scroll the newly selected sprite card into view
+  useEffect(() => {
+    if (selectedCardRef.current && gridRef.current) {
+      selectedCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [selectedSpriteId]);
 
   const handleAddSprite = (type: SpriteType) => { onAddSprite(type); setShowPicker(false); };
 
@@ -196,6 +208,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
            * flex-1 + maxHeight: the grid grows up to 160px then scrolls.
            */}
           <div
+            ref={gridRef}
             className={`p-2.5 grid grid-cols-5 gap-2 content-start
               overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent`}
             style={{ flex: '1 1 0', maxHeight: '160px' }}
@@ -207,6 +220,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
               return (
                 <div
                   key={sprite.id}
+                  ref={isSelected ? selectedCardRef : null}
                   onClick={() => onSelectSprite(sprite.id)}
                   className={`relative group flex flex-col rounded-xl cursor-pointer
                     transition-all duration-150 overflow-visible border-2
@@ -384,6 +398,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
               >
                 {currentBackdropSrc ? (
                   <img
+                    key={`backdrop-${backdropVersion}-${currentBackdropSrc}`}
                     src={currentBackdropSrc}
                     alt="backdrop"
                     className="w-full h-full object-cover"

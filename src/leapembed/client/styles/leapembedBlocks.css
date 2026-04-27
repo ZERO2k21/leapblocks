@@ -329,17 +329,60 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* Fix toolbox categories overlapping with top MenuBar */
+/* Override juniorBlocks.css horizontal toolbox styles for vertical layout */
 .blocklyToolboxDiv {
     top: 0 !important;
     padding-top: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    border-top: none !important;
+    border-right: 1px solid #e8e8e8 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
 }
 
-/* Fix flyout overlapping with top MenuBar */
+/* Remove the old 58px offset — MenuBar is in the layout flow, not fixed */
+.blocklyToolboxContents {
+    padding-top: 0 !important;
+    padding-bottom: 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* ── Pictoblox category row ─────────────────────────────────────────────── */
+.blocklyTreeRow {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 6px 8px !important;
+    cursor: pointer !important;
+    border-radius: 6px !important;
+    margin: 2px 4px !important;
+    transition: background 0.15s ease !important;
+    min-height: 44px !important;
+    width: auto !important;
+}
+
+.blocklyTreeRow:hover {
+    background: rgba(0,0,0,0.06) !important;
+}
+
+.blocklyTreeSelected {
+    background: rgba(0,0,0,0.08) !important;
+}
+
+/* Category label text */
+.blocklyTreeLabel {
+    font-family: 'Segoe UI', Inter, system-ui, sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #575E75 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Flyout stays flush */
 .blocklyFlyout {
     top: 0 !important;
-}
-
-/* Ensure toolbox content starts below the MenuBar (58px height) */
-.blocklyToolboxContents {
-    padding-top: 58px !important;
 }
