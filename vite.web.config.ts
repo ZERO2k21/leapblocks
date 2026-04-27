@@ -49,7 +49,7 @@ export default defineConfig({
             './src/components/SpriteLibrary.tsx',
             './src/components/BackdropLibrary.tsx',
             './src/components/SoundLibrary.tsx',
-            './src/junior/components/JuniorExtensionLibrary.jsx',
+            './src/leapignite/client/components/JuniorExtensionLibrary.jsx',
           ],
 
           // Extensions - lazy load these

@@ -7,7 +7,7 @@ import React from 'react';
 import SpriteCard from './SpriteCard';
 import SceneCard from './SceneCard';
 import { Flag, RotateCw, Camera, CameraOff, Grid3X3, Maximize, Minimize, Square, Circle, ScanFace, Image as ImageIcon, MicOff, Shrink } from 'lucide-react';
-import Logo from '../../components/Logo';
+import Logo from '../../../components/Logo';
 
 export default function RightPanel({
     children,

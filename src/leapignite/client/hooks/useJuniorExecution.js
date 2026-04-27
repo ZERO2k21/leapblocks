@@ -6,9 +6,9 @@
 import { useEffect, useRef, useState } from "react";
 import Blockly from "@blockly-runtime";
 import { javascriptGenerator } from "@blockly-runtime";
-import { Interpreter as LeapInterpreter, ExecutionStop } from "../engine/Interpreter";
-import { executionEngine } from "../../engine/ExecutionEngine";
-import { WorkspaceValidator } from "../engine/WorkspaceValidator";
+import { Interpreter as LeapInterpreter, ExecutionStop } from "../../server/engine/Interpreter";
+import { executionEngine } from "../../../engine/ExecutionEngine";
+import { WorkspaceValidator } from "../../server/engine/WorkspaceValidator";
 
 export function useJuniorExecution({
     workspaceRef,

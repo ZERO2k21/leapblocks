@@ -5,7 +5,7 @@
  */
 import React, { useState } from 'react';
 import { X, Paintbrush, Image } from 'lucide-react';
-import { leapBackdrops } from '../../components/generated_leap_backdrops';
+import { leapBackdrops } from '../../../components/generated_leap_backdrops';
 
 // Pre-built backdrops available in the library
 const PRESET_BACKDROPS = [

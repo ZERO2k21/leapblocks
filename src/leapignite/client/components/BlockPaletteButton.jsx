@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useRef } from 'react';
-import { previewActions } from "../engine/previewActions";
+import { previewActions } from "../../server/engine/previewActions";
 
 let lastPreview = 0;
 

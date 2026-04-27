@@ -28,7 +28,7 @@ const CATEGORIES = [
     { id: 'Patterns', color: '#F97316' },
 ];
 
-const mappedleapBackdrops = leapBackdrops.map((backdrop: any) => {
+const mappedleapBackdrops = leapBackdrops.map((backdrop: any, index: number) => {
     const tags = Array.isArray(backdrop.tags) ? backdrop.tags.map((t: string) => t.toLowerCase()) : [];
     let category = 'Outdoors';
 
@@ -42,6 +42,8 @@ const mappedleapBackdrops = leapBackdrops.map((backdrop: any) => {
 
     return {
         ...backdrop,
+        // Guarantee a unique, stable id — use existing id/name or fall back to index
+        id: backdrop.id ?? backdrop.name ?? `leap_backdrop_${index}`,
         image: `/assets/backdrops/${backdrop.md5ext || backdrop.md5}`,
         category
     } as BackdropEntry;
@@ -59,7 +61,13 @@ const PRESET_BACKDROPS: BackdropEntry[] = [
     { id: 'space_photo', name: 'Galaxy', image: 'assets/backdrops/Space.png', category: 'Space' },
 ];
 
-const FULL_CATALOG = [...PRESET_BACKDROPS, ...mappedleapBackdrops];
+// Deduplicate by id — preset backdrops take priority over generated ones
+const seen = new Set<string>();
+const FULL_CATALOG = [...PRESET_BACKDROPS, ...mappedleapBackdrops].filter(b => {
+    if (seen.has(b.id)) return false;
+    seen.add(b.id);
+    return true;
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // COMPONENT

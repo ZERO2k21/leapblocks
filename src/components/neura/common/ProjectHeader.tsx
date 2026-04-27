@@ -7,13 +7,14 @@ import React from 'react';
 import { Home, Save, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning } from 'lucide-react';
 
 interface ProjectHeaderProps {
-    icon: string;
-    title: string;
+    icon?: string;
+    title?: string;
     onBack?: () => void;
     onSave?: () => void;
     onUploadFolder?: () => void;
     projectName?: string;
     onProjectNameChange?: (name: string) => void;
+    showMiddleSection?: boolean;
 }
 
 export default function ProjectHeader({
@@ -24,6 +25,7 @@ export default function ProjectHeader({
     onUploadFolder,
     projectName,
     onProjectNameChange,
+    showMiddleSection = true,
 }: ProjectHeaderProps) {
     return (
         <div style={{
@@ -36,13 +38,14 @@ export default function ProjectHeader({
             boxShadow: 'rgba(8, 10, 37, 0.45) 0px 4px 20px, rgba(255, 255, 255, 0.06) 0px -1px 0px inset',
             zIndex: 100,
             borderBottom: '1px solid rgba(100, 180, 255, 0.1)',
-            userSelect: 'none'
+            userSelect: 'none',
+            flexShrink: 0
         }}>
             {/* ── LEFT SECTION ────────────────────────────────────────────────────────── */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 0%', minWidth: '0px' }}>
                 {onBack && (
                     <button
-                        title="Back to Projects"
+                        title="Back"
                         onClick={onBack}
                         style={{
                             display: 'flex',
@@ -116,65 +119,67 @@ export default function ProjectHeader({
             </div>
 
             {/* ── MIDDLE SECTION ──────────────────────────────────────────────────────── */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '0px 16px' }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    height: '40px',
-                    background: 'rgba(0, 0, 0, 0.25)',
-                    borderRadius: '20px',
-                    paddingLeft: '18px',
-                    paddingRight: '5px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    gap: '8px',
-                    transition: '0.2s'
-                }}>
-                    <span style={{ fontSize: '14px', opacity: 0.45 }}>{icon}</span>
-                    <input
-                        placeholder={title}
-                        type="text"
-                        value={projectName || title}
-                        onChange={(e) => onProjectNameChange && onProjectNameChange(e.target.value)}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'rgb(255, 255, 255)',
-                            fontSize: '14px',
-                            fontWeight: 700,
-                            fontFamily: '"Segoe UI", Inter, sans-serif',
-                            width: '170px',
-                            textAlign: 'center',
-                            outline: 'none',
-                            letterSpacing: '0.01em'
-                        }}
-                    />
-                    {onSave && (
-                        <button
-                            title="Save Project"
-                            onClick={onSave}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '0px 16px', flex: '1 1 auto' }}>
+                {(showMiddleSection && title) && (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        height: '40px',
+                        background: 'rgba(0, 0, 0, 0.25)',
+                        borderRadius: '20px',
+                        paddingLeft: '18px',
+                        paddingRight: '5px',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        gap: '8px',
+                        transition: '0.2s'
+                    }}>
+                        <span style={{ fontSize: '14px', opacity: 0.45 }}>{icon || '🧠'}</span>
+                        <input
+                            placeholder={title}
+                            type="text"
+                            value={projectName || title}
+                            onChange={(e) => onProjectNameChange && onProjectNameChange(e.target.value)}
                             style={{
-                                background: 'rgb(34, 197, 94)',
+                                background: 'transparent',
                                 border: 'none',
-                                borderRadius: '50%',
-                                width: '42px',
-                                height: '42px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
                                 color: 'rgb(255, 255, 255)',
-                                boxShadow: 'rgba(0, 0, 0, 0.3) 0px 4px 6px -1px',
-                                transition: 'transform 0.2s',
-                                flexShrink: 0,
-                                transform: 'scale(1)'
+                                fontSize: '14px',
+                                fontWeight: 700,
+                                fontFamily: '"Segoe UI", Inter, sans-serif',
+                                width: '170px',
+                                textAlign: 'center',
+                                outline: 'none',
+                                letterSpacing: '0.01em'
                             }}
-                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.1)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'none'; }}
-                        >
-                            <Save size={18} strokeWidth={2.8} />
-                        </button>
-                    )}
-                </div>
+                        />
+                        {onSave && (
+                            <button
+                                title="Save Project"
+                                onClick={onSave}
+                                style={{
+                                    background: 'rgb(34, 197, 94)',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '42px',
+                                    height: '42px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: 'rgb(255, 255, 255)',
+                                    boxShadow: 'rgba(0, 0, 0, 0.3) 0px 4px 6px -1px',
+                                    transition: 'transform 0.2s',
+                                    flexShrink: 0,
+                                    transform: 'scale(1)'
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.1)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'none'; }}
+                            >
+                                <Save size={18} strokeWidth={2.8} />
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* ── RIGHT SECTION ───────────────────────────────────────────────────────── */}

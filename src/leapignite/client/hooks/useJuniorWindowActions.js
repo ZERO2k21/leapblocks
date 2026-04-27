@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import { useEffect } from "react";
-import { ExecutionStop } from "../engine/Interpreter";
+import { ExecutionStop } from "../../server/engine/Interpreter";
 
 export function useJuniorWindowActions({
     scenes,

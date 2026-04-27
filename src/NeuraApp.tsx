@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import ProjectHeader from './components/neura/common/ProjectHeader';
 import MyProjectsHeader from './components/neura/dashboard/MyProjectsHeader';
 import EmptyStateIllustration from './components/neura/dashboard/EmptyStateIllustration';
 import ProjectCard from './components/neura/dashboard/ProjectCard';
@@ -73,63 +74,36 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
         }
     };
 
-    return (
-        <div className="h-screen bg-gray-50 overflow-hidden">
-            {/* Dashboard view */}
-            {view === 'dashboard' && (
-                <div className="h-full flex flex-col">
-                    {/* Top bar - Updated to match new design */}
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        height: '64px',
-                        padding: '0px 18px',
-                        background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
-                        boxShadow: 'rgba(8, 10, 37, 0.45) 0px 4px 20px, rgba(255, 255, 255, 0.06) 0px -1px 0px inset',
-                        zIndex: 100,
-                        borderBottom: '1px solid rgba(100, 180, 255, 0.1)',
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            {onBack && (
-                                <button
-                                    onClick={onBack}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        width: '40px',
-                                        height: '40px',
-                                        background: 'rgba(255, 255, 255, 0.1)',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        borderRadius: '12px',
-                                        color: '#fff',
-                                        cursor: 'pointer',
-                                        transition: '0.2s',
-                                    }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)')}
-                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-                                >
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                                    </svg>
-                                </button>
-                            )}
-                            <div style={{ height: '32px', width: '1px', background: 'rgba(255, 255, 255, 0.1)' }}></div>
-                            <img src="assets/leaplab_logo_transparent.png" alt="LeapLab" style={{ height: '52px' }} />
-                            <div style={{ display: 'flex', flexDirection: 'column', marginLeft: '10px', lineHeight: '1.1' }}>
-                                <span style={{ color: '#FFD500', fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.18em' }}>LEAPLAB</span>
-                                <span style={{ color: '#fff', fontSize: '16px', fontWeight: 900, letterSpacing: '0.08em' }}>NEURA ML</span>
-                            </div>
-                        </div>
-                    </div>
+    const getHeaderProps = () => {
+        if (view === 'dashboard' || view === 'create') {
+            return {
+                showMiddleSection: false,
+                onBack: view === 'create' ? handleBackToDashboard : onBack,
+            };
+        }
+        return {
+            showMiddleSection: true,
+            icon: '🧠',
+            title: currentProjectType?.replace('-', ' ') || 'ML Project',
+            projectName: currentProject?.name,
+            onBack: handleBackToDashboard,
+            onSave: () => console.log('Save project'),
+        };
+    };
 
-                    {/* Dashboard content */}
-                    <div className="flex-1 overflow-auto p-8">
+    return (
+        <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+            {/* Unified Topbar shared across all views */}
+            <ProjectHeader {...getHeaderProps()} />
+
+            <div className="flex-1 overflow-y-auto relative">
+                {/* Dashboard view */}
+                {view === 'dashboard' && (
+                    <div className="p-8">
                         <MyProjectsHeader onCreateNew={handleCreateNew} />
 
                         {projects.length === 0 ? (
-                            <EmptyStateIllustration />
+                            <EmptyStateIllustration onCreateNew={handleCreateNew} />
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {projects.map((project) => (
@@ -142,19 +116,19 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
                             </div>
                         )}
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Create project modal */}
-            {view === 'create' && (
-                <CreateProjectModal
-                    onClose={handleBackToDashboard}
-                    onSelectType={handleSelectType}
-                />
-            )}
+                {/* Create project modal (now rendered full screen inside flex-1) */}
+                {view === 'create' && (
+                    <CreateProjectModal
+                        onClose={handleBackToDashboard}
+                        onSelectType={handleSelectType}
+                    />
+                )}
 
-            {/* Project view */}
-            {view === 'project' && renderProjectComponent()}
+                {/* Project view */}
+                {view === 'project' && renderProjectComponent()}
+            </div>
         </div>
     );
 }
