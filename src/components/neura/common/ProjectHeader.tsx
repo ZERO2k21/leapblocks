@@ -78,13 +78,13 @@ export default function ProjectHeader({
                     filter: 'drop-shadow(rgba(80, 200, 255, 0.3) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.3) 0px 2px 6px)'
                 }}>
                     <img
-                        alt="LeapLab"
-                        src="assets/leaplab_logo_transparent.png"
+                        alt="leapembed"
+                        src="assets/leapembed_logo_transparent.png"
                         style={{ height: '52px', objectFit: 'contain' }}
                     />
                     <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', marginLeft: '10px', lineHeight: '1.1' }}>
                         <span style={{ color: 'rgb(255, 213, 0)', fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
-                            LEAPLAB
+                            leapembed
                         </span>
                         <span style={{ color: 'rgb(255, 255, 255)', fontSize: '16px', fontWeight: 900, letterSpacing: '0.08em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
                             NEURA ML

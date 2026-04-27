@@ -7,7 +7,6 @@ import React, { useState } from 'react';
 import { X, Paintbrush, Image } from 'lucide-react';
 import { leapBackdrops } from '../../../components/generated_leap_backdrops';
 
-// Pre-built backdrops available in the library
 const PRESET_BACKDROPS = [
     { id: 'maze', name: 'Maze', src: 'assets/backdrops/maze.svg', color: '#FFD54F' },
     { id: 'park', name: 'Park', src: 'assets/backdrops/park.svg', color: '#66BB6A' },
@@ -47,53 +46,30 @@ interface BackdropChooserProps {
 }
 
 export default function BackdropChooser({ onSelect, onPaint, onClose }: BackdropChooserProps) {
-    const [tab, setTab] = useState<'backdrops' | 'colors'>('backdrops'); // 'backdrops' | 'colors'
+    const [tab, setTab] = useState<'backdrops' | 'colors'>('backdrops');
     const [hoveredId, setHoveredId] = useState<string | null>(null);
 
     return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-            background: 'rgba(0,0,0,0.55)', zIndex: 3000,
-            display: 'flex', justifyContent: 'center', alignItems: 'center',
-            backdropFilter: 'blur(4px)',
-        }}>
-            <div style={{
-                background: 'white', width: '100vw', height: '100vh',
-                display: 'flex', flexDirection: 'column',
-                overflow: 'hidden',
-            }}>
+        <div className="fixed inset-0 bg-black/55 z-[3000] flex justify-center items-center backdrop-blur-[4px]">
+            <div className="bg-white w-screen h-screen flex flex-col overflow-hidden">
                 {/* Header */}
-                <div style={{
-                    background: 'linear-gradient(135deg, #7B4FC4 0%, #9B6FE4 100%)',
-                    padding: '16px 24px',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="bg-gradient-to-br from-[#7B4FC4] to-[#9B6FE4] px-6 py-4 flex justify-between items-center">
+                    <div className="flex items-center gap-2.5">
                         <Image size={22} color="white" />
-                        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'white' }}>
+                        <h2 className="m-0 text-lg font-bold text-white">
                             Choose a Backdrop
                         </h2>
                     </div>
                     <button
                         onClick={onClose}
-                        style={{
-                            background: 'rgba(255,255,255,0.2)', border: 'none',
-                            borderRadius: '50%', width: '32px', height: '32px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', transition: 'all 0.15s',
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.3)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.2)')}
+                        className="bg-white/20 border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer transition-all hover:bg-white/30"
                     >
                         <X size={18} color="white" />
                     </button>
                 </div>
 
                 {/* Tab Bar */}
-                <div style={{
-                    display: 'flex', borderBottom: '1px solid #eee',
-                    background: '#fafafa',
-                }}>
+                <div className="flex border-b border-gray-200 bg-[#fafafa]">
                     {[
                         { id: 'backdrops', label: '🖼️ Backdrops' },
                         { id: 'colors', label: '🎨 Solid Colors' },
@@ -101,15 +77,11 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }: Backdrop
                         <button
                             key={t.id}
                             onClick={() => setTab(t.id as 'backdrops' | 'colors')}
-                            style={{
-                                flex: 1, padding: '12px 16px',
-                                background: tab === t.id ? 'white' : 'transparent',
-                                border: 'none',
-                                borderBottom: tab === t.id ? '3px solid #7B4FC4' : '3px solid transparent',
-                                color: tab === t.id ? '#7B4FC4' : '#999',
-                                fontWeight: 700, fontSize: '14px',
-                                cursor: 'pointer', transition: 'all 0.15s',
-                            }}
+                            className={`flex-1 px-4 py-3 border-none text-sm font-bold cursor-pointer transition-all ${
+                                tab === t.id
+                                    ? 'bg-white border-b-[3px] border-b-[#7B4FC4] text-[#7B4FC4]'
+                                    : 'bg-transparent border-b-[3px] border-b-transparent text-[#999]'
+                            }`}
                         >
                             {t.label}
                         </button>
@@ -117,80 +89,47 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }: Backdrop
                 </div>
 
                 {/* Content */}
-                <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+                <div className="p-5 overflow-y-auto flex-1">
                     {tab === 'backdrops' && (
                         <>
-                            {/* Paint custom button */}
+                            {/* Paint custom */}
                             <div
                                 onClick={onPaint}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '10px',
-                                    padding: '12px 16px', marginBottom: '16px',
-                                    background: 'linear-gradient(135deg, #7B4FC4 0%, #9B6FE4 100%)',
-                                    borderRadius: '12px', cursor: 'pointer',
-                                    transition: 'all 0.15s', color: 'white',
-                                }}
-                                onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
-                                onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                                className="flex items-center gap-2.5 px-4 py-3 mb-4 bg-gradient-to-br from-[#7B4FC4] to-[#9B6FE4] rounded-xl cursor-pointer transition-all text-white hover:scale-[1.02]"
                             >
                                 <Paintbrush size={20} />
                                 <div>
-                                    <div style={{ fontWeight: 700, fontSize: '14px' }}>Paint Custom Backdrop</div>
-                                    <div style={{ fontSize: '11px', opacity: 0.8 }}>Draw your own scene</div>
+                                    <div className="font-bold text-sm">Paint Custom Backdrop</div>
+                                    <div className="text-[11px] opacity-80">Draw your own scene</div>
                                 </div>
                             </div>
 
                             {/* Backdrop Grid */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(3, 1fr)',
-                                gap: '14px',
-                            }}>
+                            <div className="grid grid-cols-3 gap-3.5">
                                 {BACKDROP_LIBRARY.map(bg => (
                                     <div
                                         key={bg.id}
                                         onClick={() => onSelect(bg.name, bg.src)}
                                         onMouseEnter={() => setHoveredId(bg.id)}
                                         onMouseLeave={() => setHoveredId(null)}
-                                        style={{
-                                            cursor: 'pointer',
-                                            borderRadius: '12px',
-                                            overflow: 'hidden',
-                                            border: hoveredId === bg.id ? '3px solid #7B4FC4' : '2px solid #e0e0e0',
-                                            transition: 'all 0.2s',
-                                            transform: hoveredId === bg.id ? 'scale(1.03)' : 'scale(1)',
-                                            boxShadow: hoveredId === bg.id
-                                                ? '0 6px 20px rgba(123,79,196,0.25)'
-                                                : '0 2px 6px rgba(0,0,0,0.06)',
-                                        }}
+                                        className={`cursor-pointer rounded-xl overflow-hidden transition-all duration-200 ${
+                                            hoveredId === bg.id
+                                                ? 'border-[3px] border-[#7B4FC4] scale-[1.03] shadow-[0_6px_20px_rgba(123,79,196,0.25)]'
+                                                : 'border-2 border-[#e0e0e0] scale-100 shadow-[0_2px_6px_rgba(0,0,0,0.06)]'
+                                        }`}
                                     >
-                                        {/* Preview */}
-                                        <div style={{
-                                            width: '100%',
-                                            paddingTop: '75%',
-                                            position: 'relative',
-                                            background: bg.color,
-                                        }}>
+                                        <div
+                                            className="w-full relative"
+                                            style={{ paddingTop: '75%', background: bg.color }}
+                                        >
                                             <img
                                                 src={bg.src}
                                                 alt={bg.name}
-                                                style={{
-                                                    position: 'absolute', top: 0, left: 0,
-                                                    width: '100%', height: '100%',
-                                                    objectFit: 'cover',
-                                                }}
+                                                className="absolute inset-0 w-full h-full object-cover"
                                                 onError={e => { (e.currentTarget.style.display = 'none'); }}
                                             />
                                         </div>
-                                        {/* Label */}
-                                        <div style={{
-                                            padding: '8px 10px',
-                                            fontSize: '12px',
-                                            fontWeight: 700,
-                                            color: '#444',
-                                            textAlign: 'center',
-                                            background: 'white',
-                                        }}>
+                                        <div className="px-2.5 py-2 text-xs font-bold text-[#444] text-center bg-white">
                                             {bg.name}
                                         </div>
                                     </div>
@@ -200,41 +139,22 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }: Backdrop
                     )}
 
                     {tab === 'colors' && (
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(4, 1fr)',
-                            gap: '14px',
-                        }}>
+                        <div className="grid grid-cols-4 gap-3.5">
                             {SOLID_COLORS.map(c => (
                                 <div
                                     key={c.name}
                                     onClick={() => onSelect(c.name, null, c.color)}
-                                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
-                                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                                    style={{
-                                        cursor: 'pointer',
-                                        borderRadius: '12px',
-                                        overflow: 'hidden',
-                                        border: '2px solid #e0e0e0',
-                                        transition: 'all 0.2s',
-                                        boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
-                                    }}
+                                    className="cursor-pointer rounded-xl overflow-hidden border-2 border-[#e0e0e0] transition-all duration-200 shadow-[0_2px_6px_rgba(0,0,0,0.06)] hover:scale-105"
                                 >
-                                    <div style={{
-                                        width: '100%',
-                                        paddingTop: '75%',
-                                        background: c.color,
-                                        border: c.color === '#FFFFFF' ? '1px solid #eee' : 'none',
-                                        borderRadius: '10px 10px 0 0',
-                                    }} />
-                                    <div style={{
-                                        padding: '8px',
-                                        fontSize: '11px',
-                                        fontWeight: 700,
-                                        color: '#555',
-                                        textAlign: 'center',
-                                        background: 'white',
-                                    }}>
+                                    <div
+                                        className="w-full rounded-t-[10px]"
+                                        style={{
+                                            paddingTop: '75%',
+                                            background: c.color,
+                                            border: c.color === '#FFFFFF' ? '1px solid #eee' : 'none',
+                                        }}
+                                    />
+                                    <div className="p-2 text-[11px] font-bold text-[#555] text-center bg-white">
                                         {c.name}
                                     </div>
                                 </div>

@@ -4,7 +4,6 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import '../styles/juniorExtensionLibrary.css';
 
 interface Extension {
     id: string;
@@ -147,40 +146,57 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }: J
     })).filter(section => section.extensions.length > 0);
 
     return (
-        <div className="jel-modal-overlay">
+        <div className="fixed inset-0 bg-[#e8d9f5] z-[1000] font-[Nunito,Segoe_UI,Tahoma,Geneva,Verdana,sans-serif] flex flex-col">
+            <style>{`
+                /* Scrollbar */
+                .jel-content::-webkit-scrollbar { width: 8px; }
+                .jel-content::-webkit-scrollbar-track { background: transparent; }
+                .jel-content::-webkit-scrollbar-thumb { background: #c9a8e8; border-radius: 10px; }
+                .jel-content::-webkit-scrollbar-thumb:hover { background: #a07dc5; }
+                
+                @keyframes iframeFadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes iframePopIn {
+                    from { opacity: 0; transform: scale(0.85) translateY(20px); }
+                    to { opacity: 1; transform: scale(1) translateY(0); }
+                }
+            `}</style>
+
             {/* Header */}
-            <div className="jel-header">
-                <button className="jel-back-btn" onClick={onClose}>
+            <div className="bg-[#4a1580] text-white h-[54px] flex items-center justify-between px-6 sticky top-0 z-[100] shadow-[0_3px_12px_rgba(0,0,0,0.25)]">
+                <button className="bg-transparent border-none text-white font-[inherit] font-bold text-[15px] flex items-center gap-2 cursor-pointer opacity-90 transition-opacity duration-200 px-2 py-1 hover:opacity-100" onClick={onClose}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
                         <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
                     Back
                 </button>
-                <div className="jel-title">Choose an Extension</div>
-                <button className="jel-docs-btn">Read Documentation</button>
+                <div className="text-lg font-extrabold tracking-[0.5px]">Choose an Extension</div>
+                <button className="bg-[#6b2fa0] text-white border-none rounded-[30px] px-[18px] py-2 font-[inherit] font-bold text-sm cursor-pointer transition-colors duration-200 hover:bg-[#8840c2]">Read Documentation</button>
             </div>
 
             {/* Filter Bar */}
-            <div className="jel-controls-bar">
-                <div className="jel-search-container">
-                    <svg className="jel-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="bg-[#c9a8e8] px-6 py-3.5 flex items-center gap-4 flex-wrap">
+                <div className="bg-white rounded-[30px] px-4 py-[7px] flex items-center gap-2 shadow-[0_2px_6px_rgba(0,0,0,0.1)] min-w-[200px]">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
                     <input
                         type="text"
-                        className="jel-search-input"
+                        className="border-none outline-none bg-transparent font-[inherit] text-sm text-[#1a1a2e] w-[160px] placeholder-[#bbb]"
                         placeholder="Search extensions..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
-                <div className="jel-filter-group">
+                <div className="flex gap-2 flex-wrap">
                     {FILTERS.map(f => (
                         <button
                             key={f.key}
-                            className={`jel-filter-btn ${activeFilter === f.key ? 'active' : ''}`}
+                            className={`border-none text-white font-[inherit] font-bold text-[13px] px-[18px] py-2 rounded-[30px] cursor-pointer transition-all duration-200 hover:scale-105 ${activeFilter === f.key ? 'bg-[#e84545]' : 'bg-[#6b2fa0]'}`}
                             onClick={() => setActiveFilter(f.key)}
                         >
                             {f.label}
@@ -190,32 +206,32 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }: J
             </div>
 
             {/* Extension Grid */}
-            <div className="jel-content">
+            <div className="jel-content flex-1 overflow-y-auto px-7 pt-6 pb-3 scroll-smooth">
                 {groupedSections.map(section => (
                     <div key={section.key}>
-                        <div className="jel-section-label">{section.label}</div>
-                        <div className="jel-grid">
+                        <div className="text-lg font-black text-[#4a1580] pb-1.5 border-b-[3px] border-[#c9a8e8] mt-5 mb-[18px] first:mt-0">{section.label}</div>
+                        <div className="grid grid-cols-[repeat(auto-fill,minmax(270px,1fr))] gap-5 mb-7 max-w-[1300px]">
                             {section.extensions.map(ext => (
                                 <div
                                     key={ext.id}
-                                    className="jel-card"
+                                    className="bg-white rounded-[14px] overflow-hidden shadow-[0_4px_18px_rgba(74,21,128,0.10)] cursor-pointer transition-all duration-200 no-underline text-inherit block relative group hover:-translate-y-[5px] hover:scale-[1.01] hover:shadow-[0_12px_32px_rgba(74,21,128,0.18)] active:-translate-y-[2px] active:scale-[0.99]"
                                     onClick={() => handleCardClick(ext)}
                                 >
-                                    <div className="jel-card-banner" style={{ background: ext.color }}>
-                                        <span className="jel-card-emoji">{ext.emoji}</span>
+                                    <div className="w-full h-[160px] flex items-center justify-center relative overflow-hidden" style={{ background: ext.color }}>
+                                        <span className="text-[56px] drop-shadow-[0_3px_8px_rgba(0,0,0,0.18)] z-[2] transition-transform duration-300 group-hover:scale-[1.12] group-hover:-rotate-3">{ext.emoji}</span>
                                         {ext.badge && (
-                                            <span className="jel-card-badge">{ext.badge}</span>
+                                            <span className="absolute top-2.5 right-2.5 bg-[#3dba7e] text-white text-[11px] font-extrabold px-2.5 py-[3px] rounded-[20px] tracking-[0.5px] z-[3]">{ext.badge}</span>
                                         )}
                                         {ext.requires && (
-                                            <span className="jel-card-requires">{ext.requires}</span>
+                                            <span className="absolute bottom-2.5 right-2.5 bg-white/85 text-[#1a1a2e] text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 z-[3]">{ext.requires}</span>
                                         )}
-                                        <div className="jel-card-icon" style={{ backgroundColor: ext.iconBg }}>
+                                        <div className="absolute bottom-2.5 left-2.5 w-[42px] h-[42px] rounded-[10px] flex items-center justify-center text-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.18)] z-[3]" style={{ backgroundColor: ext.iconBg }}>
                                             {ext.icon}
                                         </div>
                                     </div>
-                                    <div className="jel-card-info">
-                                        <h3 className="jel-card-title">{ext.name}</h3>
-                                        <p className="jel-card-desc">{ext.description}</p>
+                                    <div className="px-4 pt-3.5 pb-[18px]">
+                                        <h3 className="m-0 mb-1 text-base font-extrabold text-[#1a1a2e]">{ext.name}</h3>
+                                        <p className="m-0 text-[13px] text-[#555] leading-[1.4]">{ext.description}</p>
                                     </div>
                                 </div>
                             ))}
@@ -224,30 +240,30 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }: J
                 ))}
 
                 {groupedSections.length === 0 && (
-                    <div className="jel-empty">
-                        <span className="jel-empty-icon">🔍</span>
-                        <p>No extensions found matching "{search}"</p>
+                    <div className="text-center py-[60px] px-6 text-[#888]">
+                        <span className="text-[48px] block mb-4">🔍</span>
+                        <p className="text-base font-semibold">No extensions found matching "{search}"</p>
                     </div>
                 )}
             </div>
 
-            <div className="jel-footer">
+            <div className="text-center p-4 text-[#6b2fa0] text-[13px] font-semibold bg-[#e8d9f5] border-t border-[#d4bde8]">
                 🧩 Click any extension to learn more and add its blocks to your project
             </div>
 
             {/* Iframe Embed Overlay */}
             {iframeExtension && (
-                <div className="jel-iframe-overlay">
-                    <div className="jel-iframe-backdrop" onClick={handleIframeClose} />
-                    <div className="jel-iframe-container">
-                        <button className="jel-iframe-close" onClick={handleIframeClose}>
+                <div className="fixed inset-0 z-[1100] flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/55 backdrop-blur-[6px] animate-[iframeFadeIn_0.25s_ease-out]" onClick={handleIframeClose} />
+                    <div className="relative w-[90%] max-w-[560px] h-[80%] max-h-[600px] rounded-[20px] overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.35)] z-[1101] animate-[iframePopIn_0.3s_cubic-bezier(0.34,1.56,0.64,1)]">
+                        <button className="absolute top-3 right-3 z-[1102] bg-black/50 border-none text-white w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-black/75 hover:scale-110" onClick={handleIframeClose}>
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
                         </button>
                         <iframe
-                            className="jel-iframe"
+                            className="w-full h-full border-none bg-[#f5f0fa]"
                             src={getIframeUrl(iframeExtension)}
                             title={iframeExtension.name}
                             sandbox="allow-scripts allow-same-origin allow-modals allow-popups"

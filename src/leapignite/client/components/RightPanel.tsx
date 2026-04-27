@@ -7,7 +7,7 @@ import React from 'react';
 import SpriteCard from './SpriteCard';
 import SceneCard from './SceneCard';
 import { Flag, RotateCw, Maximize, Minimize, Square, Circle, ScanFace, Image as ImageIcon, MicOff, Grid3X3, CameraOff } from 'lucide-react';
-import Logo from '../../../components/Logo';
+import Logo from '../../../leapembed/client/components/Logo';
 import { JuniorScene, JuniorSprite } from '../types';
 
 interface RightPanelProps {

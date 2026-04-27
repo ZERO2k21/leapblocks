@@ -9,7 +9,7 @@
  * without changing the Python IDE structure.
  */
 
-import { useStage } from '../context/StageContext';
+import { useStage } from '../leapembed/client/context/stageContext';
 
 // ─── Sprite Action Logger ───────────────────────────────────────────────────
 // Logs sprite actions to terminal for visibility
@@ -44,8 +44,8 @@ export class SpritePanelFunctions {
 
     // Get sprite by name or ID
     getSprite(nameOrId) {
-        return this.sprites.find(s => 
-            s.id === nameOrId || 
+        return this.sprites.find(s =>
+            s.id === nameOrId ||
             s.name.toLowerCase() === String(nameOrId).toLowerCase()
         );
     }
@@ -56,7 +56,7 @@ export class SpritePanelFunctions {
     }
 
     // ─── Movement Functions ─────────────────────────────────────────────────
-    
+
     moveSprite(spriteName, steps) {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
@@ -156,7 +156,7 @@ export class SpritePanelFunctions {
     }
 
     // ─── Appearance Functions ───────────────────────────────────────────────
-    
+
     spriteSay(spriteName, message, duration = 2) {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
@@ -345,7 +345,7 @@ export class SpritePanelFunctions {
     }
 
     // ─── Direction Functions ────────────────────────────────────────────────
-    
+
     pointSpriteInDirection(spriteName, angle) {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
@@ -369,7 +369,7 @@ export class SpritePanelFunctions {
     }
 
     // ─── Utility Functions ──────────────────────────────────────────────────
-    
+
     getSpritePosition(spriteName) {
         const sprite = this.getSprite(spriteName);
         if (!sprite) return null;
@@ -408,7 +408,7 @@ export function createIntermediateBlocksBridge(sprites, setSprites, selectedSpri
         moveRelative: (spriteName, direction, steps) => panelFunctions.moveSpriteRelative(spriteName, direction, steps),
         turn: (spriteName, degrees) => panelFunctions.turnSprite(spriteName, degrees),
         goTo: (spriteName, x, y) => panelFunctions.goToSprite(spriteName, x, y),
-        
+
         // Appearance functions
         say: (spriteName, message, duration) => panelFunctions.spriteSay(spriteName, message, duration),
         think: (spriteName, message, duration) => panelFunctions.spriteThink(spriteName, message, duration),
@@ -418,16 +418,16 @@ export function createIntermediateBlocksBridge(sprites, setSprites, selectedSpri
         changeSize: (spriteName, delta) => panelFunctions.changeSpriteSize(spriteName, delta),
         nextCostume: (spriteName) => panelFunctions.nextCostume(spriteName),
         switchCostume: (spriteName, costumeName) => panelFunctions.switchCostume(spriteName, costumeName),
-        
+
         // Direction functions
         pointInDirection: (spriteName, angle) => panelFunctions.pointSpriteInDirection(spriteName, angle),
-        
+
         // Utility functions
         getPosition: (spriteName) => panelFunctions.getSpritePosition(spriteName),
         getDirection: (spriteName) => panelFunctions.getSpriteDirection(spriteName),
         getSize: (spriteName) => panelFunctions.getSpriteSize(spriteName),
         isVisible: (spriteName) => panelFunctions.isSpriteVisible(spriteName),
-        
+
         // Logger for external access
         logger: logger
     };

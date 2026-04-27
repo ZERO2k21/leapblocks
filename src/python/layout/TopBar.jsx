@@ -5,7 +5,7 @@
  */
 import React from "react";
 import { Home, Save, Settings, User, HelpCircle, Upload, Scissors, Copy, Clipboard, Undo, Redo, Hash, Wand2, Search } from "lucide-react";
-import Logo, { CreoleapLogo } from "../../components/Logo";
+import Logo, { CreoleapLogo } from "../../leapembed/client/components/Logo";
 
 // ─── Theme (PictoBlox Colors) ─────────────────────────────────────────────────
 const C = {
@@ -29,7 +29,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
             boxShadow: '0 2px 12px rgba(8,10,37,0.35)',
             borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}>
-            {/* Left Side: LeapLab Logo + App Name + Blocks/Python Tabs */}
+            {/* Left Side: leapembed Logo + App Name + Blocks/Python Tabs */}
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 {/* Home Button */}
                 <button
@@ -82,7 +82,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                             letterSpacing: '0.18em',
                             lineHeight: 1.1,
                             fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        }}>LEAPLAB</span>
+                        }}>leapembed</span>
                         <span style={{
                             color: '#fff',
                             fontSize: 15,

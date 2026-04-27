@@ -8,7 +8,7 @@
 // Visual block-based programming
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import React, { useEffect, useRef, useMemo, useCallback } from 'react';
-import type * as BlocklyType from '@blockly-runtime';
+import type * as BlocklyType from '../../../../leapembed/server/blockly/runtime';
 import type { AFProject } from '../../AppForgeStudio';
 import componentsData from '../../data/components.json';
 import { getToolboxConfig } from './BlockToolbox';
@@ -49,7 +49,7 @@ export default function BlockEditor({ project, updateProject }: BlockEditorProps
     try {
       // Dynamically import to avoid circular deps — safe because Blockly
       // is already loaded by the time this listener fires.
-      import('@blockly-runtime').then((Blockly) => {
+      import('../../../../leapembed/server/blockly/runtime').then((Blockly) => {
         const json = Blockly.serialization.workspaces.save(workspace);
         // Always calls the LATEST updateProject via the ref
         updateProjectRef.current({ blocks: json });
@@ -70,7 +70,7 @@ export default function BlockEditor({ project, updateProject }: BlockEditorProps
     const initBlockly = async () => {
       try {
         // Dynamic imports to prevent circular dependencies in production
-        const BlocklyModule = await import('@blockly-runtime');
+        const BlocklyModule = await import('../../../../leapembed/server/blockly/runtime');
         const Blockly = (BlocklyModule.default || BlocklyModule) as typeof BlocklyType;
         const { registerCustomBlocks } = await import('./CustomBlocks');
 

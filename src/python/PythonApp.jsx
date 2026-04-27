@@ -4,8 +4,8 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { StageProvider, useStage } from "../context/StageContext";
-import Logo, { CreoleapLogo } from "../components/Logo";
+import { StageProvider, useStage } from "../leapembed/client/context/stageContext";
+import Logo, { CreoleapLogo } from "../leapembed/client/components/Logo";
 import {
     Home,
     Play,
@@ -42,12 +42,12 @@ import {
     Share,
 } from "lucide-react";
 
-import { fileService } from "../services/FileService";
+import { fileService } from "../leapembed/server/services/fileService";
 import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
-import { FULL_CATALOG } from "../components/SpriteLibrary";
-import SerialMonitor from "../components/SerialMonitor";
+import { FULL_CATALOG } from "../leapembed/client/components/SpriteLibrary";
+import SerialMonitor from "../leapembed/client/components/SerialMonitor";
 import { createIntermediateBlocksBridge, useSpriteBridge, getDefaultSpritePresets } from "./SpriteBridge";
-import BoardSelectionModal, { getBoards } from "../leapignite/client/components/BoardSelectionModal";
+import BoardSelectionModal, { getBoards } from "../leapembed/client/components/BoardSelectionModal";
 
 // ─── Import Modular Components ─────────────────────────────────────────────────
 import SidePanel from "./panels/SidePanel";
@@ -802,7 +802,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const _isWebMode = !window.electronAPI?.isElectron;
     const [terminalOutput, setTerminalOutput] = useState([
         { text: "╔══════════════════════════════════════════════════════════════╗", type: "info", ts: new Date() },
-        { text: "║  Leaplab CODEX.v1.0                                          ║", type: "info", ts: new Date() },
+        { text: "║  leapembed CODEX.v1.0                                          ║", type: "info", ts: new Date() },
         { text: "║  ─────────────────────────────────────────────────────────── ║", type: "info", ts: new Date() },
         { text: "║  ▶ Press Ctrl+Enter or F5 to run code                       ║", type: "info", ts: new Date() },
         { text: "║  ▶ Press Escape to stop execution                           ║", type: "info", ts: new Date() },
@@ -1837,7 +1837,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 setTimeout(() => {
                     addLog(`✓ ${pkgName} registered (web mode)`, "success");
                     addLog(`  ⚠ Browser mode uses Skulpt — only built-in modules run natively.`, "warning");
-                    addLog(`  → For full library support, use the LeapLab desktop app.`, "info");
+                    addLog(`  → For full library support, use the leapembed desktop app.`, "info");
                 }, 600);
             }
 

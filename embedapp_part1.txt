@@ -1,0 +1,100 @@
+﻿/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { STAGE_CONFIG } from '../server/engine/stageConfig';
+
+import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '../server/blockly/runtime';
+
+import './styles/leapembedBlocks.css'; // Import leap-style blocks CSS
+import '../../leapignite/client/styles/juniorBlocks.css';
+import '../../leapignite/client/styles/juniorLooksBlocks.css';
+import { embedStyles as styles } from './styles/embedApp.styles';
+
+
+import { arduinoBlocks, arduinoToolbox } from '../server/blocks/arduinoBlocks';
+
+import { esp32Blocks, esp32Toolbox } from '../server/blocks/esp32Blocks';
+
+import { animationBlocks, animationToolbox } from '../server/blocks/animationBlocks';
+import { COLORS } from '../server/blocks/blockDefinitions';
+import { registerleapBlocks } from '../server/blocks/leapBlocks';
+
+import { hardwareBlocks } from '../server/blocks/hardwareBlocks';
+
+import { arduinoGenerator } from '../server/generators/arduinoGenerator';
+
+import { AnimationCompiler } from '../server/generators/animationGenerator';
+
+import { initPythonGenerator } from '../server/generators/pythonGenerator'; // Deferred registration
+
+import { animationVM } from '../server/vm/animationVM';
+import type { CompiledScript } from '../server/vm/animationVM';
+
+import { Sprite } from './stage/Sprite';
+import type { SpriteType } from './stage/Sprite';
+
+import Stage from './stage/Stage';
+import AskBar from './components/AskBar';
+
+import SpritePanel from './stage/SpritePanel';
+
+import MenuBar from './components/MenuBar';
+
+import BoardSelectionModal from './components/BoardSelectionModal';
+
+import { PythonEditorTab } from './components/PythonEditorTab';
+
+// import StagePanel from './stage/StagePanel'; // Temporarily disabled - component needs to be created
+
+// Lazy load large components for better performance
+const BackdropLibrary = React.lazy(() => import('./components/BackdropLibrary'));
+const SpriteLibrary = React.lazy(() => import('./components/SpriteLibrary').then(m => ({ default: m.SpriteLibrary })));
+const JuniorExtensionLibrary = React.lazy(() => import('../../leapignite/client/components/JuniorExtensionLibrary'));
+
+// Lazy load heavy tabs that import fabric.js and wav-encoder - prevents 60s startup delay
+const CostumesTab = React.lazy(() => import('./stage/CostumesTab').then(m => ({ default: m.CostumesTab })));
+const SoundsTab = React.lazy(() => import('./stage/SoundsTab').then(m => ({ default: m.SoundsTab })));
+
+// import BackdropEditor from './components/BackdropEditor'; // Temporarily disabled
+
+import { stageManager } from '../server/engine/stageManager';
+import { spriteManager } from '../server/engine/spriteManager';
+import { leapRuntime } from '../server/runtime/leapRuntime';
+import { initRuntime, setActiveSpriteId, setFaceVideoElement } from '../server/runtime/runtimeBridge';
+import { hardwareAdapter } from '../server/hardware/hardwareAdapter';
+
+import SerialMonitor from './components/SerialMonitor';
+
+import UploadModal from './components/UploadModal';
+
+import type { SpriteEntry } from './components/SpriteLibrary';
+
+import WorkspaceControls from './components/WorkspaceControls';
+
+import WorkspaceTrash from './components/WorkspaceTrash';
+
+import UnsavedWarningModal from '../../leapignite/client/components/UnsavedWarningModal';
+import { EXTENSIONS, registerExtensions } from '../server/extensions/extensionDefinitions';
+
+
+import { fileService } from '../server/services/fileService';
+import { registerLeapRenderer } from '../../leapignite/server/blocks/LeapRenderer';
+
+import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
+
+import { registerPictoBloxCategory } from '../server/blockly/customToolbox';
+
+// Import dialog components
+import MakeVariableDialog from './components/MakeVariableDialog';
+import MakeListDialog from './components/MakeListDialog';
+import MakeTableDialog from './components/MakeTableDialog';
+import MakeBlockDialog from './components/MakeBlockDialog';
+import type { BlockArgument } from './components/MakeBlockDialog';
+
+// Import monitor components
+import VariableMonitor from './components/VariableMonitor';
+import ListMonitor from './components/ListMonitor';
+import TableMonitor from './components/TableMonitor';

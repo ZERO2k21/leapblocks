@@ -12,7 +12,7 @@ import {
     Copy, Clipboard, MoreVertical, GripVertical
 } from "lucide-react";
 import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
-import Logo, { CreoleapLogo } from "../components/Logo";
+import Logo, { CreoleapLogo } from "../leapembed/client/components/Logo";
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
 const C = {
@@ -342,8 +342,8 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
             <div
                 key={cell.id}
                 className={`group relative mb-4 rounded-lg border-2 transition-all ${isActive
-                        ? "border-leap-purple shadow-lg shadow-purple-100"
-                        : "border-gray-200 hover:border-gray-300"
+                    ? "border-leap-purple shadow-lg shadow-purple-100"
+                    : "border-gray-200 hover:border-gray-300"
                     }`}
                 onClick={() => setActiveCellId(cell.id)}
             >
@@ -458,10 +458,10 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                                     <div
                                         key={i}
                                         className={`${line.type === "error"
-                                                ? "text-red-600 bg-red-50 px-2 py-1 rounded"
-                                                : line.type === "stderr"
-                                                    ? "text-orange-600"
-                                                    : "text-gray-800"
+                                            ? "text-red-600 bg-red-50 px-2 py-1 rounded"
+                                            : line.type === "stderr"
+                                                ? "text-orange-600"
+                                                : "text-gray-800"
                                             }`}
                                     >
                                         {line.text || "\u00A0"}

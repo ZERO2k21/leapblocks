@@ -17,96 +17,53 @@ export default function UnsavedWarningModal({ isOpen, onYes, onNo, onCancel }: U
     if (!isOpen) return null;
 
     return (
-        <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.6)',
-            display: 'flex', justifyContent: 'center', alignItems: 'center',
-            zIndex: 999999, // Ensure absolute top above Intermediate App and Modals
-        }}>
-            <div style={{
-                background: '#F0E6F0', // Light purple background as in the image
-                borderRadius: '12px',
-                width: '400px',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-                overflow: 'hidden',
-                animation: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-            }}>
-                {/* Header Section */}
-                <div style={{
-                    background: '#B0003A', // Crimson red
-                    padding: '16px 20px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    color: 'white'
-                }}>
-                    <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '500', textAlign: 'center', flex: 1 }}>
+        <div className="absolute inset-0 bg-black/60 flex justify-center items-center z-[999999]">
+            <div className="bg-[#F0E6F0] rounded-xl w-[400px] shadow-[0_10px_30px_rgba(0,0,0,0.3)] overflow-hidden animate-[popIn_0.3s_cubic-bezier(0.175,0.885,0.32,1.275)]">
+                {/* Header */}
+                <div className="bg-[#B0003A] px-5 py-4 flex justify-between items-center text-white">
+                    <h2 className="m-0 text-lg font-medium text-center flex-1">
                         Don't Forget to Save Your Project!
                     </h2>
-                    <button onClick={onCancel} style={{
-                        background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '50%',
-                        color: 'white', width: '28px', height: '28px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer', fontWeight: 'bold'
-                    }}>
+                    <button
+                        onClick={onCancel}
+                        className="bg-black/20 border-none rounded-full text-white w-7 h-7 flex items-center justify-center cursor-pointer font-bold hover:bg-black/30 transition-colors"
+                    >
                         ✕
                     </button>
                 </div>
 
-                {/* Body Section */}
-                <div style={{ padding: '30px 20px', textAlign: 'center' }}>
-                    <div style={{ position: 'relative', display: 'inline-block', marginBottom: '20px' }}>
+                {/* Body */}
+                <div className="py-[30px] px-5 text-center">
+                    <div className="relative inline-block mb-5">
                         <Save size={100} color="#5B2975" fill="#5B2975" />
-
-                        {/* Yellow Warning Circle Overlay */}
-                        <div style={{
-                            position: 'absolute',
-                            bottom: '0', right: '-10px',
-                            background: '#FFD700',
-                            width: '36px', height: '36px',
-                            borderRadius: '50%',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '0 0 0 10px rgba(255, 215, 0, 0.3)', // Glow effect
-                            color: 'white', fontWeight: 'bold', fontSize: '20px'
-                        }}>
+                        {/* Yellow Warning Circle */}
+                        <div className="absolute bottom-0 -right-2.5 bg-[#FFD700] w-9 h-9 rounded-full flex items-center justify-center shadow-[0_0_0_10px_rgba(255,215,0,0.3)] text-white font-bold text-xl">
                             !
                         </div>
                     </div>
-
-                    <p style={{ margin: '0 0 20px', fontSize: '18px', color: '#333' }}>
+                    <p className="m-0 mb-5 text-lg text-[#333]">
                         Save changes to your current project?
                     </p>
                 </div>
 
-                {/* Footer Section */}
-                <div style={{
-                    background: 'white',
-                    padding: '20px',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    gap: '12px'
-                }}>
-                    <button onClick={onYes} style={{
-                        padding: '12px 32px', borderRadius: '12px', border: 'none',
-                        background: '#5B2975', color: 'white', fontWeight: 'bold', fontSize: '16px',
-                        cursor: 'pointer'
-                    }}>
+                {/* Footer */}
+                <div className="bg-white p-5 flex justify-center gap-3">
+                    <button
+                        onClick={onYes}
+                        className="px-8 py-3 rounded-xl border-none bg-[#5B2975] text-white font-bold text-base cursor-pointer hover:bg-[#6B3485] transition-colors"
+                    >
                         Yes
                     </button>
-
-                    <button onClick={onNo} style={{
-                        padding: '12px 32px', borderRadius: '12px', border: 'none',
-                        background: '#E6DBe8', color: '#5B2975', fontWeight: 'bold', fontSize: '16px',
-                        cursor: 'pointer'
-                    }}>
+                    <button
+                        onClick={onNo}
+                        className="px-8 py-3 rounded-xl border-none bg-[#E6DBe8] text-[#5B2975] font-bold text-base cursor-pointer hover:bg-[#D6CBd8] transition-colors"
+                    >
                         No
                     </button>
-
-                    <button onClick={onCancel} style={{
-                        padding: '12px 24px', borderRadius: '12px', border: 'none',
-                        background: '#E6DBe8', color: '#5B2975', fontWeight: 'bold', fontSize: '16px',
-                        cursor: 'pointer'
-                    }}>
+                    <button
+                        onClick={onCancel}
+                        className="px-6 py-3 rounded-xl border-none bg-[#E6DBe8] text-[#5B2975] font-bold text-base cursor-pointer hover:bg-[#D6CBd8] transition-colors"
+                    >
                         Cancel
                     </button>
                 </div>

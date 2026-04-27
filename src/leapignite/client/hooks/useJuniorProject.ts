@@ -4,8 +4,8 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useRef } from "react";
-import Blockly from "@blockly-runtime";
-import { fileService } from "../../../services/FileService";
+import Blockly from "../../../leapembed/server/blockly/runtime";
+import { fileService } from "../../../leapembed/server/services/fileService";
 import { JuniorScene, JuniorSprite } from "../types";
 
 const cloneWorkspaceData = (workspaceJson: any) => JSON.parse(JSON.stringify(workspaceJson || {}));

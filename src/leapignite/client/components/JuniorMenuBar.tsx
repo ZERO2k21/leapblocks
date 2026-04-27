@@ -10,7 +10,7 @@ import {
     MessageSquareWarning, Trophy, Settings,
     Share, LucideIcon
 } from 'lucide-react';
-import Logo, { CreoleapLogo } from '../../../components/Logo';
+import Logo, { CreoleapLogo } from '../../../leapembed/client/components/Logo';
 
 interface DropdownMenuItem {
     label?: string;
@@ -31,7 +31,7 @@ interface DropdownMenuProps {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DROPDOWN MENU — Glassmorphism + slide-in animation (same design as Intermediate)
+// DROPDOWN MENU — Glassmorphism + slide-in animation
 // ═══════════════════════════════════════════════════════════════════════════
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }: DropdownMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
@@ -55,59 +55,24 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }: D
     }, [isOpen]);
 
     return (
-        <div ref={menuRef} style={{ position: 'relative' }}>
+        <div ref={menuRef} className="relative">
             <button
                 onClick={onToggle}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    padding: '6px 12px',
-                    border: 'none',
-                    color: '#fff',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    cursor: 'pointer',
-                    borderRadius: 20,
-                    transition: 'all 0.2s ease',
-                    background: isOpen ? 'rgba(255,255,255,0.18)' : 'transparent',
-                    backdropFilter: isOpen ? 'blur(4px)' : 'none',
-                    letterSpacing: '0.02em',
-                }}
-                onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = isOpen ? 'rgba(255,255,255,0.18)' : 'transparent'; }}
+                className={`flex items-center gap-[5px] px-3 py-1.5 border-none text-white text-[13px] font-semibold font-[Segoe_UI,Inter,system-ui,sans-serif] cursor-pointer rounded-[20px] transition-all duration-200 tracking-[0.02em] ${
+                    isOpen ? 'bg-white/[0.18] backdrop-blur-[4px]' : 'bg-transparent hover:bg-white/10'
+                }`}
             >
-                {Icon && <Icon size={14} strokeWidth={2.2} style={{ opacity: 0.9 }} />}
+                {Icon && <Icon size={14} strokeWidth={2.2} className="opacity-90 flex-shrink-0" />}
                 {label}
                 <ChevronDown
                     size={12}
                     strokeWidth={2.5}
-                    style={{
-                        opacity: 0.5,
-                        transition: 'transform 0.2s ease',
-                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    }}
+                    className={`opacity-50 transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
                 />
             </button>
 
             {isOpen && (
-                <div style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 6px)',
-                    left: 0,
-                    background: 'rgba(255,255,255,0.92)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    borderRadius: 12,
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)',
-                    border: '1px solid rgba(255,255,255,0.6)',
-                    minWidth: 200,
-                    overflow: 'hidden',
-                    zIndex: 1000,
-                    padding: '6px 0',
-                    animation: 'jrMenuSlideIn 0.18s ease-out',
-                }}>
+                <div className="absolute top-[calc(100%+6px)] left-0 bg-white/[0.92] backdrop-blur-[20px] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.16),0_2px_8px_rgba(0,0,0,0.08)] border border-white/60 min-w-[200px] overflow-hidden z-[1000] py-1.5 animate-[jrMenuSlideIn_0.18s_ease-out]">
                     <style>{`
                         @keyframes jrMenuSlideIn {
                             from { opacity: 0; transform: translateY(-6px) scale(0.98); }
@@ -116,57 +81,24 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }: D
                     `}</style>
                     {items.map((item, idx) => (
                         item.divider ? (
-                            <div key={idx} style={{
-                                height: 1,
-                                background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.08), transparent)',
-                                margin: '5px 12px',
-                            }} />
+                            <div key={idx} className="h-px bg-gradient-to-r from-transparent via-black/[0.08] to-transparent mx-3 my-[5px]" />
                         ) : (
                             <button
                                 key={idx}
                                 onClick={() => { item.onClick?.(); onClose(); }}
                                 disabled={item.disabled}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 10,
-                                    width: '100%',
-                                    padding: '9px 14px',
-                                    border: 'none',
-                                    background: 'transparent',
-                                    fontSize: 15,
-                                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                                    fontWeight: 500,
-                                    textAlign: 'left',
-                                    cursor: item.disabled ? 'not-allowed' : 'pointer',
-                                    color: item.disabled ? '#bbb' : '#374151',
-                                    transition: 'all 0.12s ease',
-                                    borderRadius: 0,
-                                    letterSpacing: '0.01em',
-                                }}
-                                onMouseEnter={e => {
-                                    if (!item.disabled) {
-                                        e.currentTarget.style.background = 'rgba(107,70,193,0.08)';
-                                        e.currentTarget.style.color = '#6B46C1';
-                                    }
-                                }}
-                                onMouseLeave={e => {
-                                    e.currentTarget.style.background = 'transparent';
-                                    e.currentTarget.style.color = item.disabled ? '#bbb' : '#374151';
-                                }}
+                                className={`flex items-center gap-2.5 w-full px-3.5 py-2.5 border-none bg-transparent text-[15px] font-[Segoe_UI,Inter,system-ui,sans-serif] font-medium text-left tracking-[0.01em] transition-all duration-[120ms] ${
+                                    item.disabled
+                                        ? 'cursor-not-allowed text-[#bbb]'
+                                        : 'cursor-pointer text-gray-700 hover:bg-[rgba(107,70,193,0.08)] hover:text-[#6B46C1]'
+                                }`}
                             >
-                                {item.icon && <item.icon size={16} color="#7C3AED" strokeWidth={2} style={{ opacity: 0.85, flexShrink: 0 }} />}
-                                <span style={{ flex: 1 }}>{item.label}</span>
+                                {item.icon && <item.icon size={16} color="#7C3AED" strokeWidth={2} className="opacity-85 flex-shrink-0" />}
+                                <span className="flex-1">{item.label}</span>
                                 {item.shortcut && (
-                                    <span style={{
-                                        fontSize: 11,
-                                        color: '#aaa',
-                                        fontWeight: 500,
-                                        background: 'rgba(0,0,0,0.04)',
-                                        padding: '2px 6px',
-                                        borderRadius: 4,
-                                        fontFamily: "'Segoe UI', monospace",
-                                    }}>{item.shortcut}</span>
+                                    <span className="text-[11px] text-[#aaa] font-medium bg-black/[0.04] px-1.5 py-0.5 rounded font-[Segoe_UI,monospace]">
+                                        {item.shortcut}
+                                    </span>
                                 )}
                             </button>
                         )
@@ -187,7 +119,7 @@ interface JuniorMenuBarProps {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// JUNIOR MENUBAR — Simplified for young children (no hardware)
+// JUNIOR MENUBAR
 // ═══════════════════════════════════════════════════════════════════════════
 export default function JuniorMenuBar({
     projectName = "My Project",
@@ -225,154 +157,50 @@ export default function JuniorMenuBar({
     ];
 
     return (
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            height: 64,
-            padding: '0 18px',
-            background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
-            boxShadow: '0 4px 20px rgba(8,10,37,0.45), inset 0 -1px 0 rgba(255,255,255,0.06)',
-            zIndex: 100,
-            borderBottom: '1px solid rgba(100,180,255,0.1)',
-        }}>
+        <div className="flex items-center justify-between h-16 px-[18px] bg-gradient-to-br from-[#0a015a] to-[#080a25] shadow-[0_4px_20px_rgba(8,10,37,0.45),inset_0_-1px_0_rgba(255,255,255,0.06)] z-[100] border-b border-[rgba(100,180,255,0.1)]">
 
-            {/* LEFT SECTION: Home, Logo, Menus */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+            {/* LEFT SECTION */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
                 <button
                     onClick={onBack}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 40,
-                        height: 40,
-                        background: 'rgba(255,255,255,0.1)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 12,
-                        color: '#fff',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        flexShrink: 0,
-                    }}
-                    onMouseEnter={e => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-                        e.currentTarget.style.transform = 'scale(1.05)';
-                    }}
-                    onMouseLeave={e => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                        e.currentTarget.style.transform = 'scale(1)';
-                    }}
+                    className="flex items-center justify-center w-10 h-10 bg-white/10 border border-white/10 rounded-xl text-white cursor-pointer transition-all duration-200 flex-shrink-0 hover:bg-white/20 hover:scale-105"
                     title="Back to Home"
                 >
                     <Home size={20} strokeWidth={2.2} />
                 </button>
 
-                <div style={{ height: 32, width: 1, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+                <div className="h-8 w-px bg-white/10 flex-shrink-0" />
 
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    marginRight: 14,
-                    flexShrink: 0,
-                    filter: 'drop-shadow(0 0 14px rgba(80,200,255,0.3)) drop-shadow(0 2px 6px rgba(0,0,0,0.3))',
-                }}>
+                <div className="flex items-center mr-3.5 flex-shrink-0 drop-shadow-[0_0_14px_rgba(80,200,255,0.3)] drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
                     <Logo height={52} />
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        marginLeft: 10,
-                        lineHeight: 1.1,
-                    }}>
-                        <span style={{
-                            color: '#fff',
-                            fontSize: 16,
-                            fontWeight: 900,
-                            letterSpacing: '0.08em',
-                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        }}>IGNITE</span>
+                    <div className="flex flex-col justify-center ml-2.5 leading-[1.1]">
+                        <span className="text-white text-base font-black tracking-[0.08em] font-[Segoe_UI,Inter,system-ui,sans-serif]">
+                            IGNITE
+                        </span>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <DropdownMenu
-                        label="File"
-                        items={fileMenuItems}
-                        isOpen={openMenu === 'file'}
-                        onToggle={() => toggleMenu('file')}
-                        onClose={closeMenu}
-                    />
-                    <DropdownMenu
-                        label="Edit"
-                        items={editMenuItems}
-                        isOpen={openMenu === 'edit'}
-                        onToggle={() => toggleMenu('edit')}
-                        onClose={closeMenu}
-                    />
-                    <DropdownMenu
-                        label="Tutorials"
-                        icon={BookOpen}
-                        items={tutorialsMenuItems}
-                        isOpen={openMenu === 'tutorials'}
-                        onToggle={() => toggleMenu('tutorials')}
-                        onClose={closeMenu}
-                    />
+                <div className="flex items-center gap-0.5">
+                    <DropdownMenu label="File" items={fileMenuItems} isOpen={openMenu === 'file'} onToggle={() => toggleMenu('file')} onClose={closeMenu} />
+                    <DropdownMenu label="Edit" items={editMenuItems} isOpen={openMenu === 'edit'} onToggle={() => toggleMenu('edit')} onClose={closeMenu} />
+                    <DropdownMenu label="Tutorials" icon={BookOpen} items={tutorialsMenuItems} isOpen={openMenu === 'tutorials'} onToggle={() => toggleMenu('tutorials')} onClose={closeMenu} />
                 </div>
             </div>
 
-            {/* CENTER SECTION: Project Name + Save */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    height: 40,
-                    background: 'rgba(0,0,0,0.25)',
-                    borderRadius: 20,
-                    paddingLeft: 18,
-                    paddingRight: 5,
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    gap: 8,
-                    transition: 'all 0.2s ease',
-                }}>
-                    <span style={{ fontSize: 14, opacity: 0.45 }}>📁</span>
+            {/* CENTER SECTION */}
+            <div className="flex items-center justify-center px-4">
+                <div className="flex items-center h-10 bg-black/25 rounded-[20px] pl-[18px] pr-[5px] border border-white/[0.08] gap-2 transition-all duration-200">
+                    <span className="text-sm opacity-45">📁</span>
                     <input
                         type="text"
                         value={projectName}
                         onChange={(e) => onProjectNameChange?.(e.target.value)}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#fff',
-                            fontSize: 14,
-                            fontWeight: 700,
-                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                            width: 170,
-                            textAlign: 'center',
-                            outline: 'none',
-                            letterSpacing: '0.01em',
-                        }}
+                        className="bg-transparent border-none text-white text-sm font-bold font-[Segoe_UI,Inter,system-ui,sans-serif] w-[170px] text-center outline-none tracking-[0.01em] placeholder:text-white/40"
                         placeholder="My Project"
                     />
                     <button
                         onClick={() => onFileAction?.('save')}
-                        style={{
-                            background: 'linear-gradient(135deg, #10B981, #059669)',
-                            border: 'none',
-                            borderRadius: '50%',
-                            width: 30,
-                            height: 30,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: '#fff',
-                            boxShadow: '0 2px 6px rgba(16,185,129,0.3)',
-                            transition: 'all 0.15s ease',
-                            flexShrink: 0,
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                        className="bg-gradient-to-br from-emerald-500 to-emerald-600 border-none rounded-full w-[30px] h-[30px] flex items-center justify-center cursor-pointer text-white shadow-[0_2px_6px_rgba(16,185,129,0.3)] transition-all flex-shrink-0 hover:scale-110"
                         title="Save Project"
                     >
                         <Save size={15} strokeWidth={2.8} />
@@ -380,17 +208,9 @@ export default function JuniorMenuBar({
                 </div>
             </div>
 
-            {/* RIGHT SECTION: Utilities, Profile, CREOLEAP Logo */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 20, flex: 1, minWidth: 0 }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 14,
-                    paddingRight: 16,
-                    borderRight: '1px solid rgba(255,255,255,0.1)',
-                    height: 32,
-                    flexShrink: 0,
-                }}>
+            {/* RIGHT SECTION */}
+            <div className="flex items-center justify-end gap-5 flex-1 min-w-0">
+                <div className="flex items-center gap-3.5 pr-4 border-r border-white/10 h-8 flex-shrink-0">
                     {[
                         { Icon: MessageSquareWarning, title: 'Feedback' },
                         { Icon: Trophy, title: 'Achievements' },
@@ -399,24 +219,7 @@ export default function JuniorMenuBar({
                     ].map(({ Icon, title }) => (
                         <button
                             key={title}
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'rgba(255,255,255,0.55)',
-                                cursor: 'pointer',
-                                padding: 0,
-                                transition: 'all 0.2s ease',
-                                display: 'flex',
-                                alignItems: 'center',
-                            }}
-                            onMouseEnter={e => {
-                                e.currentTarget.style.color = '#fff';
-                                e.currentTarget.style.transform = 'scale(1.15)';
-                            }}
-                            onMouseLeave={e => {
-                                e.currentTarget.style.color = 'rgba(255,255,255,0.55)';
-                                e.currentTarget.style.transform = 'scale(1)';
-                            }}
+                            className="bg-transparent border-none text-white/55 cursor-pointer p-0 transition-all duration-200 flex items-center hover:text-white hover:scale-[1.15]"
                             title={title}
                         >
                             <Icon size={20} strokeWidth={2.2} />
@@ -424,60 +227,16 @@ export default function JuniorMenuBar({
                     ))}
                 </div>
 
-                {/* Sign In Button */}
-                <button
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        height: 38,
-                        gap: 10,
-                        background: 'rgba(255,255,255,0.1)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 20,
-                        cursor: 'pointer',
-                        color: '#fff',
-                        fontWeight: 700,
-                        fontSize: 13,
-                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        paddingLeft: 5,
-                        paddingRight: 18,
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                        flexShrink: 0,
-                    }}
-                    onMouseEnter={e => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.18)';
-                        e.currentTarget.style.transform = 'scale(1.02)';
-                    }}
-                    onMouseLeave={e => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                        e.currentTarget.style.transform = 'scale(1)';
-                    }}
-                >
-                    <div style={{
-                        width: 28,
-                        height: 28,
-                        background: 'linear-gradient(135deg, #FFD166, #F59E0B)',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '2px solid rgba(255,255,255,0.25)',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-                    }}>
-                        <span style={{ color: '#5A2D82', fontWeight: 900, fontSize: 11 }}>LB</span>
+                {/* Sign In */}
+                <button className="flex items-center h-[38px] gap-2.5 bg-white/10 border border-white/10 rounded-[20px] cursor-pointer text-white font-bold text-[13px] font-[Segoe_UI,Inter,system-ui,sans-serif] pl-[5px] pr-[18px] transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.15)] flex-shrink-0 hover:bg-white/[0.18] hover:scale-[1.02]">
+                    <div className="w-7 h-7 bg-gradient-to-br from-[#FFD166] to-amber-500 rounded-full flex items-center justify-center border-2 border-white/25 shadow-[0_2px_4px_rgba(0,0,0,0.15)]">
+                        <span className="text-[#5A2D82] font-black text-[11px]">LB</span>
                     </div>
                     Sign In
                 </button>
 
-                {/* CREOLEAP Right Logo — Premium Fit */}
-                <div style={{
-                    marginLeft: 14,
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexShrink: 0,
-                    filter: 'drop-shadow(0 0 14px rgba(255,255,255,0.15)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))',
-                }}>
+                {/* CREOLEAP Logo */}
+                <div className="ml-3.5 flex items-center flex-shrink-0 drop-shadow-[0_0_14px_rgba(255,255,255,0.15)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
                     <CreoleapLogo height={160} />
                 </div>
             </div>

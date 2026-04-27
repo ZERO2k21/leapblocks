@@ -13,7 +13,7 @@ const logAppTiming = (label: string) => {
 
 logAppTiming('App.tsx module loaded');
 
-import Loader from './components/Loader';
+import Loader from './leapembed/client/components/Loader';
 logAppTiming('Loader imported');
 
 const LandingPage = lazy(() => {
@@ -26,7 +26,7 @@ const LandingPage = lazy(() => {
 
 const IntermediateApp = lazy(() => {
     logAppTiming('IntermediateApp lazy load started');
-    return import('./IntermediateApp').then(module => {
+    return import('./leapembed/client/EmbedApp').then(module => {
         logAppTiming('IntermediateApp lazy load completed');
         return module;
     });

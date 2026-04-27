@@ -4,10 +4,10 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useEffect, useRef, useState } from "react";
-import Blockly from "@blockly-runtime";
-import { javascriptGenerator } from "@blockly-runtime";
+import Blockly from "../../../leapembed/server/blockly/runtime";
+import { javascriptGenerator } from "../../../leapembed/server/blockly/runtime";
 import { Interpreter as LeapInterpreter } from "../../server/engine/Interpreter";
-import { executionEngine } from "../../../engine/ExecutionEngine";
+import { executionEngine } from "../../../leapembed/server/engine/executionEngine";
 import { WorkspaceValidator } from "../../server/engine/WorkspaceValidator";
 import { JuniorScene } from "../types";
 
@@ -75,7 +75,7 @@ export function useJuniorExecution({
 
     const runBlocks = async () => {
         if (!workspaceRef.current) return;
-        
+
         const validation = WorkspaceValidator.validateWorkspace(workspaceRef.current) as { isValid: boolean; error: string };
         if (!validation.isValid) {
             if (!validation.error.includes("connected to a Start") && !validation.error.includes("Start block")) {

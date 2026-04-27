@@ -5,9 +5,9 @@
  */
 import React, { useRef, useState, useEffect, useCallback } from "react";
 // @ts-ignore
-import Blockly from "@blockly-runtime";
+import Blockly from "../../leapembed/server/blockly/runtime";
 // @ts-ignore
-import { javascriptGenerator } from '@blockly-runtime';
+import { javascriptGenerator } from '../../leapembed/server/blockly/runtime';
 import Teddy from "./sprites/Teddy";
 import RightPanel from "./components/RightPanel";
 import BackdropChooser from "./components/BackdropChooser";
@@ -16,15 +16,15 @@ import PositionPicker from "./components/PositionPicker";
 import DirectionPicker from "./components/DirectionPicker";
 import InstrumentPicker from "./components/InstrumentPicker";
 import PianoPicker from "./components/PianoPicker";
-import PaintEditor from "../../components/PaintEditor";
-import { SpriteLibrary } from "../../components/SpriteLibrary";
-import WorkspaceControls from "../../components/WorkspaceControls";
-import WorkspaceTrash from "../../components/WorkspaceTrash";
+import PaintEditor from "../../leapembed/client/components/PaintEditor";
+import { SpriteLibrary } from "../../leapembed/client/components/SpriteLibrary";
+import WorkspaceControls from "../../leapembed/client/components/WorkspaceControls";
+import WorkspaceTrash from "../../leapembed/client/components/WorkspaceTrash";
 import SuccessModal from "./components/SuccessModal";
 import UnsavedWarningModal from "./components/UnsavedWarningModal";
 import JuniorSoundRecorder from "./components/JuniorSoundRecorder";
 import JuniorExtensionLibrary from "./components/JuniorExtensionLibrary";
-import { getJuniorBlocks, getJuniorToolbox } from "../../blocks/junior-blocks";
+import { getJuniorBlocks, getJuniorToolbox } from "../../leapembed/server/blocks/juniorBlocks";
 import { useSpriteSystem } from "./hooks/useSpriteSystem";
 import { useJuniorWorkspace } from "./hooks/useJuniorWorkspace";
 import { useJuniorExecution } from "./hooks/useJuniorExecution";
@@ -35,7 +35,7 @@ import { getLessonConfig } from "../server/engine/LessonConfig";
 import { GoalManager } from "../server/engine/GoalManager";
 import { HintManager } from "../server/engine/HintManager";
 import { AudioEngine } from "../../scratch-audio/src/AudioEngine";
-import { initRuntime } from "../../runtime/RuntimeBridge";
+import { initRuntime } from "../../leapembed/server/runtime/runtimeBridge";
 import { gettingStartedTutorial } from "./tutorials/gettingStarted";
 import { moveRoboTutorial } from "./tutorials/moveRobo";
 import { makeSoundsTutorial } from "./tutorials/makeSounds";

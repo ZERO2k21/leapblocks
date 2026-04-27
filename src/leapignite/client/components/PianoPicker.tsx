@@ -5,7 +5,6 @@
  */
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import '../styles/pianoPicker.css';
 
 interface Note {
     name: string;
@@ -29,6 +28,11 @@ const NOTES: Note[] = [
     { name: 'C2', nameLong: 'C', type: 'white' },
 ];
 
+// Black key positions (left offset in px)
+const BLACK_KEY_POSITIONS: Record<string, number> = {
+    'C#': 45, 'D#': 87, 'F#': 171, 'G#': 213, 'A#': 255,
+};
+
 interface PianoPickerProps {
     onPick: (note: string, octave: number) => void;
     onClose: () => void;
@@ -51,8 +55,6 @@ export default function PianoPicker({ onPick, onClose, onPreview, position, init
         setSelectedNote(note);
         if (onPreview) onPreview(cleanNote, finalOctave);
         onPick(cleanNote, finalOctave);
-        // Delay closing to allow for multiple clicks/glissando if they want
-        // But for "Pick", we usually close. Let's keep a small delay.
         setTimeout(onClose, 800);
     };
 
@@ -68,51 +70,67 @@ export default function PianoPicker({ onPick, onClose, onPreview, position, init
     };
 
     return (
-        <div className="piano-overlay" onClick={onClose}>
+        <div className="fixed top-0 left-0 w-screen h-screen z-[9005]" onClick={onClose}>
             <div
-                className="piano-container"
-                style={{
-                    position: 'absolute',
-                    left: position.x,
-                    top: position.y
-                }}
+                className="absolute bg-[#CF63CF] rounded-xl p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)] select-none min-w-[320px]"
+                style={{ left: position.x, top: position.y }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="piano-arrow-up"></div>
-                <div className="piano-header">
-                    <button className="octave-btn" onClick={() => changeOctave(-1)}>
+                {/* Arrow */}
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-[#CF63CF]" />
+
+                {/* Octave Header */}
+                <div className="flex justify-between items-center bg-white/20 rounded-lg mb-2.5 px-2.5 py-1">
+                    <button
+                        className="bg-transparent border-none text-white cursor-pointer flex items-center p-0"
+                        onClick={() => changeOctave(-1)}
+                    >
                         <ChevronLeft size={20} />
                     </button>
-                    <span className="octave-display">{octave}</span>
-                    <button className="octave-btn" onClick={() => changeOctave(1)}>
+                    <span className="text-white font-bold text-lg">{octave}</span>
+                    <button
+                        className="bg-transparent border-none text-white cursor-pointer flex items-center p-0"
+                        onClick={() => changeOctave(1)}
+                    >
                         <ChevronRight size={20} />
                     </button>
                 </div>
+
+                {/* Keyboard */}
                 <div
-                    className="piano-keyboard"
+                    className="bg-white rounded-md flex p-1 relative h-[120px]"
                     onMouseDown={() => setIsMouseDown(true)}
                     onMouseUp={() => setIsMouseDown(false)}
                     onMouseLeave={() => setIsMouseDown(false)}
                 >
-                    {NOTES.map((note, index) => (
-                        <div
-                            key={index}
-                            className={`piano-key ${note.type} ${selectedNote === note.name ? 'selected' : ''}`}
-                            onMouseDown={(e) => {
-                                e.stopPropagation();
-                                setIsMouseDown(true);
-                                handleNotePreview(note.name);
-                            }}
-                            onMouseEnter={() => {
-                                if (isMouseDown) handleNotePreview(note.name);
-                            }}
-                            onMouseUp={() => {
-                                handleNoteClick(note.name);
-                            }}
-                        >
-                            {note.type === 'white' && <span className="key-label">{note.nameLong || note.name}</span>}
-                        </div>
-                    ))}
+                    {NOTES.map((note, index) => {
+                        const isSelected = selectedNote === note.name;
+
+                        if (note.type === 'black') {
+                            return (
+                                <div
+                                    key={index}
+                                    className={`absolute w-6 h-[65px] rounded cursor-pointer transition-all duration-100 z-[2] -ml-[13px] ${isSelected ? 'bg-[#03A9F4]' : 'bg-[#333]'}`}
+                                    style={{ left: BLACK_KEY_POSITIONS[note.name] }}
+                                    onMouseDown={(e) => { e.stopPropagation(); setIsMouseDown(true); handleNotePreview(note.name); }}
+                                    onMouseEnter={() => { if (isMouseDown) handleNotePreview(note.name); }}
+                                    onMouseUp={() => handleNoteClick(note.name)}
+                                />
+                            );
+                        }
+
+                        return (
+                            <div
+                                key={index}
+                                className={`w-10 h-full rounded border border-[#ddd] mr-0.5 last:mr-0 flex items-end justify-center pb-2.5 z-[1] cursor-pointer transition-all duration-100 ${isSelected ? 'bg-[#B3E5FC]' : 'bg-white'}`}
+                                onMouseDown={(e) => { e.stopPropagation(); setIsMouseDown(true); handleNotePreview(note.name); }}
+                                onMouseEnter={() => { if (isMouseDown) handleNotePreview(note.name); }}
+                                onMouseUp={() => handleNoteClick(note.name)}
+                            >
+                                <span className="text-[#666] font-bold text-base">{note.nameLong || note.name}</span>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>

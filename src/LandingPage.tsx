@@ -167,10 +167,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           </div>
           <div className="splash-text-container">
             <div className="splash-text-welcome">Welcome to the</div>
-            <img src="assets/splash_logo_b.png" alt="Leaplab Logo" className="splash-logo" />
+            <img src="assets/splash_logo_b.png" alt="leapembed Logo" className="splash-logo" />
             <div className="splash-powered-by">
               <span>Powered by</span>
-              <img src="assets/topbar_logo.svg" alt="LeapLab" />
+              <img src="assets/topbar_logo.svg" alt="leapembed" />
             </div>
           </div>
         </div>
@@ -654,7 +654,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         <nav>
           <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
             <a href="#" className="nav-brand">
-              <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="brand-logo" />
+              <img src="assets/Final_logo_b.png" alt="leapembed Logo" className="brand-logo" />
             </a>
             <div className="nav-links">
               <a href="#" style={{ color: '#0f172a', textDecoration: 'none', fontWeight: 600, fontSize: '0.95rem', transition: 'color 0.2s' }}>Tutorials</a>
@@ -720,7 +720,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/ignite_icon.png" alt="Ignite Robot" />
                 </div>
                 <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                  <img src="assets/splash_logo_b.png" alt="leapembed" className="tc-cat-logo" />
                   <div className="tc-name">Ignite</div>
                   <div className="tc-desc">leap & block coding</div>
                 </div>
@@ -732,7 +732,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/arduino_icon.png" alt="Circuit Icon" />
                 </div>
                 <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                  <img src="assets/splash_logo_b.png" alt="leapembed" className="tc-cat-logo" />
                   <div className="tc-name">Embed</div>
                   <div className="tc-desc">Block Coding, Arduino & Embedded Systems</div>
                 </div>
@@ -744,7 +744,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/python_icon.png" alt="Codex Icon" />
                 </div>
                 <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                  <img src="assets/splash_logo_b.png" alt="leapembed" className="tc-cat-logo" />
                   <div className="tc-name">Codex</div>
                   <div className="tc-desc">Python Programming</div>
                 </div>
@@ -756,7 +756,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/ml_brain_icon.png" alt="Neura Icon" />
                 </div>
                 <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                  <img src="assets/splash_logo_b.png" alt="leapembed" className="tc-cat-logo" />
                   <div className="tc-name">Neura</div>
                   <div className="tc-desc">AI Logic & Advanced Block Programming</div>
                 </div>
@@ -768,7 +768,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/creocad_icon.png" alt="Forge Icon" />
                 </div>
                 <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                  <img src="assets/splash_logo_b.png" alt="leapembed" className="tc-cat-logo" />
                   <div className="tc-name">Electra</div>
                   <div className="tc-desc">Circuit Design & Simulation</div>
                 </div>
@@ -780,7 +780,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/vision3d_icon.png" alt="Vision3D Icon" />
                 </div>
                 <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                  <img src="assets/splash_logo_b.png" alt="leapembed" className="tc-cat-logo" />
                   <div className="tc-name">Vision3D</div>
                   <div className="tc-desc">3D Design & Modeling </div>
                 </div>
@@ -792,7 +792,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/app_game_dev_icon.png" alt="Studio Icon" />
                 </div>
                 <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                  <img src="assets/splash_logo_b.png" alt="leapembed" className="tc-cat-logo" />
                   <div className="tc-name">Studio</div>
                   <div className="tc-desc">App & Game Development</div>
                 </div>
@@ -804,7 +804,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                   <img src="assets/quiz_icon.png" alt="Quiz Icon" />
                 </div>
                 <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                  <img src="assets/splash_logo_b.png" alt="leapembed" className="tc-cat-logo" />
                   <div className="tc-name">Pulse</div>
                   <div className="tc-desc">Assessment & Quiz Creation</div>
                 </div>
@@ -845,7 +845,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
             }}>
-              LeapLab v1.0 &copy; 2026 Creoleap Technologies Pvt. Ltd. — All rights reserved.
+              leapembed v1.0 &copy; 2026 Creoleap Technologies Pvt. Ltd. — All rights reserved.
             </span>
             {/* Ambient glow dot */}
             <span style={{

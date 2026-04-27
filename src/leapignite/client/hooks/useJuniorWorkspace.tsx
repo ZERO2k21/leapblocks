@@ -4,8 +4,8 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useEffect, useRef } from "react";
-import Blockly from "@blockly-runtime";
-import { javascriptGenerator } from "@blockly-runtime";
+import Blockly from "../../../leapembed/server/blockly/runtime";
+import { javascriptGenerator } from "../../../leapembed/server/blockly/runtime";
 import defineLeapBlocks from "../../server/blocks/blocks";
 import defineLooksBlocks from "../../server/blocks/looksBlocks";
 import defineSoundBlocks from "../../server/blocks/soundBlocks";
@@ -14,7 +14,7 @@ import { getLessonConfig } from "../../server/engine/LessonConfig";
 import { WorkspaceValidator } from "../../server/engine/WorkspaceValidator";
 import { previewActions } from "../../server/engine/previewActions";
 import { looksPreview } from "../../server/engine/looksPreview";
-import { EXTENSIONS, registerExtensions } from "../../../extensions/extensionDefinitions";
+import { EXTENSIONS, registerExtensions } from "../../../leapembed/server/extensions/extensionDefinitions";
 import { JuniorScene, JuniorSprite } from "../types";
 
 interface UseJuniorWorkspaceProps {
@@ -222,7 +222,7 @@ export function useJuniorWorkspace({
     useEffect(() => {
         defineLeapBlocks(Blockly, javascriptGenerator);
         defineLooksBlocks(Blockly, javascriptGenerator);
-        defineSoundBlocks(Blockly, javascriptGenerator);
+        defineSoundBlocks();
 
         // Dynamic Dropdown Colors
         if (!(Blockly.FieldDropdown.prototype as any)._originalShowEditor) {

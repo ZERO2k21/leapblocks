@@ -34,7 +34,7 @@ export default defineConfig({
     assetsInclude: ['**/*.wasm'],
     resolve: {
       alias: {
-        '@blockly-runtime': path.resolve(__dirname, 'src/blockly/runtime.ts'),
+        '@blockly-runtime': path.resolve(__dirname, 'src/leapembed/server/blockly/runtime.ts'),
         // fabric ships pre-minified ESM (index.min.mjs) which causes TDZ errors
         // when Rollup/esbuild reprocesses the already-mangled variable names.
         'fabric': path.resolve(__dirname, 'node_modules/fabric/dist/index.mjs'),

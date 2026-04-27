@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import Blockly from "@blockly-runtime";
+import Blockly from "../../../leapembed/server/blockly/runtime";
 import { JuniorScene, JuniorSprite } from "../types";
 
 interface PaintEditorState {
@@ -159,7 +159,7 @@ export function useJuniorUIHandlers({
         const targetId = backdropEditSceneId || currentSceneId;
         const scene = scenes.find(s => s.id === targetId);
         if (!scene) return;
-        
+
         setPaintEditor({
             isOpen: true,
             type: 'backdrop',
