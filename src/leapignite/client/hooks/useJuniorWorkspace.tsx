@@ -15,12 +15,23 @@ import { WorkspaceValidator } from "../../server/engine/WorkspaceValidator";
 import { previewActions } from "../../server/engine/previewActions";
 import { looksPreview } from "../../server/engine/looksPreview";
 import { EXTENSIONS, registerExtensions } from "../../../extensions/extensionDefinitions";
+import { JuniorScene, JuniorSprite } from "../types";
 
-// Robot Assets
-const robotIdle = "assets/sprites/robot/robot_idle.svg";
-const robotWave1 = "assets/sprites/robot/robot_wave1.svg";
-const robotWave2 = "assets/sprites/robot/robot_wave2.svg";
-const robotTalk1 = "assets/sprites/robot/robot_talk1.svg";
+interface UseJuniorWorkspaceProps {
+    workspaceRef: React.MutableRefObject<Blockly.WorkspaceSvg | null>;
+    blocklyDiv: React.MutableRefObject<HTMLDivElement | null>;
+    activeSpriteIdRef: React.MutableRefObject<string | null>;
+    scenesRef: React.MutableRefObject<JuniorScene[] | null>;
+    setIsSoundRecorderOpen: (val: boolean) => void;
+    saveCurrentWorkspace: () => void;
+    spriteActions: any; // We can type this better later if needed
+    currentToolboxContentsRef: React.MutableRefObject<any[]>;
+    isLoadingWorkspaceRef: React.MutableRefObject<boolean>;
+    draggedBlockRef: React.MutableRefObject<any>;
+    setIsDraggingBlock: (val: boolean) => void;
+    lastMousePosRef: React.MutableRefObject<{ x: number, y: number }>;
+    onBlocksDropped: (targetId: string) => void;
+}
 
 // Categories
 const CATEGORIES = [
@@ -32,7 +43,7 @@ const CATEGORIES = [
     { id: "pen", name: "Pen", color: "#0FBD8C", icon: <span role="img" aria-label="pen">🖊️</span> },
 ];
 
-const categoryContents = {
+const categoryContents: Record<string, any[]> = {
     motion: [
         { kind: "block", type: "move_right" },
         { kind: "block", type: "move_left" },
@@ -103,7 +114,7 @@ export function useJuniorWorkspace({
     setIsDraggingBlock,
     lastMousePosRef,
     onBlocksDropped
-}) {
+}: UseJuniorWorkspaceProps) {
     const [activeCategory, setActiveCategory] = useState("events");
     const [categories, setCategories] = useState(CATEGORIES);
     const [categoryBlocks, setCategoryBlocks] = useState(categoryContents);
@@ -111,16 +122,16 @@ export function useJuniorWorkspace({
 
     // Pickers UI State
     const [showPicker, setShowPicker] = useState(false);
-    const [pickerCallback, setPickerCallback] = useState(null);
+    const [pickerCallback, setPickerCallback] = useState<any>(null);
     const [showDirPicker, setShowDirPicker] = useState(false);
     const [showInstPicker, setShowInstPicker] = useState(false);
     const [showPianoPicker, setShowPianoPicker] = useState(false);
-    const [pickerPos, setPickerPos] = useState(null);
-    const [activeBlock, setActiveBlock] = useState(null);
+    const [pickerPos, setPickerPos] = useState<{ x: number, y: number } | null>(null);
+    const [activeBlock, setActiveBlock] = useState<any>(null);
 
-    const previewRevertTimerRef = useRef(null);
+    const previewRevertTimerRef = useRef<any>(null);
 
-    const getToolboxXml = (catId, currentCategoryBlocks = categoryBlocks) => {
+    const getToolboxXml = (catId: string, currentCategoryBlocks = categoryBlocks) => {
         const config = getLessonConfig();
         const allowedShapes = config.allowedShapes || ["stack", "hat", "c-block", "cap"];
 
@@ -152,7 +163,7 @@ export function useJuniorWorkspace({
         }
     };
 
-    const handleCategoryClick = (catId) => {
+    const handleCategoryClick = (catId: string) => {
         setActiveCategory(catId);
         if (workspaceRef.current) {
             const toolboxXml = getToolboxXml(catId, categoryBlocks);
@@ -168,12 +179,12 @@ export function useJuniorWorkspace({
         }
     };
 
-    const handleAddExtension = (extId) => {
+    const handleAddExtension = (extId: string) => {
         setIsExtensionLibraryOpen(false);
 
         // Normalize ID (face-detection -> face_detection)
         const id = extId.replace(/-/g, '_');
-        const ext = EXTENSIONS[id];
+        const ext = (EXTENSIONS as any)[id];
 
         if (ext) {
             // Already added? Just switch category
@@ -214,9 +225,9 @@ export function useJuniorWorkspace({
         defineSoundBlocks(Blockly, javascriptGenerator);
 
         // Dynamic Dropdown Colors
-        if (!Blockly.FieldDropdown.prototype._originalShowEditor) {
-            Blockly.FieldDropdown.prototype._originalShowEditor = Blockly.FieldDropdown.prototype.showEditor_;
-            Blockly.FieldDropdown.prototype.showEditor_ = function (opt_e) {
+        if (!(Blockly.FieldDropdown.prototype as any)._originalShowEditor) {
+            (Blockly.FieldDropdown.prototype as any)._originalShowEditor = (Blockly.FieldDropdown.prototype as any).showEditor_;
+            (Blockly.FieldDropdown.prototype as any).showEditor_ = function (opt_e: any) {
                 const block = this.getSourceBlock();
                 if (block) {
                     const color = block.getColour();
@@ -229,15 +240,15 @@ export function useJuniorWorkspace({
         }
 
         // Force dropdown arrows to be black
-        if (!Blockly.FieldDropdown.prototype._arrowColourPatched) {
+        if (!(Blockly.FieldDropdown.prototype as any)._arrowColourPatched) {
             const origApplyColour = Blockly.FieldDropdown.prototype.applyColour;
             Blockly.FieldDropdown.prototype.applyColour = function () {
                 if (origApplyColour) origApplyColour.call(this);
-                const svgArrow = this.svgArrow_ || this.svgArrow;
+                const svgArrow = (this as any).svgArrow_ || (this as any).svgArrow;
                 if (svgArrow) {
                     svgArrow.style.filter = 'brightness(0)';
                 }
-                const arrow = this.arrow_ || this.arrow;
+                const arrow = (this as any).arrow_ || (this as any).arrow;
                 if (arrow) {
                     try {
                         const arrowEl = arrow.getSvgRoot ? arrow.getSvgRoot() : arrow;
@@ -246,24 +257,19 @@ export function useJuniorWorkspace({
                     } catch (e) { }
                 }
                 try {
-                    const fieldGroup = this.fieldGroup_ || this.fieldGroup;
+                    const fieldGroup = (this as any).fieldGroup_ || (this as any).fieldGroup;
                     if (fieldGroup) {
                         const images = fieldGroup.querySelectorAll('image');
-                        images.forEach(img => { img.style.filter = 'brightness(0)'; });
+                        images.forEach((img: any) => { img.style.filter = 'brightness(0)'; });
                     }
                 } catch (e) { }
             };
-            Blockly.FieldDropdown.prototype._arrowColourPatched = true;
+            (Blockly.FieldDropdown.prototype as any)._arrowColourPatched = true;
         }
 
         registerLeapRenderer(Blockly);
 
         if (blocklyDiv.current && !workspaceRef.current) {
-            // Reset any lingering flyout contents from Intermediate mode
-            if (typeof _continuousFlyoutContents !== 'undefined') {
-                _continuousFlyoutContents = [];
-            }
-
             workspaceRef.current = Blockly.inject(blocklyDiv.current, {
                 toolbox: getToolboxXml("events"),
                 scrollbars: false,
@@ -298,33 +304,33 @@ export function useJuniorWorkspace({
             const initFlyout = workspaceRef.current.getFlyout();
             if (initFlyout) {
                 const FIXED_SCALE = 1.0;
-                initFlyout.getFlyoutScale = () => FIXED_SCALE;
+                (initFlyout as any).getFlyoutScale = () => FIXED_SCALE;
                 if (initFlyout.getWorkspace()) {
-                    initFlyout.getWorkspace().setScale(FIXED_SCALE);
+                    initFlyout.getWorkspace()!.setScale(FIXED_SCALE);
                 }
-                initFlyout.height_ = 140;
+                (initFlyout as any).height_ = 140;
             }
 
             setTimeout(() => {
-                workspaceRef.current.resize();
+                workspaceRef.current?.resize();
                 window.dispatchEvent(new Event('resize'));
             }, 100);
 
             // UI Listeners (Pickers & Previews)
-            workspaceRef.current.addChangeListener((e) => {
+            workspaceRef.current.addChangeListener((e: any) => {
                 if (e.type === Blockly.Events.CLICK) {
-                    const block = workspaceRef.current.getBlockById(e.blockId);
+                    const block = workspaceRef.current!.getBlockById(e.blockId);
                     if (!block) return;
 
                     if (block.type === "go_to_location") {
-                        setPickerCallback(() => (x, y) => {
-                            if (typeof block.setGridPosition === "function") {
-                                block.setGridPosition(x, y);
+                        setPickerCallback(() => (x: number, y: number) => {
+                            if (typeof (block as any).setGridPosition === "function") {
+                                (block as any).setGridPosition(x, y);
                             } else {
-                                block.posX = x;
-                                block.posY = y;
+                                (block as any).posX = x;
+                                (block as any).posY = y;
                             }
-                            if (window.goToLocation) window.goToLocation(x, y);
+                            if ((window as any).goToLocation) (window as any).goToLocation(x, y);
                         });
                         setShowPicker(true);
                     }
@@ -337,8 +343,8 @@ export function useJuniorWorkspace({
                     if (block.type === "sound_instrument") {
                         setActiveBlock(block);
                         const xy = block.getRelativeToSurfaceXY();
-                        const scale = workspaceRef.current.getScale();
-                        const injectionDiv = workspaceRef.current.getInjectionDiv();
+                        const scale = workspaceRef.current!.getScale();
+                        const injectionDiv = workspaceRef.current!.getInjectionDiv();
                         const bBox = injectionDiv.getBoundingClientRect();
 
                         setPickerPos({
@@ -351,8 +357,8 @@ export function useJuniorWorkspace({
                     if (block.type === "sound_note") {
                         setActiveBlock(block);
                         const xy = block.getRelativeToSurfaceXY();
-                        const scale = workspaceRef.current.getScale();
-                        const injectionDiv = workspaceRef.current.getInjectionDiv();
+                        const scale = workspaceRef.current!.getScale();
+                        const injectionDiv = workspaceRef.current!.getInjectionDiv();
                         const bBox = injectionDiv.getBoundingClientRect();
 
                         setPickerPos({
@@ -363,12 +369,12 @@ export function useJuniorWorkspace({
                     }
 
                     // PROPER PREVIEW
-                    const sid = activeSpriteIdRef.current || window.activeSpriteId;
+                    const sid = activeSpriteIdRef.current || (window as any).activeSpriteId;
                     const latestScenes = scenesRef.current;
-                    let activeSprite = null;
+                    let activeSprite: JuniorSprite | null = null;
                     if (latestScenes) {
                         for (const scene of latestScenes) {
-                            activeSprite = scene.sprites.find(s => s.id === sid);
+                            activeSprite = scene.sprites.find(s => s.id === sid) || null;
                             if (activeSprite) break;
                         }
                     }
@@ -391,20 +397,20 @@ export function useJuniorWorkspace({
                     };
 
                     let previewed = false;
-                    if (looksPreview[block.type]) {
-                        looksPreview[block.type](block);
+                    if ((looksPreview as any)[block.type]) {
+                        (looksPreview as any)[block.type](block);
                         previewed = true;
-                    } else if (previewActions[block.type]) {
-                        previewActions[block.type](block);
+                    } else if ((previewActions as any)[block.type]) {
+                        (previewActions as any)[block.type](block);
                         previewed = true;
                     }
 
                     if (previewed) {
-                        if (window.jiggle) window.jiggle(activeSprite.id);
+                        if ((window as any).jiggle) (window as any).jiggle(activeSprite.id);
 
                         previewRevertTimerRef.current = setTimeout(() => {
-                            console.log(`[JuniorApp] Reverting preview for ${activeSprite.name}`);
-                            spriteActions.update(activeSprite.id, savedState);
+                            console.log(`[JuniorApp] Reverting preview for ${activeSprite!.name}`);
+                            spriteActions.update(activeSprite!.id, savedState);
                             previewRevertTimerRef.current = null;
                         }, 2000);
                     }
@@ -414,17 +420,17 @@ export function useJuniorWorkspace({
             // Flyout preview listener
             if (flyout) {
                 const flyoutWs = flyout.getWorkspace();
-                flyoutWs.addChangeListener((e) => {
+                flyoutWs!.addChangeListener((e: any) => {
                     if (e.type === Blockly.Events.CLICK) {
-                        const block = flyoutWs.getBlockById(e.blockId);
+                        const block = flyoutWs!.getBlockById(e.blockId);
                         if (!block) return;
 
-                        const sid = activeSpriteIdRef.current || window.activeSpriteId;
+                        const sid = activeSpriteIdRef.current || (window as any).activeSpriteId;
                         const latestScenes = scenesRef.current;
-                        let activeSprite = null;
+                        let activeSprite: JuniorSprite | null = null;
                         if (latestScenes) {
                             for (const scene of latestScenes) {
-                                activeSprite = scene.sprites.find(s => s.id === sid);
+                                activeSprite = scene.sprites.find(s => s.id === sid) || null;
                                 if (activeSprite) break;
                             }
                         }
@@ -447,20 +453,20 @@ export function useJuniorWorkspace({
                         };
 
                         let previewed = false;
-                        if (looksPreview[block.type]) {
-                            looksPreview[block.type](block);
+                        if ((looksPreview as any)[block.type]) {
+                            (looksPreview as any)[block.type](block);
                             previewed = true;
-                        } else if (previewActions[block.type]) {
-                            previewActions[block.type](block);
+                        } else if ((previewActions as any)[block.type]) {
+                            (previewActions as any)[block.type](block);
                             previewed = true;
                         }
 
                         if (previewed) {
-                            if (window.jiggle) window.jiggle(activeSprite.id);
+                            if ((window as any).jiggle) (window as any).jiggle(activeSprite.id);
 
                             previewRevertTimerRef.current = setTimeout(() => {
-                                console.log(`[JuniorApp] Reverting flyout preview for ${activeSprite.name}`);
-                                spriteActions.update(activeSprite.id, savedState);
+                                console.log(`[JuniorApp] Reverting flyout preview for ${activeSprite!.name}`);
+                                spriteActions.update(activeSprite!.id, savedState);
                                 previewRevertTimerRef.current = null;
                             }, 2000);
                         }
@@ -468,7 +474,7 @@ export function useJuniorWorkspace({
                 });
             }
 
-            const handleWorkspaceChange = (e) => {
+            const handleWorkspaceChange = (e: any) => {
                 if (e.type === Blockly.Events.UI) return;
 
                 // Ignore changes during workspace loading to prevent saving empty/intermediate states
@@ -483,14 +489,14 @@ export function useJuniorWorkspace({
                     const config = getLessonConfig();
                     const MAX_BLOCKS = config.maxBlocks || 500;
 
-                    const blocks = workspaceRef.current.getAllBlocks(false);
+                    const blocks = workspaceRef.current!.getAllBlocks(false);
                     if (blocks.length > MAX_BLOCKS) {
                         alert(`Lesson Limit: You can only use ${MAX_BLOCKS} blocks!`);
-                        setTimeout(() => workspaceRef.current.undo(false), 0);
+                        setTimeout(() => workspaceRef.current!.undo(false), 0);
                         return;
                     }
 
-                    const validation = WorkspaceValidator.validateWorkspace(workspaceRef.current);
+                    const validation = WorkspaceValidator.validateWorkspace(workspaceRef.current!) as { isValid: boolean; error: string; victim?: any };
                     if (!validation.isValid) {
                         if (!validation.error.includes("connected to a Start") && !validation.error.includes("Start block")) {
                             alert(validation.error);
@@ -504,7 +510,7 @@ export function useJuniorWorkspace({
                 // --- BLOCK DRAG TRACKING ---
                 if (e.type === Blockly.Events.BLOCK_DRAG) {
                     if (e.isStart) {
-                        const mainWs = workspaceRef.current;
+                        const mainWs = workspaceRef.current!;
                         const flyoutWs = mainWs.getFlyout()?.getWorkspace();
                         const block = mainWs.getBlockById(e.blockId) || flyoutWs?.getBlockById(e.blockId);
 
@@ -524,8 +530,10 @@ export function useJuniorWorkspace({
                             const card = element?.closest('[data-sprite-id]');
                             if (card) {
                                 const targetId = card.getAttribute('data-sprite-id');
-                                console.log(`[JuniorWorkspace] Robust drop detected on: ${targetId}`);
-                                onBlocksDropped(targetId);
+                                if (targetId) {
+                                    console.log(`[JuniorWorkspace] Robust drop detected on: ${targetId}`);
+                                    onBlocksDropped(targetId);
+                                }
                             }
                         }
 

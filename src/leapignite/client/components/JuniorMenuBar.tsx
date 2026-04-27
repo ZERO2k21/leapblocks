@@ -5,25 +5,43 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import {
-    ChevronDown, File, FolderOpen, Save, Download,
+    ChevronDown, File, FolderOpen, Save,
     Undo, Redo, BookOpen, HelpCircle, Home,
     MessageSquareWarning, Trophy, Settings,
-    Share
+    Share, LucideIcon
 } from 'lucide-react';
 import Logo, { CreoleapLogo } from '../../../components/Logo';
+
+interface DropdownMenuItem {
+    label?: string;
+    icon?: LucideIcon;
+    onClick?: () => void;
+    disabled?: boolean;
+    divider?: boolean;
+    shortcut?: string;
+}
+
+interface DropdownMenuProps {
+    label: string;
+    icon?: LucideIcon;
+    items: DropdownMenuItem[];
+    isOpen: boolean;
+    onToggle: () => void;
+    onClose: () => void;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DROPDOWN MENU — Glassmorphism + slide-in animation (same design as Intermediate)
 // ═══════════════════════════════════════════════════════════════════════════
-function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
-    const menuRef = useRef(null);
+function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }: DropdownMenuProps) {
+    const menuRef = useRef<HTMLDivElement>(null);
     const onCloseRef = useRef(onClose);
     onCloseRef.current = onClose;
 
     useEffect(() => {
         if (!isOpen) return;
-        const handleClickOutside = (e) => {
-            if (menuRef.current && !menuRef.current.contains(e.target)) {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
                 onCloseRef.current();
             }
         };
@@ -159,6 +177,15 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     );
 }
 
+interface JuniorMenuBarProps {
+    projectName?: string;
+    onProjectNameChange?: (name: string) => void;
+    onFileAction?: (action: string) => void;
+    onEditAction?: (action: string) => void;
+    onTutorialStart?: (tutorial: string) => void;
+    onBack?: () => void;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // JUNIOR MENUBAR — Simplified for young children (no hardware)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -169,16 +196,16 @@ export default function JuniorMenuBar({
     onEditAction,
     onTutorialStart,
     onBack,
-}) {
-    const [openMenu, setOpenMenu] = useState(null);
+}: JuniorMenuBarProps) {
+    const [openMenu, setOpenMenu] = useState<string | null>(null);
 
-    const toggleMenu = (menu) => {
+    const toggleMenu = (menu: string) => {
         setOpenMenu(openMenu === menu ? null : menu);
     };
 
     const closeMenu = () => setOpenMenu(null);
 
-    const fileMenuItems = [
+    const fileMenuItems: DropdownMenuItem[] = [
         { label: 'New Project', icon: File, onClick: () => onFileAction?.('new') },
         { label: 'Open Project', icon: FolderOpen, onClick: () => onFileAction?.('open') },
         { divider: true },
@@ -186,12 +213,12 @@ export default function JuniorMenuBar({
         { label: 'Share', icon: Share, onClick: () => onFileAction?.('share to') },
     ];
 
-    const editMenuItems = [
+    const editMenuItems: DropdownMenuItem[] = [
         { label: 'Undo', icon: Undo, onClick: () => onEditAction?.('undo') },
         { label: 'Redo', icon: Redo, onClick: () => onEditAction?.('redo') },
     ];
 
-    const tutorialsMenuItems = [
+    const tutorialsMenuItems: DropdownMenuItem[] = [
         { label: 'Getting Started', icon: BookOpen, onClick: () => onTutorialStart?.('getting_started') },
         { label: 'Move the Robo', icon: BookOpen, onClick: () => onTutorialStart?.('move_robo') },
         { label: 'Make Sounds', icon: BookOpen, onClick: () => onTutorialStart?.('make_sounds') },

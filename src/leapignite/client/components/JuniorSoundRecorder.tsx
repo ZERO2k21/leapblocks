@@ -4,20 +4,32 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+// @ts-ignore
 import AudioRecorder from '../../../scratch-audio/src/audio/audio-recorder';
 import { Play, X, RotateCcw, ChevronLeft } from 'lucide-react';
 
+interface AudioData {
+    buffer: AudioBuffer;
+    blobUrl: string;
+    trimStart?: number;
+    trimEnd?: number;
+}
+
 // --- SUB-COMPONENTS ---
 
-const VerticalLevelMeter = ({ analyser }) => {
-    const canvasRef = useRef(null);
-    const requestRef = useRef();
+interface VerticalLevelMeterProps {
+    analyser: AnalyserNode | null;
+}
+
+const VerticalLevelMeter = ({ analyser }: VerticalLevelMeterProps) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const requestRef = useRef<number>(0);
 
     useEffect(() => {
         if (!analyser) return;
 
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
+        const canvas = canvasRef.current!;
+        const ctx = canvas.getContext('2d')!;
         const bufferLength = analyser.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
 
@@ -42,27 +54,42 @@ const VerticalLevelMeter = ({ analyser }) => {
                 // Draw rounded segment
                 const radius = 4;
                 ctx.beginPath();
-                ctx.roundRect(4, y, width - 8, segmentHeight, radius);
+                // @ts-ignore
+                if (ctx.roundRect) {
+                    // @ts-ignore
+                    ctx.roundRect(4, y, width - 8, segmentHeight, radius);
+                } else {
+                    ctx.rect(4, y, width - 8, segmentHeight);
+                }
                 ctx.fill();
             }
         };
 
         renderFrame();
-        return () => cancelAnimationFrame(requestRef.current);
+        return () => {
+            if (requestRef.current) cancelAnimationFrame(requestRef.current);
+        };
     }, [analyser]);
 
     return <canvas ref={canvasRef} width={40} height={200} className="junior-recorder-level-v" />;
 };
 
-const WaveformWithTrim = ({ buffer, trimStart, trimEnd, onTrimChange }) => {
-    const canvasRef = useRef(null);
-    const containerRef = useRef(null);
+interface WaveformWithTrimProps {
+    buffer: AudioBuffer;
+    trimStart: number;
+    trimEnd: number;
+    onTrimChange: (start: number, end: number) => void;
+}
+
+const WaveformWithTrim = ({ buffer, trimStart, trimEnd, onTrimChange }: WaveformWithTrimProps) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!buffer) return;
 
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
+        const canvas = canvasRef.current!;
+        const ctx = canvas.getContext('2d')!;
         const width = canvas.width;
         const height = canvas.height;
 
@@ -77,7 +104,7 @@ const WaveformWithTrim = ({ buffer, trimStart, trimEnd, onTrimChange }) => {
         ctx.fillRect(0, 0, width, height);
 
         // Draw excluded areas (striped)
-        const drawStriped = (x, w) => {
+        const drawStriped = (x: number, w: number) => {
             ctx.save();
             ctx.beginPath();
             ctx.rect(x, 0, w, height);
@@ -121,12 +148,12 @@ const WaveformWithTrim = ({ buffer, trimStart, trimEnd, onTrimChange }) => {
 
     }, [buffer, trimStart, trimEnd]);
 
-    const handleMouseDown = (e, type) => {
+    const handleMouseDown = (e: React.MouseEvent, type: 'start' | 'end') => {
         const startX = e.clientX;
         const initialVal = type === 'start' ? trimStart : trimEnd;
-        const rect = containerRef.current.getBoundingClientRect();
+        const rect = containerRef.current!.getBoundingClientRect();
 
-        const handleMouseMove = (mmE) => {
+        const handleMouseMove = (mmE: MouseEvent) => {
             const delta = (mmE.clientX - startX) / rect.width;
             let newVal = Math.max(0, Math.min(1, initialVal + delta));
 
@@ -175,15 +202,21 @@ const WaveformWithTrim = ({ buffer, trimStart, trimEnd, onTrimChange }) => {
 
 // --- MAIN COMPONENT ---
 
-const JuniorSoundRecorder = ({ isOpen, onClose, onSave }) => {
+interface JuniorSoundRecorderProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (data: AudioData) => void;
+}
+
+const JuniorSoundRecorder = ({ isOpen, onClose, onSave }: JuniorSoundRecorderProps) => {
     const [isRecording, setIsRecording] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isReady, setIsReady] = useState(false);
-    const [audioData, setAudioData] = useState(null);
-    const [analyser, setAnalyser] = useState(null);
+    const [audioData, setAudioData] = useState<AudioData | null>(null);
+    const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
     const [trim, setTrim] = useState({ start: 0, end: 1 });
 
-    const recorderRef = useRef(null);
+    const recorderRef = useRef<any>(null);
     const audioRef = useRef(new Audio());
 
     useEffect(() => {
@@ -192,13 +225,13 @@ const JuniorSoundRecorder = ({ isOpen, onClose, onSave }) => {
             setAudioData(null);
             setTrim({ start: 0, end: 1 });
             recorderRef.current = new AudioRecorder();
-            recorderRef.current.onComplete = (data) => {
+            recorderRef.current.onComplete = (data: AudioData) => {
                 setAudioData(data);
                 setIsRecording(false);
                 setAnalyser(null);
             };
 
-            recorderRef.current.requestDevice().then(success => {
+            recorderRef.current.requestDevice().then((success: boolean) => {
                 if (success) {
                     setAnalyser(recorderRef.current.getAnalyser());
                     setIsReady(true);

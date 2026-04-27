@@ -3,11 +3,28 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import Blockly from "@blockly-runtime";
 import { fileService } from "../../../services/FileService";
+import { JuniorScene, JuniorSprite } from "../types";
 
-const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspaceJson || {}));
+const cloneWorkspaceData = (workspaceJson: any) => JSON.parse(JSON.stringify(workspaceJson || {}));
+
+interface UseJuniorProjectProps {
+    workspaceRef: React.MutableRefObject<Blockly.WorkspaceSvg | null>;
+    scenes: JuniorScene[];
+    setScenes: React.Dispatch<React.SetStateAction<JuniorScene[]>>;
+    currentSceneId: string;
+    setCurrentSceneId: React.Dispatch<React.SetStateAction<string>>;
+    activeSpriteIdRef: React.MutableRefObject<string | null>;
+    setActiveSpriteId: React.Dispatch<React.SetStateAction<string | null>>;
+    stopBlocks: () => void;
+    projectName: string;
+    setProjectName: React.Dispatch<React.SetStateAction<string>>;
+    saveCurrentWorkspace: () => void;
+    spriteWorkspacesRef: React.MutableRefObject<Map<string, any>>;
+    isLoadingWorkspaceRef: React.MutableRefObject<boolean>;
+}
 
 export function useJuniorProject({
     workspaceRef,
@@ -23,10 +40,10 @@ export function useJuniorProject({
     saveCurrentWorkspace,
     spriteWorkspacesRef,
     isLoadingWorkspaceRef
-}) {
-    const fileInputRef = useRef(null);
+}: UseJuniorProjectProps) {
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
-    const [pendingAction, setPendingAction] = useState(null); // 'new' or 'open'
+    const [pendingAction, setPendingAction] = useState<'new' | 'open' | null>(null);
 
     const executeNewProject = () => {
         // Clear all per-sprite workspaces
@@ -49,7 +66,7 @@ export function useJuniorProject({
         }
 
         const id = `robot_default`;
-        const newSprite = {
+        const newSprite: JuniorSprite = {
             id: id,
             name: "Robot",
             type: "robot",
@@ -70,7 +87,7 @@ export function useJuniorProject({
             blocks: {}
         };
 
-        const defaultScene = {
+        const defaultScene: JuniorScene = {
             id: "scene1",
             name: "Scene 1",
             background: "white",
@@ -122,7 +139,7 @@ export function useJuniorProject({
         setShowUnsavedModal(true);
     };
 
-    const confirmUnsavedAction = (saveFirst) => {
+    const confirmUnsavedAction = (saveFirst: boolean) => {
         setShowUnsavedModal(false);
         if (saveFirst) {
             handleSaveProject(true);
@@ -138,8 +155,8 @@ export function useJuniorProject({
         }
     };
 
-    const handleFileLoad = async (e) => {
-        const file = e.target.files[0];
+    const handleFileLoad = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
         if (!file) return;
 
         try {
@@ -161,8 +178,8 @@ export function useJuniorProject({
             if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
                 spriteWorkspacesRef.current.clear();
                 // Pre-populate sprite workspaces from loaded data
-                data.scenes.forEach(scene => {
-                    scene.sprites.forEach(sprite => {
+                data.scenes.forEach((scene: JuniorScene) => {
+                    scene.sprites.forEach((sprite: JuniorSprite) => {
                         if (sprite.blocks && Object.keys(sprite.blocks).length > 0) {
                             spriteWorkspacesRef.current.set(sprite.id, cloneWorkspaceData(sprite.blocks));
                             console.log(`[JuniorProject] Pre-loaded workspace for sprite: ${sprite.id}`);
@@ -225,7 +242,7 @@ export function useJuniorProject({
             }
 
             console.log('[JuniorApp] Project loaded successfully');
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to load project:', err);
             alert('Failed to load project file: ' + err.message);
         } finally {

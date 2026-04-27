@@ -6,9 +6,17 @@
 import React from 'react';
 import { X, Cpu } from 'lucide-react';
 
+interface Board {
+    id: string;
+    name: string;
+    category: string;
+    color: string;
+    description: string;
+}
+
 // Board definitions - Arduino and ESP32 focus with SVG icons
-let _BOARDS = null;
-export const getBoards = () => {
+let _BOARDS: Board[] | null = null;
+export const getBoards = (): Board[] => {
     if (!_BOARDS) {
         _BOARDS = [
             {
@@ -45,8 +53,7 @@ export const getBoards = () => {
 };
 
 // Simple Arduino board icon component
-function BoardIcon({ board }) {
-    const isArduino = board.category === 'Arduino';
+function BoardIcon({ board }: { board: Board }) {
     return (
         <div style={{
             width: '60px',
@@ -87,7 +94,14 @@ function BoardIcon({ board }) {
     );
 }
 
-export default function BoardSelectionModal({ isOpen, onClose, onSelect, currentBoard }) {
+interface BoardSelectionModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSelect: (id: string, name: string) => void;
+    currentBoard: string;
+}
+
+export default function BoardSelectionModal({ isOpen, onClose, onSelect, currentBoard }: BoardSelectionModalProps) {
     if (!isOpen) return null;
 
     return (
@@ -236,4 +250,3 @@ export default function BoardSelectionModal({ isOpen, onClose, onSelect, current
         </div>
     );
 }
-

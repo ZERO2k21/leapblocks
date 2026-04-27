@@ -5,12 +5,24 @@
  */
 import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
+import { JuniorSprite } from '../types';
+
+interface SpriteCardProps {
+    sprite: JuniorSprite;
+    active: boolean;
+    onClick: () => void;
+    onDelete?: (id: string) => void;
+    onEdit?: (id: string) => void;
+    isDraggingBlock?: boolean;
+    onBlocksDropped?: (spriteId: string, blocks?: any) => void;
+    isSuccess?: boolean;
+}
 
 export default function SpriteCard({ 
     sprite, active, onClick, onDelete, onEdit, 
     isDraggingBlock, onBlocksDropped,
     isSuccess
-}) {
+}: SpriteCardProps) {
     const [isHoveredWhileDragging, setIsHoveredWhileDragging] = React.useState(false);
 
     const handleMouseUp = () => {
@@ -23,8 +35,8 @@ export default function SpriteCard({
     const label = sprite.name;
 
     // Use actual sprite image if available, otherwise emoji
-    const spriteImage = sprite.costumes?.[sprite.currentCostume] || null;
-    const displayIcon = sprite.costumes?.[sprite.currentCostume] || "🐻";
+    const spriteImage = (sprite.costumes?.[sprite.currentCostume || 'default'] as string) || null;
+    const displayIcon = (sprite.costumes?.[sprite.currentCostume || 'default'] as string) || "🐻";
 
     return (
         <div

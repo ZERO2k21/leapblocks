@@ -6,7 +6,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/juniorExtensionLibrary.css';
 
-const EXTENSIONS = [
+interface Extension {
+    id: string;
+    name: string;
+    description: string;
+    emoji: string;
+    color: string;
+    cat: string;
+    iconBg: string;
+    icon: string;
+    requires?: string;
+    badge?: string;
+}
+
+const EXTENSIONS: Extension[] = [
     // AI & ML
     { id: 'face_detection', name: 'Face Detection', description: 'Detect and recognize human faces in real-time using the camera.', emoji: '👤', color: 'linear-gradient(135deg,#f9a825,#ffe082)', cat: 'ai', iconBg: '#f5c518', icon: '🎯' },
     { id: 'object_detection', name: 'Object Detection', description: 'Identify objects from image using AI vision models.', emoji: '🐱', color: 'linear-gradient(135deg,#00796b,#4db6ac)', cat: 'ai', iconBg: '#3dba7e', icon: '🔎' },
@@ -56,14 +69,19 @@ const FILTERS = [
     { key: 'games', label: 'Games & Animation' },
 ];
 
-export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
+interface JuniorExtensionLibraryProps {
+    onClose: () => void;
+    onSelectExtension: (id: string) => void;
+}
+
+export default function JuniorExtensionLibrary({ onClose, onSelectExtension }: JuniorExtensionLibraryProps) {
     const [search, setSearch] = useState('');
     const [activeFilter, setActiveFilter] = useState('all');
-    const [iframeExtension, setIframeExtension] = useState(null);
+    const [iframeExtension, setIframeExtension] = useState<Extension | null>(null);
 
     // Listen for postMessage from the iframe
     useEffect(() => {
-        function handleMessage(event) {
+        function handleMessage(event: MessageEvent) {
             if (event.data && event.data.type === 'ADD_EXTENSION') {
                 const extId = event.data.extensionId;
                 console.log('[ExtensionLibrary] ADD_EXTENSION received:', extId);
@@ -78,7 +96,7 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
         return () => window.removeEventListener('message', handleMessage);
     }, [onSelectExtension]);
 
-    const handleCardClick = useCallback((ext) => {
+    const handleCardClick = useCallback((ext: Extension) => {
         setIframeExtension(ext);
     }, []);
 
@@ -87,7 +105,7 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
     }, []);
 
     // Build iframe URL from extension data
-    const getIframeUrl = (ext) => {
+    const getIframeUrl = (ext: Extension) => {
         // Direct mappings for extensions with custom HTML files
         if (ext.id === 'pen') {
             return `/extensions/ext-pen.html`;

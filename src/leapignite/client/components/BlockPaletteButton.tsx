@@ -8,7 +8,7 @@ import { previewActions } from "../../server/engine/previewActions";
 
 let lastPreview = 0;
 
-function safePreview(fn) {
+function safePreview(fn: () => void) {
     const now = Date.now();
     // 300ms Cooldown
     if (now - lastPreview > 300) {
@@ -17,12 +17,19 @@ function safePreview(fn) {
     }
 }
 
-export default function BlockPaletteButton({ type, icon, label, onDragStart }) {
+interface BlockPaletteButtonProps {
+    type: string;
+    icon: string;
+    label: string;
+    onDragStart: (e: React.PointerEvent, type: string) => void;
+}
+
+export default function BlockPaletteButton({ type, icon, label, onDragStart }: BlockPaletteButtonProps) {
     const [isActive, setIsActive] = useState(false);
     const isDragging = useRef(false);
     const startPos = useRef({ x: 0, y: 0 });
 
-    const handlePointerDown = (e) => {
+    const handlePointerDown = (e: React.PointerEvent) => {
         isDragging.current = false;
         startPos.current = { x: e.clientX, y: e.clientY };
 
@@ -30,23 +37,12 @@ export default function BlockPaletteButton({ type, icon, label, onDragStart }) {
         onDragStart(e, type);
     };
 
-    // We only handle the CLICK here. The actual DRAG movement is handled by the parent overlay
-    // to ensure the element can move outside this container.
-    // However, we need to know if it was a click or a slight move that ended.
-
-    // Actually, the parent (BlockPalette) will handle the global move/up.
-    // But we need to trigger the PREVIEW if the parent tells us "It was just a click".
-
-    // SIMPLER APPROACH:
-    // We handle local state. If the parent detects a drag, it takes over.
-    // If the parent detects a MouseUp without Drag, it calls our 'onClick'.
-
     const triggerPreview = () => {
         setIsActive(true);
         setTimeout(() => setIsActive(false), 200); // Visual Pulse
 
-        if (previewActions[type]) {
-            safePreview(() => previewActions[type]());
+        if ((previewActions as any)[type]) {
+            safePreview(() => (previewActions as any)[type]());
         }
     };
 

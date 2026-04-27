@@ -6,7 +6,14 @@
 import React from 'react';
 import { Save } from 'lucide-react';
 
-export default function UnsavedWarningModal({ isOpen, onYes, onNo, onCancel }) {
+interface UnsavedWarningModalProps {
+    isOpen: boolean;
+    onYes: () => void;
+    onNo: () => void;
+    onCancel: () => void;
+}
+
+export default function UnsavedWarningModal({ isOpen, onYes, onNo, onCancel }: UnsavedWarningModalProps) {
     if (!isOpen) return null;
 
     return (

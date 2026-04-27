@@ -6,7 +6,13 @@
 import React from 'react';
 import { Trophy, Check, RefreshCw } from 'lucide-react';
 
-export default function SuccessModal({ message, onRestart, onNext }) {
+interface SuccessModalProps {
+    message: string;
+    onRestart: () => void;
+    onNext: () => void;
+}
+
+export default function SuccessModal({ message, onRestart, onNext }: SuccessModalProps) {
     return (
         <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,

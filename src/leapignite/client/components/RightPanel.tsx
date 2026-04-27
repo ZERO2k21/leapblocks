@@ -6,8 +6,41 @@
 import React from 'react';
 import SpriteCard from './SpriteCard';
 import SceneCard from './SceneCard';
-import { Flag, RotateCw, Camera, CameraOff, Grid3X3, Maximize, Minimize, Square, Circle, ScanFace, Image as ImageIcon, MicOff, Shrink } from 'lucide-react';
+import { Flag, RotateCw, Maximize, Minimize, Square, Circle, ScanFace, Image as ImageIcon, MicOff, Grid3X3, CameraOff } from 'lucide-react';
 import Logo from '../../../components/Logo';
+import { JuniorScene, JuniorSprite } from '../types';
+
+interface RightPanelProps {
+    children?: React.ReactNode;
+    sprites?: JuniorSprite[];
+    scenes?: JuniorScene[];
+    currentSprite: string | null;
+    currentScene: string | null;
+    onSelectSprite: (id: string) => void;
+    onAddSprite: () => void;
+    onDeleteSprite?: (id: string) => void;
+    onSelectScene: (id: string) => void;
+    onAddScene: () => void;
+    onDeleteScene?: (id: string) => void;
+    onEditSprite?: (id: string) => void;
+    onEditScene?: (id: string) => void;
+    onGreenFlag: () => void;
+    onStop: () => void;
+    onReset: () => void;
+    onCamera: () => void;
+    onToggleGrid: () => void;
+    onFullscreen: () => void;
+    showGrid?: boolean;
+    isRunning?: boolean;
+    isCameraOn?: boolean;
+    isFullscreen?: boolean;
+    spriteGridX?: number | null;
+    spriteGridY?: number | null;
+    isDraggingSprite?: boolean;
+    isDraggingBlock?: boolean;
+    onBlocksDropped?: (spriteId: string, blocks: any) => void;
+    successSpriteId?: string | null;
+}
 
 export default function RightPanel({
     children,
@@ -37,9 +70,9 @@ export default function RightPanel({
     spriteGridY = null,
     isDraggingSprite = false,
     isDraggingBlock = false,
-    onBlocksDropped = null,
+    onBlocksDropped,
     successSpriteId = null,
-}) {
+}: RightPanelProps) {
 
     return (
         <div style={{ width: "40%", height: "100%", display: "flex", flexDirection: "column", borderLeft: "1px solid #ddd", overflow: "hidden", position: "relative" }}>
@@ -410,7 +443,19 @@ export default function RightPanel({
 }
 
 /* ─────────────── Action Icon Button ─────────────── */
-function ActionIcon({ icon, label, onClick, bgColor, hoverBg, outlineColor, active, activeBg, size = 48 }) {
+interface ActionIconProps {
+    icon: React.ReactNode;
+    label: string;
+    onClick: () => void;
+    bgColor?: string;
+    hoverBg?: string;
+    outlineColor?: string;
+    active?: boolean;
+    activeBg?: string;
+    size?: number;
+}
+
+function ActionIcon({ icon, label, onClick, bgColor, hoverBg, outlineColor, active, activeBg, size = 48 }: ActionIconProps) {
     const [hovered, setHovered] = React.useState(false);
 
     const isFilled = !!bgColor || active;

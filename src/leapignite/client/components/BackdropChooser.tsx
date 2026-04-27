@@ -23,7 +23,7 @@ const PRESET_BACKDROPS = [
 const mappedleapBackdrops = leapBackdrops.map(bg => ({
     id: bg.name.toLowerCase().replace(/[^a-z0-9]/g, '_'),
     name: bg.name,
-    src: `/assets/backdrops/${bg.md5ext || bg.md5}`,
+    src: `/assets/backdrops/${bg.md5ext || (bg as any).md5}`,
     color: '#E0E0E0'
 }));
 
@@ -40,9 +40,15 @@ const SOLID_COLORS = [
     { name: 'Pink', color: '#F48FB1' },
 ];
 
-export default function BackdropChooser({ onSelect, onPaint, onClose }) {
-    const [tab, setTab] = useState('backdrops'); // 'backdrops' | 'colors'
-    const [hoveredId, setHoveredId] = useState(null);
+interface BackdropChooserProps {
+    onSelect: (name: string, src: string | null, solidColor?: string | null) => void;
+    onPaint: () => void;
+    onClose: () => void;
+}
+
+export default function BackdropChooser({ onSelect, onPaint, onClose }: BackdropChooserProps) {
+    const [tab, setTab] = useState<'backdrops' | 'colors'>('backdrops'); // 'backdrops' | 'colors'
+    const [hoveredId, setHoveredId] = useState<string | null>(null);
 
     return (
         <div style={{
@@ -76,8 +82,8 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }) {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             cursor: 'pointer', transition: 'all 0.15s',
                         }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.3)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.2)')}
                     >
                         <X size={18} color="white" />
                     </button>
@@ -94,7 +100,7 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }) {
                     ].map(t => (
                         <button
                             key={t.id}
-                            onClick={() => setTab(t.id)}
+                            onClick={() => setTab(t.id as 'backdrops' | 'colors')}
                             style={{
                                 flex: 1, padding: '12px 16px',
                                 background: tab === t.id ? 'white' : 'transparent',
@@ -124,8 +130,8 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }) {
                                     borderRadius: '12px', cursor: 'pointer',
                                     transition: 'all 0.15s', color: 'white',
                                 }}
-                                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-                                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
+                                onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                             >
                                 <Paintbrush size={20} />
                                 <div>
@@ -173,7 +179,7 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }) {
                                                     width: '100%', height: '100%',
                                                     objectFit: 'cover',
                                                 }}
-                                                onError={e => { e.currentTarget.style.display = 'none'; }}
+                                                onError={e => { (e.currentTarget.style.display = 'none'); }}
                                             />
                                         </div>
                                         {/* Label */}
@@ -203,8 +209,8 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }) {
                                 <div
                                     key={c.name}
                                     onClick={() => onSelect(c.name, null, c.color)}
-                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
                                     style={{
                                         cursor: 'pointer',
                                         borderRadius: '12px',

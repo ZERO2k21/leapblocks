@@ -4,6 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import { useState, useCallback, useRef } from "react";
+import { JuniorScene, JuniorSprite } from "../types";
 
 // Grid Constants (Junior is typically 20x15 grid)
 const CELL_SIZE = 24;
@@ -13,65 +14,41 @@ const GRID_H = 15; // 360px
 const STAGE_WIDTH = GRID_W * CELL_SIZE; // 480
 const STAGE_HEIGHT = GRID_H * CELL_SIZE; // 360
 
-// Hiding/Peeking Constants
-const PEEK_LIMIT = 20; // Pixels to keep visible
-const SPRITE_DIM = 80; // Standard sprite bounding box (80x80)
-
 /**
  * useSpriteSystem Hook
  * Manages the "Physics" and "State" of the sprites.
  * strictly enforcing boundaries and valid states.
  */
-export function useSpriteSystem(initialScenes) {
-    const [scenes, setScenes] = useState(initialScenes);
-    const [currentSceneId, setCurrentSceneId] = useState(initialScenes[0]?.id || "scene1");
+export function useSpriteSystem(initialScenes: JuniorScene[]) {
+    const [scenes, setScenes] = useState<JuniorScene[]>(initialScenes);
+    const [currentSceneId, setCurrentSceneId] = useState<string>(initialScenes[0]?.id || "scene1");
     // We track initial state for Reset functionality
-    const initialStatesRef = useRef(new Map());
-
-    // Helper: Dynamically measure the parent '.stage' container to lock the sprite exactly inside its physical bounds!
+    const initialStatesRef = useRef<Map<string, JuniorSprite>>(new Map());
 
     const getStageBounds = () => {
-
-        const stageEl = document.querySelector('.stage');
-
+        const stageEl = document.querySelector('.stage') as HTMLElement;
         return stageEl ? { w: stageEl.offsetWidth, h: stageEl.offsetHeight } : { w: STAGE_WIDTH, h: STAGE_HEIGHT };
-
     };
 
-
-
-    // Clamp limits restrict the sprite from crossing the edge, keeping it fully visible
-
-    // We use a margin of roughly ~100px so even scaled-up sprites don't get sliced on the right/bottom borders.
-
-    const clampX = (x) => {
-
+    const clampX = (x: number) => {
         const bounds = getStageBounds();
-
         return Math.max(0, Math.min(x, bounds.w - 100));
-
     };
 
-
-
-    const clampY = (y) => {
-
+    const clampY = (y: number) => {
         const bounds = getStageBounds();
-
         return Math.max(0, Math.min(y, bounds.h - 100));
-
     };
 
     // Capture initial state on first load (or add) for Reset
-    // In a real app, this might be more robust
-    const captureInitialState = useCallback((sprite) => {
+    const captureInitialState = useCallback((sprite: JuniorSprite) => {
         if (!initialStatesRef.current.has(sprite.id)) {
             initialStatesRef.current.set(sprite.id, { ...sprite });
         }
     }, []);
 
     // Core Update Logic
-    const updateSprite = useCallback((spriteId, updates) => {
+    const updateSprite = useCallback((spriteId: string, updates: Partial<JuniorSprite> | ((prev: JuniorSprite) => Partial<JuniorSprite>)) => {
         setScenes(prev => prev.map(scene => {
             if (scene.id !== currentSceneId) return scene;
 
@@ -88,8 +65,8 @@ export function useSpriteSystem(initialScenes) {
 
                     // Apply Updates
                     for (const key in actualUpdates) {
-                        const val = actualUpdates[key];
-                        newState[key] = typeof val === 'function' ? val(sprite[key]) : val;
+                        const val = (actualUpdates as any)[key];
+                        (newState as any)[key] = typeof val === 'function' ? val((sprite as any)[key]) : val;
                     }
 
                     // Enforce Logic (Clamping)
@@ -111,7 +88,7 @@ export function useSpriteSystem(initialScenes) {
     // Actions exposed to Interpreter
     const actions = {
         // Move with Clamping
-        moveRelative: (spriteId, direction, steps = 1) => {
+        moveRelative: (spriteId: string, direction: "UP" | "DOWN" | "LEFT" | "RIGHT", steps: number = 1) => {
             updateSprite(spriteId, (prev) => {
                 let { x, y } = prev;
                 const distance = CELL_SIZE * Math.max(1, Number(steps) || 1);
@@ -126,7 +103,7 @@ export function useSpriteSystem(initialScenes) {
         },
 
         // Go To Grid Location (-1-22, -1-20)
-        goToGrid: (spriteId, gridX, gridY) => {
+        goToGrid: (spriteId: string, gridX: number, gridY: number) => {
             const safeX = Math.max(-1, Math.min(22, Number(gridX) || 0));
             const safeY = Math.max(-1, Math.min(20, Number(gridY) || 0));
             const px = (safeX - 1) * CELL_SIZE;
@@ -134,7 +111,7 @@ export function useSpriteSystem(initialScenes) {
             updateSprite(spriteId, { x: px, y: py });
         },
 
-        nextCostume: (spriteId) => {
+        nextCostume: (spriteId: string) => {
             updateSprite(spriteId, (prev) => {
                 const costumeKeys = Object.keys(prev.costumes);
                 if (costumeKeys.length === 0) return {};
@@ -157,7 +134,6 @@ export function useSpriteSystem(initialScenes) {
         },
 
         // Soft reset: clears visual state but preserves each sprite's current position
-        // Used by green flag so sprites execute from where the user placed them
         softResetAll: () => {
             setScenes(prev => prev.map(scene => {
                 return {
@@ -171,7 +147,6 @@ export function useSpriteSystem(initialScenes) {
                         speech: null,
                         mirrored: false,
                         textColor: sprite.textColor || "#FF8C1A",
-                        // x, y are PRESERVED — sprites stay where user placed them
                     }))
                 };
             }));

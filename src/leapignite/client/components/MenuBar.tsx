@@ -6,20 +6,38 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     ChevronDown, File, FolderOpen, Save, Share,
-    Undo, Redo, Cpu, RotateCcw, Home, Upload, Monitor, Rocket
+    Undo, Redo, Cpu, RotateCcw, Home, Upload, Monitor, Rocket, LucideIcon
 } from 'lucide-react';
 import Logo from '../../../components/Logo';
 
+interface MenuItem {
+    label?: string;
+    icon?: LucideIcon;
+    shortcut?: string;
+    onClick?: () => void;
+    disabled?: boolean;
+    divider?: boolean;
+}
+
+interface DropdownMenuProps {
+    label: string;
+    icon?: LucideIcon;
+    items: MenuItem[];
+    isOpen: boolean;
+    onToggle: () => void;
+    onClose: () => void;
+}
+
 // ─── Dropdown ────────────────────────────────────────────────────────────────
-function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
-    const menuRef = useRef(null);
+function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }: DropdownMenuProps) {
+    const menuRef = useRef<HTMLDivElement>(null);
     const onCloseRef = useRef(onClose);
     onCloseRef.current = onClose;
 
     useEffect(() => {
         if (!isOpen) return;
-        const handleClickOutside = (e) => {
-            if (menuRef.current && !menuRef.current.contains(e.target)) onCloseRef.current();
+        const handleClickOutside = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) onCloseRef.current();
         };
         const timer = setTimeout(() => {
             document.addEventListener('mousedown', handleClickOutside, true);
@@ -156,8 +174,13 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     );
 }
 
+interface ModeToggleProps {
+    mode: 'stage' | 'upload';
+    onModeChange: (mode: 'stage' | 'upload') => void;
+}
+
 // ─── Mode Toggle (Stage ↔ Upload) ────────────────────────────────────────────
-function ModeToggle({ mode, onModeChange }) {
+function ModeToggle({ mode, onModeChange }: ModeToggleProps) {
     return (
         <div
             onClick={() => onModeChange(mode === 'stage' ? 'upload' : 'stage')}
@@ -177,8 +200,8 @@ function ModeToggle({ mode, onModeChange }) {
                 transition: 'border-color 0.2s',
                 boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.3)',
             }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
         >
             {/* Sliding pill */}
             <div style={{
@@ -220,8 +243,17 @@ function ModeToggle({ mode, onModeChange }) {
     );
 }
 
+interface PortsControlProps {
+    ports: any[];
+    selectedPort: string;
+    onPortSelect?: (port: string) => void;
+    onRefreshPorts: () => void;
+    onConnect: () => void;
+    isConnected: boolean;
+}
+
 // ─── Ports pill ───────────────────────────────────────────────────────────────
-function PortsControl({ ports, selectedPort, onPortSelect, onRefreshPorts, onConnect, isConnected }) {
+function PortsControl({ ports, selectedPort, onPortSelect, onRefreshPorts, onConnect, isConnected }: PortsControlProps) {
     return (
         <div style={{
             display: 'flex',
@@ -244,8 +276,8 @@ function PortsControl({ ports, selectedPort, onPortSelect, onRefreshPorts, onCon
                     display: 'flex', alignItems: 'center',
                     borderRadius: 6, transition: 'color 0.2s',
                 }}
-                onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+                onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
             >
                 <RotateCcw size={12} strokeWidth={2.5} />
             </button>
@@ -292,13 +324,33 @@ function PortsControl({ ports, selectedPort, onPortSelect, onRefreshPorts, onCon
                     fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
                     letterSpacing: '0.04em',
                 }}
-                onMouseEnter={e => { if (!isConnected) e.currentTarget.style.background = 'rgba(255,255,255,0.22)'; }}
-                onMouseLeave={e => { if (!isConnected) e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+                onMouseEnter={e => { if (!isConnected) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.22)'; }}
+                onMouseLeave={e => { if (!isConnected) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)'; }}
             >
                 {isConnected ? '● ON' : 'CONNECT'}
             </button>
         </div>
     );
+}
+
+interface MenuBarProps {
+    projectName?: string;
+    onProjectNameChange?: (name: string) => void;
+    mode?: 'stage' | 'upload';
+    onModeChange: (mode: 'stage' | 'upload') => void;
+    selectedBoard?: string;
+    onBoardSelect?: () => void;
+    connectionStatus?: string;
+    onConnect: () => void;
+    ports?: any[];
+    selectedPort?: string;
+    onPortSelect?: (port: string) => void;
+    onRefreshPorts: () => void;
+    onUpload: () => void;
+    isUploading?: boolean;
+    onFileAction?: (action: string) => void;
+    onEditAction?: (action: string) => void;
+    onBack?: () => void;
 }
 
 // ─── Main MenuBar ─────────────────────────────────────────────────────────────
@@ -320,14 +372,14 @@ export default function MenuBar({
     onFileAction,
     onEditAction,
     onBack,
-}) {
-    const [openMenu, setOpenMenu] = useState(null);
+}: MenuBarProps) {
+    const [openMenu, setOpenMenu] = useState<string | null>(null);
     const isConnected = connectionStatus === 'connected';
 
-    const toggleMenu = (menu) => setOpenMenu(openMenu === menu ? null : menu);
+    const toggleMenu = (menu: string) => setOpenMenu(openMenu === menu ? null : menu);
     const closeMenu = () => setOpenMenu(null);
 
-    const fileMenuItems = [
+    const fileMenuItems: MenuItem[] = [
         { label: 'New Project', icon: File, shortcut: 'Ctrl+N', onClick: () => onFileAction?.('new') },
         { label: 'Open Project', icon: FolderOpen, shortcut: 'Ctrl+O', onClick: () => onFileAction?.('open') },
         { divider: true },
@@ -335,12 +387,12 @@ export default function MenuBar({
         { label: 'Share', icon: Share, onClick: () => onFileAction?.('share') },
     ];
 
-    const editMenuItems = [
+    const editMenuItems: MenuItem[] = [
         { label: 'Undo', icon: Undo, shortcut: 'Ctrl+Z', onClick: () => onEditAction?.('undo') },
         { label: 'Redo', icon: Redo, shortcut: 'Ctrl+Y', onClick: () => onEditAction?.('redo') },
     ];
 
-    const boardMenuItems = [
+    const boardMenuItems: MenuItem[] = [
         { label: 'Select Board…', icon: Cpu, onClick: () => onBoardSelect?.() },
         { divider: true },
         { label: selectedBoard || 'No Board Selected', disabled: true },
@@ -469,8 +521,8 @@ export default function MenuBar({
                         minWidth: 0,
                         transition: 'border-color 0.2s',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)')}
                 >
                     <span style={{ fontSize: 14, opacity: 0.5, flexShrink: 0 }}>📁</span>
                     <input
@@ -499,8 +551,8 @@ export default function MenuBar({
                             boxShadow: '0 2px 6px rgba(16,185,129,0.35)',
                             transition: 'transform 0.15s ease',
                         }}
-                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.12)'}
-                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                        onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.12)')}
+                        onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                     >
                         <Save size={14} strokeWidth={2.8} />
                     </button>

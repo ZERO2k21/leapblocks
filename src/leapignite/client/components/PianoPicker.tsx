@@ -7,7 +7,13 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import '../styles/pianoPicker.css';
 
-const NOTES = [
+interface Note {
+    name: string;
+    type: 'white' | 'black';
+    nameLong?: string;
+}
+
+const NOTES: Note[] = [
     { name: 'C', type: 'white' },
     { name: 'C#', type: 'black' },
     { name: 'D', type: 'white' },
@@ -23,14 +29,23 @@ const NOTES = [
     { name: 'C2', nameLong: 'C', type: 'white' },
 ];
 
-export default function PianoPicker({ onPick, onClose, onPreview, position, initialNote = 'C', initialOctave = 4 }) {
+interface PianoPickerProps {
+    onPick: (note: string, octave: number) => void;
+    onClose: () => void;
+    onPreview?: (note: string, octave: number) => void;
+    position: { x: number; y: number } | null;
+    initialNote?: string;
+    initialOctave?: number;
+}
+
+export default function PianoPicker({ onPick, onClose, onPreview, position, initialNote = 'C', initialOctave = 4 }: PianoPickerProps) {
     const [octave, setOctave] = useState(initialOctave);
     const [selectedNote, setSelectedNote] = useState(initialNote);
     const [isMouseDown, setIsMouseDown] = useState(false);
 
     if (!position) return null;
 
-    const handleNoteClick = (note) => {
+    const handleNoteClick = (note: string) => {
         const cleanNote = note === 'C2' ? 'C' : note;
         const finalOctave = note === 'C2' ? octave + 1 : octave;
         setSelectedNote(note);
@@ -41,14 +56,14 @@ export default function PianoPicker({ onPick, onClose, onPreview, position, init
         setTimeout(onClose, 800);
     };
 
-    const handleNotePreview = (note) => {
+    const handleNotePreview = (note: string) => {
         const cleanNote = note === 'C2' ? 'C' : note;
         const finalOctave = note === 'C2' ? octave + 1 : octave;
         setSelectedNote(note);
         if (onPreview) onPreview(cleanNote, finalOctave);
     };
 
-    const changeOctave = (delta) => {
+    const changeOctave = (delta: number) => {
         setOctave(Math.max(1, Math.min(7, octave + delta)));
     };
 

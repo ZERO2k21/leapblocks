@@ -32,7 +32,6 @@ const IntermediateApp = lazy(() => {
     });
 });
 
-// @ts-ignore
 const JuniorApp = lazy(() => {
     logAppTiming('JuniorApp lazy load started');
     return import('./leapignite/client/JuniorApp').then(module => {

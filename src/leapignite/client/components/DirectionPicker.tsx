@@ -6,7 +6,11 @@
 import React from 'react';
 import '../styles/directionPicker.css';
 
-export default function DirectionPicker({ onPick }) {
+interface DirectionPickerProps {
+    onPick: (dir: "UP" | "DOWN" | "LEFT" | "RIGHT" | "CENTER") => void;
+}
+
+export default function DirectionPicker({ onPick }: DirectionPickerProps) {
     return (
         <div className="dir-overlay">
             <div className="dir-box" onClick={(e) => e.stopPropagation()}>

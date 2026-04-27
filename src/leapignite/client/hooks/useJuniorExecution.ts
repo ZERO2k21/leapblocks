@@ -3,12 +3,24 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Blockly from "@blockly-runtime";
 import { javascriptGenerator } from "@blockly-runtime";
-import { Interpreter as LeapInterpreter, ExecutionStop } from "../../server/engine/Interpreter";
+import { Interpreter as LeapInterpreter } from "../../server/engine/Interpreter";
 import { executionEngine } from "../../../engine/ExecutionEngine";
 import { WorkspaceValidator } from "../../server/engine/WorkspaceValidator";
+import { JuniorScene } from "../types";
+
+interface UseJuniorExecutionProps {
+    workspaceRef: React.MutableRefObject<Blockly.WorkspaceSvg | null>;
+    scenes: JuniorScene[];
+    currentSceneId: string;
+    activeSpriteIdRef: React.MutableRefObject<string | null>;
+    activeSpriteId: string | null;
+    spriteActions: any;
+    spriteWorkspacesRef: React.MutableRefObject<Map<string, any>>;
+    saveCurrentWorkspace: () => void;
+}
 
 export function useJuniorExecution({
     workspaceRef,
@@ -19,13 +31,13 @@ export function useJuniorExecution({
     spriteActions,
     spriteWorkspacesRef,
     saveCurrentWorkspace
-}) {
-    const interpreterRef = useRef(null);
+}: UseJuniorExecutionProps) {
+    const interpreterRef = useRef<LeapInterpreter | null>(null);
     const isRunning = useRef(false);
     const [isBlocksRunning, setIsBlocksRunning] = useState(false);
 
     useEffect(() => {
-        interpreterRef.current = new LeapInterpreter(workspaceRef, javascriptGenerator, {
+        interpreterRef.current = new LeapInterpreter(workspaceRef as any, javascriptGenerator, {
             onRun: () => {
                 isRunning.current = true;
                 setIsBlocksRunning(true);
@@ -34,7 +46,7 @@ export function useJuniorExecution({
                 isRunning.current = false;
                 setIsBlocksRunning(false);
             },
-            onHighlight: (id, spriteId) => {
+            onHighlight: (id: string, spriteId?: string) => {
                 if (workspaceRef.current && (!spriteId || (activeSpriteIdRef && spriteId === activeSpriteIdRef.current))) {
                     workspaceRef.current.highlightBlock(id);
                 }
@@ -62,7 +74,9 @@ export function useJuniorExecution({
     }, [scenes, currentSceneId, activeSpriteIdRef, activeSpriteId, spriteWorkspacesRef, workspaceRef]);
 
     const runBlocks = async () => {
-        const validation = WorkspaceValidator.validateWorkspace(workspaceRef.current);
+        if (!workspaceRef.current) return;
+        
+        const validation = WorkspaceValidator.validateWorkspace(workspaceRef.current) as { isValid: boolean; error: string };
         if (!validation.isValid) {
             if (!validation.error.includes("connected to a Start") && !validation.error.includes("Start block")) {
                 alert(`Oops! ${validation.error}`);
@@ -72,13 +86,13 @@ export function useJuniorExecution({
 
         if (isRunning.current) {
             stopBlocks();
-            await window.wait(0.1);
+            await (window as any).wait(0.1);
         }
 
-        if (interpreterRef.current?.isPaused) {
+        if ((interpreterRef.current as any)?.isPaused) {
             console.log("Resuming paused execution...");
             setIsBlocksRunning(true);
-            interpreterRef.current.resumeExecution();
+            (interpreterRef.current as any).resumeExecution();
             return;
         }
 
@@ -87,8 +101,8 @@ export function useJuniorExecution({
             spriteActions.softResetAll();
         }
 
-        if (window.clearPen) window.clearPen();
-        await window.wait(0.3);
+        if ((window as any).clearPen) (window as any).clearPen();
+        await (window as any).wait(0.3);
 
         const currentScene = scenes.find(s => s.id === currentSceneId);
         if (!currentScene) return;
@@ -112,7 +126,7 @@ export function useJuniorExecution({
         }
     };
 
-    const handleSpriteClick = async (clickedId) => {
+    const handleSpriteClick = async (clickedId: string) => {
         const currentActiveSpriteId = activeSpriteIdRef?.current || activeSpriteId;
         if (clickedId !== currentActiveSpriteId) {
             saveCurrentWorkspace?.();
@@ -140,16 +154,16 @@ export function useJuniorExecution({
 
     const stopBlocks = () => {
         interpreterRef.current?.stopAll();
-        interpreterRef.current?.clearPauseFlag();
+        (interpreterRef.current as any)?.clearPauseFlag();
         executionEngine.stopAll();
-        if (window.stopAll) window.stopAll();
+        if ((window as any).stopAll) (window as any).stopAll();
         setIsBlocksRunning(false);
     };
 
     const handleReset = () => {
         stopBlocks();
         spriteActions.resetAll();
-        if (window.clearPen) window.clearPen();
+        if ((window as any).clearPen) (window as any).clearPen();
     };
 
     return {

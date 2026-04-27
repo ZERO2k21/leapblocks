@@ -6,7 +6,12 @@
 import React from 'react';
 import '../styles/positionPicker.css';
 
-export default function PositionPicker({ onPick, onClose }) {
+interface PositionPickerProps {
+    onPick: (x: number, y: number) => void;
+    onClose: () => void;
+}
+
+export default function PositionPicker({ onPick, onClose }: PositionPickerProps) {
     const cols = 23; // 0 to 22
     const rows = 22; // -1 to 20
 

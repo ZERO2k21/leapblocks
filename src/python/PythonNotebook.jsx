@@ -341,11 +341,10 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
         return (
             <div
                 key={cell.id}
-                className={`group relative mb-4 rounded-lg border-2 transition-all ${
-                    isActive
+                className={`group relative mb-4 rounded-lg border-2 transition-all ${isActive
                         ? "border-leap-purple shadow-lg shadow-purple-100"
                         : "border-gray-200 hover:border-gray-300"
-                }`}
+                    }`}
                 onClick={() => setActiveCellId(cell.id)}
             >
                 {/* Cell Toolbar */}
@@ -458,13 +457,12 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                                 {cell.output.map((line, i) => (
                                     <div
                                         key={i}
-                                        className={`${
-                                            line.type === "error"
+                                        className={`${line.type === "error"
                                                 ? "text-red-600 bg-red-50 px-2 py-1 rounded"
                                                 : line.type === "stderr"
-                                                ? "text-orange-600"
-                                                : "text-gray-800"
-                                        }`}
+                                                    ? "text-orange-600"
+                                                    : "text-gray-800"
+                                            }`}
                                     >
                                         {line.text || "\u00A0"}
                                     </div>
@@ -514,9 +512,8 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                     <div className="w-px h-5 bg-white/30" />
                     <button
                         onClick={() => setShowGuide(g => !g)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-semibold border border-white/25 transition ${
-                            showGuide ? "bg-white/30" : "bg-white/12"
-                        }`}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-semibold border border-white/25 transition ${showGuide ? "bg-white/30" : "bg-white/12"
+                            }`}
                     >
                         <HelpCircle size={14} /> Guide
                     </button>

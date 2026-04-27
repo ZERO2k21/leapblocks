@@ -14,7 +14,13 @@ const INSTRUMENTS = [
     { id: 'electric_guitar', name: 'Electric', icon: '🎸'},
 ];
 
-export default function InstrumentPicker({ onPick, onClose, position }) {
+interface InstrumentPickerProps {
+    onPick: (id: string, icon: string) => void;
+    onClose: () => void;
+    position: { x: number; y: number } | null;
+}
+
+export default function InstrumentPicker({ onPick, onClose, position }: InstrumentPickerProps) {
     if (!position) return null;
 
     return (

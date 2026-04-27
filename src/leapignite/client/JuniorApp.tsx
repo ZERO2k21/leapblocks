@@ -4,7 +4,9 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useRef, useState, useEffect, useCallback } from "react";
+// @ts-ignore
 import Blockly from "@blockly-runtime";
+// @ts-ignore
 import { javascriptGenerator } from '@blockly-runtime';
 import Teddy from "./sprites/Teddy";
 import RightPanel from "./components/RightPanel";
@@ -38,8 +40,9 @@ import { gettingStartedTutorial } from "./tutorials/gettingStarted";
 import { moveRoboTutorial } from "./tutorials/moveRobo";
 import { makeSoundsTutorial } from "./tutorials/makeSounds";
 import JuniorTutorialOverlay from "./components/JuniorTutorialOverlay";
+import { JuniorProject, JuniorScene, JuniorSprite } from "./types";
 
-const TUTORIALS = {
+const TUTORIALS: Record<string, any> = {
     'getting_started': gettingStartedTutorial,
     'move_robo': moveRoboTutorial,
     'make_sounds': makeSoundsTutorial
@@ -58,7 +61,7 @@ const robotWave2 = "assets/sprites/robot/image-removebg-preview (1).png";
 const robotTalk1 = "assets/sprites/robot/image-removebg-preview.png";
 
 // ─── Lazy initialization to avoid TDZ errors in production builds ─────────
-let _audioEngine, _blocksRegistered;
+let _audioEngine: AudioEngine, _blocksRegistered: boolean;
 
 function getAudioEngine() {
     if (!_audioEngine) {
@@ -75,9 +78,13 @@ function ensureBlocksRegistered() {
     }
 }
 
-const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspaceJson || {}));
+const cloneWorkspaceData = (workspaceJson: any) => JSON.parse(JSON.stringify(workspaceJson || {}));
 
-export default function JuniorApp({ onBack }) {
+interface JuniorAppProps {
+    onBack: () => void;
+}
+
+export default function JuniorApp({ onBack }: JuniorAppProps) {
     // Ensure blocks are registered on first render
     ensureBlocksRegistered();
 
@@ -90,17 +97,17 @@ export default function JuniorApp({ onBack }) {
     }, []);
 
     // Refs
-    const workspaceRef = useRef(null);
-    const blocklyDiv = useRef(null);
-    const canvasRef = useRef(null);
-    const cameraVideoRef = useRef(null);
-    const cameraStreamRef = useRef(null);
-    const activeSpriteIdRef = useRef(null);
-    const scenesRef = useRef(null);
-    const stageContainerRef = useRef(null);
-    const timeoutRefs = useRef({});
+    const workspaceRef = useRef<any>(null);
+    const blocklyDiv = useRef<HTMLDivElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const cameraVideoRef = useRef<HTMLVideoElement>(null);
+    const cameraStreamRef = useRef<MediaStream | null>(null);
+    const activeSpriteIdRef = useRef<string | null>(null);
+    const scenesRef = useRef<JuniorScene[] | null>(null);
+    const stageContainerRef = useRef<HTMLDivElement>(null);
+    const timeoutRefs = useRef<Record<string, any>>({});
     const isLoadingWorkspaceRef = useRef(false);
-    const handleSpriteSelectRef = useRef(null);
+    const handleSpriteSelectRef = useRef<((id: string) => void) | null>(null);
 
     // UI state
     const [projectName, setProjectName] = useState("Untitled Project");
@@ -110,14 +117,14 @@ export default function JuniorApp({ onBack }) {
     const [recordingCount, setRecordingCount] = useState(1);
     const [showGrid, setShowGrid] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const draggedBlockRef = useRef(null);
+    const draggedBlockRef = useRef<any>(null);
     const [isDraggingBlock, setIsDraggingBlock] = useState(false);
-    const [successSpriteId, setSuccessSpriteId] = useState(null);
+    const [successSpriteId, setSuccessSpriteId] = useState<string | null>(null);
     const [stageSize, setStageSize] = useState({ width: 480, height: 360 });
     const lastMousePosRef = useRef({ x: 0, y: 0 });
 
     useEffect(() => {
-        const handleMouseMove = (e) => {
+        const handleMouseMove = (e: MouseEvent) => {
             lastMousePosRef.current = { x: e.clientX, y: e.clientY };
         };
         window.addEventListener('mousemove', handleMouseMove);
@@ -146,7 +153,7 @@ export default function JuniorApp({ onBack }) {
             ? new ResizeObserver(updateStageSize)
             : null;
 
-        resizeObserver?.observe(stageNode);
+        resizeObserver?.observe(stageNode!);
         window.addEventListener("resize", updateStageSize);
 
         return () => {
@@ -158,22 +165,22 @@ export default function JuniorApp({ onBack }) {
     // Modals state
     const [isSpriteModalOpen, setIsSpriteModalOpen] = useState(false);
     const [isBackdropChooserOpen, setIsBackdropChooserOpen] = useState(false);
-    const [backdropEditSceneId, setBackdropEditSceneId] = useState(null);
-    const [currentTutorialId, setCurrentTutorialId] = useState(null);
+    const [backdropEditSceneId, setBackdropEditSceneId] = useState<string | null>(null);
+    const [currentTutorialId, setCurrentTutorialId] = useState<string | null>(null);
 
-    const handleTutorialStart = (tutorialId) => setCurrentTutorialId(tutorialId);
+    const handleTutorialStart = (tutorialId: string) => setCurrentTutorialId(tutorialId);
     const handleTutorialClose = () => setCurrentTutorialId(null);
     const currentTutorial = currentTutorialId ? TUTORIALS[currentTutorialId] : null;
 
     // Paint Editor
     const [paintEditor, setPaintEditor] = useState({
         isOpen: false,
-        type: 'sprite',
-        targetId: null,
-        initialImage: null,
-        costumes: [],
+        type: 'sprite' as 'sprite' | 'backdrop',
+        targetId: null as string | null,
+        initialImage: null as any,
+        costumes: [] as any[],
         spriteName: '',
-        mode: 'junior'
+        mode: 'junior' as 'intermediate' | 'junior' | undefined
     });
 
     // --- SPRITE SYSTEM (FSM) ---
@@ -200,13 +207,13 @@ export default function JuniorApp({ onBack }) {
         }
     ]);
 
-    const [activeSpriteId, setActiveSpriteId] = useState("robot_default");
-    const [winMessage, setWinMessage] = useState(null);
+    const [activeSpriteId, setActiveSpriteId] = useState<string | null>("robot_default");
+    const [winMessage, setWinMessage] = useState<string | null>(null);
 
     // Sync globals used by dropdowns and runtime helpers.
     useEffect(() => {
         const getJuniorSoundOptions = () => {
-            const assets = audioEngine.soundBank?.assets || {};
+            const assets = (audioEngine as any).soundBank?.assets || {};
             return Object.keys(assets);
         };
 
@@ -219,29 +226,29 @@ export default function JuniorApp({ onBack }) {
         };
 
         scenesRef.current = scenes;
-        window.activeSpriteId = activeSpriteId;
+        (window as any).activeSpriteId = activeSpriteId;
 
         // Override any stale global from other editors before Blockly builds dropdowns.
-        window.getActiveSpriteSounds = getJuniorSoundOptions;
-        window.getActiveSpriteCostumes = getActiveSpriteCostumes;
+        (window as any).getActiveSpriteSounds = getJuniorSoundOptions;
+        (window as any).getActiveSpriteCostumes = getActiveSpriteCostumes;
 
         return () => {
-            delete window.activeSpriteId;
-            if (window.getActiveSpriteSounds === getJuniorSoundOptions) {
-                delete window.getActiveSpriteSounds;
+            delete (window as any).activeSpriteId;
+            if ((window as any).getActiveSpriteSounds === getJuniorSoundOptions) {
+                delete (window as any).getActiveSpriteSounds;
             }
-            if (window.getActiveSpriteCostumes === getActiveSpriteCostumes) {
-                delete window.getActiveSpriteCostumes;
+            if ((window as any).getActiveSpriteCostumes === getActiveSpriteCostumes) {
+                delete (window as any).getActiveSpriteCostumes;
             }
         };
-    }, [scenes, activeSpriteId]);
+    }, [scenes, activeSpriteId, currentSceneId]);
 
     const currentScene = scenes?.find(s => s.id === currentSceneId) || scenes?.[0];
     const sprites = currentScene?.sprites || [];
 
     // Per-sprite workspace storage: maps spriteId -> Blockly serialized JSON (synchronous ref-based storage)
-    const spriteWorkspacesRef = useRef(new Map());
-    const currentToolboxContentsRef = useRef([]);
+    const spriteWorkspacesRef = useRef(new Map<string, any>());
+    const currentToolboxContentsRef = useRef<any[]>([]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // SPRITE WORKSPACE MANAGEMENT (Matching Intermediate Blocks Architecture)
@@ -277,9 +284,9 @@ export default function JuniorApp({ onBack }) {
                 };
             });
         });
-    }, [currentSceneId]);
+    }, [currentSceneId, setScenes]);
 
-    const handleBlocksDropped = useCallback((targetSpriteId, blockData) => {
+    const handleBlocksDropped = useCallback((targetSpriteId: string, blockData: any) => {
         const blocks = blockData || draggedBlockRef.current;
         if (!blocks || targetSpriteId === activeSpriteIdRef.current) return;
 
@@ -328,7 +335,7 @@ export default function JuniorApp({ onBack }) {
             sprites: scene.sprites.map(s => s.id === targetSpriteId ? { ...s, blocks: cloneWorkspaceData(updatedWorkspace) } : s)
         })));
 
-        if (window.jiggle) window.jiggle(targetSpriteId);
+        if ((window as any).jiggle) (window as any).jiggle(targetSpriteId);
 
         // Flash success
         setSuccessSpriteId(targetSpriteId);
@@ -338,10 +345,10 @@ export default function JuniorApp({ onBack }) {
         setTimeout(() => {
             handleSpriteSelectRef.current?.(targetSpriteId);
         }, 300);
-    }, []);
+    }, [setScenes]);
 
     // Load workspace blocks from the per-sprite map
-    const loadSpriteWorkspace = useCallback((spriteId) => {
+    const loadSpriteWorkspace = useCallback((spriteId: string) => {
         if (!workspaceRef.current) {
             console.warn('[JuniorApp] Cannot load workspace: workspaceRef.current is null');
             return;
@@ -412,7 +419,7 @@ export default function JuniorApp({ onBack }) {
         draggedBlockRef,
         setIsDraggingBlock,
         lastMousePosRef,
-        onBlocksDropped: handleBlocksDropped
+        onBlocksDropped: handleBlocksDropped as any
     });
 
     const exec = useJuniorExecution({
@@ -443,12 +450,12 @@ export default function JuniorApp({ onBack }) {
     });
 
     // Wrapper for backward compatibility - delegates to loadSpriteWorkspace
-    const loadWorkspace = (sprite) => {
+    const loadWorkspace = (sprite: JuniorSprite) => {
         loadSpriteWorkspace(sprite.id);
     };
 
     // Handle scene selection: save old, load new
-    const handleSceneSelect = useCallback((newSceneId) => {
+    const handleSceneSelect = useCallback((newSceneId: string) => {
         if (newSceneId === currentSceneId) return;
 
         // Clear highlights before switching
@@ -478,10 +485,10 @@ export default function JuniorApp({ onBack }) {
                 }, 50);
             }
         }
-    }, [currentSceneId, scenes, saveCurrentWorkspace, loadSpriteWorkspace]);
+    }, [currentSceneId, scenes, saveCurrentWorkspace, loadSpriteWorkspace, setCurrentSceneId]);
 
     // Handle sprite selection: save old, load new
-    const handleSpriteSelect = useCallback((newId) => {
+    const handleSpriteSelect = useCallback((newId: string) => {
         if (newId === activeSpriteId) return;
 
         // Clear highlights in old workspace before switching
@@ -551,11 +558,11 @@ export default function JuniorApp({ onBack }) {
 
     // --- EFFECT HOOKS ---
     useEffect(() => {
-        const config = getLessonConfig();
+        const config = getLessonConfig() as any;
         if (config.goal && !winMessage) {
-            const result = GoalManager.checkGoal(config.goal, sprites, activeSpriteId);
+            const result = GoalManager.checkGoal(config.goal, sprites, activeSpriteId || '');
             if (result.complete) {
-                setWinMessage(result.message);
+                setWinMessage(result.message || null);
             }
         }
     }, [sprites, activeSpriteId, winMessage]);
@@ -584,22 +591,22 @@ export default function JuniorApp({ onBack }) {
             console.log(`[JuniorApp] Initial workspace load for sprite: ${activeSprite.name}`);
             loadSpriteWorkspace(activeSpriteId);
         }
-    }, []); // Empty deps - only run on mount
+    }, [activeSpriteId, loadSpriteWorkspace, sprites]); // Empty deps - only run on mount
 
-    const [, setHint] = useState(null);
-    const lastInteraction = useRef(null);
+    const [, setHint] = useState<string | null>(null);
+    const lastInteraction = useRef<number>(0);
 
     useEffect(() => {
         if (!lastInteraction.current) lastInteraction.current = Date.now();
         const interval = setInterval(() => {
             const idle = Date.now() - lastInteraction.current;
-            const config = getLessonConfig();
+            const config = getLessonConfig() as any;
             const count = workspaceRef.current?.getAllBlocks(false).length || 0;
             const msg = HintManager.getHint(idle, config.goal, count);
             setHint(msg);
         }, 1000);
 
-        const resetIdle = () => lastInteraction.current = Date.now();
+        const resetIdle = () => (lastInteraction.current = Date.now());
         window.addEventListener("pointerdown", resetIdle);
         window.addEventListener("keydown", resetIdle);
         return () => {
@@ -610,7 +617,7 @@ export default function JuniorApp({ onBack }) {
     }, []);
 
     useEffect(() => {
-        window.drawSegment = (x1, y1, x2, y2, color, width) => {
+        (window as any).drawSegment = (x1: number, y1: number, x2: number, y2: number, color: string, width: number) => {
             const ctx = canvasRef.current?.getContext("2d");
             if (ctx) {
                 ctx.imageSmoothingEnabled = true;
@@ -625,20 +632,20 @@ export default function JuniorApp({ onBack }) {
             }
         };
 
-        window.clearPen = () => {
+        (window as any).clearPen = () => {
             const canvas = canvasRef.current;
             if (canvas) {
                 const ctx = canvas.getContext("2d");
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx?.clearRect(0, 0, canvas.width, canvas.height);
             }
         };
 
-        window.wait = (ms) => new Promise(resolve => setTimeout(resolve, ms * 1000));
+        (window as any).wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms * 1000));
 
         return () => {
-            delete window.drawSegment;
-            delete window.clearPen;
-            delete window.wait;
+            delete (window as any).drawSegment;
+            delete (window as any).clearPen;
+            delete (window as any).wait;
         };
     }, []);
 
@@ -649,8 +656,6 @@ export default function JuniorApp({ onBack }) {
         document.addEventListener('fullscreenchange', handleFsChange);
         return () => document.removeEventListener('fullscreenchange', handleFsChange);
     }, []);
-
-
 
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100vh", fontFamily: "'Segoe UI', sans-serif" }}>
@@ -698,11 +703,11 @@ export default function JuniorApp({ onBack }) {
                 <InstrumentPicker
                     position={wp.pickerPos}
                     onClose={() => wp.setShowInstPicker(false)}
-                    onPick={(inst) => {
+                    onPick={(inst: string) => {
                         if (wp.activeBlock) {
                             wp.activeBlock.setFieldValue(inst, "INSTRUMENT");
-                            if (audioEngine.instrumentPlayer) {
-                                audioEngine.instrumentPlayer.setInstrument(inst);
+                            if ((audioEngine as any).instrumentPlayer) {
+                                (audioEngine as any).instrumentPlayer.setInstrument(inst);
                             }
                         }
                     }}
@@ -715,12 +720,12 @@ export default function JuniorApp({ onBack }) {
                     initialNote={wp.activeBlock?.getFieldValue("NOTE")}
                     initialOctave={parseInt(wp.activeBlock?.getFieldValue("OCTAVE") || "4")}
                     onClose={() => wp.setShowPianoPicker(false)}
-                    onPreview={(note, octave) => {
-                        if (audioEngine.instrumentPlayer) {
-                            audioEngine.instrumentPlayer.playNoteForDuration(note, octave, 0.3);
+                    onPreview={(note: string, octave: number) => {
+                        if ((audioEngine as any).instrumentPlayer) {
+                            (audioEngine as any).instrumentPlayer.playNoteForDuration(note, octave, 0.3);
                         }
                     }}
-                    onPick={(note, octave) => {
+                    onPick={(note: string, octave: number) => {
                         if (wp.activeBlock) {
                             wp.activeBlock.setFieldValue(note, "NOTE");
                             wp.activeBlock.setFieldValue(octave.toString(), "OCTAVE");
@@ -739,8 +744,8 @@ export default function JuniorApp({ onBack }) {
 
                             if (activeSprite.type === 'robot' && activeSprite.costumes) {
                                 imgSrc = activeSprite.costumes[activeSprite.currentCostume];
-                            } else if (activeSprite.currentCostume && typeof activeSprite.currentCostume === 'object' && activeSprite.currentCostume.image) {
-                                imgSrc = activeSprite.currentCostume.image.src;
+                            } else if (activeSprite.currentCostume && typeof activeSprite.currentCostume === 'object' && (activeSprite.currentCostume as any).image) {
+                                imgSrc = (activeSprite.currentCostume as any).image.src;
                             } else if (activeSprite.costumes && activeSprite.costumes[activeSprite.currentCostume]) {
                                 const val = activeSprite.costumes[activeSprite.currentCostume];
                                 if (typeof val === 'string' && (val.startsWith('data:image') || val.startsWith('/') || val.startsWith('http') || val.endsWith('.png') || val.endsWith('.jpg') || val.endsWith('.svg'))) {
@@ -845,14 +850,14 @@ export default function JuniorApp({ onBack }) {
                 <RightPanel
                     sprites={sprites}
                     scenes={scenes}
-                    currentSprite={activeSpriteId}
+                    currentSprite={activeSpriteId || ''}
                     currentScene={currentSceneId}
                     onSelectSprite={handleSpriteSelect}
                     onAddSprite={() => setIsSpriteModalOpen(true)}
-                    onDeleteSprite={sprites.length > 1 ? handlers.deleteSprite : null}
+                    onDeleteSprite={sprites.length > 1 ? handlers.deleteSprite : undefined}
                     onSelectScene={handleSceneSelect}
                     onAddScene={handlers.addScene}
-                    onDeleteScene={scenes.length > 1 ? handlers.deleteScene : null}
+                    onDeleteScene={scenes.length > 1 ? handlers.deleteScene : undefined}
                     onEditSprite={handlers.handleEditSprite}
                     onEditScene={handlers.handleEditScene}
                     onGreenFlag={exec.runBlocks}
@@ -922,7 +927,7 @@ export default function JuniorApp({ onBack }) {
                                 mirrored={sprite.mirrored}
                                 textColor={sprite.textColor}
                                 onClick={() => exec.handleSpriteClick(sprite.id)}
-                                onDragStateChange={(dragging) => setIsDraggingSpriteOnStage(dragging)}
+                                onDragStateChange={(dragging: boolean) => setIsDraggingSpriteOnStage(dragging)}
                             />
                         ))}
                         <canvas
@@ -957,14 +962,14 @@ export default function JuniorApp({ onBack }) {
 
             {wp.showDirPicker && (
                 <DirectionPicker
-                    onPick={(dir) => {
+                    onPick={(dir: any) => {
                         if (wp.activeBlock) {
-                            if (typeof wp.activeBlock.setDirection === "function") {
-                                wp.activeBlock.setDirection(dir);
+                            if (typeof (wp.activeBlock as any).setDirection === "function") {
+                                (wp.activeBlock as any).setDirection(dir);
                             } else {
-                                try { wp.activeBlock.direction = dir; } catch (e) { /* ignore */ }
+                                try { (wp.activeBlock as any).direction = dir; } catch (e) { /* ignore */ }
                             }
-                            if (window.moveRelative) window.moveRelative(dir);
+                            if ((window as any).moveRelative) (window as any).moveRelative(dir);
                         }
                         wp.setShowDirPicker(false);
                         wp.setActiveBlock(null);
@@ -975,9 +980,9 @@ export default function JuniorApp({ onBack }) {
             {winMessage && (
                 <SuccessModal
                     message={winMessage}
-                    onRestart={() => window.resetBear()}
+                    onRestart={() => (window as any).resetBear()}
                     onNext={() => {
-                        window.resetBear();
+                        (window as any).resetBear();
                         alert("Next lesson coming soon!");
                     }}
                 />
@@ -987,7 +992,7 @@ export default function JuniorApp({ onBack }) {
                 <SpriteLibrary
                     isOpen={isSpriteModalOpen}
                     onClose={() => setIsSpriteModalOpen(false)}
-                    onSelectSprite={(entry) => {
+                    onSelectSprite={(entry: any) => {
                         handlers.addSprite(entry);
                     }}
                     onPaintSprite={() => {
@@ -999,7 +1004,6 @@ export default function JuniorApp({ onBack }) {
 
             {paintEditor.isOpen && (
                 <PaintEditor
-                    isOpen={paintEditor.isOpen}
                     onClose={() => setPaintEditor({ ...paintEditor, isOpen: false })}
                     onSave={handlers.handlePaintSave}
                     onDeleteSound={handlers.handleDeleteCostume}
@@ -1025,7 +1029,14 @@ export default function JuniorApp({ onBack }) {
         </div>
     );
 }
-function CategoryButton({ category, isActive, onClick }) {
+
+interface CategoryButtonProps {
+    category: any;
+    isActive: boolean;
+    onClick: () => void;
+}
+
+function CategoryButton({ category, isActive, onClick }: CategoryButtonProps) {
     if (!category) return null;
     return (
         <button
@@ -1055,5 +1066,3 @@ function CategoryButton({ category, isActive, onClick }) {
         </button>
     );
 }
-
-

@@ -4,8 +4,48 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import Blockly from "@blockly-runtime";
+import { JuniorScene, JuniorSprite } from "../types";
 
-const normalizeJuniorSpriteType = (rawType) => {
+interface PaintEditorState {
+    isOpen: boolean;
+    type: 'sprite' | 'backdrop';
+    targetId: string | null;
+    initialImage: any;
+    costumes: any[];
+    spriteName: string;
+    mode: 'junior' | 'intermediate' | undefined;
+}
+
+interface UseJuniorUIHandlersProps {
+    sprites: JuniorSprite[];
+    scenes: JuniorScene[];
+    setScenes: React.Dispatch<React.SetStateAction<JuniorScene[]>>;
+    currentSceneId: string;
+    setCurrentSceneId: React.Dispatch<React.SetStateAction<string>>;
+    setActiveSpriteId: React.Dispatch<React.SetStateAction<string | null>>;
+    workspaceRef: React.MutableRefObject<Blockly.WorkspaceSvg | null>;
+    scenesRef: React.MutableRefObject<JuniorScene[] | null>;
+    paintEditor: PaintEditorState;
+    setPaintEditor: React.Dispatch<React.SetStateAction<PaintEditorState>>;
+    backdropEditSceneId: string | null;
+    setBackdropEditSceneId: React.Dispatch<React.SetStateAction<string | null>>;
+    setIsBackdropChooserOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    saveCurrentWorkspace: () => void;
+    setIsSpriteModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    isCameraOn: boolean;
+    setIsCameraOn: React.Dispatch<React.SetStateAction<boolean>>;
+    cameraStreamRef: React.MutableRefObject<MediaStream | null>;
+    cameraVideoRef: React.MutableRefObject<HTMLVideoElement | null>;
+    recordingCount: number;
+    setRecordingCount: React.Dispatch<React.SetStateAction<number>>;
+    audioEngine: any;
+    project: any;
+    isLoadingWorkspaceRef: React.MutableRefObject<boolean>;
+    spriteWorkspacesRef: React.MutableRefObject<Map<string, any>>;
+    activeSpriteIdRef: React.MutableRefObject<string | null>;
+}
+
+const normalizeJuniorSpriteType = (rawType: string) => {
     const normalized = String(rawType || "").trim().toLowerCase();
 
     if (!normalized) return "custom";
@@ -16,7 +56,7 @@ const normalizeJuniorSpriteType = (rawType) => {
     return normalized;
 };
 
-const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspaceJson || {}));
+const cloneWorkspaceData = (workspaceJson: any) => JSON.parse(JSON.stringify(workspaceJson || {}));
 
 export function useJuniorUIHandlers({
     sprites,
@@ -45,14 +85,14 @@ export function useJuniorUIHandlers({
     isLoadingWorkspaceRef,
     spriteWorkspacesRef,
     activeSpriteIdRef
-}) {
+}: UseJuniorUIHandlersProps) {
 
-    const handleEditSprite = (spriteId) => {
+    const handleEditSprite = (spriteId: string) => {
         const sprite = sprites.find(s => s.id === spriteId);
         if (!sprite) return;
 
         // Map costume IDs to display names
-        const costumeNameMap = {
+        const costumeNameMap: Record<string, string> = {
             default: 'Idle',
             wave1: 'Wave 1',
             wave2: 'Wave 2',
@@ -69,7 +109,7 @@ export function useJuniorUIHandlers({
             isOpen: true,
             type: 'sprite',
             targetId: spriteId,
-            initialImage: sprite.costumes?.[sprite.currentCostume || 'default'] || null,
+            initialImage: (sprite.costumes?.[sprite.currentCostume || 'default'] as string) || null,
             costumes: Object.entries(sprite.costumes || {}).map(([id, src]) => ({
                 id,
                 name: costumeNameMap[id] || id,
@@ -80,14 +120,14 @@ export function useJuniorUIHandlers({
         });
     };
 
-    const handleEditScene = (sceneId) => {
+    const handleEditScene = (sceneId: string) => {
         const scene = scenes.find(s => s.id === sceneId);
         if (!scene) return;
         setBackdropEditSceneId(sceneId);
         setIsBackdropChooserOpen(true);
     };
 
-    const handleBackdropSelect = (name, src, solidColor) => {
+    const handleBackdropSelect = (name: string, src: string | null, solidColor?: string | null) => {
         const targetId = backdropEditSceneId || currentSceneId;
         if (src) {
             setScenes(prev => prev.map(scene => {
@@ -105,7 +145,7 @@ export function useJuniorUIHandlers({
                 return {
                     ...scene,
                     background: solidColor,
-                    backgroundImage: null,
+                    backgroundImage: undefined,
                     backdropName: name
                 };
             }));
@@ -118,12 +158,15 @@ export function useJuniorUIHandlers({
         setIsBackdropChooserOpen(false);
         const targetId = backdropEditSceneId || currentSceneId;
         const scene = scenes.find(s => s.id === targetId);
+        if (!scene) return;
+        
         setPaintEditor({
             isOpen: true,
             type: 'backdrop',
             targetId: targetId,
             initialImage: null,
             mode: 'junior',
+            spriteName: scene.backdropName || scene.name,
             costumes: scenes.map(s => ({
                 id: s.id,
                 name: s.backdropName || s.name,
@@ -132,8 +175,7 @@ export function useJuniorUIHandlers({
         });
     };
 
-    const handlePaintSave = (imageData, svgData, name) => {
-        // Use PNG data for stable rendering in sprite cards and stage preview.
+    const handlePaintSave = (imageData: string, svgData?: string, name?: string) => {
         const savedData = imageData;
         const costumeKey = name ? name.toLowerCase().replace(/\s+/g, '_') : 'custom';
 
@@ -164,7 +206,7 @@ export function useJuniorUIHandlers({
         setPaintEditor({ ...paintEditor, isOpen: false });
     };
 
-    const handleDeleteCostume = (index) => {
+    const handleDeleteCostume = (index: number) => {
         if (paintEditor.type !== 'sprite' || !paintEditor.targetId) return;
 
         const sprite = sprites.find(s => s.id === paintEditor.targetId);
@@ -198,14 +240,13 @@ export function useJuniorUIHandlers({
             };
         }));
 
-        // Update paint editor state to reflect deletion
         setPaintEditor(prev => ({
             ...prev,
             costumes: prev.costumes.filter((_, i) => i !== index)
         }));
     };
 
-    const handleDuplicateCostume = (index) => {
+    const handleDuplicateCostume = (index: number) => {
         if (paintEditor.type !== 'sprite' || !paintEditor.targetId) return;
 
         const sprite = sprites.find(s => s.id === paintEditor.targetId);
@@ -232,7 +273,6 @@ export function useJuniorUIHandlers({
             };
         }));
 
-        // Update paint editor state to reflect duplication
         setPaintEditor(prev => ({
             ...prev,
             costumes: [
@@ -242,7 +282,7 @@ export function useJuniorUIHandlers({
         }));
     };
 
-    const handleSwitchCostume = (index) => {
+    const handleSwitchCostume = (index: number) => {
         if (!paintEditor.targetId) return;
 
         if (paintEditor.type === 'sprite') {
@@ -260,10 +300,9 @@ export function useJuniorUIHandlers({
                     })
                 };
             }));
-            // Update editor initial image to the switched costume
             setPaintEditor(prev => ({
                 ...prev,
-                initialImage: sprite.costumes[costumeKey]
+                initialImage: (sprite.costumes[costumeKey] as string)
             }));
         } else if (paintEditor.type === 'backdrop') {
             const sceneToSwitchTo = scenes[index];
@@ -278,7 +317,7 @@ export function useJuniorUIHandlers({
         }
     };
 
-    const handleRenameCostume = (index, newName) => {
+    const handleRenameCostume = (index: number, newName: string) => {
         if (!paintEditor.targetId) return;
 
         if (paintEditor.type === 'sprite') {
@@ -293,7 +332,7 @@ export function useJuniorUIHandlers({
                     ...scene,
                     sprites: scene.sprites.map(s => {
                         if (s.id !== paintEditor.targetId) return s;
-                        const newCostumes = {};
+                        const newCostumes: any = {};
                         Object.entries(s.costumes).forEach(([k, v]) => {
                             if (k === oldKey) newCostumes[newKey] = v;
                             else newCostumes[k] = v;
@@ -321,19 +360,17 @@ export function useJuniorUIHandlers({
         }));
     };
 
-    const addSprite = (spriteData = null) => {
-        // Save current workspace to ref immediately before clearing
+    const addSprite = (spriteData: any = null) => {
         if (workspaceRef && workspaceRef.current && spriteWorkspacesRef && spriteWorkspacesRef.current && activeSpriteIdRef && activeSpriteIdRef.current) {
             const activeId = activeSpriteIdRef.current;
             const json = cloneWorkspaceData(Blockly.serialization.workspaces.save(workspaceRef.current));
             spriteWorkspacesRef.current.set(activeId, cloneWorkspaceData(json));
-            console.log(`[useJuniorUIHandlers] Saved workspace to ref for sprite: ${activeId}`);
         }
 
         saveCurrentWorkspace();
         const newId = `sprite_${Date.now()}`;
 
-        let costumes = { default: "🐻" };
+        let costumes: Record<string, any> = { default: "🐻" };
         let spriteName = "Bear";
         let spriteType = "bear";
 
@@ -343,7 +380,7 @@ export function useJuniorUIHandlers({
 
             if (spriteData.costumes && spriteData.costumes.length > 0) {
                 costumes = {};
-                spriteData.costumes.forEach((c, index) => {
+                spriteData.costumes.forEach((c: any, index: number) => {
                     const key = index === 0 ? 'default' : `costume${index}`;
                     costumes[key] = c;
                 });
@@ -353,7 +390,7 @@ export function useJuniorUIHandlers({
                 costumes = { default: spriteData.emoji };
             }
         } else {
-            const type = spriteData || 'robot';
+            const type = (spriteData as string) || 'robot';
             spriteType = normalizeJuniorSpriteType(type);
             spriteName = type.charAt(0).toUpperCase() + type.slice(1);
 
@@ -412,7 +449,7 @@ export function useJuniorUIHandlers({
             newY = Math.floor(Math.random() * 9 + 3) * CELL_SIZE;
         }
 
-        const newSprite = {
+        const newSprite: JuniorSprite = {
             id: newId,
             name: spriteName,
             type: spriteType,
@@ -424,27 +461,21 @@ export function useJuniorUIHandlers({
             blocks: {}
         };
 
-        // Update scenes and immediately update scenesRef to ensure workspace loading works
         setScenes(prev => {
             const updated = prev.map(s => {
                 if (s.id === currentSceneId) return { ...s, sprites: [...s.sprites, newSprite] };
                 return s;
             });
-            // Update scenesRef immediately so the workspace loading effect can find the new sprite
             if (scenesRef && scenesRef.current) {
                 scenesRef.current = updated;
             }
             return updated;
         });
 
-        // Initialize empty workspace for the new sprite in ref storage
         if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
             spriteWorkspacesRef.current.set(newId, {});
-            console.log(`[useJuniorUIHandlers] Initialized empty workspace for new sprite: ${newId}`);
         }
 
-        // Clear workspace before switching to new sprite (matching Intermediate Blocks pattern)
-        // Set loading flag to prevent change listener from saving empty state
         if (isLoadingWorkspaceRef) {
             isLoadingWorkspaceRef.current = true;
         }
@@ -452,14 +483,11 @@ export function useJuniorUIHandlers({
             Blockly.Events.disable();
             try {
                 workspaceRef.current.clear();
-                console.log(`[useJuniorUIHandlers] Cleared workspace for new sprite: ${newId}`);
             } finally {
                 Blockly.Events.enable();
-                // Update the ref to point to the new sprite immediately
                 if (activeSpriteIdRef) {
                     activeSpriteIdRef.current = newId;
                 }
-                // Reset loading flag after a short delay to ensure any async events are swallowed
                 setTimeout(() => {
                     if (isLoadingWorkspaceRef) {
                         isLoadingWorkspaceRef.current = false;
@@ -467,7 +495,6 @@ export function useJuniorUIHandlers({
                 }, 50);
             }
         } else {
-            // Even if workspace ref is not available, update the active sprite ref
             if (activeSpriteIdRef) {
                 activeSpriteIdRef.current = newId;
             }
@@ -479,7 +506,7 @@ export function useJuniorUIHandlers({
 
     const addScene = () => {
         const newId = `scene${scenes.length + 1}`;
-        const newScene = {
+        const newScene: JuniorScene = {
             id: newId,
             name: `Scene ${scenes.length + 1}`,
             background: "white",
@@ -489,14 +516,13 @@ export function useJuniorUIHandlers({
         setCurrentSceneId(newId);
     };
 
-    const deleteSprite = (spriteId) => {
+    const deleteSprite = (spriteId: string) => {
         if (sprites.length <= 1) {
             alert("Cannot delete the last sprite!");
             return;
         }
         if (!confirm(`Delete sprite?`)) return;
 
-        // Save current workspace before deletion
         if (workspaceRef && workspaceRef.current && activeSpriteIdRef && activeSpriteIdRef.current && !isLoadingWorkspaceRef?.current) {
             const json = cloneWorkspaceData(Blockly.serialization.workspaces.save(workspaceRef.current));
             if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
@@ -504,10 +530,8 @@ export function useJuniorUIHandlers({
             }
         }
 
-        // Clean up workspace from ref storage
         if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
             spriteWorkspacesRef.current.delete(spriteId);
-            console.log(`[useJuniorUIHandlers] Deleted workspace for sprite: ${spriteId}`);
         }
 
         setScenes(prev => prev.map(scene => {
@@ -521,7 +545,6 @@ export function useJuniorUIHandlers({
             const newActiveId = remaining[0].id;
             setActiveSpriteId(newActiveId);
 
-            // Load workspace for the new active sprite (matching Intermediate Blocks pattern)
             if (workspaceRef && workspaceRef.current && spriteWorkspacesRef && spriteWorkspacesRef.current) {
                 isLoadingWorkspaceRef.current = true;
                 Blockly.Events.disable();
@@ -530,7 +553,6 @@ export function useJuniorUIHandlers({
                     workspaceRef.current.clear();
                     if (json && Object.keys(json).length > 0) {
                         Blockly.serialization.workspaces.load(cloneWorkspaceData(json), workspaceRef.current);
-                        console.log(`[useJuniorUIHandlers] Loaded workspace for new active sprite: ${newActiveId}`);
                     }
                 } catch (err) {
                     console.error(`[useJuniorUIHandlers] Error loading workspace after delete:`, err);
@@ -547,7 +569,7 @@ export function useJuniorUIHandlers({
         }
     };
 
-    const deleteScene = (sceneId) => {
+    const deleteScene = (sceneId: string) => {
         if (scenes.length <= 1) {
             alert("Cannot delete the last scene!");
             return;
@@ -588,7 +610,7 @@ export function useJuniorUIHandlers({
         }
     };
 
-    const handleSaveRecording = (audioData) => {
+    const handleSaveRecording = (audioData: any) => {
         const name = `Recording ${recordingCount}`;
         setRecordingCount(prev => prev + 1);
         audioEngine.soundBank.assets[name] = audioData.blobUrl;
@@ -596,7 +618,7 @@ export function useJuniorUIHandlers({
     };
 
     const toggleFullscreen = () => {
-        const stageContainer = document.querySelector('.stage')?.parentElement;
+        const stageContainer = document.querySelector('.stage')?.parentElement as any;
         if (!stageContainer) return;
 
         if (!document.fullscreenElement) {
@@ -606,7 +628,7 @@ export function useJuniorUIHandlers({
         }
     };
 
-    const handleFileMenu = (action) => {
+    const handleFileMenu = (action: string) => {
         if (action === "save" || action === "save_as") project.handleSaveProject();
         if (action === "open" || action === "load") project.handleOpenProject();
         if (action === "new_project" || action === "new" || action === "new_workspace") project.handleNewProject();
@@ -617,7 +639,7 @@ export function useJuniorUIHandlers({
         }
     };
 
-    const handleEditMenu = (action) => {
+    const handleEditMenu = (action: string) => {
         if (action === "restore") alert("Restore workspace feature coming soon!");
         if (action === "undo") workspaceRef.current?.undo(false);
         if (action === "redo") workspaceRef.current?.undo(true);

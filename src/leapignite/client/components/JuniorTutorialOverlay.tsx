@@ -6,7 +6,23 @@
 import React, { useState } from 'react';
 import { X, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 
-export default function JuniorTutorialOverlay({ tutorial, onComplete, onClose }) {
+interface TutorialStep {
+    title: string;
+    content: string;
+}
+
+interface Tutorial {
+    title: string;
+    steps: TutorialStep[];
+}
+
+interface JuniorTutorialOverlayProps {
+    tutorial: Tutorial | null;
+    onComplete: () => void;
+    onClose: () => void;
+}
+
+export default function JuniorTutorialOverlay({ tutorial, onComplete, onClose }: JuniorTutorialOverlayProps) {
     const [currentStep, setCurrentStep] = useState(0);
 
     if (!tutorial || !tutorial.steps || tutorial.steps.length === 0) return null;
@@ -69,8 +85,8 @@ export default function JuniorTutorialOverlay({ tutorial, onComplete, onClose })
                         borderRadius: '50%',
                         transition: 'background 0.2s',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#F3F4F6'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#F3F4F6')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
                     <X size={20} strokeWidth={2.5} />
                 </button>
@@ -118,8 +134,8 @@ export default function JuniorTutorialOverlay({ tutorial, onComplete, onClose })
                         borderRadius: '8px',
                         transition: 'background 0.2s'
                     }}
-                    onMouseEnter={e => { if (currentStep !== 0) e.currentTarget.style.background = '#F3F4F6' }}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    onMouseEnter={e => { if (currentStep !== 0) (e.currentTarget as HTMLElement).style.background = '#F3F4F6' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
                 >
                     <ChevronLeft size={18} strokeWidth={3} />
                     Back
@@ -144,8 +160,8 @@ export default function JuniorTutorialOverlay({ tutorial, onComplete, onClose })
                             : '0 4px 12px rgba(139, 92, 246, 0.3)',
                         transition: 'all 0.2s ease'
                     }}
-                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                    onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
+                    onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                 >
                     {currentStep === tutorial.steps.length - 1 ? (
                         <>Finish <Check size={18} strokeWidth={3} /></>

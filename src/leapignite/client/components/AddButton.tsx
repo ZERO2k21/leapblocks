@@ -5,7 +5,12 @@
  */
 import React from 'react';
 
-export default function AddButton({ onClick, icon }) {
+interface AddButtonProps {
+    onClick: () => void;
+    icon: React.ReactNode;
+}
+
+export default function AddButton({ onClick, icon }: AddButtonProps) {
     return (
         <div
             onClick={onClick}

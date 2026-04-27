@@ -5,13 +5,22 @@
  */
 import React from 'react';
 import { Image, X } from 'lucide-react';
+import { JuniorScene } from '../types';
 
-export default function SceneCard({ scene, active, onClick, onDelete, onEdit }) {
+interface SceneCardProps {
+    scene: JuniorScene;
+    active: boolean;
+    onClick: () => void;
+    onDelete?: (id: string) => void;
+    onEdit?: (id: string) => void;
+}
+
+export default function SceneCard({ scene, active, onClick, onDelete, onEdit }: SceneCardProps) {
     const label = scene.backdropName || scene.name || `Scene ${scene.id}`;
 
     // Get first sprite from scene for thumbnail
     const firstSprite = scene.sprites?.[0];
-    const spriteThumb = firstSprite?.costumes?.default || null;
+    const spriteThumb = firstSprite?.costumes?.default as string || null;
     const hasSpriteImage = spriteThumb && typeof spriteThumb === 'string' && spriteThumb.includes('/');
 
     // Scene background
@@ -108,7 +117,7 @@ export default function SceneCard({ scene, active, onClick, onDelete, onEdit }) 
                     hasSpriteImage ? (
                         <img src={spriteThumb} alt={label} style={{ maxWidth: "36px", maxHeight: "36px", objectFit: "contain", zIndex: 1 }} />
                     ) : (
-                        <span style={{ fontSize: "24px", zIndex: 1 }}>{firstSprite?.costumes?.default || "🎬"}</span>
+                        <span style={{ fontSize: "24px", zIndex: 1 }}>{(firstSprite?.costumes?.default as string) || "🎬"}</span>
                     )
                 )}
 
