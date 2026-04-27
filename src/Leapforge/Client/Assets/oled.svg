@@ -1,0 +1,111 @@
+<svg width="27.7mm" height="22.6mm" version="1.1" viewBox="0 0 27.7 22.6" xmlns="http://www.w3.org/2000/svg">
+  <!-- PCB body -->
+  <rect x="0" y="0" width="27.7" height="22.6" rx="0.8" ry="0.8" fill="#0a3d62"/>
+
+  <!-- PCB edge highlight -->
+  <rect x="0.15" y="0.15" width="27.4" height="22.3" rx="0.7" ry="0.7" fill="none" stroke="#0d5a8a" stroke-width="0.25"/>
+
+  <!-- Mounting holes -->
+  <circle cx="2.02" cy="1.87" r="1.24" fill="#fff" stroke="#b0bec5" stroke-width="0.2"/>
+  <circle cx="2.02" cy="1.87" r="0.65" fill="#c8ceda"/>
+  <circle cx="25.68" cy="1.87" r="1.24" fill="#fff" stroke="#b0bec5" stroke-width="0.2"/>
+  <circle cx="25.68" cy="1.87" r="0.65" fill="#c8ceda"/>
+  <circle cx="2.02" cy="20.73" r="1.24" fill="#fff" stroke="#b0bec5" stroke-width="0.2"/>
+  <circle cx="2.02" cy="20.73" r="0.65" fill="#c8ceda"/>
+  <circle cx="25.68" cy="20.73" r="1.24" fill="#fff" stroke="#b0bec5" stroke-width="0.2"/>
+  <circle cx="25.68" cy="20.73" r="0.65" fill="#c8ceda"/>
+
+  <!-- Screen bezel (outer black frame) -->
+  <rect x="0.4" y="4.2" width="26.9" height="14.8" rx="0.3" ry="0.3" fill="#111"/>
+
+  <!-- Screen inner (dark glass) -->
+  <rect x="1.46" y="5.27" width="24.8" height="12.4" rx="0.2" ry="0.2" fill="#0d0d0f"/>
+
+  <!-- Screen subtle gloss overlay -->
+  <rect x="1.46" y="5.27" width="24.8" height="3.5" rx="0.2" ry="0.2" fill="url(#gloss)" opacity="0.12"/>
+
+  <!-- Screen active area glow (very subtle blue tint when off) -->
+  <rect x="1.7" y="5.5" width="24.3" height="11.9" rx="0.1" ry="0.1" fill="#0a0a20" opacity="0.6"/>
+
+  <!-- Defs -->
+  <defs>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="pinGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0c040"/>
+      <stop offset="100%" stop-color="#b8860b"/>
+    </linearGradient>
+  </defs>
+
+  <!-- PCB trace lines (decorative) -->
+  <line x1="4.5" y1="1.71" x2="9.5" y2="1.71" stroke="#1a6fa0" stroke-width="0.18" opacity="0.7"/>
+  <line x1="18.3" y1="1.71" x2="23.5" y2="1.71" stroke="#1a6fa0" stroke-width="0.18" opacity="0.7"/>
+
+  <!-- I2C driver chip (small rectangle) -->
+  <rect x="3.5" y="3.0" width="3.2" height="1.0" rx="0.15" ry="0.15" fill="#1a1a2e" stroke="#2a2a4e" stroke-width="0.1"/>
+  <rect x="21.0" y="3.0" width="3.2" height="1.0" rx="0.15" ry="0.15" fill="#1a1a2e" stroke="#2a2a4e" stroke-width="0.1"/>
+
+  <!-- Capacitors (small circles on PCB) -->
+  <circle cx="5.5" cy="19.5" r="0.55" fill="#2a2a2a" stroke="#444" stroke-width="0.1"/>
+  <circle cx="7.2" cy="19.5" r="0.55" fill="#2a2a2a" stroke="#444" stroke-width="0.1"/>
+  <circle cx="20.5" cy="19.5" r="0.55" fill="#2a2a2a" stroke="#444" stroke-width="0.1"/>
+  <circle cx="22.2" cy="19.5" r="0.55" fill="#2a2a2a" stroke="#444" stroke-width="0.1"/>
+
+  <!-- Pin header connector base -->
+  <rect x="8.16" y="19.7" width="11.4" height="1.9" rx="0.3" ry="0.3" fill="#c8922a"/>
+  <rect x="8.16" y="19.7" width="11.4" height="0.4" rx="0.3" ry="0" fill="#e0a830" opacity="0.5"/>
+
+  <!-- Individual pin slots -->
+  <rect x="8.7"  y="20.0" width="1.6" height="1.3" rx="0.15" ry="0.15" fill="#1a1a1a"/>
+  <rect x="11.0" y="20.0" width="1.6" height="1.3" rx="0.15" ry="0.15" fill="#1a1a1a"/>
+  <rect x="13.3" y="20.0" width="1.6" height="1.3" rx="0.15" ry="0.15" fill="#1a1a1a"/>
+  <rect x="15.6" y="20.0" width="1.6" height="1.3" rx="0.15" ry="0.15" fill="#1a1a1a"/>
+
+  <!-- Pin holes (gold) -->
+  <circle cx="9.5"  cy="20.65" r="0.38" fill="url(#pinGold)"/>
+  <circle cx="11.8" cy="20.65" r="0.38" fill="url(#pinGold)"/>
+  <circle cx="14.1" cy="20.65" r="0.38" fill="url(#pinGold)"/>
+  <circle cx="16.4" cy="20.65" r="0.38" fill="url(#pinGold)"/>
+
+  <!-- Pin labels -->
+  <g font-family="monospace" font-size="0.85" fill="#8ecae6" text-anchor="middle">
+    <text x="9.5"  y="19.4">G</text>
+    <text x="11.8" y="19.4">V</text>
+    <text x="14.1" y="19.4">C</text>
+    <text x="16.4" y="19.4">D</text>
+  </g>
+
+  <!-- Top I2C pin pads (the 4 circles used for pinInfo handles) -->
+  <g fill="#e8c84a" stroke="#b8960a" stroke-width="0.15">
+    <circle cx="10.1" cy="1.71" r="0.72"/>
+    <circle cx="12.6" cy="1.71" r="0.72"/>
+    <circle cx="15.1" cy="1.71" r="0.72"/>
+    <circle cx="17.7" cy="1.71" r="0.72"/>
+  </g>
+  <!-- Pin hole centers -->
+  <g fill="#1a1a1a">
+    <circle cx="10.1" cy="1.71" r="0.3"/>
+    <circle cx="12.6" cy="1.71" r="0.3"/>
+    <circle cx="15.1" cy="1.71" r="0.3"/>
+    <circle cx="17.7" cy="1.71" r="0.3"/>
+  </g>
+
+  <!-- Top pin labels -->
+  <g font-family="monospace" font-size="0.75" fill="#8ecae6" text-anchor="middle">
+    <text x="10.1" y="3.1">G</text>
+    <text x="12.6" y="3.1">V</text>
+    <text x="15.1" y="3.1">C</text>
+    <text x="17.7" y="3.1">D</text>
+  </g>
+
+  <!-- "SSD1306" label on PCB -->
+  <text x="13.85" y="18.6" font-family="monospace" font-size="0.9" fill="#4a9aba" text-anchor="middle" opacity="0.8">SSD1306</text>
+
+  <!-- "0.96 inch" label -->
+  <text x="13.85" y="17.6" font-family="monospace" font-size="0.7" fill="#2a6a8a" text-anchor="middle" opacity="0.6">0.96"</text>
+
+  <!-- Horizontal divider line below screen -->
+  <line x1="0.4" y1="19.1" x2="27.3" y2="19.1" stroke="#0d5a8a" stroke-width="0.15" opacity="0.5"/>
+</svg>

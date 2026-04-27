@@ -78,6 +78,7 @@
  */
 
 import React, { useRef, useEffect, useCallback, useState } from 'react';
+import './Stage.css';
 import { Sprite } from './Sprite';
 import { gameLoop } from '../engine/GameLoop';
 import { stageManager } from '../engine/StageManager';

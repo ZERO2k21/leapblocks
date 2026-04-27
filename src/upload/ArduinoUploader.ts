@@ -9,6 +9,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { spawn } from 'child_process';
 
 const execAsync = promisify(exec);
 
@@ -126,6 +127,78 @@ export class ArduinoUploader {
         if (this.mainWindow) {
             this.mainWindow.webContents.send('upload-progress', progress, message);
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // UTILITIES
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /** Run arduino-cli with a given config file and return { stdout, stderr, code } */
+    private runCLI(cliPath: string, configYaml: string, args: string[]): Promise<{ stdout: string; stderr: string; code: number }> {
+        return new Promise((resolve) => {
+            const proc = spawn(cliPath, ['--config-file', configYaml, ...args], {
+                env: { ...process.env },
+            });
+            let stdout = '', stderr = '';
+            proc.stdout.on('data', (d: Buffer) => { stdout += d.toString(); });
+            proc.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
+            proc.on('close', (code: number) => resolve({ stdout, stderr, code }));
+            proc.on('error', (err: Error) => resolve({ stdout: '', stderr: err.message, code: -1 }));
+        });
+    }
+
+    /**
+     * Merges the three ESP32 flash regions into a single raw image for ESP32-C3 simulation.
+     */
+    private buildMergedFlashImage(
+        tempDir: string,
+        files: string[],
+        appBinPath: string,
+        outPath: string,
+    ): void {
+        const FLASH_SIZE = 4 * 1024 * 1024; // 4 MB
+        const BOOTLOADER_OFFSET = 0x1000;
+        const PARTITIONS_OFFSET = 0x8000;
+        const APP_OFFSET = 0x10000;
+
+        const image = Buffer.alloc(FLASH_SIZE, 0xff);
+
+        // ── Bootloader ──
+        const bootFile = files.find(f => f.includes('bootloader') && f.endsWith('.bin'));
+        if (bootFile) {
+            const bootBin = fs.readFileSync(path.join(tempDir, bootFile));
+            if (BOOTLOADER_OFFSET + bootBin.length > PARTITIONS_OFFSET) {
+                throw new Error(`Bootloader too large: ${bootBin.length} bytes overflows partition table region`);
+            }
+            bootBin.copy(image, BOOTLOADER_OFFSET);
+            console.log(`[FORGE UPLOADER] Bootloader @ 0x${BOOTLOADER_OFFSET.toString(16)}: ${bootBin.length} bytes`);
+        } else {
+            console.log(`[FORGE UPLOADER] No bootloader.bin found — region left as 0xFF (erased)`);
+        }
+
+        // ── Partition table ──
+        const partFile = files.find(f => (f.includes('partition') || f.includes('partitions')) && f.endsWith('.bin'));
+        if (partFile) {
+            const partBin = fs.readFileSync(path.join(tempDir, partFile));
+            if (PARTITIONS_OFFSET + partBin.length > APP_OFFSET) {
+                throw new Error(`Partition table too large: ${partBin.length} bytes overflows app region`);
+            }
+            partBin.copy(image, PARTITIONS_OFFSET);
+            console.log(`[FORGE UPLOADER] Partitions @ 0x${PARTITIONS_OFFSET.toString(16)}: ${partBin.length} bytes`);
+        } else {
+            console.log(`[FORGE UPLOADER] No partitions.bin found — region left as 0xFF (erased)`);
+        }
+
+        // ── Application binary ──
+        const appBin = fs.readFileSync(appBinPath);
+        if (APP_OFFSET + appBin.length > FLASH_SIZE) {
+            throw new Error(`App binary too large: ${appBin.length} bytes exceeds 4 MB flash`);
+        }
+        appBin.copy(image, APP_OFFSET);
+        console.log(`[FORGE UPLOADER] App @ 0x${APP_OFFSET.toString(16)}: ${appBin.length} bytes`);
+
+        fs.writeFileSync(outPath, image);
+        console.log(`[FORGE UPLOADER] ✓ Merged flash image: ${outPath} (${(FLASH_SIZE / 1024 / 1024).toFixed(0)} MB)`);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -382,6 +455,158 @@ directories:
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // ESP32 SIMULATION COMPILATION
+    // ═══════════════════════════════════════════════════════════════════════
+
+    async compileESP32ForSimulation(code: string, fqbn: string): Promise<{ success: boolean; binPath?: string; error?: string }> {
+        const arduinoCliPath = await this.getArduinoCliPath();
+        const configPath = this.ensureArduinoCliConfig();
+
+        if (this.mainWindow?.webContents) {
+            this.mainWindow.webContents.send('serial-data', '[SYSTEM] Checking ESP32 platform installation...\n');
+        }
+
+        const coreOk = await this.ensureESP32Core(arduinoCliPath);
+        if (!coreOk) {
+            return {
+                success: false,
+                error: 'ESP32 core installation failed. Please install manually:\narduino-cli core install esp32:esp32',
+            };
+        }
+
+        const tempDir = path.join(os.tmpdir(), `forge_esp32_${Date.now()}`);
+        const sketchDir = path.join(tempDir, 'sketch');
+        const sketchPath = path.join(sketchDir, 'sketch.ino');
+
+        try {
+            fs.mkdirSync(sketchDir, { recursive: true });
+
+            // Inject GPIO monitor header so ESP32-C3 serial output carries __LF_ tagged lines
+            const GPIO_MONITOR_HEADER = `\
+// ---- LeapForge monitor (auto-injected, do not remove) ----
+#include <Wire.h>
+#include <WiFi.h>
+
+// ── GPIO ──────────────────────────────────────────────────────────────────
+static void __lf_digitalWrite(uint8_t pin, uint8_t val) {
+  digitalWrite(pin, val);
+  Serial.printf("__LF_GPIO:%d:%d\\n", pin, (int)val);
+}
+#define digitalWrite(p,v) __lf_digitalWrite((p),(v))
+
+// ── PWM / analogWrite ─────────────────────────────────────────────────────
+static void __lf_analogWrite(uint8_t pin, uint32_t val) {
+  analogWrite(pin, val);
+  Serial.printf("__LF_PWM:%d:%d\\n", pin, (int)val);
+}
+#define analogWrite(p,v) __lf_analogWrite((p),(v))
+
+// ── I2C / Wire ────────────────────────────────────────────────────────────
+static uint8_t  __lf_i2c_addr = 0;
+static uint8_t  __lf_i2c_buf[256];
+static int      __lf_i2c_len  = 0;
+
+struct __LFWireClass {
+  void begin() { Wire.begin(); }
+  void begin(uint8_t sda, uint8_t scl) { Wire.begin(sda, scl); }
+  void setClock(uint32_t freq) { Wire.setClock(freq); }
+  void beginTransmission(uint8_t addr) {
+    __lf_i2c_addr = addr; __lf_i2c_len = 0;
+    Wire.beginTransmission(addr);
+    Serial.printf("__LF_I2C_S:%d\\n", (int)addr);
+  }
+  size_t write(uint8_t b) {
+    __lf_i2c_buf[__lf_i2c_len < 256 ? __lf_i2c_len++ : 255] = b;
+    Wire.write(b);
+    Serial.printf("__LF_I2C_B:%d\\n", (int)b);
+    return 1;
+  }
+  size_t write(const uint8_t* data, size_t len) {
+    for (size_t i = 0; i < len; i++) write(data[i]);
+    return len;
+  }
+  uint8_t endTransmission(bool stop = true) {
+    uint8_t r = Wire.endTransmission(stop);
+    Serial.printf("__LF_I2C_E:%d\\n", (int)r);
+    return r;
+  }
+  uint8_t requestFrom(uint8_t addr, uint8_t qty, bool stop = true) {
+    return Wire.requestFrom(addr, qty, stop);
+  }
+  int available() { return Wire.available(); }
+  int read()      { return Wire.read(); }
+  void onReceive(void (*fn)(int)) { Wire.onReceive(fn); }
+  void onRequest(void (*fn)())    { Wire.onRequest(fn); }
+} __lf_wire;
+#define Wire __lf_wire
+
+// ── WiFi events ───────────────────────────────────────────────────────────
+static void __lf_wifi_event(WiFiEvent_t event) {
+  switch (event) {
+    case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+      Serial.printf("__LF_WIFI:connected\\n"); break;
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+      Serial.printf("__LF_WIFI:disconnected\\n"); break;
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+      Serial.printf("__LF_WIFI:ip:%s\\n", WiFi.localIP().toString().c_str()); break;
+    default: break;
+  }
+}
+static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
+// ---- end LeapForge injection ----
+`;
+            // Preprocess code
+            let processedCode = code.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
+            processedCode = migrateESP32LedcAPI(processedCode);
+            processedCode = processedCode.replace(/(void\s+setup\s*\(\s*\)\s*\{)/, '$1\n  __lf_setup_wifi();');
+            fs.writeFileSync(sketchPath, GPIO_MONITOR_HEADER + '\n' + processedCode, 'utf-8');
+
+            const { stdout, stderr, code: exitCode } = await this.runCLI(arduinoCliPath, configPath, [
+                'compile', '--fqbn', fqbn, '--output-dir', tempDir, sketchDir,
+            ]);
+
+            if (exitCode !== 0) {
+                try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+                return { success: false, error: stderr || stdout || `Compiler exited with code ${exitCode}` };
+            }
+
+            const files = fs.readdirSync(tempDir);
+
+            // arduino-cli (esp32 core v2+) emits sketch.ino.merged.bin
+            const mergedReady = files.find(f => f === 'sketch.ino.merged.bin');
+
+            let finalBinPath: string;
+            if (mergedReady) {
+                finalBinPath = path.join(tempDir, mergedReady);
+            } else {
+                const binFile = files.find(f => f === 'sketch.ino.bin')
+                    ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
+
+                if (!binFile) {
+                    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+                    return { success: false, error: `ESP32 compiled but no .bin found. Files: ${files.join(', ')}` };
+                }
+
+                const appBinPath = path.join(tempDir, binFile);
+                const mergedPath = path.join(tempDir, 'flash_image.bin');
+                try {
+                    this.buildMergedFlashImage(tempDir, files, appBinPath, mergedPath);
+                } catch (mergeErr: any) {
+                    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+                    return { success: false, error: `Flash image merge failed: ${mergeErr.message}` };
+                }
+                finalBinPath = mergedPath;
+            }
+
+            return { success: true, binPath: finalBinPath };
+
+        } catch (err: any) {
+            try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+            return { success: false, error: err.message };
+        }
+    }
+
     /**
      * Ensure an ESP32-compatible library is installed via arduino-cli.
      * Idempotent — safe to call on every compile.
@@ -437,10 +662,18 @@ directories:
      * Ensure ESP32 arduino core is installed. Uses both Espressif CDN and GitHub URLs.
      */
     private esp32CoreReady = false;
-    async ensureESP32Core(arduinoCliPath: string): Promise<void> {
-        if (this.esp32CoreReady) return;
+    async ensureESP32Core(arduinoCliPath: string): Promise<boolean> {
+        if (this.esp32CoreReady) return true;
+        
         const configPath = this.getArduinoCliConfigPath();
         await this.ensureESP32BoardManagerUrls(configPath);
+        
+        const send = (msg: string) => {
+            console.log(`[FORGE UPLOADER] ${msg}`);
+            if (this.mainWindow?.webContents) {
+                this.mainWindow.webContents.send('serial-data', `[ESP32 SETUP] ${msg}\n`);
+            }
+        };
 
         const ESP32_URLS = [
             'https://dl.espressif.com/dl/package_esp32_index.json',
@@ -448,9 +681,10 @@ directories:
         ];
 
         try {
-            const { stdout } = await execAsync(
-                `"${arduinoCliPath}" core list --config-file "${configPath}" --format json`
-            );
+            send('Checking for ESP32 core installation...');
+            const { stdout, code: listCode } = await this.runCLI(arduinoCliPath, configPath, ['core', 'list', '--format', 'json']);
+            if (listCode !== 0) { send('ERROR: Failed to list installed cores'); return false; }
+            
             let cores: any[] = [];
             try { cores = JSON.parse(stdout || '[]'); } catch (_) { }
             const installed = cores.some((c: any) =>
@@ -459,33 +693,38 @@ directories:
             );
 
             if (!installed) {
-                console.log('[FORGE UPLOADER] ESP32 core not found — installing...');
-                await execAsync(
-                    `"${arduinoCliPath}" core update-index --config-file "${configPath}" --additional-urls ${ESP32_URLS.join(',')}`,
-                    { timeout: 60000 }
-                );
+                send('ESP32 core not found — installing (this may take 2-5 minutes)...');
+                const { code: updateCode } = await this.runCLI(arduinoCliPath, configPath, [
+                    'core', 'update-index', '--additional-urls', ESP32_URLS.join(',')
+                ]);
+                
+                if (updateCode !== 0) { send('ERROR: Failed to update package index'); return false; }
+                
                 let ok = false;
                 for (const url of ESP32_URLS) {
-                    try {
-                        await execAsync(
-                            `"${arduinoCliPath}" core install esp32:esp32 --config-file "${configPath}" --additional-urls ${url}`,
-                            { timeout: 300000 }
-                        );
+                    send(`Attempting install via ${url}...`);
+                    const { code: installCode } = await this.runCLI(arduinoCliPath, configPath, [
+                        'core', 'install', 'esp32:esp32', '--additional-urls', url
+                    ]);
+                    
+                    if (installCode === 0) {
                         ok = true;
-                        console.log(`[FORGE UPLOADER] ESP32 core installed via ${url}`);
+                        send('✓ ESP32 core installed!');
                         break;
-                    } catch (e: any) {
-                        console.warn(`[FORGE UPLOADER] Install attempt failed (${url}):`, e.message);
                     }
+                    send(`Install failed, trying next...`);
                 }
-                if (!ok) console.error('[FORGE UPLOADER] All ESP32 core install attempts failed.');
+                
+                if (!ok) { send('ERROR: All ESP32 core install attempts failed'); return false; }
             } else {
-                console.log('[FORGE UPLOADER] ESP32 core already installed.');
+                send('✓ ESP32 core already installed');
             }
+            
             this.esp32CoreReady = true;
+            return true;
         } catch (err: any) {
-            console.warn('[FORGE UPLOADER] ESP32 core check warning:', err.message);
-            this.esp32CoreReady = true;
+            send(`ERROR: ${err.message}`);
+            return false;
         }
     }
 

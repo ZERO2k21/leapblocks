@@ -95,6 +95,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     /** Inject an analog voltage into an ADC channel */
     esp32AdcSet: (channel: number, voltage: number) => ipcRenderer.invoke('esp32-adc-set', channel, voltage),
 
+    // ── Read compiled .bin file for ESP32-C3 firmware scanner ────────────
+    /** Read a compiled .bin file and return its contents as ArrayBuffer */
+    readBinFile: (filePath: string): Promise<ArrayBuffer> => {
+        console.log('[PRELOAD] readBinFile called', { filePath });
+        return ipcRenderer.invoke('read-bin-file', filePath);
+    },
+
     // ═══════════════════════════════════════════════════════════════════════
     // EVENT LISTENERS
     // ═══════════════════════════════════════════════════════════════════════
@@ -229,6 +236,8 @@ declare global {
             esp32Stop: () => Promise<{ ok: boolean }>;
             esp32GpioSet: (pin: number, high: boolean) => Promise<void>;
             esp32AdcSet: (channel: number, voltage: number) => Promise<void>;
+            // ESP32-C3 RISC-V firmware scanner
+            readBinFile: (filePath: string) => Promise<ArrayBuffer>;
             buildApk: (appState: any) => Promise<{ success: boolean, outputPath?: string, error?: string }>;
             onBuildLog: (cb: (msg: string) => void) => void;
             removeBuildLogListener: () => void;

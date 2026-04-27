@@ -17,6 +17,7 @@
  */
 
 import React, { useState } from "react";
+import './SpritePanel.css';
 import { Sprite, SpriteType } from "./Sprite";
 import { ActionMenu } from "./ActionMenu";
 import type { StageManager } from '../engine/StageManager';

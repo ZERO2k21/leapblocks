@@ -3299,7 +3299,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             'arduino_nano': 'arduino:avr:nano',
 
-            'esp32': 'esp32:esp32:esp32', // Generic ESP32 dev board (NodeMCU, DOIT, etc.)
+            'esp32': 'esp32:esp32:esp32c3', // ESP32 boards now use ESP32-C3 RISC-V simulation
 
         };
 

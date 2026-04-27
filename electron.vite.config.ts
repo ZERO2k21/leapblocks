@@ -48,6 +48,15 @@ export default defineConfig({
         },
       },
     },
+    optimizeDeps: {
+      include: [
+        'avr8js',
+        'reactflow',
+        'zustand',
+        'uuid',
+        'lucide-react',
+      ],
+    },
 
     build: {
       outDir: 'dist/renderer',

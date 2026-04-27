@@ -1,0 +1,8 @@
+node_modules/
+.env
+*.log
+tmp/
+workspace/
+output/
+arduino-cli/
+forge-lib/

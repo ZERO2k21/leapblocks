@@ -41,7 +41,6 @@ import {
     File,
     Share,
 } from "lucide-react";
-
 import { fileService } from "../services/FileService";
 import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
@@ -290,8 +289,8 @@ const BOARD_UPLOAD_CONFIG = {
     },
     esp32: {
         fileName: "esp32.cpp",
-        fqbn: "esp32:esp32:esp32",
-        runtimeLabel: "ESP32",
+        fqbn: "esp32:esp32:esp32c3",
+        runtimeLabel: "ESP32-C3",
     },
 };
 
