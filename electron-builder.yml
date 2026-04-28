@@ -25,6 +25,11 @@ extraResources:
     to: public
     filter:
       - "**/*"
+  # ── Board drivers (Arduino CP210x, ESP32 CH340) ───────────────────────────
+  - from: src/leapembed/drivers
+    to: drivers
+    filter:
+      - "**/*"
   # ── QEMU binary for ESP32 simulation ──────────────────────────────────────
   # Run `node scripts/download-qemu.js` before building to populate resources/.
   # The binary is platform-specific; only the matching one will be present.

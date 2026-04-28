@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
@@ -11,9 +11,37 @@ import 'blockly/javascript';
 
 export const LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG = '__leap_custom_block_context_menu__';
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // GLOBAL BLOCKLY OVERRIDES & PATCHES
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+// 0. TOOLBOX CATEGORY CLICK — PREVENT TOGGLE-CLOSE
+// Blockly default: clicking the already-selected category toggles the flyout closed.
+// The toggle is driven by Toolbox.shouldDeselectItem_ returning true when oldItem===newItem,
+// and shouldSelectItem_ returning false — causing updateFlyout_ to hide the flyout.
+// Fix: patch both methods so re-clicking a category always keeps the flyout open.
+const BlocklyToolbox = (Blockly as any).Toolbox;
+if (BlocklyToolbox && !BlocklyToolbox.prototype._leapNoTogglePatch) {
+    BlocklyToolbox.prototype._leapNoTogglePatch = true;
+
+    // shouldDeselectItem_: return false when same item clicked again (never deselect)
+    const _origShouldDeselect = BlocklyToolbox.prototype.shouldDeselectItem_;
+    if (_origShouldDeselect) {
+        BlocklyToolbox.prototype.shouldDeselectItem_ = function (this: any, oldItem: any, newItem: any): boolean {
+            if (oldItem && newItem && oldItem === newItem) return false; // keep selected
+            return _origShouldDeselect.call(this, oldItem, newItem);
+        };
+    }
+
+    // shouldSelectItem_: return true when same item clicked again (force re-show)
+    const _origShouldSelect = BlocklyToolbox.prototype.shouldSelectItem_;
+    if (_origShouldSelect) {
+        BlocklyToolbox.prototype.shouldSelectItem_ = function (this: any, oldItem: any, newItem: any): boolean {
+            if (oldItem && newItem && oldItem === newItem) return true; // always show
+            return _origShouldSelect.call(this, oldItem, newItem);
+        };
+    }
+}
 
 // 1. DYNAMIC DROPDOWN COLORS
 // Update highlight and background color based on block color when opening a dropdown.
@@ -160,7 +188,7 @@ if (Blockly.FieldVariable && !(Blockly.FieldVariable.prototype as any)._initMode
                 if (found) {
                     this.doValueUpdate_(found.getId());
                 } else {
-                    // No variables exist yet — do NOT auto-create one.
+                    // No variables exist yet â€” do NOT auto-create one.
                     // The flyout will show no variable blocks until the user creates one via "Make a Variable".
                     // This prevents the phantom "variable" from appearing on every flyout open.
                 }
@@ -365,7 +393,7 @@ if (browserEvents && typeof browserEvents.unbind === 'function' && !browserEvent
         try {
             origUnbind(bindData);
         } catch (err) {
-            // Silently handle — workspace disposal race conditions are non-fatal
+            // Silently handle â€” workspace disposal race conditions are non-fatal
         }
     };
     browserEvents._unbindPatched = true;

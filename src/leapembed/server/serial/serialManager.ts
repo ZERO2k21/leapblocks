@@ -4,9 +4,30 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import { BrowserWindow } from 'electron';
+import path from 'path';
 // Use standard require for serialport loaded as a native module
 const { SerialPort } = require('serialport');
 const { ReadlineParser } = require('@serialport/parser-readline');
+
+/**
+ * Resolve the path to bundled board drivers.
+ * In production: drivers are in extraResources → process.resourcesPath/drivers
+ * In development: drivers are in src/leapembed/drivers
+ */
+function getDriversPath(): string {
+    if (process.env.NODE_ENV === 'production') {
+        return path.join(process.resourcesPath, 'drivers');
+    }
+    return path.join(__dirname, '..', '..', '..', 'src', 'leapembed', 'drivers');
+}
+
+export function getArduinoDriverPath(): string {
+    return path.join(getDriversPath(), 'arduino', 'cp210x', 'silabser.inf');
+}
+
+export function getEsp32DriverPath(): string {
+    return path.join(getDriversPath(), 'esp32');
+}
 
 
 export class SerialManager {
@@ -46,10 +67,13 @@ export class SerialManager {
                         const lines = stdout.split('\n').filter((l: string) => l.trim() && !l.includes('Caption') && !l.includes('-------'));
                         if (lines.length > 0) {
                             console.log(`[SerialManager] Detected ${lines.length} unassigned bridge(s):`, lines);
+                            const driverPath = getArduinoDriverPath();
+                            console.log(`[SerialManager] Driver available at: ${driverPath}`);
                             return lines.map((line: string) => ({
                                 path: 'BRIDGE_DETECTED',
                                 manufacturer: line.trim(),
-                                productId: 'MISSING_DRIVER_OR_COM'
+                                productId: 'MISSING_DRIVER_OR_COM',
+                                driverPath,
                             }));
                         }
                     }

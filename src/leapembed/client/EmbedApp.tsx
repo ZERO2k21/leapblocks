@@ -317,7 +317,7 @@ const withCategoryHeaders = (contents: any[]) => {
 
         return {
             ...category,
-            contents: [createFlyoutCategoryLabel(category.name), ...category.contents]
+            contents: [...category.contents]
         };
     });
 };
@@ -954,16 +954,14 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 ? refreshedToolbox.getToolboxItems().filter((item: any) => typeof item?.getName === 'function')
                 : [];
 
-            // Restore previously selected category by name, using position as fallback
-            if (selectedCategoryName && toolboxItems.length > 0) {
+            // Only restore the selected category if the flyout was already open.
+            // This preserves the toggle behavior — don't force-open on toolbox refresh.
+            const flyoutIsOpen = !!(workspaceRef.current.getFlyout() as any)?.isVisible?.();
+            if (flyoutIsOpen && selectedCategoryName && toolboxItems.length > 0) {
                 const matchingIdx = toolboxItems.findIndex((item: any) => item.getName() === selectedCategoryName);
-                if (matchingIdx >= 0 && typeof refreshedToolbox?.selectItemByPosition === 'function') {
+                if (matchingIdx >= 0) {
                     refreshedToolbox.selectItemByPosition(matchingIdx);
-                } else if (typeof refreshedToolbox?.selectItemByPosition === 'function') {
-                    refreshedToolbox.selectItemByPosition(0);
                 }
-            } else if (typeof refreshedToolbox?.selectItemByPosition === 'function') {
-                refreshedToolbox.selectItemByPosition(0);
             }
         } catch (e) {
             console.warn('[APP] Toolbox update error (non-fatal):', e);
@@ -1060,6 +1058,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     workspaceRef.current = blocksWorkspace;
                     (blocksWorkspace as any)[LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG] = true;
+
+                    // ── TOOLBOX CATEGORY CLICK FIX ──────────────────────────────────────
+                    // The prototype-level patch in runtime.ts handles the toggle-close fix.
+                    // Here we just ensure the first category is selected/visible on init.
+                    const toolboxInst = blocksWorkspace.getToolbox() as any;
+                    if (toolboxInst) {
+                        // Select the first category by default so flyout is open on load
+                        setTimeout(() => {
+                            const items = toolboxInst.getToolboxItems?.();
+                            if (items && items.length > 0 && !toolboxInst.getSelectedItem?.()) {
+                                toolboxInst.selectItemByPosition?.(0);
+                            }
+                        }, 100);
+                    }
 
                     // 1. BLOCK REPLACEMENT LISTENER
                     // Auto-replace checkbox-reporters from flyout with standard reporters in workspace
@@ -1215,9 +1227,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 // Performance: Only run logic if we are on a reporter checkbox block and not during disposal
                                 // Performance: Only run logic if we are on a reporter checkbox block, not during disposal, and not in flyout
                                 if (block && !block.isDisposed() && !block.workspace?.isFlyout && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox' || block.type === 'sensing_reporter_checkbox')) {
+                                    const isSensing = block.type === 'sensing_reporter_checkbox';
                                     const type = isSensing ? 'sensing' : (block.type === 'variable_reporter_checkbox' ? 'variable' : 'list');
                                     const nameField = isSensing ? 'VARIABLE' : (type === 'variable' ? 'VARIABLE' : 'LIST');
-                                    const name = block.getFieldValue(nameField);
 
                                     // Robust check for boolean vs string 'TRUE'
                                     const checked = this.getValue() === 'TRUE' || this.getValue() === true;
@@ -1251,7 +1263,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         if (flyout) {
 
-                            flyout.autoClose = false;
+                            // flyout.autoClose is left as default (true) — flyout closes when clicking workspace
 
                             // Lock the flyout scale so blocks inside don't zoom
                             // with the main workspace viewport.
@@ -1294,32 +1306,95 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         }
 
-                        // 5. KEEP FLYOUT ALWAYS OPEN
-                        // Re-select a toolbox category whenever the flyout gets closed
-                        // (e.g. by clicking on the workspace background).
+                        // 5. CLICK-TO-TOGGLE FLYOUT
+                        // Clicking the same category again closes the flyout (toggle behavior).
+                        // Clicking a different category opens that category's flyout.
+                        let _lastSelectedCategoryId: string | null = null;
                         blocksWorkspace.addChangeListener((event: any) => {
                             if (event.type === Blockly.Events.TOOLBOX_ITEM_SELECT) {
-                                // If the toolbox selection was cleared (flyout closing),
-                                // re-select the previously active category.
-                                if (!(event as any).newItem) {
-                                    const toolbox = blocksWorkspace.getToolbox() as any;
-                                    if (toolbox) {
-                                        // Re-select old item or default to first
-                                        const oldId = (event as any).oldItem;
-                                        if (oldId) {
-                                            const items = toolbox.getToolboxItems?.() || [];
-                                            const prev = items.find((i: any) => i.getId?.() === oldId);
-                                            if (prev) {
-                                                toolbox.setSelectedItem(prev);
-                                                return;
-                                            }
-                                        }
-                                        toolbox.selectItemByPosition(0);
+                                const newItem = (event as any).newItem;
+                                const toolbox = blocksWorkspace.getToolbox() as any;
+                                if (!toolbox) return;
+                                if (newItem) {
+                                    // A category was selected
+                                    const newId = typeof newItem === 'string' ? newItem : newItem?.getId?.();
+                                    if (newId && newId === _lastSelectedCategoryId) {
+                                        // Same category clicked again — close the flyout
+                                        toolbox.clearSelection?.();
+                                        _lastSelectedCategoryId = null;
+                                    } else {
+                                        _lastSelectedCategoryId = newId ?? null;
                                     }
+                                } else {
+                                    // Flyout was closed (e.g. clicked workspace) — clear tracking
+                                    _lastSelectedCategoryId = null;
                                 }
                             }
                         });
 
+                    }
+
+                    // 6. HOVER-TO-PEEK: show flyout on toolbox hover, hide on mouse leave
+                    // When user hovers over the narrow toolbox, the flyout peeks open.
+                    // When mouse leaves both toolbox and flyout, it closes.
+                    {
+                        const toolboxEl = blocklyDiv.current?.querySelector('.blocklyToolboxDiv') as HTMLElement | null;
+                        let hoverOpenTimer: ReturnType<typeof setTimeout> | null = null;
+                        let hoverCloseTimer: ReturnType<typeof setTimeout> | null = null;
+                        let isHoverOpen = false;
+                        let isCategoryClickOpen = false;
+
+                        // Track whether flyout was opened by a click (not hover)
+                        blocksWorkspace.addChangeListener((event: any) => {
+                            if (event.type === Blockly.Events.TOOLBOX_ITEM_SELECT) {
+                                isCategoryClickOpen = !!(event as any).newItem;
+                                if (isCategoryClickOpen) isHoverOpen = false;
+                            }
+                        });
+
+                        const openFlyoutOnHover = () => {
+                            if (isCategoryClickOpen) return; // click-opened flyout takes priority
+                            if (hoverCloseTimer) { clearTimeout(hoverCloseTimer); hoverCloseTimer = null; }
+                            if (isHoverOpen) return;
+                            hoverOpenTimer = setTimeout(() => {
+                                const toolbox = blocksWorkspace.getToolbox() as any;
+                                if (!toolbox || isCategoryClickOpen) return;
+                                // Select first category to show flyout
+                                const items = toolbox.getToolboxItems?.() || [];
+                                const firstCat = items.find((i: any) => typeof i.getName === 'function');
+                                if (firstCat) {
+                                    toolbox.setSelectedItem(firstCat);
+                                    isHoverOpen = true;
+                                }
+                            }, 120); // small delay to avoid flicker
+                        };
+
+                        const closeFlyoutOnHoverLeave = () => {
+                            if (isCategoryClickOpen) return;
+                            if (hoverOpenTimer) { clearTimeout(hoverOpenTimer); hoverOpenTimer = null; }
+                            hoverCloseTimer = setTimeout(() => {
+                                if (isCategoryClickOpen) return;
+                                const toolbox = blocksWorkspace.getToolbox() as any;
+                                toolbox?.clearSelection?.();
+                                isHoverOpen = false;
+                            }, 200);
+                        };
+
+                        const cancelClose = () => {
+                            if (hoverCloseTimer) { clearTimeout(hoverCloseTimer); hoverCloseTimer = null; }
+                        };
+
+                        if (toolboxEl) {
+                            toolboxEl.addEventListener('mouseenter', openFlyoutOnHover);
+                            toolboxEl.addEventListener('mouseleave', closeFlyoutOnHoverLeave);
+                        }
+
+                        // Also keep flyout open when mouse is over the flyout itself
+                        const flyoutSvg = blocksWorkspace.getFlyout()?.svgGroup_ as SVGElement | null;
+                        if (flyoutSvg) {
+                            flyoutSvg.addEventListener('mouseenter', cancelClose);
+                            flyoutSvg.addEventListener('mouseleave', closeFlyoutOnHoverLeave);
+                        }
                     }
 
 
@@ -1327,27 +1402,19 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                    // Auto-open toolbox on load/mode switch
-
+                    // Auto-select first toolbox category on load (flyout stays closed until user clicks)
                     setTimeout(() => {
-
                         if (workspaceRef.current) {
-
-                            const toolbox = workspaceRef.current.getToolbox();
-
+                            const toolbox = workspaceRef.current.getToolbox() as any;
                             if (toolbox) {
-
-                                toolbox.selectItemByPosition(0);
-
-                                workspaceRef.current.refreshToolboxSelection();
-
-                                const flyout = workspaceRef.current.getFlyout() as any;
-                                if (flyout?.reflowInternal_) flyout.reflowInternal_();
-
+                                // Just highlight the first category without opening the flyout
+                                // The flyout will open when the user clicks a category
+                                const items = toolbox.getToolboxItems?.() || [];
+                                if (items.length > 0 && items[0]?.setSelected) {
+                                    items[0].setSelected(true);
+                                }
                             }
-
                         }
-
                     }, 50);
 
 
@@ -1356,8 +1423,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     workspaceRef.current.registerToolboxCategoryCallback('LEAP_VARIABLES', (ws: any) => {
                         const contents: any[] = [];
 
-                        contents.push(createFlyoutCategoryLabel('Variables'));
-                        contents.push(createFlyoutSectionLabel('Variables', 'category-subheader-variables'));
                         contents.push({
                             kind: 'button',
                             text: 'Make a Variable',
@@ -1423,7 +1488,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         }
 
                         contents.push({ kind: 'sep', gap: 20 });
-                        contents.push(createFlyoutSectionLabel('Lists', 'category-subheader-lists'));
                         contents.push({
                             kind: 'button',
                             text: 'Make a List',
@@ -1475,7 +1539,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         }
 
                         contents.push({ kind: 'sep', gap: 20 });
-                        contents.push(createFlyoutSectionLabel('Tables', 'category-subheader-tables'));
                         contents.push({
                             kind: 'button',
                             text: 'Make a Table',
@@ -1601,8 +1664,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     // Register LEAP_MYBLOCKS custom category callback
                     workspaceRef.current.registerToolboxCategoryCallback('LEAP_MYBLOCKS', (ws: any) => {
                         const contents: any[] = [];
-                        contents.push(createFlyoutCategoryLabel('My Blocks'));
-                        contents.push(createFlyoutSectionLabel('Custom Blocks', 'category-subheader-myblocks'));
                         contents.push({
                             kind: 'button',
                             text: 'Make a Block',
@@ -1631,8 +1692,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     workspaceRef.current.registerToolboxCategoryCallback('LEAP_MOREBLOCKS', () => {
                         const contents: any[] = [];
-                        contents.push(createFlyoutCategoryLabel(MORE_BLOCKS_CATEGORY_NAME));
-                        contents.push(createFlyoutSectionLabel('Reserved for future use', 'category-subheader-moreblocks'));
                         contents.push({
                             kind: 'label',
                             text: 'Future blocks will appear here',
@@ -2278,6 +2337,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 onPaintSprite={() => setShowSpriteLibrary(false)}
                 onSelectBackdrop={handleBackdropSelect}
                 onAddExtension={handleAddExtension}
+                installedExtensions={installedExtensions}
                 isUploading={isUploading}
                 uploadProgress={uploadProgress}
                 showUnsavedModal={showUnsavedModal}

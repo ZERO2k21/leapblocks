@@ -23,6 +23,7 @@ const EXTENSIONS: Extension[] = [
     { id: 'face_detection', name: 'Face Detection', description: 'Detect and recognize human faces in real-time using the camera.', emoji: '👤', color: 'linear-gradient(135deg,#f9a825,#ffe082)', cat: 'ai', iconBg: '#f5c518', icon: '🎯' },
     { id: 'object_detection', name: 'Object Detection', description: 'Identify objects from image using AI vision models.', emoji: '🐱', color: 'linear-gradient(135deg,#00796b,#4db6ac)', cat: 'ai', iconBg: '#3dba7e', icon: '🔎' },
     { id: 'human_body', name: 'Human Body Detection', description: 'Identify human body parts, poses and hand gestures from image.', emoji: '🤸', color: 'linear-gradient(135deg,#283593,#7986cb)', cat: 'ai', iconBg: '#5c6bc0', icon: '✋' },
+    { id: 'hand_pose', name: 'Hand Pose Detection', description: 'Identify hand gestures and track finger positions in real-time.', emoji: '✋', color: 'linear-gradient(135deg,#283593,#7986cb)', cat: 'ai', iconBg: '#3f51b5', icon: '🖐️' },
     { id: 'ml_environment', name: 'Machine Learning Environment', description: 'Classify Image, Pose, Hand Pose, Text, Number & Object Detection.', emoji: '🧠', color: 'linear-gradient(135deg,#2e7d32,#66bb6a)', cat: 'ai', iconBg: '#43a047', icon: '🤖', requires: '📡 WiFi' },
     { id: 'teachable_machine', name: 'ML with Teachable Machine', description: "Classify Image & Pose using Google's Teachable Machine.", emoji: '🎓', color: 'linear-gradient(135deg,#880e4f,#f48fb1)', cat: 'ai', iconBg: '#e91e63', icon: '📚', requires: '🖥 📡' },
     { id: 'computer_vision', name: 'Computer Vision', description: 'Detect Object, Brand, Landmark & Celebrity using cloud AI.', emoji: '👁️', color: 'linear-gradient(135deg,#6a1b9a,#ce93d8)', cat: 'ai', iconBg: '#8e24aa', icon: '🔍', requires: '🖥 📡' },
@@ -38,19 +39,18 @@ const EXTENSIONS: Extension[] = [
 
     // Games & Animation
     { id: 'physics', name: 'Physics Engine', description: 'Add real-world motions, gravity and forces to sprites.', emoji: '🎾', color: 'linear-gradient(135deg,#2e7d32,#66bb6a)', cat: 'games', iconBg: '#388e3c', icon: '⚽' },
-    { id: 'pen', name: 'Pen', description: 'Draw trails and patterns with your sprites.', emoji: '✏️', color: 'linear-gradient(135deg,#558b2f,#aed581)', cat: 'games', iconBg: '#558b2f', icon: '🖌️' },
+    { id: 'pen', name: 'Pen', description: 'Draw trails, patterns and shapes with your sprites.', emoji: '✏️', color: 'linear-gradient(135deg,#558b2f,#aed581)', cat: 'games', iconBg: '#558b2f', icon: '🖌️' },
     { id: 'music', name: 'Music', description: 'Play instruments, drums, and compose musical sequences.', emoji: '🎹', color: 'linear-gradient(135deg,#880e4f,#f48fb1)', cat: 'games', iconBg: '#c62828', icon: '🥁' },
     { id: 'video_sensing', name: 'Video Sensing', description: 'Sense motion and movement with the camera.', emoji: '📷', color: 'linear-gradient(135deg,#006064,#4dd0e1)', cat: 'games', iconBg: '#00838f', icon: '🎥' },
     { id: 'content_creation', name: 'Content Creation (Alpha)', description: 'Create interactive buttons, paragraphs, quizzes & more.', emoji: '✨', color: 'linear-gradient(135deg,#1e88e5,#42a5f5)', cat: 'games', iconBg: '#1565c0', icon: '📝', badge: 'New' },
 
-    // Hardware / Utilities
-    { id: 'qr_scanner', name: 'QR Code Scanner', description: 'Detect and Identify QR Code using camera.', emoji: '📱', color: 'linear-gradient(135deg,#00796b,#4db6ac)', cat: 'hardware', iconBg: '#00695c', icon: '📷' },
+    // Utilities
+    { id: 'qr_scanner', name: 'QR Code Scanner', description: 'Detect and identify QR codes using the camera.', emoji: '📱', color: 'linear-gradient(135deg,#00796b,#4db6ac)', cat: 'hardware', iconBg: '#00695c', icon: '📷' },
     { id: 'text_to_speech', name: 'Text to Speech', description: 'Make your projects talk with natural-sounding voices.', emoji: '🔈', color: 'linear-gradient(135deg,#6a1b9a,#ce93d8)', cat: 'hardware', iconBg: '#6a1b9a', icon: '💬', requires: '📡' },
     { id: 'translate', name: 'Translate', description: 'Translate text into many languages instantly.', emoji: '🌍', color: 'linear-gradient(135deg,#006064,#4dd0e1)', cat: 'hardware', iconBg: '#006064', icon: '🔤', requires: '📡' },
-    { id: 'data_logger', name: 'Data Logger', description: 'Store project data in a CSV File for analysis.', emoji: '📊', color: 'linear-gradient(135deg,#2e7d32,#66bb6a)', cat: 'hardware', iconBg: '#2e7d32', icon: '📋' },
+    { id: 'data_logger', name: 'Data Logger', description: 'Store project data in a CSV file for analysis.', emoji: '📊', color: 'linear-gradient(135deg,#2e7d32,#66bb6a)', cat: 'hardware', iconBg: '#2e7d32', icon: '📋' },
     { id: 'video_player', name: 'Video Player', description: 'Play videos from YouTube, URL or local PC files.', emoji: '🎬', color: 'linear-gradient(135deg,#e65100,#ffb74d)', cat: 'hardware', iconBg: '#e65100', icon: '▶️', requires: '📡' },
     { id: 'makey_makey', name: 'Makey Makey', description: 'Make anything a key — turn bananas into controllers!', emoji: '🎮', color: 'linear-gradient(135deg,#b71c1c,#ef9a9a)', cat: 'hardware', iconBg: '#b71c1c', icon: '🕹️' },
-    { id: 'hand_pose', name: 'Hand Pose Detection', description: 'Identify hand gestures and track finger positions in real-time.', emoji: '✋', color: 'linear-gradient(135deg,#283593,#7986cb)', cat: 'ai', iconBg: '#3f51b5', icon: '🖐️' },
 ];
 
 const SECTIONS = [
@@ -63,141 +63,161 @@ const SECTIONS = [
 const FILTERS = [
     { key: 'all', label: 'All' },
     { key: 'ai', label: 'AI & ML' },
-    { key: 'hardware', label: 'Hardware' },
+    { key: 'games', label: 'Games' },
     { key: 'iot', label: 'IoT' },
-    { key: 'games', label: 'Games & Animation' },
+    { key: 'hardware', label: 'Utilities' },
 ];
 
 interface JuniorExtensionLibraryProps {
     onClose: () => void;
     onSelectExtension: (id: string) => void;
+    installedExtensions?: Set<string>;
 }
 
-export default function JuniorExtensionLibrary({ onClose, onSelectExtension }: JuniorExtensionLibraryProps) {
+export default function JuniorExtensionLibrary({
+    onClose,
+    onSelectExtension,
+    installedExtensions = new Set(),
+}: JuniorExtensionLibraryProps) {
     const [search, setSearch] = useState('');
     const [activeFilter, setActiveFilter] = useState('all');
-    const [iframeExtension, setIframeExtension] = useState<Extension | null>(null);
+    // Local installed set so clicking Add gives instant feedback
+    const [localInstalled, setLocalInstalled] = useState<Set<string>>(new Set(installedExtensions));
 
-    // Listen for postMessage from the iframe
+    // Sync if parent passes updated set
+    useEffect(() => {
+        setLocalInstalled(new Set(installedExtensions));
+    }, [installedExtensions]);
+
+    // Also listen for postMessage (iframe-based extensions still work)
     useEffect(() => {
         function handleMessage(event: MessageEvent) {
-            if (event.data && event.data.type === 'ADD_EXTENSION') {
-                const extId = event.data.extensionId;
-                console.log('[ExtensionLibrary] ADD_EXTENSION received:', extId);
-                setIframeExtension(null);
-                if (onSelectExtension) {
+            if (event.data?.type === 'ADD_EXTENSION') {
+                const extId = event.data.extensionId || event.data.extension;
+                if (extId) {
+                    setLocalInstalled(prev => new Set([...prev, extId]));
                     onSelectExtension(extId);
                 }
             }
         }
-
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
     }, [onSelectExtension]);
 
-    const handleCardClick = useCallback((ext: Extension) => {
-        setIframeExtension(ext);
-    }, []);
+    const handleAdd = useCallback((ext: Extension, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const id = ext.id;
+        setLocalInstalled(prev => new Set([...prev, id]));
+        onSelectExtension(id);
+    }, [onSelectExtension]);
 
-    const handleIframeClose = useCallback(() => {
-        setIframeExtension(null);
-    }, []);
-
-    // Build iframe URL from extension data
-    const getIframeUrl = (ext: Extension) => {
-        // Direct mappings for extensions with custom HTML files
-        if (ext.id === 'pen') {
-            return `/extensions/ext-pen.html`;
-        }
-        if (ext.id === 'face_detection' || ext.id === 'face-detection') {
-            return `/extensions/ext-face-detection.html`;
-        }
-        if (ext.id === 'object_detection') {
-            return `/extensions/ext-object-detection.html`;
-        }
-        if (ext.id === 'music') {
-            return `/extensions/ext-music.html`;
-        }
-
-        // Generic detail page for other extensions
-        const params = new URLSearchParams({
-            id: ext.id,
-            name: ext.name,
-            desc: ext.description,
-            emoji: encodeURIComponent(ext.emoji),
-            color: encodeURIComponent(ext.color),
-            cat: ext.cat,
-            requires: ext.requires || '',
-        });
-        return `/extensions/ext-detail.html?${params.toString()}`;
-    };
-
-    // Filter extensions
+    // Filter
     const filteredExtensions = EXTENSIONS.filter(ext => {
         const catMatch = activeFilter === 'all' || ext.cat === activeFilter;
-        const textMatch = !search || ext.name.toLowerCase().includes(search.toLowerCase()) || ext.description.toLowerCase().includes(search.toLowerCase());
+        const textMatch = !search ||
+            ext.name.toLowerCase().includes(search.toLowerCase()) ||
+            ext.description.toLowerCase().includes(search.toLowerCase());
         return catMatch && textMatch;
     });
 
-    // Group by section
-    const groupedSections = SECTIONS.map(section => ({
-        ...section,
-        extensions: filteredExtensions.filter(ext => ext.cat === section.key),
-    })).filter(section => section.extensions.length > 0);
+    const groupedSections = SECTIONS
+        .map(section => ({
+            ...section,
+            extensions: filteredExtensions.filter(ext => ext.cat === section.key),
+        }))
+        .filter(section => section.extensions.length > 0);
+
+    const totalInstalled = localInstalled.size;
 
     return (
-        <div className="fixed inset-0 bg-[#e8d9f5] z-[1000] font-[Nunito,Segoe_UI,Tahoma,Geneva,Verdana,sans-serif] flex flex-col">
+        <div className="fixed inset-0 z-[1000] flex flex-col" style={{ fontFamily: "'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", background: '#f0eaf8' }}>
             <style>{`
-                /* Scrollbar */
-                .jel-content::-webkit-scrollbar { width: 8px; }
-                .jel-content::-webkit-scrollbar-track { background: transparent; }
-                .jel-content::-webkit-scrollbar-thumb { background: #c9a8e8; border-radius: 10px; }
-                .jel-content::-webkit-scrollbar-thumb:hover { background: #a07dc5; }
-                
-                @keyframes iframeFadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes iframePopIn {
-                    from { opacity: 0; transform: scale(0.85) translateY(20px); }
-                    to { opacity: 1; transform: scale(1) translateY(0); }
-                }
+                .jel-scroll::-webkit-scrollbar { width: 7px; }
+                .jel-scroll::-webkit-scrollbar-track { background: transparent; }
+                .jel-scroll::-webkit-scrollbar-thumb { background: #c4a0e0; border-radius: 10px; }
+                .jel-scroll::-webkit-scrollbar-thumb:hover { background: #9b6fd4; }
+                .jel-card { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+                .jel-card:hover { transform: translateY(-4px); box-shadow: 0 14px 36px rgba(74,21,128,0.16) !important; }
+                .jel-card:active { transform: translateY(-1px); }
+                .jel-add-btn { transition: all 0.15s ease; }
+                .jel-add-btn:hover:not(:disabled) { transform: scale(1.06); }
+                .jel-add-btn:active:not(:disabled) { transform: scale(0.97); }
+                .jel-filter-btn { transition: all 0.15s ease; }
+                .jel-filter-btn:hover { transform: scale(1.04); }
+                @keyframes jel-pop { from { opacity:0; transform:scale(0.92) translateY(12px); } to { opacity:1; transform:scale(1) translateY(0); } }
+                .jel-animate { animation: jel-pop 0.22s cubic-bezier(0.34,1.56,0.64,1); }
             `}</style>
 
-            {/* Header */}
-            <div className="bg-[#4a1580] text-white h-[54px] flex items-center justify-between px-6 sticky top-0 z-[100] shadow-[0_3px_12px_rgba(0,0,0,0.25)]">
-                <button className="bg-transparent border-none text-white font-[inherit] font-bold text-[15px] flex items-center gap-2 cursor-pointer opacity-90 transition-opacity duration-200 px-2 py-1 hover:opacity-100" onClick={onClose}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
+            {/* ── Header ─────────────────────────────────────────────────── */}
+            <div style={{
+                background: 'linear-gradient(135deg, #3d0f6e 0%, #5a1a9e 100%)',
+                color: '#fff', height: 56, display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between', padding: '0 20px',
+                boxShadow: '0 3px 14px rgba(0,0,0,0.28)', flexShrink: 0, zIndex: 10,
+            }}>
+                <button
+                    onClick={onClose}
+                    style={{ background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff', borderRadius: 30, padding: '6px 16px', fontFamily: 'inherit', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
                     </svg>
                     Back
                 </button>
-                <div className="text-lg font-extrabold tracking-[0.5px]">Choose an Extension</div>
-                <button className="bg-[#6b2fa0] text-white border-none rounded-[30px] px-[18px] py-2 font-[inherit] font-bold text-sm cursor-pointer transition-colors duration-200 hover:bg-[#8840c2]">Read Documentation</button>
+
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    <span style={{ fontWeight: 900, fontSize: 17, letterSpacing: 0.4 }}>Choose an Extension</span>
+                    {totalInstalled > 0 && (
+                        <span style={{ fontSize: 11, opacity: 0.8, fontWeight: 600 }}>
+                            {totalInstalled} added to project
+                        </span>
+                    )}
+                </div>
+
+                <div style={{ width: 90 }} />
             </div>
 
-            {/* Filter Bar */}
-            <div className="bg-[#c9a8e8] px-6 py-3.5 flex items-center gap-4 flex-wrap">
-                <div className="bg-white rounded-[30px] px-4 py-[7px] flex items-center gap-2 shadow-[0_2px_6px_rgba(0,0,0,0.1)] min-w-[200px]">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            {/* ── Filter Bar ─────────────────────────────────────────────── */}
+            <div style={{
+                background: '#dcc8f5', padding: '10px 20px',
+                display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flexShrink: 0,
+                borderBottom: '1px solid #cbb0e8',
+            }}>
+                {/* Search */}
+                <div style={{
+                    background: '#fff', borderRadius: 30, padding: '6px 14px',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)', minWidth: 200,
+                }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
                     </svg>
                     <input
                         type="text"
-                        className="border-none outline-none bg-transparent font-[inherit] text-sm text-[#1a1a2e] w-[160px] placeholder-[#bbb]"
                         placeholder="Search extensions..."
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        onChange={e => setSearch(e.target.value)}
+                        style={{ border: 'none', outline: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 13, color: '#1a1a2e', width: 160 }}
                     />
+                    {search && (
+                        <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#aaa', fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
+                    )}
                 </div>
-                <div className="flex gap-2 flex-wrap">
+
+                {/* Category filters */}
+                <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
                     {FILTERS.map(f => (
                         <button
                             key={f.key}
-                            className={`border-none text-white font-[inherit] font-bold text-[13px] px-[18px] py-2 rounded-[30px] cursor-pointer transition-all duration-200 hover:scale-105 ${activeFilter === f.key ? 'bg-[#e84545]' : 'bg-[#6b2fa0]'}`}
+                            className="jel-filter-btn"
                             onClick={() => setActiveFilter(f.key)}
+                            style={{
+                                border: 'none', fontFamily: 'inherit', fontWeight: 700, fontSize: 12,
+                                padding: '6px 16px', borderRadius: 30, cursor: 'pointer',
+                                background: activeFilter === f.key ? '#5a1a9e' : 'rgba(90,26,158,0.18)',
+                                color: activeFilter === f.key ? '#fff' : '#5a1a9e',
+                                boxShadow: activeFilter === f.key ? '0 3px 10px rgba(90,26,158,0.35)' : 'none',
+                            }}
                         >
                             {f.label}
                         </button>
@@ -205,72 +225,170 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }: J
                 </div>
             </div>
 
-            {/* Extension Grid */}
-            <div className="jel-content flex-1 overflow-y-auto px-7 pt-6 pb-3 scroll-smooth">
+            {/* ── Extension Grid ─────────────────────────────────────────── */}
+            <div className="jel-scroll" style={{ flex: 1, overflowY: 'auto', padding: '20px 22px 24px' }}>
                 {groupedSections.map(section => (
-                    <div key={section.key}>
-                        <div className="text-lg font-black text-[#4a1580] pb-1.5 border-b-[3px] border-[#c9a8e8] mt-5 mb-[18px] first:mt-0">{section.label}</div>
-                        <div className="grid grid-cols-[repeat(auto-fill,minmax(270px,1fr))] gap-5 mb-7 max-w-[1300px]">
-                            {section.extensions.map(ext => (
-                                <div
-                                    key={ext.id}
-                                    className="bg-white rounded-[14px] overflow-hidden shadow-[0_4px_18px_rgba(74,21,128,0.10)] cursor-pointer transition-all duration-200 no-underline text-inherit block relative group hover:-translate-y-[5px] hover:scale-[1.01] hover:shadow-[0_12px_32px_rgba(74,21,128,0.18)] active:-translate-y-[2px] active:scale-[0.99]"
-                                    onClick={() => handleCardClick(ext)}
-                                >
-                                    <div className="w-full h-[160px] flex items-center justify-center relative overflow-hidden" style={{ background: ext.color }}>
-                                        <span className="text-[56px] drop-shadow-[0_3px_8px_rgba(0,0,0,0.18)] z-[2] transition-transform duration-300 group-hover:scale-[1.12] group-hover:-rotate-3">{ext.emoji}</span>
-                                        {ext.badge && (
-                                            <span className="absolute top-2.5 right-2.5 bg-[#3dba7e] text-white text-[11px] font-extrabold px-2.5 py-[3px] rounded-[20px] tracking-[0.5px] z-[3]">{ext.badge}</span>
-                                        )}
-                                        {ext.requires && (
-                                            <span className="absolute bottom-2.5 right-2.5 bg-white/85 text-[#1a1a2e] text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 z-[3]">{ext.requires}</span>
-                                        )}
-                                        <div className="absolute bottom-2.5 left-2.5 w-[42px] h-[42px] rounded-[10px] flex items-center justify-center text-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.18)] z-[3]" style={{ backgroundColor: ext.iconBg }}>
-                                            {ext.icon}
+                    <div key={section.key} style={{ marginBottom: 32 }}>
+                        {/* Section header */}
+                        <div style={{
+                            fontSize: 15, fontWeight: 900, color: '#4a1580',
+                            paddingBottom: 8, marginBottom: 16,
+                            borderBottom: '2px solid #cbb0e8',
+                            display: 'flex', alignItems: 'center', gap: 8,
+                        }}>
+                            {section.label}
+                            <span style={{ fontSize: 12, fontWeight: 600, color: '#9b6fd4', marginLeft: 4 }}>
+                                ({section.extensions.length})
+                            </span>
+                        </div>
+
+                        {/* Cards grid */}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                            gap: 16,
+                        }}>
+                            {section.extensions.map(ext => {
+                                const isInstalled = localInstalled.has(ext.id);
+                                return (
+                                    <div
+                                        key={ext.id}
+                                        className="jel-card jel-animate"
+                                        style={{
+                                            background: '#fff', borderRadius: 16,
+                                            overflow: 'hidden',
+                                            boxShadow: isInstalled
+                                                ? '0 0 0 2.5px #5a1a9e, 0 6px 20px rgba(74,21,128,0.14)'
+                                                : '0 4px 16px rgba(74,21,128,0.09)',
+                                            display: 'flex', flexDirection: 'column',
+                                            position: 'relative',
+                                        }}
+                                    >
+                                        {/* Card banner */}
+                                        <div style={{
+                                            background: ext.color, height: 130,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            position: 'relative', overflow: 'hidden',
+                                        }}>
+                                            <span style={{ fontSize: 52, filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.2))', zIndex: 2 }}>{ext.emoji}</span>
+
+                                            {/* Badge (New) */}
+                                            {ext.badge && (
+                                                <span style={{
+                                                    position: 'absolute', top: 10, right: 10,
+                                                    background: '#3dba7e', color: '#fff',
+                                                    fontSize: 10, fontWeight: 800, padding: '3px 9px',
+                                                    borderRadius: 20, letterSpacing: 0.5, zIndex: 3,
+                                                }}>{ext.badge}</span>
+                                            )}
+
+                                            {/* Requires badge */}
+                                            {ext.requires && (
+                                                <span style={{
+                                                    position: 'absolute', bottom: 8, right: 8,
+                                                    background: 'rgba(255,255,255,0.88)', color: '#1a1a2e',
+                                                    fontSize: 10, fontWeight: 700, padding: '3px 8px',
+                                                    borderRadius: 8, zIndex: 3,
+                                                }}>{ext.requires}</span>
+                                            )}
+
+                                            {/* Icon chip */}
+                                            <div style={{
+                                                position: 'absolute', bottom: 8, left: 8,
+                                                width: 38, height: 38, borderRadius: 10,
+                                                background: ext.iconBg, display: 'flex',
+                                                alignItems: 'center', justifyContent: 'center',
+                                                fontSize: 18, boxShadow: '0 2px 8px rgba(0,0,0,0.2)', zIndex: 3,
+                                            }}>{ext.icon}</div>
+
+                                            {/* Installed checkmark */}
+                                            {isInstalled && (
+                                                <div style={{
+                                                    position: 'absolute', top: 8, left: 8,
+                                                    width: 28, height: 28, borderRadius: '50%',
+                                                    background: '#5a1a9e', display: 'flex',
+                                                    alignItems: 'center', justifyContent: 'center',
+                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.25)', zIndex: 4,
+                                                }}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                        <polyline points="20 6 9 17 4 12" />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Card body */}
+                                        <div style={{ padding: '12px 14px 14px', flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                            <div style={{ fontWeight: 800, fontSize: 14, color: '#1a1a2e', lineHeight: 1.2 }}>{ext.name}</div>
+                                            <div style={{ fontSize: 12, color: '#666', lineHeight: 1.45, flex: 1 }}>{ext.description}</div>
+
+                                            {/* Add / Added button */}
+                                            <button
+                                                className="jel-add-btn"
+                                                onClick={e => handleAdd(ext, e)}
+                                                disabled={isInstalled}
+                                                style={{
+                                                    marginTop: 8, border: 'none', borderRadius: 10,
+                                                    padding: '8px 0', fontFamily: 'inherit',
+                                                    fontWeight: 800, fontSize: 13, cursor: isInstalled ? 'default' : 'pointer',
+                                                    width: '100%',
+                                                    background: isInstalled
+                                                        ? 'linear-gradient(135deg, #5a1a9e, #7b2fd4)'
+                                                        : 'linear-gradient(135deg, #7b2fd4, #9b4de8)',
+                                                    color: '#fff',
+                                                    boxShadow: isInstalled
+                                                        ? 'none'
+                                                        : '0 4px 12px rgba(123,47,212,0.35)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                                    opacity: isInstalled ? 0.85 : 1,
+                                                }}
+                                            >
+                                                {isInstalled ? (
+                                                    <>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                            <polyline points="20 6 9 17 4 12" />
+                                                        </svg>
+                                                        Added to Project
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                                                        </svg>
+                                                        Add to Project
+                                                    </>
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
-                                    <div className="px-4 pt-3.5 pb-[18px]">
-                                        <h3 className="m-0 mb-1 text-base font-extrabold text-[#1a1a2e]">{ext.name}</h3>
-                                        <p className="m-0 text-[13px] text-[#555] leading-[1.4]">{ext.description}</p>
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 ))}
 
                 {groupedSections.length === 0 && (
-                    <div className="text-center py-[60px] px-6 text-[#888]">
-                        <span className="text-[48px] block mb-4">🔍</span>
-                        <p className="text-base font-semibold">No extensions found matching "{search}"</p>
+                    <div style={{ textAlign: 'center', padding: '60px 20px', color: '#999' }}>
+                        <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+                        <p style={{ fontSize: 15, fontWeight: 600 }}>No extensions found for "{search}"</p>
+                        <button
+                            onClick={() => setSearch('')}
+                            style={{ marginTop: 12, border: 'none', background: '#5a1a9e', color: '#fff', borderRadius: 20, padding: '8px 20px', fontFamily: 'inherit', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+                        >
+                            Clear search
+                        </button>
                     </div>
                 )}
             </div>
 
-            <div className="text-center p-4 text-[#6b2fa0] text-[13px] font-semibold bg-[#e8d9f5] border-t border-[#d4bde8]">
-                🧩 Click any extension to learn more and add its blocks to your project
+            {/* ── Footer ─────────────────────────────────────────────────── */}
+            <div style={{
+                textAlign: 'center', padding: '10px 16px',
+                color: '#7b2fd4', fontSize: 12, fontWeight: 600,
+                background: '#e8d9f5', borderTop: '1px solid #d0b8ec', flexShrink: 0,
+            }}>
+                🧩 Click <strong>Add to Project</strong> to add an extension's blocks to your workspace
             </div>
-
-            {/* Iframe Embed Overlay */}
-            {iframeExtension && (
-                <div className="fixed inset-0 z-[1100] flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/55 backdrop-blur-[6px] animate-[iframeFadeIn_0.25s_ease-out]" onClick={handleIframeClose} />
-                    <div className="relative w-[90%] max-w-[560px] h-[80%] max-h-[600px] rounded-[20px] overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.35)] z-[1101] animate-[iframePopIn_0.3s_cubic-bezier(0.34,1.56,0.64,1)]">
-                        <button className="absolute top-3 right-3 z-[1102] bg-black/50 border-none text-white w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-black/75 hover:scale-110" onClick={handleIframeClose}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </button>
-                        <iframe
-                            className="w-full h-full border-none bg-[#f5f0fa]"
-                            src={getIframeUrl(iframeExtension)}
-                            title={iframeExtension.name}
-                            sandbox="allow-scripts allow-same-origin allow-modals allow-popups"
-                        />
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

@@ -41,6 +41,7 @@ interface EmbedDialogsProps {
     onPaintSprite: () => void;
     onSelectBackdrop: (name: string, src: string) => void;
     onAddExtension: (id: string) => void;
+    installedExtensions?: Set<string>;
     // Upload
     isUploading: boolean; uploadProgress: string;
     // Unsaved
@@ -60,6 +61,7 @@ export const EmbedDialogs: React.FC<EmbedDialogsProps> = ({
     showBackdropLibrary, setShowBackdropLibrary,
     showExtensionLibrary, setShowExtensionLibrary,
     onSelectSprite, onPaintSprite, onSelectBackdrop, onAddExtension,
+    installedExtensions,
     isUploading, uploadProgress,
     showUnsavedModal, onConfirmUnsaved, onCancelUnsaved,
 }) => (
@@ -108,8 +110,11 @@ export const EmbedDialogs: React.FC<EmbedDialogsProps> = ({
         {/* Extension Library */}
         {showExtensionLibrary && (
             <React.Suspense fallback={<div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', color: '#855CD6' }}>Loading...</div>}>
-                <JuniorExtensionLibrary onClose={() => setShowExtensionLibrary(false)}
-                    onSelectExtension={(id: string) => { onAddExtension(id); setShowExtensionLibrary(false); }} />
+                <JuniorExtensionLibrary
+                    onClose={() => setShowExtensionLibrary(false)}
+                    onSelectExtension={(id: string) => { onAddExtension(id); /* keep library open so user can add more */ }}
+                    installedExtensions={installedExtensions}
+                />
             </React.Suspense>
         )}
 
