@@ -20,10 +20,10 @@ import HSBColorPicker from './HSBColorPicker';
 // Built-in costumes for "Surprise" feature
 const BUILTIN_COSTUMES = [
     { name: 'Robot Idle', src: 'assets/sprites/robot/robot_idle.svg' },
-    { name: 'Cat', src: 'assets/sprites/leap/cat.svg' },
-    { name: 'Butterfly', src: 'assets/sprites/leap/butterfly.svg' },
-    { name: 'Dolphin', src: 'assets/sprites/leap/dolphin.svg' },
-    { name: 'Elephant', src: 'assets/sprites/leap/elephant.svg' },
+    { name: 'Cat', src: 'assets/sprites/leap/cat_cat_a.svg' },
+    { name: 'Butterfly', src: 'assets/sprites/leap/butterfly_1_butterfly1-a.svg' },
+    { name: 'Dolphin', src: 'assets/sprites/leap/fish_fish-a.svg' },
+    { name: 'Elephant', src: 'assets/sprites/leap/elephant_elephant-a.svg' },
 ];
 
 interface Costume {

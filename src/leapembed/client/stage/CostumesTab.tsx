@@ -142,10 +142,10 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
     const addSurpriseCostume = async () => {
         if (!selectedSprite) return;
         const randomAssets = [
-            'assets/sprites/leap/cat.svg',
-            'assets/sprites/leap/butterfly.svg',
-            'assets/sprites/leap/dolphin.svg',
-            'assets/sprites/leap/elephant.svg',
+            'assets/sprites/leap/cat_cat_a.svg',
+            'assets/sprites/leap/butterfly_1_butterfly1-a.svg',
+            'assets/sprites/leap/fish_fish-a.svg',
+            'assets/sprites/leap/elephant_elephant-a.svg',
             'assets/sprites/robot/robot_idle.svg'
         ];
         const src = randomAssets[Math.floor(Math.random() * randomAssets.length)];
@@ -194,6 +194,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
         });
         selectedSprite.switchCostume(targetIndex);
         refresh();
+        window.dispatchEvent(new Event('leap-stage-update'));
         addLog(`Updated costume for ${selectedSprite.name}: ${selectedSprite.costumes[targetIndex]?.name}`);
     };
 

@@ -198,6 +198,7 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
                         category: 'Objects'
                     };
                     onSelectSprite(customSprite);
+                    onClose();
                 } else {
                     console.error("BG Removal failed:", result.error);
                     fallbackUpload(file);
@@ -229,6 +230,7 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
                 category: 'Objects'
             };
             onSelectSprite(customSprite);
+            onClose();
         };
         reader.readAsDataURL(file);
     };
@@ -241,6 +243,7 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
             category: 'Objects'
         };
         onSelectSprite(customSprite);
+        onClose();
     };
 
     return (
@@ -318,7 +321,7 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
                                             ...styles.spriteCard,
                                             ...(hoveredId === sprite.id ? styles.spriteCardHover : {}),
                                         }}
-                                        onClick={() => onSelectSprite(sprite)}
+                                        onClick={() => { onSelectSprite(sprite); onClose(); }}
                                         onMouseEnter={() => {
                                             setHoveredId(sprite.id);
                                             if (sprite.costumes && sprite.costumes.length > 1) {

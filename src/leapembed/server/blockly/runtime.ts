@@ -31,7 +31,7 @@ if (Blockly.FieldDropdown && !(Blockly.FieldDropdown.prototype as any)._dropdown
                 document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
             }
         } catch (e) {
-            console.warn('[Blockly Patch] Failed to set dropdown colors:',e );
+            console.warn('[Blockly Patch] Failed to set dropdown colors:', e);
         }
 
         // HEALING: If the field's current value is an object (due to a previous bug), 
@@ -160,8 +160,9 @@ if (Blockly.FieldVariable && !(Blockly.FieldVariable.prototype as any)._initMode
                 if (found) {
                     this.doValueUpdate_(found.getId());
                 } else {
-                    // No variables exist yet — call original which will create one with our patched name generator
-                    if (origInitModel) origInitModel.call(this);
+                    // No variables exist yet — do NOT auto-create one.
+                    // The flyout will show no variable blocks until the user creates one via "Make a Variable".
+                    // This prevents the phantom "variable" from appearing on every flyout open.
                 }
             }
         } else {

@@ -43,6 +43,8 @@ interface EmbedRightPanelProps {
     onRemoveBackground: (id: string) => void;
     onOpenSpriteLibrary: () => void;
     onOpenBackdropLibrary: () => void;
+    onPaintSprite?: () => void;
+    onUploadSprite?: (entry?: any) => void;
     variableMonitors: VariableMonitorState[];
     listMonitors: ListMonitorState[];
     tableMonitors: TableMonitorState[];
@@ -85,6 +87,7 @@ export const EmbedRightPanel: React.FC<EmbedRightPanelProps> = ({
     askState, onAskSubmit,
     onSelectSprite, onSpriteClick, onAddSprite, onDeleteSprite,
     onRemoveBackground, onOpenSpriteLibrary, onOpenBackdropLibrary,
+    onPaintSprite, onUploadSprite,
     variableMonitors, listMonitors, tableMonitors, sensingMonitors,
     onMonitorPositionChange, onMonitorResize, onMonitorBringToFront,
     onVariableModeChange, onVariableValueChange, onVariableSliderRangeChange,
@@ -259,6 +262,8 @@ export const EmbedRightPanel: React.FC<EmbedRightPanelProps> = ({
                     onRemoveBackground={onRemoveBackground}
                     onOpenSpriteLibrary={onOpenSpriteLibrary}
                     onOpenBackdropLibrary={onOpenBackdropLibrary}
+                    onPaintSprite={onPaintSprite}
+                    onUploadSprite={onUploadSprite}
                     stageManager={stageManager}
                     backdropVersion={backdropRefresh}
                     isFullscreen={false}

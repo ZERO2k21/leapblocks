@@ -1736,7 +1736,7 @@ const leapBlocks = [
     {
         type: 'procedures_call',
         message0: '%1',
-        args0: [{ type: 'field_dropdown', name: 'PROCCNT', options: [] }], // Populated dynamically
+        args0: [{ type: 'field_dropdown', name: 'PROCCNT', options: [['(none)', 'none']] }], // Placeholder — populated dynamically
         previousStatement: null,
         nextStatement: 'any',
         colour: '#FF6680',

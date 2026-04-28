@@ -613,6 +613,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             x: 10 + variableMonitors.length * 20, y: 10 + variableMonitors.length * 30,
         }, variableMonitors.length)]);
         addLog(`Created variable: ${v.name}`);
+        // Refresh toolbox so new variable appears immediately in the Variables flyout
+        setTimeout(() => { workspaceRef.current?.refreshToolboxSelection?.(); }, 50);
     };
     const handleCreateList = (l: { name: string; scope: 'all_sprites' | 'this_sprite' }) => {
         setListMonitors(prev => [...prev, {
@@ -624,6 +626,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             width: 140, height: 180,
         }]);
         addLog(`Created list: ${l.name}`);
+        setTimeout(() => { workspaceRef.current?.refreshToolboxSelection?.(); }, 50);
     };
     const handleCreateTable = (t: { name: string; rows: number; cols: number; scope: 'all_sprites' | 'this_sprite' }) => {
         setTableMonitors(prev => [...prev, {
@@ -635,6 +638,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             width: 200, height: 150,
         }]);
         addLog(`Created table: ${t.name} (${t.rows}x${t.cols})`);
+        setTimeout(() => { workspaceRef.current?.refreshToolboxSelection?.(); }, 50);
     };
     const handleCreateBlock = (block: { name: string; arguments: BlockArgument[]; warp: boolean }) => {
         const ws = workspaceRef.current;
@@ -677,6 +681,27 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         setWorkspaceTab(newTab);
         addLog(`Switched to ${newTab} tab`);
     }, [workspaceTab, saveCurrentSpriteWorkspace, addLog]);
+
+    // ─── Paint sprite: create blank costume then open costumes tab ─────────────
+    const handlePaintSprite = useCallback(async () => {
+        if (selectedSpriteId && selectedSpriteId !== 'stage') {
+            const sprite = spriteManager.getSprite(selectedSpriteId);
+            if (sprite) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 800; canvas.height = 600;
+                const ctx = canvas.getContext('2d');
+                if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const data = canvas.toDataURL('image/png');
+                const name = `costume${sprite.costumes.length + 1}`;
+                await sprite.addCostume(name, data);
+                sprite.switchCostume(sprite.costumes.length - 1);
+                triggerUpdate();
+                window.dispatchEvent(new Event('leap-stage-update'));
+                addLog(`Created blank costume: ${name}`);
+            }
+        }
+        handleWorkspaceTabChange('costumes');
+    }, [selectedSpriteId, handleWorkspaceTabChange, triggerUpdate, addLog]);
 
     // â”€â”€â”€ Undo / Redo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleUndo = useCallback(() => workspaceRef.current?.undo(false), []);
@@ -865,72 +890,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         }, 100);
 
         // --- BLOCKLY VISIBILITY CALLBACKS ---
-        // We use refs here to avoid stale closures in the window functions
-        // since this useEffect only runs once for VM/Runtime setup.
-        const monitorsRef = {
-            variable: variableMonitors,
-            list: listMonitors,
-            table: tableMonitors
-        };
-
+        // getVariableVisibility reads from _monitors_for_sync which is kept fresh by useMonitors.
+        // onToggleVisibility is set by the useEffect at the top of the component (line ~667).
         (window as any).getVariableVisibility = (name: string, type: string) => {
             const currentMonitors = (window as any)._monitors_for_sync?.[type] || [];
             const monitor = currentMonitors.find((m: any) => m.name === name);
             return monitor ? monitor.visible : false;
-        };
-
-        (window as any).onToggleVisibility = (name: string, type: string, forceVisible?: boolean) => {
-            const setFn = type === 'variable' ? setVariableMonitors : (type === 'list' ? setListMonitors : setTableMonitors);
-
-            setFn((prev: any[]) => {
-                const existing = prev.find(m => m.name === name);
-                const newVisible = forceVisible !== undefined ? forceVisible : (existing ? !existing.visible : true);
-
-                if (existing) {
-                    return prev.map(m => m.name === name ? { ...m, visible: newVisible } : m);
-                } else {
-                    // Create new with defaults
-                    const newY = 10 + (prev.length * 30);
-                    if (type === 'variable') {
-                        return [...prev, normalizeVariableMonitor({
-                            id: `var_${Date.now()}`,
-                            name,
-                            type: 'Number',
-                            scope: 'all_sprites',
-                            visible: true,
-                            x: 10, y: newY,
-                            value: animationVM.hasVariable(name) ? animationVM.getVariable(name) : 0
-                        }, prev.length)];
-                    } else if (type === 'list') {
-                        return [...prev, {
-                            id: `list_${Date.now()}`,
-                            name,
-                            scope: 'all_sprites',
-                            visible: true,
-                            x: 10, y: newY,
-                            items: [...animationVM.getList(name)],
-                            value: [...animationVM.getList(name)],
-                            width: 100,
-                            height: 200
-                        }];
-                    } else if (type === 'table') {
-                        return [...prev, {
-                            id: `table_${Date.now()}`,
-                            name,
-                            scope: 'all_sprites',
-                            visible: true,
-                            x: 10, y: newY,
-                            rows: animationVM.getTableCount(name, 'row'),
-                            cols: animationVM.getTableCount(name, 'column'),
-                            data: [...animationVM.getTable(name)],
-                            value: [...animationVM.getTable(name)],
-                            width: 250,
-                            height: 200
-                        }];
-                    }
-                    return prev;
-                }
-            });
         };
 
 
@@ -981,28 +946,28 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             console.log('[APP] Updating toolbox dynamically (Sprite:', selectedSpriteId, ')');
             lastToolboxJsonRef.current = nextToolboxJson;
         }
-        workspaceRef.current.updateToolbox(nextToolboxConfig);
+        try {
+            workspaceRef.current.updateToolbox(nextToolboxConfig);
 
-        const refreshedToolbox = workspaceRef.current.getToolbox() as any;
-        const toolboxItems = typeof refreshedToolbox?.getToolboxItems === 'function'
-            ? refreshedToolbox.getToolboxItems().filter((item: any) => typeof item?.getName === 'function')
-            : [];
+            const refreshedToolbox = workspaceRef.current.getToolbox() as any;
+            const toolboxItems = typeof refreshedToolbox?.getToolboxItems === 'function'
+                ? refreshedToolbox.getToolboxItems().filter((item: any) => typeof item?.getName === 'function')
+                : [];
 
-        if (selectedCategoryName) {
-            const matchingItem = toolboxItems.find((item: any) => item.getName() === selectedCategoryName);
-            if (matchingItem && typeof refreshedToolbox?.setSelectedItem === 'function') {
-                refreshedToolbox.setSelectedItem(matchingItem);
+            // Restore previously selected category by name, using position as fallback
+            if (selectedCategoryName && toolboxItems.length > 0) {
+                const matchingIdx = toolboxItems.findIndex((item: any) => item.getName() === selectedCategoryName);
+                if (matchingIdx >= 0 && typeof refreshedToolbox?.selectItemByPosition === 'function') {
+                    refreshedToolbox.selectItemByPosition(matchingIdx);
+                } else if (typeof refreshedToolbox?.selectItemByPosition === 'function') {
+                    refreshedToolbox.selectItemByPosition(0);
+                }
+            } else if (typeof refreshedToolbox?.selectItemByPosition === 'function') {
+                refreshedToolbox.selectItemByPosition(0);
             }
+        } catch (e) {
+            console.warn('[APP] Toolbox update error (non-fatal):', e);
         }
-
-        if (!refreshedToolbox?.getSelectedItem?.() && typeof refreshedToolbox?.selectItemByPosition === 'function') {
-            refreshedToolbox.selectItemByPosition(0);
-        } else {
-            workspaceRef.current.refreshToolboxSelection();
-        }
-
-        const flyout = workspaceRef.current.getFlyout() as any;
-        if (flyout?.reflowInternal_) flyout.reflowInternal_();
     }, [selectedSpriteId, editorMode, appMode, getCurrentToolbox, variableMonitors, listMonitors, tableMonitors]);
 
 
@@ -1248,8 +1213,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                 const block = this.getSourceBlock();
                                 // Performance: Only run logic if we are on a reporter checkbox block and not during disposal
-                                if (block && !block.isDisposed() && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox' || block.type === 'sensing_reporter_checkbox')) {
-                                    const isSensing = block.type === 'sensing_reporter_checkbox';
+                                // Performance: Only run logic if we are on a reporter checkbox block, not during disposal, and not in flyout
+                                if (block && !block.isDisposed() && !block.workspace?.isFlyout && (block.type === 'variable_reporter_checkbox' || block.type === 'list_reporter_checkbox' || block.type === 'sensing_reporter_checkbox')) {
                                     const type = isSensing ? 'sensing' : (block.type === 'variable_reporter_checkbox' ? 'variable' : 'list');
                                     const nameField = isSensing ? 'VARIABLE' : (type === 'variable' ? 'VARIABLE' : 'LIST');
                                     const name = block.getFieldValue(nameField);
@@ -2222,7 +2187,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     )}
                 </div>
 
-                {/* ── RIGHT: Stage canvas + SpritePanel (stage) OR Code panel (upload) ── */}
+                {/* Hide right panel when in costumes/sounds tab — those editors need full width */}
+                {!(editorMode === 'stage' && (workspaceTab === 'costumes' || workspaceTab === 'sounds')) && (
                 <EmbedRightPanel
                     editorMode={editorMode}
                     stageLayout={stageLayout}
@@ -2245,6 +2211,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     onRemoveBackground={handleRemoveBackground}
                     onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
                     onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
+                    onPaintSprite={handlePaintSprite}
+                    onUploadSprite={addSpriteFromLibrary}
                     variableMonitors={variableMonitors}
                     listMonitors={listMonitors}
                     tableMonitors={tableMonitors}
@@ -2277,6 +2245,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     onStop={handleStopClick}
                     onExitFullscreen={handleFullscreen}
                 />
+                )}
             </div>
 
             {/* ── All modals and dialogs ────────────────────────────────────── */}
@@ -2305,7 +2274,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 setShowBackdropLibrary={setShowBackdropLibrary}
                 showExtensionLibrary={showExtensionLibrary}
                 setShowExtensionLibrary={setShowExtensionLibrary}
-                onSelectSprite={addSpriteFromLibrary}
+                onSelectSprite={async (entry: any) => { await addSpriteFromLibrary(entry); setShowSpriteLibrary(false); }}
                 onPaintSprite={() => setShowSpriteLibrary(false)}
                 onSelectBackdrop={handleBackdropSelect}
                 onAddExtension={handleAddExtension}

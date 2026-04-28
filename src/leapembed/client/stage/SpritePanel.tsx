@@ -20,13 +20,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { Sprite, SpriteType } from "./Sprite";
 import { ActionMenu } from "./ActionMenu";
 import type { StageManager } from '../../server/engine/stageManager';
-
-const SPRITE_TYPES: { type: SpriteType; name: string; emoji: string; color: string }[] = [
-  { type: "cat", name: "Cat", emoji: "🐱", color: "#FF8C1A" },
-  { type: "ball", name: "Ball", emoji: "⚽", color: "#2980B9" },
-  { type: "arrow", name: "Arrow", emoji: "➤", color: "#E74C3C" },
-  { type: "robot", name: "Robot", emoji: "🤖", color: "#7D8C9C" },
-];
+import { stageManager as globalStageManager } from '../../server/engine/stageManager';
+import { FULL_CATALOG } from '../components/SpriteLibrary';
 
 interface SpritePanelProps {
   sprites: Sprite[];
@@ -37,6 +32,9 @@ interface SpritePanelProps {
   onRemoveBackground?: (spriteId: string) => void;
   onOpenSpriteLibrary?: () => void;
   onOpenBackdropLibrary?: () => void;
+  onPaintSprite?: () => void;          // opens Costumes tab / PaintEditor
+  onUploadSprite?: (entry?: any) => void; // opens file picker for sprite upload
+  onUploadBackdrop?: () => void;       // opens file picker for backdrop upload
   stageManager: StageManager;
   backdropVersion?: number;
   isFullscreen?: boolean;
@@ -50,6 +48,9 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   onDeleteSprite,
   onOpenSpriteLibrary,
   onOpenBackdropLibrary,
+  onPaintSprite,
+  onUploadSprite,
+  onUploadBackdrop,
   stageManager,
   backdropVersion,   // used to force re-render when backdrop changes
   isFullscreen = false,
@@ -58,6 +59,9 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   // Ref to the selected sprite card — used to scroll it into view on selection
   const selectedCardRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  // Hidden file inputs for upload
+  const spriteFileInputRef = useRef<HTMLInputElement>(null);
+  const backdropFileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedSprite = sprites.find((s) => s.id === selectedSpriteId);
   const isStageSelected = selectedSpriteId === "stage";
@@ -85,6 +89,42 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
   const handleAddSprite = (type: SpriteType) => { onAddSprite(type); setShowPicker(false); };
 
+  // ── Upload handlers ───────────────────────────────────────────────────────
+  const handleSpriteFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const src = ev.target?.result as string;
+      if (src && onUploadSprite) {
+        // Trigger the parent's upload handler with the data URL
+        // We create a synthetic SpriteEntry-like object
+        (onUploadSprite as any)({ name: file.name.replace(/\.[^.]+$/, ''), image: src, costumes: [] });
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleBackdropFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const src = ev.target?.result as string;
+      if (src) {
+        const name = file.name.replace(/\.[^.]+$/, '');
+        await globalStageManager.addBackdrop(name, src);
+        globalStageManager.setBackdrop(name);
+        window.dispatchEvent(new Event('leap-stage-update'));
+        // Trigger backdrop refresh via a custom event
+        window.dispatchEvent(new CustomEvent('backdrop-added', { detail: { name, src } }));
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
   // Scrollbar triggers when sprites exceed 2 visible rows (5 cols × 2 rows = 10)
   // i.e. as soon as the 3rd row starts forming — kept for reference
   const _needsScroll = normalSprites.length > 10;
@@ -106,6 +146,22 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
   return (
     <div className={`flex flex-col flex-1 min-h-0 overflow-hidden ${panelBg}`}>
+
+      {/* Hidden file inputs for upload */}
+      <input
+        ref={spriteFileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleSpriteFileUpload}
+      />
+      <input
+        ref={backdropFileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleBackdropFileUpload}
+      />
 
       {/* ══════════════════════════════════════════════════════════════════
           INFO BAR
@@ -320,7 +376,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                     </svg>
                   ),
                   label: "Upload",
-                  onClick: () => { },
+                  onClick: () => spriteFileInputRef.current?.click(),
                 },
                 {
                   id: "surprise",
@@ -332,9 +388,10 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                     </svg>
                   ),
                   label: "Surprise!",
-                  onClick: () => handleAddSprite(
-                    SPRITE_TYPES[Math.floor(Math.random() * SPRITE_TYPES.length)].type
-                  ),
+                  onClick: () => {
+                    const randomEntry = FULL_CATALOG[Math.floor(Math.random() * FULL_CATALOG.length)];
+                    if (onUploadSprite) onUploadSprite(randomEntry);
+                  },
                 },
                 {
                   id: "paint",
@@ -347,7 +404,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                     </svg>
                   ),
                   label: "Paint",
-                  onClick: () => { },
+                  onClick: onPaintSprite ?? (() => { }),
                 },
                 {
                   id: "library",
@@ -460,7 +517,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                     </svg>
                   ),
                   label: "Upload",
-                  onClick: () => { },
+                  onClick: () => backdropFileInputRef.current?.click(),
                 },
                 {
                   id: "surprise",
@@ -484,7 +541,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                     </svg>
                   ),
                   label: "Paint",
-                  onClick: () => { },
+                  onClick: onPaintSprite ?? (() => { }),
                 },
                 {
                   id: "library",

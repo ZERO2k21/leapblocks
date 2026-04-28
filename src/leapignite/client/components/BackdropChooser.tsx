@@ -5,7 +5,7 @@
  */
 import React, { useState } from 'react';
 import { X, Paintbrush, Image } from 'lucide-react';
-import { leapBackdrops } from '../../../components/generated_leap_backdrops';
+import { leapBackdrops } from '../../../leapembed/client/assets/generatedLeapBackdrops';
 
 const PRESET_BACKDROPS = [
     { id: 'maze', name: 'Maze', src: 'assets/backdrops/maze.svg', color: '#FFD54F' },
@@ -19,7 +19,7 @@ const PRESET_BACKDROPS = [
     { id: 'space_photo', name: 'Galaxy', src: 'assets/backdrops/Space.png', color: '#0D0D2B' },
 ];
 
-const mappedleapBackdrops = leapBackdrops.map(bg => ({
+const mappedleapBackdrops = leapBackdrops.map((bg: any) => ({
     id: bg.name.toLowerCase().replace(/[^a-z0-9]/g, '_'),
     name: bg.name,
     src: `/assets/backdrops/${bg.md5ext || (bg as any).md5}`,

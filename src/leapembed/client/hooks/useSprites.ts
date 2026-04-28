@@ -230,16 +230,32 @@ export function useSprites({
     const deleteSprite = useCallback((id: string) => {
         animationVM.unregisterSprite(id);
         spriteWorkspacesRef.current.delete(id);
+
         setSprites(prev => prev.filter(s => s.id !== id));
+
         if (selectedSpriteId === id) {
-            const remaining = sprites.filter(s => s.id !== id);
-            const next = remaining.length > 0 ? remaining[0].id : null;
-            setSelectedSpriteId(next);
-            if (next) loadSpriteWorkspace(next);
-            else if (workspaceRef.current) workspaceRef.current.clear();
+            // Visible sprites = non-stage, non-clone sprites
+            const visible = sprites.filter(s => s.id !== 'stage' && !s.id.includes('_clone_'));
+            const deletedIdx = visible.findIndex(s => s.id === id);
+            const remaining = visible.filter(s => s.id !== id);
+
+            if (remaining.length === 0) {
+                // No sprites left → select Stage (backdrop card)
+                setSelectedSpriteId('stage');
+                activeSpriteIdRef.current = 'stage';
+                loadSpriteWorkspace('stage');
+            } else {
+                // Select the sprite just before the deleted one,
+                // or the new first sprite if the deleted one was first
+                const nextIdx = Math.max(0, deletedIdx - 1);
+                const nextId = remaining[nextIdx]?.id ?? remaining[0].id;
+                setSelectedSpriteId(nextId);
+                loadSpriteWorkspace(nextId);
+            }
         }
+
         addLog('Deleted sprite');
-    }, [sprites, selectedSpriteId, addLog, loadSpriteWorkspace, workspaceRef]);
+    }, [sprites, selectedSpriteId, addLog, loadSpriteWorkspace, activeSpriteIdRef]);
 
     // ─── Remove background ────────────────────────────────────────────────────
     const handleRemoveBackground = useCallback(async (spriteId: string) => {

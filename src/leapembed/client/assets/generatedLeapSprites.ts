@@ -740,6 +740,27 @@ export const leapSprites: any[] = [
     "category": "leap"
   },
   {
+    "id": "leap_orange_cat",
+    "name": "Orange Cat",
+    "emoji": "🐱",
+    "image": "assets/sprites/leap/orange_cat_orange_cat-a.png",
+    "costumes": [
+      "assets/sprites/leap/orange_cat_orange_cat-a.png",
+      "assets/sprites/leap/orange_cat_orange_cat-b.png",
+      "assets/sprites/leap/orange_cat_orange_cat-c.png",
+      "assets/sprites/leap/orange_cat_orange_cat-d.png"
+    ],
+    "tags": [
+      "animals",
+      "cat",
+      "kitty",
+      "kitten",
+      "orange",
+      "cute"
+    ],
+    "category": "leap"
+  },
+  {
     "id": "leap_catcher",
     "name": "Catcher",
     "emoji": "🤖",

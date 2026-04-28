@@ -220,9 +220,9 @@ export const embedStyles: { [key: string]: React.CSSProperties } = {
     // ── Placeholder editors ───────────────────────────────────────────────────
     pythonEditor: { flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#1e1e1e', overflow: 'hidden' },
     pythonPlaceholder: { textAlign: 'center', color: '#888' },
-    costumesEditor: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
+    costumesEditor: { flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#fff', overflow: 'hidden' },
     costumePlaceholder: { textAlign: 'center', color: '#666' },
-    soundsEditor: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9' },
+    soundsEditor: { flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#f9f9f9', overflow: 'hidden' },
     soundPlaceholder: { textAlign: 'center', color: '#666' },
 
     // ── Modal ─────────────────────────────────────────────────────────────────

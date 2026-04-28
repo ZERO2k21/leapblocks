@@ -98,7 +98,10 @@ export const EmbedDialogs: React.FC<EmbedDialogsProps> = ({
         {showBackdropLibrary && (
             <React.Suspense fallback={null}>
                 <BackdropLibrary isOpen={true} onClose={() => setShowBackdropLibrary(false)}
-                    onSelectBackdrop={onSelectBackdrop} />
+                    onSelectBackdrop={(backdrop) => {
+                        onSelectBackdrop(backdrop.name, backdrop.image);
+                        setShowBackdropLibrary(false);
+                    }} />
             </React.Suspense>
         )}
 
