@@ -1,8 +1,8 @@
-import SharedAudioContext from './shared-audio-context.js';
-import {computeRMS, computeChunkedRMS} from './audio-util.js';
+import SharedAudioContext from './sharedAudioContext.js';
+import { computeRMS, computeChunkedRMS } from './audioUtil.js';
 
 class AudioRecorder {
-    constructor () {
+    constructor() {
         this.audioContext = new SharedAudioContext();
         this.bufferLength = 8192;
 
@@ -19,9 +19,9 @@ class AudioRecorder {
         this.disposed = false;
     }
 
-    startListening (onStarted, onUpdate, onError) {
+    startListening(onStarted, onUpdate, onError) {
         try {
-            navigator.mediaDevices.getUserMedia({audio: true})
+            navigator.mediaDevices.getUserMedia({ audio: true })
                 .then(userMediaStream => {
                     if (!this.disposed) {
                         this.started = true;
@@ -41,11 +41,11 @@ class AudioRecorder {
         }
     }
 
-    startRecording () {
+    startRecording() {
         this.recording = true;
     }
 
-    attachUserMediaStream (userMediaStream, onUpdate) {
+    attachUserMediaStream(userMediaStream, onUpdate) {
         this.userMediaStream = userMediaStream;
         this.mediaStreamSource = this.audioContext.createMediaStreamSource(userMediaStream);
         this.sourceNode = this.audioContext.createGain();
@@ -80,7 +80,7 @@ class AudioRecorder {
         this.scriptProcessorNode.connect(this.audioContext.destination);
     }
 
-    stop () {
+    stop() {
         const buffer = new Float32Array(this.buffers.length * this.bufferLength);
 
         let offset = 0;
@@ -121,7 +121,7 @@ class AudioRecorder {
         };
     }
 
-    dispose () {
+    dispose() {
         if (this.started) {
             this.scriptProcessorNode.onaudioprocess = null;
             this.scriptProcessorNode.disconnect();

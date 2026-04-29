@@ -4,10 +4,10 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useEffect, useRef } from 'react';
-import AudioRecorder from '../../lib/audio/audio-recorder';
-import RecordButton from './record-button';
-import LevelMeter from './level-meter';
-import WaveformDisplay from './waveform-display';
+import AudioRecorder from '../../lib/audioRecorder';
+import RecordButton from './recordButton';
+import LevelMeter from './levelMeter';
+import WaveformDisplay from './waveformDisplay';
 import './sound-editor.css';
 
 const SoundRecorder = ({ isOpen, onClose, onSave }) => {

@@ -10,11 +10,11 @@ import {
     ArrowUpFromLine, ArrowDownToLine, ArrowRightLeft, ArrowLeftRight, Clipboard as ClipboardIcon
 } from 'lucide-react';
 import { ActionMenu } from '../stage/ActionMenu';
-import { SoundBank } from '../../../scratch-audio/src/SoundBank';
+import { SoundBank } from '../../../leapAudio/src/soundBank';
 import { SoundLibrary } from './SoundLibrary';
-import AudioEffects from '../../../scratch-audio/src/audio/audio-effects';
+import AudioEffects from '../../../leapAudio/src/audio/audioEffects';
 import WavEncoder from 'wav-encoder';
-import { ADPCMSoundDecoder } from '../../../scratch-audio/src/ADPCMSoundDecoder';
+import { ADPCMSoundDecoder } from '../../../leapAudio/src/adpcmSoundDecoder';
 import { MiniWaveform } from './MiniWaveform';
 
 // ═══════════════════════════════════════════════════════════════════════════

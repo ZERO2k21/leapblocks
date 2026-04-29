@@ -3,7 +3,88 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
+
+// ─── Emoji lookup by sprite name keyword ─────────────────────────────────────
+// Used as fallback when no image loads
+const SPRITE_EMOJI_MAP: Record<string, string> = {
+  // Animals
+  cat: '🐱', dog: '🐶', bear: '🐻', bat: '🦇', beetle: '🪲', butterfly: '🦋',
+  chick: '🐥', crab: '🦀', dinosaur: '🦕', dove: '🕊️', dragon: '🐉',
+  dragonfly: '🪲', duck: '🦆', elephant: '🐘', fish: '🐟', fox: '🦊',
+  frog: '🐸', giraffe: '🦒', grasshopper: '🦗', griffin: '🦅', hare: '🐰',
+  hedgehog: '🦔', hen: '🐔', hippo: '🦛', horse: '🐴', jellyfish: '🪼',
+  ladybug: '🐞', lion: '🦁', llama: '🦙', monkey: '🐒', mouse: '🐭',
+  octopus: '🐙', owl: '🦉', panther: '🐆', parrot: '🦜', penguin: '🐧',
+  pufferfish: '🐡', puppy: '🐶', rabbit: '🐰', reindeer: '🦌', rooster: '🐓',
+  shark: '🦈', snake: '🐍', squirrel: '🐿️', toucan: '🦜', unicorn: '🦄',
+  zebra: '🦓', polar: '🐻‍❄️', orange_cat: '🐱',
+  // People
+  abby: '👧', amon: '🧑', andie: '🧑‍🦽', anina: '💃', avery: '🧑',
+  ballerina: '🩰', ben: '👦', casey: '🧑', cassy: '💃', centaur: '🧙',
+  champ: '🏆', dan: '👨', dani: '👧', dee: '🧑', devin: '👦',
+  dot: '👧', dorian: '🧑', elf: '🧝', fairy: '🧚', frank: '👨',
+  giga: '🤖', gobo: '🧑', hannah: '👩', harper: '🎸', jaime: '🧑',
+  jamal: '👦', jordyn: '👧', jouvi: '💃', kai: '🧑', kia: '👧',
+  kiran: '🧑', lb: '💃', luca: '👦', marian: '👩', max: '👦',
+  mermaid: '🧜', monet: '🎨', nano: '🤖', noor: '👧', pico: '🤖',
+  prince: '🤴', princess: '👸', ripley: '🧑', ruby: '💎', sam: '🧑',
+  sasha: '👧', singer: '🎤', skeleton: '💀', tatiana: '👩', taylor: '🧑',
+  tera: '🧑', trisha: '👩', wanda: '🧙', wizard: '🧙', witch: '🧙',
+  // Objects
+  apple: '🍎', arrow: '➡️', ball: '⚽', balloon: '🎈', bananas: '🍌',
+  baseball: '⚾', basketball: '🏀', beachball: '🏐', bell: '🔔',
+  block: '🔤', bowl: '🥣', bowtie: '🎀', bread: '🍞', broom: '🧹',
+  buildings: '🏢', button: '🔘', cake: '🎂', cloud: '☁️', crystal: '💎',
+  donut: '🍩', dress: '👗', drum: '🥁', earth: '🌍',
+  easel: '🎨', egg: '🥚', fishbowl: '🐠', gift: '🎁', glasses: '👓',
+  guitar: '🎸', hat: '🎩', heart: '❤️', home: '🏠', jar: '🫙',
+  key: '🔑', keyboard: '🎹', knight: '⚔️', laptop: '💻', lightning: '⚡',
+  magic_wand: '🪄', microphone: '🎤', milk: '🥛', muffin: '🧁',
+  orange: '🍊', paddle: '🏓', pencil: '✏️', planet: '🪐', potion: '🧪',
+  radio: '📻', rainbow: '🌈', rocks: '🪨', saxophone: '🎷', scarf: '🧣',
+  shirt: '👕', shoes: '👟', shorts: '🩳', snowflake: '❄️', snowman: '⛄',
+  soccer: '⚽', speaker: '🔊', star: '⭐', starfish: '⭐', stop: '🛑',
+  strawberry: '🍓', sun: '☀️', sunglasses: '🕶️', taco: '🌮', takeout: '🥡',
+  tennis: '🎾', tree: '🌳', trumpet: '🎺', wand: '🪄', watermelon: '🍉',
+  winter_hat: '🧢',
+  // Transport
+  city_bus: '🚌', convertible: '🚗', food_truck: '🚚', motorcycle: '🏍️',
+  rocketship: '🚀', sailboat: '⛵', truck: '🚛',
+  // Sports
+  batter: '⚾', catcher: '⚾', football: '🏈', goalie: '🥅',
+  outfielder: '⚾', pitcher: '⚾', referee: '🏅', trampoline: '🤸',
+  // Dance
+  d_money: '💃', ten80: '🕺',
+  // Default
+  default: '🎭',
+};
+
+export function getEmojiForSprite(name: string): string {
+  const lower = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  for (const [key, emoji] of Object.entries(SPRITE_EMOJI_MAP)) {
+    if (lower.includes(key)) return emoji;
+  }
+  return SPRITE_EMOJI_MAP.default;
+}
+
 export const leapSprites: any[] = [
+  // ─── LeapLab Original Characters ──────────────────────────────────────────
+  {
+    "id": "leaplab_spark",
+    "name": "Spark",
+    "emoji": "⚡",
+    "image": "assets/sprites/leaplab/spark/spark_idle.svg",
+    "costumes": [
+      "assets/sprites/leaplab/spark/spark_idle.svg",
+      "assets/sprites/leaplab/spark/spark_walk.svg",
+      "assets/sprites/leaplab/spark/spark_jump.svg",
+      "assets/sprites/leaplab/spark/spark_talk.svg"
+    ],
+    "costumeNames": ["Idle", "Walk", "Jump", "Talk"],
+    "tags": ["people", "person", "kids", "coding", "leaplab", "original"],
+    "category": "leaplab"
+  },
+  // ─── Leap Library Characters ───────────────────────────────────────────────
   {
     "id": "leap_abby",
     "name": "Abby",

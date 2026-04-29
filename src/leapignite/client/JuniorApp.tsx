@@ -34,7 +34,7 @@ import { useJuniorUIHandlers } from "./hooks/useJuniorUIHandlers";
 import { getLessonConfig } from "../server/engine/LessonConfig";
 import { GoalManager } from "../server/engine/GoalManager";
 import { HintManager } from "../server/engine/HintManager";
-import { AudioEngine } from "../../scratch-audio/src/AudioEngine";
+import { AudioEngine } from "../../leapAudio/src/audioEngine";
 import { initRuntime } from "../../leapembed/server/runtime/runtimeBridge";
 import { gettingStartedTutorial } from "./tutorials/gettingStarted";
 import { moveRoboTutorial } from "./tutorials/moveRobo";

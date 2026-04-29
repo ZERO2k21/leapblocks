@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useRef, useCallback } from 'react';
-import { leapSprites } from '../assets/generatedLeapSprites';
+import { leapSprites, getEmojiForSprite } from '../assets/generatedLeapSprites';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SPRITE CATALOG — All available sprites organized by category
@@ -36,6 +36,7 @@ const LEAPBLOCKS_SPRITES: SpriteEntry[] = [
 
 const CATEGORIES = [
     { id: 'All', color: '#FF4C4C' },
+    { id: 'LeapLab', color: '#7C3AED' },   // LeapLab originals — shown first
     { id: 'Animals', color: '#4C97FF' },
     { id: 'People', color: '#9966FF' },
     { id: 'Fantasy', color: '#CF63CF' },
@@ -54,7 +55,8 @@ const mappedleapSprites = leapSprites.map((sprite: any) => {
 
     let category = 'Objects';
 
-    if (tags.includes('animals')) category = 'Animals';
+    if (tags.includes('leaplab') || tags.includes('original')) category = 'LeapLab';
+    else if (tags.includes('animals')) category = 'Animals';
     else if (tags.includes('people') || tags.includes('person')) category = 'People';
     else if (tags.includes('fantasy')) category = 'Fantasy';
     else if (tags.includes('dance') || tags.includes('dancing')) category = 'Dance';
@@ -69,8 +71,14 @@ const mappedleapSprites = leapSprites.map((sprite: any) => {
     const fixedImage = sprite.image ? `/${sprite.image}` : undefined;
     const fixedCostumes = sprite.costumes ? sprite.costumes.map((c: string) => `/${c}`) : undefined;
 
+    // Use smart emoji lookup instead of hardcoded 🤖
+    const emoji = sprite.emoji && sprite.emoji !== '🤖'
+        ? sprite.emoji
+        : getEmojiForSprite(sprite.name);
+
     return {
         ...sprite,
+        emoji,
         category,
         image: fixedImage,
         costumes: fixedCostumes

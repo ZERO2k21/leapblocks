@@ -3,10 +3,10 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import SharedAudioContext from './shared-audio-context.js';
+import SharedAudioContext from './sharedAudioContext.js';
 
 class AudioBufferPlayer {
-    constructor (samples, sampleRate) {
+    constructor(samples, sampleRate) {
         this.audioContext = new SharedAudioContext();
         this.buffer = this.audioContext.createBuffer(1, samples.length, sampleRate);
         this.buffer.getChannelData(0).set(samples);
@@ -18,7 +18,7 @@ class AudioBufferPlayer {
         this.trimEnd = null;
     }
 
-    play (trimStart, trimEnd, onUpdate, onEnded) {
+    play(trimStart, trimEnd, onUpdate, onEnded) {
         this.updateCallback = onUpdate;
         this.trimStart = trimStart;
         this.trimEnd = trimEnd;
@@ -36,7 +36,7 @@ class AudioBufferPlayer {
         this.update();
     }
 
-    update () {
+    update() {
         const timeSinceStart = (Date.now() - this.startTime) / 1000;
         const percentage = timeSinceStart / this.buffer.duration;
         if (percentage + this.trimStart < this.trimEnd && this.source.onended) {
@@ -47,7 +47,7 @@ class AudioBufferPlayer {
         }
     }
 
-    stop () {
+    stop() {
         if (this.source) {
             this.source.onended = null; // Do not call onEnded callback if manually stopped
             try {

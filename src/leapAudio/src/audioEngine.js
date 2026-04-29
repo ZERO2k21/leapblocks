@@ -3,9 +3,9 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { SoundBank } from './SoundBank.js';
-import { InstrumentPlayer } from './InstrumentPlayer.js';
-import { SoundPlayer } from './SoundPlayer.js';
+import { SoundBank } from './soundBank.js';
+import { InstrumentPlayer } from './instrumentPlayer.js';
+import { SoundPlayer } from './soundPlayer.js';
 
 export class AudioEngine {
     constructor() {

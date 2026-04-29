@@ -94,15 +94,18 @@ export function useJuniorUIHandlers({
         // Map costume IDs to display names
         const costumeNameMap: Record<string, string> = {
             default: 'Idle',
+            idle: 'Idle',
+            walk: 'Walk',
+            jump: 'Jump',
+            talk: 'Talk',
             wave1: 'Wave 1',
             wave2: 'Wave 2',
-            talk: 'Talk',
-            costume1: 'Photoroom',
-            costume2: 'Preview 1',
-            costume3: 'Preview 2',
-            costume4: 'Wave 2',
-            costume5: 'Wave 3',
-            costume6: 'Wave 4'
+            costume1: 'Costume 1',
+            costume2: 'Costume 2',
+            costume3: 'Costume 3',
+            costume4: 'Costume 4',
+            costume5: 'Costume 5',
+            costume6: 'Costume 6',
         };
 
         setPaintEditor({
@@ -380,8 +383,12 @@ export function useJuniorUIHandlers({
 
             if (spriteData.costumes && spriteData.costumes.length > 0) {
                 costumes = {};
+                // Use costumeNames if provided (LeapLab originals), else auto-key
+                const names: string[] = spriteData.costumeNames || [];
                 spriteData.costumes.forEach((c: any, index: number) => {
-                    const key = index === 0 ? 'default' : `costume${index}`;
+                    const key = names[index]
+                        ? names[index].toLowerCase()
+                        : (index === 0 ? 'default' : `costume${index}`);
                     costumes[key] = c;
                 });
             } else if (spriteData.image) {

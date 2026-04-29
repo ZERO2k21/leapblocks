@@ -5,7 +5,7 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 // @ts-ignore
-import AudioRecorder from '../../../scratch-audio/src/audio/audio-recorder';
+import AudioRecorder from '../../../leapAudio/src/audio/audioRecorder';
 import { Play, X, RotateCcw, ChevronLeft } from 'lucide-react';
 
 interface AudioData {

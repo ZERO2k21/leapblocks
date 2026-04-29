@@ -5,7 +5,7 @@
  */
 // SoundManager.ts - Handles sound playback for animation VM
 
-import { ADPCMSoundDecoder } from '../../../scratch-audio/src/ADPCMSoundDecoder';
+import { ADPCMSoundDecoder } from '../../../leapAudio/src/adpcmSoundDecoder';
 import type { Sprite } from '../../client/stage/Sprite';
 
 type PlaybackOptions = {

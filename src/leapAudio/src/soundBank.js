@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { ADPCMSoundDecoder } from './ADPCMSoundDecoder';
+import { ADPCMSoundDecoder } from './adpcmSoundDecoder';
 
 export class SoundBank {
     constructor(audioContext) {
