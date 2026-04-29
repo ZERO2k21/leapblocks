@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
@@ -49,7 +49,7 @@ import SerialMonitor from "../../leapembed/client/components/SerialMonitor";
 import { createIntermediateBlocksBridge, useSpriteBridge, getDefaultSpritePresets } from "./spriteBridge";
 import BoardSelectionModal, { getBoards } from "../../leapembed/client/components/BoardSelectionModal";
 
-// â”€â”€â”€ Import Modular Components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Import Modular Components ─────────────────────────────────────────────────
 import SidePanel from "./panels/sidePanel";
 import EditorPanel from "./panels/editorPanel";
 import StagePanel from "./panels/stagePanel";
@@ -58,7 +58,7 @@ import StatusBar from "./editor/statusBar";
 import TerminalPanel from "./terminal/terminalPanel";
 import ActivityBar from "./layout/activityBar";
 
-// â”€â”€â”€ Dropdown Menu (Glassmorphism) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Dropdown Menu (Glassmorphism) ────────────────────────────────────────────
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     const menuRef = useRef(null);
     const onCloseRef = useRef(onClose);
@@ -190,7 +190,7 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     );
 }
 
-// â”€â”€â”€ CSS Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CSS Animations ───────────────────────────────────────────────────────────
 function injectPythonIDEAnimations() {
     if (typeof document === 'undefined') return;
     if (document.getElementById('python-ide-animations')) return;
@@ -236,7 +236,7 @@ function injectPythonIDEAnimations() {
 }
 injectPythonIDEAnimations();
 
-// â”€â”€â”€ Theme (Leapblocks Colors) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
 const C = {
     PURPLE: "#8B5CF6",
     DARK_PURPLE: "#7C3AED",
@@ -269,7 +269,7 @@ function getBoardNameById() {
 }
 
 
-// â”€â”€â”€ Default Files â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Default Files ─────────────────────────────────────────────────────────────
 const DEFAULT_FILES = { "main.py": "# LeapCodex Python IDE\n# Start coding here!\n\nprint(\"Hello, World!\")\n" };
 
 
@@ -510,7 +510,7 @@ const formatPortLabel = (port) => {
 };
 
 
-// â”€â”€â”€ Sprite Library (from shared component) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Sprite Library (from shared component) ─────────────────────────────────
 // Lazy init to avoid TDZ when FULL_CATALOG is not yet initialized after scope hoisting
 let _SPRITE_LIBRARY;
 function getSpriteLibrary() {
@@ -526,7 +526,7 @@ function getSpriteLibrary() {
     return _SPRITE_LIBRARY;
 }
 
-// â”€â”€â”€ Backdrop Library (from shared component) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Backdrop Library (from shared component) ───────────────────────────────
 const BACKDROP_LIBRARY = [
     { name: 'Blank', img: null, id: 'blank' },
     // Preset backdrops
@@ -579,12 +579,12 @@ const EXTENSIONS = [
     { id: 'arduino', name: 'Arduino', icon: 'ðŸ”Œ', desc: 'Digital and analog pins', code: '# Arduino\nfrom arduino import Arduino' },
 ];
 
-// â”€â”€â”€ Pip Package Registry (Skulpt-compatible stdlib modules + Advanced Libraries) â”€â”€
+// ─── Pip Package Registry (Skulpt-compatible stdlib modules + Advanced Libraries) ──
 let _PIP_PACKAGES = null;
 const getPipPackages = () => {
     if (!_PIP_PACKAGES) {
         _PIP_PACKAGES = [
-            // â”€â”€ Built-in Standard Library Modules â”€â”€
+            // ── Built-in Standard Library Modules ──
             { name: "math", desc: "Mathematical functions", installed: true, builtin: true, category: "core", version: "3.10", tags: ["core"] },
             { name: "random", desc: "Random number generation", installed: true, builtin: true, category: "core", version: "3.10", tags: ["core"] },
             { name: "time", desc: "Time access & conversions", installed: true, builtin: true, category: "core", version: "3.10", tags: ["core"] },
@@ -608,14 +608,14 @@ const getPipPackages = () => {
             { name: "argparse", desc: "Command-line argument parsing", installed: false, builtin: true, category: "core", version: "3.10", tags: ["cli"] },
             { name: "pathlib", desc: "Object-oriented filesystem paths", installed: false, builtin: true, category: "core", version: "3.10", tags: ["files"] },
 
-            // â”€â”€ Computer Vision & Image Processing â”€â”€
+            // ── Computer Vision & Image Processing ──
             { name: "opencv-python", desc: "OpenCV - Computer vision and image processing", installed: false, builtin: false, category: "computer-vision", version: "4.8.0", tags: ["vision", "image", "video"] },
             { name: "mediapipe", desc: "MediaPipe - ML solutions for vision, audio, and text", installed: false, builtin: false, category: "computer-vision", version: "0.10.8", tags: ["vision", "pose", "hands", "face", "gesture"] },
             { name: "pillow", desc: "PIL Fork - Image processing library", installed: false, builtin: false, category: "computer-vision", version: "10.1.0", tags: ["image", "processing"] },
             { name: "scikit-image", desc: "Image processing algorithms", installed: false, builtin: false, category: "computer-vision", version: "0.22.0", tags: ["vision", "processing"] },
             { name: "imageio", desc: "Image reading and writing library", installed: false, builtin: false, category: "computer-vision", version: "2.31.0", tags: ["image", "video"] },
 
-            // â”€â”€ Machine Learning & AI â”€â”€
+            // ── Machine Learning & AI ──
             { name: "tensorflow", desc: "TensorFlow - Deep learning framework", installed: false, builtin: false, category: "machine-learning", version: "2.15.0", tags: ["ml", "deep-learning", "neural-networks"] },
             { name: "torch", desc: "PyTorch - Deep learning framework", installed: false, builtin: false, category: "machine-learning", version: "2.1.0", tags: ["ml", "deep-learning", "neural-networks"] },
             { name: "scikit-learn", desc: "Scikit-learn - Machine learning library", installed: false, builtin: false, category: "machine-learning", version: "1.3.2", tags: ["ml", "classification", "regression"] },
@@ -624,7 +624,7 @@ const getPipPackages = () => {
             { name: "matplotlib", desc: "Matplotlib - Plotting library", installed: false, builtin: false, category: "machine-learning", version: "3.8.2", tags: ["visualization", "plotting", "graphs"] },
             { name: "opencv-contrib-python", desc: "OpenCV with extra modules (SIFT, SURF, etc.)", installed: false, builtin: false, category: "computer-vision", version: "4.8.0", tags: ["vision", "advanced"] },
 
-            // â”€â”€ Speech & Audio â”€â”€
+            // ── Speech & Audio ──
             { name: "speechrecognition", desc: "Speech Recognition - Convert speech to text", installed: false, builtin: false, category: "speech", version: "3.10.1", tags: ["speech", "audio", "stt"] },
             { name: "pyttsx3", desc: "pyttsx3 - Text-to-speech (offline)", installed: false, builtin: false, category: "speech", version: "2.90", tags: ["speech", "tts", "voice"] },
             { name: "gTTS", desc: "Google Text-to-Speech", installed: false, builtin: false, category: "speech", version: "2.5.0", tags: ["speech", "tts", "google"] },
@@ -633,7 +633,7 @@ const getPipPackages = () => {
             { name: "sounddevice", desc: "SoundDevice - Audio playback and recording", installed: false, builtin: false, category: "speech", version: "0.4.6", tags: ["audio", "playback"] },
             { name: "whisper", desc: "OpenAI Whisper - Speech recognition model", installed: false, builtin: false, category: "speech", version: "1.1.10", tags: ["speech", "ai", "transcription"] },
 
-            // â”€â”€ IoT & Hardware â”€â”€
+            // ── IoT & Hardware ──
             { name: "pyserial", desc: "PySerial - Serial port communication", installed: false, builtin: false, category: "iot", version: "3.5", tags: ["serial", "arduino", "hardware"] },
             { name: "pyfirmata", desc: "PyFirmata - Arduino communication protocol", installed: false, builtin: false, category: "iot", version: "2.3.8", tags: ["arduino", "firmata"] },
             { name: "rpi.gpio", desc: "RPi.GPIO - Raspberry Pi GPIO control", installed: false, builtin: false, category: "iot", version: "0.7.1", tags: ["raspberry-pi", "gpio"] },
@@ -643,32 +643,32 @@ const getPipPackages = () => {
             { name: "mpy-cross", desc: "MicroPython cross-compiler", installed: false, builtin: false, category: "iot", version: "1.21.0", tags: ["micropython", "embedded"] },
             { name: "smbus2", desc: "SMBus2 - I2C communication library", installed: false, builtin: false, category: "iot", version: "0.4.3", tags: ["i2c", "sensors", "hardware"] },
 
-            // â”€â”€ Robotics & Control â”€â”€
+            // ── Robotics & Control ──
             { name: "roboticstoolbox-python", desc: "Robotics Toolbox - Robot modeling and control", installed: false, builtin: false, category: "hardware", version: "1.0.3", tags: ["robotics", "kinematics", "control"] },
             { name: "pynput", desc: "PyNput - Keyboard and mouse control", installed: false, builtin: false, category: "hardware", version: "1.7.6", tags: ["input", "automation", "control"] },
             { name: "pyvjoy", desc: "PyVJoy - Virtual joystick control", installed: false, builtin: false, category: "hardware", version: "1.0.5", tags: ["joystick", "gamepad", "control"] },
             { name: "gpiozero", desc: "GPIO Zero - GPIO device interface", installed: false, builtin: false, category: "hardware", version: "2.0", tags: ["gpio", "raspberry-pi", "sensors"] },
 
-            // â”€â”€ Networking & Communication â”€â”€
+            // ── Networking & Communication ──
             { name: "requests", desc: "HTTP library for humans", installed: false, builtin: false, category: "utility", version: "2.31.0", tags: ["http", "api", "web"] },
             { name: "flask", desc: "Flask - Lightweight web framework", installed: false, builtin: false, category: "utility", version: "3.0.0", tags: ["web", "server", "api"] },
             { name: "websocket-client", desc: "WebSocket client library", installed: false, builtin: false, category: "utility", version: "1.7.0", tags: ["websocket", "real-time"] },
             { name: "paho-mqtt", desc: "Paho MQTT - IoT messaging protocol", installed: false, builtin: false, category: "iot", version: "1.6.1", tags: ["mqtt", "iot", "messaging"] },
             { name: "paramiko", desc: "Paramiko - SSH2 protocol library", installed: false, builtin: false, category: "utility", version: "3.4.0", tags: ["ssh", "remote", "networking"] },
 
-            // â”€â”€ Data Processing â”€â”€
+            // ── Data Processing ──
             { name: "openpyxl", desc: "OpenPyXL - Excel file manipulation", installed: false, builtin: false, category: "utility", version: "3.1.2", tags: ["excel", "spreadsheet"] },
             { name: "pyyaml", desc: "PyYAML - YAML parser and emitter", installed: false, builtin: false, category: "utility", version: "6.0.1", tags: ["yaml", "config"] },
             { name: "lxml", desc: "lxml - XML and HTML processing", installed: false, builtin: false, category: "utility", version: "4.9.4", tags: ["xml", "html", "parsing"] },
             { name: "beautifulsoup4", desc: "Beautiful Soup - Web scraping library", installed: false, builtin: false, category: "utility", version: "4.12.2", tags: ["scraping", "html", "parsing"] },
 
-            // â”€â”€ GUI & Visualization â”€â”€
+            // ── GUI & Visualization ──
             { name: "tkinter", desc: "Tkinter - Standard GUI library", installed: false, builtin: true, category: "utility", version: "3.10", tags: ["gui", "desktop"] },
             { name: "pygame", desc: "Pygame - Game development library", installed: false, builtin: false, category: "utility", version: "2.5.2", tags: ["game", "graphics", "multimedia"] },
             { name: "plotly", desc: "Plotly - Interactive visualization", installed: false, builtin: false, category: "utility", version: "5.18.0", tags: ["visualization", "interactive", "graphs"] },
             { name: "seaborn", desc: "Seaborn - Statistical visualization", installed: false, builtin: false, category: "utility", version: "0.13.0", tags: ["visualization", "statistics"] },
 
-            // â”€â”€ Utilities â”€â”€
+            // ── Utilities ──
             { name: "python-dotenv", desc: "Environment variable management", installed: false, builtin: false, category: "utility", version: "1.0.0", tags: ["config", "env"] },
             { name: "schedule", desc: "Job scheduling library", installed: false, builtin: false, category: "utility", version: "1.2.1", tags: ["scheduling", "automation"] },
             { name: "watchdog", desc: "Filesystem events monitoring", installed: false, builtin: false, category: "utility", version: "3.0.0", tags: ["files", "monitoring"] },
@@ -678,7 +678,7 @@ const getPipPackages = () => {
     return _PIP_PACKAGES;
 };
 
-// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main Component ────────────────────────────────────────────────────────────
 function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCostumes }) {
     const {
         sprites,
@@ -728,7 +728,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         "Upload mode initialized",
     ]);
 
-    // â”€â”€â”€ Project File Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Project File Handlers ─────────────────────────────────────────────────────
     const fileInputRef = useRef(null);
     const [openMenuId, setOpenMenuId] = useState(null);
 
@@ -858,7 +858,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const skulptRef = useRef(null);
     const boardCppMenuRef = useRef(null);
 
-    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Helpers ──────────────────────────────────────────────────────────────
     const addLog = useCallback((text, type = "log") => {
         setTerminalOutput(prev => [...prev, { text, type, ts: new Date() }]);
     }, []);
@@ -919,7 +919,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         handleModalCancel();
     }, [handleModalCancel, modalInput, modalState]);
 
-    // â”€â”€ Skulpt Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Skulpt Init ───────────────────────────────────────────────────────────
     useEffect(() => {
         // Expose updateSprite globally for Teddy component drag support
         // Accepts either sprite ID or sprite name
@@ -1150,7 +1150,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [terminalOutput]);
 
-    // â”€â”€ Keyboard Shortcuts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Keyboard Shortcuts ────────────────────────────────────────────────────
     useEffect(() => {
         const handleKeyDown = (e) => {
             // Ctrl+Enter or F5: Run code
@@ -1197,7 +1197,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isRunning, activePanel, handleRun, handleStop, handleClear, addLog, handleSaveProject, handleOpenProject, handleNewProject]);
 
-    // â”€â”€ NATIVE PYTHON IPC LISTENERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── NATIVE PYTHON IPC LISTENERS ──────────────────────────────────────────
     useEffect(() => {
         if (!window.electronAPI?.isElectron) return;
 
@@ -1209,9 +1209,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         });
         window.electronAPI.onPythonExit((code) => {
             if (code === 0) {
-                addLog(`âœ“ Program finished successfully`, "success");
+                addLog(`✓ Program finished successfully`, "success");
             } else if (code !== null) {
-                addLog(`âœ— Program exited with code ${code}`, "warning");
+                addLog(`✗ Program exited with code ${code}`, "warning");
             }
             setIsRunning(false);
         });
@@ -1238,7 +1238,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         }
     }, [activePanel, addLog]);
 
-    // â”€â”€ Run â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Run ───────────────────────────────────────────────────────────────────
     // NOTE: function declarations (not const arrows) so they hoist above the
     // keyboard-shortcuts useEffect that references them in its deps array.
     async function handleRun() {
@@ -1247,8 +1247,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         setTerminalOutput([]);
 
         const startTime = performance.now();
-        addLog(`â–¶ Running ${activeFile}...`, "info");
-        addLog(`â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€`, "info");
+        addLog(`▶ Running ${activeFile}...`, "info");
+        addLog(`────────────────────────────────────────`, "info");
 
         // Reset stage
         if (skulptRef.current?.callbacks?.actions?.softResetAll) {
@@ -1280,20 +1280,20 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
                 const endTime = performance.now();
                 const duration = ((endTime - startTime) / 1000).toFixed(3);
-                addLog(`â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€`, "info");
-                addLog(`âœ“ Program finished successfully in ${duration}s`, "success");
+                addLog(`────────────────────────────────────────`, "info");
+                addLog(`✓ Program finished successfully in ${duration}s`, "success");
             }
 
         } catch (e) {
             const errorMsg = typeof e === 'string' ? e : e?.message || e?.toString?.() || JSON.stringify(e) || "Unknown error";
-            addLog(`â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€`, "error");
-            addLog(`âœ— Execution Error:`, "error");
+            addLog(`────────────────────────────────────────`, "error");
+            addLog(`✗ Execution Error:`, "error");
             addLog(formatErrorMessage(errorMsg), "error");
 
             // Provide helpful suggestions
             const suggestion = getErrorSuggestion(errorMsg);
             if (suggestion) {
-                addLog(`ðŸ’¡ Tip: ${suggestion}`, "info");
+                addLog(`💡 Tip: ${suggestion}`, "info");
             }
         } finally {
             if (!window.electronAPI?.isElectron) {
@@ -1312,7 +1312,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
     function handleClear() { setTerminalOutput([]); }
 
-    // â”€â”€ Syntax Warning Checker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Syntax Warning Checker ────────────────────────────────────────────────
     const checkSyntaxWarnings = (code) => {
         const warnings = [];
         const lines = code.split('\n');
@@ -1342,7 +1342,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         return warnings;
     };
 
-    // â”€â”€ Error Message Formatter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Error Message Formatter ───────────────────────────────────────────────
     const formatErrorMessage = (msg) => {
         // Clean up Skulpt error messages
         let formatted = msg
@@ -1360,7 +1360,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         return formatted;
     };
 
-    // â”€â”€ Error Suggestion Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Error Suggestion Helper ───────────────────────────────────────────────
     const getErrorSuggestion = (errorMsg) => {
         const msg = errorMsg.toLowerCase();
 
@@ -1389,7 +1389,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         return null;
     };
 
-    // â”€â”€ REPL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── REPL ──────────────────────────────────────────────────────────────────
     const handleReplSubmit = async () => {
         const line = replInput.trim();
         if (!line) return;
@@ -1419,7 +1419,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             // Error already output via onErr
             const suggestion = getErrorSuggestion(e?.message || e);
             if (suggestion) {
-                addLog(`ðŸ’¡ ${suggestion}`, "info");
+                addLog(`💡 ${suggestion}`, "info");
             }
         }
         setActivePanel("terminal"); // Show output
@@ -1469,9 +1469,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         }
     };
 
-    // â”€â”€ Modal Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Modal Handlers ────────────────────────────────────────────────────────
 
-    // â”€â”€ File Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── File Management ────────────────────────────────────────────────────────
     const handleDeleteFile = (file) => {
         if (Object.keys(projectFiles).length <= 1) return;
         if (!confirm(`Delete ${file}?`)) return;
@@ -1825,8 +1825,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         editorRef.current?.trigger("python-upload-mode", "redo", null);
     };
 
-    // â”€â”€ PIP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // â”€â”€ PIP Package Installation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── PIP ───────────────────────────────────────────────────────────────────
+    // ── PIP Package Installation ──────────────────────────────────────────────
     const handleInstall = (pkgName) => {
         const pkg = getPipPackages().find(p => p.name === pkgName);
         if (!pkg) return;
@@ -1836,8 +1836,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
         // Provide appropriate feedback based on package type
         if (pkg.builtin) {
-            addLog(`âœ“ ${pkgName} enabled (built-in module)`, "success");
-            addLog(`  â†’ Ready to import in your Python scripts`, "info");
+            addLog(`✓ ${pkgName} enabled (built-in module)`, "success");
+            addLog(`  → Ready to import in your Python scripts`, "info");
         } else {
             addLog(`â³ Installing ${pkgName} via pip...`, "info");
             setActivePanel("terminal");
@@ -1846,9 +1846,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             } else {
                 // Web mode: simulate install with feedback
                 setTimeout(() => {
-                    addLog(`âœ“ ${pkgName} registered (web mode)`, "success");
+                    addLog(`✓ ${pkgName} registered (web mode)`, "success");
                     addLog(`  âš  Browser mode uses Skulpt â€” only built-in modules run natively.`, "warning");
-                    addLog(`  â†’ For full library support, use the leapembed desktop app.`, "info");
+                    addLog(`  → For full library support, use the leapembed desktop app.`, "info");
                 }, 600);
             }
 
@@ -1872,16 +1872,16 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             };
 
             if (importExamples[pkgName]) {
-                addLog(`  â†’ Use: ${importExamples[pkgName]}`, "info");
+                addLog(`  → Use: ${importExamples[pkgName]}`, "info");
             }
 
             // Add category-specific tips
             if (pkg.category === "computer-vision") {
-                addLog(`  â†’ Tip: Requires camera access for real-time processing`, "info");
+                addLog(`  → Tip: Requires camera access for real-time processing`, "info");
             } else if (pkg.category === "speech") {
-                addLog(`  â†’ Tip: Requires microphone access for audio input`, "info");
+                addLog(`  → Tip: Requires microphone access for audio input`, "info");
             } else if (pkg.category === "iot") {
-                addLog(`  â†’ Tip: Connect your hardware device before use`, "info");
+                addLog(`  → Tip: Connect your hardware device before use`, "info");
             }
         }
     };
@@ -2651,10 +2651,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             </div>
         </div>
     );
-    // â”€â”€ Utility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Utility ───────────────────────────────────────────────────────────────
     // Note: updateSpriteProperty and resetStage are now provided by StageContext
 
-    // â”€â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <div style={{
             display: "flex", flexDirection: "column",
@@ -2927,7 +2927,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             }}>
                             {isRunning ? (
                                 <>
-                                    <span style={{ animation: "spin 1s linear infinite" }}>âš™</span>
+                                    <span style={{ animation: "spin 1s linear infinite" }}>⚙</span>
                                     <span>Running...</span>
                                 </>
                             ) : (
@@ -3255,7 +3255,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         onImageUpload={handleAddImageFiles}
                         onPythonUpload={handleAddPythonFiles}
                     />
-                    {/* â”€â”€ LEFT SIDEBAR (PictoBlox Style) â”€â”€ */}
+                    {/* ── LEFT SIDEBAR (PictoBlox Style) ── */}
                     <SidePanel
                         sidePanel={sidePanel}
                         setSidePanel={setSidePanel}
@@ -3284,7 +3284,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         handleInstall={handleInstall}
                     />
 
-                    {/* â”€â”€ EDITOR + TERMINAL â”€â”€ */}
+                    {/* ── EDITOR + TERMINAL ── */}
                     <EditorPanel
                         projectFiles={projectFiles}
                         activeFile={activeFile}
@@ -3313,7 +3313,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         handleInstall={handleInstall}
                     />
 
-                    {/* â”€â”€ STAGE PANEL â”€â”€ */}
+                    {/* ── STAGE PANEL ── */}
                     <StagePanel
                         sprites={sprites}
                         selectedSpriteId={selectedSpriteId}
@@ -3345,7 +3345,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         onImageUpload={handleAddImageFiles}
                         onPythonUpload={handleAddPythonFiles}
                     />
-                    {/* â”€â”€ LEFT SIDEBAR (File Explorer) â”€â”€ */}
+                    {/* ── LEFT SIDEBAR (File Explorer) ── */}
                     <SidePanel
                         sidePanel={sidePanel}
                         setSidePanel={setSidePanel}
@@ -3374,7 +3374,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         handleInstall={handleInstall}
                     />
 
-                    {/* â”€â”€ CENTER: Code Editor â”€â”€ */}
+                    {/* ── CENTER: Code Editor ── */}
                     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", borderRight: "1px solid #313244" }}>
                         {Object.keys(projectFiles).length === 0 ? (
                             <div style={{
@@ -3436,7 +3436,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         )}
                     </div>
 
-                    {/* â”€â”€ RIGHT: Terminal / REPL (full height) â”€â”€ */}
+                    {/* ── RIGHT: Terminal / REPL (full height) ── */}
                     <div style={{ width: 380, display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0 }}>
                         <style>{`.ide-terminal-full > div:first-child { height: 100% !important; flex: 1 !important; }`}</style>
                         <div className="ide-terminal-full" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
