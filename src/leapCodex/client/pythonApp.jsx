@@ -1,11 +1,11 @@
-/**
+﻿/**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { StageProvider, useStage } from "../leapembed/client/context/stageContext";
-import Logo, { CreoleapLogo } from "../leapembed/client/components/Logo";
+import { StageProvider, useStage } from "../../leapembed/client/context/stageContext";
+import Logo, { CreoleapLogo } from "../../leapembed/client/components/Logo";
 import {
     Home,
     Play,
@@ -42,22 +42,23 @@ import {
     Share,
 } from "lucide-react";
 
-import { fileService } from "../leapembed/server/services/fileService";
-import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
-import { FULL_CATALOG } from "../leapembed/client/components/SpriteLibrary";
-import SerialMonitor from "../leapembed/client/components/SerialMonitor";
-import { createIntermediateBlocksBridge, useSpriteBridge, getDefaultSpritePresets } from "./SpriteBridge";
-import BoardSelectionModal, { getBoards } from "../leapembed/client/components/BoardSelectionModal";
+import { fileService } from "../../leapembed/server/services/fileService";
+import { SkulptEngine } from "../../leapignite/server/engine/SkulptEngine";
+import { FULL_CATALOG } from "../../leapembed/client/components/SpriteLibrary";
+import SerialMonitor from "../../leapembed/client/components/SerialMonitor";
+import { createIntermediateBlocksBridge, useSpriteBridge, getDefaultSpritePresets } from "./spriteBridge";
+import BoardSelectionModal, { getBoards } from "../../leapembed/client/components/BoardSelectionModal";
 
-// ─── Import Modular Components ─────────────────────────────────────────────────
-import SidePanel from "./panels/SidePanel";
-import EditorPanel from "./panels/EditorPanel";
-import StagePanel from "./panels/StagePanel";
-import MonacoEditor from "./editor/MonacoEditor";
-import StatusBar from "./editor/StatusBar";
-import TerminalPanel from "./terminal/TerminalPanel";
+// â”€â”€â”€ Import Modular Components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+import SidePanel from "./panels/sidePanel";
+import EditorPanel from "./panels/editorPanel";
+import StagePanel from "./panels/stagePanel";
+import MonacoEditor from "./editor/monacoEditor";
+import StatusBar from "./editor/statusBar";
+import TerminalPanel from "./terminal/terminalPanel";
+import ActivityBar from "./layout/activityBar";
 
-// ─── Dropdown Menu (Glassmorphism) ────────────────────────────────────────────
+// â”€â”€â”€ Dropdown Menu (Glassmorphism) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     const menuRef = useRef(null);
     const onCloseRef = useRef(onClose);
@@ -189,7 +190,7 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     );
 }
 
-// ─── CSS Animations ───────────────────────────────────────────────────────────
+// â”€â”€â”€ CSS Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function injectPythonIDEAnimations() {
     if (typeof document === 'undefined') return;
     if (document.getElementById('python-ide-animations')) return;
@@ -235,7 +236,7 @@ function injectPythonIDEAnimations() {
 }
 injectPythonIDEAnimations();
 
-// ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
+// â”€â”€â”€ Theme (Leapblocks Colors) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const C = {
     PURPLE: "#8B5CF6",
     DARK_PURPLE: "#7C3AED",
@@ -268,8 +269,8 @@ function getBoardNameById() {
 }
 
 
-// ─── Default Files ─────────────────────────────────────────────────────────────
-const DEFAULT_FILES = {};
+// â”€â”€â”€ Default Files â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const DEFAULT_FILES = { "main.py": "# LeapCodex Python IDE\n# Start coding here!\n\nprint(\"Hello, World!\")\n" };
 
 
 const BOARD_UPLOAD_CONFIG = {
@@ -509,7 +510,7 @@ const formatPortLabel = (port) => {
 };
 
 
-// ─── Sprite Library (from shared component) ─────────────────────────────────
+// â”€â”€â”€ Sprite Library (from shared component) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Lazy init to avoid TDZ when FULL_CATALOG is not yet initialized after scope hoisting
 let _SPRITE_LIBRARY;
 function getSpriteLibrary() {
@@ -525,7 +526,7 @@ function getSpriteLibrary() {
     return _SPRITE_LIBRARY;
 }
 
-// ─── Backdrop Library (from shared component) ───────────────────────────────
+// â”€â”€â”€ Backdrop Library (from shared component) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const BACKDROP_LIBRARY = [
     { name: 'Blank', img: null, id: 'blank' },
     // Preset backdrops
@@ -569,21 +570,21 @@ const buildAssetPlaceholder = (file, kind) => [
     "# Replace this placeholder with your own loading or processing code.",
 ].join("\n");
 const EXTENSIONS = [
-    { id: 'music', name: 'Music', icon: '🎵', desc: 'Play notes and instruments', code: '# Music\nfrom music import play_note' },
-    { id: 'pen', name: 'Pen', icon: '✏', desc: 'Draw lines on stage canvas', code: '# Pen\nfrom pen import pen_down, pen_up' },
-    { id: 'ml', name: 'Machine Learning', icon: '🧠', desc: 'KNN classifier, image AI', code: '# ML\nfrom ml import KNNClassifier' },
-    { id: 'face', name: 'Face Detection', icon: '👁', desc: 'Detect faces via camera', code: '# Face\nfrom face import FaceDetection' },
-    { id: 'speech', name: 'Speech', icon: '🗣', desc: 'TTS and speech recognition', code: '# Speech\nfrom speech import say, listen' },
-    { id: 'iot', name: 'IoT / Quarky', icon: '⚡', desc: 'Control LEDs, sensors', code: '# Quarky\nfrom quarky import Quarky' },
-    { id: 'arduino', name: 'Arduino', icon: '🔌', desc: 'Digital and analog pins', code: '# Arduino\nfrom arduino import Arduino' },
+    { id: 'music', name: 'Music', icon: 'ðŸŽµ', desc: 'Play notes and instruments', code: '# Music\nfrom music import play_note' },
+    { id: 'pen', name: 'Pen', icon: 'âœ', desc: 'Draw lines on stage canvas', code: '# Pen\nfrom pen import pen_down, pen_up' },
+    { id: 'ml', name: 'Machine Learning', icon: 'ðŸ§ ', desc: 'KNN classifier, image AI', code: '# ML\nfrom ml import KNNClassifier' },
+    { id: 'face', name: 'Face Detection', icon: 'ðŸ‘', desc: 'Detect faces via camera', code: '# Face\nfrom face import FaceDetection' },
+    { id: 'speech', name: 'Speech', icon: 'ðŸ—£', desc: 'TTS and speech recognition', code: '# Speech\nfrom speech import say, listen' },
+    { id: 'iot', name: 'IoT / Quarky', icon: 'âš¡', desc: 'Control LEDs, sensors', code: '# Quarky\nfrom quarky import Quarky' },
+    { id: 'arduino', name: 'Arduino', icon: 'ðŸ”Œ', desc: 'Digital and analog pins', code: '# Arduino\nfrom arduino import Arduino' },
 ];
 
-// ─── Pip Package Registry (Skulpt-compatible stdlib modules + Advanced Libraries) ──
+// â”€â”€â”€ Pip Package Registry (Skulpt-compatible stdlib modules + Advanced Libraries) â”€â”€
 let _PIP_PACKAGES = null;
 const getPipPackages = () => {
     if (!_PIP_PACKAGES) {
         _PIP_PACKAGES = [
-            // ── Built-in Standard Library Modules ──
+            // â”€â”€ Built-in Standard Library Modules â”€â”€
             { name: "math", desc: "Mathematical functions", installed: true, builtin: true, category: "core", version: "3.10", tags: ["core"] },
             { name: "random", desc: "Random number generation", installed: true, builtin: true, category: "core", version: "3.10", tags: ["core"] },
             { name: "time", desc: "Time access & conversions", installed: true, builtin: true, category: "core", version: "3.10", tags: ["core"] },
@@ -607,14 +608,14 @@ const getPipPackages = () => {
             { name: "argparse", desc: "Command-line argument parsing", installed: false, builtin: true, category: "core", version: "3.10", tags: ["cli"] },
             { name: "pathlib", desc: "Object-oriented filesystem paths", installed: false, builtin: true, category: "core", version: "3.10", tags: ["files"] },
 
-            // ── Computer Vision & Image Processing ──
+            // â”€â”€ Computer Vision & Image Processing â”€â”€
             { name: "opencv-python", desc: "OpenCV - Computer vision and image processing", installed: false, builtin: false, category: "computer-vision", version: "4.8.0", tags: ["vision", "image", "video"] },
             { name: "mediapipe", desc: "MediaPipe - ML solutions for vision, audio, and text", installed: false, builtin: false, category: "computer-vision", version: "0.10.8", tags: ["vision", "pose", "hands", "face", "gesture"] },
             { name: "pillow", desc: "PIL Fork - Image processing library", installed: false, builtin: false, category: "computer-vision", version: "10.1.0", tags: ["image", "processing"] },
             { name: "scikit-image", desc: "Image processing algorithms", installed: false, builtin: false, category: "computer-vision", version: "0.22.0", tags: ["vision", "processing"] },
             { name: "imageio", desc: "Image reading and writing library", installed: false, builtin: false, category: "computer-vision", version: "2.31.0", tags: ["image", "video"] },
 
-            // ── Machine Learning & AI ──
+            // â”€â”€ Machine Learning & AI â”€â”€
             { name: "tensorflow", desc: "TensorFlow - Deep learning framework", installed: false, builtin: false, category: "machine-learning", version: "2.15.0", tags: ["ml", "deep-learning", "neural-networks"] },
             { name: "torch", desc: "PyTorch - Deep learning framework", installed: false, builtin: false, category: "machine-learning", version: "2.1.0", tags: ["ml", "deep-learning", "neural-networks"] },
             { name: "scikit-learn", desc: "Scikit-learn - Machine learning library", installed: false, builtin: false, category: "machine-learning", version: "1.3.2", tags: ["ml", "classification", "regression"] },
@@ -623,7 +624,7 @@ const getPipPackages = () => {
             { name: "matplotlib", desc: "Matplotlib - Plotting library", installed: false, builtin: false, category: "machine-learning", version: "3.8.2", tags: ["visualization", "plotting", "graphs"] },
             { name: "opencv-contrib-python", desc: "OpenCV with extra modules (SIFT, SURF, etc.)", installed: false, builtin: false, category: "computer-vision", version: "4.8.0", tags: ["vision", "advanced"] },
 
-            // ── Speech & Audio ──
+            // â”€â”€ Speech & Audio â”€â”€
             { name: "speechrecognition", desc: "Speech Recognition - Convert speech to text", installed: false, builtin: false, category: "speech", version: "3.10.1", tags: ["speech", "audio", "stt"] },
             { name: "pyttsx3", desc: "pyttsx3 - Text-to-speech (offline)", installed: false, builtin: false, category: "speech", version: "2.90", tags: ["speech", "tts", "voice"] },
             { name: "gTTS", desc: "Google Text-to-Speech", installed: false, builtin: false, category: "speech", version: "2.5.0", tags: ["speech", "tts", "google"] },
@@ -632,7 +633,7 @@ const getPipPackages = () => {
             { name: "sounddevice", desc: "SoundDevice - Audio playback and recording", installed: false, builtin: false, category: "speech", version: "0.4.6", tags: ["audio", "playback"] },
             { name: "whisper", desc: "OpenAI Whisper - Speech recognition model", installed: false, builtin: false, category: "speech", version: "1.1.10", tags: ["speech", "ai", "transcription"] },
 
-            // ── IoT & Hardware ──
+            // â”€â”€ IoT & Hardware â”€â”€
             { name: "pyserial", desc: "PySerial - Serial port communication", installed: false, builtin: false, category: "iot", version: "3.5", tags: ["serial", "arduino", "hardware"] },
             { name: "pyfirmata", desc: "PyFirmata - Arduino communication protocol", installed: false, builtin: false, category: "iot", version: "2.3.8", tags: ["arduino", "firmata"] },
             { name: "rpi.gpio", desc: "RPi.GPIO - Raspberry Pi GPIO control", installed: false, builtin: false, category: "iot", version: "0.7.1", tags: ["raspberry-pi", "gpio"] },
@@ -642,32 +643,32 @@ const getPipPackages = () => {
             { name: "mpy-cross", desc: "MicroPython cross-compiler", installed: false, builtin: false, category: "iot", version: "1.21.0", tags: ["micropython", "embedded"] },
             { name: "smbus2", desc: "SMBus2 - I2C communication library", installed: false, builtin: false, category: "iot", version: "0.4.3", tags: ["i2c", "sensors", "hardware"] },
 
-            // ── Robotics & Control ──
+            // â”€â”€ Robotics & Control â”€â”€
             { name: "roboticstoolbox-python", desc: "Robotics Toolbox - Robot modeling and control", installed: false, builtin: false, category: "hardware", version: "1.0.3", tags: ["robotics", "kinematics", "control"] },
             { name: "pynput", desc: "PyNput - Keyboard and mouse control", installed: false, builtin: false, category: "hardware", version: "1.7.6", tags: ["input", "automation", "control"] },
             { name: "pyvjoy", desc: "PyVJoy - Virtual joystick control", installed: false, builtin: false, category: "hardware", version: "1.0.5", tags: ["joystick", "gamepad", "control"] },
             { name: "gpiozero", desc: "GPIO Zero - GPIO device interface", installed: false, builtin: false, category: "hardware", version: "2.0", tags: ["gpio", "raspberry-pi", "sensors"] },
 
-            // ── Networking & Communication ──
+            // â”€â”€ Networking & Communication â”€â”€
             { name: "requests", desc: "HTTP library for humans", installed: false, builtin: false, category: "utility", version: "2.31.0", tags: ["http", "api", "web"] },
             { name: "flask", desc: "Flask - Lightweight web framework", installed: false, builtin: false, category: "utility", version: "3.0.0", tags: ["web", "server", "api"] },
             { name: "websocket-client", desc: "WebSocket client library", installed: false, builtin: false, category: "utility", version: "1.7.0", tags: ["websocket", "real-time"] },
             { name: "paho-mqtt", desc: "Paho MQTT - IoT messaging protocol", installed: false, builtin: false, category: "iot", version: "1.6.1", tags: ["mqtt", "iot", "messaging"] },
             { name: "paramiko", desc: "Paramiko - SSH2 protocol library", installed: false, builtin: false, category: "utility", version: "3.4.0", tags: ["ssh", "remote", "networking"] },
 
-            // ── Data Processing ──
+            // â”€â”€ Data Processing â”€â”€
             { name: "openpyxl", desc: "OpenPyXL - Excel file manipulation", installed: false, builtin: false, category: "utility", version: "3.1.2", tags: ["excel", "spreadsheet"] },
             { name: "pyyaml", desc: "PyYAML - YAML parser and emitter", installed: false, builtin: false, category: "utility", version: "6.0.1", tags: ["yaml", "config"] },
             { name: "lxml", desc: "lxml - XML and HTML processing", installed: false, builtin: false, category: "utility", version: "4.9.4", tags: ["xml", "html", "parsing"] },
             { name: "beautifulsoup4", desc: "Beautiful Soup - Web scraping library", installed: false, builtin: false, category: "utility", version: "4.12.2", tags: ["scraping", "html", "parsing"] },
 
-            // ── GUI & Visualization ──
+            // â”€â”€ GUI & Visualization â”€â”€
             { name: "tkinter", desc: "Tkinter - Standard GUI library", installed: false, builtin: true, category: "utility", version: "3.10", tags: ["gui", "desktop"] },
             { name: "pygame", desc: "Pygame - Game development library", installed: false, builtin: false, category: "utility", version: "2.5.2", tags: ["game", "graphics", "multimedia"] },
             { name: "plotly", desc: "Plotly - Interactive visualization", installed: false, builtin: false, category: "utility", version: "5.18.0", tags: ["visualization", "interactive", "graphs"] },
             { name: "seaborn", desc: "Seaborn - Statistical visualization", installed: false, builtin: false, category: "utility", version: "0.13.0", tags: ["visualization", "statistics"] },
 
-            // ── Utilities ──
+            // â”€â”€ Utilities â”€â”€
             { name: "python-dotenv", desc: "Environment variable management", installed: false, builtin: false, category: "utility", version: "1.0.0", tags: ["config", "env"] },
             { name: "schedule", desc: "Job scheduling library", installed: false, builtin: false, category: "utility", version: "1.2.1", tags: ["scheduling", "automation"] },
             { name: "watchdog", desc: "Filesystem events monitoring", installed: false, builtin: false, category: "utility", version: "3.0.0", tags: ["files", "monitoring"] },
@@ -677,7 +678,7 @@ const getPipPackages = () => {
     return _PIP_PACKAGES;
 };
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCostumes }) {
     const {
         sprites,
@@ -700,7 +701,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     // Editor state
     const [projectName, setProjectName] = useState("My Project");
     const [workflowMode, setWorkflowMode] = useState("ide");
-    const [activeFile, setActiveFile] = useState("");
+    const [activeFile, setActiveFile] = useState("main.py");
     const [projectFiles, setProjectFiles] = useState(DEFAULT_FILES);
     const [editorCursor, setEditorCursor] = useState({ line: 1, col: 1 });
     const monacoRef = useRef(null);
@@ -727,7 +728,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         "Upload mode initialized",
     ]);
 
-    // ─── Project File Handlers ─────────────────────────────────────────────────────
+    // â”€â”€â”€ Project File Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const fileInputRef = useRef(null);
     const [openMenuId, setOpenMenuId] = useState(null);
 
@@ -801,19 +802,19 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const [activePanel, setActivePanel] = useState("terminal"); // "terminal" | "repl" | "debugger" | "pip"
     const _isWebMode = !window.electronAPI?.isElectron;
     const [terminalOutput, setTerminalOutput] = useState([
-        { text: "╔══════════════════════════════════════════════════════════════╗", type: "info", ts: new Date() },
-        { text: "║  leapembed CODEX.v1.0                                          ║", type: "info", ts: new Date() },
-        { text: "║  ─────────────────────────────────────────────────────────── ║", type: "info", ts: new Date() },
-        { text: "║  ▶ Press Ctrl+Enter or F5 to run code                       ║", type: "info", ts: new Date() },
-        { text: "║  ▶ Press Escape to stop execution                           ║", type: "info", ts: new Date() },
-        { text: "║  ▶ Press Ctrl+` to toggle REPL mode                         ║", type: "info", ts: new Date() },
-        { text: "║  ▶ Press Ctrl+S to save project                             ║", type: "info", ts: new Date() },
-        { text: "╚══════════════════════════════════════════════════════════════╝", type: "info", ts: new Date() },
+        { text: "+----------------------------------------------------------------+", type: "info", ts: new Date() },
+        { text: "|  LeapCodex Python IDE  v1.0                                    |", type: "info", ts: new Date() },
+        { text: "|  ---------------------------------------------------------------  |", type: "info", ts: new Date() },
+        { text: "|  > Press Ctrl+Enter or F5 to run code                          |", type: "info", ts: new Date() },
+        { text: "|  > Press Escape to stop execution                              |", type: "info", ts: new Date() },
+        { text: "|  > Press Ctrl+` to toggle REPL mode                            |", type: "info", ts: new Date() },
+        { text: "|  > Press Ctrl+S to save project                                |", type: "info", ts: new Date() },
+        { text: "+----------------------------------------------------------------+", type: "info", ts: new Date() },
         { text: "", type: "info", ts: new Date() },
         {
             text: _isWebMode
-                ? "🌐 Web Mode — Python runs in-browser via Skulpt. No install needed!"
-                : "🖥 Desktop Mode — Native Python connected. Ready!",
+                ? "Web Mode - Python runs in-browser via Skulpt. No install needed!"
+                : "Desktop Mode - Native Python connected. Ready!",
             type: "success", ts: new Date()
         },
     ]);
@@ -857,7 +858,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const skulptRef = useRef(null);
     const boardCppMenuRef = useRef(null);
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const addLog = useCallback((text, type = "log") => {
         setTerminalOutput(prev => [...prev, { text, type, ts: new Date() }]);
     }, []);
@@ -918,7 +919,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         handleModalCancel();
     }, [handleModalCancel, modalInput, modalState]);
 
-    // ── Skulpt Init ───────────────────────────────────────────────────────────
+    // â”€â”€ Skulpt Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     useEffect(() => {
         // Expose updateSprite globally for Teddy component drag support
         // Accepts either sprite ID or sprite name
@@ -1024,7 +1025,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         if (dir === "UP") dy = d;  // In leap, UP increases Y
                         if (dir === "DOWN") dy = -d; // In leap, DOWN decreases Y
                         const pos = s.position || { x: s.x || 0, y: s.y || 0 };
-                        addLog(`➡️ ${name}: Move ${dir} ${d} steps`, 'info');
+                        addLog(`âž¡ï¸ ${name}: Move ${dir} ${d} steps`, 'info');
                         return {
                             ...s,
                             x: pos.x + dx,
@@ -1041,7 +1042,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         const pos = s.position || { x: s.x || 0, y: s.y || 0 };
                         const newX = pos.x + Math.cos(rad) * steps;
                         const newY = pos.y + Math.sin(rad) * steps;
-                        addLog(`🏃 ${name}: Move ${steps} steps (direction: ${angle}°)`, 'info');
+                        addLog(`ðŸƒ ${name}: Move ${steps} steps (direction: ${angle}Â°)`, 'info');
                         return {
                             ...s,
                             x: newX,
@@ -1059,7 +1060,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
                         // Log sprite action to terminal
                         const actionType = Object.keys(props).join(', ');
-                        addLog(`🤖 ${name}: ${actionType}`, 'info');
+                        addLog(`ðŸ¤– ${name}: ${actionType}`, 'info');
 
                         Object.keys(props).forEach(key => {
                             if (typeof props[key] === 'function') {
@@ -1077,7 +1078,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                 const currentIdx = costumeKeys.indexOf(s.currentCostume);
                                 const nextIdx = (currentIdx + 1) % costumeKeys.length;
                                 newProps.currentCostume = costumeKeys[nextIdx] || 'default';
-                                addLog(`🎭 ${name}: Changed costume to ${newProps.currentCostume}`, 'info');
+                                addLog(`ðŸŽ­ ${name}: Changed costume to ${newProps.currentCostume}`, 'info');
                             } else if (key === 'position') {
                                 // Merge position updates
                                 newProps.position = { ...newProps.position, ...props[key] };
@@ -1149,7 +1150,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [terminalOutput]);
 
-    // ── Keyboard Shortcuts ────────────────────────────────────────────────────
+    // â”€â”€ Keyboard Shortcuts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     useEffect(() => {
         const handleKeyDown = (e) => {
             // Ctrl+Enter or F5: Run code
@@ -1175,18 +1176,28 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     setTimeout(() => replInputRef.current?.focus(), 100);
                 }
             }
-            // Ctrl+S: Save (prevent browser save)
+            // Ctrl+S: Save project
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
-                addLog("💾 Project auto-saved", "success");
+                handleSaveProject();
+            }
+            // Ctrl+O: Open project
+            if (e.ctrlKey && e.key === 'o') {
+                e.preventDefault();
+                handleOpenProject();
+            }
+            // Ctrl+N: New project
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                handleNewProject();
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isRunning, activePanel, handleRun, handleStop, handleClear, addLog]);
+    }, [isRunning, activePanel, handleRun, handleStop, handleClear, addLog, handleSaveProject, handleOpenProject, handleNewProject]);
 
-    // ── NATIVE PYTHON IPC LISTENERS ──────────────────────────────────────────
+    // â”€â”€ NATIVE PYTHON IPC LISTENERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     useEffect(() => {
         if (!window.electronAPI?.isElectron) return;
 
@@ -1198,9 +1209,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         });
         window.electronAPI.onPythonExit((code) => {
             if (code === 0) {
-                addLog(`✓ Program finished successfully`, "success");
+                addLog(`âœ“ Program finished successfully`, "success");
             } else if (code !== null) {
-                addLog(`✗ Program exited with code ${code}`, "warning");
+                addLog(`âœ— Program exited with code ${code}`, "warning");
             }
             setIsRunning(false);
         });
@@ -1227,7 +1238,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         }
     }, [activePanel, addLog]);
 
-    // ── Run ───────────────────────────────────────────────────────────────────
+    // â”€â”€ Run â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // NOTE: function declarations (not const arrows) so they hoist above the
     // keyboard-shortcuts useEffect that references them in its deps array.
     async function handleRun() {
@@ -1236,8 +1247,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         setTerminalOutput([]);
 
         const startTime = performance.now();
-        addLog(`▶ Running ${activeFile}...`, "info");
-        addLog(`────────────────────────────────────────`, "info");
+        addLog(`â–¶ Running ${activeFile}...`, "info");
+        addLog(`â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€`, "info");
 
         // Reset stage
         if (skulptRef.current?.callbacks?.actions?.softResetAll) {
@@ -1250,7 +1261,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             // Validate code before execution
             const code = projectFiles[activeFile];
             if (!code || code.trim() === '') {
-                addLog("⚠ No code to execute. Write some Python code first!", "warning");
+                addLog("âš  No code to execute. Write some Python code first!", "warning");
                 setIsRunning(false);
                 return;
             }
@@ -1258,7 +1269,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             // Check for common syntax issues
             const syntaxWarnings = checkSyntaxWarnings(code);
             if (syntaxWarnings.length > 0) {
-                syntaxWarnings.forEach(w => addLog(`⚠ ${w}`, "warning"));
+                syntaxWarnings.forEach(w => addLog(`âš  ${w}`, "warning"));
             }
 
             // Execute the code
@@ -1269,20 +1280,20 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
                 const endTime = performance.now();
                 const duration = ((endTime - startTime) / 1000).toFixed(3);
-                addLog(`────────────────────────────────────────`, "info");
-                addLog(`✓ Program finished successfully in ${duration}s`, "success");
+                addLog(`â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€`, "info");
+                addLog(`âœ“ Program finished successfully in ${duration}s`, "success");
             }
 
         } catch (e) {
             const errorMsg = typeof e === 'string' ? e : e?.message || e?.toString?.() || JSON.stringify(e) || "Unknown error";
-            addLog(`────────────────────────────────────────`, "error");
-            addLog(`✗ Execution Error:`, "error");
+            addLog(`â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€`, "error");
+            addLog(`âœ— Execution Error:`, "error");
             addLog(formatErrorMessage(errorMsg), "error");
 
             // Provide helpful suggestions
             const suggestion = getErrorSuggestion(errorMsg);
             if (suggestion) {
-                addLog(`💡 Tip: ${suggestion}`, "info");
+                addLog(`ðŸ’¡ Tip: ${suggestion}`, "info");
             }
         } finally {
             if (!window.electronAPI?.isElectron) {
@@ -1293,7 +1304,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
     function handleStop() {
         setIsRunning(false);
-        addLog("⏹ Execution stopped by user.", "warning");
+        addLog("â¹ Execution stopped by user.", "warning");
         if (window.electronAPI?.isElectron) {
             window.electronAPI.pythonStop();
         }
@@ -1301,7 +1312,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
     function handleClear() { setTerminalOutput([]); }
 
-    // ── Syntax Warning Checker ────────────────────────────────────────────────
+    // â”€â”€ Syntax Warning Checker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const checkSyntaxWarnings = (code) => {
         const warnings = [];
         const lines = code.split('\n');
@@ -1331,7 +1342,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         return warnings;
     };
 
-    // ── Error Message Formatter ───────────────────────────────────────────────
+    // â”€â”€ Error Message Formatter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const formatErrorMessage = (msg) => {
         // Clean up Skulpt error messages
         let formatted = msg
@@ -1349,7 +1360,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         return formatted;
     };
 
-    // ── Error Suggestion Helper ───────────────────────────────────────────────
+    // â”€â”€ Error Suggestion Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const getErrorSuggestion = (errorMsg) => {
         const msg = errorMsg.toLowerCase();
 
@@ -1378,7 +1389,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         return null;
     };
 
-    // ── REPL ──────────────────────────────────────────────────────────────────
+    // â”€â”€ REPL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleReplSubmit = async () => {
         const line = replInput.trim();
         if (!line) return;
@@ -1401,14 +1412,14 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
                 // Show execution time for REPL if > 100ms
                 if (endTime - startTime > 100) {
-                    addLog(`⏱ Executed in ${duration}s`, "info");
+                    addLog(`â± Executed in ${duration}s`, "info");
                 }
             }
         } catch (e) {
             // Error already output via onErr
             const suggestion = getErrorSuggestion(e?.message || e);
             if (suggestion) {
-                addLog(`💡 ${suggestion}`, "info");
+                addLog(`ðŸ’¡ ${suggestion}`, "info");
             }
         }
         setActivePanel("terminal"); // Show output
@@ -1458,9 +1469,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         }
     };
 
-    // ── Modal Handlers ────────────────────────────────────────────────────────
+    // â”€â”€ Modal Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // ── File Management ────────────────────────────────────────────────────────
+    // â”€â”€ File Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleDeleteFile = (file) => {
         if (Object.keys(projectFiles).length <= 1) return;
         if (!confirm(`Delete ${file}?`)) return;
@@ -1814,8 +1825,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         editorRef.current?.trigger("python-upload-mode", "redo", null);
     };
 
-    // ── PIP ───────────────────────────────────────────────────────────────────
-    // ── PIP Package Installation ──────────────────────────────────────────────
+    // â”€â”€ PIP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â”€â”€ PIP Package Installation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleInstall = (pkgName) => {
         const pkg = getPipPackages().find(p => p.name === pkgName);
         if (!pkg) return;
@@ -1825,19 +1836,19 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
         // Provide appropriate feedback based on package type
         if (pkg.builtin) {
-            addLog(`✓ ${pkgName} enabled (built-in module)`, "success");
-            addLog(`  → Ready to import in your Python scripts`, "info");
+            addLog(`âœ“ ${pkgName} enabled (built-in module)`, "success");
+            addLog(`  â†’ Ready to import in your Python scripts`, "info");
         } else {
-            addLog(`⏳ Installing ${pkgName} via pip...`, "info");
+            addLog(`â³ Installing ${pkgName} via pip...`, "info");
             setActivePanel("terminal");
             if (window.electronAPI?.isElectron) {
                 window.electronAPI.pythonPipInstall(pkgName);
             } else {
                 // Web mode: simulate install with feedback
                 setTimeout(() => {
-                    addLog(`✓ ${pkgName} registered (web mode)`, "success");
-                    addLog(`  ⚠ Browser mode uses Skulpt — only built-in modules run natively.`, "warning");
-                    addLog(`  → For full library support, use the leapembed desktop app.`, "info");
+                    addLog(`âœ“ ${pkgName} registered (web mode)`, "success");
+                    addLog(`  âš  Browser mode uses Skulpt â€” only built-in modules run natively.`, "warning");
+                    addLog(`  â†’ For full library support, use the leapembed desktop app.`, "info");
                 }, 600);
             }
 
@@ -1861,16 +1872,16 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             };
 
             if (importExamples[pkgName]) {
-                addLog(`  → Use: ${importExamples[pkgName]}`, "info");
+                addLog(`  â†’ Use: ${importExamples[pkgName]}`, "info");
             }
 
             // Add category-specific tips
             if (pkg.category === "computer-vision") {
-                addLog(`  → Tip: Requires camera access for real-time processing`, "info");
+                addLog(`  â†’ Tip: Requires camera access for real-time processing`, "info");
             } else if (pkg.category === "speech") {
-                addLog(`  → Tip: Requires microphone access for audio input`, "info");
+                addLog(`  â†’ Tip: Requires microphone access for audio input`, "info");
             } else if (pkg.category === "iot") {
-                addLog(`  → Tip: Connect your hardware device before use`, "info");
+                addLog(`  â†’ Tip: Connect your hardware device before use`, "info");
             }
         }
     };
@@ -2640,10 +2651,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             </div>
         </div>
     );
-    // ── Utility ───────────────────────────────────────────────────────────────
+    // â”€â”€ Utility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Note: updateSpriteProperty and resetStage are now provided by StageContext
 
-    // ─── Render ───────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     return (
         <div style={{
             display: "flex", flexDirection: "column",
@@ -2652,7 +2663,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             fontFamily: "'Inter', 'Segoe UI', sans-serif",
         }}>
 
-            {/* ══ TOPBAR (Junior/Intermediate style) ══════════════════════════════════════ */}
+            {/* â•â• TOPBAR (Junior/Intermediate style) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
             <header style={{
                 position: "sticky",
                 top: 0,
@@ -2826,7 +2837,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         </div>
                     </div>
                     <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#FF9800", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, fontWeight: "bold" }}>
-                        👤
                     </div>
                 </div>
 
@@ -2842,7 +2852,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 </div>
             </header>
 
-            {/* ══ SECOND TOOLBAR (PictoBlox Style) ══════════════════════════════ */}
+            {/* â•â• SECOND TOOLBAR (PictoBlox Style) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
             {workflowMode === "stage" ? (
                 <div style={{
                     position: "sticky",
@@ -2890,10 +2900,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                 <Redo size={16} />
                             </div>
                             <div title="Copy (Ctrl+C)" onClick={() => editorRef.current?.trigger('keyboard', 'editor.action.clipboardCopyAction', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                                <span style={{ fontSize: 14 }}>📋</span>
+                                <span style={{ fontSize: 14 }}>ðŸ“‹</span>
                             </div>
                             <div title="Paste (Ctrl+V)" onClick={() => editorRef.current?.trigger('keyboard', 'editor.action.clipboardPasteAction', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                                <span style={{ fontSize: 14 }}>📄</span>
+                                <span style={{ fontSize: 14 }}>ðŸ“„</span>
                             </div>
                             <div title="Delete" onClick={() => { if (window.confirm('Clear active file?')) { const ed = editorRef.current; if (ed) { ed.setValue(''); } } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <Trash2 size={16} />
@@ -2918,7 +2928,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             }}>
                             {isRunning ? (
                                 <>
-                                    <span style={{ animation: "spin 1s linear infinite" }}>⚙</span>
+                                    <span style={{ animation: "spin 1s linear infinite" }}>âš™</span>
                                     <span>Running...</span>
                                 </>
                             ) : (
@@ -3141,7 +3151,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     </div>
                 </div>
             ) : (
-                /* IDE Mode Toolbar — VS Code inspired dark theme */
+                /* IDE Mode Toolbar â€” VS Code inspired dark theme */
                 <div style={{
                     position: "relative",
                     height: 42,
@@ -3231,13 +3241,22 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 </div>
             )}
 
-            {/* ══ MAIN WORKSPACE ═══════════════════════════════════════════════ */}
+            {/* â•â• MAIN WORKSPACE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
             {workflowMode === "stage" ? (
                 <div style={{ flex: 1, display: "flex", overflow: "auto", minHeight: 0 }}>
 
 
 
-                    {/* ── LEFT SIDEBAR (PictoBlox Style) ── */}
+                    {/* Activity Bar */}
+                    <ActivityBar
+                        sidePanel={sidePanel}
+                        setSidePanel={setSidePanel}
+                        onCSVUpload={handleAddCsvFiles}
+                        onTextUpload={handleAddTextFiles}
+                        onImageUpload={handleAddImageFiles}
+                        onPythonUpload={handleAddPythonFiles}
+                    />
+                    {/* â”€â”€ LEFT SIDEBAR (PictoBlox Style) â”€â”€ */}
                     <SidePanel
                         sidePanel={sidePanel}
                         setSidePanel={setSidePanel}
@@ -3266,7 +3285,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         handleInstall={handleInstall}
                     />
 
-                    {/* ── EDITOR + TERMINAL ── */}
+                    {/* â”€â”€ EDITOR + TERMINAL â”€â”€ */}
                     <EditorPanel
                         projectFiles={projectFiles}
                         activeFile={activeFile}
@@ -3295,7 +3314,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         handleInstall={handleInstall}
                     />
 
-                    {/* ── STAGE PANEL ── */}
+                    {/* â”€â”€ STAGE PANEL â”€â”€ */}
                     <StagePanel
                         sprites={sprites}
                         selectedSpriteId={selectedSpriteId}
@@ -3315,10 +3334,19 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             ) : workflowMode === "upload" ? (
                 renderUploadWorkspace()
             ) : (
-                /* IDE Mode Workspace — SidePanel + Editor (left) + Terminal (right) */
+                /* IDE Mode Workspace â€” SidePanel + Editor (left) + Terminal (right) */
                 <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0, background: "#1e1e2e" }}>
 
-                    {/* ── LEFT SIDEBAR (File Explorer) ── */}
+                    {/* Activity Bar */}
+                    <ActivityBar
+                        sidePanel={sidePanel}
+                        setSidePanel={setSidePanel}
+                        onCSVUpload={handleAddCsvFiles}
+                        onTextUpload={handleAddTextFiles}
+                        onImageUpload={handleAddImageFiles}
+                        onPythonUpload={handleAddPythonFiles}
+                    />
+                    {/* â”€â”€ LEFT SIDEBAR (File Explorer) â”€â”€ */}
                     <SidePanel
                         sidePanel={sidePanel}
                         setSidePanel={setSidePanel}
@@ -3347,7 +3375,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         handleInstall={handleInstall}
                     />
 
-                    {/* ── CENTER: Code Editor ── */}
+                    {/* â”€â”€ CENTER: Code Editor â”€â”€ */}
                     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", borderRight: "1px solid #313244" }}>
                         {Object.keys(projectFiles).length === 0 ? (
                             <div style={{
@@ -3409,7 +3437,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         )}
                     </div>
 
-                    {/* ── RIGHT: Terminal / REPL (full height) ── */}
+                    {/* â”€â”€ RIGHT: Terminal / REPL (full height) â”€â”€ */}
                     <div style={{ width: 380, display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0 }}>
                         <style>{`.ide-terminal-full > div:first-child { height: 100% !important; flex: 1 !important; }`}</style>
                         <div className="ide-terminal-full" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -3472,7 +3500,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <div
                                 onClick={handleModalCancel}
                                 style={{ cursor: 'pointer', fontSize: '20px', fontWeight: 'bold' }}
-                            >×</div>
+                            >Ã—</div>
                         </div>
                         <div style={{ padding: '20px' }}>
                             <div style={{ marginBottom: '10px', fontSize: '14px', color: '#575E75' }}>
@@ -3580,7 +3608,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <div
                                 onClick={() => setShowSpriteLibrary(false)}
                                 style={{ cursor: 'pointer', fontSize: '20px', fontWeight: 'bold' }}
-                            >×</div>
+                            >Ã—</div>
                         </div>
                         <div style={{ padding: '16px', flex: 1, overflowY: 'auto' }}>
                             <div style={{
@@ -3654,5 +3682,7 @@ export default function PythonAppWithProvider(props) {
         </StageProvider>
     );
 }
+
+
 
 

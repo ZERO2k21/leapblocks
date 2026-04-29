@@ -8,10 +8,10 @@ import { FileText, Sprout, Image, Package, Download, Upload, Plus } from "lucide
 
 const C = {
     PURPLE: "#8B5CF6",
-    DARK_BG: "#2D2B55",
-    DARKER_BG: "#1E1B4B",
-    MUTED: "#9CA3AF",
-    ACTIVE: "#A78BFA",
+    DARK_BG: "#1e1b4b",
+    DARKER_BG: "#16133d",
+    MUTED: "#c4b5fd",      // brighter — was #9CA3AF (too dim on dark bg)
+    ACTIVE: "#a78bfa",
 };
 
 const ACTIVITY_ITEMS = [
@@ -77,7 +77,7 @@ export default function ActivityBar({
                 return (
                     <div
                         key={item.id}
-                        onClick={() => setSidePanel(item.id)}
+                        onClick={() => setSidePanel(isActive ? null : item.id)}
                         title={item.label}
                         style={{
                             width: 40,
@@ -87,13 +87,27 @@ export default function ActivityBar({
                             justifyContent: "center",
                             cursor: "pointer",
                             marginBottom: 4,
-                            borderRadius: 6,
-                            background: isActive ? "rgba(139, 92, 246, 0.3)" : "transparent",
-                            borderLeft: isActive ? `3px solid ${C.PURPLE}` : "3px solid transparent",
+                            borderRadius: 8,
+                            background: isActive
+                                ? "rgba(139, 92, 246, 0.35)"
+                                : "rgba(255,255,255,0.04)",
+                            borderLeft: isActive
+                                ? `3px solid ${C.PURPLE}`
+                                : "3px solid transparent",
                             transition: "all 0.15s ease",
                         }}
+                        onMouseEnter={e => {
+                            if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+                        }}
+                        onMouseLeave={e => {
+                            if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                        }}
                     >
-                        <Icon size={20} style={{ color: isActive ? C.ACTIVE : C.MUTED }} />
+                        <Icon
+                            size={20}
+                            strokeWidth={isActive ? 2.2 : 1.8}
+                            style={{ color: isActive ? "#fff" : C.MUTED }}
+                        />
                     </div>
                 );
             })}

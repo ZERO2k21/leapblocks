@@ -106,14 +106,15 @@ style Category with circular icons and vertical layout
          * Override setSelected
          */
         override setSelected(isSelected: boolean): void {
+            // Call super first so Blockly's internal selected state is maintained.
+            // This ensures getSelectedItem() returns the correct item and our
+            // updateFlyout_ patch can compare oldItem === newItem correctly.
+            super.setSelected(isSelected);
+
+            // Apply our custom visual styling on top
             if (this.rowDiv_) {
                 this.rowDiv_.style.backgroundColor = isSelected ? 'rgba(0,0,0,0.06)' : 'transparent';
             }
-            Blockly.utils.aria.setState(
-                this.htmlDiv_ as Element,
-                Blockly.utils.aria.State.SELECTED,
-                isSelected
-            );
         }
     }
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
@@ -9,9 +9,9 @@
  * without changing the Python IDE structure.
  */
 
-import { useStage } from '../leapembed/client/context/stageContext';
+import { useStage } from '../../leapembed/client/context/stageContext';
 
-// ─── Sprite Action Logger ───────────────────────────────────────────────────
+// â”€â”€â”€ Sprite Action Logger â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Logs sprite actions to terminal for visibility
 export class SpriteActionLogger {
     constructor(addLog) {
@@ -22,16 +22,16 @@ export class SpriteActionLogger {
         const paramStr = Object.entries(params)
             .map(([k, v]) => `${k}: ${v}`)
             .join(', ');
-        const message = `🤖 ${spriteName}: ${action}${paramStr ? ` (${paramStr})` : ''}`;
+        const message = `ðŸ¤– ${spriteName}: ${action}${paramStr ? ` (${paramStr})` : ''}`;
         this.addLog(message, 'info');
     }
 
     logSpriteError(spriteName, action, error) {
-        this.addLog(`❌ ${spriteName} ${action} failed: ${error}`, 'error');
+        this.addLog(`âŒ ${spriteName} ${action} failed: ${error}`, 'error');
     }
 }
 
-// ─── Sprite Panel Functions (Intermediate Blocks Compatible) ────────────────
+// â”€â”€â”€ Sprite Panel Functions (Intermediate Blocks Compatible) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // These functions can be called from intermediate blocks and update the Python IDE sprites
 
 export class SpritePanelFunctions {
@@ -55,7 +55,7 @@ export class SpritePanelFunctions {
         return this.sprites.find(s => s.id === this.selectedSpriteId);
     }
 
-    // ─── Movement Functions ─────────────────────────────────────────────────
+    // â”€â”€â”€ Movement Functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     moveSprite(spriteName, steps) {
         const sprite = this.getSprite(spriteName);
@@ -155,7 +155,7 @@ export class SpritePanelFunctions {
         this.logger.logSpriteAction(sprite.name, 'goTo', { x, y });
     }
 
-    // ─── Appearance Functions ───────────────────────────────────────────────
+    // â”€â”€â”€ Appearance Functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     spriteSay(spriteName, message, duration = 2) {
         const sprite = this.getSprite(spriteName);
@@ -199,7 +199,7 @@ export class SpritePanelFunctions {
             if (s.id !== sprite.id) return s;
             return {
                 ...s,
-                speech: '💭 ' + message
+                speech: 'ðŸ’­ ' + message
             };
         }));
 
@@ -344,7 +344,7 @@ export class SpritePanelFunctions {
         this.logger.logSpriteAction(sprite.name, 'switchCostume', { costume: costumeName });
     }
 
-    // ─── Direction Functions ────────────────────────────────────────────────
+    // â”€â”€â”€ Direction Functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     pointSpriteInDirection(spriteName, angle) {
         const sprite = this.getSprite(spriteName);
@@ -368,7 +368,7 @@ export class SpritePanelFunctions {
         this.logger.logSpriteAction(sprite.name, 'pointInDirection', { angle: finalAngle });
     }
 
-    // ─── Utility Functions ──────────────────────────────────────────────────
+    // â”€â”€â”€ Utility Functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     getSpritePosition(spriteName) {
         const sprite = this.getSprite(spriteName);
@@ -395,7 +395,7 @@ export class SpritePanelFunctions {
     }
 }
 
-// ─── Intermediate Blocks Integration ────────────────────────────────────────
+// â”€â”€â”€ Intermediate Blocks Integration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // This function creates a bridge between intermediate blocks and Python IDE
 
 export function createIntermediateBlocksBridge(sprites, setSprites, selectedSpriteId, addLog) {
@@ -433,7 +433,7 @@ export function createIntermediateBlocksBridge(sprites, setSprites, selectedSpri
     };
 }
 
-// ─── React Hook for Sprite Bridge ───────────────────────────────────────────
+// â”€â”€â”€ React Hook for Sprite Bridge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // This hook provides easy access to the sprite bridge in React components
 
 export function useSpriteBridge() {
@@ -472,7 +472,7 @@ export function useSpriteBridge() {
     };
 }
 
-// ─── Default Sprite Presets ─────────────────────────────────────────────────
+// â”€â”€â”€ Default Sprite Presets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // These presets can be used by intermediate blocks to quickly add default sprites
 let _DEFAULT_SPRITE_PRESETS = null;
 export const getDefaultSpritePresets = () => {
@@ -509,7 +509,7 @@ export const getDefaultSpritePresets = () => {
     return _DEFAULT_SPRITE_PRESETS;
 };
 
-// ─── Helper function to add default sprite ──────────────────────────────────
+// â”€â”€â”€ Helper function to add default sprite â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function addDefaultSprite(spriteType, addSprite) {
     const preset = getDefaultSpritePresets()[spriteType];
     if (!preset) {
@@ -527,3 +527,5 @@ export function addDefaultSprite(spriteType, addSprite) {
         visible: true
     });
 }
+
+

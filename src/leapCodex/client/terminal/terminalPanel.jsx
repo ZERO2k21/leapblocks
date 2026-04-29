@@ -5,7 +5,7 @@
  */
 import React from "react";
 import { Play, Square, Trash2, Package } from "lucide-react";
-import PipPanel from "../panels/PipPanel";
+import PipPanel from "../panels/pipPanel";
 
 const C = {
     PURPLE: "#8B5CF6",
@@ -32,14 +32,21 @@ export default function TerminalPanel({
     pipFilter,
     setPipFilter,
     handleInstall,
+    // When true the panel fills available vertical space (IDE mode).
+    // When false (default) it uses a fixed height (Stage mode).
+    fillHeight = false,
 }) {
     const tabs = [
         { id: "terminal", label: "Terminal", icon: <span style={{ fontSize: 12 }}>▶</span> },
         { id: "repl", label: "REPL", icon: <span style={{ fontSize: 11 }}>{">>>"}</span> },
     ];
 
+    const containerStyle = fillHeight
+        ? { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", borderTop: `1px solid ${C.BORDER}`, background: "#fff" }
+        : { height: 220, display: "flex", flexDirection: "column", borderTop: `1px solid ${C.BORDER}`, background: "#fff", flexShrink: 0 };
+
     return (
-        <div style={{ height: 220, display: "flex", flexDirection: "column", borderTop: `1px solid ${C.BORDER}`, background: "#fff", flexShrink: 0 }}>
+        <div style={containerStyle}>
             <div style={{ display: "flex", background: "#F5F5F5", borderBottom: `1px solid ${C.BORDER}`, height: 32, alignItems: "center" }}>
                 {tabs.map(({ id, label, icon }) => (
                     <div
@@ -83,25 +90,25 @@ export default function TerminalPanel({
                             style={{
                                 color: log.type === "error" ? "#F44747"
                                     : log.type === "success" ? "#6A9955"
-                                    : log.type === "info" ? (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "#9CDCFE" : "#569CD6"
-                                    : log.type === "warning" ? "#FFD700"
-                                    : log.type === "repl-in" ? "#C586C0"
-                                    : "#D4D4D4",
+                                        : log.type === "info" ? (log.text.includes("[sprite]") || log.text.includes("->") || log.text.includes("[costume]")) ? "#9CDCFE" : "#569CD6"
+                                            : log.type === "warning" ? "#FFD700"
+                                                : log.type === "repl-in" ? "#C586C0"
+                                                    : "#D4D4D4",
                                 marginBottom: 2,
                                 whiteSpace: "pre-wrap",
                                 wordBreak: "break-word",
-                                borderLeft: (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "2px solid #9CDCFE" : "none",
-                                paddingLeft: (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "8px" : (log.type === "repl-in" ? 0 : 4),
+                                borderLeft: (log.text.includes("[sprite]") || log.text.includes("->") || log.text.includes("[costume]")) ? "2px solid #9CDCFE" : "none",
+                                paddingLeft: (log.text.includes("[sprite]") || log.text.includes("->") || log.text.includes("[costume]")) ? "8px" : (log.type === "repl-in" ? 0 : 4),
                             }}
                         >
                             {log.type === "repl-in" ? <span style={{ userSelect: "none", color: "#6A9955" }}>{">>> "}</span> : null}
-                            {log.type === "error" && !log.text.startsWith("✗") ? <span style={{ color: "#F44747" }}>✗ </span> : null}
+                            {log.type === "error" && !log.text.startsWith("Execution Error") ? <span style={{ color: "#F44747" }}>! </span> : null}
                             {log.text}
                         </div>
                     ))}
                     {isRunning && (
                         <div style={{ color: "#569CD6", marginTop: 4 }}>
-                            <span style={{ animation: "blink 1s infinite" }}>▋</span> Running...
+                            <span style={{ animation: "blink 1s infinite" }}>|</span> Running...
                         </div>
                     )}
                     <div ref={terminalEndRef} />

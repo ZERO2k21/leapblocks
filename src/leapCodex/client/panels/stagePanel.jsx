@@ -5,8 +5,8 @@
  */
 import React from "react";
 import { Plus, Trash2 } from "lucide-react";
-import StageCanvas from "../stage/StageCanvas";
-import SpriteProperties from "../stage/SpriteProperties";
+import StageCanvas from "../stage/stageCanvas";
+import SpriteProperties from "../stage/spriteProperties";
 
 const C = {
     PURPLE: "#8B5CF6",
@@ -204,104 +204,29 @@ export default function StagePanel({
 
                 {showSprites && (
                     <>
-                            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                                <ActionButton
-                                    label={activeMode === "sprite" ? "Add Costume" : "Add Sprite"}
-                                    onClick={() =>
-                                        onOpenAssetLibrary?.(activeMode === "sprite" ? "costume" : "sprite")
-                                    }
-                                />
-                            </div>
+                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                            <ActionButton
+                                label={activeMode === "sprite" ? "Add Costume" : "Add Sprite"}
+                                onClick={() =>
+                                    onOpenAssetLibrary?.(activeMode === "sprite" ? "costume" : "sprite")
+                                }
+                            />
+                        </div>
 
-                            {activeMode === "sprite" ? (
-                                selectedSprite ? (
-                                    <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
-                                        {costumeEntries.map(([costumeName, costumeValue]) => {
-                                            const isSelected = costumeName === selectedSprite.currentCostume;
-
-                                            return (
-                                                <div
-                                                    key={costumeName}
-                                                    onClick={() =>
-                                                        updateSpriteProperty?.(selectedSprite.id, "currentCostume", costumeName)
-                                                    }
-                                                    style={{
-                                                        minWidth: 92,
-                                                        padding: 8,
-                                                        borderRadius: 10,
-                                                        border: `2px solid ${isSelected ? C.PURPLE : "#E5E7EB"}`,
-                                                        background: isSelected ? C.LIGHT_PURPLE : "#F9FAFB",
-                                                        cursor: "pointer",
-                                                        display: "flex",
-                                                        flexDirection: "column",
-                                                        alignItems: "center",
-                                                        gap: 6,
-                                                    }}
-                                                >
-                                                    <div
-                                                        style={{
-                                                            width: 56,
-                                                            height: 56,
-                                                            borderRadius: 8,
-                                                            background: "#fff",
-                                                            border: isSelected
-                                                                ? `2px solid ${C.PURPLE}`
-                                                                : `1px solid ${C.BORDER}`,
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                            overflow: "hidden",
-                                                        }}
-                                                    >
-                                                        {isImageSource(costumeValue) ? (
-                                                            <img
-                                                                src={costumeValue}
-                                                                alt={costumeName}
-                                                                style={{
-                                                                    width: "90%",
-                                                                    height: "90%",
-                                                                    objectFit: "contain",
-                                                                }}
-                                                            />
-                                                        ) : (
-                                                            <span style={{ fontSize: 28 }}>{costumeValue || "?"}</span>
-                                                        )}
-                                                    </div>
-                                                    <div
-                                                        style={{
-                                                            fontSize: 11,
-                                                            fontWeight: 700,
-                                                            color: isSelected ? C.PURPLE : C.TEXT,
-                                                            textAlign: "center",
-                                                            maxWidth: 76,
-                                                            overflow: "hidden",
-                                                            textOverflow: "ellipsis",
-                                                            whiteSpace: "nowrap",
-                                                        }}
-                                                    >
-                                                        {costumeName}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div style={{ fontSize: 12, color: C.MUTED, padding: "6px 0" }}>
-                                        No sprite is linked to {activeFile || "this file"} yet.
-                                    </div>
-                                )
-                            ) : (
+                        {activeMode === "sprite" ? (
+                            selectedSprite ? (
                                 <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
-                                    {spriteList.map((sprite) => {
-                                        const preview = getSpritePreview(sprite);
-                                        const isSelected = sprite.id === selectedSpriteId;
+                                    {costumeEntries.map(([costumeName, costumeValue]) => {
+                                        const isSelected = costumeName === selectedSprite.currentCostume;
 
                                         return (
                                             <div
-                                                key={sprite.id}
-                                                onClick={() => setSelectedSpriteId(sprite.id)}
+                                                key={costumeName}
+                                                onClick={() =>
+                                                    updateSpriteProperty?.(selectedSprite.id, "currentCostume", costumeName)
+                                                }
                                                 style={{
-                                                    minWidth: 86,
+                                                    minWidth: 92,
                                                     padding: 8,
                                                     borderRadius: 10,
                                                     border: `2px solid ${isSelected ? C.PURPLE : "#E5E7EB"}`,
@@ -311,60 +236,27 @@ export default function StagePanel({
                                                     flexDirection: "column",
                                                     alignItems: "center",
                                                     gap: 6,
-                                                    position: "relative",
                                                 }}
                                             >
-                                                {spriteList.length > 1 && isSelected && (
-                                                    <button
-                                                        onClick={(event) => {
-                                                            event.stopPropagation();
-                                                            deleteSprite?.(sprite.id);
-                                                        }}
-                                                        style={{
-                                                            position: "absolute",
-                                                            top: -8,
-                                                            right: -8,
-                                                            width: 22,
-                                                            height: 22,
-                                                            borderRadius: "50%",
-                                                            border: "none",
-                                                            background: "#fff",
-                                                            boxShadow: "0 1px 4px rgba(15, 23, 42, 0.18)",
-                                                            color: "#EF4444",
-                                                            cursor: "pointer",
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                        }}
-                                                        title={`Delete ${sprite.name}`}
-                                                    >
-                                                        <Trash2 size={12} />
-                                                    </button>
-                                                )}
-
                                                 <div
                                                     style={{
                                                         width: 56,
                                                         height: 56,
                                                         borderRadius: 8,
-                                                        background: isSelected ? "#EDE9FE" : "#fff",
+                                                        background: "#fff",
                                                         border: isSelected
                                                             ? `2px solid ${C.PURPLE}`
-                                                            : "2px solid transparent",
+                                                            : `1px solid ${C.BORDER}`,
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent: "center",
                                                         overflow: "hidden",
-                                                        boxShadow: isSelected
-                                                            ? `0 0 0 2px ${C.PURPLE}40`
-                                                            : "none",
-                                                        transition: "box-shadow 0.2s ease, border 0.2s ease",
                                                     }}
                                                 >
-                                                    {preview && isImageSource(preview) ? (
+                                                    {isImageSource(costumeValue) ? (
                                                         <img
-                                                            src={preview}
-                                                            alt={sprite.name}
+                                                            src={costumeValue}
+                                                            alt={costumeName}
                                                             style={{
                                                                 width: "90%",
                                                                 height: "90%",
@@ -372,9 +264,7 @@ export default function StagePanel({
                                                             }}
                                                         />
                                                     ) : (
-                                                        <span style={{ fontSize: 28 }}>
-                                                            {preview || getSpriteFallback(sprite.type)}
-                                                        </span>
+                                                        <span style={{ fontSize: 28 }}>{costumeValue || "?"}</span>
                                                     )}
                                                 </div>
                                                 <div
@@ -383,31 +273,141 @@ export default function StagePanel({
                                                         fontWeight: 700,
                                                         color: isSelected ? C.PURPLE : C.TEXT,
                                                         textAlign: "center",
-                                                        maxWidth: 70,
+                                                        maxWidth: 76,
                                                         overflow: "hidden",
                                                         textOverflow: "ellipsis",
                                                         whiteSpace: "nowrap",
                                                     }}
                                                 >
-                                                    {sprite.name}
-                                                </div>
-                                                <div
-                                                    style={{
-                                                        fontSize: 9,
-                                                        color: C.MUTED,
-                                                        fontFamily: "monospace",
-                                                    }}
-                                                >
-                                                    x:{Math.round(sprite.position?.x ?? sprite.x ?? 0)} y:
-                                                    {Math.round(sprite.position?.y ?? sprite.y ?? 0)}
+                                                    {costumeName}
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                            )}
-                        </>
-                    )}
+                            ) : (
+                                <div style={{ fontSize: 12, color: C.MUTED, padding: "6px 0" }}>
+                                    No sprite is linked to {activeFile || "this file"} yet.
+                                </div>
+                            )
+                        ) : (
+                            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+                                {spriteList.map((sprite) => {
+                                    const preview = getSpritePreview(sprite);
+                                    const isSelected = sprite.id === selectedSpriteId;
+
+                                    return (
+                                        <div
+                                            key={sprite.id}
+                                            onClick={() => setSelectedSpriteId(sprite.id)}
+                                            style={{
+                                                minWidth: 86,
+                                                padding: 8,
+                                                borderRadius: 10,
+                                                border: `2px solid ${isSelected ? C.PURPLE : "#E5E7EB"}`,
+                                                background: isSelected ? C.LIGHT_PURPLE : "#F9FAFB",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "center",
+                                                gap: 6,
+                                                position: "relative",
+                                            }}
+                                        >
+                                            {spriteList.length > 1 && isSelected && (
+                                                <button
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        deleteSprite?.(sprite.id);
+                                                    }}
+                                                    style={{
+                                                        position: "absolute",
+                                                        top: -8,
+                                                        right: -8,
+                                                        width: 22,
+                                                        height: 22,
+                                                        borderRadius: "50%",
+                                                        border: "none",
+                                                        background: "#fff",
+                                                        boxShadow: "0 1px 4px rgba(15, 23, 42, 0.18)",
+                                                        color: "#EF4444",
+                                                        cursor: "pointer",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                    }}
+                                                    title={`Delete ${sprite.name}`}
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
+                                            )}
+
+                                            <div
+                                                style={{
+                                                    width: 56,
+                                                    height: 56,
+                                                    borderRadius: 8,
+                                                    background: isSelected ? "#EDE9FE" : "#fff",
+                                                    border: isSelected
+                                                        ? `2px solid ${C.PURPLE}`
+                                                        : "2px solid transparent",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    overflow: "hidden",
+                                                    boxShadow: isSelected
+                                                        ? `0 0 0 2px ${C.PURPLE}40`
+                                                        : "none",
+                                                    transition: "box-shadow 0.2s ease, border 0.2s ease",
+                                                }}
+                                            >
+                                                {preview && isImageSource(preview) ? (
+                                                    <img
+                                                        src={preview}
+                                                        alt={sprite.name}
+                                                        style={{
+                                                            width: "90%",
+                                                            height: "90%",
+                                                            objectFit: "contain",
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <span style={{ fontSize: 28 }}>
+                                                        {preview || getSpriteFallback(sprite.type)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: 11,
+                                                    fontWeight: 700,
+                                                    color: isSelected ? C.PURPLE : C.TEXT,
+                                                    textAlign: "center",
+                                                    maxWidth: 70,
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
+                                                }}
+                                            >
+                                                {sprite.name}
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: 9,
+                                                    color: C.MUTED,
+                                                    fontFamily: "monospace",
+                                                }}
+                                            >
+                                                x:{Math.round(sprite.position?.x ?? sprite.x ?? 0)} y:
+                                                {Math.round(sprite.position?.y ?? sprite.y ?? 0)}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
 
             <div

@@ -16,29 +16,35 @@ export const LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG = '__leap_custom_block_context_
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 // 0. TOOLBOX CATEGORY CLICK — PREVENT TOGGLE-CLOSE
-// Blockly default: clicking the already-selected category toggles the flyout closed.
-// The toggle is driven by Toolbox.shouldDeselectItem_ returning true when oldItem===newItem,
-// and shouldSelectItem_ returning false — causing updateFlyout_ to hide the flyout.
-// Fix: patch both methods so re-clicking a category always keeps the flyout open.
-const BlocklyToolbox = (Blockly as any).Toolbox;
-if (BlocklyToolbox && !BlocklyToolbox.prototype._leapNoTogglePatch) {
-    BlocklyToolbox.prototype._leapNoTogglePatch = true;
+//
+// Root cause (verified from blockly_compressed.js source):
+//   updateFlyout_(oldItem, newItem) only shows the flyout when:
+//     newItem && (oldItem !== newItem || newItem.isCollapsible()) && contents.length
+//   When the same non-collapsible category is clicked again:
+//     oldItem === newItem  →  (oldItem !== newItem) is false
+//     isCollapsible() is false  →  whole condition is false  →  flyout.hide() is called
+//
+// Fix: patch updateFlyout_ to always show the flyout when newItem has contents,
+// regardless of whether it is the same item as oldItem.
+const _BlocklyToolbox = (Blockly as any).Toolbox;
+if (_BlocklyToolbox && !_BlocklyToolbox.prototype._leapFlyoutPatch) {
+    _BlocklyToolbox.prototype._leapFlyoutPatch = true;
 
-    // shouldDeselectItem_: return false when same item clicked again (never deselect)
-    const _origShouldDeselect = BlocklyToolbox.prototype.shouldDeselectItem_;
-    if (_origShouldDeselect) {
-        BlocklyToolbox.prototype.shouldDeselectItem_ = function (this: any, oldItem: any, newItem: any): boolean {
-            if (oldItem && newItem && oldItem === newItem) return false; // keep selected
-            return _origShouldDeselect.call(this, oldItem, newItem);
-        };
-    }
-
-    // shouldSelectItem_: return true when same item clicked again (force re-show)
-    const _origShouldSelect = BlocklyToolbox.prototype.shouldSelectItem_;
-    if (_origShouldSelect) {
-        BlocklyToolbox.prototype.shouldSelectItem_ = function (this: any, oldItem: any, newItem: any): boolean {
-            if (oldItem && newItem && oldItem === newItem) return true; // always show
-            return _origShouldSelect.call(this, oldItem, newItem);
+    const _origUpdateFlyout = _BlocklyToolbox.prototype.updateFlyout_;
+    if (_origUpdateFlyout) {
+        _BlocklyToolbox.prototype.updateFlyout_ = function (this: any, oldItem: any, newItem: any): void {
+            // If newItem has contents, always show — even when same category re-clicked.
+            // This removes the toggle-close behavior entirely.
+            if (newItem && newItem.getContents && newItem.getContents().length) {
+                const flyout = this.flyout;
+                if (flyout) {
+                    flyout.show(newItem.getContents());
+                    if (flyout.scrollToStart) flyout.scrollToStart();
+                }
+                return;
+            }
+            // No contents (separator, label, etc.) — use original behavior
+            _origUpdateFlyout.call(this, oldItem, newItem);
         };
     }
 }

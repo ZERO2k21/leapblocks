@@ -4,10 +4,10 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React from "react";
-import FileTabs from "../editor/FileTabs";
-import MonacoEditor from "../editor/MonacoEditor";
-import StatusBar from "../editor/StatusBar";
-import TerminalPanel from "../terminal/TerminalPanel";
+import FileTabs from "../editor/fileTabs";
+import MonacoEditor from "../editor/monacoEditor";
+import StatusBar from "../editor/statusBar";
+import TerminalPanel from "../terminal/terminalPanel";
 
 export default function EditorPanel({
     projectFiles,

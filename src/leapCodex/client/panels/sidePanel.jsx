@@ -20,8 +20,8 @@ import {
     ArrowLeft,
     FilePlus,
 } from "lucide-react";
-import BackdropPanel from "./BackdropPanel";
-import FileAddMenu, { PythonSessionActionMenu } from "./FileAddMenu";
+import BackdropPanel from "./backdropPanel";
+import FileAddMenu, { PythonSessionActionMenu } from "./fileAddMenu";
 
 const C = {
     PURPLE: "#8B5CF6",
@@ -47,6 +47,9 @@ function FilesPanel({
     onOpenExtensionsPanel,
     onAddNewFile,
 }) {
+    // Show the session action menu (pip/extensions FAB) only when handlers are provided
+    const showSessionActions = Boolean(onOpenPipPanel || onOpenExtensionsPanel);
+
     return (
         <>
             <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative" }}>
@@ -65,15 +68,22 @@ function FilesPanel({
                             onClick={onAddNewFile}
                             style={{
                                 cursor: "pointer",
-                                color: C.PURPLE,
-                                padding: 2,
-                                borderRadius: 4,
+                                color: "#fff",
+                                padding: "4px 6px",
+                                borderRadius: 6,
                                 border: "none",
-                                background: "transparent",
+                                background: C.PURPLE,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                boxShadow: "0 1px 4px rgba(139,92,246,0.4)",
+                                transition: "background 0.15s",
                             }}
+                            onMouseEnter={e => { e.currentTarget.style.background = C.DARK_PURPLE; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = C.PURPLE; }}
                             title="New Python File"
                         >
-                            <FilePlus size={14} />
+                            <FilePlus size={14} strokeWidth={2.2} />
                         </button>
                     )}
                 </div>
@@ -98,16 +108,17 @@ function FilesPanel({
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 <div
                                     style={{
-                                        width: 18,
-                                        height: 18,
+                                        width: 22,
+                                        height: 22,
                                         background: "#E8F5E9",
-                                        borderRadius: 3,
+                                        borderRadius: 4,
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
+                                        flexShrink: 0,
                                     }}
                                 >
-                                    <FileText size={12} style={{ color: "#4CAF50" }} />
+                                    <FileText size={14} style={{ color: "#4CAF50" }} />
                                 </div>
                                 <span style={{ fontSize: 12, fontWeight: activeFile === file ? 600 : 400 }}>
                                     {file}
@@ -122,25 +133,37 @@ function FilesPanel({
                                     style={{
                                         cursor: "pointer",
                                         color: C.MUTED,
-                                        padding: 2,
+                                        padding: "3px 4px",
                                         borderRadius: 4,
                                         border: "none",
                                         background: "transparent",
-                                        opacity: 0.5,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        transition: "all 0.15s",
+                                    }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.color = "#ef4444";
+                                        e.currentTarget.style.background = "#fee2e2";
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.color = C.MUTED;
+                                        e.currentTarget.style.background = "transparent";
                                     }}
                                     title="Delete file"
                                 >
-                                    <Trash2 size={12} />
+                                    <Trash2 size={13} />
                                 </button>
                             )}
                         </div>
                     ))}
                 </div>
 
-                <PythonSessionActionMenu
-                    onOpenPipPanel={onOpenPipPanel}
-                    onOpenExtensionsPanel={onOpenExtensionsPanel}
-                />
+                {showSessionActions && (
+                    <PythonSessionActionMenu
+                        onOpenPipPanel={onOpenPipPanel}
+                        onOpenExtensionsPanel={onOpenExtensionsPanel}
+                    />
+                )}
                 <FileAddMenu
                     onAddPythonFiles={handleAddPythonFiles}
                     onAddImageFiles={handleAddImageFiles}
@@ -149,27 +172,31 @@ function FilesPanel({
                 />
             </div>
 
-            <div style={{ borderTop: `1px solid ${C.BORDER}`, padding: "10px 12px 6px", background: "#FAFAFA" }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: C.MUTED, letterSpacing: "0.05em" }}>
-                    MODULES/LIBRARIES
-                </span>
-            </div>
-            <div style={{ padding: "8px 12px 12px", background: "#FAFAFA", flexShrink: 0 }}>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "6px 8px",
-                        borderRadius: 4,
-                        background: "#fff",
-                        border: `1px solid ${C.BORDER}`,
-                    }}
-                >
-                    <Package size={14} style={{ color: C.PURPLE }} />
-                    <span style={{ fontSize: 12, color: C.TEXT }}>Sprite</span>
-                </div>
-            </div>
+            {showSessionActions && (
+                <>
+                    <div style={{ borderTop: `1px solid ${C.BORDER}`, padding: "10px 12px 6px", background: "#FAFAFA" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: C.MUTED, letterSpacing: "0.05em" }}>
+                            MODULES/LIBRARIES
+                        </span>
+                    </div>
+                    <div style={{ padding: "8px 12px 12px", background: "#FAFAFA", flexShrink: 0 }}>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                padding: "6px 8px",
+                                borderRadius: 4,
+                                background: "#fff",
+                                border: `1px solid ${C.BORDER}`,
+                            }}
+                        >
+                            <Package size={14} style={{ color: C.PURPLE }} />
+                            <span style={{ fontSize: 12, color: C.TEXT }}>Sprite</span>
+                        </div>
+                    </div>
+                </>
+            )}
         </>
     );
 }
@@ -627,7 +654,15 @@ export default function SidePanel({
     pipFilter,
     setPipFilter,
     handleInstall,
+    // When true, only the Files panel is shown (no sprites/backdrops/extensions/pip)
+    ideMode = false,
 }) {
+    // When sidePanel is null the sidebar is collapsed — render nothing
+    if (!sidePanel) return null;
+
+    // In IDE mode, always show the files panel only
+    const activePanelId = ideMode ? "files" : sidePanel;
+
     return (
         <div
             style={{
@@ -640,7 +675,7 @@ export default function SidePanel({
                 overflow: "hidden",
             }}
         >
-            {sidePanel === "files" && (
+            {activePanelId === "files" && (
                 <FilesPanel
                     projectFiles={projectFiles}
                     activeFile={activeFile}
@@ -651,12 +686,13 @@ export default function SidePanel({
                     handleAddCsvFiles={handleAddCsvFiles}
                     handleDeleteFile={handleDeleteFile}
                     onAddNewFile={onAddNewFile}
-                    onOpenPipPanel={() => setSidePanel?.("pip")}
-                    onOpenExtensionsPanel={() => setSidePanel?.("extensions")}
+                    // In IDE mode, don't expose pip/extensions panel switching
+                    onOpenPipPanel={ideMode ? undefined : () => setSidePanel?.("pip")}
+                    onOpenExtensionsPanel={ideMode ? undefined : () => setSidePanel?.("extensions")}
                 />
             )}
 
-            {sidePanel === "sprites" && (
+            {!ideMode && activePanelId === "sprites" && (
                 <SpritesPanel
                     assetMode={assetMode}
                     spriteFilter={spriteFilter}
@@ -670,7 +706,7 @@ export default function SidePanel({
                 />
             )}
 
-            {sidePanel === "backdrops" && (
+            {!ideMode && activePanelId === "backdrops" && (
                 <BackdropPanel
                     BACKDROP_LIBRARY={BACKDROP_LIBRARY}
                     backdrop={backdrop}
@@ -679,7 +715,7 @@ export default function SidePanel({
                 />
             )}
 
-            {sidePanel === "extensions" && (
+            {!ideMode && activePanelId === "extensions" && (
                 <ExtensionsPanel
                     EXTENSIONS={EXTENSIONS}
                     installedExtensions={installedExtensions}
@@ -688,7 +724,7 @@ export default function SidePanel({
                 />
             )}
 
-            {sidePanel === "pip" && (
+            {!ideMode && activePanelId === "pip" && (
                 <PipPanel
                     packages={packages}
                     pipFilter={pipFilter}

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
@@ -11,10 +11,10 @@ import {
     Bell, User, FileText, Terminal, BookOpen, Zap, RotateCcw,
     Copy, Clipboard, MoreVertical, GripVertical
 } from "lucide-react";
-import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
-import Logo, { CreoleapLogo } from "../leapembed/client/components/Logo";
+import { SkulptEngine } from "../../leapignite/server/engine/SkulptEngine";
+import Logo, { CreoleapLogo } from "../../leapembed/client/components/Logo";
 
-// ─── Theme Colors ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Theme Colors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const C = {
     PURPLE: "#210d4fff",
     DARK_PURPLE: "#1b075aff",
@@ -32,7 +32,7 @@ const C = {
     YELLOW: "#FACC15",
 };
 
-// ─── Default Notebook Cells ───────────────────────────────────────────────────
+// â”€â”€â”€ Default Notebook Cells â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const DEFAULT_CELLS = [
     {
         id: "cell-1",
@@ -40,7 +40,7 @@ const DEFAULT_CELLS = [
         code: `# Welcome to LeapBlocks Python Notebook!
 # Execute code cells one at a time
 
-print("Hello, World! 🌍")`,
+print("Hello, World! ðŸŒ")`,
         output: null,
         executionCount: null,
         isRunning: false,
@@ -91,7 +91,7 @@ Try adding more cells and experimenting with:
     },
 ];
 
-// ─── Main Notebook Component ──────────────────────────────────────────────────
+// â”€â”€â”€ Main Notebook Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function PythonNotebook({ onBack, onSwitchToIDE }) {
     // Notebook state
     const [cells, setCells] = useState(DEFAULT_CELLS);
@@ -117,7 +117,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
     const executionGlobals = useRef({});
     const cellRefs = useRef({});
 
-    // ── Initialize Skulpt Engine ─────────────────────────────────────────────
+    // â”€â”€ Initialize Skulpt Engine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     useEffect(() => {
         skulptRef.current = new SkulptEngine({
             onOut: (text) => {
@@ -159,7 +159,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
         });
     }, []);
 
-    // ── Execute Cell ─────────────────────────────────────────────────────────
+    // â”€â”€ Execute Cell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const executeCell = useCallback(async (cellId) => {
         const cell = cells.find(c => c.id === cellId);
         if (!cell || cell.type === "markdown") return;
@@ -214,7 +214,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
         }
     }, [cells, executionCount]);
 
-    // ── Execute All Cells ────────────────────────────────────────────────────
+    // â”€â”€ Execute All Cells â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const executeAllCells = async () => {
         for (const cell of cells) {
             if (cell.type === "code") {
@@ -223,7 +223,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
         }
     };
 
-    // ── Cell Management ──────────────────────────────────────────────────────
+    // â”€â”€ Cell Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const addCell = (afterId, type = "code") => {
         const newCell = {
             id: `cell-${Date.now()}`,
@@ -304,7 +304,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
         })));
     };
 
-    // ── Keyboard Shortcuts ───────────────────────────────────────────────────
+    // â”€â”€ Keyboard Shortcuts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     useEffect(() => {
         const handleKeyDown = (e) => {
             // Shift+Enter: Execute cell and move to next
@@ -333,7 +333,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [activeCellId, cells, executeCell]);
 
-    // ── Render Cell ──────────────────────────────────────────────────────────
+    // â”€â”€ Render Cell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const renderCell = (cell, index) => {
         const isActive = cell.id === activeCellId;
         const isMarkdown = cell.type === "markdown";
@@ -475,10 +475,10 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
         );
     };
 
-    // ── Main Render ──────────────────────────────────────────────────────────
+    // â”€â”€ Main Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     return (
         <div className="flex flex-col h-screen bg-gray-50">
-            {/* ══ TOPBAR ══════════════════════════════════════════════════════ */}
+            {/* â•â• TOPBAR â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
             <header className="h-12 flex items-center px-4 justify-between text-white z-10 shadow-md flex-shrink-0" style={{ background: "#5A2D82" }}>
                 <div className="flex items-center gap-4">
                     <button
@@ -536,7 +536,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                 </div>
             </header>
 
-            {/* ══ TOOLBAR ═════════════════════════════════════════════════════ */}
+            {/* â•â• TOOLBAR â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
             <div className="h-10 bg-white flex items-center px-4 justify-between border-b border-gray-200 flex-shrink-0">
                 <div className="flex items-center gap-2">
                     {/* Kernel Status */}
@@ -584,7 +584,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                 </div>
             </div>
 
-            {/* ══ MAIN CONTENT ════════════════════════════════════════════════ */}
+            {/* â•â• MAIN CONTENT â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
             <div className="flex-1 flex overflow-hidden">
                 {/* Notebook Cells */}
                 <div className="flex-1 overflow-auto p-6 pl-16">
@@ -630,7 +630,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                             {/* Stage canvas placeholder */}
                             <div className="absolute inset-0 flex items-center justify-center text-gray-400">
                                 <div className="text-center">
-                                    <div className="text-4xl mb-2">🤖</div>
+                                    <div className="text-4xl mb-2">ðŸ¤–</div>
                                     <div className="text-xs">Robot</div>
                                     <div className="text-xs text-gray-400 mt-1">
                                         x: {sprites[0]?.x?.toFixed(0) || 0}, y: {sprites[0]?.y?.toFixed(0) || 0}
@@ -661,16 +661,16 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                         <h3 className="text-sm font-semibold text-gray-700 mb-2">Quick Actions</h3>
                         <div className="grid grid-cols-2 gap-2">
                             <button className="px-2 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded transition">
-                                📊 Upload CSV
+                                ðŸ“Š Upload CSV
                             </button>
                             <button className="px-2 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded transition">
-                                🐍 Import .py
+                                ðŸ Import .py
                             </button>
                             <button className="px-2 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded transition">
-                                💾 Save
+                                ðŸ’¾ Save
                             </button>
                             <button className="px-2 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded transition">
-                                📥 Export
+                                ðŸ“¥ Export
                             </button>
                         </div>
                     </div>
@@ -679,3 +679,4 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
         </div>
     );
 }
+
