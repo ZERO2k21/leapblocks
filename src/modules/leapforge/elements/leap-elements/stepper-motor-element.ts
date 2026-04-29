@@ -1,6 +1,6 @@
 import { html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ElementPin } from '.';
+import { ElementPin } from './leapElements';
 import { mmToPix } from './utils/units';
 
 /**
@@ -140,7 +140,7 @@ export class StepperMotorElement extends LitElement {
     if (changedProperties.has('angle')) {
       // Compute shortest-arc delta to avoid wrap-around flips in CSS transition
       let delta = this.angle - this._lastModAngle;
-      if (delta > 180)  delta -= 360;
+      if (delta > 180) delta -= 360;
       if (delta < -180) delta += 360;
       this._cumulativeAngle += delta;
       this._lastModAngle = this.angle;

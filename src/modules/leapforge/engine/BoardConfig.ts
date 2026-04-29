@@ -3,13 +3,13 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { 
-  AVRPortConfig, 
+import {
+  AVRPortConfig,
   portAConfig, portBConfig, portCConfig, portDConfig, portEConfig, portFConfig, portGConfig, portHConfig, portJConfig, portKConfig, portLConfig,
   timer0Config, timer1Config, timer2Config,
   adcConfig, usart0Config, twiConfig, spiConfig, eepromConfig,
   AVRTimerConfig
-} from '../lib/avr8js';
+} from '../lib/avr8js/avr8js';
 
 export const portBTinyConfig: AVRPortConfig = {
   PIN: 0x16,

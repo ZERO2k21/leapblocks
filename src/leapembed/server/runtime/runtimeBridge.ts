@@ -17,8 +17,8 @@
 import * as faceapi from '@vladmandic/face-api';
 import { penManager } from '../engine/penManager';
 import { spriteManager } from '../engine/spriteManager';
-import { ObjectDetectionRuntime } from '../extensions/objectDetectionExtension';
-import { MusicRuntime } from '../extensions/musicExtension';
+import { ObjectDetectionRuntime } from '../../../leapExtensions/objectDetection/server/objectDetectionExtension';
+import { MusicRuntime } from '../../../leapExtensions/music/server/musicExtension';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FACE RUNTIME  — MediaPipe-powered, works in all modern browsers

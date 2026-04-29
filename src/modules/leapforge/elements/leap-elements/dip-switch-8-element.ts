@@ -1,6 +1,6 @@
 import { html, LitElement, svg } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ElementPin } from '.';
+import { ElementPin } from './leapElements';
 
 @customElement('leap-dip-switch-8')
 export class DipSwitch8Element extends LitElement {

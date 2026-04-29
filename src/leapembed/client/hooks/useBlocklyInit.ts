@@ -13,7 +13,7 @@ import { animationBlocks, animationToolbox } from '../../server/blocks/animation
 import { hardwareBlocks } from '../../server/blocks/hardwareBlocks';
 import { initPythonGenerator } from '../../server/generators/pythonGenerator';
 import { registerPictoBloxCategory } from '../../server/blockly/customToolbox';
-import { EXTENSIONS } from '../../server/extensions/extensionDefinitions';
+import { EXTENSIONS } from '../../../leapExtensions/server/extensionRegistry';
 
 // ─── Toolbox helpers (module-level, no state needed) ─────────────────────────
 

@@ -9,7 +9,7 @@
  */
 import { css, html, LitElement, svg } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ElementPin } from '.';
+import { ElementPin } from './leapElements';
 import { GND, i2c, VCC } from './pin';
 
 @customElement('leap-mpu6050')
@@ -18,23 +18,23 @@ export class MPU6050Element extends LitElement {
   @property({ type: Number }) accelX = 0;
   @property({ type: Number }) accelY = 0;
   @property({ type: Number }) accelZ = 1;
-  @property({ type: Number }) gyroX  = 0;
-  @property({ type: Number }) gyroY  = 0;
-  @property({ type: Number }) gyroZ  = 0;
-  @property({ type: Number }) temp   = 25;
+  @property({ type: Number }) gyroX = 0;
+  @property({ type: Number }) gyroY = 0;
+  @property({ type: Number }) gyroZ = 0;
+  @property({ type: Number }) temp = 25;
 
   /** Legacy LED property kept for backward compat */
   @property({ type: Boolean }) led1 = false;
 
   readonly pinInfo: ElementPin[] = [
-    { name: 'INT', x: 7.28,  y: 5.78, signals: [] },
-    { name: 'AD0', x: 16.9,  y: 5.78, signals: [] },
-    { name: 'XCL', x: 26.4,  y: 5.78, signals: [] },
-    { name: 'XDA', x: 36.0,  y: 5.78, signals: [] },
-    { name: 'SDA', x: 45.6,  y: 5.78, signals: [i2c('SDA')] },
-    { name: 'SCL', x: 55.2,  y: 5.78, signals: [i2c('SCL')] },
-    { name: 'GND', x: 64.8,  y: 5.78, signals: [GND()] },
-    { name: 'VCC', x: 74.4,  y: 5.78, signals: [VCC()] },
+    { name: 'INT', x: 7.28, y: 5.78, signals: [] },
+    { name: 'AD0', x: 16.9, y: 5.78, signals: [] },
+    { name: 'XCL', x: 26.4, y: 5.78, signals: [] },
+    { name: 'XDA', x: 36.0, y: 5.78, signals: [] },
+    { name: 'SDA', x: 45.6, y: 5.78, signals: [i2c('SDA')] },
+    { name: 'SCL', x: 55.2, y: 5.78, signals: [i2c('SCL')] },
+    { name: 'GND', x: 64.8, y: 5.78, signals: [GND()] },
+    { name: 'VCC', x: 74.4, y: 5.78, signals: [VCC()] },
   ];
 
   static get styles() {

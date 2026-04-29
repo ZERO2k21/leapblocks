@@ -14,7 +14,7 @@
  */
 import { css, html, LitElement, svg } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ElementPin } from '.';
+import { ElementPin } from './leapElements';
 import { analog, GND, VCC } from './pin';
 
 @customElement('leap-photoresistor-sensor')
@@ -32,10 +32,10 @@ export class PhotoresistorSensorElement extends LitElement {
   @property({ type: Boolean }) ledDO = false;
 
   readonly pinInfo: ElementPin[] = [
-    { name: 'VCC', x: 172, y: 16,   signals: [VCC()] },
-    { name: 'GND', x: 172, y: 26,   signals: [GND()] },
-    { name: 'DO',  x: 172, y: 35.8, signals: [] },
-    { name: 'AO',  x: 172, y: 45.5, signals: [analog(0)] },
+    { name: 'VCC', x: 172, y: 16, signals: [VCC()] },
+    { name: 'GND', x: 172, y: 26, signals: [GND()] },
+    { name: 'DO', x: 172, y: 35.8, signals: [] },
+    { name: 'AO', x: 172, y: 45.5, signals: [analog(0)] },
   ];
 
   static get styles() {
@@ -48,22 +48,22 @@ export class PhotoresistorSensorElement extends LitElement {
   /** Compute AO voltage from lux using LDR voltage-divider model. */
   private _luxToVoltage(lux: number): number {
     const luxSafe = Math.max(1, lux);          // avoid division by zero
-    const R_ldr   = 500000 / luxSafe;          // empirical LDR model
+    const R_ldr = 500000 / luxSafe;          // empirical LDR model
     const R_series = 10000;                    // 10kΩ series resistor
     const VCC = 5.0;
     return VCC * R_series / (R_ldr + R_series);
   }
 
   render() {
-    const lux       = Number(this.value) || 0;
+    const lux = Number(this.value) || 0;
     const threshold = Number(this.threshold) || 500;
-    const doLow     = lux < threshold;         // DO is active-LOW
-    const voltage   = this._luxToVoltage(lux);
-    const adcRaw    = Math.round((voltage / 5.0) * 1023);
+    const doLow = lux < threshold;         // DO is active-LOW
+    const voltage = this._luxToVoltage(lux);
+    const adcRaw = Math.round((voltage / 5.0) * 1023);
 
     // Derive LED states from simulation values
     const showPower = this.ledPower;
-    const showDO    = this.ledDO || doLow;
+    const showDO = this.ledDO || doLow;
 
     // LDR visual: brighter circle when more light
     const ldrBrightness = Math.round((lux / 1000) * 200);

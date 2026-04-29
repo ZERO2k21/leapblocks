@@ -1,6 +1,6 @@
 import { html, LitElement, svg } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ElementPin } from '.';
+import { ElementPin } from './leapElements';
 import { analog, spi, usart } from './pin';
 
 @customElement('leap-nano-rp2040-connect')
@@ -313,12 +313,12 @@ export class NanoRP2040ConnectElement extends LitElement {
           </filter>
 
           ${ledBuiltIn &&
-          svg`<circle cx="14.5" cy="14.5" r="3" fill="red" filter="url(#ledFilter)" />`}
+      svg`<circle cx="14.5" cy="14.5" r="3" fill="red" filter="url(#ledFilter)" />`}
 
           <!-- LED POWER -->
           <rect x="11.9" y="50.9" width="4.94" height="4.06" fill="#f1d99f" />
           ${ledPower &&
-          svg`<circle cx="14.5" cy="53" r="3" fill="#80ff80" filter="url(#ledFilter)" />`}
+      svg`<circle cx="14.5" cy="53" r="3" fill="#80ff80" filter="url(#ledFilter)" />`}
 
           <!-- LED RGB -->
           <g fill="#ffdc8e">

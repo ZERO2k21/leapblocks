@@ -1,0 +1,398 @@
+/**
+ * Neura ML Theme - Premium Deep Navy aesthetics matching the Topbar
+ */
+
+@layer base {
+  :root {
+    --neura-primary: #0a015a;     /* Deep navy blue matching topbar */
+    --neura-accent: #15027a;      /* Brighter navy */
+    --neura-hover: #1e05a3;       /* Hover navy */
+    --neura-light: #e0e7ff;       /* Light indigo */
+    --neura-dark: #080a25;        /* Very dark background */
+  }
+}
+
+/* Neura custom component styles */
+.neura-gradient {
+  background: linear-gradient(135deg, #0a015a 0%, #080a25 100%);
+}
+
+.neura-card {
+  background-color: white;
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(10, 1, 90, 0.05), 0 2px 4px -2px rgba(10, 1, 90, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(10, 1, 90, 0.05);
+}
+
+.neura-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(10, 1, 90, 0.1), 0 8px 10px -6px rgba(10, 1, 90, 0.1);
+  border-color: rgba(10, 1, 90, 0.15);
+}
+
+.neura-button-primary {
+  background: linear-gradient(135deg, #0a015a 0%, #080a25 100%);
+  color: white;
+  padding: 0.75rem 1.75rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px 0 rgba(10, 1, 90, 0.39);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.025em;
+}
+
+.neura-button-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(10, 1, 90, 0.5);
+  background: linear-gradient(135deg, #15027a 0%, #0a0d33 100%);
+}
+
+.neura-button-secondary {
+  background-color: transparent;
+  color: #0a015a;
+  padding: 0.75rem 1.75rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  border: 2px solid #0a015a;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.025em;
+}
+
+.neura-button-secondary:hover {
+  background-color: rgba(10, 1, 90, 0.05);
+  transform: translateY(-1px);
+}
+
+.neura-input {
+  border: 2px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 0.75rem 1.25rem;
+  transition: all 0.2s ease;
+  background-color: #f8fafc;
+}
+
+.neura-input:focus {
+  border-color: #0a015a;
+  background-color: white;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(10, 1, 90, 0.1);
+}
+
+/* ========================================
+   Additional Neura ML Styles (from neura-ml/)
+   ======================================== */
+
+/* Three Panel Layout */
+.three-panel-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.5rem;
+  padding: 2rem;
+  height: calc(100vh - 200px);
+}
+
+.panel {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+/* Class Card Styles */
+.class-card {
+  background: white;
+  border: 2px solid;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.class-header {
+  padding: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+.class-name-input {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  outline: none;
+  width: 100%;
+}
+
+.class-body {
+  padding: 1rem;
+}
+
+.sample-count {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.class-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Training Panel Styles */
+.btn-train {
+  width: 100%;
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  transition: background 0.2s;
+}
+
+.btn-train:hover {
+  background: #059669;
+}
+
+.btn-train:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.progress-bar {
+  background: #f3f4f6;
+  border-radius: 0.5rem;
+  height: 2rem;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progress-fill {
+  background: #10b981;
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: bold;
+  color: #1f2937;
+}
+
+/* Webcam Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.webcam-modal {
+  background: white;
+  border-radius: 1rem;
+  max-width: 640px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+.webcam-preview {
+  width: 100%;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.btn-capture {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.125rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.btn-capture:hover {
+  background: #dc2626;
+}
+
+.btn-capture.recording {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Testing Panel Styles */
+.test-video {
+  width: 100%;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.confidence-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.confidence-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.class-label {
+  min-width: 100px;
+  font-weight: 500;
+}
+
+.confidence-bar {
+  flex: 1;
+  background: #f3f4f6;
+  border-radius: 0.5rem;
+  height: 1.5rem;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  background: #0a015a;
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.confidence-value {
+  min-width: 50px;
+  text-align: right;
+  font-weight: bold;
+}
+
+/* Button Variants */
+.btn-icon {
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-badge.success {
+  background: #10b981;
+  color: white;
+}
+
+.status-badge.warning {
+  background: #f59e0b;
+  color: white;
+}
+
+.status-badge.danger {
+  background: #ef4444;
+  color: white;
+}
+
+/* Project Type Badge */
+.project-type-badge {
+  display: inline-block;
+  background: #a78bfa;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.empty-icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .three-panel-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .panel {
+    padding: 1rem;
+  }
+  
+  .webcam-modal {
+    width: 95%;
+    padding: 1rem;
+  }
+}

@@ -14,7 +14,7 @@ import { getLessonConfig } from "../../server/engine/LessonConfig";
 import { WorkspaceValidator } from "../../server/engine/WorkspaceValidator";
 import { previewActions } from "../../server/engine/previewActions";
 import { looksPreview } from "../../server/engine/looksPreview";
-import { EXTENSIONS, registerExtensions } from "../../../leapembed/server/extensions/extensionDefinitions";
+import { EXTENSIONS, registerExtensions } from "../../../leapExtensions/server/extensionRegistry";
 import { JuniorScene, JuniorSprite } from "../types";
 
 interface UseJuniorWorkspaceProps {

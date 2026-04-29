@@ -9,7 +9,7 @@
  * Copyright (C) 2021 Uri Shaked
  */
 
-import { AVRClock } from '..';
+import { AVRClock } from '../avr8js';
 import { AVRInterruptConfig, CPU } from '../cpu/cpu';
 import { u8 } from '../types';
 

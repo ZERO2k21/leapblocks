@@ -61,7 +61,7 @@ const PythonNotebook = lazy(() => {
 // @ts-ignore
 const AppInventor = lazy(() => {
     logAppTiming('AppInventor lazy load started');
-    return import('./modules/AppInventor').then(module => {
+    return import('./modules/AppInventor/appInventor').then(module => {
         logAppTiming('AppInventor lazy load completed');
         return module;
     });
@@ -87,7 +87,7 @@ const LeapForgeStudio = lazy(() => {
 
 const NeuraApp = lazy(() => {
     logAppTiming('NeuraApp lazy load started');
-    return import('./NeuraApp').then(module => {
+    return import('./leapNeura/client/neuraApp').then(module => {
         logAppTiming('NeuraApp lazy load completed');
         return module;
     });
