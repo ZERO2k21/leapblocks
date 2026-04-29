@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
@@ -2739,10 +2739,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         ]}
                     />
 
-                    {["Tutorials", "Board", "Connect"].map((menuLabel) => (
+                    {["Board", "Connect"].map((menuLabel) => (
                         <span
                             key={menuLabel}
-                            style={{ fontSize: 15, cursor: "pointer", opacity: 0.9, padding: "4px 8px", borderRadius: 4 }}
+                            style={{ fontSize: 15, fontWeight: 500, fontFamily: "'Segoe UI', Inter, system-ui, sans-serif", cursor: "pointer", opacity: 0.9, padding: "4px 8px", borderRadius: 4 }}
                             onClick={() => {
                                 if (menuLabel === "Board") {
                                     setIsBoardModalOpen(true);
@@ -2758,13 +2758,13 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         </span>
                     ))}
                 </div>
-                <div style={{ display: "flex", alignItems: "end", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     {/* Project name */}
-                    <div style={{ background: "rgba(255,255,255,0.2)", padding: "4px 10px", borderRadius: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ background: "rgba(255,255,255,0.2)", padding: "5px 10px", borderRadius: 4, display: "flex", alignItems: "center", gap: 6 }}>
                         <input
                             value={projectName}
                             onChange={(e) => setProjectName(e.target.value)}
-                            style={{ background: "transparent", border: "none", color: "#fff", width: 90, outline: "none", fontSize: 14, fontWeight: 500 }}
+                            style={{ background: "transparent", border: "none", color: "#fff", width: 90, outline: "none", fontSize: 15, fontWeight: 500 }}
                         />
                         <Save size={15} style={{ opacity: 0.8, cursor: "pointer" }} onClick={handleSaveProject} title="Save Project" />
                     </div>
@@ -2814,7 +2814,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             Upload
                         </button>
                     </div>
-                    <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)" }} />
+                    <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.3)", margin: "0 2px" }} />
                     {/* Upload Firmware button */}
                     <button
                         onClick={() => {
@@ -2824,7 +2824,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             }
                             handleUploadFirmware();
                         }}
-                        style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 11, fontWeight: 500 }}
+                        style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 15, fontWeight: 600 }}
                     >
                         <Upload size={15} /> {workflowMode === "upload" ? "Upload Code" : "Open Upload"}
                     </button>
@@ -2836,8 +2836,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <Settings size={15} />
                         </div>
                     </div>
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#FF9800", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, fontWeight: "bold" }}>
-                    </div>
+
                 </div>
 
                 {/* CREOLEAP Right Logo */}
@@ -3426,7 +3425,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                     isRunning={isRunning}
                                     onRun={handleRun}
                                     onCursorChange={setEditorCursor}
-                                    editorOptions={{ theme: "vs-dark" }}
+                                    editorOptions={{ theme: "vs" }}
                                 />
                                 <StatusBar
                                     editorCursor={editorCursor}

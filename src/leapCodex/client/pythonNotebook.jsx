@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
@@ -426,7 +426,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                         defaultLanguage={isMarkdown ? "markdown" : "python"}
                         value={cell.code}
                         onChange={(value) => updateCellCode(cell.id, value || "")}
-                        theme="vs-dark"
+                        theme="vs"
                         options={{
                             minimap: { enabled: false },
                             fontSize: 14,
@@ -519,9 +519,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                     </button>
                     <Bell size={18} className="cursor-pointer opacity-80 hover:opacity-100" />
                     <Settings size={18} className="cursor-pointer opacity-80 hover:opacity-100" />
-                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                        <User size={16} />
-                    </div>
+
 
                     {/* CREOLEAP Right Logo */}
                     <div style={{

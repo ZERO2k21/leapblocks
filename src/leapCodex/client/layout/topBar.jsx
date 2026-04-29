@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
@@ -63,7 +63,7 @@ function Divider() {
     );
 }
 
-// ─── Nav text item (File, Edit, Tutorials…) ───────────────────────────────────
+// ─── Nav text item (File, Edit, Board…) ───────────────────────────────────────
 function NavItem({ label, onClick }) {
     const [hovered, setHovered] = React.useState(false);
     return (
@@ -192,7 +192,7 @@ export default function TopBar({
                 <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
                     <NavItem label="File" />
                     <NavItem label="Edit" />
-                    <NavItem label="Tutorials" />
+
                     <NavItem label="Board" />
                     <NavItem label="Connect" />
                 </div>

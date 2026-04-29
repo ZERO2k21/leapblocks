@@ -77,9 +77,9 @@ export default function TerminalPanel({
             </div>
 
             {activePanel === "terminal" && (
-                <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6, background: "#1E1E1E" }}>
+                <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6, background: "#fff" }}>
                     {terminalOutput.length === 0 ? (
-                        <div style={{ color: "#6A9955", fontStyle: "italic" }}>
+                        <div style={{ color: "#22863A", fontStyle: "italic" }}>
                             <div>// LeapBlocks Python Terminal</div>
                             <div>// Click Run or Run All to execute</div>
                             <div>// Open the REPL tab for interactive commands</div>
@@ -88,12 +88,12 @@ export default function TerminalPanel({
                         <div
                             key={i}
                             style={{
-                                color: log.type === "error" ? "#F44747"
-                                    : log.type === "success" ? "#6A9955"
-                                        : log.type === "info" ? (log.text.includes("[sprite]") || log.text.includes("->") || log.text.includes("[costume]")) ? "#9CDCFE" : "#569CD6"
-                                            : log.type === "warning" ? "#FFD700"
-                                                : log.type === "repl-in" ? "#C586C0"
-                                                    : "#D4D4D4",
+                                color: log.type === "error" ? "#D73A49"
+                                     : log.type === "success" ? "#22863A"
+                                         : log.type === "info" ? (log.text.includes("[sprite]") || log.text.includes("->") || log.text.includes("[costume]")) ? "#0550AE" : "#005CC5"
+                                             : log.type === "warning" ? "#E36209"
+                                                 : log.type === "repl-in" ? "#6F42C1"
+                                                     : "#24292E",
                                 marginBottom: 2,
                                 whiteSpace: "pre-wrap",
                                 wordBreak: "break-word",
@@ -101,13 +101,13 @@ export default function TerminalPanel({
                                 paddingLeft: (log.text.includes("[sprite]") || log.text.includes("->") || log.text.includes("[costume]")) ? "8px" : (log.type === "repl-in" ? 0 : 4),
                             }}
                         >
-                            {log.type === "repl-in" ? <span style={{ userSelect: "none", color: "#6A9955" }}>{">>> "}</span> : null}
+                            {log.type === "repl-in" ? <span style={{ userSelect: "none", color: "#22863A" }}>{">>> "}</span> : null}
                             {log.type === "error" && !log.text.startsWith("Execution Error") ? <span style={{ color: "#F44747" }}>! </span> : null}
                             {log.text}
                         </div>
                     ))}
                     {isRunning && (
-                        <div style={{ color: "#569CD6", marginTop: 4 }}>
+                        <div style={{ color: "#005CC5", marginTop: 4 }}>
                             <span style={{ animation: "blink 1s infinite" }}>|</span> Running...
                         </div>
                     )}
