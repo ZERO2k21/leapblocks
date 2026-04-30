@@ -23,7 +23,7 @@ export class PythonManager {
 
     public async runCode(code: string) {
         this.stopProcess(this.currentProcess);
-        
+
         // Write code to a temp file
         const tempPath = path.join(app.getPath('temp'), 'leapblocks_temp.py');
         fs.writeFileSync(tempPath, code);
@@ -35,7 +35,7 @@ export class PythonManager {
 
     public async startRepl() {
         this.stopProcess(this.replProcess);
-        
+
         // Python -i runs interactive REPL
         // We use -u for unbuffered output to ensure instant streaming
         this.replProcess = spawn('python', ['-i', '-u']);
@@ -74,15 +74,25 @@ export class PythonManager {
     }
 
     private pipeProcess(proc: ChildProcessWithoutNullStreams, outEvent: string, errEvent: string, exitEvent: string) {
+        let stderrBuffer = '';
+
         proc.stdout.on('data', (data) => {
             this.mainWindow?.webContents.send(outEvent, data.toString());
         });
 
         proc.stderr.on('data', (data) => {
+            // Buffer stderr to capture complete error messages
+            stderrBuffer += data.toString();
+
+            // Send immediately for real-time feedback, but also buffer for complete parsing
             this.mainWindow?.webContents.send(errEvent, data.toString());
         });
 
         proc.on('close', (code) => {
+            // Send complete buffered error for better parsing
+            if (stderrBuffer) {
+                this.mainWindow?.webContents.send(errEvent + '-complete', stderrBuffer);
+            }
             this.mainWindow?.webContents.send(exitEvent, code);
         });
     }

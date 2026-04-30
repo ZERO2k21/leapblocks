@@ -84,28 +84,53 @@ export default function TerminalPanel({
                             <div>// Click Run or Run All to execute</div>
                             <div>// Open the REPL tab for interactive commands</div>
                         </div>
-                    ) : terminalOutput.map((log, i) => (
-                        <div
-                            key={i}
-                            style={{
-                                color: log.type === "error" ? "#D73A49"
-                                     : log.type === "success" ? "#22863A"
-                                         : log.type === "info" ? (log.text.includes("[sprite]") || log.text.includes("->") || log.text.includes("[costume]")) ? "#0550AE" : "#005CC5"
-                                             : log.type === "warning" ? "#E36209"
-                                                 : log.type === "repl-in" ? "#6F42C1"
-                                                     : "#24292E",
-                                marginBottom: 2,
-                                whiteSpace: "pre-wrap",
-                                wordBreak: "break-word",
-                                borderLeft: (log.text.includes("[sprite]") || log.text.includes("->") || log.text.includes("[costume]")) ? "2px solid #9CDCFE" : "none",
-                                paddingLeft: (log.text.includes("[sprite]") || log.text.includes("->") || log.text.includes("[costume]")) ? "8px" : (log.type === "repl-in" ? 0 : 4),
-                            }}
-                        >
-                            {log.type === "repl-in" ? <span style={{ userSelect: "none", color: "#22863A" }}>{">>> "}</span> : null}
-                            {log.type === "error" && !log.text.startsWith("Execution Error") ? <span style={{ color: "#F44747" }}>! </span> : null}
-                            {log.text}
-                        </div>
-                    ))}
+                    ) : terminalOutput.map((log, i) => {
+                        // Enhanced error display styling
+                        const isErrorHeader = log.text.includes('═══════') || log.text.startsWith('❌');
+                        const isCodeSnippet = log.text.startsWith('    ') && log.type === 'error';
+                        const isPointer = log.text.trim().startsWith('^') && log.type === 'error';
+                        const isSuggestion = log.text.includes('💡') || log.type === 'warning';
+
+                        return (
+                            <div
+                                key={i}
+                                style={{
+                                    color: log.type === "error" ? (isErrorHeader ? "#D73A49" : isCodeSnippet ? "#E36209" : "#D73A49")
+                                        : log.type === "success" ? "#22863A"
+                                            : log.type === "info" ? (log.text.includes("[sprite]") || log.text.includes("->") || log.text.includes("[costume]") || log.text.includes("📄") || log.text.includes("📍") || log.text.includes("💡") || log.text.includes("📚")) ? "#0550AE" : "#005CC5"
+                                                : log.type === "warning" ? "#E36209"
+                                                    : log.type === "repl-in" ? "#6F42C1"
+                                                        : "#24292E",
+                                    marginBottom: 2,
+                                    whiteSpace: "pre-wrap",
+                                    wordBreak: "break-word",
+                                    borderLeft: (log.text.includes("[sprite]") || log.text.includes("->") || log.text.includes("[costume]")) ? "2px solid #9CDCFE"
+                                        : isCodeSnippet ? "3px solid #F97583"
+                                            : isSuggestion ? "3px solid #FFAB70"
+                                                : "none",
+                                    paddingLeft: (log.text.includes("[sprite]") || log.text.includes("->") || log.text.includes("[costume]")) ? "8px"
+                                        : isCodeSnippet ? "12px"
+                                            : isSuggestion ? "12px"
+                                                : (log.type === "repl-in" ? 0 : 4),
+                                    background: isErrorHeader ? "#FFF5F5"
+                                        : isCodeSnippet ? "#FFF8F0"
+                                            : isSuggestion ? "#FFFBF0"
+                                                : "transparent",
+                                    padding: isErrorHeader ? "4px 8px"
+                                        : isCodeSnippet ? "4px 12px"
+                                            : isSuggestion ? "4px 12px"
+                                                : "2px 4px",
+                                    borderRadius: isErrorHeader || isCodeSnippet || isSuggestion ? "4px" : "0",
+                                    fontWeight: isErrorHeader ? 700 : (log.text.includes("📄") || log.text.includes("📍") || log.text.includes("💡") || log.text.includes("📚")) ? 600 : 400,
+                                    fontSize: isErrorHeader ? 14 : 13,
+                                }}
+                            >
+                                {log.type === "repl-in" ? <span style={{ userSelect: "none", color: "#22863A" }}>{">>> "}</span> : null}
+                                {log.type === "error" && !log.text.startsWith("Execution Error") && !isErrorHeader && !isCodeSnippet && !log.text.includes("═══") ? <span style={{ color: "#F44747" }}>! </span> : null}
+                                {log.text}
+                            </div>
+                        );
+                    })}
                     {isRunning && (
                         <div style={{ color: "#005CC5", marginTop: 4 }}>
                             <span style={{ animation: "blink 1s infinite" }}>|</span> Running...

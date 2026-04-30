@@ -1205,7 +1205,29 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             addLog(data.replace(/\n$/, ""), "log");
         });
         window.electronAPI.onPythonError((data) => {
+            // For real-time streaming, show raw error
             addLog(data, "error");
+        });
+
+        // Listen for complete error message for better parsing
+        window.electronAPI.onPythonErrorComplete?.((errorText) => {
+            try {
+                const parsed = parsePythonError(errorText);
+                const formattedLogs = formatParsedError(parsed);
+
+                // Clear the raw error messages and replace with formatted version
+                setTerminalOutput(prev => {
+                    // Remove recent raw error messages
+                    const filtered = prev.filter((log, idx) => {
+                        if (idx < prev.length - 20) return true; // Keep older logs
+                        return log.type !== 'error' || !errorText.includes(log.text);
+                    });
+                    return [...filtered, ...formattedLogs];
+                });
+            } catch (e) {
+                console.error('Error parsing Python error:', e);
+                // Fallback to showing raw error
+            }
         });
         window.electronAPI.onPythonExit((code) => {
             if (code === 0) {
@@ -1360,33 +1382,245 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         return formatted;
     };
 
+    // ── Python Error Parser (VS Code-style) ───────────────────────────────────
+    const parsePythonError = (errorText) => {
+        const lines = errorText.split('\n');
+        const parsed = {
+            type: 'Unknown Error',
+            message: '',
+            file: null,
+            line: null,
+            column: null,
+            traceback: [],
+            codeSnippet: null,
+            suggestion: null
+        };
+
+        // Parse traceback
+        let inTraceback = false;
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+
+            // Detect traceback start
+            if (line.includes('Traceback (most recent call last)')) {
+                inTraceback = true;
+                continue;
+            }
+
+            // Parse file and line number
+            const fileMatch = line.match(/File "(.+)", line (\d+)/);
+            if (fileMatch) {
+                const [, file, lineNum] = fileMatch;
+                parsed.file = file;
+                parsed.line = parseInt(lineNum);
+
+                // Next line usually contains the code snippet
+                if (i + 1 < lines.length) {
+                    parsed.codeSnippet = lines[i + 1].trim();
+                }
+
+                // Add to traceback
+                parsed.traceback.push({
+                    file,
+                    line: parseInt(lineNum),
+                    code: i + 1 < lines.length ? lines[i + 1].trim() : null
+                });
+                continue;
+            }
+
+            // Parse error type and message
+            const errorMatch = line.match(/^(\w+Error|SyntaxError|IndentationError|TabError|NameError|TypeError|ValueError|AttributeError|ImportError|ModuleNotFoundError|KeyError|IndexError|ZeroDivisionError|FileNotFoundError|PermissionError|RuntimeError|RecursionError|MemoryError|KeyboardInterrupt): (.+)$/);
+            if (errorMatch) {
+                parsed.type = errorMatch[1];
+                parsed.message = errorMatch[2];
+
+                // Extract column info if present
+                const columnMatch = parsed.message.match(/\(line (\d+), column (\d+)\)/);
+                if (columnMatch) {
+                    parsed.column = parseInt(columnMatch[2]);
+                }
+            }
+        }
+
+        // Get suggestion based on error type
+        parsed.suggestion = getErrorSuggestion(parsed.type + ': ' + parsed.message);
+
+        return parsed;
+    };
+
+    // ── Format Parsed Error for Display ───────────────────────────────────────
+    const formatParsedError = (parsed) => {
+        const logs = [];
+
+        // Header
+        logs.push({ type: 'error', text: '═══════════════════════════════════════════════════════' });
+        logs.push({ type: 'error', text: `❌ ${parsed.type}` });
+        logs.push({ type: 'error', text: '═══════════════════════════════════════════════════════' });
+
+        // Message
+        if (parsed.message) {
+            logs.push({ type: 'error', text: '' });
+            logs.push({ type: 'error', text: `Message: ${parsed.message}` });
+        }
+
+        // Location
+        if (parsed.file && parsed.line) {
+            logs.push({ type: 'error', text: '' });
+            logs.push({ type: 'info', text: `📄 File: ${parsed.file}` });
+            logs.push({ type: 'info', text: `📍 Line: ${parsed.line}${parsed.column ? `, Column: ${parsed.column}` : ''}` });
+        }
+
+        // Code snippet
+        if (parsed.codeSnippet) {
+            logs.push({ type: 'error', text: '' });
+            logs.push({ type: 'info', text: '💡 Problematic code:' });
+            logs.push({ type: 'error', text: `    ${parsed.codeSnippet}` });
+            if (parsed.column) {
+                const pointer = ' '.repeat(4 + parsed.column - 1) + '^';
+                logs.push({ type: 'error', text: pointer });
+            }
+        }
+
+        // Traceback (if multiple frames)
+        if (parsed.traceback.length > 1) {
+            logs.push({ type: 'error', text: '' });
+            logs.push({ type: 'info', text: '📚 Call Stack:' });
+            parsed.traceback.forEach((frame, idx) => {
+                logs.push({ type: 'info', text: `  ${idx + 1}. ${frame.file}:${frame.line}` });
+                if (frame.code) {
+                    logs.push({ type: 'log', text: `     ${frame.code}` });
+                }
+            });
+        }
+
+        // Suggestion
+        if (parsed.suggestion) {
+            logs.push({ type: 'error', text: '' });
+            logs.push({ type: 'warning', text: '💡 Suggestion:' });
+            logs.push({ type: 'warning', text: `   ${parsed.suggestion}` });
+        }
+
+        logs.push({ type: 'error', text: '═══════════════════════════════════════════════════════' });
+
+        return logs;
+    };
+
     // ── Error Suggestion Helper ───────────────────────────────────────────────
     const getErrorSuggestion = (errorMsg) => {
         const msg = errorMsg.toLowerCase();
 
+        // NameError
         if (msg.includes('nameerror') || msg.includes('not defined')) {
+            if (msg.includes('name') && msg.includes('is not defined')) {
+                const match = errorMsg.match(/name '(\w+)' is not defined/i);
+                if (match) {
+                    return `Variable or function '${match[1]}' is not defined. Check spelling and make sure it's defined before use.`;
+                }
+            }
             return "Check if the variable or function name is spelled correctly and defined before use.";
         }
+
+        // SyntaxError
         if (msg.includes('syntaxerror') || msg.includes('parseerror')) {
+            if (msg.includes('invalid syntax')) {
+                return "Check for missing colons (:), parentheses, brackets, or quotes. Common issues: missing ':' after if/for/while/def, unclosed strings or brackets.";
+            }
+            if (msg.includes('unexpected eof')) {
+                return "Unexpected end of file. You might have unclosed parentheses, brackets, or quotes.";
+            }
             return "Check for missing colons (:), parentheses, or quotes in your code.";
         }
-        if (msg.includes('typeerror')) {
-            return "Check if you're using the correct data types in your operation.";
-        }
+
+        // IndentationError
         if (msg.includes('indentationerror')) {
-            return "Make sure your code indentation is consistent (use 4 spaces).";
-        }
-        if (msg.includes('attributeerror')) {
-            return "Check if the object has the method or attribute you're trying to use.";
-        }
-        if (msg.includes('importerror') || msg.includes('module not found')) {
-            return "The module might not be available in Skulpt. Try using built-in modules like math, random, or time.";
-        }
-        if (msg.includes('timeout') || msg.includes('too long')) {
-            return "Your code might have an infinite loop. Check your while/for loops.";
+            if (msg.includes('expected an indented block')) {
+                return "Python expected an indented block after a colon (:). Add at least one indented line after if/for/while/def/class statements.";
+            }
+            if (msg.includes('unexpected indent')) {
+                return "Unexpected indentation. Make sure you're not mixing tabs and spaces, and indentation matches the code structure.";
+            }
+            return "Make sure your code indentation is consistent. Use 4 spaces per level (don't mix tabs and spaces).";
         }
 
-        return null;
+        // TypeError
+        if (msg.includes('typeerror')) {
+            if (msg.includes('unsupported operand type')) {
+                return "You're trying to use an operator with incompatible types. Example: can't add a string and a number directly.";
+            }
+            if (msg.includes('not callable')) {
+                return "You're trying to call something that isn't a function. Check if you accidentally added () to a variable.";
+            }
+            if (msg.includes('missing') && msg.includes('required positional argument')) {
+                return "Function call is missing required arguments. Check the function definition to see what parameters it needs.";
+            }
+            return "Check if you're using the correct data types in your operation.";
+        }
+
+        // ValueError
+        if (msg.includes('valueerror')) {
+            if (msg.includes('invalid literal for int()')) {
+                return "Can't convert the value to an integer. Make sure you're passing a valid number string to int().";
+            }
+            if (msg.includes('could not convert string to float')) {
+                return "Can't convert the value to a float. Make sure you're passing a valid number string to float().";
+            }
+            return "The value provided is not valid for this operation. Check the input data.";
+        }
+
+        // AttributeError
+        if (msg.includes('attributeerror')) {
+            if (msg.includes('has no attribute')) {
+                const match = errorMsg.match(/'(\w+)' object has no attribute '(\w+)'/i);
+                if (match) {
+                    return `The ${match[1]} object doesn't have a '${match[2]}' attribute or method. Check the documentation or use dir() to see available attributes.`;
+                }
+            }
+            return "Check if the object has the method or attribute you're trying to use.";
+        }
+
+        // ImportError / ModuleNotFoundError
+        if (msg.includes('importerror') || msg.includes('modulenotfounderror') || msg.includes('module not found')) {
+            const match = errorMsg.match(/No module named '(\w+)'/i);
+            if (match) {
+                return `Module '${match[1]}' is not installed or not available. Try installing it with pip or check if it's a built-in module.`;
+            }
+            return "The module might not be installed. Use pip to install it, or check if it's available in your Python environment.";
+        }
+
+        // IndexError
+        if (msg.includes('indexerror')) {
+            if (msg.includes('list index out of range')) {
+                return "You're trying to access a list index that doesn't exist. Check the list length and make sure your index is valid.";
+            }
+            return "Index is out of range. Check that your index is within the bounds of the list/string.";
+        }
+
+        // KeyError
+        if (msg.includes('keyerror')) {
+            return "Dictionary key doesn't exist. Use .get() method or check if the key exists with 'in' before accessing.";
+        }
+
+        // ZeroDivisionError
+        if (msg.includes('zerodivisionerror')) {
+            return "Division by zero. Check your denominator to make sure it's not zero before dividing.";
+        }
+
+        // FileNotFoundError
+        if (msg.includes('filenotfounderror')) {
+            return "File not found. Check the file path and make sure the file exists.";
+        }
+
+        // RecursionError
+        if (msg.includes('recursionerror') || msg.includes('maximum recursion depth')) {
+            return "Maximum recursion depth exceeded. Your recursive function might not have a proper base case, or you have an infinite loop.";
+        }
+
+        // Timeout / Infinite Loop
+        if (msg.includes('timeout') || msg.includes('too long')) {
+            return "Your code might have an infinite loop. Check your while/for loops and make sure they have proper exit conditions.";
+        }
+
+        return "Check the error message above for details. Read the line number and error type carefully.";
     };
 
     // ── REPL ──────────────────────────────────────────────────────────────────
