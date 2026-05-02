@@ -186,6 +186,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     onPythonOutput: (callback: (data: string) => void) => ipcRenderer.on('python-output', (_, msg) => callback(msg)),
     onPythonError: (callback: (data: string) => void) => ipcRenderer.on('python-error', (_, msg) => callback(msg)),
+    onPythonErrorComplete: (callback: (data: string) => void) => ipcRenderer.on('python-error-complete', (_, msg) => callback(msg)),
     onPythonExit: (callback: (code: number) => void) => ipcRenderer.on('python-exit', (_, code) => callback(code)),
     onPythonReplOutput: (callback: (data: string) => void) => ipcRenderer.on('python-repl-output', (_, msg) => callback(msg)),
     onPythonReplError: (callback: (data: string) => void) => ipcRenderer.on('python-repl-error', (_, msg) => callback(msg)),
@@ -250,6 +251,7 @@ declare global {
 
             onPythonOutput: (callback: (data: string) => void) => void;
             onPythonError: (callback: (data: string) => void) => void;
+            onPythonErrorComplete: (callback: (data: string) => void) => void;
             onPythonExit: (callback: (code: number) => void) => void;
             onPythonReplOutput: (callback: (data: string) => void) => void;
             onPythonReplError: (callback: (data: string) => void) => void;

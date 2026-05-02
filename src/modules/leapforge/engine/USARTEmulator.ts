@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { AVRUSART } from '../lib/avr8js';
+import { AVRUSART } from '../lib/avr8js/avr8js';
 
 /**
  * Intercepts USART signals from the AVR and emits them to JS.

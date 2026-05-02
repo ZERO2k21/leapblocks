@@ -1,6 +1,6 @@
 import { html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ElementPin } from '.';
+import { ElementPin } from './leapElements';
 
 @customElement('leap-rgb-led')
 export class RGBLedElement extends LitElement {

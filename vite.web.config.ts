@@ -77,8 +77,8 @@ export default defineConfig({
 
           // Audio engine
           'audio': [
-            './src/scratch-audio/src/AudioEngine.js',
-            './src/scratch-audio/src/SoundBank.js',
+            './src/leapAudio/src/audioEngine.js',
+            './src/leapAudio/src/soundBank.js',
           ],
         },
       },

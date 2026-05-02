@@ -22,7 +22,7 @@
  *   slave.attach();   // hooks spi.onByte
  *   slave.detach();   // restores default spi.onByte
  */
-import { AVRSPI } from '../lib/avr8js';
+import { AVRSPI } from '../lib/avr8js/avr8js';
 import { ILI9341Emulator, ILI9341UpdateCallback } from './ILI9341Emulator';
 
 export class ILI9341SPISlave {

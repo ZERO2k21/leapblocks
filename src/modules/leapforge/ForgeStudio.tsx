@@ -7,7 +7,7 @@ import React, { useState, lazy, Suspense, useRef, useEffect } from 'react';
 import { SerialMonitor } from './components/Editor/SerialMonitor';
 import { Home, Save, FolderOpen, Settings, Play, Square, Code, Terminal, Wifi } from 'lucide-react';
 // Register official leap elements
-import './elements/leap-elements';
+import './elements/leap-elements/leapElements';
 import './ForgeStudio.css';
 import { useForgeStore } from './store/useForgeStore';
 import { BoardSelector, BoardType } from './components/BoardSelector';
@@ -428,7 +428,7 @@ void loop() {
         justifyContent: 'space-between'
       }}>
         <div style={{ display: 'flex', gap: '15px' }}>
-          <span>Engine: <b style={{ color: '#BEF264' }}>LeapLab Simulator v1.0</b></span>
+          <span>Engine: <b style={{ color: '#BEF264' }}>leapembed Simulator v1.0</b></span>
           {isSimulating && board !== 'esp32' && <span style={{ color: '#ef4444' }}>● AVR Simulation Live</span>}
           {isSimulating && board === 'esp32' && (
             <span style={{ color: '#ef4444' }}>

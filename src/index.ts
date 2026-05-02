@@ -7,9 +7,9 @@ import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { spawn } from 'child_process';
-import { SerialManager } from './serial/SerialManager';
-import { ArduinoUploader } from './upload/ArduinoUploader';
-import { PythonManager } from './pythonBackend/PythonManager';
+import { SerialManager } from './leapembed/server/serial/serialManager';
+import { ArduinoUploader } from './leapembed/server/upload/arduinoUploader';
+import { PythonManager } from './leapCodex/server/pythonManager';
 import { join } from 'path';
 
 // ── ESP32 QEMU simulation imports ────────────────────────────────────────

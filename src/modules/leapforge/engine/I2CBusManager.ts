@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { TWIEventHandler } from '../lib/avr8js';
+import { TWIEventHandler } from '../lib/avr8js/avr8js';
 import { simulationRunner } from './SimulationRunner';
 
 /**

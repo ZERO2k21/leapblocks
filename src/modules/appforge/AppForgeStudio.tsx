@@ -9,7 +9,7 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import React, { useState, lazy, Suspense } from 'react';
 import { Home } from 'lucide-react';
-import Logo, { CreoleapLogo } from '../../components/Logo';
+import Logo, { CreoleapLogo } from '../../leapembed/client/components/Logo';
 import './AppForgeStudio.css';
 import { IgniteTopbar } from '../leapforge/components/Layout/IgniteTopbar';
 
@@ -97,7 +97,7 @@ export default function AppForgeStudio({ onBack }: AppForgeProps) {
 
   return (
     <div className="af-root">
-      <IgniteTopbar 
+      <IgniteTopbar
         title={project.appName}
         onTitleChange={(val) => updateProject({ appName: val })}
         onBack={onBack}

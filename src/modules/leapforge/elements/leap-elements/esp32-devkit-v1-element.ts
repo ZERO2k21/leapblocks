@@ -1,6 +1,6 @@
 import { html, LitElement, svg } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ElementPin } from '.';
+import { ElementPin } from './leapElements';
 import { i2c, spi, usart } from './pin';
 
 @customElement('leap-esp32-devkit-v1')
@@ -155,7 +155,7 @@ export class ESP32DevkitV1Element extends LitElement {
           <rect x="35" y="108" width="3.83" height="9.3" fill="#e5e5e5" />
           <rect x="35" y="111" width="3.83" height="5.31" fill="#f5ecde" />
           ${ledPower &&
-          svg`<circle cx="37" cy="112.5" r="4" fill="red" filter="url(#ledFilter)" />`}
+      svg`<circle cx="37" cy="112.5" r="4" fill="red" filter="url(#ledFilter)" />`}
 
           <rect x="69.5" y="108" width="3.83" height="9.3" fill="#e5e5e5" />
           <rect x="69.5" y="110" width="3.83" height="5.31" fill="#f5ecde" />

@@ -1,6 +1,6 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ElementPin } from '.';
+import { ElementPin } from './leapElements';
 import { GND, VCC } from './pin';
 
 @customElement('leap-ky-040')

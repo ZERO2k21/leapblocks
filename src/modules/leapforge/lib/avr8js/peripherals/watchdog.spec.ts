@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { AVRClock, clockConfig } from '..';
+import { AVRClock, clockConfig } from '../avr8js';
 import { CPU } from '../cpu/cpu';
 import { asmProgram, TestProgramRunner } from '../utils/test-utils';
 import { AVRWatchdog, watchdogConfig } from './watchdog';
