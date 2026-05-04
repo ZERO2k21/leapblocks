@@ -99,5 +99,18 @@ export default defineConfig({
       '/transpile': 'http://localhost:3001',
       '/libraries': 'http://localhost:3001',
     },
+    watch: {
+      // Exclude arduino-cli data/staging dirs and temp files from Vite's watcher
+      // so compilation doesn't trigger a page reload
+      ignored: [
+        '**/data/**',
+        '**/forge-lib/data/**',
+        '**/forge-lib/staging/**',
+        '**/node_modules/**',
+        '**/.git/**',
+        '**/tmp/**',
+        '**/temp/**',
+      ],
+    },
   },
 });

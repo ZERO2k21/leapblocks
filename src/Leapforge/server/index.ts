@@ -97,15 +97,29 @@ const getForgePaths = () => {
 
 const CLI_BIN = getCLIBinary();
 const FORGE = getForgePaths();
+
+// Write arduino-cli.yaml with absolute paths so it works regardless of CWD
+// and keeps all data inside forge-lib/ (outside Vite's watch scope)
+(function ensureForgeConfig() {
+  const forgeLib = FORGE.userDir;
+  const dataDir = path.join(forgeLib, 'data');
+  const stagingDir = path.join(forgeLib, 'staging');
+  const libsDir = path.join(forgeLib, 'libraries');
+  [dataDir, stagingDir, libsDir].forEach(d => { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }); });
+
+  const yaml = `directories:\n  data: ${dataDir.replace(/\\/g, '/')}\n  downloads: ${stagingDir.replace(/\\/g, '/')}\n  user: ${forgeLib.replace(/\\/g, '/')}\n`;
+  fs.writeFileSync(FORGE.configFile, yaml, 'utf8');
+  console.log(`[SERVER] arduino-cli.yaml written with absolute paths → data: ${dataDir}`);
+})();
 let isInitialized = false;
 let avrReady = false;   // set true as soon as AVR core is confirmed — allows AVR compiles immediately
 let esp32Ready = false; // set true when ESP32 core is ready
 
-// Helper
-const runCommand = (cmd: string): Promise<{ stdout: string; stderr: string }> => {
+// Helper — long timeout variant for core installs (ESP32 is ~400 MB)
+const runCommandLong = (cmd: string, timeoutMs = 900_000): Promise<{ stdout: string; stderr: string }> => {
   console.log(`[EXEC] ${cmd}`);
   return new Promise((resolve, reject) => {
-    exec(cmd, { timeout: 60000 }, (err, stdout, stderr) => {
+    exec(cmd, { timeout: timeoutMs }, (err, stdout, stderr) => {
       if (err) {
         console.error(`[EXEC ERROR] Code: ${err.code}`);
         let errorMessage = stderr || stdout || err.message;
@@ -119,6 +133,11 @@ const runCommand = (cmd: string): Promise<{ stdout: string; stderr: string }> =>
       }
     });
   });
+};
+
+// Helper — standard timeout for most commands
+const runCommand = (cmd: string): Promise<{ stdout: string; stderr: string }> => {
+  return runCommandLong(cmd, 60_000);
 };
 
 /**
@@ -161,12 +180,15 @@ const initCores = async () => {
     );
     if (!hasEsp32) {
       console.log('[SERVER] Core esp32:esp32 not found. Installing in background (this may take a few minutes)...');
-      runCommand(
+      // Use 15-minute timeout — ESP32 core is ~400 MB
+      runCommandLong(
         `${CLI_BIN} core update-index --config-file "${FORGE.configFile}" --additional-urls ` +
-        `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
-      ).then(() => runCommand(
+        `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`,
+        120_000
+      ).then(() => runCommandLong(
         `${CLI_BIN} core install esp32:esp32 --config-file "${FORGE.configFile}" --additional-urls ` +
-        `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
+        `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`,
+        900_000  // 15 minutes
       )).then(() => {
         esp32Ready = true;
         console.log('[SERVER] ✓ Core esp32:esp32 installed successfully.');
@@ -186,13 +208,36 @@ const initCores = async () => {
   }
 };
 
+// GET /status — lets the client check if the server is ready
+app.get('/status', (_req, res) => {
+  res.json({
+    ready: isInitialized,
+    avrReady,
+    esp32Ready,
+    message: isInitialized
+      ? `Ready. AVR: ${avrReady}, ESP32: ${esp32Ready}`
+      : 'Server is initializing — installing Arduino cores...',
+  });
+});
+
 // POST /compile
 app.post('/compile', async (req, res) => {
-  if (!isInitialized) {
-    return res.status(503).json({ success: false, errors: ['Server is still initializing. Please wait.'] });
-  }
-
   const { code, board = 'arduino:avr:uno', libraries = [] } = req.body;
+  const isESP32Board = typeof board === 'string' && board.startsWith('esp32:');
+
+  // Block only if the required core isn't ready yet
+  if (isESP32Board && !esp32Ready) {
+    return res.status(503).json({
+      success: false,
+      errors: ['ESP32 core is still installing. Please wait a few minutes and try again.'],
+    });
+  }
+  if (!isESP32Board && !avrReady) {
+    return res.status(503).json({
+      success: false,
+      errors: ['Server is still initializing. Please wait a moment and try again.'],
+    });
+  }
 
   if (!code) {
     return res.status(400).json({ success: false, errors: ['No code provided'] });
@@ -246,7 +291,7 @@ app.post('/transpile', async (req, res) => {
   }
 
   // Step 1: Validate the sketch by compiling with arduino-cli (catches syntax errors)
-  if (isInitialized) {
+  if (esp32Ready) {
     const sketchId = `transpile_${Date.now()}`;
     const sketchDir = path.join(os.tmpdir(), 'leapforge', sketchId);
     const sketchFile = path.join(sketchDir, `${sketchId}.ino`);
@@ -372,3 +417,4 @@ app.listen(PORT, async () => {
   console.log(`LeapForge Compiler Server running on :${PORT}`);
   await initCores();
 });
+
