@@ -6,14 +6,6 @@
 import React, { useState, useEffect } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
 
-// Prevent Monaco's AMD loader from conflicting with other AMD modules (e.g. Skulpt stdlib).
-// Monaco ships its own require/define — telling it to use the bundled ESM version
-// avoids injecting a global AMD loader that breaks Skulpt's module system.
-loader.config({ monaco: undefined });
-// Use the bundled monaco-editor (ESM) instead of CDN AMD loader
-import * as monaco from 'monaco-editor';
-loader.config({ monaco });
-
 interface ForgeEditorProps {
   code: string;
   onChange: (value: string | undefined) => void;

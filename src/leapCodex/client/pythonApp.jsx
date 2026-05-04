@@ -4,6 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { StageProvider, useStage } from "../../leapembed/client/context/stageContext";
 import Logo, { CreoleapLogo } from "../../leapembed/client/components/Logo";
 import {
@@ -58,31 +59,36 @@ import StatusBar from "./editor/statusBar";
 import TerminalPanel from "./terminal/terminalPanel";
 import ActivityBar from "./layout/activityBar";
 
-// ─── Dropdown Menu (Glassmorphism) ────────────────────────────────────────────
+// ─── Dropdown Menu — portal-based so it escapes overflow:hidden parents ───────
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
-    const menuRef = useRef(null);
+    const btnRef = useRef(null);
     const onCloseRef = useRef(onClose);
     onCloseRef.current = onClose;
+    const [pos, setPos] = useState({ top: 0, left: 0 });
 
+    // Recalculate anchor position whenever menu opens
+    useEffect(() => {
+        if (isOpen && btnRef.current) {
+            const r = btnRef.current.getBoundingClientRect();
+            setPos({ top: r.bottom + 4, left: r.left });
+        }
+    }, [isOpen]);
+
+    // Close on outside click
     useEffect(() => {
         if (!isOpen) return;
-        const handleClickOutside = (e) => {
-            if (menuRef.current && !menuRef.current.contains(e.target)) {
-                onCloseRef.current();
-            }
+        const handler = (e) => {
+            if (btnRef.current && btnRef.current.contains(e.target)) return;
+            onCloseRef.current();
         };
-        const timer = setTimeout(() => {
-            document.addEventListener('mousedown', handleClickOutside, true);
-        }, 0);
-        return () => {
-            clearTimeout(timer);
-            document.removeEventListener('mousedown', handleClickOutside, true);
-        };
+        const t = setTimeout(() => document.addEventListener('mousedown', handler, true), 0);
+        return () => { clearTimeout(t); document.removeEventListener('mousedown', handler, true); };
     }, [isOpen]);
 
     return (
-        <div ref={menuRef} style={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }}>
             <button
+                ref={btnRef}
                 onClick={onToggle}
                 style={{
                     display: 'flex',
@@ -98,7 +104,6 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
                     borderRadius: 4,
                     transition: 'all 0.2s ease',
                     background: isOpen ? 'rgba(255,255,255,0.18)' : 'transparent',
-                    backdropFilter: isOpen ? 'blur(4px)' : 'none',
                 }}
                 onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
                 onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = isOpen ? 'rgba(255,255,255,0.18)' : 'transparent'; }}
@@ -116,75 +121,78 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
                 />
             </button>
 
-            {isOpen && (
-                <div style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 6px)',
-                    left: 0,
-                    background: 'rgba(255,255,255,0.95)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    borderRadius: 8,
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)',
-                    border: '1px solid rgba(255,255,255,0.6)',
-                    minWidth: 160,
-                    overflow: 'hidden',
-                    zIndex: 1000,
-                    padding: '4px 0',
-                    animation: 'pyMenuSlideIn 0.1s ease-out',
-                }}>
+            {isOpen && createPortal(
+                <>
                     <style>{`
                         @keyframes pyMenuSlideIn {
                             from { opacity: 0; transform: translateY(-4px) scale(0.98); }
-                            to { opacity: 1; transform: translateY(0) scale(1); }
+                            to   { opacity: 1; transform: translateY(0)    scale(1);    }
                         }
                     `}</style>
-                    {items.map((item, idx) => (
-                        item.divider ? (
-                            <div key={idx} style={{ height: 1, background: 'rgba(0,0,0,0.08)', margin: '4px 12px' }} />
-                        ) : (
-                            <button
-                                key={idx}
-                                onClick={() => { item.onClick?.(); onClose(); }}
-                                disabled={item.disabled}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 10,
-                                    width: '100%',
-                                    padding: '7px 14px',
-                                    border: 'none',
-                                    background: 'transparent',
-                                    fontSize: 12,
-                                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                                    fontWeight: 500,
-                                    textAlign: 'left',
-                                    cursor: item.disabled ? 'not-allowed' : 'pointer',
-                                    color: item.disabled ? '#bbb' : '#374151',
-                                    transition: 'all 0.12s ease',
-                                }}
-                                onMouseEnter={e => {
-                                    if (!item.disabled) {
-                                        e.currentTarget.style.background = 'rgba(124, 58, 237, 0.08)'; // Purple hover
-                                        e.currentTarget.style.color = '#5A2D82';
-                                    }
-                                }}
-                                onMouseLeave={e => {
-                                    e.currentTarget.style.background = 'transparent';
-                                    e.currentTarget.style.color = item.disabled ? '#bbb' : '#374151';
-                                }}
-                            >
-                                {item.icon && <item.icon size={14} color="#7C3AED" strokeWidth={2} style={{ opacity: 0.8 }} />}
-                                <span style={{ flex: 1 }}>{item.label}</span>
-                                {item.shortcut && (
-                                    <span style={{ fontSize: 10, color: '#9CA3AF', background: '#F3F4F6', padding: '2px 4px', borderRadius: 4 }}>
-                                        {item.shortcut}
-                                    </span>
-                                )}
-                            </button>
-                        )
-                    ))}
-                </div>
+                    <div style={{
+                        position: 'fixed',
+                        top: pos.top,
+                        left: pos.left,
+                        background: 'rgba(255,255,255,0.97)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        borderRadius: 8,
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1)',
+                        border: '1px solid rgba(255,255,255,0.6)',
+                        minWidth: 200,
+                        zIndex: 999999,
+                        padding: '4px 0',
+                        animation: 'pyMenuSlideIn 0.1s ease-out',
+                    }}>
+                        {items.map((item, idx) => (
+                            item.divider ? (
+                                <div key={idx} style={{ height: 1, background: 'rgba(0,0,0,0.08)', margin: '4px 12px' }} />
+                            ) : (
+                                <button
+                                    key={idx}
+                                    onClick={() => { item.onClick?.(); onClose(); }}
+                                    disabled={item.disabled}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        width: '100%',
+                                        padding: '8px 16px',
+                                        border: 'none',
+                                        background: 'transparent',
+                                        fontSize: 13,
+                                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                                        fontWeight: 500,
+                                        textAlign: 'left',
+                                        cursor: item.disabled ? 'not-allowed' : 'pointer',
+                                        color: item.disabled ? '#bbb' : '#374151',
+                                        transition: 'all 0.12s ease',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                    onMouseEnter={e => {
+                                        if (!item.disabled) {
+                                            e.currentTarget.style.background = 'rgba(124,58,237,0.08)';
+                                            e.currentTarget.style.color = '#5A2D82';
+                                        }
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.background = 'transparent';
+                                        e.currentTarget.style.color = item.disabled ? '#bbb' : '#374151';
+                                    }}
+                                >
+                                    {item.icon && <item.icon size={14} color="#7C3AED" strokeWidth={2} style={{ opacity: 0.8, flexShrink: 0 }} />}
+                                    <span style={{ flex: 1 }}>{item.label}</span>
+                                    {item.shortcut && (
+                                        <span style={{ fontSize: 10, color: '#9CA3AF', background: '#F3F4F6', padding: '2px 5px', borderRadius: 4, marginLeft: 12 }}>
+                                            {item.shortcut}
+                                        </span>
+                                    )}
+                                </button>
+                            )
+                        ))}
+                    </div>
+                </>,
+                document.body
             )}
         </div>
     );
@@ -2893,7 +2901,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         <div style={{
             display: "flex", flexDirection: "column",
             height: "100vh", width: "100vw",
-            background: C.BG, color: C.TEXT, overflow: "hidden",
+            background: C.BG, color: C.TEXT,
             fontFamily: "'Inter', 'Segoe UI', sans-serif",
         }}>
 
@@ -2910,7 +2918,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 color: "#fff",
                 zIndex: 100,
                 flexShrink: 0,
-                overflow: "hidden",
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <button
