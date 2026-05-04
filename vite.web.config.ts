@@ -89,9 +89,15 @@ export default defineConfig({
     exclude: ['electron', 'serialport'],
   },
   server: {
+    port: 5173,
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
+    proxy: {
+      '/compile': 'http://localhost:3001',
+      '/transpile': 'http://localhost:3001',
+      '/libraries': 'http://localhost:3001',
     },
   },
 });
