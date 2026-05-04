@@ -3,12 +3,14 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
     Home, Upload, Scissors, Copy, Clipboard,
     Undo, Redo, Hash, Wand2, Search,
     Camera, Maximize2, Settings2,
-    Play, Square,
+    Play, Square, ChevronDown,
+    FilePlus, FolderOpen, Save, FileDown, CheckSquare,
 } from "lucide-react";
 import Logo, { CreoleapLogo } from "../../../leapembed/client/components/Logo";
 
@@ -63,7 +65,7 @@ function Divider() {
     );
 }
 
-// ─── Nav text item (File, Edit, Board…) ───────────────────────────────────────
+// ─── Nav text item (Board, Connect…) ─────────────────────────────────────────
 function NavItem({ label, onClick }) {
     const [hovered, setHovered] = React.useState(false);
     return (
@@ -88,6 +90,128 @@ function NavItem({ label, onClick }) {
         >
             {label}
         </button>
+    );
+}
+
+// ─── Portal dropdown (renders at document.body to escape any overflow/clip) ──
+function DropdownNavItem({ label, items, isOpen, onToggle, onClose }) {
+    const btnRef = useRef(null);
+    const [pos, setPos] = useState({ top: 0, left: 0 });
+
+    // Recalculate position whenever the menu opens
+    useEffect(() => {
+        if (isOpen && btnRef.current) {
+            const rect = btnRef.current.getBoundingClientRect();
+            setPos({ top: rect.bottom + 4, left: rect.left });
+        }
+    }, [isOpen]);
+
+    // Close on outside click
+    useEffect(() => {
+        if (!isOpen) return;
+        const handler = (e) => {
+            if (btnRef.current && btnRef.current.contains(e.target)) return;
+            onClose();
+        };
+        const t = setTimeout(() => document.addEventListener("mousedown", handler, true), 0);
+        return () => { clearTimeout(t); document.removeEventListener("mousedown", handler, true); };
+    }, [isOpen, onClose]);
+
+    return (
+        <div style={{ position: "relative" }}>
+            <button
+                ref={btnRef}
+                onClick={onToggle}
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    background: isOpen ? BTN_HOVER : "transparent",
+                    border: "none",
+                    color: "rgba(255,255,255,0.88)",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    padding: "0 10px",
+                    height: 32,
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    transition: "background 0.15s",
+                    whiteSpace: "nowrap",
+                    fontFamily: "inherit",
+                }}
+                onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = BTN_HOVER; }}
+                onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = "transparent"; }}
+            >
+                {label}
+                <ChevronDown
+                    size={11}
+                    strokeWidth={2.5}
+                    style={{
+                        opacity: 0.5,
+                        transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                        transition: "transform 0.2s",
+                    }}
+                />
+            </button>
+
+            {isOpen && createPortal(
+                <div
+                    style={{
+                        position: "fixed",
+                        top: pos.top,
+                        left: pos.left,
+                        minWidth: 190,
+                        background: "#1a1f35",
+                        border: "1px solid rgba(100,180,255,0.2)",
+                        borderRadius: 8,
+                        boxShadow: "0 12px 40px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4)",
+                        zIndex: 999999,
+                        overflow: "hidden",
+                        padding: "4px 0",
+                    }}
+                >
+                    {items.map((item, i) =>
+                        item.divider ? (
+                            <div key={i} style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "4px 0" }} />
+                        ) : (
+                            <button
+                                key={i}
+                                disabled={item.disabled}
+                                onClick={() => { if (!item.disabled && item.action) item.action(); onClose(); }}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 10,
+                                    width: "100%",
+                                    padding: "8px 14px",
+                                    background: "transparent",
+                                    border: "none",
+                                    color: item.disabled ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.88)",
+                                    fontSize: 13,
+                                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                                    cursor: item.disabled ? "default" : "pointer",
+                                    textAlign: "left",
+                                    transition: "background 0.12s",
+                                }}
+                                onMouseEnter={e => { if (!item.disabled) e.currentTarget.style.background = "rgba(100,180,255,0.12)"; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                            >
+                                <span style={{ width: 16, display: "flex", alignItems: "center", opacity: item.disabled ? 0.4 : 0.7 }}>
+                                    {item.icon && <item.icon size={14} />}
+                                </span>
+                                <span style={{ flex: 1 }}>{item.label}</span>
+                                {item.shortcut && (
+                                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginLeft: 12 }}>
+                                        {item.shortcut}
+                                    </span>
+                                )}
+                            </button>
+                        )
+                    )}
+                </div>,
+                document.body
+            )}
+        </div>
     );
 }
 
@@ -126,7 +250,33 @@ export default function TopBar({
     onStop,
     onUpload,
     isRunning,
+    onSave,
+    onOpen,
+    onNew,
 }) {
+    const [openMenu, setOpenMenu] = useState(null);
+    const toggleMenu = (name) => setOpenMenu(prev => prev === name ? null : name);
+    const closeMenu = () => setOpenMenu(null);
+
+    const fileItems = [
+        { label: "New Project", icon: FilePlus, shortcut: "Ctrl+N", action: onNew },
+        { label: "Open Project", icon: FolderOpen, shortcut: "Ctrl+O", action: onOpen },
+        { divider: true },
+        { label: "Save", icon: Save, shortcut: "Ctrl+S", action: onSave },
+        { label: "Save As…", icon: FileDown, shortcut: "Ctrl+Shift+S", action: onSave },
+    ];
+
+    const editItems = [
+        { label: "Undo", icon: Undo, shortcut: "Ctrl+Z", action: () => document.execCommand("undo") },
+        { label: "Redo", icon: Redo, shortcut: "Ctrl+Y", action: () => document.execCommand("redo") },
+        { divider: true },
+        { label: "Cut", icon: Scissors, shortcut: "Ctrl+X", action: () => document.execCommand("cut") },
+        { label: "Copy", icon: Copy, shortcut: "Ctrl+C", action: () => document.execCommand("copy") },
+        { label: "Paste", icon: Clipboard, shortcut: "Ctrl+V", action: () => document.execCommand("paste") },
+        { divider: true },
+        { label: "Select All", icon: CheckSquare, shortcut: "Ctrl+A", action: () => document.execCommand("selectAll") },
+    ];
+
     return (
         <header style={{
             height: 48,
@@ -190,9 +340,20 @@ export default function TopBar({
 
                 {/* Nav items */}
                 <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-                    <NavItem label="File" />
-                    <NavItem label="Edit" />
-
+                    <DropdownNavItem
+                        label="File"
+                        items={fileItems}
+                        isOpen={openMenu === "File"}
+                        onToggle={() => toggleMenu("File")}
+                        onClose={closeMenu}
+                    />
+                    <DropdownNavItem
+                        label="Edit"
+                        items={editItems}
+                        isOpen={openMenu === "Edit"}
+                        onToggle={() => toggleMenu("Edit")}
+                        onClose={closeMenu}
+                    />
                     <NavItem label="Board" />
                     <NavItem label="Connect" />
                 </div>
