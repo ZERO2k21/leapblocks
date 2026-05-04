@@ -37,7 +37,7 @@ export default defineConfig({
     rollupOptions: {
       input: path.resolve(__dirname, 'index.html'),
       // Mark Electron/Node-only modules as external so they're stripped
-      external: ['electron', 'serialport', 'child_process', 'fs', 'fs-extra', 'path', 'os', 'crypto'],
+      external: ['electron', 'serialport', 'child_process', 'fs', 'fs-extra', 'path', 'os', 'crypto', 'monaco-editor'],
       output: {
         manualChunks: {
           // Vendor chunks - separate large libraries
@@ -86,7 +86,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'blockly'],
-    exclude: ['electron', 'serialport'],
+    exclude: ['electron', 'serialport', 'monaco-editor'],
   },
   server: {
     port: 5173,
