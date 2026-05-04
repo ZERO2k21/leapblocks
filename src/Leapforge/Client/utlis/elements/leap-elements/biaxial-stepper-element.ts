@@ -239,12 +239,11 @@ export class BiaxialStepperElement extends LitElement {
             <path
               class="cls-h"
               style="
-                transform: translate(${x}px, ${y + outerPathDesc.yOff}px)
-                           rotate(${270 + this._outerCumulative}deg)
-                           translate(-${outerPathDesc.xOff}px, -${outerPathDesc.yOff}px);
                 transition: transform 80ms linear;
-                transform-box: fill-box;
-                transform-origin: ${outerPathDesc.xOff}px ${outerPathDesc.yOff}px;
+              "
+              transform="
+                translate(${x - outerPathDesc.xOff} ${y - outerPathDesc.yOff})
+                rotate(${270 + this._outerCumulative} ${outerPathDesc.xOff} ${outerPathDesc.yOff})
               "
               fill="${this.outerHandColor}"
               d="${outerPathDesc.path}"
@@ -256,12 +255,11 @@ export class BiaxialStepperElement extends LitElement {
             <path
               class="cls-h"
               style="
-                transform: translate(${x}px, ${y + innerPathDesc.yOff}px)
-                           rotate(${270 + this._innerCumulative}deg)
-                           translate(-${innerPathDesc.xOff}px, -${innerPathDesc.yOff}px);
                 transition: transform 80ms linear;
-                transform-box: fill-box;
-                transform-origin: ${innerPathDesc.xOff}px ${innerPathDesc.yOff}px;
+              "
+              transform="
+                translate(${x - innerPathDesc.xOff} ${y - innerPathDesc.yOff})
+                rotate(${270 + this._innerCumulative} ${innerPathDesc.xOff} ${innerPathDesc.yOff})
               "
               fill="${this.innerHandColor}"
               d="${innerPathDesc.path}"

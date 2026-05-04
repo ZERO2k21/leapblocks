@@ -1543,7 +1543,8 @@ class CircuitEngine {
                               const { angle: a, stepCount: s, energized: e } = pendingUpdate;
                               pendingUpdate = null;
                               updateNodeData(motorNodeId, {
-                                angle: a,
+                                // Keep rotation cumulative/unbounded for correct CW/CCW animation.
+                                angle: (s / 200) * 360,
                                 value: `${a.toFixed(1)}°`,
                                 units: `${s > 0 ? '+' : ''}${s} steps`,
                                 arrow: e ? '#BEF264' : '',
