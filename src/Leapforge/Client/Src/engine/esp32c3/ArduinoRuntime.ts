@@ -1053,12 +1053,18 @@ export class ArduinoRuntime {
               self.pinValues.set(this._pin1, LOW);
               self.onPinChange?.(this._pin1, LOW, false);
             } else {
-              // 4-wire coil sequence
+              // 4-wire coil sequence — must match StepperEmulator.FULL_STEP_SEQ:
+              //   [aPlus, bPlus, aMinus, bMinus]
+              //   Phase 0: A+ B-  → [HIGH, LOW,  LOW,  HIGH]
+              //   Phase 1: A+ B+  → [HIGH, HIGH, LOW,  LOW ]
+              //   Phase 2: A- B+  → [LOW,  HIGH, HIGH, LOW ]
+              //   Phase 3: A- B-  → [LOW,  LOW,  HIGH, HIGH]
+              // pin order: pin1=A+, pin2=B+, pin3=A-, pin4=B-
               const seq = [
-                [HIGH, LOW, HIGH, LOW],
-                [LOW, HIGH, HIGH, LOW],
-                [LOW, HIGH, LOW, HIGH],
                 [HIGH, LOW, LOW, HIGH],
+                [HIGH, HIGH, LOW, LOW],
+                [LOW, HIGH, HIGH, LOW],
+                [LOW, LOW, HIGH, HIGH],
               ];
               const s = seq[this._stepNum];
               const pins = [this._pin1, this._pin2, this._pin3, this._pin4];

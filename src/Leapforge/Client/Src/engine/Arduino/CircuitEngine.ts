@@ -1501,11 +1501,18 @@ class CircuitEngine {
 
               if (peripheralPinName === 'STEP' || peripheralPinName === 'DIR') {
 
-                // Find the stepper motor connected to this A4988's motor pins
-                const motorEdges = currentStateStore.edges.filter(e =>
-                  (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.sourceHandle || '')) ||
-                  (e.target === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.targetHandle || ''))
-                );
+                // Find the stepper motor connected to this A4988's motor pins (1A/1B/2A/2B)
+                // Strip __target suffix from handles in case edges were loaded from saved state
+                const motorEdges = currentStateStore.edges.filter(e => {
+                  const srcHandle = (e.sourceHandle || '').replace(/__target$/, '');
+                  const tgtHandle = (e.targetHandle || '').replace(/__target$/, '');
+                  return (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(srcHandle)) ||
+                    (e.target === peripheralId && ['1A', '1B', '2A', '2B'].includes(tgtHandle));
+                });
+
+                if (motorEdges.length === 0) {
+                  console.warn(`[A4988] No motor edges found for A4988 node ${peripheralId}. Wire 1A/1B/2A/2B to a stepper motor.`);
+                }
 
                 const motorNodeId = motorEdges.length > 0
                   ? (motorEdges[0].source === peripheralId ? motorEdges[0].target : motorEdges[0].source)
@@ -1554,15 +1561,16 @@ class CircuitEngine {
                   }
 
                   if (isBiaxial) {
-                    // Determine which shaft this A4988 drives by inspecting which biaxial pins are wired
-                    const biaxialEdges = currentStateStore.edges.filter(e =>
-                      (e.source === peripheralId && motorEdges.some(me => me === e)) ||
-                      (e.target === peripheralId && motorEdges.some(me => me === e))
-                    );
-                    const connectedBiaxialPins = biaxialEdges.map(e =>
+                    // Determine which shaft this A4988 drives by inspecting which biaxial pins are wired.
+                    // motorEdges are edges between the A4988 (peripheralId) and the biaxial motor (motorNodeId).
+                    // We need the biaxial motor's pin handles to determine inner vs outer shaft.
+                    const connectedBiaxialPins = motorEdges.map(e =>
                       e.source === motorNodeId ? e.sourceHandle : e.targetHandle
                     );
-                    const isInner = connectedBiaxialPins.some(p => p && ['A2+', 'A2-', 'B2+', 'B2-'].includes(p));
+                    const isInner = connectedBiaxialPins.some(p => {
+                      const h = (p || '').replace(/__target$/, '');
+                      return ['A2+', 'A2-', 'B2+', 'B2-'].includes(h);
+                    });
                     const shaftKey = isInner ? `${motorNodeId}__inner` : `${motorNodeId}__outer`;
                     const shaftLabel = isInner ? 'inner' : 'outer';
 
