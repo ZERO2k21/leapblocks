@@ -5,7 +5,7 @@
  */
 import React, { memo, useRef, useEffect } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { getComponentPins } from '../../lib/PinMap';
+import { getComponentPins, usePinHarnessVersion } from '../../lib/PinMap';
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
 import { SensorOverlay } from './SensorOverlay';
 
@@ -13,6 +13,10 @@ import { SensorOverlay } from './SensorOverlay';
 export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   const selectedNodeId = useForgeStore((state) => state.selectedNodeId);
   const isSelected = selected || selectedNodeId === id;
+
+  // Re-render this node whenever PinHarness.json is hot-reloaded in dev.
+  // In production this is a no-op (always 0, no extra renders).
+  usePinHarnessVersion();
 
   // I2C variants map to the same element as their parallel counterpart
   const elementType = data.type === 'lcd1602-i2c' ? 'lcd1602'
