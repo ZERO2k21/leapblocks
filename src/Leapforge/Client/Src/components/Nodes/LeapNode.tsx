@@ -75,13 +75,18 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     // Relay: energized when COIL1 is HIGH (COIL2 is typically GND)
     mappedProps.energized = data.relayEnergized ?? false;
   } else if (data.type === 'a4988') {
-    // A4988 stepper driver: reflect ENABLE, STEP, DIR, and microstepping pins
-    mappedProps.enabled = !(data.pinStates?.pin_ENABLE === true); // ENABLE is active LOW
+    // A4988 stepper driver: reflect ENABLE, STEP, DIR, MS1/2/3, RESET, SLEEP pins
+    // ENABLE is active-low (default pulled-down → LOW = enabled)
+    mappedProps.enabled = data.pinStates?.pin_ENABLE === true;   // raw HIGH/LOW; element inverts
     mappedProps.stepHigh = data.pinStates?.pin_STEP === true;
     mappedProps.dirHigh = data.pinStates?.pin_DIR === true;
     mappedProps.ms1 = data.pinStates?.pin_MS1 === true;
     mappedProps.ms2 = data.pinStates?.pin_MS2 === true;
     mappedProps.ms3 = data.pinStates?.pin_MS3 === true;
+    // RESET is active-low (floating default → treat as HIGH = not in reset)
+    mappedProps.resetHigh = data.pinStates?.pin_RESET !== false;
+    // SLEEP is active-low (default pulled-up → HIGH = awake)
+    mappedProps.sleepHigh = data.pinStates?.pin_SLEEP !== false;
   } else if (data.type === 'biaxial-stepper') {
     mappedProps.outerHandAngle = data.outerHandAngle ?? 0;
     mappedProps.innerHandAngle = data.innerHandAngle ?? 0;

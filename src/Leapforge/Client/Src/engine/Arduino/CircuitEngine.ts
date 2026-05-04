@@ -10,7 +10,7 @@ import { I2CBusManager } from './I2CBusManager';
 import { PCF8574 } from './PCF8574';
 import { DHT } from './DHT';
 import { NeoPixelEmulator } from './NeoPixelEmulator';
-import { StepperEmulator } from './StepperEmulator';
+import { StepperEmulator, SteppingMode } from './StepperEmulator';
 import { SSD1306I2CSlave } from './SSD1306I2CSlave';
 import { ILI9341SPISlave } from './ILI9341SPISlave';
 import { MPU6050I2CSlave } from './MPU6050I2CSlave';
@@ -1066,7 +1066,22 @@ class CircuitEngine {
 
         // Ensure buffers exist for this peripheral
         if (!this.peripheralPinBuffers.has(peripheralId)) {
-          this.peripheralPinBuffers.set(peripheralId, {});
+          const pType = nodes.find(n => n.id === peripheralId)?.data?.type;
+          // Set A4988 pin defaults per Wokwi spec:
+          //   ENABLE  → pulled-down (LOW = 0 = enabled by default)
+          //   SLEEP   → pulled-up (HIGH = 1 = awake by default)
+          //   RESET   → floating (treat as HIGH = not in reset)
+          //   MS1/2/3 → pulled-down (LOW = full step by default)
+          const initialBuf: Record<string, boolean> = {};
+          if (pType === 'a4988') {
+            initialBuf['ENABLE'] = false; // pulled-down → LOW → driver enabled
+            initialBuf['SLEEP'] = true;  // pulled-up  → HIGH → awake
+            initialBuf['RESET'] = true;  // floating   → treat as HIGH → not in reset
+            initialBuf['MS1'] = false;
+            initialBuf['MS2'] = false;
+            initialBuf['MS3'] = false;
+          }
+          this.peripheralPinBuffers.set(peripheralId, initialBuf);
         }
 
         // Create a dedicated listener that pushes the HIGH/LOW state across the wire to the target node
@@ -1469,9 +1484,22 @@ class CircuitEngine {
             // --- A4988 Stepper Driver Emulation ---
             // Bridges STEP/DIR from Arduino to the stepper motor connected on 1A/1B/2A/2B
             if (peripheralNode.data?.type === 'a4988') {
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              buf[peripheralPinName] = isHigh;
+
+              // Handle control pins: ENABLE, RESET, SLEEP, MS1, MS2, MS3, STEP, DIR
+              // Update A4988 element UI state for all pins
+              {
+                const currentPinStates = peripheralNode.data?.pinStates || {};
+                updateNodeData(peripheralId, {
+                  pinStates: {
+                    ...currentPinStates,
+                    [`pin_${peripheralPinName}`]: isHigh
+                  }
+                });
+              }
+
               if (peripheralPinName === 'STEP' || peripheralPinName === 'DIR') {
-                const buf = this.peripheralPinBuffers.get(peripheralId)!;
-                buf[peripheralPinName] = isHigh;
 
                 // Find the stepper motor connected to this A4988's motor pins
                 const motorEdges = currentStateStore.edges.filter(e =>
@@ -1486,6 +1514,44 @@ class CircuitEngine {
                 if (motorNodeId) {
                   const motorNode = currentStateStore.nodes.find(n => n.id === motorNodeId);
                   const isBiaxial = motorNode?.data?.type === 'biaxial-stepper';
+
+                  // Check if driver is enabled per Wokwi A4988 spec:
+                  //   ENABLE is active-low (default pulled-down → LOW = enabled)
+                  //   RESET  is active-low (default floating → treat as HIGH = not in reset)
+                  //   SLEEP  is active-low (default pulled-up → HIGH = awake)
+                  const enableLow = buf['ENABLE'] === false; // LOW = enabled
+                  const resetHigh = buf['RESET'] !== false; // HIGH = not in reset
+                  const sleepHigh = buf['SLEEP'] !== false; // HIGH = awake
+                  const driverEnabled = enableLow && resetHigh && sleepHigh;
+
+                  if (!driverEnabled) {
+                    // Driver is disabled, motor should not move
+                    return;
+                  }
+
+                  // Determine microstepping mode from MS1/MS2/MS3 pins
+                  const ms1 = !!buf['MS1'];
+                  const ms2 = !!buf['MS2'];
+                  const ms3 = !!buf['MS3'];
+                  let microstepDivisor = 1;
+                  let steppingMode: SteppingMode = 'full';
+
+                  if (!ms1 && !ms2 && !ms3) {
+                    microstepDivisor = 1;
+                    steppingMode = 'full';
+                  } else if (ms1 && !ms2 && !ms3) {
+                    microstepDivisor = 2;
+                    steppingMode = 'half';
+                  } else if (!ms1 && ms2 && !ms3) {
+                    microstepDivisor = 4;
+                    steppingMode = 'micro';
+                  } else if (ms1 && ms2 && !ms3) {
+                    microstepDivisor = 8;
+                    steppingMode = 'micro';
+                  } else if (ms1 && ms2 && ms3) {
+                    microstepDivisor = 16;
+                    steppingMode = 'micro';
+                  }
 
                   if (isBiaxial) {
                     // Determine which shaft this A4988 drives by inspecting which biaxial pins are wired
@@ -1519,9 +1585,11 @@ class CircuitEngine {
                             }
                           });
                         }
-                      }, { stepsPerRev: 200 }, `${motorNodeId}-${shaftLabel}`));
+                      }, { stepsPerRev: 200, steppingMode, microstepDivisor }, `${motorNodeId}-${shaftLabel}`));
                     }
                     const stepper = this.stepperEmulators.get(shaftKey)!;
+                    // Update microstepping mode dynamically
+                    stepper.setSteppingMode(steppingMode, microstepDivisor);
                     if (peripheralPinName === 'DIR') {
                       stepper.setDirection(isHigh);
                     } else if (peripheralPinName === 'STEP') {
@@ -1552,9 +1620,11 @@ class CircuitEngine {
                             }
                           });
                         }
-                      }, { stepsPerRev: 200 }, motorNodeId));
+                      }, { stepsPerRev: 200, steppingMode, microstepDivisor }, motorNodeId));
                     }
                     const stepper = this.stepperEmulators.get(motorNodeId)!;
+                    // Update microstepping mode dynamically
+                    stepper.setSteppingMode(steppingMode, microstepDivisor);
                     if (peripheralPinName === 'DIR') {
                       stepper.setDirection(isHigh);
                     } else if (peripheralPinName === 'STEP') {
