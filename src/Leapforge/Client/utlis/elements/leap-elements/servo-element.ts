@@ -1,8 +1,8 @@
 import { html, LitElement } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-servo')
 export class ServoElement extends LitElement {
   /**
    * The angle of the servo's horn
@@ -95,3 +95,5 @@ export class ServoElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-servo', ServoElement);

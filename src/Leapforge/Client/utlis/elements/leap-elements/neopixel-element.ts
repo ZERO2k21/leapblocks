@@ -1,8 +1,8 @@
 import { html, LitElement } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { ElementPin, GND, VCC } from './pin';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-neopixel')
 export class NeoPixelElement extends LitElement {
   @property() r = 0;
   @property() g = 0;
@@ -113,3 +113,5 @@ export class NeoPixelElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-neopixel', NeoPixelElement);

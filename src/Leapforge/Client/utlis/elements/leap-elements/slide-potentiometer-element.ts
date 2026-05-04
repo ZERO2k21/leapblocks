@@ -1,11 +1,11 @@
 import { css, html, LitElement } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { analog, ElementPin } from './pin';
 import { clamp } from './utils/clamp';
 import { getScreenCTM } from './utils/ctm-workaround';
 import { mmToPix } from './utils/units';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-slide-potentiometer')
 export class SlidePotentiometerElement extends LitElement {
   @property({ type: Number }) travelLength = 30;
   @property({ type: Number }) value = 0;
@@ -283,3 +283,5 @@ export class SlidePotentiometerElement extends LitElement {
     this.dispatchEvent(new InputEvent('input', { detail: this.value }));
   }
 }
+
+safeDefine('leap-slide-potentiometer', SlidePotentiometerElement);

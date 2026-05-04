@@ -1,8 +1,9 @@
 import { css, html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { ElementPin, GND, VCC } from './pin';
 import { RGB } from './types/rgb';
 import { mmToPix } from './utils/units';
+import { safeDefine } from './utils/safe-define';
 
 const pixelWidth = 5.66;
 const pixelHeight = 5;
@@ -15,7 +16,6 @@ const pixelHeight = 5;
  * on this element, e.g. `element.setPixel(0, 0, { r: 1, g: 0, b: 0 })` to set the leftmost
  * pixel to red.
  */
-@customElement('leap-neopixel-matrix')
 export class NeopixelMatrixElement extends LitElement {
   /**
    * Number of rows in the matrix
@@ -262,3 +262,5 @@ export class NeopixelMatrixElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-neopixel-matrix', NeopixelMatrixElement);

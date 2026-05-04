@@ -10,10 +10,10 @@
  *           R0=10kΩ, B=3950, T0=298.15K, R_series=10kΩ, VCC=5V
  */
 import { css, html, LitElement } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { analog, ElementPin, GND, VCC } from './pin';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-ntc-temperature-sensor')
 export class NTCTemperatureSensorElement extends LitElement {
   /** Simulated temperature in °C */
   @property({ type: Number }) value = 25;
@@ -184,3 +184,5 @@ export class NTCTemperatureSensorElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-ntc-temperature-sensor', NTCTemperatureSensorElement);

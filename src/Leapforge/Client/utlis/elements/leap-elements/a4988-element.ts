@@ -1,6 +1,7 @@
 import { html, LitElement, css } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { ElementPin } from '.';
+import { safeDefine } from './utils/safe-define';
 
 /**
  * A4988 Stepper Motor Driver Module
@@ -15,7 +16,6 @@ import { ElementPin } from '.';
  * 
  * Board dimensions: 20.5mm x 15.5mm (actual Pololu A4988 carrier size)
  */
-@customElement('leap-a4988')
 export class A4988Element extends LitElement {
   @property({ type: Boolean }) enabled = false;
   @property({ type: Boolean }) stepHigh = false;
@@ -392,3 +392,5 @@ export class A4988Element extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-a4988', A4988Element);

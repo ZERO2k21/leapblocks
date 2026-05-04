@@ -1,7 +1,8 @@
 import { html, LitElement } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { ElementPin } from '.';
 import { mmToPix } from './utils/units';
+import { safeDefine } from './utils/safe-define';
 
 type HandShape = 'arrow' | 'plain' | 'ornate';
 type HandDesc = { xOff: number; yOff: number; path: string };
@@ -13,7 +14,6 @@ const INNER_OFFSET = 4.7; // offset to center of inner hand's ring
 const ORNATE_OUTER_OFFSET = 9; // offset to center of outer ornate hand's ring
 const ORNATE_INNER_OFFSET = 5; // offset to center of inner ornate hand's ring
 
-@customElement('leap-biaxial-stepper')
 export class BiaxialStepperElement extends LitElement {
   // length used to control outer hand length in mm
   @property() outerHandLength = 30;
@@ -272,3 +272,5 @@ export class BiaxialStepperElement extends LitElement {
     </svg>`;
   }
 }
+
+safeDefine('leap-biaxial-stepper', BiaxialStepperElement);

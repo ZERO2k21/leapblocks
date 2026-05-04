@@ -13,10 +13,10 @@
  *   DOUT   = LOW when concentration > threshold (active-LOW comparator)
  */
 import { css, html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { analog, ElementPin, GND, VCC } from './pin';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-gas-sensor')
 export class GasSensorElement extends LitElement {
   /** Gas concentration 0–100 (0 = clean air, 100 = max gas) */
   @property({ type: Number }) value = 0;
@@ -156,3 +156,5 @@ export class GasSensorElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-gas-sensor', GasSensorElement);
