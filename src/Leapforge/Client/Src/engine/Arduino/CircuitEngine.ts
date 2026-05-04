@@ -93,6 +93,8 @@ class CircuitEngine {
   private _pendingLibraryClasses = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
   private isInitialized = false;
+  private a4988DebugLogged = false; // Debug flag for A4988 diagnostics
+  private a4988MotorCache = new Map<string, { motorId: string | null; edges: any[] }>(); // A4988 nodeId → motor connection cache
 
   /**
    * Traces an electrical net from a starting point (board pin) and returns all 
@@ -755,6 +757,9 @@ class CircuitEngine {
     // Cancel all heart-beat animation timers
     this.heartBeatTimers.forEach(id => cancelAnimationFrame(id));
     this.heartBeatTimers.clear();
+    // Clear A4988 motor connection cache and debug flag
+    this.a4988MotorCache.clear();
+    this.a4988DebugLogged = false;
 
     const { nodes, edges, updateNodeData } = useForgeStore.getState();
     const currentStateStore = useForgeStore.getState();
@@ -1357,6 +1362,30 @@ class CircuitEngine {
             if (peripheralNode.data?.type === 'stepper-motor') {
               if (!this.stepperEmulators.has(peripheralId)) {
                 console.log(`[STEPPER] Wiring 4-wire emulator for node ${peripheralId} — pin ${peripheralPinName} ← AVR ${avrPin}`);
+
+                // Check if this motor is also connected to an A4988 (double-wiring issue)
+                const { nodes, edges } = useForgeStore.getState();
+                const motorToA4988Edges = edges.filter(e => {
+                  const srcHandle = (e.sourceHandle || '').replace(/__target$/, '');
+                  const tgtHandle = (e.targetHandle || '').replace(/__target$/, '');
+                  const isMotorPin = ['A+', 'A-', 'B+', 'B-'].includes(srcHandle) || ['A+', 'A-', 'B+', 'B-'].includes(tgtHandle);
+                  return (e.source === peripheralId || e.target === peripheralId) && isMotorPin;
+                });
+
+                const a4988Nodes = motorToA4988Edges
+                  .map(e => e.source === peripheralId ? e.target : e.source)
+                  .map(id => nodes.find(n => n.id === id))
+                  .filter(n => n?.data?.type === 'a4988');
+
+                if (a4988Nodes.length > 0) {
+                  console.warn(`[STEPPER] WARNING: Motor ${peripheralId} is connected to BOTH:`);
+                  console.warn(`[STEPPER]   1. ESP32 pins directly (4-wire mode) - CORRECT for Arduino Stepper library`);
+                  console.warn(`[STEPPER]   2. A4988 driver(s): ${a4988Nodes.map(n => n!.id).join(', ')}`);
+                  console.warn(`[STEPPER] This creates conflicting control paths. Choose ONE:`);
+                  console.warn(`[STEPPER]   Option A: Remove A4988, keep direct wiring, use Arduino Stepper library`);
+                  console.warn(`[STEPPER]   Option B: Remove direct wiring, wire ESP32→A4988(STEP/DIR)→Motor, use AccelStepper`);
+                }
+
                 let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
                 let rafScheduled = false;
                 this.stepperEmulators.set(peripheralId, new StepperEmulator(({ angle, stepCount, energized }) => {
@@ -1384,6 +1413,7 @@ class CircuitEngine {
               }
               const stepper = this.stepperEmulators.get(peripheralId)!;
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              const oldValue = buf[peripheralPinName];
               buf[peripheralPinName] = isHigh;
 
               if (peripheralPinName === 'STEP') {
@@ -1392,6 +1422,11 @@ class CircuitEngine {
                 stepper.setDirection(isHigh);
               } else {
                 // 4-wire mode — order must match Stepper.h: processCoils(A+, B+, A-, B-)
+                // Log only when a coil state actually changes
+                if (oldValue !== isHigh) {
+                  console.log(`[STEPPER] Coil ${peripheralPinName} changed: ${oldValue ? 'HIGH' : 'LOW'} → ${isHigh ? 'HIGH' : 'LOW'}`);
+                  console.log(`[STEPPER] Current coil state: A+=${!!buf['A+']}, B+=${!!buf['B+']}, A-=${!!buf['A-']}, B-=${!!buf['B-']}`);
+                }
                 stepper.processCoils(
                   !!buf['A+'],
                   !!buf['B+'],
@@ -1487,6 +1522,32 @@ class CircuitEngine {
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
               buf[peripheralPinName] = isHigh;
 
+              // Debug: Log all pin changes to diagnose wiring issues
+              if (!this.a4988DebugLogged) {
+                this.a4988DebugLogged = true;
+                console.log(`[A4988 DEBUG] First pin change detected: ${peripheralPinName} = ${isHigh ? 'HIGH' : 'LOW'}`);
+                console.log(`[A4988 DEBUG] A4988 node ID: ${peripheralId}`);
+
+                // Check if user is trying to use 4-wire mode with A4988
+                const { edges } = useForgeStore.getState();
+                const inputEdges = edges.filter(e => {
+                  const srcHandle = (e.sourceHandle || '').replace(/__target$/, '');
+                  const tgtHandle = (e.targetHandle || '').replace(/__target$/, '');
+                  return (e.target === peripheralId && ['STEP', 'DIR'].includes(tgtHandle)) ||
+                    (e.source === peripheralId && ['STEP', 'DIR'].includes(srcHandle));
+                });
+
+                if (inputEdges.length === 0) {
+                  console.error(`[A4988 ERROR] No STEP/DIR pins connected to A4988!`);
+                  console.error(`[A4988 ERROR] The A4988 driver requires STEP and DIR signals from your microcontroller.`);
+                  console.error(`[A4988 ERROR] If you're using Arduino's Stepper library in 4-wire mode, you have two options:`);
+                  console.error(`[A4988 ERROR]   1. Remove the A4988 and wire ESP32 pins directly to the stepper motor`);
+                  console.error(`[A4988 ERROR]   2. Change your code to use AccelStepper library with STEP/DIR mode`);
+                } else {
+                  console.log(`[A4988 DEBUG] STEP/DIR pins properly connected: ${inputEdges.length} edges`);
+                }
+              }
+
               // Handle control pins: ENABLE, RESET, SLEEP, MS1, MS2, MS3, STEP, DIR
               // Update A4988 element UI state for all pins
               {
@@ -1502,21 +1563,33 @@ class CircuitEngine {
               if (peripheralPinName === 'STEP' || peripheralPinName === 'DIR') {
 
                 // Find the stepper motor connected to this A4988's motor pins (1A/1B/2A/2B)
-                // Strip __target suffix from handles in case edges were loaded from saved state
-                const motorEdges = currentStateStore.edges.filter(e => {
-                  const srcHandle = (e.sourceHandle || '').replace(/__target$/, '');
-                  const tgtHandle = (e.targetHandle || '').replace(/__target$/, '');
-                  return (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(srcHandle)) ||
-                    (e.target === peripheralId && ['1A', '1B', '2A', '2B'].includes(tgtHandle));
-                });
+                // Cache the result to avoid filtering edges on every pin change (performance optimization)
+                let cached = this.a4988MotorCache.get(peripheralId);
 
-                if (motorEdges.length === 0) {
-                  console.warn(`[A4988] No motor edges found for A4988 node ${peripheralId}. Wire 1A/1B/2A/2B to a stepper motor.`);
+                if (!cached) {
+                  // First time - find and cache the motor connection
+                  const motorEdges = currentStateStore.edges.filter(e => {
+                    const srcHandle = (e.sourceHandle || '').replace(/__target$/, '');
+                    const tgtHandle = (e.targetHandle || '').replace(/__target$/, '');
+                    return (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(srcHandle)) ||
+                      (e.target === peripheralId && ['1A', '1B', '2A', '2B'].includes(tgtHandle));
+                  });
+
+                  if (motorEdges.length === 0) {
+                    console.warn(`[A4988] No motor edges found for A4988 node ${peripheralId}. Wire 1A/1B/2A/2B to a stepper motor.`);
+                    cached = { motorId: null, edges: [] };
+                  } else {
+                    console.log(`[A4988] Motor edges found: ${motorEdges.length} connections`);
+                    const motorId = motorEdges[0].source === peripheralId ? motorEdges[0].target : motorEdges[0].source;
+                    cached = { motorId, edges: motorEdges };
+                  }
+
+                  // Cache the result
+                  this.a4988MotorCache.set(peripheralId, cached);
                 }
 
-                const motorNodeId = motorEdges.length > 0
-                  ? (motorEdges[0].source === peripheralId ? motorEdges[0].target : motorEdges[0].source)
-                  : null;
+                const motorNodeId = cached.motorId;
+                const motorEdges = cached.edges;
 
                 if (motorNodeId) {
                   const motorNode = currentStateStore.nodes.find(n => n.id === motorNodeId);
@@ -1526,13 +1599,19 @@ class CircuitEngine {
                   //   ENABLE is active-low (default pulled-down → LOW = enabled)
                   //   RESET  is active-low (default floating → treat as HIGH = not in reset)
                   //   SLEEP  is active-low (default pulled-up → HIGH = awake)
-                  const enableLow = buf['ENABLE'] === false; // LOW = enabled
-                  const resetHigh = buf['RESET'] !== false; // HIGH = not in reset
-                  const sleepHigh = buf['SLEEP'] !== false; // HIGH = awake
+                  // Note: undefined means pin not connected, use default state
+                  const enableLow = buf['ENABLE'] !== true; // LOW or undefined = enabled
+                  const resetHigh = buf['RESET'] !== false; // HIGH or undefined = not in reset
+                  const sleepHigh = buf['SLEEP'] !== false; // HIGH or undefined = awake
                   const driverEnabled = enableLow && resetHigh && sleepHigh;
 
                   if (!driverEnabled) {
                     // Driver is disabled, motor should not move
+                    if (!this.a4988DebugLogged) {
+                      console.warn(`[A4988] Driver disabled! Motor will not move. Check ENABLE/RESET/SLEEP pins.`);
+                      console.warn(`[A4988] State: ENABLE=${buf['ENABLE']}, RESET=${buf['RESET']}, SLEEP=${buf['SLEEP']}`);
+                      this.a4988DebugLogged = true;
+                    }
                     return;
                   }
 
@@ -1618,6 +1697,7 @@ class CircuitEngine {
                             if (pendingUpdate) {
                               const { angle: a, stepCount: s, energized: e } = pendingUpdate;
                               pendingUpdate = null;
+                              console.log(`[A4988→MOTOR] Updating motor ${motorNodeId}: angle=${a.toFixed(1)}°, stepCount=${s}, energized=${e}`);
                               updateNodeData(motorNodeId, {
                                 // Keep rotation cumulative/unbounded for correct CW/CCW animation.
                                 angle: (s / 200) * 360,

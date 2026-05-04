@@ -1039,7 +1039,7 @@ export class ArduinoRuntime {
           }
         }
 
-        step(steps: number): void {
+        async step(steps: number): Promise<void> {
           const dir = steps >= 0 ? 1 : -1;
           const count = Math.abs(steps);
           for (let i = 0; i < count; i++) {
@@ -1075,6 +1075,8 @@ export class ArduinoRuntime {
                 }
               }
             }
+            // Yield to browser loop based on configured step delay
+            await new Promise(r => setTimeout(r, this._stepDelay));
           }
         }
       },
@@ -1169,10 +1171,15 @@ export class ArduinoRuntime {
           return true;
         }
 
-        runToPosition(): void {
+        async runToPosition(): Promise<void> {
           while (this._currentPos !== this._targetPos) {
             const dir: 1 | -1 = this._targetPos > this._currentPos ? 1 : -1;
             this._doStep(dir);
+            // Calculate delay from speed or maxSpeed, default to 1ms
+            const speed = this._speed !== 0 ? Math.abs(this._speed) : this._maxSpeed;
+            const delayMs = speed > 0 ? Math.max(1, Math.round(1000 / speed)) : 10;
+            // Yield to browser to prevent UI freeze and allow animation rendering
+            await new Promise(r => setTimeout(r, delayMs));
           }
         }
 
@@ -1180,9 +1187,9 @@ export class ArduinoRuntime {
           return this.run();
         }
 
-        runToNewPosition(pos: number): void {
+        async runToNewPosition(pos: number): Promise<void> {
           this.moveTo(pos);
-          this.runToPosition();
+          await this.runToPosition();
         }
 
         isRunning(): boolean {

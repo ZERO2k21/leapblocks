@@ -288,7 +288,7 @@ var Stepper = (typeof Stepper !== 'undefined' && Stepper) || class {
     this._stepNum = 0; this._stepDelay = 10;
   }
   setSpeed(rpm) { if (rpm > 0) this._stepDelay = Math.max(1, Math.round(60000 / (this._stepsPerRev * rpm))); }
-  step(steps) {
+  async step(steps) {
     const dir = steps >= 0 ? 1 : -1;
     const count = Math.abs(steps);
     const HIGH = 1, LOW = 0;
@@ -298,11 +298,12 @@ var Stepper = (typeof Stepper !== 'undefined' && Stepper) || class {
         digitalWrite(this._pin2, dir > 0 ? HIGH : LOW);
         digitalWrite(this._pin1, HIGH); digitalWrite(this._pin1, LOW);
       } else {
-        const seq = [[HIGH,LOW,HIGH,LOW],[LOW,HIGH,HIGH,LOW],[LOW,HIGH,LOW,HIGH],[HIGH,LOW,LOW,HIGH]];
+        const seq = [[HIGH,LOW,LOW,HIGH],[HIGH,HIGH,LOW,LOW],[LOW,HIGH,HIGH,LOW],[LOW,LOW,HIGH,HIGH]];
         const s = seq[this._stepNum];
         const pins = [this._pin1, this._pin2, this._pin3, this._pin4];
         for (let p = 0; p < 4; p++) { if (pins[p] >= 0) digitalWrite(pins[p], s[p]); }
       }
+      await new Promise(r => setTimeout(r, this._stepDelay));
     }
   }
 };
@@ -351,9 +352,16 @@ var AccelStepper = (typeof AccelStepper !== 'undefined' && AccelStepper) || clas
     this._doStep(this._speed > 0 ? 1 : -1);
     return true;
   }
-  runToPosition() { while (this._currentPos !== this._targetPos) this._doStep(this._targetPos > this._currentPos ? 1 : -1); }
+  async runToPosition() { 
+    while (this._currentPos !== this._targetPos) {
+      this._doStep(this._targetPos > this._currentPos ? 1 : -1);
+      const speed = this._speed !== 0 ? Math.abs(this._speed) : this._maxSpeed;
+      const delayMs = speed > 0 ? Math.max(1, Math.round(1000 / speed)) : 10;
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
   runSpeedToPosition() { return this.run(); }
-  runToNewPosition(pos) { this.moveTo(pos); this.runToPosition(); }
+  async runToNewPosition(pos) { this.moveTo(pos); await this.runToPosition(); }
 };
 var MFRC522 = (typeof MFRC522 !== 'undefined' && MFRC522) || class { constructor(){} PCD_Init(){} PICC_IsNewCardPresent(){return false;} PICC_ReadCardSerial(){return false;} };
 var Keypad = (typeof Keypad !== 'undefined' && Keypad) || class {
