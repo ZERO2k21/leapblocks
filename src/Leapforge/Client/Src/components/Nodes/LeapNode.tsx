@@ -74,6 +74,14 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   } else if (data.type === 'ks2e-m-dc5') {
     // Relay: energized when COIL1 is HIGH (COIL2 is typically GND)
     mappedProps.energized = data.relayEnergized ?? false;
+  } else if (data.type === 'a4988') {
+    // A4988 stepper driver: reflect ENABLE, STEP, DIR, and microstepping pins
+    mappedProps.enabled = !(data.pinStates?.pin_ENABLE === true); // ENABLE is active LOW
+    mappedProps.stepHigh = data.pinStates?.pin_STEP === true;
+    mappedProps.dirHigh = data.pinStates?.pin_DIR === true;
+    mappedProps.ms1 = data.pinStates?.pin_MS1 === true;
+    mappedProps.ms2 = data.pinStates?.pin_MS2 === true;
+    mappedProps.ms3 = data.pinStates?.pin_MS3 === true;
   } else if (data.type === 'biaxial-stepper') {
     mappedProps.outerHandAngle = data.outerHandAngle ?? 0;
     mappedProps.innerHandAngle = data.innerHandAngle ?? 0;
