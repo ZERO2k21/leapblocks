@@ -1,0 +1,67 @@
+{
+  "type": "leaplab-stepper-motor",
+  "name": "Stepper Motor",
+  "category": "Motors",
+  "description": "Bipolar stepper motor (NEMA standard)",
+  
+  "pins": [
+    {
+      "name": "A-",
+      "description": "Coil A negative signal",
+      "type": "input",
+      "x": 0,
+      "y": 40
+    },
+    {
+      "name": "A+",
+      "description": "Coil A positive signal",
+      "type": "input",
+      "x": 0,
+      "y": 60
+    },
+    {
+      "name": "B+",
+      "description": "Coil B positive signal",
+      "type": "input",
+      "x": 0,
+      "y": 80
+    },
+    {
+      "name": "B-",
+      "description": "Coil B negative signal",
+      "type": "input",
+      "x": 0,
+      "y": 100
+    }
+  ],
+
+  "attributes": [
+    {
+      "name": "size",
+      "description": "NEMA standard size of the motor",
+      "type": "select",
+      "options": ["8", "11", "14", "17", "23", "34"],
+      "default": "23"
+    },
+    {
+      "name": "display",
+      "description": "What to display on the motor",
+      "type": "select",
+      "options": ["steps", "angle", "none"],
+      "default": "steps"
+    },
+    {
+      "name": "gearRatio",
+      "description": "Gear ratio of the motor",
+      "type": "select",
+      "options": ["1:1", "2:1", "4:1", "8:1", "16:1", "32:1"],
+      "default": "1:1"
+    },
+    {
+      "name": "arrow",
+      "description": "Arrow color to show position",
+      "type": "color",
+      "default": ""
+    }
+  ]
+}
