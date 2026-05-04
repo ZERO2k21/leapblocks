@@ -7,37 +7,12 @@ import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { spawn } from 'child_process';
-import { SerialManager } from './serial/SerialManager';
-import { ArduinoUploader } from './upload/ArduinoUploader';
-import { PythonManager } from './pythonBackend/PythonManager';
+import { SerialManager } from './leapembed/server/serial/serialManager';
+import { ArduinoUploader } from './leapembed/server/upload/arduinoUploader';
+import { PythonManager } from './leapCodex/server/pythonManager';
 import { join } from 'path';
 
-// ── ESP32 QEMU simulation imports ────────────────────────────────────────
-// electron/ files live at the repo root, not inside dist/main/.
-// Use app.getAppPath() at call time — app may not be ready at module load.
-// We lazy-require inside a getter to avoid the timing issue.
-let _qemuManager: any = null;
-let _cleanupESP32Build: ((dir: string) => void) | null = null;
 
-function getQemuManager() {
-  if (!_qemuManager) {
-    const root = app.getAppPath();
-    const modPath = join(root, 'electron', 'qemuManager.js');
-    // Clear require cache so dev-mode changes to qemuManager.js are picked up
-    delete require.cache[require.resolve(modPath)];
-    _qemuManager = require(modPath);
-  }
-  return _qemuManager;
-}
-
-function getCleanupESP32Build(): (dir: string) => void {
-  if (!_cleanupESP32Build) {
-    const root = app.getAppPath();
-    const mod = require(join(root, 'electron', 'esp32Compiler.js'));
-    _cleanupESP32Build = mod.cleanupESP32Build;
-  }
-  return _cleanupESP32Build!;
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL STATE & SERVICES
@@ -47,8 +22,7 @@ let serialManager: SerialManager;
 let arduinoUploader: ArduinoUploader;
 let pythonManager: PythonManager;
 
-// ── ESP32 QEMU state ─────────────────────────────────────────────────────
-let lastESP32BinTempDir: string | null = null;
+// ── ESP32 compile state ──────────────────────────────────────────────────
 let esp32CoreReady = false;
 
 const log = (category: string, msg: string, data?: any) => {
@@ -292,74 +266,6 @@ async function ensureESP32Core(): Promise<boolean> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// FLASH IMAGE BUILDER
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Merges the three ESP32 flash regions into a single raw image that QEMU
- * accepts via  -drive file=<image>,if=mtd,format=raw
- *
- * Flash layout (default ESP32 single_factory partition scheme):
- *   0x001000  bootloader.bin   (max ~28 KB)
- *   0x008000  partitions.bin   (max ~3 KB)
- *   0x010000  app.bin          (rest of flash)
- *
- * The image is zero-padded to exactly 4 MB — the smallest QEMU-supported
- * size that fits the default ESP32 DevKit V1 flash.
- */
-function buildMergedFlashImage(
-  tempDir: string,
-  files: string[],
-  appBinPath: string,
-  outPath: string,
-): void {
-  const FLASH_SIZE = 4 * 1024 * 1024; // 4 MB
-  const BOOTLOADER_OFFSET = 0x1000;
-  const PARTITIONS_OFFSET = 0x8000;
-  const APP_OFFSET = 0x10000;
-
-  // Allocate a 4 MB buffer filled with 0xFF (erased flash state)
-  const image = Buffer.alloc(FLASH_SIZE, 0xff);
-
-  // ── Bootloader ────────────────────────────────────────────────────────────
-  const bootFile = files.find(f => f.includes('bootloader') && f.endsWith('.bin'));
-  if (bootFile) {
-    const bootBin = fs.readFileSync(path.join(tempDir, bootFile));
-    if (BOOTLOADER_OFFSET + bootBin.length > PARTITIONS_OFFSET) {
-      throw new Error(`Bootloader too large: ${bootBin.length} bytes overflows partition table region`);
-    }
-    bootBin.copy(image, BOOTLOADER_OFFSET);
-    log('FLASH', `Bootloader @ 0x${BOOTLOADER_OFFSET.toString(16)}: ${bootBin.length} bytes`);
-  } else {
-    log('FLASH', 'No bootloader.bin found — region left as 0xFF (erased)');
-  }
-
-  // ── Partition table ───────────────────────────────────────────────────────
-  const partFile = files.find(f => (f.includes('partition') || f.includes('partitions')) && f.endsWith('.bin'));
-  if (partFile) {
-    const partBin = fs.readFileSync(path.join(tempDir, partFile));
-    if (PARTITIONS_OFFSET + partBin.length > APP_OFFSET) {
-      throw new Error(`Partition table too large: ${partBin.length} bytes overflows app region`);
-    }
-    partBin.copy(image, PARTITIONS_OFFSET);
-    log('FLASH', `Partitions @ 0x${PARTITIONS_OFFSET.toString(16)}: ${partBin.length} bytes`);
-  } else {
-    log('FLASH', 'No partitions.bin found — region left as 0xFF (erased)');
-  }
-
-  // ── Application binary ────────────────────────────────────────────────────
-  const appBin = fs.readFileSync(appBinPath);
-  if (APP_OFFSET + appBin.length > FLASH_SIZE) {
-    throw new Error(`App binary too large: ${appBin.length} bytes exceeds 4 MB flash`);
-  }
-  appBin.copy(image, APP_OFFSET);
-  log('FLASH', `App @ 0x${APP_OFFSET.toString(16)}: ${appBin.length} bytes`);
-
-  fs.writeFileSync(outPath, image);
-  log('FLASH', `✓ Merged flash image: ${outPath} (${(FLASH_SIZE / 1024 / 1024).toFixed(0)} MB)`);
-}
-
 app.on('ready', () => {
   logTiming('Electron app ready event fired');
   createWindow();
@@ -390,8 +296,7 @@ app.on('before-quit', () => {
   if (pythonManager) {
     pythonManager.stopAll();
   }
-  // Stop QEMU if running
-  try { getQemuManager().stopQemu(); } catch (_) { }
+  // Stop QEMU if running — removed (QEMU deleted)
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -442,15 +347,14 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
   log('IPC', `isESP32: ${isESP32}`);
 
   if (isESP32) {
-    // ── ESP32 QEMU path ─────────────────────────────────────────────────────
-    log('IPC', 'ESP32 detected — using QEMU compile path');
+    // ── ESP32 path — compilation for upload only (simulation uses transpiled JS) ──
+    log('IPC', 'ESP32 detected — compiling for upload (simulation uses transpiled JS path)');
 
     if (mainWindow?.webContents) {
       mainWindow.webContents.send('serial-data', '[SYSTEM] Checking ESP32 platform installation...\n');
     }
 
     const coreOk = await ensureESP32Core();
-    log('IPC', `ensureESP32Core returned: ${coreOk}`);
     if (!coreOk) {
       return {
         success: false,
@@ -462,92 +366,12 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
     const sketchDir = path.join(tempDir, 'sketch');
     const sketchPath = path.join(sketchDir, 'sketch.ino');
 
-    log('IPC', `tempDir: ${tempDir}`);
-    log('IPC', `sketchDir: ${sketchDir}`);
-
     try {
       fs.mkdirSync(sketchDir, { recursive: true });
 
-      // Inject GPIO monitor header so QEMU serial output carries __LF_ tagged lines
-      const GPIO_MONITOR_HEADER = `\
-// ---- LeapForge monitor (auto-injected, do not remove) ----
-#include <Wire.h>
-#include <WiFi.h>
-
-// ── GPIO ──────────────────────────────────────────────────────────────────
-static void __lf_digitalWrite(uint8_t pin, uint8_t val) {
-  digitalWrite(pin, val);
-  Serial.printf("__LF_GPIO:%d:%d\\n", pin, (int)val);
-}
-#define digitalWrite(p,v) __lf_digitalWrite((p),(v))
-
-// ── PWM / analogWrite ─────────────────────────────────────────────────────
-static void __lf_analogWrite(uint8_t pin, uint32_t val) {
-  analogWrite(pin, val);
-  Serial.printf("__LF_PWM:%d:%d\\n", pin, (int)val);
-}
-#define analogWrite(p,v) __lf_analogWrite((p),(v))
-
-// ── I2C / Wire ────────────────────────────────────────────────────────────
-static uint8_t  __lf_i2c_addr = 0;
-static uint8_t  __lf_i2c_buf[256];
-static int      __lf_i2c_len  = 0;
-
-struct __LFWireClass {
-  void begin() { Wire.begin(); }
-  void begin(uint8_t sda, uint8_t scl) { Wire.begin(sda, scl); }
-  void setClock(uint32_t freq) { Wire.setClock(freq); }
-  void beginTransmission(uint8_t addr) {
-    __lf_i2c_addr = addr; __lf_i2c_len = 0;
-    Wire.beginTransmission(addr);
-    Serial.printf("__LF_I2C_S:%d\\n", (int)addr);
-  }
-  size_t write(uint8_t b) {
-    __lf_i2c_buf[__lf_i2c_len < 256 ? __lf_i2c_len++ : 255] = b;
-    Wire.write(b);
-    Serial.printf("__LF_I2C_B:%d\\n", (int)b);
-    return 1;
-  }
-  size_t write(const uint8_t* data, size_t len) {
-    for (size_t i = 0; i < len; i++) write(data[i]);
-    return len;
-  }
-  uint8_t endTransmission(bool stop = true) {
-    uint8_t r = Wire.endTransmission(stop);
-    Serial.printf("__LF_I2C_E:%d\\n", (int)r);
-    return r;
-  }
-  uint8_t requestFrom(uint8_t addr, uint8_t qty, bool stop = true) {
-    return Wire.requestFrom(addr, qty, stop);
-  }
-  int available() { return Wire.available(); }
-  int read()      { return Wire.read(); }
-  void onReceive(void (*fn)(int)) { Wire.onReceive(fn); }
-  void onRequest(void (*fn)())    { Wire.onRequest(fn); }
-} __lf_wire;
-#define Wire __lf_wire
-
-// ── WiFi events ───────────────────────────────────────────────────────────
-static void __lf_wifi_event(WiFiEvent_t event) {
-  switch (event) {
-    case ARDUINO_EVENT_WIFI_STA_CONNECTED:
-      Serial.printf("__LF_WIFI:connected\\n"); break;
-    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-      Serial.printf("__LF_WIFI:disconnected\\n"); break;
-    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-      Serial.printf("__LF_WIFI:ip:%s\\n", WiFi.localIP().toString().c_str()); break;
-    default: break;
-  }
-}
-static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
-// ---- end LeapForge injection ----
-`;
-      // Preprocess: replace Servo.h, migrate LEDC API, inject WiFi event hook
       let processedCode = code.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
       processedCode = migrateESP32LedcAPI(processedCode);
-      // Inject WiFi event hook at start of setup()
-      processedCode = processedCode.replace(/(void\s+setup\s*\(\s*\)\s*\{)/, '$1\n  __lf_setup_wifi();');
-      fs.writeFileSync(sketchPath, GPIO_MONITOR_HEADER + '\n' + processedCode, 'utf-8');
+      fs.writeFileSync(sketchPath, processedCode, 'utf-8');
 
       const isDev = !app.isPackaged;
       const APP_ROOT = app.getAppPath();
@@ -559,16 +383,9 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
         ? path.join(APP_ROOT, 'arduino-cli', 'arduino-cli.exe')
         : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe');
 
-      log('IPC', `CLI_PATH: ${CLI_PATH}`);
-      log('IPC', `FORGE_CLI_YAML: ${FORGE_CLI_YAML}`);
-
       const { stdout, stderr, code: exitCode } = await runCLI(CLI_PATH, FORGE_CLI_YAML, [
         'compile', '--fqbn', fqbn, '--output-dir', tempDir, sketchDir,
       ]);
-
-      log('IPC', `compile-code ESP32 exit=${exitCode}`);
-      if (stdout) log('IPC', `stdout: ${stdout.slice(0, 300)}`);
-      if (stderr) log('IPC', `stderr: ${stderr.slice(0, 300)}`);
 
       if (exitCode !== 0) {
         try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
@@ -576,54 +393,11 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
       }
 
       const files = fs.readdirSync(tempDir);
-      log('IPC', `output files: ${files.join(', ')}`);
+      const binFile = files.find(f => f.endsWith('.bin'));
+      const binPath = binFile ? path.join(tempDir, binFile) : undefined;
 
-      // arduino-cli (esp32 core v2+) emits sketch.ino.merged.bin — a ready-to-use
-      // 4 MB flash image with bootloader + partitions + app already merged.
-      // Prefer it directly; fall back to building our own merge if absent.
-      const mergedReady = files.find(f => f === 'sketch.ino.merged.bin');
-
-      let finalBinPath: string;
-
-      if (mergedReady) {
-        finalBinPath = path.join(tempDir, mergedReady);
-        log('IPC', `Using arduino-cli merged image: ${finalBinPath}`);
-      } else {
-        // Older arduino-cli: merge manually from the three separate files
-        const binFile = files.find(f => f === 'sketch.ino.bin')
-          ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
-
-        log('IPC', `binFile found: ${binFile}`);
-
-        if (!binFile) {
-          try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
-          return { success: false, error: `ESP32 compiled but no .bin found. Files: ${files.join(', ')}` };
-        }
-
-        const appBinPath = path.join(tempDir, binFile);
-        const mergedPath = path.join(tempDir, 'flash_image.bin');
-        try {
-          buildMergedFlashImage(tempDir, files, appBinPath, mergedPath);
-          log('IPC', `Flash image merged manually: ${mergedPath}`);
-        } catch (mergeErr: any) {
-          log('IPC', `Flash merge failed: ${mergeErr.message}`);
-          try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
-          return { success: false, error: `Flash image merge failed: ${mergeErr.message}` };
-        }
-        finalBinPath = mergedPath;
-      }
-
-      // Clean up previous build temp dir
-      if (lastESP32BinTempDir) {
-        getCleanupESP32Build()(lastESP32BinTempDir);
-      }
-      lastESP32BinTempDir = tempDir;
-
-      log('IPC', `compile-code ESP32 returning: { success: true, binPath: "${finalBinPath}" }`);
-      return { success: true, binPath: finalBinPath };
-
+      return { success: true, binPath };
     } catch (err: any) {
-      log('IPC', `compile-code ESP32 exception: ${err.message}`);
       try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
       return { success: false, error: err.message };
     }
@@ -634,50 +408,6 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
   const result = await arduinoUploader.compileForSimulation(code, fqbn);
   log('IPC', `compile-code completed. Result: ${result.success ? 'Success' : 'Failure'}`);
   return result;
-});
-
-// ── ESP32 QEMU simulation IPC handlers ───────────────────────────────────
-
-ipcMain.handle('esp32-start', async (_, binPath: string) => {
-  // Reset cached qemuManager so latest version of qemuManager.js is always used
-  _qemuManager = null;
-  await getQemuManager().startQemu(binPath, mainWindow);
-  return { ok: true };
-});
-
-ipcMain.handle('esp32-stop', async () => {
-  getQemuManager().stopQemu();
-  if (lastESP32BinTempDir) {
-    getCleanupESP32Build()(lastESP32BinTempDir);
-    lastESP32BinTempDir = null;
-  }
-  return { ok: true };
-});
-
-ipcMain.handle('esp32-gpio-set', async (_, pin: number, high: boolean) => {
-  const socket = await getQemuManager().connectQMP();
-  if (socket) {
-    await getQemuManager().sendQMPCommand(socket, {
-      execute: 'gpio-set',
-      arguments: { name: `GPIO${pin}`, level: high ? 1 : 0 },
-    });
-    socket.destroy();
-  }
-});
-
-ipcMain.handle('esp32-adc-set', async (_, channel: number, voltage: number) => {
-  const socket = await getQemuManager().connectQMP();
-  if (socket) {
-    await getQemuManager().sendQMPCommand(socket, {
-      execute: 'qom-set',
-      arguments: {
-        path: `/machine/soc/adc/channel[${channel}]`,
-        property: 'voltage',
-        value: voltage,
-      },
-    });
-    socket.destroy();
-  }
 });
 
 // Library Handlers (Wokwi Centralized Management)

@@ -2,63 +2,53 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
- *
- * Compile flow (Electron):
- *   electronAPI.compileCode(code, fqbn)
- *     → IPC: compile-code
- *     → ArduinoUploader.compileForSimulation()
- *     → arduino-cli compile --libraries forge-lib/libraries/ ...
- *     → returns { success, hexContent }
  */
-import { IS_ELECTRON, isElectron, CLOUD_COMPILER_URL } from '../config/platform';
 
-export interface CompileRequest {
-  code: string;
-  board: string;
-  libraries: string[];
+interface CompileOptions {
+    code: string;
+    board: string;
+    libraries?: string[];
 }
 
-export interface CompileResult {
-  success: boolean;
-  hexContent?: string;
-  binPath?: string;   // returned for esp32:esp32:* FQBNs (QEMU path)
-  error?: string;
+interface CompileResult {
+    success: boolean;
+    hexContent?: string;
+    binPath?: string;
+    error?: string;
 }
 
-export const compileCode = async (req: CompileRequest): Promise<CompileResult> => {
-  // Use runtime check — IS_ELECTRON may be stale if preload loaded after module init
-  if (IS_ELECTRON || isElectron()) {
-    try {
-      const result = await (window as any).electronAPI.compileCode(
-        req.code,
-        req.board,
-      );
-      return {
-        success: result.success,
-        hexContent: result.hexContent,
-        binPath: result.binPath,
-        error: result.error,
-      };
-    } catch (err: any) {
-      return { success: false, error: err.message };
+/**
+ * Compile Arduino/ESP32 code using the Electron API
+ */
+export async function compileCode(options: CompileOptions): Promise<CompileResult> {
+    const { code, board, libraries } = options;
+
+    // Get library path if libraries are specified
+    let libraryPath: string | undefined;
+    if (libraries && libraries.length > 0 && window.electronAPI?.getForgeLibPath) {
+        try {
+            libraryPath = await window.electronAPI.getForgeLibPath();
+        } catch (e) {
+            console.warn('[CompilerService] Failed to get library path:', e);
+        }
     }
-  }
 
-  // Web: POST to local build server
-  try {
-    const res = await fetch(`${CLOUD_COMPILER_URL}/compile`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req),
-    });
-    if (!res.ok) return { success: false, error: `Server error: ${res.status}` };
-    const data = await res.json();
+    // Use the Electron API to compile the code
+    if (window.electronAPI?.compileCode) {
+        try {
+            const result = await window.electronAPI.compileCode(code, board, libraryPath);
+            return result;
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.message || 'Compilation failed'
+            };
+        }
+    }
+
+    // Fallback if Electron API is not available
     return {
-      success: data.success,
-      hexContent: data.hex,
-      error: Array.isArray(data.errors) ? data.errors.join('\n') : data.errors,
+        success: false,
+        error: 'Compiler not available (Electron API not found)'
     };
-  } catch (err: any) {
-    return { success: false, error: `Cloud compiler unreachable: ${err.message}` };
-  }
-};
+}

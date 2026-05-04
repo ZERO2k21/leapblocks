@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 320" width="220" height="320">
+  <!-- Spark - Jump pose placeholder. Replace with your generated PNG. -->
+  <!-- Orange spiky hair -->
+  <ellipse cx="110" cy="55" rx="45" ry="38" fill="#FF6B1A"/>
+  <polygon points="70,38 58,8 82,32" fill="#FF6B1A"/>
+  <polygon points="90,22 88,0 105,26" fill="#FF6B1A"/>
+  <polygon points="118,20 122,0 132,26" fill="#FF6B1A"/>
+  <polygon points="140,32 158,6 148,38" fill="#FF6B1A"/>
+  <!-- Face - excited expression -->
+  <ellipse cx="110" cy="75" rx="38" ry="35" fill="#FFCBA4"/>
+  <!-- Eyes - wide open excited -->
+  <circle cx="97" cy="70" r="8" fill="#3D2B1F"/>
+  <circle cx="123" cy="70" r="8" fill="#3D2B1F"/>
+  <circle cx="99" cy="68" r="3" fill="white"/>
+  <circle cx="125" cy="68" r="3" fill="white"/>
+  <!-- Big open smile -->
+  <path d="M 90 88 Q 110 106 130 88" stroke="#3D2B1F" stroke-width="2.5" fill="#FF9999" stroke-linecap="round"/>
+  <!-- Freckles -->
+  <circle cx="88" cy="82" r="2" fill="#E8A882" opacity="0.7"/>
+  <circle cx="132" cy="82" r="2" fill="#E8A882" opacity="0.7"/>
+  <!-- Yellow hoodie body -->
+  <rect x="72" y="108" width="76" height="85" rx="12" fill="#FFD700"/>
+  <!-- Lightning bolt -->
+  <polygon points="105,124 98,146 108,146 103,166 122,142 111,142 117,124" fill="white"/>
+  <!-- Arms raised up in victory -->
+  <rect x="20" y="80" width="26" height="70" rx="13" fill="#FFD700" transform="rotate(-45 33 115)"/>
+  <rect x="174" y="80" width="26" height="70" rx="13" fill="#FFD700" transform="rotate(45 187 115)"/>
+  <!-- Fists -->
+  <ellipse cx="28" cy="78" rx="14" ry="12" fill="#FFCBA4"/>
+  <ellipse cx="192" cy="78" rx="14" ry="12" fill="#FFCBA4"/>
+  <!-- Blue jeans - legs bent for jump -->
+  <rect x="78" y="192" width="28" height="65" rx="8" fill="#4A90D9" transform="rotate(15 92 225)"/>
+  <rect x="114" y="192" width="28" height="65" rx="8" fill="#4A90D9" transform="rotate(-20 128 225)"/>
+  <!-- Jeans cuffs -->
+  <rect x="72" y="248" width="30" height="12" rx="4" fill="#3A7BC8" transform="rotate(15 87 254)"/>
+  <rect x="118" y="248" width="30" height="12" rx="4" fill="#3A7BC8" transform="rotate(-20 133 254)"/>
+  <!-- Red sneakers -->
+  <ellipse cx="80" cy="272" rx="20" ry="10" fill="#CC2200" transform="rotate(15 80 272)"/>
+  <ellipse cx="140" cy="268" rx="20" ry="10" fill="#CC2200" transform="rotate(-20 140 268)"/>
+  <rect x="60" y="264" width="40" height="12" rx="6" fill="#CC2200" transform="rotate(15 80 270)"/>
+  <rect x="120" y="260" width="40" height="12" rx="6" fill="#CC2200" transform="rotate(-20 140 266)"/>
+</svg>

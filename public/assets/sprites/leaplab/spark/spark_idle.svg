@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <!-- Spark - Idle pose placeholder. Replace with your generated PNG. -->
+  <!-- Orange spiky hair -->
+  <ellipse cx="100" cy="60" rx="45" ry="40" fill="#FF6B1A"/>
+  <polygon points="60,40 50,10 75,35" fill="#FF6B1A"/>
+  <polygon points="80,25 78,0 95,28" fill="#FF6B1A"/>
+  <polygon points="105,22 110,0 120,28" fill="#FF6B1A"/>
+  <polygon points="130,35 148,8 138,40" fill="#FF6B1A"/>
+  <!-- Face -->
+  <ellipse cx="100" cy="80" rx="38" ry="35" fill="#FFCBA4"/>
+  <!-- Eyes -->
+  <circle cx="87" cy="76" r="7" fill="#3D2B1F"/>
+  <circle cx="113" cy="76" r="7" fill="#3D2B1F"/>
+  <circle cx="89" cy="74" r="2.5" fill="white"/>
+  <circle cx="115" cy="74" r="2.5" fill="white"/>
+  <!-- Smile -->
+  <path d="M 85 92 Q 100 104 115 92" stroke="#3D2B1F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Freckles -->
+  <circle cx="80" cy="86" r="2" fill="#E8A882" opacity="0.7"/>
+  <circle cx="120" cy="86" r="2" fill="#E8A882" opacity="0.7"/>
+  <!-- Yellow hoodie body -->
+  <rect x="62" y="112" width="76" height="90" rx="12" fill="#FFD700"/>
+  <!-- Lightning bolt on hoodie -->
+  <polygon points="95,130 88,152 98,152 93,172 112,148 101,148 107,130" fill="white"/>
+  <!-- Hoodie pocket -->
+  <rect x="72" y="170" width="56" height="25" rx="6" fill="#E6C200"/>
+  <!-- Arms - relaxed at sides -->
+  <rect x="38" y="115" width="26" height="70" rx="13" fill="#FFD700"/>
+  <rect x="136" y="115" width="26" height="70" rx="13" fill="#FFD700"/>
+  <!-- Hands -->
+  <ellipse cx="51" cy="190" rx="13" ry="11" fill="#FFCBA4"/>
+  <ellipse cx="149" cy="190" rx="13" ry="11" fill="#FFCBA4"/>
+  <!-- Blue jeans -->
+  <rect x="68" y="200" width="30" height="80" rx="8" fill="#4A90D9"/>
+  <rect x="102" y="200" width="30" height="80" rx="8" fill="#4A90D9"/>
+  <!-- Jeans cuffs -->
+  <rect x="68" y="268" width="30" height="12" rx="4" fill="#3A7BC8"/>
+  <rect x="102" y="268" width="30" height="12" rx="4" fill="#3A7BC8"/>
+  <!-- Red sneakers -->
+  <ellipse cx="83" cy="286" rx="20" ry="10" fill="#CC2200"/>
+  <ellipse cx="117" cy="286" rx="20" ry="10" fill="#CC2200"/>
+  <rect x="63" y="278" width="40" height="12" rx="6" fill="#CC2200"/>
+  <rect x="97" y="278" width="40" height="12" rx="6" fill="#CC2200"/>
+  <!-- Shoe laces -->
+  <line x1="70" y1="282" x2="100" y2="282" stroke="white" stroke-width="1.5"/>
+  <line x1="104" y1="282" x2="134" y2="282" stroke="white" stroke-width="1.5"/>
+</svg>

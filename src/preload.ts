@@ -85,16 +85,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
         return ipcRenderer.invoke('compile-code', code, fqbn || 'arduino:avr:uno', libraryPath);
     },
 
-    // ── ESP32 QEMU simulation ─────────────────────────────────────────────
-    /** Start QEMU with the compiled .bin file */
-    esp32Start: (binPath: string) => ipcRenderer.invoke('esp32-start', binPath),
-    /** Stop QEMU and clean up */
-    esp32Stop: () => ipcRenderer.invoke('esp32-stop'),
-    /** Drive a GPIO input pin HIGH or LOW */
-    esp32GpioSet: (pin: number, high: boolean) => ipcRenderer.invoke('esp32-gpio-set', pin, high),
-    /** Inject an analog voltage into an ADC channel */
-    esp32AdcSet: (channel: number, voltage: number) => ipcRenderer.invoke('esp32-adc-set', channel, voltage),
-
     // ═══════════════════════════════════════════════════════════════════════
     // EVENT LISTENERS
     // ═══════════════════════════════════════════════════════════════════════
@@ -186,6 +176,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     onPythonOutput: (callback: (data: string) => void) => ipcRenderer.on('python-output', (_, msg) => callback(msg)),
     onPythonError: (callback: (data: string) => void) => ipcRenderer.on('python-error', (_, msg) => callback(msg)),
+    onPythonErrorComplete: (callback: (data: string) => void) => ipcRenderer.on('python-error-complete', (_, msg) => callback(msg)),
     onPythonExit: (callback: (code: number) => void) => ipcRenderer.on('python-exit', (_, code) => callback(code)),
     onPythonReplOutput: (callback: (data: string) => void) => ipcRenderer.on('python-repl-output', (_, msg) => callback(msg)),
     onPythonReplError: (callback: (data: string) => void) => ipcRenderer.on('python-repl-error', (_, msg) => callback(msg)),
@@ -224,11 +215,6 @@ declare global {
             onUploadProgress: (callback: (progress: number, message: string) => void) => void;
             removeAllListeners: () => void;
             removeBackground: (imagePath: string) => Promise<{ success: boolean; error?: string; stdout?: string; stderr?: string; base64?: string }>;
-            // ESP32 QEMU
-            esp32Start: (binPath: string) => Promise<{ ok: boolean }>;
-            esp32Stop: () => Promise<{ ok: boolean }>;
-            esp32GpioSet: (pin: number, high: boolean) => Promise<void>;
-            esp32AdcSet: (channel: number, voltage: number) => Promise<void>;
             buildApk: (appState: any) => Promise<{ success: boolean, outputPath?: string, error?: string }>;
             onBuildLog: (cb: (msg: string) => void) => void;
             removeBuildLogListener: () => void;
@@ -250,6 +236,7 @@ declare global {
 
             onPythonOutput: (callback: (data: string) => void) => void;
             onPythonError: (callback: (data: string) => void) => void;
+            onPythonErrorComplete: (callback: (data: string) => void) => void;
             onPythonExit: (callback: (code: number) => void) => void;
             onPythonReplOutput: (callback: (data: string) => void) => void;
             onPythonReplError: (callback: (data: string) => void) => void;
