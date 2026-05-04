@@ -1,9 +1,9 @@
 import { css, html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
 import { mmToPix } from './utils/units';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-7segment')
 export class SevenSegmentElement extends LitElement {
   /** The color of a lit segment */
   @property() color = 'red';
@@ -219,3 +219,5 @@ export class SevenSegmentElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-7segment', SevenSegmentElement);

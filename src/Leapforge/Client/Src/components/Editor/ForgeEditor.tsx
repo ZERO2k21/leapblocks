@@ -4,6 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useEffect } from 'react';
+import Editor from '@monaco-editor/react';
 import Editor, { loader } from '@monaco-editor/react';
 
 interface ForgeEditorProps {

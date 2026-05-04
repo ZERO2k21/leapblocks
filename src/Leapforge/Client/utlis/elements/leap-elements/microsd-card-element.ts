@@ -1,9 +1,10 @@
 import { html, LitElement } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { safeDefine } from './utils/safe-define';
+
 import { ElementPin } from '.';
 import { spi } from './pin';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-microsd-card')
 export class MicrosdCardElement extends LitElement {
   readonly pinInfo: ElementPin[] = [
     { name: 'CD', x: 76.734, y: 9.3744, signals: [] },
@@ -99,3 +100,5 @@ export class MicrosdCardElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-microsd-card', MicrosdCardElement);

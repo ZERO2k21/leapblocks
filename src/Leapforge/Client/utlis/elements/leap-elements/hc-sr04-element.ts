@@ -1,8 +1,9 @@
 import { html, LitElement } from 'lit';
-import { customElement } from 'lit/decorators.js';
-import { ElementPin } from './pin';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-hc-sr04')
+import { ElementPin } from './pin';
+import { safeDefine } from './utils/safe-define';
+
 export class HCSR04Element extends LitElement {
   readonly pinInfo: ElementPin[] = [
     { name: 'VCC', x: 71.3, y: 94.5, signals: [{ type: 'power', signal: 'VCC', voltage: 5 }] },
@@ -97,3 +98,5 @@ export class HCSR04Element extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-hc-sr04', HCSR04Element);

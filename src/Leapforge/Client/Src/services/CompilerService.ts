@@ -21,7 +21,7 @@ export interface CompileRequest {
 export interface CompileResult {
   success: boolean;
   hexContent?: string;
-  binPath?: string;   // returned for esp32:esp32:* FQBNs (QEMU path)
+  binPath?: string;   // returned for esp32:esp32:* FQBNs (upload path)
   error?: string;
 }
 
@@ -278,7 +278,91 @@ var Adafruit_Sensor = (typeof Adafruit_Sensor !== 'undefined' && Adafruit_Sensor
 var IRrecv = (typeof IRrecv !== 'undefined' && IRrecv) || class { constructor(){} enableIRIn(){} decode(){return false;} resume(){} };
 var decode_results = (typeof decode_results !== 'undefined' && decode_results) || class { constructor(){} };
 var SoftwareSerial = (typeof SoftwareSerial !== 'undefined' && SoftwareSerial) || class { constructor(){} begin(){} print(){} println(){} available(){return 0;} read(){return -1;} };
-var Stepper = (typeof Stepper !== 'undefined' && Stepper) || class { constructor(){} setSpeed(){} step(){} };
+var Stepper = (typeof Stepper !== 'undefined' && Stepper) || class {
+  constructor(stepsPerRev, pin1, pin2, pin3, pin4) {
+    this._stepsPerRev = stepsPerRev || 200;
+    this._pin1 = pin1; this._pin2 = pin2;
+    this._pin3 = pin3 !== undefined ? pin3 : -1;
+    this._pin4 = pin4 !== undefined ? pin4 : -1;
+    this._stepMode = (pin3 !== undefined && pin4 !== undefined) ? '4wire' : '2wire';
+    this._stepNum = 0; this._stepDelay = 10;
+  }
+  setSpeed(rpm) { if (rpm > 0) this._stepDelay = Math.max(1, Math.round(60000 / (this._stepsPerRev * rpm))); }
+  async step(steps) {
+    const dir = steps >= 0 ? 1 : -1;
+    const count = Math.abs(steps);
+    const HIGH = 1, LOW = 0;
+    for (let i = 0; i < count; i++) {
+      this._stepNum = ((this._stepNum + dir) % 4 + 4) % 4;
+      if (this._stepMode === '2wire') {
+        digitalWrite(this._pin2, dir > 0 ? HIGH : LOW);
+        digitalWrite(this._pin1, HIGH); digitalWrite(this._pin1, LOW);
+      } else {
+        const seq = [[HIGH,LOW,LOW,HIGH],[HIGH,HIGH,LOW,LOW],[LOW,HIGH,HIGH,LOW],[LOW,LOW,HIGH,HIGH]];
+        const s = seq[this._stepNum];
+        const pins = [this._pin1, this._pin2, this._pin3, this._pin4];
+        for (let p = 0; p < 4; p++) { if (pins[p] >= 0) digitalWrite(pins[p], s[p]); }
+      }
+      await new Promise(r => setTimeout(r, this._stepDelay));
+    }
+  }
+};
+var AccelStepper = (typeof AccelStepper !== 'undefined' && AccelStepper) || class {
+  static get DRIVER() { return 1; }
+  static get FULL2WIRE() { return 2; }
+  static get FULL4WIRE() { return 4; }
+  static get HALF4WIRE() { return 8; }
+  constructor(iface, stepPin, dirPin, pin3, pin4) {
+    this._iface = iface || 1; this._stepPin = stepPin; this._dirPin = dirPin;
+    this._pin3 = pin3 !== undefined ? pin3 : -1; this._pin4 = pin4 !== undefined ? pin4 : -1;
+    this._currentPos = 0; this._targetPos = 0; this._speed = 0;
+    this._maxSpeed = 1; this._dirInvert = false; this._enablePin = -1;
+  }
+  setMaxSpeed(s) { this._maxSpeed = Math.abs(s); }
+  setAcceleration(_a) {}
+  setSpeed(s) { this._speed = s; }
+  setPinsInverted(d) { this._dirInvert = d; }
+  setEnablePin(p) { this._enablePin = p; }
+  enableOutputs() { if (this._enablePin >= 0) digitalWrite(this._enablePin, 0); }
+  disableOutputs() { if (this._enablePin >= 0) digitalWrite(this._enablePin, 1); }
+  moveTo(pos) { this._targetPos = pos; }
+  move(rel) { this._targetPos = this._currentPos + rel; }
+  currentPosition() { return this._currentPos; }
+  targetPosition() { return this._targetPos; }
+  distanceToGo() { return this._targetPos - this._currentPos; }
+  setCurrentPosition(pos) { this._currentPos = pos; this._targetPos = pos; }
+  stop() { this._targetPos = this._currentPos; }
+  speed() { return this._speed; }
+  maxSpeed() { return this._maxSpeed; }
+  isRunning() { return this._currentPos !== this._targetPos; }
+  _doStep(dir) {
+    const isForward = dir > 0;
+    const dirVal = (isForward !== this._dirInvert) ? 1 : 0;
+    digitalWrite(this._dirPin, dirVal);
+    digitalWrite(this._stepPin, 1); digitalWrite(this._stepPin, 0);
+    this._currentPos += dir;
+  }
+  run() {
+    if (this._currentPos === this._targetPos) return false;
+    this._doStep(this._targetPos > this._currentPos ? 1 : -1);
+    return this._currentPos !== this._targetPos;
+  }
+  runSpeed() {
+    if (this._speed === 0) return false;
+    this._doStep(this._speed > 0 ? 1 : -1);
+    return true;
+  }
+  async runToPosition() { 
+    while (this._currentPos !== this._targetPos) {
+      this._doStep(this._targetPos > this._currentPos ? 1 : -1);
+      const speed = this._speed !== 0 ? Math.abs(this._speed) : this._maxSpeed;
+      const delayMs = speed > 0 ? Math.max(1, Math.round(1000 / speed)) : 10;
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  runSpeedToPosition() { return this.run(); }
+  async runToNewPosition(pos) { this.moveTo(pos); await this.runToPosition(); }
+};
 var MFRC522 = (typeof MFRC522 !== 'undefined' && MFRC522) || class { constructor(){} PCD_Init(){} PICC_IsNewCardPresent(){return false;} PICC_ReadCardSerial(){return false;} };
 var Keypad = (typeof Keypad !== 'undefined' && Keypad) || class {
   constructor(_keymap, _rowPins, _colPins, _rows, _cols) {

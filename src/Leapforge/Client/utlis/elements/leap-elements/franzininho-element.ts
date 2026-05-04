@@ -1,10 +1,10 @@
 import { html, LitElement, svg, css } from 'lit';
-import { customElement, property, query } from 'lit/decorators.js';
+import { property, query } from 'lit/decorators.js';
 import { pinsFemalePattern } from './patterns/pins-female';
 import { analog, ElementPin, i2c, spi } from './pin';
 import { SPACE_KEYS } from './utils/keys';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-franzininho')
 export class FranzininhoElement extends LitElement {
   @property() led1 = false;
   @property() ledPower = false;
@@ -454,3 +454,5 @@ export class FranzininhoElement extends LitElement {
     this.up();
   }
 }
+
+safeDefine('leap-franzininho', FranzininhoElement);

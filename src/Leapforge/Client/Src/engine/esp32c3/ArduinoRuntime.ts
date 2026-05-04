@@ -321,16 +321,16 @@ export class ArduinoRuntime {
       // ── Additional Arduino utility functions ───────────────
       // shiftIn / shiftOut — used by some sensor libraries
       shiftIn(_dataPin: number, _clockPin: number, _bitOrder: number): number { return 0; },
-      shiftOut(_dataPin: number, _clockPin: number, _bitOrder: number, _val: number): void {},
+      shiftOut(_dataPin: number, _clockPin: number, _bitOrder: number, _val: number): void { },
       // pulseInLong — same as pulseIn but for longer pulses
       pulseInLong(pin: number, state: number, timeout?: number): number {
         return 0; // stub — real timing not available in browser
       },
       // noInterrupts / interrupts — no-ops in browser simulation
-      noInterrupts(): void {},
-      interrupts(): void {},
+      noInterrupts(): void { },
+      interrupts(): void { },
       // yield — cooperative multitasking hint, no-op in async JS
-      yield(): void {},
+      yield(): void { },
       // ESP32-specific
       esp_get_free_heap_size(): number { return 200000; },
       esp_get_minimum_free_heap_size(): number { return 100000; },
@@ -761,14 +761,14 @@ export class ArduinoRuntime {
                 gx = sv.gyroX ?? 0;
                 gy = sv.gyroY ?? 0;
                 gz = sv.gyroZ ?? 0;
-                t  = sv.temp  ?? 25;
+                t = sv.temp ?? 25;
                 break;
               }
             }
           } catch (e) { /* store not available */ }
           if (accelEvt) accelEvt.acceleration = { x: ax, y: ay, z: az };
-          if (gyroEvt)  gyroEvt.gyro          = { x: gx, y: gy, z: gz };
-          if (tempEvt)  tempEvt.temperature    = t;
+          if (gyroEvt) gyroEvt.gyro = { x: gx, y: gy, z: gz };
+          if (tempEvt) tempEvt.temperature = t;
           return true;
         }
       },
@@ -790,7 +790,7 @@ export class ArduinoRuntime {
         _sck = 0;
         _scale = 1;
         _offset = 0;
-        constructor() {}
+        constructor() { }
         begin(dout: number, sck: number): void {
           this._dout = dout;
           this._sck = sck;
@@ -810,8 +810,8 @@ export class ArduinoRuntime {
         is_ready(): boolean {
           return true;
         }
-        power_down(): void {}
-        power_up(): void {}
+        power_down(): void { }
+        power_up(): void { }
         private _readRaw(): number {
           try {
             const { nodes } = useForgeStore.getState();
@@ -882,12 +882,12 @@ export class ArduinoRuntime {
           self._i2cBus.write(0x00);
           self._i2cBus.endTransmission();
           self._i2cBus.requestFrom(this._addr, 7);
-          const sec  = this._fromBCD(self._i2cBus.read());
-          const min  = this._fromBCD(self._i2cBus.read());
+          const sec = this._fromBCD(self._i2cBus.read());
+          const min = this._fromBCD(self._i2cBus.read());
           const hour = this._fromBCD(self._i2cBus.read() & 0x3F);
           const _dow = self._i2cBus.read();
-          const day  = this._fromBCD(self._i2cBus.read());
-          const mon  = this._fromBCD(self._i2cBus.read());
+          const day = this._fromBCD(self._i2cBus.read());
+          const mon = this._fromBCD(self._i2cBus.read());
           const year = this._fromBCD(self._i2cBus.read()) + 2000;
           return new Date(year, mon - 1, day, hour, min, sec);
         }
@@ -908,14 +908,14 @@ export class ArduinoRuntime {
             this._date = new Date();
           }
         }
-        year(): number   { return this._date.getFullYear(); }
-        month(): number  { return this._date.getMonth() + 1; }
-        day(): number    { return this._date.getDate(); }
-        hour(): number   { return this._date.getHours(); }
+        year(): number { return this._date.getFullYear(); }
+        month(): number { return this._date.getMonth() + 1; }
+        day(): number { return this._date.getDate(); }
+        hour(): number { return this._date.getHours(); }
         minute(): number { return this._date.getMinutes(); }
         second(): number { return this._date.getSeconds(); }
         dayOfWeek(): number { return this._date.getDay() || 7; } // 1=Mon ... 7=Sun
-        unixtime(): number  { return Math.floor(this._date.getTime() / 1000); }
+        unixtime(): number { return Math.floor(this._date.getTime() / 1000); }
         toString(): string {
           const pad = (n: number) => String(n).padStart(2, '0');
           return `${this.year()}-${pad(this.month())}-${pad(this.day())} ${pad(this.hour())}:${pad(this.minute())}:${pad(this.second())}`;
@@ -953,7 +953,7 @@ export class ArduinoRuntime {
               this._keys.push(row);
             }
           } else {
-            this._keys = [['1','2','3','A'],['4','5','6','B'],['7','8','9','C'],['*','0','#','D']];
+            this._keys = [['1', '2', '3', 'A'], ['4', '5', '6', 'B'], ['7', '8', '9', 'C'], ['*', '0', '#', 'D']];
           }
         }
 
@@ -1009,6 +1009,195 @@ export class ArduinoRuntime {
         setHoldTime(_ms: number): void { }
         setDebounceTime(_ms: number): void { }
         addEventListener(_listener: any): void { }
+      },
+
+      // ── Stepper library (4-wire or STEP/DIR mode) ───────────────────────────
+      // Calls digitalWrite so CircuitEngine's A4988 listener fires on STEP/DIR pins.
+      Stepper: class {
+        private _stepsPerRev: number;
+        private _pin1: number;
+        private _pin2: number;
+        private _pin3: number;
+        private _pin4: number;
+        private _stepMode: '2wire' | '4wire';
+        private _stepDelay: number = 10; // ms per step
+        private _stepNum: number = 0;
+
+        constructor(stepsPerRev: number, pin1: number, pin2: number, pin3?: number, pin4?: number) {
+          this._stepsPerRev = stepsPerRev || 200;
+          this._pin1 = pin1;
+          this._pin2 = pin2;
+          this._pin3 = pin3 ?? -1;
+          this._pin4 = pin4 ?? -1;
+          this._stepMode = (pin3 !== undefined && pin4 !== undefined) ? '4wire' : '2wire';
+        }
+
+        setSpeed(rpm: number): void {
+          // Convert RPM to ms per step
+          if (rpm > 0) {
+            this._stepDelay = Math.max(1, Math.round(60000 / (this._stepsPerRev * rpm)));
+          }
+        }
+
+        async step(steps: number): Promise<void> {
+          const dir = steps >= 0 ? 1 : -1;
+          const count = Math.abs(steps);
+          for (let i = 0; i < count; i++) {
+            this._stepNum = ((this._stepNum + dir) % 4 + 4) % 4;
+            if (this._stepMode === '2wire') {
+              // STEP/DIR mode: pin1=STEP, pin2=DIR
+              self.pinValues.set(this._pin2, dir > 0 ? HIGH : LOW);
+              self.onPinChange?.(this._pin2, dir > 0 ? HIGH : LOW, false);
+              self.pinValues.set(this._pin1, HIGH);
+              self.onPinChange?.(this._pin1, HIGH, false);
+              self.pinValues.set(this._pin1, LOW);
+              self.onPinChange?.(this._pin1, LOW, false);
+            } else {
+              // 4-wire coil sequence — must match StepperEmulator.FULL_STEP_SEQ:
+              //   [aPlus, bPlus, aMinus, bMinus]
+              //   Phase 0: A+ B-  → [HIGH, LOW,  LOW,  HIGH]
+              //   Phase 1: A+ B+  → [HIGH, HIGH, LOW,  LOW ]
+              //   Phase 2: A- B+  → [LOW,  HIGH, HIGH, LOW ]
+              //   Phase 3: A- B-  → [LOW,  LOW,  HIGH, HIGH]
+              // pin order: pin1=A+, pin2=B+, pin3=A-, pin4=B-
+              const seq = [
+                [HIGH, LOW, LOW, HIGH],
+                [HIGH, HIGH, LOW, LOW],
+                [LOW, HIGH, HIGH, LOW],
+                [LOW, LOW, HIGH, HIGH],
+              ];
+              const s = seq[this._stepNum];
+              const pins = [this._pin1, this._pin2, this._pin3, this._pin4];
+              for (let p = 0; p < 4; p++) {
+                if (pins[p] >= 0) {
+                  self.pinValues.set(pins[p], s[p]);
+                  self.onPinChange?.(pins[p], s[p], false);
+                }
+              }
+            }
+            // Yield to browser loop based on configured step delay
+            await new Promise(r => setTimeout(r, this._stepDelay));
+          }
+        }
+      },
+
+      // ── AccelStepper library (most common A4988 library) ────────────────────
+      // Emulates STEP/DIR mode: fires onPinChange for STEP and DIR pins so
+      // CircuitEngine's A4988 listener can drive the stepper motor visual.
+      AccelStepper: class {
+        static DRIVER = 1;   // STEP/DIR mode
+        static FULL2WIRE = 2;
+        static FULL4WIRE = 4;
+        static HALF4WIRE = 8;
+
+        private _interface: number;
+        private _stepPin: number;
+        private _dirPin: number;
+        private _pin3: number;
+        private _pin4: number;
+        private _currentPos: number = 0;
+        private _targetPos: number = 0;
+        private _speed: number = 0;
+        private _maxSpeed: number = 1;
+        private _acceleration: number = 0;
+        private _dirInvert: boolean = false;
+        private _enablePin: number = -1;
+
+        constructor(iface: number, stepPin: number, dirPin: number, pin3?: number, pin4?: number) {
+          this._interface = iface ?? 1;
+          this._stepPin = stepPin;
+          this._dirPin = dirPin;
+          this._pin3 = pin3 ?? -1;
+          this._pin4 = pin4 ?? -1;
+        }
+
+        // ── Configuration ──────────────────────────────────────
+        setMaxSpeed(speed: number): void { this._maxSpeed = Math.abs(speed); }
+        setAcceleration(_accel: number): void { this._acceleration = _accel; }
+        setSpeed(speed: number): void { this._speed = speed; }
+        setPinsInverted(dirInvert: boolean): void { this._dirInvert = dirInvert; }
+        setEnablePin(pin: number): void { this._enablePin = pin; }
+        enableOutputs(): void {
+          if (this._enablePin >= 0) {
+            self.pinValues.set(this._enablePin, LOW); // ENABLE is active LOW
+            self.onPinChange?.(this._enablePin, LOW, false);
+          }
+        }
+        disableOutputs(): void {
+          if (this._enablePin >= 0) {
+            self.pinValues.set(this._enablePin, HIGH);
+            self.onPinChange?.(this._enablePin, HIGH, false);
+          }
+        }
+
+        // ── Position ───────────────────────────────────────────
+        moveTo(absolute: number): void { this._targetPos = absolute; }
+        move(relative: number): void { this._targetPos = this._currentPos + relative; }
+        currentPosition(): number { return this._currentPos; }
+        targetPosition(): number { return this._targetPos; }
+        distanceToGo(): number { return this._targetPos - this._currentPos; }
+        setCurrentPosition(pos: number): void { this._currentPos = pos; this._targetPos = pos; }
+        stop(): void { this._targetPos = this._currentPos; }
+
+        // ── Stepping ───────────────────────────────────────────
+        private _doStep(dir: 1 | -1): void {
+          const isForward = dir > 0;
+          const dirVal = (isForward !== this._dirInvert) ? HIGH : LOW;
+          // Set DIR pin
+          const prevDir = self.pinValues.get(this._dirPin) ?? LOW;
+          if (prevDir !== dirVal) {
+            self.pinValues.set(this._dirPin, dirVal);
+            self.onPinChange?.(this._dirPin, dirVal, false);
+          }
+          // Pulse STEP pin HIGH then LOW
+          self.pinValues.set(this._stepPin, HIGH);
+          self.onPinChange?.(this._stepPin, HIGH, false);
+          self.pinValues.set(this._stepPin, LOW);
+          self.onPinChange?.(this._stepPin, LOW, false);
+          this._currentPos += dir;
+        }
+
+        run(): boolean {
+          if (this._currentPos === this._targetPos) return false;
+          const dir: 1 | -1 = this._targetPos > this._currentPos ? 1 : -1;
+          this._doStep(dir);
+          return this._currentPos !== this._targetPos;
+        }
+
+        runSpeed(): boolean {
+          if (this._speed === 0) return false;
+          const dir: 1 | -1 = this._speed > 0 ? 1 : -1;
+          this._doStep(dir);
+          return true;
+        }
+
+        async runToPosition(): Promise<void> {
+          while (this._currentPos !== this._targetPos) {
+            const dir: 1 | -1 = this._targetPos > this._currentPos ? 1 : -1;
+            this._doStep(dir);
+            // Calculate delay from speed or maxSpeed, default to 1ms
+            const speed = this._speed !== 0 ? Math.abs(this._speed) : this._maxSpeed;
+            const delayMs = speed > 0 ? Math.max(1, Math.round(1000 / speed)) : 10;
+            // Yield to browser to prevent UI freeze and allow animation rendering
+            await new Promise(r => setTimeout(r, delayMs));
+          }
+        }
+
+        runSpeedToPosition(): boolean {
+          return this.run();
+        }
+
+        async runToNewPosition(pos: number): Promise<void> {
+          this.moveTo(pos);
+          await this.runToPosition();
+        }
+
+        isRunning(): boolean {
+          return this._currentPos !== this._targetPos;
+        }
+
+        speed(): number { return this._speed; }
+        maxSpeed(): number { return this._maxSpeed; }
       },
     };
   }

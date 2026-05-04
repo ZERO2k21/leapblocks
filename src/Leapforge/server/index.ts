@@ -15,6 +15,31 @@ import { transpileArduinoToJS } from './transpiler.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Project root — works whether running from src/Leapforge/server/ or compiled dist/
+// Walk up until we find the directory that has BOTH package.json AND arduino-cli/
+function findProjectRoot(startDir: string): string {
+  let dir = startDir;
+  for (let i = 0; i < 10; i++) {
+    if (
+      fs.existsSync(path.join(dir, 'package.json')) &&
+      fs.existsSync(path.join(dir, 'arduino-cli'))
+    ) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  // Fallback: first package.json found walking up
+  dir = startDir;
+  for (let i = 0; i < 10; i++) {
+    if (fs.existsSync(path.join(dir, 'package.json'))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return startDir;
+}
+const PROJECT_ROOT = findProjectRoot(__dirname);
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -26,14 +51,21 @@ const getCLIBinary = () => {
   const isWindows = os.platform() === 'win32';
   const binaryName = isWindows ? 'arduino-cli.exe' : 'arduino-cli';
 
-  const localBundledPath = path.resolve(__dirname, '..', 'arduino-cli', binaryName);
+  // 1. Bundled alongside the project root (arduino-cli/arduino-cli.exe)
+  const bundledPath = path.join(PROJECT_ROOT, 'arduino-cli', binaryName);
+  if (fs.existsSync(bundledPath)) {
+    console.log(`[SERVER] Using bundled CLI: ${bundledPath}`);
+    return `"${bundledPath}"`;
+  }
 
+  // 2. Legacy: relative to server file (for compiled/deployed builds)
+  const localBundledPath = path.resolve(__dirname, '..', 'arduino-cli', binaryName);
   if (fs.existsSync(localBundledPath)) {
-    console.log(`[SERVER] Using bundled CLI: ${localBundledPath}`);
+    console.log(`[SERVER] Using local bundled CLI: ${localBundledPath}`);
     return `"${localBundledPath}"`;
   }
 
-  console.log(`[SERVER] Bundled CLI not found. Falling back to global command.`);
+  console.log(`[SERVER] Bundled CLI not found at ${bundledPath} — falling back to global command.`);
   return 'arduino-cli';
 };
 
@@ -41,16 +73,22 @@ const getCLIBinary = () => {
  * Resolve the path to the forge-lib and its config.
  */
 const getForgePaths = () => {
-  const localForgeLib = path.resolve(__dirname, '..', 'forge-lib');
-  const localConfig = path.join(localForgeLib, 'arduino-cli.yaml');
-
-  if (fs.existsSync(localConfig)) {
-    return {
-      userDir: localForgeLib,
-      configFile: localConfig
-    };
+  // 1. Project root forge-lib (dev mode)
+  const rootForgeLib = path.join(PROJECT_ROOT, 'forge-lib');
+  const rootConfig = path.join(rootForgeLib, 'arduino-cli.yaml');
+  if (fs.existsSync(rootConfig)) {
+    console.log(`[SERVER] Using forge-lib at: ${rootForgeLib}`);
+    return { userDir: rootForgeLib, configFile: rootConfig };
   }
 
+  // 2. Legacy relative path
+  const localForgeLib = path.resolve(__dirname, '..', 'forge-lib');
+  const localConfig = path.join(localForgeLib, 'arduino-cli.yaml');
+  if (fs.existsSync(localConfig)) {
+    return { userDir: localForgeLib, configFile: localConfig };
+  }
+
+  // 3. Docker / deployed fallback
   return {
     userDir: '/app/forge-lib',
     configFile: '/app/forge-lib/arduino-cli.yaml'
@@ -59,13 +97,29 @@ const getForgePaths = () => {
 
 const CLI_BIN = getCLIBinary();
 const FORGE = getForgePaths();
-let isInitialized = false;
 
-// Helper
-const runCommand = (cmd: string): Promise<{ stdout: string; stderr: string }> => {
+// Write arduino-cli.yaml with absolute paths so it works regardless of CWD
+// and keeps all data inside forge-lib/ (outside Vite's watch scope)
+(function ensureForgeConfig() {
+  const forgeLib = FORGE.userDir;
+  const dataDir = path.join(forgeLib, 'data');
+  const stagingDir = path.join(forgeLib, 'staging');
+  const libsDir = path.join(forgeLib, 'libraries');
+  [dataDir, stagingDir, libsDir].forEach(d => { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }); });
+
+  const yaml = `directories:\n  data: ${dataDir.replace(/\\/g, '/')}\n  downloads: ${stagingDir.replace(/\\/g, '/')}\n  user: ${forgeLib.replace(/\\/g, '/')}\n`;
+  fs.writeFileSync(FORGE.configFile, yaml, 'utf8');
+  console.log(`[SERVER] arduino-cli.yaml written with absolute paths → data: ${dataDir}`);
+})();
+let isInitialized = false;
+let avrReady = false;   // set true as soon as AVR core is confirmed — allows AVR compiles immediately
+let esp32Ready = false; // set true when ESP32 core is ready
+
+// Helper — long timeout variant for core installs (ESP32 is ~400 MB)
+const runCommandLong = (cmd: string, timeoutMs = 900_000): Promise<{ stdout: string; stderr: string }> => {
   console.log(`[EXEC] ${cmd}`);
   return new Promise((resolve, reject) => {
-    exec(cmd, { timeout: 60000 }, (err, stdout, stderr) => {
+    exec(cmd, { timeout: timeoutMs }, (err, stdout, stderr) => {
       if (err) {
         console.error(`[EXEC ERROR] Code: ${err.code}`);
         let errorMessage = stderr || stdout || err.message;
@@ -81,8 +135,14 @@ const runCommand = (cmd: string): Promise<{ stdout: string; stderr: string }> =>
   });
 };
 
+// Helper — standard timeout for most commands
+const runCommand = (cmd: string): Promise<{ stdout: string; stderr: string }> => {
+  return runCommandLong(cmd, 60_000);
+};
+
 /**
  * Ensure necessary cores are installed.
+ * AVR is marked ready immediately after it's confirmed — ESP32 installs in background.
  */
 const initCores = async () => {
   try {
@@ -109,39 +169,75 @@ const initCores = async () => {
       console.log('[SERVER] Core arduino:avr is already installed.');
     }
 
-    // Install ESP32 core if not present
+    // AVR is ready — allow AVR compiles immediately without waiting for ESP32
+    avrReady = true;
+    isInitialized = true;
+    console.log('[SERVER] ✓ Ready for AVR compilation.');
+
+    // Install ESP32 core in the background — doesn't block AVR compiles
     const hasEsp32 = Array.isArray(data) && data.some((c: any) =>
       (c.platform?.id === 'esp32:esp32') || (c.id === 'esp32:esp32')
     );
     if (!hasEsp32) {
-      console.log('[SERVER] Core esp32:esp32 not found. Installing (this may take a few minutes)...');
-      await runCommand(
+      console.log('[SERVER] Core esp32:esp32 not found. Installing in background (this may take a few minutes)...');
+      // Use 15-minute timeout — ESP32 core is ~400 MB
+      runCommandLong(
         `${CLI_BIN} core update-index --config-file "${FORGE.configFile}" --additional-urls ` +
-        `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
-      );
-      await runCommand(
+        `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`,
+        120_000
+      ).then(() => runCommandLong(
         `${CLI_BIN} core install esp32:esp32 --config-file "${FORGE.configFile}" --additional-urls ` +
-        `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
-      );
-      console.log('[SERVER] Core esp32:esp32 installed successfully.');
+        `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`,
+        900_000  // 15 minutes
+      )).then(() => {
+        esp32Ready = true;
+        console.log('[SERVER] ✓ Core esp32:esp32 installed successfully.');
+      }).catch((err: any) => {
+        console.warn('[SERVER WARNING] ESP32 core install failed:', err.message);
+      });
     } else {
+      esp32Ready = true;
       console.log('[SERVER] Core esp32:esp32 is already installed.');
     }
 
-    isInitialized = true;
   } catch (err: any) {
     console.warn('[SERVER WARNING] Core initialization skip/fail:', err.message);
-    isInitialized = true; // Proceed anyway
+    // Allow compilation attempts even if core check failed
+    isInitialized = true;
+    avrReady = true;
   }
 };
 
+// GET /status — lets the client check if the server is ready
+app.get('/status', (_req, res) => {
+  res.json({
+    ready: isInitialized,
+    avrReady,
+    esp32Ready,
+    message: isInitialized
+      ? `Ready. AVR: ${avrReady}, ESP32: ${esp32Ready}`
+      : 'Server is initializing — installing Arduino cores...',
+  });
+});
+
 // POST /compile
 app.post('/compile', async (req, res) => {
-  if (!isInitialized) {
-    return res.status(503).json({ success: false, errors: ['Server is still initializing. Please wait.'] });
-  }
-
   const { code, board = 'arduino:avr:uno', libraries = [] } = req.body;
+  const isESP32Board = typeof board === 'string' && board.startsWith('esp32:');
+
+  // Block only if the required core isn't ready yet
+  if (isESP32Board && !esp32Ready) {
+    return res.status(503).json({
+      success: false,
+      errors: ['ESP32 core is still installing. Please wait a few minutes and try again.'],
+    });
+  }
+  if (!isESP32Board && !avrReady) {
+    return res.status(503).json({
+      success: false,
+      errors: ['Server is still initializing. Please wait a moment and try again.'],
+    });
+  }
 
   if (!code) {
     return res.status(400).json({ success: false, errors: ['No code provided'] });
@@ -195,7 +291,7 @@ app.post('/transpile', async (req, res) => {
   }
 
   // Step 1: Validate the sketch by compiling with arduino-cli (catches syntax errors)
-  if (isInitialized) {
+  if (esp32Ready) {
     const sketchId = `transpile_${Date.now()}`;
     const sketchDir = path.join(os.tmpdir(), 'leapforge', sketchId);
     const sketchFile = path.join(sketchDir, `${sketchId}.ino`);
@@ -321,3 +417,4 @@ app.listen(PORT, async () => {
   console.log(`LeapForge Compiler Server running on :${PORT}`);
   await initCores();
 });
+

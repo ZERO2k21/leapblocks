@@ -1,8 +1,9 @@
 import { html, LitElement } from 'lit';
-import { customElement } from 'lit/decorators.js';
-import { ElementPin, GND, i2c, VCC } from './pin';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-ds1307')
+import { ElementPin, GND, i2c, VCC } from './pin';
+import { safeDefine } from './utils/safe-define';
+
 export class Ds1307Element extends LitElement {
   readonly pinInfo: ElementPin[] = [
     { name: 'GND', y: 15, x: 9.5, number: 1, signals: [GND()] },
@@ -97,3 +98,5 @@ export class Ds1307Element extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-ds1307', Ds1307Element);

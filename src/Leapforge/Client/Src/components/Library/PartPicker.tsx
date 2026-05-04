@@ -42,6 +42,7 @@ const COMPONENTS = [
   { id: 'buzzer', name: 'Buzzer', category: 'outputs', desc: 'Piezo sounder' },
   { id: 'servo', name: 'Servo Motor', category: 'outputs', desc: 'Positionable motor' },
   { id: 'stepper-motor', name: 'Stepper Motor', category: 'outputs', desc: 'Step motor' },
+  { id: 'a4988', name: 'A4988 Driver', category: 'outputs', desc: 'Stepper motor driver' },
   { id: 'biaxial-stepper', name: 'Biaxial Stepper', category: 'outputs', desc: 'Dual-axis stepper' },
   { id: 'ks2e-m-dc5', name: 'Relay', category: 'outputs', desc: '5V Relay' },
 

@@ -1,11 +1,11 @@
 import { css, html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
+import { safeDefine } from './utils/safe-define';
 
 /**
  * Renders a piezo electric buzzer.
  */
-@customElement('leap-buzzer')
 export class BuzzerElement extends LitElement {
   /**
    * Boolean representing if an electric signal is coming in the buzzer
@@ -140,3 +140,5 @@ export class BuzzerElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-buzzer', BuzzerElement);

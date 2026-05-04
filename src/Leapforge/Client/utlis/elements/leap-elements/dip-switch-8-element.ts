@@ -1,8 +1,8 @@
 import { html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { ElementPin } from '.';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-dip-switch-8')
 export class DipSwitch8Element extends LitElement {
   @property({ type: Array }) values = [0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -154,3 +154,5 @@ export class DipSwitch8Element extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-dip-switch-8', DipSwitch8Element);

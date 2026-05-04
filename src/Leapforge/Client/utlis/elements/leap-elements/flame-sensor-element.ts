@@ -13,10 +13,10 @@
  *   DOUT   = LOW when intensity > threshold (active-LOW comparator output)
  */
 import { css, html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { analog, ElementPin, GND, VCC } from './pin';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-flame-sensor')
 export class FlameSensorElement extends LitElement {
   /** Flame intensity 0–100 (0 = no flame, 100 = full flame) */
   @property({ type: Number }) value = 0;
@@ -239,3 +239,5 @@ export class FlameSensorElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-flame-sensor', FlameSensorElement);

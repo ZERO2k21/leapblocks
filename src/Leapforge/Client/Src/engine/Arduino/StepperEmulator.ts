@@ -82,6 +82,7 @@ export class StepperEmulator {
 
   private coilState: [boolean, boolean, boolean, boolean] = [false, false, false, false];
   private lastPhase = -1;
+  private lastPhaseSeqLen: 4 | 8 | 0 = 0;
   private energized = false;
 
   private dirHigh: boolean;
@@ -150,18 +151,41 @@ export class StepperEmulator {
     }
 
     const fullIdx = FULL_STEP_SEQ.findIndex(s => s.every((v, i) => v === this.coilState[i]));
-    const halfIdx = fullIdx === -1 ? HALF_STEP_SEQ.findIndex(s => s.every((v, i) => v === this.coilState[i])) : -1;
+    const halfIdx = HALF_STEP_SEQ.findIndex(s => s.every((v, i) => v === this.coilState[i]));
 
-    const seqLen   = fullIdx !== -1 ? 4 : halfIdx !== -1 ? 8 : 0;
-    const newPhase = fullIdx !== -1 ? fullIdx : halfIdx;
+    let seqLen: 4 | 8 | 0 = 0;
+    let newPhase = -1;
+    if (fullIdx !== -1) {
+      seqLen = 4;
+      newPhase = fullIdx;
+    } else if (halfIdx !== -1) {
+      seqLen = 8;
+      newPhase = halfIdx;
+    }
 
     if (newPhase === -1) { this.emit(); return; }
+
+    // In full-step mode, ignore half-step intermediary states that appear while
+    // individual GPIO pins change one-by-one. This removes direction glitches.
+    if (this.steppingMode === 'full' && seqLen !== 4) {
+      this.emit();
+      return;
+    }
 
     if (this.mode !== '4-wire') {
       this.mode = '4-wire';
     }
 
     if (this.lastPhase !== -1) {
+      // Compare only within the same sequence family (4-step or 8-step).
+      // Mixing sequence lengths can create false reverse pulses.
+      if (this.lastPhaseSeqLen !== seqLen) {
+        this.lastPhase = newPhase;
+        this.lastPhaseSeqLen = seqLen;
+        this.emit();
+        return;
+      }
+
       const delta = newPhase - this.lastPhase;
       let step: 1 | -1 | 0 = 0;
 
@@ -177,6 +201,7 @@ export class StepperEmulator {
     }
 
     this.lastPhase = newPhase;
+    this.lastPhaseSeqLen = seqLen;
     this.emit();
   }
 
@@ -312,6 +337,7 @@ export class StepperEmulator {
     this.currentSpeed = 0;
     this.lastDirection = 0;
     this.lastPhase = -1;
+    this.lastPhaseSeqLen = 0;
     this.emit();
   }
 

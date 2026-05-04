@@ -1,13 +1,13 @@
 import { html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
 import { RGB } from './types/rgb';
 import { mmToPix } from './utils/units';
+import { safeDefine } from './utils/safe-define';
 
 const pinHeight = 3;
 const pcbWidth = 6;
 
-@customElement('leap-led-ring')
 export class LEDRingElement extends LitElement {
   /**
    * Number of pixels to in the LED ring
@@ -175,3 +175,5 @@ export class LEDRingElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-led-ring', LEDRingElement);
