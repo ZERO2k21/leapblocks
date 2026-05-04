@@ -27,6 +27,8 @@ export default defineConfig({
   define: {
     // Ensure process.env exists for libraries that check it
     'process.env.NODE_ENV': JSON.stringify('production'),
+    // Prevent UMD modules (like Blockly) from using Monaco's AMD loader
+    'define.amd': 'false',
   },
   build: {
     outDir: 'build',

@@ -40,6 +40,10 @@ export default defineConfig({
         'fabric': path.resolve(__dirname, 'node_modules/fabric/dist/index.mjs'),
       },
     },
+    define: {
+      // Prevent UMD modules (like Blockly) from using Monaco's AMD loader
+      'define.amd': 'false',
+    },
     esbuild: {
       tsconfigRaw: {
         compilerOptions: {
