@@ -247,7 +247,7 @@ export class ESP32SimulationRunner {
         const wifiM = /^__LF_WIFI:(.+)$/.exec(line);
         if (wifiM !== null) {
             // Lazy import to avoid circular dep — store is a singleton
-            import('../modules/leapforge/store/useForgeStore').then(({ useForgeStore }) => {
+            import('../Leapforge/Client/utlis/store/useForgeStore').then(({ useForgeStore }) => {
                 useForgeStore.getState().appendWiFiLog(wifiM[1]);
             }).catch(() => { /* non-fatal */ });
             return;

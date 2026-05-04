@@ -5,7 +5,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useAppState } from './hooks/useAppState';
-import { IgniteTopbar } from '../leapforge/components/Layout/IgniteTopbar';
+import { IgniteTopbar } from '../../Leapforge/Client/Src/components/Layout/Topbar';
 import Palette from './components/Palette';
 import PhoneCanvas from './components/PhoneCanvas';
 import PropertiesPanel from './components/PropertiesPanel';
@@ -73,15 +73,15 @@ export default function AppInventor({ onBack }) {
 
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden bg-white text-gray-900 font-sans">
-      <IgniteTopbar 
+      <IgniteTopbar
         title={appState.appName}
         onTitleChange={(val) => appState.setAppName(val)}
         onBack={onBack}
-        onSave={() => {}} // Save logic if needed
+        onSave={() => { }} // Save logic if needed
         brandName="APP INVENTOR"
         centerContent={
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '20px' }}>
-             <nav style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '20px' }}>
+            <nav style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '20px' }}>
               {['designer', 'blocks'].map(tab => (
                 <button
                   key={tab}

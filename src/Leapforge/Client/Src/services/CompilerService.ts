@@ -10,7 +10,7 @@
  *     → arduino-cli compile --libraries forge-lib/libraries/ ...
  *     → returns { success, hexContent }
  */
-import { IS_ELECTRON, isElectron, CLOUD_COMPILER_URL } from '../../../../../leapembed/server/config/platform';
+import { IS_ELECTRON, isElectron, CLOUD_COMPILER_URL } from '../../../../leapembed/server/config/platform';
 
 export interface CompileRequest {
   code: string;

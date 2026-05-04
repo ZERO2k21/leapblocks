@@ -11,7 +11,7 @@ import React, { useState, lazy, Suspense } from 'react';
 import { Home } from 'lucide-react';
 import Logo, { CreoleapLogo } from '../../leapembed/client/components/Logo';
 import './AppForgeStudio.css';
-import { IgniteTopbar } from '../leapforge/components/Layout/IgniteTopbar';
+import { IgniteTopbar } from '../../Leapforge/Client/Src/components/Layout/Topbar';
 
 // Lazy load heavy panels
 const Designer = lazy(() => import('./components/Designer/Designer'));
