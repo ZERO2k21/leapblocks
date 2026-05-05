@@ -4,9 +4,8 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import { html, LitElement } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
-import { safeDefine } from './utils/safe-define';
 
 // Pin positions in mm (SVG viewBox is 0 0 21 10)
 const y1Pos = 1.35;   // top row (mm)
@@ -16,6 +15,7 @@ const x2Pos = 6.61;   // NC pins
 const x3Pos = 11.9;   // P (pole) pins
 const x4Pos = 19.58;  // COIL pins
 
+@customElement('leap-ks2e-m-dc5')
 export class KS2EMDC5Element extends LitElement {
   /** Whether the relay coil is energized (coil powered) */
   @property({ type: Boolean }) energized = false;
@@ -87,5 +87,3 @@ export class KS2EMDC5Element extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-ks2e-m-dc5', KS2EMDC5Element);

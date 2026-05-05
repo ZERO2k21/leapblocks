@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import Blockly from '../../../leapembed/server/blockly/runtime';
+import Blockly from '@blockly-runtime';
 
 let _registered = false;
 

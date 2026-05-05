@@ -4,7 +4,14 @@ const fs = require('fs');
 const { spawn } = require('child_process');
 const buildApk = require('./buildApk');
 const { makeESP32Compiler, cleanupESP32Build } = require('./esp32Compiler');
-const qemuManager = require('./qemuManager');
+// qemuManager removed — ESP32-C3 uses custom RISC-V emulator in renderer
+const qemuManager = {
+  stopQemu: () => { },
+  startQemu: async () => { },
+  connectQMP: async () => { throw new Error('QMP not available'); },
+  sendQMPCommand: async () => { },
+  ensureQemuSilent: async () => { },
+};
 const { makeESP32Uploader } = require('./esp32Uploader');
 
 const isDev = !app.isPackaged;
@@ -79,6 +86,65 @@ function stopBuildServer() {
   }
 }
 
+// ── LeapForge Compile Server (Arduino compile + transpile) ─────────────────
+let compileServerProcess = null;
+
+function startCompileServer() {
+  const serverPath = isDev
+    ? path.join(__dirname, '..', 'compiler-server', 'server.js')
+    : path.join(process.resourcesPath, 'compiler-server', 'server.js');
+
+  if (!fs.existsSync(serverPath)) {
+    console.log('[COMPILE-SERVER] Server file not found at:', serverPath);
+    console.log('[COMPILE-SERVER] Run: cd compiler-server && npm install');
+    return;
+  }
+
+  // Check node_modules exist for the compiler-server
+  const nmPath = isDev
+    ? path.join(__dirname, '..', 'compiler-server', 'node_modules')
+    : path.join(process.resourcesPath, 'compiler-server', 'node_modules');
+
+  if (!fs.existsSync(nmPath)) {
+    console.log('[COMPILE-SERVER] node_modules missing — run: cd compiler-server && npm install');
+    return;
+  }
+
+  compileServerProcess = spawn('node', [serverPath], {
+    env: {
+      ...process.env,
+      PORT: '3001',
+      // Point arduino-cli to the bundled binary
+      ARDUINO_CLI_PATH: isDev
+        ? path.join(__dirname, '..', 'arduino-cli', 'arduino-cli.exe')
+        : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe'),
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    detached: false,
+  });
+
+  compileServerProcess.stdout.on('data', (data) => {
+    console.log(`[COMPILE-SERVER] ${data.toString().trim()}`);
+  });
+  compileServerProcess.stderr.on('data', (data) => {
+    console.error(`[COMPILE-SERVER ERROR] ${data.toString().trim()}`);
+  });
+  compileServerProcess.on('close', (code) => {
+    console.log(`[COMPILE-SERVER] Exited with code ${code}`);
+    compileServerProcess = null;
+  });
+
+  console.log('[COMPILE-SERVER] Started on http://localhost:3001');
+}
+
+function stopCompileServer() {
+  if (compileServerProcess) {
+    compileServerProcess.kill();
+    compileServerProcess = null;
+    console.log('[COMPILE-SERVER] Stopped');
+  }
+}
+
 let mainWindow;
 
 function createWindow() {
@@ -93,7 +159,9 @@ function createWindow() {
     show: false,
     backgroundColor: '#f8fafc', // matches the app background so no flicker
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: isDev
+        ? path.join(__dirname, '../dist/preload/preload.js')
+        : path.join(__dirname, '../preload/preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       // Enable background throttling suppression for smoother startup
@@ -121,6 +189,7 @@ app.whenReady().then(async () => {
   // in parallel without blocking the window from loading.
   createWindow();
   startBuildServer();
+  startCompileServer();
 
   // Fire-and-forget background warmup tasks — run concurrently, never block the UI
   await Promise.allSettled([
@@ -134,11 +203,13 @@ app.whenReady().then(async () => {
 
 app.on('window-all-closed', function () {
   stopBuildServer();
+  stopCompileServer();
   if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('before-quit', () => {
   stopBuildServer();
+  stopCompileServer();
   qemuManager.stopQemu();
 });
 
@@ -630,7 +701,7 @@ function migrateESP32LedcAPI(code) {
 }
 
 // ── ESP32 QEMU simulation pipeline ───────────────────────────────────────
-const ESP32_FQBNS = ['esp32:esp32:esp32', 'esp32:esp32:esp32s3'];
+const ESP32_FQBNS = ['esp32:esp32:esp32c3'];
 const { compileESP32 } = makeESP32Compiler({ runCLI, forgeLibDir: FORGE_LIB_DIR });
 
 // Track the last binPath so we can clean it up after QEMU stops
@@ -648,7 +719,7 @@ ipcMain.handle('compile-esp32-sim', async (_, code, fqbn) => {
     lastESP32BinTempDir = null;
   }
 
-  const result = await compileESP32(code, fqbn || 'esp32:esp32:esp32');
+  const result = await compileESP32(code, fqbn || 'esp32:esp32:esp32c3');
   if (result.success) {
     // Remember the temp dir so we can clean it up on stop
     lastESP32BinTempDir = require('path').dirname(result.binPath);
@@ -691,6 +762,35 @@ ipcMain.handle('esp32-adc-set', async (_, channel, voltage) => {
     },
   });
   socket.destroy();
+});
+
+// ── read-bin-file: Read compiled ESP32 binary for RISC-V simulation ──────
+ipcMain.handle('read-bin-file', async (_, filePath) => {
+  console.log(`[MAIN:IPC] read-bin-file request: ${filePath}`);
+
+  try {
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      console.error(`[MAIN:IPC] File not found: ${filePath}`);
+      throw new Error(`Binary file not found: ${filePath}`);
+    }
+
+    // Read the file as a Buffer
+    const buffer = fs.readFileSync(filePath);
+    console.log(`[MAIN:IPC] Read ${buffer.length} bytes from ${filePath}`);
+
+    // Log first 16 bytes for debugging
+    const preview = Array.from(buffer.slice(0, Math.min(16, buffer.length)))
+      .map(b => '0x' + b.toString(16).padStart(2, '0'))
+      .join(' ');
+    console.log(`[MAIN:IPC] First bytes: ${preview}`);
+
+    // Return as ArrayBuffer (convert Node Buffer to ArrayBuffer)
+    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+  } catch (err) {
+    console.error(`[MAIN:IPC] read-bin-file error:`, err);
+    throw err;
+  }
 });
 
 // ── ensureESP32Core: install ESP32 arduino core on first use ─────────────

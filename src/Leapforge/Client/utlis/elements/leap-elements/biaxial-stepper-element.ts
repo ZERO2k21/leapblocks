@@ -1,19 +1,19 @@
 import { html, LitElement } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from '.';
 import { mmToPix } from './utils/units';
-import { safeDefine } from './utils/safe-define';
 
 type HandShape = 'arrow' | 'plain' | 'ornate';
 type HandDesc = { xOff: number; yOff: number; path: string };
 
-const SHAFT_X = 60; // x location of shaft point (center of motor body in translated space)
-const SHAFT_Y = 80; // y location of shaft point (vertical center: body spans ~0-226, center=113)
+const SHAFT_X = 60; // x location of shaft point
+const SHAFT_Y = 77; // y location of shaft point
 const OUTER_OFFSET = 9; // offset to center of outer hand's ring
-const INNER_OFFSET = 5; // offset to center of inner hand's ring
+const INNER_OFFSET = 4.7; // offset to center of inner hand's ring
 const ORNATE_OUTER_OFFSET = 9; // offset to center of outer ornate hand's ring
 const ORNATE_INNER_OFFSET = 5; // offset to center of inner ornate hand's ring
 
+@customElement('leap-biaxial-stepper')
 export class BiaxialStepperElement extends LitElement {
   // length used to control outer hand length in mm
   @property() outerHandLength = 30;
@@ -46,16 +46,8 @@ export class BiaxialStepperElement extends LitElement {
   private _innerLastMod = 0;
 
   get pinInfo(): ElementPin[] {
-    // Match connector hotspots to the actual rendered pin pad centers.
-    // SVG pin group transform:
-    //   outer: translate(45px, 30px)
-    //   inner: scale(mmToPix) translate(2mm, 20.5mm)
-    // pin path spans x:[-2..0]mm, y:[0..1]mm => center at (-1mm, 0.5mm)
-    const pinCenterX = 45 + (2 - 1) * mmToPix;
-    const pinStartY = (30 / mmToPix) + (20.5 + 0.5);
-
     const pinXY = (y: number) => {
-      return { x: pinCenterX, y: (pinStartY + y * 2.54) * mmToPix };
+      return { x: 45, y: (28.9 + y * 2.54) * mmToPix };
     };
 
     return [
@@ -73,14 +65,14 @@ export class BiaxialStepperElement extends LitElement {
   update(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('outerHandAngle')) {
       let delta = this.outerHandAngle - this._outerLastMod;
-      if (delta > 180) delta -= 360;
+      if (delta > 180)  delta -= 360;
       if (delta < -180) delta += 360;
       this._outerCumulative += delta;
       this._outerLastMod = this.outerHandAngle;
     }
     if (changedProperties.has('innerHandAngle')) {
       let delta = this.innerHandAngle - this._innerLastMod;
-      if (delta > 180) delta -= 360;
+      if (delta > 180)  delta -= 360;
       if (delta < -180) delta += 360;
       this._innerCumulative += delta;
       this._innerLastMod = this.innerHandAngle;
@@ -247,11 +239,12 @@ export class BiaxialStepperElement extends LitElement {
             <path
               class="cls-h"
               style="
+                transform: translate(${x}px, ${y + outerPathDesc.yOff}px)
+                           rotate(${270 + this._outerCumulative}deg)
+                           translate(-${outerPathDesc.xOff}px, -${outerPathDesc.yOff}px);
                 transition: transform 80ms linear;
-              "
-              transform="
-                translate(${x - outerPathDesc.xOff} ${y - outerPathDesc.yOff})
-                rotate(${270 + this._outerCumulative} ${outerPathDesc.xOff} ${outerPathDesc.yOff})
+                transform-box: fill-box;
+                transform-origin: ${outerPathDesc.xOff}px ${outerPathDesc.yOff}px;
               "
               fill="${this.outerHandColor}"
               d="${outerPathDesc.path}"
@@ -263,36 +256,19 @@ export class BiaxialStepperElement extends LitElement {
             <path
               class="cls-h"
               style="
+                transform: translate(${x}px, ${y + innerPathDesc.yOff}px)
+                           rotate(${270 + this._innerCumulative}deg)
+                           translate(-${innerPathDesc.xOff}px, -${innerPathDesc.yOff}px);
                 transition: transform 80ms linear;
-              "
-              transform="
-                translate(${x - innerPathDesc.xOff} ${y - innerPathDesc.yOff})
-                rotate(${270 + this._innerCumulative} ${innerPathDesc.xOff} ${innerPathDesc.yOff})
+                transform-box: fill-box;
+                transform-origin: ${innerPathDesc.xOff}px ${innerPathDesc.yOff}px;
               "
               fill="${this.innerHandColor}"
               d="${innerPathDesc.path}"
             />
           </g>
-
-          <!-- shaft cap: silver circle rendered on top of both hands to hide the gold outer ring -->
-          <circle
-            cx="${x}"
-            cy="${y}"
-            r="6"
-            fill="#c0c0c0"
-            stroke="#888"
-            stroke-width="1"
-          />
-          <circle
-            cx="${x}"
-            cy="${y}"
-            r="2.5"
-            fill="#666"
-          />
         </g>
       </g>
     </svg>`;
   }
 }
-
-safeDefine('leap-biaxial-stepper', BiaxialStepperElement);

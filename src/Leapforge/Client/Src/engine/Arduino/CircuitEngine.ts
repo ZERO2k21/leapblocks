@@ -10,7 +10,7 @@ import { I2CBusManager } from './I2CBusManager';
 import { PCF8574 } from './PCF8574';
 import { DHT } from './DHT';
 import { NeoPixelEmulator } from './NeoPixelEmulator';
-import { StepperEmulator, SteppingMode } from './StepperEmulator';
+import { StepperEmulator } from './StepperEmulator';
 import { SSD1306I2CSlave } from './SSD1306I2CSlave';
 import { ILI9341SPISlave } from './ILI9341SPISlave';
 import { MPU6050I2CSlave } from './MPU6050I2CSlave';
@@ -93,8 +93,6 @@ class CircuitEngine {
   private _pendingLibraryClasses = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
   private isInitialized = false;
-  private a4988DebugLogged = false; // Debug flag for A4988 diagnostics
-  private a4988MotorCache = new Map<string, { motorId: string | null; edges: any[] }>(); // A4988 nodeId → motor connection cache
 
   /**
    * Traces an electrical net from a starting point (board pin) and returns all 
@@ -423,7 +421,7 @@ class CircuitEngine {
       constructor(keymap: any, _rowPins?: any, _colPins?: any, _rows?: number, _cols?: number) {
         // keymap may be a 2D array from makeKeymap or the keys array directly
         this._keymap = Array.isArray(keymap) ? keymap : [
-          ['1', '2', '3', 'A'], ['4', '5', '6', 'B'], ['7', '8', '9', 'C'], ['*', '0', '#', 'D']
+          ['1','2','3','A'],['4','5','6','B'],['7','8','9','C'],['*','0','#','D']
         ];
         // Find the first registered keypad emulator
         if (keypadEmulators.size > 0) {
@@ -461,10 +459,10 @@ class CircuitEngine {
       }
 
       getState(): number { return 0; }
-      addEventListener(): void { }
+      addEventListener(): void {}
     };
 
-    const RealMakeKeymap = function (keymap: any, rowPins?: any, colPins?: any, rows?: number, cols?: number) {
+    const RealMakeKeymap = function(keymap: any, rowPins?: any, colPins?: any, rows?: number, cols?: number) {
       return new RealKeypad(keymap, rowPins, colPins, rows, cols);
     };
 
@@ -487,30 +485,30 @@ class CircuitEngine {
       private _nodeId: string | null = null;
 
       private static readonly FONT5X7: number[][] = [
-        [0x00, 0x00, 0x00, 0x00, 0x00], [0x00, 0x00, 0x5F, 0x00, 0x00], [0x00, 0x07, 0x00, 0x07, 0x00], [0x14, 0x7F, 0x14, 0x7F, 0x14],
-        [0x24, 0x2A, 0x7F, 0x2A, 0x12], [0x23, 0x13, 0x08, 0x64, 0x62], [0x36, 0x49, 0x55, 0x22, 0x50], [0x00, 0x05, 0x03, 0x00, 0x00],
-        [0x00, 0x1C, 0x22, 0x41, 0x00], [0x00, 0x41, 0x22, 0x1C, 0x00], [0x14, 0x08, 0x3E, 0x08, 0x14], [0x08, 0x08, 0x3E, 0x08, 0x08],
-        [0x00, 0x50, 0x30, 0x00, 0x00], [0x08, 0x08, 0x08, 0x08, 0x08], [0x00, 0x60, 0x60, 0x00, 0x00], [0x20, 0x10, 0x08, 0x04, 0x02],
-        [0x3E, 0x51, 0x49, 0x45, 0x3E], [0x00, 0x42, 0x7F, 0x40, 0x00], [0x42, 0x61, 0x51, 0x49, 0x46], [0x21, 0x41, 0x45, 0x4B, 0x31],
-        [0x18, 0x14, 0x12, 0x7F, 0x10], [0x27, 0x45, 0x45, 0x45, 0x39], [0x3C, 0x4A, 0x49, 0x49, 0x30], [0x01, 0x71, 0x09, 0x05, 0x03],
-        [0x36, 0x49, 0x49, 0x49, 0x36], [0x06, 0x49, 0x49, 0x29, 0x1E], [0x00, 0x36, 0x36, 0x00, 0x00], [0x00, 0x56, 0x36, 0x00, 0x00],
-        [0x08, 0x14, 0x22, 0x41, 0x00], [0x14, 0x14, 0x14, 0x14, 0x14], [0x00, 0x41, 0x22, 0x14, 0x08], [0x02, 0x01, 0x51, 0x09, 0x06],
-        [0x32, 0x49, 0x79, 0x41, 0x3E], [0x7E, 0x11, 0x11, 0x11, 0x7E], [0x7F, 0x49, 0x49, 0x49, 0x36], [0x3E, 0x41, 0x41, 0x41, 0x22],
-        [0x7F, 0x41, 0x41, 0x22, 0x1C], [0x7F, 0x49, 0x49, 0x49, 0x41], [0x7F, 0x09, 0x09, 0x09, 0x01], [0x3E, 0x41, 0x49, 0x49, 0x7A],
-        [0x7F, 0x08, 0x08, 0x08, 0x7F], [0x00, 0x41, 0x7F, 0x41, 0x00], [0x20, 0x40, 0x41, 0x3F, 0x01], [0x7F, 0x08, 0x14, 0x22, 0x41],
-        [0x7F, 0x40, 0x40, 0x40, 0x40], [0x7F, 0x02, 0x0C, 0x02, 0x7F], [0x7F, 0x04, 0x08, 0x10, 0x7F], [0x3E, 0x41, 0x41, 0x41, 0x3E],
-        [0x7F, 0x09, 0x09, 0x09, 0x06], [0x3E, 0x41, 0x51, 0x21, 0x5E], [0x7F, 0x09, 0x19, 0x29, 0x46], [0x46, 0x49, 0x49, 0x49, 0x31],
-        [0x01, 0x01, 0x7F, 0x01, 0x01], [0x3F, 0x40, 0x40, 0x40, 0x3F], [0x1F, 0x20, 0x40, 0x20, 0x1F], [0x3F, 0x40, 0x38, 0x40, 0x3F],
-        [0x63, 0x14, 0x08, 0x14, 0x63], [0x07, 0x08, 0x70, 0x08, 0x07], [0x61, 0x51, 0x49, 0x45, 0x43], [0x00, 0x7F, 0x41, 0x41, 0x00],
-        [0x02, 0x04, 0x08, 0x10, 0x20], [0x00, 0x41, 0x41, 0x7F, 0x00], [0x04, 0x02, 0x01, 0x02, 0x04], [0x40, 0x40, 0x40, 0x40, 0x40],
-        [0x00, 0x01, 0x02, 0x04, 0x00], [0x20, 0x54, 0x54, 0x54, 0x78], [0x7F, 0x48, 0x44, 0x44, 0x38], [0x38, 0x44, 0x44, 0x44, 0x20],
-        [0x38, 0x44, 0x44, 0x48, 0x7F], [0x38, 0x54, 0x54, 0x54, 0x18], [0x08, 0x7E, 0x09, 0x01, 0x02], [0x0C, 0x52, 0x52, 0x52, 0x3E],
-        [0x7F, 0x08, 0x04, 0x04, 0x78], [0x00, 0x44, 0x7D, 0x40, 0x00], [0x20, 0x40, 0x44, 0x3D, 0x00], [0x7F, 0x10, 0x28, 0x44, 0x00],
-        [0x00, 0x41, 0x7F, 0x40, 0x00], [0x7C, 0x04, 0x18, 0x04, 0x78], [0x7C, 0x08, 0x04, 0x04, 0x78], [0x38, 0x44, 0x44, 0x44, 0x38],
-        [0x7C, 0x14, 0x14, 0x14, 0x08], [0x08, 0x14, 0x14, 0x18, 0x7C], [0x7C, 0x08, 0x04, 0x04, 0x08], [0x48, 0x54, 0x54, 0x54, 0x20],
-        [0x04, 0x3F, 0x44, 0x40, 0x20], [0x3C, 0x40, 0x40, 0x40, 0x3C], [0x1C, 0x20, 0x40, 0x20, 0x1C], [0x3C, 0x40, 0x30, 0x40, 0x3C],
-        [0x44, 0x28, 0x10, 0x28, 0x44], [0x0C, 0x50, 0x50, 0x50, 0x3C], [0x44, 0x64, 0x54, 0x4C, 0x44], [0x00, 0x08, 0x36, 0x41, 0x00],
-        [0x00, 0x00, 0x7F, 0x00, 0x00], [0x00, 0x41, 0x36, 0x08, 0x00], [0x10, 0x08, 0x08, 0x10, 0x08],
+        [0x00,0x00,0x00,0x00,0x00],[0x00,0x00,0x5F,0x00,0x00],[0x00,0x07,0x00,0x07,0x00],[0x14,0x7F,0x14,0x7F,0x14],
+        [0x24,0x2A,0x7F,0x2A,0x12],[0x23,0x13,0x08,0x64,0x62],[0x36,0x49,0x55,0x22,0x50],[0x00,0x05,0x03,0x00,0x00],
+        [0x00,0x1C,0x22,0x41,0x00],[0x00,0x41,0x22,0x1C,0x00],[0x14,0x08,0x3E,0x08,0x14],[0x08,0x08,0x3E,0x08,0x08],
+        [0x00,0x50,0x30,0x00,0x00],[0x08,0x08,0x08,0x08,0x08],[0x00,0x60,0x60,0x00,0x00],[0x20,0x10,0x08,0x04,0x02],
+        [0x3E,0x51,0x49,0x45,0x3E],[0x00,0x42,0x7F,0x40,0x00],[0x42,0x61,0x51,0x49,0x46],[0x21,0x41,0x45,0x4B,0x31],
+        [0x18,0x14,0x12,0x7F,0x10],[0x27,0x45,0x45,0x45,0x39],[0x3C,0x4A,0x49,0x49,0x30],[0x01,0x71,0x09,0x05,0x03],
+        [0x36,0x49,0x49,0x49,0x36],[0x06,0x49,0x49,0x29,0x1E],[0x00,0x36,0x36,0x00,0x00],[0x00,0x56,0x36,0x00,0x00],
+        [0x08,0x14,0x22,0x41,0x00],[0x14,0x14,0x14,0x14,0x14],[0x00,0x41,0x22,0x14,0x08],[0x02,0x01,0x51,0x09,0x06],
+        [0x32,0x49,0x79,0x41,0x3E],[0x7E,0x11,0x11,0x11,0x7E],[0x7F,0x49,0x49,0x49,0x36],[0x3E,0x41,0x41,0x41,0x22],
+        [0x7F,0x41,0x41,0x22,0x1C],[0x7F,0x49,0x49,0x49,0x41],[0x7F,0x09,0x09,0x09,0x01],[0x3E,0x41,0x49,0x49,0x7A],
+        [0x7F,0x08,0x08,0x08,0x7F],[0x00,0x41,0x7F,0x41,0x00],[0x20,0x40,0x41,0x3F,0x01],[0x7F,0x08,0x14,0x22,0x41],
+        [0x7F,0x40,0x40,0x40,0x40],[0x7F,0x02,0x0C,0x02,0x7F],[0x7F,0x04,0x08,0x10,0x7F],[0x3E,0x41,0x41,0x41,0x3E],
+        [0x7F,0x09,0x09,0x09,0x06],[0x3E,0x41,0x51,0x21,0x5E],[0x7F,0x09,0x19,0x29,0x46],[0x46,0x49,0x49,0x49,0x31],
+        [0x01,0x01,0x7F,0x01,0x01],[0x3F,0x40,0x40,0x40,0x3F],[0x1F,0x20,0x40,0x20,0x1F],[0x3F,0x40,0x38,0x40,0x3F],
+        [0x63,0x14,0x08,0x14,0x63],[0x07,0x08,0x70,0x08,0x07],[0x61,0x51,0x49,0x45,0x43],[0x00,0x7F,0x41,0x41,0x00],
+        [0x02,0x04,0x08,0x10,0x20],[0x00,0x41,0x41,0x7F,0x00],[0x04,0x02,0x01,0x02,0x04],[0x40,0x40,0x40,0x40,0x40],
+        [0x00,0x01,0x02,0x04,0x00],[0x20,0x54,0x54,0x54,0x78],[0x7F,0x48,0x44,0x44,0x38],[0x38,0x44,0x44,0x44,0x20],
+        [0x38,0x44,0x44,0x48,0x7F],[0x38,0x54,0x54,0x54,0x18],[0x08,0x7E,0x09,0x01,0x02],[0x0C,0x52,0x52,0x52,0x3E],
+        [0x7F,0x08,0x04,0x04,0x78],[0x00,0x44,0x7D,0x40,0x00],[0x20,0x40,0x44,0x3D,0x00],[0x7F,0x10,0x28,0x44,0x00],
+        [0x00,0x41,0x7F,0x40,0x00],[0x7C,0x04,0x18,0x04,0x78],[0x7C,0x08,0x04,0x04,0x78],[0x38,0x44,0x44,0x44,0x38],
+        [0x7C,0x14,0x14,0x14,0x08],[0x08,0x14,0x14,0x18,0x7C],[0x7C,0x08,0x04,0x04,0x08],[0x48,0x54,0x54,0x54,0x20],
+        [0x04,0x3F,0x44,0x40,0x20],[0x3C,0x40,0x40,0x40,0x3C],[0x1C,0x20,0x40,0x20,0x1C],[0x3C,0x40,0x30,0x40,0x3C],
+        [0x44,0x28,0x10,0x28,0x44],[0x0C,0x50,0x50,0x50,0x3C],[0x44,0x64,0x54,0x4C,0x44],[0x00,0x08,0x36,0x41,0x00],
+        [0x00,0x00,0x7F,0x00,0x00],[0x00,0x41,0x36,0x08,0x00],[0x10,0x08,0x08,0x10,0x08],
       ];
 
       // Arduino-style value-to-string formatting (handles HEX, OCT, BIN, DEC bases)
@@ -552,7 +550,7 @@ class CircuitEngine {
 
       width() { return (this._rotation & 1) ? 320 : 240; }
       height() { return (this._rotation & 1) ? 240 : 320; }
-      invertDisplay(_i: boolean) { }
+      invertDisplay(_i: boolean) {}
 
       private _rgb565toRGBA(c: number): [number, number, number] {
         const r = ((c >> 11) & 0x1F) * 255 / 31;
@@ -590,42 +588,42 @@ class CircuitEngine {
         this.drawLine(x + w - 1, y, x + w - 1, y + h - 1, c);
       }
       drawLine(x0: number, y0: number, x1: number, y1: number, c: number) {
-        const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+        const dx = Math.abs(x1-x0), dy = Math.abs(y1-y0), sx = x0<x1?1:-1, sy = y0<y1?1:-1;
         let err = dx - dy;
-        for (; ;) { this.drawPixel(x0, y0, c); if (x0 === x1 && y0 === y1) break; const e2 = 2 * err; if (e2 > -dy) { err -= dy; x0 += sx; } if (e2 < dx) { err += dx; y0 += sy; } }
+        for (;;) { this.drawPixel(x0, y0, c); if (x0===x1&&y0===y1) break; const e2=2*err; if(e2>-dy){err-=dy;x0+=sx;} if(e2<dx){err+=dx;y0+=sy;} }
       }
       drawCircle(x0: number, y0: number, r: number, c: number) {
         let x = r, y = 0, err = 0;
         while (x >= y) {
-          this.drawPixel(x0 + x, y0 + y, c); this.drawPixel(x0 + y, y0 + x, c);
-          this.drawPixel(x0 - y, y0 + x, c); this.drawPixel(x0 - x, y0 + y, c);
-          this.drawPixel(x0 - x, y0 - y, c); this.drawPixel(x0 - y, y0 - x, c);
-          this.drawPixel(x0 + y, y0 - x, c); this.drawPixel(x0 + x, y0 - y, c);
+          this.drawPixel(x0+x, y0+y, c); this.drawPixel(x0+y, y0+x, c);
+          this.drawPixel(x0-y, y0+x, c); this.drawPixel(x0-x, y0+y, c);
+          this.drawPixel(x0-x, y0-y, c); this.drawPixel(x0-y, y0-x, c);
+          this.drawPixel(x0+y, y0-x, c); this.drawPixel(x0+x, y0-y, c);
           y++; err += 1 + 2 * y;
           if (2 * (err - x) + 1 > 0) { x--; err += 1 - 2 * x; }
         }
       }
       fillCircle(x0: number, y0: number, r: number, c: number) {
-        for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= r * r) this.drawPixel(x0 + dx, y0 + dy, c);
+        for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (dx*dx+dy*dy <= r*r) this.drawPixel(x0+dx, y0+dy, c);
         this._flush();
       }
-      drawTriangle(x0: number, y0: number, x1: number, y1: number, x2: number, y2: number, c: number) {
-        this.drawLine(x0, y0, x1, y1, c); this.drawLine(x1, y1, x2, y2, c); this.drawLine(x2, y2, x0, y0, c);
+      drawTriangle(x0: number,y0: number,x1: number,y1: number,x2: number,y2: number,c: number) {
+        this.drawLine(x0,y0,x1,y1,c); this.drawLine(x1,y1,x2,y2,c); this.drawLine(x2,y2,x0,y0,c);
       }
-      fillTriangle(x0: number, y0: number, x1: number, y1: number, x2: number, y2: number, c: number) {
-        const pts = [[x0, y0], [x1, y1], [x2, y2]].sort((a, b) => a[1] - b[1]);
+      fillTriangle(x0: number,y0: number,x1: number,y1: number,x2: number,y2: number,c: number) {
+        const pts = [[x0,y0],[x1,y1],[x2,y2]].sort((a,b) => a[1]-b[1]);
         for (let y = pts[0][1]; y <= pts[2][1]; y++) {
-          let xa = pts[0][1] !== pts[2][1] ? pts[0][0] + (y - pts[0][1]) * (pts[2][0] - pts[0][0]) / (pts[2][1] - pts[0][1]) : pts[0][0];
+          let xa = pts[0][1]!==pts[2][1] ? pts[0][0]+(y-pts[0][1])*(pts[2][0]-pts[0][0])/(pts[2][1]-pts[0][1]) : pts[0][0];
           let xb: number;
-          if (y < pts[1][1]) xb = pts[0][1] !== pts[1][1] ? pts[0][0] + (y - pts[0][1]) * (pts[1][0] - pts[0][0]) / (pts[1][1] - pts[0][1]) : pts[0][0];
-          else xb = pts[1][1] !== pts[2][1] ? pts[1][0] + (y - pts[1][1]) * (pts[2][0] - pts[1][0]) / (pts[2][1] - pts[1][1]) : pts[1][0];
+          if (y < pts[1][1]) xb = pts[0][1]!==pts[1][1] ? pts[0][0]+(y-pts[0][1])*(pts[1][0]-pts[0][0])/(pts[1][1]-pts[0][1]) : pts[0][0];
+          else xb = pts[1][1]!==pts[2][1] ? pts[1][0]+(y-pts[1][1])*(pts[2][0]-pts[1][0])/(pts[2][1]-pts[1][1]) : pts[1][0];
           if (xa > xb) { const t = xa; xa = xb; xb = t; }
           for (let x = Math.ceil(xa); x <= Math.floor(xb); x++) this.drawPixel(x, y, c);
         }
         this._flush();
       }
-      drawRoundRect(x: number, y: number, w: number, h: number, _r: number, c: number) { this.drawRect(x, y, w, h, c); }
-      fillRoundRect(x: number, y: number, w: number, h: number, _r: number, c: number) { this.fillRect(x, y, w, h, c); }
+      drawRoundRect(x: number,y: number,w: number,h: number,_r: number,c: number) { this.drawRect(x,y,w,h,c); }
+      fillRoundRect(x: number,y: number,w: number,h: number,_r: number,c: number) { this.fillRect(x,y,w,h,c); }
 
       // ── Text rendering ───────────────────────────────────────────────
       setCursor(x: number, y: number) { this._cursor_x = x | 0; this._cursor_y = y | 0; }
@@ -655,8 +653,8 @@ class CircuitEngine {
         for (let col = 0; col < 5; col++) {
           let line = g[col];
           for (let row = 0; row < 8; row++) {
-            if (line & 1) for (let sy = 0; sy < this._textsize; sy++) for (let sx = 0; sx < this._textsize; sx++)
-              this.drawPixel(this._cursor_x + col * this._textsize + sx, this._cursor_y + row * this._textsize + sy, this._textcolor);
+            if (line & 1) for (let sy=0;sy<this._textsize;sy++) for (let sx=0;sx<this._textsize;sx++)
+              this.drawPixel(this._cursor_x + col*this._textsize + sx, this._cursor_y + row*this._textsize + sy, this._textcolor);
             line >>= 1;
           }
         }
@@ -757,9 +755,6 @@ class CircuitEngine {
     // Cancel all heart-beat animation timers
     this.heartBeatTimers.forEach(id => cancelAnimationFrame(id));
     this.heartBeatTimers.clear();
-    // Clear A4988 motor connection cache and debug flag
-    this.a4988MotorCache.clear();
-    this.a4988DebugLogged = false;
 
     const { nodes, edges, updateNodeData } = useForgeStore.getState();
     const currentStateStore = useForgeStore.getState();
@@ -829,7 +824,7 @@ class CircuitEngine {
         const nodeId = node.id;
         const emulator = new KeypadEmulator(
           [], [], // row/col pins — not used in transpiled path, UI drives via pushKeypadKey
-          (_pin: string, _high: boolean) => { } // no-op pin setter for transpiled path
+          (_pin: string, _high: boolean) => {} // no-op pin setter for transpiled path
         );
         this.keypadEmulators.set(nodeId, emulator);
         console.log(`[KEYPAD] Registered membrane-keypad emulator: nodeId=${nodeId}`);
@@ -858,11 +853,11 @@ class CircuitEngine {
           }
         );
         this.tiltSwitchEmulators.set(nodeId, emulator);
-
+        
         // Set initial tilt state from node data
         const initialTilted = node.data?.sensorValues?.tilted ?? false;
         emulator.setTilted(initialTilted);
-
+        
         console.log(`[TILT] Registered tilt-switch emulator: nodeId=${nodeId}, initial state=${initialTilted ? 'TILTED' : 'UPRIGHT'}`);
       }
 
@@ -876,7 +871,7 @@ class CircuitEngine {
           }
         );
         this.rotaryEncoderEmulators.set(nodeId, emulator);
-
+        
         // Initialize SW button pin to HIGH (pull-up state) immediately
         this.pushInputSignal(nodeId, 'SW', true);
         console.log(`[KY-040] Registered rotary encoder emulator: nodeId=${nodeId}, SW initialized to HIGH`);
@@ -1071,22 +1066,7 @@ class CircuitEngine {
 
         // Ensure buffers exist for this peripheral
         if (!this.peripheralPinBuffers.has(peripheralId)) {
-          const pType = nodes.find(n => n.id === peripheralId)?.data?.type;
-          // Set A4988 pin defaults per Wokwi spec:
-          //   ENABLE  → pulled-down (LOW = 0 = enabled by default)
-          //   SLEEP   → pulled-up (HIGH = 1 = awake by default)
-          //   RESET   → floating (treat as HIGH = not in reset)
-          //   MS1/2/3 → pulled-down (LOW = full step by default)
-          const initialBuf: Record<string, boolean> = {};
-          if (pType === 'a4988') {
-            initialBuf['ENABLE'] = false; // pulled-down → LOW → driver enabled
-            initialBuf['SLEEP'] = true;  // pulled-up  → HIGH → awake
-            initialBuf['RESET'] = true;  // floating   → treat as HIGH → not in reset
-            initialBuf['MS1'] = false;
-            initialBuf['MS2'] = false;
-            initialBuf['MS3'] = false;
-          }
-          this.peripheralPinBuffers.set(peripheralId, initialBuf);
+          this.peripheralPinBuffers.set(peripheralId, {});
         }
 
         // Create a dedicated listener that pushes the HIGH/LOW state across the wire to the target node
@@ -1362,30 +1342,6 @@ class CircuitEngine {
             if (peripheralNode.data?.type === 'stepper-motor') {
               if (!this.stepperEmulators.has(peripheralId)) {
                 console.log(`[STEPPER] Wiring 4-wire emulator for node ${peripheralId} — pin ${peripheralPinName} ← AVR ${avrPin}`);
-
-                // Check if this motor is also connected to an A4988 (double-wiring issue)
-                const { nodes, edges } = useForgeStore.getState();
-                const motorToA4988Edges = edges.filter(e => {
-                  const srcHandle = (e.sourceHandle || '').replace(/__target$/, '');
-                  const tgtHandle = (e.targetHandle || '').replace(/__target$/, '');
-                  const isMotorPin = ['A+', 'A-', 'B+', 'B-'].includes(srcHandle) || ['A+', 'A-', 'B+', 'B-'].includes(tgtHandle);
-                  return (e.source === peripheralId || e.target === peripheralId) && isMotorPin;
-                });
-
-                const a4988Nodes = motorToA4988Edges
-                  .map(e => e.source === peripheralId ? e.target : e.source)
-                  .map(id => nodes.find(n => n.id === id))
-                  .filter(n => n?.data?.type === 'a4988');
-
-                if (a4988Nodes.length > 0) {
-                  console.warn(`[STEPPER] WARNING: Motor ${peripheralId} is connected to BOTH:`);
-                  console.warn(`[STEPPER]   1. ESP32 pins directly (4-wire mode) - CORRECT for Arduino Stepper library`);
-                  console.warn(`[STEPPER]   2. A4988 driver(s): ${a4988Nodes.map(n => n!.id).join(', ')}`);
-                  console.warn(`[STEPPER] This creates conflicting control paths. Choose ONE:`);
-                  console.warn(`[STEPPER]   Option A: Remove A4988, keep direct wiring, use Arduino Stepper library`);
-                  console.warn(`[STEPPER]   Option B: Remove direct wiring, wire ESP32→A4988(STEP/DIR)→Motor, use AccelStepper`);
-                }
-
                 let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
                 let rafScheduled = false;
                 this.stepperEmulators.set(peripheralId, new StepperEmulator(({ angle, stepCount, energized }) => {
@@ -1398,9 +1354,8 @@ class CircuitEngine {
                         const { angle: a, stepCount: s, energized: e } = pendingUpdate;
                         pendingUpdate = null;
                         updateNodeData(peripheralId, {
-                          // Pass true cumulative angle (unbounded) so the element
-                          // can use it directly in rotate() without delta tracking.
-                          // stepCount is negative for CCW, positive for CW.
+                          // Use stepCount-based unbounded angle for cumulative rotation.
+                          // This matches the A4988 path and prevents visual jump at 360°.
                           angle: (s / 200) * 360,
                           value: `${a.toFixed(1)}°`,
                           units: `${s > 0 ? '+' : ''}${s} steps`,
@@ -1413,7 +1368,6 @@ class CircuitEngine {
               }
               const stepper = this.stepperEmulators.get(peripheralId)!;
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
-              const oldValue = buf[peripheralPinName];
               buf[peripheralPinName] = isHigh;
 
               if (peripheralPinName === 'STEP') {
@@ -1422,11 +1376,6 @@ class CircuitEngine {
                 stepper.setDirection(isHigh);
               } else {
                 // 4-wire mode — order must match Stepper.h: processCoils(A+, B+, A-, B-)
-                // Log only when a coil state actually changes
-                if (oldValue !== isHigh) {
-                  console.log(`[STEPPER] Coil ${peripheralPinName} changed: ${oldValue ? 'HIGH' : 'LOW'} → ${isHigh ? 'HIGH' : 'LOW'}`);
-                  console.log(`[STEPPER] Current coil state: A+=${!!buf['A+']}, B+=${!!buf['B+']}, A-=${!!buf['A-']}, B-=${!!buf['B-']}`);
-                }
                 stepper.processCoils(
                   !!buf['A+'],
                   !!buf['B+'],
@@ -1519,6 +1468,7 @@ class CircuitEngine {
             // --- A4988 Stepper Driver Emulation ---
             // Bridges STEP/DIR from Arduino to the stepper motor connected on 1A/1B/2A/2B
             if (peripheralNode.data?.type === 'a4988') {
+<<<<<<< HEAD
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
               // Skip buffer update for FLOATING state — preserves A4988 hardware
               // default pin states (RESET=HIGH via pull-up, SLEEP=HIGH via pull-up,
@@ -1566,96 +1516,36 @@ class CircuitEngine {
                 });
               }
 
+=======
+>>>>>>> 27ef53929d8d360b8ad3a33c9a2cafb360e19b1c
               if (peripheralPinName === 'STEP' || peripheralPinName === 'DIR') {
+                const buf = this.peripheralPinBuffers.get(peripheralId)!;
+                buf[peripheralPinName] = isHigh;
 
-                // Find the stepper motor connected to this A4988's motor pins (1A/1B/2A/2B)
-                // Cache the result to avoid filtering edges on every pin change (performance optimization)
-                let cached = this.a4988MotorCache.get(peripheralId);
+                // Find the stepper motor connected to this A4988's motor pins
+                const motorEdges = currentStateStore.edges.filter(e =>
+                  (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.sourceHandle || '')) ||
+                  (e.target === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.targetHandle || ''))
+                );
 
-                if (!cached) {
-                  // First time - find and cache the motor connection
-                  const motorEdges = currentStateStore.edges.filter(e => {
-                    const srcHandle = (e.sourceHandle || '').replace(/__target$/, '');
-                    const tgtHandle = (e.targetHandle || '').replace(/__target$/, '');
-                    return (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(srcHandle)) ||
-                      (e.target === peripheralId && ['1A', '1B', '2A', '2B'].includes(tgtHandle));
-                  });
-
-                  if (motorEdges.length === 0) {
-                    console.warn(`[A4988] No motor edges found for A4988 node ${peripheralId}. Wire 1A/1B/2A/2B to a stepper motor.`);
-                    cached = { motorId: null, edges: [] };
-                  } else {
-                    console.log(`[A4988] Motor edges found: ${motorEdges.length} connections`);
-                    const motorId = motorEdges[0].source === peripheralId ? motorEdges[0].target : motorEdges[0].source;
-                    cached = { motorId, edges: motorEdges };
-                  }
-
-                  // Cache the result
-                  this.a4988MotorCache.set(peripheralId, cached);
-                }
-
-                const motorNodeId = cached.motorId;
-                const motorEdges = cached.edges;
+                const motorNodeId = motorEdges.length > 0
+                  ? (motorEdges[0].source === peripheralId ? motorEdges[0].target : motorEdges[0].source)
+                  : null;
 
                 if (motorNodeId) {
                   const motorNode = currentStateStore.nodes.find(n => n.id === motorNodeId);
                   const isBiaxial = motorNode?.data?.type === 'biaxial-stepper';
 
-                  // Check if driver is enabled per Wokwi A4988 spec:
-                  //   ENABLE is active-low (default pulled-down → LOW = enabled)
-                  //   RESET  is active-low (default floating → treat as HIGH = not in reset)
-                  //   SLEEP  is active-low (default pulled-up → HIGH = awake)
-                  // Note: undefined means pin not connected, use default state
-                  const enableLow = buf['ENABLE'] !== true; // LOW or undefined = enabled
-                  const resetHigh = buf['RESET'] !== false; // HIGH or undefined = not in reset
-                  const sleepHigh = buf['SLEEP'] !== false; // HIGH or undefined = awake
-                  const driverEnabled = enableLow && resetHigh && sleepHigh;
-
-                  if (!driverEnabled) {
-                    // Driver is disabled, motor should not move
-                    if (!this.a4988DebugLogged) {
-                      console.warn(`[A4988] Driver disabled! Motor will not move. Check ENABLE/RESET/SLEEP pins.`);
-                      console.warn(`[A4988] State: ENABLE=${buf['ENABLE']}, RESET=${buf['RESET']}, SLEEP=${buf['SLEEP']}`);
-                      this.a4988DebugLogged = true;
-                    }
-                    return;
-                  }
-
-                  // Determine microstepping mode from MS1/MS2/MS3 pins
-                  const ms1 = !!buf['MS1'];
-                  const ms2 = !!buf['MS2'];
-                  const ms3 = !!buf['MS3'];
-                  let microstepDivisor = 1;
-                  let steppingMode: SteppingMode = 'full';
-
-                  if (!ms1 && !ms2 && !ms3) {
-                    microstepDivisor = 1;
-                    steppingMode = 'full';
-                  } else if (ms1 && !ms2 && !ms3) {
-                    microstepDivisor = 2;
-                    steppingMode = 'half';
-                  } else if (!ms1 && ms2 && !ms3) {
-                    microstepDivisor = 4;
-                    steppingMode = 'micro';
-                  } else if (ms1 && ms2 && !ms3) {
-                    microstepDivisor = 8;
-                    steppingMode = 'micro';
-                  } else if (ms1 && ms2 && ms3) {
-                    microstepDivisor = 16;
-                    steppingMode = 'micro';
-                  }
-
                   if (isBiaxial) {
-                    // Determine which shaft this A4988 drives by inspecting which biaxial pins are wired.
-                    // motorEdges are edges between the A4988 (peripheralId) and the biaxial motor (motorNodeId).
-                    // We need the biaxial motor's pin handles to determine inner vs outer shaft.
-                    const connectedBiaxialPins = motorEdges.map(e =>
+                    // Determine which shaft this A4988 drives by inspecting which biaxial pins are wired
+                    const biaxialEdges = currentStateStore.edges.filter(e =>
+                      (e.source === peripheralId && motorEdges.some(me => me === e)) ||
+                      (e.target === peripheralId && motorEdges.some(me => me === e))
+                    );
+                    const connectedBiaxialPins = biaxialEdges.map(e =>
                       e.source === motorNodeId ? e.sourceHandle : e.targetHandle
                     );
-                    const isInner = connectedBiaxialPins.some(p => {
-                      const h = (p || '').replace(/__target$/, '');
-                      return ['A2+', 'A2-', 'B2+', 'B2-'].includes(h);
-                    });
+                    const isInner = connectedBiaxialPins.some(p => p && ['A2+', 'A2-', 'B2+', 'B2-'].includes(p));
                     const shaftKey = isInner ? `${motorNodeId}__inner` : `${motorNodeId}__outer`;
                     const shaftLabel = isInner ? 'inner' : 'outer';
 
@@ -1678,11 +1568,9 @@ class CircuitEngine {
                             }
                           });
                         }
-                      }, { stepsPerRev: 200, steppingMode, microstepDivisor }, `${motorNodeId}-${shaftLabel}`));
+                      }, { stepsPerRev: 200 }, `${motorNodeId}-${shaftLabel}`));
                     }
                     const stepper = this.stepperEmulators.get(shaftKey)!;
-                    // Update microstepping mode dynamically
-                    stepper.setSteppingMode(steppingMode, microstepDivisor);
                     if (peripheralPinName === 'DIR') {
                       stepper.setDirection(isHigh);
                     } else if (peripheralPinName === 'STEP') {
@@ -1704,8 +1592,7 @@ class CircuitEngine {
                               const { angle: a, stepCount: s, energized: e } = pendingUpdate;
                               pendingUpdate = null;
                               updateNodeData(motorNodeId, {
-                                // Keep rotation cumulative/unbounded for correct CW/CCW animation.
-                                angle: (s / 200) * 360,
+                                angle: a,
                                 value: `${a.toFixed(1)}°`,
                                 units: `${s > 0 ? '+' : ''}${s} steps`,
                                 arrow: e ? '#BEF264' : '',
@@ -1713,11 +1600,9 @@ class CircuitEngine {
                             }
                           });
                         }
-                      }, { stepsPerRev: 200, steppingMode, microstepDivisor }, motorNodeId));
+                      }, { stepsPerRev: 200 }, motorNodeId));
                     }
                     const stepper = this.stepperEmulators.get(motorNodeId)!;
-                    // Update microstepping mode dynamically
-                    stepper.setSteppingMode(steppingMode, microstepDivisor);
                     if (peripheralPinName === 'DIR') {
                       stepper.setDirection(isHigh);
                     } else if (peripheralPinName === 'STEP') {
@@ -1866,7 +1751,7 @@ class CircuitEngine {
     }
     // Persist tilt state in node data for UI visualization
     const { updateNodeData } = useForgeStore.getState();
-    updateNodeData(nodeId, {
+    updateNodeData(nodeId, { 
       sensorValues: { tilted }
     });
     console.log(`[FORGE CIRCUIT] Tilt Switch (${nodeId}) state: ${tilted ? 'TILTED' : 'UPRIGHT'}`);
@@ -1903,11 +1788,11 @@ class CircuitEngine {
     const { updateNodeData, nodes } = useForgeStore.getState();
     const peripheralNode = nodes.find(n => n.id === nodeId);
     if (!peripheralNode) return;
-
+    
     updateNodeData(nodeId, {
       sensorValues: { ...peripheralNode.data?.sensorValues, xValue: x, yValue: y }
     });
-
+    
     // We trigger pushInputSignal, passing false for digital isHigh since it's analog
     this.pushInputSignal(nodeId, 'HORZ', false);
     this.pushInputSignal(nodeId, 'VERT', false);
@@ -1963,14 +1848,14 @@ class CircuitEngine {
         'gas-sensor', 'big-sound-sensor', 'small-sound-sensor', 'photoresistor',
         'heart-beat-sensor',
       ];
-
+      
       // Digital-only sensors that should never use analog path
       const digitalOnlySensors = [
-        'tilt-switch', 'push-button', 'pushbutton-6mm', 'slide-switch',
+        'tilt-switch', 'push-button', 'pushbutton-6mm', 'slide-switch', 
         'dip-switch-8', 'pir-motion-sensor', 'membrane-keypad', 'rotary-dialer',
         'ky-040'  // KY-040 rotary encoder (CLK, DT, SW are all digital)
       ];
-
+      
       // Only use analog path if it's an analog sensor AND not a digital-only sensor
       if (analogSensors.includes(pType) && !digitalOnlySensors.includes(pType)) {
         const voltage = this.computeSensorVoltage(pType, sv, 3.3, pinName);

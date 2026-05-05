@@ -1,9 +1,9 @@
 import { html, LitElement, svg } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from '.';
 import { analog, spi, usart } from './pin';
-import { safeDefine } from './utils/safe-define';
 
+@customElement('leap-nano-rp2040-connect')
 export class NanoRP2040ConnectElement extends LitElement {
   @property() ledRed = 0;
   @property() ledGreen = 0;
@@ -347,5 +347,3 @@ export class NanoRP2040ConnectElement extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-nano-rp2040-connect', NanoRP2040ConnectElement);

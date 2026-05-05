@@ -1,9 +1,9 @@
 import { css, html, LitElement } from 'lit';
-import { property, query } from 'lit/decorators.js';
+import { customElement, property, query } from 'lit/decorators.js';
 import { analog, ElementPin, GND, VCC } from './pin';
 import { SPACE_KEYS } from './utils/keys';
-import { safeDefine } from './utils/safe-define';
 
+@customElement('leap-analog-joystick')
 export class AnalogJoystickElement extends LitElement {
   @property({ type: Number }) xValue = 0;
   @property({ type: Number }) yValue = 0;
@@ -310,5 +310,3 @@ export class AnalogJoystickElement extends LitElement {
     this.dispatchEvent(new InputEvent('input'));
   }
 }
-
-safeDefine('leap-analog-joystick', AnalogJoystickElement);

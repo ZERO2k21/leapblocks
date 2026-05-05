@@ -1,6 +1,5 @@
 import './react-types';
 export { SevenSegmentElement } from './7segment-element';
-export { A4988Element } from './a4988-element';
 export { AnalogJoystickElement } from './analog-joystick-element';
 export { ArduinoMegaElement } from './arduino-mega-element';
 export { ArduinoNanoElement } from './arduino-nano-element';

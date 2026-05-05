@@ -1,8 +1,8 @@
 import { css, html, LitElement, svg } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin, GND, VCC } from './pin';
-import { safeDefine } from './utils/safe-define';
 
+@customElement('leap-hx711')
 export class HX711Element extends LitElement {
   @property() type: '5kg' | '50kg' | 'gauge' | undefined;
 
@@ -441,5 +441,3 @@ export class HX711Element extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-hx711', HX711Element);

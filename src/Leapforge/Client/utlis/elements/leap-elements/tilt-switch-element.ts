@@ -1,9 +1,9 @@
 import { html, LitElement, css } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from '.';
 import { GND, VCC } from './pin';
-import { safeDefine } from './utils/safe-define';
 
+@customElement('leap-tilt-switch')
 export class TiltSwitchElement extends LitElement {
   @property({ type: Boolean }) tilted = false;
 
@@ -254,5 +254,3 @@ export class TiltSwitchElement extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-tilt-switch', TiltSwitchElement);

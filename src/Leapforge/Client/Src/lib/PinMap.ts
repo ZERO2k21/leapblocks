@@ -3,8 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { useState, useEffect } from 'react';
-import _INITIAL_PINS from '../engine/Arduino/PinHarness.json';
+import { LEAP_PINS } from '../engine/Arduino/PinHarness';
 
 export interface PinEntry {
   name: string;
@@ -13,60 +12,13 @@ export interface PinEntry {
   type?: 'source' | 'target';
 }
 
-type PinHarnessMap = Record<string, {
-  viewBox: { minX: number; minY: number; width: number; height: number };
-  pins: { name: string; x: number; y: number }[];
-}>;
-
-// Mutable reference so the HMR handler can swap in fresh data without
-// breaking the closure held by getComponentPins().
-let LEAP_PINS: PinHarnessMap = _INITIAL_PINS;
-
-// Subscribers notified on every HMR reload of PinHarness.ts.
-// LeapNode subscribes via usePinHarnessVersion() to force a re-render.
-let _pinVersion = 0;
-const _pinListeners = new Set<() => void>();
-
-function _notifyPinListeners() {
-  _pinVersion++;
-  _pinListeners.forEach((fn) => fn());
-}
-
-// When PinHarness.ts is saved, Vite re-evaluates it and calls this handler
-// with the new module. We swap LEAP_PINS and notify all subscribed nodes.
-if (import.meta.hot) {
-  import.meta.hot.accept('../engine/Arduino/PinHarness.json', (newModule) => {
-    if (newModule) {
-      LEAP_PINS = (newModule.default ?? newModule) as PinHarnessMap;
-      _notifyPinListeners();
-    }
-  });
-}
-
-/**
- * React hook that returns a version counter that increments every time
- * PinHarness.json is hot-reloaded. Use this in LeapNode to force a
- * re-render when pin coordinates change during development.
- *
- * In production this is a no-op (always returns 0).
- */
-export function usePinHarnessVersion(): number {
-  const [version, setVersion] = useState(_pinVersion);
-  useEffect(() => {
-    const handler = () => setVersion((v) => v + 1);
-    _pinListeners.add(handler);
-    return () => { _pinListeners.delete(handler); };
-  }, []);
-  return version;
-}
-
 const DPI = 96;
 const MM_PER_INCH = 25.4;
 const PX_PER_MM = DPI / MM_PER_INCH; // ~3.7795
 
 export function getComponentPins(type: string): PinEntry[] {
   const componentData = LEAP_PINS[type];
-
+  
   if (!componentData || !componentData.viewBox) {
     // Fallback generic
     return [
@@ -82,29 +34,29 @@ export function getComponentPins(type: string): PinEntry[] {
     // Leap pin coordinates are usually in CSS pixels (96 DPI).
     // but the component itself defines width in mm inside its SVGs, rendering to native CSS pixels.
     // If the element renders at intrinsic size, its width in pixels is viewBox.width * PX_PER_MM.
-
+    
     let xPercent = 0;
     let yPercent = 0;
 
     const isSvgComponent = ['led', 'rgb-led', 'pushbutton', 'pushbutton-6mm', 'led-bar-graph', 'neopixel', 'neopixel-matrix', 'led-ring', 'stepper-motor', 'a4988', 'biaxial-stepper', 'ks2e-m-dc5', 'ili9341', 'ssd1306', 'mpu6050', 'pir-motion-sensor', 'hc-sr04', 'dht22', 'dht11', 'ntc-temperature-sensor', 'photoresistor-sensor', 'flame-sensor', 'gas-sensor', 'heart-beat-sensor', 'big-sound-sensor', 'small-sound-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer'].includes(type);
 
     if (isSvgComponent) {
-      // SVG components define pin coordinates in leur internal viewBox space.
-      // We calculate percentage relative to the total width/height after offset.
-      xPercent = ((pin.x - viewBox.minX) / viewBox.width) * 100;
-      yPercent = ((pin.y - viewBox.minY) / viewBox.height) * 100;
+        // SVG components define pin coordinates in leur internal viewBox space.
+        // We calculate percentage relative to the total width/height after offset.
+        xPercent = ((pin.x - viewBox.minX) / viewBox.width) * 100;
+        yPercent = ((pin.y - viewBox.minY) / viewBox.height) * 100;
     } else {
-      // For MM based components like Arduino:
-      // Convert viewBox width (mm) to CSS pixels
-      const widthPx = viewBox.width * PX_PER_MM;
-      const heightPx = viewBox.height * PX_PER_MM;
+        // For MM based components like Arduino:
+        // Convert viewBox width (mm) to CSS pixels
+        const widthPx = viewBox.width * PX_PER_MM;
+        const heightPx = viewBox.height * PX_PER_MM;
+        
+        // Account for 'minX' shifting if necessary
+        const offsetXPx = viewBox.minX < 0 ? Math.abs(viewBox.minX) * PX_PER_MM : 0;
+        const offsetYPx = viewBox.minY < 0 ? Math.abs(viewBox.minY) * PX_PER_MM : 0;
 
-      // Account for 'minX' shifting if necessary
-      const offsetXPx = viewBox.minX < 0 ? Math.abs(viewBox.minX) * PX_PER_MM : 0;
-      const offsetYPx = viewBox.minY < 0 ? Math.abs(viewBox.minY) * PX_PER_MM : 0;
-
-      xPercent = ((pin.x + offsetXPx) / widthPx) * 100;
-      yPercent = ((pin.y + offsetYPx) / heightPx) * 100;
+        xPercent = ((pin.x + offsetXPx) / widthPx) * 100;
+        yPercent = ((pin.y + offsetYPx) / heightPx) * 100;
     }
 
     return {

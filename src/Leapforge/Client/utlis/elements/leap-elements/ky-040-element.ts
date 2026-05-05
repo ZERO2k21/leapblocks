@@ -1,9 +1,9 @@
 import { css, html, LitElement } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from '.';
 import { GND, VCC } from './pin';
-import { safeDefine } from './utils/safe-define';
 
+@customElement('leap-ky-040')
 export class KY040Element extends LitElement {
   @property() angle = 0;
   @property() stepSize = 1;  // Changed from 18 to 1 degree per click
@@ -260,5 +260,3 @@ export class KY040Element extends LitElement {
     }
   }
 }
-
-safeDefine('leap-ky-040', KY040Element);

@@ -13,11 +13,11 @@
  *   V_ao  = VCC × R_series / (R_ldr + R_series)
  */
 import { css, html, LitElement, svg } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from '.';
 import { analog, GND, VCC } from './pin';
-import { safeDefine } from './utils/safe-define';
 
+@customElement('leap-photoresistor-sensor')
 export class PhotoresistorSensorElement extends LitElement {
   /** Simulated light level in lux (0 = dark, 1000 = bright) */
   @property({ type: Number }) value = 500;
@@ -193,5 +193,3 @@ export class PhotoresistorSensorElement extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-photoresistor-sensor', PhotoresistorSensorElement);

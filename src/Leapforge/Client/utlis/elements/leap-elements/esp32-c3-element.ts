@@ -1,9 +1,9 @@
 import { html, LitElement, svg } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from '.';
 import { i2c, spi, usart } from './pin';
-import { safeDefine } from './utils/safe-define';
 
+@customElement('leap-esp32-c3')
 export class ESP32C3Element extends LitElement {
   @property() led1 = false;
   @property() ledPower = false;
@@ -236,5 +236,3 @@ export class ESP32C3Element extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-esp32-c3', ESP32C3Element);

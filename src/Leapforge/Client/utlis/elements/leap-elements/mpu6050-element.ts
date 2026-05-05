@@ -8,11 +8,11 @@
  *   temp        — temperature in °C  (-40 … +85)
  */
 import { css, html, LitElement, svg } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from '.';
 import { GND, i2c, VCC } from './pin';
-import { safeDefine } from './utils/safe-define';
 
+@customElement('leap-mpu6050')
 export class MPU6050Element extends LitElement {
   // ── Simulation sensor values ─────────────────────────────────────────────
   @property({ type: Number }) accelX = 0;
@@ -197,5 +197,3 @@ export class MPU6050Element extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-mpu6050', MPU6050Element);

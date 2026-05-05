@@ -1,9 +1,9 @@
 import { css, html, LitElement, svg } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
 import { ctrlCmdPressed, SPACE_KEYS } from './utils/keys';
-import { safeDefine } from './utils/safe-define';
 
+@customElement('leap-pushbutton')
 export class PushbuttonElement extends LitElement {
   @property() color = 'red';
   @property() pressed = false;
@@ -193,5 +193,3 @@ export class PushbuttonElement extends LitElement {
     }
   }
 }
-
-safeDefine('leap-pushbutton', PushbuttonElement);

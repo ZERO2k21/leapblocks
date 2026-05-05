@@ -1,7 +1,6 @@
 import { css, html, LitElement } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
-import { safeDefine } from './utils/safe-define';
 
 const bandColors: { [key: number]: string } = {
   [-2]: '#C3C7C0', // Silver
@@ -21,6 +20,7 @@ const bandColors: { [key: number]: string } = {
 /**
  * Renders an axial-lead resistor with 4 color bands.
  */
+@customElement('leap-resistor')
 export class ResistorElement extends LitElement {
   /**
    * Resitance value, in ohms. The value is reflected in the color of the bands, according to
@@ -124,5 +124,3 @@ export class ResistorElement extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-resistor', ResistorElement);
