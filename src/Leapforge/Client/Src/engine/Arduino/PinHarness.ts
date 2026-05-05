@@ -1,9 +1,4 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
-export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, width: number, height: number }, pins: { name: string, x: number, y: number }[] }> = {
+{
   "slide-potentiometer": {
     "viewBox": {
       "minX": 0,
@@ -919,14 +914,14 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 285
     },
     "pins": [
-      { "name": "B1-", "x": 45, "y": 217 },
-      { "name": "B1+", "x": 45, "y": 226 },
-      { "name": "A1+", "x": 45, "y": 236 },
-      { "name": "A1-", "x": 45, "y": 246 },
-      { "name": "B2-", "x": 45, "y": 255 },
-      { "name": "B2+", "x": 45, "y": 265 },
-      { "name": "A2+", "x": 45, "y": 274 },
-      { "name": "A2-", "x": 45, "y": 284 }
+      { "name": "A1-", "x": 45, "y": 103 },
+      { "name": "A1+", "x": 45, "y": 113 },
+      { "name": "B1+", "x": 45, "y": 122 },
+      { "name": "B1-", "x": 45, "y": 131 },
+      { "name": "A2-", "x": 45, "y": 141 },
+      { "name": "A2+", "x": 45, "y": 150 },
+      { "name": "B2+", "x": 45, "y": 160 },
+      { "name": "B2-", "x": 45, "y": 169 }
     ]
   },
   "stepper-motor": {
@@ -1069,6 +1064,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
         "name": "GND",
         "x": 9.5,
         "y": 25
+<<<<<<<< HEAD:src/Leapforge/Client/Src/engine/Arduino/PinHarness.ts
       },
       {
         "name": "5V",
@@ -1076,6 +1072,14 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
         "y": 35
       },
       {
+========
+      },{
+        "name": "vcc",
+        "x": 9,
+        "y": 25
+      }
+      ,{
+>>>>>>>> 1a7c2933d631f71c5a612b5153096bdabd548289:src/Leapforge/Client/Src/engine/Arduino/PinHarness.json
         "name": "SDA",
         "x": 9.5,
         "y": 44
@@ -1459,6 +1463,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "CLK",
+<<<<<<<< HEAD:src/Leapforge/Client/Src/engine/Arduino/PinHarness.ts
         "x": 425,
         "y": 9
       },
@@ -1481,6 +1486,30 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
         "name": "GND",
         "x": 425,
         "y": 140
+========
+        "x": 116,
+        "y": 7.9
+      },
+      {
+        "name": "DT",
+        "x": 116,
+        "y": 17.4
+      },
+      {
+        "name": "SW",
+        "x": 116,
+        "y": 27
+      },
+      {
+        "name": "VCC",
+        "x": 116,
+        "y": 36.3
+      },
+      {
+        "name": "GND",
+        "x": 116,
+        "y": 45.5
+>>>>>>>> 1a7c2933d631f71c5a612b5153096bdabd548289:src/Leapforge/Client/Src/engine/Arduino/PinHarness.json
       }
     ]
   },
@@ -2170,6 +2199,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "GND",
+<<<<<<<< HEAD:src/Leapforge/Client/Src/engine/Arduino/PinHarness.ts
         "x":320 ,
         "y": 40
       },
@@ -2182,6 +2212,20 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
         "name": "OUT",
         "x": 320,
         "y": 118
+========
+        "x": 88,
+        "y": 18
+      },
+      {
+        "name": "VCC",
+        "x": 88,
+        "y": 27.8
+      },
+      {
+        "name": "OUT",
+        "x": 88,
+        "y": 37.5
+>>>>>>>> 1a7c2933d631f71c5a612b5153096bdabd548289:src/Leapforge/Client/Src/engine/Arduino/PinHarness.json
       }
     ]
   },
@@ -2253,8 +2297,9 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     ]
   },
   "a4988": {
-    "viewBox": { "minX": 0, "minY": 0, "width": 113.39, "height": 325.04 },
+    "viewBox": { "minX": 0, "minY": 0, "width": 15.2, "height": 20.3 },
     "pins": [
+<<<<<<<< HEAD:src/Leapforge/Client/Src/engine/Arduino/PinHarness.ts
       { "name": "ENABLE", "x": 0, "y": 35.91 },
       { "name": "MS1", "x": 0, "y": 71.81 },
       { "name": "MS2", "x": 0, "y": 107.72 },
@@ -2271,6 +2316,24 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       { "name": "1B", "x": 113.39, "y": 215.43 },
       { "name": "VMOT", "x": 113.39, "y": 251.34 },
       { "name": "GND2", "x": 113.39, "y": 287.24 }
+========
+      { "name": "ENABLE", "x": 1.27,  "y": 0  },
+      { "name": "MS1",    "x": 1.27,  "y": 2.5  },
+      { "name": "MS2",    "x": 1.27,  "y": 5  },
+      { "name": "MS3",    "x": 1.27,  "y": 7.3  },
+      { "name": "RESET",  "x": 1.27,  "y": 9.5 },
+      { "name": "SLEEP",  "x": 1.27,  "y": 12 },
+      { "name": "STEP",   "x": 1.27,  "y": 14.5 },
+      { "name": "DIR",    "x": 1.27,  "y": 17 },
+      { "name": "VMOT",   "x": 13.93, "y": 0  },
+      { "name": "GND",    "x": 13.93, "y": 2.5  },
+      { "name": "2B",     "x": 13.93, "y": 5  },
+      { "name": "2A",     "x": 13.93, "y": 7.3  },
+      { "name": "1A",     "x": 13.93, "y": 9.5 },
+      { "name": "1B",     "x": 13.93, "y": 12 },
+      { "name": "VDD",    "x": 13.93, "y": 14.5 },
+      { "name": "GND2",   "x": 13.93, "y": 17 }
+>>>>>>>> 1a7c2933d631f71c5a612b5153096bdabd548289:src/Leapforge/Client/Src/engine/Arduino/PinHarness.json
     ]
   },
   "led-ring": {
@@ -2287,4 +2350,4 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       { "name": "DOUT", "x": 85.21, "y": 152.94 }
     ]
   }
-};
+}

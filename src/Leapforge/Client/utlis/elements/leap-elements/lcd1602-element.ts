@@ -1,8 +1,9 @@
 import { css, html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { fontA00 } from './lcd1602-font-a00';
 import { ElementPin, i2c } from './pin';
 import { mmToPix } from './utils/units';
+import { safeDefine } from './utils/safe-define';
 
 const charXSpacing = 3.55;
 const charYSpacing = 5.95;
@@ -12,7 +13,6 @@ const backgroundColors: { [key: string]: string } = {
   blue: '#000eff',
 };
 
-@customElement('leap-lcd1602')
 export class LCD1602Element extends LitElement {
   @property() color = 'black';
   @property() background = 'green';
@@ -300,3 +300,5 @@ export class LCD1602Element extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-lcd1602', LCD1602Element);

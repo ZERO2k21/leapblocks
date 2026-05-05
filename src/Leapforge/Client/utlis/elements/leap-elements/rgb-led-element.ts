@@ -1,8 +1,8 @@
 import { html, LitElement } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { ElementPin } from '.';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-rgb-led')
 export class RGBLedElement extends LitElement {
   @property({ type: Number }) ledRed = 0;
   @property({ type: Number }) ledGreen = 0;
@@ -104,3 +104,5 @@ export class RGBLedElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-rgb-led', RGBLedElement);

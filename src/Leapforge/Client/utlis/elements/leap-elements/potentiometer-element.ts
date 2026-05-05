@@ -1,9 +1,10 @@
 import { css, html, LitElement } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { analog, ElementPin } from './pin';
 import { clamp } from './utils/clamp';
 import { getScreenCTM } from './utils/ctm-workaround';
+import { safeDefine } from './utils/safe-define';
 
 const knobCenter = {
   x: 9.91,
@@ -12,7 +13,6 @@ const knobCenter = {
 
 /** The potentiometer SVG is taken from https://freesvg.org/potentiometer and some of the
     functions are taken from https://github.com/vitaliy-bobrov/js-rocks knob component */
-@customElement('leap-potentiometer')
 export class PotentiometerElement extends LitElement {
   @property({ type: Number }) min = 0;
   @property({ type: Number }) max = 1023;
@@ -235,3 +235,5 @@ export class PotentiometerElement extends LitElement {
     this.dispatchEvent(new InputEvent('input', { detail: this.value }));
   }
 }
+
+safeDefine('leap-potentiometer', PotentiometerElement);

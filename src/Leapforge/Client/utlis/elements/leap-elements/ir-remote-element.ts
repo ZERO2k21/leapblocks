@@ -1,6 +1,8 @@
 import { css, html, LitElement } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { safeDefine } from './utils/safe-define';
+
 import { SPACE_KEYS } from './utils/keys';
+import { safeDefine } from './utils/safe-define';
 
 const irKeyCodes: { [key: string]: number } = {
   power: 0xa2,
@@ -48,7 +50,6 @@ const keyboardKeyMap: { [key: string]: string } = {
   9: '9',
 };
 
-@customElement('leap-ir-remote')
 export class IRRemoteElement extends LitElement {
   static get styles() {
     return css`
@@ -250,3 +251,5 @@ export class IRRemoteElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-ir-remote', IRRemoteElement);

@@ -10,6 +10,7 @@ files:
   - remove_bg.py
   - electron/buildApk.js
 win:
+  icon: public/assets/Final_logo_b.png
   target:
     - target: squirrel
       arch:
@@ -23,6 +24,11 @@ npmRebuild: true
 extraResources:
   - from: public
     to: public
+    filter:
+      - "**/*"
+  # ── Board drivers (Arduino CP210x, ESP32 CH340) ───────────────────────────
+  - from: src/leapembed/drivers
+    to: drivers
     filter:
       - "**/*"
   # ── QEMU binary for ESP32 simulation ──────────────────────────────────────

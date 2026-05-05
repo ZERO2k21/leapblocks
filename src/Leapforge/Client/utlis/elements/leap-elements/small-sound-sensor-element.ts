@@ -13,10 +13,10 @@
  *   DOUT   = LOW when level > threshold (active-LOW comparator output)
  */
 import { css, html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { analog, ElementPin, GND, VCC } from './pin';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-small-sound-sensor')
 export class SmallSoundSensorElement extends LitElement {
   /** Sound level 0–100 (0 = silent, 100 = max) */
   @property({ type: Number }) value = 0;
@@ -195,3 +195,5 @@ export class SmallSoundSensorElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-small-sound-sensor', SmallSoundSensorElement);

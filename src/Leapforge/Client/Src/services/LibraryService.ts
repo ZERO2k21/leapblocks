@@ -17,8 +17,7 @@
  *               → ArduinoUploader.uninstallLibrary()
  */
 
-import { IS_ELECTRON, isElectron } from '../../../../config/platform';
-import { CLOUD_COMPILER_URL } from '../../../../config/platform';
+import { IS_ELECTRON, isElectron, CLOUD_COMPILER_URL } from '../../../../leapembed/server/config/platform';
 const WEB_LIBS_KEY = 'leapforge_selected_libs';
 const LIBRARY_INDEX_URL = 'https://downloads.arduino.cc/libraries/library_index.json';
 

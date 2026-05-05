@@ -1,6 +1,7 @@
 import { css, html, LitElement } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
+import { safeDefine } from './utils/safe-define';
 
 const lightColors: { [key: string]: string } = {
   red: '#ff8080',
@@ -12,7 +13,6 @@ const lightColors: { [key: string]: string } = {
   purple: '#ff80ff',
 };
 
-@customElement('leap-led')
 export class LEDElement extends LitElement {
   @property() value = false;
   @property() brightness = 1.0;
@@ -168,3 +168,5 @@ export class LEDElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-led', LEDElement);

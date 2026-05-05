@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { IS_ELECTRON, isElectron } from '../../../../config/platform';
+import { IS_ELECTRON, isElectron } from '../../../../leapembed/server/config/platform';
 
 const PROJECT_PREFIX = 'leapforge_project_';
 

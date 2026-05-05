@@ -1,8 +1,9 @@
 import { html, LitElement } from 'lit';
-import { customElement } from 'lit/decorators.js';
-import { ElementPin, GND, VCC } from './pin';
+import { safeDefine } from './utils/safe-define';
 
-@customElement('leap-ir-receiver')
+import { ElementPin, GND, VCC } from './pin';
+import { safeDefine } from './utils/safe-define';
+
 export class IRReceiverElement extends LitElement {
   readonly pinInfo: ElementPin[] = [
     { name: 'GND', y: 87.75, x: 20.977, number: 1, signals: [GND()] },
@@ -127,3 +128,5 @@ export class IRReceiverElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-ir-receiver', IRReceiverElement);

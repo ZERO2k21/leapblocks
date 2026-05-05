@@ -1,7 +1,8 @@
 import { html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
 import { mmToPix } from './utils/units';
+import { safeDefine } from './utils/safe-define';
 
 const segments = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 const mm = mmToPix;
@@ -19,7 +20,6 @@ const colorPalettes: Record<string, string[]> = {
   BCYR: [blue, cyan, cyan, cyan, cyan, yellow, yellow, yellow, red, red],
 };
 
-@customElement('leap-led-bar-graph')
 export class LedBarGraphElement extends LitElement {
   /** The color of a lit segment. Either HTML color or the special values GYR / BCYR */
   @property() color = 'red';
@@ -83,3 +83,5 @@ export class LedBarGraphElement extends LitElement {
     `;
   }
 }
+
+safeDefine('leap-led-bar-graph', LedBarGraphElement);

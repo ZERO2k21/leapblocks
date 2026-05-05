@@ -1,8 +1,9 @@
 import { css, html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { pinsFemalePattern } from './patterns/pins-female';
 import { ElementPin } from './pin';
 import { SPACE_KEYS } from './utils/keys';
+import { safeDefine } from './utils/safe-define';
 
 const rowPositions = [10.7, 25, 39.3, 53.6];
 const columnPositions = [7, 22, 37, 52];
@@ -11,7 +12,6 @@ function isNumeric(text: string) {
   return !isNaN(parseFloat(text));
 }
 
-@customElement('leap-membrane-keypad')
 export class MembraneKeypadElement extends LitElement {
   /**
    * Number of columns (3 or 4)
@@ -298,3 +298,5 @@ export class MembraneKeypadElement extends LitElement {
     }
   }
 }
+
+safeDefine('leap-membrane-keypad', MembraneKeypadElement);
