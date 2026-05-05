@@ -1,9 +1,8 @@
 import { html, LitElement } from 'lit';
-import { safeDefine } from './utils/safe-define';
-
+import { customElement } from 'lit/decorators.js';
 import { ElementPin } from './pin';
-import { safeDefine } from './utils/safe-define';
 
+@customElement('leap-dht22')
 export class DHT22Element extends LitElement {
   readonly pinInfo: ElementPin[] = [
     { name: 'VCC', x: 15, y: 114.9, signals: [{ type: 'power', signal: 'VCC' }], number: 1 },
@@ -49,5 +48,3 @@ export class DHT22Element extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-dht22', DHT22Element);

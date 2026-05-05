@@ -7,9 +7,8 @@
  * Pins (bottom row, SVG units): y≈75, x starts at ≈11.8 with 2.54mm pitch
  */
 import { css, html, LitElement } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin, spi } from './pin';
-import { safeDefine } from './utils/safe-define';
 
 // SVG viewBox dimensions (mm)
 const SVG_W = 46.5;
@@ -33,6 +32,7 @@ const NATIVE_H = 320;
 
 type CanvasCtx = CanvasRenderingContext2D | null | undefined;
 
+@customElement('leap-ili9341')
 export class ILI9341Element extends LitElement {
   /** Native screen width (pixels) */
   readonly screenWidth  = NATIVE_W;
@@ -210,5 +210,3 @@ export class ILI9341Element extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-ili9341', ILI9341Element);

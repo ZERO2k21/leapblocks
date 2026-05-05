@@ -13,7 +13,7 @@ const logAppTiming = (label: string) => {
 
 logAppTiming('App.tsx module loaded');
 
-import Loader from './leapembed/client/components/Loader';
+import Loader from './components/Loader';
 logAppTiming('Loader imported');
 
 const LandingPage = lazy(() => {
@@ -26,12 +26,13 @@ const LandingPage = lazy(() => {
 
 const IntermediateApp = lazy(() => {
     logAppTiming('IntermediateApp lazy load started');
-    return import('./leapembed/client/EmbedApp').then(module => {
+    return import('./IntermediateApp').then(module => {
         logAppTiming('IntermediateApp lazy load completed');
         return module;
     });
 });
 
+// @ts-ignore
 const JuniorApp = lazy(() => {
     logAppTiming('JuniorApp lazy load started');
     return import('./leapignite/client/JuniorApp').then(module => {
@@ -43,7 +44,7 @@ const JuniorApp = lazy(() => {
 // @ts-ignore
 const PythonApp = lazy(() => {
     logAppTiming('PythonApp lazy load started');
-    return import('./leapCodex/client/pythonApp').then(module => {
+    return import('./python/PythonApp').then(module => {
         logAppTiming('PythonApp lazy load completed');
         return module;
     });
@@ -52,7 +53,7 @@ const PythonApp = lazy(() => {
 // @ts-ignore
 const PythonNotebook = lazy(() => {
     logAppTiming('PythonNotebook lazy load started');
-    return import('./leapCodex/client/pythonNotebook').then(module => {
+    return import('./python/PythonNotebook').then(module => {
         logAppTiming('PythonNotebook lazy load completed');
         return module;
     });
@@ -61,7 +62,7 @@ const PythonNotebook = lazy(() => {
 // @ts-ignore
 const AppInventor = lazy(() => {
     logAppTiming('AppInventor lazy load started');
-    return import('./modules/AppInventor/appInventor').then(module => {
+    return import('./modules/AppInventor').then(module => {
         logAppTiming('AppInventor lazy load completed');
         return module;
     });
@@ -70,7 +71,7 @@ const AppInventor = lazy(() => {
 // @ts-ignore
 const LeapForgeStudio = lazy(() => {
     logAppTiming('LeapForgeStudio lazy load started');
-    return import('./Leapforge/ForgeStudio').then(module => {
+    return import('./Leapforge/Client/Src/ForgeStudio').then(module => {
         logAppTiming('LeapForgeStudio lazy load completed');
         return module;
     });
@@ -78,7 +79,7 @@ const LeapForgeStudio = lazy(() => {
 
 const NeuraApp = lazy(() => {
     logAppTiming('NeuraApp lazy load started');
-    return import('./leapNeura/client/neuraApp').then(module => {
+    return import('./NeuraApp').then(module => {
         logAppTiming('NeuraApp lazy load completed');
         return module;
     });

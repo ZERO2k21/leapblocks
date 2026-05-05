@@ -27,8 +27,6 @@ export default defineConfig({
   define: {
     // Ensure process.env exists for libraries that check it
     'process.env.NODE_ENV': JSON.stringify('production'),
-    // Prevent UMD modules (like Blockly) from using Monaco's AMD loader
-    'define.amd': 'false',
   },
   build: {
     outDir: 'build',
@@ -39,7 +37,7 @@ export default defineConfig({
     rollupOptions: {
       input: path.resolve(__dirname, 'index.html'),
       // Mark Electron/Node-only modules as external so they're stripped
-      external: ['electron', 'serialport', 'child_process', 'fs', 'fs-extra', 'path', 'os', 'crypto', 'monaco-editor'],
+      external: ['electron', 'serialport', 'child_process', 'fs', 'fs-extra', 'path', 'os', 'crypto'],
       output: {
         manualChunks: {
           // Vendor chunks - separate large libraries
@@ -79,8 +77,8 @@ export default defineConfig({
 
           // Audio engine
           'audio': [
-            './src/leapAudio/src/audioEngine.js',
-            './src/leapAudio/src/soundBank.js',
+            './src/scratch-audio/src/AudioEngine.js',
+            './src/scratch-audio/src/SoundBank.js',
           ],
         },
       },
@@ -88,31 +86,12 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'blockly'],
-    exclude: ['electron', 'serialport', 'monaco-editor'],
+    exclude: ['electron', 'serialport'],
   },
   server: {
-    port: 5173,
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
-    },
-    proxy: {
-      '/compile': 'http://localhost:3001',
-      '/transpile': 'http://localhost:3001',
-      '/libraries': 'http://localhost:3001',
-    },
-    watch: {
-      // Exclude arduino-cli data/staging dirs and temp files from Vite's watcher
-      // so compilation doesn't trigger a page reload
-      ignored: [
-        '**/data/**',
-        '**/forge-lib/data/**',
-        '**/forge-lib/staging/**',
-        '**/node_modules/**',
-        '**/.git/**',
-        '**/tmp/**',
-        '**/temp/**',
-      ],
     },
   },
 });

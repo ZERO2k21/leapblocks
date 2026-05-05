@@ -3,8 +3,8 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import Blockly from "../../../leapembed/server/blockly/runtime";
-import { javascriptGenerator } from "../../../leapembed/server/blockly/runtime";
+import Blockly from "@blockly-runtime";
+import { javascriptGenerator } from "@blockly-runtime";
 
 export default function defineSoundBlocks() {
     const defaultSoundOptions = [["Pop", "pop"], ["Boing", "boing"], ["Clap", "clap"]];

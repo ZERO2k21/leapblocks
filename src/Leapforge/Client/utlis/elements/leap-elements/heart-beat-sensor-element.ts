@@ -16,9 +16,8 @@
  * computed from the current beat phase, updated every animation frame.
  */
 import { css, html, LitElement } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { analog, ElementPin, GND, VCC } from './pin';
-import { safeDefine } from './utils/safe-define';
 
 /** Real PulseSensor.com ADC output model — matches analogRead() values */
 function pulseSensorADC(phase: number): number {
@@ -32,6 +31,7 @@ function pulseSensorADC(phase: number): number {
   return Math.round(512 + breathingDrift + beat + noise);
 }
 
+@customElement('leap-heart-beat-sensor')
 export class HeartBeatSensorElement extends LitElement {
   /** Heart rate in BPM */
   @property({ type: Number }) bpm = 72;
@@ -184,5 +184,3 @@ export class HeartBeatSensorElement extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-heart-beat-sensor', HeartBeatSensorElement);

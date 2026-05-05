@@ -21,10 +21,9 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
       "@blockly-runtime": [
-        "./src/leapembed/server/blockly/runtime.ts"
+        "./src/blockly/runtime.ts"
       ]
     }
   },

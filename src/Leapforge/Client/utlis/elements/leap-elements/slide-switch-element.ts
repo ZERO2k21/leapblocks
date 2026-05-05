@@ -1,8 +1,8 @@
 import { css, html, LitElement } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
-import { safeDefine } from './utils/safe-define';
 
+@customElement('leap-slide-switch')
 export class SlideSwitchElement extends LitElement {
   @property() value = 0;
 
@@ -102,5 +102,3 @@ export class SlideSwitchElement extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-slide-switch', SlideSwitchElement);

@@ -263,6 +263,10 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     serialOutput: state.serialOutput + data
   })),
 
+  appendWiFiLog: (data) => set((state) => ({
+    serialOutput: state.serialOutput + '[WiFi] ' + data + '\n'
+  })),
+
   clearSerial: () => set({ serialOutput: '' }),
 
   appendWiFiLog: (msg) => set((state) => ({

@@ -5,7 +5,7 @@
  */
 import React, { memo, useRef, useEffect } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { getComponentPins, usePinHarnessVersion } from '../../lib/PinMap';
+import { getComponentPins } from '../../lib/PinMap';
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
 import { SensorOverlay } from './SensorOverlay';
 
@@ -13,10 +13,6 @@ import { SensorOverlay } from './SensorOverlay';
 export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   const selectedNodeId = useForgeStore((state) => state.selectedNodeId);
   const isSelected = selected || selectedNodeId === id;
-
-  // Re-render this node whenever PinHarness.json is hot-reloaded in dev.
-  // In production this is a no-op (always 0, no extra renders).
-  usePinHarnessVersion();
 
   // I2C variants map to the same element as their parallel counterpart
   const elementType = data.type === 'lcd1602-i2c' ? 'lcd1602'
@@ -69,24 +65,13 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     // Servos use the 'angle' property calculated in CircuitEngine
     mappedProps.angle = data.angle ?? 0;
   } else if (data.type === 'stepper-motor') {
-    // angle/value/units/arrow are set imperatively via useEffect below
-    // to ensure Lit receives them as typed properties, not string attributes
+    mappedProps.angle = data.angle ?? 0;
+    mappedProps.value = data.value ?? '0.0°';
+    mappedProps.units = data.units ?? '0 steps';
+    mappedProps.arrow = data.arrow ?? '';
   } else if (data.type === 'ks2e-m-dc5') {
     // Relay: energized when COIL1 is HIGH (COIL2 is typically GND)
     mappedProps.energized = data.relayEnergized ?? false;
-  } else if (data.type === 'a4988') {
-    // A4988 stepper driver: reflect ENABLE, STEP, DIR, MS1/2/3, RESET, SLEEP pins
-    // ENABLE is active-low (default pulled-down → LOW = enabled)
-    mappedProps.enabled = data.pinStates?.pin_ENABLE === true;   // raw HIGH/LOW; element inverts
-    mappedProps.stepHigh = data.pinStates?.pin_STEP === true;
-    mappedProps.dirHigh = data.pinStates?.pin_DIR === true;
-    mappedProps.ms1 = data.pinStates?.pin_MS1 === true;
-    mappedProps.ms2 = data.pinStates?.pin_MS2 === true;
-    mappedProps.ms3 = data.pinStates?.pin_MS3 === true;
-    // RESET is active-low (floating default → treat as HIGH = not in reset)
-    mappedProps.resetHigh = data.pinStates?.pin_RESET !== false;
-    // SLEEP is active-low (default pulled-up → HIGH = awake)
-    mappedProps.sleepHigh = data.pinStates?.pin_SLEEP !== false;
   } else if (data.type === 'biaxial-stepper') {
     mappedProps.outerHandAngle = data.outerHandAngle ?? 0;
     mappedProps.innerHandAngle = data.innerHandAngle ?? 0;
@@ -286,18 +271,6 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     el.angle = angle;
   }, [data.type, data.angle]);
 
-  // Imperatively set stepper-motor angle as DOM property.
-  // Same reason as servo — JSX spreads numbers as strings on Web Components,
-  // which breaks Lit's @property({ type: Number }) and the cumulative angle tracking.
-  useEffect(() => {
-    if (!elementRef.current || data.type !== 'stepper-motor') return;
-    const el = elementRef.current;
-    el.angle = data.angle ?? 0;
-    el.value = data.value ?? '';
-    el.units = data.units ?? '';
-    el.arrow = data.arrow ?? '';
-  }, [data.type, data.angle, data.value, data.units, data.arrow]);
-
   // Push pixel data to matrix/ring elements via DOM setPixel() method
   useEffect(() => {
     if (!elementRef.current || !data.neopixelPixels) return;
@@ -386,6 +359,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     };
 
     el.addEventListener('tilt-toggle', handleTiltToggle);
+    
     // Set initial state on mount
     const initialTilted = data.sensorValues?.tilted ?? false;
     import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
@@ -480,6 +454,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     el.addEventListener('input', handleInput);
     el.addEventListener('button-press', handlePress);
     el.addEventListener('button-release', handleRelease);
+    
     // Inject the center resting state immediately on mount
     handleInput();
     handleRelease();

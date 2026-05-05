@@ -1,14 +1,13 @@
 import { css, html, LitElement } from 'lit';
-import { safeDefine } from './utils/safe-define';
-
+import { customElement } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { ElementPin, GND } from './pin';
-import { safeDefine } from './utils/safe-define';
 
 type InitialValue = '';
 type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
+@customElement('leap-rotary-dialer')
 export class RotaryDialerElement extends LitElement {
   readonly pinInfo: ElementPin[] = [
     { name: 'GND', x: 122, y: 286, signals: [GND()] },
@@ -180,5 +179,3 @@ export class RotaryDialerElement extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-rotary-dialer', RotaryDialerElement);

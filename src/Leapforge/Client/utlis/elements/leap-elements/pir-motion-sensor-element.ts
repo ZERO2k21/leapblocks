@@ -7,13 +7,13 @@
  *                    shown as a green glow on the dome + status badge
  */
 import { css, html, LitElement } from 'lit';
-import { property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { ElementPin, GND, VCC } from './pin';
-import { safeDefine } from './utils/safe-define';
 
 // SVG viewBox: 0 0 90.7 92.4  (px units, used as-is)
 // Rendered at 24mm × 24.448mm via SVG width/height attributes
 
+@customElement('leap-pir-motion-sensor')
 export class PIRMotionSensorElement extends LitElement {
 
   /** When true the OUT pin is HIGH — motion detected. */
@@ -201,5 +201,3 @@ export class PIRMotionSensorElement extends LitElement {
     `;
   }
 }
-
-safeDefine('leap-pir-motion-sensor', PIRMotionSensorElement);
