@@ -31,7 +31,7 @@ if (Blockly.FieldDropdown && !(Blockly.FieldDropdown.prototype as any)._dropdown
                 document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
             }
         } catch (e) {
-            console.warn('[Blockly Patch] Failed to set dropdown colors:',e );
+            console.warn('[Blockly Patch] Failed to set dropdown colors:', e);
         }
 
         // HEALING: If the field's current value is an object (due to a previous bug), 
@@ -350,21 +350,32 @@ const browserEvents = (Blockly as any).browserEvents;
 if (browserEvents && typeof browserEvents.unbind === 'function' && !browserEvents._unbindPatched) {
     const origUnbind = browserEvents.unbind;
     browserEvents.unbind = function (bindData: any) {
-        if (!bindData || !Array.isArray(bindData)) return;
+        if (!bindData) return;
+
+        if (!Array.isArray(bindData)) {
+            try {
+                origUnbind(bindData);
+            } catch (err) {
+                console.warn('[Blockly Patch] Error unbinding non-array:', err);
+            }
+            return;
+        }
 
         // Filter out any undefined/invalid entries that would crash on property access
-        for (let i = bindData.length - 1; i >= 0; i--) {
+        const validEntries = [];
+        for (let i = 0; i < bindData.length; i++) {
             const entry = bindData[i];
-            if (!entry || (Array.isArray(entry) && (!entry[0] || !entry[2]))) {
-                bindData.splice(i, 1);
+            if (Array.isArray(entry) && entry.length >= 3 && entry[0] && entry[1] && entry[2]) {
+                validEntries.push(entry);
             }
         }
-        if (bindData.length === 0) return;
+
+        if (validEntries.length === 0) return;
 
         try {
-            origUnbind(bindData);
+            origUnbind(validEntries);
         } catch (err) {
-            // Silently handle — workspace disposal race conditions are non-fatal
+            console.warn('[Blockly Patch] Error unbinding events:', err);
         }
     };
     browserEvents._unbindPatched = true;
