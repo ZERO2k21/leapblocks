@@ -1354,7 +1354,9 @@ class CircuitEngine {
                         const { angle: a, stepCount: s, energized: e } = pendingUpdate;
                         pendingUpdate = null;
                         updateNodeData(peripheralId, {
-                          angle: a,
+                          // Use stepCount-based unbounded angle for cumulative rotation.
+                          // This matches the A4988 path and prevents visual jump at 360°.
+                          angle: (s / 200) * 360,
                           value: `${a.toFixed(1)}°`,
                           units: `${s > 0 ? '+' : ''}${s} steps`,
                           arrow: e ? '#BEF264' : '',
@@ -1466,6 +1468,56 @@ class CircuitEngine {
             // --- A4988 Stepper Driver Emulation ---
             // Bridges STEP/DIR from Arduino to the stepper motor connected on 1A/1B/2A/2B
             if (peripheralNode.data?.type === 'a4988') {
+<<<<<<< HEAD
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              // Skip buffer update for FLOATING state — preserves A4988 hardware
+              // default pin states (RESET=HIGH via pull-up, SLEEP=HIGH via pull-up,
+              // ENABLE=LOW via pull-down). The initial addListener() call fires with
+              // FLOATING before any real signal arrives, which would incorrectly
+              // overwrite these defaults and disable the driver.
+              if (state === 'FLOATING') return;
+              buf[peripheralPinName] = isHigh;
+
+              // Debug: Log all pin changes to diagnose wiring issues
+              if (!this.a4988DebugLogged) {
+                this.a4988DebugLogged = true;
+                console.log(`[A4988 DEBUG] First pin change detected: ${peripheralPinName} = ${isHigh ? 'HIGH' : 'LOW'}`);
+                console.log(`[A4988 DEBUG] A4988 node ID: ${peripheralId}`);
+
+                // Check if user is trying to use 4-wire mode with A4988
+                const { edges } = useForgeStore.getState();
+                const inputEdges = edges.filter(e => {
+                  const srcHandle = (e.sourceHandle || '').replace(/__target$/, '');
+                  const tgtHandle = (e.targetHandle || '').replace(/__target$/, '');
+                  return (e.target === peripheralId && ['STEP', 'DIR'].includes(tgtHandle)) ||
+                    (e.source === peripheralId && ['STEP', 'DIR'].includes(srcHandle));
+                });
+
+                if (inputEdges.length === 0) {
+                  console.error(`[A4988 ERROR] No STEP/DIR pins connected to A4988!`);
+                  console.error(`[A4988 ERROR] The A4988 driver requires STEP and DIR signals from your microcontroller.`);
+                  console.error(`[A4988 ERROR] If you're using Arduino's Stepper library in 4-wire mode, you have two options:`);
+                  console.error(`[A4988 ERROR]   1. Remove the A4988 and wire ESP32 pins directly to the stepper motor`);
+                  console.error(`[A4988 ERROR]   2. Change your code to use AccelStepper library with STEP/DIR mode`);
+                } else {
+                  console.log(`[A4988 DEBUG] STEP/DIR pins properly connected: ${inputEdges.length} edges`);
+                }
+              }
+
+              // Handle control pins: ENABLE, RESET, SLEEP, MS1, MS2, MS3, STEP, DIR
+              // Update A4988 element UI state for all pins
+              {
+                const currentPinStates = peripheralNode.data?.pinStates || {};
+                updateNodeData(peripheralId, {
+                  pinStates: {
+                    ...currentPinStates,
+                    [`pin_${peripheralPinName}`]: isHigh
+                  }
+                });
+              }
+
+=======
+>>>>>>> 27ef53929d8d360b8ad3a33c9a2cafb360e19b1c
               if (peripheralPinName === 'STEP' || peripheralPinName === 'DIR') {
                 const buf = this.peripheralPinBuffers.get(peripheralId)!;
                 buf[peripheralPinName] = isHigh;
