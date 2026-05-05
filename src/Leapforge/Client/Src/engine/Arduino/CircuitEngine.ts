@@ -1520,6 +1520,12 @@ class CircuitEngine {
             // Bridges STEP/DIR from Arduino to the stepper motor connected on 1A/1B/2A/2B
             if (peripheralNode.data?.type === 'a4988') {
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              // Skip buffer update for FLOATING state — preserves A4988 hardware
+              // default pin states (RESET=HIGH via pull-up, SLEEP=HIGH via pull-up,
+              // ENABLE=LOW via pull-down). The initial addListener() call fires with
+              // FLOATING before any real signal arrives, which would incorrectly
+              // overwrite these defaults and disable the driver.
+              if (state === 'FLOATING') return;
               buf[peripheralPinName] = isHigh;
 
               // Debug: Log all pin changes to diagnose wiring issues
@@ -1697,7 +1703,6 @@ class CircuitEngine {
                             if (pendingUpdate) {
                               const { angle: a, stepCount: s, energized: e } = pendingUpdate;
                               pendingUpdate = null;
-                              console.log(`[A4988→MOTOR] Updating motor ${motorNodeId}: angle=${a.toFixed(1)}°, stepCount=${s}, energized=${e}`);
                               updateNodeData(motorNodeId, {
                                 // Keep rotation cumulative/unbounded for correct CW/CCW animation.
                                 angle: (s / 200) * 360,
