@@ -6,7 +6,7 @@ import { mmToPix } from './utils/units';
 type HandShape = 'arrow' | 'plain' | 'ornate';
 type HandDesc = { xOff: number; yOff: number; path: string };
 
-const SHAFT_X = 34; // x location of shaft point
+const SHAFT_X = 58; // x location of shaft point
 const SHAFT_Y = 75; // y location of shaft point
 const OUTER_OFFSET = 9; // offset to center of outer hand's ring
 const INNER_OFFSET = 4; // offset to center of inner hand's ring
@@ -244,7 +244,7 @@ export class BiaxialStepperElement extends LitElement {
                            translate(-${outerPathDesc.xOff}px, -${outerPathDesc.yOff}px);
                 transition: transform 80ms linear;
                 transform-box: fill-box;
-                transform-origin: center center;
+                transform-origin: ${outerPathDesc.xOff}px ${outerPathDesc.yOff}px;
               "
               fill="${this.outerHandColor}"
               d="${outerPathDesc.path}"
@@ -261,7 +261,7 @@ export class BiaxialStepperElement extends LitElement {
                            translate(-${innerPathDesc.xOff}px, -${innerPathDesc.yOff}px);
                 transition: transform 80ms linear;
                 transform-box: fill-box;
-                transform-origin: center center;
+                transform-origin: ${innerPathDesc.xOff}px ${innerPathDesc.yOff}px;
               "
               fill="${this.innerHandColor}"
               d="${innerPathDesc.path}"
