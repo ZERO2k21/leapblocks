@@ -376,7 +376,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     };
 
     el.addEventListener('tilt-toggle', handleTiltToggle);
-    
+
     // Set initial state on mount
     const initialTilted = data.sensorValues?.tilted ?? false;
     import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
@@ -387,6 +387,31 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       el.removeEventListener('tilt-toggle', handleTiltToggle);
     };
   }, [data.type, id]);
+
+  // Wire slide-switch DOM input events into the circuit engine
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el || data.type !== 'slide-switch') return;
+
+    const handleInput = (e: Event) => {
+      const value = (e as CustomEvent).detail ?? (el as any).value ?? 0;
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushSlideSwitchState(id, value);
+      });
+    };
+
+    el.addEventListener('input', handleInput);
+
+    // Set initial state on mount
+    const initialValue = data.value ?? 0;
+    import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+      circuitEngine.pushSlideSwitchState(id, initialValue);
+    });
+
+    return () => {
+      el.removeEventListener('input', handleInput);
+    };
+  }, [data.type, id, data.value]);
 
   // Wire KY-040 rotary encoder DOM events into the circuit engine
   useEffect(() => {
@@ -471,7 +496,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     el.addEventListener('input', handleInput);
     el.addEventListener('button-press', handlePress);
     el.addEventListener('button-release', handleRelease);
-    
+
     // Inject the center resting state immediately on mount
     handleInput();
     handleRelease();

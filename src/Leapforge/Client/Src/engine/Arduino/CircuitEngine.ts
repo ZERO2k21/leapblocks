@@ -1922,6 +1922,88 @@ class CircuitEngine {
   }
 
   /**
+   * Update slide switch state (SPDT behavior).
+   * Called by LeapNode when it receives 'input' events from the slide switch.
+   * 
+   * SPDT Logic:
+   * - Pin 1 (COM) is always the common terminal
+   * - When value=0 (OFF): Pin 1 connects to Pin 3 (NC - Normally Closed)
+   * - When value=1 (ON):  Pin 1 connects to Pin 2 (NO - Normally Open)
+   */
+  public pushSlideSwitchState(nodeId: string, value: number) {
+    const { updateNodeData, edges, nodes } = useForgeStore.getState();
+    const switchNode = nodes.find(n => n.id === nodeId);
+    if (!switchNode) return;
+
+    // Update node data for UI
+    updateNodeData(nodeId, { value });
+
+    console.log(`[SLIDE SWITCH] Node ${nodeId} state: ${value ? 'ON (COM→NO)' : 'OFF (COM→NC)'}`);
+
+    // Find wires connected to each pin
+    const getConnectedWire = (pinName: string) => {
+      return edges.find(e => {
+        const srcMatch = e.source === nodeId && (e.sourceHandle === pinName || e.sourceHandle === `${pinName}__target`);
+        const tgtMatch = e.target === nodeId && (e.targetHandle === pinName || e.targetHandle === `${pinName}__target`);
+        return srcMatch || tgtMatch;
+      });
+    };
+
+    const wire1 = getConnectedWire('1'); // COM
+    const wire2 = getConnectedWire('2'); // NO
+    const wire3 = getConnectedWire('3'); // NC
+
+    if (!wire1) {
+      console.warn(`[SLIDE SWITCH] Pin 1 (COM) not connected - switch has no effect`);
+      return;
+    }
+
+    // Determine which output pin is active
+    const activeWire = value === 1 ? wire2 : wire3;
+    const activePinName = value === 1 ? '2' : '3';
+    const activePinLabel = value === 1 ? 'NO' : 'NC';
+
+    if (!activeWire) {
+      console.warn(`[SLIDE SWITCH] ${activePinLabel} (Pin ${activePinName}) not connected - switch output has no effect`);
+      return;
+    }
+
+    // Get the board pin connected to COM
+    const comBoardPin = (wire1.source === nodeId ? wire1.targetHandle : wire1.sourceHandle) || '';
+    const comBoardNodeId = wire1.source === nodeId ? wire1.target : wire1.source;
+    const cleanComBoardPin = comBoardPin.replace(/__target$/, '');
+
+    // Check if COM is connected to power (5V, 3.3V, VCC) or GND
+    const comNode = nodes.find(n => n.id === comBoardNodeId);
+    const comPinUpper = cleanComBoardPin.toUpperCase();
+    const isComPower = comPinUpper.includes('5V') || comPinUpper.includes('3V3') || comPinUpper.includes('VCC') || comPinUpper.includes('3.3V');
+    const isComGND = comPinUpper.includes('GND');
+
+    // Determine the signal level to output
+    let outputHigh = false;
+
+    if (isComPower) {
+      // COM connected to power → output HIGH when switch connects
+      outputHigh = true;
+      console.log(`[SLIDE SWITCH] COM connected to power → Output ${activePinLabel} = HIGH`);
+    } else if (isComGND) {
+      // COM connected to GND → output LOW when switch connects
+      outputHigh = false;
+      console.log(`[SLIDE SWITCH] COM connected to GND → Output ${activePinLabel} = LOW`);
+    } else {
+      // COM connected to Arduino pin → read that pin's state
+      // For now, assume it's being driven HIGH by the Arduino
+      outputHigh = true;
+      console.log(`[SLIDE SWITCH] COM connected to Arduino pin → Output ${activePinLabel} = HIGH (assumed)`);
+    }
+
+    // Inject the signal into the connected Arduino pin
+    this.pushInputSignal(nodeId, activePinName, outputHigh);
+
+    console.log(`[SLIDE SWITCH] Injecting ${outputHigh ? 'HIGH' : 'LOW'} to ${activePinLabel} (Pin ${activePinName})`);
+  }
+
+  /**
    * Push analog values from analog-joystick into CircuitEngine.
    */
   public pushJoystickAnalog(nodeId: string, x: number, y: number) {
