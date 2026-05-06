@@ -2122,36 +2122,12 @@ export const animationToolbox = {
             name: 'Looks',
             colour: COLORS.looks,
             contents: [
-                {
-                    kind: 'block',
-                    type: 'looks_say_for_secs',
-                    inputs: {
-                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hello!' } } },
-                        SECS: { shadow: { type: 'math_number', fields: { NUM: 2 } } }
-                    }
-                },
-                {
-                    kind: 'block',
-                    type: 'looks_say',
-                    inputs: {
-                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hello!' } } }
-                    }
-                },
-                {
-                    kind: 'block',
-                    type: 'looks_think_for_secs',
-                    inputs: {
-                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hmm...' } } },
-                        SECS: { shadow: { type: 'math_number', fields: { NUM: 2 } } }
-                    }
-                },
-                {
-                    kind: 'block',
-                    type: 'looks_think',
-                    inputs: {
-                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hmm...' } } }
-                    }
-                },
+                // Note: looks_say/think blocks are registered from leapBlocks.ts which uses
+                // field_input (not input_value), so no shadow inputs should be specified here.
+                { kind: 'block', type: 'looks_say_for_secs' },
+                { kind: 'block', type: 'looks_say' },
+                { kind: 'block', type: 'looks_think_for_secs' },
+                { kind: 'block', type: 'looks_think' },
                 { kind: 'label', text: '── Visibility ──' },
                 { kind: 'block', type: 'looks_show' },
                 { kind: 'block', type: 'looks_hide' },
@@ -2201,21 +2177,11 @@ export const animationToolbox = {
             name: 'Control',
             colour: COLORS.control,
             contents: [
-                {
-                    kind: 'block',
-                    type: 'control_wait',
-                    inputs: {
-                        SECS: { shadow: { type: 'math_number', fields: { NUM: 1 } } }
-                    }
-                },
+                // Note: Control blocks are registered from leapBlocks.ts which uses field_number
+                // (not input_value), so no shadow inputs should be specified here.
+                { kind: 'block', type: 'control_wait' },
                 { kind: 'label', text: '── Loops ──' },
-                {
-                    kind: 'block',
-                    type: 'control_repeat',
-                    inputs: {
-                        TIMES: { shadow: { type: 'math_number', fields: { NUM: 10 } } }
-                    }
-                },
+                { kind: 'block', type: 'control_repeat' },
                 { kind: 'block', type: 'control_forever' },
                 { kind: 'block', type: 'control_repeat_until' },
                 { kind: 'label', text: '── Conditions ──' },
