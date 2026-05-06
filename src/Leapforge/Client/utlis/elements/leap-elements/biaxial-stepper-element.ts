@@ -65,14 +65,14 @@ export class BiaxialStepperElement extends LitElement {
   update(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('outerHandAngle')) {
       let delta = this.outerHandAngle - this._outerLastMod;
-      if (delta > 180)  delta -= 360;
+      if (delta > 180) delta -= 360;
       if (delta < -180) delta += 360;
       this._outerCumulative += delta;
       this._outerLastMod = this.outerHandAngle;
     }
     if (changedProperties.has('innerHandAngle')) {
       let delta = this.innerHandAngle - this._innerLastMod;
-      if (delta > 180)  delta -= 360;
+      if (delta > 180) delta -= 360;
       if (delta < -180) delta += 360;
       this._innerCumulative += delta;
       this._innerLastMod = this.innerHandAngle;
@@ -244,7 +244,7 @@ export class BiaxialStepperElement extends LitElement {
                            translate(-${outerPathDesc.xOff}px, -${outerPathDesc.yOff}px);
                 transition: transform 80ms linear;
                 transform-box: fill-box;
-                transform-origin: ${outerPathDesc.xOff}px ${outerPathDesc.yOff}px;
+                transform-origin: center center;
               "
               fill="${this.outerHandColor}"
               d="${outerPathDesc.path}"
@@ -261,7 +261,7 @@ export class BiaxialStepperElement extends LitElement {
                            translate(-${innerPathDesc.xOff}px, -${innerPathDesc.yOff}px);
                 transition: transform 80ms linear;
                 transform-box: fill-box;
-                transform-origin: ${innerPathDesc.xOff}px ${innerPathDesc.yOff}px;
+                transform-origin: center center;
               "
               fill="${this.innerHandColor}"
               d="${innerPathDesc.path}"

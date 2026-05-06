@@ -137,13 +137,10 @@ export class StepperMotorElement extends LitElement {
     if (changedProperties.has('size')) {
       this.dispatchEvent(new CustomEvent('pininfo-change'));
     }
+    // We now receive a perfectly unbounded cumulative angle from the emulator.
+    // No delta calculation needed.
     if (changedProperties.has('angle')) {
-      // Compute shortest-arc delta to avoid wrap-around flips in CSS transition
-      let delta = this.angle - this._lastModAngle;
-      if (delta > 180)  delta -= 360;
-      if (delta < -180) delta += 360;
-      this._cumulativeAngle += delta;
-      this._lastModAngle = this.angle;
+      this._cumulativeAngle = this.angle;
     }
     super.update(changedProperties);
   }
@@ -167,24 +164,16 @@ export class StepperMotorElement extends LitElement {
     // shaft radius offset, needed for transform
     const rOff = Math.sqrt(0.75 * Math.pow(shaftRadius, 2));
 
-    // Speed-adaptive transition: faster steps → shorter transition so it looks smooth
-    // but never faster than 16ms (one frame) or slower than 300ms
-    const stepsPerSec = 200; // default; visual only — keeps motion fluid
-    const stepAngle = 360 / 200;
-    const stepDurationMs = Math.min(300, Math.max(16, Math.round((stepAngle / 360) * (1000 / (stepsPerSec / 200)))));
-
     const energized = !!this.arrow;
     const glowColor = energized ? '#BEF264' : 'none';
     const glowFilter = energized ? 'drop-shadow(0 0 3px #BEF264)' : 'none';
 
+    // The shaft center in SVG user-space (mm units, inside the scale group)
+    // After translate(1,1) + scale(mmToPix), the shaft center in CSS px is:
+    const shaftCenterPx_X = (1 + halfFrame) * mmToPix;
+    const shaftCenterPx_Y = (1 + halfFrame) * mmToPix;
+
     return html`
-      <style>
-        #rotator {
-          transform-box: fill-box;
-          transform-origin: center;
-          transition: transform ${stepDurationMs}ms linear;
-        }
-      </style>
       <svg
       width="${frameSize + 1}mm"
       height="${frameSize + 5}mm"
@@ -287,12 +276,17 @@ export class StepperMotorElement extends LitElement {
             stroke-opacity="${energized ? '0.6' : '0'}"
             style="transition: stroke-opacity 80ms ease, stroke 80ms ease"
           />
+        </g>
+      </g>
 
-          <!-- Rotator group — CSS transition handles smooth sweep -->
-          <g
-            id="rotator"
-            style="transform: rotate(${this._cumulativeAngle}deg); transform-origin: ${halfFrame}mm ${halfFrame}mm; transition: transform ${stepDurationMs}ms linear"
-          >
+      <!-- Rotator group — outside the scale() group so CSS transform-origin works in pixel coords -->
+      <!-- Rotation pivot = shaft center = translate(1,1) + scale(mmToPix) applied to (halfFrame, halfFrame) -->
+      <g
+        id="rotator"
+        style="transform: rotate(${this._cumulativeAngle}deg); transform-origin: ${shaftCenterPx_X}px ${shaftCenterPx_Y}px; transition: transform 100ms linear;"
+      >
+        <g transform="translate(1,1)">
+          <g transform="scale(${mmToPix})">
             <!-- Direction arrow -->
             <path
               transform="translate(${halfFrame} ${halfFrame})"
@@ -308,8 +302,12 @@ export class StepperMotorElement extends LitElement {
               stroke-width=".57968"
             />
           </g>
+        </g>
+      </g>
 
-          <!-- Text -->
+      <!-- Text overlay (outside rotator so it stays upright) -->
+      <g transform="translate(1,1)">
+        <g transform="scale(${mmToPix})">
           <text font-family="arial" font-size="14.667px" text-align="center" text-anchor="middle">
             <tspan
               x="${halfFrame}"

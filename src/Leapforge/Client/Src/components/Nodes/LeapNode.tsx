@@ -271,6 +271,15 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     el.angle = angle;
   }, [data.type, data.angle]);
 
+  // Imperatively set stepper-motor angle as DOM property.
+  // Same issue as servo — Lit @property({ type: Number }) needs a real number, not a string attribute.
+  useEffect(() => {
+    if (!elementRef.current || data.type !== 'stepper-motor') return;
+    const el = elementRef.current;
+    el.angle = data.angle ?? 0;
+    el.arrow = data.arrow ?? '';
+  }, [data.type, data.angle, data.arrow]);
+
   // Push pixel data to matrix/ring elements via DOM setPixel() method
   useEffect(() => {
     if (!elementRef.current || !data.neopixelPixels) return;

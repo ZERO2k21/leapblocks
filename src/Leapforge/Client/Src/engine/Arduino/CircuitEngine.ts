@@ -208,6 +208,12 @@ class CircuitEngine {
       // Re-sync only when edges change while already simulating (not on the start transition)
       const edgesChanged = state.edges.length !== previousEdgesCount;
       const wasAlreadySimulating = previousIsSimulating && state.isSimulating;
+
+      // Handle simulation stop to clean up emulators
+      if (previousIsSimulating && !state.isSimulating) {
+        this.cleanup();
+      }
+
       previousEdgesCount = state.edges.length;
       previousIsSimulating = state.isSimulating;
       if (edgesChanged && wasAlreadySimulating) {
@@ -732,11 +738,9 @@ class CircuitEngine {
   }
 
   /**
-   * Called whenever wires are drawn/removed. Rebuilds the routing table.
+   * Clears all active emulators, timers, and AVR listeners.
    */
-  public syncCircuitGraph() {
-    console.log('[FORGE CIRCUIT] syncCircuitGraph triggered. Re-evaluating electrical routing table...');
-    // 1. Clear all old AVR listeners hooked by the circuit engine
+  public cleanup() {
     this.activeSubscriptions.forEach((unsubscribe) => unsubscribe());
     this.activeSubscriptions.clear();
     this.lcdEmulators.clear();
@@ -760,6 +764,15 @@ class CircuitEngine {
     // Clear A4988 motor connection cache and debug flag
     this.a4988MotorCache.clear();
     this.a4988DebugLogged = false;
+  }
+
+  /**
+   * Called whenever wires are drawn/removed. Rebuilds the routing table.
+   */
+  public syncCircuitGraph() {
+    console.log('[FORGE CIRCUIT] syncCircuitGraph triggered. Re-evaluating electrical routing table...');
+    // 1. Clear all old AVR listeners hooked by the circuit engine
+    this.cleanup();
 
     const { nodes, edges, updateNodeData } = useForgeStore.getState();
     const currentStateStore = useForgeStore.getState();
@@ -1386,23 +1399,25 @@ class CircuitEngine {
                   console.warn(`[STEPPER]   Option B: Remove direct wiring, wire ESP32→A4988(STEP/DIR)→Motor, use AccelStepper`);
                 }
 
-                let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
+                let pendingUpdate: { angle: number; stepCount: number; energized: boolean; actualAngle?: number; actualAngleUnbounded?: number } | null = null;
                 let rafScheduled = false;
-                this.stepperEmulators.set(peripheralId, new StepperEmulator(({ angle, stepCount, energized }) => {
-                  pendingUpdate = { angle, stepCount, energized };
+                this.stepperEmulators.set(peripheralId, new StepperEmulator(({ angle, stepCount, energized, actualAngle, actualAngleUnbounded }) => {
+                  pendingUpdate = { angle, stepCount, energized, actualAngle, actualAngleUnbounded };
                   if (!rafScheduled) {
                     rafScheduled = true;
                     requestAnimationFrame(() => {
                       rafScheduled = false;
                       if (pendingUpdate) {
-                        const { angle: a, stepCount: s, energized: e } = pendingUpdate;
+                        const { angle: a, stepCount: s, energized: e, actualAngle: smoothAngle, actualAngleUnbounded: smoothUnbounded } = pendingUpdate;
                         pendingUpdate = null;
+                        // Use smooth physics angle if available for display
+                        const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
+                        // Use unbounded smooth angle for CSS transform if available
+                        const transformAngle = smoothUnbounded !== undefined ? smoothUnbounded : (s / 200) * 360;
                         updateNodeData(peripheralId, {
-                          // Pass true cumulative angle (unbounded) so the element
-                          // can use it directly in rotate() without delta tracking.
-                          // stepCount is negative for CCW, positive for CW.
-                          angle: (s / 200) * 360,
-                          value: `${a.toFixed(1)}°`,
+                          // For CSS transform, use smooth unbounded angle for realistic motion
+                          angle: transformAngle,
+                          value: `${transformAngle.toFixed(1)}°`,
                           units: `${s > 0 ? '+' : ''}${s} steps`,
                           arrow: e ? '#BEF264' : '',
                         });
@@ -1450,18 +1465,20 @@ class CircuitEngine {
               // Create outer emulator (motor 1)
               if (!this.stepperEmulators.has(outerKey)) {
                 console.log(`[BIAXIAL] Wiring outer emulator for node ${peripheralId}`);
-                let pending: { angle: number; energized: boolean } | null = null;
+                let pending: { angle: number; energized: boolean; actualAngleUnbounded?: number } | null = null;
                 let rafPending = false;
-                this.stepperEmulators.set(outerKey, new StepperEmulator(({ angle, energized }) => {
-                  pending = { angle, energized };
+                this.stepperEmulators.set(outerKey, new StepperEmulator(({ angle, energized, actualAngleUnbounded }) => {
+                  pending = { angle, energized, actualAngleUnbounded };
                   if (!rafPending) {
                     rafPending = true;
                     requestAnimationFrame(() => {
                       rafPending = false;
                       if (pending) {
-                        const { angle: a, energized: e } = pending;
+                        const { angle: a, energized: e, actualAngleUnbounded: smoothAngle } = pending;
                         pending = null;
-                        updateNodeData(peripheralId, { outerHandAngle: a, outerEnergized: e });
+                        // Use smooth angle if available
+                        const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
+                        updateNodeData(peripheralId, { outerHandAngle: displayAngle, outerEnergized: e });
                       }
                     });
                   }
@@ -1471,18 +1488,20 @@ class CircuitEngine {
               // Create inner emulator (motor 2)
               if (!this.stepperEmulators.has(innerKey)) {
                 console.log(`[BIAXIAL] Wiring inner emulator for node ${peripheralId}`);
-                let pending: { angle: number; energized: boolean } | null = null;
+                let pending: { angle: number; energized: boolean; actualAngleUnbounded?: number } | null = null;
                 let rafPending = false;
-                this.stepperEmulators.set(innerKey, new StepperEmulator(({ angle, energized }) => {
-                  pending = { angle, energized };
+                this.stepperEmulators.set(innerKey, new StepperEmulator(({ angle, energized, actualAngleUnbounded }) => {
+                  pending = { angle, energized, actualAngleUnbounded };
                   if (!rafPending) {
                     rafPending = true;
                     requestAnimationFrame(() => {
                       rafPending = false;
                       if (pending) {
-                        const { angle: a, energized: e } = pending;
+                        const { angle: a, energized: e, actualAngleUnbounded: smoothAngle } = pending;
                         pending = null;
-                        updateNodeData(peripheralId, { innerHandAngle: a, innerEnergized: e });
+                        // Use smooth angle if available
+                        const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
+                        updateNodeData(peripheralId, { innerHandAngle: displayAngle, innerEnergized: e });
                       }
                     });
                   }
@@ -1661,20 +1680,22 @@ class CircuitEngine {
 
                     if (!this.stepperEmulators.has(shaftKey)) {
                       console.log(`[BIAXIAL] Wiring A4988 STEP/DIR emulator for ${shaftLabel} shaft of node ${motorNodeId}`);
-                      let pending: { angle: number; energized: boolean } | null = null;
+                      let pending: { angle: number; energized: boolean; actualAngleUnbounded?: number } | null = null;
                       let rafPending = false;
-                      this.stepperEmulators.set(shaftKey, new StepperEmulator(({ angle, energized }) => {
-                        pending = { angle, energized };
+                      this.stepperEmulators.set(shaftKey, new StepperEmulator(({ angle, energized, actualAngleUnbounded }) => {
+                        pending = { angle, energized, actualAngleUnbounded };
                         if (!rafPending) {
                           rafPending = true;
                           requestAnimationFrame(() => {
                             rafPending = false;
                             if (pending) {
-                              const { angle: a, energized: e } = pending;
+                              const { angle: a, energized: e, actualAngleUnbounded: smoothAngle } = pending;
                               pending = null;
                               const prop = isInner ? 'innerHandAngle' : 'outerHandAngle';
                               const energizedProp = isInner ? 'innerEnergized' : 'outerEnergized';
-                              updateNodeData(motorNodeId, { [prop]: a, [energizedProp]: e });
+                              // Use smooth angle if available
+                              const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
+                              updateNodeData(motorNodeId, { [prop]: displayAngle, [energizedProp]: e });
                             }
                           });
                         }
@@ -1692,21 +1713,25 @@ class CircuitEngine {
                     // Standard single stepper motor
                     if (!this.stepperEmulators.has(motorNodeId)) {
                       console.log(`[STEPPER] Wiring A4988 STEP/DIR emulator for motor node ${motorNodeId}`);
-                      let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
+                      let pendingUpdate: { angle: number; stepCount: number; energized: boolean; actualAngle?: number; actualAngleUnbounded?: number } | null = null;
                       let rafScheduled = false;
-                      this.stepperEmulators.set(motorNodeId, new StepperEmulator(({ angle, stepCount, energized }) => {
-                        pendingUpdate = { angle, stepCount, energized };
+                      this.stepperEmulators.set(motorNodeId, new StepperEmulator(({ angle, stepCount, energized, actualAngle, actualAngleUnbounded }) => {
+                        pendingUpdate = { angle, stepCount, energized, actualAngle, actualAngleUnbounded };
                         if (!rafScheduled) {
                           rafScheduled = true;
                           requestAnimationFrame(() => {
                             rafScheduled = false;
                             if (pendingUpdate) {
-                              const { angle: a, stepCount: s, energized: e } = pendingUpdate;
+                              const { angle: a, stepCount: s, energized: e, actualAngle: smoothAngle, actualAngleUnbounded: smoothUnbounded } = pendingUpdate;
                               pendingUpdate = null;
+                              // Use smooth physics angle if available for display
+                              const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
+                              // Use unbounded smooth angle for CSS transform if available
+                              const transformAngle = smoothUnbounded !== undefined ? smoothUnbounded : (s / 200) * 360;
                               updateNodeData(motorNodeId, {
-                                // Keep rotation cumulative/unbounded for correct CW/CCW animation.
-                                angle: (s / 200) * 360,
-                                value: `${a.toFixed(1)}°`,
+                                // Keep rotation cumulative/unbounded for correct CW/CCW animation with smooth physics
+                                angle: transformAngle,
+                                value: `${displayAngle.toFixed(1)}°`,
                                 units: `${s > 0 ? '+' : ''}${s} steps`,
                                 arrow: e ? '#BEF264' : '',
                               });
