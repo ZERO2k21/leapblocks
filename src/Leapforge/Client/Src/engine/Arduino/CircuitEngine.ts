@@ -1958,16 +1958,6 @@ class CircuitEngine {
       return;
     }
 
-    // Determine which output pin is active
-    const activeWire = value === 1 ? wire2 : wire3;
-    const activePinName = value === 1 ? '2' : '3';
-    const activePinLabel = value === 1 ? 'NO' : 'NC';
-
-    if (!activeWire) {
-      console.warn(`[SLIDE SWITCH] ${activePinLabel} (Pin ${activePinName}) not connected - switch output has no effect`);
-      return;
-    }
-
     // Get the board pin connected to COM
     const comBoardPin = (wire1.source === nodeId ? wire1.targetHandle : wire1.sourceHandle) || '';
     const comBoardNodeId = wire1.source === nodeId ? wire1.target : wire1.source;
@@ -1979,28 +1969,50 @@ class CircuitEngine {
     const isComPower = comPinUpper.includes('5V') || comPinUpper.includes('3V3') || comPinUpper.includes('VCC') || comPinUpper.includes('3.3V');
     const isComGND = comPinUpper.includes('GND');
 
-    // Determine the signal level to output
-    let outputHigh = false;
+    // Determine the signal level based on COM connection
+    let activeSignal = false;
+    let inactiveSignal = false;
 
     if (isComPower) {
-      // COM connected to power → output HIGH when switch connects
-      outputHigh = true;
-      console.log(`[SLIDE SWITCH] COM connected to power → Output ${activePinLabel} = HIGH`);
+      // COM connected to power → active pin gets HIGH, inactive gets LOW (floating/disconnected)
+      activeSignal = true;
+      inactiveSignal = false;
+      console.log(`[SLIDE SWITCH] COM connected to power`);
     } else if (isComGND) {
-      // COM connected to GND → output LOW when switch connects
-      outputHigh = false;
-      console.log(`[SLIDE SWITCH] COM connected to GND → Output ${activePinLabel} = LOW`);
+      // COM connected to GND → active pin gets LOW, inactive gets HIGH (floating/pulled up)
+      activeSignal = false;
+      inactiveSignal = true;
+      console.log(`[SLIDE SWITCH] COM connected to GND`);
     } else {
-      // COM connected to Arduino pin → read that pin's state
-      // For now, assume it's being driven HIGH by the Arduino
-      outputHigh = true;
-      console.log(`[SLIDE SWITCH] COM connected to Arduino pin → Output ${activePinLabel} = HIGH (assumed)`);
+      // COM connected to Arduino pin → assume it's being driven HIGH
+      activeSignal = true;
+      inactiveSignal = false;
+      console.log(`[SLIDE SWITCH] COM connected to Arduino pin (assumed HIGH)`);
     }
 
-    // Inject the signal into the connected Arduino pin
-    this.pushInputSignal(nodeId, activePinName, outputHigh);
-
-    console.log(`[SLIDE SWITCH] Injecting ${outputHigh ? 'HIGH' : 'LOW'} to ${activePinLabel} (Pin ${activePinName})`);
+    // Inject signals to BOTH pins (active and inactive)
+    // This ensures the inactive pin is properly disconnected
+    if (value === 1) {
+      // Switch ON: Pin 2 (NO) is active, Pin 3 (NC) is inactive
+      if (wire2) {
+        this.pushInputSignal(nodeId, '2', activeSignal);
+        console.log(`[SLIDE SWITCH] Pin 2 (NO) = ${activeSignal ? 'HIGH' : 'LOW'} (ACTIVE)`);
+      }
+      if (wire3) {
+        this.pushInputSignal(nodeId, '3', inactiveSignal);
+        console.log(`[SLIDE SWITCH] Pin 3 (NC) = ${inactiveSignal ? 'HIGH' : 'LOW'} (INACTIVE)`);
+      }
+    } else {
+      // Switch OFF: Pin 3 (NC) is active, Pin 2 (NO) is inactive
+      if (wire3) {
+        this.pushInputSignal(nodeId, '3', activeSignal);
+        console.log(`[SLIDE SWITCH] Pin 3 (NC) = ${activeSignal ? 'HIGH' : 'LOW'} (ACTIVE)`);
+      }
+      if (wire2) {
+        this.pushInputSignal(nodeId, '2', inactiveSignal);
+        console.log(`[SLIDE SWITCH] Pin 2 (NO) = ${inactiveSignal ? 'HIGH' : 'LOW'} (INACTIVE)`);
+      }
+    }
   }
 
   /**
