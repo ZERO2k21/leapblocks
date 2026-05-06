@@ -348,6 +348,15 @@ void loop() {
               <SerialMonitor
                 output={serialOutput}
                 onClear={() => clearSerial()}
+                onSend={async (data) => {
+                  // Send data to the simulation runner (works for both AVR and ESP32)
+                  const runner = await getSimulationRunner();
+                  if (runner && isSimulating) {
+                    runner.sendSerialInput(data);
+                  } else {
+                    console.warn('[FORGE STUDIO] Cannot send serial data: simulation not running');
+                  }
+                }}
               />
             ) : activeTab === 'wifi' ? (
               <div style={{ fontFamily: 'monospace', fontSize: 11, padding: 8, overflowY: 'auto', flex: 1, background: '#0d1117' }}>

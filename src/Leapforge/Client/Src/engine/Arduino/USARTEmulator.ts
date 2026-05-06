@@ -21,4 +21,15 @@ export class USARTEmulator {
       this.onData(String.fromCharCode(value));
     };
   }
+
+  /**
+   * Send data to the AVR's serial RX buffer (from Serial Monitor input)
+   */
+  sendData(data: string): void {
+    for (let i = 0; i < data.length; i++) {
+      const byte = data.charCodeAt(i);
+      this.usart.writeByte(byte);
+    }
+    console.log(`[USART] Sent ${data.length} bytes to AVR RX: "${data}"`);
+  }
 }

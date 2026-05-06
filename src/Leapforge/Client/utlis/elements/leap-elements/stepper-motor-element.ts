@@ -279,8 +279,7 @@ export class StepperMotorElement extends LitElement {
         </g>
       </g>
 
-      <!-- Rotator group — outside the scale() group so CSS transform-origin works in pixel coords -->
-      <!-- Rotation pivot = shaft center = translate(1,1) + scale(mmToPix) applied to (halfFrame, halfFrame) -->
+      <!-- Rotator group — shaft rotates in place at its center -->
       <g
         id="rotator"
         style="transform: rotate(${this._cumulativeAngle}deg); transform-origin: ${shaftCenterPx_X}px ${shaftCenterPx_Y}px; transition: transform 100ms linear;"

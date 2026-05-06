@@ -1,4 +1,5 @@
 import './react-types';
+export { A4988Element } from './a4988-element';
 export { SevenSegmentElement } from './7segment-element';
 export { AnalogJoystickElement } from './analog-joystick-element';
 export { ArduinoMegaElement } from './arduino-mega-element';
