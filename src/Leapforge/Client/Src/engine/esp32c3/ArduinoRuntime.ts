@@ -60,6 +60,9 @@ export class ArduinoRuntime {
 
   // ── Delay control ────────────────────────────────────────────
   private _abortController: AbortController | null = null;
+  private _lastMicrosCallTime: number = 0;
+  private _microsSpinCount: number = 0;
+  private _virtualTimeOffset: number = 0;
 
   // ── I2C bus bridge (set by CircuitEngine after syncCircuitGraph) ──────────
   private _i2cBus: {
@@ -192,6 +195,9 @@ export class ArduinoRuntime {
     this.serialBaud = 0;
     this.serialBuffer = '';
     this.interruptHandlers.clear();
+    this._virtualTimeOffset = 0;
+    this._microsSpinCount = 0;
+    this._lastMicrosCallTime = 0;
     console.log('[ArduinoRuntime] Simulation stopped.');
   }
 
