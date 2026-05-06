@@ -6,12 +6,12 @@ import { mmToPix } from './utils/units';
 type HandShape = 'arrow' | 'plain' | 'ornate';
 type HandDesc = { xOff: number; yOff: number; path: string };
 
-const SHAFT_X = 60; // x location of shaft point
-const SHAFT_Y = 77; // y location of shaft point
+const SHAFT_X = 34; // x location of shaft point
+const SHAFT_Y = 75; // y location of shaft point
 const OUTER_OFFSET = 9; // offset to center of outer hand's ring
-const INNER_OFFSET = 4.7; // offset to center of inner hand's ring
-const ORNATE_OUTER_OFFSET = 9; // offset to center of outer ornate hand's ring
-const ORNATE_INNER_OFFSET = 5; // offset to center of inner ornate hand's ring
+const INNER_OFFSET = 4; // offset to center of inner hand's ring
+const ORNATE_OUTER_OFFSET = 0; // offset to center of outer ornate hand's ring
+const ORNATE_INNER_OFFSET = 2; // offset to center of inner ornate hand's ring
 
 @customElement('leap-biaxial-stepper')
 export class BiaxialStepperElement extends LitElement {
@@ -22,7 +22,7 @@ export class BiaxialStepperElement extends LitElement {
   @property({ type: Number }) outerHandAngle = 0;
 
   // the current outer hand color
-  @property() outerHandColor = 'gold';
+  @property() outerHandColor = 'grey';
 
   // the current outer hand shape
   @property() outerHandShape: HandShape = 'plain';
@@ -34,7 +34,7 @@ export class BiaxialStepperElement extends LitElement {
   @property({ type: Number }) innerHandAngle = 0;
 
   // the current inner hand color
-  @property() innerHandColor = 'silver';
+  @property() innerHandColor = 'grey';
 
   // the current inner hand shape
   @property() innerHandShape: HandShape = 'plain';
@@ -239,7 +239,7 @@ export class BiaxialStepperElement extends LitElement {
             <path
               class="cls-h"
               style="
-                transform: translate(${x}px, ${y + outerPathDesc.yOff}px)
+                transform: translate(${x}px, ${y}px)
                            rotate(${270 + this._outerCumulative}deg)
                            translate(-${outerPathDesc.xOff}px, -${outerPathDesc.yOff}px);
                 transition: transform 80ms linear;
@@ -256,7 +256,7 @@ export class BiaxialStepperElement extends LitElement {
             <path
               class="cls-h"
               style="
-                transform: translate(${x}px, ${y + innerPathDesc.yOff}px)
+                transform: translate(${x}px, ${y}px)
                            rotate(${270 + this._innerCumulative}deg)
                            translate(-${innerPathDesc.xOff}px, -${innerPathDesc.yOff}px);
                 transition: transform 80ms linear;

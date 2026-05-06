@@ -280,6 +280,14 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     el.arrow = data.arrow ?? '';
   }, [data.type, data.angle, data.arrow]);
 
+  // Imperatively set biaxial-stepper hand angles as DOM properties.
+  useEffect(() => {
+    if (!elementRef.current || data.type !== 'biaxial-stepper') return;
+    const el = elementRef.current;
+    el.outerHandAngle = data.outerHandAngle ?? 0;
+    el.innerHandAngle = data.innerHandAngle ?? 0;
+  }, [data.type, data.outerHandAngle, data.innerHandAngle]);
+
   // Push pixel data to matrix/ring elements via DOM setPixel() method
   useEffect(() => {
     if (!elementRef.current || !data.neopixelPixels) return;
