@@ -60,6 +60,9 @@ export class ArduinoRuntime {
 
   // ── Delay control ────────────────────────────────────────────
   private _abortController: AbortController | null = null;
+  private _lastMicrosCallTime: number = 0;
+  private _microsSpinCount: number = 0;
+  private _virtualTimeOffset: number = 0;
 
   // ── I2C bus bridge (set by CircuitEngine after syncCircuitGraph) ──────────
   private _i2cBus: {
@@ -192,6 +195,9 @@ export class ArduinoRuntime {
     this.serialBaud = 0;
     this.serialBuffer = '';
     this.interruptHandlers.clear();
+    this._virtualTimeOffset = 0;
+    this._microsSpinCount = 0;
+    this._lastMicrosCallTime = 0;
     console.log('[ArduinoRuntime] Simulation stopped.');
   }
 
@@ -538,25 +544,35 @@ export class ArduinoRuntime {
 
       // ── Timing ─────────────────────────────────────────────
       millis(): number {
-        return Math.floor(performance.now() - self.startTime);
+        return Math.floor(this.micros() / 1000);
       },
       micros(): number {
-        return Math.floor((performance.now() - self.startTime) * 1000);
+        const now = performance.now();
+        // If micros() is called repeatedly in the exact same millisecond (tight spin loop)
+        // artificially advance virtual time to prevent triggering the infinite loop protector
+        if (now === self._lastMicrosCallTime) {
+          self._microsSpinCount++;
+          // After 50 tight iterations, advance time by 1ms to break spin-locks
+          if (self._microsSpinCount > 50) {
+            self._virtualTimeOffset += 1;
+            self._microsSpinCount = 0;
+          }
+        } else {
+          self._lastMicrosCallTime = now;
+          self._microsSpinCount = 0;
+        }
+        return Math.floor((now + self._virtualTimeOffset - self.startTime) * 1000);
       },
       async __delay(ms: number): Promise<void> {
         if (!self.running) throw new Error('__ARDUINO_HALT__');
         const target = performance.now() + ms;
-        // For short delays (<20ms), spin; for longer, yield to the event loop
-        if (ms <= 16) {
-          while (performance.now() < target && self.running) { /* spin */ }
-        } else {
-          // Yield in chunks to keep UI responsive
-          while (performance.now() < target && self.running) {
-            await new Promise<void>(resolve => {
-              const remaining = target - performance.now();
-              setTimeout(resolve, Math.min(remaining, 16));
-            });
-          }
+        // Always yield to the event loop to keep the UI responsive, even for short delays.
+        // Spin-locking blocks requestAnimationFrame, causing visual teleportation of components.
+        while (performance.now() < target && self.running) {
+          await new Promise<void>(resolve => {
+            const remaining = target - performance.now();
+            setTimeout(resolve, Math.max(1, Math.min(remaining, 16)));
+          });
         }
         if (!self.running) throw new Error('__ARDUINO_HALT__');
       },

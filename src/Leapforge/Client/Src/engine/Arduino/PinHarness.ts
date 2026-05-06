@@ -919,7 +919,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       "height": 285
     },
     "pins": [
-      { "name": "B1-", "x": 45, "y": 217 },
+      { "name": "B1-", "x": 45, "y": 0 },
       { "name": "B1+", "x": 45, "y": 226 },
       { "name": "A1+", "x": 45, "y": 236 },
       { "name": "A1-", "x": 45, "y": 246 },
@@ -2170,7 +2170,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "GND",
-        "x":320 ,
+        "x": 320,
         "y": 40
       },
       {
@@ -2195,7 +2195,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       { "name": "VCC", "x": 18, "y": 126 },
       { "name": "SCK", "x": 18, "y": 103 },
-      { "name": "DT","x": 18, "y": 80  },
+      { "name": "DT", "x": 18, "y": 80 },
       { "name": "GND", "x": 18, "y": 55 }
     ]
   },

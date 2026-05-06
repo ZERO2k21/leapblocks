@@ -10,7 +10,7 @@ import { I2CBusManager } from './I2CBusManager';
 import { PCF8574 } from './PCF8574';
 import { DHT } from './DHT';
 import { NeoPixelEmulator } from './NeoPixelEmulator';
-import { StepperEmulator } from './StepperEmulator';
+import { StepperEmulator, SteppingMode } from './StepperEmulator';
 import { SSD1306I2CSlave } from './SSD1306I2CSlave';
 import { ILI9341SPISlave } from './ILI9341SPISlave';
 import { MPU6050I2CSlave } from './MPU6050I2CSlave';
@@ -93,6 +93,8 @@ class CircuitEngine {
   private _pendingLibraryClasses = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
   private isInitialized = false;
+  private a4988DebugLogged = false; // Debug flag for A4988 diagnostics
+  private a4988MotorCache = new Map<string, { motorId: string | null; edges: any[] }>(); // A4988 nodeId → motor connection cache
 
   /**
    * Traces an electrical net from a starting point (board pin) and returns all 
@@ -206,6 +208,12 @@ class CircuitEngine {
       // Re-sync only when edges change while already simulating (not on the start transition)
       const edgesChanged = state.edges.length !== previousEdgesCount;
       const wasAlreadySimulating = previousIsSimulating && state.isSimulating;
+
+      // Handle simulation stop to clean up emulators
+      if (previousIsSimulating && !state.isSimulating) {
+        this.cleanup();
+      }
+
       previousEdgesCount = state.edges.length;
       previousIsSimulating = state.isSimulating;
       if (edgesChanged && wasAlreadySimulating) {
@@ -730,11 +738,9 @@ class CircuitEngine {
   }
 
   /**
-   * Called whenever wires are drawn/removed. Rebuilds the routing table.
+   * Clears all active emulators, timers, and AVR listeners.
    */
-  public syncCircuitGraph() {
-    console.log('[FORGE CIRCUIT] syncCircuitGraph triggered. Re-evaluating electrical routing table...');
-    // 1. Clear all old AVR listeners hooked by the circuit engine
+  public cleanup() {
     this.activeSubscriptions.forEach((unsubscribe) => unsubscribe());
     this.activeSubscriptions.clear();
     this.lcdEmulators.clear();
@@ -755,6 +761,18 @@ class CircuitEngine {
     // Cancel all heart-beat animation timers
     this.heartBeatTimers.forEach(id => cancelAnimationFrame(id));
     this.heartBeatTimers.clear();
+    // Clear A4988 motor connection cache and debug flag
+    this.a4988MotorCache.clear();
+    this.a4988DebugLogged = false;
+  }
+
+  /**
+   * Called whenever wires are drawn/removed. Rebuilds the routing table.
+   */
+  public syncCircuitGraph() {
+    console.log('[FORGE CIRCUIT] syncCircuitGraph triggered. Re-evaluating electrical routing table...');
+    // 1. Clear all old AVR listeners hooked by the circuit engine
+    this.cleanup();
 
     const { nodes, edges, updateNodeData } = useForgeStore.getState();
     const currentStateStore = useForgeStore.getState();
@@ -1066,7 +1084,22 @@ class CircuitEngine {
 
         // Ensure buffers exist for this peripheral
         if (!this.peripheralPinBuffers.has(peripheralId)) {
-          this.peripheralPinBuffers.set(peripheralId, {});
+          const pType = nodes.find(n => n.id === peripheralId)?.data?.type;
+          // Set A4988 pin defaults per Wokwi spec:
+          //   ENABLE  → pulled-down (LOW = 0 = enabled by default)
+          //   SLEEP   → pulled-up (HIGH = 1 = awake by default)
+          //   RESET   → floating (treat as HIGH = not in reset)
+          //   MS1/2/3 → pulled-down (LOW = full step by default)
+          const initialBuf: Record<string, boolean> = {};
+          if (pType === 'a4988') {
+            initialBuf['ENABLE'] = false; // pulled-down → LOW → driver enabled
+            initialBuf['SLEEP'] = true;  // pulled-up  → HIGH → awake
+            initialBuf['RESET'] = true;  // floating   → treat as HIGH → not in reset
+            initialBuf['MS1'] = false;
+            initialBuf['MS2'] = false;
+            initialBuf['MS3'] = false;
+          }
+          this.peripheralPinBuffers.set(peripheralId, initialBuf);
         }
 
         // Create a dedicated listener that pushes the HIGH/LOW state across the wire to the target node
@@ -1342,22 +1375,49 @@ class CircuitEngine {
             if (peripheralNode.data?.type === 'stepper-motor') {
               if (!this.stepperEmulators.has(peripheralId)) {
                 console.log(`[STEPPER] Wiring 4-wire emulator for node ${peripheralId} — pin ${peripheralPinName} ← AVR ${avrPin}`);
-                let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
+
+                // Check if this motor is also connected to an A4988 (double-wiring issue)
+                const { nodes, edges } = useForgeStore.getState();
+                const motorToA4988Edges = edges.filter(e => {
+                  const srcHandle = (e.sourceHandle || '').replace(/__target$/, '');
+                  const tgtHandle = (e.targetHandle || '').replace(/__target$/, '');
+                  const isMotorPin = ['A+', 'A-', 'B+', 'B-'].includes(srcHandle) || ['A+', 'A-', 'B+', 'B-'].includes(tgtHandle);
+                  return (e.source === peripheralId || e.target === peripheralId) && isMotorPin;
+                });
+
+                const a4988Nodes = motorToA4988Edges
+                  .map(e => e.source === peripheralId ? e.target : e.source)
+                  .map(id => nodes.find(n => n.id === id))
+                  .filter(n => n?.data?.type === 'a4988');
+
+                if (a4988Nodes.length > 0) {
+                  console.warn(`[STEPPER] WARNING: Motor ${peripheralId} is connected to BOTH:`);
+                  console.warn(`[STEPPER]   1. ESP32 pins directly (4-wire mode) - CORRECT for Arduino Stepper library`);
+                  console.warn(`[STEPPER]   2. A4988 driver(s): ${a4988Nodes.map(n => n!.id).join(', ')}`);
+                  console.warn(`[STEPPER] This creates conflicting control paths. Choose ONE:`);
+                  console.warn(`[STEPPER]   Option A: Remove A4988, keep direct wiring, use Arduino Stepper library`);
+                  console.warn(`[STEPPER]   Option B: Remove direct wiring, wire ESP32→A4988(STEP/DIR)→Motor, use AccelStepper`);
+                }
+
+                let pendingUpdate: { angle: number; stepCount: number; energized: boolean; actualAngle?: number; actualAngleUnbounded?: number } | null = null;
                 let rafScheduled = false;
-                this.stepperEmulators.set(peripheralId, new StepperEmulator(({ angle, stepCount, energized }) => {
-                  pendingUpdate = { angle, stepCount, energized };
+                this.stepperEmulators.set(peripheralId, new StepperEmulator(({ angle, stepCount, energized, actualAngle, actualAngleUnbounded }) => {
+                  pendingUpdate = { angle, stepCount, energized, actualAngle, actualAngleUnbounded };
                   if (!rafScheduled) {
                     rafScheduled = true;
                     requestAnimationFrame(() => {
                       rafScheduled = false;
                       if (pendingUpdate) {
-                        const { angle: a, stepCount: s, energized: e } = pendingUpdate;
+                        const { angle: a, stepCount: s, energized: e, actualAngle: smoothAngle, actualAngleUnbounded: smoothUnbounded } = pendingUpdate;
                         pendingUpdate = null;
+                        // Use smooth physics angle if available for display
+                        const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
+                        // Use unbounded smooth angle for CSS transform if available
+                        const transformAngle = smoothUnbounded !== undefined ? smoothUnbounded : (s / 200) * 360;
                         updateNodeData(peripheralId, {
-                          // Use stepCount-based unbounded angle for cumulative rotation.
-                          // This matches the A4988 path and prevents visual jump at 360°.
-                          angle: (s / 200) * 360,
-                          value: `${a.toFixed(1)}°`,
+                          // For CSS transform, use smooth unbounded angle for realistic motion
+                          angle: transformAngle,
+                          value: `${transformAngle.toFixed(1)}°`,
                           units: `${s > 0 ? '+' : ''}${s} steps`,
                           arrow: e ? '#BEF264' : '',
                         });
@@ -1368,6 +1428,7 @@ class CircuitEngine {
               }
               const stepper = this.stepperEmulators.get(peripheralId)!;
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              const oldValue = buf[peripheralPinName];
               buf[peripheralPinName] = isHigh;
 
               if (peripheralPinName === 'STEP') {
@@ -1376,6 +1437,11 @@ class CircuitEngine {
                 stepper.setDirection(isHigh);
               } else {
                 // 4-wire mode — order must match Stepper.h: processCoils(A+, B+, A-, B-)
+                // Log only when a coil state actually changes
+                if (oldValue !== isHigh) {
+                  console.log(`[STEPPER] Coil ${peripheralPinName} changed: ${oldValue ? 'HIGH' : 'LOW'} → ${isHigh ? 'HIGH' : 'LOW'}`);
+                  console.log(`[STEPPER] Current coil state: A+=${!!buf['A+']}, B+=${!!buf['B+']}, A-=${!!buf['A-']}, B-=${!!buf['B-']}`);
+                }
                 stepper.processCoils(
                   !!buf['A+'],
                   !!buf['B+'],
@@ -1399,18 +1465,20 @@ class CircuitEngine {
               // Create outer emulator (motor 1)
               if (!this.stepperEmulators.has(outerKey)) {
                 console.log(`[BIAXIAL] Wiring outer emulator for node ${peripheralId}`);
-                let pending: { angle: number; energized: boolean } | null = null;
+                let pending: { angle: number; energized: boolean; actualAngleUnbounded?: number } | null = null;
                 let rafPending = false;
-                this.stepperEmulators.set(outerKey, new StepperEmulator(({ angle, energized }) => {
-                  pending = { angle, energized };
+                this.stepperEmulators.set(outerKey, new StepperEmulator(({ angle, energized, actualAngleUnbounded }) => {
+                  pending = { angle, energized, actualAngleUnbounded };
                   if (!rafPending) {
                     rafPending = true;
                     requestAnimationFrame(() => {
                       rafPending = false;
                       if (pending) {
-                        const { angle: a, energized: e } = pending;
+                        const { angle: a, energized: e, actualAngleUnbounded: smoothAngle } = pending;
                         pending = null;
-                        updateNodeData(peripheralId, { outerHandAngle: a, outerEnergized: e });
+                        // Use smooth angle if available
+                        const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
+                        updateNodeData(peripheralId, { outerHandAngle: displayAngle, outerEnergized: e });
                       }
                     });
                   }
@@ -1420,18 +1488,20 @@ class CircuitEngine {
               // Create inner emulator (motor 2)
               if (!this.stepperEmulators.has(innerKey)) {
                 console.log(`[BIAXIAL] Wiring inner emulator for node ${peripheralId}`);
-                let pending: { angle: number; energized: boolean } | null = null;
+                let pending: { angle: number; energized: boolean; actualAngleUnbounded?: number } | null = null;
                 let rafPending = false;
-                this.stepperEmulators.set(innerKey, new StepperEmulator(({ angle, energized }) => {
-                  pending = { angle, energized };
+                this.stepperEmulators.set(innerKey, new StepperEmulator(({ angle, energized, actualAngleUnbounded }) => {
+                  pending = { angle, energized, actualAngleUnbounded };
                   if (!rafPending) {
                     rafPending = true;
                     requestAnimationFrame(() => {
                       rafPending = false;
                       if (pending) {
-                        const { angle: a, energized: e } = pending;
+                        const { angle: a, energized: e, actualAngleUnbounded: smoothAngle } = pending;
                         pending = null;
-                        updateNodeData(peripheralId, { innerHandAngle: a, innerEnergized: e });
+                        // Use smooth angle if available
+                        const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
+                        updateNodeData(peripheralId, { innerHandAngle: displayAngle, innerEnergized: e });
                       }
                     });
                   }
@@ -1516,58 +1586,124 @@ class CircuitEngine {
               }
 
               if (peripheralPinName === 'STEP' || peripheralPinName === 'DIR') {
-                const buf = this.peripheralPinBuffers.get(peripheralId)!;
-                buf[peripheralPinName] = isHigh;
 
-                // Find the stepper motor connected to this A4988's motor pins
-                const motorEdges = currentStateStore.edges.filter(e =>
-                  (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.sourceHandle || '')) ||
-                  (e.target === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.targetHandle || ''))
-                );
+                // Find the stepper motor connected to this A4988's motor pins (1A/1B/2A/2B)
+                // Cache the result to avoid filtering edges on every pin change (performance optimization)
+                let cached = this.a4988MotorCache.get(peripheralId);
 
-                const motorNodeId = motorEdges.length > 0
-                  ? (motorEdges[0].source === peripheralId ? motorEdges[0].target : motorEdges[0].source)
-                  : null;
+                if (!cached) {
+                  // First time - find and cache the motor connection
+                  const motorEdges = currentStateStore.edges.filter(e => {
+                    const srcHandle = (e.sourceHandle || '').replace(/__target$/, '');
+                    const tgtHandle = (e.targetHandle || '').replace(/__target$/, '');
+                    return (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(srcHandle)) ||
+                      (e.target === peripheralId && ['1A', '1B', '2A', '2B'].includes(tgtHandle));
+                  });
+
+                  if (motorEdges.length === 0) {
+                    console.warn(`[A4988] No motor edges found for A4988 node ${peripheralId}. Wire 1A/1B/2A/2B to a stepper motor.`);
+                    cached = { motorId: null, edges: [] };
+                  } else {
+                    console.log(`[A4988] Motor edges found: ${motorEdges.length} connections`);
+                    const motorId = motorEdges[0].source === peripheralId ? motorEdges[0].target : motorEdges[0].source;
+                    cached = { motorId, edges: motorEdges };
+                  }
+
+                  // Cache the result
+                  this.a4988MotorCache.set(peripheralId, cached);
+                }
+
+                const motorNodeId = cached.motorId;
+                const motorEdges = cached.edges;
 
                 if (motorNodeId) {
                   const motorNode = currentStateStore.nodes.find(n => n.id === motorNodeId);
                   const isBiaxial = motorNode?.data?.type === 'biaxial-stepper';
 
+                  // Check if driver is enabled per Wokwi A4988 spec:
+                  //   ENABLE is active-low (default pulled-down → LOW = enabled)
+                  //   RESET  is active-low (default floating → treat as HIGH = not in reset)
+                  //   SLEEP  is active-low (default pulled-up → HIGH = awake)
+                  // Note: undefined means pin not connected, use default state
+                  const enableLow = buf['ENABLE'] !== true; // LOW or undefined = enabled
+                  const resetHigh = buf['RESET'] !== false; // HIGH or undefined = not in reset
+                  const sleepHigh = buf['SLEEP'] !== false; // HIGH or undefined = awake
+                  const driverEnabled = enableLow && resetHigh && sleepHigh;
+
+                  if (!driverEnabled) {
+                    // Driver is disabled, motor should not move
+                    if (!this.a4988DebugLogged) {
+                      console.warn(`[A4988] Driver disabled! Motor will not move. Check ENABLE/RESET/SLEEP pins.`);
+                      console.warn(`[A4988] State: ENABLE=${buf['ENABLE']}, RESET=${buf['RESET']}, SLEEP=${buf['SLEEP']}`);
+                      this.a4988DebugLogged = true;
+                    }
+                    return;
+                  }
+
+                  // Determine microstepping mode from MS1/MS2/MS3 pins
+                  const ms1 = !!buf['MS1'];
+                  const ms2 = !!buf['MS2'];
+                  const ms3 = !!buf['MS3'];
+                  let microstepDivisor = 1;
+                  let steppingMode: SteppingMode = 'full';
+
+                  if (!ms1 && !ms2 && !ms3) {
+                    microstepDivisor = 1;
+                    steppingMode = 'full';
+                  } else if (ms1 && !ms2 && !ms3) {
+                    microstepDivisor = 2;
+                    steppingMode = 'half';
+                  } else if (!ms1 && ms2 && !ms3) {
+                    microstepDivisor = 4;
+                    steppingMode = 'micro';
+                  } else if (ms1 && ms2 && !ms3) {
+                    microstepDivisor = 8;
+                    steppingMode = 'micro';
+                  } else if (ms1 && ms2 && ms3) {
+                    microstepDivisor = 16;
+                    steppingMode = 'micro';
+                  }
+
                   if (isBiaxial) {
-                    // Determine which shaft this A4988 drives by inspecting which biaxial pins are wired
-                    const biaxialEdges = currentStateStore.edges.filter(e =>
-                      (e.source === peripheralId && motorEdges.some(me => me === e)) ||
-                      (e.target === peripheralId && motorEdges.some(me => me === e))
-                    );
-                    const connectedBiaxialPins = biaxialEdges.map(e =>
+                    // Determine which shaft this A4988 drives by inspecting which biaxial pins are wired.
+                    // motorEdges are edges between the A4988 (peripheralId) and the biaxial motor (motorNodeId).
+                    // We need the biaxial motor's pin handles to determine inner vs outer shaft.
+                    const connectedBiaxialPins = motorEdges.map(e =>
                       e.source === motorNodeId ? e.sourceHandle : e.targetHandle
                     );
-                    const isInner = connectedBiaxialPins.some(p => p && ['A2+', 'A2-', 'B2+', 'B2-'].includes(p));
+                    const isInner = connectedBiaxialPins.some(p => {
+                      const h = (p || '').replace(/__target$/, '');
+                      return ['A2+', 'A2-', 'B2+', 'B2-'].includes(h);
+                    });
                     const shaftKey = isInner ? `${motorNodeId}__inner` : `${motorNodeId}__outer`;
                     const shaftLabel = isInner ? 'inner' : 'outer';
 
                     if (!this.stepperEmulators.has(shaftKey)) {
                       console.log(`[BIAXIAL] Wiring A4988 STEP/DIR emulator for ${shaftLabel} shaft of node ${motorNodeId}`);
-                      let pending: { angle: number; energized: boolean } | null = null;
+                      let pending: { angle: number; energized: boolean; actualAngleUnbounded?: number } | null = null;
                       let rafPending = false;
-                      this.stepperEmulators.set(shaftKey, new StepperEmulator(({ angle, energized }) => {
-                        pending = { angle, energized };
+                      this.stepperEmulators.set(shaftKey, new StepperEmulator(({ angle, energized, actualAngleUnbounded }) => {
+                        pending = { angle, energized, actualAngleUnbounded };
                         if (!rafPending) {
                           rafPending = true;
                           requestAnimationFrame(() => {
                             rafPending = false;
                             if (pending) {
-                              const { angle: a, energized: e } = pending;
+                              const { angle: a, energized: e, actualAngleUnbounded: smoothAngle } = pending;
                               pending = null;
                               const prop = isInner ? 'innerHandAngle' : 'outerHandAngle';
                               const energizedProp = isInner ? 'innerEnergized' : 'outerEnergized';
-                              updateNodeData(motorNodeId, { [prop]: a, [energizedProp]: e });
+                              // Use smooth angle if available
+                              const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
+                              updateNodeData(motorNodeId, { [prop]: displayAngle, [energizedProp]: e });
                             }
                           });
                         }
-                      }, { stepsPerRev: 200 }, `${motorNodeId}-${shaftLabel}`));
+                      }, { stepsPerRev: 200, steppingMode, microstepDivisor }, `${motorNodeId}-${shaftLabel}`));
                     }
                     const stepper = this.stepperEmulators.get(shaftKey)!;
+                    // Update microstepping mode dynamically
+                    stepper.setSteppingMode(steppingMode, microstepDivisor);
                     if (peripheralPinName === 'DIR') {
                       stepper.setDirection(isHigh);
                     } else if (peripheralPinName === 'STEP') {
@@ -1577,29 +1713,36 @@ class CircuitEngine {
                     // Standard single stepper motor
                     if (!this.stepperEmulators.has(motorNodeId)) {
                       console.log(`[STEPPER] Wiring A4988 STEP/DIR emulator for motor node ${motorNodeId}`);
-                      let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
+                      let pendingUpdate: { angle: number; stepCount: number; energized: boolean; actualAngle?: number; actualAngleUnbounded?: number } | null = null;
                       let rafScheduled = false;
-                      this.stepperEmulators.set(motorNodeId, new StepperEmulator(({ angle, stepCount, energized }) => {
-                        pendingUpdate = { angle, stepCount, energized };
+                      this.stepperEmulators.set(motorNodeId, new StepperEmulator(({ angle, stepCount, energized, actualAngle, actualAngleUnbounded }) => {
+                        pendingUpdate = { angle, stepCount, energized, actualAngle, actualAngleUnbounded };
                         if (!rafScheduled) {
                           rafScheduled = true;
                           requestAnimationFrame(() => {
                             rafScheduled = false;
                             if (pendingUpdate) {
-                              const { angle: a, stepCount: s, energized: e } = pendingUpdate;
+                              const { angle: a, stepCount: s, energized: e, actualAngle: smoothAngle, actualAngleUnbounded: smoothUnbounded } = pendingUpdate;
                               pendingUpdate = null;
+                              // Use smooth physics angle if available for display
+                              const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
+                              // Use unbounded smooth angle for CSS transform if available
+                              const transformAngle = smoothUnbounded !== undefined ? smoothUnbounded : (s / 200) * 360;
                               updateNodeData(motorNodeId, {
-                                angle: a,
-                                value: `${a.toFixed(1)}°`,
+                                // Keep rotation cumulative/unbounded for correct CW/CCW animation with smooth physics
+                                angle: transformAngle,
+                                value: `${displayAngle.toFixed(1)}°`,
                                 units: `${s > 0 ? '+' : ''}${s} steps`,
                                 arrow: e ? '#BEF264' : '',
                               });
                             }
                           });
                         }
-                      }, { stepsPerRev: 200 }, motorNodeId));
+                      }, { stepsPerRev: 200, steppingMode, microstepDivisor }, motorNodeId));
                     }
                     const stepper = this.stepperEmulators.get(motorNodeId)!;
+                    // Update microstepping mode dynamically
+                    stepper.setSteppingMode(steppingMode, microstepDivisor);
                     if (peripheralPinName === 'DIR') {
                       stepper.setDirection(isHigh);
                     } else if (peripheralPinName === 'STEP') {
