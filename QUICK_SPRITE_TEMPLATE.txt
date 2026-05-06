@@ -1,0 +1,173 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║           QUICK SPRITE CREATION TEMPLATE                              ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+Use this template to quickly create new STEM educational sprites!
+
+═══════════════════════════════════════════════════════════════════════
+STEP 1: CHATGPT PROMPTS (Copy & Paste)
+═══════════════════════════════════════════════════════════════════════
+
+CHARACTER: Ada (Female Programmer)
+Replace "Ada" with your character name and adjust description
+
+---
+COSTUME A - WALKING:
+---
+Create a cartoon character for STEM education. A young girl with brown hair 
+in a ponytail, wearing a purple t-shirt with a code symbol (</>), blue jeans, 
+and sneakers. She's holding a laptop and walking with her left foot forward. 
+The character should be friendly, approachable, and suitable for kids aged 8-14. 
+Style: flat design, simple shapes, bright colors. White background. Full body view.
+
+---
+COSTUME B - STANDING:
+---
+Create a cartoon character for STEM education. A young girl with brown hair 
+in a ponytail, wearing a purple t-shirt with a code symbol (</>), blue jeans, 
+and sneakers. She's standing straight, holding a laptop, front-facing view. 
+The character should be friendly, approachable, and suitable for kids aged 8-14. 
+Style: flat design, simple shapes, bright colors. White background. Full body view.
+
+---
+COSTUME C - PRESENTING:
+---
+Create a cartoon character for STEM education. A young girl with brown hair 
+in a ponytail, wearing a purple t-shirt with a code symbol (</>), blue jeans, 
+and sneakers. She's holding a laptop in one hand and gesturing with the other 
+hand as if explaining something. The character should be friendly, approachable, 
+and suitable for kids aged 8-14. Style: flat design, simple shapes, bright colors. 
+White background. Full body view.
+
+---
+COSTUME D - EXCITED:
+---
+Create a cartoon character for STEM education. A young girl with brown hair 
+in a ponytail, wearing a purple t-shirt with a code symbol (</>), blue jeans, 
+and sneakers. She's jumping with excitement, holding a laptop, with one fist 
+raised in celebration. The character should be friendly, approachable, and 
+suitable for kids aged 8-14. Style: flat design, simple shapes, bright colors. 
+White background. Full body view.
+
+═══════════════════════════════════════════════════════════════════════
+STEP 2: REMOVE BACKGROUNDS
+═══════════════════════════════════════════════════════════════════════
+
+Go to: https://www.remove.bg/
+Upload each of the 4 images
+Download transparent PNGs
+
+═══════════════════════════════════════════════════════════════════════
+STEP 3: RENAME FILES
+═══════════════════════════════════════════════════════════════════════
+
+Rename to:
+  ada_ada-a.png
+  ada_ada-b.png
+  ada_ada-c.png
+  ada_ada-d.png
+
+═══════════════════════════════════════════════════════════════════════
+STEP 4: COPY TO ASSETS
+═══════════════════════════════════════════════════════════════════════
+
+Copy all 4 files to:
+  public/assets/sprites/leap/
+
+═══════════════════════════════════════════════════════════════════════
+STEP 5: REGISTER IN SYSTEM
+═══════════════════════════════════════════════════════════════════════
+
+Edit: src/components/generated_leap_sprites.ts
+
+Add this entry (in alphabetical order):
+
+{
+  "id": "leap_ada",
+  "name": "Ada",
+  "emoji": "👩‍💻",
+  "image": "assets/sprites/leap/ada_ada-a.png",
+  "costumes": [
+    "assets/sprites/leap/ada_ada-a.png",
+    "assets/sprites/leap/ada_ada-b.png",
+    "assets/sprites/leap/ada_ada-c.png",
+    "assets/sprites/leap/ada_ada-d.png"
+  ],
+  "tags": [
+    "people",
+    "person",
+    "girl",
+    "coding",
+    "programming",
+    "computer",
+    "tech",
+    "stem",
+    "education",
+    "laptop"
+  ],
+  "category": "leap"
+}
+
+═══════════════════════════════════════════════════════════════════════
+STEP 6: TEST
+═══════════════════════════════════════════════════════════════════════
+
+npm run dev
+
+Then:
+  1. Open sprite library
+  2. Search for "Ada"
+  3. Select sprite
+  4. Test all 4 costumes
+
+═══════════════════════════════════════════════════════════════════════
+OTHER STEM CHARACTER IDEAS
+═══════════════════════════════════════════════════════════════════════
+
+Newton (Scientist):
+  - White lab coat, safety goggles
+  - Holding test tube or beaker
+  - Atom symbol on shirt
+  - Tags: science, chemistry, physics, experiment
+
+Rosie (Robot Engineer):
+  - Orange shirt with gear symbol
+  - Holding wrench
+  - Small robot companion
+  - Tags: robotics, engineering, building, maker
+
+Max (Math Wizard):
+  - Red shirt with pi symbol
+  - Holding calculator
+  - Math symbols floating around
+  - Tags: math, mathematics, numbers, calculator
+
+Luna (Space Explorer):
+  - Space suit (white/silver)
+  - Helmet with visor
+  - Stars and planets
+  - Tags: space, astronomy, planets, astronaut
+
+Chip (Electronics Expert):
+  - Green shirt with circuit pattern
+  - Holding circuit board
+  - LED lights
+  - Tags: electronics, circuits, arduino, maker
+
+═══════════════════════════════════════════════════════════════════════
+CHECKLIST
+═══════════════════════════════════════════════════════════════════════
+
+[ ] Generated 4 images with ChatGPT
+[ ] Removed backgrounds with Remove.bg
+[ ] Renamed files correctly
+[ ] Copied to public/assets/sprites/leap/
+[ ] Registered in generated_leap_sprites.ts
+[ ] Restarted dev server
+[ ] Tested in sprite library
+[ ] All 4 costumes work
+[ ] Transparency works (no white boxes)
+
+═══════════════════════════════════════════════════════════════════════
+
+For detailed guide, see: STEM_SPRITE_CREATION_GUIDE.md

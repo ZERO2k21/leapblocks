@@ -6,8 +6,17 @@
 import * as Blockly from 'blockly/core';
 
 // Load Blockly extensions in a stable order before any app modules touch them.
-import 'blockly/blocks';
-import 'blockly/javascript';
+// Import as namespace to avoid AMD define() conflicts
+import * as BlocklyBlocks from 'blockly/blocks';
+import * as BlocklyJavaScript from 'blockly/javascript';
+
+// Ensure blocks and generators are registered
+if (BlocklyBlocks) {
+    // Blocks are auto-registered on import
+}
+if (BlocklyJavaScript) {
+    // JavaScript generator is auto-registered on import
+}
 
 export const LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG = '__leap_custom_block_context_menu__';
 

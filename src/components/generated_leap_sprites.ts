@@ -615,6 +615,36 @@ export const leapSprites: any[] = [
     "category": "leap"
   },
   {
+    "id": "leap_byte",
+    "name": "Byte",
+    "emoji": "👦",
+    "image": "assets/sprites/leap/byte_byte-a.png",
+    "costumes": [
+      "assets/sprites/leap/byte_byte-a.png",
+      "assets/sprites/leap/byte_byte-b.png",
+      "assets/sprites/leap/byte_byte-c.png",
+      "assets/sprites/leap/byte_byte-d.png"
+    ],
+    "tags": [
+      "people",
+      "person",
+      "boy",
+      "kid",
+      "tech",
+      "technology",
+      "coding",
+      "programmer",
+      "computer",
+      "tablet",
+      "circuit",
+      "glasses",
+      "geek",
+      "nerd",
+      "stem"
+    ],
+    "category": "leap"
+  },
+  {
     "id": "leap_cake",
     "name": "Cake",
     "emoji": "🤖",

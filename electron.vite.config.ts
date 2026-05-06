@@ -55,7 +55,16 @@ export default defineConfig({
         'zustand',
         'uuid',
         'lucide-react',
+        'blockly/core',
+        'blockly/blocks',
+        'blockly/javascript',
       ],
+      esbuildOptions: {
+        // Prevent AMD define() conflicts with Blockly
+        define: {
+          define: 'undefined',
+        },
+      },
     },
 
     build: {
