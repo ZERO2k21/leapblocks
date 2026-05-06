@@ -79,7 +79,6 @@ const COMPONENTS = [
   { id: 'slide-potentiometer', name: 'Slide Pot.', category: 'inputs', desc: 'Linear variable resistor' },
   { id: 'membrane-keypad', name: 'Keypad (4x4)', category: 'inputs', desc: 'Matrix keypad' },
   { id: 'slide-switch', name: 'Slide Switch', category: 'inputs', desc: 'SPDT toggle' },
-  { id: 'dip-switch-8', name: 'DIP Switch (8)', category: 'inputs', desc: '8-position toggle' },
   { id: 'tilt-switch', name: 'Tilt Switch', category: 'inputs', desc: 'Tilt sensor switch' },
   { id: 'analog-joystick', name: 'Joystick', category: 'inputs', desc: '2-axis analog joystick' },
   { id: 'ky-040', name: 'Rotary Encoder', category: 'inputs', desc: 'Incremental encoder' },

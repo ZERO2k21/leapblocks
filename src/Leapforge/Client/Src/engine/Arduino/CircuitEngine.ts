@@ -2086,7 +2086,7 @@ class CircuitEngine {
       // Digital-only sensors that should never use analog path
       const digitalOnlySensors = [
         'tilt-switch', 'push-button', 'pushbutton-6mm', 'slide-switch',
-        'dip-switch-8', 'pir-motion-sensor', 'membrane-keypad', 'rotary-dialer',
+        'pir-motion-sensor', 'membrane-keypad', 'rotary-dialer',
         'ky-040'  // KY-040 rotary encoder (CLK, DT, SW are all digital)
       ];
 

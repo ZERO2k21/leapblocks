@@ -48,7 +48,6 @@ import { RGBLedElement } from './rgb-led-element';
 import { ILI9341Element } from './ili9341-element';
 import { LedBarGraphElement } from './led-bar-graph-element';
 import { MicrosdCardElement } from './microsd-card-element';
-import { DipSwitch8Element } from './dip-switch-8-element';
 import { StepperMotorElement } from './stepper-motor-element';
 import { HX711Element } from './hx711-element';
 import { KS2EMDC5Element } from './ks2e-m-dc5-element';
@@ -107,7 +106,6 @@ declare global {
       'leap-ili9341': LeapElement<ILI9341Element>;
       'leap-led-bar-graph': LeapElement<LedBarGraphElement>;
       'leap-microsd-card': LeapElement<MicrosdCardElement>;
-      'leap-dip-switch-8': LeapElement<DipSwitch8Element>;
       'leap-stepper-motor': LeapElement<StepperMotorElement>;
       'leap-hx711': LeapElement<HX711Element>;
       'leap-ks2e-m-dc5': LeapElement<KS2EMDC5Element>;
