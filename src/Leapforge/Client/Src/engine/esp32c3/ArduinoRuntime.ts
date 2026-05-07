@@ -707,52 +707,150 @@ export class ArduinoRuntime {
         },
       },
 
-      // ── WiFiClient (for TCP connections) ──────────────────
+      // ── WiFiClient (for TCP connections — sends real HTTP requests) ──
       WiFiClient: class {
         private _connected: boolean = false;
-        private _buffer: string = '';
+        private _host: string = '';
+        private _port: number = 80;
+        private _requestBuffer: string = '';
+        private _responseBuffer: string = '';
+        private _fetching: boolean = false;
+        private _fetchDone: boolean = false;
 
-        connect(_host: string, _port: number): boolean {
+        connect(host: string, port: number): boolean {
+          this._host = host;
+          this._port = port;
           this._connected = true;
+          this._requestBuffer = '';
+          this._responseBuffer = '';
+          this._fetching = false;
+          this._fetchDone = false;
+          self.onSerial?.(`__LF_WIFI:tcp_connect:${host}:${port}\n`);
           return true;
         }
 
         connected(): boolean {
+          // Once fetch is done and response is fully consumed, mark disconnected
+          if (this._fetchDone && this._responseBuffer.length === 0) {
+            this._connected = false;
+          }
           return this._connected;
         }
 
         stop(): void {
+          // Fire any buffered but unsent request (fire-and-forget)
+          if (this._requestBuffer.length > 0 && !this._fetching && !this._fetchDone) {
+            this._fireRequest();
+          }
           this._connected = false;
-          this._buffer = '';
         }
 
         print(data: any): void {
-          this._buffer += String(data);
+          this._requestBuffer += String(data);
+          this._tryFlush();
         }
 
-        println(data: any): void {
-          this._buffer += String(data) + '\n';
+        println(data: any = ''): void {
+          this._requestBuffer += String(data) + '\r\n';
+          this._tryFlush();
+        }
+
+        write(val: any): void {
+          const text = typeof val === 'number' ? String.fromCharCode(val) : String(val);
+          this._requestBuffer += text;
+          this._tryFlush();
         }
 
         available(): number {
-          return this._buffer.length;
+          return this._responseBuffer.length;
         }
 
         read(): number {
-          if (this._buffer.length === 0) return -1;
-          const char = this._buffer.charCodeAt(0);
-          this._buffer = this._buffer.substring(1);
+          if (this._responseBuffer.length === 0) return -1;
+          const char = this._responseBuffer.charCodeAt(0);
+          this._responseBuffer = this._responseBuffer.substring(1);
           return char;
         }
 
         readString(): string {
-          const str = this._buffer;
-          this._buffer = '';
+          const str = this._responseBuffer;
+          this._responseBuffer = '';
           return str;
+        }
+
+        flush(): void { }
+
+        /** Detect end of HTTP headers (\r\n\r\n) and trigger fetch */
+        private _tryFlush(): void {
+          if (this._fetching || this._fetchDone) return;
+          if (!this._requestBuffer.includes('\r\n\r\n')) return;
+          this._fireRequest();
+        }
+
+        /** Parse raw HTTP request text and send via fetch */
+        private async _fireRequest(): Promise<void> {
+          if (this._fetching) return;
+          this._fetching = true;
+
+          try {
+            const lines = this._requestBuffer.split('\r\n');
+            const requestLine = lines[0] || 'GET / HTTP/1.1';
+            const parts = requestLine.split(' ');
+            const method = parts[0] || 'GET';
+            const path = parts[1] || '/';
+
+            const protocol = this._port === 443 ? 'https' : 'http';
+            const url = `${protocol}://${this._host}${path}`;
+
+            // Parse headers
+            const headers: Record<string, string> = {};
+            let bodyStartIdx = -1;
+            for (let i = 1; i < lines.length; i++) {
+              if (lines[i] === '') { bodyStartIdx = i + 1; break; }
+              const colonIdx = lines[i].indexOf(':');
+              if (colonIdx > 0) {
+                const key = lines[i].substring(0, colonIdx).trim();
+                const val = lines[i].substring(colonIdx + 1).trim();
+                if (key.toLowerCase() !== 'host') headers[key] = val;
+              }
+            }
+
+            let body: string | undefined;
+            if (bodyStartIdx > 0 && bodyStartIdx < lines.length) {
+              body = lines.slice(bodyStartIdx).join('\r\n').trim() || undefined;
+            }
+
+            self.onSerial?.(`__LF_WIFI:http_request:${method} ${url}\n`);
+
+            const response = await fetch(url, {
+              method,
+              headers,
+              body: (method !== 'GET' && method !== 'HEAD') ? body : undefined,
+            });
+
+            // Build HTTP response string for sketch to read
+            let responseText = `HTTP/1.1 ${response.status} ${response.statusText}\r\n`;
+            response.headers.forEach((value, key) => {
+              responseText += `${key}: ${value}\r\n`;
+            });
+            responseText += '\r\n';
+            responseText += await response.text();
+
+            this._responseBuffer = responseText;
+            self.onSerial?.(`__LF_WIFI:http_response:${response.status}\n`);
+          } catch (error: any) {
+            console.error('[WiFiClient] Request failed:', error);
+            self.onSerial?.(`__LF_WIFI:http_error:${error.message}\n`);
+            this._responseBuffer = 'HTTP/1.1 0 Connection Failed\r\n\r\n';
+          } finally {
+            this._fetching = false;
+            this._fetchDone = true;
+            this._requestBuffer = '';
+          }
         }
       },
 
-      // ── HTTPClient (for real HTTP requests) ───────────────
+      // ── HTTPClient (for real HTTP requests via fetch) ───────────────
       HTTPClient: class {
         private _url: string = '';
         private _headers: Map<string, string> = new Map();
@@ -765,6 +863,7 @@ export class ArduinoRuntime {
           this._headers.clear();
           this._responseCode = 0;
           this._responseBody = '';
+          self.onSerial?.(`__LF_WIFI:http_begin:${url}\n`);
           return true;
         }
 
@@ -806,6 +905,8 @@ export class ArduinoRuntime {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), this._timeout);
 
+            self.onSerial?.(`__LF_WIFI:http_request:${method} ${this._url}\n`);
+
             const response = await fetch(this._url, {
               method,
               headers,
@@ -818,13 +919,17 @@ export class ArduinoRuntime {
             this._responseCode = response.status;
             this._responseBody = await response.text();
 
+            self.onSerial?.(`__LF_WIFI:http_response:${this._responseCode}\n`);
+
             return this._responseCode;
           } catch (error: any) {
             console.error('[HTTPClient] Request failed:', error);
             if (error.name === 'AbortError') {
               this._responseCode = -1; // Timeout
+              self.onSerial?.(`__LF_WIFI:http_error:Request timed out\n`);
             } else {
               this._responseCode = -2; // Connection failed
+              self.onSerial?.(`__LF_WIFI:http_error:${error.message}\n`);
             }
             this._responseBody = '';
             return this._responseCode;

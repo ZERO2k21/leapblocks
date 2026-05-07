@@ -18,7 +18,6 @@ const char* password = "electra123";
 // ThingSpeak settings
 const int myChannelNumber = 3372736;
 const char* myApiKey = "FXL4GV1FL2TNW2DW";
-const char* server = "api.thingspeak.com";
 
 DHTesp dhtSensor;
 
