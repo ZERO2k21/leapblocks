@@ -18,7 +18,7 @@
 // export const PLATFORM: PlatformMode = IS_ELECTRON ? 'electron' : 'web';
 
 // // Cloud compiler endpoint
-// //export const CLOUD_COMPILER_URL = 'https://compiler.leapforge.dev';
+// //export const CLOUD_COMPILER_URL = 'https://compiler.electra.dev';
 // export const CLOUD_COMPILER_URL = 'http://localhost:3001';
 
 const isElectronEnv = (): boolean => {
@@ -40,7 +40,7 @@ export const PLATFORM: PlatformMode = IS_ELECTRON ? 'electron' : 'web';
  * Compile server URL.
  * - Local / Electron:  http://localhost:3001  (compiler-server started by Electron)
  * - Online (deployed): set VITE_COMPILER_URL env var to your Railway/Render URL
- *   e.g.  VITE_COMPILER_URL=https://leapforge-compiler.up.railway.app
+ *   e.g.  VITE_COMPILER_URL=https://electra-compiler.up.railway.app
  *
  * To deploy: see leapblocks/compiler-server/README.md
  */

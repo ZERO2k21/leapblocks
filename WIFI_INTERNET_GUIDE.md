@@ -1,8 +1,8 @@
-# ESP32 Internet Connectivity in Leapforge
+# ESP32 Internet Connectivity in Electra
 
 ## Overview
 
-The Leapforge ESP32-C3 simulation now supports **real internet connectivity**! Your simulated ESP32 can make actual HTTP/HTTPS requests using your computer's network connection, just like a physical ESP32 would.
+The Electra ESP32-C3 simulation now supports **real internet connectivity**! Your simulated ESP32 can make actual HTTP/HTTPS requests using your computer's network connection, just like a physical ESP32 would.
 
 ## Features
 

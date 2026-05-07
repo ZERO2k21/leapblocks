@@ -213,18 +213,18 @@ After restart, verify:
 ## Files Modified
 
 ### Element Files
-- `src/modules/leapforge/elements/leap-elements/esp32-c3-element.ts`
-- `src/modules/leapforge/elements/leap-elements/esp32-c3-element.stories.ts`
-- `src/modules/leapforge/elements/leap-elements/esp32-c3-element.spec.ts`
-- `src/modules/leapforge/elements/leap-elements/index.ts`
-- `src/modules/leapforge/elements/leap-elements/react-types.ts`
+- `src/modules/electra/elements/leap-elements/esp32-c3-element.ts`
+- `src/modules/electra/elements/leap-elements/esp32-c3-element.stories.ts`
+- `src/modules/electra/elements/leap-elements/esp32-c3-element.spec.ts`
+- `src/modules/electra/elements/leap-elements/index.ts`
+- `src/modules/electra/elements/leap-elements/react-types.ts`
 
 ### Configuration Files
-- `src/modules/leapforge/components/BoardSelector.tsx`
-- `src/modules/leapforge/components/Sidebar.tsx`
-- `src/modules/leapforge/components/Library/PartPicker.tsx`
-- `src/modules/leapforge/store/useForgeStore.ts`
-- `src/modules/leapforge/engine/SimulationRunner.ts`
+- `src/modules/electra/components/BoardSelector.tsx`
+- `src/modules/electra/components/Sidebar.tsx`
+- `src/modules/electra/components/Library/PartPicker.tsx`
+- `src/modules/electra/store/useForgeStore.ts`
+- `src/modules/electra/engine/SimulationRunner.ts`
 
 ## Status
 

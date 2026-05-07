@@ -82,7 +82,7 @@ ESP32 compiled. Starting QEMU simulation...
 ## Code Changes Made
 
 ### ✅ Fixed Files:
-1. `src/modules/leapforge/ForgeStudio.tsx` - FQBN mapping corrected
+1. `src/modules/electra/ForgeStudio.tsx` - FQBN mapping corrected
 2. `electron/main.js` - Installation logic fixed with proper error handling
 3. `src/upload/ArduinoUploader.ts` - Platform name corrected
 

@@ -69,10 +69,10 @@ const AppInventor = lazy(() => {
 });
 
 // @ts-ignore
-const LeapForgeStudio = lazy(() => {
-    logAppTiming('LeapForgeStudio lazy load started');
-    return import('./Leapforge/Client/Src/ForgeStudio').then(module => {
-        logAppTiming('LeapForgeStudio lazy load completed');
+const ElectraStudio = lazy(() => {
+    logAppTiming('ElectraStudio lazy load started');
+    return import('./Electra/Client/Src/ForgeStudio').then(module => {
+        logAppTiming('ElectraStudio lazy load completed');
         return module;
     });
 });
@@ -87,7 +87,7 @@ const NeuraApp = lazy(() => {
 
 logAppTiming('All lazy components defined');
 
-type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'appinventor' | 'appforge' | 'leapforge' | 'neura';
+type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'appinventor' | 'appforge' | 'electra' | 'neura';
 
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
@@ -141,10 +141,10 @@ export default function App() {
     // }, []);
 
     // REMOVED: Prefetch disabled - modules load only when user navigates to them
-    // This prevents loading heavy modules (LeapForge, Blockly) that user may never use
+    // This prevents loading heavy modules (Electra, Blockly) that user may never use
     // React.useEffect(() => {
     //     const prefetch = () => {
-    //         import('./modules/leapforge/ForgeStudio');
+    //         import('./modules/electra/ForgeStudio');
     //         import('./IntermediateApp');
     //     };
     //     if (typeof requestIdleCallback !== 'undefined') {
@@ -189,8 +189,8 @@ export default function App() {
                 />}
                 {mode === 'notebook' && <PythonNotebook onBack={() => setMode('home')} onSwitchToIDE={() => setMode('python')} />}
                 {mode === 'appinventor' && <AppInventor {...({ onBack: () => setMode('home') } as any)} />}
-                {mode === 'appforge' && <LeapForgeStudio {...({ onBack: () => setMode('home') } as any)} />}
-                {mode === 'leapforge' && <LeapForgeStudio {...({ onBack: () => setMode('home') } as any)} />}
+                {mode === 'appforge' && <ElectraStudio {...({ onBack: () => setMode('home') } as any)} />}
+                {mode === 'electra' && <ElectraStudio {...({ onBack: () => setMode('home') } as any)} />}
                 {mode === 'neura' && <NeuraApp onBack={() => setMode('home')} />}
                 {mode === 'home' && <LandingPage onSelect={setMode} />}
             </Suspense>

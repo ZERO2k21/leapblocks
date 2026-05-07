@@ -288,7 +288,7 @@ Example: `digitalWrite(2, HIGH)` → `ESP2 = HIGH`
 ## File Structure
 
 ```
-src/modules/leapforge/
+src/modules/electra/
 ├── engine/
 │   ├── SimulationRunner.ts          # Main simulation coordinator
 │   ├── CircuitEngine.ts              # Peripheral emulation (shared)

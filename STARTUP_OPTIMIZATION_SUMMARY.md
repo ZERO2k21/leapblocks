@@ -2,12 +2,12 @@
 
 ## Issues Fixed
 
-### 1. LeapForge Engine Loading (2-3 seconds)
+### 1. Electra Engine Loading (2-3 seconds)
 **Problem:** Heavy simulation engines loaded synchronously at app startup
 **Solution:** Lazy-load engines only when needed
 **Files:** 
-- `src/modules/leapforge/store/useForgeStore.ts`
-- `src/modules/leapforge/ForgeStudio.tsx`
+- `src/modules/electra/store/useForgeStore.ts`
+- `src/modules/electra/ForgeStudio.tsx`
 
 ### 2. ESP32 Core Installation (7-9 seconds)
 **Problem:** ESP32 arduino-cli core check/install ran 3 seconds after startup
@@ -78,14 +78,14 @@ ipcMain.handle('compile-code', async (event, code, fqbn) => {
 
 ## Files Modified
 
-1. **src/modules/leapforge/store/useForgeStore.ts**
+1. **src/modules/electra/store/useForgeStore.ts**
    - Lazy-load simulationRunner and circuitEngine
    - Convert store actions to async
 
-2. **src/modules/leapforge/ForgeStudio.tsx**
+2. **src/modules/electra/ForgeStudio.tsx**
    - Lazy-load simulationRunner
 
-3. **src/modules/leapforge/engine/CircuitEngine.ts**
+3. **src/modules/electra/engine/CircuitEngine.ts**
    - Fix pType variable declaration order
 
 4. **src/index.ts**
@@ -93,7 +93,7 @@ ipcMain.handle('compile-code', async (event, code, fqbn) => {
 
 ## Documentation Created
 
-1. **LEAPFORGE_STARTUP_OPTIMIZATION.md** - LeapForge lazy loading details
+1. **ELECTRA_STARTUP_OPTIMIZATION.md** - Electra lazy loading details
 2. **ESP32_STARTUP_OPTIMIZATION.md** - ESP32 core caching strategy
 3. **STARTUP_OPTIMIZATION_SUMMARY.md** - This file
 4. **test-startup-performance.html** - Performance testing tool
@@ -104,7 +104,7 @@ ipcMain.handle('compile-code', async (event, code, fqbn) => {
 1. Close the app completely
 2. Launch the app
 3. **Verify:** Main window appears in <1 second ✅
-4. Navigate to LeapForge mode
+4. Navigate to Electra mode
 5. **Verify:** Canvas loads without errors ✅
 6. Click "Run Simulation" with ESP32 board
 7. **Verify:** First compile shows ESP32 core check (7-10s) ✅
@@ -133,7 +133,7 @@ git revert HEAD~4..HEAD  # Reverts last 4 commits
 ```
 
 Or manually restore:
-1. `src/modules/leapforge/store/useForgeStore.ts` - Restore synchronous imports
+1. `src/modules/electra/store/useForgeStore.ts` - Restore synchronous imports
 2. `src/index.ts` - Restore ESP32 warmup in app.on('ready')
 
 ## Future Optimizations

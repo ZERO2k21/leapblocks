@@ -20,7 +20,7 @@ WiFi.begin(WIFI_NAME, WIFI_PASSWORD);  // ❌ These don't exist!
 
 ### Error 2: Missing ThingSpeak Library
 ```cpp
-#include "ThingSpeak.h"  // ❌ Not available in LeapForge
+#include "ThingSpeak.h"  // ❌ Not available in Electra
 ```
 
 ---

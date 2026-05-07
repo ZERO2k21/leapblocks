@@ -30,7 +30,7 @@ npm install
 
 ### 2. ✅ Fixed Import Paths
 
-After the revert, `FileService` moved from `src/services/` to `src/Leapforge/Client/Src/services/`
+After the revert, `FileService` moved from `src/services/` to `src/Electra/Client/Src/services/`
 
 **Files Fixed**:
 
@@ -40,7 +40,7 @@ After the revert, `FileService` moved from `src/services/` to `src/Leapforge/Cli
 import { fileService } from "../../../services/FileService";
 
 // After
-import { fileService } from "../../../Leapforge/Client/Src/services/FileService";
+import { fileService } from "../../../Electra/Client/Src/services/FileService";
 ```
 
 #### src/python/PythonApp.jsx
@@ -49,7 +49,7 @@ import { fileService } from "../../../Leapforge/Client/Src/services/FileService"
 import { fileService } from "../services/FileService";
 
 // After
-import { fileService } from "../Leapforge/Client/Src/services/FileService";
+import { fileService } from "../Electra/Client/Src/services/FileService";
 ```
 
 #### src/IntermediateApp.tsx
@@ -58,7 +58,7 @@ import { fileService } from "../Leapforge/Client/Src/services/FileService";
 import { fileService } from './services/FileService';
 
 // After
-import { fileService } from './Leapforge/Client/Src/services/FileService';
+import { fileService } from './Electra/Client/Src/services/FileService';
 ```
 
 ---

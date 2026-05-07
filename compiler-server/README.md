@@ -1,6 +1,6 @@
-# LeapForge Compile Server
+# Electra Compile Server
 
-Standalone Node.js server that compiles Arduino sketches and transpiles them to JavaScript for the LeapForge ESP32 simulator.
+Standalone Node.js server that compiles Arduino sketches and transpiles them to JavaScript for the Electra ESP32 simulator.
 
 ## Endpoints
 
@@ -50,7 +50,7 @@ node server.js
 2. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
 3. Select the repo, set root directory to `compiler-server`
 4. Railway auto-detects the Dockerfile and deploys
-5. Copy the generated URL (e.g. `https://leapforge-compiler.up.railway.app`)
+5. Copy the generated URL (e.g. `https://electra-compiler.up.railway.app`)
 6. Update `CLOUD_COMPILER_URL` in `src/config/platform.ts`
 
 ## Deploy to Render (Free Tier)
@@ -65,7 +65,7 @@ node server.js
 
 ```bash
 cd compiler-server
-fly launch --name leapforge-compiler
+fly launch --name electra-compiler
 fly deploy
 ```
 

@@ -1,4 +1,4 @@
-# 🚀 How to Use ThingSpeak with ESP32 in LeapForge
+# 🚀 How to Use ThingSpeak with ESP32 in Electra
 
 ## ✅ Your Code is Already Fixed!
 
@@ -22,10 +22,10 @@ WiFi.begin(WIFI_NAME, WIFI_PASSWORD);  // ❌ These don't exist!
 
 ### Error 2: ThingSpeak Library Not Available ❌
 ```cpp
-#include "ThingSpeak.h"  // ❌ Not in LeapForge
+#include "ThingSpeak.h"  // ❌ Not in Electra
 ```
 
-LeapForge doesn't have the ThingSpeak library, but you don't need it!
+Electra doesn't have the ThingSpeak library, but you don't need it!
 
 ---
 
@@ -61,7 +61,7 @@ if (httpCode == 200) {
 ## 📋 Step-by-Step Guide
 
 ### Step 1: Open the Fixed Code
-1. In LeapForge, open the file: **`dht22_thingspeak.ino`**
+1. In Electra, open the file: **`dht22_thingspeak.ino`**
 2. This file has all the fixes already applied
 
 ### Step 2: Verify Your ThingSpeak Settings
@@ -76,11 +76,11 @@ const char* myApiKey = "FXL4GV1FL2TNW2DW";  // Your Write API Key
 ### Step 3: Select ESP32-C3 Board
 ⚠️ **IMPORTANT**: WiFi and HTTP only work on ESP32-C3, not Arduino!
 
-1. In LeapForge, select **ESP32-C3** from the board dropdown
+1. In Electra, select **ESP32-C3** from the board dropdown
 2. Do NOT use Arduino Uno/Mega/Nano
 
 ### Step 4: Add DHT22 Sensor to Your Circuit
-1. Click "Add Component" in LeapForge
+1. Click "Add Component" in Electra
 2. Search for "DHT22" sensor
 3. Connect the sensor:
    - **VCC** → 3.3V
@@ -152,7 +152,7 @@ Otherwise, the LED is **OFF**.
 ```cpp
 WiFi.begin(ssid, password);
 ```
-- In LeapForge, WiFi connection is **simulated**
+- In Electra, WiFi connection is **simulated**
 - Any SSID/password will work
 - Connection happens instantly (no real WiFi needed)
 - Uses your computer's internet connection
@@ -326,7 +326,7 @@ GET https://api.thingspeak.com/update?api_key=KEY&field1=VALUE
 
 ### 4. ESP32 Has Real Internet
 - ESP32 can make real HTTP requests
-- Arduino boards cannot (in LeapForge)
+- Arduino boards cannot (in Electra)
 - Use ESP32 for IoT projects
 
 ---

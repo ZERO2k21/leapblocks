@@ -230,8 +230,8 @@ LED OFF
 ### Source Files (Before Build)
 - ✅ `electron/main.js` - Has `read-bin-file` handler
 - ✅ `electron/preload.js` - Has `readBinFile` API
-- ✅ `src/modules/leapforge/engine/esp32c3/ESP32C3SimulationRunner.ts` - Has diagnostics
-- ✅ `src/modules/leapforge/engine/SimulationRunner.ts` - Calls `readBinFile`
+- ✅ `src/modules/electra/engine/esp32c3/ESP32C3SimulationRunner.ts` - Has diagnostics
+- ✅ `src/modules/electra/engine/SimulationRunner.ts` - Calls `readBinFile`
 
 ### Built Files (After Build)
 - ✅ `dist/main/index.js` - Contains IPC handler

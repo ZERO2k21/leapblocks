@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const jsonPath = path.join(__dirname, '../src/Leapforge/Client/Src/engine/Arduino/PinHarness.json');
+const jsonPath = path.join(__dirname, '../src/Electra/Client/Src/engine/Arduino/PinHarness.json');
 
 console.log('👀 Watching PinHarness.json for changes...');
 console.log(`   File: ${jsonPath}\n`);

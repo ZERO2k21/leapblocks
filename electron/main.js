@@ -86,7 +86,7 @@ function stopBuildServer() {
   }
 }
 
-// ── LeapForge Compile Server (Arduino compile + transpile) ─────────────────
+// ── Electra Compile Server (Arduino compile + transpile) ─────────────────
 let compileServerProcess = null;
 
 function startCompileServer() {

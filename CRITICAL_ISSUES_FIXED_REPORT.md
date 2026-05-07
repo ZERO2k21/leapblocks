@@ -15,7 +15,7 @@ Three critical issues were identified and fixed:
 When clicking simulation, the application showed:
 ```
 Transform failed with 1 error:
-D:/Leapblocks/src/Leapforge/client/src/engine/Arduino/CircuitEngine.ts:1671:0: 
+D:/Leapblocks/src/Electra/client/src/engine/Arduino/CircuitEngine.ts:1671:0: 
 ERROR: Unexpected "<"
 ```
 
@@ -41,7 +41,7 @@ These conflict markers are **invalid TypeScript syntax**, causing the compiler t
 
 ### Fix Applied
 ```bash
-git checkout d9e4a5d -- src/Leapforge/Client/Src/engine/Arduino/CircuitEngine.ts
+git checkout d9e4a5d -- src/Electra/Client/Src/engine/Arduino/CircuitEngine.ts
 ```
 
 **Result**: Restored the working version from commit `d9e4a5d`
@@ -52,7 +52,7 @@ git checkout d9e4a5d -- src/Leapforge/Client/Src/engine/Arduino/CircuitEngine.ts
 getDiagnostics: No diagnostics found ✅
 
 # No remaining merge conflicts
-grep -r "<<<<<<< HEAD" src/Leapforge/ 
+grep -r "<<<<<<< HEAD" src/Electra/ 
 # (no results) ✅
 ```
 
@@ -66,7 +66,7 @@ The A4988 stepper motor driver was **not visible** in the component picker, maki
 ### Root Cause
 The A4988 component was **not registered** in the `COMPONENTS` array in `PartPicker.tsx`.
 
-**File**: `src/Leapforge/Client/Src/components/Library/PartPicker.tsx`
+**File**: `src/Electra/Client/Src/components/Library/PartPicker.tsx`
 
 **Missing entry**:
 ```typescript
@@ -135,7 +135,7 @@ Added motor connection caching to avoid repeated edge filtering.
 
 ### 1. CircuitEngine.ts
 **Action**: Restored from commit `d9e4a5d`
-**Path**: `src/Leapforge/Client/Src/engine/Arduino/CircuitEngine.ts`
+**Path**: `src/Electra/Client/Src/engine/Arduino/CircuitEngine.ts`
 **Changes**:
 - Removed merge conflict markers
 - Restored working A4988 simulation code
@@ -143,7 +143,7 @@ Added motor connection caching to avoid repeated edge filtering.
 
 ### 2. PartPicker.tsx
 **Action**: Added A4988 component entry
-**Path**: `src/Leapforge/Client/Src/components/Library/PartPicker.tsx`
+**Path**: `src/Electra/Client/Src/components/Library/PartPicker.tsx`
 **Changes**:
 - Added line 46: `{ id: 'a4988', name: 'A4988 Driver', category: 'outputs', desc: 'Stepper motor driver' }`
 
@@ -178,7 +178,7 @@ npm run dev
 ```
 
 ### 2. Check Component Picker
-1. Open Leapforge
+1. Open Electra
 2. Click "Add Component" button
 3. Select "Outputs" category
 4. **Verify**: A4988 Driver appears in the list
@@ -267,7 +267,7 @@ All critical issues have been resolved:
 1. Pull latest changes
 2. Run `npm install` (if needed)
 3. Start dev server: `npm run dev`
-4. Test A4988 component in Leapforge
+4. Test A4988 component in Electra
 
 ### For Developers
 1. Review merge conflict resolution process

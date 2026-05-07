@@ -59,9 +59,9 @@ Added comprehensive logging to `CircuitEngine.ts` to help debug LED issues:
 
 ## Files Modified
 
-1. `src/modules/leapforge/engine/CircuitEngine.ts` - Added `value` property to LED updates
-2. `src/modules/leapforge/engine/esp32c3/ESP32C3SimulationRunner.ts` - Added detailed logging
-3. `src/modules/leapforge/engine/SimulationRunner.ts` - Added detailed logging
+1. `src/modules/electra/engine/CircuitEngine.ts` - Added `value` property to LED updates
+2. `src/modules/electra/engine/esp32c3/ESP32C3SimulationRunner.ts` - Added detailed logging
+3. `src/modules/electra/engine/SimulationRunner.ts` - Added detailed logging
 
 ## Next Steps
 

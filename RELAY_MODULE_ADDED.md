@@ -2,7 +2,7 @@
 
 ## Overview
 
-A new **Single-Channel 5V Relay Module** component has been added to Leapforge. This is a standard relay module commonly used with Arduino to control high-power devices.
+A new **Single-Channel 5V Relay Module** component has been added to Electra. This is a standard relay module commonly used with Arduino to control high-power devices.
 
 ## Component Details
 
@@ -126,7 +126,7 @@ When Arduino pin 7 is HIGH, the relay closes and the LED turns on.
 
 ## Simulation Behavior
 
-The relay module is fully simulated in Leapforge:
+The relay module is fully simulated in Electra:
 
 1. **Visual Feedback**:
    - LED indicator shows energized state
@@ -146,7 +146,7 @@ The relay module is fully simulated in Leapforge:
 
 ## Differences from KS2E-M-DC5
 
-Leapforge now has **two relay components**:
+Electra now has **two relay components**:
 
 | Feature | relay-module | ks2e-m-dc5 |
 |---------|-------------|------------|
@@ -192,4 +192,4 @@ Content rephrased for compliance with licensing restrictions. Information source
 
 **Status**: ✅ COMPLETE - Relay module fully integrated and ready to use!
 
-**Next Steps**: Reload the Leapforge application to see the new relay module in the component library.
+**Next Steps**: Reload the Electra application to see the new relay module in the component library.

@@ -21,7 +21,7 @@ The 60-second blank screen startup issue was **already fixed** in the previous s
 ```typescript
 const IntermediateApp = lazy(() => import('./IntermediateApp'));
 const JuniorApp = lazy(() => import('./junior/JuniorApp'));
-const LeapForgeStudio = lazy(() => import('./modules/leapforge/ForgeStudio'));
+const ElectraStudio = lazy(() => import('./modules/electra/ForgeStudio'));
 // ... all major components lazy loaded
 ```
 **Effect:** Heavy components load only when user navigates to them
@@ -45,7 +45,7 @@ mainWindow.once('ready-to-show', () => {
 // REMOVED: Prefetch disabled - modules load only when user navigates
 // React.useEffect(() => {
 //     const prefetch = () => {
-//         import('./modules/leapforge/ForgeStudio');
+//         import('./modules/electra/ForgeStudio');
 //         import('./IntermediateApp');
 //     };
 // }, []);

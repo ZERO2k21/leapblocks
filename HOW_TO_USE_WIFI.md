@@ -1,8 +1,8 @@
-# How to Use WiFi in LeapForge ESP32 Simulation
+# How to Use WiFi in Electra ESP32 Simulation
 
 ## Important: WiFi is Simulated!
 
-In LeapForge, the ESP32 WiFi is **simulated** - it doesn't actually connect to a real WiFi network. Instead:
+In Electra, the ESP32 WiFi is **simulated** - it doesn't actually connect to a real WiFi network. Instead:
 
 ✅ **WiFi.begin()** - Always succeeds (simulated connection)  
 ✅ **HTTP requests** - Use your computer's internet through the browser  
@@ -60,7 +60,7 @@ void loop() {
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────┐
-│  LeapForge Simulation                                   │
+│  Electra Simulation                                   │
 │  - WiFi: Simulated (always connects)                    │
 │  - HTTP: Real (uses browser fetch API)                  │
 └────────────────────────┬────────────────────────────────┘
@@ -122,7 +122,7 @@ void loop() {}
 **A:** No, the simulation doesn't connect to real WiFi networks. It's simulated. But HTTP requests are real!
 
 ### Q: Why does WiFi.begin() always succeed?
-**A:** Because it's simulated. In a real ESP32, it would try to connect to an actual network. In LeapForge, it just pretends to connect.
+**A:** Because it's simulated. In a real ESP32, it would try to connect to an actual network. In Electra, it just pretends to connect.
 
 ### Q: Are HTTP requests real?
 **A:** YES! HTTP requests are 100% real. They use your computer's internet connection.

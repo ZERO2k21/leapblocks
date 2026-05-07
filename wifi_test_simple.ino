@@ -1,5 +1,5 @@
 // Simple WiFi Test - Guaranteed to Work
-// Copy this code into LeapForge and run it
+// Copy this code into Electra and run it
 
 #include <WiFi.h>
 

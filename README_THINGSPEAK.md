@@ -1,6 +1,6 @@
-# 📡 ESP32 + DHT22 + ThingSpeak for LeapForge
+# 📡 ESP32 + DHT22 + ThingSpeak for Electra
 
-Complete guide to sending sensor data to ThingSpeak cloud using ESP32-C3 in LeapForge.
+Complete guide to sending sensor data to ThingSpeak cloud using ESP32-C3 in Electra.
 
 ---
 
@@ -60,7 +60,7 @@ WiFi.begin(WIFI_NAME, WIFI_PASSWORD);   // Used different names ❌
 
 ### Error 2: Missing ThingSpeak Library ❌
 ```cpp
-#include "ThingSpeak.h"  // Not available in LeapForge ❌
+#include "ThingSpeak.h"  // Not available in Electra ❌
 ```
 
 ---
@@ -96,7 +96,7 @@ int httpCode = http.GET();
 ```cpp
 WiFi.begin(ssid, password);
 ```
-- In LeapForge, WiFi is **simulated**
+- In Electra, WiFi is **simulated**
 - Any SSID/password works
 - Uses your computer's internet connection
 
@@ -127,7 +127,7 @@ int httpCode = http.GET();
 ## 🔧 Hardware Setup
 
 ### Required Components
-1. **ESP32-C3** board (select in LeapForge)
+1. **ESP32-C3** board (select in Electra)
 2. **DHT22** temperature/humidity sensor
 3. **LED** (optional, for status indication)
 
@@ -152,7 +152,7 @@ LED (optional):
 const char* ssid = "electra";        // Your WiFi SSID
 const char* password = "electra123"; // Your WiFi password
 ```
-**Note**: In LeapForge simulation, these are just placeholders. Any values work!
+**Note**: In Electra simulation, these are just placeholders. Any values work!
 
 ### ThingSpeak Settings
 ```cpp
@@ -284,7 +284,7 @@ GET https://api.thingspeak.com/update?api_key=KEY&field1=VALUE
 
 ### 4. ESP32 Internet Connectivity
 - ESP32 can make real HTTP requests
-- Arduino boards cannot (in LeapForge)
+- Arduino boards cannot (in Electra)
 - Use ESP32 for IoT projects
 
 ---
@@ -354,5 +354,5 @@ Your ESP32 + DHT22 + ThingSpeak code is fixed and ready to run.
 
 ---
 
-**Created for LeapForge ESP32-C3 Simulation**  
+**Created for Electra ESP32-C3 Simulation**  
 **Based on Wokwi Project**: https://wokwi.com/arduino/projects/322410731508073042

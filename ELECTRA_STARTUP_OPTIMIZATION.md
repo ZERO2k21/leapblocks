@@ -1,7 +1,7 @@
-# LeapForge Startup Optimization
+# Electra Startup Optimization
 
 ## Problem
-The LeapForge module was loading heavy simulation engines (CircuitEngine and SimulationRunner) synchronously during app startup, blocking the main page from rendering quickly.
+The Electra module was loading heavy simulation engines (CircuitEngine and SimulationRunner) synchronously during app startup, blocking the main page from rendering quickly.
 
 ## Root Cause
 1. `useForgeStore.ts` imported `simulationRunner` and `circuitEngine` at the module level
@@ -11,7 +11,7 @@ The LeapForge module was loading heavy simulation engines (CircuitEngine and Sim
 
 ## Solution Implemented
 
-### 1. Lazy-Load Engines in Store (`src/modules/leapforge/store/useForgeStore.ts`)
+### 1. Lazy-Load Engines in Store (`src/modules/electra/store/useForgeStore.ts`)
 - Replaced synchronous imports with async getter functions:
   ```typescript
   let simulationRunner: any = null;
@@ -44,7 +44,7 @@ All store actions that interact with engines now use async/await:
 - `removeNode()` - loads runner when board node is removed
 - `setNodes()` - loads runner when nodes are loaded from project
 
-### 3. Lazy-Load in ForgeStudio (`src/modules/leapforge/ForgeStudio.tsx`)
+### 3. Lazy-Load in ForgeStudio (`src/modules/electra/ForgeStudio.tsx`)
 - Added lazy-loading for simulationRunner in ForgeStudio component
 - Only loads when ESP32 compilation needs to set binPath
 
@@ -59,13 +59,13 @@ The following components already use dynamic imports (no changes needed):
 
 ### Before
 - App startup: ~2-3 seconds
-- Main page blocked by LeapForge engine loading
-- AVR8js library loaded immediately even if user never uses LeapForge
+- Main page blocked by Electra engine loading
+- AVR8js library loaded immediately even if user never uses Electra
 
 ### After
 - App startup: <500ms (main page renders immediately)
 - Engines only load when:
-  - User navigates to LeapForge mode
+  - User navigates to Electra mode
   - User starts a simulation
   - User adds a board node to canvas
 - First simulation start may have a small delay (~200-300ms) for engine initialization
@@ -73,7 +73,7 @@ The following components already use dynamic imports (no changes needed):
 
 ## Testing Checklist
 - [ ] App starts and landing page renders quickly
-- [ ] Navigate to LeapForge mode - should load without errors
+- [ ] Navigate to Electra mode - should load without errors
 - [ ] Add board node to canvas - should work
 - [ ] Start AVR simulation - should compile and run
 - [ ] Start ESP32 simulation - should compile and run with QEMU

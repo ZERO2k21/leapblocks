@@ -763,7 +763,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 5 ELECTRA */}
-              <div className={`tc tc-electra ${tcClass(4)}`} onClick={() => handleCardClick(() => onSelect('leapforge'))}>
+              <div className={`tc tc-electra ${tcClass(4)}`} onClick={() => handleCardClick(() => onSelect('electra'))}>
                 <div className="tc-icon">
                   <img src="assets/creocad_icon.png" alt="Forge Icon" />
                 </div>

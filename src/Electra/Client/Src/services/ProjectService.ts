@@ -5,7 +5,7 @@
  */
 import { IS_ELECTRON, isElectron } from '../../../../config/platform';
 
-const PROJECT_PREFIX = 'leapforge_project_';
+const PROJECT_PREFIX = 'electra_project_';
 
 const safeLocalStorage = {
   getItem: (key: string) => {

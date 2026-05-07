@@ -1,12 +1,12 @@
 # WiFi Quick Start Guide
 
-## Using WiFi in Leapforge ESP32-C3
+## Using WiFi in Electra ESP32-C3
 
-WiFi functionality is now fully working in Leapforge! Here's how to use it:
+WiFi functionality is now fully working in Electra! Here's how to use it:
 
 ### 1. Select ESP32-C3 Board
 
-In the Leapforge interface, select **ESP32-C3** from the board selector.
+In the Electra interface, select **ESP32-C3** from the board selector.
 
 ### 2. Write Your WiFi Sketch
 

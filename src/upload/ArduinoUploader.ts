@@ -484,7 +484,7 @@ directories:
 
             // Inject GPIO monitor header so ESP32-C3 serial output carries __LF_ tagged lines
             const GPIO_MONITOR_HEADER = `\
-// ---- LeapForge monitor (auto-injected, do not remove) ----
+// ---- Electra monitor (auto-injected, do not remove) ----
 #include <Wire.h>
 #include <WiFi.h>
 
@@ -554,7 +554,7 @@ static void __lf_wifi_event(WiFiEvent_t event) {
   }
 }
 static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
-// ---- end LeapForge injection ----
+// ---- end Electra injection ----
 `;
             // Preprocess code
             let processedCode = code.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');

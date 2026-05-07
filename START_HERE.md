@@ -252,7 +252,7 @@ const char* myApiKey = "FXL4GV1FL2TNW2DW"; // ✅ Your API key
 1. **Variable names must match** between definition and usage
 2. **Libraries can be replaced** with equivalent functionality
 3. **ThingSpeak REST API** is simple HTTP GET requests
-4. **ESP32 has real internet** connectivity in LeapForge
+4. **ESP32 has real internet** connectivity in Electra
 5. **Rate limiting** is important for cloud APIs
 
 ---
@@ -333,5 +333,5 @@ Your code is fixed and ready. Just open `dht22_thingspeak.ino` and click Play!
 
 ---
 
-**Created for LeapForge ESP32-C3 Simulation**  
+**Created for Electra ESP32-C3 Simulation**  
 **Your ThingSpeak integration is ready to go!** ✨

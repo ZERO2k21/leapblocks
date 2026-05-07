@@ -1,9 +1,9 @@
-# ── LeapForge Compile Server ─────────────────────────────────────────────────
+# ── Electra Compile Server ─────────────────────────────────────────────────
 # Multi-stage build: installs arduino-cli + ESP32 core, then runs the server
 # Deploy to: Railway, Render, Fly.io, or any Docker host
 #
-# Build:  docker build -t leapforge-compiler .
-# Run:    docker run -p 3001:3001 leapforge-compiler
+# Build:  docker build -t electra-compiler .
+# Run:    docker run -p 3001:3001 electra-compiler
 
 FROM node:20-slim AS base
 

@@ -1,6 +1,6 @@
 # ESP32-C3 RISC-V Simulation Engine
 
-This directory contains the **production-ready** ESP32-C3 RISC-V simulation engine for LeapForge.
+This directory contains the **production-ready** ESP32-C3 RISC-V simulation engine for Electra.
 
 ## Implementation Status
 
@@ -202,7 +202,7 @@ simulationRunner.addESP32C3PinListener(gpioNum, (high) => {
 ### Unit Tests
 Run the test suite:
 ```bash
-npm test src/modules/leapforge/engine/esp32c3/tests/
+npm test src/modules/electra/engine/esp32c3/tests/
 ```
 
 #### RiscVCore.test.ts

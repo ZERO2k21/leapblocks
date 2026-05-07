@@ -6,58 +6,58 @@
 **Error:** `SyntaxError: Invalid left-hand side in assignment`  
 **Cause:** `DateTime` class stub was too long (500+ chars on one line), causing truncation  
 **Fix:** Split into multi-line format  
-**File:** `src/Leapforge/Client/Src/services/CompilerService.ts`
+**File:** `src/Electra/Client/Src/services/CompilerService.ts`
 
 ### 2. WiFi Events Not Captured
 **Problem:** WiFi tab remained empty, no events shown  
 **Cause:** `__LF_WIFI:` messages weren't being parsed  
 **Fix:** Added WiFi message parsing in serial listeners  
 **Files:**
-- `src/Leapforge/Client/utlis/store/useForgeStore.ts`
-- `src/Leapforge/Client/Src/engine/Arduino/SimulationRunner.ts`
+- `src/Electra/Client/utlis/store/useForgeStore.ts`
+- `src/Electra/Client/Src/engine/Arduino/SimulationRunner.ts`
 
 ### 3. WiFi Status Not Updating
 **Problem:** Status indicator showed "Connecting..." forever  
 **Cause:** No logic to update status from WiFi log  
 **Fix:** Added `useEffect` to watch `wifiLog` and update status  
-**File:** `src/Leapforge/Client/Src/ForgeStudio.tsx`
+**File:** `src/Electra/Client/Src/ForgeStudio.tsx`
 
 ### 4. WiFi Stubs Missing
 **Problem:** Transpiler didn't know how to handle `WiFi.localIP()`, `WiFi.status()`, etc.  
 **Cause:** No WiFi library stubs in transpiler  
 **Fix:** Added `IPAddress`, `WiFiClass`, and WiFi constants  
-**File:** `src/Leapforge/Client/Src/services/CompilerService.ts`
+**File:** `src/Electra/Client/Src/services/CompilerService.ts`
 
 ### 5. WiFi Not Emitting Events
 **Problem:** WiFi status always showed "Unknown"  
 **Cause:** ArduinoRuntime WiFi stub didn't emit `__LF_WIFI:` events  
 **Fix:** Updated WiFi stub to emit proper events with delays  
-**File:** `src/Leapforge/Client/Src/engine/esp32c3/ArduinoRuntime.ts`
+**File:** `src/Electra/Client/Src/engine/esp32c3/ArduinoRuntime.ts`
 
 ### 6. WiFi Works on Arduino Boards
 **Problem:** WiFi should only work on ESP32-C3  
 **Cause:** No board check before compilation  
 **Fix:** Added compile-time check to reject WiFi on Arduino boards  
-**File:** `src/Leapforge/Client/Src/ForgeStudio.tsx`
+**File:** `src/Electra/Client/Src/ForgeStudio.tsx`
 
 ## Complete File List
 
 ### Modified Files (6 total):
-1. `src/Leapforge/Client/Src/services/CompilerService.ts`
+1. `src/Electra/Client/Src/services/CompilerService.ts`
    - Split DateTime class (fixes syntax error)
    - Added WiFi stubs (IPAddress, WiFiClass, constants)
 
-2. `src/Leapforge/Client/utlis/store/useForgeStore.ts`
+2. `src/Electra/Client/utlis/store/useForgeStore.ts`
    - Added WiFi message parsing in serial listener
 
-3. `src/Leapforge/Client/Src/engine/Arduino/SimulationRunner.ts`
+3. `src/Electra/Client/Src/engine/Arduino/SimulationRunner.ts`
    - Added WiFi message parsing for RISC-V path
 
-4. `src/Leapforge/Client/Src/ForgeStudio.tsx`
+4. `src/Electra/Client/Src/ForgeStudio.tsx`
    - Added WiFi board check
    - Added WiFi status update logic
 
-5. `src/Leapforge/Client/Src/engine/esp32c3/ArduinoRuntime.ts`
+5. `src/Electra/Client/Src/engine/esp32c3/ArduinoRuntime.ts`
    - Updated WiFi stub to emit `__LF_WIFI:` events
    - Added connection simulation with delays
 

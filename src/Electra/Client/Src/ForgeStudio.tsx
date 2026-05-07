@@ -61,7 +61,7 @@ export default function ForgeStudio({ onBack }: ForgeStudioProps) {
     }
   }, [wifiLog, board, isSimulating]);
 
-  const [code, setCode] = useState(`// LeapForge Project
+  const [code, setCode] = useState(`// Electra Project
 void setup() {
   Serial.begin(9600);
   pinMode(13, OUTPUT);
@@ -249,7 +249,7 @@ void loop() {
 
       <footer className="forge-footer">
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <span className="engine-pill">LeapForge Engine v1.0</span>
+          <span className="engine-pill">Electra Engine v1.0</span>
           {isSimulating && (
             <div className="sim-status-live">
               <div className="status-dot" />

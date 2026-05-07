@@ -14,7 +14,7 @@ You're seeing this error:
 ## ✅ The Solution (3 Steps)
 
 ### Step 1: Stop the Current Simulation
-Click the **Stop** button in LeapForge
+Click the **Stop** button in Electra
 
 ### Step 2: Open the Correct File
 You have **3 options** - choose one:
@@ -37,7 +37,7 @@ You have **3 options** - choose one:
 - Shows connection status
 
 ### Step 3: Run the Correct Code
-1. Make sure the correct file is open in LeapForge editor
+1. Make sure the correct file is open in Electra editor
 2. Select **ESP32-C3** board (not Arduino!)
 3. Click **Play** ▶️
 
@@ -106,7 +106,7 @@ Once this works, then try `dht22_thingspeak.ino`
 ## 🐛 Still Getting the Error?
 
 ### Check 1: Which File is Actually Open?
-Look at the **file name** in the LeapForge editor tab. Is it:
+Look at the **file name** in the Electra editor tab. Is it:
 - ✅ `dht22_thingspeak.ino` - Good!
 - ✅ `wifi_test_simple.ino` - Good!
 - ❌ Something else - Wrong file!
@@ -247,4 +247,4 @@ Once `wifi_test_simple.ino` works:
 
 **The fix is simple: Open the correct file!** 🎯
 
-All the fixed code is ready - you just need to load it in LeapForge.
+All the fixed code is ready - you just need to load it in Electra.

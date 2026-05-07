@@ -113,8 +113,8 @@ ipcMain.handle('read-bin-file', async (_, filePath) => {
 ## Files Modified
 
 1. **`electron/main.js`** - Added `read-bin-file` IPC handler (CRITICAL FIX)
-2. `src/modules/leapforge/engine/esp32c3/ESP32C3SimulationRunner.ts` - Enhanced diagnostics
-3. `src/modules/leapforge/engine/SimulationRunner.ts` - Improved error handling
+2. `src/modules/electra/engine/esp32c3/ESP32C3SimulationRunner.ts` - Enhanced diagnostics
+3. `src/modules/electra/engine/SimulationRunner.ts` - Improved error handling
 4. `ESP32_ILLEGAL_INSTRUCTION_FIX.md` - Updated documentation
 
 ## Verification Steps
@@ -145,7 +145,7 @@ To prevent similar issues in the future:
 ## Related Documentation
 
 - `ESP32_ILLEGAL_INSTRUCTION_FIX.md` - Detailed diagnostic guide
-- `src/modules/leapforge/engine/esp32c3/README.md` - ESP32-C3 architecture
+- `src/modules/electra/engine/esp32c3/README.md` - ESP32-C3 architecture
 - `SIMULATION_ARCHITECTURE.md` - Overall simulation design
 
 ---

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented realistic physics simulation for stepper motors in Leapforge, focusing on a "working concept" approach that provides realistic motion without the computational overhead of exact physics simulation.
+Successfully implemented realistic physics simulation for stepper motors in Electra, focusing on a "working concept" approach that provides realistic motion without the computational overhead of exact physics simulation.
 
 ## What Was Implemented
 
@@ -289,12 +289,12 @@ The implementation strikes the perfect balance between realism and performance, 
 
 ## Files Modified
 
-1. **`src/Leapforge/Client/Src/engine/Arduino/StepperEmulator.ts`**
+1. **`src/Electra/Client/Src/engine/Arduino/StepperEmulator.ts`**
    - Added physics simulation properties and methods
    - Implemented spring-damper model
    - Added 60 Hz update loop
 
-2. **`src/Leapforge/Client/Src/engine/Arduino/CircuitEngine.ts`**
+2. **`src/Electra/Client/Src/engine/Arduino/CircuitEngine.ts`**
    - Updated all stepper emulator callbacks
    - Integrated smooth angle rendering
    - Maintained backward compatibility

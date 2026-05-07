@@ -148,7 +148,7 @@ app.post('/compile', async (req, res) => {
   }
 
   const sketchId = `sketch_${Date.now()}`;
-  const sketchDir = path.join(os.tmpdir(), 'leapforge', sketchId);
+  const sketchDir = path.join(os.tmpdir(), 'electra', sketchId);
   const sketchFile = path.join(sketchDir, `${sketchId}.ino`);
 
   try {
@@ -197,7 +197,7 @@ app.post('/transpile', async (req, res) => {
   // Step 1: Validate the sketch by compiling with arduino-cli (catches syntax errors)
   if (isInitialized) {
     const sketchId = `transpile_${Date.now()}`;
-    const sketchDir = path.join(os.tmpdir(), 'leapforge', sketchId);
+    const sketchDir = path.join(os.tmpdir(), 'electra', sketchId);
     const sketchFile = path.join(sketchDir, `${sketchId}.ino`);
     try {
       fs.mkdirSync(sketchDir, { recursive: true });
@@ -318,6 +318,6 @@ app.delete('/libraries/remove', async (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, async () => {
-  console.log(`LeapForge Compiler Server running on :${PORT}`);
+  console.log(`Electra Compiler Server running on :${PORT}`);
   await initCores();
 });

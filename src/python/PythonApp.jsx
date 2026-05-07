@@ -41,7 +41,7 @@ import {
     File,
     Share,
 } from "lucide-react";
-import { fileService } from "../Leapforge/Client/Src/services/FileService";
+import { fileService } from "../Electra/Client/Src/services/FileService";
 import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
 import SerialMonitor from "../components/SerialMonitor";

@@ -80,7 +80,7 @@ Comprehensive timing logs have been added throughout the entire startup process 
 - PythonNotebook
 - AppInventor
 - AppForgeStudio
-- LeapForgeStudio
+- ElectraStudio
 - NeuraApp
 
 **Log Format:**
@@ -95,7 +95,7 @@ Comprehensive timing logs have been added throughout the entire startup process 
 [APP TIMING] 245.80ms - LandingPage lazy load completed
 ```
 
-### 4. LeapForge Store (`src/modules/leapforge/store/useForgeStore.ts`)
+### 4. Electra Store (`src/modules/electra/store/useForgeStore.ts`)
 **Timing Variable:** `STORE_LOAD_START` (performance.now())
 
 **Logged Events:**
@@ -136,10 +136,10 @@ Comprehensive timing logs have been added throughout the entire startup process 
 
 ### Module Navigation Sequence
 ```
-User clicks "LeapForge"
-1. [APP TIMING] Mode changed to: leapforge
-2. [APP TIMING] LeapForgeStudio lazy load started
-3. [APP TIMING] LeapForgeStudio lazy load completed
+User clicks "Electra"
+1. [APP TIMING] Mode changed to: electra
+2. [APP TIMING] ElectraStudio lazy load started
+3. [APP TIMING] ElectraStudio lazy load completed
 4. [STORE TIMING] Store module started loading (if first time)
 5. [STORE TIMING] Lazy loaders defined
 ```
@@ -175,7 +175,7 @@ Renderer Process:
 Module Loading (On-Demand):
   LandingPage:      100-200ms
   IntermediateApp:  300-600ms (Blockly is heavy)
-  LeapForgeStudio:  200-400ms
+  ElectraStudio:  200-400ms
   SimulationRunner: 300-500ms (AVR8js is heavy)
   CircuitEngine:    100-200ms
 ```
@@ -215,11 +215,11 @@ Ensure heavy modules don't load at startup:
 ✅ Good:
 [APP TIMING] 2.15ms - All lazy components defined
 [RENDERER TIMING] 250ms - Browser idle
-[APP TIMING] 1200ms - LeapForgeStudio lazy load started  # After user action
+[APP TIMING] 1200ms - ElectraStudio lazy load started  # After user action
 
 ❌ Bad:
 [APP TIMING] 2.15ms - All lazy components defined
-[APP TIMING] 50ms - LeapForgeStudio lazy load started  # Too early!
+[APP TIMING] 50ms - ElectraStudio lazy load started  # Too early!
 [RENDERER TIMING] 2500ms - Browser idle  # Too slow!
 ```
 
@@ -250,14 +250,14 @@ Verify engines load once and cache:
 ```bash
 # Launch app
 # Wait for "Browser idle"
-# Click "LeapForge"
+# Click "Electra"
 # Check console for lazy load timing
 # Verify module loads in < 500ms
 ```
 
 ### 3. Simulation Start Test
 ```bash
-# Navigate to LeapForge
+# Navigate to Electra
 # Click "Run Simulation"
 # Check console for engine load timing
 # Verify engines load in < 1000ms total

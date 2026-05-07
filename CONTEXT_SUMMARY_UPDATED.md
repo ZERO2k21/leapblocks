@@ -70,7 +70,7 @@ readBinFile: (filePath) => {
 - `dist/main/index.js` - Built main process ✅
 - `dist/preload/preload.js` - Built preload ✅
 - `electron/main.js` - Electron entry point
-- `src/modules/leapforge/engine/SimulationRunner.ts` - Calls readBinFile
+- `src/modules/electra/engine/SimulationRunner.ts` - Calls readBinFile
 
 ### Expected Behavior After Restart
 1. Compile ESP32 code → generates `.bin` file

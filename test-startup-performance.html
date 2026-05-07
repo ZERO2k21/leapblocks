@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LeapForge Startup Performance Test</title>
+    <title>Electra Startup Performance Test</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -69,7 +69,7 @@
     </style>
 </head>
 <body>
-    <h1>🚀 LeapForge Startup Performance Test</h1>
+    <h1>🚀 Electra Startup Performance Test</h1>
     
     <div class="instructions">
         <h3>Test Instructions:</h3>
@@ -122,7 +122,7 @@
             
             try {
                 // This should be fast now - no heavy engines loaded
-                const { useForgeStore } = await import('./src/modules/leapforge/store/useForgeStore.ts');
+                const { useForgeStore } = await import('./src/modules/electra/store/useForgeStore.ts');
                 
                 const end = performance.now();
                 const duration = (end - start).toFixed(2);
@@ -159,7 +159,7 @@
             try {
                 // Import store (should be fast)
                 const storeStart = performance.now();
-                const { useForgeStore } = await import('./src/modules/leapforge/store/useForgeStore.ts');
+                const { useForgeStore } = await import('./src/modules/electra/store/useForgeStore.ts');
                 const storeEnd = performance.now();
                 
                 // Try to trigger engine load by calling an action

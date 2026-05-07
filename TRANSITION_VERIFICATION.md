@@ -22,8 +22,8 @@ Please follow this checklist to verify the successful transition of the codebase
 - [ ] **Package Verification:** Check that both `package.json` and `server/package.json` have `"license": "UNLICENSED"` and `"private": true`.
 - [ ] **Source Verification (src/):** Spot-check at least one `.ts` or `.tsx` file inside `src/` to ensure the Creoleap copyright header was injected at the top.
 - [ ] **Source Verification (server/ root):** Spot-check `server/index.ts` to ensure the Creoleap copyright header was injected at the top.
-- [ ] **Vendor Verification (avr8js):** Ensure files inside `src/modules/leapforge/lib/avr8js/` are untouched.
-- [ ] **Vendor Verification (leap-elements):** Ensure files inside `src/modules/leapforge/elements/leap-elements/` are untouched.
+- [ ] **Vendor Verification (avr8js):** Ensure files inside `src/modules/electra/lib/avr8js/` are untouched.
+- [ ] **Vendor Verification (leap-elements):** Ensure files inside `src/modules/electra/elements/leap-elements/` are untouched.
 - [ ] **Exclusion Verification:** Confirm `arduino-cli/` and `cp210x_drivers/` were not modified.
 - [ ] **Licenses Document:** Confirm `THIRD_PARTY_LICENSES.md` exists exactly at the project root with the MIT credits.
 

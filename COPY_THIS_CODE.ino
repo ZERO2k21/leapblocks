@@ -1,8 +1,8 @@
 /**
- * COPY THIS CODE INTO LEAPFORGE
+ * COPY THIS CODE INTO ELECTRA
  * 
  * This is the CORRECT code without errors.
- * Copy everything below into your LeapForge editor.
+ * Copy everything below into your Electra editor.
  */
 
 #include <WiFi.h>
@@ -102,7 +102,7 @@ void loop() {
  * INSTRUCTIONS:
  * 
  * 1. Copy ALL of this code
- * 2. Paste into LeapForge editor
+ * 2. Paste into Electra editor
  * 3. Select ESP32-C3 board
  * 4. Click Play
  * 

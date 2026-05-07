@@ -101,7 +101,7 @@ Returns ArrayBuffer to renderer
 - `dist/main/index.js` - Built main process (handler compiled here)
 - `dist/preload/preload.js` - Built preload (API compiled here)
 - `electron/main.js` - Electron entry point (loads preload from dist)
-- `src/modules/leapforge/engine/SimulationRunner.ts` - Calls readBinFile
+- `src/modules/electra/engine/SimulationRunner.ts` - Calls readBinFile
 
 ## Status
 ✅ **RESOLVED** - No code changes needed, just restart the app

@@ -12,8 +12,8 @@ const headerText = `/**
 `;
 
 const excludedPaths = [
-    path.normalize('src/modules/leapforge/lib/avr8js'),
-    path.normalize('src/modules/leapforge/elements/leap-elements'),
+    path.normalize('src/modules/electra/lib/avr8js'),
+    path.normalize('src/modules/electra/elements/leap-elements'),
     path.normalize('arduino-cli'),
     path.normalize('cp210x_drivers'),
     path.normalize('node_modules'),

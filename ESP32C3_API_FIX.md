@@ -158,7 +158,7 @@ ESP32-C3 has a 12-bit ADC (0-4095 range):
 Formula: `adcValue = (voltage / 5.0) * 4095`
 
 ## Files Modified
-- `src/modules/leapforge/engine/SimulationRunner.ts` - Fixed API calls to match ESP32C3SimulationRunner
+- `src/modules/electra/engine/SimulationRunner.ts` - Fixed API calls to match ESP32C3SimulationRunner
 
 ## Status
 ✅ All TypeScript errors resolved  

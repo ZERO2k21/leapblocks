@@ -238,7 +238,7 @@ delay(20000);  // 20 seconds - Safe for ThingSpeak ✅
 ## 🎯 Why These Changes Work
 
 ### HTTPClient vs ThingSpeak Library
-- **ThingSpeak library**: Convenient wrapper, but not available in LeapForge
+- **ThingSpeak library**: Convenient wrapper, but not available in Electra
 - **HTTPClient**: Built-in ESP32 library, makes direct HTTP requests
 - **Result**: Same functionality, more control, works everywhere
 

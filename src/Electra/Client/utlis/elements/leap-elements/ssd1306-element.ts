@@ -1,4 +1,4 @@
-// Reference: leapblocks/src/Leapforge/Client/Assets/oled.svg
+// Reference: leapblocks/src/Electra/Client/Assets/oled.svg
 // Monochrome 128x64 OLED display with I2C interface
 // Default I2C address: 0x3C (60). Some modules use 0x3D.
 import { css, html, LitElement } from 'lit';
@@ -137,7 +137,7 @@ export class SSD1306Element extends LitElement {
     return html`
       <div class="oled-wrap">
         <img
-          src="/src/Leapforge/Client/Assets/oled.svg"
+          src="/src/Electra/Client/Assets/oled.svg"
           alt="SSD1306 OLED"
           draggable="false"
         />

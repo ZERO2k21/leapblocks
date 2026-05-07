@@ -19,7 +19,7 @@ The app has the following optimizations already in place:
    - Load only when user navigates to them
 
 3. **Prefetch Disabled** (`App.tsx`)
-   - Heavy modules (LeapForge, Blockly) don't preload
+   - Heavy modules (Electra, Blockly) don't preload
    - Only load when user actually needs them
 
 4. **Timing Logs** (`App.tsx`)

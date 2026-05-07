@@ -6,8 +6,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const jsonPath = path.join(__dirname, '../src/Leapforge/Client/Src/engine/Arduino/PinHarness.json');
-const tsPath = path.join(__dirname, '../src/Leapforge/Client/Src/engine/Arduino/PinHarness.ts');
+const jsonPath = path.join(__dirname, '../src/Electra/Client/Src/engine/Arduino/PinHarness.json');
+const tsPath = path.join(__dirname, '../src/Electra/Client/Src/engine/Arduino/PinHarness.ts');
 
 try {
     // Read the JSON file

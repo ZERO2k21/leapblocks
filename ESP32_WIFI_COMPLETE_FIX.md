@@ -12,9 +12,9 @@
 3. `ForgeStudio.tsx` - Added `useEffect` to update WiFi status indicator
 
 **Files Modified:**
-- `src/Leapforge/Client/utlis/store/useForgeStore.ts`
-- `src/Leapforge/Client/Src/engine/Arduino/SimulationRunner.ts`
-- `src/Leapforge/Client/Src/ForgeStudio.tsx`
+- `src/Electra/Client/utlis/store/useForgeStore.ts`
+- `src/Electra/Client/Src/engine/Arduino/SimulationRunner.ts`
+- `src/Electra/Client/Src/ForgeStudio.tsx`
 
 See `WIFI_FIX_SUMMARY.md` for detailed explanation.
 
@@ -84,7 +84,7 @@ var WL_DISCONNECTED     = 6;
 ```
 
 **Files Modified:**
-- `src/Leapforge/Client/Src/services/CompilerService.ts`
+- `src/Electra/Client/Src/services/CompilerService.ts`
 
 ---
 
@@ -92,7 +92,7 @@ var WL_DISCONNECTED     = 6;
 
 To test the complete WiFi functionality:
 
-1. **Open Leapforge** and select ESP32-C3 board
+1. **Open Electra** and select ESP32-C3 board
 2. **Load the test sketch** (`test_wifi_example.ino`)
 3. **Click Run** - the sketch should now compile successfully
 4. **Check the WiFi tab** - you should see:
@@ -146,20 +146,20 @@ Updates wifiStatus state → UI displays "Connected"
 
 ## Files Modified Summary
 
-1. **`src/Leapforge/Client/utlis/store/useForgeStore.ts`**
+1. **`src/Electra/Client/utlis/store/useForgeStore.ts`**
    - Added WiFi message parsing in ESP32-C3 serial listener
    - Routes `__LF_WIFI:` messages to `appendWiFiLog()`
 
-2. **`src/Leapforge/Client/Src/engine/Arduino/SimulationRunner.ts`**
+2. **`src/Electra/Client/Src/engine/Arduino/SimulationRunner.ts`**
    - Added WiFi message parsing for RISC-V path
    - Same routing logic as store
 
-3. **`src/Leapforge/Client/Src/ForgeStudio.tsx`**
+3. **`src/Electra/Client/Src/ForgeStudio.tsx`**
    - Added `useEffect` to watch `wifiLog` changes
    - Updates `wifiStatus` state based on WiFi events
    - Displays status in UI indicator
 
-4. **`src/Leapforge/Client/Src/services/CompilerService.ts`**
+4. **`src/Electra/Client/Src/services/CompilerService.ts`**
    - Added `IPAddress` class stub
    - Added `WiFiClass` stub with common methods
    - Added `WiFi` singleton instance

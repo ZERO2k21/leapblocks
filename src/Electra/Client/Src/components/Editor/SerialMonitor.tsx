@@ -27,7 +27,7 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
     const element = document.createElement('a');
     const file = new Blob([output], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
-    element.download = `leapforge-serial-${Date.now()}.txt`;
+    element.download = `electra-serial-${Date.now()}.txt`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);

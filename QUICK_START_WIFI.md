@@ -1,9 +1,9 @@
-# Quick Start: ESP32 WiFi in LeapForge
+# Quick Start: ESP32 WiFi in Electra
 
 ## ✅ Step-by-Step Guide
 
 ### Step 1: Select ESP32-C3 Board
-1. Click the board selector in LeapForge
+1. Click the board selector in Electra
 2. Choose **ESP32-C3**
 
 ### Step 2: Load the WiFi Test Sketch

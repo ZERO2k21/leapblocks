@@ -32,7 +32,7 @@ This will automatically sync every time you save `PinHarness.json`.
 
 ## 📝 Workflow
 
-1. **Edit** `src/Leapforge/Client/Src/engine/Arduino/PinHarness.json`
+1. **Edit** `src/Electra/Client/Src/engine/Arduino/PinHarness.json`
 2. **Sync** using one of the methods above
 3. **Reload** your application to see changes
 
@@ -40,14 +40,14 @@ This will automatically sync every time you save `PinHarness.json`.
 
 - ✅ `scripts/sync-pinharness.js` - Manual sync script
 - ✅ `scripts/watch-pinharness.js` - Auto-sync file watcher
-- ✅ `src/Leapforge/Client/Src/engine/Arduino/README.md` - Detailed documentation
+- ✅ `src/Electra/Client/Src/engine/Arduino/README.md` - Detailed documentation
 - ✅ Updated `package.json` with new scripts
 
 ## 🎯 Example Usage
 
 ### Scenario: You want to update biaxial-stepper pins
 
-1. Open `src/Leapforge/Client/Src/engine/Arduino/PinHarness.json`
+1. Open `src/Electra/Client/Src/engine/Arduino/PinHarness.json`
 2. Find the `"biaxial-stepper"` section
 3. Edit the pin coordinates:
    ```json
@@ -69,7 +69,7 @@ To verify the sync worked:
 
 ```bash
 # Check if PinHarness.ts was updated
-git diff src/Leapforge/Client/Src/engine/Arduino/PinHarness.ts
+git diff src/Electra/Client/Src/engine/Arduino/PinHarness.ts
 ```
 
 ## ⚠️ Important Notes
@@ -86,4 +86,4 @@ git diff src/Leapforge/Client/Src/engine/Arduino/PinHarness.ts
 3. Check if your changes appear in the component
 
 Need help? Check the detailed README at:
-`src/Leapforge/Client/Src/engine/Arduino/README.md`
+`src/Electra/Client/Src/engine/Arduino/README.md`

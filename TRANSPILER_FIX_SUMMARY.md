@@ -57,7 +57,7 @@ var DateTime = (typeof DateTime !== 'undefined' && DateTime) || class {
 
 ## Files Modified
 
-- `src/Leapforge/Client/Src/services/CompilerService.ts` - Split DateTime class definition
+- `src/Electra/Client/Src/services/CompilerService.ts` - Split DateTime class definition
 
 ## Why This Fixes It
 

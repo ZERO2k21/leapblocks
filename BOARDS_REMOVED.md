@@ -1,8 +1,8 @@
-# 🗑️ Boards Removed from LeapForge
+# 🗑️ Boards Removed from Electra
 
 ## Summary
 
-Successfully removed the following boards from LeapForge:
+Successfully removed the following boards from Electra:
 
 1. ❌ **Arduino Mega** - Removed
 2. ❌ **Arduino Nano** - Removed  
@@ -14,7 +14,7 @@ Successfully removed the following boards from LeapForge:
 
 ## ✅ Remaining Boards
 
-LeapForge now supports only these two boards:
+Electra now supports only these two boards:
 
 1. ✅ **Arduino Uno** - Standard microcontroller (5V)
 2. ✅ **ESP32-C3** - RISC-V WiFi & Bluetooth MCU (3.3V/5V)
@@ -24,7 +24,7 @@ LeapForge now supports only these two boards:
 ## 📝 Changes Made
 
 ### 1. **Sidebar.tsx**
-**File**: `src/Leapforge/Client/Src/components/Sidebar.tsx`
+**File**: `src/Electra/Client/Src/components/Sidebar.tsx`
 
 **Before** (5 boards):
 ```typescript
@@ -50,7 +50,7 @@ const COMPONENTS = [
 ```
 
 ### 2. **CircuitAnalysisPanel.tsx**
-**File**: `src/Leapforge/Client/Src/components/CircuitAnalysis/CircuitAnalysisPanel.tsx`
+**File**: `src/Electra/Client/Src/components/CircuitAnalysis/CircuitAnalysisPanel.tsx`
 
 **Before**:
 ```typescript
@@ -70,7 +70,7 @@ const powerSource = nodes.find(n =>
 ```
 
 ### 3. **leap-elements/index.ts** ✅
-**File**: `src/Leapforge/Client/utlis/elements/leap-elements/index.ts`
+**File**: `src/Electra/Client/utlis/elements/leap-elements/index.ts`
 
 **Commented out Web Component exports** to prevent registration:
 ```typescript
@@ -84,33 +84,33 @@ const powerSource = nodes.find(n =>
 **Why this matters**: Web Components must be explicitly exported to be registered. By commenting out these exports, the components won't load into the browser, preventing them from appearing in the UI even if referenced elsewhere.
 
 ### 4. **PartPicker.tsx** ✅
-**File**: `src/Leapforge/Client/Src/components/Library/PartPicker.tsx`
+**File**: `src/Electra/Client/Src/components/Library/PartPicker.tsx`
 
 Removed unwanted boards from the "Add Component" dialog COMPONENTS array.
 
 ### 5. **CircuitEngine.ts** ✅
-**File**: `src/Leapforge/Client/Src/engine/Arduino/CircuitEngine.ts`
+**File**: `src/Electra/Client/Src/engine/Arduino/CircuitEngine.ts`
 
 Updated board node filter to only include Arduino Uno and ESP32-C3.
 
 ### 6. **useForgeStore.ts** ✅
-**File**: `src/Leapforge/Client/utlis/store/useForgeStore.ts`
+**File**: `src/Electra/Client/utlis/store/useForgeStore.ts`
 
 Commented out board mappings for removed boards.
 
 ### 7. **BoardSelector.tsx** ✅
-**File**: `src/Leapforge/Client/Src/components/BoardSelector.tsx`
+**File**: `src/Electra/Client/Src/components/BoardSelector.tsx`
 
 - Updated `BoardType` to only include `'arduino-uno'` and `'esp32-c3'`
 - Removed unwanted boards from BOARDS array
 
 ### 8. **ForgeStudio.tsx** ✅
-**File**: `src/Leapforge/Client/Src/ForgeStudio.tsx`
+**File**: `src/Electra/Client/Src/ForgeStudio.tsx`
 
 Commented out FQBN mappings for removed boards.
 
 ### 9. **react-types.ts** ✅
-**File**: `src/Leapforge/Client/utlis/elements/leap-elements/react-types.ts`
+**File**: `src/Electra/Client/utlis/elements/leap-elements/react-types.ts`
 
 - Commented out imports for removed board elements
 - Commented out JSX type definitions for removed boards
@@ -254,7 +254,7 @@ After removal, verify:
 - [ ] Circuit analysis works with both boards
 - [ ] Simulation runs on both boards
 
-**Note**: You must reload/restart the Leapforge application for all changes to take effect.
+**Note**: You must reload/restart the Electra application for all changes to take effect.
 
 ---
 
@@ -283,7 +283,7 @@ If you have projects using removed boards:
 
 **Removed**: Arduino Mega, Arduino Nano, ATtiny85  
 **Kept**: Arduino Uno, ESP32-C3  
-**Result**: Simpler, cleaner, more focused LeapForge  
+**Result**: Simpler, cleaner, more focused Electra  
 **Impact**: Minimal - most users use Uno or ESP32-C3  
 
 **The changes are complete and ready to use!** 🎉

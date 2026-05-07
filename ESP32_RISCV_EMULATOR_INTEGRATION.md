@@ -47,7 +47,7 @@ Successfully integrated the **permanent ESP32-C3 RISC-V emulator** solution, rep
 ## File Structure
 
 ```
-src/modules/leapforge/engine/esp32c3/
+src/modules/electra/engine/esp32c3/
 ├── cpu/
 │   └── RiscVCore.ts              ← RV32IMC soft-core (30 KB)
 ├── peripherals/
@@ -143,10 +143,10 @@ npm run build:electron
 ### Unit Tests Available
 ```bash
 # Run RISC-V core tests
-npx jest src/modules/leapforge/engine/esp32c3/tests/RiscVCore.test.ts
+npx jest src/modules/electra/engine/esp32c3/tests/RiscVCore.test.ts
 
 # Run platform integration tests
-npx jest src/modules/leapforge/engine/esp32c3/tests/ESP32C3Platform.test.ts
+npx jest src/modules/electra/engine/esp32c3/tests/ESP32C3Platform.test.ts
 ```
 
 ### Expected Test Coverage
@@ -221,25 +221,25 @@ npx jest src/modules/leapforge/engine/esp32c3/tests/ESP32C3Platform.test.ts
 ## Files Modified
 
 ### New Files Added
-- `src/modules/leapforge/engine/esp32c3/cpu/RiscVCore.ts` (30 KB)
-- `src/modules/leapforge/engine/esp32c3/peripherals/GPIO.ts`
-- `src/modules/leapforge/engine/esp32c3/peripherals/UART.ts`
-- `src/modules/leapforge/engine/esp32c3/peripherals/ADC.ts`
-- `src/modules/leapforge/engine/esp32c3/peripherals/I2C.ts`
-- `src/modules/leapforge/engine/esp32c3/peripherals/SPI.ts`
-- `src/modules/leapforge/engine/esp32c3/peripherals/SysTimer.ts`
-- `src/modules/leapforge/engine/esp32c3/compiler/FirmwareLoader.ts`
-- `src/modules/leapforge/engine/esp32c3/tests/RiscVCore.test.ts`
-- `src/modules/leapforge/engine/esp32c3/tests/ESP32C3Platform.test.ts`
+- `src/modules/electra/engine/esp32c3/cpu/RiscVCore.ts` (30 KB)
+- `src/modules/electra/engine/esp32c3/peripherals/GPIO.ts`
+- `src/modules/electra/engine/esp32c3/peripherals/UART.ts`
+- `src/modules/electra/engine/esp32c3/peripherals/ADC.ts`
+- `src/modules/electra/engine/esp32c3/peripherals/I2C.ts`
+- `src/modules/electra/engine/esp32c3/peripherals/SPI.ts`
+- `src/modules/electra/engine/esp32c3/peripherals/SysTimer.ts`
+- `src/modules/electra/engine/esp32c3/compiler/FirmwareLoader.ts`
+- `src/modules/electra/engine/esp32c3/tests/RiscVCore.test.ts`
+- `src/modules/electra/engine/esp32c3/tests/ESP32C3Platform.test.ts`
 
 ### Files Replaced
-- `src/modules/leapforge/engine/esp32c3/ESP32C3SimulationRunner.ts` (complete rewrite)
+- `src/modules/electra/engine/esp32c3/ESP32C3SimulationRunner.ts` (complete rewrite)
 
 ### Files Unchanged
-- `src/modules/leapforge/engine/SimulationRunner.ts`
-- `src/modules/leapforge/engine/CircuitEngine.ts`
-- `src/modules/leapforge/ForgeStudio.tsx`
-- `src/modules/leapforge/store/useForgeStore.ts`
+- `src/modules/electra/engine/SimulationRunner.ts`
+- `src/modules/electra/engine/CircuitEngine.ts`
+- `src/modules/electra/ForgeStudio.tsx`
+- `src/modules/electra/store/useForgeStore.ts`
 
 ## Summary
 

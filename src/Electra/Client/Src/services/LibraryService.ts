@@ -19,7 +19,7 @@
 
 import { IS_ELECTRON, isElectron } from '../../../../config/platform';
 import { CLOUD_COMPILER_URL } from '../../../../config/platform';
-const WEB_LIBS_KEY = 'leapforge_selected_libs';
+const WEB_LIBS_KEY = 'electra_selected_libs';
 const LIBRARY_INDEX_URL = 'https://downloads.arduino.cc/libraries/library_index.json';
 
 export interface Library {

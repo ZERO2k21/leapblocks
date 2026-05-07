@@ -1,7 +1,7 @@
 /**
  * ESP32-C3 WiFi Test Sketch
  * 
- * This sketch demonstrates WiFi functionality in Leapforge.
+ * This sketch demonstrates WiFi functionality in Electra.
  * It will trigger WiFi events that should appear in the WiFi tab.
  */
 

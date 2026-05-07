@@ -48,7 +48,7 @@ style="transform-box: fill-box; transform-origin: center center"
 
 ### Changes Made
 
-**File**: `src/Leapforge/Client/utlis/elements/leap-elements/stepper-motor-element.ts`
+**File**: `src/Electra/Client/utlis/elements/leap-elements/stepper-motor-element.ts`
 
 **1. CSS Style Block (Line ~175)**:
 ```typescript
@@ -130,7 +130,7 @@ style="transform-box: fill-box; transform-origin: center center"
 
 ### How to Verify the Fix
 
-1. **Open Leapforge**
+1. **Open Electra**
 2. **Add a stepper motor** to the canvas
 3. **Wire it to ESP32** (4-wire mode) or **A4988 driver** (STEP/DIR mode)
 4. **Upload Arduino code** that rotates the motor
@@ -161,7 +161,7 @@ The biaxial stepper motor has two shafts (inner and outer). Let me check if it h
 
 ```bash
 # Check if biaxial-stepper uses similar transform-origin
-grep -n "transform-origin" src/Leapforge/Client/utlis/elements/leap-elements/biaxial-stepper-element.ts
+grep -n "transform-origin" src/Electra/Client/utlis/elements/leap-elements/biaxial-stepper-element.ts
 ```
 
 If it shows `transform-origin` with mm units, apply the same fix.

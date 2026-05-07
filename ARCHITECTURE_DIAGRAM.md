@@ -1,4 +1,4 @@
-# LeapForge WiFi/HTTP Architecture
+# Electra WiFi/HTTP Architecture
 
 ## System Architecture
 
@@ -180,7 +180,7 @@
 
 ## Comparison with Wokwi
 
-| Feature | Wokwi | LeapForge |
+| Feature | Wokwi | Electra |
 |---------|-------|-----------|
 | ESP32 WiFi | ✅ Yes | ✅ Yes |
 | Arduino WiFi | ❌ No | ❌ No |
@@ -193,7 +193,7 @@
 
 ## Key Differences from Physical ESP32
 
-| Feature | Physical ESP32 | LeapForge Simulation |
+| Feature | Physical ESP32 | Electra Simulation |
 |---------|----------------|---------------------|
 | Network | Real WiFi chip | Host computer network |
 | Protocol | TCP/IP stack | Browser fetch() API |

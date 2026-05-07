@@ -1,6 +1,6 @@
 # 🔧 ThingSpeak Troubleshooting Guide
 
-Quick solutions to common problems when using ThingSpeak with ESP32 in LeapForge.
+Quick solutions to common problems when using ThingSpeak with ESP32 in Electra.
 
 ---
 
@@ -40,7 +40,7 @@ fatal error: ThingSpeak.h: No such file or directory
 ```
 
 ### Cause
-LeapForge doesn't have the ThingSpeak library.
+Electra doesn't have the ThingSpeak library.
 
 ### Solution
 **Use the Fixed File**
@@ -157,7 +157,7 @@ Wifi not connected
 WiFi connection is stuck in connecting state.
 
 ### Solution
-**In LeapForge, WiFi is simulated:**
+**In Electra, WiFi is simulated:**
 - Any SSID/password will work
 - Connection should happen instantly
 
@@ -236,7 +236,7 @@ dhtSensor.setup(DHT_PIN, DHTesp::DHT22);  // DHT22, not DHT11
 ```
 
 **4. Add Sensor Component**
-- In LeapForge, add DHT22 component to circuit
+- In Electra, add DHT22 component to circuit
 - Sensor values are simulated
 - Adjust values in component UI
 

@@ -131,26 +131,26 @@ LED might not be wired to GPIO pins.
 ## Files Verified
 
 ### Configuration Files ✅
-- `src/modules/leapforge/components/Sidebar.tsx`
-- `src/modules/leapforge/components/BoardSelector.tsx`
-- `src/modules/leapforge/store/useForgeStore.ts`
-- `src/modules/leapforge/ForgeStudio.tsx`
+- `src/modules/electra/components/Sidebar.tsx`
+- `src/modules/electra/components/BoardSelector.tsx`
+- `src/modules/electra/store/useForgeStore.ts`
+- `src/modules/electra/ForgeStudio.tsx`
 
 ### Simulation Files ✅
-- `src/modules/leapforge/engine/SimulationRunner.ts`
-- `src/modules/leapforge/engine/CircuitEngine.ts`
-- `src/modules/leapforge/engine/ESP32BoardConfig.ts`
+- `src/modules/electra/engine/SimulationRunner.ts`
+- `src/modules/electra/engine/CircuitEngine.ts`
+- `src/modules/electra/engine/ESP32BoardConfig.ts`
 
 ### Emulator Files ✅
-- `src/modules/leapforge/engine/esp32c3/cpu/RiscVCore.ts`
-- `src/modules/leapforge/engine/esp32c3/peripherals/GPIO.ts`
-- `src/modules/leapforge/engine/esp32c3/peripherals/UART.ts`
-- `src/modules/leapforge/engine/esp32c3/peripherals/ADC.ts`
-- `src/modules/leapforge/engine/esp32c3/peripherals/I2C.ts`
-- `src/modules/leapforge/engine/esp32c3/peripherals/SPI.ts`
-- `src/modules/leapforge/engine/esp32c3/peripherals/SysTimer.ts`
-- `src/modules/leapforge/engine/esp32c3/compiler/FirmwareLoader.ts`
-- `src/modules/leapforge/engine/esp32c3/ESP32C3SimulationRunner.ts`
+- `src/modules/electra/engine/esp32c3/cpu/RiscVCore.ts`
+- `src/modules/electra/engine/esp32c3/peripherals/GPIO.ts`
+- `src/modules/electra/engine/esp32c3/peripherals/UART.ts`
+- `src/modules/electra/engine/esp32c3/peripherals/ADC.ts`
+- `src/modules/electra/engine/esp32c3/peripherals/I2C.ts`
+- `src/modules/electra/engine/esp32c3/peripherals/SPI.ts`
+- `src/modules/electra/engine/esp32c3/peripherals/SysTimer.ts`
+- `src/modules/electra/engine/esp32c3/compiler/FirmwareLoader.ts`
+- `src/modules/electra/engine/esp32c3/ESP32C3SimulationRunner.ts`
 
 ### IPC Files ✅
 - `src/index.ts` (IPC handler)

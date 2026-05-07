@@ -20,7 +20,7 @@ const PORT = Number(process.env.TCP_PROXY_PORT ?? 3002);
 
 const server = http.createServer((_req, res) => {
     res.writeHead(200);
-    res.end('LeapForge TCP Proxy');
+    res.end('Electra TCP Proxy');
 });
 
 const wss = new WebSocketServer({ server });
@@ -72,5 +72,5 @@ wss.on('connection', (ws: WebSocket, req: http.IncomingMessage) => {
 });
 
 server.listen(PORT, () => {
-    console.log(`[LeapForge TCP Proxy] Listening on :${PORT}`);
+    console.log(`[Electra TCP Proxy] Listening on :${PORT}`);
 });

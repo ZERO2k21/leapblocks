@@ -93,7 +93,7 @@ The firmware scanner will now work correctly when the user compiles an ESP32 ske
 ### TASK 2: Implement ESP32-C3 RISC-V Simulation Engine ✅
 - Created mock RISC-V emulator architecture
 - Implemented firmware-scan strategy for GPIO detection
-- **Files**: `src/modules/leapforge/engine/esp32c3/RiscVCore.ts`, `ESP32C3SimulationRunner.ts`
+- **Files**: `src/modules/electra/engine/esp32c3/RiscVCore.ts`, `ESP32C3SimulationRunner.ts`
 
 ### TASK 3: Remove ESP32 Classic (QEMU-based) Implementation ✅
 - Removed all QEMU references from codebase
@@ -159,6 +159,6 @@ preload: isDev
 - Main IPC handler: `src/index.ts` line ~807
 - Preload source: `src/preload.ts`
 - Preload build output: `dist/preload/preload.js`
-- Simulation runner: `src/modules/leapforge/engine/SimulationRunner.ts`
-- ESP32-C3 runner: `src/modules/leapforge/engine/esp32c3/ESP32C3SimulationRunner.ts`
-- Circuit engine LED fix: `src/modules/leapforge/engine/CircuitEngine.ts` line ~501-503
+- Simulation runner: `src/modules/electra/engine/SimulationRunner.ts`
+- ESP32-C3 runner: `src/modules/electra/engine/esp32c3/ESP32C3SimulationRunner.ts`
+- Circuit engine LED fix: `src/modules/electra/engine/CircuitEngine.ts` line ~501-503

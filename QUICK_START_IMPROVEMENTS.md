@@ -1,4 +1,4 @@
-# Leapforge - Quick Start Improvement Guide
+# Electra - Quick Start Improvement Guide
 
 ## 🚀 Start Here: Top 20 Quick Wins
 
@@ -40,8 +40,8 @@ validateCircuit() {
 ```
 
 **Files to modify**:
-- `src/Leapforge/Client/Src/engine/CircuitEngine.ts`
-- `src/Leapforge/Client/Src/components/ForgeCanvas.tsx`
+- `src/Electra/Client/Src/engine/CircuitEngine.ts`
+- `src/Electra/Client/Src/components/ForgeCanvas.tsx`
 
 ---
 
@@ -75,7 +75,7 @@ monaco.languages.registerCompletionItemProvider('cpp', {
 ```
 
 **Files to modify**:
-- `src/Leapforge/Client/Src/components/Editor/ForgeEditor.tsx`
+- `src/Electra/Client/Src/components/Editor/ForgeEditor.tsx`
 
 ---
 
@@ -98,12 +98,12 @@ Error: Compilation failed
 💡 Tip: Did you forget to include the pin mode?
 Try adding: pinMode(13, INPUT);
 
-📚 Learn more: https://docs.leapforge.io/digitalRead
+📚 Learn more: https://docs.electra.io/digitalRead
 ```
 
 **Files to modify**:
-- `src/Leapforge/Client/Src/services/CompilerService.ts`
-- `src/Leapforge/Client/Src/components/Editor/ForgeEditor.tsx`
+- `src/Electra/Client/Src/services/CompilerService.ts`
+- `src/Electra/Client/Src/components/Editor/ForgeEditor.tsx`
 
 ---
 
@@ -138,7 +138,7 @@ return (
 ```
 
 **Files to modify**:
-- `src/Leapforge/Client/Src/components/Sidebar.tsx`
+- `src/Electra/Client/Src/components/Sidebar.tsx`
 
 ---
 
@@ -181,7 +181,7 @@ useEffect(() => {
 ```
 
 **Files to modify**:
-- `src/Leapforge/Client/Src/ForgeStudio.tsx`
+- `src/Electra/Client/Src/ForgeStudio.tsx`
 
 ---
 
@@ -224,7 +224,7 @@ const redo = () => {
 ```
 
 **Files to modify**:
-- `src/Leapforge/Client/utlis/store/useForgeStore.ts`
+- `src/Electra/Client/utlis/store/useForgeStore.ts`
 
 ---
 
@@ -242,8 +242,8 @@ const redo = () => {
 5. **RGB LED Control**: PWM color mixing
 
 **Files to create**:
-- `src/Leapforge/Client/templates/blink-led.json`
-- `src/Leapforge/Client/templates/button-input.json`
+- `src/Electra/Client/templates/blink-led.json`
+- `src/Electra/Client/templates/button-input.json`
 - etc.
 
 ---
@@ -599,7 +599,7 @@ After completing these 20 quick wins, move on to the comprehensive improvement c
 
 ## 📞 Need Help?
 
-- **Technical questions**: Check `LEAPFORGE_ANALYSIS.md`
+- **Technical questions**: Check `ELECTRA_ANALYSIS.md`
 - **Full checklist**: See `IMPROVEMENT_CHECKLIST.md`
 - **Overview**: Read `EXECUTIVE_SUMMARY.md`
 

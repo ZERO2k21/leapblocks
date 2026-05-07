@@ -2,7 +2,7 @@
 
 ## Overview
 
-A comprehensive educational tool that teaches students circuit theory concepts through real-time analysis of their circuits in LeapForge.
+A comprehensive educational tool that teaches students circuit theory concepts through real-time analysis of their circuits in Electra.
 
 ---
 
@@ -194,7 +194,7 @@ Analysis:
 
 ## 🔧 Integration
 
-### To Add to LeapForge:
+### To Add to Electra:
 
 1. **Import the component** in ForgeStudio.tsx:
 ```typescript

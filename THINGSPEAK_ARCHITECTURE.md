@@ -1,6 +1,6 @@
 # 🏗️ ThingSpeak Integration Architecture
 
-Visual guide to how ESP32 + DHT22 + ThingSpeak works in LeapForge.
+Visual guide to how ESP32 + DHT22 + ThingSpeak works in Electra.
 
 ---
 
@@ -8,7 +8,7 @@ Visual guide to how ESP32 + DHT22 + ThingSpeak works in LeapForge.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         LeapForge IDE                           │
+│                         Electra IDE                           │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │                    Your Arduino Code                      │  │
 │  │  ┌─────────────────────────────────────────────────────┐  │  │

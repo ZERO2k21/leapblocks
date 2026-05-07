@@ -11,7 +11,7 @@ You're running the **WRONG CODE**. The error shows you're still using your origi
 1. **Open file**: `COPY_THIS_CODE.ino`
 2. **Select ALL** the code (Ctrl+A)
 3. **Copy** it (Ctrl+C)
-4. **Paste** into LeapForge editor (Ctrl+V)
+4. **Paste** into Electra editor (Ctrl+V)
 5. **Select board**: ESP32-C3
 6. **Click Play** ▶️
 
@@ -27,7 +27,7 @@ You're running the **WRONG CODE**. The error shows you're still using your origi
 
 ## How to Verify You Have the Right Code
 
-**Look at your code in the LeapForge editor.**
+**Look at your code in the Electra editor.**
 
 Find the line that says `WiFi.begin(...)`
 
@@ -131,7 +131,7 @@ Setup complete! Entering loop...
 ## Still Not Working?
 
 **Take a screenshot of:**
-1. The code in your LeapForge editor (especially the `WiFi.begin()` line)
+1. The code in your Electra editor (especially the `WiFi.begin()` line)
 2. The error message
 
 This will help identify the issue.

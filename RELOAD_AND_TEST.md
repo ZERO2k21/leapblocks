@@ -8,7 +8,7 @@ I've fixed the transpiler error by breaking up very long lines in the library st
 
 ## 🚀 What to Do Now (2 Steps)
 
-### Step 1: Reload LeapForge
+### Step 1: Reload Electra
 
 The code has been updated, but you need to reload the application:
 
@@ -111,7 +111,7 @@ var Adafruit_ILI9341 = (typeof Adafruit_ILI9341 !== 'undefined' && Adafruit_ILI9
 
 ## 📋 Quick Checklist
 
-- [ ] Reload LeapForge (Ctrl+R or wait for auto-reload)
+- [ ] Reload Electra (Ctrl+R or wait for auto-reload)
 - [ ] Open `dht22_thingspeak.ino`
 - [ ] Select ESP32-C3 board
 - [ ] Click Play ▶️

@@ -1,12 +1,12 @@
 # Third-Party Licenses
 
-This document outlines the third-party open-source libraries incorporated into the LeapForge module, along with their respective license agreements.
+This document outlines the third-party open-source libraries incorporated into the Electra module, along with their respective license agreements.
 
 ---
 
 ### avr8js
 
-**Repository/Location:** `src/modules/leapforge/lib/avr8js`  
+**Repository/Location:** `src/modules/electra/lib/avr8js`  
 **Copyright:** Copyright (c) 2019-2025 Uri Shaked and contributors  
 **Additional Credits:** Portions of utility files credit Michael Conrad Tadpol Tilstra (2012)
 
@@ -36,7 +36,7 @@ SOFTWARE.
 
 ### leap-elements
 
-**Repository/Location:** `src/modules/leapforge/elements/leap-elements`  
+**Repository/Location:** `src/modules/electra/elements/leap-elements`  
 **Copyright:** Copyright (c) 2020 Uri Shaked
 
 **License (MIT Lincense):**

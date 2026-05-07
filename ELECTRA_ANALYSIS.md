@@ -1,8 +1,8 @@
-# Leapforge Circuit Simulation Platform - Comprehensive Analysis
+# Electra Circuit Simulation Platform - Comprehensive Analysis
 
 ## 📋 Executive Summary
 
-**Leapforge** is an advanced Arduino/ESP32 circuit simulation and development platform built with modern web technologies. It provides a visual circuit designer with real-time simulation capabilities, code editing, and hardware emulation.
+**Electra** is an advanced Arduino/ESP32 circuit simulation and development platform built with modern web technologies. It provides a visual circuit designer with real-time simulation capabilities, code editing, and hardware emulation.
 
 ### Core Technology Stack
 - **Frontend**: React 19, TypeScript, Lit Elements (Web Components)
@@ -17,7 +17,7 @@
 
 ## 🏗️ Architecture Overview
 
-### 1. **Client Architecture** (`src/Leapforge/Client/`)
+### 1. **Client Architecture** (`src/Electra/Client/`)
 
 #### A. **Main Application** (`ForgeStudio.tsx`)
 - Split-pane interface: Code Editor (left) + Circuit Canvas (right)
@@ -47,7 +47,7 @@
 - **ProjectService**: Handles project save/load operations
 - **FileService**: File system operations
 
-### 2. **Server Architecture** (`src/Leapforge/server/`)
+### 2. **Server Architecture** (`src/Electra/server/`)
 - **TCP Proxy**: Bridges web simulation to real hardware
 - **Transpiler**: Converts Arduino C++ to JavaScript for ESP32 simulation
 - **Compilation API**: Remote compilation service
@@ -434,7 +434,7 @@ npm run watch:pinharness # Auto-sync on changes
 
 ## 📝 Conclusion
 
-Leapforge is a **powerful and innovative** circuit simulation platform with a solid foundation. The architecture is well-designed, using modern web technologies and a modular component system. The main areas for improvement are:
+Electra is a **powerful and innovative** circuit simulation platform with a solid foundation. The architecture is well-designed, using modern web technologies and a modular component system. The main areas for improvement are:
 
 1. **Simulation accuracy and features**
 2. **Circuit validation and safety**
@@ -442,7 +442,7 @@ Leapforge is a **powerful and innovative** circuit simulation platform with a so
 4. **Component library expansion**
 5. **Documentation and tutorials**
 
-With focused development on these areas, Leapforge can become a leading platform for Arduino/ESP32 education and prototyping.
+With focused development on these areas, Electra can become a leading platform for Arduino/ESP32 education and prototyping.
 
 ---
 

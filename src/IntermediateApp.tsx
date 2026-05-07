@@ -79,7 +79,7 @@ import UnsavedWarningModal from './leapignite/client/components/UnsavedWarningMo
 import { EXTENSIONS, registerExtensions } from './extensions/extensionDefinitions';
 
 
-import { fileService } from './Leapforge/Client/Src/services/FileService';
+import { fileService } from './Electra/Client/Src/services/FileService';
 import { registerLeapRenderer } from './leapignite/server/blocks/LeapRenderer';
 
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';

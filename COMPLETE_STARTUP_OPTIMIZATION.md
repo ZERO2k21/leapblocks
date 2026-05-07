@@ -13,7 +13,7 @@ Ensure NO heavy libraries (Ignite, Embed, Neura, Forge, Codex, Vision3D, Quiz, C
 // Prefetch the most-likely next screens after the landing page has painted
 React.useEffect(() => {
     const prefetch = () => {
-        import('./modules/leapforge/ForgeStudio');  // ❌ Loads LeapForge early
+        import('./modules/electra/ForgeStudio');  // ❌ Loads Electra early
         import('./IntermediateApp');                 // ❌ Loads Blockly early
     };
     requestIdleCallback(prefetch, { timeout: 5000 });
@@ -23,7 +23,7 @@ React.useEffect(() => {
 **After:**
 ```typescript
 // REMOVED: Prefetch disabled - modules load only when user navigates to them
-// This prevents loading heavy modules (LeapForge, Blockly) that user may never use
+// This prevents loading heavy modules (Electra, Blockly) that user may never use
 ```
 
 **Impact:** Saves ~2MB of JavaScript from loading at startup
@@ -69,8 +69,8 @@ const zip = await JSZip.loadAsync(buffer);
 
 **Impact:** Saves ~100KB from initial bundle
 
-### 4. Lazy-Load LeapForge Engines ✅
-**File:** `src/modules/leapforge/store/useForgeStore.ts`
+### 4. Lazy-Load Electra Engines ✅
+**File:** `src/modules/electra/store/useForgeStore.ts`
 
 **Before:**
 ```typescript
@@ -140,7 +140,7 @@ app.on('ready', () => {
 - PythonNotebook - when user clicks "Notebook"
 - AppInventor - when user clicks "App Inventor"
 - AppForgeStudio - when user clicks "App Forge"
-- LeapForgeStudio - when user clicks "LeapForge"
+- ElectraStudio - when user clicks "Electra"
 - NeuraApp - when user clicks "Neura"
 ```
 
@@ -161,7 +161,7 @@ app.on('ready', () => {
 Initial Bundle:     2.8 MB
   - React/ReactDOM:   170 KB
   - App code:         200 KB
-  - LeapForge:        800 KB (prefetched)
+  - Electra:        800 KB (prefetched)
   - Blockly:          600 KB (prefetched)
   - AVR8js:           500 KB (loaded with store)
   - JSZip:            100 KB
@@ -178,7 +178,7 @@ Initial Bundle:     207 KB (compressed)
   - LandingPage:       17 KB
 
 Lazy Chunks:
-  - LeapForge:        800 KB (loads on navigation)
+  - Electra:        800 KB (loads on navigation)
   - Blockly:          600 KB (loads on navigation)
   - AVR8js:           500 KB (loads on simulation)
   - JSZip:            100 KB (loads on Lottie)
@@ -219,10 +219,10 @@ Time to Interactive: <1 second
 - **Size:** ~350KB
 - **Not loaded at startup** ✅
 
-### ✅ Forge (LeapForge Circuit Simulator)
+### ✅ Forge (Electra Circuit Simulator)
 - **Status:** Lazy-loaded via React.lazy()
 - **Engines:** Lazy-loaded on first simulation
-- **Loads:** When user clicks "LeapForge"
+- **Loads:** When user clicks "Electra"
 - **Size:** ~800KB + 500KB engines
 - **Not loaded at startup** ✅
 - **No prefetch** ✅
@@ -259,7 +259,7 @@ Time to Interactive: <1 second
 - [x] No ESP32 core check at startup
 
 ### Module Loading
-- [ ] LeapForge loads only when clicked
+- [ ] Electra loads only when clicked
 - [ ] Intermediate (Blockly) loads only when clicked
 - [ ] Python IDE loads only when clicked
 - [ ] App Inventor loads only when clicked
@@ -307,8 +307,8 @@ npm run build
    - main bundle (~200KB)
    - LandingPage chunk (~20KB)
    - CSS files
-4. Navigate to LeapForge
-5. Verify LeapForge chunk loads now
+4. Navigate to Electra
+5. Verify Electra chunk loads now
 6. Start simulation
 7. Verify engine chunks load now
 ```
@@ -331,12 +331,12 @@ If issues occur:
 ```bash
 git diff HEAD~5 src/App.tsx > app-changes.patch
 git diff HEAD~5 src/LandingPage.tsx > landing-changes.patch
-git diff HEAD~5 src/modules/leapforge/store/useForgeStore.ts > store-changes.patch
+git diff HEAD~5 src/modules/electra/store/useForgeStore.ts > store-changes.patch
 
 # To rollback:
 git checkout HEAD~5 -- src/App.tsx
 git checkout HEAD~5 -- src/LandingPage.tsx
-git checkout HEAD~5 -- src/modules/leapforge/store/useForgeStore.ts
+git checkout HEAD~5 -- src/modules/electra/store/useForgeStore.ts
 ```
 
 ## Future Optimizations

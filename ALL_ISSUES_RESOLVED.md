@@ -41,7 +41,7 @@ import { fileService } from "../../../services/FileService";
 
 To:
 ```javascript
-import { fileService } from "../../../Leapforge/Client/Src/services/FileService";
+import { fileService } from "../../../Electra/Client/Src/services/FileService";
 ```
 
 ### 5. ✅ HardwareAdapter Import Path Fixed
@@ -49,12 +49,12 @@ Fixed `src/hardware/HardwareAdapter.ts`:
 
 Changed from:
 ```typescript
-import { COMMANDS, parseResponse, buildCommand, FirmwareResponse } from '../Leapforge/firmware/firmware-protocol';
+import { COMMANDS, parseResponse, buildCommand, FirmwareResponse } from '../Electra/firmware/firmware-protocol';
 ```
 
 To:
 ```typescript
-import { COMMANDS, parseResponse, buildCommand, FirmwareResponse } from '../Leapforge/Client/Src/firmware/firmware-protocol';
+import { COMMANDS, parseResponse, buildCommand, FirmwareResponse } from '../Electra/Client/Src/firmware/firmware-protocol';
 ```
 
 ---
@@ -106,7 +106,7 @@ leapblocks/
 │   │           └── useJuniorProject.js   ✅ Fixed import path
 │   ├── python/
 │   │   └── PythonApp.jsx                 ✅ Fixed import path
-│   ├── Leapforge/
+│   ├── Electra/
 │   │   └── Client/
 │   │       └── Src/
 │   │           ├── services/

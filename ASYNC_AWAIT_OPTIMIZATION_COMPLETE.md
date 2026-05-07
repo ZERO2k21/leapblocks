@@ -147,7 +147,7 @@ React.useEffect(() => {
 // Prefetch heavy modules during idle time
 React.useEffect(() => {
   const prefetch = () => {
-    import('./modules/leapforge/ForgeStudio');
+    import('./modules/electra/ForgeStudio');
     import('./IntermediateApp');
   };
   if (typeof requestIdleCallback !== 'undefined') {
@@ -160,7 +160,7 @@ React.useEffect(() => {
 
 **Changes:**
 - ✅ `registerCustomFields` deferred to `requestIdleCallback` — doesn't block first paint
-- ✅ Added prefetch hints for `LeapForgeStudio` and `IntermediateApp` — chunks download during idle time
+- ✅ Added prefetch hints for `ElectraStudio` and `IntermediateApp` — chunks download during idle time
 
 ---
 
@@ -173,7 +173,7 @@ React.useEffect(() => {
 | **ESP32 core check** | ~300ms on every compile | 0ms (pre-checked at boot) | 300ms saved per compile |
 | **QEMU binary check** | Blocks first Run | Pre-checked in background | 0–5s saved (if download needed) |
 | **Blockly fields** | Blocks first paint | Deferred to idle | ~50–100ms faster first paint |
-| **LeapForge navigation** | Shows spinner (~500ms) | Instant (prefetched) | 500ms saved |
+| **Electra navigation** | Shows spinner (~500ms) | Instant (prefetched) | 500ms saved |
 | **QEMU serial connect** | Fixed 800ms delay | Polls until ready | 0–600ms saved (adaptive) |
 
 ---

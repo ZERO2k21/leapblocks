@@ -1,8 +1,8 @@
-# WiFi Fix Summary for Leapforge ESP32-C3
+# WiFi Fix Summary for Electra ESP32-C3
 
 ## Problem Identified
 
-The WiFi functionality in Leapforge's ESP32-C3 simulation was not working because:
+The WiFi functionality in Electra's ESP32-C3 simulation was not working because:
 
 1. **WiFi events were being injected into Arduino code** via the `__LF_WIFI:` serial output mechanism in `ArduinoUploader.ts` (lines 544-556)
 2. **But these events were never being parsed** - the serial listeners in both `SimulationRunner.ts` and `useForgeStore.ts` were only calling `appendSerial()`, not routing WiFi messages to `appendWiFiLog()`
@@ -138,9 +138,9 @@ To test the WiFi functionality:
 
 ## Files Modified
 
-1. `src/Leapforge/Client/utlis/store/useForgeStore.ts` - Added WiFi message parsing
-2. `src/Leapforge/Client/Src/engine/Arduino/SimulationRunner.ts` - Added WiFi message parsing
-3. `src/Leapforge/Client/Src/ForgeStudio.tsx` - Added WiFi status update logic
+1. `src/Electra/Client/utlis/store/useForgeStore.ts` - Added WiFi message parsing
+2. `src/Electra/Client/Src/engine/Arduino/SimulationRunner.ts` - Added WiFi message parsing
+3. `src/Electra/Client/Src/ForgeStudio.tsx` - Added WiFi status update logic
 
 ## Architecture
 

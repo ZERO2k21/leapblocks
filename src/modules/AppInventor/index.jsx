@@ -5,7 +5,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useAppState } from './hooks/useAppState';
-import { IgniteTopbar } from '../leapforge/components/Layout/IgniteTopbar';
+import { IgniteTopbar } from '../electra/components/Layout/IgniteTopbar';
 import Palette from './components/Palette';
 import PhoneCanvas from './components/PhoneCanvas';
 import PropertiesPanel from './components/PropertiesPanel';

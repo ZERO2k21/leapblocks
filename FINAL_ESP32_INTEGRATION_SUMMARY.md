@@ -184,7 +184,7 @@ runner.addSerialListener(line => console.log(line));
 
 ### Added (11 files)
 ```
-src/modules/leapforge/engine/esp32c3/
+src/modules/electra/engine/esp32c3/
 ├── cpu/RiscVCore.ts
 ├── peripherals/GPIO.ts
 ├── peripherals/UART.ts
@@ -199,15 +199,15 @@ src/modules/leapforge/engine/esp32c3/
 
 ### Replaced (1 file)
 ```
-src/modules/leapforge/engine/esp32c3/ESP32C3SimulationRunner.ts
+src/modules/electra/engine/esp32c3/ESP32C3SimulationRunner.ts
 ```
 
 ### Unchanged (4 files)
 ```
-src/modules/leapforge/engine/SimulationRunner.ts
-src/modules/leapforge/engine/CircuitEngine.ts
-src/modules/leapforge/ForgeStudio.tsx
-src/modules/leapforge/store/useForgeStore.ts
+src/modules/electra/engine/SimulationRunner.ts
+src/modules/electra/engine/CircuitEngine.ts
+src/modules/electra/ForgeStudio.tsx
+src/modules/electra/store/useForgeStore.ts
 ```
 
 ## Verification Steps
@@ -220,7 +220,7 @@ npm run build:electron
 
 ### 2. File Structure ✅
 ```bash
-ls src/modules/leapforge/engine/esp32c3/
+ls src/modules/electra/engine/esp32c3/
 # Result: All files present
 ```
 

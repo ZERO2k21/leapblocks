@@ -578,7 +578,7 @@ const config = {
 
 ## Conclusion
 
-The current Leapforge stepper motor implementation has a **solid foundation** with:
+The current Electra stepper motor implementation has a **solid foundation** with:
 - ✅ Good stepping logic
 - ✅ Speed calculation
 - ✅ Basic torque model

@@ -253,7 +253,7 @@ Arduino digitalRead(5) returns HIGH
 ## Files Modified
 
 ### Source Files
-- `src/modules/leapforge/engine/SimulationRunner.ts` - Fixed API calls
+- `src/modules/electra/engine/SimulationRunner.ts` - Fixed API calls
 
 ### Built Files (Auto-generated)
 - `dist/main/index.js` - Main process with IPC handler

@@ -1,6 +1,6 @@
 /**
  * ILI9341 2.8" SPI TFT Display — 240×320 color (RGB565)
- * Simulation element for LeapForge.
+ * Simulation element for Electra.
  *
  * SVG board: 46.5mm × 77.6mm
  * Screen area (SVG units): x≈1.62 y≈6.79 w≈43.3 h≈61.9

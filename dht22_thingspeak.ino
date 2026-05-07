@@ -1,6 +1,6 @@
 /**
  * ESP32 + DHT22 + ThingSpeak Example
- * Adapted for LeapForge from Wokwi
+ * Adapted for Electra from Wokwi
  * https://wokwi.com/arduino/projects/322410731508073042
  */
 

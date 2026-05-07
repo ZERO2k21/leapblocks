@@ -1,4 +1,4 @@
-# ThingSpeak DHT22 Example - Fixed for LeapForge
+# ThingSpeak DHT22 Example - Fixed for Electra
 
 ## 🐛 Problems in Original Code
 
@@ -16,7 +16,7 @@ WiFi.begin(WIFI_NAME, WIFI_PASSWORD);  // ❌ ERROR!
 
 ### Problem 2: ThingSpeak Library Not Available
 ```cpp
-#include "ThingSpeak.h"  // ❌ Not available in LeapForge
+#include "ThingSpeak.h"  // ❌ Not available in Electra
 ThingSpeak.begin(client);
 ThingSpeak.setField(1, data.temperature);
 ThingSpeak.writeFields(...);
@@ -58,7 +58,7 @@ ThingSpeak.writeFields(...);
 ## 📝 How to Use
 
 ### Step 1: Load the Fixed Code
-Open `dht22_thingspeak.ino` in LeapForge
+Open `dht22_thingspeak.ino` in Electra
 
 ### Step 2: Update Your ThingSpeak Credentials (if needed)
 ```cpp
@@ -140,7 +140,7 @@ Otherwise, LED is OFF.
 ## ⚠️ Important Notes
 
 ### 1. ThingSpeak Library Not Needed
-LeapForge doesn't have the ThingSpeak library, but you don't need it! The HTTPClient approach works perfectly and gives you more control.
+Electra doesn't have the ThingSpeak library, but you don't need it! The HTTPClient approach works perfectly and gives you more control.
 
 ### 2. CORS May Block Requests
 ThingSpeak API should work, but if you get CORS errors:

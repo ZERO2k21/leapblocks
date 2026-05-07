@@ -115,7 +115,7 @@ This should make the LED blink. If this works, then add the relay back.
 
 ## Summary
 
-The **ks2e-m-dc5 relay works correctly** in Leapforge. The issue is likely incorrect wiring. Make sure:
+The **ks2e-m-dc5 relay works correctly** in Electra. The issue is likely incorrect wiring. Make sure:
 
 1. ✅ COIL1 = control signal (Arduino Pin 2)
 2. ✅ COIL2 = power (Arduino 5V)

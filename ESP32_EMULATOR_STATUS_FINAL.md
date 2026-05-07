@@ -114,13 +114,13 @@ For **educational/demo purposes**:
 ## Files Modified in This Session
 
 1. `electron/main.js` — Added `read-bin-file` IPC handler
-2. `src/modules/leapforge/engine/esp32c3/cpu/RiscVCore.ts` — Stack pointer init, MMIO stub, ROM stub, null-guard, SYSTEM register defaults
-3. `src/modules/leapforge/engine/esp32c3/compiler/FirmwareLoader.ts` — Merged flash image detection, correct header size (24 bytes), IROM/DROM loading
-4. `src/modules/leapforge/engine/esp32c3/peripherals/UART.ts` — Correct register offsets from ESP-IDF source
-5. `src/modules/leapforge/engine/esp32c3/peripherals/GPIO.ts` — Fixed `GPIO_STATUS_W1TC` offset
-6. `src/modules/leapforge/engine/esp32c3/peripherals/SysTimer.ts` — Fixed BigInt literals
-7. `src/modules/leapforge/engine/SimulationRunner.ts` — binPath preservation logic
-8. `src/modules/leapforge/engine/esp32c3/ESP32C3SimulationRunner.ts` — PC tracking, stuck detection
+2. `src/modules/electra/engine/esp32c3/cpu/RiscVCore.ts` — Stack pointer init, MMIO stub, ROM stub, null-guard, SYSTEM register defaults
+3. `src/modules/electra/engine/esp32c3/compiler/FirmwareLoader.ts` — Merged flash image detection, correct header size (24 bytes), IROM/DROM loading
+4. `src/modules/electra/engine/esp32c3/peripherals/UART.ts` — Correct register offsets from ESP-IDF source
+5. `src/modules/electra/engine/esp32c3/peripherals/GPIO.ts` — Fixed `GPIO_STATUS_W1TC` offset
+6. `src/modules/electra/engine/esp32c3/peripherals/SysTimer.ts` — Fixed BigInt literals
+7. `src/modules/electra/engine/SimulationRunner.ts` — binPath preservation logic
+8. `src/modules/electra/engine/esp32c3/ESP32C3SimulationRunner.ts` — PC tracking, stuck detection
 
 ## Next Steps
 

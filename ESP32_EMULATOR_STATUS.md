@@ -6,7 +6,7 @@ Your project **already has a complete, production-ready RISC-V RV32IMC emulator*
 
 ## Emulator Components
 
-### 1. CPU Core (`src/modules/leapforge/engine/esp32c3/cpu/RiscVCore.ts`)
+### 1. CPU Core (`src/modules/electra/engine/esp32c3/cpu/RiscVCore.ts`)
 **Size:** 732 lines of TypeScript  
 **Status:** ✅ COMPLETE
 
@@ -43,7 +43,7 @@ Your project **already has a complete, production-ready RISC-V RV32IMC emulator*
 ✓ C.J, C.JAL, C.BEQZ  - Compressed jumps/branches
 ```
 
-### 2. Peripherals (`src/modules/leapforge/engine/esp32c3/peripherals/`)
+### 2. Peripherals (`src/modules/electra/engine/esp32c3/peripherals/`)
 **Status:** ✅ ALL IMPLEMENTED
 
 #### GPIO.ts
@@ -86,7 +86,7 @@ Your project **already has a complete, production-ready RISC-V RV32IMC emulator*
 - ✅ Interrupt generation
 - ✅ Cycle counting
 
-### 3. Firmware Loader (`src/modules/leapforge/engine/esp32c3/compiler/FirmwareLoader.ts`)
+### 3. Firmware Loader (`src/modules/electra/engine/esp32c3/compiler/FirmwareLoader.ts`)
 **Status:** ✅ COMPLETE
 
 **Features:**
@@ -96,7 +96,7 @@ Your project **already has a complete, production-ready RISC-V RV32IMC emulator*
 - ✅ Entry point detection
 - ✅ IRAM/DRAM mapping
 
-### 4. Simulation Runner (`src/modules/leapforge/engine/esp32c3/ESP32C3SimulationRunner.ts`)
+### 4. Simulation Runner (`src/modules/electra/engine/esp32c3/ESP32C3SimulationRunner.ts`)
 **Status:** ✅ COMPLETE
 
 **Features:**

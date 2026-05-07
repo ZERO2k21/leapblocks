@@ -64,7 +64,7 @@ Where:
 
 ## Changes Made
 
-**File**: `src/Leapforge/Client/utlis/elements/leap-elements/stepper-motor-element.ts`
+**File**: `src/Electra/Client/utlis/elements/leap-elements/stepper-motor-element.ts`
 
 ### 1. CSS Style Block (Line ~175)
 
@@ -165,7 +165,7 @@ const mmToPix = 3.7795275591;  // Standard mm to pixel conversion
 
 ### How to Verify
 
-1. **Open Leapforge**
+1. **Open Electra**
 2. **Add stepper motor** to canvas
 3. **Wire and upload code** that rotates the motor
 4. **Start simulation**

@@ -27,7 +27,7 @@ Includes: ['esp32', 'esp32-devkit-v1', 'esp32-c3']
 ## Configuration Files Checked
 
 ### 1. ✅ Sidebar.tsx
-**Location:** `src/modules/leapforge/components/Sidebar.tsx`
+**Location:** `src/modules/electra/components/Sidebar.tsx`
 
 ```typescript
 const COMPONENTS = [
@@ -39,7 +39,7 @@ const COMPONENTS = [
 **Status:** ✅ Correct - ESP32 DevKit is available in component library
 
 ### 2. ✅ BoardSelector.tsx
-**Location:** `src/modules/leapforge/components/BoardSelector.tsx`
+**Location:** `src/modules/electra/components/BoardSelector.tsx`
 
 ```typescript
 export type BoardType =
@@ -57,7 +57,7 @@ const BOARDS = [
 **Status:** ✅ Correct - Board selector uses unified 'esp32' ID
 
 ### 3. ✅ useForgeStore.ts
-**Location:** `src/modules/leapforge/store/useForgeStore.ts`
+**Location:** `src/modules/electra/store/useForgeStore.ts`
 
 ```typescript
 const BOARD_NODE_TO_BOARD_ID: Record<string, string> = {
@@ -73,7 +73,7 @@ const BOARD_NODE_TO_BOARD_ID: Record<string, string> = {
 **Status:** ✅ Correct - Proper mapping from canvas node type to board ID
 
 ### 4. ✅ SimulationRunner.ts
-**Location:** `src/modules/leapforge/engine/SimulationRunner.ts`
+**Location:** `src/modules/electra/engine/SimulationRunner.ts`
 
 ```typescript
 // In initCPU() - Line 71
@@ -105,7 +105,7 @@ if (ESP32_C3_BOARD_IDS.includes(this.selectedBoard)) {
 **Status:** ✅ Correct - All methods check for ESP32 boards and route to ESP32-C3 emulator
 
 ### 5. ✅ ForgeStudio.tsx
-**Location:** `src/modules/leapforge/ForgeStudio.tsx`
+**Location:** `src/modules/electra/ForgeStudio.tsx`
 
 ```typescript
 const ESP32_BOARD_IDS = new Set(['esp32', 'esp32-devkit-v1', 'esp32-c3']);
@@ -136,7 +136,7 @@ if (isESP32) {
 **Status:** ✅ Correct - All ESP32 boards compile with ESP32-C3 FQBN
 
 ### 6. ✅ CircuitEngine.ts
-**Location:** `src/modules/leapforge/engine/CircuitEngine.ts`
+**Location:** `src/modules/electra/engine/CircuitEngine.ts`
 
 ```typescript
 // Line 415
@@ -149,7 +149,7 @@ const isESP32 = boardNode.data?.type === 'esp32' || boardNode.data?.type === 'es
 **Status:** ✅ Correct - CircuitEngine recognizes both ESP32 node types
 
 ### 7. ✅ PinHarness.ts
-**Location:** `src/modules/leapforge/engine/PinHarness.ts`
+**Location:** `src/modules/electra/engine/PinHarness.ts`
 
 ```typescript
 "esp32-devkit-v1": {
@@ -163,7 +163,7 @@ const isESP32 = boardNode.data?.type === 'esp32' || boardNode.data?.type === 'es
 **Status:** ✅ Correct - Pin harness defined for ESP32 DevKit V1
 
 ### 8. ✅ ESP32 Element
-**Location:** `src/modules/leapforge/elements/leap-elements/esp32-devkit-v1-element.ts`
+**Location:** `src/modules/electra/elements/leap-elements/esp32-devkit-v1-element.ts`
 
 ```typescript
 @customElement('leap-esp32-devkit-v1')
@@ -187,10 +187,10 @@ export class ESP32DevkitV1Element extends LitElement {
 ## TypeScript Diagnostics
 
 ✅ **No errors found in:**
-- `src/modules/leapforge/engine/SimulationRunner.ts`
-- `src/modules/leapforge/ForgeStudio.tsx`
-- `src/modules/leapforge/store/useForgeStore.ts`
-- `src/modules/leapforge/engine/CircuitEngine.ts`
+- `src/modules/electra/engine/SimulationRunner.ts`
+- `src/modules/electra/ForgeStudio.tsx`
+- `src/modules/electra/store/useForgeStore.ts`
+- `src/modules/electra/engine/CircuitEngine.ts`
 
 ## Potential Issues Checked
 

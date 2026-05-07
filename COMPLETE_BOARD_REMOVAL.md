@@ -2,26 +2,26 @@
 
 ## Summary
 
-Successfully removed **Arduino Mega, Arduino Nano, ATtiny85, Franzininho, and Nano RP2040 Connect** from ALL locations in the Leapforge codebase.
+Successfully removed **Arduino Mega, Arduino Nano, ATtiny85, Franzininho, and Nano RP2040 Connect** from ALL locations in the Electra codebase.
 
 ## Files Modified (9 files total)
 
 ### 1. ✅ Sidebar.tsx
-**Path**: `src/Leapforge/Client/Src/components/Sidebar.tsx`
+**Path**: `src/Electra/Client/Src/components/Sidebar.tsx`
 - Removed unwanted boards from COMPONENTS array
 - Only Arduino Uno and ESP32-C3 remain
 
 ### 2. ✅ CircuitAnalysisPanel.tsx
-**Path**: `src/Leapforge/Client/Src/components/CircuitAnalysis/CircuitAnalysisPanel.tsx`
+**Path**: `src/Electra/Client/Src/components/CircuitAnalysis/CircuitAnalysisPanel.tsx`
 - Removed arduino-mega reference from power source detection
 
 ### 3. ✅ PartPicker.tsx
-**Path**: `src/Leapforge/Client/Src/components/Library/PartPicker.tsx`
+**Path**: `src/Electra/Client/Src/components/Library/PartPicker.tsx`
 - Removed unwanted boards from "Add Component" dialog
 - This was the main issue causing boards to still show in UI
 
 ### 4. ✅ leap-elements/index.ts
-**Path**: `src/Leapforge/Client/utlis/elements/leap-elements/index.ts`
+**Path**: `src/Electra/Client/utlis/elements/leap-elements/index.ts`
 - Commented out Web Component exports:
   - ArduinoMegaElement
   - ArduinoNanoElement
@@ -29,26 +29,26 @@ Successfully removed **Arduino Mega, Arduino Nano, ATtiny85, Franzininho, and Na
   - NanoRP2040ConnectElement
 
 ### 5. ✅ CircuitEngine.ts
-**Path**: `src/Leapforge/Client/Src/engine/Arduino/CircuitEngine.ts`
+**Path**: `src/Electra/Client/Src/engine/Arduino/CircuitEngine.ts`
 - Updated board node filter (line ~1020)
 - Removed: arduino-nano, arduino-mega, attiny85, boards
 - Kept: arduino-uno, esp32-c3
 
 ### 6. ✅ useForgeStore.ts
-**Path**: `src/Leapforge/Client/utlis/store/useForgeStore.ts`
+**Path**: `src/Electra/Client/utlis/store/useForgeStore.ts`
 - Commented out board mappings in BOARD_NODE_TO_BOARD_ID
 
 ### 7. ✅ BoardSelector.tsx
-**Path**: `src/Leapforge/Client/Src/components/BoardSelector.tsx`
+**Path**: `src/Electra/Client/Src/components/BoardSelector.tsx`
 - Updated BoardType to only include 'arduino-uno' and 'esp32-c3'
 - Removed unwanted boards from BOARDS array
 
 ### 8. ✅ ForgeStudio.tsx
-**Path**: `src/Leapforge/Client/Src/ForgeStudio.tsx`
+**Path**: `src/Electra/Client/Src/ForgeStudio.tsx`
 - Commented out FQBN mappings for removed boards
 
 ### 9. ✅ react-types.ts
-**Path**: `src/Leapforge/Client/utlis/elements/leap-elements/react-types.ts`
+**Path**: `src/Electra/Client/utlis/elements/leap-elements/react-types.ts`
 - Commented out imports for removed board elements
 - Commented out JSX type definitions
 
@@ -91,7 +91,7 @@ Only these 2 boards are now supported:
 
 ## Next Steps
 
-1. **Reload the Leapforge application** (Ctrl+R or restart)
+1. **Reload the Electra application** (Ctrl+R or restart)
 2. Verify boards no longer appear in:
    - Board selector dropdown
    - "Add Component" dialog

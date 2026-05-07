@@ -7,7 +7,7 @@ import { TWIEventHandler } from '../../lib/avr8js';
 import { simulationRunner } from './SimulationRunner';
 
 /**
- * Interface for virtual I2C slave devices in the LeapForge engine.
+ * Interface for virtual I2C slave devices in the Electra engine.
  */
 export interface I2CSlave {
   i2cAddress: number;

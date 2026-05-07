@@ -63,7 +63,7 @@ The TypeScript files have been updated. You need to reload:
 
 **Option B: Manual Reload**
 - Press `Ctrl+R` or `F5` to reload the browser
-- Or close and reopen LeapForge
+- Or close and reopen Electra
 
 ### Step 2: Try Your Code Again
 1. Make sure `dht22_thingspeak.ino` is open
@@ -129,6 +129,6 @@ Data pushed successfully! Entry ID: 12345
 ✅ **Fixed**: Line length issue in library stubs  
 ✅ **Changed**: 10 class definitions broken into multiple lines  
 ✅ **Result**: Transpiler should now work correctly  
-✅ **Action**: Reload LeapForge and try again  
+✅ **Action**: Reload Electra and try again  
 
 **Your ThingSpeak code should now work!** 🎉

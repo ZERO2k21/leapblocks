@@ -1,7 +1,7 @@
 /**
  * ESP32-C3 HTTP Request Example
  * 
- * This sketch demonstrates real internet connectivity in Leapforge.
+ * This sketch demonstrates real internet connectivity in Electra.
  * The simulated ESP32 will make actual HTTP requests using your computer's network.
  */
 
@@ -89,7 +89,7 @@ void makeHttpPostRequest() {
   http.setTimeout(10000);
   
   // Create JSON payload
-  String jsonPayload = "{\"title\":\"ESP32 Test\",\"body\":\"Hello from Leapforge!\",\"userId\":1}";
+  String jsonPayload = "{\"title\":\"ESP32 Test\",\"body\":\"Hello from Electra!\",\"userId\":1}";
   
   int httpCode = http.POST(jsonPayload);
   

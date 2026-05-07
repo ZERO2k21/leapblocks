@@ -445,7 +445,7 @@ transition: background 0.2s ease;
 ---
 
 **Reference Images:**
-- See `src/modules/leapforge/components/Layout/IgniteTopbar.tsx` for Ignite implementation
+- See `src/modules/electra/components/Layout/IgniteTopbar.tsx` for Ignite implementation
 - See `src/python/layout/TopBar.jsx` for Python implementation
 - See `neura-ml/components/NeuraHeader.jsx` for ML implementation
 

@@ -1,8 +1,8 @@
-# Requirements Document: Leapforge Comprehensive Improvements
+# Requirements Document: Electra Comprehensive Improvements
 
 ## Introduction
 
-This document specifies requirements for comprehensive improvements to the Leapforge circuit simulation platform. Leapforge is a web-based Arduino/ESP32 development environment that combines visual circuit design, code editing, and real-time simulation. These improvements focus on enhancing simulation capabilities, circuit validation, code editor features, component library expansion, visual enhancements, and collaboration features.
+This document specifies requirements for comprehensive improvements to the Electra circuit simulation platform. Electra is a web-based Arduino/ESP32 development environment that combines visual circuit design, code editing, and real-time simulation. These improvements focus on enhancing simulation capabilities, circuit validation, code editor features, component library expansion, visual enhancements, and collaboration features.
 
 The improvements are prioritized into Critical (Enhanced Simulation, Circuit Validation, Code Editor) and High Priority (Component Library, Visual Enhancements, Collaboration) categories, aligned with a 4-phase roadmap for 2026.
 

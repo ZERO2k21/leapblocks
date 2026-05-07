@@ -732,13 +732,13 @@ export const esp32Toolbox = {
                 {
                     kind: 'block', type: 'esp32_mqtt_publish',
                     inputs: {
-                        TOPIC: { shadow: { type: 'arduino_text', fields: { TEXT: 'leapforge/data' } } },
+                        TOPIC: { shadow: { type: 'arduino_text', fields: { TEXT: 'electra/data' } } },
                         PAYLOAD: { shadow: { type: 'arduino_text', fields: { TEXT: 'hello' } } },
                     }
                 },
                 {
                     kind: 'block', type: 'esp32_mqtt_subscribe',
-                    inputs: { TOPIC: { shadow: { type: 'arduino_text', fields: { TEXT: 'leapforge/cmd' } } } }
+                    inputs: { TOPIC: { shadow: { type: 'arduino_text', fields: { TEXT: 'electra/cmd' } } } }
                 },
                 { kind: 'block', type: 'esp32_mqtt_loop' },
                 { kind: 'block', type: 'esp32_mqtt_connected' },

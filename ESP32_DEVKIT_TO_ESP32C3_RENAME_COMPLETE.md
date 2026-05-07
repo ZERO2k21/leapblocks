@@ -15,30 +15,30 @@ Successfully renamed all "ESP32 DevKit V1" references to "ESP32-C3" throughout t
 - ✅ Class name: `ESP32DevkitV1Element` → `ESP32C3Element`
 
 ### 2. Configuration Files (Previously Completed)
-- ✅ `src/modules/leapforge/elements/leap-elements/index.ts`
-- ✅ `src/modules/leapforge/elements/leap-elements/react-types.ts`
-- ✅ `src/modules/leapforge/components/BoardSelector.tsx`
-- ✅ `src/modules/leapforge/components/Sidebar.tsx`
-- ✅ `src/modules/leapforge/components/Library/PartPicker.tsx`
-- ✅ `src/modules/leapforge/store/useForgeStore.ts`
+- ✅ `src/modules/electra/elements/leap-elements/index.ts`
+- ✅ `src/modules/electra/elements/leap-elements/react-types.ts`
+- ✅ `src/modules/electra/components/BoardSelector.tsx`
+- ✅ `src/modules/electra/components/Sidebar.tsx`
+- ✅ `src/modules/electra/components/Library/PartPicker.tsx`
+- ✅ `src/modules/electra/store/useForgeStore.ts`
 
 ### 3. Engine Files (Just Completed)
-- ✅ **`src/modules/leapforge/ForgeStudio.tsx`**
+- ✅ **`src/modules/electra/ForgeStudio.tsx`**
   - Updated `ESP32_BOARD_IDS` from `['esp32', 'esp32-devkit-v1', 'esp32-c3']` → `['esp32-c3']`
   - Updated FQBN mapping to only include `'esp32-c3': 'esp32:esp32:esp32c3'`
   - Updated WiFi tab visibility check: `board === 'esp32'` → `board === 'esp32-c3'`
   - Updated WiFi status pill check: `board === 'esp32'` → `board === 'esp32-c3'`
   - Updated footer status check: `board !== 'esp32'` → `board !== 'esp32-c3'`
 
-- ✅ **`src/modules/leapforge/engine/CircuitEngine.ts`**
+- ✅ **`src/modules/electra/engine/CircuitEngine.ts`**
   - Updated board node filter to check for `'esp32-c3'` instead of `'esp32'` and `'esp32-devkit-v1'`
   - Updated `isESP32Board` check: `board.data?.type === 'esp32' || board.data?.type === 'esp32-devkit-v1'` → `board.data?.type === 'esp32-c3'`
   - Updated `isESP32` check: `boardNode.data?.type === 'esp32' || boardNode.data?.type === 'esp32-devkit-v1'` → `boardNode.data?.type === 'esp32-c3'`
 
-- ✅ **`src/modules/leapforge/engine/PinHarness.ts`**
+- ✅ **`src/modules/electra/engine/PinHarness.ts`**
   - Renamed pin configuration key: `"esp32-devkit-v1"` → `"esp32-c3"`
 
-- ✅ **`src/modules/leapforge/engine/SimulationRunner.ts`**
+- ✅ **`src/modules/electra/engine/SimulationRunner.ts`**
   - Updated `ESP32_C3_BOARD_IDS` from `['esp32', 'esp32-devkit-v1', 'esp32-c3']` → `['esp32-c3']` in:
     - `initCPU()` method
     - `reset()` method
@@ -161,7 +161,7 @@ After restarting the app, verify:
 ## Related Documentation
 - `ESP32_DEVKIT_TO_ESP32C3_RENAME.md` - Original rename plan
 - `SIMULATION_ARCHITECTURE.md` - ESP32-C3 RISC-V architecture details
-- `src/modules/leapforge/engine/esp32c3/README.md` - ESP32-C3 emulator documentation
+- `src/modules/electra/engine/esp32c3/README.md` - ESP32-C3 emulator documentation
 
 ---
 

@@ -147,6 +147,6 @@ If you still see illegal instruction errors after these fixes:
 ## Files Modified
 
 - **`electron/main.js`** - **CRITICAL FIX**: Added missing `read-bin-file` IPC handler
-- `src/modules/leapforge/engine/esp32c3/ESP32C3SimulationRunner.ts` - Enhanced diagnostics
-- `src/modules/leapforge/engine/esp32c3/compiler/FirmwareLoader.ts` - Enhanced diagnostics
-- `src/modules/leapforge/engine/SimulationRunner.ts` - Improved error handling
+- `src/modules/electra/engine/esp32c3/ESP32C3SimulationRunner.ts` - Enhanced diagnostics
+- `src/modules/electra/engine/esp32c3/compiler/FirmwareLoader.ts` - Enhanced diagnostics
+- `src/modules/electra/engine/SimulationRunner.ts` - Improved error handling
