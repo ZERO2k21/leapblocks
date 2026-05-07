@@ -206,6 +206,15 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
         const esp32c3Runner = runner.ESP32C3Runner;
         if (esp32c3Runner) {
           esp32c3Runner.addSerialListener((line: string) => {
+            // Parse __LF_WIFI: prefixed messages and route to WiFi log
+            const wifiMatch = line.match(/__LF_WIFI:(.+)/);
+            if (wifiMatch) {
+              const wifiMsg = wifiMatch[1].trim();
+              useForgeStore.getState().appendWiFiLog(wifiMsg);
+              return; // Don't append to serial output
+            }
+
+            // Regular serial output
             useForgeStore.getState().appendSerial(line);
 
             // Parse __LF_GPIO:pin:value lines and drive SimulationRunner pin states
@@ -224,7 +233,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
               runner.setPinState(`ESP${pin}`, val > 127 ? 'HIGH' : 'LOW');
             }
           });
-          console.log('[FORGE STORE] ESP32-C3 serial listener wired to store.appendSerial + GPIO parser');
+          console.log('[FORGE STORE] ESP32-C3 serial listener wired to store.appendSerial + GPIO parser + WiFi log');
         }
       }
 

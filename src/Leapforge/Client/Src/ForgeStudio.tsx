@@ -50,8 +50,29 @@ export default function ForgeStudio({ onBack }: ForgeStudioProps) {
 
   const [activeTab, setActiveTab] = useState<'code' | 'serial' | 'wifi' | 'libraries'>('code');
 
-  // WiFi status polling removed — esp32WiFiConnected/esp32IPAddress were stub-engine only
+  // WiFi status derived from WiFi log messages
   const [wifiStatus, setWifiStatus] = useState('');
+
+  // Update WiFi status when WiFi log changes
+  useEffect(() => {
+    if (board !== 'esp32-c3' || !isSimulating) {
+      setWifiStatus('');
+      return;
+    }
+
+    // Parse the latest WiFi log entry to update status
+    if (wifiLog.length > 0) {
+      const latestLog = wifiLog[wifiLog.length - 1];
+      if (latestLog.includes('connected')) {
+        setWifiStatus('Connected');
+      } else if (latestLog.includes('disconnected')) {
+        setWifiStatus('Disconnected');
+      } else if (latestLog.startsWith('ip:')) {
+        const ip = latestLog.replace('ip:', '').trim();
+        setWifiStatus(`IP: ${ip}`);
+      }
+    }
+  }, [wifiLog, board, isSimulating]);
 
   const [code, setCode] = useState(`// LeapForge Serial Test
 void setup() {
@@ -100,6 +121,16 @@ void loop() {
     clearSerial();
 
     try {
+      // ── WiFi Board Check ────────────────────────────────────────────────────
+      // WiFi is only supported on ESP32 boards
+      if (code.includes('#include <WiFi.h>') && !isESP32) {
+        const errorMsg = 'WiFi is only supported on ESP32-C3 board. Please select ESP32-C3 from the board selector.';
+        setCompileError(errorMsg);
+        appendSerial(`[ERROR]: ${errorMsg}\n`);
+        setIsCompiling(false);
+        return;
+      }
+
       // ── ESP32 Arduino Transpilation path ────────────────────────────────────
       if (isESP32) {
         console.log('[FORGE UI] ESP32-C3 board detected — using transpilation path...');

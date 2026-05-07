@@ -204,6 +204,15 @@ class SimulationRunner {
         // Wire serial output from ESP32 runner to the Zustand store
         this.esp32c3Runner.addSerialListener((text: string) => {
           import('../../../utlis/store/useForgeStore').then(({ useForgeStore }) => {
+            // Parse __LF_WIFI: prefixed messages and route to WiFi log
+            const wifiMatch = text.match(/__LF_WIFI:(.+)/);
+            if (wifiMatch) {
+              const wifiMsg = wifiMatch[1].trim();
+              useForgeStore.getState().appendWiFiLog(wifiMsg);
+              return; // Don't append to serial output
+            }
+
+            // Regular serial output
             useForgeStore.getState().appendSerial(text);
           });
         });

@@ -652,20 +652,199 @@ export class ArduinoRuntime {
       __arduino_lowByte(val: number): number { return val & 0xFF; },
       __arduino_highByte(val: number): number { return (val >> 8) & 0xFF; },
 
-      // ── WiFi stubs ─────────────────────────────────────────
+      // ── WiFi simulation ─────────────────────────────────────────
       WiFi: {
+        _status: 0, // WL_IDLE_STATUS initially
+        _ssid: '',
+        _ip: '192.168.1.100',
+
         begin(ssid: string, _password?: string): void {
-          self.onSerial?.(`[WiFi] Connecting to ${ssid}...\n`);
-          self.onSerial?.(`[WiFi] Connected! IP: 192.168.1.100\n`);
+          this._ssid = ssid;
+          this._status = 0; // WL_IDLE_STATUS
+
+          // Simulate connection sequence with proper __LF_WIFI: events
+          setTimeout(() => {
+            this._status = 3; // WL_CONNECTED
+            self.onSerial?.('__LF_WIFI:connected\n');
+          }, 500);
+
+          setTimeout(() => {
+            self.onSerial?.(`__LF_WIFI:ip:${this._ip}\n`);
+          }, 1000);
         },
-        status(): number { return 3; }, // WL_CONNECTED
-        localIP(): string { return '192.168.1.100'; },
+
+        status(): number {
+          return this._status;
+        },
+
+        localIP(): any {
+          // Return an IPAddress-like object with toString()
+          return {
+            _a: 192, _b: 168, _c: 1, _d: 100,
+            toString() { return `${this._a}.${this._b}.${this._c}.${this._d}`; }
+          };
+        },
+
+        SSID(): string { return this._ssid; },
         macAddress(): string { return 'AA:BB:CC:DD:EE:FF'; },
         RSSI(): number { return -50; },
-        disconnect(): void { self.onSerial?.('[WiFi] Disconnected\n'); },
+
+        disconnect(): void {
+          this._status = 6; // WL_DISCONNECTED
+          self.onSerial?.('__LF_WIFI:disconnected\n');
+        },
+
         mode(_mode: number): void { },
-        softAP(ssid: string): void { self.onSerial?.(`[WiFi] AP started: ${ssid}\n`); },
-        softAPIP(): string { return '192.168.4.1'; },
+        softAP(ssid: string): void {
+          this._ssid = ssid;
+          self.onSerial?.(`[WiFi] AP started: ${ssid}\n`);
+        },
+        softAPIP(): any {
+          return {
+            _a: 192, _b: 168, _c: 4, _d: 1,
+            toString() { return `${this._a}.${this._b}.${this._c}.${this._d}`; }
+          };
+        },
+      },
+
+      // ── WiFiClient (for TCP connections) ──────────────────
+      WiFiClient: class {
+        private _connected: boolean = false;
+        private _buffer: string = '';
+
+        connect(_host: string, _port: number): boolean {
+          this._connected = true;
+          return true;
+        }
+
+        connected(): boolean {
+          return this._connected;
+        }
+
+        stop(): void {
+          this._connected = false;
+          this._buffer = '';
+        }
+
+        print(data: any): void {
+          this._buffer += String(data);
+        }
+
+        println(data: any): void {
+          this._buffer += String(data) + '\n';
+        }
+
+        available(): number {
+          return this._buffer.length;
+        }
+
+        read(): number {
+          if (this._buffer.length === 0) return -1;
+          const char = this._buffer.charCodeAt(0);
+          this._buffer = this._buffer.substring(1);
+          return char;
+        }
+
+        readString(): string {
+          const str = this._buffer;
+          this._buffer = '';
+          return str;
+        }
+      },
+
+      // ── HTTPClient (for real HTTP requests) ───────────────
+      HTTPClient: class {
+        private _url: string = '';
+        private _headers: Map<string, string> = new Map();
+        private _responseCode: number = 0;
+        private _responseBody: string = '';
+        private _timeout: number = 5000;
+
+        begin(url: string): boolean {
+          this._url = url;
+          this._headers.clear();
+          this._responseCode = 0;
+          this._responseBody = '';
+          return true;
+        }
+
+        addHeader(name: string, value: string): void {
+          this._headers.set(name, value);
+        }
+
+        setTimeout(timeout: number): void {
+          this._timeout = timeout;
+        }
+
+        async GET(): Promise<number> {
+          return await this._makeRequest('GET');
+        }
+
+        async POST(payload: string): Promise<number> {
+          return await this._makeRequest('POST', payload);
+        }
+
+        async PUT(payload: string): Promise<number> {
+          return await this._makeRequest('PUT', payload);
+        }
+
+        async DELETE(): Promise<number> {
+          return await this._makeRequest('DELETE');
+        }
+
+        async PATCH(payload: string): Promise<number> {
+          return await this._makeRequest('PATCH', payload);
+        }
+
+        private async _makeRequest(method: string, body?: string): Promise<number> {
+          try {
+            const headers: Record<string, string> = {};
+            this._headers.forEach((value, key) => {
+              headers[key] = value;
+            });
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), this._timeout);
+
+            const response = await fetch(this._url, {
+              method,
+              headers,
+              body: body,
+              signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            this._responseCode = response.status;
+            this._responseBody = await response.text();
+
+            return this._responseCode;
+          } catch (error: any) {
+            console.error('[HTTPClient] Request failed:', error);
+            if (error.name === 'AbortError') {
+              this._responseCode = -1; // Timeout
+            } else {
+              this._responseCode = -2; // Connection failed
+            }
+            this._responseBody = '';
+            return this._responseCode;
+          }
+        }
+
+        getString(): string {
+          return this._responseBody;
+        }
+
+        getSize(): number {
+          return this._responseBody.length;
+        }
+
+        end(): void {
+          this._url = '';
+          this._headers.clear();
+          this._responseCode = 0;
+          this._responseBody = '';
+        }
       },
 
       // ── Tone ───────────────────────────────────────────────
