@@ -1706,6 +1706,28 @@ class CircuitEngine {
   }
 
   /**
+   * Update the slide switch position (0, 1, or 2).
+   * Called by LeapNode when it receives 'input' events from slide-switch.
+   */
+  public pushSlideSwitchState(nodeId: string, value: number) {
+    // Slide switch typically has 3 positions: 0, 1, 2
+    // Update the node data for UI visualization
+    const { updateNodeData } = useForgeStore.getState();
+    updateNodeData(nodeId, {
+      value: value,
+      sensorValues: { position: value }
+    });
+
+    // Push the digital state to the connected pin
+    // Position 0 = LOW, Position 1 = MIDDLE (could be HIGH or LOW depending on design), Position 2 = HIGH
+    // For simplicity, we'll treat it as: 0=LOW, 1=LOW, 2=HIGH (common slide switch behavior)
+    const isHigh = value === 2;
+    this.pushInputSignal(nodeId, 'OUT', isHigh);
+
+    console.log(`[FORGE CIRCUIT] Slide Switch (${nodeId}) position: ${value} (${isHigh ? 'HIGH' : 'LOW'})`);
+  }
+
+  /**
    * Rotate the KY-040 encoder clockwise.
    * Called by LeapNode when it receives 'rotate-cw' events.
    */

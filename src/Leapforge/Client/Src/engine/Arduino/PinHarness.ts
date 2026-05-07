@@ -1389,23 +1389,23 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "VCC",
-        "x": 71.3,
-        "y": 94.5
+        "x": 18.5,
+        "y": 23
       },
       {
         "name": "TRIG",
-        "x": 81.3,
-        "y": 94.5
+        "x": 21.5,
+        "y": 23
       },
       {
         "name": "ECHO",
-        "x": 91.3,
-        "y": 94.5
+        "x": 24,
+        "y": 23
       },
       {
         "name": "GND",
-        "x": 101.3,
-        "y": 94.5
+        "x": 26.5,
+        "y": 23
       }
     ]
   },

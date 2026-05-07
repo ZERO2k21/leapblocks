@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { memo, useRef, useEffect } from 'react';
+import React, { memo, useRef, useEffect, useMemo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { getComponentPins } from '../../lib/PinMap';
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
@@ -12,7 +12,24 @@ import { SensorOverlay } from './SensorOverlay';
 // This is a generic wrapper for our internalized Leap elements (rebranded Leap)
 export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   const selectedNodeId = useForgeStore((state) => state.selectedNodeId);
+  const edges = useForgeStore((state) => state.edges);
+  const isSimulating = useForgeStore((state) => state.isSimulating);
   const isSelected = selected || selectedNodeId === id;
+
+  // Build a Set of pin names on this node that have at least one wire connected.
+  // This powers the Wokwi-style green glow on wired pins.
+  const connectedPinNames = useMemo(() => {
+    const set = new Set<string>();
+    for (const edge of edges) {
+      if (edge.source === id && edge.sourceHandle) {
+        set.add(edge.sourceHandle.replace(/__target$/, ''));
+      }
+      if (edge.target === id && edge.targetHandle) {
+        set.add(edge.targetHandle.replace(/__target$/, ''));
+      }
+    }
+    return set;
+  }, [edges, id]);
 
   // I2C variants map to the same element as their parallel counterpart
   const elementType = data.type === 'lcd1602-i2c' ? 'lcd1602'
@@ -530,17 +547,36 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
           }}
         />
 
-        {/* ── DYNAMIC PIN HANDLES (Relativized to the Tag itself) ── */}
+        {/* ── DYNAMIC PIN HANDLES — Wokwi-style connection indicators ── */}
         {pins.map((pin, idx) => {
           const pinPosition = pin.y < 50 ? Position.Top : Position.Bottom;
+          const isConnected = connectedPinNames.has(pin.name);
+          const isPinHigh = data.pinStates?.[`pin_${pin.name}`] === true;
+
+          // Simple pin color logic - no glow:
+          //   Connected + HIGH (simulating) → red
+          //   Connected (idle or LOW)       → green
+          //   Unconnected                   → dim gray
+          let pinColor = '#475569';
+          let pinOpacity = isSelected ? 0.5 : 0.1;
+
+          if (isConnected) {
+            if (isSimulating && isPinHigh) {
+              pinColor = '#ef4444';
+            } else {
+              pinColor = '#22c55e';
+            }
+            pinOpacity = 0.9;
+          }
+
           const handleStyle: React.CSSProperties = {
             left: `${pin.x}%`,
             top: `${pin.y}%`,
-            width: '8px',
-            height: '8px',
+            width: isConnected ? '4px' : '3px',
+            height: isConnected ? '4px' : '3px',
             zIndex: 10,
             pointerEvents: 'all',
-            transition: 'opacity 0.2s',
+            transition: 'all 0.25s ease',
           };
 
           return (
@@ -557,18 +593,20 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                   opacity: 0,
                 }}
               />
-              {/* Visible handle (source) — renders last, on top for hover tooltip */}
+              {/* Visible handle (source) - Simple small dot without glow */}
               <Handle
                 id={`${pin.name}`}
                 type="source"
                 position={pinPosition}
                 style={{
                   ...handleStyle,
-                  background: data.pinStates?.[`pin_${pin.name}`] ? '#ef4444' : '#BEF264',
-                  border: '1.5px solid #1e293b',
-                  opacity: selected ? 1 : 0.3,
+                  background: pinColor,
+                  border: `1px solid ${isConnected ? pinColor : '#334155'}`,
+                  borderRadius: '50%',
+                  opacity: pinOpacity,
+                  boxShadow: 'none',
                 }}
-                title={pin.name}
+                title={`${pin.name}${isConnected ? ' ✓' : ''}`}
               />
             </React.Fragment>
           );
