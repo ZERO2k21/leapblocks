@@ -1563,6 +1563,46 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       }
     ]
   },
+  "relay-module": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 30,
+      "height": 12
+    },
+    "pins": [
+      {
+        "name": "VCC",
+        "x": 2,
+        "y": 2
+      },
+      {
+        "name": "GND",
+        "x": 2,
+        "y": 5
+      },
+      {
+        "name": "IN",
+        "x": 2,
+        "y": 7
+      },
+      {
+        "name": "NO",
+        "x": 28,
+        "y": 2
+      },
+      {
+        "name": "COM",
+        "x": 28,
+        "y": 5
+      },
+      {
+        "name": "NC",
+        "x": 28,
+        "y": 7
+      }
+    ]
+  },
   "ky-040": {
     "viewBox": {
       "minX": 0,

@@ -89,6 +89,10 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   } else if (data.type === 'ks2e-m-dc5') {
     // Relay: energized when COIL1 is HIGH (COIL2 is typically GND)
     mappedProps.energized = data.relayEnergized ?? false;
+  } else if (data.type === 'relay-module') {
+    // Relay Module: energized when IN pin is HIGH
+    mappedProps.energized = data.relayEnergized ?? false;
+    mappedProps.led = data.relayEnergized ?? false;
   } else if (data.type === 'biaxial-stepper') {
     mappedProps.outerHandAngle = data.outerHandAngle ?? 0;
     mappedProps.innerHandAngle = data.innerHandAngle ?? 0;

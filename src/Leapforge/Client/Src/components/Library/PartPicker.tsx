@@ -41,6 +41,7 @@ const COMPONENTS = [
   { id: 'biaxial-stepper', name: 'Biaxial Stepper', category: 'outputs', desc: 'Dual-axis stepper' },
   { id: 'a4988', name: 'A4988 Driver', category: 'outputs', desc: 'Stepper motor driver' },
   { id: 'ks2e-m-dc5', name: 'Relay', category: 'outputs', desc: '5V Relay' },
+  { id: 'relay-module', name: 'Relay Module', category: 'outputs', desc: 'Single-channel relay' },
 
   // DISPLAYS
   { id: 'lcd1602', name: 'LCD 1602', category: 'displays', desc: '16x2 Character display (parallel)' },

@@ -1383,6 +1383,22 @@
       { "name": "COIL1", "x": 19.58, "y": 8.65 }
     ]
   },
+  "relay-module": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 30,
+      "height": 12
+    },
+    "pins": [
+      { "name": "VCC", "x": 2, "y": 0 },
+      { "name": "GND", "x": 2, "y": 6 },
+      { "name": "IN", "x": 2, "y": 9 },
+      { "name": "NO", "x": 28, "y": 3 },
+      { "name": "COM", "x": 28, "y": 6 },
+      { "name": "NC", "x": 28, "y": 9 }
+    ]
+  },
   "ky-040": {
     "viewBox": {
       "minX": 0,

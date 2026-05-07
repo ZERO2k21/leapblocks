@@ -134,6 +134,7 @@ export const CircuitAnalysisPanel: React.FC = () => {
 
                 case 'relay':
                 case 'ks2e-m-dc5':
+                case 'relay-module':
                     // Relay coil: 5V, 70mA
                     voltage = 5.0;
                     current = 0.07;

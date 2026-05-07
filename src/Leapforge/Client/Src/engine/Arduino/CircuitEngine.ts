@@ -139,6 +139,39 @@ class CircuitEngine {
             queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
           }
         }
+      } else if (nodeType === 'relay-module') {
+        // Relay module contact traversal: signal enters on COM and exits via active contact (NO or NC)
+        const relayNode = nodes.find(n => n.id === current.id);
+        const energized = relayNode?.data?.relayEnergized ?? false;
+
+        // When energized: COM connects to NO
+        // When de-energized: COM connects to NC
+        const activeContact = energized ? 'NO' : 'NC';
+
+        // If signal is on COM, route to active contact
+        if (current.pin === 'COM') {
+          const downstreamEdges = edges.filter(e =>
+            (e.source === current.id && e.sourceHandle === activeContact) ||
+            (e.target === current.id && e.targetHandle === activeContact)
+          );
+          for (const edge of downstreamEdges) {
+            const nextId = edge.source === current.id ? edge.target : edge.source;
+            const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
+            queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
+          }
+        }
+        // If signal is on NO or NC, route to COM (bidirectional)
+        else if (current.pin === activeContact) {
+          const downstreamEdges = edges.filter(e =>
+            (e.source === current.id && e.sourceHandle === 'COM') ||
+            (e.target === current.id && e.targetHandle === 'COM')
+          );
+          for (const edge of downstreamEdges) {
+            const nextId = edge.source === current.id ? edge.target : edge.source;
+            const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
+            queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
+          }
+        }
       } else if (nodeType === 'resistor') {
         const rValue = Number(node.data?.sensorValues?.value ?? 0);
         console.log(`[FORGE CIRCUIT] Net trace through resistor (${current.id}): +${rValue} ohms`);
@@ -1080,7 +1113,7 @@ class CircuitEngine {
           }
 
           const isComplexPeripheral = ['stepper-motor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
-            'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5',
+            'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5', 'relay-module',
             '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer'].includes(pType);
 
           // 1. Trace the electrical network — only for simple output peripherals
@@ -1329,6 +1362,104 @@ class CircuitEngine {
                     });
                   }
                 }
+              }
+            }
+
+            // --- Relay Module Emulation (Single-Channel) ---
+            // IN = signal pin (HIGH = energized), VCC/GND = power
+            // When energized (IN=HIGH): COM connects to NO
+            // When de-energized (IN=LOW): COM connects to NC
+            if (peripheralNode.data?.type === 'relay-module') {
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              buf[peripheralPinName] = isHigh;
+
+              // Track ALL pins including switch terminals (COM, NO, NC)
+              // This is important because COM receives signals from the circuit
+              console.log(`[RELAY MODULE] Pin ${peripheralPinName} = ${isHigh ? 'HIGH' : 'LOW'}, buffer:`, buf);
+
+              // Relay is energized when IN pin is HIGH
+              const inHigh = !!buf['IN'];
+              const wasEnergized = peripheralNode.data?.relayEnergized ?? false;
+
+              // Check if COM is connected to a power source (5V or 3V3)
+              const relayEdges = currentStateStore.edges.filter(e =>
+                e.source === peripheralId || e.target === peripheralId
+              );
+
+              const comEdge = relayEdges.find(e =>
+                (e.source === peripheralId && e.sourceHandle === 'COM') ||
+                (e.target === peripheralId && e.targetHandle === 'COM')
+              );
+
+              let comSignal = buf['COM'] ?? false;
+
+              // If COM is connected to a board's power pin (5V, 3V3), it's always HIGH
+              if (comEdge) {
+                const connectedNodeId = comEdge.source === peripheralId ? comEdge.target : comEdge.source;
+                const connectedPin = comEdge.source === peripheralId ? comEdge.targetHandle : comEdge.sourceHandle;
+                const connectedNode = currentStateStore.nodes.find(n => n.id === connectedNodeId);
+
+                if (connectedNode && (connectedNode.data?.type === 'arduino-uno' || connectedNode.data?.type === 'esp32-c3')) {
+                  // Check if connected to a power pin
+                  if (connectedPin === '5V' || connectedPin === '3V3' || connectedPin === 'VCC') {
+                    comSignal = true;
+                    buf['COM'] = true;
+                    console.log(`[RELAY MODULE] COM connected to power pin ${connectedPin}, setting to HIGH`);
+                  }
+                }
+              }
+
+              // When IN pin changes, update relay state
+              if (peripheralPinName === 'IN' && inHigh !== wasEnergized) {
+                console.log(`[RELAY MODULE] Node ${peripheralId} — ${inHigh ? 'ENERGIZED' : 'DE-ENERGIZED'}`);
+                updateNodeData(peripheralId, { relayEnergized: inHigh });
+
+                // Determine active and inactive contacts
+                const activeContact = inHigh ? 'NO' : 'NC';
+                const inactiveContact = inHigh ? 'NC' : 'NO';
+
+                // Trace what's downstream of the active and inactive contacts
+                const activeTargets = this.traceNet(peripheralId, activeContact);
+                const inactiveTargets = this.traceNet(peripheralId, inactiveContact);
+
+                // Get the signal level on COM from the buffer
+                const comSignal = buf['COM'] ?? false;
+                console.log(`[RELAY MODULE] COM signal: ${comSignal}, routing to ${activeContact}`);
+
+                // Push signal to newly-active contact targets
+                activeTargets.forEach((target: { nodeId: string; pinName: string }) => {
+                  const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
+                  if (!targetNode) return;
+                  const pinStates = { ...(targetNode.data?.pinStates || {}), [`pin_${target.pinName}`]: comSignal };
+                  console.log(`[RELAY MODULE] Setting ${target.nodeId} pin ${target.pinName} = ${comSignal}`);
+                  updateNodeData(target.nodeId, { pinStates, damaged: false });
+                });
+
+                // Cut signal to newly-inactive contact targets
+                inactiveTargets.forEach((target: { nodeId: string; pinName: string }) => {
+                  const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
+                  if (!targetNode) return;
+                  const pinStates = { ...(targetNode.data?.pinStates || {}), [`pin_${target.pinName}`]: false };
+                  console.log(`[RELAY MODULE] Cutting ${target.nodeId} pin ${target.pinName}`);
+                  updateNodeData(target.nodeId, { pinStates, damaged: false });
+                });
+              }
+
+              // When COM pin receives a signal, route it through the active contact
+              if (peripheralPinName === 'COM') {
+                const activeContact = inHigh ? 'NO' : 'NC';
+                const activeTargets = this.traceNet(peripheralId, activeContact);
+
+                console.log(`[RELAY MODULE] COM signal changed to ${isHigh}, routing to ${activeContact}, targets:`, activeTargets.length);
+
+                // Push signal to active contact targets
+                activeTargets.forEach((target: { nodeId: string; pinName: string }) => {
+                  const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
+                  if (!targetNode) return;
+                  const pinStates = { ...(targetNode.data?.pinStates || {}), [`pin_${target.pinName}`]: isHigh };
+                  console.log(`[RELAY MODULE] Propagating to ${target.nodeId} pin ${target.pinName} = ${isHigh}`);
+                  updateNodeData(target.nodeId, { pinStates, damaged: false });
+                });
               }
             }
 

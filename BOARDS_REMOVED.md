@@ -238,8 +238,15 @@ After removal, verify:
 - [x] Sidebar.tsx updated - removed from COMPONENTS array
 - [x] CircuitAnalysisPanel.tsx updated - removed arduino-mega reference
 - [x] leap-elements/index.ts updated - commented out Web Component exports
+- [x] PartPicker.tsx updated - removed from Add Component dialog
+- [x] CircuitEngine.ts updated - removed from board node filter
+- [x] useForgeStore.ts updated - commented out board mappings
+- [x] BoardSelector.tsx updated - removed BoardType and BOARDS entries
+- [x] ForgeStudio.tsx updated - commented out FQBN mappings
+- [x] react-types.ts updated - commented out imports and type definitions
 - [ ] **Reload the application** to see changes take effect
 - [ ] Board selector shows only Arduino Uno and ESP32-C3
+- [ ] "Add Component" dialog shows only Arduino Uno and ESP32-C3
 - [ ] Component library loads correctly
 - [ ] Existing Uno projects work
 - [ ] Existing ESP32-C3 projects work
@@ -247,7 +254,7 @@ After removal, verify:
 - [ ] Circuit analysis works with both boards
 - [ ] Simulation runs on both boards
 
-**Note**: You must reload/restart the Leapforge application for the Web Component changes to take effect.
+**Note**: You must reload/restart the Leapforge application for all changes to take effect.
 
 ---
 

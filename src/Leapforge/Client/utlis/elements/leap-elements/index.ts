@@ -48,6 +48,7 @@ export { PushbuttonElement } from './pushbutton-element';
 export { ResistorElement } from './resistor-element';
 export { RGBLedElement } from './rgb-led-element';
 export { RotaryDialerElement } from './rotary-dialer-element';
+export { RelayModuleElement } from './relay-module-element';
 export { ServoElement } from './servo-element';
 export { SlidePotentiometerElement } from './slide-potentiometer-element';
 export { SlideSwitchElement } from './slide-switch-element';
