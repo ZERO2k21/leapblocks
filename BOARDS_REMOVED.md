@@ -69,7 +69,7 @@ const powerSource = nodes.find(n =>
 );
 ```
 
-### 3. **leap-elements/index.ts** ✅ NEW
+### 3. **leap-elements/index.ts** ✅
 **File**: `src/Leapforge/Client/utlis/elements/leap-elements/index.ts`
 
 **Commented out Web Component exports** to prevent registration:
@@ -82,6 +82,38 @@ const powerSource = nodes.find(n =>
 ```
 
 **Why this matters**: Web Components must be explicitly exported to be registered. By commenting out these exports, the components won't load into the browser, preventing them from appearing in the UI even if referenced elsewhere.
+
+### 4. **PartPicker.tsx** ✅
+**File**: `src/Leapforge/Client/Src/components/Library/PartPicker.tsx`
+
+Removed unwanted boards from the "Add Component" dialog COMPONENTS array.
+
+### 5. **CircuitEngine.ts** ✅
+**File**: `src/Leapforge/Client/Src/engine/Arduino/CircuitEngine.ts`
+
+Updated board node filter to only include Arduino Uno and ESP32-C3.
+
+### 6. **useForgeStore.ts** ✅
+**File**: `src/Leapforge/Client/utlis/store/useForgeStore.ts`
+
+Commented out board mappings for removed boards.
+
+### 7. **BoardSelector.tsx** ✅
+**File**: `src/Leapforge/Client/Src/components/BoardSelector.tsx`
+
+- Updated `BoardType` to only include `'arduino-uno'` and `'esp32-c3'`
+- Removed unwanted boards from BOARDS array
+
+### 8. **ForgeStudio.tsx** ✅
+**File**: `src/Leapforge/Client/Src/ForgeStudio.tsx`
+
+Commented out FQBN mappings for removed boards.
+
+### 9. **react-types.ts** ✅
+**File**: `src/Leapforge/Client/utlis/elements/leap-elements/react-types.ts`
+
+- Commented out imports for removed board elements
+- Commented out JSX type definitions for removed boards
 
 ---
 
