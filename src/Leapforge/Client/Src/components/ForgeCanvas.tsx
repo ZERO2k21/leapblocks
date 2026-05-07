@@ -125,10 +125,10 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
   return (
     <div
       className="forge-canvas-container"
-      style={{ 
-        width: '100%', 
-        height: '100%', 
-        background: '#f8fafc', 
+      style={{
+        width: '100%',
+        height: '100%',
+        background: '#f8fafc',
         position: 'relative',
         backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(0,0,0,0.03) 1px, transparent 0)',
         backgroundSize: '24px 24px'
@@ -156,14 +156,14 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
         connectionMode={ConnectionMode.Loose}
         style={{ background: 'transparent' }}
       >
-        <Background 
-          variant={BackgroundVariant.Dots} 
-          gap={24} 
-          size={1.5} 
-          color="rgba(0,0,0,0.15)" 
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={24}
+          size={1.5}
+          color="rgba(0,0,0,0.15)"
         />
-        
-        <Controls 
+
+        <Controls
           className="glass-controls"
           style={{
             display: 'flex',
@@ -180,8 +180,8 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
 
         <MiniMap
           className="glass-minimap"
-          style={{ 
-            background: 'rgba(255, 255, 255, 0.7)', 
+          style={{
+            background: 'rgba(255, 255, 255, 0.7)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(0,0,0,0.06)',
             borderRadius: 16,

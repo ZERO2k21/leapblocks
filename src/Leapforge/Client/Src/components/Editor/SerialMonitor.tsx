@@ -71,14 +71,14 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={handleDownload}
-            style={{ 
-              background: 'rgba(123, 79, 196, 0.05)', 
-              border: 'none', 
-              color: '#7B4FC4', 
-              cursor: 'pointer', 
-              padding: '6px 12px', 
+            style={{
+              background: 'rgba(123, 79, 196, 0.05)',
+              border: 'none',
+              color: '#7B4FC4',
+              cursor: 'pointer',
+              padding: '6px 12px',
               borderRadius: '8px',
-              fontSize: '11px', 
+              fontSize: '11px',
               fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
@@ -89,14 +89,14 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
           </button>
           <button
             onClick={onClear}
-            style={{ 
-              background: 'rgba(239, 68, 68, 0.05)', 
-              border: 'none', 
-              color: '#ef4444', 
-              cursor: 'pointer', 
-              padding: '6px 12px', 
+            style={{
+              background: 'rgba(239, 68, 68, 0.05)',
+              border: 'none',
+              color: '#ef4444',
+              cursor: 'pointer',
+              padding: '6px 12px',
               borderRadius: '8px',
-              fontSize: '11px', 
+              fontSize: '11px',
               fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
