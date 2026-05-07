@@ -114,9 +114,10 @@ const BOARD_NODE_TO_BOARD_ID: Record<string, string> = {
   'esp32-c3': 'esp32-c3',
   'esp32': 'esp32-c3',
   'arduino-uno': 'arduino-uno',
-  'arduino-nano': 'arduino-nano',
-  'arduino-mega': 'arduino-mega',
-  'attiny85': 'attiny85',
+  // REMOVED: Only Arduino Uno and ESP32-C3 supported
+  // 'arduino-nano': 'arduino-nano',
+  // 'arduino-mega': 'arduino-mega',
+  // 'attiny85': 'attiny85',
 };
 
 /** Detect the board from a list of nodes — returns the first board node found, or null */

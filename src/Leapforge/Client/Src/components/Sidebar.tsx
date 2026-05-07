@@ -27,9 +27,6 @@ const CATEGORIES = [
 const COMPONENTS = [
   // BOARDS
   { id: 'arduino-uno', name: 'Arduino Uno', category: 'boards', desc: 'Standard microcontroller' },
-  { id: 'arduino-mega', name: 'Arduino Mega', category: 'boards', desc: 'Powerful microcontroller' },
-  { id: 'attiny85', name: 'ATtiny85', category: 'boards', desc: 'Mini 8-pin MCU' },
-  { id: 'arduino-nano', name: 'Arduino Nano', category: 'boards', desc: 'Compact microcontroller' },
   { id: 'esp32-c3', name: 'ESP32-C3', category: 'boards', desc: 'RISC-V WiFi & Bluetooth MCU' },
 
   // OUTPUTS

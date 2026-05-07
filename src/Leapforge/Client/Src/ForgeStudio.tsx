@@ -107,10 +107,11 @@ void loop() {
 
     const FQBN: Record<string, string> = {
       'arduino-uno': 'arduino:avr:uno',
-      'arduino-nano': 'arduino:avr:nano:cpu=atmega328old',
-      'arduino-mega': 'arduino:avr:mega',
-      'attiny85': 'attiny:avr:ATtinyX5:cpu=attiny85,clock=internal8',
       'esp32-c3': 'esp32:esp32:esp32c3',
+      // REMOVED: Only Arduino Uno and ESP32-C3 supported
+      // 'arduino-nano': 'arduino:avr:nano:cpu=atmega328old',
+      // 'arduino-mega': 'arduino:avr:mega',
+      // 'attiny85': 'attiny:avr:ATtinyX5:cpu=attiny85,clock=internal8',
     };
 
     const isESP32 = ESP32_BOARD_IDS.has(board);

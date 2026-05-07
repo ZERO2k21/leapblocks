@@ -1017,9 +1017,6 @@ class CircuitEngine {
     // 2. Map board nodes (Arduino/ESP32) and their connected peripherals
     const boardNodes = nodes.filter(n =>
       n.data?.type === 'arduino-uno' ||
-      n.data?.type === 'arduino-nano' ||
-      n.data?.type === 'arduino-mega' ||
-      n.data?.type === 'boards' ||
       n.data?.type === 'esp32-c3'
     );
 
