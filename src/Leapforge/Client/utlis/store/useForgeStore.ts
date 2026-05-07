@@ -84,7 +84,6 @@ export interface ForgeState {
   serialOutput: string;
   appendSerial: (data: string) => void;
   clearSerial: () => void;
-  appendWiFiLog: (data: string) => void;
 
   // WiFi Log (ESP32 only)
   wifiLog: string[];
@@ -270,10 +269,6 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   appendSerial: (data) => set((state) => ({
     serialOutput: state.serialOutput + data
-  })),
-
-  appendWiFiLog: (data) => set((state) => ({
-    serialOutput: state.serialOutput + '[WiFi] ' + data + '\n'
   })),
 
   clearSerial: () => set({ serialOutput: '' }),
