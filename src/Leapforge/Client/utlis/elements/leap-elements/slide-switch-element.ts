@@ -2,14 +2,25 @@ import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ElementPin } from './pin';
 
+/**
+ * Slide Switch Element - SPDT (Single Pole Double Throw)
+ * 
+ * Pin Configuration:
+ * - Pin 1: Common terminal (pole)
+ * - Pin 2: Normally Open (NO) - connected when switch is ON (value=1)
+ * - Pin 3: Normally Closed (NC) - connected when switch is OFF (value=0)
+ * 
+ * When value=0 (OFF): Pin 1 connected to Pin 3 (NC)
+ * When value=1 (ON):  Pin 1 connected to Pin 2 (NO)
+ */
 @customElement('leap-slide-switch')
 export class SlideSwitchElement extends LitElement {
   @property() value = 0;
 
   readonly pinInfo: ElementPin[] = [
-    { name: '1', number: 1, y: 34, x: 6.5, signals: [] },
-    { name: '2', number: 2, y: 34, x: 16, signals: [] },
-    { name: '3', number: 3, y: 34, x: 25.5, signals: [] },
+    { name: '1', number: 1, y: 34, x: 6.5, signals: [], description: 'Common (Pole)' },
+    { name: '2', number: 2, y: 34, x: 16, signals: [], description: 'NO (Normally Open)' },
+    { name: '3', number: 3, y: 34, x: 25.5, signals: [], description: 'NC (Normally Closed)' },
   ];
 
   static get styles() {
@@ -22,7 +33,8 @@ export class SlideSwitchElement extends LitElement {
         margin: -1px;
       }
       svg #handle {
-        transition: transform 0.2s linear;
+        transition: transform 0.2s ease-out;
+        cursor: pointer;
       }
       input:checked + svg #handle {
         transform: translate(2px, 0);
@@ -30,6 +42,12 @@ export class SlideSwitchElement extends LitElement {
       input:focus + svg #handle {
         stroke-width: 0.4px;
         stroke: #8080ff;
+      }
+      svg {
+        cursor: pointer;
+      }
+      svg:hover #handle {
+        filter: brightness(1.2);
       }
     `;
   }
@@ -71,20 +89,30 @@ export class SlideSwitchElement extends LitElement {
           <stop stop-color="#b5b5b5" offset="1" />
         </radialGradient>
       </defs>
+      <!-- Terminal pins -->
       <g fill="#aaa" stroke-width=".0673">
-        <rect x="4" y="5" width=".5" height="4.2" rx=".25" ry=".25" />
         <rect x="1.54" y="5" width=".5" height="4.2" rx=".25" ry=".25" />
+        <rect x="4" y="5" width=".5" height="4.2" rx=".25" ry=".25" />
         <rect x="6.5" y="5" width=".5" height="4.2" rx=".25" ry=".25" />
       </g>
+      <!-- Slider handle -->
       <path
         id="handle"
         d="m2.74 0.128 0.145-0.128 0.177 0.0725 0.174-0.0725 0.151 0.0725 0.154-0.0725 0.151 0.0725 0.128-0.0725 0.134 0.0725 0.123-0.0725 0.145 0.128 2e-5 2h-1.48z"
         stroke-width=".0623"
+        fill="${this.value ? '#4ade80' : '#94a3b8'}"
       />
+      <!-- Switch body -->
       <rect x="0" y="2.06" width="8.5" height="3.48" fill="url(#a)" stroke-width=".0548" />
-      <rect x=".0322" y="4.74" width="1.55" height=".805" stroke-width=".0637" />
-      <rect x="6.95" y="4.74" width="1.55" height=".805" stroke-width=".0637" />
-      <rect x="2.55" y="4.74" width="3.47" height=".805" stroke-width=".0955" />
+      <!-- Terminal contacts -->
+      <rect x=".0322" y="4.74" width="1.55" height=".805" stroke-width=".0637" fill="${this.value ? '#94a3b8' : '#4ade80'}" />
+      <rect x="2.55" y="4.74" width="3.47" height=".805" stroke-width=".0955" fill="#d1d5db" />
+      <rect x="6.95" y="4.74" width="1.55" height=".805" stroke-width=".0637" fill="${this.value ? '#4ade80' : '#94a3b8'}" />
+      
+      <!-- State indicator labels -->
+      <text x="1" y="8.5" font-size="1.2" fill="#6b7280" font-family="monospace">NC</text>
+      <text x="4.25" y="1.5" font-size="1" fill="#6b7280" font-family="monospace" text-anchor="middle">${this.value ? 'ON' : 'OFF'}</text>
+      <text x="7" y="8.5" font-size="1.2" fill="#6b7280" font-family="monospace">NO</text>
     </svg>`;
   }
 

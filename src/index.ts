@@ -69,6 +69,9 @@ const createWindow = (): void => {
       preload: join(__dirname, '../preload/preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      // Allow cross-origin requests from renderer — required for ESP32 simulation
+      // HTTPClient/WiFiClient to reach external APIs (ThingSpeak, etc.)
+      webSecurity: false,
     },
   });
 

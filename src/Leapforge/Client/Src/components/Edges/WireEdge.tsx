@@ -14,8 +14,8 @@ import { useForgeStore } from '../../../utlis/store/useForgeStore';
 
 interface Point { x: number; y: number }
 
-/** Build an SVG path string through a list of points with rounded corners */
-function buildPath(points: Point[], radius = 8): string {
+/** Build an SVG path string through a list of points with slightly rounded corners */
+function buildPath(points: Point[], radius = 4): string {
   if (points.length < 2) return '';
   if (points.length === 2) {
     return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
@@ -29,6 +29,7 @@ function buildPath(points: Point[], radius = 8): string {
 
     const d1 = Math.hypot(curr.x - prev.x, curr.y - prev.y);
     const d2 = Math.hypot(next.x - curr.x, next.y - curr.y);
+    // Use a small sharp radius for electrical wire look
     const r = Math.min(radius, d1 / 2, d2 / 2);
 
     const t1 = r / d1;
@@ -146,92 +147,85 @@ export const WireEdge: React.FC<EdgeProps> = ({
 
   return (
     <g className="wire-edge-group">
+      {/* 0. GLOW FILTER for plug terminals */}
+      <defs>
+        <filter id={`plug-glow-${id}`} x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
       {/* 1. SELECTION GLOW */}
       {selected && (
         <path
-          style={{ stroke: wireColor, strokeWidth: 10, opacity: 0.18, fill: 'none', filter: 'blur(4px)' }}
+          style={{ stroke: wireColor, strokeWidth: 12, opacity: 0.2, fill: 'none', filter: 'blur(4px)' }}
           d={edgePath}
         />
       )}
 
-      {/* 2. DROP SHADOW */}
+      {/* 2. DROP SHADOW - Subtle for depth */}
       <path
         style={{
-          stroke: 'rgba(0,0,0,0.45)', strokeWidth: 5, fill: 'none',
-          strokeLinecap: 'round', transform: 'translate(2px, 2.5px)', filter: 'blur(1px)',
+          stroke: 'rgba(0,0,0,0.3)', strokeWidth: 3.5, fill: 'none',
+          strokeLinecap: 'round', strokeLinejoin: 'round', transform: 'translate(0.5px, 1px)', filter: 'blur(1px)',
         }}
         d={edgePath}
       />
 
-      {/* 3. MAIN WIRE BODY */}
+      {/* 3. MAIN WIRE BODY - Thinner wire */}
       <path
-        style={{ ...style, stroke: wireColor, strokeWidth: 4, fill: 'none', strokeLinecap: 'round' }}
+        style={{ ...style, stroke: wireColor, strokeWidth: 3, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }}
         className="react-flow__edge-path"
         d={edgePath}
       />
 
-      {/* 4. WHITE CORE */}
+      {/* 3b. WIRE HIGHLIGHT - thin bright line for 3D cable look */}
       <path
-        style={{ stroke: '#ffffff', strokeWidth: 1.5, fill: 'none', strokeLinecap: 'round', opacity: 0.75 }}
+        style={{ stroke: 'rgba(255,255,255,0.12)', strokeWidth: 1, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round', pointerEvents: 'none' }}
         d={edgePath}
       />
 
-      {/* 5. GLOSS */}
+      {/* 4. INVISIBLE HIT AREA */}
       <path
-        style={{
-          stroke: 'rgba(255,255,255,0.3)', strokeWidth: 1, fill: 'none',
-          strokeLinecap: 'round', transform: 'translate(-0.5px, -1px)',
-        }}
-        d={edgePath}
-      />
-
-      {/* 6. INVISIBLE HIT AREA */}
-      <path
-        style={{ stroke: 'transparent', strokeWidth: 14, fill: 'none', cursor: 'pointer' }}
+        style={{ stroke: 'transparent', strokeWidth: 16, fill: 'none', cursor: 'pointer' }}
         className="react-flow__edge-interaction"
         d={edgePath}
       />
 
-      {/* 7. PLUG TERMINALS */}
-      <g>
-        <circle cx={sourceX} cy={sourceY} r={3} fill="#0a0a0a" stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
-        <circle cx={sourceX} cy={sourceY} r={1.5} fill="#fff" opacity={0.9} />
-        <circle cx={targetX} cy={targetY} r={3} fill="#0a0a0a" stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
-        <circle cx={targetX} cy={targetY} r={1.5} fill="#fff" opacity={0.9} />
+      {/* 5. PLUG TERMINALS - Hidden, component pins will show the connection */}
+      <g style={{ display: 'none' }}>
+        {/* Terminals hidden - component pin handles show the connection points */}
+        <circle cx={sourceX} cy={sourceY} r={0} fill="transparent" />
+        <circle cx={targetX} cy={targetY} r={0} fill="transparent" />
       </g>
 
-      {/* 8. WAYPOINT HANDLES (drag to bend) — only when selected or hovered */}
+      {/* 6. WAYPOINT HANDLES (drag to bend) — only when selected or hovered */}
       {selected && waypoints.map((wp, i) => (
         <g key={`wp-${i}`} style={{ cursor: 'grab' }}>
-          {/* Outer ring */}
+          {/* Node dot */}
           <circle
-            cx={wp.x} cy={wp.y} r={7}
-            fill={wireColor} stroke="#fff" strokeWidth={1.5} opacity={0.9}
+            cx={wp.x} cy={wp.y} r={5}
+            fill={wireColor} stroke="rgba(0,0,0,0.5)" strokeWidth={1}
             onMouseDown={(e) => onWaypointMouseDown(e, i)}
             onDoubleClick={(e) => removeWaypoint(e, i)}
             style={{ cursor: 'grab' }}
           />
-          {/* Inner dot */}
-          <circle cx={wp.x} cy={wp.y} r={2.5} fill="#fff" opacity={0.9} style={{ pointerEvents: 'none' }} />
         </g>
       ))}
 
-      {/* 9. MID-SEGMENT ADD HANDLES (click to add bend point) — only when selected */}
+      {/* 7. MID-SEGMENT ADD HANDLES (click to add bend point) — only when selected */}
       {selected && midHandles.map(({ m, insertAfterIdx }, i) => (
         <g key={`mid-${i}`} style={{ cursor: 'crosshair' }}>
           <circle
             cx={m.x} cy={m.y} r={5}
-            fill="rgba(255,255,255,0.08)" stroke={wireColor} strokeWidth={1.5}
+            fill="transparent" stroke={wireColor} strokeWidth={1.5}
             strokeDasharray="2 2"
             onClick={(e) => addWaypoint(e, insertAfterIdx, m)}
             style={{ cursor: 'crosshair' }}
           />
-          <text
-            x={m.x} y={m.y + 1}
-            textAnchor="middle" dominantBaseline="middle"
-            fontSize={8} fill={wireColor} opacity={0.8}
-            style={{ pointerEvents: 'none', userSelect: 'none' }}
-          >+</text>
         </g>
       ))}
     </g>

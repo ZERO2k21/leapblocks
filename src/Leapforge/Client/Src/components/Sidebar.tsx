@@ -27,9 +27,6 @@ const CATEGORIES = [
 const COMPONENTS = [
   // BOARDS
   { id: 'arduino-uno', name: 'Arduino Uno', category: 'boards', desc: 'Standard microcontroller' },
-  { id: 'arduino-mega', name: 'Arduino Mega', category: 'boards', desc: 'Powerful microcontroller' },
-  { id: 'attiny85', name: 'ATtiny85', category: 'boards', desc: 'Mini 8-pin MCU' },
-  { id: 'arduino-nano', name: 'Arduino Nano', category: 'boards', desc: 'Compact microcontroller' },
   { id: 'esp32-c3', name: 'ESP32-C3', category: 'boards', desc: 'RISC-V WiFi & Bluetooth MCU' },
 
   // OUTPUTS
@@ -40,6 +37,7 @@ const COMPONENTS = [
   { id: 'servo', name: 'Servo Motor', category: 'outputs', desc: 'Positionable motor' },
   { id: 'stepper-motor', name: 'Stepper Motor', category: 'outputs', desc: 'NEMA bipolar stepper' },
   { id: 'a4988', name: 'A4988 Driver', category: 'outputs', desc: 'Stepper motor driver' },
+  { id: 'relay-module', name: 'Relay Module', category: 'outputs', desc: 'Single-channel relay' },
 
   // DISPLAYS
   { id: 'lcd1602', name: 'LCD 1602', category: 'displays', desc: '16x2 Character display (parallel)' },

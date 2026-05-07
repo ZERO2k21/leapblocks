@@ -10,7 +10,7 @@ import { I2CBusManager } from './I2CBusManager';
 import { PCF8574 } from './PCF8574';
 import { DHT } from './DHT';
 import { NeoPixelEmulator } from './NeoPixelEmulator';
-import { StepperEmulator, SteppingMode } from './StepperEmulator';
+import { StepperEmulator } from './StepperEmulator';
 import { SSD1306I2CSlave } from './SSD1306I2CSlave';
 import { ILI9341SPISlave } from './ILI9341SPISlave';
 import { MPU6050I2CSlave } from './MPU6050I2CSlave';
@@ -93,8 +93,6 @@ class CircuitEngine {
   private _pendingLibraryClasses = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
   private isInitialized = false;
-  private a4988DebugLogged = false; // Debug flag for A4988 diagnostics
-  private a4988MotorCache = new Map<string, { motorId: string | null; edges: any[] }>(); // A4988 nodeId → motor connection cache
 
   /**
    * Traces an electrical net from a starting point (board pin) and returns all 
@@ -108,7 +106,9 @@ class CircuitEngine {
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      const key = `${current.id}-${current.pin}`;
+      // Always use clean pin names for visited set and logic
+      const cleanStartPin = current.pin.replace(/__target$/, '');
+      const key = `${current.id}-${cleanStartPin}`;
       if (visited.has(key)) continue;
       visited.add(key);
 
@@ -118,27 +118,88 @@ class CircuitEngine {
       const nodeType = node.data?.type;
 
       if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring'].includes(nodeType)) {
-        targets.push({ nodeId: current.id, pinName: current.pin, resistance: current.resistance, type: nodeType });
+        targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
       } else if (nodeType === 'ks2e-m-dc5') {
-        // Relay contact traversal: signal enters on a pole pin (P1/P2) and exits via the active contact
-        const relayNode = nodes.find(n => n.id === current.id);
-        const energized = relayNode?.data?.relayEnergized ?? false;
-
-        // Map pole → active contact based on relay state
-        const contactMap: Record<string, string> = energized
-          ? { 'P1': 'NO1', 'P2': 'NO2' }
-          : { 'P1': 'NC1', 'P2': 'NC2' };
-
-        const exitPin = contactMap[current.pin];
-        if (exitPin) {
-          const downstreamEdges = edges.filter(e =>
-            (e.source === current.id && e.sourceHandle === exitPin) ||
-            (e.target === current.id && e.targetHandle === exitPin)
+        // When tracing FROM the relay itself (start node), follow external edges
+        // from the specified pin — don't apply internal contact routing
+        if (current.id === startNodeId) {
+          const outEdges = edges.filter(e =>
+            (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === cleanStartPin) ||
+            (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === cleanStartPin)
           );
-          for (const edge of downstreamEdges) {
+          for (const edge of outEdges) {
             const nextId = edge.source === current.id ? edge.target : edge.source;
             const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
             queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
+          }
+        } else {
+          // Relay contact traversal: signal enters on a pole pin (P1/P2) and exits via the active contact
+          const relayNode = nodes.find(n => n.id === current.id);
+          const energized = relayNode?.data?.relayEnergized ?? false;
+
+          // Map pole → active contact based on relay state
+          const contactMap: Record<string, string> = energized
+            ? { 'P1': 'NO1', 'P2': 'NO2' }
+            : { 'P1': 'NC1', 'P2': 'NC2' };
+
+          const exitPin = contactMap[cleanStartPin];
+          if (exitPin) {
+            const downstreamEdges = edges.filter(e =>
+              (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
+              (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
+            );
+            for (const edge of downstreamEdges) {
+              const nextId = edge.source === current.id ? edge.target : edge.source;
+              const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
+              queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
+            }
+          }
+        }
+      } else if (nodeType === 'relay-module') {
+        // When tracing FROM the relay itself (start node), follow external edges
+        // from the specified pin — don't apply internal contact routing
+        if (current.id === startNodeId) {
+          const outEdges = edges.filter(e =>
+            (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === cleanStartPin) ||
+            (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === cleanStartPin)
+          );
+          for (const edge of outEdges) {
+            const nextId = edge.source === current.id ? edge.target : edge.source;
+            const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
+            queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
+          }
+        } else {
+          // Relay module contact traversal: signal enters on COM and exits via active contact (NO or NC)
+          const relayNode = nodes.find(n => n.id === current.id);
+          const energized = relayNode?.data?.relayEnergized ?? false;
+
+          // When energized: COM connects to NO
+          // When de-energized: COM connects to NC
+          const activeContact = energized ? 'NO' : 'NC';
+
+          // If signal is on COM, route to active contact
+          if (cleanStartPin === 'COM') {
+            const downstreamEdges = edges.filter(e =>
+              (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === activeContact) ||
+              (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === activeContact)
+            );
+            for (const edge of downstreamEdges) {
+              const nextId = edge.source === current.id ? edge.target : edge.source;
+              const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
+              queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
+            }
+          }
+          // If signal is on NO or NC, route to COM (bidirectional)
+          else if (cleanStartPin === activeContact) {
+            const downstreamEdges = edges.filter(e =>
+              (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === 'COM') ||
+              (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === 'COM')
+            );
+            for (const edge of downstreamEdges) {
+              const nextId = edge.source === current.id ? edge.target : edge.source;
+              const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
+              queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
+            }
           }
         }
       } else if (nodeType === 'resistor') {
@@ -147,21 +208,21 @@ class CircuitEngine {
 
         // Find the other pin of the resistor
         let exitPin = '';
-        if (current.pin === '1' || current.pin === 'pin_1' || current.pin === 'IN') {
+        if (cleanStartPin === '1' || cleanStartPin === 'pin_1' || cleanStartPin === 'IN') {
           exitPin = node.data?.pinOUT ? 'OUT' : '2';
         } else {
           exitPin = node.data?.pinIN ? 'IN' : '1';
         }
 
         // Robust fallback: if we don't know the pins, check if they are 'IN'/'OUT'
-        if (current.pin === 'IN') exitPin = 'OUT';
-        else if (current.pin === 'OUT') exitPin = 'IN';
-        else if (current.pin === '1' || current.pin === 'pin_1') exitPin = '2';
-        else if (current.pin === '2' || current.pin === 'pin_2') exitPin = '1';
+        if (cleanStartPin === 'IN') exitPin = 'OUT';
+        else if (cleanStartPin === 'OUT') exitPin = 'IN';
+        else if (cleanStartPin === '1' || cleanStartPin === 'pin_1') exitPin = '2';
+        else if (cleanStartPin === '2' || cleanStartPin === 'pin_2') exitPin = '1';
 
         const downstreamEdges = edges.filter(e =>
-          (e.source === current.id && e.sourceHandle === exitPin) ||
-          (e.target === current.id && e.targetHandle === exitPin)
+          (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
+          (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
         );
 
         for (const edge of downstreamEdges) {
@@ -208,12 +269,6 @@ class CircuitEngine {
       // Re-sync only when edges change while already simulating (not on the start transition)
       const edgesChanged = state.edges.length !== previousEdgesCount;
       const wasAlreadySimulating = previousIsSimulating && state.isSimulating;
-
-      // Handle simulation stop to clean up emulators
-      if (previousIsSimulating && !state.isSimulating) {
-        this.cleanup();
-      }
-
       previousEdgesCount = state.edges.length;
       previousIsSimulating = state.isSimulating;
       if (edgesChanged && wasAlreadySimulating) {
@@ -738,9 +793,11 @@ class CircuitEngine {
   }
 
   /**
-   * Clears all active emulators, timers, and AVR listeners.
+   * Called whenever wires are drawn/removed. Rebuilds the routing table.
    */
-  public cleanup() {
+  public syncCircuitGraph() {
+    console.log('[FORGE CIRCUIT] syncCircuitGraph triggered. Re-evaluating electrical routing table...');
+    // 1. Clear all old AVR listeners hooked by the circuit engine
     this.activeSubscriptions.forEach((unsubscribe) => unsubscribe());
     this.activeSubscriptions.clear();
     this.lcdEmulators.clear();
@@ -761,18 +818,6 @@ class CircuitEngine {
     // Cancel all heart-beat animation timers
     this.heartBeatTimers.forEach(id => cancelAnimationFrame(id));
     this.heartBeatTimers.clear();
-    // Clear A4988 motor connection cache and debug flag
-    this.a4988MotorCache.clear();
-    this.a4988DebugLogged = false;
-  }
-
-  /**
-   * Called whenever wires are drawn/removed. Rebuilds the routing table.
-   */
-  public syncCircuitGraph() {
-    console.log('[FORGE CIRCUIT] syncCircuitGraph triggered. Re-evaluating electrical routing table...');
-    // 1. Clear all old AVR listeners hooked by the circuit engine
-    this.cleanup();
 
     const { nodes, edges, updateNodeData } = useForgeStore.getState();
     const currentStateStore = useForgeStore.getState();
@@ -1035,9 +1080,6 @@ class CircuitEngine {
     // 2. Map board nodes (Arduino/ESP32) and their connected peripherals
     const boardNodes = nodes.filter(n =>
       n.data?.type === 'arduino-uno' ||
-      n.data?.type === 'arduino-nano' ||
-      n.data?.type === 'arduino-mega' ||
-      n.data?.type === 'boards' ||
       n.data?.type === 'esp32-c3'
     );
 
@@ -1084,22 +1126,7 @@ class CircuitEngine {
 
         // Ensure buffers exist for this peripheral
         if (!this.peripheralPinBuffers.has(peripheralId)) {
-          const pType = nodes.find(n => n.id === peripheralId)?.data?.type;
-          // Set A4988 pin defaults per Wokwi spec:
-          //   ENABLE  → pulled-down (LOW = 0 = enabled by default)
-          //   SLEEP   → pulled-up (HIGH = 1 = awake by default)
-          //   RESET   → floating (treat as HIGH = not in reset)
-          //   MS1/2/3 → pulled-down (LOW = full step by default)
-          const initialBuf: Record<string, boolean> = {};
-          if (pType === 'a4988') {
-            initialBuf['ENABLE'] = false; // pulled-down → LOW → driver enabled
-            initialBuf['SLEEP'] = true;  // pulled-up  → HIGH → awake
-            initialBuf['RESET'] = true;  // floating   → treat as HIGH → not in reset
-            initialBuf['MS1'] = false;
-            initialBuf['MS2'] = false;
-            initialBuf['MS3'] = false;
-          }
-          this.peripheralPinBuffers.set(peripheralId, initialBuf);
+          this.peripheralPinBuffers.set(peripheralId, {});
         }
 
         // Create a dedicated listener that pushes the HIGH/LOW state across the wire to the target node
@@ -1116,7 +1143,7 @@ class CircuitEngine {
           }
 
           const isComplexPeripheral = ['stepper-motor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
-            'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5',
+            'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5', 'relay-module',
             '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer'].includes(pType);
 
           // 1. Trace the electrical network — only for simple output peripherals
@@ -1336,8 +1363,8 @@ class CircuitEngine {
 
                   // Find the signal level on the pole pin
                   const poleEdge = relayEdges.find(e =>
-                    (e.source === peripheralId && e.sourceHandle === pole) ||
-                    (e.target === peripheralId && e.targetHandle === pole)
+                    (e.source === peripheralId && e.sourceHandle?.replace(/__target$/, '') === pole) ||
+                    (e.target === peripheralId && e.targetHandle?.replace(/__target$/, '') === pole)
                   );
 
                   if (poleEdge) {
@@ -1368,6 +1395,107 @@ class CircuitEngine {
               }
             }
 
+            // --- Relay Module Emulation (Single-Channel) ---
+            // IN = signal pin (HIGH = energized), VCC/GND = power
+            // When energized (IN=HIGH): COM connects to NO
+            // When de-energized (IN=LOW): COM connects to NC
+            if (peripheralNode.data?.type === 'relay-module') {
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              buf[peripheralPinName] = isHigh;
+
+              // Track ALL pins including switch terminals (COM, NO, NC)
+              // This is important because COM receives signals from the circuit
+              console.log(`[RELAY MODULE] Pin ${peripheralPinName} = ${isHigh ? 'HIGH' : 'LOW'}, buffer:`, buf);
+
+              // Relay is energized when IN pin is HIGH
+              const inHigh = !!buf['IN'];
+              const wasEnergized = peripheralNode.data?.relayEnergized ?? false;
+
+              // Check if COM is connected to a power source (5V or 3V3)
+              const relayEdges = currentStateStore.edges.filter(e =>
+                e.source === peripheralId || e.target === peripheralId
+              );
+
+              const comEdge = relayEdges.find(e =>
+                (e.source === peripheralId && e.sourceHandle?.replace(/__target$/, '') === 'COM') ||
+                (e.target === peripheralId && e.targetHandle?.replace(/__target$/, '') === 'COM')
+              );
+
+              let comSignal = buf['COM'] ?? false;
+
+              // If COM is connected to a board's power pin (5V, 3V3), it's always HIGH
+              if (comEdge) {
+                const connectedNodeId = comEdge.source === peripheralId ? comEdge.target : comEdge.source;
+                const connectedPinRaw = comEdge.source === peripheralId ? comEdge.targetHandle : comEdge.sourceHandle;
+                const connectedPin = connectedPinRaw?.replace(/__target$/, '') || '';
+                const connectedNode = currentStateStore.nodes.find(n => n.id === connectedNodeId);
+
+                if (connectedNode && (connectedNode.data?.type === 'arduino-uno' || connectedNode.data?.type === 'esp32-c3')) {
+                  // Check if connected to a power pin
+                  if (connectedPin === '5V' || connectedPin === '3V3' || connectedPin === '3.3V' || connectedPin === 'VCC' || connectedPin === 'VIN') {
+                    comSignal = true;
+                    buf['COM'] = true;
+                    console.log(`[RELAY MODULE] COM connected to power pin ${connectedPin}, setting to HIGH`);
+                  }
+                }
+              }
+
+              // When IN pin changes, update relay state
+              if (peripheralPinName === 'IN' && inHigh !== wasEnergized) {
+                console.log(`[RELAY MODULE] Node ${peripheralId} — ${inHigh ? 'ENERGIZED' : 'DE-ENERGIZED'}`);
+                updateNodeData(peripheralId, { relayEnergized: inHigh });
+
+                // Determine active and inactive contacts
+                const activeContact = inHigh ? 'NO' : 'NC';
+                const inactiveContact = inHigh ? 'NC' : 'NO';
+
+                // Trace what's downstream of the active and inactive contacts
+                const activeTargets = this.traceNet(peripheralId, activeContact);
+                const inactiveTargets = this.traceNet(peripheralId, inactiveContact);
+
+                console.log(`[RELAY MODULE] Found ${activeTargets.length} active targets for ${activeContact}, ${inactiveTargets.length} inactive targets for ${inactiveContact}`);
+                
+                // Get the signal level on COM from the buffer
+                const comSignal = buf['COM'] ?? false;
+                console.log(`[RELAY MODULE] COM signal: ${comSignal}, routing to ${activeContact}`);
+
+                // Push signal to newly-active contact targets
+                activeTargets.forEach((target: { nodeId: string; pinName: string }) => {
+                  const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
+                  if (!targetNode) return;
+                  const pinStates = { ...(targetNode.data?.pinStates || {}), [`pin_${target.pinName}`]: comSignal };
+                  console.log(`[RELAY MODULE] Setting ${target.nodeId} pin ${target.pinName} = ${comSignal}`);
+                  updateNodeData(target.nodeId, { pinStates, damaged: false });
+                });
+
+                // Cut signal to newly-inactive contact targets
+                inactiveTargets.forEach((target: { nodeId: string; pinName: string }) => {
+                  const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
+                  if (!targetNode) return;
+                  const pinStates = { ...(targetNode.data?.pinStates || {}), [`pin_${target.pinName}`]: false };
+                  console.log(`[RELAY MODULE] Cutting ${target.nodeId} pin ${target.pinName}`);
+                  updateNodeData(target.nodeId, { pinStates, damaged: false });
+                });
+              }
+
+              // When COM pin receives a signal, route it through the active contact
+              if (peripheralPinName === 'COM') {
+                const activeContact = inHigh ? 'NO' : 'NC';
+                const activeTargets = this.traceNet(peripheralId, activeContact);
+
+                console.log(`[RELAY MODULE] COM signal changed to ${isHigh}, routing to ${activeContact}, targets:`, activeTargets.length);
+
+                // Push signal to active contact targets
+                activeTargets.forEach((target: { nodeId: string; pinName: string }) => {
+                  const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
+                  if (!targetNode) return;
+                  const pinStates = { ...(targetNode.data?.pinStates || {}), [`pin_${target.pinName}`]: isHigh };
+                  console.log(`[RELAY MODULE] Propagating to ${target.nodeId} pin ${target.pinName} = ${isHigh}`);
+                  updateNodeData(target.nodeId, { pinStates, damaged: false });
+                });
+              }
+            }
+
             // --- Stepper Motor Emulation ---
             // Supports both wiring modes:
             //   4-wire (A+, B+, A-, B-) — Arduino Stepper.h / ULN2003
@@ -1375,49 +1503,20 @@ class CircuitEngine {
             if (peripheralNode.data?.type === 'stepper-motor') {
               if (!this.stepperEmulators.has(peripheralId)) {
                 console.log(`[STEPPER] Wiring 4-wire emulator for node ${peripheralId} — pin ${peripheralPinName} ← AVR ${avrPin}`);
-
-                // Check if this motor is also connected to an A4988 (double-wiring issue)
-                const { nodes, edges } = useForgeStore.getState();
-                const motorToA4988Edges = edges.filter(e => {
-                  const srcHandle = (e.sourceHandle || '').replace(/__target$/, '');
-                  const tgtHandle = (e.targetHandle || '').replace(/__target$/, '');
-                  const isMotorPin = ['A+', 'A-', 'B+', 'B-'].includes(srcHandle) || ['A+', 'A-', 'B+', 'B-'].includes(tgtHandle);
-                  return (e.source === peripheralId || e.target === peripheralId) && isMotorPin;
-                });
-
-                const a4988Nodes = motorToA4988Edges
-                  .map(e => e.source === peripheralId ? e.target : e.source)
-                  .map(id => nodes.find(n => n.id === id))
-                  .filter(n => n?.data?.type === 'a4988');
-
-                if (a4988Nodes.length > 0) {
-                  console.warn(`[STEPPER] WARNING: Motor ${peripheralId} is connected to BOTH:`);
-                  console.warn(`[STEPPER]   1. ESP32 pins directly (4-wire mode) - CORRECT for Arduino Stepper library`);
-                  console.warn(`[STEPPER]   2. A4988 driver(s): ${a4988Nodes.map(n => n!.id).join(', ')}`);
-                  console.warn(`[STEPPER] This creates conflicting control paths. Choose ONE:`);
-                  console.warn(`[STEPPER]   Option A: Remove A4988, keep direct wiring, use Arduino Stepper library`);
-                  console.warn(`[STEPPER]   Option B: Remove direct wiring, wire ESP32→A4988(STEP/DIR)→Motor, use AccelStepper`);
-                }
-
-                let pendingUpdate: { angle: number; stepCount: number; energized: boolean; actualAngle?: number; actualAngleUnbounded?: number } | null = null;
+                let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
                 let rafScheduled = false;
-                this.stepperEmulators.set(peripheralId, new StepperEmulator(({ angle, stepCount, energized, actualAngle, actualAngleUnbounded }) => {
-                  pendingUpdate = { angle, stepCount, energized, actualAngle, actualAngleUnbounded };
+                this.stepperEmulators.set(peripheralId, new StepperEmulator(({ angle, stepCount, energized }) => {
+                  pendingUpdate = { angle, stepCount, energized };
                   if (!rafScheduled) {
                     rafScheduled = true;
                     requestAnimationFrame(() => {
                       rafScheduled = false;
                       if (pendingUpdate) {
-                        const { angle: a, stepCount: s, energized: e, actualAngle: smoothAngle, actualAngleUnbounded: smoothUnbounded } = pendingUpdate;
+                        const { angle: a, stepCount: s, energized: e } = pendingUpdate;
                         pendingUpdate = null;
-                        // Use smooth physics angle if available for display
-                        const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
-                        // Use unbounded smooth angle for CSS transform if available
-                        const transformAngle = smoothUnbounded !== undefined ? smoothUnbounded : (s / 200) * 360;
                         updateNodeData(peripheralId, {
-                          // For CSS transform, use smooth unbounded angle for realistic motion
-                          angle: transformAngle,
-                          value: `${transformAngle.toFixed(1)}°`,
+                          angle: a,
+                          value: `${a.toFixed(1)}°`,
                           units: `${s > 0 ? '+' : ''}${s} steps`,
                           arrow: e ? '#BEF264' : '',
                         });
@@ -1428,7 +1527,6 @@ class CircuitEngine {
               }
               const stepper = this.stepperEmulators.get(peripheralId)!;
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
-              const oldValue = buf[peripheralPinName];
               buf[peripheralPinName] = isHigh;
 
               if (peripheralPinName === 'STEP') {
@@ -1437,11 +1535,6 @@ class CircuitEngine {
                 stepper.setDirection(isHigh);
               } else {
                 // 4-wire mode — order must match Stepper.h: processCoils(A+, B+, A-, B-)
-                // Log only when a coil state actually changes
-                if (oldValue !== isHigh) {
-                  console.log(`[STEPPER] Coil ${peripheralPinName} changed: ${oldValue ? 'HIGH' : 'LOW'} → ${isHigh ? 'HIGH' : 'LOW'}`);
-                  console.log(`[STEPPER] Current coil state: A+=${!!buf['A+']}, B+=${!!buf['B+']}, A-=${!!buf['A-']}, B-=${!!buf['B-']}`);
-                }
                 stepper.processCoils(
                   !!buf['A+'],
                   !!buf['B+'],
@@ -1465,20 +1558,18 @@ class CircuitEngine {
               // Create outer emulator (motor 1)
               if (!this.stepperEmulators.has(outerKey)) {
                 console.log(`[BIAXIAL] Wiring outer emulator for node ${peripheralId}`);
-                let pending: { angle: number; energized: boolean; actualAngleUnbounded?: number } | null = null;
+                let pending: { angle: number; energized: boolean } | null = null;
                 let rafPending = false;
-                this.stepperEmulators.set(outerKey, new StepperEmulator(({ angle, energized, actualAngleUnbounded }) => {
-                  pending = { angle, energized, actualAngleUnbounded };
+                this.stepperEmulators.set(outerKey, new StepperEmulator(({ angle, energized }) => {
+                  pending = { angle, energized };
                   if (!rafPending) {
                     rafPending = true;
                     requestAnimationFrame(() => {
                       rafPending = false;
                       if (pending) {
-                        const { angle: a, energized: e, actualAngleUnbounded: smoothAngle } = pending;
+                        const { angle: a, energized: e } = pending;
                         pending = null;
-                        // Use smooth angle if available
-                        const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
-                        updateNodeData(peripheralId, { outerHandAngle: displayAngle, outerEnergized: e });
+                        updateNodeData(peripheralId, { outerHandAngle: a, outerEnergized: e });
                       }
                     });
                   }
@@ -1488,20 +1579,18 @@ class CircuitEngine {
               // Create inner emulator (motor 2)
               if (!this.stepperEmulators.has(innerKey)) {
                 console.log(`[BIAXIAL] Wiring inner emulator for node ${peripheralId}`);
-                let pending: { angle: number; energized: boolean; actualAngleUnbounded?: number } | null = null;
+                let pending: { angle: number; energized: boolean } | null = null;
                 let rafPending = false;
-                this.stepperEmulators.set(innerKey, new StepperEmulator(({ angle, energized, actualAngleUnbounded }) => {
-                  pending = { angle, energized, actualAngleUnbounded };
+                this.stepperEmulators.set(innerKey, new StepperEmulator(({ angle, energized }) => {
+                  pending = { angle, energized };
                   if (!rafPending) {
                     rafPending = true;
                     requestAnimationFrame(() => {
                       rafPending = false;
                       if (pending) {
-                        const { angle: a, energized: e, actualAngleUnbounded: smoothAngle } = pending;
+                        const { angle: a, energized: e } = pending;
                         pending = null;
-                        // Use smooth angle if available
-                        const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
-                        updateNodeData(peripheralId, { innerHandAngle: displayAngle, innerEnergized: e });
+                        updateNodeData(peripheralId, { innerHandAngle: a, innerEnergized: e });
                       }
                     });
                   }
@@ -1538,172 +1627,59 @@ class CircuitEngine {
             // --- A4988 Stepper Driver Emulation ---
             // Bridges STEP/DIR from Arduino to the stepper motor connected on 1A/1B/2A/2B
             if (peripheralNode.data?.type === 'a4988') {
-              const buf = this.peripheralPinBuffers.get(peripheralId)!;
-              // Skip buffer update for FLOATING state — preserves A4988 hardware
-              // default pin states (RESET=HIGH via pull-up, SLEEP=HIGH via pull-up,
-              // ENABLE=LOW via pull-down). The initial addListener() call fires with
-              // FLOATING before any real signal arrives, which would incorrectly
-              // overwrite these defaults and disable the driver.
-              if (state === 'FLOATING') return;
-              buf[peripheralPinName] = isHigh;
-
-              // Debug: Log all pin changes to diagnose wiring issues
-              if (!this.a4988DebugLogged) {
-                this.a4988DebugLogged = true;
-                console.log(`[A4988 DEBUG] First pin change detected: ${peripheralPinName} = ${isHigh ? 'HIGH' : 'LOW'}`);
-                console.log(`[A4988 DEBUG] A4988 node ID: ${peripheralId}`);
-
-                // Check if user is trying to use 4-wire mode with A4988
-                const { edges } = useForgeStore.getState();
-                const inputEdges = edges.filter(e => {
-                  const srcHandle = (e.sourceHandle || '').replace(/__target$/, '');
-                  const tgtHandle = (e.targetHandle || '').replace(/__target$/, '');
-                  return (e.target === peripheralId && ['STEP', 'DIR'].includes(tgtHandle)) ||
-                    (e.source === peripheralId && ['STEP', 'DIR'].includes(srcHandle));
-                });
-
-                if (inputEdges.length === 0) {
-                  console.error(`[A4988 ERROR] No STEP/DIR pins connected to A4988!`);
-                  console.error(`[A4988 ERROR] The A4988 driver requires STEP and DIR signals from your microcontroller.`);
-                  console.error(`[A4988 ERROR] If you're using Arduino's Stepper library in 4-wire mode, you have two options:`);
-                  console.error(`[A4988 ERROR]   1. Remove the A4988 and wire ESP32 pins directly to the stepper motor`);
-                  console.error(`[A4988 ERROR]   2. Change your code to use AccelStepper library with STEP/DIR mode`);
-                } else {
-                  console.log(`[A4988 DEBUG] STEP/DIR pins properly connected: ${inputEdges.length} edges`);
-                }
-              }
-
-              // Handle control pins: ENABLE, RESET, SLEEP, MS1, MS2, MS3, STEP, DIR
-              // Update A4988 element UI state for all pins
-              {
-                const currentPinStates = peripheralNode.data?.pinStates || {};
-                updateNodeData(peripheralId, {
-                  pinStates: {
-                    ...currentPinStates,
-                    [`pin_${peripheralPinName}`]: isHigh
-                  }
-                });
-              }
-
               if (peripheralPinName === 'STEP' || peripheralPinName === 'DIR') {
+                const buf = this.peripheralPinBuffers.get(peripheralId)!;
+                buf[peripheralPinName] = isHigh;
 
-                // Find the stepper motor connected to this A4988's motor pins (1A/1B/2A/2B)
-                // Cache the result to avoid filtering edges on every pin change (performance optimization)
-                let cached = this.a4988MotorCache.get(peripheralId);
+                // Find the stepper motor connected to this A4988's motor pins
+                const motorEdges = currentStateStore.edges.filter(e =>
+                  (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.sourceHandle || '')) ||
+                  (e.target === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.targetHandle || ''))
+                );
 
-                if (!cached) {
-                  // First time - find and cache the motor connection
-                  const motorEdges = currentStateStore.edges.filter(e => {
-                    const srcHandle = (e.sourceHandle || '').replace(/__target$/, '');
-                    const tgtHandle = (e.targetHandle || '').replace(/__target$/, '');
-                    return (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(srcHandle)) ||
-                      (e.target === peripheralId && ['1A', '1B', '2A', '2B'].includes(tgtHandle));
-                  });
-
-                  if (motorEdges.length === 0) {
-                    console.warn(`[A4988] No motor edges found for A4988 node ${peripheralId}. Wire 1A/1B/2A/2B to a stepper motor.`);
-                    cached = { motorId: null, edges: [] };
-                  } else {
-                    console.log(`[A4988] Motor edges found: ${motorEdges.length} connections`);
-                    const motorId = motorEdges[0].source === peripheralId ? motorEdges[0].target : motorEdges[0].source;
-                    cached = { motorId, edges: motorEdges };
-                  }
-
-                  // Cache the result
-                  this.a4988MotorCache.set(peripheralId, cached);
-                }
-
-                const motorNodeId = cached.motorId;
-                const motorEdges = cached.edges;
+                const motorNodeId = motorEdges.length > 0
+                  ? (motorEdges[0].source === peripheralId ? motorEdges[0].target : motorEdges[0].source)
+                  : null;
 
                 if (motorNodeId) {
                   const motorNode = currentStateStore.nodes.find(n => n.id === motorNodeId);
                   const isBiaxial = motorNode?.data?.type === 'biaxial-stepper';
 
-                  // Check if driver is enabled per Wokwi A4988 spec:
-                  //   ENABLE is active-low (default pulled-down → LOW = enabled)
-                  //   RESET  is active-low (default floating → treat as HIGH = not in reset)
-                  //   SLEEP  is active-low (default pulled-up → HIGH = awake)
-                  // Note: undefined means pin not connected, use default state
-                  const enableLow = buf['ENABLE'] !== true; // LOW or undefined = enabled
-                  const resetHigh = buf['RESET'] !== false; // HIGH or undefined = not in reset
-                  const sleepHigh = buf['SLEEP'] !== false; // HIGH or undefined = awake
-                  const driverEnabled = enableLow && resetHigh && sleepHigh;
-
-                  if (!driverEnabled) {
-                    // Driver is disabled, motor should not move
-                    if (!this.a4988DebugLogged) {
-                      console.warn(`[A4988] Driver disabled! Motor will not move. Check ENABLE/RESET/SLEEP pins.`);
-                      console.warn(`[A4988] State: ENABLE=${buf['ENABLE']}, RESET=${buf['RESET']}, SLEEP=${buf['SLEEP']}`);
-                      this.a4988DebugLogged = true;
-                    }
-                    return;
-                  }
-
-                  // Determine microstepping mode from MS1/MS2/MS3 pins
-                  const ms1 = !!buf['MS1'];
-                  const ms2 = !!buf['MS2'];
-                  const ms3 = !!buf['MS3'];
-                  let microstepDivisor = 1;
-                  let steppingMode: SteppingMode = 'full';
-
-                  if (!ms1 && !ms2 && !ms3) {
-                    microstepDivisor = 1;
-                    steppingMode = 'full';
-                  } else if (ms1 && !ms2 && !ms3) {
-                    microstepDivisor = 2;
-                    steppingMode = 'half';
-                  } else if (!ms1 && ms2 && !ms3) {
-                    microstepDivisor = 4;
-                    steppingMode = 'micro';
-                  } else if (ms1 && ms2 && !ms3) {
-                    microstepDivisor = 8;
-                    steppingMode = 'micro';
-                  } else if (ms1 && ms2 && ms3) {
-                    microstepDivisor = 16;
-                    steppingMode = 'micro';
-                  }
-
                   if (isBiaxial) {
-                    // Determine which shaft this A4988 drives by inspecting which biaxial pins are wired.
-                    // motorEdges are edges between the A4988 (peripheralId) and the biaxial motor (motorNodeId).
-                    // We need the biaxial motor's pin handles to determine inner vs outer shaft.
-                    const connectedBiaxialPins = motorEdges.map(e =>
+                    // Determine which shaft this A4988 drives by inspecting which biaxial pins are wired
+                    const biaxialEdges = currentStateStore.edges.filter(e =>
+                      (e.source === peripheralId && motorEdges.some(me => me === e)) ||
+                      (e.target === peripheralId && motorEdges.some(me => me === e))
+                    );
+                    const connectedBiaxialPins = biaxialEdges.map(e =>
                       e.source === motorNodeId ? e.sourceHandle : e.targetHandle
                     );
-                    const isInner = connectedBiaxialPins.some(p => {
-                      const h = (p || '').replace(/__target$/, '');
-                      return ['A2+', 'A2-', 'B2+', 'B2-'].includes(h);
-                    });
+                    const isInner = connectedBiaxialPins.some(p => p && ['A2+', 'A2-', 'B2+', 'B2-'].includes(p));
                     const shaftKey = isInner ? `${motorNodeId}__inner` : `${motorNodeId}__outer`;
                     const shaftLabel = isInner ? 'inner' : 'outer';
 
                     if (!this.stepperEmulators.has(shaftKey)) {
                       console.log(`[BIAXIAL] Wiring A4988 STEP/DIR emulator for ${shaftLabel} shaft of node ${motorNodeId}`);
-                      let pending: { angle: number; energized: boolean; actualAngleUnbounded?: number } | null = null;
+                      let pending: { angle: number; energized: boolean } | null = null;
                       let rafPending = false;
-                      this.stepperEmulators.set(shaftKey, new StepperEmulator(({ angle, energized, actualAngleUnbounded }) => {
-                        pending = { angle, energized, actualAngleUnbounded };
+                      this.stepperEmulators.set(shaftKey, new StepperEmulator(({ angle, energized }) => {
+                        pending = { angle, energized };
                         if (!rafPending) {
                           rafPending = true;
                           requestAnimationFrame(() => {
                             rafPending = false;
                             if (pending) {
-                              const { angle: a, energized: e, actualAngleUnbounded: smoothAngle } = pending;
+                              const { angle: a, energized: e } = pending;
                               pending = null;
                               const prop = isInner ? 'innerHandAngle' : 'outerHandAngle';
                               const energizedProp = isInner ? 'innerEnergized' : 'outerEnergized';
-                              // Use smooth angle if available
-                              const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
-                              updateNodeData(motorNodeId, { [prop]: displayAngle, [energizedProp]: e });
+                              updateNodeData(motorNodeId, { [prop]: a, [energizedProp]: e });
                             }
                           });
                         }
-                      }, { stepsPerRev: 200, steppingMode, microstepDivisor }, `${motorNodeId}-${shaftLabel}`));
+                      }, { stepsPerRev: 200 }, `${motorNodeId}-${shaftLabel}`));
                     }
                     const stepper = this.stepperEmulators.get(shaftKey)!;
-                    // Update microstepping mode dynamically
-                    stepper.setSteppingMode(steppingMode, microstepDivisor);
                     if (peripheralPinName === 'DIR') {
                       stepper.setDirection(isHigh);
                     } else if (peripheralPinName === 'STEP') {
@@ -1713,36 +1689,29 @@ class CircuitEngine {
                     // Standard single stepper motor
                     if (!this.stepperEmulators.has(motorNodeId)) {
                       console.log(`[STEPPER] Wiring A4988 STEP/DIR emulator for motor node ${motorNodeId}`);
-                      let pendingUpdate: { angle: number; stepCount: number; energized: boolean; actualAngle?: number; actualAngleUnbounded?: number } | null = null;
+                      let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
                       let rafScheduled = false;
-                      this.stepperEmulators.set(motorNodeId, new StepperEmulator(({ angle, stepCount, energized, actualAngle, actualAngleUnbounded }) => {
-                        pendingUpdate = { angle, stepCount, energized, actualAngle, actualAngleUnbounded };
+                      this.stepperEmulators.set(motorNodeId, new StepperEmulator(({ angle, stepCount, energized }) => {
+                        pendingUpdate = { angle, stepCount, energized };
                         if (!rafScheduled) {
                           rafScheduled = true;
                           requestAnimationFrame(() => {
                             rafScheduled = false;
                             if (pendingUpdate) {
-                              const { angle: a, stepCount: s, energized: e, actualAngle: smoothAngle, actualAngleUnbounded: smoothUnbounded } = pendingUpdate;
+                              const { angle: a, stepCount: s, energized: e } = pendingUpdate;
                               pendingUpdate = null;
-                              // Use smooth physics angle if available for display
-                              const displayAngle = smoothAngle !== undefined ? smoothAngle : a;
-                              // Use unbounded smooth angle for CSS transform if available
-                              const transformAngle = smoothUnbounded !== undefined ? smoothUnbounded : (s / 200) * 360;
                               updateNodeData(motorNodeId, {
-                                // Keep rotation cumulative/unbounded for correct CW/CCW animation with smooth physics
-                                angle: transformAngle,
-                                value: `${displayAngle.toFixed(1)}°`,
+                                angle: a,
+                                value: `${a.toFixed(1)}°`,
                                 units: `${s > 0 ? '+' : ''}${s} steps`,
                                 arrow: e ? '#BEF264' : '',
                               });
                             }
                           });
                         }
-                      }, { stepsPerRev: 200, steppingMode, microstepDivisor }, motorNodeId));
+                      }, { stepsPerRev: 200 }, motorNodeId));
                     }
                     const stepper = this.stepperEmulators.get(motorNodeId)!;
-                    // Update microstepping mode dynamically
-                    stepper.setSteppingMode(steppingMode, microstepDivisor);
                     if (peripheralPinName === 'DIR') {
                       stepper.setDirection(isHigh);
                     } else if (peripheralPinName === 'STEP') {
@@ -1895,6 +1864,28 @@ class CircuitEngine {
       sensorValues: { tilted }
     });
     console.log(`[FORGE CIRCUIT] Tilt Switch (${nodeId}) state: ${tilted ? 'TILTED' : 'UPRIGHT'}`);
+  }
+
+  /**
+   * Update the slide switch position (0, 1, or 2).
+   * Called by LeapNode when it receives 'input' events from slide-switch.
+   */
+  public pushSlideSwitchState(nodeId: string, value: number) {
+    // Slide switch typically has 3 positions: 0, 1, 2
+    // Update the node data for UI visualization
+    const { updateNodeData } = useForgeStore.getState();
+    updateNodeData(nodeId, {
+      value: value,
+      sensorValues: { position: value }
+    });
+
+    // Push the digital state to the connected pin
+    // Position 0 = LOW, Position 1 = MIDDLE (could be HIGH or LOW depending on design), Position 2 = HIGH
+    // For simplicity, we'll treat it as: 0=LOW, 1=LOW, 2=HIGH (common slide switch behavior)
+    const isHigh = value === 2;
+    this.pushInputSignal(nodeId, 'OUT', isHigh);
+
+    console.log(`[FORGE CIRCUIT] Slide Switch (${nodeId}) position: ${value} (${isHigh ? 'HIGH' : 'LOW'})`);
   }
 
   /**

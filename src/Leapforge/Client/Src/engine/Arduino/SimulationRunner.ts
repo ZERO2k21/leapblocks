@@ -204,6 +204,15 @@ class SimulationRunner {
         // Wire serial output from ESP32 runner to the Zustand store
         this.esp32c3Runner.addSerialListener((text: string) => {
           import('../../../utlis/store/useForgeStore').then(({ useForgeStore }) => {
+            // Parse __LF_WIFI: prefixed messages and route to WiFi log
+            const wifiMatch = text.match(/__LF_WIFI:(.+)/);
+            if (wifiMatch) {
+              const wifiMsg = wifiMatch[1].trim();
+              useForgeStore.getState().appendWiFiLog(wifiMsg);
+              return; // Don't append to serial output
+            }
+
+            // Regular serial output
             useForgeStore.getState().appendSerial(text);
           });
         });
@@ -550,7 +559,7 @@ class SimulationRunner {
       'A6': { gpio: 25, ch: 6 }, 'D25': { gpio: 25, ch: 6 },
       'A7': { gpio: 26, ch: 7 }, 'D26': { gpio: 26, ch: 7 },
       'D27': { gpio: 27, ch: 7 },  // ADC2_CH7
-      
+
       // ESP32-C3 ADC capable pins
       'D0': { gpio: 0, ch: 0 },
       'D1': { gpio: 1, ch: 1 },
@@ -661,6 +670,25 @@ class SimulationRunner {
   public get isESP32C3Board(): boolean {
     const ESP32_C3_BOARD_IDS = ['esp32-c3'];
     return ESP32_C3_BOARD_IDS.includes(this.selectedBoard);
+  }
+
+  /**
+   * Send data to Serial input (from Serial Monitor)
+   * Works for both AVR and ESP32-C3 boards
+   */
+  public sendSerialInput(data: string): void {
+    // ESP32-C3 path
+    if (this.esp32c3Runner?.runtime) {
+      this.esp32c3Runner.runtime.sendSerialInput(data);
+      return;
+    }
+
+    // AVR path
+    if (this.usartEmulator) {
+      this.usartEmulator.sendData(data);
+    } else {
+      console.warn('[SimulationRunner] Cannot send serial data: USART not initialized');
+    }
   }
 
   /**

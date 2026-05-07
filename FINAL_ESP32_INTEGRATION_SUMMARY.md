@@ -162,9 +162,11 @@ runner.addSerialListener(line => console.log(line));
 | Feature | Status | Impact |
 |---------|--------|--------|
 | FreeRTOS | ❌ Not implemented | Tasks won't work |
-| WiFi/BLE | ❌ Not implemented | Network sketches fail |
+| WiFi/BLE | ✅ WiFi events implemented (Dec 2024) | WiFi.begin() events now captured in WiFi tab |
 | Flash/NVS | ❌ Not implemented | EEPROM not persisted |
 | Watchdog | ❌ Not implemented | WDT resets ignored |
+
+**Note:** WiFi event monitoring is now functional. The simulation captures WiFi connection events (connected, disconnected, IP assignment) and displays them in the dedicated WiFi tab. See `WIFI_FIX_SUMMARY.md` for details.
 
 ## Future Enhancements
 

@@ -46,6 +46,7 @@ export class ArduinoRuntime {
   // ── Serial ───────────────────────────────────────────────────
   private serialBaud: number = 0;
   private serialBuffer: string = '';
+  private serialInputBuffer: number[] = []; // Input buffer for Serial.read()
 
   // ── Callbacks ────────────────────────────────────────────────
   private onPinChange: PinChangeCallback | null = null;
@@ -100,6 +101,15 @@ export class ArduinoRuntime {
   /** Inject analog input value (from CircuitEngine sensor sliders) */
   setAnalogInput(pin: number, value12bit: number): void {
     this.analogInputs.set(pin, value12bit & 0xFFF);
+  }
+
+  /** Send data to Serial input buffer (from Serial Monitor) */
+  sendSerialInput(data: string): void {
+    // Convert string to byte array and add to input buffer
+    for (let i = 0; i < data.length; i++) {
+      this.serialInputBuffer.push(data.charCodeAt(i));
+    }
+    console.log(`[ARDUINO RUNTIME] Serial input received: "${data}" (${this.serialInputBuffer.length} bytes in buffer)`);
   }
 
   /** Inject digital input (from CircuitEngine) */
@@ -327,16 +337,16 @@ export class ArduinoRuntime {
       // ── Additional Arduino utility functions ───────────────
       // shiftIn / shiftOut — used by some sensor libraries
       shiftIn(_dataPin: number, _clockPin: number, _bitOrder: number): number { return 0; },
-      shiftOut(_dataPin: number, _clockPin: number, _bitOrder: number, _val: number): void {},
+      shiftOut(_dataPin: number, _clockPin: number, _bitOrder: number, _val: number): void { },
       // pulseInLong — same as pulseIn but for longer pulses
       pulseInLong(pin: number, state: number, timeout?: number): number {
         return 0; // stub — real timing not available in browser
       },
       // noInterrupts / interrupts — no-ops in browser simulation
-      noInterrupts(): void {},
-      interrupts(): void {},
+      noInterrupts(): void { },
+      interrupts(): void { },
       // yield — cooperative multitasking hint, no-op in async JS
-      yield(): void {},
+      yield(): void { },
       // ESP32-specific
       esp_get_free_heap_size(): number { return 200000; },
       esp_get_minimum_free_heap_size(): number { return 100000; },
@@ -520,11 +530,28 @@ export class ArduinoRuntime {
           self.serialBuffer += text;
           self.onSerial?.(text);
         },
-        available(): number { return 0; },
-        read(): number { return -1; },
-        readString(): string { return ''; },
-        parseInt(): number { return 0; },
-        parseFloat(): number { return 0.0; },
+        available(): number {
+          return self.serialInputBuffer.length;
+        },
+        read(): number {
+          return self.serialInputBuffer.length > 0 ? self.serialInputBuffer.shift()! : -1;
+        },
+        readString(): string {
+          if (self.serialInputBuffer.length === 0) return '';
+          const str = String.fromCharCode(...self.serialInputBuffer);
+          self.serialInputBuffer = [];
+          return str;
+        },
+        parseInt(): number {
+          const str = this.readString();
+          const num = parseInt(str, 10);
+          return isNaN(num) ? 0 : num;
+        },
+        parseFloat(): number {
+          const str = this.readString();
+          const num = parseFloat(str);
+          return isNaN(num) ? 0.0 : num;
+        },
         flush(): void { },
         end(): void { },
       },
@@ -625,20 +652,304 @@ export class ArduinoRuntime {
       __arduino_lowByte(val: number): number { return val & 0xFF; },
       __arduino_highByte(val: number): number { return (val >> 8) & 0xFF; },
 
-      // ── WiFi stubs ─────────────────────────────────────────
+      // ── WiFi simulation ─────────────────────────────────────────
       WiFi: {
+        _status: 0, // WL_IDLE_STATUS initially
+        _ssid: '',
+        _ip: '192.168.1.100',
+
         begin(ssid: string, _password?: string): void {
-          self.onSerial?.(`[WiFi] Connecting to ${ssid}...\n`);
-          self.onSerial?.(`[WiFi] Connected! IP: 192.168.1.100\n`);
+          this._ssid = ssid;
+          this._status = 0; // WL_IDLE_STATUS
+
+          // Simulate connection sequence with proper __LF_WIFI: events
+          setTimeout(() => {
+            this._status = 3; // WL_CONNECTED
+            self.onSerial?.('__LF_WIFI:connected\n');
+          }, 500);
+
+          setTimeout(() => {
+            self.onSerial?.(`__LF_WIFI:ip:${this._ip}\n`);
+          }, 1000);
         },
-        status(): number { return 3; }, // WL_CONNECTED
-        localIP(): string { return '192.168.1.100'; },
+
+        status(): number {
+          return this._status;
+        },
+
+        localIP(): any {
+          // Return an IPAddress-like object with toString()
+          return {
+            _a: 192, _b: 168, _c: 1, _d: 100,
+            toString() { return `${this._a}.${this._b}.${this._c}.${this._d}`; }
+          };
+        },
+
+        SSID(): string { return this._ssid; },
         macAddress(): string { return 'AA:BB:CC:DD:EE:FF'; },
         RSSI(): number { return -50; },
-        disconnect(): void { self.onSerial?.('[WiFi] Disconnected\n'); },
+
+        disconnect(): void {
+          this._status = 6; // WL_DISCONNECTED
+          self.onSerial?.('__LF_WIFI:disconnected\n');
+        },
+
         mode(_mode: number): void { },
-        softAP(ssid: string): void { self.onSerial?.(`[WiFi] AP started: ${ssid}\n`); },
-        softAPIP(): string { return '192.168.4.1'; },
+        softAP(ssid: string): void {
+          this._ssid = ssid;
+          self.onSerial?.(`[WiFi] AP started: ${ssid}\n`);
+        },
+        softAPIP(): any {
+          return {
+            _a: 192, _b: 168, _c: 4, _d: 1,
+            toString() { return `${this._a}.${this._b}.${this._c}.${this._d}`; }
+          };
+        },
+      },
+
+      // ── WiFiClient (for TCP connections — sends real HTTP requests) ──
+      WiFiClient: class {
+        private _connected: boolean = false;
+        private _host: string = '';
+        private _port: number = 80;
+        private _requestBuffer: string = '';
+        private _responseBuffer: string = '';
+        private _fetching: boolean = false;
+        private _fetchDone: boolean = false;
+
+        connect(host: string, port: number): boolean {
+          this._host = host;
+          this._port = port;
+          this._connected = true;
+          this._requestBuffer = '';
+          this._responseBuffer = '';
+          this._fetching = false;
+          this._fetchDone = false;
+          self.onSerial?.(`__LF_WIFI:tcp_connect:${host}:${port}\n`);
+          return true;
+        }
+
+        connected(): boolean {
+          // Once fetch is done and response is fully consumed, mark disconnected
+          if (this._fetchDone && this._responseBuffer.length === 0) {
+            this._connected = false;
+          }
+          return this._connected;
+        }
+
+        stop(): void {
+          // Fire any buffered but unsent request (fire-and-forget)
+          if (this._requestBuffer.length > 0 && !this._fetching && !this._fetchDone) {
+            this._fireRequest();
+          }
+          this._connected = false;
+        }
+
+        print(data: any): void {
+          this._requestBuffer += String(data);
+          this._tryFlush();
+        }
+
+        println(data: any = ''): void {
+          this._requestBuffer += String(data) + '\r\n';
+          this._tryFlush();
+        }
+
+        write(val: any): void {
+          const text = typeof val === 'number' ? String.fromCharCode(val) : String(val);
+          this._requestBuffer += text;
+          this._tryFlush();
+        }
+
+        available(): number {
+          return this._responseBuffer.length;
+        }
+
+        read(): number {
+          if (this._responseBuffer.length === 0) return -1;
+          const char = this._responseBuffer.charCodeAt(0);
+          this._responseBuffer = this._responseBuffer.substring(1);
+          return char;
+        }
+
+        readString(): string {
+          const str = this._responseBuffer;
+          this._responseBuffer = '';
+          return str;
+        }
+
+        flush(): void { }
+
+        /** Detect end of HTTP headers (\r\n\r\n) and trigger fetch */
+        private _tryFlush(): void {
+          if (this._fetching || this._fetchDone) return;
+          if (!this._requestBuffer.includes('\r\n\r\n')) return;
+          this._fireRequest();
+        }
+
+        /** Parse raw HTTP request text and send via fetch */
+        private async _fireRequest(): Promise<void> {
+          if (this._fetching) return;
+          this._fetching = true;
+
+          try {
+            const lines = this._requestBuffer.split('\r\n');
+            const requestLine = lines[0] || 'GET / HTTP/1.1';
+            const parts = requestLine.split(' ');
+            const method = parts[0] || 'GET';
+            const path = parts[1] || '/';
+
+            const protocol = this._port === 443 ? 'https' : 'http';
+            const url = `${protocol}://${this._host}${path}`;
+
+            // Parse headers
+            const headers: Record<string, string> = {};
+            let bodyStartIdx = -1;
+            for (let i = 1; i < lines.length; i++) {
+              if (lines[i] === '') { bodyStartIdx = i + 1; break; }
+              const colonIdx = lines[i].indexOf(':');
+              if (colonIdx > 0) {
+                const key = lines[i].substring(0, colonIdx).trim();
+                const val = lines[i].substring(colonIdx + 1).trim();
+                if (key.toLowerCase() !== 'host') headers[key] = val;
+              }
+            }
+
+            let body: string | undefined;
+            if (bodyStartIdx > 0 && bodyStartIdx < lines.length) {
+              body = lines.slice(bodyStartIdx).join('\r\n').trim() || undefined;
+            }
+
+            self.onSerial?.(`__LF_WIFI:http_request:${method} ${url}\n`);
+
+            const response = await fetch(url, {
+              method,
+              headers,
+              body: (method !== 'GET' && method !== 'HEAD') ? body : undefined,
+            });
+
+            // Build HTTP response string for sketch to read
+            let responseText = `HTTP/1.1 ${response.status} ${response.statusText}\r\n`;
+            response.headers.forEach((value, key) => {
+              responseText += `${key}: ${value}\r\n`;
+            });
+            responseText += '\r\n';
+            responseText += await response.text();
+
+            this._responseBuffer = responseText;
+            self.onSerial?.(`__LF_WIFI:http_response:${response.status}\n`);
+          } catch (error: any) {
+            console.error('[WiFiClient] Request failed:', error);
+            self.onSerial?.(`__LF_WIFI:http_error:${error.message}\n`);
+            this._responseBuffer = 'HTTP/1.1 0 Connection Failed\r\n\r\n';
+          } finally {
+            this._fetching = false;
+            this._fetchDone = true;
+            this._requestBuffer = '';
+          }
+        }
+      },
+
+      // ── HTTPClient (for real HTTP requests via fetch) ───────────────
+      HTTPClient: class {
+        private _url: string = '';
+        private _headers: Map<string, string> = new Map();
+        private _responseCode: number = 0;
+        private _responseBody: string = '';
+        private _timeout: number = 5000;
+
+        begin(url: string): boolean {
+          this._url = url;
+          this._headers.clear();
+          this._responseCode = 0;
+          this._responseBody = '';
+          self.onSerial?.(`__LF_WIFI:http_begin:${url}\n`);
+          return true;
+        }
+
+        addHeader(name: string, value: string): void {
+          this._headers.set(name, value);
+        }
+
+        setTimeout(timeout: number): void {
+          this._timeout = timeout;
+        }
+
+        async GET(): Promise<number> {
+          return await this._makeRequest('GET');
+        }
+
+        async POST(payload: string): Promise<number> {
+          return await this._makeRequest('POST', payload);
+        }
+
+        async PUT(payload: string): Promise<number> {
+          return await this._makeRequest('PUT', payload);
+        }
+
+        async DELETE(): Promise<number> {
+          return await this._makeRequest('DELETE');
+        }
+
+        async PATCH(payload: string): Promise<number> {
+          return await this._makeRequest('PATCH', payload);
+        }
+
+        private async _makeRequest(method: string, body?: string): Promise<number> {
+          try {
+            const headers: Record<string, string> = {};
+            this._headers.forEach((value, key) => {
+              headers[key] = value;
+            });
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), this._timeout);
+
+            self.onSerial?.(`__LF_WIFI:http_request:${method} ${this._url}\n`);
+
+            const response = await fetch(this._url, {
+              method,
+              headers,
+              body: body,
+              signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            this._responseCode = response.status;
+            this._responseBody = await response.text();
+
+            self.onSerial?.(`__LF_WIFI:http_response:${this._responseCode}\n`);
+
+            return this._responseCode;
+          } catch (error: any) {
+            console.error('[HTTPClient] Request failed:', error);
+            if (error.name === 'AbortError') {
+              this._responseCode = -1; // Timeout
+              self.onSerial?.(`__LF_WIFI:http_error:Request timed out\n`);
+            } else {
+              this._responseCode = -2; // Connection failed
+              self.onSerial?.(`__LF_WIFI:http_error:${error.message}\n`);
+            }
+            this._responseBody = '';
+            return this._responseCode;
+          }
+        }
+
+        getString(): string {
+          return this._responseBody;
+        }
+
+        getSize(): number {
+          return this._responseBody.length;
+        }
+
+        end(): void {
+          this._url = '';
+          this._headers.clear();
+          this._responseCode = 0;
+          this._responseBody = '';
+        }
       },
 
       // ── Tone ───────────────────────────────────────────────
@@ -777,14 +1088,14 @@ export class ArduinoRuntime {
                 gx = sv.gyroX ?? 0;
                 gy = sv.gyroY ?? 0;
                 gz = sv.gyroZ ?? 0;
-                t  = sv.temp  ?? 25;
+                t = sv.temp ?? 25;
                 break;
               }
             }
           } catch (e) { /* store not available */ }
           if (accelEvt) accelEvt.acceleration = { x: ax, y: ay, z: az };
-          if (gyroEvt)  gyroEvt.gyro          = { x: gx, y: gy, z: gz };
-          if (tempEvt)  tempEvt.temperature    = t;
+          if (gyroEvt) gyroEvt.gyro = { x: gx, y: gy, z: gz };
+          if (tempEvt) tempEvt.temperature = t;
           return true;
         }
       },
@@ -806,7 +1117,7 @@ export class ArduinoRuntime {
         _sck = 0;
         _scale = 1;
         _offset = 0;
-        constructor() {}
+        constructor() { }
         begin(dout: number, sck: number): void {
           this._dout = dout;
           this._sck = sck;
@@ -826,8 +1137,8 @@ export class ArduinoRuntime {
         is_ready(): boolean {
           return true;
         }
-        power_down(): void {}
-        power_up(): void {}
+        power_down(): void { }
+        power_up(): void { }
         private _readRaw(): number {
           try {
             const { nodes } = useForgeStore.getState();
@@ -898,12 +1209,12 @@ export class ArduinoRuntime {
           self._i2cBus.write(0x00);
           self._i2cBus.endTransmission();
           self._i2cBus.requestFrom(this._addr, 7);
-          const sec  = this._fromBCD(self._i2cBus.read());
-          const min  = this._fromBCD(self._i2cBus.read());
+          const sec = this._fromBCD(self._i2cBus.read());
+          const min = this._fromBCD(self._i2cBus.read());
           const hour = this._fromBCD(self._i2cBus.read() & 0x3F);
           const _dow = self._i2cBus.read();
-          const day  = this._fromBCD(self._i2cBus.read());
-          const mon  = this._fromBCD(self._i2cBus.read());
+          const day = this._fromBCD(self._i2cBus.read());
+          const mon = this._fromBCD(self._i2cBus.read());
           const year = this._fromBCD(self._i2cBus.read()) + 2000;
           return new Date(year, mon - 1, day, hour, min, sec);
         }
@@ -924,14 +1235,14 @@ export class ArduinoRuntime {
             this._date = new Date();
           }
         }
-        year(): number   { return this._date.getFullYear(); }
-        month(): number  { return this._date.getMonth() + 1; }
-        day(): number    { return this._date.getDate(); }
-        hour(): number   { return this._date.getHours(); }
+        year(): number { return this._date.getFullYear(); }
+        month(): number { return this._date.getMonth() + 1; }
+        day(): number { return this._date.getDate(); }
+        hour(): number { return this._date.getHours(); }
         minute(): number { return this._date.getMinutes(); }
         second(): number { return this._date.getSeconds(); }
         dayOfWeek(): number { return this._date.getDay() || 7; } // 1=Mon ... 7=Sun
-        unixtime(): number  { return Math.floor(this._date.getTime() / 1000); }
+        unixtime(): number { return Math.floor(this._date.getTime() / 1000); }
         toString(): string {
           const pad = (n: number) => String(n).padStart(2, '0');
           return `${this.year()}-${pad(this.month())}-${pad(this.day())} ${pad(this.hour())}:${pad(this.minute())}:${pad(this.second())}`;
@@ -969,7 +1280,7 @@ export class ArduinoRuntime {
               this._keys.push(row);
             }
           } else {
-            this._keys = [['1','2','3','A'],['4','5','6','B'],['7','8','9','C'],['*','0','#','D']];
+            this._keys = [['1', '2', '3', 'A'], ['4', '5', '6', 'B'], ['7', '8', '9', 'C'], ['*', '0', '#', 'D']];
           }
         }
 

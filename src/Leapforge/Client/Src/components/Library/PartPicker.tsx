@@ -24,13 +24,9 @@ const CATEGORIES = [
 ];
 
 const COMPONENTS = [
-  // BOARDS
+  // BOARDS - Only Arduino Uno and ESP32-C3 supported
   { id: 'arduino-uno', name: 'Arduino Uno', category: 'boards', desc: 'Standard microcontroller' },
-  { id: 'arduino-mega', name: 'Arduino Mega', category: 'boards', desc: 'Powerful microcontroller' },
-  { id: 'arduino-nano', name: 'Arduino Nano', category: 'boards', desc: 'Compact microcontroller' },
   { id: 'esp32-c3', name: 'ESP32-C3', category: 'boards', desc: 'RISC-V WiFi & Bluetooth MCU' },
-  { id: 'franzininho', name: 'Franzininho', category: 'boards', desc: 'ATtiny85 board' },
-  { id: 'nano-rp2040-connect', name: 'Nano RP2040', category: 'boards', desc: 'RP2040 connected board' },
 
   // OUTPUTS
   { id: 'led', name: 'LED', category: 'outputs', desc: 'Standard 5mm LED' },
@@ -45,6 +41,7 @@ const COMPONENTS = [
   { id: 'biaxial-stepper', name: 'Biaxial Stepper', category: 'outputs', desc: 'Dual-axis stepper' },
   { id: 'a4988', name: 'A4988 Driver', category: 'outputs', desc: 'Stepper motor driver' },
   { id: 'ks2e-m-dc5', name: 'Relay', category: 'outputs', desc: '5V Relay' },
+  { id: 'relay-module', name: 'Relay Module', category: 'outputs', desc: 'Single-channel relay' },
 
   // DISPLAYS
   { id: 'lcd1602', name: 'LCD 1602', category: 'displays', desc: '16x2 Character display (parallel)' },
@@ -79,7 +76,6 @@ const COMPONENTS = [
   { id: 'slide-potentiometer', name: 'Slide Pot.', category: 'inputs', desc: 'Linear variable resistor' },
   { id: 'membrane-keypad', name: 'Keypad (4x4)', category: 'inputs', desc: 'Matrix keypad' },
   { id: 'slide-switch', name: 'Slide Switch', category: 'inputs', desc: 'SPDT toggle' },
-  { id: 'dip-switch-8', name: 'DIP Switch (8)', category: 'inputs', desc: '8-position toggle' },
   { id: 'tilt-switch', name: 'Tilt Switch', category: 'inputs', desc: 'Tilt sensor switch' },
   { id: 'analog-joystick', name: 'Joystick', category: 'inputs', desc: '2-axis analog joystick' },
   { id: 'ky-040', name: 'Rotary Encoder', category: 'inputs', desc: 'Incremental encoder' },

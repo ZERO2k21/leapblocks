@@ -17,7 +17,9 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "download-qemu": "node scripts/download-qemu.js",
-    "postinstall": "node scripts/download-qemu.js"
+    "postinstall": "node scripts/download-qemu.js",
+    "sync:pinharness": "node scripts/sync-pinharness.js",
+    "watch:pinharness": "node scripts/watch-pinharness.js"
   },
   "keywords": [],
   "author": {

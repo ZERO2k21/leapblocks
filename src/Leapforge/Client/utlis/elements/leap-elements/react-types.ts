@@ -15,11 +15,13 @@ import { PushbuttonElement } from './pushbutton-element';
 import { Pushbutton6mmElement } from './pushbutton-6mm-element';
 import { ResistorElement } from './resistor-element';
 import { RotaryDialerElement } from './rotary-dialer-element';
+import { RelayModuleElement } from './relay-module-element';
 import { SSD1306Element } from './ssd1306-element';
 import { ServoElement } from './servo-element';
 import { DHT22Element } from './dht22-element';
-import { ArduinoMegaElement } from './arduino-mega-element';
-import { ArduinoNanoElement } from './arduino-nano-element';
+// REMOVED: Only Arduino Uno and ESP32-C3 supported
+// import { ArduinoMegaElement } from './arduino-mega-element';
+// import { ArduinoNanoElement } from './arduino-nano-element';
 import { Ds1307Element } from './ds1307-element';
 import { LEDRingElement } from './led-ring-element';
 import { SlideSwitchElement } from './slide-switch-element';
@@ -36,8 +38,8 @@ import { HeartBeatSensorElement } from './heart-beat-sensor-element';
 import { TiltSwitchElement } from './tilt-switch-element';
 import { FlameSensorElement } from './flame-sensor-element';
 import { GasSensorElement } from './gas-sensor-element';
-import { FranzininhoElement } from './franzininho-element';
-import { NanoRP2040ConnectElement } from './nano-rp2040-connect-element';
+// import { FranzininhoElement } from './franzininho-element';
+// import { NanoRP2040ConnectElement } from './nano-rp2040-connect-element';
 import { SmallSoundSensorElement } from './small-sound-sensor-element';
 import { BigSoundSensorElement } from './big-sound-sensor-element';
 import { MPU6050Element } from './mpu6050-element';
@@ -48,7 +50,6 @@ import { RGBLedElement } from './rgb-led-element';
 import { ILI9341Element } from './ili9341-element';
 import { LedBarGraphElement } from './led-bar-graph-element';
 import { MicrosdCardElement } from './microsd-card-element';
-import { DipSwitch8Element } from './dip-switch-8-element';
 import { StepperMotorElement } from './stepper-motor-element';
 import { HX711Element } from './hx711-element';
 import { KS2EMDC5Element } from './ks2e-m-dc5-element';
@@ -77,8 +78,11 @@ declare global {
       'leap-rotary-dialer': LeapElement<RotaryDialerElement>;
       'leap-servo': LeapElement<ServoElement>;
       'leap-dht22': LeapElement<DHT22Element>;
-      'leap-arduino-mega': LeapElement<ArduinoMegaElement>;
-      'leap-arduino-nano': LeapElement<ArduinoNanoElement>;
+      // REMOVED: Only Arduino Uno and ESP32-C3 supported
+      // 'leap-arduino-mega': LeapElement<ArduinoMegaElement>;
+      // 'leap-arduino-nano': LeapElement<ArduinoNanoElement>;
+      // 'leap-franzininho': LeapElement<FranzininhoElement>;
+      // 'leap-nano-rp2040-connect': LeapElement<NanoRP2040ConnectElement>;
       'leap-ds1307': LeapElement<Ds1307Element>;
       'leap-neopixel-ring': LeapElement<LEDRingElement>;
       'leap-slide-switch': LeapElement<SlideSwitchElement>;
@@ -107,10 +111,10 @@ declare global {
       'leap-ili9341': LeapElement<ILI9341Element>;
       'leap-led-bar-graph': LeapElement<LedBarGraphElement>;
       'leap-microsd-card': LeapElement<MicrosdCardElement>;
-      'leap-dip-switch-8': LeapElement<DipSwitch8Element>;
       'leap-stepper-motor': LeapElement<StepperMotorElement>;
       'leap-hx711': LeapElement<HX711Element>;
       'leap-ks2e-m-dc5': LeapElement<KS2EMDC5Element>;
+      'leap-relay-module': LeapElement<RelayModuleElement>;
       'leap-biaxial-stepper': LeapElement<BiaxialStepperElement>;
     }
   }

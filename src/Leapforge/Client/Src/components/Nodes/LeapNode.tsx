@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { memo, useRef, useEffect } from 'react';
+import React, { memo, useRef, useEffect, useMemo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { getComponentPins } from '../../lib/PinMap';
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
@@ -12,7 +12,24 @@ import { SensorOverlay } from './SensorOverlay';
 // This is a generic wrapper for our internalized Leap elements (rebranded Leap)
 export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   const selectedNodeId = useForgeStore((state) => state.selectedNodeId);
+  const edges = useForgeStore((state) => state.edges);
+  const isSimulating = useForgeStore((state) => state.isSimulating);
   const isSelected = selected || selectedNodeId === id;
+
+  // Build a Set of pin names on this node that have at least one wire connected.
+  // This powers the Wokwi-style green glow on wired pins.
+  const connectedPinNames = useMemo(() => {
+    const set = new Set<string>();
+    for (const edge of edges) {
+      if (edge.source === id && edge.sourceHandle) {
+        set.add(edge.sourceHandle.replace(/__target$/, ''));
+      }
+      if (edge.target === id && edge.targetHandle) {
+        set.add(edge.targetHandle.replace(/__target$/, ''));
+      }
+    }
+    return set;
+  }, [edges, id]);
 
   // I2C variants map to the same element as their parallel counterpart
   const elementType = data.type === 'lcd1602-i2c' ? 'lcd1602'
@@ -72,6 +89,10 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   } else if (data.type === 'ks2e-m-dc5') {
     // Relay: energized when COIL1 is HIGH (COIL2 is typically GND)
     mappedProps.energized = data.relayEnergized ?? false;
+  } else if (data.type === 'relay-module') {
+    // Relay Module: energized when IN pin is HIGH
+    mappedProps.energized = data.relayEnergized ?? false;
+    mappedProps.led = data.relayEnergized ?? false;
   } else if (data.type === 'biaxial-stepper') {
     mappedProps.outerHandAngle = data.outerHandAngle ?? 0;
     mappedProps.innerHandAngle = data.innerHandAngle ?? 0;
@@ -376,7 +397,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     };
 
     el.addEventListener('tilt-toggle', handleTiltToggle);
-    
+
     // Set initial state on mount
     const initialTilted = data.sensorValues?.tilted ?? false;
     import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
@@ -387,6 +408,31 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       el.removeEventListener('tilt-toggle', handleTiltToggle);
     };
   }, [data.type, id]);
+
+  // Wire slide-switch DOM input events into the circuit engine
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el || data.type !== 'slide-switch') return;
+
+    const handleInput = (e: Event) => {
+      const value = (e as CustomEvent).detail ?? (el as any).value ?? 0;
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushSlideSwitchState(id, value);
+      });
+    };
+
+    el.addEventListener('input', handleInput);
+
+    // Set initial state on mount
+    const initialValue = data.value ?? 0;
+    import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+      circuitEngine.pushSlideSwitchState(id, initialValue);
+    });
+
+    return () => {
+      el.removeEventListener('input', handleInput);
+    };
+  }, [data.type, id, data.value]);
 
   // Wire KY-040 rotary encoder DOM events into the circuit engine
   useEffect(() => {
@@ -471,7 +517,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     el.addEventListener('input', handleInput);
     el.addEventListener('button-press', handlePress);
     el.addEventListener('button-release', handleRelease);
-    
+
     // Inject the center resting state immediately on mount
     handleInput();
     handleRelease();
@@ -505,17 +551,36 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
           }}
         />
 
-        {/* ── DYNAMIC PIN HANDLES (Relativized to the Tag itself) ── */}
+        {/* ── DYNAMIC PIN HANDLES — Wokwi-style connection indicators ── */}
         {pins.map((pin, idx) => {
           const pinPosition = pin.y < 50 ? Position.Top : Position.Bottom;
+          const isConnected = connectedPinNames.has(pin.name);
+          const isPinHigh = data.pinStates?.[`pin_${pin.name}`] === true;
+
+          // Simple pin color logic - no glow:
+          //   Connected + HIGH (simulating) → red
+          //   Connected (idle or LOW)       → green
+          //   Unconnected                   → dim gray
+          let pinColor = '#475569';
+          let pinOpacity = isSelected ? 0.5 : 0.1;
+
+          if (isConnected) {
+            if (isSimulating && isPinHigh) {
+              pinColor = '#ef4444';
+            } else {
+              pinColor = '#22c55e';
+            }
+            pinOpacity = 0.9;
+          }
+
           const handleStyle: React.CSSProperties = {
             left: `${pin.x}%`,
             top: `${pin.y}%`,
-            width: '8px',
-            height: '8px',
+            width: isConnected ? '4px' : '3px',
+            height: isConnected ? '4px' : '3px',
             zIndex: 10,
             pointerEvents: 'all',
-            transition: 'opacity 0.2s',
+            transition: 'all 0.25s ease',
           };
 
           return (
@@ -532,18 +597,20 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                   opacity: 0,
                 }}
               />
-              {/* Visible handle (source) — renders last, on top for hover tooltip */}
+              {/* Visible handle (source) - Simple small dot without glow */}
               <Handle
                 id={`${pin.name}`}
                 type="source"
                 position={pinPosition}
                 style={{
                   ...handleStyle,
-                  background: data.pinStates?.[`pin_${pin.name}`] ? '#ef4444' : '#BEF264',
-                  border: '1.5px solid #1e293b',
-                  opacity: selected ? 1 : 0.3,
+                  background: pinColor,
+                  border: `1px solid ${isConnected ? pinColor : '#334155'}`,
+                  borderRadius: '50%',
+                  opacity: pinOpacity,
+                  boxShadow: 'none',
                 }}
-                title={pin.name}
+                title={`${pin.name}${isConnected ? ' ✓' : ''}`}
               />
             </React.Fragment>
           );
@@ -554,11 +621,12 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       {data.label && (
         <div style={{
           marginTop: '8px',
-          fontSize: '10px',
-          color: '#94a3b8',
-          fontWeight: 600,
-          fontFamily: 'JetBrains Mono, monospace',
-          pointerEvents: 'none'
+          fontSize: '11px',
+          color: '#0f172a', /* High contrast dark text */
+          fontWeight: 800,
+          fontFamily: 'Outfit, sans-serif',
+          pointerEvents: 'none',
+          textShadow: '0 1px 2px rgba(255,255,255,0.8)'
         }}>
           {data.label}
         </div>
