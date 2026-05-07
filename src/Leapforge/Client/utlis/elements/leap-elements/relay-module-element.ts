@@ -31,38 +31,38 @@ import { ElementPin } from './pin';
 
 @customElement('leap-relay-module')
 export class RelayModuleElement extends LitElement {
-    /** Whether the relay is energized (IN pin is HIGH) */
-    @property({ type: Boolean }) energized = false;
+  /** Whether the relay is energized (IN pin is HIGH) */
+  @property({ type: Boolean }) energized = false;
 
-    /** LED indicator state */
-    @property({ type: Boolean }) led = false;
+  /** LED indicator state */
+  @property({ type: Boolean }) led = false;
 
-    readonly pinInfo: ElementPin[] = [
-        // Control pins (left side)
-        { name: 'VCC', x: 2, y: 3, signals: [{ type: 'power', signal: 'VCC' }], number: 1 },
-        { name: 'GND', x: 2, y: 6, signals: [{ type: 'power', signal: 'GND' }], number: 2 },
-        { name: 'IN', x: 2, y: 9, signals: [], number: 3 },
+  readonly pinInfo: ElementPin[] = [
+    // Control pins (left side)
+    { name: 'VCC', x: 2, y: 3, signals: [{ type: 'power', signal: 'VCC' }], number: 1 },
+    { name: 'GND', x: 2, y: 6, signals: [{ type: 'power', signal: 'GND' }], number: 2 },
+    { name: 'IN', x: 2, y: 9, signals: [], number: 3 },
 
-        // Switch terminals (right side)
-        { name: 'NO', x: 28, y: 3, signals: [], number: 4 },
-        { name: 'COM', x: 28, y: 6, signals: [], number: 5 },
-        { name: 'NC', x: 28, y: 9, signals: [], number: 6 },
-    ];
+    // Switch terminals (right side)
+    { name: 'NO', x: 28, y: 3, signals: [], number: 4 },
+    { name: 'COM', x: 28, y: 6, signals: [], number: 5 },
+    { name: 'NC', x: 28, y: 9, signals: [], number: 6 },
+  ];
 
-    static styles = css`
+  static styles = css`
     :host {
       display: inline-block;
     }
   `;
 
-    render() {
-        // LED color: red when energized, dark when off
-        const ledColor = this.led ? '#ef4444' : '#7f1d1d';
-        // Contact indicator
-        const activeContact = this.energized ? 'NO' : 'NC';
-        const contactLineY = this.energized ? 3.5 : 8.5;
+  render() {
+    // LED color: red when energized, dark when off
+    const ledColor = this.led ? '#ef4444' : '#7f1d1d';
+    // Contact indicator
+    const activeContact = this.energized ? 'NO' : 'NC';
+    const contactLineY = this.energized ? 3.5 : 8.5;
 
-        return html`
+    return html`
       <svg
         width="30mm"
         height="12mm"
@@ -139,5 +139,5 @@ export class RelayModuleElement extends LitElement {
         </text>
       </svg>
     `;
-    }
+  }
 }

@@ -14,7 +14,8 @@ import ReactFlow, {
   Node,
   useNodesState,
   useEdgesState,
-  ReactFlowProvider
+  ReactFlowProvider,
+  BackgroundVariant
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useForgeStore } from '../../utlis/store/useForgeStore';
@@ -67,7 +68,6 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
   // Handle new connections (wiring)
   const onConnect = useCallback(
     (params: Connection | Edge) => {
-      // Normalize handle IDs — strip "__target" suffix from dual-handle system
       const normalized = {
         ...params,
         sourceHandle: (params.sourceHandle || '').replace('__target', ''),
@@ -78,28 +78,23 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
     [addStoreEdge]
   );
 
-  // Sync local position -> store
   const onNodeDragStop = useCallback((_: any, node: Node) => {
     updateNodePosition(node.id, node.position);
   }, [updateNodePosition]);
 
-  // Record node click in Global Store to stabilize the slider UI
   const onNodeClick = useCallback((_: any, node: Node) => {
     store.setSelectedNode(node.id);
   }, [store]);
 
-  // Record pane click to clear selection
   const onPaneClick = useCallback(() => {
     store.setSelectedNode(null);
     store.setSelectedEdge(null);
   }, [store]);
 
-  // Handle edge clicks
   const onEdgeClick = useCallback((_: any, edge: Edge) => {
     store.setSelectedEdge(edge.id);
   }, [store]);
 
-  // Handle drag and drop from sidebar (kept for backward compatibility)
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
@@ -108,36 +103,36 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
-
       const type = event.dataTransfer.getData('application/forge-component');
       if (!type) return;
-
       const reactFlowBounds = document.querySelector('.forge-canvas-container')?.getBoundingClientRect();
       if (!reactFlowBounds) return;
-
       const position = {
         x: event.clientX - reactFlowBounds.left - 50,
         y: event.clientY - reactFlowBounds.top - 50,
       };
-
       addNode(type, position, { label: `${type.toUpperCase()}` });
     },
     [addNode]
   );
 
   const handleAddPart = (type: string) => {
-    const center = { x: 400, y: 300 }; // Default center
+    const center = { x: 400, y: 300 };
     addNode(type, center, { label: `${type.toUpperCase()}` });
     setShowPicker(false);
   };
 
-  const Bg = Background as any;
-  const Mm = MiniMap as any;
-
   return (
     <div
       className="forge-canvas-container"
-      style={{ width: '100%', height: '100%', background: '#0f172a', position: 'relative' }}
+      style={{ 
+        width: '100%', 
+        height: '100%', 
+        background: '#f8fafc', 
+        position: 'relative',
+        backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(0,0,0,0.03) 1px, transparent 0)',
+        backgroundSize: '24px 24px'
+      }}
       onDrop={onDrop}
       onDragOver={onDragOver}
     >
@@ -156,16 +151,44 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
         defaultEdgeOptions={{ type: 'wire' }}
         fitView
         snapToGrid
-        snapGrid={[20, 20]}
+        snapGrid={[10, 10]}
         connectionLineComponent={PhysicalConnectionLine}
         connectionMode={ConnectionMode.Loose}
-        style={{ background: '#0f172a' }}
+        style={{ background: 'transparent' }}
       >
-        <Bg color="#1e293b" gap={20} />
-        <Controls />
-        <Mm
-          style={{ background: '#1e293b' }}
-          nodeColor={(n: any) => n.data?.type === 'boards' ? '#BEF264' : '#64748b'}
+        <Background 
+          variant={BackgroundVariant.Dots} 
+          gap={24} 
+          size={1.5} 
+          color="rgba(0,0,0,0.15)" 
+        />
+        
+        <Controls 
+          className="glass-controls"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+            background: 'rgba(255,255,255,0.7)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(0,0,0,0.06)',
+            borderRadius: 12,
+            padding: 4,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}
+        />
+
+        <MiniMap
+          className="glass-minimap"
+          style={{ 
+            background: 'rgba(255, 255, 255, 0.7)', 
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(0,0,0,0.06)',
+            borderRadius: 16,
+            overflow: 'hidden'
+          }}
+          nodeColor={(n: any) => n.data?.type === 'boards' ? '#7B4FC4' : '#cbd5e1'}
+          maskColor="rgba(248, 250, 252, 0.6)"
         />
       </ReactFlow>
 
@@ -175,118 +198,138 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
         .react-flow__edge { pointer-events: all; }
         .react-flow__nodes { z-index: 50 !important; }
         .react-flow__handle { z-index: 10 !important; }
+        
+        /* Modern Controls Styling */
+        .glass-controls button {
+          background: transparent !important;
+          border: none !important;
+          border-radius: 8px !important;
+          color: #64748b !important;
+          transition: all 0.2s !important;
+        }
+        .glass-controls button:hover {
+          background: rgba(123, 79, 196, 0.1) !important;
+          color: #7B4FC4 !important;
+        }
+        .react-flow__controls-button svg {
+          fill: currentColor !important;
+        }
       `}</style>
 
       {/* ── SELECTION TOOLBAR ─────────────────────────── */}
       <SelectionToolbar />
 
-      {/* ── FLOATING TOOLBAR (Leap Style) ────────────────── */}
-      <div className="canvas-fab-group" style={{
+      {/* ── FLOATING ACTION PANEL (Leap Style) ────────────────── */}
+      <div className="canvas-action-panel" style={{
         position: 'absolute',
         top: '20px',
         right: '20px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px',
+        gap: '8px',
+        padding: '8px',
+        background: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(0,0,0,0.06)',
+        borderRadius: '24px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
         zIndex: 100
       }}>
-        {/* Play/Stop Toggle */}
+        {/* Play/Stop Button */}
         <button
           onClick={onToggleSimulation || toggleStoreSimulation}
           disabled={isCompiling}
-          title={isSimulating ? 'Stop Simulation' : 'Start Simulation'}
+          className="canvas-btn"
           style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '50%',
-            background: isSimulating ? '#ef4444' : 'rgb(34, 197, 94)',
+            width: '48px',
+            height: '48px',
+            borderRadius: '20px',
+            background: isSimulating ? '#ef4444' : '#10b981',
             border: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
             cursor: 'pointer',
-            transition: 'transform 0.2s'
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: isSimulating ? '0 0 20px rgba(239, 68, 68, 0.4)' : '0 4px 12px rgba(16, 185, 129, 0.3)'
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
         >
           {isCompiling ? (
-            <div style={{ width: '18px', height: '18px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <div className="spinner" style={{ width: 18, height: 18, border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           ) : isSimulating ? (
-            <Square size={18} fill="currentColor" stroke="currentColor" strokeWidth={2} />
+            <Square size={20} fill="currentColor" />
           ) : (
-            <Play size={18} fill="currentColor" stroke="currentColor" strokeWidth={2} />
+            <Play size={20} fill="currentColor" style={{ marginLeft: 3 }} />
           )}
         </button>
 
-        {/* Reset Simulation Button */}
+        {/* Reset Button */}
         <button
           onClick={store.resetSimulation}
-          title="Reset Simulation"
+          className="canvas-btn secondary"
           style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '50%',
-            background: '#eab308',
-            border: 'none',
+            width: '48px',
+            height: '48px',
+            borderRadius: '20px',
+            background: '#ffffff',
+            border: '1px solid rgba(0,0,0,0.06)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#fff',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+            color: '#64748b',
             cursor: 'pointer',
-            transition: 'transform 0.2s'
+            transition: 'all 0.2s'
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#7B4FC4'; e.currentTarget.style.background = 'rgba(123, 79, 196, 0.05)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.background = '#ffffff'; }}
         >
-          <RotateCcw size={18} />
+          <RotateCcw size={20} />
         </button>
 
-        {/* Add Part Button */}
+        <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: '4px 8px' }} />
+
+        {/* Add Component Button */}
         <button
           onClick={() => setShowPicker(!showPicker)}
-          title="Add Component"
           style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '50%',
-            background: '#3b82f6',
+            width: '48px',
+            height: '48px',
+            borderRadius: '20px',
+            background: '#7B4FC4',
             border: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
             cursor: 'pointer',
-            transition: 'transform 0.2s'
+            transition: 'all 0.3s',
+            boxShadow: '0 4px 12px rgba(123, 79, 196, 0.3)'
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.background = '#8B5CF6'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#7B4FC4'; }}
         >
-          <Plus size={22} />
+          <Plus size={24} />
         </button>
 
-        {/* Help Menu */}
+        {/* Help Button */}
         <button
-          title="Help"
           style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '50%',
-            background: '#475569',
+            width: '48px',
+            height: '48px',
+            borderRadius: '20px',
+            background: 'transparent',
             border: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#fff',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+            color: '#94a3b8',
             cursor: 'pointer'
           }}
         >
-          <CircleHelp size={18} />
+          <CircleHelp size={20} />
         </button>
       </div>
 

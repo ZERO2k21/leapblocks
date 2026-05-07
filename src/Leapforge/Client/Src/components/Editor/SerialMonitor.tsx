@@ -3,13 +3,8 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-/**
- * SerialMonitor.tsx
- * A high-speed, terminal-style component for displaying serial output from the LeapForge simulator.
- */
-
 import React, { useEffect, useRef } from 'react';
-import { Trash2, Download, Terminal } from 'lucide-react';
+import { Trash2, Download, Terminal, ChevronRight } from 'lucide-react';
 
 interface SerialMonitorProps {
   output: string;
@@ -22,7 +17,6 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
   const [inputValue, setInputValue] = React.useState('');
   const [lineEnding, setLineEnding] = React.useState<'none' | 'nl' | 'cr' | 'crnl'>('nl');
 
-  // Auto-scroll to bottom
   useEffect(() => {
     if (terminalRef.current) {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
@@ -41,176 +35,181 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
 
   const handleSend = () => {
     if (!inputValue || !onSend) return;
-
     let dataToSend = inputValue;
-
-    // Add line ending based on selection
     switch (lineEnding) {
-      case 'nl':
-        dataToSend += '\n';
-        break;
-      case 'cr':
-        dataToSend += '\r';
-        break;
-      case 'crnl':
-        dataToSend += '\r\n';
-        break;
-      case 'none':
-      default:
-        // No line ending
-        break;
+      case 'nl': dataToSend += '\n'; break;
+      case 'cr': dataToSend += '\r'; break;
+      case 'crnl': dataToSend += '\r\n'; break;
     }
-
     onSend(dataToSend);
     setInputValue('');
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSend();
-    }
-  };
-
   return (
-    <div style={{
+    <div className="serial-monitor-container" style={{
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
-      background: '#0d1117',
-      color: '#c9d1d9',
-      fontFamily: 'JetBrains Mono, "Fira Code", monospace'
+      background: '#fdfdfd',
+      color: '#1e293b',
+      fontFamily: 'JetBrains Mono, monospace'
     }}>
-      {/* ── MONITOR TOOLBAR ────────────────────────── */}
+      {/* ── TOOLBAR ── */}
       <div style={{
-        padding: '8px 16px',
-        background: '#161b22',
-        borderBottom: '1px solid #30363d',
+        padding: '12px 20px',
+        background: 'rgba(255, 255, 255, 0.5)',
+        borderBottom: '1px solid rgba(0,0,0,0.06)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#8b949e', fontSize: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '11px', fontWeight: 700 }}>
           <Terminal size={14} />
-          <span style={{ fontWeight: 600, letterSpacing: '0.05em' }}>SERIAL MONITOR @ 9600 BAUD</span>
+          <span>SERIAL CONSOLE</span>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={handleDownload}
-            style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}
-            title="Download Logs"
+            style={{ 
+              background: 'rgba(123, 79, 196, 0.05)', 
+              border: 'none', 
+              color: '#7B4FC4', 
+              cursor: 'pointer', 
+              padding: '6px 12px', 
+              borderRadius: '8px',
+              fontSize: '11px', 
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
           >
-            <Download size={14} /> Export
+            <Download size={13} /> EXPORT
           </button>
           <button
             onClick={onClear}
-            style={{ background: 'transparent', border: 'none', color: '#f85149', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}
-            title="Clear Console"
+            style={{ 
+              background: 'rgba(239, 68, 68, 0.05)', 
+              border: 'none', 
+              color: '#ef4444', 
+              cursor: 'pointer', 
+              padding: '6px 12px', 
+              borderRadius: '8px',
+              fontSize: '11px', 
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
           >
-            <Trash2 size={14} /> Clear
+            <Trash2 size={13} /> CLEAR
           </button>
         </div>
       </div>
 
-      {/* ── CONSOLE OUTPUT ───────────────────────────── */}
+      {/* ── OUTPUT ── */}
       <div
         ref={terminalRef}
         style={{
           flex: 1,
-          padding: '16px',
+          padding: '20px',
           overflowY: 'auto',
           fontSize: '13px',
           lineHeight: '1.6',
           whiteSpace: 'pre-wrap',
-          wordBreak: 'break-all'
+          wordBreak: 'break-all',
+          color: '#334155'
         }}
       >
         {output ? output : (
-          <div style={{ color: '#484f58', fontStyle: 'italic' }}>
-            Waiting for Serial output...
+          <div style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+            Ready for input. Start simulation to see serial data.
           </div>
         )}
       </div>
 
-      {/* ── INPUT SECTION ───────────────────────────── */}
+      {/* ── INPUT ── */}
       {onSend && (
         <div style={{
-          padding: '12px 16px',
-          background: '#161b22',
-          borderTop: '1px solid #30363d',
+          padding: '16px 20px',
+          background: 'rgba(255, 255, 255, 0.8)',
+          borderTop: '1px solid rgba(0,0,0,0.06)',
           display: 'flex',
-          gap: '8px',
+          gap: '10px',
           alignItems: 'center'
         }}>
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type message to send..."
-            style={{
-              flex: 1,
-              padding: '8px 12px',
-              background: '#0d1117',
-              border: '1px solid #30363d',
-              borderRadius: '6px',
-              color: '#c9d1d9',
-              fontSize: '13px',
-              fontFamily: 'inherit',
-              outline: 'none'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#58a6ff'}
-            onBlur={(e) => e.target.style.borderColor = '#30363d'}
-          />
+          <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+            <ChevronRight size={16} style={{ position: 'absolute', left: 12, color: '#94a3b8' }} />
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Type message..."
+              style={{
+                width: '100%',
+                padding: '10px 12px 10px 32px',
+                background: '#f8fafc',
+                border: '1px solid rgba(123, 79, 196, 0.1)',
+                borderRadius: '12px',
+                color: '#1e293b',
+                fontSize: '13px',
+                fontFamily: 'inherit',
+                outline: 'none',
+                transition: 'all 0.2s'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#7B4FC4';
+                e.target.style.background = '#fff';
+                e.target.style.boxShadow = '0 0 0 4px rgba(123, 79, 196, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(123, 79, 196, 0.1)';
+                e.target.style.background = '#f8fafc';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+          </div>
 
           <select
             value={lineEnding}
             onChange={(e) => setLineEnding(e.target.value as any)}
             style={{
-              padding: '8px 12px',
-              background: '#0d1117',
-              border: '1px solid #30363d',
-              borderRadius: '6px',
-              color: '#8b949e',
+              padding: '10px 12px',
+              background: '#f8fafc',
+              border: '1px solid rgba(0,0,0,0.06)',
+              borderRadius: '12px',
+              color: '#64748b',
               fontSize: '11px',
-              fontFamily: 'inherit',
+              fontWeight: 600,
               cursor: 'pointer',
               outline: 'none'
             }}
-            title="Line ending"
           >
-            <option value="none">No line ending</option>
-            <option value="nl">Newline (\\n)</option>
-            <option value="cr">Carriage return (\\r)</option>
-            <option value="crnl">Both (\\r\\n)</option>
+            <option value="none">NO ENDING</option>
+            <option value="nl">NEWLINE (\\n)</option>
+            <option value="cr">RETURN (\\r)</option>
+            <option value="crnl">BOTH (\\r\\n)</option>
           </select>
 
           <button
             onClick={handleSend}
             disabled={!inputValue}
             style={{
-              padding: '8px 16px',
-              background: inputValue ? '#238636' : '#21262d',
+              padding: '10px 24px',
+              background: inputValue ? '#7B4FC4' : '#e2e8f0',
               border: 'none',
-              borderRadius: '6px',
-              color: inputValue ? '#ffffff' : '#484f58',
+              borderRadius: '12px',
+              color: inputValue ? '#fff' : '#94a3b8',
               fontSize: '13px',
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: inputValue ? 'pointer' : 'not-allowed',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              if (inputValue) {
-                e.currentTarget.style.background = '#2ea043';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (inputValue) {
-                e.currentTarget.style.background = '#238636';
-              }
+              transition: 'all 0.2s',
+              boxShadow: inputValue ? '0 4px 12px rgba(123, 79, 196, 0.2)' : 'none'
             }}
           >
-            Send
+            SEND
           </button>
         </div>
       )}

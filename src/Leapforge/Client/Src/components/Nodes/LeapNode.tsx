@@ -621,11 +621,12 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       {data.label && (
         <div style={{
           marginTop: '8px',
-          fontSize: '10px',
-          color: '#94a3b8',
-          fontWeight: 600,
-          fontFamily: 'JetBrains Mono, monospace',
-          pointerEvents: 'none'
+          fontSize: '11px',
+          color: '#0f172a', /* High contrast dark text */
+          fontWeight: 800,
+          fontFamily: 'Outfit, sans-serif',
+          pointerEvents: 'none',
+          textShadow: '0 1px 2px rgba(255,255,255,0.8)'
         }}>
           {data.label}
         </div>

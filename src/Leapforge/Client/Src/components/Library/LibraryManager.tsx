@@ -161,7 +161,7 @@ export const LibraryManager: React.FC = () => {
               type="text"
               placeholder="Filter by name, author or description…"
               value={searchQuery}
-              onChange={handleQueryChange}              style={{ width: '100%', background: t.surface, border: `1px solid ${t.border}`, borderRadius: '6px', padding: '9px 12px 9px 36px', color: t.white, fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
+              onChange={handleQueryChange} style={{ width: '100%', background: t.surface, border: `1px solid ${t.border}`, borderRadius: '6px', padding: '9px 12px 9px 36px', color: t.white, fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
