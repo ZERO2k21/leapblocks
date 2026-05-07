@@ -106,7 +106,9 @@ class CircuitEngine {
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      const key = `${current.id}-${current.pin}`;
+      // Always use clean pin names for visited set and logic
+      const cleanStartPin = current.pin.replace(/__target$/, '');
+      const key = `${current.id}-${cleanStartPin}`;
       if (visited.has(key)) continue;
       visited.add(key);
 
@@ -116,60 +118,88 @@ class CircuitEngine {
       const nodeType = node.data?.type;
 
       if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring'].includes(nodeType)) {
-        targets.push({ nodeId: current.id, pinName: current.pin, resistance: current.resistance, type: nodeType });
+        targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
       } else if (nodeType === 'ks2e-m-dc5') {
-        // Relay contact traversal: signal enters on a pole pin (P1/P2) and exits via the active contact
-        const relayNode = nodes.find(n => n.id === current.id);
-        const energized = relayNode?.data?.relayEnergized ?? false;
-
-        // Map pole → active contact based on relay state
-        const contactMap: Record<string, string> = energized
-          ? { 'P1': 'NO1', 'P2': 'NO2' }
-          : { 'P1': 'NC1', 'P2': 'NC2' };
-
-        const exitPin = contactMap[current.pin];
-        if (exitPin) {
-          const downstreamEdges = edges.filter(e =>
-            (e.source === current.id && e.sourceHandle === exitPin) ||
-            (e.target === current.id && e.targetHandle === exitPin)
+        // When tracing FROM the relay itself (start node), follow external edges
+        // from the specified pin — don't apply internal contact routing
+        if (current.id === startNodeId) {
+          const outEdges = edges.filter(e =>
+            (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === cleanStartPin) ||
+            (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === cleanStartPin)
           );
-          for (const edge of downstreamEdges) {
+          for (const edge of outEdges) {
             const nextId = edge.source === current.id ? edge.target : edge.source;
             const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
             queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
+          }
+        } else {
+          // Relay contact traversal: signal enters on a pole pin (P1/P2) and exits via the active contact
+          const relayNode = nodes.find(n => n.id === current.id);
+          const energized = relayNode?.data?.relayEnergized ?? false;
+
+          // Map pole → active contact based on relay state
+          const contactMap: Record<string, string> = energized
+            ? { 'P1': 'NO1', 'P2': 'NO2' }
+            : { 'P1': 'NC1', 'P2': 'NC2' };
+
+          const exitPin = contactMap[cleanStartPin];
+          if (exitPin) {
+            const downstreamEdges = edges.filter(e =>
+              (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
+              (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
+            );
+            for (const edge of downstreamEdges) {
+              const nextId = edge.source === current.id ? edge.target : edge.source;
+              const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
+              queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
+            }
           }
         }
       } else if (nodeType === 'relay-module') {
-        // Relay module contact traversal: signal enters on COM and exits via active contact (NO or NC)
-        const relayNode = nodes.find(n => n.id === current.id);
-        const energized = relayNode?.data?.relayEnergized ?? false;
-
-        // When energized: COM connects to NO
-        // When de-energized: COM connects to NC
-        const activeContact = energized ? 'NO' : 'NC';
-
-        // If signal is on COM, route to active contact
-        if (current.pin === 'COM') {
-          const downstreamEdges = edges.filter(e =>
-            (e.source === current.id && e.sourceHandle === activeContact) ||
-            (e.target === current.id && e.targetHandle === activeContact)
+        // When tracing FROM the relay itself (start node), follow external edges
+        // from the specified pin — don't apply internal contact routing
+        if (current.id === startNodeId) {
+          const outEdges = edges.filter(e =>
+            (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === cleanStartPin) ||
+            (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === cleanStartPin)
           );
-          for (const edge of downstreamEdges) {
+          for (const edge of outEdges) {
             const nextId = edge.source === current.id ? edge.target : edge.source;
             const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
             queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
           }
-        }
-        // If signal is on NO or NC, route to COM (bidirectional)
-        else if (current.pin === activeContact) {
-          const downstreamEdges = edges.filter(e =>
-            (e.source === current.id && e.sourceHandle === 'COM') ||
-            (e.target === current.id && e.targetHandle === 'COM')
-          );
-          for (const edge of downstreamEdges) {
-            const nextId = edge.source === current.id ? edge.target : edge.source;
-            const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
-            queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
+        } else {
+          // Relay module contact traversal: signal enters on COM and exits via active contact (NO or NC)
+          const relayNode = nodes.find(n => n.id === current.id);
+          const energized = relayNode?.data?.relayEnergized ?? false;
+
+          // When energized: COM connects to NO
+          // When de-energized: COM connects to NC
+          const activeContact = energized ? 'NO' : 'NC';
+
+          // If signal is on COM, route to active contact
+          if (cleanStartPin === 'COM') {
+            const downstreamEdges = edges.filter(e =>
+              (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === activeContact) ||
+              (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === activeContact)
+            );
+            for (const edge of downstreamEdges) {
+              const nextId = edge.source === current.id ? edge.target : edge.source;
+              const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
+              queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
+            }
+          }
+          // If signal is on NO or NC, route to COM (bidirectional)
+          else if (cleanStartPin === activeContact) {
+            const downstreamEdges = edges.filter(e =>
+              (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === 'COM') ||
+              (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === 'COM')
+            );
+            for (const edge of downstreamEdges) {
+              const nextId = edge.source === current.id ? edge.target : edge.source;
+              const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
+              queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
+            }
           }
         }
       } else if (nodeType === 'resistor') {
@@ -178,21 +208,21 @@ class CircuitEngine {
 
         // Find the other pin of the resistor
         let exitPin = '';
-        if (current.pin === '1' || current.pin === 'pin_1' || current.pin === 'IN') {
+        if (cleanStartPin === '1' || cleanStartPin === 'pin_1' || cleanStartPin === 'IN') {
           exitPin = node.data?.pinOUT ? 'OUT' : '2';
         } else {
           exitPin = node.data?.pinIN ? 'IN' : '1';
         }
 
         // Robust fallback: if we don't know the pins, check if they are 'IN'/'OUT'
-        if (current.pin === 'IN') exitPin = 'OUT';
-        else if (current.pin === 'OUT') exitPin = 'IN';
-        else if (current.pin === '1' || current.pin === 'pin_1') exitPin = '2';
-        else if (current.pin === '2' || current.pin === 'pin_2') exitPin = '1';
+        if (cleanStartPin === 'IN') exitPin = 'OUT';
+        else if (cleanStartPin === 'OUT') exitPin = 'IN';
+        else if (cleanStartPin === '1' || cleanStartPin === 'pin_1') exitPin = '2';
+        else if (cleanStartPin === '2' || cleanStartPin === 'pin_2') exitPin = '1';
 
         const downstreamEdges = edges.filter(e =>
-          (e.source === current.id && e.sourceHandle === exitPin) ||
-          (e.target === current.id && e.targetHandle === exitPin)
+          (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
+          (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
         );
 
         for (const edge of downstreamEdges) {
@@ -1333,8 +1363,8 @@ class CircuitEngine {
 
                   // Find the signal level on the pole pin
                   const poleEdge = relayEdges.find(e =>
-                    (e.source === peripheralId && e.sourceHandle === pole) ||
-                    (e.target === peripheralId && e.targetHandle === pole)
+                    (e.source === peripheralId && e.sourceHandle?.replace(/__target$/, '') === pole) ||
+                    (e.target === peripheralId && e.targetHandle?.replace(/__target$/, '') === pole)
                   );
 
                   if (poleEdge) {
@@ -1387,8 +1417,8 @@ class CircuitEngine {
               );
 
               const comEdge = relayEdges.find(e =>
-                (e.source === peripheralId && e.sourceHandle === 'COM') ||
-                (e.target === peripheralId && e.targetHandle === 'COM')
+                (e.source === peripheralId && e.sourceHandle?.replace(/__target$/, '') === 'COM') ||
+                (e.target === peripheralId && e.targetHandle?.replace(/__target$/, '') === 'COM')
               );
 
               let comSignal = buf['COM'] ?? false;
@@ -1396,12 +1426,13 @@ class CircuitEngine {
               // If COM is connected to a board's power pin (5V, 3V3), it's always HIGH
               if (comEdge) {
                 const connectedNodeId = comEdge.source === peripheralId ? comEdge.target : comEdge.source;
-                const connectedPin = comEdge.source === peripheralId ? comEdge.targetHandle : comEdge.sourceHandle;
+                const connectedPinRaw = comEdge.source === peripheralId ? comEdge.targetHandle : comEdge.sourceHandle;
+                const connectedPin = connectedPinRaw?.replace(/__target$/, '') || '';
                 const connectedNode = currentStateStore.nodes.find(n => n.id === connectedNodeId);
 
                 if (connectedNode && (connectedNode.data?.type === 'arduino-uno' || connectedNode.data?.type === 'esp32-c3')) {
                   // Check if connected to a power pin
-                  if (connectedPin === '5V' || connectedPin === '3V3' || connectedPin === 'VCC') {
+                  if (connectedPin === '5V' || connectedPin === '3V3' || connectedPin === '3.3V' || connectedPin === 'VCC' || connectedPin === 'VIN') {
                     comSignal = true;
                     buf['COM'] = true;
                     console.log(`[RELAY MODULE] COM connected to power pin ${connectedPin}, setting to HIGH`);
@@ -1422,6 +1453,8 @@ class CircuitEngine {
                 const activeTargets = this.traceNet(peripheralId, activeContact);
                 const inactiveTargets = this.traceNet(peripheralId, inactiveContact);
 
+                console.log(`[RELAY MODULE] Found ${activeTargets.length} active targets for ${activeContact}, ${inactiveTargets.length} inactive targets for ${inactiveContact}`);
+                
                 // Get the signal level on COM from the buffer
                 const comSignal = buf['COM'] ?? false;
                 console.log(`[RELAY MODULE] COM signal: ${comSignal}, routing to ${activeContact}`);
