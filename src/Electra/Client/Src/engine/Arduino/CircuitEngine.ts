@@ -1,8 +1,7 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
+/* Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+* All rights reserved. Proprietary and confidential.
+* Unauthorized copying, distribution, or modification is strictly prohibited.
+*/
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
 import { simulationRunner, PinState } from './SimulationRunner';
 import { HD44780 } from './HD44780';
@@ -193,7 +192,7 @@ class CircuitEngine {
 
       const nodeType = node.data?.type;
 
-      if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'l298n', 'battery-12v'].includes(nodeType)) {
+      if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'l298n'].includes(nodeType)) {
         targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
       } else if (nodeType === 'ks2e-m-dc5') {
         // When tracing FROM the relay itself (start node), follow external edges
@@ -1167,12 +1166,7 @@ class CircuitEngine {
     };
     this.stepperIdleRaf = requestAnimationFrame(tickUnifiedSteppers);
 
-        // 1.5 Propagate Static Power Sources (Batteries)
-    nodes.filter(n => n.data?.type === 'battery-12v').forEach(battery => {
-      this.pushInputSignal(battery.id, 'POS', true);
-      this.pushInputSignal(battery.id, 'NEG', false);
-    });
-// 2. Map board nodes (Arduino/ESP32) and their connected peripherals
+    // 2. Map board nodes (Arduino/ESP32) and their connected peripherals
     const boardNodes = nodes.filter(n =>
       n.data?.type === 'arduino-uno' ||
       n.data?.type === 'esp32-c3'
@@ -1452,10 +1446,8 @@ class CircuitEngine {
             // When energized: P1↔NO1, P2↔NO2 are closed; P1↔NC1, P2↔NC2 open.
             // When de-energized: P1↔NC1, P2↔NC2 are closed; P1↔NO1, P2↔NO2 open.
             if (peripheralNode.data?.type === 'ks2e-m-dc5') {
-                            const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
               buf[peripheralPinName] = isHigh;
-
-              const isPowered = buf['12V'] === true && buf['GND'] === false;
 
               // Coil is energized when COIL1 is HIGH (COIL2 is GND)
               const coil1High = !!buf['COIL1'];
@@ -1516,10 +1508,8 @@ class CircuitEngine {
             // When energized (IN=HIGH): COM connects to NO
             // When de-energized (IN=LOW): COM connects to NC
             if (peripheralNode.data?.type === 'relay-module') {
-                            const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
               buf[peripheralPinName] = isHigh;
-
-              const isPowered = buf['12V'] === true && buf['GND'] === false;
 
               // Track ALL pins including switch terminals (COM, NO, NC)
               // This is important because COM receives signals from the circuit
@@ -1623,11 +1613,10 @@ class CircuitEngine {
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
               buf[peripheralPinName] = isHigh;
 
-              const isPowered = (buf['12V'] === true);
-              const ena = (buf['ENA'] !== false) && isPowered; // HIGH by default (jumpered)
+              const ena = buf['ENA'] !== false; // HIGH by default (jumpered)
               const in1 = !!buf['IN1'];
               const in2 = !!buf['IN2'];
-              const enb = (buf['ENB'] !== false) && isPowered; // HIGH by default (jumpered)
+              const enb = buf['ENB'] !== false; // HIGH by default (jumpered)
               const in3 = !!buf['IN3'];
               const in4 = !!buf['IN4'];
 
@@ -1656,7 +1645,7 @@ class CircuitEngine {
                   if (!targetNode) return;
                   const pinKey = `pin_${target.pinName}`;
                   const newPinStates = { ...(targetNode.data?.pinStates || {}), [pinKey]: signal };
-                  
+
                   if (target.type === 'dc-motor') {
                     const pos = !!newPinStates['pin_POS'];
                     const neg = !!newPinStates['pin_NEG'];
@@ -1707,10 +1696,8 @@ class CircuitEngine {
                 }, { stepsPerRev: 200 }, peripheralId));
               }
               const stepper = this.stepperEmulators.get(peripheralId)!;
-                            const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
               buf[peripheralPinName] = isHigh;
-
-              const isPowered = buf['12V'] === true && buf['GND'] === false;
 
               if (peripheralPinName === 'STEP') {
                 stepper.processStep(isHigh);
@@ -1752,10 +1739,8 @@ class CircuitEngine {
             // Outer shaft: A1+, A1-, B1+, B1-
             // Inner shaft: A2+, A2-, B2+, B2-
             if (peripheralNode.data?.type === 'biaxial-stepper') {
-                            const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
               buf[peripheralPinName] = isHigh;
-
-              const isPowered = buf['12V'] === true && buf['GND'] === false;
 
               const outerKey = `${peripheralId}__outer`;
               const innerKey = `${peripheralId}__inner`;
@@ -2361,7 +2346,5 @@ class CircuitEngine {
 }
 
 export const circuitEngine = new CircuitEngine();
-
-
 
 
