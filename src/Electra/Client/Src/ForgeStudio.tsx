@@ -15,6 +15,7 @@ import { useForgeStore, getSimulationRunner } from '../utlis/store/useForgeStore
 const ForgeCanvas = lazy(() => import('./components/ForgeCanvas'));
 const ForgeEditor = lazy(() => import('./components/Editor/ForgeEditor'));
 import { LibraryManager } from './components/Library/LibraryManager';
+import { PartPicker as ComponentSidebar } from './components/Library/PartPicker';
 import { IgniteTopbar } from './components/Layout/Topbar';
 import { compileCode } from './services/CompilerService';
 
@@ -143,6 +144,7 @@ void loop() {
   }, [initialBoard]); // Run when initialBoard changes
 
   const [activeTab, setActiveTab] = useState<'code' | 'serial' | 'wifi' | 'libraries'>('code');
+  const { showPartPicker, setShowPartPicker } = useForgeStore();
   const [wifiStatus, setWifiStatus] = useState('');
 
   useEffect(() => {
@@ -511,31 +513,31 @@ void loop() {
             <div className="forge-tabs-container" style={{ height: 48 }}>
               {/* Board badge - non-interactive */}
               <div style={{
-                padding: '6px 14px',
+                padding: '4px 12px',
                 background: board === 'esp32-c3'
-                  ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(34, 211, 238, 0.1))'
-                  : 'linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(239, 68, 68, 0.1))',
+                  ? 'rgba(34, 211, 238, 0.1)'
+                  : 'rgba(245, 158, 11, 0.1)',
                 border: board === 'esp32-c3'
-                  ? '1.5px solid rgba(6, 182, 212, 0.4)'
-                  : '1.5px solid rgba(251, 146, 60, 0.4)',
-                borderRadius: '10px',
-                color: board === 'esp32-c3' ? '#06b6d4' : '#fb923c',
-                fontSize: '11px',
-                fontWeight: 800,
+                  ? '1px solid rgba(34, 211, 238, 0.4)'
+                  : '1px solid rgba(245, 158, 11, 0.4)',
+                borderRadius: '2px',
+                color: board === 'esp32-c3' ? 'var(--lp-accent-primary)' : 'var(--lp-amber)',
+                fontSize: '10px',
+                fontWeight: 700,
                 textTransform: 'uppercase',
-                letterSpacing: '0.8px',
+                letterSpacing: '1px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px'
               }}>
                 <div style={{
-                  width: '8px',
-                  height: '8px',
+                  width: '6px',
+                  height: '6px',
                   borderRadius: '50%',
-                  background: board === 'esp32-c3' ? '#06b6d4' : '#fb923c',
+                  background: board === 'esp32-c3' ? 'var(--lp-accent-primary)' : 'var(--lp-amber)',
                   boxShadow: board === 'esp32-c3'
-                    ? '0 0 10px rgba(6, 182, 212, 0.6)'
-                    : '0 0 10px rgba(251, 146, 60, 0.6)'
+                    ? '0 0 10px var(--lp-accent-primary)'
+                    : '0 0 10px var(--lp-amber)'
                 }} />
                 {board === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}
               </div>
@@ -599,8 +601,8 @@ void loop() {
                 {activeTab === 'wifi' ? (
                   <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, padding: 15, overflowY: 'auto', height: '100%', background: '#fdfdfd' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <span style={{ color: '#94a3b8', fontSize: 10, fontWeight: 700 }}>NETWORK LOG</span>
-                      <button onClick={() => clearWiFiLog()} style={{ background: 'none', border: 'none', color: '#7B4FC4', cursor: 'pointer', fontSize: 10, fontWeight: 700 }}>CLEAR</button>
+                      <span style={{ color: 'var(--lp-zinc-400)', fontSize: 9, fontWeight: 700, letterSpacing: '0.5px' }}>NETWORK LOG</span>
+                      <button onClick={() => clearWiFiLog()} style={{ background: 'none', border: 'none', color: 'var(--lp-accent-primary)', cursor: 'pointer', fontSize: 10, fontWeight: 700 }}>CLEAR</button>
                     </div>
                     {wifiLog.length === 0 ? (
                       <div style={{ color: '#cbd5e1', textAlign: 'center', marginTop: 20 }}>No network activity.</div>
@@ -623,19 +625,42 @@ void loop() {
           )}
         </div>
 
-        {/* Right: Simulation Canvas */}
-        <div className="canvas-pane">
-          <Suspense fallback={<div className="forge-loader"><div className="spinner" />Initializing Physics...</div>}>
-            <ForgeCanvas onToggleSimulation={handleToggleSimulation} isCompiling={isCompiling} />
-          </Suspense>
+        {/* Right: Simulation Canvas + Sidebar */}
+        <div className="canvas-pane" style={{ display: 'flex', flexDirection: 'row' }}>
+          <div style={{ flex: 1, position: 'relative', height: '100%' }}>
+            <Suspense fallback={<div className="forge-loader"><div className="spinner" />Initializing Physics...</div>}>
+              <ForgeCanvas onToggleSimulation={handleToggleSimulation} isCompiling={isCompiling} />
+            </Suspense>
 
-          {/* Floating WiFi Status */}
-          {board === 'esp32-c3' && isSimulating && wifiStatus && (
-            <div style={{ position: 'absolute', bottom: 20, right: 20, zIndex: 10 }}>
-              <div className="wifi-status-pill">
-                <div className="wifi-dot" />
-                {wifiStatus}
+            {/* Floating WiFi Status */}
+            {board === 'esp32-c3' && isSimulating && wifiStatus && (
+              <div style={{ position: 'absolute', bottom: 20, right: 20, zIndex: 10 }}>
+                <div className="wifi-status-pill">
+                  <div className="wifi-dot" />
+                  {wifiStatus}
+                </div>
               </div>
+            )}
+          </div>
+
+          {showPartPicker && (
+            <div style={{
+              width: 'var(--sidebar-width)',
+              height: '100%',
+              borderLeft: '1px solid var(--lp-border)',
+              background: 'var(--lp-dark-bg)',
+              zIndex: 50,
+              display: 'flex'
+            }}>
+              <ComponentSidebar
+                onSelect={(type) => {
+                  const state = useForgeStore.getState();
+                  state.addNode(type, { x: 400, y: 300 }, { label: type.toUpperCase() });
+                  // We don't close it automatically anymore as it's a sidebar
+                }}
+                onClose={() => setShowPartPicker(false)}
+                currentBoard={board as any}
+              />
             </div>
           )}
         </div>

@@ -107,6 +107,10 @@ export interface ForgeState {
   librarySearchQuery: string;
   librarySearchResults: any[];
   setLibrarySearch: (query: string, results: any[]) => void;
+
+  // UI State
+  showPartPicker: boolean;
+  setShowPartPicker: (show: boolean) => void;
 }
 
 /** Map canvas node data.type → store board ID */
@@ -143,6 +147,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   importedLibraries: [],
   librarySearchQuery: '',
   librarySearchResults: [],
+  showPartPicker: false,
 
   setProjectPath: (path) => {
     console.log(`[FORGE STORE] projectPath updated to: ${path}`);
@@ -174,6 +179,8 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     librarySearchQuery: query,
     librarySearchResults: results
   }),
+
+  setShowPartPicker: (show) => set({ showPartPicker: show }),
 
   startSimulation: (hexString) => {
     const state = useForgeStore.getState();
