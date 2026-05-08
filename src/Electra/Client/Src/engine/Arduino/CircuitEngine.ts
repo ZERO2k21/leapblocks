@@ -192,7 +192,7 @@ class CircuitEngine {
 
       const nodeType = node.data?.type;
 
-      if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'l298n'].includes(nodeType)) {
+      if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'l298n', 'battery-12v'].includes(nodeType)) {
         targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
       } else if (nodeType === 'ks2e-m-dc5') {
         // When tracing FROM the relay itself (start node), follow external edges
@@ -1613,10 +1613,13 @@ class CircuitEngine {
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
               buf[peripheralPinName] = isHigh;
 
-              const ena = buf['ENA'] !== false; // HIGH by default (jumpered)
+              // Check if 12V terminal has power from a battery or source
+              const has12VPower = this.traceNet(peripheralId, '12V').some(t => t.type === 'battery-12v');
+              
+              const ena = (buf['ENA'] !== false) && has12VPower; // HIGH by default (jumpered)
               const in1 = !!buf['IN1'];
               const in2 = !!buf['IN2'];
-              const enb = buf['ENB'] !== false; // HIGH by default (jumpered)
+              const enb = (buf['ENB'] !== false) && has12VPower; // HIGH by default (jumpered)
               const in3 = !!buf['IN3'];
               const in4 = !!buf['IN4'];
 
@@ -1661,8 +1664,8 @@ class CircuitEngine {
 
               propagate('OUT1', a_pos);
               propagate('OUT2', a_neg);
-              propagate('OUT4', b_pos);
-              propagate('OUT3', b_neg);
+              propagate('OUT3', b_pos);
+              propagate('OUT4', b_neg);
             }
 
             // --- Stepper Motor Emulation ---

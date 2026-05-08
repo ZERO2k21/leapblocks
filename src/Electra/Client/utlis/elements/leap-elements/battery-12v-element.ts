@@ -18,57 +18,52 @@ export class Battery12VElement extends LitElement {
         height="85"
         viewBox="0 0 100 85"
         xmlns="http://www.w3.org/2000/svg"
-        style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));"
+        style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.5));"
       >
         <defs>
           <linearGradient id="battery-body-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style="stop-color:#27272a;stop-opacity:1" />
+            <stop offset="0%" style="stop-color:#3f3f46;stop-opacity:1" />
             <stop offset="100%" style="stop-color:#09090b;stop-opacity:1" />
           </linearGradient>
           
           <linearGradient id="terminal-pos-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+            <stop offset="0%" style="stop-color:#f87171;stop-opacity:1" />
             <stop offset="100%" style="stop-color:#991b1b;stop-opacity:1" />
           </linearGradient>
-
-          <filter id="battery-glow">
-            <feGaussianBlur stdDeviation="1" result="blur"/>
-            <feMerge>
-              <feMergeNode in="blur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
         </defs>
 
         <!-- Battery Body -->
-        <rect x="5" y="15" width="90" height="65" rx="4" fill="url(#battery-body-grad)" stroke="#000" stroke-width="1.5" />
+        <rect x="5" y="15" width="90" height="65" rx="6" fill="url(#battery-body-grad)" stroke="#000" stroke-width="1.5" />
         
-        <!-- Top Cover -->
-        <rect x="5" y="15" width="90" height="15" rx="2" fill="#18181b" stroke="#000" stroke-width="0.5" />
-        <rect x="5" y="15" width="90" height="2" fill="rgba(255,255,255,0.05)" />
+        <!-- Top Cover Details -->
+        <rect x="5" y="15" width="90" height="18" rx="3" fill="#18181b" stroke="#000" stroke-width="0.5" />
+        <rect x="10" y="18" width="80" height="4" rx="1" fill="#000" opacity="0.3" />
 
-        <!-- Terminals (Spade type) -->
+        <!-- Terminals (Industrial Studs) -->
         <!-- Positive -->
-        <g transform="translate(15, 5)">
-          <rect x="0" y="0" width="12" height="12" rx="1" fill="url(#terminal-pos-grad)" />
-          <rect x="3" y="2" width="6" height="2" fill="white" opacity="0.3" rx="0.5" />
-          <text x="6" y="25" font-family="'Inter', sans-serif" font-size="12" font-weight="900" fill="#ef4444" text-anchor="middle" filter="url(#battery-glow)">+</text>
+        <g transform="translate(18, 8)">
+          <rect x="0" y="0" width="16" height="16" rx="2" fill="url(#terminal-pos-grad)" stroke="#7f1d1d" stroke-width="0.5" />
+          <circle cx="8" cy="8" r="4" fill="#fb7185" opacity="0.4" />
+          <text x="8" y="32" font-family="'Inter', sans-serif" font-size="16" font-weight="900" fill="#f87171" text-anchor="middle" style="text-shadow: 0 0 5px rgba(248,113,113,0.5)">+</text>
         </g>
 
         <!-- Negative -->
-        <g transform="translate(73, 5)">
-          <rect x="0" y="0" width="12" height="12" rx="1" fill="#3f3f46" />
-          <rect x="3" y="2" width="6" height="2" fill="white" opacity="0.1" rx="0.5" />
-          <text x="6" y="25" font-family="'Inter', sans-serif" font-size="12" font-weight="900" fill="#94a3b8" text-anchor="middle" filter="url(#battery-glow)">-</text>
+        <g transform="translate(66, 8)">
+          <rect x="0" y="0" width="16" height="16" rx="2" fill="#52525b" stroke="#27272a" stroke-width="0.5" />
+          <circle cx="8" cy="8" r="4" fill="#94a3b8" opacity="0.2" />
+          <text x="8" y="32" font-family="'Inter', sans-serif" font-size="16" font-weight="900" fill="#94a3b8" text-anchor="middle">-</text>
         </g>
 
-        <!-- Industrial Label -->
-        <rect x="20" y="40" width="60" height="30" rx="2" fill="#111827" stroke="#374151" stroke-width="0.5" />
-        <text x="50" y="55" font-family="'Inter', sans-serif" font-size="14" font-weight="900" fill="white" text-anchor="middle" style="letter-spacing: 1px;">12V</text>
-        <text x="50" y="65" font-family="monospace" font-size="6" fill="#60a5fa" text-anchor="middle">7.2Ah / LEAD-ACID</text>
+        <!-- Premium Label -->
+        <g transform="translate(20, 38)">
+          <rect x="0" y="0" width="60" height="35" rx="3" fill="#020617" stroke="#1e293b" stroke-width="1" />
+          <text x="30" y="18" font-family="'Inter', sans-serif" font-size="16" font-weight="900" fill="#f8fafc" text-anchor="middle" style="letter-spacing: 2px;">12V</text>
+          <text x="30" y="28" font-family="monospace" font-size="7" font-weight="bold" fill="#3b82f6" text-anchor="middle">ULTRA-DENSE POWER</text>
+        </g>
         
-        <!-- Warning text -->
-        <text x="50" y="76" font-family="sans-serif" font-size="4" fill="#ef4444" text-anchor="middle" opacity="0.6">CAUTION: DO NOT SHORT CIRCUIT</text>
+        <!-- Warning Markings -->
+        <rect x="10" y="76" width="80" height="4" fill="#eab308" opacity="0.8" />
+        <text x="50" y="79.5" font-family="sans-serif" font-size="3" font-weight="bold" fill="black" text-anchor="middle">DANGER - HIGH ENERGY - HANDLE WITH CARE</text>
       </svg>
     `;
   }

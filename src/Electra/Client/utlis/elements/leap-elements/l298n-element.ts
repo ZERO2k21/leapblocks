@@ -39,7 +39,6 @@ export class L298NElement extends LitElement {
   render() {
     const enaColor = this.ena ? '#ef4444' : '#374151'; // Red jumper
     const enbColor = this.enb ? '#ef4444' : '#374151';
-    const inColor = '#334155'; // Dark pin headers
 
     return html`
       <svg
@@ -47,166 +46,131 @@ export class L298NElement extends LitElement {
         height="200"
         viewBox="0 0 200 200"
         xmlns="http://www.w3.org/2000/svg"
-        style="filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));"
+        style="filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4));"
       >
+        <defs>
+          <linearGradient id="pcb-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#b91c1c;stop-opacity:1" />
+          </linearGradient>
+          <linearGradient id="heatsink-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#18181b;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:#3f3f46;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#18181b;stop-opacity:1" />
+          </linearGradient>
+          <linearGradient id="terminal-block-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+          </linearGradient>
+          <filter id="inner-bevel">
+            <feOffset dx="1" dy="1" />
+            <feGaussianBlur stdDeviation="1" result="blur" />
+            <feComposite operator="out" in="SourceGraphic" in2="blur" result="inverse" />
+            <feFlood flood-color="white" flood-opacity="0.3" result="light" />
+            <feComposite operator="in" in="light" in2="inverse" result="bevel" />
+            <feComposite operator="over" in="bevel" in2="SourceGraphic" />
+          </filter>
+        </defs>
+
         <!-- PCB Board -->
-        <rect x="0" y="0" width="200" height="200" fill="#cc291d" />
+        <rect x="0" y="0" width="200" height="200" rx="4" fill="url(#pcb-grad)" />
+        <rect x="2" y="2" width="196" height="196" rx="3" fill="none" stroke="#dc2626" stroke-width="0.5" opacity="0.5" />
 
         <!-- Mounting Holes -->
-        <circle cx="14" cy="14" r="9" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.5" />
-        <circle cx="186" cy="14" r="9" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.5" />
-        <circle cx="14" cy="186" r="9" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.5" />
-        <circle cx="186" cy="186" r="9" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.5" />
+        <circle cx="14" cy="14" r="8" fill="#cbd5e1" stroke="#475569" stroke-width="1" />
+        <circle cx="186" cy="14" r="8" fill="#cbd5e1" stroke="#475569" stroke-width="1" />
+        <circle cx="14" cy="186" r="8" fill="#cbd5e1" stroke="#475569" stroke-width="1" />
+        <circle cx="186" cy="186" r="8" fill="#cbd5e1" stroke="#475569" stroke-width="1" />
 
         <!-- Heatsink Area -->
-        <g transform="translate(43, 10)">
-          <!-- Heatsink Base -->
-          <rect x="0" y="32" width="114" height="8" fill="#000" />
-          <!-- Heatsink Fins -->
-          <rect x="0" y="0" width="3" height="40" fill="#000" />
-          <rect x="22" y="0" width="3" height="40" fill="#000" />
-          <rect x="44" y="0" width="3" height="40" fill="#000" />
-          <rect x="67" y="0" width="3" height="40" fill="#000" />
-          <rect x="89" y="0" width="3" height="40" fill="#000" />
-          <rect x="111" y="0" width="3" height="40" fill="#000" />
-          <!-- Heatsink Horizontal Bar -->
-          <rect x="0" y="0" width="114" height="2" fill="#000" />
-          <rect x="0" y="40" width="114" height="20" fill="#000" />
+        <g transform="translate(43, 15)">
+          <rect x="0" y="35" width="114" height="25" fill="url(#heatsink-grad)" rx="1" />
+          ${[0, 19, 38, 57, 76, 95, 111].map(x => html`
+            <rect x="${x}" y="0" width="3" height="40" fill="#000" rx="0.5" />
+          `)}
+          <rect x="0" y="0" width="114" height="4" fill="#000" rx="1" />
           
-          <!-- IC Pins -->
-          <g transform="translate(8, 60)">
-            ${Array.from({ length: 11 }).map((_, i) => html`
-              <rect x="${i * 9}" y="0" width="4" height="18" fill="#e2e8f0" rx="1" />
+          <!-- Chip Label -->
+          <text x="57" y="52" font-family="monospace" font-size="10" font-weight="bold" fill="#94a3b8" text-anchor="middle">L298N</text>
+        </g>
+
+        <!-- Blue Terminal Blocks (Premium Style) -->
+        <g filter="url(#inner-bevel)">
+          <!-- Left (Motor A) -->
+          <g transform="translate(8, 105)">
+            <rect x="0" y="0" width="34" height="54" rx="2" fill="url(#terminal-block-grad)" />
+            <rect x="4" y="8" width="26" height="16" rx="1" fill="#1e3a8a" opacity="0.3" />
+            <rect x="4" y="30" width="26" height="16" rx="1" fill="#1e3a8a" opacity="0.3" />
+            
+            <!-- Screws -->
+            <circle cx="17" cy="16" r="10" fill="#94a3b8" stroke="#475569" stroke-width="0.5" />
+            <path d="M 12 16 L 22 16 M 17 11 L 17 21" stroke="#1e293b" stroke-width="1.5" transform="rotate(45, 17, 16)" />
+            
+            <circle cx="17" cy="38" r="10" fill="#94a3b8" stroke="#475569" stroke-width="0.5" />
+            <path d="M 12 38 L 22 38 M 17 33 L 17 43" stroke="#1e293b" stroke-width="1.5" transform="rotate(45, 17, 38)" />
+            
+            <text x="4" y="-4" font-family="monospace" font-size="8" font-weight="bold" fill="white">OUT1</text>
+            <text x="4" y="64" font-family="monospace" font-size="8" font-weight="bold" fill="white">OUT2</text>
+          </g>
+
+          <!-- Power (Bottom) -->
+          <g transform="translate(50, 158)">
+            <rect x="0" y="0" width="80" height="34" rx="2" fill="url(#terminal-block-grad)" />
+            <rect x="8" y="4" width="64" height="12" rx="1" fill="#1e3a8a" opacity="0.3" />
+            
+            ${[15, 40, 65].map(x => html`
+              <circle cx="${x}" cy="17" r="9" fill="#94a3b8" stroke="#475569" stroke-width="0.5" />
+              <path d="M ${x - 4} 17 L ${x + 4} 17 M ${x} 13 L ${x} 21" stroke="#1e293b" stroke-width="1.5" transform="rotate(45, ${x}, 17)" />
             `)}
+            
+            <text x="15" y="-4" font-family="monospace" font-size="7" font-weight="bold" fill="white" text-anchor="middle">12V</text>
+            <text x="40" y="-4" font-family="monospace" font-size="7" font-weight="bold" fill="white" text-anchor="middle">GND</text>
+            <text x="65" y="-4" font-family="monospace" font-size="7" font-weight="bold" fill="white" text-anchor="middle">5V</text>
+          </g>
+
+          <!-- Right (Motor B) -->
+          <g transform="translate(158, 105)">
+            <rect x="0" y="0" width="34" height="54" rx="2" fill="url(#terminal-block-grad)" />
+            <rect x="4" y="8" width="26" height="16" rx="1" fill="#1e3a8a" opacity="0.3" />
+            <rect x="4" y="30" width="26" height="16" rx="1" fill="#1e3a8a" opacity="0.3" />
+            
+            <circle cx="17" cy="16" r="10" fill="#94a3b8" stroke="#475569" stroke-width="0.5" />
+            <path d="M 12 16 L 22 16 M 17 11 L 17 21" stroke="#1e293b" stroke-width="1.5" transform="rotate(45, 17, 16)" />
+            
+            <circle cx="17" cy="38" r="10" fill="#94a3b8" stroke="#475569" stroke-width="0.5" />
+            <path d="M 12 38 L 22 38 M 17 33 L 17 43" stroke="#1e293b" stroke-width="1.5" transform="rotate(45, 17, 38)" />
+            
+            <text x="30" y="-4" font-family="monospace" font-size="8" font-weight="bold" fill="white" text-anchor="end">OUT4</text>
+            <text x="30" y="64" font-family="monospace" font-size="8" font-weight="bold" fill="white" text-anchor="end">OUT3</text>
           </g>
         </g>
 
-        <!-- Diodes Left -->
-        <g transform="translate(10, 35)">
-          ${Array.from({ length: 4 }).map((_, i) => html`
-            <rect x="0" y="${i * 18}" width="26" height="10" fill="#000" />
-            <rect x="20" y="${i * 18}" width="6" height="10" fill="#64748b" />
-          `)}
-        </g>
+        <!-- Capacitors & Details -->
+        <circle cx="75" cy="120" r="14" fill="#18181b" stroke="#000" />
+        <rect x="61" y="115" width="4" height="10" fill="#94a3b8" />
+        
+        <circle cx="130" cy="140" r="12" fill="#18181b" stroke="#000" />
+        <rect x="140" y="135" width="4" height="10" fill="#94a3b8" />
 
-        <!-- Diodes Right -->
-        <g transform="translate(164, 35)">
-          ${Array.from({ length: 4 }).map((_, i) => html`
-            <rect x="0" y="${i * 18}" width="26" height="10" fill="#000" />
-            <rect x="0" y="${i * 18}" width="6" height="10" fill="#64748b" />
-          `)}
-        </g>
-
-        <!-- Labels -->
-        <text x="40" y="98" font-family="'Courier New', Courier, monospace" font-size="18" font-weight="900" fill="white">L298N</text>
-
-        <!-- Large Capacitor -->
-        <g transform="translate(58, 105)">
-          <circle cx="15" cy="15" r="15" fill="#18181b" />
-          <path d="M 0 15 A 15 15 0 0 1 30 15 L 30 25 A 15 15 0 0 1 0 25 Z" fill="#18181b" />
-          <rect x="2" y="10" width="8" height="10" fill="#94a3b8" /> <!-- Polarity band -->
-          <circle cx="15" cy="15" r="15" fill="none" stroke="#000" stroke-width="0.5" />
-        </g>
-
-        <!-- Small Capacitor -->
-        <g transform="translate(120, 145)">
-          <circle cx="15" cy="15" r="15" fill="#18181b" />
-          <rect x="22" y="10" width="8" height="10" fill="#94a3b8" /> <!-- Polarity band -->
-          <circle cx="15" cy="15" r="15" fill="none" stroke="#000" stroke-width="0.5" />
-        </g>
-
-        <!-- Voltage Regulator -->
-        <g transform="translate(103, 103)">
-          <rect x="12" y="0" width="36" height="32" rx="1" fill="#000" />
-          <rect x="18" y="5" width="24" height="22" fill="#334155" />
-          <!-- Regulator Pins -->
-          <rect x="0" y="4" width="12" height="4" fill="#e2e8f0" />
-          <rect x="0" y="14" width="12" height="4" fill="#e2e8f0" />
-          <rect x="0" y="24" width="12" height="4" fill="#e2e8f0" />
-        </g>
-
-        <!-- Blue Terminal Blocks -->
-        <!-- Left (Motor A) -->
-        <g transform="translate(5, 108)">
-          <rect x="0" y="0" width="36" height="50" fill="#0047ab" /> <!-- Base -->
-          <rect x="2" y="0" width="34" height="50" fill="#2563eb" /> <!-- Top -->
-          <!-- Screws -->
-          <circle cx="18" cy="14" r="11" fill="#64748b" />
-          <rect x="10" y="13.5" width="16" height="1" fill="#1e293b" transform="rotate(45, 18, 14)" />
-          
-          <circle cx="18" cy="45" r="11" fill="#64748b" />
-          <rect x="10" y="44.5" width="16" height="1" fill="#1e293b" transform="rotate(45, 18, 45)" />
-          
-          <text x="0" y="-4" font-family="monospace" font-size="9" fill="white">OUT1</text>
-          <text x="0" y="60" font-family="monospace" font-size="9" fill="white">OUT2</text>
-        </g>
-
-        <!-- Power (Bottom) -->
-        <g transform="translate(43, 160)">
-          <rect x="0" y="0" width="85" height="36" fill="#0047ab" />
-          <rect x="0" y="2" width="85" height="34" fill="#2563eb" />
-          <!-- Screws -->
-          <circle cx="15" cy="18" r="11" fill="#64748b" />
-          <rect x="7" y="17.5" width="16" height="1" fill="#1e293b" transform="rotate(45, 15, 18)" />
-          
-          <circle cx="42" cy="18" r="11" fill="#64748b" />
-          <rect x="34" y="17.5" width="16" height="1" fill="#1e293b" transform="rotate(45, 42, 18)" />
-
-          <circle cx="70" cy="18" r="11" fill="#64748b" />
-          <rect x="62" y="17.5" width="16" height="1" fill="#1e293b" transform="rotate(45, 70, 18)" />
-          
-          <text x="15" y="-4" font-family="monospace" font-size="8" fill="white" text-anchor="middle">12V</text>
-          <text x="42" y="-4" font-family="monospace" font-size="8" fill="white" text-anchor="middle">GND</text>
-          <text x="70" y="-4" font-family="monospace" font-size="8" fill="white" text-anchor="middle">5V</text>
-        </g>
-
-        <!-- Right (Motor B) -->
-        <g transform="translate(159, 108)">
-          <rect x="0" y="0" width="36" height="50" fill="#0047ab" />
-          <rect x="0" y="0" width="34" height="50" fill="#2563eb" />
-          <!-- Screws -->
-          <circle cx="18" cy="14" r="11" fill="#64748b" />
-          <rect x="10" y="13.5" width="16" height="1" fill="#1e293b" transform="rotate(45, 18, 14)" />
-          
-          <circle cx="18" cy="45" r="11" fill="#64748b" />
-          <rect x="10" y="44.5" width="16" height="1" fill="#1e293b" transform="rotate(45, 18, 45)" />
-          
-          <text x="36" y="-4" font-family="monospace" font-size="9" fill="white" text-anchor="end">OUT4</text>
-          <text x="36" y="60" font-family="monospace" font-size="9" fill="white" text-anchor="end">OUT3</text>
-        </g>
-
-        <!-- Jumper 5VEN -->
-        <g transform="translate(53, 138)">
-          <rect x="0" y="0" width="24" height="10" fill="#1e293b" />
-          <rect x="2" y="2" width="8" height="6" fill="#000" />
-          <rect x="14" y="2" width="8" height="6" fill="#000" />
-          <text x="26" y="8" font-family="monospace" font-size="8" fill="white">5VEN</text>
-        </g>
-
-        <!-- Control Pins -->
-        <g transform="translate(103, 168)">
-          <!-- Pin Base -->
-          <rect x="0" y="0" width="85" height="24" fill="#000" />
-          <!-- Headers -->
-          ${[0, 13, 26, 39, 52, 65, 78].map((x, i) => html`
-            <rect x="${x + 2}" y="2" width="10" height="10" fill="#1e293b" />
+        <!-- Control Pins (Black Header) -->
+        <g transform="translate(140, 165)">
+          <rect x="0" y="0" width="50" height="25" rx="2" fill="#18181b" />
+          ${[5, 13, 21, 29, 37, 45].map(x => html`
+            <rect x="${x}" y="4" width="4" height="4" fill="#facc15" />
           `)}
           
-          <!-- ENA Jumper (Red) -->
-          <rect x="2" y="2" width="10" height="10" fill="${enaColor}" />
-          <!-- ENB Jumper (Red) -->
-          <rect x="80" y="2" width="10" height="10" fill="${enbColor}" />
+          <!-- Jumper Overlays -->
+          <rect x="4" y="2" width="6" height="12" rx="1" fill="${enaColor}" stroke="#000" stroke-width="0.5" />
+          <rect x="44" y="2" width="6" height="12" rx="1" fill="${enbColor}" stroke="#000" stroke-width="0.5" />
           
-          <!-- Labels -->
-          <g font-family="monospace" font-size="6" fill="white" text-anchor="middle">
+          <g font-family="monospace" font-size="5" font-weight="bold" fill="#f8fafc" text-anchor="middle">
             <text x="7" y="22">ENA</text>
-            <text x="20" y="22">IN1</text>
-            <text x="33" y="22">IN2</text>
-            <text x="46" y="22">IN3</text>
-            <text x="59" y="22">IN4</text>
-            <text x="72" y="22">ENB</text>
+            <text x="46" y="22">ENB</text>
           </g>
         </g>
+
+        <!-- Branding -->
+        <text x="100" y="192" font-family="'Inter', sans-serif" font-size="8" font-weight="900" fill="white" opacity="0.3" text-anchor="middle" style="letter-spacing: 2px;">LEAPLAB MOTOR DRIVE</text>
       </svg>
     `;
   }
