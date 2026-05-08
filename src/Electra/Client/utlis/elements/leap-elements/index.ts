@@ -56,3 +56,6 @@ export { SmallSoundSensorElement } from './small-sound-sensor-element';
 export { SSD1306Element } from './ssd1306-element';
 export { StepperMotorElement } from './stepper-motor-element';
 export { TiltSwitchElement } from './tilt-switch-element';
+export { L298NElement } from './l298n-element';
+export { DCMotorElement } from './dc-motor-element';
+export { Battery12VElement } from './battery-12v-element';

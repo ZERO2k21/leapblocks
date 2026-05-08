@@ -193,7 +193,7 @@ class CircuitEngine {
 
       const nodeType = node.data?.type;
 
-      if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring'].includes(nodeType)) {
+      if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'l298n', 'battery-12v'].includes(nodeType)) {
         targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
       } else if (nodeType === 'ks2e-m-dc5') {
         // When tracing FROM the relay itself (start node), follow external edges
@@ -1167,7 +1167,12 @@ class CircuitEngine {
     };
     this.stepperIdleRaf = requestAnimationFrame(tickUnifiedSteppers);
 
-    // 2. Map board nodes (Arduino/ESP32) and their connected peripherals
+        // 1.5 Propagate Static Power Sources (Batteries)
+    nodes.filter(n => n.data?.type === 'battery-12v').forEach(battery => {
+      this.pushInputSignal(battery.id, 'POS', true);
+      this.pushInputSignal(battery.id, 'NEG', false);
+    });
+// 2. Map board nodes (Arduino/ESP32) and their connected peripherals
     const boardNodes = nodes.filter(n =>
       n.data?.type === 'arduino-uno' ||
       n.data?.type === 'esp32-c3'
@@ -1447,8 +1452,10 @@ class CircuitEngine {
             // When energized: P1↔NO1, P2↔NO2 are closed; P1↔NC1, P2↔NC2 open.
             // When de-energized: P1↔NC1, P2↔NC2 are closed; P1↔NO1, P2↔NO2 open.
             if (peripheralNode.data?.type === 'ks2e-m-dc5') {
-              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+                            const buf = this.peripheralPinBuffers.get(peripheralId)!;
               buf[peripheralPinName] = isHigh;
+
+              const isPowered = buf['12V'] === true && buf['GND'] === false;
 
               // Coil is energized when COIL1 is HIGH (COIL2 is GND)
               const coil1High = !!buf['COIL1'];
@@ -1509,8 +1516,10 @@ class CircuitEngine {
             // When energized (IN=HIGH): COM connects to NO
             // When de-energized (IN=LOW): COM connects to NC
             if (peripheralNode.data?.type === 'relay-module') {
-              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+                            const buf = this.peripheralPinBuffers.get(peripheralId)!;
               buf[peripheralPinName] = isHigh;
+
+              const isPowered = buf['12V'] === true && buf['GND'] === false;
 
               // Track ALL pins including switch terminals (COM, NO, NC)
               // This is important because COM receives signals from the circuit
@@ -1609,6 +1618,65 @@ class CircuitEngine {
             // Supports both wiring modes:
             //   4-wire (A+, B+, A-, B-) — Arduino Stepper.h / ULN2003
             //   STEP+DIR (A4988 / DRV8825)
+            // --- L298N Motor Driver Emulation ---
+            if (pType === 'l298n') {
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              buf[peripheralPinName] = isHigh;
+
+              const isPowered = (buf['12V'] === true);
+              const ena = (buf['ENA'] !== false) && isPowered; // HIGH by default (jumpered)
+              const in1 = !!buf['IN1'];
+              const in2 = !!buf['IN2'];
+              const enb = (buf['ENB'] !== false) && isPowered; // HIGH by default (jumpered)
+              const in3 = !!buf['IN3'];
+              const in4 = !!buf['IN4'];
+
+              // Update visuals for L298N itself
+              updateNodeData(peripheralId, { ena, enb, in1, in2, in3, in4 });
+
+              // Motor A Logic (OUT1, OUT2)
+              let a_pos = false, a_neg = false;
+              if (ena) {
+                if (in1 && !in2) { a_pos = true; a_neg = false; }
+                else if (!in1 && in2) { a_pos = false; a_neg = true; }
+              }
+
+              // Motor B Logic (OUT3, OUT4)
+              let b_pos = false, b_neg = false;
+              if (enb) {
+                if (in3 && !in4) { b_pos = true; b_neg = false; }
+                else if (!in3 && in4) { b_pos = false; b_neg = true; }
+              }
+
+              // Propagate signals to connected loads (DC Motors)
+              const propagate = (outPin: string, signal: boolean) => {
+                const targets = this.traceNet(peripheralId, outPin);
+                targets.forEach(target => {
+                  const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
+                  if (!targetNode) return;
+                  const pinKey = `pin_${target.pinName}`;
+                  const newPinStates = { ...(targetNode.data?.pinStates || {}), [pinKey]: signal };
+                  
+                  if (target.type === 'dc-motor') {
+                    const pos = !!newPinStates['pin_POS'];
+                    const neg = !!newPinStates['pin_NEG'];
+                    let speed = 0;
+                    if (pos && !neg) speed = 100;
+                    else if (!pos && neg) speed = -100;
+                    updateNodeData(target.nodeId, { pinStates: newPinStates, speed });
+                  } else {
+                    updateNodeData(target.nodeId, { pinStates: newPinStates });
+                  }
+                });
+              };
+
+              propagate('OUT1', a_pos);
+              propagate('OUT2', a_neg);
+              propagate('OUT4', b_pos);
+              propagate('OUT3', b_neg);
+            }
+
+            // --- Stepper Motor Emulation ---
             if (peripheralNode.data?.type === 'stepper-motor') {
               if (!this.stepperEmulators.has(peripheralId)) {
                 console.log(`[STEPPER] Wiring 4-wire emulator for node ${peripheralId} — pin ${peripheralPinName} ← AVR ${avrPin}`);
@@ -1639,8 +1707,10 @@ class CircuitEngine {
                 }, { stepsPerRev: 200 }, peripheralId));
               }
               const stepper = this.stepperEmulators.get(peripheralId)!;
-              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+                            const buf = this.peripheralPinBuffers.get(peripheralId)!;
               buf[peripheralPinName] = isHigh;
+
+              const isPowered = buf['12V'] === true && buf['GND'] === false;
 
               if (peripheralPinName === 'STEP') {
                 stepper.processStep(isHigh);
@@ -1682,8 +1752,10 @@ class CircuitEngine {
             // Outer shaft: A1+, A1-, B1+, B1-
             // Inner shaft: A2+, A2-, B2+, B2-
             if (peripheralNode.data?.type === 'biaxial-stepper') {
-              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+                            const buf = this.peripheralPinBuffers.get(peripheralId)!;
               buf[peripheralPinName] = isHigh;
+
+              const isPowered = buf['12V'] === true && buf['GND'] === false;
 
               const outerKey = `${peripheralId}__outer`;
               const innerKey = `${peripheralId}__inner`;
@@ -2289,3 +2361,7 @@ class CircuitEngine {
 }
 
 export const circuitEngine = new CircuitEngine();
+
+
+
+

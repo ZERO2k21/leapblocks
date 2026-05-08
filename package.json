@@ -6,7 +6,8 @@
   "main": "dist/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
-    "dev:web": "vite --config vite.web.config.ts",
+    "dev:web": "concurrently \"npm run dev:server\" \"vite --config vite.web.config.ts\"",
+    "dev:server": "cd compiler-server && node server.js",
     "build:web": "vite build --config vite.web.config.ts",
     "build:electron": "electron-vite build",
     "dist": "npm run build:electron && electron-builder",

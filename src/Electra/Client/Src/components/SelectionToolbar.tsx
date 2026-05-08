@@ -88,9 +88,9 @@ export const SelectionToolbar: React.FC = () => {
     };
 
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#1e293b', padding: '4px 12px', borderRadius: '8px', border: '1px solid #334155' }}>
-        <Sliders size={14} className="text-slate-400" />
-        <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', minWidth: '70px' }}>{config.label}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '2px', border: '1px solid var(--lp-border)' }}>
+        <Sliders size={12} style={{ color: 'var(--lp-zinc-600)' }} />
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', textTransform: 'uppercase', minWidth: '60px' }}>{config.label}</span>
         <input
           type="range"
           min={config.min}
@@ -98,9 +98,9 @@ export const SelectionToolbar: React.FC = () => {
           step={config.min < 1 ? 0.01 : 1}
           value={currentValue}
           onChange={handleSliderChange}
-          style={{ width: '120px', accentColor: '#BEF264' }}
+          style={{ width: '100px', accentColor: 'var(--lp-accent-primary)' }}
         />
-        <span style={{ fontSize: '11px', fontWeight: 700, color: '#BEF264', fontFamily: 'monospace', minWidth: '50px' }}>
+        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--lp-accent-primary)', fontFamily: "'Space Mono', monospace", minWidth: '40px' }}>
           {currentValue >= 1000 ? `${(currentValue / 1000).toFixed(1)}k` : currentValue.toString().slice(0, 5)} {config.unit}
         </span>
       </div>
@@ -113,32 +113,60 @@ export const SelectionToolbar: React.FC = () => {
     { name: 'Green', color: '#22c55e' },
     { name: 'Blue', color: '#3b82f6' },
     { name: 'Yellow', color: '#eab308' },
-    { name: 'Orange', color: '#f59e0b' },
     { name: 'White', color: '#ffffff' },
-    { name: 'Brown', color: '#78350f' },
   ];
+
+  const LED_COLORS = [
+    { name: 'Red', color: 'red' },
+    { name: 'Green', color: '#10b981' },
+    { name: 'Blue', color: '#3b82f6' },
+    { name: 'Yellow', color: '#eab308' },
+    { name: 'White', color: '#ffffff' },
+  ];
+
+  const renderLEDColorPalette = () => {
+    if (nodeType !== 'led' && nodeType !== 'led-ring' && nodeType !== 'led-bar-graph') return null;
+    return (
+      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '2px', border: '1px solid var(--lp-border)' }}>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', textTransform: 'uppercase', marginRight: '4px' }}>LED_COLOR</span>
+        {LED_COLORS.map((lc) => (
+          <button
+            key={lc.color}
+            onClick={() => updateNodeData(selectedNode.id, { color: lc.color })}
+            title={lc.name}
+            style={{
+              width: '16px',
+              height: '16px',
+              borderRadius: '1px',
+              backgroundColor: lc.color,
+              border: selectedNode.data?.color === lc.color ? '2px solid var(--lp-accent-primary)' : '1px solid rgba(255,255,255,0.1)',
+              cursor: 'pointer',
+              transition: 'all 0.1s',
+            }}
+          />
+        ))}
+      </div>
+    );
+  };
 
   const renderColorPalette = () => {
     if (!selectedEdge) return null;
     return (
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '2px', border: '1px solid var(--lp-border)' }}>
         {WIRE_COLORS.map((wc) => (
           <button
             key={wc.color}
             onClick={() => updateEdgeData(selectedEdge.id, { color: wc.color })}
             title={wc.name}
             style={{
-              width: '24px',
-              height: '24px',
+              width: '16px',
+              height: '16px',
               borderRadius: '50%',
               backgroundColor: wc.color,
-              border: selectedEdge.data?.color === wc.color ? '2px solid #bef264' : '1px solid rgba(255,255,255,0.2)',
+              border: selectedEdge.data?.color === wc.color ? '2px solid var(--lp-accent-primary)' : '1px solid rgba(255,255,255,0.1)',
               cursor: 'pointer',
               transition: 'transform 0.1s',
-              boxShadow: wc.color === '#ffffff' ? 'inset 0 0 0 1px #ccc' : 'none'
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.2)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
           />
         ))}
       </div>
@@ -148,46 +176,44 @@ export const SelectionToolbar: React.FC = () => {
   return (
     <div style={{
       position: 'absolute',
-      top: '12px',
+      bottom: '24px',
       left: '50%',
       transform: 'translateX(-50%)',
       zIndex: 1000,
       display: 'flex',
       alignItems: 'center',
-      gap: '16px',
-      background: 'rgba(15, 23, 42, 0.85)',
-      backdropFilter: 'blur(12px)',
-      padding: '6px 16px',
-      borderRadius: '16px',
-      border: '1px solid rgba(186, 242, 100, 0.2)',
-      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
-      animation: 'slideIn 0.3s ease-out'
+      gap: '12px',
+      background: 'var(--lp-dark-surface)',
+      padding: '4px 12px',
+      borderRadius: '2px',
+      border: '1px solid var(--lp-border)',
+      boxShadow: 'var(--lp-shadow)',
+      animation: 'slideUp 0.2s ease-out'
     }}>
       <style>{`
-        @keyframes slideIn {
-          from { transform: translate(-50%, -20px); opacity: 0; }
+        @keyframes slideUp {
+          from { transform: translate(-50%, 20px); opacity: 0; }
           to { transform: translate(-50%, 0); opacity: 1; }
         }
       `}</style>
 
       {selectedNode ? (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid #334155', paddingRight: '16px' }}>
-            <Settings2 size={16} className="text-lime-400" />
-            <span style={{ fontSize: '12px', fontWeight: 800, color: '#fff', letterSpacing: '0.02em' }}>
-              {selectedNode?.data?.type.replace(/-/g, ' ').toUpperCase()}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid var(--lp-border)', paddingRight: '12px' }}>
+            <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--lp-accent-primary)', letterSpacing: '1px' }}>
+              UNIT::{selectedNode?.data?.type.replace(/-/g, '_').toUpperCase()}
             </span>
           </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             {renderSlider()}
+            {renderLEDColorPalette()}
           </div>
         </>
       ) : (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid #334155', paddingRight: '16px' }}>
-            <Settings2 size={16} className="text-lime-400" />
-            <span style={{ fontSize: '12px', fontWeight: 800, color: '#fff', letterSpacing: '0.02em' }}>
-              WIRE COLOR
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid var(--lp-border)', paddingRight: '12px' }}>
+            <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--lp-accent-primary)', letterSpacing: '1px' }}>
+              WIRE_SPEC
             </span>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -196,32 +222,27 @@ export const SelectionToolbar: React.FC = () => {
         </>
       )}
 
-      <div style={{ display: 'flex', gap: '8px', paddingLeft: '8px', borderLeft: '1px solid #334155' }}>
+      <div style={{ display: 'flex', gap: '8px', paddingLeft: '8px', borderLeft: '1px solid var(--lp-border)' }}>
         <button
           onClick={handleDelete}
-          title="Delete Component"
+          title="REMOVE_ELEMENT"
           style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#f87171',
-            padding: '6px',
-            borderRadius: '8px',
+            background: 'rgba(244, 63, 94, 0.1)',
+            border: '1px solid var(--lp-rose)',
+            color: 'var(--lp-rose)',
+            padding: '4px 8px',
+            borderRadius: '2px',
             cursor: 'pointer',
+            fontSize: '9px',
+            fontWeight: 900,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            gap: '4px',
             transition: 'all 0.2s'
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
-            e.currentTarget.style.borderColor = '#ef4444';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-          }}
         >
-          <Trash2 size={18} />
+          <Trash2 size={12} />
+          DELETE
         </button>
       </div>
     </div>

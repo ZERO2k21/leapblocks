@@ -228,7 +228,7 @@ void loop() {
         version: '1.0.0',
         timestamp: new Date().toISOString()
       };
-      const result = await window.electronAPI.saveProject(projectData, projectPath);
+      const result = await window.electronAPI.saveProject(projectData, projectPath ?? undefined);
       if (result.success && result.projectPath) {
         setProjectPath(result.projectPath);
 
@@ -255,8 +255,8 @@ void loop() {
         version: '1.0.0',
         timestamp: new Date().toISOString()
       };
-      // Pass null as path to force "Save As" dialog
-      const result = await window.electronAPI.saveProject(projectData, null);
+      // Pass undefined as path to force "Save As" dialog
+      const result = await window.electronAPI.saveProject(projectData, undefined);
       if (result.success && result.projectPath) {
         setProjectPath(result.projectPath);
 

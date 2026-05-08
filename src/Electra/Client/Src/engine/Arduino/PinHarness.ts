@@ -4,6 +4,39 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, width: number, height: number }, pins: { name: string, x: number, y: number }[] }> = {
+  "l298n": {
+    "viewBox": { "minX": 0, "minY": 0, "width": 200, "height": 200 },
+    "pins": [
+      { "name": "OUT1", "x": 23, "y": 122 },
+      { "name": "OUT2", "x": 23, "y": 153 },
+      { "name": "OUT3", "x": 177, "y": 153 },
+      { "name": "OUT4", "x": 177, "y": 122 },
+      { "name": "12V", "x": 58, "y": 178 },
+      { "name": "GND", "x": 85, "y": 178 },
+      { "name": "5V", "x": 113, "y": 178 },
+      { "name": "ENA", "x": 110, "y": 178 },
+      { "name": "IN1", "x": 123, "y": 178 },
+      { "name": "IN2", "x": 136, "y": 178 },
+      { "name": "IN3", "x": 149, "y": 178 },
+      { "name": "IN4", "x": 162, "y": 178 },
+      { "name": "ENB", "x": 175, "y": 178 }
+    ]
+  },
+  "dc-motor": {
+    "viewBox": { "minX": 0, "minY": 0, "width": 160, "height": 80 },
+    "pins": [
+      { "name": "POS", "x": 5, "y": 31 },
+      { "name": "NEG", "x": 5, "y": 51 }
+    ]
+  },
+  "battery-12v": {
+    "viewBox": { "minX": 0, "minY": 0, "width": 100, "height": 85 },
+    "pins": [
+      { "name": "POS", "x": 21, "y": 11 },
+      { "name": "NEG", "x": 79, "y": 11 }
+    ]
+  },
+
   "slide-potentiometer": {
     "viewBox": {
       "minX": 0,
@@ -2929,3 +2962,5 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     ]
   }
 };
+
+

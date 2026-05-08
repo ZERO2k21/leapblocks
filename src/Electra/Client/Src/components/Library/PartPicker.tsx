@@ -34,6 +34,8 @@ const COMPONENTS = [
   { id: 'stepper-motor', name: 'Stepper Motor', category: 'outputs', desc: 'Step motor' },
   { id: 'biaxial-stepper', name: 'Biaxial Stepper', category: 'outputs', desc: 'Dual-axis stepper' },
   { id: 'a4988', name: 'A4988 Driver', category: 'outputs', desc: 'Stepper motor driver' },
+  { id: 'l298n', name: 'L298N Driver', category: 'outputs', desc: 'Dual DC motor driver' },
+  { id: 'dc-motor', name: 'DC Motor', category: 'outputs', desc: 'Simple DC motor' },
   { id: 'ks2e-m-dc5', name: 'Relay', category: 'outputs', desc: '5V Relay' },
   { id: 'relay-module', name: 'Relay Module', category: 'outputs', desc: 'Single-channel relay' },
 
@@ -69,6 +71,7 @@ const COMPONENTS = [
   { id: 'analog-joystick', name: 'Joystick', category: 'inputs', desc: '2-axis analog joystick' },
   { id: 'ky-040', name: 'Rotary Encoder', category: 'inputs', desc: 'Incremental encoder' },
   { id: 'ir-remote', name: 'IR Remote', category: 'inputs', desc: 'Infrared remote' },
+  { id: 'battery-12v', name: '12V Battery', category: 'inputs', desc: '12V Lead-acid battery' },
   { id: 'resistor', name: 'Resistor', category: 'inputs', desc: 'Passive resistor' },
 ];
 
