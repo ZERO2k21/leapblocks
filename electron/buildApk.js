@@ -35,7 +35,7 @@ async function buildApk(appState, appRoot, onLog) {
   const templateDir = path.join(appRoot, 'android-template');
   const sdkDir = path.join(appRoot, 'android-sdk');
   const jdkDir = path.join(appRoot, 'jdk');
-  
+
   const timestamp = Date.now();
   const tmpDir = path.join(os.tmpdir(), 'leapblocks', `build_${timestamp}`);
   const outputDir = path.join(appRoot, 'output');
@@ -58,7 +58,7 @@ async function buildApk(appState, appRoot, onLog) {
         path.join(appRoot, 'src')
       ]
     });
-    const codeGen = require('../src/modules/AppInventor/utils/codeGenerators.js');
+    const codeGen = require('../src/appinverter/utils/codeGenerators.js');
     await codeGen.generateAndInjectZip(appState, templateDir, tmpDir);
 
     onLog("Installing npm dependencies...");
@@ -72,7 +72,7 @@ async function buildApk(appState, appRoot, onLog) {
       JAVA_HOME: jdkDir,
       PATH: `${path.join(jdkDir, 'bin')};${process.env.PATH}`
     };
-    
+
     // Use gradlew.bat for Windows
     const gradleScript = path.join(tmpDir, 'android', 'gradlew.bat');
     await runCommand(gradleScript, ['assembleRelease'], path.join(tmpDir, 'android'), onLog, buildEnv);
@@ -81,7 +81,7 @@ async function buildApk(appState, appRoot, onLog) {
     const appNameClean = (appState.appName || 'App').replace(/[^a-zA-Z0-9]/g, '');
     const apkSourcePath = path.join(tmpDir, 'android', 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk');
     const destApkPath = path.join(outputDir, `${appNameClean}.apk`);
-    
+
     if (await fs.pathExists(apkSourcePath)) {
       await fs.copy(apkSourcePath, destApkPath);
     } else {
@@ -105,7 +105,7 @@ function runCommand(command, args, cwd, onLog, env) {
   return new Promise((resolve, reject) => {
     // Determine shell execution environment for windows
     const isWin = process.platform === 'win32';
-    
+
     const child = spawn(command, args, {
       cwd,
       env,
