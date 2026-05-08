@@ -95,6 +95,79 @@ class CircuitEngine {
   private isInitialized = false;
 
   /**
+   * Validates if a component has proper GND connection.
+   * Components need GND to complete the circuit and function properly.
+   * Returns true if GND is connected, false otherwise.
+   */
+  private hasGroundConnection(nodeId: string): boolean {
+    const { nodes, edges } = useForgeStore.getState();
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return false;
+
+    // Find all edges connected to this component
+    const connectedEdges = edges.filter(e => e.source === nodeId || e.target === nodeId);
+
+    // Check if any edge connects to a GND pin
+    for (const edge of connectedEdges) {
+      const pinName = (edge.source === nodeId ? edge.sourceHandle : edge.targetHandle)?.replace(/__target$/, '');
+
+      // Common GND pin names
+      const gndPins = ['GND', 'GROUND', 'V-', 'VSS', 'C', 'Cathode', 'NEG', '-'];
+      if (pinName && gndPins.some(gnd => pinName.toUpperCase().includes(gnd.toUpperCase()))) {
+        // Verify the other end connects to a board GND or another grounded component
+        const otherNodeId = edge.source === nodeId ? edge.target : edge.source;
+        const otherNode = nodes.find(n => n.id === otherNodeId);
+
+        if (otherNode) {
+          const otherPinName = (edge.source === nodeId ? edge.targetHandle : edge.sourceHandle)?.replace(/__target$/, '');
+          // Check if connected to board GND or power supply GND
+          if (otherPinName && gndPins.some(gnd => otherPinName.toUpperCase().includes(gnd.toUpperCase()))) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Validates if a component has proper VCC/power connection.
+   * Returns true if power is connected, false otherwise.
+   */
+  private hasPowerConnection(nodeId: string): boolean {
+    const { nodes, edges } = useForgeStore.getState();
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return false;
+
+    // Find all edges connected to this component
+    const connectedEdges = edges.filter(e => e.source === nodeId || e.target === nodeId);
+
+    // Check if any edge connects to a VCC/power pin
+    for (const edge of connectedEdges) {
+      const pinName = (edge.source === nodeId ? edge.sourceHandle : edge.targetHandle)?.replace(/__target$/, '');
+
+      // Common power pin names
+      const powerPins = ['VCC', '5V', '3V3', '3.3V', 'VIN', 'POWER', 'V+', 'A', 'Anode', 'POS', '+'];
+      if (pinName && powerPins.some(pwr => pinName.toUpperCase().includes(pwr.toUpperCase()))) {
+        // Verify the other end connects to a board power pin
+        const otherNodeId = edge.source === nodeId ? edge.target : edge.source;
+        const otherNode = nodes.find(n => n.id === otherNodeId);
+
+        if (otherNode) {
+          const otherPinName = (edge.source === nodeId ? edge.targetHandle : edge.sourceHandle)?.replace(/__target$/, '');
+          // Check if connected to board power
+          if (otherPinName && powerPins.some(pwr => otherPinName.toUpperCase().includes(pwr.toUpperCase()))) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Traces an electrical net from a starting point (board pin) and returns all 
    * reachable endpoints (LEDs, Buzzers, etc.) along with the total resistance in the path.
    */
@@ -1154,6 +1227,24 @@ class CircuitEngine {
               const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
               if (!targetNode) return;
 
+              // CRITICAL FIX: Validate GND connection for components that require it
+              const requiresGround = ['led', 'rgb-led', 'buzzer'].includes(target.type);
+              const hasGround = this.hasGroundConnection(target.nodeId);
+              const hasPower = this.hasPowerConnection(target.nodeId);
+
+              if (requiresGround && !hasGround) {
+                console.warn(`[CIRCUIT] ⚠ Component ${target.nodeId} (${target.type}) missing GND connection - simulation disabled`);
+                // Mark component as damaged/non-functional without GND
+                updateNodeData(target.nodeId, {
+                  damaged: true,
+                  value: false,
+                  brightness: 0,
+                  hasSignal: false,
+                  pinStates: { ...targetNode.data?.pinStates || {}, [`pin_${target.pinName}`]: false }
+                });
+                return;
+              }
+
               const currentPinStates = targetNode.data?.pinStates || {};
               const pinKey = `pin_${target.pinName}`;
 
@@ -1164,20 +1255,21 @@ class CircuitEngine {
                   pinStates: { ...currentPinStates, [pinKey]: isHigh }
                 };
 
-                const intensity = isHigh ? 1.0 : 0.0;
+                // Only allow component to work if it has proper GND connection
+                const intensity = (isHigh && hasGround) ? 1.0 : 0.0;
 
                 if (target.type === 'led') {
                   updates.brightness = intensity;
-                  updates.value = isHigh;  // LED requires both brightness AND value to glow
-                  console.log(`[CIRCUIT LED] Setting LED brightness to ${intensity}, value to ${isHigh}`);
+                  updates.value = isHigh && hasGround;  // LED requires both power AND ground
+                  console.log(`[CIRCUIT LED] Setting LED brightness to ${intensity}, value to ${isHigh && hasGround}, hasGround=${hasGround}`);
                 }
                 else if (target.type === 'rgb-led') updates[`intensity_${target.pinName}`] = intensity;
                 else if (target.type === 'buzzer') {
                   updates.intensity = intensity;
-                  updates.hasSignal = isHigh;
+                  updates.hasSignal = isHigh && hasGround;
                 }
 
-                updates.damaged = false;
+                updates.damaged = !hasGround; // Mark as damaged if no ground
                 console.log(`[CIRCUIT LED] Calling updateNodeData for ${target.nodeId}:`, updates);
                 updateNodeData(target.nodeId, updates);
               } else {
@@ -1454,7 +1546,7 @@ class CircuitEngine {
                 const inactiveTargets = this.traceNet(peripheralId, inactiveContact);
 
                 console.log(`[RELAY MODULE] Found ${activeTargets.length} active targets for ${activeContact}, ${inactiveTargets.length} inactive targets for ${inactiveContact}`);
-                
+
                 // Get the signal level on COM from the buffer
                 const comSignal = buf['COM'] ?? false;
                 console.log(`[RELAY MODULE] COM signal: ${comSignal}, routing to ${activeContact}`);

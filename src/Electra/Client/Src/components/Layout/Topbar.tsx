@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Home,
   ChevronDown,
@@ -12,92 +12,397 @@ import {
   MessageSquareWarning,
   Trophy,
   Settings,
-  CircleHelp
+  CircleHelp,
+  FileText,
+  FolderOpen,
+  FilePlus,
+  Undo,
+  Redo,
+  Scissors,
+  Copy,
+  Clipboard
 } from 'lucide-react';
 
 interface IgniteTopbarProps {
   onBack: () => void;
   onSave: () => void;
+  onSaveAs?: () => void;
+  onNew?: () => void;
+  onOpen?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  onCut?: () => void;
+  onCopy?: () => void;
+  onPaste?: () => void;
   title: string;
   onTitleChange: (val: string) => void;
   centerContent?: React.ReactNode;
   rightContent?: React.ReactNode;
   brandName?: string;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
   onBack,
   onSave,
+  onSaveAs,
+  onNew,
+  onOpen,
+  onUndo,
+  onRedo,
+  onCut,
+  onCopy,
+  onPaste,
   title,
   onTitleChange,
   centerContent,
   rightContent,
-  brandName = 'ELECTRA'
+  brandName = 'ELECTRA',
+  canUndo = false,
+  canRedo = false
 }) => {
+  const [fileMenuOpen, setFileMenuOpen] = useState(false);
+  const [editMenuOpen, setEditMenuOpen] = useState(false);
+  const fileMenuRef = useRef<HTMLDivElement>(null);
+  const editMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (fileMenuRef.current && !fileMenuRef.current.contains(event.target as Node)) {
+        setFileMenuOpen(false);
+      }
+      if (editMenuRef.current && !editMenuRef.current.contains(event.target as Node)) {
+        setEditMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const menuItemStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '10px 16px',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    background: 'transparent',
+    border: 'none',
+    width: '100%',
+    textAlign: 'left',
+    color: '#1e293b',
+    fontSize: '13px',
+    fontWeight: 500,
+    fontFamily: '"Segoe UI", Inter, sans-serif'
+  };
+
+  const menuItemDisabledStyle: React.CSSProperties = {
+    ...menuItemStyle,
+    opacity: 0.4,
+    cursor: 'not-allowed'
+  };
+
+  const dropdownStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    marginTop: '4px',
+    background: '#ffffff',
+    borderRadius: '12px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08)',
+    border: '1px solid rgba(148, 163, 184, 0.2)',
+    minWidth: '220px',
+    padding: '6px',
+    zIndex: 1000,
+    animation: 'slideDown 0.15s ease-out'
+  };
+
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      height: '64px',
-      padding: '0px 18px',
-      background: 'linear-gradient(135deg, #0b1b42 0%, #0f2f7a 55%, #0a204f 100%)',
-      boxShadow: 'rgba(8, 20, 58, 0.45) 0px 4px 20px, rgba(96, 165, 250, 0.12) 0px -1px 0px inset',
-      zIndex: 100,
-      borderBottom: '1px solid rgba(96, 165, 250, 0.28)',
-      userSelect: 'none'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 0%', minWidth: '0px' }}>
-        <button
-          title="Back to Home"
-          onClick={onBack}
-          style={{
+    <>
+      <style>{`
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: '64px',
+        padding: '0px 18px',
+        background: 'linear-gradient(135deg, #0b1b42 0%, #0f2f7a 55%, #0a204f 100%)',
+        boxShadow: 'rgba(8, 20, 58, 0.45) 0px 4px 20px, rgba(96, 165, 250, 0.12) 0px -1px 0px inset',
+        zIndex: 100,
+        borderBottom: '1px solid rgba(96, 165, 250, 0.28)',
+        userSelect: 'none'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 0%', minWidth: '0px' }}>
+          <button
+            title="Back to Home"
+            onClick={onBack}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '40px',
+              height: '40px',
+              background: 'rgba(148, 197, 255, 0.18)',
+              border: '1px solid rgba(148, 197, 255, 0.24)',
+              borderRadius: '12px',
+              color: 'rgb(255, 255, 255)',
+              cursor: 'pointer',
+              transition: '0.2s',
+              flexShrink: 0
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(191, 219, 254, 0.24)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(148, 197, 255, 0.18)')}
+          >
+            <Home size={20} strokeWidth={2.2} />
+          </button>
+
+          <div style={{ height: '32px', width: '1px', background: 'rgba(191, 219, 254, 0.28)', flexShrink: 0 }} />
+
+          <div style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            width: '40px',
-            height: '40px',
-            background: 'rgba(148, 197, 255, 0.18)',
-            border: '1px solid rgba(148, 197, 255, 0.24)',
-            borderRadius: '12px',
-            color: 'rgb(255, 255, 255)',
-            cursor: 'pointer',
-            transition: '0.2s',
-            flexShrink: 0
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(191, 219, 254, 0.24)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(148, 197, 255, 0.18)')}
-        >
-          <Home size={20} strokeWidth={2.2} />
-        </button>
-
-        <div style={{ height: '32px', width: '1px', background: 'rgba(191, 219, 254, 0.28)', flexShrink: 0 }} />
-
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          marginRight: '14px',
-          flexShrink: 0,
-          filter: 'drop-shadow(rgba(56, 189, 248, 0.3) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.3) 0px 2px 6px)'
-        }}>
-          <img
-            alt="LeapLab"
-            src="assets/leaplab_logo_transparent.png"
-            style={{ height: '52px', objectFit: 'contain' }}
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', marginLeft: '10px', lineHeight: '1.1' }}>
-            <span style={{ color: 'rgb(147, 197, 253)', fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
-              LEAPLAB
-            </span>
-            <span style={{ color: 'rgb(255, 255, 255)', fontSize: '16px', fontWeight: 900, letterSpacing: '0.08em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
-              {brandName}
-            </span>
+            marginRight: '14px',
+            flexShrink: 0,
+            filter: 'drop-shadow(rgba(56, 189, 248, 0.3) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.3) 0px 2px 6px)'
+          }}>
+            <img
+              alt="LeapLab"
+              src="assets/leaplab_logo_transparent.png"
+              style={{ height: '52px', objectFit: 'contain' }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', marginLeft: '10px', lineHeight: '1.1' }}>
+              <span style={{ color: 'rgb(147, 197, 253)', fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
+                LEAPLAB
+              </span>
+              <span style={{ color: 'rgb(255, 255, 255)', fontSize: '16px', fontWeight: 900, letterSpacing: '0.08em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
+                {brandName}
+              </span>
+            </div>
           </div>
-        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-          {['File', 'Edit'].map((item) => (
-            <div key={item} style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+            {/* File Menu */}
+            <div ref={fileMenuRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => {
+                  setFileMenuOpen(!fileMenuOpen);
+                  setEditMenuOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '6px 12px',
+                  border: 'none',
+                  color: 'rgb(255, 255, 255)',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  fontFamily: '"Segoe UI", Inter, sans-serif',
+                  cursor: 'pointer',
+                  borderRadius: '20px',
+                  transition: '0.2s',
+                  background: fileMenuOpen ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                  letterSpacing: '0.02em'
+                }}
+                onMouseEnter={(e) => !fileMenuOpen && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)')}
+                onMouseLeave={(e) => !fileMenuOpen && (e.currentTarget.style.background = 'transparent')}
+              >
+                File
+                <ChevronDown size={12} strokeWidth={2.5} style={{ opacity: 0.5 }} />
+              </button>
+
+              {fileMenuOpen && (
+                <div style={dropdownStyle}>
+                  <button
+                    style={menuItemStyle}
+                    onClick={() => {
+                      onNew?.();
+                      setFileMenuOpen(false);
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <FilePlus size={16} strokeWidth={2} />
+                    <span>New Project</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', opacity: 0.5 }}>Ctrl+N</span>
+                  </button>
+
+                  <button
+                    style={menuItemStyle}
+                    onClick={() => {
+                      onOpen?.();
+                      setFileMenuOpen(false);
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <FolderOpen size={16} strokeWidth={2} />
+                    <span>Open Project</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', opacity: 0.5 }}>Ctrl+O</span>
+                  </button>
+
+                  <div style={{ height: '1px', background: 'rgba(148, 163, 184, 0.2)', margin: '6px 0' }} />
+
+                  <button
+                    style={menuItemStyle}
+                    onClick={() => {
+                      onSave();
+                      setFileMenuOpen(false);
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Save size={16} strokeWidth={2} />
+                    <span>Save</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', opacity: 0.5 }}>Ctrl+S</span>
+                  </button>
+
+                  <button
+                    style={menuItemStyle}
+                    onClick={() => {
+                      onSaveAs?.();
+                      setFileMenuOpen(false);
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <FileText size={16} strokeWidth={2} />
+                    <span>Save As...</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', opacity: 0.5 }}>Ctrl+Shift+S</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Edit Menu */}
+            <div ref={editMenuRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => {
+                  setEditMenuOpen(!editMenuOpen);
+                  setFileMenuOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '6px 12px',
+                  border: 'none',
+                  color: 'rgb(255, 255, 255)',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  fontFamily: '"Segoe UI", Inter, sans-serif',
+                  cursor: 'pointer',
+                  borderRadius: '20px',
+                  transition: '0.2s',
+                  background: editMenuOpen ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                  letterSpacing: '0.02em'
+                }}
+                onMouseEnter={(e) => !editMenuOpen && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)')}
+                onMouseLeave={(e) => !editMenuOpen && (e.currentTarget.style.background = 'transparent')}
+              >
+                Edit
+                <ChevronDown size={12} strokeWidth={2.5} style={{ opacity: 0.5 }} />
+              </button>
+
+              {editMenuOpen && (
+                <div style={dropdownStyle}>
+                  <button
+                    style={canUndo ? menuItemStyle : menuItemDisabledStyle}
+                    disabled={!canUndo}
+                    onClick={() => {
+                      if (canUndo) {
+                        onUndo?.();
+                        setEditMenuOpen(false);
+                      }
+                    }}
+                    onMouseEnter={(e) => canUndo && (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseLeave={(e) => canUndo && (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Undo size={16} strokeWidth={2} />
+                    <span>Undo</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', opacity: 0.5 }}>Ctrl+Z</span>
+                  </button>
+
+                  <button
+                    style={canRedo ? menuItemStyle : menuItemDisabledStyle}
+                    disabled={!canRedo}
+                    onClick={() => {
+                      if (canRedo) {
+                        onRedo?.();
+                        setEditMenuOpen(false);
+                      }
+                    }}
+                    onMouseEnter={(e) => canRedo && (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseLeave={(e) => canRedo && (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Redo size={16} strokeWidth={2} />
+                    <span>Redo</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', opacity: 0.5 }}>Ctrl+Y</span>
+                  </button>
+
+                  <div style={{ height: '1px', background: 'rgba(148, 163, 184, 0.2)', margin: '6px 0' }} />
+
+                  <button
+                    style={menuItemStyle}
+                    onClick={() => {
+                      onCut?.();
+                      setEditMenuOpen(false);
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Scissors size={16} strokeWidth={2} />
+                    <span>Cut</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', opacity: 0.5 }}>Ctrl+X</span>
+                  </button>
+
+                  <button
+                    style={menuItemStyle}
+                    onClick={() => {
+                      onCopy?.();
+                      setEditMenuOpen(false);
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Copy size={16} strokeWidth={2} />
+                    <span>Copy</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', opacity: 0.5 }}>Ctrl+C</span>
+                  </button>
+
+                  <button
+                    style={menuItemStyle}
+                    onClick={() => {
+                      onPaste?.();
+                      setEditMenuOpen(false);
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Clipboard size={16} strokeWidth={2} />
+                    <span>Paste</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', opacity: 0.5 }}>Ctrl+V</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div style={{ position: 'relative' }}>
               <button style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -114,165 +419,144 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                 background: 'transparent',
                 letterSpacing: '0.02em'
               }}>
-                {item}
+                <BookOpen size={14} strokeWidth={2.2} style={{ opacity: 0.9 }} />
+                Tutorials
                 <ChevronDown size={12} strokeWidth={2.5} style={{ opacity: 0.5 }} />
               </button>
             </div>
-          ))}
-          <div style={{ position: 'relative' }}>
-            <button style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '6px 12px',
-              border: 'none',
-              color: 'rgb(255, 255, 255)',
-              fontSize: '13px',
-              fontWeight: 600,
-              fontFamily: '"Segoe UI", Inter, sans-serif',
-              cursor: 'pointer',
-              borderRadius: '20px',
-              transition: '0.2s',
-              background: 'transparent',
-              letterSpacing: '0.02em'
-            }}>
-              <BookOpen size={14} strokeWidth={2.2} style={{ opacity: 0.9 }} />
-              Tutorials
-              <ChevronDown size={12} strokeWidth={2.5} style={{ opacity: 0.5 }} />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '0px 16px' }}>
+          {centerContent}
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            height: '40px',
+            background: 'rgba(8, 20, 58, 0.55)',
+            borderRadius: '20px',
+            paddingLeft: '18px',
+            paddingRight: '5px',
+            border: '1px solid rgba(147, 197, 253, 0.2)',
+            gap: '8px',
+            transition: '0.2s'
+          }}>
+            <span style={{ fontSize: '14px', opacity: 0.45 }}>Folder</span>
+            <input
+              placeholder="My Project"
+              type="text"
+              value={title}
+              onChange={(e) => onTitleChange(e.target.value)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'rgb(255, 255, 255)',
+                fontSize: '14px',
+                fontWeight: 700,
+                fontFamily: '"Segoe UI", Inter, sans-serif',
+                width: '170px',
+                textAlign: 'center',
+                outline: 'none',
+                letterSpacing: '0.01em'
+              }}
+            />
+            <button
+              title="Save Project"
+              onClick={onSave}
+              style={{
+                background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '42px',
+                height: '42px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'rgb(255, 255, 255)',
+                boxShadow: 'rgba(8, 47, 123, 0.45) 0px 4px 10px -1px',
+                transition: 'transform 0.2s',
+                flexShrink: 0,
+                transform: 'scale(1)'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.08)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'none'; }}
+            >
+              <Save size={18} strokeWidth={2.8} />
             </button>
           </div>
         </div>
-      </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '0px 16px' }}>
-        {centerContent}
-
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          height: '40px',
-          background: 'rgba(8, 20, 58, 0.55)',
-          borderRadius: '20px',
-          paddingLeft: '18px',
-          paddingRight: '5px',
-          border: '1px solid rgba(147, 197, 253, 0.2)',
-          gap: '8px',
-          transition: '0.2s'
-        }}>
-          <span style={{ fontSize: '14px', opacity: 0.45 }}>Folder</span>
-          <input
-            placeholder="My Project"
-            type="text"
-            value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'rgb(255, 255, 255)',
-              fontSize: '14px',
-              fontWeight: 700,
-              fontFamily: '"Segoe UI", Inter, sans-serif',
-              width: '170px',
-              textAlign: 'center',
-              outline: 'none',
-              letterSpacing: '0.01em'
-            }}
-          />
-          <button
-            title="Save Project"
-            onClick={onSave}
-            style={{
-              background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
-              border: 'none',
-              borderRadius: '50%',
-              width: '42px',
-              height: '42px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'rgb(255, 255, 255)',
-              boxShadow: 'rgba(8, 47, 123, 0.45) 0px 4px 10px -1px',
-              transition: 'transform 0.2s',
-              flexShrink: 0,
-              transform: 'scale(1)'
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.08)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'none'; }}
-          >
-            <Save size={18} strokeWidth={2.8} />
-          </button>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '20px', flex: '1 1 0%', minWidth: '0px' }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '14px',
-          paddingRight: '16px',
-          borderRight: '1px solid rgba(191, 219, 254, 0.22)',
-          height: '32px',
-          flexShrink: 0
-        }}>
-          <button title="Feedback" style={{ background: 'transparent', border: 'none', color: 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><MessageSquareWarning size={20} strokeWidth={2.2} /></button>
-          <button title="Achievements" style={{ background: 'transparent', border: 'none', color: 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><Trophy size={20} strokeWidth={2.2} /></button>
-          <button title="Settings" style={{ background: 'transparent', border: 'none', color: 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><Settings size={20} strokeWidth={2.2} /></button>
-          <button title="Help" style={{ background: 'transparent', border: 'none', color: 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><CircleHelp size={20} strokeWidth={2.2} /></button>
-        </div>
-
-        {rightContent ? rightContent : (
-          <button style={{
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '20px', flex: '1 1 0%', minWidth: '0px' }}>
+          <div style={{
             display: 'flex',
             alignItems: 'center',
-            height: '38px',
-            gap: '10px',
-            background: 'rgba(148, 197, 255, 0.18)',
-            border: '1px solid rgba(191, 219, 254, 0.25)',
-            borderRadius: '20px',
-            cursor: 'pointer',
-            color: 'rgb(255, 255, 255)',
-            fontWeight: 700,
-            fontSize: '13px',
-            fontFamily: '"Segoe UI", Inter, sans-serif',
-            paddingLeft: '5px',
-            paddingRight: '18px',
-            transition: '0.2s',
-            boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 8px',
+            gap: '14px',
+            paddingRight: '16px',
+            borderRight: '1px solid rgba(191, 219, 254, 0.22)',
+            height: '32px',
             flexShrink: 0
           }}>
-            <div style={{
-              width: '28px',
-              height: '28px',
-              background: 'linear-gradient(135deg, rgb(96, 165, 250), rgb(29, 78, 216))',
-              borderRadius: '50%',
+            <button title="Feedback" style={{ background: 'transparent', border: 'none', color: 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><MessageSquareWarning size={20} strokeWidth={2.2} /></button>
+            <button title="Achievements" style={{ background: 'transparent', border: 'none', color: 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><Trophy size={20} strokeWidth={2.2} /></button>
+            <button title="Settings" style={{ background: 'transparent', border: 'none', color: 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><Settings size={20} strokeWidth={2.2} /></button>
+            <button title="Help" style={{ background: 'transparent', border: 'none', color: 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><CircleHelp size={20} strokeWidth={2.2} /></button>
+          </div>
+
+          {rightContent ? rightContent : (
+            <button style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              border: '2px solid rgba(255, 255, 255, 0.25)',
-              boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 4px'
+              height: '38px',
+              gap: '10px',
+              background: 'rgba(148, 197, 255, 0.18)',
+              border: '1px solid rgba(191, 219, 254, 0.25)',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              color: 'rgb(255, 255, 255)',
+              fontWeight: 700,
+              fontSize: '13px',
+              fontFamily: '"Segoe UI", Inter, sans-serif',
+              paddingLeft: '5px',
+              paddingRight: '18px',
+              transition: '0.2s',
+              boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 8px',
+              flexShrink: 0
             }}>
-              <span style={{ color: 'rgb(224, 242, 254)', fontWeight: 900, fontSize: '11px' }}>LB</span>
-            </div>
-            Sign In
-          </button>
-        )}
+              <div style={{
+                width: '28px',
+                height: '28px',
+                background: 'linear-gradient(135deg, rgb(96, 165, 250), rgb(29, 78, 216))',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px solid rgba(255, 255, 255, 0.25)',
+                boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 4px'
+              }}>
+                <span style={{ color: 'rgb(224, 242, 254)', fontWeight: 900, fontSize: '11px' }}>LB</span>
+              </div>
+              Sign In
+            </button>
+          )}
 
-        <div style={{
-          marginLeft: '14px',
-          display: 'flex',
-          alignItems: 'center',
-          flexShrink: 0,
-          filter: 'drop-shadow(rgba(191, 219, 254, 0.22) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.4) 0px 2px 8px)'
-        }}>
-          <img
-            alt="Leap into the AI Future"
-            src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
-            style={{ height: '160px', objectFit: 'contain', filter: 'brightness(1.14) contrast(1.05)' }}
-          />
+          <div style={{
+            marginLeft: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            flexShrink: 0,
+            filter: 'drop-shadow(rgba(191, 219, 254, 0.22) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.4) 0px 2px 8px)'
+          }}>
+            <img
+              alt="Leap into the AI Future"
+              src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
+              style={{ height: '160px', objectFit: 'contain', filter: 'brightness(1.14) contrast(1.05)' }}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

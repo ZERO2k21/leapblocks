@@ -49,7 +49,8 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
     edges: storeEdges,
     addNode,
     addEdge: addStoreEdge,
-    updateNodePosition
+    updateNodePosition,
+    board
   } = store;
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -338,6 +339,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
         <PartPicker
           onSelect={handleAddPart}
           onClose={() => setShowPicker(false)}
+          currentBoard={board as 'arduino-uno' | 'esp32-c3'}
         />
       )}
     </div>

@@ -61,13 +61,16 @@ export class LEDElement extends LitElement {
     const opacity = this.brightness ? 0.3 + this.brightness * 0.7 : 0;
     const lightOn = this.value && this.brightness > Number.EPSILON && !this.damaged;
     const xScale = flip ? -1 : 1;
+
+    // Visual feedback for damaged/no-ground state
     const grayscaleFilter = this.damaged ? 'grayscale(100%) opacity(0.5)' : '';
+    const warningGlow = this.damaged ? '0 0 10px #ff6b6b' : '';
 
     return html`<svg
       width="40"
       height="50"
       transform="scale(${xScale} 1)"
-      style="filter: ${grayscaleFilter}"
+      style="filter: ${grayscaleFilter}; box-shadow: ${warningGlow}"
       version="1.2"
       viewBox="-10 -5 35.456 39.618"
       xmlns="http://www.w3.org/2000/svg"

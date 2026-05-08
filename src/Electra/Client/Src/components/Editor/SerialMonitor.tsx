@@ -50,60 +50,90 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
-      background: '#fdfdfd',
-      color: '#1e293b',
+      background: '#0a0e1a',
+      color: '#e2e8f0',
       fontFamily: 'JetBrains Mono, monospace'
     }}>
       {/* ── TOOLBAR ── */}
       <div style={{
-        padding: '12px 20px',
-        background: 'rgba(255, 255, 255, 0.5)',
-        borderBottom: '1px solid rgba(0,0,0,0.06)',
+        padding: '14px 24px',
+        background: 'linear-gradient(135deg, rgba(21, 27, 46, 0.95), rgba(15, 20, 35, 0.9))',
+        borderBottom: '2px solid rgba(168, 85, 247, 0.3)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '11px', fontWeight: 700 }}>
-          <Terminal size={14} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#c084fc', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+          <Terminal size={16} strokeWidth={2.5} />
           <span>SERIAL CONSOLE</span>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
           <button
             onClick={handleDownload}
             style={{
-              background: 'rgba(123, 79, 196, 0.05)',
-              border: 'none',
-              color: '#7B4FC4',
+              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(6, 182, 212, 0.1))',
+              border: '1.5px solid rgba(168, 85, 247, 0.4)',
+              color: '#c084fc',
               cursor: 'pointer',
-              padding: '6px 12px',
-              borderRadius: '8px',
+              padding: '7px 14px',
+              borderRadius: '10px',
               fontSize: '11px',
-              fontWeight: 700,
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '6px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #a855f7, #06b6d4)';
+              e.currentTarget.style.color = 'white';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(6, 182, 212, 0.1))';
+              e.currentTarget.style.color = '#c084fc';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
-            <Download size={13} /> EXPORT
+            <Download size={13} strokeWidth={2.5} /> EXPORT
           </button>
           <button
             onClick={onClear}
             style={{
-              background: 'rgba(239, 68, 68, 0.05)',
-              border: 'none',
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1.5px solid rgba(239, 68, 68, 0.5)',
               color: '#ef4444',
               cursor: 'pointer',
-              padding: '6px 12px',
-              borderRadius: '8px',
+              padding: '7px 14px',
+              borderRadius: '10px',
               fontSize: '11px',
-              fontWeight: 700,
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '6px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#ef4444';
+              e.currentTarget.style.color = 'white';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+              e.currentTarget.style.color = '#ef4444';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
-            <Trash2 size={13} /> CLEAR
+            <Trash2 size={13} strokeWidth={2.5} /> CLEAR
           </button>
         </div>
       </div>
@@ -113,18 +143,20 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
         ref={terminalRef}
         style={{
           flex: 1,
-          padding: '20px',
+          padding: '24px',
           overflowY: 'auto',
           fontSize: '13px',
-          lineHeight: '1.6',
+          lineHeight: '1.7',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-all',
-          color: '#334155'
+          color: '#e2e8f0',
+          background: 'linear-gradient(180deg, #0a0e1a 0%, #0f1419 100%)'
         }}
       >
         {output ? output : (
-          <div style={{ color: '#94a3b8', fontStyle: 'italic' }}>
-            Ready for input. Start simulation to see serial data.
+          <div style={{ color: '#64748b', fontStyle: 'italic', textAlign: 'center', marginTop: '40px', fontSize: '14px' }}>
+            <Terminal size={40} style={{ opacity: 0.2, marginBottom: '12px' }} />
+            <div>Ready for input. Start simulation to see serial data.</div>
           </div>
         )}
       </div>
@@ -132,15 +164,15 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
       {/* ── INPUT ── */}
       {onSend && (
         <div style={{
-          padding: '16px 20px',
-          background: 'rgba(255, 255, 255, 0.8)',
-          borderTop: '1px solid rgba(0,0,0,0.06)',
+          padding: '18px 24px',
+          background: 'linear-gradient(135deg, rgba(21, 27, 46, 0.95), rgba(15, 20, 35, 0.9))',
+          borderTop: '2px solid rgba(168, 85, 247, 0.3)',
           display: 'flex',
-          gap: '10px',
+          gap: '12px',
           alignItems: 'center'
         }}>
           <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-            <ChevronRight size={16} style={{ position: 'absolute', left: 12, color: '#94a3b8' }} />
+            <ChevronRight size={18} style={{ position: 'absolute', left: 14, color: '#a855f7' }} strokeWidth={2.5} />
             <input
               type="text"
               value={inputValue}
@@ -149,24 +181,25 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
               placeholder="Type message..."
               style={{
                 width: '100%',
-                padding: '10px 12px 10px 32px',
-                background: '#f8fafc',
-                border: '1px solid rgba(123, 79, 196, 0.1)',
+                padding: '12px 14px 12px 40px',
+                background: '#151b2e',
+                border: '2px solid rgba(168, 85, 247, 0.3)',
                 borderRadius: '12px',
-                color: '#1e293b',
+                color: '#e2e8f0',
                 fontSize: '13px',
                 fontFamily: 'inherit',
                 outline: 'none',
-                transition: 'all 0.2s'
+                transition: 'all 0.3s ease',
+                fontWeight: 500
               }}
               onFocus={(e) => {
-                e.target.style.borderColor = '#7B4FC4';
-                e.target.style.background = '#fff';
-                e.target.style.boxShadow = '0 0 0 4px rgba(123, 79, 196, 0.1)';
+                e.target.style.borderColor = '#a855f7';
+                e.target.style.background = '#1a2137';
+                e.target.style.boxShadow = '0 0 0 4px rgba(168, 85, 247, 0.15), 0 0 20px rgba(168, 85, 247, 0.2)';
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = 'rgba(123, 79, 196, 0.1)';
-                e.target.style.background = '#f8fafc';
+                e.target.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+                e.target.style.background = '#151b2e';
                 e.target.style.boxShadow = 'none';
               }}
             />
@@ -176,15 +209,17 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
             value={lineEnding}
             onChange={(e) => setLineEnding(e.target.value as any)}
             style={{
-              padding: '10px 12px',
-              background: '#f8fafc',
-              border: '1px solid rgba(0,0,0,0.06)',
+              padding: '12px 14px',
+              background: '#151b2e',
+              border: '2px solid rgba(168, 85, 247, 0.3)',
               borderRadius: '12px',
-              color: '#64748b',
+              color: '#94a3b8',
               fontSize: '11px',
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: 'pointer',
-              outline: 'none'
+              outline: 'none',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
             }}
           >
             <option value="none">NO ENDING</option>
@@ -197,16 +232,30 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
             onClick={handleSend}
             disabled={!inputValue}
             style={{
-              padding: '10px 24px',
-              background: inputValue ? '#7B4FC4' : '#e2e8f0',
+              padding: '12px 28px',
+              background: inputValue ? 'linear-gradient(135deg, #a855f7, #06b6d4)' : '#1a2137',
               border: 'none',
               borderRadius: '12px',
-              color: inputValue ? '#fff' : '#94a3b8',
-              fontSize: '13px',
-              fontWeight: 700,
+              color: inputValue ? '#fff' : '#475569',
+              fontSize: '12px',
+              fontWeight: 800,
               cursor: inputValue ? 'pointer' : 'not-allowed',
-              transition: 'all 0.2s',
-              boxShadow: inputValue ? '0 4px 12px rgba(123, 79, 196, 0.2)' : 'none'
+              transition: 'all 0.3s ease',
+              boxShadow: inputValue ? '0 6px 16px rgba(168, 85, 247, 0.5)' : 'none',
+              textTransform: 'uppercase',
+              letterSpacing: '0.8px'
+            }}
+            onMouseEnter={(e) => {
+              if (inputValue) {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(168, 85, 247, 0.6)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (inputValue) {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.5)';
+              }
             }}
           >
             SEND

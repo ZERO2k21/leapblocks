@@ -304,11 +304,22 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   removeNode: (id) => {
     const state = useForgeStore.getState();
     const removedNode = state.nodes.find(n => n.id === id);
+
+    // CRITICAL FIX: Prevent deletion of Arduino Uno and ESP32-C3 board nodes
+    // These are the primary simulation boards and should persist
+    const isBoardNode = removedNode && BOARD_NODE_TO_BOARD_ID[removedNode.data?.type];
+    const isProtectedBoard = removedNode?.data?.type === 'arduino-uno' || removedNode?.data?.type === 'esp32-c3';
+
+    if (isBoardNode && isProtectedBoard) {
+      console.warn(`[FORGE STORE] ⚠ Cannot remove ${removedNode.data.type} board - it is required for simulation`);
+      return; // Block deletion of Arduino Uno and ESP32-C3
+    }
+
     const newNodes = state.nodes.filter(n => n.id !== id);
 
     // If a board node was removed, detect remaining board or revert to default
     let newBoard = state.board;
-    if (removedNode && BOARD_NODE_TO_BOARD_ID[removedNode.data?.type]) {
+    if (isBoardNode) {
       const detected = detectBoardFromNodes(newNodes);
       newBoard = detected ?? 'arduino-uno';
       if (newBoard !== state.board) {

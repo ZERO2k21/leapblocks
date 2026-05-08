@@ -10,7 +10,6 @@ import { Play, Square, Code, Terminal, Wifi, Library as LibraryIcon } from 'luci
 import '../utlis/elements/leap-elements';
 import './ForgeStudio.css';
 import { useForgeStore, getSimulationRunner } from '../utlis/store/useForgeStore';
-import { BoardSelector, BoardType } from './components/BoardSelector';
 
 // Lazy load complex inner components
 const ForgeCanvas = lazy(() => import('./components/ForgeCanvas'));
@@ -21,9 +20,10 @@ import { compileCode } from './services/CompilerService';
 
 interface ForgeStudioProps {
   onBack: () => void;
+  initialBoard?: 'arduino-uno' | 'esp32-c3';
 }
 
-export default function ForgeStudio({ onBack }: ForgeStudioProps) {
+export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: ForgeStudioProps) {
   const {
     nodes,
     edges,
@@ -44,6 +44,104 @@ export default function ForgeStudio({ onBack }: ForgeStudioProps) {
     setBoard,
   } = useForgeStore();
 
+  // Undo/Redo History Management
+  const [history, setHistory] = useState<Array<{ nodes: any[]; edges: any[]; code: string }>>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [code, setCode] = useState(`// Electra Project
+void setup() {
+  Serial.begin(9600);
+  pinMode(13, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(13, HIGH);
+  Serial.println("System Active");
+  delay(1000);
+  digitalWrite(13, LOW);
+  delay(1000);
+}`);
+
+  // Save current state to history
+  const saveToHistory = () => {
+    const newState = { nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edges)), code };
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newState);
+    // Limit history to 50 states
+    if (newHistory.length > 50) newHistory.shift();
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  // Undo operation
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const prevState = history[historyIndex - 1];
+      setNodes(prevState.nodes);
+      setEdges(prevState.edges);
+      setCode(prevState.code);
+      setHistoryIndex(historyIndex - 1);
+    }
+  };
+
+  // Redo operation
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const nextState = history[historyIndex + 1];
+      setNodes(nextState.nodes);
+      setEdges(nextState.edges);
+      setCode(nextState.code);
+      setHistoryIndex(historyIndex + 1);
+    }
+  };
+
+  // Initialize history on mount
+  useEffect(() => {
+    if (history.length === 0) {
+      saveToHistory();
+    }
+  }, []);
+
+  // Save to history when nodes, edges, or code changes (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (history.length > 0) {
+        const lastState = history[historyIndex];
+        const hasChanged =
+          JSON.stringify(lastState?.nodes) !== JSON.stringify(nodes) ||
+          JSON.stringify(lastState?.edges) !== JSON.stringify(edges) ||
+          lastState?.code !== code;
+
+        if (hasChanged) {
+          saveToHistory();
+        }
+      }
+    }, 1000); // 1 second debounce
+
+    return () => clearTimeout(timer);
+  }, [nodes, edges, code]);
+
+  // Initialize board from prop
+  useEffect(() => {
+    if (initialBoard && board !== initialBoard) {
+      setBoard(initialBoard);
+    }
+  }, [initialBoard, board, setBoard]);
+
+  // Add the selected board to canvas on mount if no nodes exist
+  useEffect(() => {
+    const state = useForgeStore.getState();
+    console.log('[FORGE STUDIO] Checking if board needs to be added. Current nodes:', state.nodes.length, 'Initial board:', initialBoard);
+
+    if (state.nodes.length === 0 && initialBoard) {
+      console.log('[FORGE STUDIO] Adding board to canvas:', initialBoard);
+      // Use the store's addNode function to properly add the board
+      state.addNode(initialBoard, { x: 400, y: 300 }, {
+        label: initialBoard === 'esp32-c3' ? 'ESP32-C3' : 'Arduino Uno'
+      });
+      console.log('[FORGE STUDIO] Board added. New nodes count:', useForgeStore.getState().nodes.length);
+    }
+  }, [initialBoard]); // Run when initialBoard changes
+
   const [activeTab, setActiveTab] = useState<'code' | 'serial' | 'wifi' | 'libraries'>('code');
   const [wifiStatus, setWifiStatus] = useState('');
 
@@ -61,21 +159,235 @@ export default function ForgeStudio({ onBack }: ForgeStudioProps) {
     }
   }, [wifiLog, board, isSimulating]);
 
-  const [code, setCode] = useState(`// Electra Project
+  const [isCompiling, setIsCompiling] = useState(false);
+
+  // File Operations
+  const handleNewProject = () => {
+    if (confirm('Create a new project? Unsaved changes will be lost.')) {
+      setNodes([]);
+      setEdges([]);
+      setCode(`// New Electra Project
 void setup() {
   Serial.begin(9600);
-  pinMode(13, OUTPUT);
 }
 
 void loop() {
-  digitalWrite(13, HIGH);
-  Serial.println("System Active");
-  delay(1000);
-  digitalWrite(13, LOW);
-  delay(1000);
+  // Your code here
 }`);
+      setProjectName('Untitled Project');
+      setProjectPath(null);
+      setHistory([]);
+      setHistoryIndex(-1);
+      saveToHistory();
 
-  const [isCompiling, setIsCompiling] = useState(false);
+      // Add board back to canvas
+      const state = useForgeStore.getState();
+      state.addNode(board, { x: 400, y: 300 }, {
+        label: board === 'esp32-c3' ? 'ESP32-C3' : 'Arduino Uno'
+      });
+    }
+  };
+
+  const handleOpenProject = async () => {
+    try {
+      const result = await window.electronAPI.openProject();
+      if (result && result.data) {
+        const { nodes: loadedNodes, edges: loadedEdges, code: loadedCode, version } = result.data;
+        setNodes(loadedNodes || []);
+        setEdges(loadedEdges || []);
+        setCode(loadedCode || '');
+        setProjectPath(result.projectPath);
+
+        // Extract project name from path
+        const pathParts = result.projectPath.split(/[\\/]/);
+        const folderName = pathParts[pathParts.length - 1];
+        setProjectName(folderName || 'Loaded Project');
+
+        // Reset history
+        setHistory([]);
+        setHistoryIndex(-1);
+        saveToHistory();
+
+        console.log('[FORGE] Project loaded successfully:', result.projectPath);
+      }
+    } catch (err) {
+      console.error('[FORGE] Failed to open project:', err);
+      alert('Failed to open project. Please try again.');
+    }
+  };
+
+  const handleSaveProject = async () => {
+    try {
+      const projectData = {
+        nodes,
+        edges,
+        code,
+        board,
+        version: '1.0.0',
+        timestamp: new Date().toISOString()
+      };
+      const result = await window.electronAPI.saveProject(projectData, projectPath);
+      if (result.success && result.projectPath) {
+        setProjectPath(result.projectPath);
+
+        // Update project name from saved path
+        const pathParts = result.projectPath.split(/[\\/]/);
+        const folderName = pathParts[pathParts.length - 1];
+        setProjectName(folderName || projectName);
+
+        console.log('[FORGE] Project saved successfully:', result.projectPath);
+      }
+    } catch (err) {
+      console.error('[FORGE] Failed to save project:', err);
+      alert('Failed to save project. Please try again.');
+    }
+  };
+
+  const handleSaveAsProject = async () => {
+    try {
+      const projectData = {
+        nodes,
+        edges,
+        code,
+        board,
+        version: '1.0.0',
+        timestamp: new Date().toISOString()
+      };
+      // Pass null as path to force "Save As" dialog
+      const result = await window.electronAPI.saveProject(projectData, null);
+      if (result.success && result.projectPath) {
+        setProjectPath(result.projectPath);
+
+        // Update project name from saved path
+        const pathParts = result.projectPath.split(/[\\/]/);
+        const folderName = pathParts[pathParts.length - 1];
+        setProjectName(folderName || projectName);
+
+        console.log('[FORGE] Project saved as:', result.projectPath);
+      }
+    } catch (err) {
+      console.error('[FORGE] Failed to save project as:', err);
+      alert('Failed to save project. Please try again.');
+    }
+  };
+
+  // Edit Operations
+  const handleCut = () => {
+    // Copy selected nodes/edges to clipboard then delete
+    handleCopy();
+    const state = useForgeStore.getState();
+    if (state.selectedNodeId) {
+      state.removeNode(state.selectedNodeId);
+    }
+    if (state.selectedEdgeId) {
+      state.removeEdge(state.selectedEdgeId);
+    }
+  };
+
+  const handleCopy = () => {
+    const state = useForgeStore.getState();
+    const clipboardData: any = {};
+
+    if (state.selectedNodeId) {
+      const node = nodes.find(n => n.id === state.selectedNodeId);
+      if (node) {
+        clipboardData.node = JSON.parse(JSON.stringify(node));
+      }
+    }
+
+    if (state.selectedEdgeId) {
+      const edge = edges.find(e => e.id === state.selectedEdgeId);
+      if (edge) {
+        clipboardData.edge = JSON.parse(JSON.stringify(edge));
+      }
+    }
+
+    // Store in sessionStorage (clipboard API requires user interaction)
+    if (Object.keys(clipboardData).length > 0) {
+      sessionStorage.setItem('forge-clipboard', JSON.stringify(clipboardData));
+      console.log('[FORGE] Copied to clipboard:', clipboardData);
+    }
+  };
+
+  const handlePaste = () => {
+    try {
+      const clipboardStr = sessionStorage.getItem('forge-clipboard');
+      if (!clipboardStr) return;
+
+      const clipboardData = JSON.parse(clipboardStr);
+      const state = useForgeStore.getState();
+
+      if (clipboardData.node) {
+        // Paste node with offset position
+        const newNode = {
+          ...clipboardData.node,
+          id: `${clipboardData.node.id}-copy-${Date.now()}`,
+          position: {
+            x: clipboardData.node.position.x + 50,
+            y: clipboardData.node.position.y + 50
+          }
+        };
+        state.addNode(newNode.data.type, newNode.position, newNode.data);
+        console.log('[FORGE] Pasted node:', newNode);
+      }
+    } catch (err) {
+      console.error('[FORGE] Failed to paste:', err);
+    }
+  };
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+S: Save
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        handleSaveProject();
+      }
+      // Ctrl+Shift+S: Save As
+      else if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        handleSaveAsProject();
+      }
+      // Ctrl+N: New Project
+      else if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        handleNewProject();
+      }
+      // Ctrl+O: Open Project
+      else if (e.ctrlKey && e.key === 'o') {
+        e.preventDefault();
+        handleOpenProject();
+      }
+      // Ctrl+Z: Undo
+      else if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+      // Ctrl+Y or Ctrl+Shift+Z: Redo
+      else if (e.ctrlKey && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
+        e.preventDefault();
+        handleRedo();
+      }
+      // Ctrl+X: Cut
+      else if (e.ctrlKey && e.key === 'x') {
+        e.preventDefault();
+        handleCut();
+      }
+      // Ctrl+C: Copy
+      else if (e.ctrlKey && e.key === 'c') {
+        e.preventDefault();
+        handleCopy();
+      }
+      // Ctrl+V: Paste
+      else if (e.ctrlKey && e.key === 'v') {
+        e.preventDefault();
+        handlePaste();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [historyIndex, history, nodes, edges, code, projectPath]);
 
   const handleToggleSimulation = async () => {
     if (isSimulating) {
@@ -119,12 +431,6 @@ void loop() {
     }
   };
 
-  const handleSaveProject = async () => {
-    const projectData = { nodes, edges, code, version: '1.0.0' };
-    const result = await window.electronAPI.invoke('save-project', projectData, projectPath);
-    if (result.success && result.projectPath) setProjectPath(result.projectPath);
-  };
-
   return (
     <div className="forge-root">
       <IgniteTopbar
@@ -132,25 +438,64 @@ void loop() {
         onTitleChange={setProjectName}
         onBack={onBack}
         onSave={handleSaveProject}
+        onSaveAs={handleSaveAsProject}
+        onNew={handleNewProject}
+        onOpen={handleOpenProject}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onCut={handleCut}
+        onCopy={handleCopy}
+        onPaste={handlePaste}
+        canUndo={historyIndex > 0}
+        canRedo={historyIndex < history.length - 1}
       />
 
       <main className="forge-main-split">
         {/* Left: Interactive Pane (Editor/Serial/WiFi/Libs) */}
         <div className="editor-pane">
           {/* Top: Sketch Editor */}
-          <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--lp-border)', minHeight: 0 }}>
+          <div style={{
+            flex: activeTab === 'libraries' ? 1 : 1.5,
+            display: 'flex',
+            flexDirection: 'column',
+            borderBottom: activeTab === 'libraries' ? 'none' : '1px solid var(--lp-border)',
+            minHeight: 0
+          }}>
             <div className="forge-tabs-container" style={{ height: 48 }}>
-              <BoardSelector
-                selected={board as BoardType}
-                onChange={(b) => {
-                  if (isSimulating) stopSimulation();
-                  setBoard(b);
-                }}
-                disabled={isSimulating}
-              />
+              {/* Board badge - non-interactive */}
+              <div style={{
+                padding: '6px 14px',
+                background: board === 'esp32-c3'
+                  ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(34, 211, 238, 0.1))'
+                  : 'linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(239, 68, 68, 0.1))',
+                border: board === 'esp32-c3'
+                  ? '1.5px solid rgba(6, 182, 212, 0.4)'
+                  : '1.5px solid rgba(251, 146, 60, 0.4)',
+                borderRadius: '10px',
+                color: board === 'esp32-c3' ? '#06b6d4' : '#fb923c',
+                fontSize: '11px',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: board === 'esp32-c3' ? '#06b6d4' : '#fb923c',
+                  boxShadow: board === 'esp32-c3'
+                    ? '0 0 10px rgba(6, 182, 212, 0.6)'
+                    : '0 0 10px rgba(251, 146, 60, 0.6)'
+                }} />
+                {board === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}
+              </div>
+
               <div style={{ width: 1, height: 20, background: 'rgba(0,0,0,0.1)', margin: '0 12px' }} />
-              
-              <button 
+
+              <button
                 className={`forge-tab-btn ${activeTab === 'code' ? 'active' : ''}`}
                 style={{ height: 32, fontSize: 11 }}
                 onClick={() => setActiveTab('code')}
@@ -158,7 +503,7 @@ void loop() {
                 <Code size={14} /> SKETCH
               </button>
 
-              <button 
+              <button
                 className={`forge-tab-btn ${activeTab === 'libraries' ? 'active' : ''}`}
                 style={{ height: 32, fontSize: 11 }}
                 onClick={() => setActiveTab('libraries')}
@@ -166,7 +511,7 @@ void loop() {
                 <LibraryIcon size={14} /> LIBRARIES
               </button>
             </div>
-            
+
             <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
               {activeTab === 'libraries' ? (
                 <LibraryManager />
@@ -178,55 +523,57 @@ void loop() {
             </div>
           </div>
 
-          {/* Bottom: Terminal (Serial / WiFi) */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fff', minHeight: 0 }}>
-            <div className="forge-tabs-container" style={{ height: 40, background: 'rgba(0,0,0,0.02)' }}>
-              <button 
-                className={`forge-tab-btn ${activeTab === 'serial' || activeTab === 'code' ? 'active' : ''}`}
-                style={{ height: 28, fontSize: 11, borderRadius: 8 }}
-                onClick={() => setActiveTab('serial')}
-              >
-                <Terminal size={14} /> SERIAL OUTPUT
-                {serialOutput.length > 0 && <span className="status-dot" style={{ marginLeft: 6 }} />}
-              </button>
-
-              {board === 'esp32-c3' && (
-                <button 
-                  className={`forge-tab-btn wifi ${activeTab === 'wifi' ? 'active' : ''}`}
+          {/* Bottom: Terminal (Serial / WiFi) - Hidden when Libraries tab is active */}
+          {activeTab !== 'libraries' && (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fff', minHeight: 0 }}>
+              <div className="forge-tabs-container" style={{ height: 40, background: 'rgba(0,0,0,0.02)' }}>
+                <button
+                  className={`forge-tab-btn ${activeTab === 'serial' || activeTab === 'code' ? 'active' : ''}`}
                   style={{ height: 28, fontSize: 11, borderRadius: 8 }}
-                  onClick={() => setActiveTab('wifi')}
+                  onClick={() => setActiveTab('serial')}
                 >
-                  <Wifi size={14} /> WiFi LOG
-                  {wifiLog.length > 0 && <span className="status-dot" style={{ background: '#10b981', boxShadow: '0 0 8px #10b981', marginLeft: 6 }} />}
+                  <Terminal size={14} /> SERIAL OUTPUT
+                  {serialOutput.length > 0 && <span className="status-dot" style={{ marginLeft: 6 }} />}
                 </button>
-              )}
-            </div>
 
-            <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-              {activeTab === 'wifi' ? (
-                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, padding: 15, overflowY: 'auto', height: '100%', background: '#fdfdfd' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ color: '#94a3b8', fontSize: 10, fontWeight: 700 }}>NETWORK LOG</span>
-                    <button onClick={() => clearWiFiLog()} style={{ background: 'none', border: 'none', color: '#7B4FC4', cursor: 'pointer', fontSize: 10, fontWeight: 700 }}>CLEAR</button>
+                {board === 'esp32-c3' && (
+                  <button
+                    className={`forge-tab-btn wifi ${activeTab === 'wifi' ? 'active' : ''}`}
+                    style={{ height: 28, fontSize: 11, borderRadius: 8 }}
+                    onClick={() => setActiveTab('wifi')}
+                  >
+                    <Wifi size={14} /> WiFi LOG
+                    {wifiLog.length > 0 && <span className="status-dot" style={{ background: '#10b981', boxShadow: '0 0 8px #10b981', marginLeft: 6 }} />}
+                  </button>
+                )}
+              </div>
+
+              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                {activeTab === 'wifi' ? (
+                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, padding: 15, overflowY: 'auto', height: '100%', background: '#fdfdfd' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <span style={{ color: '#94a3b8', fontSize: 10, fontWeight: 700 }}>NETWORK LOG</span>
+                      <button onClick={() => clearWiFiLog()} style={{ background: 'none', border: 'none', color: '#7B4FC4', cursor: 'pointer', fontSize: 10, fontWeight: 700 }}>CLEAR</button>
+                    </div>
+                    {wifiLog.length === 0 ? (
+                      <div style={{ color: '#cbd5e1', textAlign: 'center', marginTop: 20 }}>No network activity.</div>
+                    ) : wifiLog.map((line, i) => (
+                      <div key={i} style={{ color: line.includes('ERROR') ? '#ef4444' : '#64748b', marginBottom: 2 }}>{line}</div>
+                    ))}
                   </div>
-                  {wifiLog.length === 0 ? (
-                    <div style={{ color: '#cbd5e1', textAlign: 'center', marginTop: 20 }}>No network activity.</div>
-                  ) : wifiLog.map((line, i) => (
-                    <div key={i} style={{ color: line.includes('ERROR') ? '#ef4444' : '#64748b', marginBottom: 2 }}>{line}</div>
-                  ))}
-                </div>
-              ) : (
-                <SerialMonitor
-                  output={serialOutput}
-                  onClear={() => clearSerial()}
-                  onSend={async (data) => {
-                    const runner = await getSimulationRunner();
-                    if (runner && isSimulating) runner.sendSerialInput(data);
-                  }}
-                />
-              )}
+                ) : (
+                  <SerialMonitor
+                    output={serialOutput}
+                    onClear={() => clearSerial()}
+                    onSend={async (data) => {
+                      const runner = await getSimulationRunner();
+                      if (runner && isSimulating) runner.sendSerialInput(data);
+                    }}
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Right: Simulation Canvas */}

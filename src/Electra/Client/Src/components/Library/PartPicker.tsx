@@ -16,7 +16,6 @@ import {
 
 const CATEGORIES = [
   { id: 'all', name: 'All', icon: Search },
-  { id: 'boards', name: 'Boards', icon: Cpu },
   { id: 'outputs', name: 'Outputs', icon: Lightbulb },
   { id: 'displays', name: 'Displays', icon: Smartphone },
   { id: 'sensors', name: 'Sensors', icon: Gauge },
@@ -87,13 +86,19 @@ const COMPONENTS = [
 interface PartPickerProps {
   onSelect: (type: string) => void;
   onClose: () => void;
+  currentBoard?: 'arduino-uno' | 'esp32-c3';
 }
 
-export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => {
+export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, currentBoard }) => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredComponents = COMPONENTS.filter(c => {
+    // Hide board components - they're already selected
+    if (c.category === 'boards') {
+      return false;
+    }
+
     const matchesCategory = activeCategory === 'all' || c.category === activeCategory;
     const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;

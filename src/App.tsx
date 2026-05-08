@@ -71,7 +71,7 @@ const AppInventor = lazy(() => {
 // @ts-ignore
 const ElectraStudio = lazy(() => {
     logAppTiming('ElectraStudio lazy load started');
-    return import('./Electra/Client/Src/ForgeStudio').then(module => {
+    return import('./Electra/Client/Src/ElectraStudio').then(module => {
         logAppTiming('ElectraStudio lazy load completed');
         return module;
     });

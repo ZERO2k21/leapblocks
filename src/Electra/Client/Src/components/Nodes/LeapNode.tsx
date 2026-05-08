@@ -551,33 +551,54 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
           }}
         />
 
-        {/* ── DYNAMIC PIN HANDLES — Wokwi-style connection indicators ── */}
+        {/* ── DYNAMIC PIN HANDLES — Wokwi-style connection indicators with power glow ── */}
         {pins.map((pin, idx) => {
           const pinPosition = pin.y < 50 ? Position.Top : Position.Bottom;
           const isConnected = connectedPinNames.has(pin.name);
           const isPinHigh = data.pinStates?.[`pin_${pin.name}`] === true;
 
-          // Simple pin color logic - no glow:
-          //   Connected + HIGH (simulating) → red
-          //   Connected (idle or LOW)       → green
-          //   Unconnected                   → dim gray
+          // Check if this is a power/ground pin
+          const isPowerPin = ['VCC', '5V', '3V3', '3.3V', 'VIN', 'POWER', 'V+'].includes(pin.name);
+          const isGroundPin = ['GND', 'GROUND', 'V-', 'VSS'].includes(pin.name);
+
+          // Enhanced pin color logic with power visualization:
+          //   Power pins (VCC/5V) connected → bright red glow (always powered)
+          //   Ground pins (GND) connected → blue glow (ground reference)
+          //   Signal pins HIGH → red glow
+          //   Signal pins connected but LOW → green
+          //   Unconnected → dim gray
           let pinColor = '#475569';
           let pinOpacity = isSelected ? 0.5 : 0.1;
+          let pinGlow = 'none';
 
           if (isConnected) {
-            if (isSimulating && isPinHigh) {
+            if (isPowerPin) {
+              // VCC/5V pins glow bright red when connected (always powered)
               pinColor = '#ef4444';
+              pinOpacity = 1.0;
+              pinGlow = '0 0 8px #ef4444, 0 0 12px #ef4444';
+            } else if (isGroundPin) {
+              // GND pins glow blue when connected (ground reference)
+              pinColor = '#3b82f6';
+              pinOpacity = 0.9;
+              pinGlow = '0 0 6px #3b82f6';
+            } else if (isSimulating && isPinHigh) {
+              // Signal pins glow red when HIGH
+              pinColor = '#ef4444';
+              pinOpacity = 1.0;
+              pinGlow = '0 0 8px #ef4444, 0 0 12px #ef4444';
             } else {
+              // Signal pins connected but LOW → green
               pinColor = '#22c55e';
+              pinOpacity = 0.9;
             }
-            pinOpacity = 0.9;
           }
 
           const handleStyle: React.CSSProperties = {
             left: `${pin.x}%`,
             top: `${pin.y}%`,
-            width: isConnected ? '4px' : '3px',
-            height: isConnected ? '4px' : '3px',
+            width: isConnected ? '5px' : '3px',
+            height: isConnected ? '5px' : '3px',
             zIndex: 10,
             pointerEvents: 'all',
             transition: 'all 0.25s ease',
@@ -597,7 +618,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                   opacity: 0,
                 }}
               />
-              {/* Visible handle (source) - Simple small dot without glow */}
+              {/* Visible handle (source) - Enhanced with power glow */}
               <Handle
                 id={`${pin.name}`}
                 type="source"
@@ -608,9 +629,9 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                   border: `1px solid ${isConnected ? pinColor : '#334155'}`,
                   borderRadius: '50%',
                   opacity: pinOpacity,
-                  boxShadow: 'none',
+                  boxShadow: pinGlow,
                 }}
-                title={`${pin.name}${isConnected ? ' ✓' : ''}`}
+                title={`${pin.name}${isConnected ? ' ✓' : ''}${isPowerPin ? ' (POWER)' : ''}${isGroundPin ? ' (GND)' : ''}`}
               />
             </React.Fragment>
           );
