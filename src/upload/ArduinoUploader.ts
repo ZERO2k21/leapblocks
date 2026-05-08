@@ -559,6 +559,15 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
             // Preprocess code
             let processedCode = code.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
             processedCode = migrateESP32LedcAPI(processedCode);
+            // Add a comment-only helper for common Stepper.h wiring mistakes (28BYJ-48).
+            // We inject only when a Stepper constructor with 5 args is detected.
+            if (/\bStepper\s+(myStepper|stepper)\b/.test(processedCode)) {
+                const stepperCtorPattern = /^([ \t]*Stepper\s+(?:myStepper|stepper)\s*\(\s*[^,\n]+,\s*[^,\n]+,\s*[^,\n]+,\s*[^,\n]+,\s*[^)\n]+\)\s*;.*)$/m;
+                processedCode = processedCode.replace(
+                    stepperCtorPattern,
+                    `// LeapForge: 28BYJ-48 with Stepper.h requires pin order IN1,IN3,IN2,IN4\n// Stepper myStepper(4096, pin1, pin3, pin2, pin4)\n$1`
+                );
+            }
             processedCode = processedCode.replace(/(void\s+setup\s*\(\s*\)\s*\{)/, '$1\n  __lf_setup_wifi();');
             fs.writeFileSync(sketchPath, GPIO_MONITOR_HEADER + '\n' + processedCode, 'utf-8');
 

@@ -8,9 +8,14 @@ import { Handle, Position, NodeProps } from 'reactflow';
 import { getComponentPins } from '../../lib/PinMap';
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
 import { SensorOverlay } from './SensorOverlay';
+import { StepperMotorNode } from './StepperMotorNode';
 
 // This is a generic wrapper for our internalized Leap elements (rebranded Leap)
 export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
+  if (data.type === 'stepperMotor') {
+    return <StepperMotorNode nodeId={id} data={data} selected={selected} />;
+  }
+
   const selectedNodeId = useForgeStore((state) => state.selectedNodeId);
   const edges = useForgeStore((state) => state.edges);
   const isSimulating = useForgeStore((state) => state.isSimulating);

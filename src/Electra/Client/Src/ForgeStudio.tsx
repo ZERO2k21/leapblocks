@@ -370,18 +370,42 @@ void loop() {
       }
       // Ctrl+X: Cut
       else if (e.ctrlKey && e.key === 'x') {
-        e.preventDefault();
-        handleCut();
+        // Don't intercept if user is in code editor or input field
+        const activeElement = document.activeElement;
+        const isInEditor = activeElement?.classList.contains('monaco-editor') ||
+          activeElement?.closest('.monaco-editor') ||
+          activeElement?.tagName === 'INPUT' ||
+          activeElement?.tagName === 'TEXTAREA';
+        if (!isInEditor) {
+          e.preventDefault();
+          handleCut();
+        }
       }
       // Ctrl+C: Copy
       else if (e.ctrlKey && e.key === 'c') {
-        e.preventDefault();
-        handleCopy();
+        // Don't intercept if user is in code editor or input field
+        const activeElement = document.activeElement;
+        const isInEditor = activeElement?.classList.contains('monaco-editor') ||
+          activeElement?.closest('.monaco-editor') ||
+          activeElement?.tagName === 'INPUT' ||
+          activeElement?.tagName === 'TEXTAREA';
+        if (!isInEditor) {
+          e.preventDefault();
+          handleCopy();
+        }
       }
       // Ctrl+V: Paste
       else if (e.ctrlKey && e.key === 'v') {
-        e.preventDefault();
-        handlePaste();
+        // Don't intercept if user is in code editor or input field
+        const activeElement = document.activeElement;
+        const isInEditor = activeElement?.classList.contains('monaco-editor') ||
+          activeElement?.closest('.monaco-editor') ||
+          activeElement?.tagName === 'INPUT' ||
+          activeElement?.tagName === 'TEXTAREA';
+        if (!isInEditor) {
+          e.preventDefault();
+          handlePaste();
+        }
       }
     };
 
@@ -413,6 +437,14 @@ void loop() {
           runner.setBoard(board);
           runner.setTranspiledJS(result.jsCode);
           startSimulation('__esp32_c3_transpiled__');
+        } else if (result.error) {
+          // Display transpilation errors in Serial Monitor
+          const { appendSerial } = useForgeStore.getState();
+          appendSerial('❌ TRANSPILATION ERROR:\n');
+          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+          appendSerial(result.error + '\n');
+          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+          appendSerial('\nPlease fix the errors and try again.\n');
         }
       } else {
         const result = await compileCode({
@@ -422,10 +454,25 @@ void loop() {
         });
         if (result.success && result.hexContent) {
           startSimulation(result.hexContent);
+        } else if (result.error) {
+          // Display compilation errors in Serial Monitor
+          const { appendSerial } = useForgeStore.getState();
+          appendSerial('❌ COMPILATION ERROR:\n');
+          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+          appendSerial(result.error + '\n');
+          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+          appendSerial('\nPlease fix the errors and try again.\n');
         }
       }
     } catch (err: any) {
       console.error(err);
+      // Display unexpected errors in Serial Monitor
+      const { appendSerial } = useForgeStore.getState();
+      appendSerial('❌ UNEXPECTED ERROR:\n');
+      appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+      appendSerial(err.message || String(err) + '\n');
+      appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+      appendSerial('\nPlease check your code and try again.\n');
     } finally {
       setIsCompiling(false);
     }

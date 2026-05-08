@@ -47,6 +47,10 @@ export default defineConfig({
           useDefineForClassFields: false,
         },
       },
+      // Speed up builds by reducing minification in dev
+      minifyIdentifiers: false,
+      minifySyntax: true,
+      minifyWhitespace: false,
     },
     optimizeDeps: {
       include: [
@@ -64,14 +68,43 @@ export default defineConfig({
         define: {
           define: 'undefined',
         },
+        // Speed up dependency pre-bundling
+        target: 'es2020',
       },
     },
 
     build: {
       outDir: 'dist/renderer',
-      minify: true,
+      minify: 'esbuild', // esbuild is faster than terser
+      target: 'es2020',
+      // Increase chunk size warning limit
+      chunkSizeWarningLimit: 1000,
       rollupOptions: {
         input: path.resolve(__dirname, 'index.html'),
+        output: {
+          // Manual chunking for better caching
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom'],
+            'reactflow-vendor': ['reactflow'],
+            'blockly-vendor': ['blockly/core', 'blockly/blocks', 'blockly/javascript'],
+            'avr-vendor': ['avr8js'],
+          },
+        },
+      },
+      // Increase worker threads for parallel processing
+      commonjsOptions: {
+        transformMixedEsModules: true,
+      },
+    },
+
+    // Development server optimizations
+    server: {
+      hmr: {
+        overlay: false, // Disable error overlay for faster HMR
+      },
+      watch: {
+        // Ignore node_modules for faster file watching
+        ignored: ['**/node_modules/**', '**/dist/**'],
       },
     },
   },

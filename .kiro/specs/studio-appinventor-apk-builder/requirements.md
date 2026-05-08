@@ -620,23 +620,296 @@ The Studio module will be considered successful when:
 
 ---
 
-## Decision Required
+## ✅ DECISION MADE: Best Method for Low-End Computers
 
-**You need to choose the APK build approach:**
+### Selected Approach: **Capacitor (Option 2)** with Optimizations
 
-1. **Start with Native Android (Option 1)** - Best quality, longer development time
-2. **Start with Capacitor (Option 2)** - Good balance, faster development
-3. **Hybrid Approach** - Implement both, let users choose
+**Rationale for Low-End Computer Support**:
 
-**Recommendation**: Start with **Capacitor (Option 2)** for MVP, then add **Native Android (Option 1)** as "Advanced Build" option later.
+1. **Minimal SDK Requirements**:
+   - Capacitor requires smaller Android SDK footprint (~500 MB vs 2 GB for full native)
+   - Can use pre-built Capacitor CLI instead of full Android Studio
+   - Node.js is lightweight and already required for Electron
 
-This provides:
-- ✅ Faster time to market
-- ✅ Easier maintenance
-- ✅ Good enough performance for most apps
-- ✅ Path to upgrade to native later
-- ✅ Lower barrier to entry (smaller SDK requirements)
+2. **Faster Build Times**:
+   - Web-to-native conversion is faster than full Gradle compilation
+   - First build: ~2-3 minutes (vs 5-10 minutes for native)
+   - Incremental builds: ~30 seconds (vs 2-3 minutes for native)
+
+3. **Lower Memory Usage**:
+   - Capacitor build process uses ~1 GB RAM (vs 4 GB for Android Studio)
+   - Can run on computers with 4 GB RAM minimum
+   - No need for Android Emulator (uses real device or lightweight testing)
+
+4. **Simpler Toolchain**:
+   - Fewer dependencies to install and manage
+   - Less disk space required (~2 GB total vs 5-6 GB for native)
+   - Easier troubleshooting for students
+
+5. **Progressive Enhancement Path**:
+   - Start with Capacitor for all users
+   - Add "Pro Build" (Native Android) option later for advanced users with better hardware
+   - Users can choose based on their computer specs
+
+### Implementation Strategy
+
+**Phase 1: Capacitor Build (Weeks 1-3)**
+- ✅ Implement HTML/CSS/JavaScript code generation from visual design
+- ✅ Integrate Capacitor CLI for APK building
+- ✅ Add progress indicators and build logs
+- ✅ Optimize for low-end computers (memory management, incremental builds)
+
+**Phase 2: UI Optimization (Week 4)**
+- ✅ Add build caching to speed up subsequent builds
+- ✅ Implement background build process (non-blocking UI)
+- ✅ Add system requirements checker (warn if specs too low)
+
+**Phase 3: Native Build Option (Future)**
+- ⏳ Add "Advanced Build" option for users with better hardware
+- ⏳ Implement full Gradle-based native compilation
+- ⏳ Let users choose build method based on their needs
 
 ---
 
-**Next Steps**: Once you approve this requirements document, I will create the technical design document with architecture diagrams, component specifications, and implementation details.
+## Copyright and Licensing Analysis
+
+### ✅ Safe to Use - Open Source Components
+
+1. **MIT App Inventor**:
+   - **License**: Apache License 2.0 + Creative Commons Attribution ShareAlike 3.0
+   - **Status**: ✅ Free and open source
+   - **Usage**: We can study the architecture and concepts, but must implement our own code
+   - **Attribution**: Must credit MIT App Inventor in documentation
+   - **Source**: https://github.com/mit-cml/appinventor-sources
+
+2. **Google Blockly**:
+   - **License**: Apache License 2.0
+   - **Status**: ✅ Free and open source, no attribution required
+   - **Usage**: Can use Blockly library directly in our project
+   - **Source**: https://github.com/google/blockly
+
+3. **Capacitor**:
+   - **License**: MIT License
+   - **Status**: ✅ Free and open source
+   - **Usage**: Can use Capacitor as build tool
+   - **Source**: https://capacitorjs.com
+
+### ⚠️ Cannot Copy Directly
+
+1. **MIT App Inventor UI Design**:
+   - **Status**: ⚠️ Visual design and layout are copyrighted
+   - **Solution**: Create similar but distinct UI design
+   - **Approach**: Use same concepts (two-panel layout, component palette) but different visual style
+
+2. **MIT App Inventor Component Names**:
+   - **Status**: ⚠️ Exact component names may be trademarked
+   - **Solution**: Use similar but not identical names, or use generic names
+   - **Example**: "TinyDB" → "LocalStorage", "AccelerometerSensor" → "Accelerometer"
+
+3. **MIT App Inventor Branding**:
+   - **Status**: ❌ Cannot use "App Inventor" name or MIT branding
+   - **Solution**: Use "LeapLab Studio" branding throughout
+   - **Approach**: Make it clear this is inspired by, not affiliated with, MIT App Inventor
+
+### ✅ Our Approach - Legal and Ethical
+
+1. **Inspired By, Not Copied From**:
+   - Study MIT App Inventor's concepts and workflow
+   - Implement our own code from scratch
+   - Create our own visual design and branding
+   - Use open source libraries (Blockly, Capacitor) legally
+
+2. **Attribution**:
+   - Credit MIT App Inventor in documentation: "Inspired by MIT App Inventor"
+   - Credit Google Blockly: "Powered by Google Blockly"
+   - Include all required license notices in About dialog
+
+3. **Differentiation**:
+   - Use LeapLab branding and color scheme
+   - Add unique features (integration with other LeapLab modules)
+   - Different component organization and naming
+   - Enhanced for desktop (not web-based like MIT App Inventor)
+
+---
+
+## Additional Requirements: UI Designer (Like MIT App Inventor)
+
+### Requirement 11: Component Designer Layout (MIT App Inventor Style)
+
+**User Story**: As a student familiar with MIT App Inventor, I want the same two-panel designer layout, so that I can design apps the same way I learned.
+
+#### Acceptance Criteria
+
+1. **WHERE** the user opens Designer view, **THE** system **SHALL** display a three-panel layout: Palette (left), Viewer (center), Components/Properties (right)
+
+2. **WHERE** the Palette panel is displayed, **THE** system **SHALL** organize components into collapsible categories matching MIT App Inventor: User Interface, Layout, Media, Drawing and Animation, Maps, Sensors, Social, Storage, Connectivity
+
+3. **WHERE** the Viewer panel is displayed, **THE** system **SHALL** show a phone mockup with the current screen's components
+
+4. **WHERE** the Components panel is displayed, **THE** system **SHALL** show a tree view of all components on the current screen
+
+5. **WHERE** the Properties panel is displayed, **THE** system **SHALL** show all properties of the selected component with appropriate input controls
+
+6. **WHERE** the user drags a component from Palette to Viewer, **THE** system **SHALL** add it to the Components tree and select it
+
+7. **WHERE** the user clicks a component in the tree, **THE** system **SHALL** highlight it in the Viewer and show its properties
+
+8. **WHERE** the user renames a component, **THE** system **SHALL** update all references in blocks code automatically
+
+#### Correctness Properties
+
+- **Property 11.1**: Component tree SHALL always reflect the exact state of the Viewer
+- **Property 11.2**: Property changes SHALL be immediately visible in the Viewer
+- **Property 11.3**: Component selection SHALL be synchronized across Viewer, Components tree, and Properties panel
+
+---
+
+### Requirement 12: Blocks Editor (Google Blockly Integration)
+
+**User Story**: As a student, I want to program my app using visual blocks exactly like MIT App Inventor, so that I can code without typing.
+
+#### Acceptance Criteria
+
+1. **WHERE** the user switches to Blocks view, **THE** system **SHALL** display a Blockly workspace with a blocks palette on the left
+
+2. **WHERE** the Blocks palette is displayed, **THE** system **SHALL** organize blocks into categories: Built-in (Control, Logic, Math, Text, Lists, Colors, Variables, Procedures), Component blocks (for each component on screen)
+
+3. **WHERE** the user clicks a component category, **THE** system **SHALL** show all available blocks for that component (events, methods, properties)
+
+4. **WHERE** the user drags an event block, **THE** system **SHALL** create an event handler that executes when that event fires
+
+5. **WHERE** the user drags a method block, **THE** system **SHALL** allow calling that method with appropriate parameters
+
+6. **WHERE** the user drags a property getter/setter block, **THE** system **SHALL** allow reading or writing that property value
+
+7. **WHERE** the user connects blocks, **THE** system **SHALL** validate type compatibility and show error if types don't match
+
+8. **WHERE** the user creates a variable, **THE** system **SHALL** add getter/setter blocks to the Variables category
+
+9. **WHERE** the user creates a procedure, **THE** system **SHALL** add a call block to the Procedures category
+
+10. **WHERE** the user saves the project, **THE** system **SHALL** serialize blocks to XML format (Blockly standard)
+
+#### Correctness Properties
+
+- **Property 12.1**: Block connections SHALL only allow type-compatible blocks (number to number, text to text, etc.)
+- **Property 12.2**: Event handlers SHALL execute in the order they are defined
+- **Property 12.3**: Variable scope SHALL be enforced (global vs local variables)
+- **Property 12.4**: Blocks code SHALL generate valid JavaScript that runs identically in Companion app and built APK
+
+---
+
+### Requirement 13: Component Blocks Auto-Generation
+
+**User Story**: As a student, I want blocks to automatically appear for my components, so that I don't have to manually create them.
+
+#### Acceptance Criteria
+
+1. **WHERE** the user adds a component in Designer, **THE** system **SHALL** automatically generate blocks for that component in the Blocks palette
+
+2. **WHERE** a Button component is added, **THE** system **SHALL** generate blocks: Button.Click event, Button.Text property getter/setter, Button.BackgroundColor property getter/setter, Button.Enabled property getter/setter
+
+3. **WHERE** a Label component is added, **THE** system **SHALL** generate blocks: Label.Text property getter/setter, Label.TextColor property getter/setter, Label.FontSize property getter/setter
+
+4. **WHERE** a TextBox component is added, **THE** system **SHALL** generate blocks: TextBox.Text property getter/setter, TextBox.GotFocus event, TextBox.LostFocus event
+
+5. **WHERE** a Canvas component is added, **THE** system **SHALL** generate blocks: Canvas.Touched event, Canvas.Dragged event, Canvas.DrawCircle method, Canvas.DrawLine method, Canvas.Clear method
+
+6. **WHERE** a Sensor component is added, **THE** system **SHALL** generate blocks: Sensor.Changed event, Sensor.Value property getter
+
+7. **WHERE** the user deletes a component, **THE** system **SHALL** remove its blocks from the palette and warn if blocks are in use
+
+8. **WHERE** the user renames a component, **THE** system **SHALL** update all block labels automatically
+
+#### Correctness Properties
+
+- **Property 13.1**: Block generation SHALL complete within 100ms of component addition
+- **Property 13.2**: Block removal SHALL cascade to delete orphaned blocks in workspace
+- **Property 13.3**: Component rename SHALL update all existing blocks without breaking connections
+
+---
+
+### Requirement 14: Built-in Blocks (Control Flow, Logic, Math, Text, Lists)
+
+**User Story**: As a student, I want standard programming blocks (if/else, loops, math, text), so that I can write complete programs.
+
+#### Acceptance Criteria
+
+1. **WHERE** the user opens the Control category, **THE** system **SHALL** provide blocks: if/then, if/then/else, for each loop, while loop, for range loop, break, continue
+
+2. **WHERE** the user opens the Logic category, **THE** system **SHALL** provide blocks: equals, not equals, and, or, not, true, false, comparison operators (<, >, <=, >=)
+
+3. **WHERE** the user opens the Math category, **THE** system **SHALL** provide blocks: number, arithmetic operators (+, -, *, /), modulo, power, square root, absolute value, min, max, random integer, random fraction
+
+4. **WHERE** the user opens the Text category, **THE** system **SHALL** provide blocks: text string, join, length, is empty, compare texts, trim, upcase, downcase, substring, replace
+
+5. **WHERE** the user opens the Lists category, **THE** system **SHALL** provide blocks: create empty list, create list with items, add item to list, insert item at index, replace item at index, remove item, get item at index, length of list, is empty, find item, sort list
+
+6. **WHERE** the user opens the Colors category, **THE** system **SHALL** provide blocks: color picker, make color from RGB, split color to RGB
+
+7. **WHERE** the user opens the Variables category, **THE** system **SHALL** allow creating global and local variables with initialize, get, and set blocks
+
+8. **WHERE** the user opens the Procedures category, **THE** system **SHALL** allow creating procedures with parameters and return values
+
+#### Correctness Properties
+
+- **Property 14.1**: Control flow blocks SHALL execute in correct order (sequential, conditional, iterative)
+- **Property 14.2**: Math operations SHALL follow standard operator precedence
+- **Property 14.3**: List operations SHALL handle empty lists and out-of-bounds indices gracefully
+- **Property 14.4**: Variable scope SHALL be enforced (global accessible everywhere, local only in procedure)
+
+---
+
+### Requirement 15: Real-time Block Validation and Error Highlighting
+
+**User Story**: As a student, I want to see errors in my blocks immediately, so that I can fix them before building the app.
+
+#### Acceptance Criteria
+
+1. **WHERE** the user connects incompatible blocks, **THE** system **SHALL** highlight the connection in red and show an error tooltip
+
+2. **WHERE** the user leaves a required input empty, **THE** system **SHALL** highlight the block in yellow and show a warning
+
+3. **WHERE** the user creates a circular reference (variable depends on itself), **THE** system **SHALL** highlight the blocks in red and show an error
+
+4. **WHERE** the user references a deleted component, **THE** system **SHALL** highlight the block in red and show "Component not found" error
+
+5. **WHERE** the user fixes an error, **THE** system **SHALL** remove the error highlighting immediately
+
+6. **WHERE** the user hovers over an error, **THE** system **SHALL** display a tooltip with the error message and suggested fix
+
+7. **WHERE** the user clicks "Check Blocks", **THE** system **SHALL** scan all blocks and display a list of errors and warnings
+
+#### Correctness Properties
+
+- **Property 15.1**: Error detection SHALL complete within 200ms of block change
+- **Property 15.2**: Error messages SHALL be clear and actionable
+- **Property 15.3**: Error highlighting SHALL not interfere with block dragging or editing
+
+---
+
+## Updated Success Criteria
+
+The Studio module will be considered successful when:
+
+1. ✅ Users can create a simple "Hello World" app in under 5 minutes
+2. ✅ Users can build an APK using Capacitor in under 3 minutes on a 4 GB RAM computer
+3. ✅ The system supports at least 50 components matching MIT App Inventor
+4. ✅ The blocks editor uses Google Blockly and supports all basic programming constructs
+5. ✅ The UI layout matches MIT App Inventor's three-panel designer and blocks editor
+6. ✅ Component blocks are auto-generated when components are added in Designer
+7. ✅ The system provides real-time error validation in blocks editor
+8. ✅ The system can load and save projects reliably
+9. ✅ The APK build process works on low-end computers (4 GB RAM, 2 GB free disk space)
+10. ✅ The system provides clear error messages and debugging tools
+11. ✅ All open source licenses are properly attributed
+12. ✅ The system is stable and does not crash during normal use
+
+---
+
+**Next Steps**: Proceed to create the technical design document with:
+- Detailed architecture for Capacitor build pipeline
+- Blockly integration specifications
+- Component-to-blocks mapping system
+- Code generation strategy (visual design → HTML/CSS/JS)
+- Low-end computer optimization techniques

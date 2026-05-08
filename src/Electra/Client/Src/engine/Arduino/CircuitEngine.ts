@@ -11,6 +11,7 @@ import { PCF8574 } from './PCF8574';
 import { DHT } from './DHT';
 import { NeoPixelEmulator } from './NeoPixelEmulator';
 import { StepperEmulator } from './StepperEmulator';
+import { StepperEmulator as UnifiedStepperEmulator, type StepperModel } from '../../simulation/components/StepperEmulator';
 import { SSD1306I2CSlave } from './SSD1306I2CSlave';
 import { ILI9341SPISlave } from './ILI9341SPISlave';
 import { MPU6050I2CSlave } from './MPU6050I2CSlave';
@@ -83,6 +84,7 @@ class CircuitEngine {
   private dhtEmulators = new Map<string, DHT>();
   private neoPixelEmulators = new Map<string, NeoPixelEmulator>();
   private stepperEmulators = new Map<string, StepperEmulator>();
+  private unifiedStepperEmulators = new Map<string, UnifiedStepperEmulator>();
   private ili9341Slaves = new Map<string, ILI9341SPISlave>();
   private mpu6050Slaves = new Map<string, MPU6050I2CSlave>();
   private ssd1306Slaves = new Map<string, SSD1306I2CSlave>();
@@ -92,6 +94,7 @@ class CircuitEngine {
   private rotaryEncoderEmulators = new Map<string, RotaryEncoderEmulator>();
   private _pendingLibraryClasses = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
+  private stepperIdleRaf: number | null = null;
   private isInitialized = false;
 
   /**
@@ -880,6 +883,7 @@ class CircuitEngine {
     this.neoPixelEmulators.clear();
     this.stepperEmulators.forEach(e => e.destroy());
     this.stepperEmulators.clear();
+    this.unifiedStepperEmulators.clear();
     this.ili9341Slaves.forEach(s => s.detach());
     this.ili9341Slaves.clear();
     this.mpu6050Slaves.clear();
@@ -888,6 +892,10 @@ class CircuitEngine {
     this.rotaryDialerEmulators.clear();
     this.tiltSwitchEmulators.clear();
     this.rotaryEncoderEmulators.clear();
+    if (this.stepperIdleRaf !== null) {
+      cancelAnimationFrame(this.stepperIdleRaf);
+      this.stepperIdleRaf = null;
+    }
     // Cancel all heart-beat animation timers
     this.heartBeatTimers.forEach(id => cancelAnimationFrame(id));
     this.heartBeatTimers.clear();
@@ -1150,6 +1158,15 @@ class CircuitEngine {
     // Applied via syncI2CBridge() called from SimulationRunner.start() after initTranspiled()
     this.syncI2CBridge();
 
+    const tickUnifiedSteppers = () => {
+      this.unifiedStepperEmulators.forEach((emulator, nodeId) => {
+        emulator.checkIdle();
+        updateNodeData(nodeId, emulator.getState());
+      });
+      this.stepperIdleRaf = requestAnimationFrame(tickUnifiedSteppers);
+    };
+    this.stepperIdleRaf = requestAnimationFrame(tickUnifiedSteppers);
+
     // 2. Map board nodes (Arduino/ESP32) and their connected peripherals
     const boardNodes = nodes.filter(n =>
       n.data?.type === 'arduino-uno' ||
@@ -1215,7 +1232,7 @@ class CircuitEngine {
             console.log(`[CIRCUIT 7SEG] Listener triggered: ${avrPin} = ${state}, peripheral pin: ${peripheralPinName}`);
           }
 
-          const isComplexPeripheral = ['stepper-motor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
+          const isComplexPeripheral = ['stepper-motor', 'stepperMotor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
             'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5', 'relay-module',
             '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer'].includes(pType);
 
@@ -1595,22 +1612,26 @@ class CircuitEngine {
             if (peripheralNode.data?.type === 'stepper-motor') {
               if (!this.stepperEmulators.has(peripheralId)) {
                 console.log(`[STEPPER] Wiring 4-wire emulator for node ${peripheralId} — pin ${peripheralPinName} ← AVR ${avrPin}`);
-                let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
+                let pendingUpdate: { angle: number; stepCount: number; energized: boolean; actualAngleUnbounded?: number } | null = null;
                 let rafScheduled = false;
-                this.stepperEmulators.set(peripheralId, new StepperEmulator(({ angle, stepCount, energized }) => {
-                  pendingUpdate = { angle, stepCount, energized };
+                this.stepperEmulators.set(peripheralId, new StepperEmulator((state) => {
+                  pendingUpdate = {
+                    angle: state.angle,
+                    stepCount: state.stepCount,
+                    energized: state.energized,
+                    actualAngleUnbounded: state.actualAngleUnbounded
+                  };
                   if (!rafScheduled) {
                     rafScheduled = true;
                     requestAnimationFrame(() => {
                       rafScheduled = false;
                       if (pendingUpdate) {
-                        const { angle: a, stepCount: s, energized: e } = pendingUpdate;
+                        const { angle: a, stepCount: s, energized: e, actualAngleUnbounded: unbounded } = pendingUpdate;
                         pendingUpdate = null;
                         updateNodeData(peripheralId, {
-                          angle: a,
+                          angle: unbounded ?? a,  // Use unbounded angle for smooth rotation
                           value: `${a.toFixed(1)}°`,
                           units: `${s > 0 ? '+' : ''}${s} steps`,
-                          arrow: e ? '#BEF264' : '',
                         });
                       }
                     });
@@ -1634,6 +1655,26 @@ class CircuitEngine {
                   !!buf['B-'],
                 );
               }
+            }
+
+            // --- Unified Stepper Motor Emulation (IN1-IN4, AVR + ESP32) ---
+            if (peripheralNode.data?.type === 'stepperMotor') {
+              if (!this.unifiedStepperEmulators.has(peripheralId)) {
+                const model = ((peripheralNode.data?.model as StepperModel) ?? 'bipolar_nema');
+                this.unifiedStepperEmulators.set(peripheralId, new UnifiedStepperEmulator(model));
+              }
+
+              const unified = this.unifiedStepperEmulators.get(peripheralId)!;
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              buf[peripheralPinName] = isHigh;
+
+              unified.onPinChange(
+                !!buf['IN1'],
+                !!buf['IN2'],
+                !!buf['IN3'],
+                !!buf['IN4'],
+              );
+              updateNodeData(peripheralId, unified.getState());
             }
 
             // --- Biaxial Stepper Emulation ---
@@ -2019,6 +2060,14 @@ class CircuitEngine {
     // We trigger pushInputSignal, passing false for digital isHigh since it's analog
     this.pushInputSignal(nodeId, 'HORZ', false);
     this.pushInputSignal(nodeId, 'VERT', false);
+  }
+
+  public resetStepper(nodeId: string) {
+    const emulator = this.unifiedStepperEmulators.get(nodeId);
+    if (!emulator) return;
+    emulator.resetState();
+    const { updateNodeData } = useForgeStore.getState();
+    updateNodeData(nodeId, emulator.getState());
   }
 
   /**
