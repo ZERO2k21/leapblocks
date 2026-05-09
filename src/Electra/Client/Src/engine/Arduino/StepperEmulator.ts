@@ -209,9 +209,9 @@ export class StepperEmulator {
         // Treat it as a single step in the previously observed direction instead of dropping it.
         if (delta === 2) {
           if (this.lastDirection !== 0) {
-            delta = this.lastDirection > 0 ? -1 : 1;
+            delta = this.lastDirection > 0 ? 1 : -1;
           } else {
-            delta = this.dirHigh ? -1 : 1;
+            delta = this.dirHigh ? 1 : -1;
           }
         } else if (delta === 3) {
           delta = -1;
@@ -220,7 +220,9 @@ export class StepperEmulator {
         if (delta > wrap / 2) delta -= wrap;
       }
 
-      const dir: 1 | -1 = delta < 0 ? 1 : -1;
+      // Positive phase delta (0→1→2→3) = CW = dir +1
+      // Negative phase delta (3→2→1→0) = CCW = dir -1
+      const dir: 1 | -1 = delta > 0 ? 1 : -1;
       const stepsToApply = Math.abs(delta);
       this.dirHigh = (dir === 1);
       for (let i = 0; i < stepsToApply; i++) this.applyStep(dir);

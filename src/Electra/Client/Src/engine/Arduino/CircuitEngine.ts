@@ -1702,14 +1702,15 @@ class CircuitEngine {
                         const { angle: a, stepCount: s, energized: e, actualAngleUnbounded: unbounded } = pendingUpdate;
                         pendingUpdate = null;
                         updateNodeData(peripheralId, {
-                          angle: unbounded ?? a,  // Use unbounded angle for smooth rotation
+                          angle: unbounded ?? a,  // Use unbounded angle for smooth CSS rotation
                           value: `${a.toFixed(1)}°`,
                           units: `${s > 0 ? '+' : ''}${s} steps`,
+                          arrow: e ? 'orange' : '',  // Wokwi-style orange arrow when energized
                         });
                       }
                     });
                   }
-                }, { stepsPerRev: 200 }, peripheralId));
+                }, { stepsPerRev: 200, constrainRotation: false }, peripheralId));
               }
               const stepper = this.stepperEmulators.get(peripheralId)!;
               const buf = this.peripheralPinBuffers.get(peripheralId)!;

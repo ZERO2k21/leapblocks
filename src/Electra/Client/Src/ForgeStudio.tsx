@@ -18,7 +18,7 @@ import { LibraryManager } from './components/Library/LibraryManager';
 import { PartPicker as ComponentSidebar } from './components/Library/PartPicker';
 import { IgniteTopbar } from './components/Layout/Topbar';
 import { compileCode } from './services/CompilerService';
-import { IS_ELECTRON } from '../../config/platform';
+import { IS_ELECTRON } from '../../../config/platform';
 import * as ProjectService from './services/ProjectService';
 import { v4 as uuidv4 } from 'uuid';
 
