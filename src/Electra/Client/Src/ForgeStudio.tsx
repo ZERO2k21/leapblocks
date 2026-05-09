@@ -18,6 +18,9 @@ import { LibraryManager } from './components/Library/LibraryManager';
 import { PartPicker as ComponentSidebar } from './components/Library/PartPicker';
 import { IgniteTopbar } from './components/Layout/Topbar';
 import { compileCode } from './services/CompilerService';
+import { IS_ELECTRON } from '../../config/platform';
+import * as ProjectService from './services/ProjectService';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ForgeStudioProps {
   onBack: () => void;
@@ -144,8 +147,10 @@ void loop() {
   }, [initialBoard]); // Run when initialBoard changes
 
   const [activeTab, setActiveTab] = useState<'code' | 'serial' | 'wifi' | 'libraries'>('code');
-  const { showPartPicker, setShowPartPicker } = useForgeStore();
+  const { showPartPicker, setShowPartPicker, importedLibraries, rotateNode } = useForgeStore();
   const [wifiStatus, setWifiStatus] = useState('');
+  const [showWebOpenModal, setShowWebOpenModal] = useState(false);
+  const [recentProjects, setRecentProjects] = useState<ProjectService.LeapProject[]>([]);
 
   useEffect(() => {
     if (board !== 'esp32-c3' || !isSimulating) {
@@ -191,61 +196,89 @@ void loop() {
   };
 
   const handleOpenProject = async () => {
-    try {
-      const result = await window.electronAPI.openProject();
-      if (result && result.data) {
-        const { nodes: loadedNodes, edges: loadedEdges, code: loadedCode, version } = result.data;
-        setNodes(loadedNodes || []);
-        setEdges(loadedEdges || []);
-        setCode(loadedCode || '');
-        setProjectPath(result.projectPath);
+    if (IS_ELECTRON) {
+      try {
+        const result = await (window as any).electronAPI.openProject();
+        if (result && result.data) {
+          const { nodes: loadedNodes, edges: loadedEdges, code: loadedCode } = result.data;
+          setNodes(loadedNodes || []);
+          setEdges(loadedEdges || []);
+          setCode(loadedCode || '');
+          setProjectPath(result.projectPath);
 
-        // Extract project name from path
-        const pathParts = result.projectPath.split(/[\\/]/);
-        const folderName = pathParts[pathParts.length - 1];
-        setProjectName(folderName || 'Loaded Project');
+          const pathParts = result.projectPath.split(/[\\/]/);
+          const folderName = pathParts[pathParts.length - 1];
+          setProjectName(folderName || 'Loaded Project');
 
-        // Reset history
-        setHistory([]);
-        setHistoryIndex(-1);
-        saveToHistory();
-
-        console.log('[FORGE] Project loaded successfully:', result.projectPath);
+          setHistory([]);
+          setHistoryIndex(-1);
+          saveToHistory();
+        }
+      } catch (err) {
+        console.error('[FORGE] Failed to open project:', err);
+        alert('Failed to open project.');
       }
-    } catch (err) {
-      console.error('[FORGE] Failed to open project:', err);
-      alert('Failed to open project. Please try again.');
+    } else {
+      const projects = await ProjectService.listProjects();
+      setRecentProjects(projects);
+      setShowWebOpenModal(true);
     }
+  };
+
+  const loadWebProject = (project: ProjectService.LeapProject) => {
+    setNodes(project.circuit.nodes || []);
+    setEdges(project.circuit.edges || []);
+    setCode(project.code || '');
+    setProjectPath(project.id);
+    setProjectName(project.name);
+    setHistory([]);
+    setHistoryIndex(-1);
+    saveToHistory();
+    setShowWebOpenModal(false);
   };
 
   const handleSaveProject = async () => {
     try {
-      const projectData = {
-        nodes,
-        edges,
-        code,
-        board,
-        version: '1.0.0',
-        timestamp: new Date().toISOString()
-      };
-      const result = await window.electronAPI.saveProject(projectData, projectPath ?? undefined);
-      if (result.success && result.projectPath) {
-        setProjectPath(result.projectPath);
-
-        // Update project name from saved path
-        const pathParts = result.projectPath.split(/[\\/]/);
-        const folderName = pathParts[pathParts.length - 1];
-        setProjectName(folderName || projectName);
-
-        console.log('[FORGE] Project saved successfully:', result.projectPath);
+      if (IS_ELECTRON) {
+        const projectData = {
+          nodes,
+          edges,
+          code,
+          board,
+          version: '1.0.0',
+          timestamp: new Date().toISOString()
+        };
+        const result = await (window as any).electronAPI.saveProject(projectData, projectPath ?? undefined);
+        if (result.success && result.projectPath) {
+          setProjectPath(result.projectPath);
+          const pathParts = result.projectPath.split(/[\\/]/);
+          const folderName = pathParts[pathParts.length - 1];
+          setProjectName(folderName || projectName);
+        }
+      } else {
+        const id = projectPath || uuidv4();
+        await ProjectService.saveProject({
+          id,
+          name: projectName,
+          circuit: { nodes, edges },
+          code,
+          libraries: importedLibraries,
+          updatedAt: new Date().toISOString()
+        });
+        setProjectPath(id);
+        alert('Project saved successfully!');
       }
     } catch (err) {
       console.error('[FORGE] Failed to save project:', err);
-      alert('Failed to save project. Please try again.');
+      alert('Failed to save project.');
     }
   };
 
   const handleSaveAsProject = async () => {
+    if (!IS_ELECTRON) {
+      handleSaveProject(); // On web, save as is just save
+      return;
+    }
     try {
       const projectData = {
         nodes,
@@ -255,21 +288,16 @@ void loop() {
         version: '1.0.0',
         timestamp: new Date().toISOString()
       };
-      // Pass undefined as path to force "Save As" dialog
-      const result = await window.electronAPI.saveProject(projectData, undefined);
+      const result = await (window as any).electronAPI.saveProject(projectData, undefined);
       if (result.success && result.projectPath) {
         setProjectPath(result.projectPath);
-
-        // Update project name from saved path
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         setProjectName(folderName || projectName);
-
-        console.log('[FORGE] Project saved as:', result.projectPath);
       }
     } catch (err) {
       console.error('[FORGE] Failed to save project as:', err);
-      alert('Failed to save project. Please try again.');
+      alert('Failed to save project.');
     }
   };
 
@@ -407,6 +435,21 @@ void loop() {
         if (!isInEditor) {
           e.preventDefault();
           handlePaste();
+        }
+      }
+      // R: Rotate selected node
+      else if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+        const activeElement = document.activeElement;
+        const isInEditor = activeElement?.classList.contains('monaco-editor') ||
+          activeElement?.closest('.monaco-editor') ||
+          activeElement?.tagName === 'INPUT' ||
+          activeElement?.tagName === 'TEXTAREA';
+        
+        if (!isInEditor) {
+          const state = useForgeStore.getState();
+          if (state.selectedNodeId) {
+            rotateNode(state.selectedNodeId);
+          }
         }
       }
     };
@@ -680,6 +723,37 @@ void loop() {
           {new Date().toLocaleTimeString()}
         </div>
       </footer>
+
+      {/* Web Open Project Modal */}
+      {!IS_ELECTRON && showWebOpenModal && (
+        <div className="web-modal-overlay" onClick={() => setShowWebOpenModal(false)}>
+          <div className="web-modal-content" onClick={e => e.stopPropagation()}>
+            <div className="web-modal-header">
+              <h3>Recent Projects</h3>
+              <button onClick={() => setShowWebOpenModal(false)}>×</button>
+            </div>
+            <div className="web-modal-body">
+              {recentProjects.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                  No saved projects found in browser storage.
+                </div>
+              ) : (
+                <div className="project-list">
+                  {recentProjects.map(p => (
+                    <div key={p.id} className="project-item" onClick={() => loadWebProject(p)}>
+                      <div className="project-info">
+                        <div className="project-name">{p.name}</div>
+                        <div className="project-date">Last saved: {new Date(p.updatedAt).toLocaleString()}</div>
+                      </div>
+                      <div className="project-id">{p.id.slice(0, 8)}...</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -61,6 +61,7 @@ export interface ForgeState {
   removeNode: (id: string) => void;
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
   updateNodeData: (id: string, data: any) => void;
+  rotateNode: (id: string) => void;
 
   addEdge: (edge: Edge | Connection) => void;
   removeEdge: (id: string) => void;
@@ -293,7 +294,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       id: uuidv4(),
       type: 'leap',
       position,
-      data: { ...data, type }
+      data: { ...data, type, rotation: data.rotation || 0 }
     };
     const newNodes = [...state.nodes, newNode];
 
@@ -349,6 +350,16 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   updateNodeData: (id, data) => set((state) => ({
     nodes: state.nodes.map(n => n.id === id ? { ...n, data: { ...n.data, ...data } } : n)
+  })),
+
+  rotateNode: (id) => set((state) => ({
+    nodes: state.nodes.map(n => {
+      if (n.id === id) {
+        const currentRotation = n.data?.rotation || 0;
+        return { ...n, data: { ...n.data, rotation: (currentRotation + 90) % 360 } };
+      }
+      return n;
+    })
   })),
 
   addEdge: (connection) => set((state) => {
