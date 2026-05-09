@@ -2821,23 +2821,23 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "GND",
-        "x": 86.27,
-        "y": 181.42
+        "x": 85,
+        "y": 174
       },
       {
         "name": "VCC",
-        "x": 95.87,
-        "y": 181.42
+        "x": 96,
+        "y": 174
       },
       {
         "name": "DIN",
-        "x": 105.47,
-        "y": 181.42
+        "x": 104,
+        "y": 174
       },
       {
         "name": "DOUT",
-        "x": 115.07,
-        "y": 181.42
+        "x": 115,
+        "y": 174
       }
     ]
   },
