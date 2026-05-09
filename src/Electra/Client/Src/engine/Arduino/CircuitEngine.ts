@@ -1284,6 +1284,25 @@ class CircuitEngine {
                   updates.intensity = intensity;
                   updates.hasSignal = isHigh && hasGround;
                 }
+                else if (target.type === 'dc-motor') {
+                  // DC Motor logic: calculate speed and direction based on POS and NEG pins
+                  const pos = target.pinName === 'POS' ? isHigh : !!currentPinStates['pin_POS'];
+                  const neg = target.pinName === 'NEG' ? isHigh : !!currentPinStates['pin_NEG'];
+                  let speed = 0;
+                  let direction = 'cw';
+
+                  if (pos && !neg) {
+                    speed = 1.0; // Full speed clockwise
+                    direction = 'cw';
+                  } else if (!pos && neg) {
+                    speed = 1.0; // Full speed counter-clockwise
+                    direction = 'ccw';
+                  }
+
+                  updates.speed = speed;
+                  updates.direction = direction;
+                  console.log(`[CIRCUIT MOTOR] Setting DC motor speed to ${speed}, direction to ${direction}, pos=${pos}, neg=${neg}`);
+                }
 
                 updates.damaged = !hasGround; // Mark as damaged if no ground
                 console.log(`[CIRCUIT LED] Calling updateNodeData for ${target.nodeId}:`, updates);
@@ -1615,7 +1634,7 @@ class CircuitEngine {
 
               // Check if 12V terminal has power from a battery or source
               const has12VPower = this.traceNet(peripheralId, '12V').some(t => t.type === 'battery-12v');
-              
+
               const ena = (buf['ENA'] !== false) && has12VPower; // HIGH by default (jumpered)
               const in1 = !!buf['IN1'];
               const in2 = !!buf['IN2'];
@@ -1653,9 +1672,15 @@ class CircuitEngine {
                     const pos = !!newPinStates['pin_POS'];
                     const neg = !!newPinStates['pin_NEG'];
                     let speed = 0;
-                    if (pos && !neg) speed = 100;
-                    else if (!pos && neg) speed = -100;
-                    updateNodeData(target.nodeId, { pinStates: newPinStates, speed });
+                    let direction = 'cw';
+                    if (pos && !neg) {
+                      speed = 1.0; // Normalized speed (0-1 range)
+                      direction = 'cw';
+                    } else if (!pos && neg) {
+                      speed = 1.0; // Normalized speed (0-1 range)
+                      direction = 'ccw';
+                    }
+                    updateNodeData(target.nodeId, { pinStates: newPinStates, speed, direction });
                   } else {
                     updateNodeData(target.nodeId, { pinStates: newPinStates });
                   }

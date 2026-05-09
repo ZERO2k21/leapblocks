@@ -47,8 +47,9 @@ export class DCMotorElement extends LitElement {
       const delta = timestamp - this._lastTimestamp;
       this._lastTimestamp = timestamp;
 
-      if (this.speed > 0) {
-        const rotationDelta = (this.speed * delta * 0.5);
+      if (this.speed !== 0) {
+        const absSpeed = Math.abs(this.speed);
+        const rotationDelta = (absSpeed * delta * 0.8); // Increased from 0.5 to 0.8 for faster rotation
         this._rotation += (this.direction === 'cw' ? rotationDelta : -rotationDelta);
         this._rotation %= 360;
         this.requestUpdate();
@@ -63,8 +64,8 @@ export class DCMotorElement extends LitElement {
   }
 
   render() {
-    const isRunning = this.speed > 0;
-    
+    const isRunning = this.speed !== 0;
+
     return html`
       <div class="${isRunning ? 'vibrating' : ''}" style="width: 160px; height: 80px;">
         <svg
@@ -132,11 +133,12 @@ export class DCMotorElement extends LitElement {
             
             <!-- Rotating Shaft -->
             <g transform="translate(75, 30) rotate(${this._rotation})">
-              <!-- Cross or Gear Shape -->
-              <rect x="-2" y="-12" width="4" height="24" rx="1" fill="#fef3c7" stroke="#b45309" stroke-width="0.5" />
-              <rect x="-12" y="-2" width="24" height="4" rx="1" fill="#fef3c7" stroke="#b45309" stroke-width="0.5" />
-              <circle cx="0" cy="0" r="5" fill="#fbbf24" stroke="#b45309" stroke-width="1" />
-              <circle cx="0" cy="0" r="1.5" fill="#334155" />
+              <!-- Wheel/Cross Shape - More prominent -->
+              <circle cx="0" cy="0" r="15" fill="#fef3c7" stroke="#b45309" stroke-width="1.5" opacity="0.8" />
+              <rect x="-2" y="-15" width="4" height="30" rx="1" fill="#fef3c7" stroke="#b45309" stroke-width="1" />
+              <rect x="-15" y="-2" width="30" height="4" rx="1" fill="#fef3c7" stroke="#b45309" stroke-width="1" />
+              <circle cx="0" cy="0" r="6" fill="#fbbf24" stroke="#b45309" stroke-width="1.5" />
+              <circle cx="0" cy="0" r="2" fill="#334155" />
             </g>
           </g>
 

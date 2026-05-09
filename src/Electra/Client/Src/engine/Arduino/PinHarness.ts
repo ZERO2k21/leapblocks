@@ -7,33 +7,33 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
   "l298n": {
     "viewBox": { "minX": 0, "minY": 0, "width": 200, "height": 200 },
     "pins": [
-      { "name": "OUT1", "x": 23, "y": 122 },
-      { "name": "OUT2", "x": 23, "y": 153 },
-      { "name": "OUT3", "x": 177, "y": 153 },
-      { "name": "OUT4", "x": 177, "y": 122 },
-      { "name": "12V", "x": 58, "y": 178 },
-      { "name": "GND", "x": 85, "y": 178 },
-      { "name": "5V", "x": 113, "y": 178 },
+      { "name": "OUT1", "x": 5, "y": 116 },
+      { "name": "OUT2", "x": 5, "y": 140 },
+      { "name": "OUT3", "x": 200, "y": 135 },
+      { "name": "OUT4", "x": 200, "y": 115 },
+      { "name": "12V", "x": 40, "y": 190 },
+      { "name": "GND", "x": 65, "y": 190 },
+      { "name": "5V", "x": 85, "y": 190 },
       { "name": "ENA", "x": 110, "y": 178 },
-      { "name": "IN1", "x": 123, "y": 178 },
-      { "name": "IN2", "x": 136, "y": 178 },
-      { "name": "IN3", "x": 149, "y": 178 },
-      { "name": "IN4", "x": 162, "y": 178 },
-      { "name": "ENB", "x": 175, "y": 178 }
+      { "name": "IN1", "x": 122, "y": 178 },
+      { "name": "IN2", "x": 133, "y": 178 },
+      { "name": "IN3", "x": 145, "y": 178 },
+      { "name": "IN4", "x": 157, "y": 178 },
+      { "name": "ENB", "x": 168, "y": 178 }
     ]
   },
   "dc-motor": {
     "viewBox": { "minX": 0, "minY": 0, "width": 160, "height": 80 },
     "pins": [
-      { "name": "POS", "x": 5, "y": 31 },
-      { "name": "NEG", "x": 5, "y": 51 }
+      { "name": "POS", "x": 3, "y": 31 },
+      { "name": "NEG", "x": 3, "y": 45 }
     ]
   },
   "battery-12v": {
     "viewBox": { "minX": 0, "minY": 0, "width": 100, "height": 85 },
     "pins": [
-      { "name": "POS", "x": 21, "y": 11 },
-      { "name": "NEG", "x": 79, "y": 11 }
+      { "name": "POS", "x": 27, "y": 11 },
+      { "name": "NEG", "x": 75, "y": 11 }
     ]
   },
 

@@ -86,6 +86,10 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   } else if (data.type === 'servo') {
     // Servos use the 'angle' property calculated in CircuitEngine
     mappedProps.angle = data.angle ?? 0;
+  } else if (data.type === 'dc-motor') {
+    // DC Motor: speed and direction from CircuitEngine
+    mappedProps.speed = data.speed ?? 0;
+    mappedProps.direction = data.direction ?? 'cw';
   } else if (data.type === 'stepper-motor') {
     mappedProps.angle = data.angle ?? 0;
     mappedProps.value = data.value ?? '0.0°';
@@ -296,6 +300,14 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     const angle = data.angle ?? 0;
     el.angle = angle;
   }, [data.type, data.angle]);
+
+  // Imperatively set dc-motor speed and direction as DOM properties.
+  useEffect(() => {
+    if (!elementRef.current || data.type !== 'dc-motor') return;
+    const el = elementRef.current;
+    el.speed = data.speed ?? 0;
+    el.direction = data.direction ?? 'cw';
+  }, [data.type, data.speed, data.direction]);
 
   // Imperatively set stepper-motor angle as DOM property.
   // Same issue as servo — Lit @property({ type: Number }) needs a real number, not a string attribute.

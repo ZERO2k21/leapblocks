@@ -87,16 +87,38 @@ export const LibraryManager: React.FC = () => {
   const handleInstall = async (lib: Library) => {
     setIsInstalling(prev => ({ ...prev, [lib.name]: true }));
     try {
+      console.log(`[LIBRARY MANAGER] Installing library: ${lib.name}`);
       const result = await installLibrary(lib);
+      console.log(`[LIBRARY MANAGER] Install result:`, result);
+
       if (result.success) {
-        await refreshInstalled();
-        setAllLibraries(prev => prev.map(l => l.name === lib.name ? { ...l, isInstalled: true } : l));
+        console.log(`[LIBRARY MANAGER] Successfully installed ${lib.name}, refreshing list...`);
+
+        // Wait a bit for filesystem to sync
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Refresh installed libraries
+        const installed = await refreshInstalled();
+        console.log(`[LIBRARY MANAGER] Refreshed installed libraries:`, installed);
+        console.log(`[LIBRARY MANAGER] Installed library names:`, installed.map(l => l.name));
+
+        // Update the search results to show as installed
+        setAllLibraries(prev => {
+          const installedNames = new Set(installed.map(l => l.name.toLowerCase()));
+          return prev.map(l => ({
+            ...l,
+            isInstalled: installedNames.has(l.name.toLowerCase())
+          }));
+        });
+
+        console.log(`[LIBRARY MANAGER] UI updated, ${lib.name} should now show as LINKED`);
       } else {
-        console.error('[FORGE] Install failed:', result.error);
-        alert(`Failed to install "${lib.name}":\n${result.error}`);
+        console.error('[LIBRARY MANAGER] Install failed:', result.error);
+        alert(`Failed to install "${lib.name}":\n${result.error || 'Unknown error'}`);
       }
-    } catch (err) {
-      console.error('[FORGE] Installation error:', err);
+    } catch (err: any) {
+      console.error('[LIBRARY MANAGER] Installation error:', err);
+      alert(`Error installing "${lib.name}":\n${err.message || 'Unknown error'}`);
     } finally {
       setIsInstalling(prev => ({ ...prev, [lib.name]: false }));
     }
@@ -105,11 +127,37 @@ export const LibraryManager: React.FC = () => {
   const handleRemove = async (name: string) => {
     if (!confirm(`Remove "${name}" from this project?`)) return;
     try {
-      await removeLibrary(name);
-      await refreshInstalled();
-      setAllLibraries(prev => prev.map(l => l.name === name ? { ...l, isInstalled: false } : l));
-    } catch (err) {
-      console.error('[FORGE] Removal error:', err);
+      console.log(`[LIBRARY MANAGER] Removing library: ${name}`);
+      const result = await removeLibrary(name);
+      console.log(`[LIBRARY MANAGER] Remove result:`, result);
+
+      if (result.success) {
+        console.log(`[LIBRARY MANAGER] Successfully removed ${name}, refreshing list...`);
+
+        // Wait a bit for filesystem to sync
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Refresh installed libraries
+        const installed = await refreshInstalled();
+        console.log(`[LIBRARY MANAGER] Refreshed installed libraries:`, installed);
+
+        // Update the search results to show as not installed
+        setAllLibraries(prev => {
+          const installedNames = new Set(installed.map(l => l.name.toLowerCase()));
+          return prev.map(l => ({
+            ...l,
+            isInstalled: installedNames.has(l.name.toLowerCase())
+          }));
+        });
+
+        console.log(`[LIBRARY MANAGER] UI updated, ${name} should now show LINK button`);
+      } else {
+        console.error('[LIBRARY MANAGER] Remove failed:', result.error);
+        alert(`Failed to remove "${name}":\n${result.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      console.error('[LIBRARY MANAGER] Removal error:', err);
+      alert(`Error removing "${name}":\n${err.message || 'Unknown error'}`);
     }
   };
 
