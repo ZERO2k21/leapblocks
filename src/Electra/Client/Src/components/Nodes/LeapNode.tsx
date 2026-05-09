@@ -229,6 +229,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     } else {
       mappedProps.pixels = data.pixels ?? 16;
     }
+    mappedProps.neopixelPixels = data.neopixelPixels ?? [];
   }
 
   // ── Ref for NeoPixel DOM access (setPixel requires DOM methods) ──
@@ -291,6 +292,33 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     el.g = data.neopixelG ?? 0;
     el.b = data.neopixelB ?? 0;
   }, [data.type, data.neopixelR, data.neopixelG, data.neopixelB]);
+
+  // Imperatively set NeoPixel Matrix / LED Ring pixels as DOM properties.
+  useEffect(() => {
+    if (!elementRef.current || !['neopixel-matrix', 'led-ring'].includes(data.type)) return;
+    const el = elementRef.current;
+    const pixels = data.neopixelPixels ?? [];
+    if (el.setPixel) {
+      pixels.forEach((p: any, i: number) => {
+        // Normalize 0-255 to 0-1 as expected by the Lit elements
+        const rgb = {
+          r: (p.r ?? 0) / 255,
+          g: (p.g ?? 0) / 255,
+          b: (p.b ?? 0) / 255
+        };
+
+        if (data.type === 'neopixel-matrix') {
+          const cols = (el as any).cols || 8;
+          const row = Math.floor(i / cols);
+          const col = i % cols;
+          el.setPixel(row, col, rgb);
+        } else {
+          // 1D elements like LED Ring or simple NeoPixel strips
+          el.setPixel(i, rgb);
+        }
+      });
+    }
+  }, [data.type, data.neopixelPixels]);
 
   // Imperatively set servo angle as DOM property.
   // React JSX sets number props as string attributes on Web Components.

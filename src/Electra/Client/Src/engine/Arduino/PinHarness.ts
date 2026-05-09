@@ -23,7 +23,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     ]
   },
   "dc-motor": {
-    "viewBox": { "minX": 0, "minY": 0, "width": 160, "height": 80 },
+    "viewBox": { "minX": 0, "minY": 0, "width": 200, "height": 80 },
     "pins": [
       { "name": "POS", "x": 3, "y": 31 },
       { "name": "NEG", "x": 3, "y": 45 }
@@ -2942,22 +2942,22 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "GND",
         "x": 56.41,
-        "y": 152.94
+        "y": 145
       },
       {
         "name": "VCC",
         "x": 66.01,
-        "y": 152.94
+        "y": 145
       },
       {
         "name": "DIN",
         "x": 75.61,
-        "y": 152.94
+        "y": 145
       },
       {
         "name": "DOUT",
         "x": 85.21,
-        "y": 152.94
+        "y": 145
       }
     ]
   }

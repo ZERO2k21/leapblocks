@@ -118,10 +118,24 @@ export const getLibraries = async (): Promise<Library[]> => {
     }
   }
 
-  // Web: Use browser storage (IndexedDB)
+  // Web: Use browser storage (IndexedDB) + Sync with local server
   try {
     console.log('[LibraryService] Getting libraries from browser storage...');
     const storedLibs = await browserLibraryStorage.getInstalledLibraries();
+    
+    // Optional: Fetch from server to ensure sync
+    try {
+      const res = await fetch(`${CLOUD_COMPILER_URL}/libraries/installed`);
+      if (res.ok) {
+        const serverLibs = await res.json();
+        // Merge or prioritize server libs? For now, we'll just trust browser storage
+        // but this confirms server communication is working.
+        console.log(`[LibraryService] Server has ${serverLibs.length} libraries installed.`);
+      }
+    } catch (e) {
+      console.warn('[LibraryService] Could not reach compiler server for library sync.');
+    }
+
     return storedLibs.map(l => ({
       name: l.name,
       author: l.author,
@@ -140,10 +154,25 @@ export const installLibrary = async (lib: Library): Promise<{ success: boolean; 
     return result ?? { success: false, error: 'No response from installer' };
   }
 
-  // Web: Use browser storage (IndexedDB)
+  // Web: Use browser storage (IndexedDB) + Sync with local server
   try {
     console.log('[LibraryService] Installing library to browser storage:', lib.name);
     const result = await browserLibraryStorage.installLibrary(lib);
+    
+    if (result.success) {
+      // Also trigger install on the compiler server so arduino-cli has it
+      console.log('[LibraryService] Syncing installation with compiler server...');
+      try {
+        await fetch(`${CLOUD_COMPILER_URL}/libraries/install`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: lib.name }),
+        });
+      } catch (e) {
+        console.warn('[LibraryService] Failed to sync install with server (it may be offline):', e);
+      }
+    }
+    
     return result;
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -160,10 +189,25 @@ export const removeLibrary = async (name: string): Promise<{ success: boolean; e
     }
   }
 
-  // Web: Use browser storage (IndexedDB)
+  // Web: Use browser storage (IndexedDB) + Sync with local server
   try {
     console.log('[LibraryService] Removing library from browser storage:', name);
     const result = await browserLibraryStorage.uninstallLibrary(name);
+    
+    if (result.success) {
+      // Also trigger remove on the compiler server
+      console.log('[LibraryService] Syncing removal with compiler server...');
+      try {
+        await fetch(`${CLOUD_COMPILER_URL}/libraries/remove`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name }),
+        });
+      } catch (e) {
+        console.warn('[LibraryService] Failed to sync removal with server:', e);
+      }
+    }
+
     return result;
   } catch (err: any) {
     console.warn('[LibraryService] Browser storage removal failed:', err);

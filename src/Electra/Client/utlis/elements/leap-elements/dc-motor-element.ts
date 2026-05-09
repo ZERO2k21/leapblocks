@@ -33,8 +33,8 @@ export class DCMotorElement extends LitElement {
 
   get pinInfo(): ElementPin[] {
     return [
-      { name: 'POS', x: 5, y: 31, number: 1, signals: [] },
-      { name: 'NEG', x: 5, y: 51, number: 2, signals: [] },
+      { name: 'POS', x: 2, y: 31, number: 1, signals: [] },
+      { name: 'NEG', x: 2, y: 51, number: 2, signals: [] },
     ];
   }
 
@@ -49,7 +49,7 @@ export class DCMotorElement extends LitElement {
 
       if (this.speed !== 0) {
         const absSpeed = Math.abs(this.speed);
-        const rotationDelta = (absSpeed * delta * 0.8); // Increased from 0.5 to 0.8 for faster rotation
+        const rotationDelta = (absSpeed * delta * 0.8);
         this._rotation += (this.direction === 'cw' ? rotationDelta : -rotationDelta);
         this._rotation %= 360;
         this.requestUpdate();
@@ -66,12 +66,16 @@ export class DCMotorElement extends LitElement {
   render() {
     const isRunning = this.speed !== 0;
 
+    // Pre-compute spoke geometry for the wheel
+    const treadAngles = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
+    const spokeAngles = [0, 72, 144, 216, 288];
+
     return html`
-      <div class="${isRunning ? 'vibrating' : ''}" style="width: 160px; height: 80px;">
+      <div class="${isRunning ? 'vibrating' : ''}" style="width: 200px; height: 80px;">
         <svg
-          width="160"
+          width="200"
           height="80"
-          viewBox="0 0 160 80"
+          viewBox="0 0 200 80"
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
@@ -119,31 +123,97 @@ export class DCMotorElement extends LitElement {
           <!-- Yellow Gearbox -->
           <g transform="translate(55, 10)" filter="url(#shadow)">
             <!-- Main Housing -->
-            <rect x="0" y="0" width="85" height="60" rx="3" fill="url(#yellow-grad)" stroke="#b45309" stroke-width="0.5" />
+            <rect x="0" y="0" width="50" height="60" rx="3" fill="url(#yellow-grad)" stroke="#b45309" stroke-width="0.5" />
             
             <!-- Housing Details (Screws/Lines) -->
-            <line x1="0" y1="30" x2="85" y2="30" stroke="#b45309" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.4" />
-            <circle cx="10" cy="10" r="2" fill="#b45309" opacity="0.2" />
-            <circle cx="10" cy="50" r="2" fill="#b45309" opacity="0.2" />
-            <circle cx="75" cy="10" r="2" fill="#b45309" opacity="0.2" />
-            <circle cx="75" cy="50" r="2" fill="#b45309" opacity="0.2" />
+            <line x1="0" y1="30" x2="50" y2="30" stroke="#b45309" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.4" />
+            <circle cx="8" cy="8" r="2" fill="#b45309" opacity="0.2" />
+            <circle cx="8" cy="52" r="2" fill="#b45309" opacity="0.2" />
+            <circle cx="42" cy="8" r="2" fill="#b45309" opacity="0.2" />
+            <circle cx="42" cy="52" r="2" fill="#b45309" opacity="0.2" />
 
-            <!-- Output Shaft Area -->
-            <rect x="65" y="15" width="20" height="30" rx="2" fill="#f59e0b" opacity="0.5" />
-            
-            <!-- Rotating Shaft -->
-            <g transform="translate(75, 30) rotate(${this._rotation})">
-              <!-- Wheel/Cross Shape - More prominent -->
-              <circle cx="0" cy="0" r="15" fill="#fef3c7" stroke="#b45309" stroke-width="1.5" opacity="0.8" />
-              <rect x="-2" y="-15" width="4" height="30" rx="1" fill="#fef3c7" stroke="#b45309" stroke-width="1" />
-              <rect x="-15" y="-2" width="30" height="4" rx="1" fill="#fef3c7" stroke="#b45309" stroke-width="1" />
-              <circle cx="0" cy="0" r="6" fill="#fbbf24" stroke="#b45309" stroke-width="1.5" />
-              <circle cx="0" cy="0" r="2" fill="#334155" />
-            </g>
+            <!-- Shaft Bearing -->
+            <circle cx="50" cy="30" r="5" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.5" />
+            <circle cx="50" cy="30" r="2.5" fill="#d1d5db" stroke="#6b7280" stroke-width="0.3" />
           </g>
 
-          <!-- Front Plastic Tip -->
-          <rect x="140" y="32" width="10" height="16" rx="1" fill="#fbbf24" stroke="#b45309" stroke-width="0.5" />
+          <!-- Axle connecting gearbox to wheel (Shortened) -->
+          <rect x="105" y="38" width="20" height="4" rx="1" fill="#9ca3af" stroke="#6b7280" stroke-width="0.3" />
+
+          <!-- Wheel/Tire Assembly (Shifted Left) -->
+          <g transform="translate(125, 40) rotate(${this._rotation})">
+            <!-- Outer Tire (black rubber) -->
+            <circle cx="0" cy="0" r="32" fill="#1e293b" stroke="#0f172a" stroke-width="1.5" />
+            
+            <!-- Tire Tread Marks -->
+            ${treadAngles.map(angle => html`
+              <line 
+                x1="${Math.cos(angle * Math.PI / 180) * 26}" 
+                y1="${Math.sin(angle * Math.PI / 180) * 26}" 
+                x2="${Math.cos(angle * Math.PI / 180) * 32}" 
+                y2="${Math.sin(angle * Math.PI / 180) * 32}" 
+                stroke="#374151" stroke-width="3" stroke-linecap="round"
+              />
+            `)}
+            
+            <!-- Inner Tire Wall -->
+            <circle cx="0" cy="0" r="24" fill="#334155" stroke="#475569" stroke-width="0.5" />
+            
+            <!-- Wheel Rim (silver) -->
+            <circle cx="0" cy="0" r="18" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1" />
+            
+            <!-- 5 Spokes with arrow markers -->
+            ${spokeAngles.map(angle => html`
+              <line 
+                x1="${Math.cos(angle * Math.PI / 180) * 5}" 
+                y1="${Math.sin(angle * Math.PI / 180) * 5}" 
+                x2="${Math.cos(angle * Math.PI / 180) * 16}" 
+                y2="${Math.sin(angle * Math.PI / 180) * 16}" 
+                stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"
+              />
+              <polygon 
+                points="${Math.cos(angle * Math.PI / 180) * 16},${Math.sin(angle * Math.PI / 180) * 16} ${Math.cos((angle - 15) * Math.PI / 180) * 12},${Math.sin((angle - 15) * Math.PI / 180) * 12} ${Math.cos((angle + 15) * Math.PI / 180) * 12},${Math.sin((angle + 15) * Math.PI / 180) * 12}"
+                fill="#64748b"
+              />
+            `)}
+            
+            <!-- Center Hub -->
+            <circle cx="0" cy="0" r="5" fill="#fbbf24" stroke="#b45309" stroke-width="1" />
+            <circle cx="0" cy="0" r="2" fill="#334155" />
+            
+            <!-- Red dot marker for tracking rotation -->
+            <circle cx="0" cy="-14" r="3" fill="#ef4444" stroke="#b91c1c" stroke-width="0.5" />
+          </g>
+
+          <!-- Direction Indicator (non-rotating, shown only when running) -->
+          ${isRunning ? html`
+            <!-- Direction Arrow Arc -->
+            <path 
+              d="${this.direction === 'cw'
+          ? 'M 138 4 A 16 16 0 0 1 152 16'
+          : 'M 152 4 A 16 16 0 0 0 138 16'}" 
+              fill="none" 
+              stroke="#22c55e" 
+              stroke-width="2" 
+              stroke-linecap="round"
+            />
+            <!-- Arrow head -->
+            <polygon 
+              points="${this.direction === 'cw'
+          ? '152,16 149,10 155,12'
+          : '138,16 135,12 141,10'}" 
+              fill="#22c55e" 
+            />
+            <!-- CW/CCW Label -->
+            <text 
+              x="145" y="3" 
+              font-family="monospace" 
+              font-size="7" 
+              font-weight="bold" 
+              fill="#22c55e" 
+              text-anchor="middle"
+            >${this.direction === 'cw' ? 'CW' : 'CCW'}</text>
+          ` : ''}
         </svg>
       </div>
     `;

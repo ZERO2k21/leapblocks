@@ -56,8 +56,10 @@ export class NeopixelMatrixElement extends LitElement {
     const { cols, rows, rowSpacing, colSpacing } = this;
     const pinSpacing = 2.54;
     const p = pinSpacing * mmToPix;
-    const cx = ((cols * (colSpacing + pixelWidth)) / 2) * mmToPix;
-    const y = rows * (rowSpacing + pixelHeight) * mmToPix;
+    const width = pixelWidth * cols + colSpacing * (cols - 1);
+    const height = pixelHeight * rows + rowSpacing * (rows - 1) + 4;
+    const cx = (width / 2) * mmToPix;
+    const y = (height - 2) * mmToPix;
 
     return [
       {
@@ -216,7 +218,11 @@ export class NeopixelMatrixElement extends LitElement {
     const patWidth = pixelWidth + colSpacing;
     const patHeight = pixelHeight + rowSpacing;
     const width = pixelWidth * cols + colSpacing * (cols - 1);
-    const height = pixelHeight * rows + rowSpacing * (rows - 1);
+    const height = pixelHeight * rows + rowSpacing * (rows - 1) + 4; // Add space for pins
+    const pinSpacing = 2.54;
+    const cx = (width / 2);
+    const py = height - 2;
+
     return html`
       <svg
         width="${width}mm"
@@ -256,7 +262,16 @@ export class NeopixelMatrixElement extends LitElement {
             fill="#666"
           />
         </pattern>
-        <rect width="${width}" height="${height}" fill="url(#pixel)"></rect>
+        <rect width="${width}" height="${height - 4}" fill="url(#pixel)"></rect>
+        
+        <!-- Pin Terminals -->
+        <g transform="translate(${cx}, ${py})">
+          <circle cx="${-1.5 * pinSpacing}" cy="0" r="0.8" fill="#333" /> <!-- GND -->
+          <circle cx="${-0.5 * pinSpacing}" cy="0" r="0.8" fill="#e44" /> <!-- VCC -->
+          <circle cx="${0.5 * pinSpacing}" cy="0" r="0.8" fill="#4e4" /> <!-- DIN -->
+          <circle cx="${1.5 * pinSpacing}" cy="0" r="0.8" fill="#44e" /> <!-- DOUT -->
+        </g>
+
         <g style="${blurLight ? 'filter: url(#blurLight)' : ''}">${this.renderPixels()}</g>
       </svg>
     `;

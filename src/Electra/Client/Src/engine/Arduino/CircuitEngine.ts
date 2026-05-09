@@ -78,7 +78,7 @@ function pulseSensorADC(phase: number): number {
 class CircuitEngine {
   private activeSubscriptions = new Map<string, () => void>();
   private lcdEmulators = new Map<string, HD44780>();
-  private peripheralPinBuffers = new Map<string, Record<string, boolean>>();
+  private peripheralPinBuffers = new Map<string, Record<string, any>>();
   private i2cBusManager = new I2CBusManager();
   private dhtEmulators = new Map<string, DHT>();
   private neoPixelEmulators = new Map<string, NeoPixelEmulator>();
@@ -179,9 +179,10 @@ class CircuitEngine {
     const queue = [{ id: startNodeId, pin: startPin, resistance: 0 }];
     const visited = new Set<string>();
 
+    const targetTypes = ['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'l298n', 'battery-12v'];
+
     while (queue.length > 0) {
       const current = queue.shift()!;
-      // Always use clean pin names for visited set and logic
       const cleanStartPin = current.pin.replace(/__target$/, '');
       const key = `${current.id}-${cleanStartPin}`;
       if (visited.has(key)) continue;
@@ -189,121 +190,87 @@ class CircuitEngine {
 
       const node = nodes.find(n => n.id === current.id);
       if (!node) continue;
-
       const nodeType = node.data?.type;
 
-      if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'l298n', 'battery-12v'].includes(nodeType)) {
+      // 1. If this is a target component (and not where we started), record it
+      if (current.id !== startNodeId && targetTypes.includes(nodeType)) {
         targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
-      } else if (nodeType === 'ks2e-m-dc5') {
-        // When tracing FROM the relay itself (start node), follow external edges
-        // from the specified pin — don't apply internal contact routing
-        if (current.id === startNodeId) {
+        // Stop tracing "through" simple terminal components
+        if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'battery-12v'].includes(nodeType)) {
+          continue;
+        }
+      }
+      
+      // Also include the start node itself if it's a target (preserving legacy behavior for simple components)
+      if (current.id === startNodeId && targetTypes.includes(nodeType)) {
+         targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
+      }
+
+      // 2. Follow internal/specialized routing
+      if (nodeType === 'ks2e-m-dc5') {
+        const energized = node.data?.relayEnergized ?? false;
+        const contactMap: Record<string, string> = energized
+          ? { 'P1': 'NO1', 'P2': 'NO2', 'NO1': 'P1', 'NO2': 'P2' }
+          : { 'P1': 'NC1', 'P2': 'NC2', 'NC1': 'P1', 'NC2': 'P2' };
+        const exitPin = contactMap[cleanStartPin];
+        if (exitPin) {
           const outEdges = edges.filter(e =>
-            (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === cleanStartPin) ||
-            (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === cleanStartPin)
+            (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
+            (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
           );
           for (const edge of outEdges) {
             const nextId = edge.source === current.id ? edge.target : edge.source;
             const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
             queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
-          }
-        } else {
-          // Relay contact traversal: signal enters on a pole pin (P1/P2) and exits via the active contact
-          const relayNode = nodes.find(n => n.id === current.id);
-          const energized = relayNode?.data?.relayEnergized ?? false;
-
-          // Map pole → active contact based on relay state
-          const contactMap: Record<string, string> = energized
-            ? { 'P1': 'NO1', 'P2': 'NO2' }
-            : { 'P1': 'NC1', 'P2': 'NC2' };
-
-          const exitPin = contactMap[cleanStartPin];
-          if (exitPin) {
-            const downstreamEdges = edges.filter(e =>
-              (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
-              (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
-            );
-            for (const edge of downstreamEdges) {
-              const nextId = edge.source === current.id ? edge.target : edge.source;
-              const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
-              queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
-            }
           }
         }
       } else if (nodeType === 'relay-module') {
-        // When tracing FROM the relay itself (start node), follow external edges
-        // from the specified pin — don't apply internal contact routing
-        if (current.id === startNodeId) {
+        const energized = node.data?.relayEnergized ?? false;
+        const activeContact = energized ? 'NO' : 'NC';
+        let exitPin = '';
+        if (cleanStartPin === 'COM') exitPin = activeContact;
+        else if (cleanStartPin === activeContact) exitPin = 'COM';
+
+        if (exitPin) {
           const outEdges = edges.filter(e =>
-            (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === cleanStartPin) ||
-            (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === cleanStartPin)
+            (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
+            (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
           );
           for (const edge of outEdges) {
             const nextId = edge.source === current.id ? edge.target : edge.source;
             const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
             queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
-          }
-        } else {
-          // Relay module contact traversal: signal enters on COM and exits via active contact (NO or NC)
-          const relayNode = nodes.find(n => n.id === current.id);
-          const energized = relayNode?.data?.relayEnergized ?? false;
-
-          // When energized: COM connects to NO
-          // When de-energized: COM connects to NC
-          const activeContact = energized ? 'NO' : 'NC';
-
-          // If signal is on COM, route to active contact
-          if (cleanStartPin === 'COM') {
-            const downstreamEdges = edges.filter(e =>
-              (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === activeContact) ||
-              (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === activeContact)
-            );
-            for (const edge of downstreamEdges) {
-              const nextId = edge.source === current.id ? edge.target : edge.source;
-              const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
-              queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
-            }
-          }
-          // If signal is on NO or NC, route to COM (bidirectional)
-          else if (cleanStartPin === activeContact) {
-            const downstreamEdges = edges.filter(e =>
-              (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === 'COM') ||
-              (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === 'COM')
-            );
-            for (const edge of downstreamEdges) {
-              const nextId = edge.source === current.id ? edge.target : edge.source;
-              const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
-              queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
-            }
           }
         }
       } else if (nodeType === 'resistor') {
         const rValue = Number(node.data?.sensorValues?.value ?? 0);
-        console.log(`[FORGE CIRCUIT] Net trace through resistor (${current.id}): +${rValue} ohms`);
-
-        // Find the other pin of the resistor
         let exitPin = '';
-        if (cleanStartPin === '1' || cleanStartPin === 'pin_1' || cleanStartPin === 'IN') {
-          exitPin = node.data?.pinOUT ? 'OUT' : '2';
-        } else {
-          exitPin = node.data?.pinIN ? 'IN' : '1';
-        }
-
-        // Robust fallback: if we don't know the pins, check if they are 'IN'/'OUT'
-        if (cleanStartPin === 'IN') exitPin = 'OUT';
-        else if (cleanStartPin === 'OUT') exitPin = 'IN';
-        else if (cleanStartPin === '1' || cleanStartPin === 'pin_1') exitPin = '2';
-        else if (cleanStartPin === '2' || cleanStartPin === 'pin_2') exitPin = '1';
-
-        const downstreamEdges = edges.filter(e =>
+        if (cleanStartPin === '1' || cleanStartPin === 'pin_1' || cleanStartPin === 'IN') exitPin = node.data?.pinOUT ? 'OUT' : '2';
+        else exitPin = node.data?.pinIN ? 'IN' : '1';
+        
+        const outEdges = edges.filter(e =>
           (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
           (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
         );
-
-        for (const edge of downstreamEdges) {
+        for (const edge of outEdges) {
           const nextId = edge.source === current.id ? edge.target : edge.source;
           const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
           queue.push({ id: nextId, pin: nextPin, resistance: current.resistance + rValue });
+        }
+      }
+      
+      // 3. Always follow the wire connected to the CURRENT pin externally
+      // This is critical for the start node and for nodes that aren't terminal components.
+      const isTerminal = ['led', 'buzzer', 'rgb-led', 'dc-motor', 'battery-12v'].includes(nodeType);
+      if (current.id === startNodeId || !isTerminal) {
+        const outEdges = edges.filter(e =>
+          (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === cleanStartPin) ||
+          (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === cleanStartPin)
+        );
+        for (const edge of outEdges) {
+          const nextId = edge.source === current.id ? edge.target : edge.source;
+          const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
+          queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
         }
       }
     }
@@ -411,7 +378,7 @@ class CircuitEngine {
 
       begin(_vcc?: number, addr?: number): boolean {
         this._addr = addr || 0x3C;
-        console.log(`[OLED] begin() called: addr=0x${this._addr.toString(16)}, ssd1306Slaves.size=${ssd1306Slaves.size}`);
+        // console.log(`[OLED] begin() called: addr=0x${this._addr.toString(16)}, ssd1306Slaves.size=${ssd1306Slaves.size}`);
 
         // Find the matching slave by address
         for (const [nodeId, slave] of ssd1306Slaves) {
@@ -442,10 +409,10 @@ class CircuitEngine {
       }
       clearDisplay() {
         this._buf.fill(0);
-        console.log(`[OLED] clearDisplay()`);
+        // console.log(`[OLED] clearDisplay()`);
       }
       display() {
-        console.log(`[OLED] display() called — flushing ${this._buf.length} bytes to emulator`);
+        // console.log(`[OLED] display() called — flushing ${this._buf.length} bytes to emulator`);
         this._flush();
       }
       setTextSize(s: number) { this._textsize = Math.max(1, s | 0); }
@@ -492,12 +459,12 @@ class CircuitEngine {
       }
       print(v: any, base?: number) {
         const s = (typeof v === 'number' && base !== undefined && base !== 10) ? (v >>> 0).toString(base).toUpperCase() : String(v);
-        console.log(`[OLED] print("${s}")`);
+        // console.log(`[OLED] print("${s}")`);
         this._writeStr(s);
       }
       println(v: any = '', base?: number) {
         const s = (typeof v === 'number' && base !== undefined && base !== 10) ? (v >>> 0).toString(base).toUpperCase() : String(v);
-        console.log(`[OLED] println("${s}")`);
+        // console.log(`[OLED] println("${s}")`);
         this._writeStr(s + '\n');
       }
       write(c: number) { this._writeChar(c); }
@@ -535,7 +502,7 @@ class CircuitEngine {
         // Count non-zero bytes to verify pixels were written
         let nonZero = 0;
         for (let i = 0; i < this._buf.length; i++) if (this._buf[i] !== 0) nonZero++;
-        console.log(`[OLED] _flush(): ${nonZero}/${this._buf.length} non-zero bytes → calling forceFlush(true)`);
+        // console.log(`[OLED] _flush(): ${nonZero}/${this._buf.length} non-zero bytes → calling forceFlush(true)`);
 
         em.forceFlush(true);
         console.log(`[OLED] _flush() complete`);
@@ -1227,13 +1194,13 @@ class CircuitEngine {
           const pType = currentStateStore.nodes.find(n => n.id === peripheralId)?.data?.type;
 
           // Log 7-segment related activity
-          if (pType === '7segment') {
+          /* if (pType === '7segment') {
             console.log(`[CIRCUIT 7SEG] Listener triggered: ${avrPin} = ${state}, peripheral pin: ${peripheralPinName}`);
-          }
+          } */
 
           const isComplexPeripheral = ['stepper-motor', 'stepperMotor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
             'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5', 'relay-module',
-            '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer'].includes(pType);
+            '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer', 'l298n'].includes(pType);
 
           // 1. Trace the electrical network — only for simple output peripherals
           if (!isComplexPeripheral) {
@@ -1301,7 +1268,7 @@ class CircuitEngine {
 
                   updates.speed = speed;
                   updates.direction = direction;
-                  console.log(`[CIRCUIT MOTOR] Setting DC motor speed to ${speed}, direction to ${direction}, pos=${pos}, neg=${neg}`);
+                  // console.log(`[CIRCUIT MOTOR] Setting DC motor speed to ${speed}, direction to ${direction}, pos=${pos}, neg=${neg}`);
                 }
 
                 updates.damaged = !hasGround; // Mark as damaged if no ground
@@ -1630,15 +1597,27 @@ class CircuitEngine {
             // --- L298N Motor Driver Emulation ---
             if (pType === 'l298n') {
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              
+              // Only process if the pin state actually changed in the buffer
+              if (buf[peripheralPinName] === isHigh && buf['_initialized']) {
+                return;
+              }
               buf[peripheralPinName] = isHigh;
+              buf['_initialized'] = true;
 
-              // Check if 12V terminal has power from a battery or source
-              const has12VPower = this.traceNet(peripheralId, '12V').some(t => t.type === 'battery-12v');
-
-              const ena = (buf['ENA'] !== false) && has12VPower; // HIGH by default (jumpered)
+              // Cache the 12V terminal power check (very expensive trace)
+              // Only re-check if graph hasn't been checked for a while or on start
+              if (buf['_lastPowerCheck'] === undefined || (Date.now() - (buf['_lastPowerCheck'] as any)) > 1000) {
+                // FIXED: traceNet now correctly follows wires out of the 12V pin
+                buf['_has12VPower'] = this.traceNet(peripheralId, '12V').some(t => t.type === 'battery-12v');
+                buf['_lastPowerCheck'] = Date.now();
+              }
+              
+              const has12VPower = !!buf['_has12VPower'];
+              const ena = (buf['ENA'] !== false) && has12VPower; 
               const in1 = !!buf['IN1'];
               const in2 = !!buf['IN2'];
-              const enb = (buf['ENB'] !== false) && has12VPower; // HIGH by default (jumpered)
+              const enb = (buf['ENB'] !== false) && has12VPower; 
               const in3 = !!buf['IN3'];
               const in4 = !!buf['IN4'];
 
@@ -1659,14 +1638,23 @@ class CircuitEngine {
                 else if (!in3 && in4) { b_pos = false; b_neg = true; }
               }
 
-              // Propagate signals to connected loads (DC Motors)
+              // Only propagate if motor outputs changed to avoid redundant graph scans
+              const motorStateKey = `${a_pos}${a_neg}${b_pos}${b_neg}`;
+              if (buf['_lastMotorState'] === motorStateKey) return;
+              buf['_lastMotorState'] = motorStateKey;
+
               const propagate = (outPin: string, signal: boolean) => {
                 const targets = this.traceNet(peripheralId, outPin);
                 targets.forEach(target => {
                   const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
                   if (!targetNode) return;
                   const pinKey = `pin_${target.pinName}`;
-                  const newPinStates = { ...(targetNode.data?.pinStates || {}), [pinKey]: signal };
+                  const currentPinStates = targetNode.data?.pinStates || {};
+                  
+                  // Skip if target pin state is already what we want
+                  if (currentPinStates[pinKey] === signal) return;
+
+                  const newPinStates = { ...currentPinStates, [pinKey]: signal };
 
                   if (target.type === 'dc-motor') {
                     const pos = !!newPinStates['pin_POS'];
@@ -1674,10 +1662,10 @@ class CircuitEngine {
                     let speed = 0;
                     let direction = 'cw';
                     if (pos && !neg) {
-                      speed = 1.0; // Normalized speed (0-1 range)
+                      speed = 1.0; 
                       direction = 'cw';
                     } else if (!pos && neg) {
-                      speed = 1.0; // Normalized speed (0-1 range)
+                      speed = 1.0; 
                       direction = 'ccw';
                     }
                     updateNodeData(target.nodeId, { pinStates: newPinStates, speed, direction });
