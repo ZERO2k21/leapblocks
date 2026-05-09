@@ -29,6 +29,7 @@ export interface Library {
   author: string;
   description: string;
   version: string;
+  url?: string;
   isInstalled?: boolean;
 }
 
@@ -55,6 +56,7 @@ async function loadIndex(): Promise<Library[]> {
             author: entry.author ?? entry.maintainer ?? '',
             description: entry.sentence ?? entry.paragraph ?? '',
             version: entry.version ?? '0.0.0',
+            url: entry.url,
           });
         }
       }
@@ -111,6 +113,7 @@ export const getLibraries = async (): Promise<Library[]> => {
         author: l.author ?? l.Author ?? '',
         description: l.sentence ?? l.description ?? '',
         version: l.version ?? l.Version ?? '?',
+        url: l.url,
       }));
     } catch (err) {
       console.warn('[LibraryService] getInstalledLibraries failed:', err);
@@ -141,6 +144,7 @@ export const getLibraries = async (): Promise<Library[]> => {
       author: l.author,
       description: l.description,
       version: l.version,
+      url: (l as any).url,
     }));
   } catch (err) {
     console.warn('[LibraryService] Browser storage failed:', err);

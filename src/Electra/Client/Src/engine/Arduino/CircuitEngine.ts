@@ -1721,11 +1721,12 @@ class CircuitEngine {
               } else if (peripheralPinName === 'DIR') {
                 stepper.setDirection(isHigh);
               } else {
-                // 4-wire mode — order must match Stepper.h: processCoils(A+, B+, A-, B-)
+                // 4-wire mode — order must match Wokwi physical pin order: A-, A+, B+, B-
+                // This corresponds to Arduino Stepper.h (pin1, pin2, pin3, pin4)
                 stepper.processCoils(
+                  !!buf['A-'],
                   !!buf['A+'],
                   !!buf['B+'],
-                  !!buf['A-'],
                   !!buf['B-'],
                 );
               }
@@ -1808,21 +1809,21 @@ class CircuitEngine {
               const innerStepper = this.stepperEmulators.get(innerKey)!;
 
               // Route pins to the correct emulator
-              // Outer motor coils: A1+, A1-, B1+, B1-
+              // Outer motor coils: A1-, A1+, B1+, B1- (Wokwi physical order)
               if (['A1+', 'A1-', 'B1+', 'B1-'].includes(peripheralPinName)) {
                 outerStepper.processCoils(
+                  !!buf['A1-'],
                   !!buf['A1+'],
                   !!buf['B1+'],
-                  !!buf['A1-'],
                   !!buf['B1-'],
                 );
               }
-              // Inner motor coils: A2+, A2-, B2+, B2-
+              // Inner motor coils: A2-, A2+, B2+, B2- (Wokwi physical order)
               if (['A2+', 'A2-', 'B2+', 'B2-'].includes(peripheralPinName)) {
                 innerStepper.processCoils(
+                  !!buf['A2-'],
                   !!buf['A2+'],
                   !!buf['B2+'],
-                  !!buf['A2-'],
                   !!buf['B2-'],
                 );
               }

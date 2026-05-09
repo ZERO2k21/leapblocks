@@ -619,7 +619,8 @@ export class ArduinoRuntime {
           for (const n of nodes) {
             if (n.data?.type === 'hc-sr04' || n.data?.type === 'ultrasonic') {
               const distanceCm = n.data?.distance ?? n.data?.sensorValues?.distance ?? 6;
-              const duration_us = distanceCm / 0.017;
+              // Standard HC-SR04: 58 microseconds per cm
+              const duration_us = distanceCm * 58;
               return Math.round(duration_us);
             }
           }

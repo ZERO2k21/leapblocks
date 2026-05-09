@@ -41,7 +41,7 @@ const VALID_DIVISORS = [1, 2, 4, 8, 16, 32, 64, 128, 256] as const;
 
 // Matches Arduino Stepper.cpp 4-wire stepMotor() sequence exactly:
 // step 0: 1010, step 1: 0110, step 2: 0101, step 3: 1001
-// Order here is [A+, B+, A-, B-] == [pin1, pin2, pin3, pin4]
+// Order here is [A-, A+, B+, B-] == Wokwi physical pin order == [pin1, pin2, pin3, pin4]
 const FULL_STEP_SEQ: Array<[boolean, boolean, boolean, boolean]> = [
   [true, false, true, false],  // 1010
   [false, true, true, false],  // 0110
@@ -173,9 +173,9 @@ export class StepperEmulator {
 
   // ── Mode A: 4-wire (Coil) Logic ────────────────────────────────────────────
 
-  processCoils(aPlus: boolean, bPlus: boolean, aMinus: boolean, bMinus: boolean) {
-    this.energized = aPlus || bPlus || aMinus || bMinus;
-    this.coilState = [aPlus, bPlus, aMinus, bMinus];
+  processCoils(aMinus: boolean, aPlus: boolean, bPlus: boolean, bMinus: boolean) {
+    this.energized = aMinus || aPlus || bPlus || bMinus;
+    this.coilState = [aMinus, aPlus, bPlus, bMinus];
 
     if (!this.energized) {
       this.lastPhase = -1;

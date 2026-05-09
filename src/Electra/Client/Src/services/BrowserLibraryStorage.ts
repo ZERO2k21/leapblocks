@@ -54,6 +54,7 @@ class BrowserLibraryStorage {
         version: string;
         author: string;
         description: string;
+        url?: string;
     }): Promise<{ success: boolean; error?: string }> {
         try {
             await this.init();
@@ -61,7 +62,7 @@ class BrowserLibraryStorage {
             console.log(`[BROWSER STORAGE] Downloading library: ${lib.name}`);
 
             // Download library files from Arduino CDN
-            const files = await this.downloadLibraryFiles(lib.name, lib.version, lib.author);
+            const files = await this.downloadLibraryFiles(lib.name, lib.version, lib.author, lib.url);
 
             if (!files || Object.keys(files).length === 0) {
                 return { success: false, error: 'Failed to download library files. Please check your internet connection or try again.' };
@@ -168,7 +169,8 @@ class BrowserLibraryStorage {
     private async downloadLibraryFiles(
         name: string,
         version: string,
-        author: string
+        author: string,
+        url?: string
     ): Promise<{ [path: string]: string }> {
         try {
             // Try to download from Arduino library repository
@@ -177,11 +179,15 @@ class BrowserLibraryStorage {
             const sanitizedAuthor = author.replace(/\s+/g, '').toLowerCase();
             
             // Try with author prefix (common for Adafruit, etc.)
-            const urls = [
+            const urls = [];
+            if (url) {
+                urls.push(url.replace('http://', 'https://'));
+            }
+            urls.push(
                 `https://downloads.arduino.cc/libraries/github.com/${sanitizedAuthor}/${sanitizedName}-${version}.zip`,
                 `https://downloads.arduino.cc/libraries/github.com/arduino-libraries/${sanitizedName}-${version}.zip`,
                 `https://downloads.arduino.cc/libraries/github.com/${sanitizedName}-${version}.zip`
-            ];
+            );
 
             let response = null;
             for (const url of urls) {
