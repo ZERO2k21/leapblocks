@@ -11,6 +11,8 @@ import { AVRUSART } from '../../lib/avr8js';
 export class USARTEmulator {
   private usart: AVRUSART;
   private onData: (char: string) => void;
+  private decoder = new TextDecoder('utf-8');
+  private encoder = new TextEncoder();
 
   constructor(usart: AVRUSART, onData: (char: string) => void) {
     this.usart = usart;
@@ -18,7 +20,10 @@ export class USARTEmulator {
 
     // Listen to every byte transmitted on the TX line
     this.usart.onByteTransmit = (value: number) => {
-      this.onData(String.fromCharCode(value));
+      const char = this.decoder.decode(new Uint8Array([value]), { stream: true });
+      if (char) {
+        this.onData(char);
+      }
     };
   }
 
@@ -26,10 +31,10 @@ export class USARTEmulator {
    * Send data to the AVR's serial RX buffer (from Serial Monitor input)
    */
   sendData(data: string): void {
-    for (let i = 0; i < data.length; i++) {
-      const byte = data.charCodeAt(i);
-      this.usart.writeByte(byte);
+    const bytes = this.encoder.encode(data);
+    for (let i = 0; i < bytes.length; i++) {
+      this.usart.writeByte(bytes[i]);
     }
-    console.log(`[USART] Sent ${data.length} bytes to AVR RX: "${data}"`);
+    console.log(`[USART] Sent ${bytes.length} bytes to AVR RX: "${data}"`);
   }
 }
