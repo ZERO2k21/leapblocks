@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited. deploy
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useEffect } from 'react';
 import { useAppState } from './hooks/useAppState';
