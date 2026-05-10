@@ -19,7 +19,7 @@ export class NTCTemperatureSensorElement extends LitElement {
   @property({ type: Number }) value = 25;
 
   readonly pinInfo: ElementPin[] = [
-    { name: 'GND', y: 26.2, x: 135, number: 1, signals: [GND()] },
+    { name: 'GND', y: 25, x: 135, number: 1, signals: [GND()] },
     { name: 'VCC', y: 35.8, x: 135, number: 2, signals: [VCC()] },
     { name: 'OUT', y: 45.5, x: 135, number: 3, signals: [analog(0)] },
   ];

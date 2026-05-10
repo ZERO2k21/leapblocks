@@ -21,6 +21,9 @@ export const SelectionToolbar: React.FC = () => {
     updateEdgeData
   } = useForgeStore();
 
+  const [irAddress, setIrAddress] = React.useState('0');
+  const [irCommand, setIrCommand] = React.useState('162');
+
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
   const selectedEdge = edges.find(e => e.id === selectedEdgeId);
 
@@ -72,9 +75,9 @@ export const SelectionToolbar: React.FC = () => {
     const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = parseFloat(e.target.value);
       if (config.isTopLevel) {
-        updateNodeData(selectedNode.id, { [config.key]: val });
+        updateNodeData(selectedNode!.id, { [config.key]: val });
       } else {
-        updateNodeData(selectedNode.id, {
+        updateNodeData(selectedNode!.id, {
           sensorValues: { ...currentValues, [config.key]: val }
         });
       }
@@ -132,14 +135,14 @@ export const SelectionToolbar: React.FC = () => {
         {LED_COLORS.map((lc) => (
           <button
             key={lc.color}
-            onClick={() => updateNodeData(selectedNode.id, { color: lc.color })}
+            onClick={() => updateNodeData(selectedNode!.id, { color: lc.color })}
             title={lc.name}
             style={{
               width: '16px',
               height: '16px',
               borderRadius: '1px',
               backgroundColor: lc.color,
-              border: selectedNode.data?.color === lc.color ? '2px solid var(--lp-accent-primary)' : '1px solid rgba(255,255,255,0.1)',
+              border: selectedNode?.data?.color === lc.color ? '2px solid var(--lp-accent-primary)' : '1px solid rgba(255,255,255,0.1)',
               cursor: 'pointer',
               transition: 'all 0.1s',
             }}
@@ -173,8 +176,60 @@ export const SelectionToolbar: React.FC = () => {
     );
   };
 
+  const renderIRReceiverInput = () => {
+    if (nodeType !== 'ir-receiver') return null;
+    return (
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '2px', border: '1px solid var(--lp-border)' }}>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', textTransform: 'uppercase' }}>ADDR</span>
+        <input
+          type="text"
+          value={irAddress}
+          onChange={(e) => setIrAddress(e.target.value)}
+          title="IR Address (0-255)"
+          style={{ width: '30px', background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+        />
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', textTransform: 'uppercase' }}>CMD</span>
+        <input
+          type="text"
+          value={irCommand}
+          onChange={(e) => setIrCommand(e.target.value)}
+          title="IR Command (0-255)"
+          style={{ width: '30px', background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+        />
+        <button
+          onClick={() => {
+            const addr = parseInt(irAddress) || 0;
+            const cmd = parseInt(irCommand) || 0;
+            if (selectedNode?.id) {
+              import('../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+                circuitEngine.sendIRSignalToReceiver(selectedNode.id, addr, cmd);
+              });
+            }
+          }}
+          style={{
+            background: 'var(--lp-accent-primary)',
+            color: 'black',
+            border: 'none',
+            padding: '2px 8px',
+            borderRadius: '2px',
+            fontSize: '9px',
+            fontWeight: 900,
+            cursor: 'pointer',
+            textTransform: 'uppercase'
+          }}
+        >
+          Send
+        </button>
+      </div>
+    );
+  };
+
   return (
-    <div style={{
+    <div 
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+      style={{
       position: 'absolute',
       bottom: '24px',
       left: '50%',
@@ -207,6 +262,7 @@ export const SelectionToolbar: React.FC = () => {
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             {renderSlider()}
             {renderLEDColorPalette()}
+            {renderIRReceiverInput()}
           </div>
         </>
       ) : (

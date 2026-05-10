@@ -27,8 +27,8 @@ export class MPU6050Element extends LitElement {
   @property({ type: Boolean }) led1 = false;
 
   readonly pinInfo: ElementPin[] = [
-    { name: 'INT', x: 7.28, y: 5.78, signals: [] },
-    { name: 'AD0', x: 16.9, y: 5.78, signals: [] },
+    { name: 'INT', x: 7.28, y: 7, signals: [] },
+    { name: 'AD0', x: 16.9, y: 7, signals: [] },
     { name: 'XCL', x: 26.4, y: 5.78, signals: [] },
     { name: 'XDA', x: 36.0, y: 5.78, signals: [] },
     { name: 'SDA', x: 45.6, y: 5.78, signals: [i2c('SDA')] },
@@ -169,8 +169,8 @@ export class MPU6050Element extends LitElement {
             <circle cx="45.6" cy="5.78" r="2.81" />
             <circle cx="36"   cy="5.78" r="2.81" />
             <circle cx="26.4" cy="5.78" r="2.81" />
-            <circle cx="16.9" cy="5.78" r="2.81" />
-            <circle cx="7.28" cy="5.78" r="2.81" />
+            <circle cx="16.9" cy="7" r="2.81" />
+            <circle cx="7.28" cy="7" r="2.81" />
             <circle cx="74.4" cy="5.78" r="2.81" />
           </g>
 
