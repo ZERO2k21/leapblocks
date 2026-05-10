@@ -1,8 +1,7 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
+/* Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+* All rights reserved. Proprietary and confidential.
+* Unauthorized copying, distribution, or modification is strictly prohibited.
+*/
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
 import { simulationRunner, PinState } from './SimulationRunner';
 import { HD44780 } from './HD44780';
@@ -11,6 +10,7 @@ import { PCF8574 } from './PCF8574';
 import { DHT } from './DHT';
 import { NeoPixelEmulator } from './NeoPixelEmulator';
 import { StepperEmulator } from './StepperEmulator';
+import { StepperEmulator as UnifiedStepperEmulator, type StepperModel } from '../../simulation/components/StepperEmulator';
 import { SSD1306I2CSlave } from './SSD1306I2CSlave';
 import { ILI9341SPISlave } from './ILI9341SPISlave';
 import { MPU6050I2CSlave } from './MPU6050I2CSlave';
@@ -78,11 +78,12 @@ function pulseSensorADC(phase: number): number {
 class CircuitEngine {
   private activeSubscriptions = new Map<string, () => void>();
   private lcdEmulators = new Map<string, HD44780>();
-  private peripheralPinBuffers = new Map<string, Record<string, boolean>>();
+  private peripheralPinBuffers = new Map<string, Record<string, any>>();
   private i2cBusManager = new I2CBusManager();
   private dhtEmulators = new Map<string, DHT>();
   private neoPixelEmulators = new Map<string, NeoPixelEmulator>();
   private stepperEmulators = new Map<string, StepperEmulator>();
+  private unifiedStepperEmulators = new Map<string, UnifiedStepperEmulator>();
   private ili9341Slaves = new Map<string, ILI9341SPISlave>();
   private mpu6050Slaves = new Map<string, MPU6050I2CSlave>();
   private ssd1306Slaves = new Map<string, SSD1306I2CSlave>();
@@ -92,6 +93,7 @@ class CircuitEngine {
   private rotaryEncoderEmulators = new Map<string, RotaryEncoderEmulator>();
   private _pendingLibraryClasses = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
+  private stepperIdleRaf: number | null = null;
   private isInitialized = false;
 
   /**
@@ -177,9 +179,10 @@ class CircuitEngine {
     const queue = [{ id: startNodeId, pin: startPin, resistance: 0 }];
     const visited = new Set<string>();
 
+    const targetTypes = ['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'l298n', 'battery-12v'];
+
     while (queue.length > 0) {
       const current = queue.shift()!;
-      // Always use clean pin names for visited set and logic
       const cleanStartPin = current.pin.replace(/__target$/, '');
       const key = `${current.id}-${cleanStartPin}`;
       if (visited.has(key)) continue;
@@ -187,121 +190,87 @@ class CircuitEngine {
 
       const node = nodes.find(n => n.id === current.id);
       if (!node) continue;
-
       const nodeType = node.data?.type;
 
-      if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring'].includes(nodeType)) {
+      // 1. If this is a target component (and not where we started), record it
+      if (current.id !== startNodeId && targetTypes.includes(nodeType)) {
         targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
-      } else if (nodeType === 'ks2e-m-dc5') {
-        // When tracing FROM the relay itself (start node), follow external edges
-        // from the specified pin — don't apply internal contact routing
-        if (current.id === startNodeId) {
+        // Stop tracing "through" simple terminal components
+        if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'battery-12v'].includes(nodeType)) {
+          continue;
+        }
+      }
+      
+      // Also include the start node itself if it's a target (preserving legacy behavior for simple components)
+      if (current.id === startNodeId && targetTypes.includes(nodeType)) {
+         targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
+      }
+
+      // 2. Follow internal/specialized routing
+      if (nodeType === 'ks2e-m-dc5') {
+        const energized = node.data?.relayEnergized ?? false;
+        const contactMap: Record<string, string> = energized
+          ? { 'P1': 'NO1', 'P2': 'NO2', 'NO1': 'P1', 'NO2': 'P2' }
+          : { 'P1': 'NC1', 'P2': 'NC2', 'NC1': 'P1', 'NC2': 'P2' };
+        const exitPin = contactMap[cleanStartPin];
+        if (exitPin) {
           const outEdges = edges.filter(e =>
-            (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === cleanStartPin) ||
-            (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === cleanStartPin)
+            (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
+            (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
           );
           for (const edge of outEdges) {
             const nextId = edge.source === current.id ? edge.target : edge.source;
             const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
             queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
-          }
-        } else {
-          // Relay contact traversal: signal enters on a pole pin (P1/P2) and exits via the active contact
-          const relayNode = nodes.find(n => n.id === current.id);
-          const energized = relayNode?.data?.relayEnergized ?? false;
-
-          // Map pole → active contact based on relay state
-          const contactMap: Record<string, string> = energized
-            ? { 'P1': 'NO1', 'P2': 'NO2' }
-            : { 'P1': 'NC1', 'P2': 'NC2' };
-
-          const exitPin = contactMap[cleanStartPin];
-          if (exitPin) {
-            const downstreamEdges = edges.filter(e =>
-              (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
-              (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
-            );
-            for (const edge of downstreamEdges) {
-              const nextId = edge.source === current.id ? edge.target : edge.source;
-              const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
-              queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
-            }
           }
         }
       } else if (nodeType === 'relay-module') {
-        // When tracing FROM the relay itself (start node), follow external edges
-        // from the specified pin — don't apply internal contact routing
-        if (current.id === startNodeId) {
+        const energized = node.data?.relayEnergized ?? false;
+        const activeContact = energized ? 'NO' : 'NC';
+        let exitPin = '';
+        if (cleanStartPin === 'COM') exitPin = activeContact;
+        else if (cleanStartPin === activeContact) exitPin = 'COM';
+
+        if (exitPin) {
           const outEdges = edges.filter(e =>
-            (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === cleanStartPin) ||
-            (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === cleanStartPin)
+            (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
+            (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
           );
           for (const edge of outEdges) {
             const nextId = edge.source === current.id ? edge.target : edge.source;
             const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
             queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
-          }
-        } else {
-          // Relay module contact traversal: signal enters on COM and exits via active contact (NO or NC)
-          const relayNode = nodes.find(n => n.id === current.id);
-          const energized = relayNode?.data?.relayEnergized ?? false;
-
-          // When energized: COM connects to NO
-          // When de-energized: COM connects to NC
-          const activeContact = energized ? 'NO' : 'NC';
-
-          // If signal is on COM, route to active contact
-          if (cleanStartPin === 'COM') {
-            const downstreamEdges = edges.filter(e =>
-              (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === activeContact) ||
-              (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === activeContact)
-            );
-            for (const edge of downstreamEdges) {
-              const nextId = edge.source === current.id ? edge.target : edge.source;
-              const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
-              queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
-            }
-          }
-          // If signal is on NO or NC, route to COM (bidirectional)
-          else if (cleanStartPin === activeContact) {
-            const downstreamEdges = edges.filter(e =>
-              (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === 'COM') ||
-              (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === 'COM')
-            );
-            for (const edge of downstreamEdges) {
-              const nextId = edge.source === current.id ? edge.target : edge.source;
-              const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
-              queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
-            }
           }
         }
       } else if (nodeType === 'resistor') {
         const rValue = Number(node.data?.sensorValues?.value ?? 0);
-        console.log(`[FORGE CIRCUIT] Net trace through resistor (${current.id}): +${rValue} ohms`);
-
-        // Find the other pin of the resistor
         let exitPin = '';
-        if (cleanStartPin === '1' || cleanStartPin === 'pin_1' || cleanStartPin === 'IN') {
-          exitPin = node.data?.pinOUT ? 'OUT' : '2';
-        } else {
-          exitPin = node.data?.pinIN ? 'IN' : '1';
-        }
-
-        // Robust fallback: if we don't know the pins, check if they are 'IN'/'OUT'
-        if (cleanStartPin === 'IN') exitPin = 'OUT';
-        else if (cleanStartPin === 'OUT') exitPin = 'IN';
-        else if (cleanStartPin === '1' || cleanStartPin === 'pin_1') exitPin = '2';
-        else if (cleanStartPin === '2' || cleanStartPin === 'pin_2') exitPin = '1';
-
-        const downstreamEdges = edges.filter(e =>
+        if (cleanStartPin === '1' || cleanStartPin === 'pin_1' || cleanStartPin === 'IN') exitPin = node.data?.pinOUT ? 'OUT' : '2';
+        else exitPin = node.data?.pinIN ? 'IN' : '1';
+        
+        const outEdges = edges.filter(e =>
           (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
           (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
         );
-
-        for (const edge of downstreamEdges) {
+        for (const edge of outEdges) {
           const nextId = edge.source === current.id ? edge.target : edge.source;
           const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
           queue.push({ id: nextId, pin: nextPin, resistance: current.resistance + rValue });
+        }
+      }
+      
+      // 3. Always follow the wire connected to the CURRENT pin externally
+      // This is critical for the start node and for nodes that aren't terminal components.
+      const isTerminal = ['led', 'buzzer', 'rgb-led', 'dc-motor', 'battery-12v'].includes(nodeType);
+      if (current.id === startNodeId || !isTerminal) {
+        const outEdges = edges.filter(e =>
+          (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === cleanStartPin) ||
+          (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === cleanStartPin)
+        );
+        for (const edge of outEdges) {
+          const nextId = edge.source === current.id ? edge.target : edge.source;
+          const nextPin = (edge.source === current.id ? edge.targetHandle : edge.sourceHandle) || '';
+          queue.push({ id: nextId, pin: nextPin, resistance: current.resistance });
         }
       }
     }
@@ -409,7 +378,7 @@ class CircuitEngine {
 
       begin(_vcc?: number, addr?: number): boolean {
         this._addr = addr || 0x3C;
-        console.log(`[OLED] begin() called: addr=0x${this._addr.toString(16)}, ssd1306Slaves.size=${ssd1306Slaves.size}`);
+        // console.log(`[OLED] begin() called: addr=0x${this._addr.toString(16)}, ssd1306Slaves.size=${ssd1306Slaves.size}`);
 
         // Find the matching slave by address
         for (const [nodeId, slave] of ssd1306Slaves) {
@@ -440,10 +409,10 @@ class CircuitEngine {
       }
       clearDisplay() {
         this._buf.fill(0);
-        console.log(`[OLED] clearDisplay()`);
+        // console.log(`[OLED] clearDisplay()`);
       }
       display() {
-        console.log(`[OLED] display() called — flushing ${this._buf.length} bytes to emulator`);
+        // console.log(`[OLED] display() called — flushing ${this._buf.length} bytes to emulator`);
         this._flush();
       }
       setTextSize(s: number) { this._textsize = Math.max(1, s | 0); }
@@ -490,12 +459,12 @@ class CircuitEngine {
       }
       print(v: any, base?: number) {
         const s = (typeof v === 'number' && base !== undefined && base !== 10) ? (v >>> 0).toString(base).toUpperCase() : String(v);
-        console.log(`[OLED] print("${s}")`);
+        // console.log(`[OLED] print("${s}")`);
         this._writeStr(s);
       }
       println(v: any = '', base?: number) {
         const s = (typeof v === 'number' && base !== undefined && base !== 10) ? (v >>> 0).toString(base).toUpperCase() : String(v);
-        console.log(`[OLED] println("${s}")`);
+        // console.log(`[OLED] println("${s}")`);
         this._writeStr(s + '\n');
       }
       write(c: number) { this._writeChar(c); }
@@ -533,7 +502,7 @@ class CircuitEngine {
         // Count non-zero bytes to verify pixels were written
         let nonZero = 0;
         for (let i = 0; i < this._buf.length; i++) if (this._buf[i] !== 0) nonZero++;
-        console.log(`[OLED] _flush(): ${nonZero}/${this._buf.length} non-zero bytes → calling forceFlush(true)`);
+        // console.log(`[OLED] _flush(): ${nonZero}/${this._buf.length} non-zero bytes → calling forceFlush(true)`);
 
         em.forceFlush(true);
         console.log(`[OLED] _flush() complete`);
@@ -880,6 +849,7 @@ class CircuitEngine {
     this.neoPixelEmulators.clear();
     this.stepperEmulators.forEach(e => e.destroy());
     this.stepperEmulators.clear();
+    this.unifiedStepperEmulators.clear();
     this.ili9341Slaves.forEach(s => s.detach());
     this.ili9341Slaves.clear();
     this.mpu6050Slaves.clear();
@@ -888,6 +858,10 @@ class CircuitEngine {
     this.rotaryDialerEmulators.clear();
     this.tiltSwitchEmulators.clear();
     this.rotaryEncoderEmulators.clear();
+    if (this.stepperIdleRaf !== null) {
+      cancelAnimationFrame(this.stepperIdleRaf);
+      this.stepperIdleRaf = null;
+    }
     // Cancel all heart-beat animation timers
     this.heartBeatTimers.forEach(id => cancelAnimationFrame(id));
     this.heartBeatTimers.clear();
@@ -1150,6 +1124,15 @@ class CircuitEngine {
     // Applied via syncI2CBridge() called from SimulationRunner.start() after initTranspiled()
     this.syncI2CBridge();
 
+    const tickUnifiedSteppers = () => {
+      this.unifiedStepperEmulators.forEach((emulator, nodeId) => {
+        emulator.checkIdle();
+        updateNodeData(nodeId, emulator.getState());
+      });
+      this.stepperIdleRaf = requestAnimationFrame(tickUnifiedSteppers);
+    };
+    this.stepperIdleRaf = requestAnimationFrame(tickUnifiedSteppers);
+
     // 2. Map board nodes (Arduino/ESP32) and their connected peripherals
     const boardNodes = nodes.filter(n =>
       n.data?.type === 'arduino-uno' ||
@@ -1211,13 +1194,13 @@ class CircuitEngine {
           const pType = currentStateStore.nodes.find(n => n.id === peripheralId)?.data?.type;
 
           // Log 7-segment related activity
-          if (pType === '7segment') {
+          /* if (pType === '7segment') {
             console.log(`[CIRCUIT 7SEG] Listener triggered: ${avrPin} = ${state}, peripheral pin: ${peripheralPinName}`);
-          }
+          } */
 
-          const isComplexPeripheral = ['stepper-motor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
+          const isComplexPeripheral = ['stepper-motor', 'stepperMotor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
             'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5', 'relay-module',
-            '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer'].includes(pType);
+            '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer', 'l298n'].includes(pType);
 
           // 1. Trace the electrical network — only for simple output peripherals
           if (!isComplexPeripheral) {
@@ -1267,6 +1250,25 @@ class CircuitEngine {
                 else if (target.type === 'buzzer') {
                   updates.intensity = intensity;
                   updates.hasSignal = isHigh && hasGround;
+                }
+                else if (target.type === 'dc-motor') {
+                  // DC Motor logic: calculate speed and direction based on POS and NEG pins
+                  const pos = target.pinName === 'POS' ? isHigh : !!currentPinStates['pin_POS'];
+                  const neg = target.pinName === 'NEG' ? isHigh : !!currentPinStates['pin_NEG'];
+                  let speed = 0;
+                  let direction = 'cw';
+
+                  if (pos && !neg) {
+                    speed = 1.0; // Full speed clockwise
+                    direction = 'cw';
+                  } else if (!pos && neg) {
+                    speed = 1.0; // Full speed counter-clockwise
+                    direction = 'ccw';
+                  }
+
+                  updates.speed = speed;
+                  updates.direction = direction;
+                  // console.log(`[CIRCUIT MOTOR] Setting DC motor speed to ${speed}, direction to ${direction}, pos=${pos}, neg=${neg}`);
                 }
 
                 updates.damaged = !hasGround; // Mark as damaged if no ground
@@ -1592,30 +1594,123 @@ class CircuitEngine {
             // Supports both wiring modes:
             //   4-wire (A+, B+, A-, B-) — Arduino Stepper.h / ULN2003
             //   STEP+DIR (A4988 / DRV8825)
+            // --- L298N Motor Driver Emulation ---
+            if (pType === 'l298n') {
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              
+              // Only process if the pin state actually changed in the buffer
+              if (buf[peripheralPinName] === isHigh && buf['_initialized']) {
+                return;
+              }
+              buf[peripheralPinName] = isHigh;
+              buf['_initialized'] = true;
+
+              // Cache the 12V terminal power check (very expensive trace)
+              // Only re-check if graph hasn't been checked for a while or on start
+              if (buf['_lastPowerCheck'] === undefined || (Date.now() - (buf['_lastPowerCheck'] as any)) > 1000) {
+                // FIXED: traceNet now correctly follows wires out of the 12V pin
+                buf['_has12VPower'] = this.traceNet(peripheralId, '12V').some(t => t.type === 'battery-12v');
+                buf['_lastPowerCheck'] = Date.now();
+              }
+              
+              const has12VPower = !!buf['_has12VPower'];
+              const ena = (buf['ENA'] !== false) && has12VPower; 
+              const in1 = !!buf['IN1'];
+              const in2 = !!buf['IN2'];
+              const enb = (buf['ENB'] !== false) && has12VPower; 
+              const in3 = !!buf['IN3'];
+              const in4 = !!buf['IN4'];
+
+              // Update visuals for L298N itself
+              updateNodeData(peripheralId, { ena, enb, in1, in2, in3, in4 });
+
+              // Motor A Logic (OUT1, OUT2)
+              let a_pos = false, a_neg = false;
+              if (ena) {
+                if (in1 && !in2) { a_pos = true; a_neg = false; }
+                else if (!in1 && in2) { a_pos = false; a_neg = true; }
+              }
+
+              // Motor B Logic (OUT3, OUT4)
+              let b_pos = false, b_neg = false;
+              if (enb) {
+                if (in3 && !in4) { b_pos = true; b_neg = false; }
+                else if (!in3 && in4) { b_pos = false; b_neg = true; }
+              }
+
+              // Only propagate if motor outputs changed to avoid redundant graph scans
+              const motorStateKey = `${a_pos}${a_neg}${b_pos}${b_neg}`;
+              if (buf['_lastMotorState'] === motorStateKey) return;
+              buf['_lastMotorState'] = motorStateKey;
+
+              const propagate = (outPin: string, signal: boolean) => {
+                const targets = this.traceNet(peripheralId, outPin);
+                targets.forEach(target => {
+                  const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
+                  if (!targetNode) return;
+                  const pinKey = `pin_${target.pinName}`;
+                  const currentPinStates = targetNode.data?.pinStates || {};
+                  
+                  // Skip if target pin state is already what we want
+                  if (currentPinStates[pinKey] === signal) return;
+
+                  const newPinStates = { ...currentPinStates, [pinKey]: signal };
+
+                  if (target.type === 'dc-motor') {
+                    const pos = !!newPinStates['pin_POS'];
+                    const neg = !!newPinStates['pin_NEG'];
+                    let speed = 0;
+                    let direction = 'cw';
+                    if (pos && !neg) {
+                      speed = 1.0; 
+                      direction = 'cw';
+                    } else if (!pos && neg) {
+                      speed = 1.0; 
+                      direction = 'ccw';
+                    }
+                    updateNodeData(target.nodeId, { pinStates: newPinStates, speed, direction });
+                  } else {
+                    updateNodeData(target.nodeId, { pinStates: newPinStates });
+                  }
+                });
+              };
+
+              propagate('OUT1', a_pos);
+              propagate('OUT2', a_neg);
+              propagate('OUT3', b_pos);
+              propagate('OUT4', b_neg);
+            }
+
+            // --- Stepper Motor Emulation ---
             if (peripheralNode.data?.type === 'stepper-motor') {
               if (!this.stepperEmulators.has(peripheralId)) {
                 console.log(`[STEPPER] Wiring 4-wire emulator for node ${peripheralId} — pin ${peripheralPinName} ← AVR ${avrPin}`);
-                let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
+                let pendingUpdate: { angle: number; stepCount: number; energized: boolean; actualAngleUnbounded?: number } | null = null;
                 let rafScheduled = false;
-                this.stepperEmulators.set(peripheralId, new StepperEmulator(({ angle, stepCount, energized }) => {
-                  pendingUpdate = { angle, stepCount, energized };
+                this.stepperEmulators.set(peripheralId, new StepperEmulator((state) => {
+                  pendingUpdate = {
+                    angle: state.angle,
+                    stepCount: state.stepCount,
+                    energized: state.energized,
+                    actualAngleUnbounded: state.actualAngleUnbounded
+                  };
                   if (!rafScheduled) {
                     rafScheduled = true;
                     requestAnimationFrame(() => {
                       rafScheduled = false;
                       if (pendingUpdate) {
-                        const { angle: a, stepCount: s, energized: e } = pendingUpdate;
+                        const { angle: a, stepCount: s, energized: e, actualAngleUnbounded: unbounded } = pendingUpdate;
                         pendingUpdate = null;
                         updateNodeData(peripheralId, {
-                          angle: a,
+                          angle: unbounded ?? a,  // Use unbounded angle for smooth CSS rotation
                           value: `${a.toFixed(1)}°`,
                           units: `${s > 0 ? '+' : ''}${s} steps`,
-                          arrow: e ? '#BEF264' : '',
+                          arrow: e ? 'orange' : '',  // Wokwi-style orange arrow when energized
                         });
                       }
                     });
                   }
-                }, { stepsPerRev: 200 }, peripheralId));
+                }, { stepsPerRev: 200, constrainRotation: false }, peripheralId));
               }
               const stepper = this.stepperEmulators.get(peripheralId)!;
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
@@ -1626,14 +1721,35 @@ class CircuitEngine {
               } else if (peripheralPinName === 'DIR') {
                 stepper.setDirection(isHigh);
               } else {
-                // 4-wire mode — order must match Stepper.h: processCoils(A+, B+, A-, B-)
+                // 4-wire mode — order must match Wokwi physical pin order: A-, A+, B+, B-
+                // This corresponds to Arduino Stepper.h (pin1, pin2, pin3, pin4)
                 stepper.processCoils(
+                  !!buf['A-'],
                   !!buf['A+'],
                   !!buf['B+'],
-                  !!buf['A-'],
                   !!buf['B-'],
                 );
               }
+            }
+
+            // --- Unified Stepper Motor Emulation (IN1-IN4, AVR + ESP32) ---
+            if (peripheralNode.data?.type === 'stepperMotor') {
+              if (!this.unifiedStepperEmulators.has(peripheralId)) {
+                const model = ((peripheralNode.data?.model as StepperModel) ?? 'bipolar_nema');
+                this.unifiedStepperEmulators.set(peripheralId, new UnifiedStepperEmulator(model));
+              }
+
+              const unified = this.unifiedStepperEmulators.get(peripheralId)!;
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              buf[peripheralPinName] = isHigh;
+
+              unified.onPinChange(
+                !!buf['IN1'],
+                !!buf['IN2'],
+                !!buf['IN3'],
+                !!buf['IN4'],
+              );
+              updateNodeData(peripheralId, unified.getState());
             }
 
             // --- Biaxial Stepper Emulation ---
@@ -1693,21 +1809,21 @@ class CircuitEngine {
               const innerStepper = this.stepperEmulators.get(innerKey)!;
 
               // Route pins to the correct emulator
-              // Outer motor coils: A1+, A1-, B1+, B1-
+              // Outer motor coils: A1-, A1+, B1+, B1- (Wokwi physical order)
               if (['A1+', 'A1-', 'B1+', 'B1-'].includes(peripheralPinName)) {
                 outerStepper.processCoils(
+                  !!buf['A1-'],
                   !!buf['A1+'],
                   !!buf['B1+'],
-                  !!buf['A1-'],
                   !!buf['B1-'],
                 );
               }
-              // Inner motor coils: A2+, A2-, B2+, B2-
+              // Inner motor coils: A2-, A2+, B2+, B2- (Wokwi physical order)
               if (['A2+', 'A2-', 'B2+', 'B2-'].includes(peripheralPinName)) {
                 innerStepper.processCoils(
+                  !!buf['A2-'],
                   !!buf['A2+'],
                   !!buf['B2+'],
-                  !!buf['A2-'],
                   !!buf['B2-'],
                 );
               }
@@ -2021,6 +2137,14 @@ class CircuitEngine {
     this.pushInputSignal(nodeId, 'VERT', false);
   }
 
+  public resetStepper(nodeId: string) {
+    const emulator = this.unifiedStepperEmulators.get(nodeId);
+    if (!emulator) return;
+    emulator.resetState();
+    const { updateNodeData } = useForgeStore.getState();
+    updateNodeData(nodeId, emulator.getState());
+  }
+
   /**
    * Called by interactive UI nodes (e.g. Buttons, PIR sensors) to push signals backwards into the board.
    * Handles both AVR (Arduino) and ESP32 boards.
@@ -2240,3 +2364,5 @@ class CircuitEngine {
 }
 
 export const circuitEngine = new CircuitEngine();
+
+

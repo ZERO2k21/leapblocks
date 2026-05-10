@@ -19,6 +19,8 @@
 
 import { IS_ELECTRON, isElectron } from '../../../../config/platform';
 import { CLOUD_COMPILER_URL } from '../../../../config/platform';
+import { browserLibraryStorage } from './BrowserLibraryStorage';
+
 const WEB_LIBS_KEY = 'electra_selected_libs';
 const LIBRARY_INDEX_URL = 'https://downloads.arduino.cc/libraries/library_index.json';
 
@@ -27,6 +29,7 @@ export interface Library {
   author: string;
   description: string;
   version: string;
+  url?: string;
   isInstalled?: boolean;
 }
 
@@ -53,6 +56,7 @@ async function loadIndex(): Promise<Library[]> {
             author: entry.author ?? entry.maintainer ?? '',
             description: entry.sentence ?? entry.paragraph ?? '',
             version: entry.version ?? '0.0.0',
+            url: entry.url,
           });
         }
       }
@@ -109,24 +113,41 @@ export const getLibraries = async (): Promise<Library[]> => {
         author: l.author ?? l.Author ?? '',
         description: l.sentence ?? l.description ?? '',
         version: l.version ?? l.Version ?? '?',
+        url: l.url,
       }));
     } catch (err) {
       console.warn('[LibraryService] getInstalledLibraries failed:', err);
       return [];
     }
   }
-  // Web: ask the local compile server — silently return [] if server not running
+
+  // Web: Use browser storage (IndexedDB) + Sync with local server
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch(`${CLOUD_COMPILER_URL}/libraries/installed`, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch (err: any) {
-    if (err?.name !== 'AbortError') {
-      console.warn('[LibraryService] /libraries/installed unavailable (server not running)');
+    console.log('[LibraryService] Getting libraries from browser storage...');
+    const storedLibs = await browserLibraryStorage.getInstalledLibraries();
+    
+    // Optional: Fetch from server to ensure sync
+    try {
+      const res = await fetch(`${CLOUD_COMPILER_URL}/libraries/installed`);
+      if (res.ok) {
+        const serverLibs = await res.json();
+        // Merge or prioritize server libs? For now, we'll just trust browser storage
+        // but this confirms server communication is working.
+        console.log(`[LibraryService] Server has ${serverLibs.length} libraries installed.`);
+      }
+    } catch (e) {
+      console.warn('[LibraryService] Could not reach compiler server for library sync.');
     }
+
+    return storedLibs.map(l => ({
+      name: l.name,
+      author: l.author,
+      description: l.description,
+      version: l.version,
+      url: (l as any).url,
+    }));
+  } catch (err) {
+    console.warn('[LibraryService] Browser storage failed:', err);
     return [];
   }
 };
@@ -136,30 +157,64 @@ export const installLibrary = async (lib: Library): Promise<{ success: boolean; 
     const result = await (window as any).electronAPI.installLibrary(lib.name);
     return result ?? { success: false, error: 'No response from installer' };
   }
+
+  // Web: Use browser storage (IndexedDB) + Sync with local server
   try {
-    const res = await fetch(`${CLOUD_COMPILER_URL}/libraries/install`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: lib.name }),
-    });
-    return await res.json();
+    console.log('[LibraryService] Installing library to browser storage:', lib.name);
+    const result = await browserLibraryStorage.installLibrary(lib);
+    
+    if (result.success) {
+      // Also trigger install on the compiler server so arduino-cli has it
+      console.log('[LibraryService] Syncing installation with compiler server...');
+      try {
+        await fetch(`${CLOUD_COMPILER_URL}/libraries/install`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: lib.name }),
+        });
+      } catch (e) {
+        console.warn('[LibraryService] Failed to sync install with server (it may be offline):', e);
+      }
+    }
+    
+    return result;
   } catch (err: any) {
     return { success: false, error: err.message };
   }
 };
 
-export const removeLibrary = async (name: string): Promise<void> => {
+export const removeLibrary = async (name: string): Promise<{ success: boolean; error?: string }> => {
   if (IS_ELECTRON || isElectron()) {
-    await (window as any).electronAPI.removeLibrary(name);
-    return;
+    try {
+      const result = await (window as any).electronAPI.removeLibrary(name);
+      return result ?? { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
   }
+
+  // Web: Use browser storage (IndexedDB) + Sync with local server
   try {
-    await fetch(`${CLOUD_COMPILER_URL}/libraries/remove`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    });
-  } catch (err) {
-    console.warn('[LibraryService] /libraries/remove failed:', err);
+    console.log('[LibraryService] Removing library from browser storage:', name);
+    const result = await browserLibraryStorage.uninstallLibrary(name);
+    
+    if (result.success) {
+      // Also trigger remove on the compiler server
+      console.log('[LibraryService] Syncing removal with compiler server...');
+      try {
+        await fetch(`${CLOUD_COMPILER_URL}/libraries/remove`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name }),
+        });
+      } catch (e) {
+        console.warn('[LibraryService] Failed to sync removal with server:', e);
+      }
+    }
+
+    return result;
+  } catch (err: any) {
+    console.warn('[LibraryService] Browser storage removal failed:', err);
+    return { success: false, error: err.message };
   }
 };

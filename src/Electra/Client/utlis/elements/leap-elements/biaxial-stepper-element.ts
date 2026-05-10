@@ -39,12 +39,6 @@ export class BiaxialStepperElement extends LitElement {
   // the current inner hand shape
   @property() innerHandShape: HandShape = 'plain';
 
-  // ── Cumulative angle tracking (avoids wrap-around flip on CSS transition) ──
-  private _outerCumulative = 0;
-  private _outerLastMod = 0;
-  private _innerCumulative = 0;
-  private _innerLastMod = 0;
-
   get pinInfo(): ElementPin[] {
     const pinXY = (y: number) => {
       return { x: 45, y: (28.9 + y * 2.54) * mmToPix };
@@ -60,24 +54,6 @@ export class BiaxialStepperElement extends LitElement {
       { name: 'B2+', ...pinXY(6), number: 7, signals: [] },
       { name: 'B2-', ...pinXY(7), number: 8, signals: [] },
     ];
-  }
-
-  update(changedProperties: Map<string, unknown>) {
-    if (changedProperties.has('outerHandAngle')) {
-      let delta = this.outerHandAngle - this._outerLastMod;
-      if (delta > 180) delta -= 360;
-      if (delta < -180) delta += 360;
-      this._outerCumulative += delta;
-      this._outerLastMod = this.outerHandAngle;
-    }
-    if (changedProperties.has('innerHandAngle')) {
-      let delta = this.innerHandAngle - this._innerLastMod;
-      if (delta > 180) delta -= 360;
-      if (delta < -180) delta += 360;
-      this._innerCumulative += delta;
-      this._innerLastMod = this.innerHandAngle;
-    }
-    super.update(changedProperties);
   }
 
   readonly handMap: { [key: string]: (len: number) => HandDesc } = {
@@ -240,9 +216,8 @@ export class BiaxialStepperElement extends LitElement {
               class="cls-h"
               style="
                 transform: translate(${x}px, ${y}px)
-                           rotate(${270 + this._outerCumulative}deg)
+                           rotate(${270 + this.outerHandAngle}deg)
                            translate(-${outerPathDesc.xOff}px, -${outerPathDesc.yOff}px);
-                transition: transform 80ms linear;
                 transform-box: fill-box;
                 transform-origin: ${outerPathDesc.xOff}px ${outerPathDesc.yOff}px;
               "
@@ -257,9 +232,8 @@ export class BiaxialStepperElement extends LitElement {
               class="cls-h"
               style="
                 transform: translate(${x}px, ${y}px)
-                           rotate(${270 + this._innerCumulative}deg)
+                           rotate(${270 + this.innerHandAngle}deg)
                            translate(-${innerPathDesc.xOff}px, -${innerPathDesc.yOff}px);
-                transition: transform 80ms linear;
                 transform-box: fill-box;
                 transform-origin: ${innerPathDesc.xOff}px ${innerPathDesc.yOff}px;
               "

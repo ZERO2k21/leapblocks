@@ -57,7 +57,7 @@ function startBuildServer() {
   }
 
   buildServerProcess = spawn('node', [serverPath], {
-    env: { ...process.env, BUILD_PORT: '3001' },
+    env: { ...process.env, BUILD_PORT: '3002' },
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: false,
   });

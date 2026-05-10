@@ -24,7 +24,7 @@ import { PartPicker } from './Library/PartPicker';
 import { SelectionToolbar } from './SelectionToolbar';
 import { WireEdge } from './Edges/WireEdge';
 import { PhysicalConnectionLine } from './Edges/PhysicalConnectionLine';
-import { Plus, Play, Square, CircleHelp, RotateCcw } from 'lucide-react';
+import { Plus, Play, Square, RotateCcw } from 'lucide-react';
 
 // Define custom node types outside component to prevent re-renders
 const nodeTypes = {
@@ -55,7 +55,6 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [showPicker, setShowPicker] = useState(false);
 
   // Sync store -> local React Flow state
   useEffect(() => {
@@ -120,7 +119,6 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
   const handleAddPart = (type: string) => {
     const center = { x: 400, y: 300 };
     addNode(type, center, { label: `${type.toUpperCase()}` });
-    setShowPicker(false);
   };
 
   return (
@@ -129,9 +127,9 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
       style={{
         width: '100%',
         height: '100%',
-        background: '#f8fafc',
+        background: 'var(--lp-dark-bg)',
         position: 'relative',
-        backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(0,0,0,0.03) 1px, transparent 0)',
+        backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0)',
         backgroundSize: '24px 24px'
       }}
       onDrop={onDrop}
@@ -160,8 +158,8 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
         <Background
           variant={BackgroundVariant.Dots}
           gap={24}
-          size={1.5}
-          color="rgba(0,0,0,0.15)"
+          size={1}
+          color="rgba(255,255,255,0.05)"
         />
 
         <Controls
@@ -199,6 +197,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
         .react-flow__edge { pointer-events: all; }
         .react-flow__nodes { z-index: 50 !important; }
         .react-flow__handle { z-index: 10 !important; }
+        .react-flow__attribution { display: none !important; }
         
         /* Modern Controls Styling */
         .glass-controls button {
@@ -223,17 +222,16 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
       {/* ── FLOATING ACTION PANEL (Leap Style) ────────────────── */}
       <div className="canvas-action-panel" style={{
         position: 'absolute',
-        top: '20px',
-        right: '20px',
+        top: '16px',
+        right: '16px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '8px',
-        padding: '8px',
-        background: 'rgba(255, 255, 255, 0.7)',
-        backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(0,0,0,0.06)',
-        borderRadius: '24px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+        gap: '6px',
+        padding: '6px',
+        background: 'var(--lp-dark-surface)',
+        border: '1px solid var(--lp-border)',
+        borderRadius: '4px',
+        boxShadow: 'var(--lp-shadow)',
         zIndex: 100
       }}>
         {/* Play/Stop Button */}
@@ -245,18 +243,17 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
             width: '48px',
             height: '48px',
             borderRadius: '20px',
-            background: isSimulating ? '#ef4444' : '#10b981',
+            background: isSimulating ? 'var(--lp-rose)' : 'var(--lp-emerald)',
             border: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
             cursor: 'pointer',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: isSimulating ? '0 0 20px rgba(239, 68, 68, 0.4)' : '0 4px 12px rgba(16, 185, 129, 0.3)'
+            transition: 'all 0.2s ease',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
         >
           {isCompiling ? (
             <div className="spinner" style={{ width: 18, height: 18, border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
@@ -294,54 +291,29 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
 
         {/* Add Component Button */}
         <button
-          onClick={() => setShowPicker(!showPicker)}
+          onClick={() => store.setShowPartPicker(!store.showPartPicker)}
           style={{
             width: '48px',
             height: '48px',
             borderRadius: '20px',
-            background: '#7B4FC4',
+            background: 'var(--lp-accent-primary)',
             border: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#fff',
+            color: '#000',
             cursor: 'pointer',
-            transition: 'all 0.3s',
-            boxShadow: '0 4px 12px rgba(123, 79, 196, 0.3)'
+            transition: 'all 0.2s',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.background = '#8B5CF6'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#7B4FC4'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--lp-accent-bright)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--lp-accent-primary)'; }}
         >
           <Plus size={24} />
         </button>
 
-        {/* Help Button */}
-        <button
-          style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '20px',
-            background: 'transparent',
-            border: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#94a3b8',
-            cursor: 'pointer'
-          }}
-        >
-          <CircleHelp size={20} />
-        </button>
       </div>
 
-      {/* ── PART PICKER POPOVER ─────────────────────────── */}
-      {showPicker && (
-        <PartPicker
-          onSelect={handleAddPart}
-          onClose={() => setShowPicker(false)}
-          currentBoard={board as 'arduino-uno' | 'esp32-c3'}
-        />
-      )}
+      {/* ComponentSidebar is now docked in ForgeStudio */}
     </div>
   );
 };

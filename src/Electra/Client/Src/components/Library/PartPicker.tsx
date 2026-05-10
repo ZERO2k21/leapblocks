@@ -1,32 +1,27 @@
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState } from 'react';
 import {
   Search,
-  Cpu,
   Lightbulb,
   Smartphone,
   Gauge,
   MousePointer2,
-  X
+  X,
+  LayoutGrid
 } from 'lucide-react';
 
 const CATEGORIES = [
-  { id: 'all', name: 'All', icon: Search },
-  { id: 'outputs', name: 'Outputs', icon: Lightbulb },
-  { id: 'displays', name: 'Displays', icon: Smartphone },
-  { id: 'sensors', name: 'Sensors', icon: Gauge },
-  { id: 'inputs', name: 'Inputs', icon: MousePointer2 },
+  { id: 'all', name: 'ALL', icon: LayoutGrid },
+  { id: 'outputs', name: 'OUT', icon: Lightbulb },
+  { id: 'displays', name: 'DSPL', icon: Smartphone },
+  { id: 'sensors', name: 'SENS', icon: Gauge },
+  { id: 'inputs', name: 'INP', icon: MousePointer2 },
 ];
 
 const COMPONENTS = [
-  // BOARDS - Only Arduino Uno and ESP32-C3 supported
-  { id: 'arduino-uno', name: 'Arduino Uno', category: 'boards', desc: 'Standard microcontroller' },
-  { id: 'esp32-c3', name: 'ESP32-C3', category: 'boards', desc: 'RISC-V WiFi & Bluetooth MCU' },
-
   // OUTPUTS
   { id: 'led', name: 'LED', category: 'outputs', desc: 'Standard 5mm LED' },
   { id: 'rgb-led', name: 'RGB LED', category: 'outputs', desc: 'Multi-color LED' },
@@ -39,17 +34,19 @@ const COMPONENTS = [
   { id: 'stepper-motor', name: 'Stepper Motor', category: 'outputs', desc: 'Step motor' },
   { id: 'biaxial-stepper', name: 'Biaxial Stepper', category: 'outputs', desc: 'Dual-axis stepper' },
   { id: 'a4988', name: 'A4988 Driver', category: 'outputs', desc: 'Stepper motor driver' },
+  { id: 'l298n', name: 'L298N Driver', category: 'outputs', desc: 'Dual DC motor driver' },
+  { id: 'dc-motor', name: 'DC Motor', category: 'outputs', desc: 'Simple DC motor' },
   { id: 'ks2e-m-dc5', name: 'Relay', category: 'outputs', desc: '5V Relay' },
   { id: 'relay-module', name: 'Relay Module', category: 'outputs', desc: 'Single-channel relay' },
 
   // DISPLAYS
-  { id: 'lcd1602', name: 'LCD 1602', category: 'displays', desc: '16x2 Character display (parallel)' },
+  { id: 'lcd1602', name: 'LCD 1602', category: 'displays', desc: '16x2 Character display' },
   { id: 'lcd1602-i2c', name: 'LCD 1602 I²C', category: 'displays', desc: '16x2 Character display (I²C)' },
-  { id: 'lcd2004', name: 'LCD 2004', category: 'displays', desc: '20x4 Character display (parallel)' },
+  { id: 'lcd2004', name: 'LCD 2004', category: 'displays', desc: '20x4 Character display' },
   { id: 'lcd2004-i2c', name: 'LCD 2004 I²C', category: 'displays', desc: '20x4 Character display (I²C)' },
   { id: '7segment', name: '7-Segment', category: 'displays', desc: 'Numeric display' },
   { id: 'ssd1306', name: 'OLED SSD1306', category: 'displays', desc: '128x64 Graphics OLED' },
-  { id: 'ili9341', name: 'ILI9341 TFT', category: 'displays', desc: '2.8" SPI TFT display' },
+  { id: 'ili9341', name: 'ILI9341 TFT', category: 'displays', desc: '2.8" SPI TFT' },
 
   // SENSORS
   { id: 'dht22', name: 'DHT22', category: 'sensors', desc: 'Temp & Humidity' },
@@ -61,8 +58,6 @@ const COMPONENTS = [
   { id: 'flame-sensor', name: 'Flame Sensor', category: 'sensors', desc: 'IR flame detector' },
   { id: 'gas-sensor', name: 'Gas Sensor', category: 'sensors', desc: 'MQ-series gas sensor' },
   { id: 'heart-beat-sensor', name: 'Heart Rate', category: 'sensors', desc: 'Pulse sensor' },
-  { id: 'big-sound-sensor', name: 'Big Sound Sensor', category: 'sensors', desc: 'Microphone module' },
-  { id: 'small-sound-sensor', name: 'Small Sound Sensor', category: 'sensors', desc: 'Microphone module' },
   { id: 'hx711', name: 'HX711 Load Cell', category: 'sensors', desc: 'Weight sensor amp' },
   { id: 'ir-receiver', name: 'IR Receiver', category: 'sensors', desc: 'Infrared receiver' },
   { id: 'ds1307', name: 'DS1307 RTC', category: 'sensors', desc: 'Real-time clock' },
@@ -70,16 +65,13 @@ const COMPONENTS = [
 
   // INPUTS / PASSIVES
   { id: 'pushbutton', name: 'Pushbutton', category: 'inputs', desc: 'Momentary switch' },
-  { id: 'pushbutton-6mm', name: 'Pushbutton 6mm', category: 'inputs', desc: 'Small tactile button' },
   { id: 'potentiometer', name: 'Potentiometer', category: 'inputs', desc: 'Variable resistor' },
-  { id: 'slide-potentiometer', name: 'Slide Pot.', category: 'inputs', desc: 'Linear variable resistor' },
   { id: 'membrane-keypad', name: 'Keypad (4x4)', category: 'inputs', desc: 'Matrix keypad' },
   { id: 'slide-switch', name: 'Slide Switch', category: 'inputs', desc: 'SPDT toggle' },
-  { id: 'tilt-switch', name: 'Tilt Switch', category: 'inputs', desc: 'Tilt sensor switch' },
   { id: 'analog-joystick', name: 'Joystick', category: 'inputs', desc: '2-axis analog joystick' },
   { id: 'ky-040', name: 'Rotary Encoder', category: 'inputs', desc: 'Incremental encoder' },
-  { id: 'rotary-dialer', name: 'Rotary Dialer', category: 'inputs', desc: 'Classic rotary dial' },
-  { id: 'ir-remote', name: 'IR Remote', category: 'inputs', desc: 'Infrared remote control' },
+  { id: 'ir-remote', name: 'IR Remote', category: 'inputs', desc: 'Infrared remote' },
+  { id: 'battery-12v', name: '12V Battery', category: 'inputs', desc: '12V Lead-acid battery' },
   { id: 'resistor', name: 'Resistor', category: 'inputs', desc: 'Passive resistor' },
 ];
 
@@ -89,192 +81,203 @@ interface PartPickerProps {
   currentBoard?: 'arduino-uno' | 'esp32-c3';
 }
 
-export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, currentBoard }) => {
+export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredComponents = COMPONENTS.filter(c => {
-    // Hide board components - they're already selected
-    if (c.category === 'boards') {
-      return false;
-    }
-
     const matchesCategory = activeCategory === 'all' || c.category === activeCategory;
     const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   return (
-    <div className="part-picker-overlay" style={{
-      position: 'absolute',
-      top: '60px',
-      left: '20px',
-      width: '320px',
-      maxHeight: '400px',
-      background: 'rgba(30, 41, 59, 0.95)',
-      backdropFilter: 'blur(16px)',
-      borderRadius: '16px',
-      border: '1.5px solid rgba(148, 163, 184, 0.2)',
-      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
-      zIndex: 1000,
+    <div className="component-sidebar" style={{
+      width: '100%',
+      height: '100%',
+      background: 'var(--lp-dark-bg)',
       display: 'flex',
       flexDirection: 'column',
-      overflow: 'hidden'
+      borderLeft: '1px solid var(--lp-border)',
+      fontFamily: "'Space Mono', monospace"
     }}>
-      <div className="picker-header" style={{
-        padding: '12px 16px',
-        borderBottom: '1px solid rgba(148, 163, 184, 0.1)',
+      {/* Header */}
+      <div style={{
+        padding: '16px',
+        borderBottom: '1px solid var(--lp-border)',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        background: 'var(--lp-dark-surface)'
       }}>
-        <span style={{ color: '#f8fafc', fontWeight: 600, fontSize: '14px' }}>Add Component</span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ 
+            color: 'var(--lp-accent-primary)', 
+            fontSize: '12px', 
+            fontWeight: 700, 
+            letterSpacing: '1px' 
+          }}>LIBRARY.BROWSER</span>
+          <span style={{ color: 'var(--lp-zinc-400)', fontSize: '9px' }}>v1.0.4-STABLE</span>
+        </div>
         <button onClick={onClose} style={{
-          background: 'transparent',
+          background: 'none',
           border: 'none',
-          color: '#94a3b8',
+          color: 'var(--lp-zinc-400)',
           cursor: 'pointer',
           padding: '4px'
-        }}><X size={18} /></button>
+        }}><X size={14} /></button>
       </div>
 
-      <div className="picker-search" style={{ padding: '10px 16px' }}>
+      {/* Search Bar */}
+      <div style={{ padding: '12px' }}>
         <div style={{
-          background: 'rgba(15, 23, 42, 0.5)',
-          borderRadius: '8px',
+          background: 'var(--lp-zinc-800)',
           display: 'flex',
           alignItems: 'center',
-          padding: '0 10px'
+          padding: '0 8px',
+          border: '1px solid var(--lp-border)',
         }}>
-          <Search size={14} color="#64748b" />
+          <span style={{ color: 'var(--lp-accent-primary)', fontSize: '12px', marginRight: '4px' }}>&gt;</span>
           <input
             type="text"
-            placeholder="Search parts..."
+            placeholder="FILTER_PARTS..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               background: 'transparent',
               border: 'none',
-              padding: '8px',
-              color: '#f8fafc',
-              fontSize: '13px',
+              padding: '8px 4px',
+              color: 'var(--lp-zinc-400)',
+              fontSize: '11px',
               outline: 'none',
-              width: '100%'
+              width: '100%',
+              fontFamily: 'inherit'
             }}
           />
+          <Search size={12} color="var(--lp-zinc-600)" />
         </div>
       </div>
 
-      <div className="categories-strip" style={{
-        display: 'flex',
-        gap: '8px',
-        padding: '0 16px 10px',
-        overflowX: 'auto',
-        scrollbarWidth: 'none'
-      }}>
-        {CATEGORIES.map(cat => (
-          <button
-            key={cat.id}
-            onClick={() => setActiveCategory(cat.id)}
-            style={{
-              padding: '6px 12px',
-              borderRadius: '20px',
-              background: activeCategory === cat.id ? '#BEF264' : 'rgba(148, 163, 184, 0.1)',
-              color: activeCategory === cat.id ? '#0f172a' : '#94a3b8',
-              border: 'none',
-              fontSize: '11px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {cat.name}
-          </button>
-        ))}
-      </div>
+      {/* Categories & List Container */}
+      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+        {/* Vertical Categories */}
+        <div style={{
+          width: '56px',
+          borderRight: '1px solid var(--lp-border)',
+          display: 'flex',
+          flexDirection: 'column',
+          background: 'var(--lp-dark-surface)'
+        }}>
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              style={{
+                width: '100%',
+                height: '56px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                background: activeCategory === cat.id ? 'var(--lp-zinc-800)' : 'transparent',
+                border: 'none',
+                borderLeft: activeCategory === cat.id ? '2px solid var(--lp-accent-primary)' : '2px solid transparent',
+                color: activeCategory === cat.id ? 'var(--lp-accent-primary)' : 'var(--lp-zinc-400)',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              <cat.icon size={16} />
+              <span style={{ fontSize: '8px', fontWeight: 700 }}>{cat.name}</span>
+            </button>
+          ))}
+        </div>
 
-      <div className="picker-list" style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '8px',
-        background: 'rgba(15, 23, 42, 0.2)'
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        {/* Component Grid */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '12px',
+          display: 'grid',
+          gridTemplateColumns: '1fr',
+          gap: '8px',
+          alignContent: 'start'
+        }}>
           {filteredComponents.map(comp => (
             <div
               key={comp.id}
               onClick={() => onSelect(comp.id)}
+              className="component-card"
               style={{
-                background: 'rgba(51, 65, 85, 0.4)',
-                padding: '12px 8px',
-                borderRadius: '12px',
+                background: 'var(--lp-dark-surface)',
+                border: '1px solid var(--lp-border)',
+                padding: '10px',
                 cursor: 'pointer',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                textAlign: 'center',
-                border: '1px solid rgba(148, 163, 184, 0.1)',
-                transition: 'all 0.2s',
-                height: '100px',
-                justifyContent: 'center',
-                position: 'relative',
-                overflow: 'hidden'
+                gap: '12px',
+                transition: 'all 0.1s'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(51, 65, 85, 0.6)';
-                e.currentTarget.style.borderColor = 'rgba(190, 242, 100, 0.4)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.borderColor = 'var(--lp-accent-primary)';
+                e.currentTarget.style.background = 'var(--lp-zinc-800)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(51, 65, 85, 0.4)';
-                e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.1)';
-                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.borderColor = 'var(--lp-border)';
+                e.currentTarget.style.background = 'var(--lp-dark-surface)';
               }}
             >
-              {/* Component Preview Container */}
               <div style={{
-                height: '54px',
-                width: '100%',
+                width: '32px',
+                height: '32px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: '4px',
-                pointerEvents: 'none',
-                opacity: 0.9,
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid var(--lp-border)',
+                flexShrink: 0,
                 overflow: 'hidden'
               }}>
                 <div style={{
-                  transform: comp.id.includes('mega') ? 'scale(0.12)' :
-                    comp.id.includes('uno') ? 'scale(0.18)' :
-                      comp.id.includes('esp32') ? 'scale(0.22)' :
-                        comp.category === 'boards' ? 'scale(0.25)' :
-                          comp.category === 'displays' ? 'scale(0.3)' : 'scale(0.5)',
+                  transform: 'scale(0.3)',
                   transformOrigin: 'center center',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
+                  opacity: 0.8
                 }}>
                   {React.createElement(`leap-${comp.id}` as any, {
                     color: comp.id === 'led' ? 'red' : undefined,
                     value: true
-                  })}                </div>
+                  })}
+                </div>
               </div>
-
-              <span style={{
-                color: '#f8fafc',
-                fontSize: '10px',
-                fontWeight: 600,
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                lineHeight: '1.2'
-              }}>
-                {comp.name}
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <span style={{ 
+                  color: 'var(--lp-zinc-400)', 
+                  fontSize: '10px', 
+                  fontWeight: 700,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>{comp.name}</span>
+                <span style={{ color: 'var(--lp-zinc-600)', fontSize: '8px' }}>{comp.id.toUpperCase()}</span>
+              </div>
             </div>
           ))}
         </div>
+      </div>
+      
+      {/* Status Bar */}
+      <div style={{
+        padding: '6px 12px',
+        borderTop: '1px solid var(--lp-border)',
+        fontSize: '8px',
+        color: 'var(--lp-zinc-600)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        background: 'var(--lp-dark-surface)'
+      }}>
+        <span>READY</span>
+        <span>{filteredComponents.length} ELEMENTS</span>
       </div>
     </div>
   );

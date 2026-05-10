@@ -8,9 +8,14 @@ import { Handle, Position, NodeProps } from 'reactflow';
 import { getComponentPins } from '../../lib/PinMap';
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
 import { SensorOverlay } from './SensorOverlay';
+import { StepperMotorNode } from './StepperMotorNode';
 
 // This is a generic wrapper for our internalized Leap elements (rebranded Leap)
 export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
+  if (data.type === 'stepperMotor') {
+    return <StepperMotorNode nodeId={id} data={data} selected={selected} />;
+  }
+
   const selectedNodeId = useForgeStore((state) => state.selectedNodeId);
   const edges = useForgeStore((state) => state.edges);
   const isSimulating = useForgeStore((state) => state.isSimulating);
@@ -44,7 +49,8 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     borderRadius: '4px',
     background: 'transparent',
     border: `1px solid ${isSelected ? '#BEF264' : 'transparent'}`,
-    transition: 'all 0.2s ease-out',
+    transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border 0.2s ease-out',
+    transform: `rotate(${data.rotation || 0}deg)`,
     position: 'relative',
     boxSizing: 'border-box'
   };
@@ -81,6 +87,10 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   } else if (data.type === 'servo') {
     // Servos use the 'angle' property calculated in CircuitEngine
     mappedProps.angle = data.angle ?? 0;
+  } else if (data.type === 'dc-motor') {
+    // DC Motor: speed and direction from CircuitEngine
+    mappedProps.speed = data.speed ?? 0;
+    mappedProps.direction = data.direction ?? 'cw';
   } else if (data.type === 'stepper-motor') {
     mappedProps.angle = data.angle ?? 0;
     mappedProps.value = data.value ?? '0.0°';
@@ -220,6 +230,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     } else {
       mappedProps.pixels = data.pixels ?? 16;
     }
+    mappedProps.neopixelPixels = data.neopixelPixels ?? [];
   }
 
   // ── Ref for NeoPixel DOM access (setPixel requires DOM methods) ──
@@ -283,6 +294,33 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     el.b = data.neopixelB ?? 0;
   }, [data.type, data.neopixelR, data.neopixelG, data.neopixelB]);
 
+  // Imperatively set NeoPixel Matrix / LED Ring pixels as DOM properties.
+  useEffect(() => {
+    if (!elementRef.current || !['neopixel-matrix', 'led-ring'].includes(data.type)) return;
+    const el = elementRef.current;
+    const pixels = data.neopixelPixels ?? [];
+    if (el.setPixel) {
+      pixels.forEach((p: any, i: number) => {
+        // Normalize 0-255 to 0-1 as expected by the Lit elements
+        const rgb = {
+          r: (p.r ?? 0) / 255,
+          g: (p.g ?? 0) / 255,
+          b: (p.b ?? 0) / 255
+        };
+
+        if (data.type === 'neopixel-matrix') {
+          const cols = (el as any).cols || 8;
+          const row = Math.floor(i / cols);
+          const col = i % cols;
+          el.setPixel(row, col, rgb);
+        } else {
+          // 1D elements like LED Ring or simple NeoPixel strips
+          el.setPixel(i, rgb);
+        }
+      });
+    }
+  }, [data.type, data.neopixelPixels]);
+
   // Imperatively set servo angle as DOM property.
   // React JSX sets number props as string attributes on Web Components.
   useEffect(() => {
@@ -291,6 +329,14 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     const angle = data.angle ?? 0;
     el.angle = angle;
   }, [data.type, data.angle]);
+
+  // Imperatively set dc-motor speed and direction as DOM properties.
+  useEffect(() => {
+    if (!elementRef.current || data.type !== 'dc-motor') return;
+    const el = elementRef.current;
+    el.speed = data.speed ?? 0;
+    el.direction = data.direction ?? 'cw';
+  }, [data.type, data.speed, data.direction]);
 
   // Imperatively set stepper-motor angle as DOM property.
   // Same issue as servo — Lit @property({ type: Number }) needs a real number, not a string attribute.

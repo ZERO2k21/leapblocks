@@ -920,42 +920,42 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "B1-",
         "x": 45,
-        "y": 103
+        "y": 5
       },
       {
         "name": "B1+",
         "x": 45,
-        "y": 113
+        "y": 226
       },
       {
         "name": "A1+",
         "x": 45,
-        "y": 122
+        "y": 236
       },
       {
         "name": "A1-",
         "x": 45,
-        "y": 131
+        "y": 246
       },
       {
         "name": "B2-",
         "x": 45,
-        "y": 141
+        "y": 255
       },
       {
         "name": "B2+",
         "x": 45,
-        "y": 150
+        "y": 265
       },
       {
         "name": "A2+",
         "x": 45,
-        "y": 160
+        "y": 274
       },
       {
         "name": "A2-",
         "x": 45,
-        "y": 169
+        "y": 284
       }
     ]
   },
@@ -968,22 +968,22 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     },
     "pins": [
       {
-        "name": "B-",
+        "name": "A-",
         "x": 95.1,
         "y": 235.5
       },
       {
-        "name": "B+",
+        "name": "A+",
         "x": 104.7,
         "y": 235.5
       },
       {
-        "name": "A+",
+        "name": "B+",
         "x": 114.3,
         "y": 235.5
       },
       {
-        "name": "A-",
+        "name": "B-",
         "x": 123.9,
         "y": 235.5
       }
@@ -1389,7 +1389,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "VCC",
-        "x": 18.5,
+        "x": 19,
         "y": 23
       },
       {
@@ -1613,28 +1613,28 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "CLK",
-        "x": 445,
-        "y": 10
+        "x": 116,
+        "y": 7.9
       },
       {
         "name": "DT",
-        "x": 445,
-        "y": 50
+        "x": 116,
+        "y": 17.4
       },
       {
         "name": "SW",
-        "x": 445,
-        "y": 80
+        "x": 116,
+        "y": 27
       },
       {
         "name": "VCC",
-        "x": 445,
-        "y": 110
+        "x": 116,
+        "y": 36.3
       },
       {
         "name": "GND",
-        "x": 445,
-        "y": 145
+        "x": 116,
+        "y": 45.5
       }
     ]
   },
@@ -2204,12 +2204,12 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "INT",
         "x": 7.28,
-        "y": 5.78
+        "y": 7
       },
       {
         "name": "AD0",
         "x": 16.9,
-        "y": 5.78
+        "y": 7
       },
       {
         "name": "XCL",
@@ -2469,17 +2469,17 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "VCC",
         "x": 36.178,
-        "y": 92
+        "y": 84
       },
       {
         "name": "OUT",
         "x": 45.9175,
-        "y": 92
+        "y": 84
       },
       {
         "name": "GND",
         "x": 55.6415,
-        "y": 92
+        "y": 84
       }
     ]
   },
@@ -2909,7 +2909,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "GND",
         "x": 56.41,
-        "y": 152.94
+        "y": 15
       },
       {
         "name": "VCC",
@@ -2926,6 +2926,53 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
         "x": 85.21,
         "y": 152.94
       }
+    ]
+  },
+  "l298n": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 200,
+      "height": 200
+    },
+    "pins": [
+      { "name": "OUT1", "x": 0, "y": 118 },
+      { "name": "OUT2", "x": 0, "y": 138 },
+      { "name": "12V", "x": 44, "y": 186 },
+      { "name": "GND", "x": 64, "y": 186 },
+      { "name": "5V", "x": 84, "y": 186 },
+      { "name": "OUT4", "x": 200, "y": 112 },
+      { "name": "OUT3", "x": 200, "y": 138 },
+      { "name": "ENA", "x": 110, "y": 178 },
+      { "name": "IN1", "x": 123, "y": 178 },
+      { "name": "IN2", "x": 136, "y": 178 },
+      { "name": "IN3", "x": 149, "y": 178 },
+      { "name": "IN4", "x": 162, "y": 178 },
+      { "name": "ENB", "x": 172, "y": 178 }
+    ]
+  },
+  "dc-motor": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 200,
+      "height": 80
+    },
+    "pins": [
+      { "name": "POS", "x": 2, "y": 31 },
+      { "name": "NEG", "x": 2, "y": 51 }
+    ]
+  },
+  "battery-12v": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 100,
+      "height": 85
+    },
+    "pins": [
+      { "name": "POS", "x": 16, "y": 11 },
+      { "name": "NEG", "x": 77, "y": 11 }
     ]
   }
 };

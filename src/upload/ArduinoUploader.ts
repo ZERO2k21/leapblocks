@@ -408,9 +408,9 @@ directories:
 
                 const libsFolder = this.getLibrariesPath();
 
-                // For ESP32: exclude the forge-lib libraries folder if it contains AVR-only libs
-                // that conflict with ESP32 core. Use arduino-cli's built-in library resolution instead.
-                const libsArg = (fs.existsSync(libsFolder) && !isESP32)
+                // Include libraries folder for all boards. Arduino-cli will handle library compatibility.
+                // The config file already points to the correct forge-lib location.
+                const libsArg = fs.existsSync(libsFolder)
                     ? `--libraries "${libsFolder}"`
                     : '';
 
@@ -559,11 +559,23 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
             // Preprocess code
             let processedCode = code.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
             processedCode = migrateESP32LedcAPI(processedCode);
+            // Add a comment-only helper for common Stepper.h wiring mistakes (28BYJ-48).
+            // We inject only when a Stepper constructor with 5 args is detected.
+            if (/\bStepper\s+(myStepper|stepper)\b/.test(processedCode)) {
+                const stepperCtorPattern = /^([ \t]*Stepper\s+(?:myStepper|stepper)\s*\(\s*[^,\n]+,\s*[^,\n]+,\s*[^,\n]+,\s*[^,\n]+,\s*[^)\n]+\)\s*;.*)$/m;
+                processedCode = processedCode.replace(
+                    stepperCtorPattern,
+                    `// LeapForge: 28BYJ-48 with Stepper.h requires pin order IN1,IN3,IN2,IN4\n// Stepper myStepper(4096, pin1, pin3, pin2, pin4)\n$1`
+                );
+            }
             processedCode = processedCode.replace(/(void\s+setup\s*\(\s*\)\s*\{)/, '$1\n  __lf_setup_wifi();');
             fs.writeFileSync(sketchPath, GPIO_MONITOR_HEADER + '\n' + processedCode, 'utf-8');
 
+            const libsFolder = this.getLibrariesPath();
+            const libsArgs = fs.existsSync(libsFolder) ? ['--libraries', libsFolder] : [];
+
             const { stdout, stderr, code: exitCode } = await this.runCLI(arduinoCliPath, configPath, [
-                'compile', '--fqbn', fqbn, '--output-dir', tempDir, sketchDir,
+                'compile', '--fqbn', fqbn, '--output-dir', tempDir, ...libsArgs, sketchDir,
             ]);
 
             if (exitCode !== 0) {
@@ -664,10 +676,10 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
     private esp32CoreReady = false;
     async ensureESP32Core(arduinoCliPath: string): Promise<boolean> {
         if (this.esp32CoreReady) return true;
-        
+
         const configPath = this.getArduinoCliConfigPath();
         await this.ensureESP32BoardManagerUrls(configPath);
-        
+
         const send = (msg: string) => {
             console.log(`[FORGE UPLOADER] ${msg}`);
             if (this.mainWindow?.webContents) {
@@ -684,7 +696,7 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
             send('Checking for ESP32 core installation...');
             const { stdout, code: listCode } = await this.runCLI(arduinoCliPath, configPath, ['core', 'list', '--format', 'json']);
             if (listCode !== 0) { send('ERROR: Failed to list installed cores'); return false; }
-            
+
             let cores: any[] = [];
             try { cores = JSON.parse(stdout || '[]'); } catch (_) { }
             const installed = cores.some((c: any) =>
@@ -697,16 +709,16 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
                 const { code: updateCode } = await this.runCLI(arduinoCliPath, configPath, [
                     'core', 'update-index', '--additional-urls', ESP32_URLS.join(',')
                 ]);
-                
+
                 if (updateCode !== 0) { send('ERROR: Failed to update package index'); return false; }
-                
+
                 let ok = false;
                 for (const url of ESP32_URLS) {
                     send(`Attempting install via ${url}...`);
                     const { code: installCode } = await this.runCLI(arduinoCliPath, configPath, [
                         'core', 'install', 'esp32:esp32', '--additional-urls', url
                     ]);
-                    
+
                     if (installCode === 0) {
                         ok = true;
                         send('✓ ESP32 core installed!');
@@ -714,12 +726,12 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
                     }
                     send(`Install failed, trying next...`);
                 }
-                
+
                 if (!ok) { send('ERROR: All ESP32 core install attempts failed'); return false; }
             } else {
                 send('✓ ESP32 core already installed');
             }
-            
+
             this.esp32CoreReady = true;
             return true;
         } catch (err: any) {

@@ -137,10 +137,25 @@ export class StepperMotorElement extends LitElement {
     if (changedProperties.has('size')) {
       this.dispatchEvent(new CustomEvent('pininfo-change'));
     }
-    // We now receive a perfectly unbounded cumulative angle from the emulator.
-    // No delta calculation needed.
+    // Handle angle updates with wrapping detection
     if (changedProperties.has('angle')) {
-      this._cumulativeAngle = this.angle;
+      const oldAngle = changedProperties.get('angle') as number ?? 0;
+      const newAngle = this.angle;
+
+      // Detect wrapping and adjust cumulative angle accordingly
+      const delta = newAngle - oldAngle;
+
+      // If delta is large (> 180°), we wrapped around
+      if (delta > 180) {
+        // Wrapped from 359° to 0° (CCW) - subtract 360° from cumulative
+        this._cumulativeAngle -= 360;
+      } else if (delta < -180) {
+        // Wrapped from 0° to 359° (CW) - add 360° to cumulative
+        this._cumulativeAngle += 360;
+      }
+
+      // Apply the new angle to cumulative
+      this._cumulativeAngle += (newAngle - oldAngle);
     }
     super.update(changedProperties);
   }

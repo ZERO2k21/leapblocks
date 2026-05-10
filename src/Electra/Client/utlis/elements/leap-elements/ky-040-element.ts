@@ -137,7 +137,8 @@ export class KY040Element extends LitElement {
               stroke="#022"
               stroke-width=".0625px"
               class="arrow"
-              style="pointer-events: none;"
+              style="pointer-events: all; cursor: pointer;"
+              @click=${this.clockwiseStep}
             />
           </g>
 
@@ -153,7 +154,8 @@ export class KY040Element extends LitElement {
               stroke="#000"
               stroke-width=".0625px"
               class="arrow"
-              style="pointer-events: none;"
+              style="pointer-events: all; cursor: pointer;"
+              @click=${this.counterClockwiseStep}
             />
           </g>
         </g>
@@ -170,6 +172,7 @@ export class KY040Element extends LitElement {
           stroke-width="2"
           fill="none"
           opacity="0"
+          style="pointer-events: none;"
         />
 
         <!-- Chip Pins -->
