@@ -5,20 +5,25 @@
  */
 export const leapSprites: any[] = [
   {
-    "id": "leap_abby",
-    "name": "Abby",
-    "emoji": "🤖",
-    "image": "assets/sprites/leap/abby_abby-a.svg",
+    "id": "leap_aayala",
+    "name": "Aayala",
+    "emoji": "👧",
+    "image": "assets/sprites/leap/aayala_aayala-a.svg",
     "costumes": [
-      "assets/sprites/leap/abby_abby-a.svg",
-      "assets/sprites/leap/abby_abby-b.svg",
-      "assets/sprites/leap/abby_abby-c.svg",
-      "assets/sprites/leap/abby_abby-d.svg"
+      "assets/sprites/leap/aayala_aayala-a.svg",
+      "assets/sprites/leap/aayala_aayala-b.svg",
+      "assets/sprites/leap/aayala_aayala-c.svg",
+      "assets/sprites/leap/aayala_aayala-d.svg"
     ],
     "tags": [
       "people",
       "person",
-      "drawing"
+      "girl",
+      "student",
+      "education",
+      "stem",
+      "learning",
+      "kid"
     ],
     "category": "leap"
   },
@@ -134,15 +139,15 @@ export const leapSprites: any[] = [
     "category": "leap"
   },
   {
-    "id": "leap_avery_walking",
-    "name": "Avery Walking",
-    "emoji": "🤖",
-    "image": "assets/sprites/leap/avery_walking_avery_walking-a.svg",
+    "id": "leap_ayati_walking",
+    "name": "Ayati Walking",
+    "emoji": "🚶‍♀️",
+    "image": "assets/sprites/leap/ayati_walking_ayati_walking-a.svg",
     "costumes": [
-      "assets/sprites/leap/avery_walking_avery_walking-a.svg",
-      "assets/sprites/leap/avery_walking_avery_walking-b.svg",
-      "assets/sprites/leap/avery_walking_avery_walking-c.svg",
-      "assets/sprites/leap/avery_walking_avery_walking-d.svg"
+      "assets/sprites/leap/ayati_walking_ayati_walking-a.svg",
+      "assets/sprites/leap/ayati_walking_ayati_walking-b.svg",
+      "assets/sprites/leap/ayati_walking_ayati_walking-c.svg",
+      "assets/sprites/leap/ayati_walking_ayati_walking-d.svg"
     ],
     "tags": [
       "people",
@@ -196,12 +201,14 @@ export const leapSprites: any[] = [
   {
     "id": "leap_balloon1",
     "name": "Balloon1",
-    "emoji": "🤖",
+    "emoji": "🎈",
     "image": "assets/sprites/leap/balloon1_balloon1-a.svg",
     "costumes": [
       "assets/sprites/leap/balloon1_balloon1-a.svg",
       "assets/sprites/leap/balloon1_balloon1-b.svg",
-      "assets/sprites/leap/balloon1_balloon1-c.svg"
+      "assets/sprites/leap/balloon1_balloon1-c.svg",
+      "assets/sprites/leap/balloon1_balloon1-d.svg",
+      "assets/sprites/leap/balloon1_balloon1-e.svg"
     ],
     "tags": [
       "party",
