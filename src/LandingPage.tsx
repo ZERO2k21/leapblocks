@@ -787,7 +787,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 7 STUDIO */}
-              <div className={`tc tc-studio ${tcClass(6)}`} onClick={() => handleCardClick(() => onSelect('appforge'))}>
+              <div className={`tc tc-studio ${tcClass(6)}`} onClick={() => handleCardClick(() => onSelect('appinventor'))}>
                 <div className="tc-icon">
                   <img src="assets/app_game_dev_icon.png" alt="Studio Icon" />
                 </div>

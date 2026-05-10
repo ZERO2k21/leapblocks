@@ -15,8 +15,12 @@ import { useForgeStore, getSimulationRunner } from '../utlis/store/useForgeStore
 const ForgeCanvas = lazy(() => import('./components/ForgeCanvas'));
 const ForgeEditor = lazy(() => import('./components/Editor/ForgeEditor'));
 import { LibraryManager } from './components/Library/LibraryManager';
+import { PartPicker as ComponentSidebar } from './components/Library/PartPicker';
 import { IgniteTopbar } from './components/Layout/Topbar';
 import { compileCode } from './services/CompilerService';
+import { IS_ELECTRON } from '../../../config/platform';
+import * as ProjectService from './services/ProjectService';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ForgeStudioProps {
   onBack: () => void;
@@ -143,7 +147,10 @@ void loop() {
   }, [initialBoard]); // Run when initialBoard changes
 
   const [activeTab, setActiveTab] = useState<'code' | 'serial' | 'wifi' | 'libraries'>('code');
+  const { showPartPicker, setShowPartPicker, importedLibraries, rotateNode } = useForgeStore();
   const [wifiStatus, setWifiStatus] = useState('');
+  const [showWebOpenModal, setShowWebOpenModal] = useState(false);
+  const [recentProjects, setRecentProjects] = useState<ProjectService.LeapProject[]>([]);
 
   useEffect(() => {
     if (board !== 'esp32-c3' || !isSimulating) {
@@ -189,61 +196,89 @@ void loop() {
   };
 
   const handleOpenProject = async () => {
-    try {
-      const result = await window.electronAPI.openProject();
-      if (result && result.data) {
-        const { nodes: loadedNodes, edges: loadedEdges, code: loadedCode, version } = result.data;
-        setNodes(loadedNodes || []);
-        setEdges(loadedEdges || []);
-        setCode(loadedCode || '');
-        setProjectPath(result.projectPath);
+    if (IS_ELECTRON) {
+      try {
+        const result = await (window as any).electronAPI.openProject();
+        if (result && result.data) {
+          const { nodes: loadedNodes, edges: loadedEdges, code: loadedCode } = result.data;
+          setNodes(loadedNodes || []);
+          setEdges(loadedEdges || []);
+          setCode(loadedCode || '');
+          setProjectPath(result.projectPath);
 
-        // Extract project name from path
-        const pathParts = result.projectPath.split(/[\\/]/);
-        const folderName = pathParts[pathParts.length - 1];
-        setProjectName(folderName || 'Loaded Project');
+          const pathParts = result.projectPath.split(/[\\/]/);
+          const folderName = pathParts[pathParts.length - 1];
+          setProjectName(folderName || 'Loaded Project');
 
-        // Reset history
-        setHistory([]);
-        setHistoryIndex(-1);
-        saveToHistory();
-
-        console.log('[FORGE] Project loaded successfully:', result.projectPath);
+          setHistory([]);
+          setHistoryIndex(-1);
+          saveToHistory();
+        }
+      } catch (err) {
+        console.error('[FORGE] Failed to open project:', err);
+        alert('Failed to open project.');
       }
-    } catch (err) {
-      console.error('[FORGE] Failed to open project:', err);
-      alert('Failed to open project. Please try again.');
+    } else {
+      const projects = await ProjectService.listProjects();
+      setRecentProjects(projects);
+      setShowWebOpenModal(true);
     }
+  };
+
+  const loadWebProject = (project: ProjectService.LeapProject) => {
+    setNodes(project.circuit.nodes || []);
+    setEdges(project.circuit.edges || []);
+    setCode(project.code || '');
+    setProjectPath(project.id);
+    setProjectName(project.name);
+    setHistory([]);
+    setHistoryIndex(-1);
+    saveToHistory();
+    setShowWebOpenModal(false);
   };
 
   const handleSaveProject = async () => {
     try {
-      const projectData = {
-        nodes,
-        edges,
-        code,
-        board,
-        version: '1.0.0',
-        timestamp: new Date().toISOString()
-      };
-      const result = await window.electronAPI.saveProject(projectData, projectPath);
-      if (result.success && result.projectPath) {
-        setProjectPath(result.projectPath);
-
-        // Update project name from saved path
-        const pathParts = result.projectPath.split(/[\\/]/);
-        const folderName = pathParts[pathParts.length - 1];
-        setProjectName(folderName || projectName);
-
-        console.log('[FORGE] Project saved successfully:', result.projectPath);
+      if (IS_ELECTRON) {
+        const projectData = {
+          nodes,
+          edges,
+          code,
+          board,
+          version: '1.0.0',
+          timestamp: new Date().toISOString()
+        };
+        const result = await (window as any).electronAPI.saveProject(projectData, projectPath ?? undefined);
+        if (result.success && result.projectPath) {
+          setProjectPath(result.projectPath);
+          const pathParts = result.projectPath.split(/[\\/]/);
+          const folderName = pathParts[pathParts.length - 1];
+          setProjectName(folderName || projectName);
+        }
+      } else {
+        const id = projectPath || uuidv4();
+        await ProjectService.saveProject({
+          id,
+          name: projectName,
+          circuit: { nodes, edges },
+          code,
+          libraries: importedLibraries,
+          updatedAt: new Date().toISOString()
+        });
+        setProjectPath(id);
+        alert('Project saved successfully!');
       }
     } catch (err) {
       console.error('[FORGE] Failed to save project:', err);
-      alert('Failed to save project. Please try again.');
+      alert('Failed to save project.');
     }
   };
 
   const handleSaveAsProject = async () => {
+    if (!IS_ELECTRON) {
+      handleSaveProject(); // On web, save as is just save
+      return;
+    }
     try {
       const projectData = {
         nodes,
@@ -253,21 +288,16 @@ void loop() {
         version: '1.0.0',
         timestamp: new Date().toISOString()
       };
-      // Pass null as path to force "Save As" dialog
-      const result = await window.electronAPI.saveProject(projectData, null);
+      const result = await (window as any).electronAPI.saveProject(projectData, undefined);
       if (result.success && result.projectPath) {
         setProjectPath(result.projectPath);
-
-        // Update project name from saved path
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         setProjectName(folderName || projectName);
-
-        console.log('[FORGE] Project saved as:', result.projectPath);
       }
     } catch (err) {
       console.error('[FORGE] Failed to save project as:', err);
-      alert('Failed to save project. Please try again.');
+      alert('Failed to save project.');
     }
   };
 
@@ -370,18 +400,57 @@ void loop() {
       }
       // Ctrl+X: Cut
       else if (e.ctrlKey && e.key === 'x') {
-        e.preventDefault();
-        handleCut();
+        // Don't intercept if user is in code editor or input field
+        const activeElement = document.activeElement;
+        const isInEditor = activeElement?.classList.contains('monaco-editor') ||
+          activeElement?.closest('.monaco-editor') ||
+          activeElement?.tagName === 'INPUT' ||
+          activeElement?.tagName === 'TEXTAREA';
+        if (!isInEditor) {
+          e.preventDefault();
+          handleCut();
+        }
       }
       // Ctrl+C: Copy
       else if (e.ctrlKey && e.key === 'c') {
-        e.preventDefault();
-        handleCopy();
+        // Don't intercept if user is in code editor or input field
+        const activeElement = document.activeElement;
+        const isInEditor = activeElement?.classList.contains('monaco-editor') ||
+          activeElement?.closest('.monaco-editor') ||
+          activeElement?.tagName === 'INPUT' ||
+          activeElement?.tagName === 'TEXTAREA';
+        if (!isInEditor) {
+          e.preventDefault();
+          handleCopy();
+        }
       }
       // Ctrl+V: Paste
       else if (e.ctrlKey && e.key === 'v') {
-        e.preventDefault();
-        handlePaste();
+        // Don't intercept if user is in code editor or input field
+        const activeElement = document.activeElement;
+        const isInEditor = activeElement?.classList.contains('monaco-editor') ||
+          activeElement?.closest('.monaco-editor') ||
+          activeElement?.tagName === 'INPUT' ||
+          activeElement?.tagName === 'TEXTAREA';
+        if (!isInEditor) {
+          e.preventDefault();
+          handlePaste();
+        }
+      }
+      // R: Rotate selected node
+      else if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+        const activeElement = document.activeElement;
+        const isInEditor = activeElement?.classList.contains('monaco-editor') ||
+          activeElement?.closest('.monaco-editor') ||
+          activeElement?.tagName === 'INPUT' ||
+          activeElement?.tagName === 'TEXTAREA';
+        
+        if (!isInEditor) {
+          const state = useForgeStore.getState();
+          if (state.selectedNodeId) {
+            rotateNode(state.selectedNodeId);
+          }
+        }
       }
     };
 
@@ -413,6 +482,14 @@ void loop() {
           runner.setBoard(board);
           runner.setTranspiledJS(result.jsCode);
           startSimulation('__esp32_c3_transpiled__');
+        } else if (result.error) {
+          // Display transpilation errors in Serial Monitor
+          const { appendSerial } = useForgeStore.getState();
+          appendSerial('❌ TRANSPILATION ERROR:\n');
+          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+          appendSerial(result.error + '\n');
+          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+          appendSerial('\nPlease fix the errors and try again.\n');
         }
       } else {
         const result = await compileCode({
@@ -422,10 +499,25 @@ void loop() {
         });
         if (result.success && result.hexContent) {
           startSimulation(result.hexContent);
+        } else if (result.error) {
+          // Display compilation errors in Serial Monitor
+          const { appendSerial } = useForgeStore.getState();
+          appendSerial('❌ COMPILATION ERROR:\n');
+          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+          appendSerial(result.error + '\n');
+          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+          appendSerial('\nPlease fix the errors and try again.\n');
         }
       }
     } catch (err: any) {
       console.error(err);
+      // Display unexpected errors in Serial Monitor
+      const { appendSerial } = useForgeStore.getState();
+      appendSerial('❌ UNEXPECTED ERROR:\n');
+      appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+      appendSerial(err.message || String(err) + '\n');
+      appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+      appendSerial('\nPlease check your code and try again.\n');
     } finally {
       setIsCompiling(false);
     }
@@ -464,31 +556,31 @@ void loop() {
             <div className="forge-tabs-container" style={{ height: 48 }}>
               {/* Board badge - non-interactive */}
               <div style={{
-                padding: '6px 14px',
+                padding: '4px 12px',
                 background: board === 'esp32-c3'
-                  ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(34, 211, 238, 0.1))'
-                  : 'linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(239, 68, 68, 0.1))',
+                  ? 'rgba(34, 211, 238, 0.1)'
+                  : 'rgba(245, 158, 11, 0.1)',
                 border: board === 'esp32-c3'
-                  ? '1.5px solid rgba(6, 182, 212, 0.4)'
-                  : '1.5px solid rgba(251, 146, 60, 0.4)',
-                borderRadius: '10px',
-                color: board === 'esp32-c3' ? '#06b6d4' : '#fb923c',
-                fontSize: '11px',
-                fontWeight: 800,
+                  ? '1px solid rgba(34, 211, 238, 0.4)'
+                  : '1px solid rgba(245, 158, 11, 0.4)',
+                borderRadius: '2px',
+                color: board === 'esp32-c3' ? 'var(--lp-accent-primary)' : 'var(--lp-amber)',
+                fontSize: '10px',
+                fontWeight: 700,
                 textTransform: 'uppercase',
-                letterSpacing: '0.8px',
+                letterSpacing: '1px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px'
               }}>
                 <div style={{
-                  width: '8px',
-                  height: '8px',
+                  width: '6px',
+                  height: '6px',
                   borderRadius: '50%',
-                  background: board === 'esp32-c3' ? '#06b6d4' : '#fb923c',
+                  background: board === 'esp32-c3' ? 'var(--lp-accent-primary)' : 'var(--lp-amber)',
                   boxShadow: board === 'esp32-c3'
-                    ? '0 0 10px rgba(6, 182, 212, 0.6)'
-                    : '0 0 10px rgba(251, 146, 60, 0.6)'
+                    ? '0 0 10px var(--lp-accent-primary)'
+                    : '0 0 10px var(--lp-amber)'
                 }} />
                 {board === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}
               </div>
@@ -552,8 +644,8 @@ void loop() {
                 {activeTab === 'wifi' ? (
                   <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, padding: 15, overflowY: 'auto', height: '100%', background: '#fdfdfd' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <span style={{ color: '#94a3b8', fontSize: 10, fontWeight: 700 }}>NETWORK LOG</span>
-                      <button onClick={() => clearWiFiLog()} style={{ background: 'none', border: 'none', color: '#7B4FC4', cursor: 'pointer', fontSize: 10, fontWeight: 700 }}>CLEAR</button>
+                      <span style={{ color: 'var(--lp-zinc-400)', fontSize: 9, fontWeight: 700, letterSpacing: '0.5px' }}>NETWORK LOG</span>
+                      <button onClick={() => clearWiFiLog()} style={{ background: 'none', border: 'none', color: 'var(--lp-accent-primary)', cursor: 'pointer', fontSize: 10, fontWeight: 700 }}>CLEAR</button>
                     </div>
                     {wifiLog.length === 0 ? (
                       <div style={{ color: '#cbd5e1', textAlign: 'center', marginTop: 20 }}>No network activity.</div>
@@ -576,19 +668,42 @@ void loop() {
           )}
         </div>
 
-        {/* Right: Simulation Canvas */}
-        <div className="canvas-pane">
-          <Suspense fallback={<div className="forge-loader"><div className="spinner" />Initializing Physics...</div>}>
-            <ForgeCanvas onToggleSimulation={handleToggleSimulation} isCompiling={isCompiling} />
-          </Suspense>
+        {/* Right: Simulation Canvas + Sidebar */}
+        <div className="canvas-pane" style={{ display: 'flex', flexDirection: 'row' }}>
+          <div style={{ flex: 1, position: 'relative', height: '100%' }}>
+            <Suspense fallback={<div className="forge-loader"><div className="spinner" />Initializing Physics...</div>}>
+              <ForgeCanvas onToggleSimulation={handleToggleSimulation} isCompiling={isCompiling} />
+            </Suspense>
 
-          {/* Floating WiFi Status */}
-          {board === 'esp32-c3' && isSimulating && wifiStatus && (
-            <div style={{ position: 'absolute', bottom: 20, right: 20, zIndex: 10 }}>
-              <div className="wifi-status-pill">
-                <div className="wifi-dot" />
-                {wifiStatus}
+            {/* Floating WiFi Status */}
+            {board === 'esp32-c3' && isSimulating && wifiStatus && (
+              <div style={{ position: 'absolute', bottom: 20, right: 20, zIndex: 10 }}>
+                <div className="wifi-status-pill">
+                  <div className="wifi-dot" />
+                  {wifiStatus}
+                </div>
               </div>
+            )}
+          </div>
+
+          {showPartPicker && (
+            <div style={{
+              width: 'var(--sidebar-width)',
+              height: '100%',
+              borderLeft: '1px solid var(--lp-border)',
+              background: 'var(--lp-dark-bg)',
+              zIndex: 50,
+              display: 'flex'
+            }}>
+              <ComponentSidebar
+                onSelect={(type) => {
+                  const state = useForgeStore.getState();
+                  state.addNode(type, { x: 400, y: 300 }, { label: type.toUpperCase() });
+                  // We don't close it automatically anymore as it's a sidebar
+                }}
+                onClose={() => setShowPartPicker(false)}
+                currentBoard={board as any}
+              />
             </div>
           )}
         </div>
@@ -608,6 +723,37 @@ void loop() {
           {new Date().toLocaleTimeString()}
         </div>
       </footer>
+
+      {/* Web Open Project Modal */}
+      {!IS_ELECTRON && showWebOpenModal && (
+        <div className="web-modal-overlay" onClick={() => setShowWebOpenModal(false)}>
+          <div className="web-modal-content" onClick={e => e.stopPropagation()}>
+            <div className="web-modal-header">
+              <h3>Recent Projects</h3>
+              <button onClick={() => setShowWebOpenModal(false)}>×</button>
+            </div>
+            <div className="web-modal-body">
+              {recentProjects.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                  No saved projects found in browser storage.
+                </div>
+              ) : (
+                <div className="project-list">
+                  {recentProjects.map(p => (
+                    <div key={p.id} className="project-item" onClick={() => loadWebProject(p)}>
+                      <div className="project-info">
+                        <div className="project-name">{p.name}</div>
+                        <div className="project-date">Last saved: {new Date(p.updatedAt).toLocaleString()}</div>
+                      </div>
+                      <div className="project-id">{p.id.slice(0, 8)}...</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

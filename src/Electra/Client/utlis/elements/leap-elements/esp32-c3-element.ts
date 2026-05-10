@@ -222,7 +222,7 @@ export class ESP32C3Element extends LitElement {
           <tspan x="-36.582" y="96.012">D22</tspan>
           <tspan x="-26.250" y="95.903">D23</tspan>
         </text>
-        <text x="30" y="59" fill="#cecccb" font-family="sans-serif" font-size="15px">ESP32-C3</text>
+        <text x="52.8" y="61.45" fill="#cecccb" font-family="sans-serif" font-size="15px" text-anchor="middle" dominant-baseline="middle">ESP32-C3</text>
 
         <!-- Antenna -->
         <path

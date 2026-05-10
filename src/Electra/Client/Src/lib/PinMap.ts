@@ -38,7 +38,7 @@ export function getComponentPins(type: string): PinEntry[] {
     let xPercent = 0;
     let yPercent = 0;
 
-    const isSvgComponent = ['led', 'rgb-led', 'pushbutton', 'pushbutton-6mm', 'led-bar-graph', 'neopixel', 'neopixel-matrix', 'led-ring', 'stepper-motor', 'a4988', 'biaxial-stepper', 'ks2e-m-dc5', 'relay-module', 'ili9341', 'ssd1306', 'mpu6050', 'pir-motion-sensor', 'hc-sr04', 'dht22', 'dht11', 'ntc-temperature-sensor', 'photoresistor-sensor', 'flame-sensor', 'gas-sensor', 'heart-beat-sensor', 'big-sound-sensor', 'small-sound-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer'].includes(type);
+    const isSvgComponent = ['led', 'rgb-led', 'pushbutton', 'pushbutton-6mm', 'led-bar-graph', 'neopixel', 'neopixel-matrix', 'led-ring', 'stepper-motor', 'a4988', 'biaxial-stepper', 'ks2e-m-dc5', 'relay-module', 'ili9341', 'ssd1306', 'mpu6050', 'pir-motion-sensor', 'hc-sr04', 'dht22', 'dht11', 'ntc-temperature-sensor', 'photoresistor-sensor', 'flame-sensor', 'gas-sensor', 'heart-beat-sensor', 'big-sound-sensor', 'small-sound-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer', 'l298n', 'dc-motor', 'battery-12v'].includes(type);
 
     if (isSvgComponent) {
       // SVG components define pin coordinates in leur internal viewBox space.

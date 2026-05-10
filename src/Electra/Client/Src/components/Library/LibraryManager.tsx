@@ -87,16 +87,38 @@ export const LibraryManager: React.FC = () => {
   const handleInstall = async (lib: Library) => {
     setIsInstalling(prev => ({ ...prev, [lib.name]: true }));
     try {
+      console.log(`[LIBRARY MANAGER] Installing library: ${lib.name}`);
       const result = await installLibrary(lib);
+      console.log(`[LIBRARY MANAGER] Install result:`, result);
+
       if (result.success) {
-        await refreshInstalled();
-        setAllLibraries(prev => prev.map(l => l.name === lib.name ? { ...l, isInstalled: true } : l));
+        console.log(`[LIBRARY MANAGER] Successfully installed ${lib.name}, refreshing list...`);
+
+        // Wait a bit for filesystem to sync
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Refresh installed libraries
+        const installed = await refreshInstalled();
+        console.log(`[LIBRARY MANAGER] Refreshed installed libraries:`, installed);
+        console.log(`[LIBRARY MANAGER] Installed library names:`, installed.map(l => l.name));
+
+        // Update the search results to show as installed
+        setAllLibraries(prev => {
+          const installedNames = new Set(installed.map(l => l.name.toLowerCase()));
+          return prev.map(l => ({
+            ...l,
+            isInstalled: installedNames.has(l.name.toLowerCase())
+          }));
+        });
+
+        console.log(`[LIBRARY MANAGER] UI updated, ${lib.name} should now show as LINKED`);
       } else {
-        console.error('[FORGE] Install failed:', result.error);
-        alert(`Failed to install "${lib.name}":\n${result.error}`);
+        console.error('[LIBRARY MANAGER] Install failed:', result.error);
+        alert(`Failed to install "${lib.name}":\n${result.error || 'Unknown error'}`);
       }
-    } catch (err) {
-      console.error('[FORGE] Installation error:', err);
+    } catch (err: any) {
+      console.error('[LIBRARY MANAGER] Installation error:', err);
+      alert(`Error installing "${lib.name}":\n${err.message || 'Unknown error'}`);
     } finally {
       setIsInstalling(prev => ({ ...prev, [lib.name]: false }));
     }
@@ -105,144 +127,158 @@ export const LibraryManager: React.FC = () => {
   const handleRemove = async (name: string) => {
     if (!confirm(`Remove "${name}" from this project?`)) return;
     try {
-      await removeLibrary(name);
-      await refreshInstalled();
-      setAllLibraries(prev => prev.map(l => l.name === name ? { ...l, isInstalled: false } : l));
-    } catch (err) {
-      console.error('[FORGE] Removal error:', err);
+      console.log(`[LIBRARY MANAGER] Removing library: ${name}`);
+      const result = await removeLibrary(name);
+      console.log(`[LIBRARY MANAGER] Remove result:`, result);
+
+      if (result.success) {
+        console.log(`[LIBRARY MANAGER] Successfully removed ${name}, refreshing list...`);
+
+        // Wait a bit for filesystem to sync
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Refresh installed libraries
+        const installed = await refreshInstalled();
+        console.log(`[LIBRARY MANAGER] Refreshed installed libraries:`, installed);
+
+        // Update the search results to show as not installed
+        setAllLibraries(prev => {
+          const installedNames = new Set(installed.map(l => l.name.toLowerCase()));
+          return prev.map(l => ({
+            ...l,
+            isInstalled: installedNames.has(l.name.toLowerCase())
+          }));
+        });
+
+        console.log(`[LIBRARY MANAGER] UI updated, ${name} should now show LINK button`);
+      } else {
+        console.error('[LIBRARY MANAGER] Remove failed:', result.error);
+        alert(`Failed to remove "${name}":\n${result.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      console.error('[LIBRARY MANAGER] Removal error:', err);
+      alert(`Error removing "${name}":\n${err.message || 'Unknown error'}`);
     }
   };
 
   const t = {
-    bg: '#0a0e1a',
-    surface: '#151b2e',
-    surfaceHover: '#1a2137',
-    border: 'rgba(168, 85, 247, 0.3)',
-    borderBright: 'rgba(168, 85, 247, 0.5)',
-    text: '#e2e8f0',
-    dim: '#94a3b8',
-    accent: '#a855f7',
-    accentBright: '#c084fc',
-    accentDim: 'rgba(168, 85, 247, 0.1)',
-    cyan: '#06b6d4',
-    cyanBright: '#22d3ee',
-    orange: '#fb923c',
-    danger: '#ef4444',
-    success: '#10b981',
-    white: '#f8fafc',
+    bg: 'var(--lp-dark-bg)',
+    surface: 'var(--lp-dark-surface)',
+    surfaceHover: 'var(--lp-zinc-800)',
+    border: 'var(--lp-border)',
+    borderBright: 'var(--lp-border-active)',
+    text: 'var(--lp-zinc-400)',
+    dim: 'var(--lp-zinc-600)',
+    accent: 'var(--lp-accent-primary)',
+    accentBright: 'var(--lp-accent-bright)',
+    accentDim: 'rgba(34, 211, 238, 0.1)',
+    cyan: 'var(--lp-accent-primary)',
+    cyanBright: 'var(--lp-accent-bright)',
+    orange: 'var(--lp-amber)',
+    danger: 'var(--lp-rose)',
+    success: 'var(--lp-emerald)',
+    white: '#ffffff',
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: t.bg, color: t.text, fontFamily: 'Outfit,-apple-system,sans-serif', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: t.bg, color: t.text, fontFamily: "'Space Mono', monospace", overflow: 'hidden' }}>
 
       {/* Header */}
-      <div style={{ padding: '24px 32px 20px', borderBottom: `2px solid ${t.border}`, background: `linear-gradient(135deg, ${t.surface}, ${t.bg})` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `linear-gradient(135deg, ${t.accent}, ${t.cyan})`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 20px rgba(168, 85, 247, 0.4)` }}>
-            <LibraryIcon size={22} color="white" strokeWidth={2.5} />
+      <div style={{ padding: '16px 24px', borderBottom: `1px solid ${t.border}`, background: t.surface }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '2px', background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <LibraryIcon size={18} color="#000" strokeWidth={3} />
           </div>
-          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 800, color: t.white, letterSpacing: '-0.5px' }}>Library Marketplace</h1>
+          <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: t.white, letterSpacing: '1px', textTransform: 'uppercase' }}>LIBRARY_CORE.V1</h1>
         </div>
-        <p style={{ margin: 0, color: t.dim, fontSize: '13px', paddingLeft: '52px' }}>
-          Discover and integrate Arduino libraries into your project
+        <p style={{ margin: 0, color: t.dim, fontSize: '10px', paddingLeft: '44px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          Central dependency manager for external modules
         </p>
       </div>
 
       {/* Status bar */}
-      <div style={{ margin: '16px 32px', background: `linear-gradient(135deg, ${t.accentDim}, rgba(6, 182, 212, 0.05))`, border: `2px solid ${t.borderBright}`, borderRadius: '12px', padding: '12px 18px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: t.accentBright, fontWeight: 600, boxShadow: `0 4px 15px rgba(168, 85, 247, 0.2)` }}>
-        <Info size={16} strokeWidth={2.5} />
+      <div style={{ margin: '12px 24px', background: t.accentDim, border: `1px solid ${t.accent}`, borderRadius: '2px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: t.accent, fontWeight: 700, textTransform: 'uppercase' }}>
+        <Info size={14} strokeWidth={3} />
         <span>
           {isLoading
-            ? 'Fetching Arduino library index…'
-            : `${allLibraries.length.toLocaleString()} libraries available · ${installedLibraries.length} added to project`}
+            ? 'SYNCING_INDEX...'
+            : `${allLibraries.length.toLocaleString()} REMOTE_LIBS · ${installedLibraries.length} LOCAL_DEPS`}
         </span>
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', padding: '0 32px 20px', gap: '24px' }}>
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', padding: '0 24px 16px', gap: '16px' }}>
 
         {/* Left — search + results */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, borderRight: `2px solid ${t.border}`, paddingRight: '24px' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, borderRight: `1px solid ${t.border}`, paddingRight: '16px' }}>
 
           {/* Filter input */}
-          <div style={{ position: 'relative', marginBottom: '20px' }}>
-            <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: t.accent, pointerEvents: 'none' }} strokeWidth={2.5} />
+          <div style={{ position: 'relative', marginBottom: '16px' }}>
+            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: t.accent, fontSize: '12px', fontWeight: 900 }}>&gt;</span>
             <input
               type="text"
-              placeholder="Search by name, author, or description…"
+              placeholder="FILTER_MODULES..."
               value={searchQuery}
               onChange={handleQueryChange}
-              style={{ width: '100%', background: t.surface, border: `2px solid ${t.border}`, borderRadius: '12px', padding: '12px 16px 12px 44px', color: t.white, fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontWeight: 500, transition: 'all 0.3s ease' }}
-              onFocus={(e) => e.target.style.borderColor = t.borderBright}
-              onBlur={(e) => e.target.style.borderColor = t.border}
+              style={{ width: '100%', background: t.surface, border: `1px solid ${t.border}`, borderRadius: '2px', padding: '10px 12px 10px 32px', color: t.white, fontSize: '12px', outline: 'none', boxSizing: 'border-box', fontWeight: 700, fontFamily: 'inherit' }}
             />
           </div>
 
           {/* Result count */}
           {!isLoading && (
-            <div style={{ fontSize: '11px', color: t.dim, marginBottom: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              {searchResults.length.toLocaleString()} {debouncedQuery.trim() ? 'RESULTS' : 'LIBRARIES'}
+            <div style={{ fontSize: '9px', color: t.dim, marginBottom: '8px', fontWeight: 700, letterSpacing: '1px' }}>
+              QUERY_RESULT: {searchResults.length.toLocaleString()} UNITS
             </div>
           )}
 
           {/* List */}
-          <div ref={listRef} onScroll={handleScroll} style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
+          <div ref={listRef} onScroll={handleScroll} style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
             {isLoading ? (
-              <div style={{ textAlign: 'center', marginTop: '80px', color: t.dim }}>
-                <Loader2 size={36} style={{ opacity: 0.6, marginBottom: '16px', animation: 'spin 1s linear infinite', color: t.accent }} strokeWidth={2.5} />
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Loading library index…</p>
+              <div style={{ textAlign: 'center', marginTop: '60px', color: t.dim }}>
+                <Loader2 size={24} style={{ opacity: 0.6, marginBottom: '12px', animation: 'spin 1s linear infinite', color: t.accent }} strokeWidth={3} />
+                <p style={{ margin: 0, fontSize: '11px', fontWeight: 700 }}>SYNCING...</p>
               </div>
             ) : searchResults.length === 0 ? (
-              <div style={{ textAlign: 'center', marginTop: '80px', color: t.dim }}>
-                <Search size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>No libraries match "{debouncedQuery}"</p>
+              <div style={{ textAlign: 'center', marginTop: '60px', color: t.dim }}>
+                <Search size={32} style={{ opacity: 0.2, marginBottom: '12px' }} />
+                <p style={{ margin: 0, fontSize: '11px', fontWeight: 700 }}>NO_MATCHES</p>
               </div>
             ) : (
               visibleResults.map(lib => (
-                <div key={lib.name} style={{ background: `linear-gradient(135deg, ${t.surface}, ${t.bg})`, border: `2px solid ${t.border}`, borderRadius: '12px', padding: '16px 18px', marginBottom: '12px', transition: 'all 0.3s ease', cursor: 'pointer' }}
+                <div key={lib.name} style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: '2px', padding: '12px', marginBottom: '8px', transition: 'all 0.1s ease' }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = t.borderBright;
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = `0 8px 20px rgba(168, 85, 247, 0.3)`;
+                    e.currentTarget.style.borderColor = t.accent;
+                    e.currentTarget.style.background = t.surfaceHover;
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = t.border;
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.background = t.surface;
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '15px', fontWeight: 800, color: t.accentBright, fontFamily: 'JetBrains Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.3px' }}>{lib.name}</div>
-                      <div style={{ fontSize: '11px', color: t.dim, marginTop: '3px', fontWeight: 600 }}>by {lib.author}</div>
+                      <div style={{ fontSize: '13px', fontWeight: 900, color: t.accentBright, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lib.name}</div>
+                      <div style={{ fontSize: '9px', color: t.dim, marginTop: '2px', fontWeight: 700 }}>AUTOR: {lib.author}</div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: '16px', flexShrink: 0 }}>
-                      <span style={{ fontSize: '10px', color: t.cyan, background: 'rgba(6, 182, 212, 0.15)', padding: '3px 8px', borderRadius: '6px', fontWeight: 700, border: `1px solid rgba(6, 182, 212, 0.3)` }}>v{lib.version}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px', flexShrink: 0 }}>
+                      <span style={{ fontSize: '9px', color: t.cyan, background: 'rgba(34, 211, 238, 0.05)', padding: '2px 6px', borderRadius: '1px', fontWeight: 700, border: `1px solid rgba(34, 211, 238, 0.2)` }}>{lib.version}</span>
                       {lib.isInstalled ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: t.success, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          <CheckCircle size={15} strokeWidth={2.5} /> ADDED
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: t.success, fontSize: '9px', fontWeight: 900 }}>
+                          <CheckCircle size={12} strokeWidth={3} /> LINKED
                         </div>
                       ) : (
                         <button
                           onClick={() => handleInstall(lib)}
                           disabled={!!isInstalling[lib.name]}
-                          style={{ background: `linear-gradient(135deg, ${t.accent}, ${t.cyan})`, border: 'none', color: 'white', borderRadius: '8px', padding: '6px 14px', fontSize: '11px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: `0 4px 12px rgba(168, 85, 247, 0.4)`, transition: 'all 0.3s ease' }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = `0 6px 16px rgba(168, 85, 247, 0.6)`;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = `0 4px 12px rgba(168, 85, 247, 0.4)`;
-                          }}
+                          style={{ background: t.accent, border: 'none', color: '#000', borderRadius: '2px', padding: '4px 10px', fontSize: '9px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', textTransform: 'uppercase' }}
                         >
-                          {isInstalling[lib.name] ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} strokeWidth={2.5} /> : <Download size={12} strokeWidth={2.5} />}
-                          ADD
+                          {isInstalling[lib.name] ? <Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} strokeWidth={3} /> : <Download size={10} strokeWidth={3} />}
+                          LINK
                         </button>
                       )}
                     </div>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', lineHeight: '1.6', color: t.text, fontWeight: 400 }}>{lib.description}</p>
+                  <p style={{ margin: 0, fontSize: '11px', lineHeight: '1.4', color: t.white, fontWeight: 500 }}>{lib.description}</p>
                 </div>
               ))
             )}
@@ -250,49 +286,31 @@ export const LibraryManager: React.FC = () => {
         </div>
 
         {/* Right — installed */}
-        <div style={{ width: '320px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', padding: '12px 16px', background: `linear-gradient(135deg, ${t.surface}, ${t.bg})`, borderRadius: '12px', border: `2px solid ${t.border}` }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `linear-gradient(135deg, ${t.orange}, ${t.danger})`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 4px 12px rgba(251, 146, 60, 0.4)` }}>
-              <Package size={18} color="white" strokeWidth={2.5} />
+        <div style={{ width: '280px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', padding: '10px 14px', background: t.surface, borderRadius: '2px', border: `1px solid ${t.border}` }}>
+            <div style={{ width: '24px', height: '24px', borderRadius: '2px', background: t.orange, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Package size={14} color="#000" strokeWidth={3} />
             </div>
-            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: t.white, letterSpacing: '-0.3px' }}>Project Libraries</h2>
-            <span style={{ marginLeft: 'auto', fontSize: '11px', background: `linear-gradient(135deg, ${t.accent}, ${t.cyan})`, color: 'white', padding: '3px 10px', borderRadius: '100px', fontWeight: 800, boxShadow: `0 2px 8px rgba(168, 85, 247, 0.4)` }}>{installedLibraries.length}</span>
+            <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 900, color: t.white, letterSpacing: '0.5px', textTransform: 'uppercase' }}>LOCAL_DEPS</h2>
+            <span style={{ marginLeft: 'auto', fontSize: '10px', background: t.accent, color: '#000', padding: '1px 8px', borderRadius: '10px', fontWeight: 900 }}>{installedLibraries.length}</span>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
             {installedLibraries.length === 0 ? (
-              <div style={{ textAlign: 'center', marginTop: '60px', color: t.dim, fontSize: '13px', fontWeight: 600 }}>
-                <Package size={40} style={{ opacity: 0.2, marginBottom: '12px' }} />
-                <p style={{ margin: 0 }}>No libraries added yet</p>
+              <div style={{ textAlign: 'center', marginTop: '40px', color: t.dim, fontSize: '11px', fontWeight: 700 }}>
+                <p style={{ margin: 0 }}>EMPTY_DEP_TREE</p>
               </div>
             ) : (
               installedLibraries.map(lib => (
-                <div key={lib.name} style={{ padding: '14px 16px', borderBottom: `2px solid ${t.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: t.surface, marginBottom: '8px', borderRadius: '10px', transition: 'all 0.3s ease' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = t.surfaceHover;
-                    e.currentTarget.style.borderColor = t.borderBright;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = t.surface;
-                    e.currentTarget.style.borderColor = t.border;
-                  }}
-                >
+                <div key={lib.name} style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: t.surface, marginBottom: '6px', borderRadius: '2px' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: t.white, fontFamily: 'JetBrains Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lib.name}</div>
-                    <div style={{ fontSize: '10px', color: t.cyan, marginTop: '2px', fontWeight: 700 }}>v{lib.version}</div>
+                    <div style={{ fontSize: '12px', fontWeight: 900, color: t.white, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lib.name}</div>
+                    <div style={{ fontSize: '9px', color: t.cyan, marginTop: '1px', fontWeight: 700 }}>{lib.version}</div>
                   </div>
-                  <button onClick={() => handleRemove(lib.name)} style={{ background: 'rgba(239, 68, 68, 0.15)', border: `1.5px solid ${t.danger}`, color: t.danger, cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center', borderRadius: '8px', transition: 'all 0.3s ease' }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = t.danger;
-                      e.currentTarget.style.color = 'white';
-                      e.currentTarget.style.transform = 'scale(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
-                      e.currentTarget.style.color = t.danger;
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }}
+                  <button onClick={() => handleRemove(lib.name)} style={{ background: 'rgba(244, 63, 94, 0.1)', border: `1px solid ${t.danger}`, color: t.danger, cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', borderRadius: '2px', transition: 'all 0.1s' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = t.danger; e.currentTarget.style.color = '#000'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(244, 63, 94, 0.1)'; e.currentTarget.style.color = t.danger; }}
                   >
-                    <Trash2 size={15} strokeWidth={2.5} />
+                    <Trash2 size={12} strokeWidth={3} />
                   </button>
                 </div>
               ))
@@ -303,10 +321,10 @@ export const LibraryManager: React.FC = () => {
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(168, 85, 247, 0.05); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, rgba(168, 85, 247, 0.5), rgba(6, 182, 212, 0.5)); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(135deg, rgba(168, 85, 247, 0.7), rgba(6, 182, 212, 0.7)); }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: var(--lp-dark-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--lp-zinc-800); border-radius: 0; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--lp-accent-primary); }
       `}</style>
     </div>
   );

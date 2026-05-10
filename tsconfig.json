@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES6",
+    "target": "ES2020",
     "lib": [
-      "ES6",
+      "ES2020",
       "DOM",
       "DOM.Iterable"
     ],
@@ -11,7 +11,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "noImplicitAny": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "rootDir": "src",
     "outDir": "dist",
     "moduleResolution": "bundler",
@@ -21,6 +21,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "noEmit": true,
+    "incremental": true,
     "paths": {
       "@blockly-runtime": [
         "./src/blockly/runtime.ts"
@@ -30,5 +31,11 @@
   "include": [
     "src/**/*",
     "src/types/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts"
   ]
 }

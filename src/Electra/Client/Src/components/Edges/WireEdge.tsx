@@ -139,6 +139,8 @@ export const WireEdge: React.FC<EdgeProps> = ({
     updateEdgeData(id, { waypoints: newWaypoints });
   }, [id, waypoints, updateEdgeData]);
 
+  const [isHovered, setIsHovered] = React.useState(false);
+
   // ── Midpoint add-handles (shown between each segment) ────────────────────
   const midHandles = allPoints.slice(0, -1).map((pt, i) => {
     const m = mid(pt, allPoints[i + 1]);
@@ -146,7 +148,11 @@ export const WireEdge: React.FC<EdgeProps> = ({
   });
 
   return (
-    <g className="wire-edge-group">
+    <g 
+      className="wire-edge-group"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {/* 0. GLOW FILTER for plug terminals */}
       <defs>
         <filter id={`plug-glow-${id}`} x="-100%" y="-100%" width="300%" height="300%">
@@ -157,11 +163,11 @@ export const WireEdge: React.FC<EdgeProps> = ({
           </feMerge>
         </filter>
       </defs>
-
+      
       {/* 1. SELECTION GLOW */}
-      {selected && (
+      {(selected || isHovered) && (
         <path
-          style={{ stroke: wireColor, strokeWidth: 12, opacity: 0.2, fill: 'none', filter: 'blur(4px)' }}
+          style={{ stroke: wireColor, strokeWidth: 10, opacity: 0.15, fill: 'none', filter: 'blur(4px)' }}
           d={edgePath}
         />
       )}
@@ -184,7 +190,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
 
       {/* 3b. WIRE HIGHLIGHT - thin bright line for 3D cable look */}
       <path
-        style={{ stroke: 'rgba(255,255,255,0.12)', strokeWidth: 1, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round', pointerEvents: 'none' }}
+        style={{ stroke: 'rgba(255,255,255,0.15)', strokeWidth: 1, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round', pointerEvents: 'none' }}
         d={edgePath}
       />
 
@@ -203,28 +209,29 @@ export const WireEdge: React.FC<EdgeProps> = ({
       </g>
 
       {/* 6. WAYPOINT HANDLES (drag to bend) — only when selected or hovered */}
-      {selected && waypoints.map((wp, i) => (
+      {(selected || isHovered) && waypoints.map((wp, i) => (
         <g key={`wp-${i}`} style={{ cursor: 'grab' }}>
-          {/* Node dot */}
           <circle
-            cx={wp.x} cy={wp.y} r={5}
-            fill={wireColor} stroke="rgba(0,0,0,0.5)" strokeWidth={1}
+            cx={wp.x} cy={wp.y} r={6}
+            fill="#fff" stroke={wireColor} strokeWidth={2}
             onMouseDown={(e) => onWaypointMouseDown(e, i)}
             onDoubleClick={(e) => removeWaypoint(e, i)}
-            style={{ cursor: 'grab' }}
+            style={{ cursor: 'grab', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}
           />
         </g>
       ))}
 
-      {/* 7. MID-SEGMENT ADD HANDLES (click to add bend point) — only when selected */}
-      {selected && midHandles.map(({ m, insertAfterIdx }, i) => (
+      {/* 7. MID-SEGMENT ADD HANDLES (click to add bend point) — only when selected or hovered */}
+      {(selected || isHovered) && midHandles.map(({ m, insertAfterIdx }, i) => (
         <g key={`mid-${i}`} style={{ cursor: 'crosshair' }}>
           <circle
-            cx={m.x} cy={m.y} r={5}
-            fill="transparent" stroke={wireColor} strokeWidth={1.5}
-            strokeDasharray="2 2"
+            cx={m.x} cy={m.y} r={4}
+            fill={wireColor}
+            opacity={0.6}
             onClick={(e) => addWaypoint(e, insertAfterIdx, m)}
-            style={{ cursor: 'crosshair' }}
+            style={{ cursor: 'crosshair', transition: 'all 0.2s' }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.r = '6'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.r = '4'; }}
           />
         </g>
       ))}

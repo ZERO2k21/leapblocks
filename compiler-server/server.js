@@ -21,15 +21,15 @@
 
 'use strict';
 
-const express    = require('express');
-const cors       = require('cors');
-const path       = require('path');
-const fs         = require('fs');
-const os         = require('os');
-const { spawn }  = require('child_process');
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
+const os = require('os');
+const { spawn } = require('child_process');
 const { v4: uuidv4 } = require('uuid');
 
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 3001;
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
@@ -41,9 +41,13 @@ app.use(express.json({ limit: '2mb' }));
 function getCliPath() {
   if (process.env.ARDUINO_CLI_PATH) return process.env.ARDUINO_CLI_PATH;
 
-  // Bundled binary next to server.js (for Electron / self-hosted)
-  const bundled = path.join(__dirname, 'arduino-cli', process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli');
-  if (fs.existsSync(bundled)) return bundled;
+  // Bundled binary next to server.js
+  const bundledLocal = path.join(__dirname, 'arduino-cli', process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli');
+  if (fs.existsSync(bundledLocal)) return bundledLocal;
+
+  // Bundled binary in parent directory (monorepo structure)
+  const bundledParent = path.join(__dirname, '..', 'arduino-cli', process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli');
+  if (fs.existsSync(bundledParent)) return bundledParent;
 
   // Fallback: system PATH
   return process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli';
@@ -51,16 +55,22 @@ function getCliPath() {
 
 const CLI_PATH = getCliPath();
 
-// arduino-cli config file — use bundled one if present, else let CLI use defaults
+// arduino-cli config file
 const CLI_CONFIG = (() => {
-  const bundled = path.join(__dirname, 'arduino-cli.yaml');
-  return fs.existsSync(bundled) ? bundled : null;
+  const bundledLocal = path.join(__dirname, 'arduino-cli.yaml');
+  if (fs.existsSync(bundledLocal)) return bundledLocal;
+  const bundledParent = path.join(__dirname, '..', 'arduino-cli', 'arduino-cli.yaml');
+  if (fs.existsSync(bundledParent)) return bundledParent;
+  return null;
 })();
 
-// Libraries directory — bundled forge-lib/libraries if present
+// Libraries directory
 const FORGE_LIB_LIBRARIES = (() => {
-  const bundled = path.join(__dirname, 'forge-lib', 'libraries');
-  return fs.existsSync(bundled) ? bundled : null;
+  const bundledLocal = path.join(__dirname, 'forge-lib', 'libraries');
+  if (fs.existsSync(bundledLocal)) return bundledLocal;
+  const bundledParent = path.join(__dirname, '..', 'forge-lib', 'libraries');
+  if (fs.existsSync(bundledParent)) return bundledParent;
+  return null;
 })();
 
 console.log(`[SERVER] arduino-cli: ${CLI_PATH}`);
@@ -76,7 +86,7 @@ function runCLI(args) {
     proc.stdout.on('data', d => { stdout += d.toString(); });
     proc.stderr.on('data', d => { stderr += d.toString(); });
     proc.on('close', code => resolve({ stdout, stderr, code }));
-    proc.on('error', err  => resolve({ stdout: '', stderr: err.message, code: -1 }));
+    proc.on('error', err => resolve({ stdout: '', stderr: err.message, code: -1 }));
   });
 }
 
@@ -143,19 +153,19 @@ function binToIntelHex(buf) {
   let hex = '';
   for (let offset = 0; offset < buf.length; offset += RECORD_SIZE) {
     const chunk = buf.slice(offset, Math.min(offset + RECORD_SIZE, buf.length));
-    const len  = chunk.length;
+    const len = chunk.length;
     const addr = offset & 0xFFFF;
     if (offset > 0 && (offset & 0xFFFF) === 0) {
       const seg = (offset >> 16) & 0xFFFF;
       const hi = (seg >> 8) & 0xFF, lo = seg & 0xFF;
       const ck = (0x100 - ((2 + 4 + hi + lo) & 0xFF)) & 0xFF;
-      hex += `:02000004${hi.toString(16).padStart(2,'0').toUpperCase()}${lo.toString(16).padStart(2,'0').toUpperCase()}${ck.toString(16).padStart(2,'0').toUpperCase()}\n`;
+      hex += `:02000004${hi.toString(16).padStart(2, '0').toUpperCase()}${lo.toString(16).padStart(2, '0').toUpperCase()}${ck.toString(16).padStart(2, '0').toUpperCase()}\n`;
     }
     let sum = len + ((addr >> 8) & 0xFF) + (addr & 0xFF);
     let data = '';
-    for (let i = 0; i < len; i++) { sum += chunk[i]; data += chunk[i].toString(16).padStart(2,'0').toUpperCase(); }
+    for (let i = 0; i < len; i++) { sum += chunk[i]; data += chunk[i].toString(16).padStart(2, '0').toUpperCase(); }
     const checksum = (0x100 - (sum & 0xFF)) & 0xFF;
-    hex += `:${len.toString(16).padStart(2,'0').toUpperCase()}${addr.toString(16).padStart(4,'0').toUpperCase()}00${data}${checksum.toString(16).padStart(2,'0').toUpperCase()}\n`;
+    hex += `:${len.toString(16).padStart(2, '0').toUpperCase()}${addr.toString(16).padStart(4, '0').toUpperCase()}00${data}${checksum.toString(16).padStart(2, '0').toUpperCase()}\n`;
   }
   hex += ':00000001FF\n';
   return hex;
@@ -261,28 +271,28 @@ function transpileArduinoToJS(code) {
 // ── Library stubs ────────────────────────────────────────────────────────────
 // IMPORTANT: These use conditional assignment (not var declarations) so they
 // do NOT shadow injected parameters from ArduinoRuntime.buildContext().
-if (!Adafruit_SSD1306) Adafruit_SSD1306 = class { constructor() { this._buf = new Uint8Array(128 * 8); } begin() { return true; } clearDisplay() { this._buf.fill(0); } display() {} setTextSize() {} setTextColor() {} setCursor() {} print(v) { console.log('[OLED]', v); } println(v) { console.log('[OLED]', v); } drawPixel(x, y, c) { if (x >= 0 && x < 128 && y >= 0 && y < 64) { const page = Math.floor(y / 8); const bit = y % 8; if (c) this._buf[page * 128 + x] |= (1 << bit); else this._buf[page * 128 + x] &= ~(1 << bit); } } fillRect() {} drawRect() {} drawCircle() {} fillCircle() {} setRotation() {} invertDisplay() {} startscrollright() {} stopscroll() {} getBuffer() { return this._buf; } };
-if (!Adafruit_GFX) Adafruit_GFX = class { constructor() {} };
-if (!LiquidCrystal_I2C) LiquidCrystal_I2C = class { constructor() {} begin() {} print(v) { console.log('[LCD]', v); } println(v) { console.log('[LCD]', v); } setCursor() {} clear() {} backlight() {} noBacklight() {} };
-if (!LiquidCrystal) LiquidCrystal = class { constructor() {} begin() {} print(v) { console.log('[LCD]', v); } println(v) { console.log('[LCD]', v); } setCursor() {} clear() {} };
-if (!DHT) DHT = class { constructor() {} begin() {} readTemperature() { return 25.0; } readHumidity() { return 50.0; } isnan(v) { return isNaN(v); } };
-if (!IRrecv) IRrecv = class { constructor() {} enableIRIn() {} decode() { return false; } resume() {} };
-if (!decode_results) decode_results = class { constructor() { this.value = 0; } };
-if (!SoftwareSerial) SoftwareSerial = class { constructor() {} begin() {} print(v) { Serial.print(v); } println(v) { Serial.println(v); } available() { return 0; } read() { return -1; } };
-if (!Stepper) Stepper = class { constructor() {} setSpeed() {} step() {} };
-if (!MFRC522) MFRC522 = class { constructor() {} PCD_Init() {} PICC_IsNewCardPresent() { return false; } PICC_ReadCardSerial() { return false; } };
-if (!Keypad) Keypad = class { constructor() {} getKey() { return null; } };
-if (!makeKeymap) makeKeymap = (k) => k;
-if (!U8g2_SSD1306_128X64_NONAME_F_HW_I2C) U8g2_SSD1306_128X64_NONAME_F_HW_I2C = class { constructor() {} begin() {} clearBuffer() {} sendBuffer() {} setFont() {} drawStr() {} setCursor() {} print() {} println() {} };
-if (!TFT_eSPI) TFT_eSPI = class { constructor() {} init() {} fillScreen() {} setTextColor() {} setTextSize() {} setCursor() {} print() {} println() {} drawPixel() {} fillRect() {} drawRect() {} };
-if (!Servo) Servo = class { constructor() { this._pin = 0; this._angle = 90; } attach(pin) { this._pin = pin; } write(a) { this._angle = a; if (typeof __onServoWrite === 'function') __onServoWrite(this._pin, a); } read() { return this._angle; } detach() {} };
-if (!NeoPixel) NeoPixel = class { constructor(n, pin) { this._n = n; this._pin = pin; this._pixels = new Uint32Array(n); } begin() {} show() {} setPixelColor(i, r, g, b) { if (i < this._n) this._pixels[i] = (r << 16) | (g << 8) | b; } Color(r, g, b) { return (r << 16) | (g << 8) | b; } clear() { this._pixels.fill(0); } };
-if (!Adafruit_NeoPixel) Adafruit_NeoPixel = NeoPixel;
-if (!isnan) isnan = (v) => isNaN(v);
-if (!isinf) isinf = (v) => !isFinite(v);
-if (!F) F = (s) => s;
+if (typeof Adafruit_SSD1306 === 'undefined') Adafruit_SSD1306 = class { constructor() { this._buf = new Uint8Array(128 * 8); } begin() { return true; } clearDisplay() { this._buf.fill(0); } display() {} setTextSize() {} setTextColor() {} setCursor() {} print(v) { console.log('[OLED]', v); } println(v) { console.log('[OLED]', v); } drawPixel(x, y, c) { if (x >= 0 && x < 128 && y >= 0 && y < 64) { const page = Math.floor(y / 8); const bit = y % 8; if (c) this._buf[page * 128 + x] |= (1 << bit); else this._buf[page * 128 + x] &= ~(1 << bit); } } fillRect() {} drawRect() {} drawCircle() {} fillCircle() {} setRotation() {} invertDisplay() {} startscrollright() {} stopscroll() {} getBuffer() { return this._buf; } };
+if (typeof Adafruit_GFX === 'undefined') Adafruit_GFX = class { constructor() {} };
+if (typeof LiquidCrystal_I2C === 'undefined') LiquidCrystal_I2C = class { constructor() {} begin() {} print(v) { console.log('[LCD]', v); } println(v) { console.log('[LCD]', v); } setCursor() {} clear() {} backlight() {} noBacklight() {} };
+if (typeof LiquidCrystal === 'undefined') LiquidCrystal = class { constructor() {} begin() {} print(v) { console.log('[LCD]', v); } println(v) { console.log('[LCD]', v); } setCursor() {} clear() {} };
+if (typeof DHT === 'undefined') DHT = class { constructor() {} begin() {} readTemperature() { return 25.0; } readHumidity() { return 50.0; } isnan(v) { return isNaN(v); } };
+if (typeof IRrecv === 'undefined') IRrecv = class { constructor() {} enableIRIn() {} decode() { return false; } resume() {} };
+if (typeof decode_results === 'undefined') decode_results = class { constructor() { this.value = 0; } };
+if (typeof SoftwareSerial === 'undefined') SoftwareSerial = class { constructor() {} begin() {} print(v) { Serial.print(v); } println(v) { Serial.println(v); } available() { return 0; } read() { return -1; } };
+if (typeof Stepper === 'undefined') Stepper = class { constructor() {} setSpeed() {} step() {} };
+if (typeof MFRC522 === 'undefined') MFRC522 = class { constructor() {} PCD_Init() {} PICC_IsNewCardPresent() { return false; } PICC_ReadCardSerial() { return false; } };
+if (typeof Keypad === 'undefined') Keypad = class { constructor() {} getKey() { return null; } };
+if (typeof makeKeymap === 'undefined') makeKeymap = (k) => k;
+if (typeof U8g2_SSD1306_128X64_NONAME_F_HW_I2C === 'undefined') U8g2_SSD1306_128X64_NONAME_F_HW_I2C = class { constructor() {} begin() {} clearBuffer() {} sendBuffer() {} setFont() {} drawStr() {} setCursor() {} print() {} println() {} };
+if (typeof TFT_eSPI === 'undefined') TFT_eSPI = class { constructor() {} init() {} fillScreen() {} setTextColor() {} setTextSize() {} setCursor() {} print() {} println() {} drawPixel() {} fillRect() {} drawRect() {} };
+if (typeof Servo === 'undefined') Servo = class { constructor() { this._pin = 0; this._angle = 90; } attach(pin) { this._pin = pin; } write(a) { this._angle = a; if (typeof __onServoWrite === 'function') __onServoWrite(this._pin, a); } read() { return this._angle; } detach() {} };
+if (typeof NeoPixel === 'undefined') NeoPixel = class { constructor(n, pin) { this._n = n; this._pin = pin; this._pixels = new Uint32Array(n); } begin() {} show() {} setPixelColor(i, r, g, b) { if (i < this._n) this._pixels[i] = (r << 16) | (g << 8) | b; } Color(r, g, b) { return (r << 16) | (g << 8) | b; } clear() { this._pixels.fill(0); } };
+if (typeof Adafruit_NeoPixel === 'undefined') Adafruit_NeoPixel = NeoPixel;
+if (typeof isnan === 'undefined') isnan = (v) => isNaN(v);
+if (typeof isinf === 'undefined') isinf = (v) => !isFinite(v);
+if (typeof F === 'undefined') F = (s) => s;
 if (typeof PROGMEM === 'undefined') PROGMEM = '';
-if (!pgm_read_byte) pgm_read_byte = (p) => p;
+if (typeof pgm_read_byte === 'undefined') pgm_read_byte = (p) => p;
 // ── Library constants ─────────────────────────────────────────────────────────
 if (typeof SSD1306_SWITCHCAPVCC === 'undefined') SSD1306_SWITCHCAPVCC = 0x02;
 if (typeof SSD1306_EXTERNALVCC  === 'undefined') SSD1306_EXTERNALVCC  = 0x01;
@@ -327,9 +337,9 @@ app.post('/compile', async (req, res) => {
   if (!code) return res.status(400).json({ success: false, errors: 'No code provided' });
 
   const isESP32 = board.startsWith('esp32:');
-  const tempId  = uuidv4();
+  const tempId = uuidv4();
   const tempDir = path.join(os.tmpdir(), `electra_${tempId}`);
-  const sketchDir  = path.join(tempDir, 'sketch');
+  const sketchDir = path.join(tempDir, 'sketch');
   const sketchPath = path.join(sketchDir, 'sketch.ino');
 
   try {
@@ -356,8 +366,14 @@ app.post('/compile', async (req, res) => {
     }
     // Add user-specified libraries
     if (libraries) {
-      const libPath = path.resolve(libraries);
-      if (fs.existsSync(libPath)) cliArgs.push('--libraries', libPath);
+      const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map(l => l.trim());
+      for (const lib of libList) {
+        if (!lib) continue;
+        const libPath = path.resolve(lib);
+        if (fs.existsSync(libPath)) {
+          cliArgs.push('--libraries', libPath);
+        }
+      }
     }
 
     cliArgs.push(sketchDir);
@@ -389,7 +405,7 @@ app.post('/compile', async (req, res) => {
   } catch (err) {
     return res.json({ success: false, errors: err.message });
   } finally {
-    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) {}
+    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
   }
 });
 
@@ -406,6 +422,74 @@ app.post('/transpile', async (req, res) => {
   }
 });
 
+// ─── Library Management ───────────────────────────────────────────────────────
+
+// GET /libraries/installed - List installed libraries
+app.get('/libraries/installed', async (req, res) => {
+  if (!FORGE_LIB_LIBRARIES || !fs.existsSync(FORGE_LIB_LIBRARIES)) {
+    return res.json([]);
+  }
+
+  try {
+    const entries = fs.readdirSync(FORGE_LIB_LIBRARIES, { withFileTypes: true });
+    const libs = [];
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const libDir = path.join(FORGE_LIB_LIBRARIES, entry.name);
+      const propFile = path.join(libDir, 'library.properties');
+      if (fs.existsSync(propFile)) {
+        const props = {};
+        fs.readFileSync(propFile, 'utf-8').split('\n').forEach(line => {
+          const [k, ...v] = line.split('=');
+          if (k && v.length) props[k.trim()] = v.join('=').trim();
+        });
+        libs.push({
+          name: props.name || entry.name,
+          version: props.version || '?',
+          author: props.author || '',
+          description: props.sentence || '',
+        });
+      } else {
+        libs.push({ name: entry.name, version: '?', author: '', description: '' });
+      }
+    }
+    res.json(libs);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /libraries/install - Install a library
+app.post('/libraries/install', async (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ success: false, error: 'Library name required' });
+
+  console.log(`[SERVER] Installing library: ${name}`);
+  if (FORGE_LIB_LIBRARIES) fs.mkdirSync(FORGE_LIB_LIBRARIES, { recursive: true });
+
+  const { stdout, stderr, code } = await runCLI(['lib', 'install', name]);
+  if (code === 0) {
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ success: false, error: stderr || stdout || 'Installation failed' });
+  }
+});
+
+// DELETE /libraries/remove - Remove a library
+app.delete('/libraries/remove', async (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ success: false, error: 'Library name required' });
+
+  console.log(`[SERVER] Removing library: ${name}`);
+  const { code, stderr, stdout } = await runCLI(['lib', 'uninstall', name]);
+  if (code === 0) {
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ success: false, error: stderr || stdout || 'Removal failed' });
+  }
+});
+
 // ─── GET /health ──────────────────────────────────────────────────────────────
 app.get('/health', async (req, res) => {
   let cliVersion = 'unknown';
@@ -413,7 +497,7 @@ app.get('/health', async (req, res) => {
     const { stdout } = await runCLI(['version', '--format', 'json']);
     const parsed = JSON.parse(stdout || '{}');
     cliVersion = parsed.VersionString || parsed.version || stdout.trim().split('\n')[0];
-  } catch (_) {}
+  } catch (_) { }
 
   res.json({
     status: 'ok',
@@ -421,7 +505,7 @@ app.get('/health', async (req, res) => {
     uptime: Math.floor(process.uptime()),
     arduinoCli: cliVersion,
     esp32CoreReady,
-    endpoints: ['/compile', '/transpile', '/health'],
+    endpoints: ['/compile', '/transpile', '/libraries/installed', '/libraries/install', '/libraries/remove', '/health'],
   });
 });
 

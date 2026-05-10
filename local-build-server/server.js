@@ -10,7 +10,7 @@ const fs = require('fs-extra');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-const PORT = process.env.BUILD_PORT || 3001;
+const PORT = process.env.BUILD_PORT || 3002;
 const jobs = {};
 
 app.use(cors());
