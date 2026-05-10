@@ -292,6 +292,11 @@ function transpileArduinoToJS(code) {
   js = js.replace(/\bhighByte\s*\(/g, '__arduino_highByte(');
   js = js.replace(/\brandomSeed\s*\(/g, '__arduino_randomSeed(');
 
+  // 8b. Await async HTTP/network methods (these return Promises in the browser runtime)
+  js = js.replace(/(\w+)\.(GET|POST|PUT|DELETE|PATCH)\s*\(/g, 'await $1.$2(');
+  js = js.replace(/(\w+)\.(writeFields|writeField|readFloatField|readLongField)\s*\(/g, 'await $1.$2(');
+  js = js.replace(/(\w+)\.(getString)\s*\(/g, 'await $1.$2(');
+
   // 9. String type → string (JS has no String type keyword)
   js = js.replace(/\bString\s+(\w+)/g, 'let $1');
 

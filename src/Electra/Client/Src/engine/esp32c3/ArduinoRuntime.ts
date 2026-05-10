@@ -676,16 +676,26 @@ export class ArduinoRuntime {
           this._ssid = ssid;
           this._status = 0; // WL_IDLE_STATUS
 
-          // Wokwi-style: accept any SSID/password (simulation always connects)
-          // Simulate connection sequence with proper __LF_WIFI: events
-          setTimeout(() => {
-            this._status = 3; // WL_CONNECTED
-            self.onSerial?.('__LF_WIFI:connected\n');
-          }, 500);
+          // Only 'electra' SSID connects in the Electra simulation
+          if (ssid.toLowerCase() === 'electra') {
+            // Simulate connection sequence
+            setTimeout(() => {
+              this._status = 3; // WL_CONNECTED
+              self.onSerial?.('__LF_WIFI:connected\n');
+            }, 500);
 
-          setTimeout(() => {
-            self.onSerial?.(`__LF_WIFI:ip:${this._ip}\n`);
-          }, 1000);
+            setTimeout(() => {
+              self.onSerial?.(`__LF_WIFI:ip:${this._ip}\n`);
+            }, 1000);
+          } else {
+            // Wrong SSID — show helpful message
+            setTimeout(() => {
+              this._status = 4; // WL_CONNECT_FAILED
+              self.onSerial?.(`\n[WiFi] Connection failed: SSID "${ssid}" not found.\n`);
+              self.onSerial?.(`[WiFi] Use SSID "electra" and password "electra" to connect to the internet in Electra simulation.\n`);
+              self.onSerial?.('__LF_WIFI:connect_failed\n');
+            }, 500);
+          }
         },
 
         status(): number {
@@ -967,19 +977,6 @@ export class ArduinoRuntime {
         }
       },
 
-      // ── WiFiClient (simple TCP client stub for library compatibility) ──
-      WiFiClient: class {
-        private _connected: boolean = false;
-        connect(_host: string, _port: number): boolean { this._connected = true; return true; }
-        connected(): boolean { return this._connected; }
-        available(): number { return 0; }
-        read(): number { return -1; }
-        write(_data: any): number { return 0; }
-        print(data: any): void { console.log('[WiFiClient]', data); }
-        println(data: any): void { console.log('[WiFiClient]', data); }
-        stop(): void { this._connected = false; }
-        flush(): void { }
-      },
 
       // ── ThingSpeak library (makes real HTTP requests via fetch) ────────
       ThingSpeak: {
@@ -1000,7 +997,7 @@ export class ArduinoRuntime {
         async writeFields(channelNumber: number | string, apiKey: string): Promise<number> {
           try {
             let url = `https://api.thingspeak.com/update?api_key=${apiKey}`;
-            this._fields.forEach((value, field) => {
+            this._fields.forEach((value: string, field: number) => {
               url += `&field${field}=${encodeURIComponent(value)}`;
             });
 
