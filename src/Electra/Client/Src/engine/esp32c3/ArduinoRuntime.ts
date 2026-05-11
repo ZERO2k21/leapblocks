@@ -334,6 +334,19 @@ export class ArduinoRuntime {
       ICACHE_RAM_ATTR: undefined,
       DRAM_ATTR: undefined,
 
+      // ── WiFi status constants (from ESP32 WiFi library) ──────
+      WL_NO_SHIELD: 255,
+      WL_IDLE_STATUS: 0,
+      WL_NO_SSID_AVAIL: 1,
+      WL_SCAN_COMPLETED: 2,
+      WL_CONNECTED: 3,
+      WL_CONNECT_FAILED: 4,
+      WL_CONNECTION_LOST: 5,
+      WL_DISCONNECTED: 6,
+      WIFI_STA: 1,
+      WIFI_AP: 2,
+      WIFI_AP_STA: 3,
+
       // ── Additional Arduino utility functions ───────────────
       // shiftIn / shiftOut — used by some sensor libraries
       shiftIn(_dataPin: number, _clockPin: number, _bitOrder: number): number { return 0; },
@@ -663,15 +676,26 @@ export class ArduinoRuntime {
           this._ssid = ssid;
           this._status = 0; // WL_IDLE_STATUS
 
-          // Simulate connection sequence with proper __LF_WIFI: events
-          setTimeout(() => {
-            this._status = 3; // WL_CONNECTED
-            self.onSerial?.('__LF_WIFI:connected\n');
-          }, 500);
+          // Only 'electra' SSID connects in the Electra simulation
+          if (ssid.toLowerCase() === 'electra') {
+            // Simulate connection sequence
+            setTimeout(() => {
+              this._status = 3; // WL_CONNECTED
+              self.onSerial?.('__LF_WIFI:connected\n');
+            }, 500);
 
-          setTimeout(() => {
-            self.onSerial?.(`__LF_WIFI:ip:${this._ip}\n`);
-          }, 1000);
+            setTimeout(() => {
+              self.onSerial?.(`__LF_WIFI:ip:${this._ip}\n`);
+            }, 1000);
+          } else {
+            // Wrong SSID — show helpful message
+            setTimeout(() => {
+              this._status = 4; // WL_CONNECT_FAILED
+              self.onSerial?.(`\n[WiFi] Connection failed: SSID "${ssid}" not found.\n`);
+              self.onSerial?.(`[WiFi] Use SSID "electra" and password "electra" to connect to the internet in Electra simulation.\n`);
+              self.onSerial?.('__LF_WIFI:connect_failed\n');
+            }, 500);
+          }
         },
 
         status(): number {
@@ -951,6 +975,73 @@ export class ArduinoRuntime {
           this._responseCode = 0;
           this._responseBody = '';
         }
+      },
+
+
+      // ── ThingSpeak library (makes real HTTP requests via fetch) ────────
+      ThingSpeak: {
+        _fields: new Map<number, string>(),
+        _client: null as any,
+
+        begin(_client: any): void {
+          this._client = _client;
+          this._fields.clear();
+          self.onSerial?.('__LF_WIFI:thingspeak_init\\n');
+        },
+
+        setField(field: number, value: any): number {
+          this._fields.set(field, String(value));
+          return 200;
+        },
+
+        async writeFields(channelNumber: number | string, apiKey: string): Promise<number> {
+          try {
+            let url = `https://api.thingspeak.com/update?api_key=${apiKey}`;
+            this._fields.forEach((value: string, field: number) => {
+              url += `&field${field}=${encodeURIComponent(value)}`;
+            });
+
+            self.onSerial?.(`__LF_WIFI:thingspeak_write:channel=${channelNumber}\\n`);
+
+            const response = await fetch(url);
+            const result = await response.text();
+            const entryId = parseInt(result.trim(), 10);
+
+            self.onSerial?.(`__LF_WIFI:thingspeak_response:${entryId}\\n`);
+            this._fields.clear();
+
+            return entryId > 0 ? 200 : -1;
+          } catch (error: any) {
+            console.error('[ThingSpeak] writeFields failed:', error);
+            self.onSerial?.(`__LF_WIFI:thingspeak_error:${error.message}\\n`);
+            return -1;
+          }
+        },
+
+        async writeField(channelNumber: number | string, field: number, value: any, apiKey: string): Promise<number> {
+          this._fields.clear();
+          this._fields.set(field, String(value));
+          return await this.writeFields(channelNumber, apiKey);
+        },
+
+        async readFloatField(channelNumber: number | string, field: number, apiKey?: string): Promise<number> {
+          try {
+            let url = `https://api.thingspeak.com/channels/${channelNumber}/fields/${field}/last.txt`;
+            if (apiKey) url += `?api_key=${apiKey}`;
+            const response = await fetch(url);
+            const text = await response.text();
+            return parseFloat(text.trim()) || 0;
+          } catch {
+            return 0;
+          }
+        },
+
+        async readLongField(channelNumber: number | string, field: number, apiKey?: string): Promise<number> {
+          const val = await this.readFloatField(channelNumber, field, apiKey);
+          return Math.trunc(val);
+        },
+
+        getLastReadStatus(): number { return 200; },
       },
 
       // ── Tone ───────────────────────────────────────────────

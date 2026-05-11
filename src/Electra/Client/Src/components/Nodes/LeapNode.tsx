@@ -535,6 +535,34 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     };
   }, [data.type, id]);
 
+  // Wire IR remote DOM button-press/release events into the circuit engine
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el || data.type !== 'ir-remote') return;
+
+    const handlePress = (e: Event) => {
+      const irCode = (e as CustomEvent).detail?.irCode ?? 0;
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushIRRemoteButton(id, irCode, true);
+      });
+    };
+
+    const handleRelease = (e: Event) => {
+      const irCode = (e as CustomEvent).detail?.irCode ?? 0;
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushIRRemoteButton(id, irCode, false);
+      });
+    };
+
+    el.addEventListener('button-press', handlePress);
+    el.addEventListener('button-release', handleRelease);
+
+    return () => {
+      el.removeEventListener('button-press', handlePress);
+      el.removeEventListener('button-release', handleRelease);
+    };
+  }, [data.type, id]);
+
   // Wire analog-joystick DOM events into the circuit engine
   useEffect(() => {
     const el = elementRef.current;

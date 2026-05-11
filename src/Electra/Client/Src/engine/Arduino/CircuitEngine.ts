@@ -19,6 +19,7 @@ import { KeypadEmulator } from './KeypadEmulator';
 import { RotaryDialerEmulator } from './RotaryDialerEmulator';
 import { TiltSwitchEmulator } from './TiltSwitchEmulator';
 import { RotaryEncoderEmulator } from './RotaryEncoderEmulator';
+import { IRReceiverEmulator } from './IRReceiverEmulator';
 import { ESP32_BOARD_CONFIG, ESP32_BOARDS, type ESP32PinInfo } from './ESP32BoardConfig.js';
 
 /** Simplified ECG pulse shape used by the heart-beat sensor emulator. Returns -1..+1 for phase 0..1 */
@@ -91,6 +92,7 @@ class CircuitEngine {
   private rotaryDialerEmulators = new Map<string, RotaryDialerEmulator>();
   private tiltSwitchEmulators = new Map<string, TiltSwitchEmulator>();
   private rotaryEncoderEmulators = new Map<string, RotaryEncoderEmulator>();
+  private irReceiverEmulators = new Map<string, IRReceiverEmulator>();
   private _pendingLibraryClasses = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
   private stepperIdleRaf: number | null = null;
@@ -200,10 +202,10 @@ class CircuitEngine {
           continue;
         }
       }
-      
+
       // Also include the start node itself if it's a target (preserving legacy behavior for simple components)
       if (current.id === startNodeId && targetTypes.includes(nodeType)) {
-         targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
+        targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
       }
 
       // 2. Follow internal/specialized routing
@@ -247,7 +249,7 @@ class CircuitEngine {
         let exitPin = '';
         if (cleanStartPin === '1' || cleanStartPin === 'pin_1' || cleanStartPin === 'IN') exitPin = node.data?.pinOUT ? 'OUT' : '2';
         else exitPin = node.data?.pinIN ? 'IN' : '1';
-        
+
         const outEdges = edges.filter(e =>
           (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
           (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
@@ -258,7 +260,7 @@ class CircuitEngine {
           queue.push({ id: nextId, pin: nextPin, resistance: current.resistance + rValue });
         }
       }
-      
+
       // 3. Always follow the wire connected to the CURRENT pin externally
       // This is critical for the start node and for nodes that aren't terminal components.
       const isTerminal = ['led', 'buzzer', 'rgb-led', 'dc-motor', 'battery-12v'].includes(nodeType);
@@ -1200,7 +1202,8 @@ class CircuitEngine {
 
           const isComplexPeripheral = ['stepper-motor', 'stepperMotor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
             'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5', 'relay-module',
-            '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer', 'l298n'].includes(pType);
+            '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer', 'l298n',
+            'ir-receiver', 'ir-remote'].includes(pType);
 
           // 1. Trace the electrical network — only for simple output peripherals
           if (!isComplexPeripheral) {
@@ -1406,6 +1409,18 @@ class CircuitEngine {
               }
             }
 
+            // --- IR Receiver Emulation ---
+            // IR receiver is a pure INPUT sensor — receives IR signals from remote and outputs to DATA pin
+            if (peripheralNode.data?.type === 'ir-receiver') {
+              if (peripheralPinName === 'DAT' || peripheralPinName === 'DATA' || peripheralPinName === 'OUT') {
+                if (!this.irReceiverEmulators.has(peripheralId)) {
+                  // Create IR receiver emulator for this node
+                  this.irReceiverEmulators.set(peripheralId, new IRReceiverEmulator(avrPin, peripheralId));
+                  console.log(`[IR RECEIVER] Initialized emulator for node ${peripheralId} on pin ${avrPin}`);
+                }
+              }
+            }
+
             // --- ILI9341 TFT SPI Display Emulation ---
             // D/C pin controls command vs data mode; CS pin enables/disables the chip.
             if (peripheralNode.data?.type === 'ili9341') {
@@ -1597,7 +1612,7 @@ class CircuitEngine {
             // --- L298N Motor Driver Emulation ---
             if (pType === 'l298n') {
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
-              
+
               // Only process if the pin state actually changed in the buffer
               if (buf[peripheralPinName] === isHigh && buf['_initialized']) {
                 return;
@@ -1612,12 +1627,12 @@ class CircuitEngine {
                 buf['_has12VPower'] = this.traceNet(peripheralId, '12V').some(t => t.type === 'battery-12v');
                 buf['_lastPowerCheck'] = Date.now();
               }
-              
+
               const has12VPower = !!buf['_has12VPower'];
-              const ena = (buf['ENA'] !== false) && has12VPower; 
+              const ena = (buf['ENA'] !== false) && has12VPower;
               const in1 = !!buf['IN1'];
               const in2 = !!buf['IN2'];
-              const enb = (buf['ENB'] !== false) && has12VPower; 
+              const enb = (buf['ENB'] !== false) && has12VPower;
               const in3 = !!buf['IN3'];
               const in4 = !!buf['IN4'];
 
@@ -1650,7 +1665,7 @@ class CircuitEngine {
                   if (!targetNode) return;
                   const pinKey = `pin_${target.pinName}`;
                   const currentPinStates = targetNode.data?.pinStates || {};
-                  
+
                   // Skip if target pin state is already what we want
                   if (currentPinStates[pinKey] === signal) return;
 
@@ -1662,10 +1677,10 @@ class CircuitEngine {
                     let speed = 0;
                     let direction = 'cw';
                     if (pos && !neg) {
-                      speed = 1.0; 
+                      speed = 1.0;
                       direction = 'cw';
                     } else if (!pos && neg) {
-                      speed = 1.0; 
+                      speed = 1.0;
                       direction = 'ccw';
                     }
                     updateNodeData(target.nodeId, { pinStates: newPinStates, speed, direction });
@@ -2118,6 +2133,54 @@ class CircuitEngine {
       emulator.stepCCW();
     }
     console.log(`[FORGE CIRCUIT] Rotary Encoder (${nodeId}) rotated CCW`);
+  }
+
+  /**
+   * Handle IR remote button press/release events.
+   * Called by LeapNode when it receives 'button-press' / 'button-release' events from IR remote.
+   * @param remoteNodeId The IR remote node ID (source of the signal)
+   * @param irCode The NEC protocol IR code (0x00-0xFF)
+   * @param pressed Whether the button is pressed (true) or released (false)
+   */
+  public pushIRRemoteButton(remoteNodeId: string, irCode: number, pressed: boolean) {
+    const { nodes, edges } = useForgeStore.getState();
+
+    // Find all IR receivers in the circuit
+    const irReceivers = nodes.filter(n => n.data?.type === 'ir-receiver');
+
+    if (irReceivers.length === 0) {
+      console.warn(`[IR REMOTE] No IR receivers found in circuit`);
+      return;
+    }
+
+    // Send the IR signal to all receivers (simulating broadcast nature of IR)
+    irReceivers.forEach(receiverNode => {
+      const emulator = this.irReceiverEmulators.get(receiverNode.id);
+      if (emulator) {
+        if (pressed) {
+          // NEC protocol: address byte is typically 0x00 for generic remotes
+          const address = 0x00;
+          emulator.transmit(address, irCode, false);
+          console.log(`[IR REMOTE] Button pressed: code=0x${irCode.toString(16).padStart(2, '0')} → receiver ${receiverNode.id}`);
+        } else {
+          emulator.release();
+          console.log(`[IR REMOTE] Button released → receiver ${receiverNode.id}`);
+        }
+      }
+    });
+  }
+
+  /**
+   * Send a manual IR signal directly to a specific receiver (simulates Wokwi's popup menu).
+   */
+  public sendIRSignalToReceiver(nodeId: string, address: number, command: number) {
+    const emulator = this.irReceiverEmulators.get(nodeId);
+    if (emulator) {
+      console.log(`[IR RECEIVER] Manual signal injected: addr=0x${address.toString(16)}, cmd=0x${command.toString(16)} to node ${nodeId}`);
+      emulator.transmit(address, command, false);
+    } else {
+      console.warn(`[IR RECEIVER] Cannot send signal: emulator not found for node ${nodeId}`);
+    }
   }
 
   /**

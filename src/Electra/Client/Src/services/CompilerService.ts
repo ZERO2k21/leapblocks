@@ -336,7 +336,7 @@ function clientSideTranspile(code: string): TranspileResult {
     js = js.replace(/^\s*#include\s*[<"].*?[>"]\s*$/gm, '');
     // Strip C++ const / volatile qualifiers (before type processing)
     // Only strip when followed by a known C++ type so #define-generated `const X = Y;` is preserved
-    js = js.replace(/\b(const|volatile)\s+(?=(void|int|long|short|unsigned|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\b)/g, '');
+    js = js.replace(/\b(const|volatile)\s+(?=(void|int|long|short|unsigned|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool|String|string)\b)/g, '');
     // Strip standalone volatile (not followed by type)
     js = js.replace(/\bvolatile\s+/g, '');
     // Strip ESP32/AVR function attributes that appear between return type and function name

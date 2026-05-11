@@ -171,19 +171,59 @@ function binToIntelHex(buf) {
   return hex;
 }
 
+// ─── String-aware comment remover (won't destroy URLs inside quotes) ─────────
+function removeCommentsStringAware(code) {
+  let result = '';
+  let inString = false;
+  let stringChar = '';
+  let i = 0;
+  while (i < code.length) {
+    if (inString) {
+      if (code[i] === '\\') {
+        result += code[i] + (code[i + 1] || '');
+        i += 2;
+        continue;
+      }
+      if (code[i] === stringChar) inString = false;
+      result += code[i];
+      i++;
+    } else {
+      if (code[i] === '"' || code[i] === "'") {
+        inString = true;
+        stringChar = code[i];
+        result += code[i];
+        i++;
+      } else if (code[i] === '/' && code[i + 1] === '/') {
+        while (i < code.length && code[i] !== '\n') i++;
+      } else if (code[i] === '/' && code[i + 1] === '*') {
+        i += 2;
+        while (i < code.length - 1 && !(code[i] === '*' && code[i + 1] === '/')) i++;
+        i += 2;
+      } else {
+        result += code[i];
+        i++;
+      }
+    }
+  }
+  return result;
+}
+
 // ─── Client-side transpiler (AST-aware, handles class types) ─────────────────
 function transpileArduinoToJS(code) {
   let js = code;
 
-  // 1. Strip comments
-  js = js.replace(/\/\/.*$/gm, '');
-  js = js.replace(/\/\*[\s\S]*?\*\//g, '');
+  // 1. Strip comments (string-aware — won't eat :// inside "http://...")
+  js = removeCommentsStringAware(js);
 
   // 2. Strip #include directives
   js = js.replace(/^\s*#include\s*[<"].*?[>"]\s*$/gm, '');
 
   // 3. #define → const (simple value defines only)
   js = js.replace(/^\s*#define\s+(\w+)\s+(.+)$/gm, (_m, n, v) => `const ${n} = ${v.trim()};`);
+
+  // 3b. Strip C++ const/volatile qualifiers before a known type
+  //     e.g. "const char* server" → "char* server" (then type regex handles char*)
+  js = js.replace(/\b(const|volatile)\s+(?=(void|int|long|short|unsigned|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool|String|string)\b)/g, '');
 
   // 4. Convert class-type variable declarations to JS var instantiations
   // e.g. Adafruit_SSD1306 oled(128, 64, &Wire, -1); → var oled = new Adafruit_SSD1306(128, 64);
@@ -221,13 +261,13 @@ function transpileArduinoToJS(code) {
     }
   );
 
-  // 6. Variable declarations: typed → let
+  // 6. Variable declarations: typed → let (includes pointer types like char*)
   js = js.replace(
-    new RegExp(`\\b${TYPES}\\s+(\\w+)\\s*=`, 'g'),
+    new RegExp(`\\b${TYPES}\\s*\\*?\\s+(\\w+)\\s*=`, 'g'),
     (_m, n) => `let ${n} =`
   );
   js = js.replace(
-    new RegExp(`\\b${TYPES}\\s+(\\w+)\\s*;`, 'g'),
+    new RegExp(`\\b${TYPES}\\s*\\*?\\s+(\\w+)\\s*;`, 'g'),
     (_m, n) => `let ${n} = 0;`
   );
 
@@ -252,11 +292,26 @@ function transpileArduinoToJS(code) {
   js = js.replace(/\bhighByte\s*\(/g, '__arduino_highByte(');
   js = js.replace(/\brandomSeed\s*\(/g, '__arduino_randomSeed(');
 
+  // 8b. Await async HTTP/network methods (these return Promises in the browser runtime)
+  js = js.replace(/(\w+)\.(GET|POST|PUT|DELETE|PATCH)\s*\(/g, 'await $1.$2(');
+  js = js.replace(/(\w+)\.(writeFields|writeField|readFloatField|readLongField)\s*\(/g, 'await $1.$2(');
+  js = js.replace(/(\w+)\.(getString)\s*\(/g, 'await $1.$2(');
+
   // 9. String type → string (JS has no String type keyword)
   js = js.replace(/\bString\s+(\w+)/g, 'let $1');
 
   // 10. Cast expressions: (int), (float), (byte) etc.
   js = js.replace(/\((?:int|float|double|byte|char|long|uint8_t|uint16_t|uint32_t)\)\s*/g, '');
+
+  // 10b. C++ scope resolution operator :: → JS dot notation (e.g. DHTesp::DHT22 → DHTesp.DHT22)
+  js = js.replace(/::/g, '.');
+
+  // 10c. Remove .c_str() calls — JS strings don't need this
+  js = js.replace(/\.c_str\s*\(\s*\)/g, '');
+
+  // 10d. Fallback: Class-type variable with arbitrary RHS assignment
+  //      e.g. TempAndHumidity data = dhtSensor.getTempAndHumidity();
+  js = js.replace(/^\s*([A-Z][A-Za-z0-9_]*)\s+(\w+)\s*=/gm, 'let $2 =');
 
   // 11. Boolean literals
   js = js.replace(/\btrue\b/g, 'true');
@@ -288,6 +343,8 @@ if (typeof TFT_eSPI === 'undefined') TFT_eSPI = class { constructor() {} init() 
 if (typeof Servo === 'undefined') Servo = class { constructor() { this._pin = 0; this._angle = 90; } attach(pin) { this._pin = pin; } write(a) { this._angle = a; if (typeof __onServoWrite === 'function') __onServoWrite(this._pin, a); } read() { return this._angle; } detach() {} };
 if (typeof NeoPixel === 'undefined') NeoPixel = class { constructor(n, pin) { this._n = n; this._pin = pin; this._pixels = new Uint32Array(n); } begin() {} show() {} setPixelColor(i, r, g, b) { if (i < this._n) this._pixels[i] = (r << 16) | (g << 8) | b; } Color(r, g, b) { return (r << 16) | (g << 8) | b; } clear() { this._pixels.fill(0); } };
 if (typeof Adafruit_NeoPixel === 'undefined') Adafruit_NeoPixel = NeoPixel;
+if (typeof WiFiClient === 'undefined') WiFiClient = class { constructor() { this._connected = false; } connect() { this._connected = true; return true; } connected() { return this._connected; } available() { return 0; } read() { return -1; } write() { return 0; } print(v) { console.log('[WiFiClient]', v); } println(v) { console.log('[WiFiClient]', v); } stop() { this._connected = false; } flush() {} };
+if (typeof DHTesp === 'undefined') DHTesp = class { constructor() { this.DHT22 = 22; this.DHT11 = 11; } setup() {} getTempAndHumidity() { return { temperature: 25.0, humidity: 50.0 }; } getTemperature() { return 25.0; } getHumidity() { return 50.0; } };
 if (typeof isnan === 'undefined') isnan = (v) => isNaN(v);
 if (typeof isinf === 'undefined') isinf = (v) => !isFinite(v);
 if (typeof F === 'undefined') F = (s) => s;
