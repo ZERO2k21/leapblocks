@@ -46,6 +46,12 @@ const TABS = [
   { id: 'build',    label: 'Build',    icon: '📦', component: BuildPlaceholder },
 ];
 
+const isLocalhost = window.location.hostname === 'localhost' || 
+                    window.location.hostname === '127.0.0.1' || 
+                    window.location.hostname === '[::1]';
+
+const BUILD_SERVER_URL = isLocalhost ? 'localhost:3001' : 'leaplab.creoleap.com';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('designer');
   const [projectName, setProjectName] = useState('Untitled Project');
@@ -123,7 +129,7 @@ export default function App() {
       <footer className="app-statusbar">
         <span className="status-left">
           <span className="status-dot online" />
-          Build Server: <strong>localhost:3001</strong>
+          Build Server: <strong>{BUILD_SERVER_URL}</strong>
         </span>
         <span className="status-center">
           {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Mode

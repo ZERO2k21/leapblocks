@@ -8,7 +8,7 @@ import { Trash2, Smartphone, Plus } from 'lucide-react';
 
 export default function PropertiesPanel({ appState }) {
   const {
-    screens, activeScreen, selectedId,
+    screens, activeScreen, selectedId, selectedComponent,
     setSelectedId, updateProp, removeComponent, addScreen
   } = appState;
 
@@ -17,8 +17,26 @@ export default function PropertiesPanel({ appState }) {
 
   const currentScreen = screens.find(s => s.id === activeScreen) || screens[0];
   const components = currentScreen?.components || [];
+  const nonVisibleComponents = currentScreen?.nonVisibleComponents || [];
 
-  let selectedComponent = components.find(c => c.id === selectedId);
+  // MIT App Inventor style Width/Height options
+  const sizeOptions = {
+    Width: [
+      { value: 'Automatic', label: 'Automatic' },
+      { value: 'Fill parent', label: 'Fill parent...' },
+      { value: 'custom', label: 'Custom (pixels)...' }
+    ],
+    Height: [
+      { value: 'Automatic', label: 'Automatic' },
+      { value: 'Fill parent', label: 'Fill parent...' },
+      { value: 'custom', label: 'Custom (pixels)...' }
+    ]
+  };
+
+  const enumOptions = {
+    TextAlignment: ['left', 'center', 'right'],
+    Shape: ['default', 'rounded', 'rectangular', 'oval']
+  };
 
   const handleAddScreen = () => {
     if (newScreenName.trim() && !screens.find(s => s.id === newScreenName.trim())) {
@@ -39,14 +57,81 @@ export default function PropertiesPanel({ appState }) {
 
     const { id, type, props } = selectedComponent;
 
+    // Helper function to render Width/Height with MIT App Inventor style
+    const renderSizeProperty = (key, value) => {
+      const isCustom = typeof value === 'number';
+      const currentValue = isCustom ? 'custom' : value;
+
+      return (
+        <div className="space-y-2">
+          <select
+            value={currentValue}
+            className="block w-full rounded-md border-[#b7c4d4] shadow-sm focus:border-[#4a90e2] focus:ring-[#4a90e2] sm:text-sm border px-2 py-1 bg-white"
+            onChange={(e) => {
+              const newValue = e.target.value;
+              if (newValue === 'custom') {
+                // Set to default pixel value
+                updateProp(id, key, 100);
+              } else {
+                updateProp(id, key, newValue);
+              }
+            }}
+          >
+            {sizeOptions[key].map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          {/* Show pixel input if custom is selected */}
+          {isCustom && (
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="1"
+                max="9999"
+                value={value}
+                className="flex-1 block w-full rounded-md border-[#b7c4d4] shadow-sm focus:border-[#4a90e2] focus:ring-[#4a90e2] sm:text-sm border px-2 py-1"
+                onChange={(e) => updateProp(id, key, parseInt(e.target.value) || 1)}
+              />
+              <span className="text-xs text-gray-500">pixels</span>
+            </div>
+          )}
+        </div>
+      );
+    };
+
     return (
       <div className="p-4">
-        <h3 className="text-sm font-semibold text-gray-800 mb-4">{type} Properties</h3>
+        {/* Header with Delete Button */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-gray-800">{type} Properties</h3>
+          <button
+            onClick={() => {
+              if (window.confirm(`Delete ${id}?`)) {
+                removeComponent(id);
+              }
+            }}
+            className="flex items-center gap-1 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded transition-colors"
+            title="Delete Component"
+          >
+            <Trash2 className="h-3 w-3" />
+            Delete
+          </button>
+        </div>
         <div className="space-y-4">
           {Object.entries(props).map(([key, value]) => {
+            // Skip legacy lowercase aliases
+            if (key === 'width' || key === 'height' || key === 'visible') {
+              return null;
+            }
+
             const isColor = key.toLowerCase().includes('color');
             const isBoolean = typeof value === 'boolean';
-            const isNumber = typeof value === 'number';
+            const isNumber = typeof value === 'number' && key !== 'Width' && key !== 'Height';
+            const isSizeProperty = key === 'Width' || key === 'Height';
+            const options = enumOptions[key];
 
             return (
               <div key={key} className="flex flex-col gap-1">
@@ -54,7 +139,9 @@ export default function PropertiesPanel({ appState }) {
                   {key.replace(/([A-Z])/g, ' $1').trim()}
                 </label>
 
-                {isBoolean ? (
+                {isSizeProperty ? (
+                  renderSizeProperty(key, value)
+                ) : isBoolean ? (
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
@@ -62,7 +149,7 @@ export default function PropertiesPanel({ appState }) {
                       checked={value}
                       onChange={(e) => updateProp(id, key, e.target.checked)}
                     />
-                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#6c63ff]"></div>
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#4a90e2]"></div>
                   </label>
                 ) : isColor ? (
                   <div className="flex space-x-2">
@@ -75,22 +162,32 @@ export default function PropertiesPanel({ appState }) {
                     <input
                       type="text"
                       value={value}
-                      className="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#6c63ff] focus:ring-[#6c63ff] sm:text-sm border px-2 py-1"
+                      className="flex-1 block w-full rounded-md border-[#b7c4d4] shadow-sm focus:border-[#4a90e2] focus:ring-[#4a90e2] sm:text-sm border px-2 py-1"
                       onChange={(e) => updateProp(id, key, e.target.value)}
                     />
                   </div>
+                ) : options ? (
+                  <select
+                    value={value}
+                    className="block w-full rounded-md border-[#b7c4d4] shadow-sm focus:border-[#4a90e2] focus:ring-[#4a90e2] sm:text-sm border px-2 py-1 bg-white"
+                    onChange={(e) => updateProp(id, key, e.target.value)}
+                  >
+                    {options.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
                 ) : isNumber ? (
                   <input
                     type="number"
                     value={value}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#6c63ff] focus:ring-[#6c63ff] sm:text-sm border px-2 py-1"
+                    className="block w-full rounded-md border-[#b7c4d4] shadow-sm focus:border-[#4a90e2] focus:ring-[#4a90e2] sm:text-sm border px-2 py-1"
                     onChange={(e) => updateProp(id, key, parseFloat(e.target.value) || 0)}
                   />
                 ) : (
                   <input
                     type="text"
                     value={value}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#6c63ff] focus:ring-[#6c63ff] sm:text-sm border px-2 py-1"
+                    className="block w-full rounded-md border-[#b7c4d4] shadow-sm focus:border-[#4a90e2] focus:ring-[#4a90e2] sm:text-sm border px-2 py-1"
                     onChange={(e) => updateProp(id, key, e.target.value)}
                   />
                 )}
@@ -102,33 +199,32 @@ export default function PropertiesPanel({ appState }) {
     );
   };
 
+  const rowClass = (id) => `flex items-center justify-between group px-2 py-1.5 rounded cursor-pointer ${selectedId === id ? 'bg-[#e8f1ff] text-[#2b6cb0]' : 'hover:bg-gray-50 text-gray-600'}`;
+
   return (
-    <div className="w-[260px] bg-white border-l border-gray-200 flex flex-col h-full shrink-0">
-      {/* TOP HALF - Component Tree */}
-      <div className="h-1/2 border-b border-gray-200 flex flex-col overflow-hidden">
-        <div className="p-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-700 uppercase">Components</span>
+    <div className="w-[280px] bg-white border-l border-[#c6cfda] flex flex-col h-full shrink-0">
+      <div className="h-1/2 border-b border-[#c6cfda] flex flex-col overflow-hidden">
+        <div className="px-3 py-2 border-b border-[#c6cfda] bg-[#dfe6ee] flex items-center justify-between">
+          <span className="text-xs font-semibold text-[#2c3e50] uppercase tracking-wide">Components</span>
         </div>
         <div className="p-3 overflow-y-auto flex-1 text-sm">
           <div className="flex items-center space-x-2 text-gray-800 font-medium mb-2">
-            <Smartphone className="h-4 w-4 text-[#6c63ff]" />
+            <Smartphone className="h-4 w-4 text-[#4a90e2]" />
             <span>{activeScreen}</span>
           </div>
           <div className="pl-6 space-y-1">
             {components.map(comp => (
-              <div
-                key={comp.id}
-                className={`flex items-center justify-between group px-2 py-1.5 rounded cursor-pointer ${selectedId === comp.id ? 'bg-purple-50 text-[#6c63ff]' : 'hover:bg-gray-50 text-gray-600'}`}
-                onClick={() => setSelectedId(comp.id)}
-              >
-                <div className="truncate flex-1">
-                  {comp.id} <span className="text-xs text-gray-400">({comp.type})</span>
-                </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); removeComponent(comp.id); }}
-                  className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0"
-                  title="Remove Component"
-                >
+              <div key={comp.id} className={rowClass(comp.id)} onClick={() => setSelectedId(comp.id)}>
+                <div className="truncate flex-1">{comp.id} <span className="text-xs text-gray-400">({comp.type})</span></div>
+                <button onClick={(e) => { e.stopPropagation(); removeComponent(comp.id); }} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0" title="Remove Component">
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {nonVisibleComponents.map(comp => (
+              <div key={comp.id} className={rowClass(comp.id)} onClick={() => setSelectedId(comp.id)}>
+                <div className="truncate flex-1">{comp.id} <span className="text-xs text-gray-400">({comp.type})</span></div>
+                <button onClick={(e) => { e.stopPropagation(); removeComponent(comp.id); }} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0" title="Remove Component">
                   <Trash2 className="h-3 w-3" />
                 </button>
               </div>
@@ -136,31 +232,22 @@ export default function PropertiesPanel({ appState }) {
           </div>
         </div>
 
-        {/* Add Screen section */}
-        <div className="p-3 border-t border-gray-100 bg-gray-50">
+        <div className="p-3 border-t border-[#c6cfda] bg-[#eef3f8]">
           {isAddingScreen ? (
             <div className="flex space-x-2">
               <input
                 type="text"
                 autoFocus
                 placeholder="Screen name"
-                className="w-full text-sm border-gray-300 rounded-md border px-2 py-1 focus:ring-1 focus:ring-[#6c63ff] focus:border-[#6c63ff] outline-none"
+                className="w-full text-sm border-[#b7c4d4] rounded-md border px-2 py-1 focus:ring-1 focus:ring-[#4a90e2] focus:border-[#4a90e2] outline-none"
                 value={newScreenName}
                 onChange={(e) => setNewScreenName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddScreen()}
               />
-              <button
-                className="px-2 py-1 bg-[#6c63ff] text-white text-xs rounded hover:bg-purple-600"
-                onClick={handleAddScreen}
-              >
-                Add
-              </button>
+              <button className="px-2 py-1 bg-[#4a90e2] text-white text-xs rounded hover:bg-[#3f79bf]" onClick={handleAddScreen}>Add</button>
             </div>
           ) : (
-            <button
-              className="flex items-center justify-center w-full space-x-1 text-xs text-[#6c63ff] hover:text-purple-700 font-medium py-1"
-              onClick={() => setIsAddingScreen(true)}
-            >
+            <button className="flex items-center justify-center w-full space-x-1 text-xs text-[#2b6cb0] hover:text-[#1e4f85] font-medium py-1" onClick={() => setIsAddingScreen(true)}>
               <Plus className="h-3 w-3" />
               <span>Add Screen</span>
             </button>
@@ -168,7 +255,6 @@ export default function PropertiesPanel({ appState }) {
         </div>
       </div>
 
-      {/* BOTTOM HALF - Properties Editor */}
       <div className="h-1/2 overflow-y-auto">
         {renderPropertyEditor()}
       </div>
