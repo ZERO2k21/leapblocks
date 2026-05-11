@@ -81,50 +81,52 @@ export default function AppInventor({ onBack }) {
         onBack={onBack}
         onSave={() => { }} // Save logic if needed
         brandName="APP INVENTOR"
-        centerContent={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '20px' }}>
-            <nav style={{ display: 'flex', alignItems: 'center', gap: '0', background: '#d4dbe5', border: '1px solid #9ca8b8', borderRadius: '4px', overflow: 'hidden' }}>
-              {['designer', 'blocks'].map(tab => (
+        rightContent={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <nav style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              {['Designer', 'Blocks'].map(tab => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  id={`tab-${tab.toLowerCase()}`}
+                  onClick={() => setActiveTab(tab.toLowerCase())}
                   style={{
-                    padding: '6px 18px',
-                    borderRadius: '0',
-                    border: 'none',
-                    borderRight: tab === 'designer' ? '1px solid #9ca8b8' : 'none',
+                    padding: '7px 22px',
+                    borderRadius: '4px',
+                    border: '1px solid #9ca8b8',
                     cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: 700,
+                    fontSize: '13px',
+                    fontWeight: 800,
                     transition: '0.2s',
-                    background: activeTab === tab ? '#ffffff' : '#d4dbe5',
+                    background: activeTab === tab.toLowerCase() ? '#ffffff' : '#d4dbe5',
                     color: '#2c3e50',
-                    textTransform: 'capitalize',
-                    boxShadow: activeTab === tab ? 'inset 0 -2px 0 #4a90e2' : 'none'
+                    boxShadow: activeTab === tab.toLowerCase() ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                    outline: 'none'
                   }}
                 >
                   {tab}
                 </button>
               ))}
             </nav>
+            <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.2)', margin: '0 4px' }} />
             <button
+              id="btn-build-apk"
               onClick={handleBuildApk}
               style={{
-                marginLeft: '8px',
-                padding: '7px 14px',
+                padding: '7px 16px',
                 borderRadius: '4px',
                 border: '1px solid #b88400',
                 cursor: 'pointer',
                 background: '#f2c94c',
                 color: '#2c3e50',
-                fontSize: '12px',
-                fontWeight: 700,
+                fontSize: '13px',
+                fontWeight: 800,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
               }}
             >
-              <span>📦</span> Build APK
+              <span style={{ fontSize: '16px' }}>📦</span> Build APK
             </button>
           </div>
         }

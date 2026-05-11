@@ -263,7 +263,7 @@ export function useAppState() {
   const selectComponent = (id) => setSelectedId(id);
   const deleteComponent = (id) => removeComponent(id);
 
-  return {
+  return useMemo(() => ({
     screens,
     activeScreen,
     selectedId,
@@ -291,5 +291,15 @@ export function useAppState() {
     getNextComponentName,
     isArrangementType: (type) => ARRANGEMENT_TYPES.has(type),
     getComponentVisibility: (type) => (COMPONENT_META.get(type)?.visible ?? true)
-  };
+  }), [
+    screens,
+    activeScreen,
+    selectedId,
+    appName,
+    packageName,
+    blockLogic,
+    media,
+    currentScreen,
+    selectedComponent
+  ]);
 }

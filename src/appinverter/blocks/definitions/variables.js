@@ -60,7 +60,7 @@ Blockly.Blocks['local_declaration_statement'] = {
         this.setNextStatement(true, null);
         this.setColour(100);
         this.setTooltip("Create a local variable");
-        this.setMutator(new Blockly.Mutator(['local_declaration_item']));
+        this.setMutator(new Blockly.icons.MutatorIcon(['local_declaration_item'], this));
         this.localCount_ = 1;
     },
     mutationToDom: function () {
@@ -111,7 +111,7 @@ Blockly.Blocks['local_declaration_expression'] = {
         this.setOutput(true, null);
         this.setColour(100);
         this.setTooltip("Create a local variable with return value");
-        this.setMutator(new Blockly.Mutator(['local_declaration_item']));
+        this.setMutator(new Blockly.icons.MutatorIcon(['local_declaration_item'], this));
         this.localCount_ = 1;
     },
     mutationToDom: function () {

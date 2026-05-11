@@ -2,7 +2,7 @@
  * MIT App Inventor Built-in Blocks
  * All standard blocks that are always available
  */
-import * as Blockly from 'blockly/core';
+import * as Blockly from 'blockly';
 
 // MIT App Inventor Block Colors
 export const MIT_COLORS = {

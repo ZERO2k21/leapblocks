@@ -1,7 +1,7 @@
 /**
  * MIT App Inventor Text and List Blocks
  */
-import * as Blockly from 'blockly/core';
+import * as Blockly from 'blockly';
 import { MIT_COLORS } from './builtin_blocks';
 
 // ============================================================================

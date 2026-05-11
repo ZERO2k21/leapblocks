@@ -1,7 +1,8 @@
 /**
  * MIT App Inventor Color and Component Blocks
  */
-import * as Blockly from 'blockly/core';
+import * as Blockly from 'blockly';
+import { FieldColour } from '@blockly/field-colour';
 import { MIT_COLORS } from './builtin_blocks';
 
 // ============================================================================
@@ -13,7 +14,7 @@ Blockly.Blocks['colour_picker'] = {
     init: function () {
         this.setColour(MIT_COLORS.colors);
         this.appendDummyInput()
-            .appendField(new Blockly.FieldColour('#ff0000'), 'COLOUR');
+            .appendField(new FieldColour('#ff0000'), 'COLOUR');
         this.setOutput(true, 'Colour');
         this.setTooltip('Click to select a color.');
     }
@@ -255,6 +256,88 @@ Blockly.Blocks['component_component_block'] = {
             const options = components.map(c => [c.id, c.id]);
             dropdown.menuGenerator_ = options;
         }
+    }
+};
+
+/**
+ * Generic Component Event Block (Any Component)
+ * Format: when any [ComponentType].[EventName] do
+ */
+Blockly.Blocks['any_component_event'] = {
+    init: function () {
+        this.setColour(MIT_COLORS.events);
+        this.appendDummyInput()
+            .appendField('when any')
+            .appendField(new Blockly.FieldDropdown([['Button', 'Button']]), 'COMPONENT_TYPE')
+            .appendField('.')
+            .appendField(new Blockly.FieldDropdown([['Click', 'Click']]), 'EVENT');
+        this.appendStatementInput('DO')
+            .appendField('do');
+        this.setTooltip('Runs when the specified event occurs on any component of this type.');
+    }
+};
+
+/**
+ * Generic Component Method Block (Any Component)
+ * Format: call [ComponentType].[MethodName] for component [ComponentInstance]
+ */
+Blockly.Blocks['any_component_method'] = {
+    init: function () {
+        this.setColour(MIT_COLORS.methods);
+        this.appendDummyInput()
+            .appendField('call')
+            .appendField(new Blockly.FieldDropdown([['Button', 'Button']]), 'COMPONENT_TYPE')
+            .appendField('.')
+            .appendField(new Blockly.FieldDropdown([['HideKeyboard', 'HideKeyboard']]), 'METHOD');
+        this.appendValueInput('COMPONENT')
+            .setCheck('Component')
+            .appendField('for component');
+        this.setPreviousStatement(true);
+        this.setNextStatement(true);
+        this.setTooltip('Calls a method on a specific component of this type.');
+    }
+};
+
+/**
+ * Generic Component Property Getter Block (Any Component)
+ * Format: get [ComponentType].[PropertyName] for component [ComponentInstance]
+ */
+Blockly.Blocks['any_component_get_property'] = {
+    init: function () {
+        this.setColour(MIT_COLORS.getters);
+        this.appendDummyInput()
+            .appendField('get')
+            .appendField(new Blockly.FieldDropdown([['Button', 'Button']]), 'COMPONENT_TYPE')
+            .appendField('.')
+            .appendField(new Blockly.FieldDropdown([['Text', 'Text']]), 'PROPERTY');
+        this.appendValueInput('COMPONENT')
+            .setCheck('Component')
+            .appendField('for component');
+        this.setOutput(true);
+        this.setTooltip('Gets the value of a property for a specific component of this type.');
+    }
+};
+
+/**
+ * Generic Component Property Setter Block (Any Component)
+ * Format: set [ComponentType].[PropertyName] for component [ComponentInstance] to
+ */
+Blockly.Blocks['any_component_set_property'] = {
+    init: function () {
+        this.setColour(MIT_COLORS.setters);
+        this.appendDummyInput()
+            .appendField('set')
+            .appendField(new Blockly.FieldDropdown([['Button', 'Button']]), 'COMPONENT_TYPE')
+            .appendField('.')
+            .appendField(new Blockly.FieldDropdown([['Text', 'Text']]), 'PROPERTY');
+        this.appendValueInput('COMPONENT')
+            .setCheck('Component')
+            .appendField('for component');
+        this.appendValueInput('VALUE')
+            .appendField('to');
+        this.setPreviousStatement(true);
+        this.setNextStatement(true);
+        this.setTooltip('Sets the value of a property for a specific component of this type.');
     }
 };
 

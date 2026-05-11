@@ -4,13 +4,13 @@
  * Original implementation inspired by MIT App Inventor (Apache 2.0)
  */
 import React, { useEffect, useRef, useState } from 'react';
-import * as Blockly from 'blockly/core';
+import * as Blockly from 'blockly';
 import { javascriptGenerator } from 'blockly/javascript';
-import 'blockly/blocks';
 
 // Import our custom blocks
 import { initializeAllBlocks, MIT_COLORS, createComponentBlocks } from '../blocks/definitions/index';
 import { BLOCK_COLORS } from '../blocks/utils/blockColors';
+import { COMPONENT_METADATA, ANY_COMPONENT_METADATA } from '../data/componentMetadata';
 
 // Import icons
 import { Search, ZoomIn, ZoomOut, Trash2, Download, Upload, Code } from 'lucide-react';
@@ -39,7 +39,7 @@ export default function BlocksEditorComplete({ appState }) {
         // Create toolbox
         const toolbox = createToolbox(appState);
 
-        // Workspace configuration - MIT App Inventor Style (Simplified & Working)
+        // Workspace configuration - MIT App Inventor Style
         const workspace = Blockly.inject(blocklyDiv.current, {
             toolbox: toolbox,
             grid: {
@@ -56,13 +56,13 @@ export default function BlocksEditorComplete({ appState }) {
                 minScale: 0.3,
                 scaleSpeed: 1.2
             },
-            trashcan: false,
+            trashcan: true,
             scrollbars: true,
             theme: createCustomTheme(),
             collapse: false,
             comments: true,
             disable: true,
-            sounds: false,
+            sounds: true,
             // CRITICAL: Enable all move/drag interactions
             move: {
                 scrollbars: {
@@ -74,14 +74,14 @@ export default function BlocksEditorComplete({ appState }) {
             },
             horizontalLayout: false,
             toolboxPosition: 'start',
-            renderer: 'geras',
-            media: './',
+            renderer: 'zelos',
+            media: 'https://unpkg.com/blockly/media/',
             oneBasedIndex: true
         });
 
         // GLOBAL FIX: Disable collapse feature completely
         // This prevents double-click from collapsing blocks
-        if (Blockly.Block.prototype.setCollapsed) {
+        if (Blockly.Block.prototype.setCollapsed && !Blockly.Block.prototype.setCollapsed.isOverridden) {
             const originalSetCollapsed = Blockly.Block.prototype.setCollapsed;
             Blockly.Block.prototype.setCollapsed = function (collapsed) {
                 // Always keep blocks expanded (never collapse)
@@ -90,21 +90,21 @@ export default function BlocksEditorComplete({ appState }) {
                 }
                 originalSetCollapsed.call(this, false);
             };
+            Blockly.Block.prototype.setCollapsed.isOverridden = true;
         }
 
         workspaceRef.current = workspace;
 
-        // MIT App Inventor Style: Enable workspace panning and flyout behavior
         const flyout = workspace.getFlyout();
         if (flyout) {
             flyout.autoClose = false;
-            // Ensure flyout blocks are draggable
-            flyout.workspace_.options.readOnly = false;
         }
 
-        // CRITICAL FIX: Enable drag gestures on the workspace
-        // This ensures blocks can be dragged from flyout to workspace
-        workspace.options.readOnly = false;
+        // Workspace should not be read-only by default when toolbox is present
+        // but we ensure it here if needed.
+        if (workspace.options.readOnly) {
+            workspace.options.readOnly = false;
+        }
 
         // CRITICAL: Ensure the workspace SVG allows pointer events
         const workspaceSvg = workspace.getParentSvg();
@@ -152,6 +152,11 @@ export default function BlocksEditorComplete({ appState }) {
                     const pathElement = block.pathObject?.svgPath;
                     if (pathElement) {
                         pathElement.style.pointerEvents = 'auto';
+                    }
+
+                    // FIX: Ensure the block is added to the drag surface correctly
+                    if (block.svgGroup_) {
+                        block.svgGroup_.classList.add('blocklyDraggable');
                     }
 
                     // Prevent double-click collapse
@@ -233,11 +238,12 @@ export default function BlocksEditorComplete({ appState }) {
             window.removeEventListener('resize', debouncedResize);
             window.removeEventListener('orientationchange', handleResize);
             if (workspaceRef.current) {
+                console.log('🧹 Disposing Blockly workspace');
                 workspaceRef.current.dispose();
                 workspaceRef.current = null;
             }
         };
-    }, [appState]);
+    }, [appState.activeScreen]); // Only re-inject if the screen changes
 
     // Update toolbox when components change
     useEffect(() => {
@@ -453,6 +459,20 @@ export default function BlocksEditorComplete({ appState }) {
                 },
                 {
                     kind: 'category',
+                    name: 'Dictionaries',
+                    colour: MIT_COLORS.lists,
+                    contents: [
+                        { kind: 'block', type: 'dictionaries_create_with' },
+                        { kind: 'block', type: 'dictionaries_pair' },
+                        { kind: 'block', type: 'dictionaries_set_pair' },
+                        { kind: 'block', type: 'dictionaries_delete_pair' },
+                        { kind: 'block', type: 'dictionaries_get_value' },
+                        { kind: 'block', type: 'dictionaries_alist_to_dict' },
+                        { kind: 'block', type: 'dictionaries_dict_to_alist' }
+                    ]
+                },
+                {
+                    kind: 'category',
                     name: 'Colors',
                     colour: MIT_COLORS.colors,
                     contents: [
@@ -464,10 +484,36 @@ export default function BlocksEditorComplete({ appState }) {
                     ]
                 },
                 {
+                    kind: 'category',
+                    name: 'Variables',
+                    colour: MIT_COLORS.variables,
+                    contents: [
+                        { kind: 'block', type: 'global_declaration' },
+                        { kind: 'block', type: 'lexical_variable_get' },
+                        { kind: 'block', type: 'lexical_variable_set' },
+                        { kind: 'block', type: 'local_declaration_statement' },
+                        { kind: 'block', type: 'local_declaration_expression' }
+                    ]
+                },
+                {
+                    kind: 'category',
+                    name: 'Procedures',
+                    colour: MIT_COLORS.procedures,
+                    contents: [
+                        { kind: 'block', type: 'procedures_defnoreturn' },
+                        { kind: 'block', type: 'procedures_defreturn' },
+                        { kind: 'block', type: 'procedures_callnoreturn' },
+                        { kind: 'block', type: 'procedures_callreturn' }
+                    ]
+                },
+                {
                     kind: 'sep'
                 },
                 // Component blocks (Dynamic based on added components)
-                ...generateComponentCategories(components)
+                ...generateComponentCategories(components),
+                { kind: 'sep' },
+                // Generic Component blocks (Any Component)
+                ...generateAnyComponentCategories(components)
             ]
         };
     };
@@ -479,35 +525,26 @@ export default function BlocksEditorComplete({ appState }) {
         // Always add Screen category first
         const currentScreen = appState.screens?.find(s => s.id === appState.activeScreen) || appState.screens?.[0];
         if (currentScreen) {
+            const metadata = COMPONENT_METADATA['Screen'];
             const screenCategory = {
                 kind: 'category',
                 name: currentScreen.id,
                 colour: MIT_COLORS.events,
                 contents: [
-                    {
+                    ...metadata.events.map(event => ({
                         kind: 'block',
                         type: 'component_event',
-                        fields: {
-                            COMPONENT: currentScreen.id,
-                            EVENT: 'Initialize'
-                        }
-                    },
-                    {
+                        fields: { COMPONENT: currentScreen.id, EVENT: event.name }
+                    })),
+                    ...metadata.methods.map(method => ({
                         kind: 'block',
-                        type: 'component_event',
-                        fields: {
-                            COMPONENT: currentScreen.id,
-                            EVENT: 'BackPressed'
-                        }
-                    },
-                    {
-                        kind: 'block',
-                        type: 'component_event',
-                        fields: {
-                            COMPONENT: currentScreen.id,
-                            EVENT: 'ErrorOccurred'
-                        }
-                    }
+                        type: 'component_method',
+                        fields: { COMPONENT: currentScreen.id, METHOD: method.name }
+                    })),
+                    ...metadata.properties.flatMap(prop => [
+                        { kind: 'block', type: 'component_get_property', fields: { COMPONENT: currentScreen.id, PROPERTY: prop.name } },
+                        { kind: 'block', type: 'component_set_property', fields: { COMPONENT: currentScreen.id, PROPERTY: prop.name } }
+                    ])
                 ]
             };
             categories.push(screenCategory);
@@ -515,6 +552,7 @@ export default function BlocksEditorComplete({ appState }) {
 
         // Add categories for each component
         components.forEach(comp => {
+            const metadata = COMPONENT_METADATA[comp.type] || { events: [], methods: [], properties: [] };
             const category = {
                 kind: 'category',
                 name: comp.id,
@@ -523,55 +561,37 @@ export default function BlocksEditorComplete({ appState }) {
             };
 
             // Add event blocks
-            const events = getComponentEvents(comp.type);
-            events.forEach(event => {
+            metadata.events.forEach(event => {
                 category.contents.push({
                     kind: 'block',
                     type: 'component_event',
-                    fields: {
-                        COMPONENT: comp.id,
-                        EVENT: event.name
-                    }
+                    fields: { COMPONENT: comp.id, EVENT: event.name }
                 });
             });
 
             // Add method blocks
-            const methods = getComponentMethods(comp.type);
-            methods.forEach(method => {
+            metadata.methods.forEach(method => {
                 category.contents.push({
                     kind: 'block',
                     type: 'component_method',
-                    fields: {
-                        COMPONENT: comp.id,
-                        METHOD: method.name
-                    }
+                    fields: { COMPONENT: comp.id, METHOD: method.name }
                 });
             });
 
             // Add property getter/setter blocks
-            const properties = getComponentProperties(comp.type);
-            properties.forEach(prop => {
-                // Getter
+            metadata.properties.forEach(prop => {
                 category.contents.push({
                     kind: 'block',
                     type: 'component_get_property',
-                    fields: {
-                        COMPONENT: comp.id,
-                        PROPERTY: prop.name
-                    }
+                    fields: { COMPONENT: comp.id, PROPERTY: prop.name }
                 });
-                // Setter
                 category.contents.push({
                     kind: 'block',
                     type: 'component_set_property',
-                    fields: {
-                        COMPONENT: comp.id,
-                        PROPERTY: prop.name
-                    }
+                    fields: { COMPONENT: comp.id, PROPERTY: prop.name }
                 });
             });
 
-            // Only add category if it has content
             if (category.contents.length > 0) {
                 categories.push(category);
             }
@@ -580,356 +600,43 @@ export default function BlocksEditorComplete({ appState }) {
         return categories;
     };
 
-    // Get component methods - NEW!
-    const getComponentMethods = (componentType) => {
-        const methodMap = {
-            'Button': [],
-            'Label': [],
-            'TextBox': [],
-            'Image': [],
-            'Canvas': [
-                { name: 'Clear', description: 'Clear the canvas' },
-                { name: 'DrawCircle', description: 'Draw a circle' },
-                { name: 'DrawLine', description: 'Draw a line' },
-                { name: 'DrawPoint', description: 'Draw a point' },
-                { name: 'DrawText', description: 'Draw text' }
-            ],
-            'Camera': [
-                { name: 'TakePicture', description: 'Take a picture' }
-            ],
-            'VideoPlayer': [
-                { name: 'Start', description: 'Start playing' },
-                { name: 'Pause', description: 'Pause playback' },
-                { name: 'Stop', description: 'Stop playback' }
-            ],
-            'Sound': [
-                { name: 'Play', description: 'Play the sound' },
-                { name: 'Pause', description: 'Pause the sound' },
-                { name: 'Resume', description: 'Resume the sound' },
-                { name: 'Stop', description: 'Stop the sound' },
-                { name: 'Vibrate', description: 'Vibrate device' }
-            ],
-            'Player': [
-                { name: 'Start', description: 'Start playing' },
-                { name: 'Pause', description: 'Pause playback' },
-                { name: 'Stop', description: 'Stop playback' }
-            ],
-            'TinyDB': [
-                { name: 'StoreValue', description: 'Store a value' },
-                { name: 'GetValue', description: 'Get a value' },
-                { name: 'ClearAll', description: 'Clear all data' },
-                { name: 'ClearTag', description: 'Clear specific tag' }
-            ],
-            'File': [
-                { name: 'SaveFile', description: 'Save text to file' },
-                { name: 'ReadFrom', description: 'Read from file' },
-                { name: 'Delete', description: 'Delete file' }
-            ],
-            'Web': [
-                { name: 'Get', description: 'HTTP GET request' },
-                { name: 'Post', description: 'HTTP POST request' },
-                { name: 'PostText', description: 'POST text data' },
-                { name: 'PostFile', description: 'POST file' }
-            ],
-            'Notifier': [
-                { name: 'ShowAlert', description: 'Show alert dialog' },
-                { name: 'ShowChooseDialog', description: 'Show choice dialog' },
-                { name: 'ShowTextDialog', description: 'Show text input dialog' },
-                { name: 'ShowMessageDialog', description: 'Show message' }
-            ],
-            'Clock': [
-                { name: 'Now', description: 'Get current time' },
-                { name: 'MakeInstant', description: 'Create instant' },
-                { name: 'FormatDate', description: 'Format date' },
-                { name: 'FormatTime', description: 'Format time' }
-            ],
-            'LocationSensor': [
-                { name: 'LatitudeFromAddress', description: 'Get latitude from address' },
-                { name: 'LongitudeFromAddress', description: 'Get longitude from address' }
-            ],
-            'TextToSpeech': [
-                { name: 'Speak', description: 'Speak text' }
-            ],
-            'SpeechRecognizer': [
-                { name: 'GetText', description: 'Start speech recognition' }
-            ]
-        };
+    // Generate Any Component categories
+    const generateAnyComponentCategories = (components) => {
+        const types = [...new Set(components.map(c => c.type))];
+        const categories = [];
 
-        return methodMap[componentType] || [];
-    };
+        types.forEach(type => {
+            const metadata = ANY_COMPONENT_METADATA[type];
+            if (!metadata) return;
 
-    // Get component events - EXPANDED for all components
-    const getComponentEvents = (componentType) => {
-        const eventMap = {
-            'Button': [
-                { name: 'Click', description: 'User tapped and released the button' },
-                { name: 'LongClick', description: 'User held the button down' },
-                { name: 'TouchDown', description: 'User touched the button' },
-                { name: 'TouchUp', description: 'User released the button' },
-                { name: 'GotFocus', description: 'Button gained focus' },
-                { name: 'LostFocus', description: 'Button lost focus' }
-            ],
-            'Label': [
-                { name: 'Click', description: 'User tapped the label' }
-            ],
-            'TextBox': [
-                { name: 'GotFocus', description: 'User tapped on the text box' },
-                { name: 'LostFocus', description: 'User tapped outside the text box' },
-                { name: 'TextChanged', description: 'Text content changed' }
-            ],
-            'PasswordTextBox': [
-                { name: 'GotFocus', description: 'User tapped on the password box' },
-                { name: 'LostFocus', description: 'User tapped outside the password box' },
-                { name: 'TextChanged', description: 'Password content changed' }
-            ],
-            'CheckBox': [
-                { name: 'Changed', description: 'Checkbox state changed' },
-                { name: 'GotFocus', description: 'Checkbox gained focus' },
-                { name: 'LostFocus', description: 'Checkbox lost focus' }
-            ],
-            'Switch': [
-                { name: 'Changed', description: 'Switch state changed' }
-            ],
-            'Slider': [
-                { name: 'PositionChanged', description: 'Slider position changed' }
-            ],
-            'Spinner': [
-                { name: 'AfterSelecting', description: 'User selected an item' }
-            ],
-            'ListPicker': [
-                { name: 'BeforePicking', description: 'Before picker opens' },
-                { name: 'AfterPicking', description: 'After user picks an item' }
-            ],
-            'ListView': [
-                { name: 'AfterPicking', description: 'User selected a list item' }
-            ],
-            'Image': [
-                { name: 'Click', description: 'User tapped the image' }
-            ],
-            'Canvas': [
-                { name: 'Touched', description: 'User touched the canvas' },
-                { name: 'Dragged', description: 'User dragged on the canvas' },
-                { name: 'Flung', description: 'User flung on the canvas' },
-                { name: 'TouchDown', description: 'User touched down' },
-                { name: 'TouchUp', description: 'User released touch' }
-            ],
-            'Camera': [
-                { name: 'AfterPicture', description: 'After picture is taken' }
-            ],
-            'VideoPlayer': [
-                { name: 'Completed', description: 'Video finished playing' }
-            ],
-            'Sound': [
-                { name: 'SoundError', description: 'Error playing sound' }
-            ],
-            'Player': [
-                { name: 'Completed', description: 'Audio finished playing' },
-                { name: 'PlayerError', description: 'Error playing audio' }
-            ],
-            'AccelerometerSensor': [
-                { name: 'AccelerationChanged', description: 'Acceleration changed' },
-                { name: 'Shaking', description: 'Device is shaking' }
-            ],
-            'LocationSensor': [
-                { name: 'LocationChanged', description: 'Location changed' },
-                { name: 'StatusChanged', description: 'GPS status changed' }
-            ],
-            'GyroscopeSensor': [
-                { name: 'GyroscopeChanged', description: 'Gyroscope values changed' }
-            ],
-            'Clock': [
-                { name: 'Timer', description: 'Timer fired' }
-            ],
-            'TinyDB': [],
-            'File': [
-                { name: 'AfterFileSaved', description: 'File saved successfully' },
-                { name: 'GotText', description: 'Text read from file' }
-            ],
-            'Web': [
-                { name: 'GotText', description: 'Response received' },
-                { name: 'GotFile', description: 'File downloaded' }
-            ],
-            'BluetoothClient': [
-                { name: 'BluetoothError', description: 'Bluetooth error occurred' }
-            ],
-            'Screen': [
-                { name: 'Initialize', description: 'Screen started' },
-                { name: 'BackPressed', description: 'User pressed back button' },
-                { name: 'ErrorOccurred', description: 'Error occurred' },
-                { name: 'ScreenOrientationChanged', description: 'Orientation changed' }
-            ],
-            'HorizontalArrangement': [
-                { name: 'Click', description: 'User tapped the arrangement' }
-            ],
-            'VerticalArrangement': [
-                { name: 'Click', description: 'User tapped the arrangement' }
-            ],
-            'TableArrangement': [
-                { name: 'Click', description: 'User tapped the arrangement' }
-            ]
-        };
+            const category = {
+                kind: 'category',
+                name: `Any ${type}`,
+                colour: '#3366cc',
+                contents: [
+                    {
+                        kind: 'block',
+                        type: 'any_component_event',
+                        fields: { COMPONENT_TYPE: type }
+                    },
+                    ...metadata.methods.map(method => ({
+                        kind: 'block',
+                        type: 'any_component_method',
+                        fields: { COMPONENT_TYPE: type, METHOD: method }
+                    })),
+                    ...metadata.properties.flatMap(prop => [
+                        { kind: 'block', type: 'any_component_get_property', fields: { COMPONENT_TYPE: type, PROPERTY: prop } },
+                        { kind: 'block', type: 'any_component_set_property', fields: { COMPONENT_TYPE: type, PROPERTY: prop } }
+                    ])
+                ]
+            };
+            categories.push(category);
+        });
 
-        return eventMap[componentType] || [];
-    };
-
-    // Get component properties - EXPANDED for all components
-    const getComponentProperties = (componentType) => {
-        const propMap = {
-            'Button': [
-                { name: 'Text', type: 'String' },
-                { name: 'BackgroundColor', type: 'Color' },
-                { name: 'TextColor', type: 'Color' },
-                { name: 'Enabled', type: 'Boolean' },
-                { name: 'FontSize', type: 'Number' },
-                { name: 'FontBold', type: 'Boolean' },
-                { name: 'Width', type: 'Number' },
-                { name: 'Height', type: 'Number' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'Label': [
-                { name: 'Text', type: 'String' },
-                { name: 'TextColor', type: 'Color' },
-                { name: 'BackgroundColor', type: 'Color' },
-                { name: 'FontSize', type: 'Number' },
-                { name: 'FontBold', type: 'Boolean' },
-                { name: 'TextAlignment', type: 'String' },
-                { name: 'Width', type: 'Number' },
-                { name: 'Height', type: 'Number' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'TextBox': [
-                { name: 'Text', type: 'String' },
-                { name: 'Hint', type: 'String' },
-                { name: 'Enabled', type: 'Boolean' },
-                { name: 'FontSize', type: 'Number' },
-                { name: 'TextColor', type: 'Color' },
-                { name: 'BackgroundColor', type: 'Color' },
-                { name: 'MultiLine', type: 'Boolean' },
-                { name: 'Width', type: 'Number' },
-                { name: 'Height', type: 'Number' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'PasswordTextBox': [
-                { name: 'Text', type: 'String' },
-                { name: 'Hint', type: 'String' },
-                { name: 'Enabled', type: 'Boolean' },
-                { name: 'FontSize', type: 'Number' },
-                { name: 'Width', type: 'Number' },
-                { name: 'Height', type: 'Number' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'CheckBox': [
-                { name: 'Text', type: 'String' },
-                { name: 'Checked', type: 'Boolean' },
-                { name: 'Enabled', type: 'Boolean' },
-                { name: 'TextColor', type: 'Color' },
-                { name: 'FontSize', type: 'Number' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'Switch': [
-                { name: 'Text', type: 'String' },
-                { name: 'On', type: 'Boolean' },
-                { name: 'Enabled', type: 'Boolean' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'Slider': [
-                { name: 'MinValue', type: 'Number' },
-                { name: 'MaxValue', type: 'Number' },
-                { name: 'ThumbPosition', type: 'Number' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'Spinner': [
-                { name: 'Selection', type: 'String' },
-                { name: 'Elements', type: 'List' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'ListPicker': [
-                { name: 'Text', type: 'String' },
-                { name: 'Selection', type: 'String' },
-                { name: 'Elements', type: 'List' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'ListView': [
-                { name: 'Elements', type: 'List' },
-                { name: 'Selection', type: 'String' },
-                { name: 'TextColor', type: 'Color' },
-                { name: 'BackgroundColor', type: 'Color' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'Image': [
-                { name: 'Picture', type: 'String' },
-                { name: 'Width', type: 'Number' },
-                { name: 'Height', type: 'Number' },
-                { name: 'ScalePictureToFit', type: 'Boolean' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'Canvas': [
-                { name: 'BackgroundColor', type: 'Color' },
-                { name: 'Width', type: 'Number' },
-                { name: 'Height', type: 'Number' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'VideoPlayer': [
-                { name: 'Source', type: 'String' },
-                { name: 'Width', type: 'Number' },
-                { name: 'Height', type: 'Number' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'Sound': [
-                { name: 'Source', type: 'String' },
-                { name: 'MinimumInterval', type: 'Number' }
-            ],
-            'Player': [
-                { name: 'Source', type: 'String' },
-                { name: 'Loop', type: 'Boolean' },
-                { name: 'Volume', type: 'Number' }
-            ],
-            'TinyDB': [],
-            'File': [],
-            'Clock': [
-                { name: 'TimerInterval', type: 'Number' },
-                { name: 'TimerEnabled', type: 'Boolean' }
-            ],
-            'AccelerometerSensor': [
-                { name: 'Enabled', type: 'Boolean' },
-                { name: 'XAccel', type: 'Number' },
-                { name: 'YAccel', type: 'Number' },
-                { name: 'ZAccel', type: 'Number' }
-            ],
-            'LocationSensor': [
-                { name: 'Enabled', type: 'Boolean' },
-                { name: 'Latitude', type: 'Number' },
-                { name: 'Longitude', type: 'Number' }
-            ],
-            'GyroscopeSensor': [
-                { name: 'Enabled', type: 'Boolean' }
-            ],
-            'Web': [
-                { name: 'Url', type: 'String' }
-            ],
-            'HorizontalArrangement': [
-                { name: 'BackgroundColor', type: 'Color' },
-                { name: 'Width', type: 'Number' },
-                { name: 'Height', type: 'Number' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'VerticalArrangement': [
-                { name: 'BackgroundColor', type: 'Color' },
-                { name: 'Width', type: 'Number' },
-                { name: 'Height', type: 'Number' },
-                { name: 'Visible', type: 'Boolean' }
-            ],
-            'TableArrangement': [
-                { name: 'BackgroundColor', type: 'Color' },
-                { name: 'Columns', type: 'Number' },
-                { name: 'Rows', type: 'Number' },
-                { name: 'Width', type: 'Number' },
-                { name: 'Height', type: 'Number' },
-                { name: 'Visible', type: 'Boolean' }
-            ]
-        };
-
-        return propMap[componentType] || [];
+        if (categories.length > 0) {
+            return [{ kind: 'category', name: 'Any Component', contents: categories }];
+        }
+        return [];
     };
 
     // Generate code
@@ -1088,11 +795,52 @@ export default function BlocksEditorComplete({ appState }) {
             {/* Blockly Workspace - MIT App Inventor Style (Fixed for Dragging) */}
             <div
                 ref={blocklyDiv}
-                className="flex-1 w-full h-full min-h-[400px] sm:min-h-[500px] md:min-h-[600px] lg:min-h-[700px]"
+                className="flex-1 w-full h-full min-h-[400px] sm:min-h-[500px] md:min-h-[600px] lg:min-h-[700px] blockly-injection-container"
                 style={{
-                    position: 'relative'
+                    position: 'relative',
+                    overflow: 'visible' // Ensure drag surface is not clipped
                 }}
             />
+
+            {/* CRITICAL CSS FIXES FOR BLOCKLY DRAG SURFACE */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                .blockly-injection-container {
+                    position: relative !important;
+                }
+                .blocklyBlockDragSurface {
+                    pointer-events: none !important;
+                    display: block !important;
+                    visibility: visible !important;
+                    z-index: 1000 !important;
+                }
+                .blocklyBlockDragSurface g {
+                    pointer-events: none !important;
+                }
+                .blocklyDragging {
+                    cursor: grabbing !important;
+                    pointer-events: none !important;
+                }
+                .blocklyDraggable {
+                    cursor: grab !important;
+                    pointer-events: auto !important;
+                }
+                /* Ensure zelos blocks are rendered correctly in drag surface */
+                .blocklyBlockDragSurface .blocklyPath {
+                    fill-opacity: 0.8 !important;
+                    stroke-width: 2px !important;
+                }
+                /* Prevent workspace from capturing drag events when they should go to surface */
+                .blocklyWorkspace {
+                    pointer-events: auto !important;
+                }
+                /* Fix for flyout dragging */
+                .blocklyFlyout {
+                    pointer-events: auto !important;
+                }
+                .blocklyFlyout .blocklyDraggable {
+                    pointer-events: auto !important;
+                }
+            `}} />
 
             {/* Code Preview Modal - Responsive */}
             {showCode && (

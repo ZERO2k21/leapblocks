@@ -17,7 +17,7 @@ Blockly.Blocks['procedures_defnoreturn'] = {
         this.setTooltip("Define a procedure");
         this.setHelpUrl("");
         this.arguments_ = [];
-        this.setMutator(new Blockly.Mutator(['procedures_mutatorarg']));
+        this.setMutator(new Blockly.icons.MutatorIcon(['procedures_mutatorarg'], this));
     },
     mutationToDom: function () {
         const container = Blockly.utils.xml.createElement('mutation');
@@ -71,7 +71,7 @@ Blockly.Blocks['procedures_defreturn'] = {
         this.setTooltip("Define a procedure that returns a value");
         this.setHelpUrl("");
         this.arguments_ = [];
-        this.setMutator(new Blockly.Mutator(['procedures_mutatorarg']));
+        this.setMutator(new Blockly.icons.MutatorIcon(['procedures_mutatorarg'], this));
     },
     mutationToDom: function () {
         const container = Blockly.utils.xml.createElement('mutation');
@@ -123,7 +123,7 @@ Blockly.Blocks['procedures_callnoreturn'] = {
         this.setColour(290);
         this.setTooltip("Call a procedure");
         this.arguments_ = [];
-        this.setMutator(new Blockly.Mutator(['procedures_mutatorarg']));
+        this.setMutator(new Blockly.icons.MutatorIcon(['procedures_mutatorarg'], this));
     },
     mutationToDom: function () {
         const container = Blockly.utils.xml.createElement('mutation');
@@ -170,7 +170,7 @@ Blockly.Blocks['procedures_callreturn'] = {
         this.setColour(290);
         this.setTooltip("Call a procedure that returns a value");
         this.arguments_ = [];
-        this.setMutator(new Blockly.Mutator(['procedures_mutatorarg']));
+        this.setMutator(new Blockly.icons.MutatorIcon(['procedures_mutatorarg'], this));
     },
     mutationToDom: function () {
         const container = Blockly.utils.xml.createElement('mutation');

@@ -7,6 +7,9 @@
 import './builtin_blocks';
 import './text_list_blocks';
 import './color_component_blocks';
+import './dictionary_blocks';
+import './variables';
+import './procedures';
 
 // Export colors and utilities
 export { MIT_COLORS } from './builtin_blocks';
