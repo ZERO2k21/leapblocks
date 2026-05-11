@@ -48,12 +48,26 @@ const isLocal = typeof window !== 'undefined' &&
    window.location.hostname === '127.0.0.1' || 
    window.location.hostname === '[::1]');
 
-export const CLOUD_COMPILER_URL: string =
-  (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_COMPILER_URL)
-    ? (import.meta as any).env.VITE_COMPILER_URL as string
-    : isLocal 
-      ? 'http://localhost:3001' 
-      : 'https://leaplab.creoleap.com';
+export const CLOUD_COMPILER_URL: string = (() => {
+  // 1. Priority: Environment Variable
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_COMPILER_URL) {
+    return (import.meta as any).env.VITE_COMPILER_URL as string;
+  }
+
+  // 2. Explicit If-Else Condition for environments
+  if (isLocal) {
+    return 'http://localhost:3001';
+  } else if (typeof window !== 'undefined') {
+    if (window.location.hostname === 'leapblocks.vercel.app') {
+      return 'https://leapblocks.vercel.app';
+    } else if (window.location.hostname === 'leaplab.creoleap.com') {
+      return 'https://leaplab.creoleap.com';
+    }
+  }
+
+  // Default Fallback
+  return 'https://leaplab.creoleap.com';
+})();
 
 /** Runtime check — use this instead of IS_ELECTRON when calling from async contexts */
 export const isElectron = (): boolean => {

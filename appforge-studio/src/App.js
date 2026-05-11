@@ -50,7 +50,12 @@ const isLocalhost = window.location.hostname === 'localhost' ||
                     window.location.hostname === '127.0.0.1' || 
                     window.location.hostname === '[::1]';
 
-const BUILD_SERVER_URL = isLocalhost ? 'localhost:3001' : 'leaplab.creoleap.com';
+const BUILD_SERVER_URL = (() => {
+  if (isLocalhost) return 'localhost:3001';
+  if (window.location.hostname === 'leapblocks.vercel.app') return 'leapblocks.vercel.app';
+  if (window.location.hostname === 'leaplab.creoleap.com') return 'leaplab.creoleap.com';
+  return 'leaplab.creoleap.com';
+})();
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('designer');
