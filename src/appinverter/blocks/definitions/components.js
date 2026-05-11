@@ -4,26 +4,32 @@
  */
 import * as Blockly from 'blockly';
 
+Blockly.Blocks['component_event'] = {
+    init: function () {
+        this.appendDummyInput()
+            .appendField('when')
+            .appendField(new Blockly.FieldTextInput('Button1'), 'COMPONENT')
+            .appendField('.')
+            .appendField(new Blockly.FieldTextInput('Click'), 'EVENT');
+        this.appendStatementInput('DO')
+            .setCheck(null)
+            .appendField('do');
+        this.setPreviousStatement(false, null);
+        this.setNextStatement(false, null);
+        this.setColour(230);
+        this.setTooltip('Handle component event');
+    }
+};
+
 // Set Component Property
 Blockly.Blocks['component_set_property'] = {
     init: function () {
         this.appendValueInput("VALUE")
             .setCheck(null)
             .appendField("set")
-            .appendField(new Blockly.FieldDropdown([
-                ["Button1", "Button1"],
-                ["Label1", "Label1"],
-                ["TextBox1", "TextBox1"]
-            ]), "COMPONENT")
+            .appendField(new Blockly.FieldTextInput('Button1'), "COMPONENT")
             .appendField(".")
-            .appendField(new Blockly.FieldDropdown([
-                ["Text", "Text"],
-                ["BackgroundColor", "BackgroundColor"],
-                ["TextColor", "TextColor"],
-                ["FontSize", "FontSize"],
-                ["Visible", "Visible"],
-                ["Enabled", "Enabled"]
-            ]), "PROPERTY")
+            .appendField(new Blockly.FieldTextInput('Text'), "PROPERTY")
             .appendField("to");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
@@ -37,22 +43,9 @@ Blockly.Blocks['component_set_property'] = {
 Blockly.Blocks['component_get_property'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField(new Blockly.FieldDropdown([
-                ["Button1", "Button1"],
-                ["Label1", "Label1"],
-                ["TextBox1", "TextBox1"]
-            ]), "COMPONENT")
+            .appendField(new Blockly.FieldTextInput('Button1'), "COMPONENT")
             .appendField(".")
-            .appendField(new Blockly.FieldDropdown([
-                ["Text", "Text"],
-                ["BackgroundColor", "BackgroundColor"],
-                ["TextColor", "TextColor"],
-                ["FontSize", "FontSize"],
-                ["Visible", "Visible"],
-                ["Enabled", "Enabled"],
-                ["Width", "Width"],
-                ["Height", "Height"]
-            ]), "PROPERTY");
+            .appendField(new Blockly.FieldTextInput('Text'), "PROPERTY");
         this.setOutput(true, null);
         this.setColour(160);
         this.setTooltip("Get component property");
@@ -65,18 +58,9 @@ Blockly.Blocks['component_method'] = {
     init: function () {
         this.appendDummyInput()
             .appendField("call")
-            .appendField(new Blockly.FieldDropdown([
-                ["Button1", "Button1"],
-                ["Label1", "Label1"],
-                ["Notifier1", "Notifier1"]
-            ]), "COMPONENT")
+            .appendField(new Blockly.FieldTextInput('Notifier1'), "COMPONENT")
             .appendField(".")
-            .appendField(new Blockly.FieldDropdown([
-                ["ShowAlert", "ShowAlert"],
-                ["ShowMessage", "ShowMessage"],
-                ["Hide", "Hide"],
-                ["Show", "Show"]
-            ]), "METHOD");
+            .appendField(new Blockly.FieldTextInput('ShowAlert'), "METHOD");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour(290);
@@ -157,6 +141,7 @@ Blockly.Blocks['device_vibrate'] = {
 };
 
 export default {
+    'component_event': Blockly.Blocks['component_event'],
     'component_set_property': Blockly.Blocks['component_set_property'],
     'component_get_property': Blockly.Blocks['component_get_property'],
     'component_method': Blockly.Blocks['component_method'],
