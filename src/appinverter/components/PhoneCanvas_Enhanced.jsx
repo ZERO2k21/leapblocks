@@ -10,6 +10,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const [deviceType, setDeviceType] = useState('phone'); // 'phone', 'tablet7', 'tablet10'
     const [orientation, setOrientation] = useState('portrait'); // 'portrait', 'landscape'
     const [dragOver, setDragOver] = useState(false);
+    const [dropTarget, setDropTarget] = useState(null); // Track which container is being dragged over
     const canvasRef = useRef(null);
 
     const currentScreen = screens.find(s => s.id === activeScreen) || screens[0];
@@ -27,9 +28,11 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const displayWidth = orientation === 'portrait' ? currentDimensions.width : currentDimensions.height;
     const displayHeight = orientation === 'portrait' ? currentDimensions.height : currentDimensions.width;
 
-    const handleDrop = (e) => {
+    const handleDrop = (e, targetContainerId = null) => {
         e.preventDefault();
+        e.stopPropagation();
         setDragOver(false);
+        setDropTarget(null);
 
         const type = e.dataTransfer.getData('componentType');
         const componentData = e.dataTransfer.getData('componentData');
@@ -50,6 +53,12 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 visible = undefined;
             }
         }
+
+        // If dropping into a container, select it first
+        if (targetContainerId) {
+            setSelectedId(targetContainerId);
+        }
+
         addComponent(type, x, y, { visible });
     };
 
@@ -69,8 +78,8 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const renderComponentPreview = (comp) => {
         const isSelected = comp.id === selectedId;
         const baseClasses = `cursor-pointer transition-all ${isSelected
-                ? 'ring-2 ring-blue-500 ring-offset-2 shadow-lg z-10'
-                : 'hover:ring-2 hover:ring-gray-300'
+            ? 'ring-2 ring-blue-500 ring-offset-2 shadow-lg z-10'
+            : 'hover:ring-2 hover:ring-gray-300'
             } mb-2 relative`;
 
         // Dynamic styles from props
@@ -270,14 +279,27 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2`}
+                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50' : ''
+                            }`}
                         style={{ ...style, display: 'flex', flexDirection: 'row', gap: '8px', minHeight: '60px' }}
                         onClick={handleClick}
+                        onDrop={(e) => handleDrop(e, comp.id)}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDropTarget(comp.id);
+                        }}
+                        onDragLeave={(e) => {
+                            e.stopPropagation();
+                            setDropTarget(null);
+                        }}
                     >
                         {comp.children && comp.children.length > 0 ? (
                             comp.children.map(child => renderComponentPreview(child))
                         ) : (
-                            <div className="text-gray-400 text-sm italic">Horizontal Arrangement</div>
+                            <div className="text-gray-400 text-sm italic flex items-center justify-center flex-1">
+                                Drop components here (Horizontal)
+                            </div>
                         )}
                     </div>
                 );
@@ -287,14 +309,27 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2`}
+                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50' : ''
+                            }`}
                         style={{ ...style, display: 'flex', flexDirection: 'column', gap: '8px', minHeight: '60px' }}
                         onClick={handleClick}
+                        onDrop={(e) => handleDrop(e, comp.id)}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDropTarget(comp.id);
+                        }}
+                        onDragLeave={(e) => {
+                            e.stopPropagation();
+                            setDropTarget(null);
+                        }}
                     >
                         {comp.children && comp.children.length > 0 ? (
                             comp.children.map(child => renderComponentPreview(child))
                         ) : (
-                            <div className="text-gray-400 text-sm italic">Vertical Arrangement</div>
+                            <div className="text-gray-400 text-sm italic flex items-center justify-center flex-1">
+                                Drop components here (Vertical)
+                            </div>
                         )}
                     </div>
                 );
@@ -303,14 +338,27 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2`}
+                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50' : ''
+                            }`}
                         style={{ ...style, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', minHeight: '100px' }}
                         onClick={handleClick}
+                        onDrop={(e) => handleDrop(e, comp.id)}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDropTarget(comp.id);
+                        }}
+                        onDragLeave={(e) => {
+                            e.stopPropagation();
+                            setDropTarget(null);
+                        }}
                     >
                         {comp.children && comp.children.length > 0 ? (
                             comp.children.map(child => renderComponentPreview(child))
                         ) : (
-                            <div className="text-gray-400 text-sm italic col-span-2">Table Arrangement</div>
+                            <div className="text-gray-400 text-sm italic col-span-2 flex items-center justify-center">
+                                Drop components here (Table)
+                            </div>
                         )}
                     </div>
                 );

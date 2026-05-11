@@ -134,22 +134,40 @@
 /* Blockly specific styles to ensure proper drag-and-drop */
 .blocklyDraggable {
   cursor: grab !important;
+  pointer-events: auto !important;
 }
 
 .blocklyDragging {
   cursor: grabbing !important;
   opacity: 0.8 !important;
+  pointer-events: auto !important;
 }
 
 /* Fix z-index for dragging blocks - ensure they appear on top */
 .blocklyDragging > .blocklyPath {
   fill-opacity: 0.8 !important;
   stroke-opacity: 0.8 !important;
+  pointer-events: auto !important;
 }
 
 .blocklyBlockDragSurface {
   z-index: 9999 !important;
-  pointer-events: none !important;
+  pointer-events: auto !important;
+}
+
+/* CRITICAL: Ensure all block elements can receive pointer events */
+.blocklyBlockCanvas .blocklyDraggable,
+.blocklyBlockCanvas .blocklyDraggable *,
+.blocklyFlyout .blocklyDraggable,
+.blocklyFlyout .blocklyDraggable * {
+  pointer-events: auto !important;
+}
+
+/* Enable touch events for mobile dragging */
+.blocklySvg {
+  touch-action: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
 }
 
 /* Ensure the drag surface is always on top */
@@ -207,10 +225,26 @@
 /* Ensure blocks are visible and draggable */
 .blocklyBlockCanvas .blocklyDraggable {
   cursor: grab !important;
+  pointer-events: auto !important;
 }
 
 .blocklyBlockCanvas .blocklyDraggable:active {
   cursor: grabbing !important;
+}
+
+/* Ensure flyout blocks are also draggable */
+.blocklyFlyout .blocklyDraggable {
+  cursor: grab !important;
+  pointer-events: auto !important;
+}
+
+.blocklyFlyout .blocklyDraggable:active {
+  cursor: grabbing !important;
+}
+
+/* Make sure block paths are interactive */
+.blocklyPath {
+  pointer-events: auto !important;
 }
 
 /* Workspace styling */

@@ -19,9 +19,21 @@ export default function PropertiesPanel({ appState }) {
   const components = currentScreen?.components || [];
   const nonVisibleComponents = currentScreen?.nonVisibleComponents || [];
 
+  // MIT App Inventor style Width/Height options
+  const sizeOptions = {
+    Width: [
+      { value: 'Automatic', label: 'Automatic' },
+      { value: 'Fill parent', label: 'Fill parent...' },
+      { value: 'custom', label: 'Custom (pixels)...' }
+    ],
+    Height: [
+      { value: 'Automatic', label: 'Automatic' },
+      { value: 'Fill parent', label: 'Fill parent...' },
+      { value: 'custom', label: 'Custom (pixels)...' }
+    ]
+  };
+
   const enumOptions = {
-    Width: ['Automatic', 'Fill parent'],
-    Height: ['Automatic', 'Fill parent'],
     TextAlignment: ['left', 'center', 'right'],
     Shape: ['default', 'rounded', 'rectangular', 'oval']
   };
@@ -45,14 +57,80 @@ export default function PropertiesPanel({ appState }) {
 
     const { id, type, props } = selectedComponent;
 
+    // Helper function to render Width/Height with MIT App Inventor style
+    const renderSizeProperty = (key, value) => {
+      const isCustom = typeof value === 'number';
+      const currentValue = isCustom ? 'custom' : value;
+
+      return (
+        <div className="space-y-2">
+          <select
+            value={currentValue}
+            className="block w-full rounded-md border-[#b7c4d4] shadow-sm focus:border-[#4a90e2] focus:ring-[#4a90e2] sm:text-sm border px-2 py-1 bg-white"
+            onChange={(e) => {
+              const newValue = e.target.value;
+              if (newValue === 'custom') {
+                // Set to default pixel value
+                updateProp(id, key, 100);
+              } else {
+                updateProp(id, key, newValue);
+              }
+            }}
+          >
+            {sizeOptions[key].map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          {/* Show pixel input if custom is selected */}
+          {isCustom && (
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="1"
+                max="9999"
+                value={value}
+                className="flex-1 block w-full rounded-md border-[#b7c4d4] shadow-sm focus:border-[#4a90e2] focus:ring-[#4a90e2] sm:text-sm border px-2 py-1"
+                onChange={(e) => updateProp(id, key, parseInt(e.target.value) || 1)}
+              />
+              <span className="text-xs text-gray-500">pixels</span>
+            </div>
+          )}
+        </div>
+      );
+    };
+
     return (
       <div className="p-4">
-        <h3 className="text-sm font-semibold text-gray-800 mb-4">{type} Properties</h3>
+        {/* Header with Delete Button */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-gray-800">{type} Properties</h3>
+          <button
+            onClick={() => {
+              if (window.confirm(`Delete ${id}?`)) {
+                removeComponent(id);
+              }
+            }}
+            className="flex items-center gap-1 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded transition-colors"
+            title="Delete Component"
+          >
+            <Trash2 className="h-3 w-3" />
+            Delete
+          </button>
+        </div>
         <div className="space-y-4">
           {Object.entries(props).map(([key, value]) => {
+            // Skip legacy lowercase aliases
+            if (key === 'width' || key === 'height' || key === 'visible') {
+              return null;
+            }
+
             const isColor = key.toLowerCase().includes('color');
             const isBoolean = typeof value === 'boolean';
-            const isNumber = typeof value === 'number';
+            const isNumber = typeof value === 'number' && key !== 'Width' && key !== 'Height';
+            const isSizeProperty = key === 'Width' || key === 'Height';
             const options = enumOptions[key];
 
             return (
@@ -61,7 +139,9 @@ export default function PropertiesPanel({ appState }) {
                   {key.replace(/([A-Z])/g, ' $1').trim()}
                 </label>
 
-                {isBoolean ? (
+                {isSizeProperty ? (
+                  renderSizeProperty(key, value)
+                ) : isBoolean ? (
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
