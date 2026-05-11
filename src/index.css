@@ -131,6 +131,134 @@
   box-sizing: border-box;
 }
 
+/* Blockly specific styles to ensure proper drag-and-drop */
+.blocklyDraggable {
+  cursor: grab !important;
+}
+
+.blocklyDragging {
+  cursor: grabbing !important;
+  opacity: 0.8 !important;
+}
+
+/* Fix z-index for dragging blocks - ensure they appear on top */
+.blocklyDragging > .blocklyPath {
+  fill-opacity: 0.8 !important;
+  stroke-opacity: 0.8 !important;
+}
+
+.blocklyBlockDragSurface {
+  z-index: 9999 !important;
+  pointer-events: none !important;
+}
+
+/* Ensure the drag surface is always on top */
+.blocklyBlockCanvas {
+  z-index: 1 !important;
+}
+
+.blocklyBubbleCanvas {
+  z-index: 2 !important;
+}
+
+.blocklyTooltipDiv {
+  z-index: 10000 !important;
+}
+
+.blocklyToolboxDiv {
+  background-color: #f3f4f6 !important;
+  border-right: 1px solid #e5e7eb !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  z-index: 10 !important;
+}
+
+.blocklyFlyout {
+  background-color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+.blocklyMainBackground {
+  stroke: none !important;
+  fill: #ffffff !important;
+}
+
+.blocklyTreeRow {
+  padding: 8px !important;
+  cursor: pointer !important;
+  height: auto !important;
+  line-height: 1.5 !important;
+}
+
+.blocklyTreeRow:hover {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+.blocklyTreeLabel {
+  cursor: pointer !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 14px !important;
+}
+
+.blocklyTreeSelected .blocklyTreeLabel {
+  color: #1e40af !important;
+}
+
+/* Ensure blocks are visible and draggable */
+.blocklyBlockCanvas .blocklyDraggable {
+  cursor: grab !important;
+}
+
+.blocklyBlockCanvas .blocklyDraggable:active {
+  cursor: grabbing !important;
+}
+
+/* Workspace styling */
+.blocklyWorkspace {
+  background-color: #ffffff !important;
+}
+
+/* Scrollbar styling for Blockly */
+.blocklyScrollbarHandle {
+  fill: #cbd5e1 !important;
+}
+
+.blocklyScrollbarBackground {
+  fill: #f1f5f9 !important;
+}
+
+/* Connection indicators */
+.blocklyInsertionMarker > .blocklyPath {
+  fill: #4ade80 !important;
+  fill-opacity: 0.3 !important;
+  stroke: #22c55e !important;
+  stroke-width: 2px !important;
+}
+
+/* Highlight compatible connections */
+.blocklyHighlightedConnectionPath {
+  stroke: #3b82f6 !important;
+  stroke-width: 4px !important;
+}
+
+/* Make sure SVG elements don't interfere with dragging */
+.blocklyMainWorkspaceScrollbar {
+  z-index: 5 !important;
+}
+
+/* Fix for blocks disappearing - ensure proper rendering order */
+svg.blocklySvg {
+  overflow: visible !important;
+}
+
+.blocklyWidgetDiv {
+  z-index: 9998 !important;
+}
+
+.blocklyDropDownDiv {
+  z-index: 9999 !important;
+}
+
 :root {
   --motion-color: #4A90E2;
   --looks-color: #8B5CF6;

@@ -12,11 +12,12 @@ export function useAppState() {
   const [selectedId, setSelectedId] = useState(null);
   const [appName, setAppName] = useState('MyApp');
   const [packageName, setPackageName] = useState('com.leapblocks.myapp');
+  const [blockLogic, setBlockLogic] = useState('');
 
   const addComponent = (type, x = 0, y = 0) => {
     const newId = `${type}${Date.now()}`;
     const defaultProps = defaultPropsFor(type);
-    
+
     setScreens(prevScreens => prevScreens.map(screen => {
       if (screen.id === activeScreen) {
         return {
@@ -34,7 +35,7 @@ export function useAppState() {
       if (screen.id === activeScreen) {
         return {
           ...screen,
-          components: screen.components.map(comp => 
+          components: screen.components.map(comp =>
             comp.id === id ? { ...comp, props: { ...comp.props, [key]: value } } : comp
           )
         };
@@ -70,7 +71,8 @@ export function useAppState() {
       packageName,
       versionCode: 1,
       versionName: "1.0",
-      screens
+      screens,
+      blockLogic
     };
   };
 
@@ -80,6 +82,7 @@ export function useAppState() {
     selectedId,
     appName,
     packageName,
+    blockLogic,
     addComponent,
     updateProp,
     removeComponent,
@@ -88,6 +91,7 @@ export function useAppState() {
     setSelectedId,
     setAppName,
     setPackageName,
+    setBlockLogic,
     getSerializedState
   };
 }
