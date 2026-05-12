@@ -4,6 +4,7 @@
 import * as Blockly from 'blockly';
 import { FieldColour } from '@blockly/field-colour';
 import { MIT_COLORS } from './builtin_blocks';
+import { COMPONENT_METADATA as COMPONENT_DATABASE } from '../data/componentMetadata';
 
 // ============================================================================
 // COLOR BLOCKS
@@ -94,37 +95,83 @@ Blockly.Blocks['colour_blend'] = {
 Blockly.Blocks['component_event'] = {
     init: function () {
         this.setColour(MIT_COLORS.events);
-        this.appendDummyInput()
-            .appendField('when')
-            .appendField(new Blockly.FieldDropdown([['Component1', 'Component1']]), 'COMPONENT')
-            .appendField('.')
-            .appendField(new Blockly.FieldDropdown([['Event', 'Event']]), 'EVENT');
-        this.appendStatementInput('DO')
-            .appendField('do');
-        this.setTooltip('Runs when the specified event occurs.');
-        this.componentName = '';
-        this.eventName = '';
+        this.typeName = 'Button';
+        this.eventName = 'Click';
+        this.instanceName = 'Button1';
+        this.isGeneric = false;
+
+        this.updateShape_();
     },
 
-    /**
-     * Update the dropdown options based on available components
-     */
-    updateComponentDropdown: function (components) {
-        const dropdown = this.getField('COMPONENT');
-        if (dropdown) {
-            const options = components.map(c => [c.id, c.id]);
-            dropdown.menuGenerator_ = options;
+    mutationToDom: function () {
+        const container = document.createElement('mutation');
+        container.setAttribute('component_type', this.typeName);
+        container.setAttribute('event_name', this.eventName);
+        container.setAttribute('instance_name', this.instanceName);
+        container.setAttribute('is_generic', this.isGeneric ? 'true' : 'false');
+        return container;
+    },
+
+    domToMutation: function (xmlElement) {
+        this.typeName = xmlElement.getAttribute('component_type');
+        this.eventName = xmlElement.getAttribute('event_name');
+        this.instanceName = xmlElement.getAttribute('instance_name');
+        this.isGeneric = xmlElement.getAttribute('is_generic') === 'true';
+        this.updateShape_();
+    },
+
+    saveExtraState: function () {
+        return {
+            'component_type': this.typeName,
+            'event_name': this.eventName,
+            'instance_name': this.instanceName,
+            'is_generic': this.isGeneric
+        };
+    },
+
+    loadExtraState: function (state) {
+        this.typeName = state['component_type'];
+        this.eventName = state['event_name'];
+        this.instanceName = state['instance_name'];
+        this.isGeneric = state['is_generic'];
+        this.updateShape_();
+    },
+
+    updateShape_: function () {
+        // Clear previous inputs
+        const inputs = this.inputList.slice();
+        inputs.forEach(input => {
+            if (input.name !== 'DO') {
+                this.removeInput(input.name);
+            }
+        });
+
+        // Add header
+        const header = this.appendDummyInput('HEADER');
+        header.appendField('when');
+        if (this.isGeneric) {
+            header.appendField('any ' + this.typeName);
+        } else {
+            header.appendField(this.instanceName);
         }
-    },
+        header.appendField('.' + this.eventName);
 
-    /**
-     * Update the event dropdown based on selected component
-     */
-    updateEventDropdown: function (events) {
-        const dropdown = this.getField('EVENT');
-        if (dropdown) {
-            const options = events.map(e => [e.name, e.name]);
-            dropdown.menuGenerator_ = options;
+        // Add parameters (as flydown fields or labels)
+        const componentDef = COMPONENT_DATABASE[this.typeName];
+        const eventDef = componentDef?.events.find(e => e.name === this.eventName);
+
+        if (eventDef && eventDef.parameters.length > 0) {
+            const paramInput = this.appendDummyInput('PARAMS');
+            eventDef.parameters.forEach(param => {
+                paramInput.appendField(param.name).appendField(' ');
+            });
+        }
+
+        // Re-order DO input if it exists, otherwise add it
+        if (!this.getInput('DO')) {
+            this.appendStatementInput('DO').appendField('do');
+        } else {
+            this.moveInputBefore('DO', null);
         }
     }
 };
@@ -136,31 +183,77 @@ Blockly.Blocks['component_event'] = {
 Blockly.Blocks['component_method'] = {
     init: function () {
         this.setColour(MIT_COLORS.methods);
-        this.appendDummyInput()
-            .appendField('call')
-            .appendField(new Blockly.FieldDropdown([['Component1', 'Component1']]), 'COMPONENT')
-            .appendField('.')
-            .appendField(new Blockly.FieldDropdown([['Method', 'Method']]), 'METHOD');
         this.setPreviousStatement(true);
         this.setNextStatement(true);
-        this.setTooltip('Calls a method on the component.');
-        this.componentName = '';
-        this.methodName = '';
+        this.typeName = 'Notifier';
+        this.methodName = 'ShowAlert';
+        this.instanceName = 'Notifier1';
+        this.isGeneric = false;
+
+        this.updateShape_();
     },
 
-    updateComponentDropdown: function (components) {
-        const dropdown = this.getField('COMPONENT');
-        if (dropdown) {
-            const options = components.map(c => [c.id, c.id]);
-            dropdown.menuGenerator_ = options;
+    mutationToDom: function () {
+        const container = document.createElement('mutation');
+        container.setAttribute('component_type', this.typeName);
+        container.setAttribute('method_name', this.methodName);
+        container.setAttribute('instance_name', this.instanceName);
+        container.setAttribute('is_generic', this.isGeneric ? 'true' : 'false');
+        return container;
+    },
+
+    domToMutation: function (xmlElement) {
+        this.typeName = xmlElement.getAttribute('component_type');
+        this.methodName = xmlElement.getAttribute('method_name');
+        this.instanceName = xmlElement.getAttribute('instance_name');
+        this.isGeneric = xmlElement.getAttribute('is_generic') === 'true';
+        this.updateShape_();
+    },
+
+    saveExtraState: function () {
+        return {
+            'component_type': this.typeName,
+            'method_name': this.methodName,
+            'instance_name': this.instanceName,
+            'is_generic': this.isGeneric
+        };
+    },
+
+    loadExtraState: function (state) {
+        this.typeName = state['component_type'];
+        this.methodName = state['method_name'];
+        this.instanceName = state['instance_name'];
+        this.isGeneric = state['is_generic'];
+        this.updateShape_();
+    },
+
+    updateShape_: function () {
+        // Remove old inputs
+        while (this.inputList.length > 0) {
+            this.removeInput(this.inputList[0].name);
         }
-    },
 
-    updateMethodDropdown: function (methods) {
-        const dropdown = this.getField('METHOD');
-        if (dropdown) {
-            const options = methods.map(m => [m.name, m.name]);
-            dropdown.menuGenerator_ = options;
+        // Header
+        const header = this.appendDummyInput('HEADER');
+        header.appendField('call');
+        if (this.isGeneric) {
+            header.appendField('any ' + this.typeName);
+        } else {
+            header.appendField(this.instanceName);
+        }
+        header.appendField('.' + this.methodName);
+
+        // Arguments
+        const componentDef = COMPONENT_DATABASE[this.typeName];
+        const methodDef = componentDef?.methods.find(m => m.name === this.methodName);
+
+        if (methodDef) {
+            methodDef.parameters.forEach(param => {
+                this.appendValueInput('ARG_' + param.name)
+                    .setCheck(param.type)
+                    .setAlign(Blockly.inputs.Align.RIGHT)
+                    .appendField(param.name);
+            });
         }
     }
 };
@@ -172,29 +265,64 @@ Blockly.Blocks['component_method'] = {
 Blockly.Blocks['component_get_property'] = {
     init: function () {
         this.setColour(MIT_COLORS.getters);
-        this.appendDummyInput()
-            .appendField(new Blockly.FieldDropdown([['Component1', 'Component1']]), 'COMPONENT')
-            .appendField('.')
-            .appendField(new Blockly.FieldDropdown([['Property', 'Property']]), 'PROPERTY');
         this.setOutput(true);
-        this.setTooltip('Gets the value of a component property.');
-        this.componentName = '';
-        this.propertyName = '';
+        this.typeName = 'Button';
+        this.propertyName = 'Text';
+        this.instanceName = 'Button1';
+        this.isGeneric = false;
+
+        this.updateShape_();
     },
 
-    updateComponentDropdown: function (components) {
-        const dropdown = this.getField('COMPONENT');
-        if (dropdown) {
-            const options = components.map(c => [c.id, c.id]);
-            dropdown.menuGenerator_ = options;
+    mutationToDom: function () {
+        const container = document.createElement('mutation');
+        container.setAttribute('component_type', this.typeName);
+        container.setAttribute('property_name', this.propertyName);
+        container.setAttribute('instance_name', this.instanceName);
+        container.setAttribute('is_generic', this.isGeneric ? 'true' : 'false');
+        return container;
+    },
+
+    domToMutation: function (xmlElement) {
+        this.typeName = xmlElement.getAttribute('component_type');
+        this.propertyName = xmlElement.getAttribute('property_name');
+        this.instanceName = xmlElement.getAttribute('instance_name');
+        this.isGeneric = xmlElement.getAttribute('is_generic') === 'true';
+        this.updateShape_();
+    },
+
+    saveExtraState: function () {
+        return {
+            'component_type': this.typeName,
+            'property_name': this.propertyName,
+            'instance_name': this.instanceName,
+            'is_generic': this.isGeneric
+        };
+    },
+
+    loadExtraState: function (state) {
+        this.typeName = state['component_type'];
+        this.propertyName = state['property_name'];
+        this.instanceName = state['instance_name'];
+        this.isGeneric = state['is_generic'];
+        this.updateShape_();
+    },
+
+    updateShape_: function () {
+        if (this.inputList.length > 0) this.removeInput('MAIN');
+        const input = this.appendDummyInput('MAIN');
+        if (this.isGeneric) {
+            input.appendField('any ' + this.typeName);
+        } else {
+            input.appendField(this.instanceName);
         }
-    },
+        input.appendField('.' + this.propertyName);
 
-    updatePropertyDropdown: function (properties) {
-        const dropdown = this.getField('PROPERTY');
-        if (dropdown) {
-            const options = properties.map(p => [p.name, p.name]);
-            dropdown.menuGenerator_ = options;
+        // Set output type based on property
+        const componentDef = COMPONENT_DATABASE[this.typeName];
+        const propDef = componentDef?.properties.find(p => p.name === this.propertyName);
+        if (propDef) {
+            this.setOutput(true, propDef.type);
         }
     }
 };
@@ -206,32 +334,65 @@ Blockly.Blocks['component_get_property'] = {
 Blockly.Blocks['component_set_property'] = {
     init: function () {
         this.setColour(MIT_COLORS.setters);
-        this.appendValueInput('VALUE')
-            .appendField('set')
-            .appendField(new Blockly.FieldDropdown([['Component1', 'Component1']]), 'COMPONENT')
-            .appendField('.')
-            .appendField(new Blockly.FieldDropdown([['Property', 'Property']]), 'PROPERTY')
-            .appendField('to');
         this.setPreviousStatement(true);
         this.setNextStatement(true);
-        this.setTooltip('Sets the value of a component property.');
-        this.componentName = '';
-        this.propertyName = '';
+        this.typeName = 'Button';
+        this.propertyName = 'Text';
+        this.instanceName = 'Button1';
+        this.isGeneric = false;
+
+        this.updateShape_();
     },
 
-    updateComponentDropdown: function (components) {
-        const dropdown = this.getField('COMPONENT');
-        if (dropdown) {
-            const options = components.map(c => [c.id, c.id]);
-            dropdown.menuGenerator_ = options;
+    mutationToDom: function () {
+        const container = document.createElement('mutation');
+        container.setAttribute('component_type', this.typeName);
+        container.setAttribute('property_name', this.propertyName);
+        container.setAttribute('instance_name', this.instanceName);
+        container.setAttribute('is_generic', this.isGeneric ? 'true' : 'false');
+        return container;
+    },
+
+    domToMutation: function (xmlElement) {
+        this.typeName = xmlElement.getAttribute('component_type');
+        this.propertyName = xmlElement.getAttribute('property_name');
+        this.instanceName = xmlElement.getAttribute('instance_name');
+        this.isGeneric = xmlElement.getAttribute('is_generic') === 'true';
+        this.updateShape_();
+    },
+
+    saveExtraState: function () {
+        return {
+            'component_type': this.typeName,
+            'property_name': this.propertyName,
+            'instance_name': this.instanceName,
+            'is_generic': this.isGeneric
+        };
+    },
+
+    loadExtraState: function (state) {
+        this.typeName = state['component_type'];
+        this.propertyName = state['property_name'];
+        this.instanceName = state['instance_name'];
+        this.isGeneric = state['is_generic'];
+        this.updateShape_();
+    },
+
+    updateShape_: function () {
+        if (this.inputList.length > 0) this.removeInput('VALUE');
+        const input = this.appendValueInput('VALUE').appendField('set ');
+        if (this.isGeneric) {
+            input.appendField('any ' + this.typeName);
+        } else {
+            input.appendField(this.instanceName);
         }
-    },
+        input.appendField('.' + this.propertyName).appendField(' to');
 
-    updatePropertyDropdown: function (properties) {
-        const dropdown = this.getField('PROPERTY');
-        if (dropdown) {
-            const options = properties.map(p => [p.name, p.name]);
-            dropdown.menuGenerator_ = options;
+        // Set check type based on property
+        const componentDef = COMPONENT_DATABASE[this.typeName];
+        const propDef = componentDef?.properties.find(p => p.name === this.propertyName);
+        if (propDef) {
+            input.setCheck(propDef.type);
         }
     }
 };
@@ -261,83 +422,97 @@ Blockly.Blocks['component_component_block'] = {
 
 /**
  * Generic Component Event Block (Any Component)
- * Format: when any [ComponentType].[EventName] do
  */
 Blockly.Blocks['any_component_event'] = {
     init: function () {
         this.setColour(MIT_COLORS.events);
-        this.appendDummyInput()
-            .appendField('when any')
-            .appendField(new Blockly.FieldDropdown([['Button', 'Button']]), 'COMPONENT_TYPE')
-            .appendField('.')
-            .appendField(new Blockly.FieldDropdown([['Click', 'Click']]), 'EVENT');
-        this.appendStatementInput('DO')
-            .appendField('do');
-        this.setTooltip('Runs when the specified event occurs on any component of this type.');
-    }
+        this.typeName = 'Button';
+        this.eventName = 'Click';
+        this.isGeneric = true;
+        this.updateShape_();
+    },
+    mutationToDom: Blockly.Blocks['component_event'].mutationToDom,
+    domToMutation: Blockly.Blocks['component_event'].domToMutation,
+    updateShape_: Blockly.Blocks['component_event'].updateShape_
 };
 
 /**
  * Generic Component Method Block (Any Component)
- * Format: call [ComponentType].[MethodName] for component [ComponentInstance]
  */
 Blockly.Blocks['any_component_method'] = {
     init: function () {
         this.setColour(MIT_COLORS.methods);
-        this.appendDummyInput()
-            .appendField('call')
-            .appendField(new Blockly.FieldDropdown([['Button', 'Button']]), 'COMPONENT_TYPE')
-            .appendField('.')
-            .appendField(new Blockly.FieldDropdown([['HideKeyboard', 'HideKeyboard']]), 'METHOD');
-        this.appendValueInput('COMPONENT')
-            .setCheck('Component')
-            .appendField('for component');
         this.setPreviousStatement(true);
         this.setNextStatement(true);
-        this.setTooltip('Calls a method on a specific component of this type.');
+        this.typeName = 'Notifier';
+        this.methodName = 'ShowAlert';
+        this.isGeneric = true;
+        this.updateShape_();
+    },
+    mutationToDom: Blockly.Blocks['component_method'].mutationToDom,
+    domToMutation: Blockly.Blocks['component_method'].domToMutation,
+    updateShape_: function () {
+        Blockly.Blocks['component_method'].updateShape_.call(this);
+        // Special case for generic method: add a 'component' input if not present
+        if (!this.getInput('COMPONENT')) {
+            this.appendValueInput('COMPONENT')
+                .setCheck('Component')
+                .setAlign(Blockly.inputs.Align.RIGHT)
+                .appendField('for component');
+        }
     }
 };
 
 /**
  * Generic Component Property Getter Block (Any Component)
- * Format: get [ComponentType].[PropertyName] for component [ComponentInstance]
  */
 Blockly.Blocks['any_component_get_property'] = {
     init: function () {
         this.setColour(MIT_COLORS.getters);
-        this.appendDummyInput()
-            .appendField('get')
-            .appendField(new Blockly.FieldDropdown([['Button', 'Button']]), 'COMPONENT_TYPE')
-            .appendField('.')
-            .appendField(new Blockly.FieldDropdown([['Text', 'Text']]), 'PROPERTY');
-        this.appendValueInput('COMPONENT')
-            .setCheck('Component')
-            .appendField('for component');
         this.setOutput(true);
-        this.setTooltip('Gets the value of a property for a specific component of this type.');
+        this.typeName = 'Button';
+        this.propertyName = 'Text';
+        this.isGeneric = true;
+        this.updateShape_();
+    },
+    mutationToDom: Blockly.Blocks['component_get_property'].mutationToDom,
+    domToMutation: Blockly.Blocks['component_get_property'].domToMutation,
+    updateShape_: function () {
+        Blockly.Blocks['component_get_property'].updateShape_.call(this);
+        if (!this.getInput('COMPONENT')) {
+            this.appendValueInput('COMPONENT')
+                .setCheck('Component')
+                .setAlign(Blockly.inputs.Align.RIGHT)
+                .appendField('for component');
+        }
     }
 };
 
 /**
  * Generic Component Property Setter Block (Any Component)
- * Format: set [ComponentType].[PropertyName] for component [ComponentInstance] to
  */
 Blockly.Blocks['any_component_set_property'] = {
     init: function () {
         this.setColour(MIT_COLORS.setters);
-        this.appendDummyInput()
-            .appendField('set')
-            .appendField(new Blockly.FieldDropdown([['Button', 'Button']]), 'COMPONENT_TYPE')
-            .appendField('.')
-            .appendField(new Blockly.FieldDropdown([['Text', 'Text']]), 'PROPERTY');
-        this.appendValueInput('COMPONENT')
-            .setCheck('Component')
-            .appendField('for component');
-        this.appendValueInput('VALUE')
-            .appendField('to');
         this.setPreviousStatement(true);
         this.setNextStatement(true);
-        this.setTooltip('Sets the value of a property for a specific component of this type.');
+        this.typeName = 'Button';
+        this.propertyName = 'Text';
+        this.isGeneric = true;
+        this.updateShape_();
+    },
+    mutationToDom: Blockly.Blocks['component_set_property'].mutationToDom,
+    domToMutation: Blockly.Blocks['component_set_property'].domToMutation,
+    updateShape_: function () {
+        Blockly.Blocks['component_set_property'].updateShape_.call(this);
+        // Move the 'to' value input after the 'for component' input
+        if (!this.getInput('COMPONENT')) {
+            this.appendValueInput('COMPONENT')
+                .setCheck('Component')
+                .setAlign(Blockly.inputs.Align.RIGHT)
+                .appendField('for component');
+        }
+        this.moveInputBefore('VALUE', null);
     }
 };
 
@@ -366,42 +541,48 @@ export function createComponentBlocks(appState) {
 
     // Create blocks for each component
     components.forEach(comp => {
+        const componentDef = COMPONENT_DATABASE[comp.type];
+        if (!componentDef) return;
+
         // Event blocks
-        const events = getComponentEvents(comp.type);
-        events.forEach(event => {
+        componentDef.events.forEach(event => {
             blocks.push({
                 kind: 'block',
                 type: 'component_event',
-                fields: {
-                    COMPONENT: comp.id,
-                    EVENT: event.name
+                extraState: {
+                    component_type: comp.type,
+                    instance_name: comp.id,
+                    event_name: event.name,
+                    is_generic: false
                 }
             });
         });
 
         // Method blocks
-        const methods = getComponentMethods(comp.type);
-        methods.forEach(method => {
+        componentDef.methods.forEach(method => {
             blocks.push({
                 kind: 'block',
                 type: 'component_method',
-                fields: {
-                    COMPONENT: comp.id,
-                    METHOD: method.name
+                extraState: {
+                    component_type: comp.type,
+                    instance_name: comp.id,
+                    method_name: method.name,
+                    is_generic: false
                 }
             });
         });
 
-        // Property getter/setter blocks
-        const properties = getComponentProperties(comp.type);
-        properties.forEach(prop => {
+        // Property blocks
+        componentDef.properties.forEach(prop => {
             // Getter
             blocks.push({
                 kind: 'block',
                 type: 'component_get_property',
-                fields: {
-                    COMPONENT: comp.id,
-                    PROPERTY: prop.name
+                extraState: {
+                    component_type: comp.type,
+                    instance_name: comp.id,
+                    property_name: prop.name,
+                    is_generic: false
                 }
             });
 
@@ -409,161 +590,15 @@ export function createComponentBlocks(appState) {
             blocks.push({
                 kind: 'block',
                 type: 'component_set_property',
-                fields: {
-                    COMPONENT: comp.id,
-                    PROPERTY: prop.name
+                extraState: {
+                    component_type: comp.type,
+                    instance_name: comp.id,
+                    property_name: prop.name,
+                    is_generic: false
                 }
             });
         });
     });
 
     return blocks;
-}
-
-/**
- * Get events for a component type
- */
-function getComponentEvents(componentType) {
-    const eventMap = {
-        'Button': [
-            { name: 'Click' },
-            { name: 'LongClick' },
-            { name: 'TouchDown' },
-            { name: 'TouchUp' },
-            { name: 'GotFocus' },
-            { name: 'LostFocus' }
-        ],
-        'Label': [{ name: 'Click' }],
-        'TextBox': [
-            { name: 'GotFocus' },
-            { name: 'LostFocus' },
-            { name: 'TextChanged' }
-        ],
-        'CheckBox': [
-            { name: 'Changed' },
-            { name: 'GotFocus' },
-            { name: 'LostFocus' }
-        ],
-        'Switch': [{ name: 'Changed' }],
-        'Slider': [{ name: 'PositionChanged' }],
-        'Image': [{ name: 'Click' }],
-        'Canvas': [
-            { name: 'Touched' },
-            { name: 'Dragged' },
-            { name: 'Flung' }
-        ],
-        'Screen': [
-            { name: 'Initialize' },
-            { name: 'BackPressed' },
-            { name: 'ErrorOccurred' }
-        ]
-    };
-
-    return eventMap[componentType] || [];
-}
-
-/**
- * Get methods for a component type
- */
-function getComponentMethods(componentType) {
-    const methodMap = {
-        'Button': [],
-        'Label': [],
-        'TextBox': [],
-        'Canvas': [
-            { name: 'Clear' },
-            { name: 'DrawCircle' },
-            { name: 'DrawLine' },
-            { name: 'DrawPoint' }
-        ],
-        'Camera': [{ name: 'TakePicture' }],
-        'Sound': [
-            { name: 'Play' },
-            { name: 'Pause' },
-            { name: 'Stop' }
-        ],
-        'TinyDB': [
-            { name: 'StoreValue' },
-            { name: 'GetValue' },
-            { name: 'ClearAll' }
-        ],
-        'Web': [
-            { name: 'Get' },
-            { name: 'Post' }
-        ],
-        'Notifier': [
-            { name: 'ShowAlert' },
-            { name: 'ShowChooseDialog' }
-        ]
-    };
-
-    return methodMap[componentType] || [];
-}
-
-/**
- * Get properties for a component type
- */
-function getComponentProperties(componentType) {
-    const propMap = {
-        'Button': [
-            { name: 'Text' },
-            { name: 'BackgroundColor' },
-            { name: 'TextColor' },
-            { name: 'Enabled' },
-            { name: 'FontSize' },
-            { name: 'Width' },
-            { name: 'Height' },
-            { name: 'Visible' }
-        ],
-        'Label': [
-            { name: 'Text' },
-            { name: 'TextColor' },
-            { name: 'BackgroundColor' },
-            { name: 'FontSize' },
-            { name: 'Width' },
-            { name: 'Height' },
-            { name: 'Visible' }
-        ],
-        'TextBox': [
-            { name: 'Text' },
-            { name: 'Hint' },
-            { name: 'Enabled' },
-            { name: 'FontSize' },
-            { name: 'Width' },
-            { name: 'Height' },
-            { name: 'Visible' }
-        ],
-        'CheckBox': [
-            { name: 'Text' },
-            { name: 'Checked' },
-            { name: 'Enabled' },
-            { name: 'Visible' }
-        ],
-        'Switch': [
-            { name: 'Text' },
-            { name: 'On' },
-            { name: 'Enabled' },
-            { name: 'Visible' }
-        ],
-        'Slider': [
-            { name: 'MinValue' },
-            { name: 'MaxValue' },
-            { name: 'ThumbPosition' },
-            { name: 'Visible' }
-        ],
-        'Image': [
-            { name: 'Picture' },
-            { name: 'Width' },
-            { name: 'Height' },
-            { name: 'Visible' }
-        ],
-        'Canvas': [
-            { name: 'BackgroundColor' },
-            { name: 'Width' },
-            { name: 'Height' },
-            { name: 'Visible' }
-        ]
-    };
-
-    return propMap[componentType] || [];
 }

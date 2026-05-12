@@ -6,11 +6,19 @@
 export const COMPONENT_METADATA = {
     'Screen': {
         events: [
-            { name: 'Initialize', description: 'Screen started' },
-            { name: 'BackPressed', description: 'User pressed back button' },
-            { name: 'ErrorOccurred', description: 'Error occurred' },
-            { name: 'ScreenOrientationChanged', description: 'Orientation changed' },
-            { name: 'OtherScreenClosed', description: 'Returned from another screen' }
+            { name: 'Initialize', description: 'Screen started', parameters: [] },
+            { name: 'BackPressed', description: 'User pressed back button', parameters: [] },
+            { name: 'ErrorOccurred', description: 'Error occurred', parameters: [
+                { name: 'component', type: 'Component' },
+                { name: 'functionName', type: 'String' },
+                { name: 'errorNumber', type: 'Number' },
+                { name: 'message', type: 'String' }
+            ]},
+            { name: 'ScreenOrientationChanged', description: 'Orientation changed', parameters: [] },
+            { name: 'OtherScreenClosed', description: 'Returned from another screen', parameters: [
+                { name: 'otherScreenName', type: 'String' },
+                { name: 'result', type: 'Any' }
+            ]}
         ],
         methods: [],
         properties: [
@@ -102,24 +110,41 @@ export const COMPONENT_METADATA = {
     },
     'Canvas': {
         events: [
-            { name: 'Dragged', description: 'User dragged on the canvas' },
-            { name: 'Flung', description: 'User flung on the canvas' },
-            { name: 'TouchDown', description: 'User touched down' },
-            { name: 'Touched', description: 'User touched the canvas' },
-            { name: 'TouchUp', description: 'User released touch' }
+            { name: 'Touched', description: 'User touched the canvas', parameters: [
+                { name: 'x', type: 'Number' }, { name: 'y', type: 'Number' }, { name: 'touchedSprite', type: 'Boolean' }
+            ]},
+            { name: 'Dragged', description: 'User dragged on the canvas', parameters: [
+                { name: 'startX', type: 'Number' }, { name: 'startY', type: 'Number' },
+                { name: 'prevX', type: 'Number' }, { name: 'prevY', type: 'Number' },
+                { name: 'currentX', type: 'Number' }, { name: 'currentY', type: 'Number' },
+                { name: 'draggedSprite', type: 'Boolean' }
+            ]},
+            { name: 'Flung', description: 'User flung on the canvas', parameters: [
+                { name: 'x', type: 'Number' }, { name: 'y', type: 'Number' },
+                { name: 'speed', type: 'Number' }, { name: 'heading', type: 'Number' },
+                { name: 'xvel', type: 'Number' }, { name: 'yvel', type: 'Number' },
+                { name: 'flungSprite', type: 'Boolean' }
+            ]},
+            { name: 'TouchDown', description: 'User touched down', parameters: [{ name: 'x', type: 'Number' }, { name: 'y', type: 'Number' }] },
+            { name: 'TouchUp', description: 'User released touch', parameters: [{ name: 'x', type: 'Number' }, { name: 'y', type: 'Number' }] }
         ],
         methods: [
-            { name: 'Clear', description: 'Clear the canvas' },
-            { name: 'DrawCircle', description: 'Draw a circle' },
-            { name: 'DrawLine', description: 'Draw a line' },
-            { name: 'DrawPoint', description: 'Draw a point' },
-            { name: 'DrawText', description: 'Draw text' },
-            { name: 'DrawTextAtAngle', description: 'Draw text at an angle' },
-            { name: 'GetBackgroundPixelColor', description: 'Get pixel color' },
-            { name: 'GetPixelColor', description: 'Get pixel color' },
-            { name: 'Save', description: 'Save canvas as image' },
-            { name: 'SaveAs', description: 'Save canvas as image with name' },
-            { name: 'SetBackgroundPixelColor', description: 'Set pixel color' }
+            { name: 'Clear', description: 'Clear the canvas', parameters: [] },
+            { name: 'DrawCircle', description: 'Draw a circle', parameters: [
+                { name: 'centerX', type: 'Number' }, { name: 'centerY', type: 'Number' },
+                { name: 'radius', type: 'Number' }, { name: 'fill', type: 'Boolean' }
+            ]},
+            { name: 'DrawLine', description: 'Draw a line', parameters: [
+                { name: 'x1', type: 'Number' }, { name: 'y1', type: 'Number' },
+                { name: 'x2', type: 'Number' }, { name: 'y2', type: 'Number' }
+            ]},
+            { name: 'DrawPoint', description: 'Draw a point', parameters: [{ name: 'x', type: 'Number' }, { name: 'y', type: 'Number' }] },
+            { name: 'DrawText', description: 'Draw text', parameters: [
+                { name: 'text', type: 'String' }, { name: 'x', type: 'Number' }, { name: 'y', type: 'Number' }
+            ]},
+            { name: 'DrawTextAtAngle', description: 'Draw text at an angle', parameters: [
+                { name: 'text', type: 'String' }, { name: 'x', type: 'Number' }, { name: 'y', type: 'Number' }, { name: 'angle', type: 'Number' }
+            ]}
         ],
         properties: [
             { name: 'BackgroundColor', type: 'Color' },
@@ -182,17 +207,22 @@ export const COMPONENT_METADATA = {
     },
     'Notifier': {
         events: [
-            { name: 'AfterChoosing', description: 'After user chooses an option' },
-            { name: 'AfterTextInput', description: 'After user enters text' }
+            { name: 'AfterChoosing', description: 'After user chooses an option', parameters: [{ name: 'choice', type: 'String' }] },
+            { name: 'AfterTextInput', description: 'After user enters text', parameters: [{ name: 'response', type: 'String' }] }
         ],
         methods: [
-            { name: 'DismissProgressDialog', description: 'Dismiss dialog' },
-            { name: 'ShowAlert', description: 'Show alert' },
-            { name: 'ShowChooseDialog', description: 'Show choice dialog' },
-            { name: 'ShowMessageDialog', description: 'Show message' },
-            { name: 'ShowPasswordDialog', description: 'Show password dialog' },
-            { name: 'ShowProgressDialog', description: 'Show progress dialog' },
-            { name: 'ShowTextDialog', description: 'Show text dialog' }
+            { name: 'ShowAlert', description: 'Show alert', parameters: [{ name: 'notice', type: 'String' }] },
+            { name: 'ShowMessageDialog', description: 'Show message', parameters: [
+                { name: 'message', type: 'String' }, { name: 'title', type: 'String' }, { name: 'buttonText', type: 'String' }
+            ]},
+            { name: 'ShowChooseDialog', description: 'Show choice dialog', parameters: [
+                { name: 'message', type: 'String' }, { name: 'title', type: 'String' },
+                { name: 'button1Text', type: 'String' }, { name: 'button2Text', type: 'String' },
+                { name: 'cancelable', type: 'Boolean' }
+            ]},
+            { name: 'ShowTextDialog', description: 'Show text dialog', parameters: [
+                { name: 'message', type: 'String' }, { name: 'title', type: 'String' }, { name: 'cancelable', type: 'Boolean' }
+            ]}
         ],
         properties: [
             { name: 'BackgroundColor', type: 'Color' },

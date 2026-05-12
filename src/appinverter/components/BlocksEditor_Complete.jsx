@@ -534,16 +534,44 @@ export default function BlocksEditorComplete({ appState }) {
                     ...metadata.events.map(event => ({
                         kind: 'block',
                         type: 'component_event',
-                        fields: { COMPONENT: currentScreen.id, EVENT: event.name }
+                        extraState: {
+                            component_type: 'Screen',
+                            instance_name: currentScreen.id,
+                            event_name: event.name,
+                            is_generic: false
+                        }
                     })),
                     ...metadata.methods.map(method => ({
                         kind: 'block',
                         type: 'component_method',
-                        fields: { COMPONENT: currentScreen.id, METHOD: method.name }
+                        extraState: {
+                            component_type: 'Screen',
+                            instance_name: currentScreen.id,
+                            method_name: method.name,
+                            is_generic: false
+                        }
                     })),
                     ...metadata.properties.flatMap(prop => [
-                        { kind: 'block', type: 'component_get_property', fields: { COMPONENT: currentScreen.id, PROPERTY: prop.name } },
-                        { kind: 'block', type: 'component_set_property', fields: { COMPONENT: currentScreen.id, PROPERTY: prop.name } }
+                        {
+                            kind: 'block',
+                            type: 'component_set_property',
+                            extraState: {
+                                component_type: 'Screen',
+                                instance_name: currentScreen.id,
+                                property_name: prop.name,
+                                is_generic: false
+                            }
+                        },
+                        {
+                            kind: 'block',
+                            type: 'component_get_property',
+                            extraState: {
+                                component_type: 'Screen',
+                                instance_name: currentScreen.id,
+                                property_name: prop.name,
+                                is_generic: false
+                            }
+                        }
                     ])
                 ]
             };
@@ -565,7 +593,12 @@ export default function BlocksEditorComplete({ appState }) {
                 category.contents.push({
                     kind: 'block',
                     type: 'component_event',
-                    fields: { COMPONENT: comp.id, EVENT: event.name }
+                    extraState: {
+                        component_type: comp.type,
+                        instance_name: comp.id,
+                        event_name: event.name,
+                        is_generic: false
+                    }
                 });
             });
 
@@ -574,7 +607,12 @@ export default function BlocksEditorComplete({ appState }) {
                 category.contents.push({
                     kind: 'block',
                     type: 'component_method',
-                    fields: { COMPONENT: comp.id, METHOD: method.name }
+                    extraState: {
+                        component_type: comp.type,
+                        instance_name: comp.id,
+                        method_name: method.name,
+                        is_generic: false
+                    }
                 });
             });
 
@@ -582,13 +620,23 @@ export default function BlocksEditorComplete({ appState }) {
             metadata.properties.forEach(prop => {
                 category.contents.push({
                     kind: 'block',
-                    type: 'component_get_property',
-                    fields: { COMPONENT: comp.id, PROPERTY: prop.name }
+                    type: 'component_set_property',
+                    extraState: {
+                        component_type: comp.type,
+                        instance_name: comp.id,
+                        property_name: prop.name,
+                        is_generic: false
+                    }
                 });
                 category.contents.push({
                     kind: 'block',
-                    type: 'component_set_property',
-                    fields: { COMPONENT: comp.id, PROPERTY: prop.name }
+                    type: 'component_get_property',
+                    extraState: {
+                        component_type: comp.type,
+                        instance_name: comp.id,
+                        property_name: prop.name,
+                        is_generic: false
+                    }
                 });
             });
 
@@ -617,16 +665,40 @@ export default function BlocksEditorComplete({ appState }) {
                     {
                         kind: 'block',
                         type: 'any_component_event',
-                        fields: { COMPONENT_TYPE: type }
+                        extraState: {
+                            component_type: type,
+                            is_generic: true,
+                            event_name: 'Click' // Default
+                        }
                     },
                     ...metadata.methods.map(method => ({
                         kind: 'block',
                         type: 'any_component_method',
-                        fields: { COMPONENT_TYPE: type, METHOD: method }
+                        extraState: {
+                            component_type: type,
+                            method_name: method,
+                            is_generic: true
+                        }
                     })),
                     ...metadata.properties.flatMap(prop => [
-                        { kind: 'block', type: 'any_component_get_property', fields: { COMPONENT_TYPE: type, PROPERTY: prop } },
-                        { kind: 'block', type: 'any_component_set_property', fields: { COMPONENT_TYPE: type, PROPERTY: prop } }
+                        {
+                            kind: 'block',
+                            type: 'any_component_set_property',
+                            extraState: {
+                                component_type: type,
+                                property_name: prop,
+                                is_generic: true
+                            }
+                        },
+                        {
+                            kind: 'block',
+                            type: 'any_component_get_property',
+                            extraState: {
+                                component_type: type,
+                                property_name: prop,
+                                is_generic: true
+                            }
+                        }
                     ])
                 ]
             };
