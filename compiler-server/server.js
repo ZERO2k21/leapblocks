@@ -66,10 +66,24 @@ const CLI_CONFIG = (() => {
 
 // Libraries directory
 const FORGE_LIB_LIBRARIES = (() => {
+  // 1. Local arduino-cli data dir
+  const dataLocal = path.join(__dirname, 'arduino-cli', 'data', 'libraries');
+  if (fs.existsSync(dataLocal)) return dataLocal;
+
+  // 2. Local forge-lib dir
   const bundledLocal = path.join(__dirname, 'forge-lib', 'libraries');
   if (fs.existsSync(bundledLocal)) return bundledLocal;
+
+  // 3. Parent forge-lib dir
   const bundledParent = path.join(__dirname, '..', 'forge-lib', 'libraries');
   if (fs.existsSync(bundledParent)) return bundledParent;
+
+  // 4. Standard Arduino user dir (Linux/Docker fallback)
+  if (process.platform === 'linux') {
+    const linuxUser = path.join(os.homedir(), 'Arduino', 'libraries');
+    if (fs.existsSync(linuxUser)) return linuxUser;
+  }
+
   return null;
 })();
 
@@ -539,9 +553,47 @@ app.delete('/libraries/remove', async (req, res) => {
   if (!name) return res.status(400).json({ success: false, error: 'Library name required' });
 
   console.log(`[SERVER] Removing library: ${name}`);
+  
+  // 1. Try arduino-cli first
   const { code, stderr, stdout } = await runCLI(['lib', 'uninstall', name]);
-  if (code === 0) {
-    res.json({ success: true });
+  
+  // 2. Manual cleanup fallback (ensures folder is gone even if CLI is flaky)
+  let manualRemoved = false;
+  if (FORGE_LIB_LIBRARIES && fs.existsSync(FORGE_LIB_LIBRARIES)) {
+    try {
+      const entries = fs.readdirSync(FORGE_LIB_LIBRARIES, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const libDir = path.join(FORGE_LIB_LIBRARIES, entry.name);
+        
+        // Match by folder name OR name in library.properties
+        let match = (entry.name === name);
+        
+        if (!match) {
+          const propFile = path.join(libDir, 'library.properties');
+          if (fs.existsSync(propFile)) {
+             const props = fs.readFileSync(propFile, 'utf-8').split('\n').reduce((acc, line) => {
+               const [k, ...v] = line.split('=');
+               if (k && v.length) acc[k.trim()] = v.join('=').trim();
+               return acc;
+             }, {});
+             if (props.name === name) match = true;
+          }
+        }
+        
+        if (match) {
+          console.log(`[SERVER] Force removing directory: ${libDir}`);
+          fs.rmSync(libDir, { recursive: true, force: true });
+          manualRemoved = true;
+        }
+      }
+    } catch (e) {
+      console.warn('[SERVER] Manual cleanup error:', e.message);
+    }
+  }
+
+  if (code === 0 || manualRemoved) {
+    res.json({ success: true, manualRemoved });
   } else {
     res.status(500).json({ success: false, error: stderr || stdout || 'Removal failed' });
   }
