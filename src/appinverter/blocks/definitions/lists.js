@@ -3,14 +3,15 @@
  * MIT App Inventor compatible list operations
  */
 import * as Blockly from 'blockly';
+import { BLOCK_COLORS } from '../utils/blockColors';
 
 // Create Empty List
 Blockly.Blocks['lists_create_empty'] = {
     init: function () {
         this.appendDummyInput()
             .appendField("create empty list");
-        this.setOutput(true, "Array");
-        this.setColour(200);
+        this.setOutput(true, "List");
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Create an empty list");
     }
 };
@@ -23,10 +24,10 @@ Blockly.Blocks['lists_create_with'] = {
             .appendField("make a list");
         this.appendValueInput("ADD1")
             .setCheck(null);
-        this.setOutput(true, "Array");
-        this.setColour(200);
+        this.setOutput(true, "List");
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Create a list with items");
-        this.setMutator(new Blockly.Mutator(['lists_create_with_item']));
+        this.setMutator(new Blockly.icons.MutatorIcon(['lists_create_with_item'], this));
         this.itemCount_ = 2;
     },
     mutationToDom: function () {
@@ -57,14 +58,14 @@ Blockly.Blocks['lists_create_with'] = {
 Blockly.Blocks['lists_add_items'] = {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("add items to list");
         this.appendValueInput("ITEM")
             .setCheck(null)
             .appendField("item");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Add items to the end of a list");
     }
 };
@@ -76,12 +77,12 @@ Blockly.Blocks['lists_is_in'] = {
             .setCheck(null)
             .appendField("is in list?");
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("thing");
         this.appendDummyInput()
             .appendField("list");
         this.setOutput(true, "Boolean");
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Check if item is in list");
     }
 };
@@ -90,10 +91,10 @@ Blockly.Blocks['lists_is_in'] = {
 Blockly.Blocks['lists_length'] = {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("length of list");
         this.setOutput(true, "Number");
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Get the number of items in a list");
     }
 };
@@ -102,10 +103,10 @@ Blockly.Blocks['lists_length'] = {
 Blockly.Blocks['lists_is_empty'] = {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("is list empty?");
         this.setOutput(true, "Boolean");
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Check if list is empty");
     }
 };
@@ -114,10 +115,10 @@ Blockly.Blocks['lists_is_empty'] = {
 Blockly.Blocks['lists_pick_random'] = {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("pick a random item from list");
         this.setOutput(true, null);
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Pick a random item from the list");
     }
 };
@@ -129,12 +130,12 @@ Blockly.Blocks['lists_position_in'] = {
             .setCheck(null)
             .appendField("index in list");
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("thing");
         this.appendDummyInput()
             .appendField("list");
         this.setOutput(true, "Number");
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Find the position of an item in a list");
     }
 };
@@ -143,14 +144,14 @@ Blockly.Blocks['lists_position_in'] = {
 Blockly.Blocks['lists_select_item'] = {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("select list item");
         this.appendValueInput("INDEX")
             .setCheck("Number")
             .appendField("list")
             .appendField("index");
         this.setOutput(true, null);
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Get item at index in list");
     }
 };
@@ -159,7 +160,7 @@ Blockly.Blocks['lists_select_item'] = {
 Blockly.Blocks['lists_replace_item'] = {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("replace list item");
         this.appendValueInput("INDEX")
             .setCheck("Number")
@@ -170,7 +171,7 @@ Blockly.Blocks['lists_replace_item'] = {
             .appendField("replacement");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Replace item at index in list");
     }
 };
@@ -179,7 +180,7 @@ Blockly.Blocks['lists_replace_item'] = {
 Blockly.Blocks['lists_remove_item'] = {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("remove list item");
         this.appendValueInput("INDEX")
             .setCheck("Number")
@@ -187,7 +188,7 @@ Blockly.Blocks['lists_remove_item'] = {
             .appendField("index");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Remove item at index from list");
     }
 };
@@ -196,7 +197,7 @@ Blockly.Blocks['lists_remove_item'] = {
 Blockly.Blocks['lists_insert_item'] = {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("insert list item");
         this.appendValueInput("INDEX")
             .setCheck("Number")
@@ -207,7 +208,7 @@ Blockly.Blocks['lists_insert_item'] = {
             .appendField("item");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Insert item at index in list");
     }
 };
@@ -216,15 +217,15 @@ Blockly.Blocks['lists_insert_item'] = {
 Blockly.Blocks['lists_append_list'] = {
     init: function () {
         this.appendValueInput("LIST1")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("append to list");
         this.appendValueInput("LIST2")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("list1")
             .appendField("list2");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Append list2 to list1");
     }
 };
@@ -233,10 +234,10 @@ Blockly.Blocks['lists_append_list'] = {
 Blockly.Blocks['lists_copy'] = {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("copy list");
-        this.setOutput(true, "Array");
-        this.setColour(200);
+        this.setOutput(true, "List");
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Create a copy of the list");
     }
 };
@@ -250,7 +251,7 @@ Blockly.Blocks['lists_is_list'] = {
         this.appendDummyInput()
             .appendField("thing");
         this.setOutput(true, "Boolean");
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Check if something is a list");
     }
 };
@@ -259,11 +260,11 @@ Blockly.Blocks['lists_is_list'] = {
 Blockly.Blocks['lists_reverse'] = {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("reverse list");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Reverse the order of items in a list");
     }
 };
@@ -272,10 +273,10 @@ Blockly.Blocks['lists_reverse'] = {
 Blockly.Blocks['lists_to_csv_row'] = {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("list to csv row");
         this.setOutput(true, "String");
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Convert list to CSV row");
     }
 };
@@ -286,8 +287,8 @@ Blockly.Blocks['lists_from_csv_row'] = {
         this.appendValueInput("TEXT")
             .setCheck("String")
             .appendField("list from csv row");
-        this.setOutput(true, "Array");
-        this.setColour(200);
+        this.setOutput(true, "List");
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Convert CSV row to list");
     }
 };
@@ -296,10 +297,10 @@ Blockly.Blocks['lists_from_csv_row'] = {
 Blockly.Blocks['lists_to_csv_table'] = {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("list to csv table");
         this.setOutput(true, "String");
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Convert list of lists to CSV table");
     }
 };
@@ -310,8 +311,8 @@ Blockly.Blocks['lists_from_csv_table'] = {
         this.appendValueInput("TEXT")
             .setCheck("String")
             .appendField("list from csv table");
-        this.setOutput(true, "Array");
-        this.setColour(200);
+        this.setOutput(true, "List");
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Convert CSV table to list of lists");
     }
 };
@@ -323,14 +324,14 @@ Blockly.Blocks['lists_lookup_in_pairs'] = {
             .setCheck(null)
             .appendField("lookup in pairs");
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("key")
             .appendField("list");
         this.appendValueInput("NOT_FOUND")
             .setCheck(null)
             .appendField("notFound");
         this.setOutput(true, null);
-        this.setColour(200);
+        this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Look up a key in a list of pairs");
     }
 };

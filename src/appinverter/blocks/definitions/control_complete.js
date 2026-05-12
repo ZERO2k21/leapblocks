@@ -42,7 +42,7 @@ Blockly.Blocks['controls_if_else'] = {
 Blockly.Blocks['controls_forEach'] = {
     init: function () {
         this.appendValueInput('LIST')
-            .setCheck('Array')
+            .setCheck('List')
             .appendField('for each')
             .appendField(new Blockly.FieldVariable('item'), 'VAR')
             .appendField('in list');

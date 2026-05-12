@@ -3,8 +3,55 @@
  */
 import * as Blockly from 'blockly';
 import { FieldColour } from '@blockly/field-colour';
-import { MIT_COLORS } from './builtin_blocks';
-import { COMPONENT_METADATA as COMPONENT_DATABASE } from '../data/componentMetadata';
+import { BLOCK_COLORS } from '../utils/blockColors';
+import { COMPONENT_METADATA as COMPONENT_DATABASE } from '../../data/componentMetadata';
+
+// ============================================================================
+// HELPER FUNCTIONS FOR DYNAMIC DROPDOWNS
+// ============================================================================
+
+const getComponentInstances = (typeName, currentValue) => {
+    const components = window.LeapLab_Components || [];
+    const instances = components
+        .filter(c => c.type === typeName)
+        .map(c => [c.id, c.id]);
+    
+    if (typeName === 'Screen' && window.LeapLab_ActiveScreen) {
+        if (!instances.some(i => i[1] === window.LeapLab_ActiveScreen.id)) {
+            instances.unshift([window.LeapLab_ActiveScreen.id, window.LeapLab_ActiveScreen.id]);
+        }
+    }
+
+    // Ensure currentValue is in the list to avoid validation errors
+    if (currentValue && !instances.some(i => i[1] === currentValue)) {
+        instances.push([currentValue, currentValue]);
+    }
+    
+    return instances.length > 0 ? instances : [['(none)', '']];
+};
+
+const getComponentEvents = (typeName) => {
+    const metadata = COMPONENT_DATABASE[typeName];
+    if (!metadata || !metadata.events) return [['Event', 'Event']];
+    return metadata.events.map(e => [e.name, e.name]);
+};
+
+const getComponentMethods = (typeName) => {
+    const metadata = COMPONENT_DATABASE[typeName];
+    if (!metadata || !metadata.methods) return [['Method', 'Method']];
+    return metadata.methods.map(m => [m.name, m.name]);
+};
+
+const getComponentProperties = (typeName, currentValue) => {
+    const metadata = COMPONENT_DATABASE[typeName];
+    if (!metadata || !metadata.properties) return [[currentValue || 'Property', currentValue || 'Property']];
+    const options = metadata.properties.map(p => [p.name, p.name]);
+    
+    if (currentValue && !options.some(i => i[1] === currentValue)) {
+        options.push([currentValue, currentValue]);
+    }
+    return options;
+};
 
 // ============================================================================
 // COLOR BLOCKS
@@ -13,10 +60,10 @@ import { COMPONENT_METADATA as COMPONENT_DATABASE } from '../data/componentMetad
 // color picker block
 Blockly.Blocks['colour_picker'] = {
     init: function () {
-        this.setColour(MIT_COLORS.colors);
+        this.setColour(BLOCK_COLORS.colors);
         this.appendDummyInput()
             .appendField(new FieldColour('#ff0000'), 'COLOUR');
-        this.setOutput(true, 'Colour');
+        this.setOutput(true, 'Color');
         this.setTooltip('Click to select a color.');
     }
 };
@@ -24,10 +71,10 @@ Blockly.Blocks['colour_picker'] = {
 // random color block
 Blockly.Blocks['colour_random'] = {
     init: function () {
-        this.setColour(MIT_COLORS.colors);
+        this.setColour(BLOCK_COLORS.colors);
         this.appendDummyInput()
             .appendField('random color');
-        this.setOutput(true, 'Colour');
+        this.setOutput(true, 'Color');
         this.setTooltip('Returns a random color.');
     }
 };
@@ -35,7 +82,7 @@ Blockly.Blocks['colour_random'] = {
 // make color (RGB) block
 Blockly.Blocks['colour_rgb'] = {
     init: function () {
-        this.setColour(MIT_COLORS.colors);
+        this.setColour(BLOCK_COLORS.colors);
         this.appendValueInput('RED')
             .setCheck('Number')
             .appendField('make color');
@@ -47,7 +94,7 @@ Blockly.Blocks['colour_rgb'] = {
             .appendField('green')
             .appendField('blue');
         this.setInputsInline(true);
-        this.setOutput(true, 'Colour');
+        this.setOutput(true, 'Color');
         this.setTooltip('Returns a color with the given red, green, and blue components (0-255).');
     }
 };
@@ -55,11 +102,11 @@ Blockly.Blocks['colour_rgb'] = {
 // split color block
 Blockly.Blocks['colour_split'] = {
     init: function () {
-        this.setColour(MIT_COLORS.colors);
+        this.setColour(BLOCK_COLORS.colors);
         this.appendValueInput('COLOUR')
             .setCheck('Colour')
             .appendField('split color');
-        this.setOutput(true, 'Array');
+        this.setOutput(true, 'List');
         this.setTooltip('Returns a list of three elements: red, green, and blue components (0-255).');
     }
 };
@@ -67,7 +114,7 @@ Blockly.Blocks['colour_split'] = {
 // blend colors block
 Blockly.Blocks['colour_blend'] = {
     init: function () {
-        this.setColour(MIT_COLORS.colors);
+        this.setColour(BLOCK_COLORS.colors);
         this.appendValueInput('COLOUR1')
             .setCheck('Colour')
             .appendField('blend');
@@ -94,29 +141,12 @@ Blockly.Blocks['colour_blend'] = {
  */
 Blockly.Blocks['component_event'] = {
     init: function () {
-        this.setColour(MIT_COLORS.events);
+        this.setColour(BLOCK_COLORS.events);
         this.typeName = 'Button';
         this.eventName = 'Click';
         this.instanceName = 'Button1';
         this.isGeneric = false;
 
-        this.updateShape_();
-    },
-
-    mutationToDom: function () {
-        const container = document.createElement('mutation');
-        container.setAttribute('component_type', this.typeName);
-        container.setAttribute('event_name', this.eventName);
-        container.setAttribute('instance_name', this.instanceName);
-        container.setAttribute('is_generic', this.isGeneric ? 'true' : 'false');
-        return container;
-    },
-
-    domToMutation: function (xmlElement) {
-        this.typeName = xmlElement.getAttribute('component_type');
-        this.eventName = xmlElement.getAttribute('event_name');
-        this.instanceName = xmlElement.getAttribute('instance_name');
-        this.isGeneric = xmlElement.getAttribute('is_generic') === 'true';
         this.updateShape_();
     },
 
@@ -152,7 +182,13 @@ Blockly.Blocks['component_event'] = {
         if (this.isGeneric) {
             header.appendField('any ' + this.typeName);
         } else {
-            header.appendField(this.instanceName);
+            const instanceDropdown = new Blockly.FieldDropdown(function() {
+                return getComponentInstances(this.getSourceBlock()?.typeName || 'Button', this.getValue());
+            }, (newValue) => {
+                this.instanceName = newValue;
+            });
+            header.appendField(instanceDropdown, 'INSTANCE');
+            this.getField('INSTANCE')?.setValue(this.instanceName);
         }
         header.appendField('.' + this.eventName);
 
@@ -160,7 +196,7 @@ Blockly.Blocks['component_event'] = {
         const componentDef = COMPONENT_DATABASE[this.typeName];
         const eventDef = componentDef?.events.find(e => e.name === this.eventName);
 
-        if (eventDef && eventDef.parameters.length > 0) {
+        if (eventDef && eventDef.parameters && eventDef.parameters.length > 0) {
             const paramInput = this.appendDummyInput('PARAMS');
             eventDef.parameters.forEach(param => {
                 paramInput.appendField(param.name).appendField(' ');
@@ -182,7 +218,7 @@ Blockly.Blocks['component_event'] = {
  */
 Blockly.Blocks['component_method'] = {
     init: function () {
-        this.setColour(MIT_COLORS.methods);
+        this.setColour(BLOCK_COLORS.methods);
         this.setPreviousStatement(true);
         this.setNextStatement(true);
         this.typeName = 'Notifier';
@@ -190,23 +226,6 @@ Blockly.Blocks['component_method'] = {
         this.instanceName = 'Notifier1';
         this.isGeneric = false;
 
-        this.updateShape_();
-    },
-
-    mutationToDom: function () {
-        const container = document.createElement('mutation');
-        container.setAttribute('component_type', this.typeName);
-        container.setAttribute('method_name', this.methodName);
-        container.setAttribute('instance_name', this.instanceName);
-        container.setAttribute('is_generic', this.isGeneric ? 'true' : 'false');
-        return container;
-    },
-
-    domToMutation: function (xmlElement) {
-        this.typeName = xmlElement.getAttribute('component_type');
-        this.methodName = xmlElement.getAttribute('method_name');
-        this.instanceName = xmlElement.getAttribute('instance_name');
-        this.isGeneric = xmlElement.getAttribute('is_generic') === 'true';
         this.updateShape_();
     },
 
@@ -237,9 +256,16 @@ Blockly.Blocks['component_method'] = {
         const header = this.appendDummyInput('HEADER');
         header.appendField('call');
         if (this.isGeneric) {
-            header.appendField('any ' + this.typeName);
+            header.appendField('call any ' + this.typeName);
         } else {
-            header.appendField(this.instanceName);
+            header.appendField('call ');
+            const instanceDropdown = new Blockly.FieldDropdown(function() {
+                return getComponentInstances(this.getSourceBlock()?.typeName || 'Button', this.getValue());
+            }, (newValue) => {
+                this.instanceName = newValue;
+            });
+            header.appendField(instanceDropdown, 'INSTANCE');
+            this.getField('INSTANCE')?.setValue(this.instanceName);
         }
         header.appendField('.' + this.methodName);
 
@@ -247,7 +273,7 @@ Blockly.Blocks['component_method'] = {
         const componentDef = COMPONENT_DATABASE[this.typeName];
         const methodDef = componentDef?.methods.find(m => m.name === this.methodName);
 
-        if (methodDef) {
+        if (methodDef && methodDef.parameters) {
             methodDef.parameters.forEach(param => {
                 this.appendValueInput('ARG_' + param.name)
                     .setCheck(param.type)
@@ -264,30 +290,13 @@ Blockly.Blocks['component_method'] = {
  */
 Blockly.Blocks['component_get_property'] = {
     init: function () {
-        this.setColour(MIT_COLORS.getters);
+        this.setColour(BLOCK_COLORS.getters);
         this.setOutput(true);
         this.typeName = 'Button';
         this.propertyName = 'Text';
         this.instanceName = 'Button1';
         this.isGeneric = false;
 
-        this.updateShape_();
-    },
-
-    mutationToDom: function () {
-        const container = document.createElement('mutation');
-        container.setAttribute('component_type', this.typeName);
-        container.setAttribute('property_name', this.propertyName);
-        container.setAttribute('instance_name', this.instanceName);
-        container.setAttribute('is_generic', this.isGeneric ? 'true' : 'false');
-        return container;
-    },
-
-    domToMutation: function (xmlElement) {
-        this.typeName = xmlElement.getAttribute('component_type');
-        this.propertyName = xmlElement.getAttribute('property_name');
-        this.instanceName = xmlElement.getAttribute('instance_name');
-        this.isGeneric = xmlElement.getAttribute('is_generic') === 'true';
         this.updateShape_();
     },
 
@@ -309,20 +318,43 @@ Blockly.Blocks['component_get_property'] = {
     },
 
     updateShape_: function () {
-        if (this.inputList.length > 0) this.removeInput('MAIN');
-        const input = this.appendDummyInput('MAIN');
-        if (this.isGeneric) {
-            input.appendField('any ' + this.typeName);
-        } else {
-            input.appendField(this.instanceName);
-        }
-        input.appendField('.' + this.propertyName);
+        if (this.isUpdating) return;
+        this.isUpdating = true;
+        try {
+            if (this.inputList.length > 0) this.removeInput('MAIN');
+            const input = this.appendDummyInput('MAIN');
+            if (this.isGeneric) {
+                input.appendField('any ' + this.typeName);
+            } else {
+                const instanceDropdown = new Blockly.FieldDropdown(function() {
+                    return getComponentInstances(this.getSourceBlock()?.typeName || 'Button', this.getValue());
+                }, (newValue) => {
+                    this.instanceName = newValue;
+                });
+                input.appendField(instanceDropdown, 'INSTANCE');
+                this.getField('INSTANCE')?.setValue(this.instanceName);
+            }
 
-        // Set output type based on property
-        const componentDef = COMPONENT_DATABASE[this.typeName];
-        const propDef = componentDef?.properties.find(p => p.name === this.propertyName);
-        if (propDef) {
-            this.setOutput(true, propDef.type);
+            const propertyDropdown = new Blockly.FieldDropdown(function() {
+                return getComponentProperties(this.getSourceBlock()?.typeName || 'Button', this.getValue());
+            }, (newValue) => {
+                if (this.propertyName !== newValue) {
+                    this.propertyName = newValue;
+                    this.updateShape_();
+                }
+            });
+            input.appendField('.');
+            input.appendField(propertyDropdown, 'PROPERTY');
+            this.getField('PROPERTY')?.setValue(this.propertyName);
+
+            // Set output type based on property
+            const componentDef = COMPONENT_DATABASE[this.typeName];
+            const propDef = componentDef?.properties.find(p => p.name === this.propertyName);
+            if (propDef) {
+                this.setOutput(true, propDef.type);
+            }
+        } finally {
+            this.isUpdating = false;
         }
     }
 };
@@ -333,7 +365,7 @@ Blockly.Blocks['component_get_property'] = {
  */
 Blockly.Blocks['component_set_property'] = {
     init: function () {
-        this.setColour(MIT_COLORS.setters);
+        this.setColour(BLOCK_COLORS.setters);
         this.setPreviousStatement(true);
         this.setNextStatement(true);
         this.typeName = 'Button';
@@ -341,23 +373,6 @@ Blockly.Blocks['component_set_property'] = {
         this.instanceName = 'Button1';
         this.isGeneric = false;
 
-        this.updateShape_();
-    },
-
-    mutationToDom: function () {
-        const container = document.createElement('mutation');
-        container.setAttribute('component_type', this.typeName);
-        container.setAttribute('property_name', this.propertyName);
-        container.setAttribute('instance_name', this.instanceName);
-        container.setAttribute('is_generic', this.isGeneric ? 'true' : 'false');
-        return container;
-    },
-
-    domToMutation: function (xmlElement) {
-        this.typeName = xmlElement.getAttribute('component_type');
-        this.propertyName = xmlElement.getAttribute('property_name');
-        this.instanceName = xmlElement.getAttribute('instance_name');
-        this.isGeneric = xmlElement.getAttribute('is_generic') === 'true';
         this.updateShape_();
     },
 
@@ -379,20 +394,44 @@ Blockly.Blocks['component_set_property'] = {
     },
 
     updateShape_: function () {
-        if (this.inputList.length > 0) this.removeInput('VALUE');
-        const input = this.appendValueInput('VALUE').appendField('set ');
-        if (this.isGeneric) {
-            input.appendField('any ' + this.typeName);
-        } else {
-            input.appendField(this.instanceName);
-        }
-        input.appendField('.' + this.propertyName).appendField(' to');
+        if (this.isUpdating) return;
+        this.isUpdating = true;
+        try {
+            if (this.inputList.length > 0) this.removeInput('VALUE');
+            const input = this.appendValueInput('VALUE').appendField('set ');
+            if (this.isGeneric) {
+                input.appendField('any ' + this.typeName);
+            } else {
+                const instanceDropdown = new Blockly.FieldDropdown(function() {
+                    return getComponentInstances(this.getSourceBlock()?.typeName || 'Button', this.getValue());
+                }, (newValue) => {
+                    this.instanceName = newValue;
+                });
+                input.appendField(instanceDropdown, 'INSTANCE');
+                this.getField('INSTANCE')?.setValue(this.instanceName);
+            }
 
-        // Set check type based on property
-        const componentDef = COMPONENT_DATABASE[this.typeName];
-        const propDef = componentDef?.properties.find(p => p.name === this.propertyName);
-        if (propDef) {
-            input.setCheck(propDef.type);
+            const propertyDropdown = new Blockly.FieldDropdown(function() {
+                return getComponentProperties(this.getSourceBlock()?.typeName || 'Button', this.getValue());
+            }, (newValue) => {
+                if (this.propertyName !== newValue) {
+                    this.propertyName = newValue;
+                    this.updateShape_();
+                }
+            });
+            input.appendField('.');
+            input.appendField(propertyDropdown, 'PROPERTY');
+            this.getField('PROPERTY')?.setValue(this.propertyName);
+            input.appendField(' to');
+
+            // Set check type based on property
+            const componentDef = COMPONENT_DATABASE[this.typeName];
+            const propDef = componentDef?.properties.find(p => p.name === this.propertyName);
+            if (propDef) {
+                input.setCheck(propDef.type);
+            }
+        } finally {
+            this.isUpdating = false;
         }
     }
 };
@@ -403,20 +442,38 @@ Blockly.Blocks['component_set_property'] = {
  */
 Blockly.Blocks['component_component_block'] = {
     init: function () {
-        this.setColour(MIT_COLORS.getters);
-        this.appendDummyInput()
-            .appendField(new Blockly.FieldDropdown([['Component1', 'Component1']]), 'COMPONENT_SELECTOR');
-        this.setOutput(true, 'Component');
-        this.setTooltip('Refers to a component.');
-        this.componentName = '';
+        this.setColour(BLOCK_COLORS.getters);
+        this.typeName = 'Button';
+        this.instanceName = 'Button1';
+        this.updateShape_();
     },
 
-    updateComponentDropdown: function (components) {
-        const dropdown = this.getField('COMPONENT_SELECTOR');
-        if (dropdown) {
-            const options = components.map(c => [c.id, c.id]);
-            dropdown.menuGenerator_ = options;
-        }
+    saveExtraState: function () {
+        return {
+            'component_type': this.typeName,
+            'instance_name': this.instanceName
+        };
+    },
+
+    loadExtraState: function (state) {
+        this.typeName = state['component_type'];
+        this.instanceName = state['instance_name'];
+        this.updateShape_();
+    },
+
+    updateShape_: function () {
+        if (this.inputList.length > 0) this.removeInput('MAIN');
+        const input = this.appendDummyInput('MAIN');
+        
+        const instanceDropdown = new Blockly.FieldDropdown(function() {
+            return getComponentInstances(this.getSourceBlock()?.typeName || 'Button', this.getValue());
+        }, (newValue) => {
+            this.instanceName = newValue;
+        });
+        
+        input.appendField(instanceDropdown, 'INSTANCE');
+        this.getField('INSTANCE')?.setValue(this.instanceName);
+        this.setOutput(true, 'Component');
     }
 };
 
@@ -425,14 +482,14 @@ Blockly.Blocks['component_component_block'] = {
  */
 Blockly.Blocks['any_component_event'] = {
     init: function () {
-        this.setColour(MIT_COLORS.events);
+        this.setColour(BLOCK_COLORS.events);
         this.typeName = 'Button';
         this.eventName = 'Click';
         this.isGeneric = true;
         this.updateShape_();
     },
-    mutationToDom: Blockly.Blocks['component_event'].mutationToDom,
-    domToMutation: Blockly.Blocks['component_event'].domToMutation,
+    saveExtraState: Blockly.Blocks['component_event'].saveExtraState,
+    loadExtraState: Blockly.Blocks['component_event'].loadExtraState,
     updateShape_: Blockly.Blocks['component_event'].updateShape_
 };
 
@@ -441,7 +498,7 @@ Blockly.Blocks['any_component_event'] = {
  */
 Blockly.Blocks['any_component_method'] = {
     init: function () {
-        this.setColour(MIT_COLORS.methods);
+        this.setColour(BLOCK_COLORS.methods);
         this.setPreviousStatement(true);
         this.setNextStatement(true);
         this.typeName = 'Notifier';
@@ -449,8 +506,8 @@ Blockly.Blocks['any_component_method'] = {
         this.isGeneric = true;
         this.updateShape_();
     },
-    mutationToDom: Blockly.Blocks['component_method'].mutationToDom,
-    domToMutation: Blockly.Blocks['component_method'].domToMutation,
+    saveExtraState: Blockly.Blocks['component_method'].saveExtraState,
+    loadExtraState: Blockly.Blocks['component_method'].loadExtraState,
     updateShape_: function () {
         Blockly.Blocks['component_method'].updateShape_.call(this);
         // Special case for generic method: add a 'component' input if not present
@@ -468,15 +525,15 @@ Blockly.Blocks['any_component_method'] = {
  */
 Blockly.Blocks['any_component_get_property'] = {
     init: function () {
-        this.setColour(MIT_COLORS.getters);
+        this.setColour(BLOCK_COLORS.getters);
         this.setOutput(true);
         this.typeName = 'Button';
         this.propertyName = 'Text';
         this.isGeneric = true;
         this.updateShape_();
     },
-    mutationToDom: Blockly.Blocks['component_get_property'].mutationToDom,
-    domToMutation: Blockly.Blocks['component_get_property'].domToMutation,
+    saveExtraState: Blockly.Blocks['component_get_property'].saveExtraState,
+    loadExtraState: Blockly.Blocks['component_get_property'].loadExtraState,
     updateShape_: function () {
         Blockly.Blocks['component_get_property'].updateShape_.call(this);
         if (!this.getInput('COMPONENT')) {
@@ -493,7 +550,7 @@ Blockly.Blocks['any_component_get_property'] = {
  */
 Blockly.Blocks['any_component_set_property'] = {
     init: function () {
-        this.setColour(MIT_COLORS.setters);
+        this.setColour(BLOCK_COLORS.setters);
         this.setPreviousStatement(true);
         this.setNextStatement(true);
         this.typeName = 'Button';
@@ -501,8 +558,8 @@ Blockly.Blocks['any_component_set_property'] = {
         this.isGeneric = true;
         this.updateShape_();
     },
-    mutationToDom: Blockly.Blocks['component_set_property'].mutationToDom,
-    domToMutation: Blockly.Blocks['component_set_property'].domToMutation,
+    saveExtraState: Blockly.Blocks['component_set_property'].saveExtraState,
+    loadExtraState: Blockly.Blocks['component_set_property'].loadExtraState,
     updateShape_: function () {
         Blockly.Blocks['component_set_property'].updateShape_.call(this);
         // Move the 'to' value input after the 'for component' input
@@ -513,6 +570,54 @@ Blockly.Blocks['any_component_set_property'] = {
                 .appendField('for component');
         }
         this.moveInputBefore('VALUE', null);
+    }
+};
+
+/**
+ * Component Property Choice Block (Dropdowns)
+ * Provides preset values for properties like Alignment, Orientation, etc.
+ */
+Blockly.Blocks['component_choice'] = {
+    init: function () {
+        this.setColour(BLOCK_COLORS.getters);
+        this.setOutput(true);
+        this.typeName = 'Screen';
+        this.propertyName = 'ScreenOrientation';
+        this.choiceValue = 'Portrait';
+        this.updateShape_();
+    },
+
+    saveExtraState: function () {
+        return {
+            'component_type': this.typeName,
+            'property_name': this.propertyName,
+            'choice_value': this.choiceValue
+        };
+    },
+
+    loadExtraState: function (state) {
+        this.typeName = state['component_type'];
+        this.propertyName = state['property_name'];
+        this.choiceValue = state['choice_value'];
+        this.updateShape_();
+    },
+
+    updateShape_: function () {
+        while (this.inputList.length > 0) this.removeInput(this.inputList[0].name);
+
+        const componentDef = COMPONENT_DATABASE[this.typeName];
+        const propDef = componentDef?.properties.find(p => p.name === this.propertyName);
+        const options = propDef?.options || ['No Options'];
+
+        const dropdown = new Blockly.FieldDropdown(options.map(opt => [opt, opt]), (newValue) => {
+            this.choiceValue = newValue;
+        });
+
+        this.appendDummyInput('MAIN')
+            .appendField(dropdown, 'CHOICE');
+
+        this.getField('CHOICE').setValue(this.choiceValue);
+        this.setOutput(true, propDef?.type || null);
     }
 };
 
@@ -597,6 +702,19 @@ export function createComponentBlocks(appState) {
                     is_generic: false
                 }
             });
+
+            // Choice block (if options exist)
+            if (prop.options) {
+                blocks.push({
+                    kind: 'block',
+                    type: 'component_choice',
+                    extraState: {
+                        component_type: comp.type,
+                        property_name: prop.name,
+                        choice_value: prop.options[0]
+                    }
+                });
+            }
         });
     });
 

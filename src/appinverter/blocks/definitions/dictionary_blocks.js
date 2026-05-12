@@ -2,12 +2,12 @@
  * MIT App Inventor Dictionary Blocks
  */
 import * as Blockly from 'blockly';
-import { MIT_COLORS } from './builtin_blocks';
+import { BLOCK_COLORS } from '../utils/blockColors';
 
 // make a dictionary block
 Blockly.Blocks['dictionaries_create_with'] = {
     init: function () {
-        this.setColour(MIT_COLORS.lists); // MIT uses same color for lists and dictionaries mostly or similar shades
+        this.setColour(BLOCK_COLORS.lists); // MIT uses same color for lists and dictionaries mostly or similar shades
         this.appendDummyInput()
             .appendField('make a dictionary');
         this.setOutput(true, 'Dictionary');
@@ -18,7 +18,7 @@ Blockly.Blocks['dictionaries_create_with'] = {
 // make a pair block
 Blockly.Blocks['dictionaries_pair'] = {
     init: function () {
-        this.setColour(MIT_COLORS.lists);
+        this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('KEY')
             .appendField('make a pair');
         this.appendValueInput('VALUE')
@@ -32,7 +32,7 @@ Blockly.Blocks['dictionaries_pair'] = {
 // set value for key block
 Blockly.Blocks['dictionaries_set_pair'] = {
     init: function () {
-        this.setColour(MIT_COLORS.lists);
+        this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT')
             .setCheck('Dictionary')
             .appendField('set value for key');
@@ -50,7 +50,7 @@ Blockly.Blocks['dictionaries_set_pair'] = {
 // delete entry for key block
 Blockly.Blocks['dictionaries_delete_pair'] = {
     init: function () {
-        this.setColour(MIT_COLORS.lists);
+        this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT')
             .setCheck('Dictionary')
             .appendField('delete entry for key');
@@ -66,7 +66,7 @@ Blockly.Blocks['dictionaries_delete_pair'] = {
 // get value for key block
 Blockly.Blocks['dictionaries_get_value'] = {
     init: function () {
-        this.setColour(MIT_COLORS.lists);
+        this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT')
             .setCheck('Dictionary')
             .appendField('get value for key');
@@ -83,9 +83,9 @@ Blockly.Blocks['dictionaries_get_value'] = {
 // list of pairs to dictionary
 Blockly.Blocks['dictionaries_alist_to_dict'] = {
     init: function () {
-        this.setColour(MIT_COLORS.lists);
+        this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('LIST')
-            .setCheck('Array')
+            .setCheck('List')
             .appendField('list of pairs to dictionary');
         this.setOutput(true, 'Dictionary');
         this.setTooltip('Converts a list of pairs into a dictionary.');
@@ -95,11 +95,11 @@ Blockly.Blocks['dictionaries_alist_to_dict'] = {
 // dictionary to list of pairs
 Blockly.Blocks['dictionaries_dict_to_alist'] = {
     init: function () {
-        this.setColour(MIT_COLORS.lists);
+        this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT')
             .setCheck('Dictionary')
             .appendField('dictionary to list of pairs');
-        this.setOutput(true, 'Array');
+        this.setOutput(true, 'List');
         this.setTooltip('Converts a dictionary into a list of pairs.');
     }
 };

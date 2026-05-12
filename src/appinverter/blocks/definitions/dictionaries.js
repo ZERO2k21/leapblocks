@@ -27,7 +27,7 @@ Blockly.Blocks['dictionaries_create_with'] = {
         this.setOutput(true, "Dictionary");
         this.setColour(0);
         this.setTooltip("Create a dictionary with key-value pairs");
-        this.setMutator(new Blockly.Mutator(['dictionaries_create_with_item']));
+        this.setMutator(new Blockly.icons.MutatorIcon(['dictionaries_create_with_item'], this));
         this.pairCount_ = 1;
     },
     mutationToDom: function () {
@@ -122,7 +122,7 @@ Blockly.Blocks['dictionaries_get_keys'] = {
             .appendField("get keys");
         this.appendDummyInput()
             .appendField("dictionary");
-        this.setOutput(true, "Array");
+        this.setOutput(true, "List");
         this.setColour(0);
         this.setTooltip("Get a list of all keys in the dictionary");
     }
@@ -136,7 +136,7 @@ Blockly.Blocks['dictionaries_get_values'] = {
             .appendField("get values");
         this.appendDummyInput()
             .appendField("dictionary");
-        this.setOutput(true, "Array");
+        this.setOutput(true, "List");
         this.setColour(0);
         this.setTooltip("Get a list of all values in the dictionary");
     }
@@ -174,7 +174,7 @@ Blockly.Blocks['dictionaries_length'] = {
 Blockly.Blocks['dictionaries_alist_to_dict'] = {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("list of pairs to dictionary");
         this.setOutput(true, "Dictionary");
         this.setColour(0);
@@ -188,7 +188,7 @@ Blockly.Blocks['dictionaries_dict_to_alist'] = {
         this.appendValueInput("DICTIONARY")
             .setCheck("Dictionary")
             .appendField("dictionary to list of pairs");
-        this.setOutput(true, "Array");
+        this.setOutput(true, "List");
         this.setColour(0);
         this.setTooltip("Convert a dictionary to a list of pairs");
     }
@@ -243,10 +243,10 @@ Blockly.Blocks['dictionaries_walk_tree'] = {
             .setCheck(null)
             .appendField("walk all at level");
         this.appendValueInput("PATH")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("tree")
             .appendField("path");
-        this.setOutput(true, "Array");
+        this.setOutput(true, "List");
         this.setColour(0);
         this.setTooltip("Walk through nested dictionaries/lists");
     }
@@ -259,7 +259,7 @@ Blockly.Blocks['dictionaries_walk_key_path'] = {
             .setCheck(null)
             .appendField("get value at key path");
         this.appendValueInput("PATH")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("tree")
             .appendField("path");
         this.setOutput(true, null);
@@ -275,7 +275,7 @@ Blockly.Blocks['dictionaries_set_key_path'] = {
             .setCheck(null)
             .appendField("set value at key path");
         this.appendValueInput("PATH")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField("tree")
             .appendField("path");
         this.appendValueInput("VALUE")

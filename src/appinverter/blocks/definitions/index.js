@@ -5,9 +5,11 @@
 
 // Import all block definitions
 import './builtin_blocks';
-import './text_list_blocks';
+import './text';
+import './lists';
 import './color_component_blocks';
 import './dictionary_blocks';
+import './matrices';
 import './variables';
 import './procedures';
 

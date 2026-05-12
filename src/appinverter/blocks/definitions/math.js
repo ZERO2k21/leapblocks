@@ -106,7 +106,7 @@ Blockly.Blocks['math_random_float'] = Blockly.Blocks['math_random_float'] || {
 Blockly.Blocks['math_on_list'] = Blockly.Blocks['math_on_list'] || {
     init: function () {
         this.appendValueInput("LIST")
-            .setCheck("Array")
+            .setCheck("List")
             .appendField(new Blockly.FieldDropdown([
                 ["min", "MIN"],
                 ["max", "MAX"],

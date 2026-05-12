@@ -8,9 +8,10 @@ import * as Blockly from 'blockly';
 import { javascriptGenerator } from 'blockly/javascript';
 
 // Import our custom blocks
-import { initializeAllBlocks, MIT_COLORS, createComponentBlocks } from '../blocks/definitions/index';
+import { initializeAllBlocks, createComponentBlocks } from '../blocks/definitions/index';
 import { BLOCK_COLORS } from '../blocks/utils/blockColors';
 import { COMPONENT_METADATA, ANY_COMPONENT_METADATA } from '../data/componentMetadata';
+const MIT_COLORS = BLOCK_COLORS;
 
 // Import icons
 import { Search, ZoomIn, ZoomOut, Trash2, Download, Upload, Code } from 'lucide-react';
@@ -357,6 +358,10 @@ export default function BlocksEditorComplete({ appState }) {
             ...(currentScreen?.nonVisibleComponents || [])
         ];
 
+        // GLOBAL: Expose components for block dropdowns
+        window.LeapLab_Components = components;
+        window.LeapLab_ActiveScreen = currentScreen;
+
         return {
             kind: 'categoryToolbox',
             contents: [
@@ -393,24 +398,40 @@ export default function BlocksEditorComplete({ appState }) {
                 {
                     kind: 'category',
                     name: 'Math',
-                    colour: MIT_COLORS.math,
+                    colour: BLOCK_COLORS.math,
                     contents: [
                         { kind: 'block', type: 'math_number' },
                         { kind: 'block', type: 'math_arithmetic' },
+                        { kind: 'block', type: 'math_bitwise' },
+                        { kind: 'block', type: 'math_random_int' },
+                        { kind: 'block', type: 'math_random_float' },
+                        { kind: 'block', type: 'math_random_set_seed' },
                         { kind: 'block', type: 'math_single' },
                         { kind: 'block', type: 'math_trig' },
-                        { kind: 'block', type: 'math_constant' },
-                        { kind: 'block', type: 'math_number_property' },
                         { kind: 'block', type: 'math_round' },
                         { kind: 'block', type: 'math_modulo' },
-                        { kind: 'block', type: 'math_random_int' },
-                        { kind: 'block', type: 'math_random_float' }
+                        { kind: 'block', type: 'math_constant' },
+                        { kind: 'block', type: 'math_number_property' }
+                    ]
+                },
+                {
+                    kind: 'category',
+                    name: 'Matrices',
+                    colour: BLOCK_COLORS.matrices,
+                    contents: [
+                        { kind: 'block', type: 'matrices_create_2d' },
+                        { kind: 'block', type: 'matrices_create_with_dimensions' },
+                        { kind: 'block', type: 'matrices_get_cell' },
+                        { kind: 'block', type: 'matrices_set_cell' },
+                        { kind: 'block', type: 'matrices_get_row' },
+                        { kind: 'block', type: 'matrices_get_column' },
+                        { kind: 'block', type: 'matrices_get_dimensions' }
                     ]
                 },
                 {
                     kind: 'category',
                     name: 'Text',
-                    colour: MIT_COLORS.text,
+                    colour: BLOCK_COLORS.text,
                     contents: [
                         { kind: 'block', type: 'text' },
                         { kind: 'block', type: 'text_join' },
@@ -419,12 +440,8 @@ export default function BlocksEditorComplete({ appState }) {
                         { kind: 'block', type: 'text_compare' },
                         { kind: 'block', type: 'text_trim' },
                         { kind: 'block', type: 'text_changeCase' },
-                        { kind: 'block', type: 'text_indexOf' },
                         { kind: 'block', type: 'text_contains' },
-                        { kind: 'block', type: 'text_split' },
-                        { kind: 'block', type: 'text_charAt' },
-                        { kind: 'block', type: 'text_getSubstring' },
-                        { kind: 'block', type: 'text_replace_all' }
+                        { kind: 'block', type: 'text_split' }
                     ]
                 },
                 {
@@ -571,24 +588,33 @@ export default function BlocksEditorComplete({ appState }) {
                                 property_name: prop.name,
                                 is_generic: false
                             }
-                        }
+                        },
+                        ...(prop.options ? [{
+                            kind: 'block',
+                            type: 'component_choice',
+                            extraState: {
+                                component_type: 'Screen',
+                                property_name: prop.name,
+                                choice_value: prop.options[0]
+                            }
+                        }] : [])
                     ])
                 ]
             };
             categories.push(screenCategory);
         }
-
-        // Add categories for each component
         components.forEach(comp => {
-            const metadata = COMPONENT_METADATA[comp.type] || { events: [], methods: [], properties: [] };
+            const metadata = COMPONENT_METADATA[comp.type];
+            if (!metadata) return;
+
             const category = {
                 kind: 'category',
                 name: comp.id,
-                colour: MIT_COLORS.events,
+                colour: comp.type === 'Screen' ? MIT_COLORS.control : MIT_COLORS.variables,
                 contents: []
             };
 
-            // Add event blocks
+            // 1. Add event blocks
             metadata.events.forEach(event => {
                 category.contents.push({
                     kind: 'block',
@@ -602,7 +628,7 @@ export default function BlocksEditorComplete({ appState }) {
                 });
             });
 
-            // Add method blocks
+            // 2. Add method blocks
             metadata.methods.forEach(method => {
                 category.contents.push({
                     kind: 'block',
@@ -616,7 +642,7 @@ export default function BlocksEditorComplete({ appState }) {
                 });
             });
 
-            // Add property getter/setter blocks
+            // 3. Add property setter blocks (Setters first in MIT)
             metadata.properties.forEach(prop => {
                 category.contents.push({
                     kind: 'block',
@@ -628,6 +654,10 @@ export default function BlocksEditorComplete({ appState }) {
                         is_generic: false
                     }
                 });
+            });
+
+            // 4. Add property getter blocks
+            metadata.properties.forEach(prop => {
                 category.contents.push({
                     kind: 'block',
                     type: 'component_get_property',
@@ -638,6 +668,29 @@ export default function BlocksEditorComplete({ appState }) {
                         is_generic: false
                     }
                 });
+
+                // Add choice block if property has options
+                if (prop.options) {
+                    category.contents.push({
+                        kind: 'block',
+                        type: 'component_choice',
+                        extraState: {
+                            component_type: comp.type,
+                            property_name: prop.name,
+                            choice_value: prop.options[0]
+                        }
+                    });
+                }
+            });
+
+            // 5. Add component instance block at the end (mit app inventor style)
+            category.contents.push({
+                kind: 'block',
+                type: 'component_component_block',
+                extraState: {
+                    component_type: comp.type,
+                    instance_name: comp.id
+                }
             });
 
             if (category.contents.length > 0) {
