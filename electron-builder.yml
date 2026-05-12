@@ -9,6 +9,9 @@ files:
   - node_modules/**/*
   - remove_bg.py
   - electron/buildApk.js
+  - tools/**/*
+  - engine/**/*
+  - local-build-server/**/*
 win:
   target:
     - target: squirrel
@@ -33,3 +36,9 @@ extraResources:
     filter:
       - "qemu-system-xtensa"
       - "qemu-system-xtensa.exe"
+  - from: tools
+    to: tools
+  - from: engine
+    to: engine
+  - from: local-build-server
+    to: local-build-server
