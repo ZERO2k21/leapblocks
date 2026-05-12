@@ -80,19 +80,8 @@ export default function BlocksEditorComplete({ appState }) {
             oneBasedIndex: true
         });
 
-        // GLOBAL FIX: Disable collapse feature completely
-        // This prevents double-click from collapsing blocks
-        if (Blockly.Block.prototype.setCollapsed && !Blockly.Block.prototype.setCollapsed.isOverridden) {
-            const originalSetCollapsed = Blockly.Block.prototype.setCollapsed;
-            Blockly.Block.prototype.setCollapsed = function (collapsed) {
-                // Always keep blocks expanded (never collapse)
-                if (collapsed) {
-                    return; // Ignore collapse requests
-                }
-                originalSetCollapsed.call(this, false);
-            };
-            Blockly.Block.prototype.setCollapsed.isOverridden = true;
-        }
+        // MIT App Inventor Style: Blocks are expanded by default
+        // We handle this via theme or block initialization instead of a global override
 
         workspaceRef.current = workspace;
 
@@ -249,8 +238,14 @@ export default function BlocksEditorComplete({ appState }) {
     // Update toolbox when components change
     useEffect(() => {
         if (workspaceRef.current && appState.screens) {
-            const toolbox = createToolbox(appState);
-            workspaceRef.current.updateToolbox(toolbox);
+            // Use a slight delay to avoid race conditions during flyout updates
+            const timer = setTimeout(() => {
+                if (workspaceRef.current) {
+                    const toolbox = createToolbox(appState);
+                    workspaceRef.current.updateToolbox(toolbox);
+                }
+            }, 50);
+            return () => clearTimeout(timer);
         }
     }, [appState.screens, appState.activeScreen]);
 

@@ -100,7 +100,7 @@ Blockly.Blocks['lists_length'] = {
 };
 
 // Is List Empty?
-Blockly.Blocks['lists_is_empty'] = {
+Blockly.Blocks['lists_isEmpty'] = {
     init: function () {
         this.appendValueInput("LIST")
             .setCheck("List")
@@ -124,7 +124,7 @@ Blockly.Blocks['lists_pick_random'] = {
 };
 
 // Index in List
-Blockly.Blocks['lists_position_in'] = {
+Blockly.Blocks['lists_indexOf'] = {
     init: function () {
         this.appendValueInput("ITEM")
             .setCheck(null)
@@ -141,7 +141,7 @@ Blockly.Blocks['lists_position_in'] = {
 };
 
 // Select List Item
-Blockly.Blocks['lists_select_item'] = {
+Blockly.Blocks['lists_getIndex'] = {
     init: function () {
         this.appendValueInput("LIST")
             .setCheck("List")
@@ -157,7 +157,7 @@ Blockly.Blocks['lists_select_item'] = {
 };
 
 // Replace List Item
-Blockly.Blocks['lists_replace_item'] = {
+Blockly.Blocks['lists_setIndex'] = {
     init: function () {
         this.appendValueInput("LIST")
             .setCheck("List")
@@ -214,7 +214,7 @@ Blockly.Blocks['lists_insert_item'] = {
 };
 
 // Append to List
-Blockly.Blocks['lists_append_list'] = {
+Blockly.Blocks['lists_append'] = {
     init: function () {
         this.appendValueInput("LIST1")
             .setCheck("List")
@@ -317,22 +317,54 @@ Blockly.Blocks['lists_from_csv_table'] = {
     }
 };
 
-// Lookup in Pairs
-Blockly.Blocks['lists_lookup_in_pairs'] = {
+// Join with Separator
+Blockly.Blocks['lists_join_with_separator'] = {
     init: function () {
-        this.appendValueInput("KEY")
-            .setCheck(null)
-            .appendField("lookup in pairs");
+        this.appendValueInput("SEPARATOR")
+            .setCheck("String")
+            .appendField("join with separator");
         this.appendValueInput("LIST")
             .setCheck("List")
-            .appendField("key")
             .appendField("list");
-        this.appendValueInput("NOT_FOUND")
-            .setCheck(null)
-            .appendField("notFound");
-        this.setOutput(true, null);
+        this.setOutput(true, "String");
         this.setColour(BLOCK_COLORS.lists);
-        this.setTooltip("Look up a key in a list of pairs");
+        this.setTooltip("Join list items with a separator");
+    }
+};
+
+// Sort List
+Blockly.Blocks['lists_sort'] = {
+    init: function () {
+        this.appendValueInput("LIST")
+            .setCheck("List")
+            .appendField("sort list");
+        this.appendDummyInput()
+            .appendField(new Blockly.FieldDropdown([
+                ["numeric", "NUMERIC"],
+                ["alphabetic", "ALPHABETIC"]
+            ]), "TYPE")
+            .appendField(new Blockly.FieldDropdown([
+                ["ascending", "ASCENDING"],
+                ["descending", "DESCENDING"]
+            ]), "ORDER");
+        this.setOutput(true, "List");
+        this.setColour(BLOCK_COLORS.lists);
+        this.setTooltip("Sort items in a list");
+    }
+};
+
+// Repeat List
+Blockly.Blocks['lists_repeat'] = {
+    init: function () {
+        this.appendValueInput("ITEM")
+            .setCheck(null)
+            .appendField("make a list by repeating item");
+        this.appendValueInput("NUM")
+            .setCheck("Number")
+            .appendField("length");
+        this.setOutput(true, "List");
+        this.setColour(BLOCK_COLORS.lists);
+        this.setTooltip("Create a list by repeating an item n times");
     }
 };
 
@@ -342,14 +374,14 @@ export default {
     'lists_add_items': Blockly.Blocks['lists_add_items'],
     'lists_is_in': Blockly.Blocks['lists_is_in'],
     'lists_length': Blockly.Blocks['lists_length'],
-    'lists_is_empty': Blockly.Blocks['lists_is_empty'],
+    'lists_isEmpty': Blockly.Blocks['lists_isEmpty'],
     'lists_pick_random': Blockly.Blocks['lists_pick_random'],
-    'lists_position_in': Blockly.Blocks['lists_position_in'],
-    'lists_select_item': Blockly.Blocks['lists_select_item'],
-    'lists_replace_item': Blockly.Blocks['lists_replace_item'],
+    'lists_indexOf': Blockly.Blocks['lists_indexOf'],
+    'lists_getIndex': Blockly.Blocks['lists_getIndex'],
+    'lists_setIndex': Blockly.Blocks['lists_setIndex'],
     'lists_remove_item': Blockly.Blocks['lists_remove_item'],
     'lists_insert_item': Blockly.Blocks['lists_insert_item'],
-    'lists_append_list': Blockly.Blocks['lists_append_list'],
+    'lists_append': Blockly.Blocks['lists_append'],
     'lists_copy': Blockly.Blocks['lists_copy'],
     'lists_is_list': Blockly.Blocks['lists_is_list'],
     'lists_reverse': Blockly.Blocks['lists_reverse'],
@@ -357,5 +389,8 @@ export default {
     'lists_from_csv_row': Blockly.Blocks['lists_from_csv_row'],
     'lists_to_csv_table': Blockly.Blocks['lists_to_csv_table'],
     'lists_from_csv_table': Blockly.Blocks['lists_from_csv_table'],
-    'lists_lookup_in_pairs': Blockly.Blocks['lists_lookup_in_pairs']
+    'lists_lookup_in_pairs': Blockly.Blocks['lists_lookup_in_pairs'],
+    'lists_join_with_separator': Blockly.Blocks['lists_join_with_separator'],
+    'lists_sort': Blockly.Blocks['lists_sort'],
+    'lists_repeat': Blockly.Blocks['lists_repeat']
 };
