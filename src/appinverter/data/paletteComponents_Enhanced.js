@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * Complete MIT App Inventor Component Library
- * Inspired by MIT App Inventor (Apache 2.0) - Original implementation
+ * Complete Leap App Inventor Component Library
+ * Inspired by Leap App Inventor (Apache 2.0) - Original implementation
  */
 
 export const PALETTE_ENHANCED = [
@@ -67,7 +67,7 @@ export const PALETTE_ENHANCED = [
         label: 'Notifier',
         icon: '🔔',
         category: 'User Interface',
-        visible: false,
+        visible: true,
         description: 'Shows alerts, messages, and dialogs to the user'
     },
     {
@@ -223,7 +223,7 @@ export const PALETTE_ENHANCED = [
         label: 'SpeechRecognizer',
         icon: '🎤',
         category: 'Media',
-        visible: false,
+        visible: true,
         description: 'Converts speech to text'
     },
     {
@@ -231,7 +231,7 @@ export const PALETTE_ENHANCED = [
         label: 'TextToSpeech',
         icon: '🗣️',
         category: 'Media',
-        visible: false,
+        visible: true,
         description: 'Converts text to spoken words'
     },
     {
@@ -249,6 +249,22 @@ export const PALETTE_ENHANCED = [
         category: 'Media',
         visible: false,
         description: 'Translates text between languages'
+    },
+    {
+        type: 'Translator',
+        label: 'Translator',
+        icon: '🌐',
+        category: 'Media',
+        visible: false,
+        description: 'Translates text between languages using modern translation services'
+    },
+    {
+        type: 'MediaStore',
+        label: 'MediaStore',
+        icon: '💿',
+        category: 'Media',
+        visible: false,
+        description: 'Saves media files to the device'
     },
 
     // ==================== DRAWING & ANIMATION ====================
@@ -333,6 +349,14 @@ export const PALETTE_ENHANCED = [
         category: 'Maps',
         visible: false,
         description: 'A rectangular region on a map'
+    },
+    {
+        type: 'Navigation',
+        label: 'Navigation',
+        icon: '🧭',
+        category: 'Maps',
+        visible: false,
+        description: 'Provides directions between two locations'
     },
 
     // ==================== SENSORS ====================
@@ -439,6 +463,14 @@ export const PALETTE_ENHANCED = [
         category: 'Sensors',
         visible: false,
         description: 'Measures temperature'
+    },
+    {
+        type: 'Barometer',
+        label: 'Barometer',
+        icon: '🌡️',
+        category: 'Sensors',
+        visible: false,
+        description: 'Measures atmospheric air pressure'
     },
 
     // ==================== SOCIAL ====================
@@ -548,6 +580,22 @@ export const PALETTE_ENHANCED = [
         visible: false,
         description: 'Stores data on a web server'
     },
+    {
+        type: 'Spreadsheet',
+        label: 'Spreadsheet',
+        icon: '📊',
+        category: 'Storage',
+        visible: false,
+        description: 'Reads and writes data from Google Sheets'
+    },
+    {
+        type: 'FilePicker',
+        label: 'FilePicker',
+        icon: '📎',
+        category: 'Storage',
+        visible: false,
+        description: 'Lets users pick a file from the device'
+    },
 
     // ==================== CONNECTIVITY ====================
     {
@@ -563,7 +611,7 @@ export const PALETTE_ENHANCED = [
         label: 'BluetoothClient',
         icon: '🦷',
         category: 'Connectivity',
-        visible: false,
+        visible: true,
         description: 'Connects to Bluetooth devices'
     },
     {
@@ -587,7 +635,7 @@ export const PALETTE_ENHANCED = [
         label: 'Web',
         icon: '🌐',
         category: 'Connectivity',
-        visible: false,
+        visible: true,
         description: 'Makes HTTP requests to web services'
     },
 
@@ -722,6 +770,58 @@ export const PALETTE_ENHANCED = [
         visible: true,
         description: 'Advanced web viewer using Chrome'
     },
+
+    // ==================== CHARTS ====================
+    {
+        type: 'Chart',
+        label: 'Chart',
+        icon: '📊',
+        category: 'Charts',
+        visible: true,
+        description: 'Displays data in chart form (line, bar, pie, scatter, area)'
+    },
+    {
+        type: 'ChartData2D',
+        label: 'ChartData2D',
+        icon: '📈',
+        category: 'Charts',
+        visible: false,
+        description: 'Provides 2D data series for a Chart component'
+    },
+
+    // ==================== DATA SCIENCE ====================
+    {
+        type: 'DataCollection',
+        label: 'DataCollection',
+        icon: '📋',
+        category: 'Data Science',
+        visible: false,
+        description: 'Collects and manages datasets for analysis'
+    },
+    {
+        type: 'Regression',
+        label: 'Regression',
+        icon: '📉',
+        category: 'Data Science',
+        visible: false,
+        description: 'Performs regression analysis on data'
+    },
+    {
+        type: 'Trendline',
+        label: 'Trendline',
+        icon: '📐',
+        category: 'Data Science',
+        visible: false,
+        description: 'Adds trendlines to chart data'
+    },
+    {
+        type: 'AnomalyDetection',
+        label: 'AnomalyDetection',
+        icon: '🔍',
+        category: 'Data Science',
+        visible: false,
+        description: 'Detects anomalies in datasets'
+    },
 ];
 
 // Export category list for reference
@@ -731,6 +831,8 @@ export const CATEGORIES = [
     'Media',
     'Drawing and Animation',
     'Maps',
+    'Charts',
+    'Data Science',
     'Sensors',
     'Social',
     'Storage',
@@ -741,3 +843,5 @@ export const CATEGORIES = [
 
 // Export count
 export const COMPONENT_COUNT = PALETTE_ENHANCED.length;
+
+

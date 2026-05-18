@@ -1,11 +1,22 @@
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * Complete Blocks Editor - MIT App Inventor Style
- * Original implementation inspired by MIT App Inventor (Apache 2.0)
+ * Complete Blocks Editor - leap app inventor style
+ * Original implementation inspired by Leap App Inventor (Apache 2.0)
  */
 import React, { useEffect, useRef, useState } from 'react';
+
+// ── FIX: Neutralize AMD define() before Blockly imports ─────────────────────
+// Monaco Editor's CDN loader re-installs window.define after startup cleanup.
+// When navigating from Electra → App Inventor, Blockly's UMD wrapper detects
+// the stale AMD define and crashes with:
+// "Error: Can only have one anonymous define call per script file"
+if (typeof window !== 'undefined' && typeof window.define === 'function' && window.define.amd) {
+    window.define = undefined;
+}
+
 import * as Blockly from 'blockly';
 import { javascriptGenerator } from 'blockly/javascript';
+import 'blockly/blocks';
 
 // Import our custom blocks
 import { initializeAllBlocks, createComponentBlocks } from '../blocks/definitions/index';
@@ -14,7 +25,7 @@ import { COMPONENT_METADATA, ANY_COMPONENT_METADATA } from '../data/componentMet
 const MIT_COLORS = BLOCK_COLORS;
 
 // Import icons
-import { Search, ZoomIn, ZoomOut, Trash2, Download, Upload, Code } from 'lucide-react';
+import { Search, ZoomIn, ZoomOut, Trash2, Download, Upload, Code, AlertTriangle, XCircle } from 'lucide-react';
 
 export default function BlocksEditorComplete({ appState }) {
     const blocklyDiv = useRef(null);
@@ -22,12 +33,22 @@ export default function BlocksEditorComplete({ appState }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [showCode, setShowCode] = useState(false);
     const [generatedCode, setGeneratedCode] = useState('');
+    const [lastSyncTime, setLastSyncTime] = useState(Date.now());
+    const [errorCount, setErrorCount] = useState(0);
+    const [warningCount, setWarningCount] = useState(0);
+
+    // Helper for structured logging
+    const logSession = (action, details = {}) => {
+        const timestamp = new Date().toLocaleTimeString();
+        console.log(`[BLOCKS SESSION] ${timestamp} - ${action}`, details);
+    };
 
     // Initialize Blockly workspace
     useEffect(() => {
         if (!blocklyDiv.current || workspaceRef.current) return;
 
-        // Initialize all MIT App Inventor blocks
+        // Initialize all Leap App Inventor blocks
+        logSession('INITIALIZING_WORKSPACE', { screen: appState.activeScreen });
         initializeAllBlocks();
 
         // Ensure the div has dimensions before injecting Blockly
@@ -40,7 +61,7 @@ export default function BlocksEditorComplete({ appState }) {
         // Create toolbox
         const toolbox = createToolbox(appState);
 
-        // Workspace configuration - MIT App Inventor Style
+        // Workspace configuration - leap app inventor style
         const workspace = Blockly.inject(blocklyDiv.current, {
             toolbox: toolbox,
             grid: {
@@ -75,15 +96,16 @@ export default function BlocksEditorComplete({ appState }) {
             },
             horizontalLayout: false,
             toolboxPosition: 'start',
-            renderer: 'zelos',
+            renderer: 'geras',
             media: 'https://unpkg.com/blockly/media/',
             oneBasedIndex: true
         });
 
-        // MIT App Inventor Style: Blocks are expanded by default
+        // leap app inventor style: Blocks are expanded by default
         // We handle this via theme or block initialization instead of a global override
 
         workspaceRef.current = workspace;
+        logSession('WORKSPACE_INJECTED', { id: workspace.id });
 
         const flyout = workspace.getFlyout();
         if (flyout) {
@@ -96,58 +118,31 @@ export default function BlocksEditorComplete({ appState }) {
             workspace.options.readOnly = false;
         }
 
-        // CRITICAL: Ensure the workspace SVG allows pointer events
-        const workspaceSvg = workspace.getParentSvg();
-        if (workspaceSvg) {
-            workspaceSvg.style.pointerEvents = 'auto';
-            workspaceSvg.style.touchAction = 'none';
-        }
-
-        // CRITICAL: Enable pointer events on all block groups
-        const enableBlockInteractions = () => {
-            const allBlocks = workspace.getAllBlocks(false);
-            allBlocks.forEach(block => {
-                if (block.svgGroup_) {
-                    block.svgGroup_.style.pointerEvents = 'auto';
-                    block.svgGroup_.style.cursor = 'grab';
-                }
-            });
-        };
-
-        // Run immediately and after any block changes
-        enableBlockInteractions();
-
-        // MIT App Inventor Style: Block behavior
+        // leap app inventor style: Block behavior
         // Blocks should be freely draggable and copyable from flyout
         workspace.addChangeListener((event) => {
+            // Log toolbox interactions
+            if (event.type === Blockly.Events.TOOLBOX_ITEM_SELECT) {
+                logSession('TOOLBOX_CATEGORY_SELECTED', { item: event.newItem });
+            }
+
+            // Log significant events
+            if (event.type === Blockly.Events.BLOCK_CREATE ||
+                event.type === Blockly.Events.BLOCK_DELETE ||
+                event.type === Blockly.Events.BLOCK_MOVE ||
+                event.type === Blockly.Events.BLOCK_CHANGE) {
+                logSession('BLOCK_EVENT', { type: event.type, blockId: event.blockId });
+            }
+
+            // leap app inventor style: blocks never collapse
             if (event.type === Blockly.Events.BLOCK_CREATE) {
                 const block = workspace.getBlockById(event.blockId);
                 if (block) {
-                    // MIT App Inventor style: blocks never collapse
+                    logSession('BLOCK_CREATED', { type: block.type });
                     block.setCollapsed(false);
-
-                    // CRITICAL: Ensure blocks are fully interactive and draggable
                     block.setMovable(true);
                     block.setDeletable(true);
                     block.setEditable(true);
-
-                    // Enable all interactions on SVG element
-                    if (block.svgGroup_) {
-                        block.svgGroup_.style.pointerEvents = 'auto';
-                        block.svgGroup_.style.cursor = 'grab';
-                        block.svgGroup_.style.touchAction = 'none'; // Enable touch dragging
-                    }
-
-                    // Ensure the block's path element is also interactive
-                    const pathElement = block.pathObject?.svgPath;
-                    if (pathElement) {
-                        pathElement.style.pointerEvents = 'auto';
-                    }
-
-                    // FIX: Ensure the block is added to the drag surface correctly
-                    if (block.svgGroup_) {
-                        block.svgGroup_.classList.add('blocklyDraggable');
-                    }
 
                     // Prevent double-click collapse
                     const originalOnMouseDown = block.onMouseDown_;
@@ -164,18 +159,60 @@ export default function BlocksEditorComplete({ appState }) {
                 }
             }
 
-            // Re-enable interactions after any workspace change
-            if (event.type === Blockly.Events.FINISHED_LOADING ||
+            // Real-time validation for Errors and Warnings
+            if (event.type === Blockly.Events.BLOCK_CREATE ||
+                event.type === Blockly.Events.BLOCK_CHANGE ||
                 event.type === Blockly.Events.BLOCK_MOVE ||
-                event.type === Blockly.Events.BLOCK_CREATE) {
-                requestAnimationFrame(() => {
-                    const allBlocks = workspace.getAllBlocks(false);
+                event.type === Blockly.Events.BLOCK_DELETE) {
+
+                let errors = 0;
+                let warnings = 0;
+
+                // Use a short timeout to let Blockly finish its internal connection state updates
+                setTimeout(() => {
+                    if (!workspaceRef.current) return;
+                    const allBlocks = workspaceRef.current.getAllBlocks(false);
+
                     allBlocks.forEach(block => {
-                        if (block.svgGroup_) {
-                            block.svgGroup_.style.pointerEvents = 'auto';
+                        let blockError = null;
+                        let blockWarning = null;
+
+                        // 1. Check for empty Value inputs (Errors)
+                        block.inputList.forEach(input => {
+                            if (input.type === Blockly.inputs.inputTypes.VALUE && !input.connection?.targetConnection) {
+                                blockError = "Error: Missing expected input block.";
+                                errors++;
+                            }
+                        });
+
+                        // 2. Check for disconnected (orphan) blocks (Warnings)
+                        // Root blocks are allowed to be unconnected. Non-root blocks should have a parent.
+                        const isRootType = block.type.includes('event') ||
+                            block.type.includes('procedures_def') ||
+                            block.type === 'global_declaration';
+
+                        if (!block.getParent() && !isRootType) {
+                            // Only warn if it's not a top-level block that is meant to be a root
+                            // and if it's an output or statement block
+                            if (block.outputConnection || block.previousConnection) {
+                                blockWarning = "Warning: This block is not connected to any event or procedure, so it will not run.";
+                                warnings++;
+                            }
+                        }
+
+                        // 3. Set the warning text (Blockly only supports one warning text natively)
+                        if (blockError) {
+                            block.setWarningText(blockError);
+                        } else if (blockWarning) {
+                            block.setWarningText(blockWarning);
+                        } else {
+                            block.setWarningText(null);
                         }
                     });
-                });
+
+                    setErrorCount(errors);
+                    setWarningCount(warnings);
+                }, 100);
             }
         });
 
@@ -183,9 +220,12 @@ export default function BlocksEditorComplete({ appState }) {
         const savedBlocks = appState.blockLogic;
         if (savedBlocks) {
             try {
+                logSession('LOADING_SAVED_BLOCKS');
                 const xml = Blockly.utils.xml.textToDom(savedBlocks);
                 Blockly.Xml.domToWorkspace(xml, workspace);
+                logSession('BLOCKS_LOADED_SUCCESSFULLY');
             } catch (e) {
+                logSession('ERROR_LOADING_BLOCKS', { error: e.message });
                 console.error('Error loading blocks:', e);
             }
         }
@@ -224,11 +264,12 @@ export default function BlocksEditorComplete({ appState }) {
 
         // Cleanup
         return () => {
+            logSession('CLEANING_UP_WORKSPACE');
             clearTimeout(resizeTimeout);
             window.removeEventListener('resize', debouncedResize);
             window.removeEventListener('orientationchange', handleResize);
             if (workspaceRef.current) {
-                console.log('🧹 Disposing Blockly workspace');
+                logSession('DISPOSING_BLOCKLY_WORKSPACE');
                 workspaceRef.current.dispose();
                 workspaceRef.current = null;
             }
@@ -238,18 +279,20 @@ export default function BlocksEditorComplete({ appState }) {
     // Update toolbox when components change
     useEffect(() => {
         if (workspaceRef.current && appState.screens) {
+            logSession('COMPONENTS_CHANGED_SYNCING_TOOLBOX');
             // Use a slight delay to avoid race conditions during flyout updates
             const timer = setTimeout(() => {
                 if (workspaceRef.current) {
                     const toolbox = createToolbox(appState);
                     workspaceRef.current.updateToolbox(toolbox);
+                    logSession('TOOLBOX_UPDATED');
                 }
             }, 50);
             return () => clearTimeout(timer);
         }
     }, [appState.screens, appState.activeScreen]);
 
-    // Create custom theme - MIT App Inventor Colors
+    // Create custom theme - Leap App Inventor Colors
     const createCustomTheme = () => {
         return Blockly.Theme.defineTheme('appinventor', {
             'base': Blockly.Themes.Classic,
@@ -296,23 +339,23 @@ export default function BlocksEditorComplete({ appState }) {
                 },
                 'event_blocks': {
                     'colourPrimary': MIT_COLORS.events,
-                    'colourSecondary': '#E8BC15',
-                    'colourTertiary': '#D0AC05'
+                    'colourSecondary': '#B08805',
+                    'colourTertiary': '#906800'
                 },
                 'method_blocks': {
                     'colourPrimary': MIT_COLORS.methods,
-                    'colourSecondary': '#793FB4',
-                    'colourTertiary': '#692FA4'
+                    'colourSecondary': '#610CA5',
+                    'colourTertiary': '#410085'
                 },
                 'getter_blocks': {
                     'colourPrimary': MIT_COLORS.getters,
-                    'colourSecondary': '#338960',
-                    'colourTertiary': '#237950'
+                    'colourSecondary': '#419245',
+                    'colourTertiary': '#217225'
                 },
                 'setter_blocks': {
                     'colourPrimary': MIT_COLORS.setters,
-                    'colourSecondary': '#1E5633',
-                    'colourTertiary': '#0E4623'
+                    'colourSecondary': '#0E5D12',
+                    'colourTertiary': '#003D00'
                 }
             },
             'categoryStyles': {
@@ -344,7 +387,7 @@ export default function BlocksEditorComplete({ appState }) {
         });
     };
 
-    // Create toolbox XML - MIT App Inventor Style
+    // Create toolbox XML - leap app inventor style
     const createToolbox = (appState) => {
         const currentScreen = appState.screens?.find(s => s.id === appState.activeScreen) || appState.screens?.[0];
         const flattenVisible = (list = []) => list.flatMap(item => [item, ...(item.children ? flattenVisible(item.children) : [])]);
@@ -357,25 +400,46 @@ export default function BlocksEditorComplete({ appState }) {
         window.LeapLab_Components = components;
         window.LeapLab_ActiveScreen = currentScreen;
 
+        logSession('CONSTRUCTING_TOOLBOX', {
+            componentCount: components.length,
+            screen: currentScreen?.id
+        });
+
         return {
             kind: 'categoryToolbox',
             contents: [
-                // Built-in blocks - MIT App Inventor Standard
+                // Built-in blocks - Leap App Inventor Standard
                 {
                     kind: 'category',
                     name: 'Control',
                     colour: MIT_COLORS.control,
                     contents: [
                         { kind: 'block', type: 'controls_if' },
-                        { kind: 'block', type: 'controls_if_else' },
+                        {
+                            kind: 'block',
+                            type: 'controls_if',
+                            extraState: '<mutation else="1"></mutation>'
+                        },
+                        {
+                            kind: 'block',
+                            type: 'controls_if',
+                            extraState: '<mutation elseif="1" else="1"></mutation>'
+                        },
                         { kind: 'block', type: 'controls_forRange' },
                         { kind: 'block', type: 'controls_forEach' },
+                        { kind: 'block', type: 'controls_forEachDict' },
                         { kind: 'block', type: 'controls_while' },
                         { kind: 'block', type: 'controls_choose' },
                         { kind: 'block', type: 'controls_do_then_return' },
                         { kind: 'block', type: 'controls_eval_but_ignore' },
                         { kind: 'block', type: 'controls_openAnotherScreen' },
+                        { kind: 'block', type: 'controls_openAnotherScreenWithStartValue' },
+                        { kind: 'block', type: 'controls_getStartValue' },
+                        { kind: 'block', type: 'controls_getPlainStartText' },
                         { kind: 'block', type: 'controls_closeScreen' },
+                        { kind: 'block', type: 'controls_closeScreenWithValue' },
+                        { kind: 'block', type: 'controls_closeScreenWithPlainText' },
+                        { kind: 'block', type: 'controls_closeApplication' },
                         { kind: 'block', type: 'controls_break' }
                     ]
                 },
@@ -396,17 +460,35 @@ export default function BlocksEditorComplete({ appState }) {
                     colour: BLOCK_COLORS.math,
                     contents: [
                         { kind: 'block', type: 'math_number' },
-                        { kind: 'block', type: 'math_arithmetic' },
+                        { kind: 'block', type: 'math_number_radix' },
+                        { kind: 'block', type: 'math_compare' },
+                        { kind: 'block', type: 'math_add' },
+                        { kind: 'block', type: 'math_subtract' },
+                        { kind: 'block', type: 'math_multiply' },
+                        { kind: 'block', type: 'math_divide_regular' },
+                        { kind: 'block', type: 'math_power' },
                         { kind: 'block', type: 'math_bitwise' },
                         { kind: 'block', type: 'math_random_int' },
                         { kind: 'block', type: 'math_random_float' },
                         { kind: 'block', type: 'math_random_set_seed' },
-                        { kind: 'block', type: 'math_single' },
-                        { kind: 'block', type: 'math_trig' },
-                        { kind: 'block', type: 'math_round' },
-                        { kind: 'block', type: 'math_modulo' },
-                        { kind: 'block', type: 'math_constant' },
-                        { kind: 'block', type: 'math_number_property' }
+                        { kind: 'block', type: 'math_on_list' },
+                        { kind: 'block', type: 'math_on_list2' },
+                        { kind: 'block', type: 'math_mode_of_list' },
+                        { kind: 'block', type: 'math_single', fields: { OP: 'ROOT' } },
+                        { kind: 'block', type: 'math_single', fields: { OP: 'ABS' } },
+                        { kind: 'block', type: 'math_single', fields: { OP: 'NEG' } },
+                        { kind: 'block', type: 'math_round', fields: { OP: 'ROUND' } },
+                        { kind: 'block', type: 'math_round', fields: { OP: 'CEILING' } },
+                        { kind: 'block', type: 'math_round', fields: { OP: 'FLOOR' } },
+                        { kind: 'block', type: 'math_divide', fields: { OP: 'MODULO' } },
+                        { kind: 'block', type: 'math_trig', fields: { OP: 'SIN' } },
+                        { kind: 'block', type: 'math_trig', fields: { OP: 'COS' } },
+                        { kind: 'block', type: 'math_trig', fields: { OP: 'TAN' } },
+                        { kind: 'block', type: 'math_atan2' },
+                        { kind: 'block', type: 'math_convert_angles' },
+                        { kind: 'block', type: 'math_format_as_decimal' },
+                        { kind: 'block', type: 'math_is_a_number' },
+                        { kind: 'block', type: 'math_convert_number' }
                     ]
                 },
                 {
@@ -420,7 +502,16 @@ export default function BlocksEditorComplete({ appState }) {
                         { kind: 'block', type: 'matrices_set_cell' },
                         { kind: 'block', type: 'matrices_get_row' },
                         { kind: 'block', type: 'matrices_get_column' },
-                        { kind: 'block', type: 'matrices_get_dimensions' }
+                        { kind: 'block', type: 'matrices_get_dimensions' },
+                        { kind: 'block', type: 'matrices_add' },
+                        { kind: 'block', type: 'matrices_subtract' },
+                        { kind: 'block', type: 'matrices_multiply' },
+                        { kind: 'block', type: 'matrices_power' },
+                        { kind: 'block', type: 'matrices_operation', fields: { OP: 'INVERSE' } },
+                        { kind: 'block', type: 'matrices_operation', fields: { OP: 'TRANSPOSE' } },
+                        { kind: 'block', type: 'matrices_operation', fields: { OP: 'ROTATE_LEFT' } },
+                        { kind: 'block', type: 'matrices_operation', fields: { OP: 'ROTATE_RIGHT' } },
+                        { kind: 'block', type: 'matrices_is_matrix' }
                     ]
                 },
                 {
@@ -435,8 +526,15 @@ export default function BlocksEditorComplete({ appState }) {
                         { kind: 'block', type: 'text_compare' },
                         { kind: 'block', type: 'text_trim' },
                         { kind: 'block', type: 'text_changeCase' },
+                        { kind: 'block', type: 'text_starts_at' },
                         { kind: 'block', type: 'text_contains' },
-                        { kind: 'block', type: 'text_split' }
+                        { kind: 'block', type: 'text_split' },
+                        { kind: 'block', type: 'text_segment' },
+                        { kind: 'block', type: 'text_replace_all' },
+                        { kind: 'block', type: 'text_obfuscated' },
+                        { kind: 'block', type: 'text_is_string' },
+                        { kind: 'block', type: 'text_reverse' },
+                        { kind: 'block', type: 'text_replace_all_mappings' }
                     ]
                 },
                 {
@@ -455,6 +553,7 @@ export default function BlocksEditorComplete({ appState }) {
                         { kind: 'block', type: 'lists_getIndex' },
                         { kind: 'block', type: 'lists_setIndex' },
                         { kind: 'block', type: 'lists_remove_item' },
+                        { kind: 'block', type: 'lists_insert_item' },
                         { kind: 'block', type: 'lists_append' },
                         { kind: 'block', type: 'lists_copy' },
                         { kind: 'block', type: 'lists_is_list' },
@@ -479,8 +578,16 @@ export default function BlocksEditorComplete({ appState }) {
                         { kind: 'block', type: 'dictionaries_set_pair' },
                         { kind: 'block', type: 'dictionaries_delete_pair' },
                         { kind: 'block', type: 'dictionaries_get_value' },
+                        { kind: 'block', type: 'dictionaries_is_key_in' },
+                        { kind: 'block', type: 'dictionaries_length' },
                         { kind: 'block', type: 'dictionaries_alist_to_dict' },
-                        { kind: 'block', type: 'dictionaries_dict_to_alist' }
+                        { kind: 'block', type: 'dictionaries_dict_to_alist' },
+                        { kind: 'block', type: 'dictionaries_get_keys' },
+                        { kind: 'block', type: 'dictionaries_get_values' },
+                        { kind: 'block', type: 'dictionaries_combine' },
+                        { kind: 'block', type: 'dictionaries_is_a_dictionary' },
+                        { kind: 'block', type: 'dictionaries_walk_tree' },
+                        { kind: 'block', type: 'dictionaries_walk_all' }
                     ]
                 },
                 {
@@ -530,8 +637,9 @@ export default function BlocksEditorComplete({ appState }) {
         };
     };
 
-    // Generate component categories - MIT App Inventor Style
+    // Generate component categories - leap app inventor style
     const generateComponentCategories = (components) => {
+        logSession('GENERATING_COMPONENT_CATEGORIES', { count: components.length });
         const categories = [];
 
         // Always add Screen category first
@@ -637,7 +745,7 @@ export default function BlocksEditorComplete({ appState }) {
                 });
             });
 
-            // 3. Add property setter blocks (Setters first in MIT)
+            // 3. Add property setter blocks (Setters first in Leap)
             metadata.properties.forEach(prop => {
                 category.contents.push({
                     kind: 'block',
@@ -678,7 +786,7 @@ export default function BlocksEditorComplete({ appState }) {
                 }
             });
 
-            // 5. Add component instance block at the end (mit app inventor style)
+            // 5. Add component instance block at the end (leap app inventor style)
             category.contents.push({
                 kind: 'block',
                 type: 'component_component_block',
@@ -699,10 +807,11 @@ export default function BlocksEditorComplete({ appState }) {
     // Generate Any Component categories
     const generateAnyComponentCategories = (components) => {
         const types = [...new Set(components.map(c => c.type))];
+        logSession('GENERATING_ANY_COMPONENT_CATEGORIES', { typesCount: types.length });
         const categories = [];
 
         types.forEach(type => {
-            const metadata = ANY_COMPONENT_METADATA[type];
+            const metadata = COMPONENT_METADATA[type];
             if (!metadata) return;
 
             const category = {
@@ -710,31 +819,31 @@ export default function BlocksEditorComplete({ appState }) {
                 name: `Any ${type}`,
                 colour: '#3366cc',
                 contents: [
-                    {
+                    ...(metadata.events || []).map(event => ({
                         kind: 'block',
                         type: 'any_component_event',
                         extraState: {
                             component_type: type,
                             is_generic: true,
-                            event_name: 'Click' // Default
+                            event_name: event.name
                         }
-                    },
-                    ...metadata.methods.map(method => ({
+                    })),
+                    ...(metadata.methods || []).map(method => ({
                         kind: 'block',
                         type: 'any_component_method',
                         extraState: {
                             component_type: type,
-                            method_name: method,
+                            method_name: method.name || method,
                             is_generic: true
                         }
                     })),
-                    ...metadata.properties.flatMap(prop => [
+                    ...(metadata.properties || []).flatMap(prop => [
                         {
                             kind: 'block',
                             type: 'any_component_set_property',
                             extraState: {
                                 component_type: type,
-                                property_name: prop,
+                                property_name: prop.name || prop,
                                 is_generic: true
                             }
                         },
@@ -743,7 +852,7 @@ export default function BlocksEditorComplete({ appState }) {
                             type: 'any_component_get_property',
                             extraState: {
                                 component_type: type,
-                                property_name: prop,
+                                property_name: prop.name || prop,
                                 is_generic: true
                             }
                         }
@@ -837,7 +946,7 @@ export default function BlocksEditorComplete({ appState }) {
     };
 
     return (
-        <div className="flex flex-col w-full h-full min-h-screen bg-[#edf1f6]">
+        <div className="flex flex-col w-full h-full bg-[#edf1f6] overflow-hidden">
             {/* Toolbar - Responsive */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 py-2 bg-[#dfe6ee] border-b border-[#c6cfda] gap-2 sm:gap-0">
                 <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -875,6 +984,22 @@ export default function BlocksEditorComplete({ appState }) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+                    {/* Error & Warning Counters */}
+                    {(errorCount > 0 || warningCount > 0) && (
+                        <div className="flex items-center gap-2 mr-2">
+                            {errorCount > 0 && (
+                                <div className="flex items-center text-red-600 bg-red-100 px-2 py-1 rounded text-xs font-semibold" title={`${errorCount} empty sockets or errors`}>
+                                    <XCircle className="w-3.5 h-3.5 mr-1" /> {errorCount}
+                                </div>
+                            )}
+                            {warningCount > 0 && (
+                                <div className="flex items-center text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-xs font-semibold" title={`${warningCount} orphan blocks`}>
+                                    <AlertTriangle className="w-3.5 h-3.5 mr-1" /> {warningCount}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Actions */}
                     <button
                         onClick={handleGenerateCode}
@@ -912,10 +1037,10 @@ export default function BlocksEditorComplete({ appState }) {
                 </div>
             </div>
 
-            {/* Blockly Workspace - MIT App Inventor Style (Fixed for Dragging) */}
+            {/* Blockly Workspace - leap app inventor style (Fixed for Dragging) */}
             <div
                 ref={blocklyDiv}
-                className="flex-1 w-full h-full min-h-[400px] sm:min-h-[500px] md:min-h-[600px] lg:min-h-[700px] blockly-injection-container"
+                className="flex-1 w-full h-full blockly-injection-container leap-blockly-workspace"
                 style={{
                     position: 'relative',
                     overflow: 'visible' // Ensure drag surface is not clipped
@@ -923,7 +1048,8 @@ export default function BlocksEditorComplete({ appState }) {
             />
 
             {/* CRITICAL CSS FIXES FOR BLOCKLY DRAG SURFACE */}
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .blockly-injection-container {
                     position: relative !important;
                 }
@@ -1004,3 +1130,4 @@ export default function BlocksEditorComplete({ appState }) {
         </div>
     );
 }
+

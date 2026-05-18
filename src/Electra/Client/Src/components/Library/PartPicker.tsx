@@ -111,11 +111,11 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
         background: 'var(--lp-dark-surface)'
       }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ 
-            color: 'var(--lp-accent-primary)', 
-            fontSize: '12px', 
-            fontWeight: 700, 
-            letterSpacing: '1px' 
+          <span style={{
+            color: 'var(--lp-accent-primary)',
+            fontSize: '12px',
+            fontWeight: 700,
+            letterSpacing: '1px'
           }}>LIBRARY.BROWSER</span>
           <span style={{ color: 'var(--lp-zinc-400)', fontSize: '9px' }}>v1.0.4-STABLE</span>
         </div>
@@ -251,9 +251,9 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                <span style={{ 
-                  color: 'var(--lp-zinc-400)', 
-                  fontSize: '10px', 
+                <span style={{
+                  color: 'var(--lp-zinc-400)',
+                  fontSize: '10px',
                   fontWeight: 700,
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -265,7 +265,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
           ))}
         </div>
       </div>
-      
+
       {/* Status Bar */}
       <div style={{
         padding: '6px 12px',

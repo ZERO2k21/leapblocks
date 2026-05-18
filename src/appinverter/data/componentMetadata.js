@@ -1,7 +1,9 @@
 /**
- * MIT App Inventor Component Metadata
+ * Leap App Inventor Component Metadata
  * Defines events, methods, and properties for all components
  */
+import { PALETTE_ENHANCED } from './paletteComponents_Enhanced.js';
+import { GENERATED_COMPONENT_METADATA } from './componentMetadata.generated.js';
 
 export const COMPONENT_METADATA = {
     'Screen': {
@@ -610,3 +612,268 @@ export const ANY_COMPONENT_METADATA = {
         properties: ['Url', 'Timeout']
     }
 };
+
+const DEFAULT_VISIBLE_PROPERTIES = [
+    { name: 'Width', type: 'Number' },
+    { name: 'Height', type: 'Number' },
+    { name: 'Visible', type: 'Boolean' }
+];
+
+const DEFAULT_NON_VISIBLE_PROPERTIES = [
+    { name: 'Enabled', type: 'Boolean' }
+];
+
+const DEFAULT_LAYOUT_PROPERTIES = [
+    { name: 'Width', type: 'Number' },
+    { name: 'Height', type: 'Number' },
+    { name: 'Visible', type: 'Boolean' },
+    { name: 'AlignHorizontal', type: 'Number', options: ['Left', 'Center', 'Right'] },
+    { name: 'AlignVertical', type: 'Number', options: ['Top', 'Center', 'Bottom'] }
+];
+
+// ============================================================================
+// MIT App Inventor Inheritance Map
+// Maps child component → parent class(es) in order of resolution priority.
+// The auto-generated metadata doesn't capture Java class hierarchy, so events/
+// methods/properties from parent classes are missing. This map fixes that.
+// ============================================================================
+const INHERITANCE_MAP = {
+    // UI Components
+    Button: ['ButtonBase'],
+    CheckBox: ['ToggleBase'],
+    Switch: ['ToggleBase'],
+    DatePicker: ['ButtonBase'],
+    TimePicker: ['ButtonBase'],
+    ListPicker: ['Picker', 'ButtonBase'],
+    ContactPicker: ['Picker', 'ButtonBase'],
+    EmailPicker: ['Picker', 'ButtonBase'],
+    PhoneNumberPicker: ['Picker', 'ButtonBase'],
+    ImagePicker: ['Picker', 'ButtonBase'],
+    FilePicker: ['Picker', 'ButtonBase'],
+    PasswordTextBox: ['TextBoxBase'],
+    TextBox: ['TextBoxBase'],
+    // Sprites
+    Ball: ['TouchComponent'],
+    ImageSprite: ['TouchComponent'],
+    // Sensors (single-value)
+    Barometer: ['SingleValueSensor'],
+    Hygrometer: ['SingleValueSensor'],
+    LightSensor: ['SingleValueSensor'],
+    ThermometerSensor: ['SingleValueSensor'],
+    Thermometer: ['SingleValueSensor'],
+    HygrometrySensor: ['SingleValueSensor'],
+    // Bluetooth
+    BluetoothClient: ['BluetoothConnectionBase'],
+    BluetoothServer: ['BluetoothConnectionBase'],
+    // EV3
+    Ev3Motors: ['LegoMindstormsEv3Base'],
+    Ev3ColorSensor: ['LegoMindstormsEv3Sensor', 'LegoMindstormsEv3Base'],
+    Ev3GyroSensor: ['LegoMindstormsEv3Sensor', 'LegoMindstormsEv3Base'],
+    Ev3TouchSensor: ['LegoMindstormsEv3Sensor', 'LegoMindstormsEv3Base'],
+    Ev3UltrasonicSensor: ['LegoMindstormsEv3Sensor', 'LegoMindstormsEv3Base'],
+    Ev3Sound: ['LegoMindstormsEv3Base'],
+    Ev3UI: ['LegoMindstormsEv3Base'],
+    Ev3Commands: ['LegoMindstormsEv3Base'],
+    // NXT
+    NxtDrive: ['LegoMindstormsNxtBase'],
+    NxtColorSensor: ['LegoMindstormsNxtSensor', 'LegoMindstormsNxtBase'],
+    NxtLightSensor: ['LegoMindstormsNxtSensor', 'LegoMindstormsNxtBase'],
+    NxtSoundSensor: ['LegoMindstormsNxtSensor', 'LegoMindstormsNxtBase'],
+    NxtTouchSensor: ['LegoMindstormsNxtSensor', 'LegoMindstormsNxtBase'],
+    NxtUltrasonicSensor: ['LegoMindstormsNxtSensor', 'LegoMindstormsNxtBase'],
+    NxtDirectCommands: ['LegoMindstormsNxtBase'],
+    // Layouts
+    HorizontalArrangement: ['HVArrangement'],
+    VerticalArrangement: ['HVArrangement'],
+    HorizontalScrollArrangement: ['HVArrangement'],
+    VerticalScrollArrangement: ['HVArrangement'],
+    // Charts
+    Chart: [],
+    ChartData2D: ['ChartDataBase'],
+    // Data science
+    Regression: [],
+    Trendline: [],
+    DataCollection: [],
+    AnomalyDetection: [],
+    // Storage
+    Spreadsheet: [],
+    // Progress
+    CircularProgress: [],
+    LinearProgress: [],
+};
+
+// ============================================================================
+// Type Coercion Map
+// The auto-generated metadata often has type: "Any". This map resolves common
+// property name patterns to their correct Blockly type.
+// ============================================================================
+const TYPE_COERCION_PATTERNS = [
+    // Boolean properties (exact matches)
+    { match: /^(Enabled|Visible|Available|IsConnected|HasAccuracy|HasAltitude|HasLongitudeLatitude|TimerAlwaysFires|TimerEnabled|FontBold|FontItalic|Checked|On|ShowFeedback|ScalePictureToFit|ReadOnly|MultiLine|NumbersOnly|Clickable|Rotates|IsLooping|PlayOnlyInForeground|AllowCookies|SaveResponse|ShowFilterBar|HTMLFormat|HasMargins|UseFront|HighByteFirst|Secure|LegacyMode|DisconnectOnError|NoLocationNeeded|OriginAtCenter|ThumbEnabled|ShowCompass|ShowUser|ShowZoom|EnableRotation|UseSSL|Scrollable|ShowStatusBar|ShowListsAsJson|PromptForPermission|KeepRunningWhenOnPause|ShowNavigation|FollowLinks|IgnoreSslErrors)$/i, type: 'Boolean' },
+    // Color properties
+    { match: /Color$/i, type: 'Color' },
+    { match: /^(PaintColor|BackgroundColor|TextColor|ThumbColorActive|ThumbColorInactive|TrackColorActive|TrackColorInactive|ColorLeft|ColorRight|FillColor|StrokeColor)$/i, type: 'Color' },
+    // Number properties
+    { match: /^(Width|Height|FontSize|FontTypeface|Shape|TextAlignment|Interval|Speed|Heading|X|Y|Z|Radius|LineWidth|MinValue|MaxValue|ThumbPosition|Latitude|Longitude|Altitude|Accuracy|ZoomLevel|DistanceInterval|TimeInterval|Columns|Rows|Volume|Pitch|SpeechRate|NotifierLength|RotationAngle|SelectionIndex|Timeout|PollingRate|Sensitivity|MinimumInterval|TimerInterval|StrokeWidth|Column|Row|Period|FillOpacity|StrokeOpacity|DistanceToPoint)$/i, type: 'Number' },
+    // String properties
+    { match: /^(Text|Hint|Title|Source|Picture|Url|Selection|Prompt|Country|Language|Action|ActivityClass|ActivityPackage|DataType|DataUri|ExtraKey|ExtraValue|AppName|AboutScreen|BackgroundImage|AlternateText|ResponseFileName|ProviderName|ServiceUrl|PhoneNumber|EmailAddress|Image|Namespace|CharacterEncoding|Result|ResultName|ResultType|ResultUri|CurrentAddress|CurrentPageTitle|HomeUrl|WebViewString|UserAgent|ApiKey|Token|ProjectID|FirebaseURL|DefaultURL|ServiceURL|RedisServer|RedisPort|ProjectBucket)$/i, type: 'String' },
+];
+
+const coerceType = (propName, currentType) => {
+    if (currentType && currentType !== 'Any') return currentType;
+    for (const pattern of TYPE_COERCION_PATTERNS) {
+        if (pattern.match.test(propName)) return pattern.type;
+    }
+    return currentType || 'Any';
+};
+
+// ============================================================================
+// Resolve inheritance for a single component from generated data
+// ============================================================================
+const resolveInheritedData = (componentType) => {
+    const gen = GENERATED_COMPONENT_METADATA;
+    const visited = new Set();
+    const allEvents = [];
+    const allMethods = [];
+    const allProperties = [];
+
+    const collect = (typeName) => {
+        if (!typeName || visited.has(typeName)) return;
+        visited.add(typeName);
+        const data = gen[typeName];
+        if (data) {
+            (data.events || []).forEach((e) => {
+                if (e?.name && !allEvents.some((x) => x.name === e.name)) allEvents.push(e);
+            });
+            (data.methods || []).forEach((m) => {
+                if (m?.name && !allMethods.some((x) => x.name === m.name)) allMethods.push(m);
+            });
+            (data.properties || []).forEach((p) => {
+                if (p?.name && !allProperties.some((x) => x.name === p.name)) {
+                    allProperties.push({ ...p, type: coerceType(p.name, p.type) });
+                }
+            });
+        }
+        // Walk up inheritance chain
+        const parents = INHERITANCE_MAP[typeName];
+        if (parents) {
+            parents.forEach(collect);
+        }
+    };
+
+    collect(componentType);
+    return { events: allEvents, methods: allMethods, properties: allProperties };
+};
+
+const mergeNamedItems = (current = [], generated = []) => {
+    const map = new Map();
+    current.forEach((item) => map.set(item.name, item));
+    generated.forEach((item) => {
+        if (!item?.name) return;
+        if (!map.has(item.name)) {
+            map.set(item.name, item);
+            return;
+        }
+        const existing = map.get(item.name);
+        // Prefer richer item definition (e.g., options/type/parameters)
+        if ((item.options?.length || 0) > (existing.options?.length || 0)) {
+            map.set(item.name, { ...existing, ...item });
+        } else if ((!existing.type || existing.type === 'Any') && item.type && item.type !== 'Any') {
+            map.set(item.name, { ...existing, type: item.type });
+        } else if ((item.parameters?.length || 0) > (existing.parameters?.length || 0)) {
+            map.set(item.name, { ...existing, parameters: item.parameters });
+        }
+    });
+    return Array.from(map.values());
+};
+
+const ensureBaseProperties = (properties, isVisible) => {
+    const required = isVisible
+        ? [
+            { name: 'Width', type: 'Number' },
+            { name: 'Height', type: 'Number' },
+            { name: 'Visible', type: 'Boolean' }
+        ]
+        : [{ name: 'Enabled', type: 'Boolean' }];
+
+    const map = new Map(properties.map((p) => [p.name, p]));
+    required.forEach((p) => {
+        if (!map.has(p.name)) map.set(p.name, p);
+    });
+    return Array.from(map.values());
+};
+
+const inferFallbackProperties = (componentType, isVisible) => {
+    if (componentType.includes('Arrangement')) return DEFAULT_LAYOUT_PROPERTIES;
+    if (componentType === 'Map') {
+        return [
+            { name: 'Latitude', type: 'Number' },
+            { name: 'Longitude', type: 'Number' },
+            { name: 'ZoomLevel', type: 'Number' },
+            { name: 'Visible', type: 'Boolean' }
+        ];
+    }
+    if (['Marker', 'Circle', 'Rectangle', 'Polygon', 'LineString', 'FeatureCollection'].includes(componentType)) {
+        return [
+            { name: 'Visible', type: 'Boolean' },
+            { name: 'StrokeColor', type: 'Color' },
+            { name: 'StrokeWidth', type: 'Number' }
+        ];
+    }
+    return isVisible ? DEFAULT_VISIBLE_PROPERTIES : DEFAULT_NON_VISIBLE_PROPERTIES;
+};
+
+const ensurePaletteCoverage = () => {
+    // First, resolve inheritance for Screen
+    if (GENERATED_COMPONENT_METADATA.Screen) {
+        const resolved = resolveInheritedData('Screen');
+        const current = COMPONENT_METADATA.Screen || { events: [], methods: [], properties: [] };
+        COMPONENT_METADATA.Screen = {
+            events: mergeNamedItems(current.events || [], resolved.events),
+            methods: mergeNamedItems(current.methods || [], resolved.methods),
+            properties: mergeNamedItems(current.properties || [], resolved.properties)
+        };
+    }
+
+    PALETTE_ENHANCED.forEach((component) => {
+        // Resolve inheritance-aware generated data
+        const resolved = resolveInheritedData(component.type);
+        const hasResolved = resolved.events.length > 0 || resolved.methods.length > 0 || resolved.properties.length > 0;
+
+        if (hasResolved) {
+            const current = COMPONENT_METADATA[component.type] || { events: [], methods: [], properties: [] };
+
+            const mergedEvents = mergeNamedItems(current.events || [], resolved.events);
+            const mergedMethods = mergeNamedItems(current.methods || [], resolved.methods);
+            const mergedProperties = ensureBaseProperties(
+                mergeNamedItems(current.properties || [], resolved.properties),
+                component.visible
+            );
+
+            const currentScore = (current.events?.length || 0) + (current.methods?.length || 0) + (current.properties?.length || 0);
+            const mergedScore = mergedEvents.length + mergedMethods.length + mergedProperties.length;
+
+            COMPONENT_METADATA[component.type] = mergedScore >= currentScore
+                ? { events: mergedEvents, methods: mergedMethods, properties: mergedProperties }
+                : current;
+        }
+
+        if (!COMPONENT_METADATA[component.type]) {
+            COMPONENT_METADATA[component.type] = {
+                events: [],
+                methods: [],
+                properties: inferFallbackProperties(component.type, component.visible)
+            };
+        }
+
+        if (!ANY_COMPONENT_METADATA[component.type]) {
+            ANY_COMPONENT_METADATA[component.type] = {
+                methods: COMPONENT_METADATA[component.type].methods.map((m) => m.name),
+                properties: COMPONENT_METADATA[component.type].properties.map((p) => p.name)
+            };
+        }
+    });
+};
+
+ensurePaletteCoverage();
+

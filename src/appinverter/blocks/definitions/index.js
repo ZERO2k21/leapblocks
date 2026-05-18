@@ -1,5 +1,5 @@
 /**
- * MIT App Inventor Blocks - Main Entry Point
+ * Leap App Inventor Blocks - Main Entry Point
  * Imports all block definitions
  */
 
@@ -22,5 +22,6 @@ export { createComponentBlocks } from './color_component_blocks';
  * This function should be called before creating the Blockly workspace
  */
 export function initializeAllBlocks() {
-    console.log('✅ MIT App Inventor blocks initialized');
+    console.log('✅ Leap App Inventor blocks initialized');
 }
+

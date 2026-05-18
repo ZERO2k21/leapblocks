@@ -1,5 +1,5 @@
 /**
- * MIT App Inventor Matrices Blocks
+ * Leap App Inventor Matrices Blocks
  */
 import * as Blockly from 'blockly';
 import { BLOCK_COLORS } from '../utils/blockColors';
@@ -124,6 +124,163 @@ Blockly.Blocks['matrices_get_dimensions'] = {
     }
 };
 
+Blockly.Blocks['matrices_add'] = {
+    init: function () {
+        this.setColour(BLOCK_COLORS.matrices);
+        this.appendValueInput('NUM0').setCheck(['Matrix', 'Number']);
+        this.appendValueInput('NUM1')
+            .setCheck(['Matrix', 'Number'])
+            .appendField('+');
+        this.setInputsInline(true);
+        this.setOutput(true, 'Matrix');
+        this.setTooltip('Return the sum of two or more matrices.');
+        this.setMutator(new Blockly.icons.MutatorIcon(['math_mutator_item'], this));
+        this.itemCount_ = 2;
+    },
+    mutationToDom: function () {
+        const container = Blockly.utils.xml.createElement('mutation');
+        container.setAttribute('items', this.itemCount_);
+        return container;
+    },
+    domToMutation: function (xmlElement) {
+        this.itemCount_ = parseInt(xmlElement.getAttribute('items'), 10) || 2;
+        this.updateShape_();
+    },
+    decompose: function (workspace) {
+        const containerBlock = workspace.newBlock('math_mutator_container');
+        containerBlock.initSvg();
+        let connection = containerBlock.nextConnection;
+        for (let i = 0; i < this.itemCount_; i++) {
+            const itemBlock = workspace.newBlock('math_mutator_item');
+            itemBlock.initSvg();
+            connection.connect(itemBlock.previousConnection);
+            connection = itemBlock.nextConnection;
+        }
+        return containerBlock;
+    },
+    compose: function (containerBlock) {
+        let itemBlock = containerBlock.nextConnection.targetBlock();
+        const connections = [];
+        while (itemBlock && !itemBlock.isInsertionMarker()) {
+            connections.push(itemBlock.valueConnection_);
+            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
+        }
+        this.itemCount_ = connections.length;
+        this.updateShape_();
+        for (let i = 0; i < this.itemCount_; i++) {
+            Blockly.Mutator.reconnect(connections[i], this, 'NUM' + i);
+        }
+    },
+    saveConnections: function (containerBlock) {
+        let itemBlock = containerBlock.nextConnection.targetBlock();
+        let i = 0;
+        while (itemBlock) {
+            const input = this.getInput('NUM' + i);
+            itemBlock.valueConnection_ = input && input.connection.targetConnection;
+            i++;
+            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
+        }
+    },
+    updateShape_: function () {
+        if (this.itemCount_ < 2) this.itemCount_ = 2;
+        let i = 0;
+        while (this.getInput('NUM' + i)) {
+            this.removeInput('NUM' + i);
+            i++;
+        }
+        for (let i = 0; i < this.itemCount_; i++) {
+            const input = this.appendValueInput('NUM' + i).setCheck(['Matrix', 'Number']);
+            if (i > 0) {
+                input.appendField('+');
+            }
+        }
+    }
+};
+
+Blockly.Blocks['matrices_subtract'] = {
+    init: function () {
+        this.setColour(BLOCK_COLORS.matrices);
+        this.appendValueInput('A').setCheck(['Matrix', 'Number']);
+        this.appendValueInput('B').setCheck(['Matrix', 'Number']).appendField('-');
+        this.setInputsInline(true);
+        this.setOutput(true, 'Matrix');
+        this.setTooltip('Return the difference of two matrices.');
+    }
+};
+
+Blockly.Blocks['matrices_multiply'] = {
+    init: function () {
+        this.setColour(BLOCK_COLORS.matrices);
+        this.appendValueInput('NUM0').setCheck(['Matrix', 'Number']);
+        this.appendValueInput('NUM1')
+            .setCheck(['Matrix', 'Number'])
+            .appendField('×');
+        this.setInputsInline(true);
+        this.setOutput(true, 'Matrix');
+        this.setTooltip('Return the product of two or more matrices.');
+        this.setMutator(new Blockly.icons.MutatorIcon(['math_mutator_item'], this));
+        this.itemCount_ = 2;
+    },
+    mutationToDom: Blockly.Blocks['matrices_add'].mutationToDom,
+    domToMutation: Blockly.Blocks['matrices_add'].domToMutation,
+    decompose: Blockly.Blocks['matrices_add'].decompose,
+    compose: Blockly.Blocks['matrices_add'].compose,
+    saveConnections: Blockly.Blocks['matrices_add'].saveConnections,
+    updateShape_: function () {
+        if (this.itemCount_ < 2) this.itemCount_ = 2;
+        let i = 0;
+        while (this.getInput('NUM' + i)) {
+            this.removeInput('NUM' + i);
+            i++;
+        }
+        for (let i = 0; i < this.itemCount_; i++) {
+            const input = this.appendValueInput('NUM' + i).setCheck(['Matrix', 'Number']);
+            if (i > 0) {
+                input.appendField('×');
+            }
+        }
+    }
+};
+
+Blockly.Blocks['matrices_power'] = {
+    init: function () {
+        this.setColour(BLOCK_COLORS.matrices);
+        this.appendValueInput('A').setCheck(['Matrix', 'Number']);
+        this.appendValueInput('B').setCheck(['Matrix', 'Number']).appendField('^');
+        this.setInputsInline(true);
+        this.setOutput(true, 'Matrix');
+        this.setTooltip('Return the first matrix raised to the power of the second.');
+    }
+};
+
+Blockly.Blocks['matrices_operation'] = {
+    init: function () {
+        this.setColour(BLOCK_COLORS.matrices);
+        this.appendDummyInput()
+            .appendField(new Blockly.FieldDropdown([
+                ['inverse', 'INVERSE'],
+                ['transpose', 'TRANSPOSE'],
+                ['rotate left', 'ROTATE_LEFT'],
+                ['rotate right', 'ROTATE_RIGHT']
+            ]), 'OP');
+        this.appendValueInput('MATRIX').setCheck('Matrix');
+        this.setInputsInline(true);
+        this.setOutput(true, 'Matrix');
+        this.setTooltip('Perform operation on a matrix.');
+    }
+};
+
+Blockly.Blocks['matrices_is_matrix'] = {
+    init: function () {
+        this.setColour(BLOCK_COLORS.matrices);
+        this.appendDummyInput().appendField('is a matrix?');
+        this.appendValueInput('MATRIX');
+        this.setInputsInline(true);
+        this.setOutput(true, 'Boolean');
+        this.setTooltip('Check if the input is a matrix.');
+    }
+};
+
 export default {
     'matrices_create_2d': Blockly.Blocks['matrices_create_2d'],
     'matrices_create_with_dimensions': Blockly.Blocks['matrices_create_with_dimensions'],
@@ -131,5 +288,11 @@ export default {
     'matrices_set_cell': Blockly.Blocks['matrices_set_cell'],
     'matrices_get_row': Blockly.Blocks['matrices_get_row'],
     'matrices_get_column': Blockly.Blocks['matrices_get_column'],
-    'matrices_get_dimensions': Blockly.Blocks['matrices_get_dimensions']
+    'matrices_get_dimensions': Blockly.Blocks['matrices_get_dimensions'],
+    'matrices_add': Blockly.Blocks['matrices_add'],
+    'matrices_subtract': Blockly.Blocks['matrices_subtract'],
+    'matrices_multiply': Blockly.Blocks['matrices_multiply'],
+    'matrices_power': Blockly.Blocks['matrices_power'],
+    'matrices_operation': Blockly.Blocks['matrices_operation'],
+    'matrices_is_matrix': Blockly.Blocks['matrices_is_matrix']
 };

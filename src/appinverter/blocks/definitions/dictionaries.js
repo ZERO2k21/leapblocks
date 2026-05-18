@@ -1,6 +1,6 @@
 /**
  * Dictionary Blocks for App Inventor
- * MIT App Inventor compatible dictionary operations
+ * Leap App Inventor compatible dictionary operations
  */
 import * as Blockly from 'blockly';
 
@@ -307,3 +307,4 @@ export default {
     'dictionaries_walk_key_path': Blockly.Blocks['dictionaries_walk_key_path'],
     'dictionaries_set_key_path': Blockly.Blocks['dictionaries_set_key_path']
 };
+

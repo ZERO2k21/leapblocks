@@ -444,7 +444,7 @@ void loop() {
           activeElement?.closest('.monaco-editor') ||
           activeElement?.tagName === 'INPUT' ||
           activeElement?.tagName === 'TEXTAREA';
-        
+
         if (!isInEditor) {
           const state = useForgeStore.getState();
           if (state.selectedNodeId) {
@@ -475,21 +475,64 @@ void loop() {
 
     try {
       if (board === 'esp32-c3') {
-        const { transpileCode } = await import('./services/CompilerService');
-        const result = await transpileCode(code, 'esp32:esp32:esp32c3');
-        if (result.success && result.jsCode) {
-          const runner = await getSimulationRunner();
-          runner.setBoard(board);
-          runner.setTranspiledJS(result.jsCode);
-          startSimulation('__esp32_c3_transpiled__');
-        } else if (result.error) {
-          // Display transpilation errors in Serial Monitor
+        // ── ESP32-C3 Compilation Strategy ──────────────────────────────────────
+        // Option 1: Full RISC-V emulation (slower, but accurate hardware simulation)
+        // Option 2: Transpilation (fast, but limited component support)
+        //
+        // Use full emulation for better component compatibility
+        const USE_FULL_EMULATION = true; // Set to true for full-accuracy simulation
+
+        if (USE_FULL_EMULATION) {
+          // Full RISC-V emulation path — compile to .bin and run on RISC-V core
           const { appendSerial } = useForgeStore.getState();
-          appendSerial('❌ TRANSPILATION ERROR:\n');
-          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-          appendSerial(result.error + '\n');
-          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-          appendSerial('\nPlease fix the errors and try again.\n');
+          appendSerial('[ESP32-C3] Compiling firmware for RISC-V emulation...\n');
+          appendSerial('[ESP32-C3] This may take 1-2 minutes on first compile.\n\n');
+
+          const result = await compileCode({
+            code,
+            board: FQBN[board],
+            libraries: useForgeStore.getState().importedLibraries
+          });
+
+          if (result.success && (result.binPath || result.binBase64)) {
+            appendSerial('[ESP32-C3] ✓ Compilation successful!\n');
+            if (result.binPath) appendSerial(`[ESP32-C3] Firmware: ${result.binPath}\n\n`);
+
+            const runner = await getSimulationRunner();
+            runner.setBoard(board, result.binPath);
+            if (result.binBase64) {
+              runner.setFirmwareBase64(result.binBase64);
+            }
+            startSimulation('__esp32_c3_riscv__');
+          } else if (result.error) {
+            appendSerial('❌ ESP32-C3 COMPILATION ERROR:\n');
+            appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            appendSerial(result.error + '\n');
+            appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            appendSerial('\nPlease fix the errors and try again.\n');
+          } else {
+            appendSerial('❌ ESP32-C3 COMPILATION ERROR:\n');
+            appendSerial('Server returned success but no binary was provided.\n');
+            console.error('[ForgeStudio] Compilation succeeded but no binPath or binBase64 was returned.', result);
+          }
+        } else {
+          // Fast transpilation path (fallback for web or when USE_FULL_EMULATION = false)
+          const { transpileCode } = await import('./services/CompilerService');
+          const transpileResult = await transpileCode(code, 'esp32:esp32:esp32c3');
+
+          if (transpileResult.success && transpileResult.jsCode) {
+            const runner = await getSimulationRunner();
+            runner.setBoard(board);
+            runner.setTranspiledJS(transpileResult.jsCode);
+            startSimulation('__esp32_c3_transpiled__');
+          } else if (transpileResult.error) {
+            const { appendSerial } = useForgeStore.getState();
+            appendSerial('❌ TRANSPILATION ERROR:\n');
+            appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            appendSerial(transpileResult.error + '\n');
+            appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            appendSerial('\nPlease fix the errors and try again.\n');
+          }
         }
       } else {
         const result = await compileCode({

@@ -1,5 +1,5 @@
 /**
- * MIT App Inventor Style Block Colors
+ * Leap App Inventor Style Block Colors
  */
 export const BLOCK_COLORS = {
     control: '#D0B13D',     // Gold/Yellowish
@@ -12,8 +12,9 @@ export const BLOCK_COLORS = {
     colors: '#A55BA5',      // Purple-ish
     variables: '#D47B42',    // Orange
     procedures: '#7B42D4',   // Violet
-    events: '#FACC15',       // Bright Yellow
-    methods: '#894FC4',      // Purple
-    getters: '#439970',      // Greenish
-    setters: '#266643'       // Dark Green
+    events: '#D0A825',       // Goldenrod
+    methods: '#812CE5',      // Purple
+    getters: '#61B265',      // Light Green
+    setters: '#2E7D32'       // Dark Green
 };
+

@@ -1,11 +1,11 @@
-# MIT App Inventor Designer + Blocks Parity Checklist
+# Leap App Inventor Designer + Blocks Parity Checklist
 
-Reference baseline: `appinventor-sources-ref` (cloned from `mit-cml/appinventor-sources`)
+Reference baseline: `appinventor-sources-ref` (cloned from `Leap-cml/appinventor-sources`)
 Scope: Studio session `src/appinverter` Designer + Blocks tabs
 
 ## Designer
 
-- [x] Palette uses enhanced MIT-style category library (`Palette_Enhanced`) with descriptions/search.
+- [x] Palette uses enhanced Leap-style category library (`Palette_Enhanced`) with descriptions/search.
 - [x] Drag payload carries component metadata and `visible` classification.
 - [x] Canvas uses enhanced viewer (`PhoneCanvas_Enhanced`) with device size and orientation.
 - [x] Non-visible components are inserted into and rendered in dedicated tray.
@@ -19,7 +19,7 @@ Scope: Studio session `src/appinverter` Designer + Blocks tabs
 ## Properties
 
 - [x] Property editor supports boolean/color/number/text types.
-- [x] Enum/select support added for common MIT-style fields (`Width`, `Height`, `Shape`, `TextAlignment`).
+- [x] Enum/select support added for common Leap-style fields (`Width`, `Height`, `Shape`, `TextAlignment`).
 - [x] Non-visible components are editable from the properties side panel list.
 
 ## Blocks
@@ -40,3 +40,4 @@ Scope: Studio session `src/appinverter` Designer + Blocks tabs
 
 - [x] `npm run build` succeeds after changes.
 - [ ] Manual UX parity sweep against selected upstream screens/flows (pending interactive verification).
+

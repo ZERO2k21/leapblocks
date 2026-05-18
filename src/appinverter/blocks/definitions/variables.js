@@ -1,6 +1,6 @@
 /**
  * Variable Blocks for App Inventor
- * MIT App Inventor compatible variable operations
+ * Leap App Inventor compatible variable operations
  */
 import * as Blockly from 'blockly';
 
@@ -69,8 +69,43 @@ Blockly.Blocks['local_declaration_statement'] = {
         return container;
     },
     domToMutation: function (xmlElement) {
-        this.localCount_ = parseInt(xmlElement.getAttribute('locals'), 10);
+        this.localCount_ = parseInt(xmlElement.getAttribute('locals'), 10) || 1;
         this.updateShape_();
+    },
+    decompose: function (workspace) {
+        const containerBlock = workspace.newBlock('local_declaration_container');
+        containerBlock.initSvg();
+        let connection = containerBlock.nextConnection;
+        for (let i = 0; i < this.localCount_; i++) {
+            const itemBlock = workspace.newBlock('local_declaration_item');
+            itemBlock.initSvg();
+            connection.connect(itemBlock.previousConnection);
+            connection = itemBlock.nextConnection;
+        }
+        return containerBlock;
+    },
+    compose: function (containerBlock) {
+        let itemBlock = containerBlock.nextConnection.targetBlock();
+        const connections = [];
+        while (itemBlock && !itemBlock.isInsertionMarker()) {
+            connections.push(itemBlock.valueConnection_);
+            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
+        }
+        this.localCount_ = connections.length;
+        this.updateShape_();
+        for (let i = 0; i < this.localCount_; i++) {
+            if (connections[i]) connections[i].reconnect(this, 'DECL' + i);
+        }
+    },
+    saveConnections: function (containerBlock) {
+        let itemBlock = containerBlock.nextConnection.targetBlock();
+        let i = 0;
+        while (itemBlock) {
+            const input = this.getInput('DECL' + i);
+            itemBlock.valueConnection_ = input && input.connection.targetConnection;
+            i++;
+            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
+        }
     },
     updateShape_: function () {
         // Remove all declaration inputs
@@ -97,6 +132,16 @@ Blockly.Blocks['local_declaration_statement'] = {
     }
 };
 
+// Container block for local declaration mutator
+Blockly.Blocks['local_declaration_container'] = {
+    init: function () {
+        this.setColour(100);
+        this.appendDummyInput().appendField("local declarations");
+        this.setNextStatement(true);
+        this.contextMenu = false;
+    }
+};
+
 // Initialize Local Variable (in return)
 Blockly.Blocks['local_declaration_expression'] = {
     init: function () {
@@ -120,8 +165,43 @@ Blockly.Blocks['local_declaration_expression'] = {
         return container;
     },
     domToMutation: function (xmlElement) {
-        this.localCount_ = parseInt(xmlElement.getAttribute('locals'), 10);
+        this.localCount_ = parseInt(xmlElement.getAttribute('locals'), 10) || 1;
         this.updateShape_();
+    },
+    decompose: function (workspace) {
+        const containerBlock = workspace.newBlock('local_declaration_container');
+        containerBlock.initSvg();
+        let connection = containerBlock.nextConnection;
+        for (let i = 0; i < this.localCount_; i++) {
+            const itemBlock = workspace.newBlock('local_declaration_item');
+            itemBlock.initSvg();
+            connection.connect(itemBlock.previousConnection);
+            connection = itemBlock.nextConnection;
+        }
+        return containerBlock;
+    },
+    compose: function (containerBlock) {
+        let itemBlock = containerBlock.nextConnection.targetBlock();
+        const connections = [];
+        while (itemBlock && !itemBlock.isInsertionMarker()) {
+            connections.push(itemBlock.valueConnection_);
+            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
+        }
+        this.localCount_ = connections.length;
+        this.updateShape_();
+        for (let i = 0; i < this.localCount_; i++) {
+            if (connections[i]) connections[i].reconnect(this, 'DECL' + i);
+        }
+    },
+    saveConnections: function (containerBlock) {
+        let itemBlock = containerBlock.nextConnection.targetBlock();
+        let i = 0;
+        while (itemBlock) {
+            const input = this.getInput('DECL' + i);
+            itemBlock.valueConnection_ = input && input.connection.targetConnection;
+            i++;
+            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
+        }
     },
     updateShape_: function () {
         // Remove all declaration inputs
@@ -169,3 +249,4 @@ export default {
     'local_declaration_expression': Blockly.Blocks['local_declaration_expression'],
     'local_declaration_item': Blockly.Blocks['local_declaration_item']
 };
+

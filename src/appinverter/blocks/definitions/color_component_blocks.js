@@ -1,5 +1,5 @@
 /**
- * MIT App Inventor Color and Component Blocks
+ * Leap App Inventor Color and Component Blocks
  */
 import * as Blockly from 'blockly';
 import { FieldColour } from '@blockly/field-colour';
@@ -12,15 +12,19 @@ import { COMPONENT_METADATA as COMPONENT_DATABASE } from '../../data/componentMe
 
 const getComponentInstances = (typeName, currentValue, block) => {
     // If we have a block, use its internal state if currentValue is not provided
-    const val = currentValue || block?.instanceName;
+    const val = currentValue || block?.instanceName || '';
     const components = window.LeapLab_Components || [];
     const instances = components
         .filter(c => c.type === typeName)
-        .map(c => [c.id, c.id]);
-    
+        .map(c => [c.name || c.id, c.id || c.name]);
+
+    // Log for debugging if needed (uncomment for verbose logging)
+    // console.log(`[BLOCKS SYNC] Fetching instances for ${typeName}. Found: ${instances.length}. Current: ${val}`);
+
     if (typeName === 'Screen' && window.LeapLab_ActiveScreen) {
-        if (!instances.some(i => i[1] === window.LeapLab_ActiveScreen.id)) {
-            instances.unshift([window.LeapLab_ActiveScreen.id, window.LeapLab_ActiveScreen.id]);
+        const screenId = window.LeapLab_ActiveScreen.id || window.LeapLab_ActiveScreen.name;
+        if (!instances.some(i => i[1] === screenId)) {
+            instances.unshift([screenId, screenId]);
         }
     }
 
@@ -28,8 +32,12 @@ const getComponentInstances = (typeName, currentValue, block) => {
     if (val && !instances.some(i => i[1] === val)) {
         instances.push([val, val]);
     }
-    
-    return instances.length > 0 ? instances : [['(none)', '']];
+
+    if (instances.length === 0) {
+        instances.push(['(none)', '']);
+    }
+
+    return instances;
 };
 
 const getComponentEvents = (typeName) => {
@@ -47,14 +55,19 @@ const getComponentMethods = (typeName) => {
 const getComponentProperties = (typeName, currentValue, block) => {
     const val = currentValue || block?.propertyName;
     const metadata = COMPONENT_DATABASE[typeName];
-    if (!metadata || !metadata.properties) return [[val || 'Property', val || 'Property']];
+    if (!metadata || !metadata.properties) return [[val || '(none)', val || '']];
     const options = metadata.properties.map(p => [p.name, p.name]);
-    
+
     if (val && !options.some(i => i[1] === val)) {
         options.push([val, val]);
     }
+    if (options.length === 0) {
+        options.push(['(none)', '']);
+    }
     return options;
 };
+
+const hasOption = (options, value) => options.some((opt) => opt[1] === value);
 
 // ============================================================================
 // COLOR BLOCKS
@@ -189,19 +202,24 @@ Blockly.Blocks['component_event'] = {
             if (this.isGeneric) {
                 header.appendField('any ' + this.typeName);
             } else {
-                const instanceDropdown = new Blockly.FieldDropdown(function() {
-                    return getComponentInstances(this.getSourceBlock()?.typeName || 'Button', this.getValue(), this.getSourceBlock());
-                }, (newValue) => {
+                // Pre-populate with valid options to avoid "unavailable option" error
+                const initialOptions = getComponentInstances(this.typeName, this.instanceName, this);
+                const instanceDropdown = new Blockly.FieldDropdown(initialOptions, (newValue) => {
                     this.instanceName = newValue;
                 });
+                // Make it dynamic for future clicks
+                instanceDropdown.menuGenerator_ = function () {
+                    const block = this.getSourceBlock();
+                    return getComponentInstances(block?.typeName || 'Button', block?.instanceName, block);
+                };
                 header.appendField(instanceDropdown, 'INSTANCE');
-                if (this.instanceName) {
+                if (this.instanceName && hasOption(initialOptions, this.instanceName)) {
                     instanceDropdown.setValue(this.instanceName);
                 }
             }
             header.appendField('.' + this.eventName);
 
-            // Add parameters (as flydown fields or labels)
+            // Add parameters
             const componentDef = COMPONENT_DATABASE[this.typeName];
             const eventDef = componentDef?.events.find(e => e.name === this.eventName);
 
@@ -274,13 +292,18 @@ Blockly.Blocks['component_method'] = {
                 header.appendField('any ' + this.typeName);
             } else {
                 header.appendField(' ');
-                const instanceDropdown = new Blockly.FieldDropdown(function() {
-                    return getComponentInstances(this.getSourceBlock()?.typeName || 'Button', this.getValue(), this.getSourceBlock());
-                }, (newValue) => {
+                // Pre-populate with valid options to avoid "unavailable option" error
+                const initialOptions = getComponentInstances(this.typeName, this.instanceName, this);
+                const instanceDropdown = new Blockly.FieldDropdown(initialOptions, (newValue) => {
                     this.instanceName = newValue;
                 });
+                // Make it dynamic for future clicks
+                instanceDropdown.menuGenerator_ = function () {
+                    const block = this.getSourceBlock();
+                    return getComponentInstances(block?.typeName || 'Notifier', block?.instanceName, block);
+                };
                 header.appendField(instanceDropdown, 'INSTANCE');
-                if (this.instanceName) {
+                if (this.instanceName && hasOption(initialOptions, this.instanceName)) {
                     instanceDropdown.setValue(this.instanceName);
                 }
             }
@@ -298,6 +321,36 @@ Blockly.Blocks['component_method'] = {
                         .appendField(param.name);
                 });
             }
+
+            // Determine if the method returns a value
+            let hasReturn = false;
+            let returnType = null;
+
+            // Hardcoded heuristics based on MIT App Inventor method behaviors
+            const methodName = this.methodName;
+            if (methodName.match(/^(Get|Is|Has|Receive|Read|Calculate|Check|Connect|Accept|BytesAvailable|Format|Split|Replace)/i)) {
+                hasReturn = true;
+                if (methodName.match(/^(Is|Has|Check|Connect|Accept)/i)) returnType = 'Boolean';
+                else if (methodName.match(/^(ReceiveSigned|ReceiveUnsigned|BytesAvailable|Get.*Count|Length)/i)) returnType = 'Number';
+                else if (methodName.match(/^(ReceiveText|Format|Replace|Trim)/i)) returnType = 'String';
+                else if (methodName.match(/^(Receive.*Bytes|Split)/i)) returnType = 'List';
+            }
+
+            // Explicitly void methods (even if they match above, these override)
+            if (methodName.match(/^(Send|Disconnect|Show|Hide|Clear|Add|Remove|Delete|Set|Play|Stop|Pause|Vibrate|Save|Write|Move|ConnectWithUUID)/i)) {
+                hasReturn = false;
+            }
+
+            if (hasReturn) {
+                this.setPreviousStatement(false);
+                this.setNextStatement(false);
+                this.setOutput(true, returnType);
+            } else {
+                this.setOutput(false);
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+            }
+
         } finally {
             this.isUpdating = false;
         }
@@ -346,28 +399,34 @@ Blockly.Blocks['component_get_property'] = {
             if (this.isGeneric) {
                 input.appendField('any ' + this.typeName);
             } else {
-                const instanceDropdown = new Blockly.FieldDropdown(function() {
-                    return getComponentInstances(this.getSourceBlock()?.typeName || 'Button', this.getValue(), this.getSourceBlock());
-                }, (newValue) => {
+                const initialOptions = getComponentInstances(this.typeName, this.instanceName, this);
+                const instanceDropdown = new Blockly.FieldDropdown(initialOptions, (newValue) => {
                     this.instanceName = newValue;
                 });
+                instanceDropdown.menuGenerator_ = function () {
+                    const block = this.getSourceBlock();
+                    return getComponentInstances(block?.typeName || 'Button', block?.instanceName, block);
+                };
                 input.appendField(instanceDropdown, 'INSTANCE');
-                if (this.instanceName) {
+                if (this.instanceName && hasOption(initialOptions, this.instanceName)) {
                     instanceDropdown.setValue(this.instanceName);
                 }
             }
 
-            const propertyDropdown = new Blockly.FieldDropdown(function() {
-                return getComponentProperties(this.getSourceBlock()?.typeName || 'Button', this.getValue(), this.getSourceBlock());
-            }, (newValue) => {
+            const initialPropertyOptions = getComponentProperties(this.typeName, this.propertyName, this);
+            const propertyDropdown = new Blockly.FieldDropdown(initialPropertyOptions, (newValue) => {
                 if (this.propertyName !== newValue) {
                     this.propertyName = newValue;
                     this.updateShape_();
                 }
             });
+            propertyDropdown.menuGenerator_ = function () {
+                const block = this.getSourceBlock();
+                return getComponentProperties(block?.typeName || 'Button', block?.propertyName, block);
+            };
             input.appendField('.');
             input.appendField(propertyDropdown, 'PROPERTY');
-            if (this.propertyName) {
+            if (this.propertyName && hasOption(initialPropertyOptions, this.propertyName)) {
                 propertyDropdown.setValue(this.propertyName);
             }
 
@@ -426,28 +485,38 @@ Blockly.Blocks['component_set_property'] = {
             if (this.isGeneric) {
                 input.appendField('any ' + this.typeName);
             } else {
-                const instanceDropdown = new Blockly.FieldDropdown(function() {
-                    return getComponentInstances(this.getSourceBlock()?.typeName || 'Button', this.getValue(), this.getSourceBlock());
-                }, (newValue) => {
+                // Pre-populate with valid options to avoid "unavailable option" error
+                const initialOptions = getComponentInstances(this.typeName, this.instanceName, this);
+                const instanceDropdown = new Blockly.FieldDropdown(initialOptions, (newValue) => {
                     this.instanceName = newValue;
                 });
+                // Make it dynamic for future clicks
+                instanceDropdown.menuGenerator_ = function () {
+                    const block = this.getSourceBlock();
+                    return getComponentInstances(block?.typeName || 'Button', block?.instanceName, block);
+                };
                 input.appendField(instanceDropdown, 'INSTANCE');
-                if (this.instanceName) {
+                if (this.instanceName && hasOption(initialOptions, this.instanceName)) {
                     instanceDropdown.setValue(this.instanceName);
                 }
             }
 
-            const propertyDropdown = new Blockly.FieldDropdown(function() {
-                return getComponentProperties(this.getSourceBlock()?.typeName || 'Button', this.getValue(), this.getSourceBlock());
-            }, (newValue) => {
+            const initialPropOptions = getComponentProperties(this.typeName, this.propertyName, this);
+            const propertyDropdown = new Blockly.FieldDropdown(initialPropOptions, (newValue) => {
                 if (this.propertyName !== newValue) {
                     this.propertyName = newValue;
                     this.updateShape_();
                 }
+                return newValue;
             });
+            // Make it dynamic for future clicks
+            propertyDropdown.menuGenerator_ = function () {
+                const block = this.getSourceBlock();
+                return getComponentProperties(block?.typeName || 'Button', block?.propertyName, block);
+            };
             input.appendField('.');
             input.appendField(propertyDropdown, 'PROPERTY');
-            if (this.propertyName) {
+            if (this.propertyName && hasOption(initialPropOptions, this.propertyName)) {
                 propertyDropdown.setValue(this.propertyName);
             }
             input.appendField(' to');
@@ -495,15 +564,18 @@ Blockly.Blocks['component_component_block'] = {
         try {
             while (this.inputList.length > 0) this.removeInput(this.inputList[0].name);
             const input = this.appendDummyInput('MAIN');
-            
-            const instanceDropdown = new Blockly.FieldDropdown(function() {
-                return getComponentInstances(this.getSourceBlock()?.typeName || 'Button', this.getValue(), this.getSourceBlock());
-            }, (newValue) => {
+
+            const initialOptions = getComponentInstances(this.typeName, this.instanceName, this);
+            const instanceDropdown = new Blockly.FieldDropdown(initialOptions, (newValue) => {
                 this.instanceName = newValue;
             });
-            
+            instanceDropdown.menuGenerator_ = function () {
+                const block = this.getSourceBlock();
+                return getComponentInstances(block?.typeName || 'Button', block?.instanceName, block);
+            };
+
             input.appendField(instanceDropdown, 'INSTANCE');
-            if (this.instanceName) {
+            if (this.instanceName && hasOption(initialOptions, this.instanceName)) {
                 instanceDropdown.setValue(this.instanceName);
             }
             this.setOutput(true, 'Component');
@@ -643,7 +715,7 @@ Blockly.Blocks['component_choice'] = {
 
         const componentDef = COMPONENT_DATABASE[this.typeName];
         const propDef = componentDef?.properties.find(p => p.name === this.propertyName);
-        const options = propDef?.options || ['No Options'];
+        const options = (propDef?.options && propDef.options.length > 0) ? propDef.options : ['No Options'];
 
         const dropdown = new Blockly.FieldDropdown(options.map(opt => [opt, opt]), (newValue) => {
             this.choiceValue = newValue;
@@ -652,7 +724,9 @@ Blockly.Blocks['component_choice'] = {
         this.appendDummyInput('MAIN')
             .appendField(dropdown, 'CHOICE');
 
-        this.getField('CHOICE').setValue(this.choiceValue);
+        if (options.includes(this.choiceValue)) {
+            this.getField('CHOICE').setValue(this.choiceValue);
+        }
         this.setOutput(true, propDef?.type || null);
     }
 };
@@ -756,3 +830,4 @@ export function createComponentBlocks(appState) {
 
     return blocks;
 }
+

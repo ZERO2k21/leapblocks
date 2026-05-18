@@ -1,0 +1,102 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BlockEditor Layout Styling
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.block-editor-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  background: #f5f5f5;
+}
+
+/* Toolbar */
+.block-editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  z-index: 100;
+}
+
+.toolbar-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f0f0f0;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-btn:hover {
+  background: #e0e0e0;
+  transform: translateY(-1px);
+}
+
+.toolbar-btn:active {
+  transform: translateY(0);
+}
+
+.toolbar-btn.variable-btn {
+  background: linear-gradient(135deg, #FF9F43 0%, #FF6B6B 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 159, 67, 0.3);
+}
+
+.toolbar-btn.variable-btn:hover {
+  box-shadow: 0 6px 16px rgba(255, 159, 67, 0.4);
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.toolbar-info {
+  font-size: 13px;
+  color: #666;
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border-radius: 6px;
+}
+
+/* Blockly wrapper */
+.blockly-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.blockly-workspace {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Stage overlay - sits on top of Blockly workspace */
+.stage-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 500;
+}
+
+/* Enable pointer events on watchers */
+.stage-overlay > * {
+  pointer-events: auto;
+}

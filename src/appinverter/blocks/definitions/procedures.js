@@ -1,6 +1,6 @@
 /**
  * Procedure Blocks for App Inventor
- * MIT App Inventor compatible procedure/function operations
+ * Leap App Inventor compatible procedure/function operations
  */
 import * as Blockly from 'blockly';
 
@@ -18,6 +18,7 @@ Blockly.Blocks['procedures_defnoreturn'] = {
         this.setHelpUrl("");
         this.arguments_ = [];
         this.setMutator(new Blockly.icons.MutatorIcon(['procedures_mutatorarg'], this));
+        this.arguments_ = [];
     },
     mutationToDom: function () {
         const container = Blockly.utils.xml.createElement('mutation');
@@ -34,6 +35,28 @@ Blockly.Blocks['procedures_defnoreturn'] = {
             if (childNode.nodeName.toLowerCase() === 'arg') {
                 this.arguments_.push(childNode.getAttribute('name'));
             }
+        }
+        this.updateParams_();
+    },
+    decompose: function (workspace) {
+        const containerBlock = workspace.newBlock('procedures_mutatorcontainer');
+        containerBlock.initSvg();
+        let connection = containerBlock.nextConnection;
+        for (let i = 0; i < this.arguments_.length; i++) {
+            const itemBlock = workspace.newBlock('procedures_mutatorarg');
+            itemBlock.setFieldValue(this.arguments_[i], 'NAME');
+            itemBlock.initSvg();
+            connection.connect(itemBlock.previousConnection);
+            connection = itemBlock.nextConnection;
+        }
+        return containerBlock;
+    },
+    compose: function (containerBlock) {
+        this.arguments_ = [];
+        let itemBlock = containerBlock.nextConnection.targetBlock();
+        while (itemBlock && !itemBlock.isInsertionMarker()) {
+            this.arguments_.push(itemBlock.getFieldValue('NAME'));
+            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
         }
         this.updateParams_();
     },
@@ -58,6 +81,15 @@ Blockly.Blocks['procedures_defnoreturn'] = {
     }
 };
 
+Blockly.Blocks['procedures_mutatorcontainer'] = {
+    init: function () {
+        this.setColour(290);
+        this.appendDummyInput().appendField("inputs");
+        this.setNextStatement(true);
+        this.contextMenu = false;
+    }
+};
+
 // Procedure Definition (with return)
 Blockly.Blocks['procedures_defreturn'] = {
     init: function () {
@@ -72,6 +104,7 @@ Blockly.Blocks['procedures_defreturn'] = {
         this.setHelpUrl("");
         this.arguments_ = [];
         this.setMutator(new Blockly.icons.MutatorIcon(['procedures_mutatorarg'], this));
+        this.arguments_ = [];
     },
     mutationToDom: function () {
         const container = Blockly.utils.xml.createElement('mutation');
@@ -88,6 +121,28 @@ Blockly.Blocks['procedures_defreturn'] = {
             if (childNode.nodeName.toLowerCase() === 'arg') {
                 this.arguments_.push(childNode.getAttribute('name'));
             }
+        }
+        this.updateParams_();
+    },
+    decompose: function (workspace) {
+        const containerBlock = workspace.newBlock('procedures_mutatorcontainer');
+        containerBlock.initSvg();
+        let connection = containerBlock.nextConnection;
+        for (let i = 0; i < this.arguments_.length; i++) {
+            const itemBlock = workspace.newBlock('procedures_mutatorarg');
+            itemBlock.setFieldValue(this.arguments_[i], 'NAME');
+            itemBlock.initSvg();
+            connection.connect(itemBlock.previousConnection);
+            connection = itemBlock.nextConnection;
+        }
+        return containerBlock;
+    },
+    compose: function (containerBlock) {
+        this.arguments_ = [];
+        let itemBlock = containerBlock.nextConnection.targetBlock();
+        while (itemBlock && !itemBlock.isInsertionMarker()) {
+            this.arguments_.push(itemBlock.getFieldValue('NAME'));
+            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
         }
         this.updateParams_();
     },
@@ -241,3 +296,4 @@ export default {
     'procedures_mutatorarg': Blockly.Blocks['procedures_mutatorarg'],
     'procedures_getarg': Blockly.Blocks['procedures_getarg']
 };
+
