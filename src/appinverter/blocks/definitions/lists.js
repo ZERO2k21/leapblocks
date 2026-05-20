@@ -1,6 +1,6 @@
 /**
  * List Blocks for App Inventor
- * MIT App Inventor compatible list operations
+ * Leap App Inventor compatible list operations
  */
 import * as Blockly from 'blockly';
 import { BLOCK_COLORS } from '../utils/blockColors';
@@ -36,10 +36,46 @@ Blockly.Blocks['lists_create_with'] = {
         return container;
     },
     domToMutation: function (xmlElement) {
-        this.itemCount_ = parseInt(xmlElement.getAttribute('items'), 10);
+        this.itemCount_ = parseInt(xmlElement.getAttribute('items'), 10) || 2;
         this.updateShape_();
     },
+    decompose: function (workspace) {
+        const containerBlock = workspace.newBlock('lists_create_with_container');
+        containerBlock.initSvg();
+        let connection = containerBlock.nextConnection;
+        for (let i = 0; i < this.itemCount_; i++) {
+            const itemBlock = workspace.newBlock('lists_create_with_item');
+            itemBlock.initSvg();
+            connection.connect(itemBlock.previousConnection);
+            connection = itemBlock.nextConnection;
+        }
+        return containerBlock;
+    },
+    compose: function (containerBlock) {
+        let itemBlock = containerBlock.nextConnection.targetBlock();
+        const connections = [];
+        while (itemBlock && !itemBlock.isInsertionMarker()) {
+            connections.push(itemBlock.valueConnection_);
+            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
+        }
+        this.itemCount_ = connections.length;
+        this.updateShape_();
+        for (let i = 0; i < this.itemCount_; i++) {
+            if (connections[i]) connections[i].reconnect(this, 'ADD' + i);
+        }
+    },
+    saveConnections: function (containerBlock) {
+        let itemBlock = containerBlock.nextConnection.targetBlock();
+        let i = 0;
+        while (itemBlock) {
+            const input = this.getInput('ADD' + i);
+            itemBlock.valueConnection_ = input && input.connection.targetConnection;
+            i++;
+            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
+        }
+    },
     updateShape_: function () {
+        if (this.itemCount_ < 0) this.itemCount_ = 0;
         // Remove all inputs
         for (let i = 0; this.getInput('ADD' + i); i++) {
             this.removeInput('ADD' + i);
@@ -51,6 +87,25 @@ Blockly.Blocks['lists_create_with'] = {
                 input.appendField('make a list');
             }
         }
+    }
+};
+
+Blockly.Blocks['lists_create_with_container'] = {
+    init: function () {
+        this.setColour(BLOCK_COLORS.lists);
+        this.appendDummyInput().appendField("list");
+        this.setNextStatement(true);
+        this.contextMenu = false;
+    }
+};
+
+Blockly.Blocks['lists_create_with_item'] = {
+    init: function () {
+        this.setColour(BLOCK_COLORS.lists);
+        this.appendDummyInput().appendField("item");
+        this.setPreviousStatement(true);
+        this.setNextStatement(true);
+        this.contextMenu = false;
     }
 };
 
@@ -368,6 +423,19 @@ Blockly.Blocks['lists_repeat'] = {
     }
 };
 
+// Lookup in Pairs
+Blockly.Blocks['lists_lookup_in_pairs'] = {
+    init: function() {
+        this.setColour(BLOCK_COLORS.lists);
+        this.appendValueInput('KEY').appendField('lookup in pairs');
+        this.appendValueInput('LIST').setCheck('List').appendField('key');
+        this.appendValueInput('NOTFOUND').appendField('pairs').appendField('notFound');
+        this.setInputsInline(true);
+        this.setOutput(true);
+        this.setTooltip('Look up a key in a list of pairs (key-value pairs).');
+    }
+};
+
 export default {
     'lists_create_empty': Blockly.Blocks['lists_create_empty'],
     'lists_create_with': Blockly.Blocks['lists_create_with'],
@@ -394,3 +462,4 @@ export default {
     'lists_sort': Blockly.Blocks['lists_sort'],
     'lists_repeat': Blockly.Blocks['lists_repeat']
 };
+

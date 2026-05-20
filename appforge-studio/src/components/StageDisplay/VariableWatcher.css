@@ -1,0 +1,113 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   VariableWatcher - leap-style variable display
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.variable-watcher {
+  position: absolute;
+  background: linear-gradient(135deg, #FFD93D 0%, #FFBF00 100%);
+  border: 3px solid #e6a800;
+  border-radius: 12px;
+  padding: 0;
+  min-width: 120px;
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: move;
+  user-select: none;
+  z-index: 1000;
+  font-family: 'Roboto', 'Arial', sans-serif;
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.1s;
+}
+
+.variable-watcher:hover {
+  box-shadow:
+    0 6px 12px rgba(0, 0, 0, 0.25),
+    0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.variable-watcher.dragging {
+  z-index: 9999;
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.3),
+    0 8px 16px rgba(0, 0, 0, 0.2);
+  opacity: 0.95;
+}
+
+.watcher-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  color: white;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.variable-watcher:hover .watcher-close {
+  opacity: 1;
+}
+
+.watcher-close:hover {
+  background: rgba(255, 0, 0, 0.5);
+}
+
+.watcher-header {
+  background: rgba(0, 0, 0, 0.15);
+  padding: 8px 12px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  font-size: 13px;
+  font-weight: 700;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.watcher-value {
+  padding: 12px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #222;
+  text-align: center;
+  font-family: 'Courier New', monospace; /* Monospace for numbers */
+}
+
+/* Pulse animation when value changes */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, #FFE58F 0%, #FFD93D 100%);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.variable-watcher.pulse {
+  animation: pulse 0.3s ease-out;
+}
+
+/* Make it look like leap's variable display */
+.variable-watcher::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 50%);
+  pointer-events: none;
+  border-radius: 12px;
+}

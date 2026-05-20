@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * Asset Picker Component - For selecting media in properties panel
- * MIT App Inventor Style
+ * Leap App Inventor Style
  */
 import React, { useState } from 'react';
 import { Image, Music, Video, File, X, Upload } from 'lucide-react';
@@ -180,3 +180,4 @@ export default function AssetPicker({
         </div>
     );
 }
+

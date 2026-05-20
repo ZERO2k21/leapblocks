@@ -151,4 +151,87 @@ javascriptGenerator['controls_break'] = function (block) {
     return `break;\n`;
 };
 
+// Math Arithmetic Blocks
+javascriptGenerator['math_add'] = function(block) {
+    let code = [];
+    for (let i = 0; i < block.itemCount_; i++) {
+        let val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_ADDITION) || '0';
+        code.push(val);
+    }
+    return [code.join(' + '), javascriptGenerator.ORDER_ADDITION];
+};
+
+javascriptGenerator['math_subtract'] = function(block) {
+    const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_SUBTRACTION) || '0';
+    const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_SUBTRACTION) || '0';
+    return [`${a} - ${b}`, javascriptGenerator.ORDER_SUBTRACTION];
+};
+
+javascriptGenerator['math_multiply'] = function(block) {
+    let code = [];
+    for (let i = 0; i < block.itemCount_; i++) {
+        let val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_MULTIPLICATION) || '1';
+        code.push(val);
+    }
+    return [code.join(' * '), javascriptGenerator.ORDER_MULTIPLICATION];
+};
+
+javascriptGenerator['math_divide_regular'] = function(block) {
+    const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_DIVISION) || '0';
+    const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_DIVISION) || '1';
+    return [`${a} / ${b}`, javascriptGenerator.ORDER_DIVISION];
+};
+
+javascriptGenerator['math_power'] = function(block) {
+    const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_COMMA) || '0';
+    const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_COMMA) || '1';
+    return [`Math.pow(${a}, ${b})`, javascriptGenerator.ORDER_FUNCTION_CALL];
+};
+
+// Matrices Arithmetic Blocks
+javascriptGenerator['matrices_add'] = function(block) {
+    let code = [];
+    for (let i = 0; i < block.itemCount_; i++) {
+        let val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_ADDITION) || 'null';
+        code.push(val);
+    }
+    return [`matrixAdd(${code.join(', ')})`, javascriptGenerator.ORDER_FUNCTION_CALL];
+};
+
+javascriptGenerator['matrices_subtract'] = function(block) {
+    const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_COMMA) || 'null';
+    const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_COMMA) || 'null';
+    return [`matrixSubtract(${a}, ${b})`, javascriptGenerator.ORDER_FUNCTION_CALL];
+};
+
+javascriptGenerator['matrices_multiply'] = function(block) {
+    let code = [];
+    for (let i = 0; i < block.itemCount_; i++) {
+        let val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_COMMA) || 'null';
+        code.push(val);
+    }
+    return [`matrixMultiply(${code.join(', ')})`, javascriptGenerator.ORDER_FUNCTION_CALL];
+};
+
+javascriptGenerator['matrices_power'] = function(block) {
+    const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_COMMA) || 'null';
+    const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_COMMA) || 'null';
+    return [`matrixPower(${a}, ${b})`, javascriptGenerator.ORDER_FUNCTION_CALL];
+};
+
+javascriptGenerator['matrices_operation'] = function(block) {
+    const op = block.getFieldValue('OP');
+    const matrix = javascriptGenerator.valueToCode(block, 'MATRIX', javascriptGenerator.ORDER_COMMA) || 'null';
+    let functionName = 'matrixInverse';
+    if (op === 'TRANSPOSE') functionName = 'matrixTranspose';
+    else if (op === 'ROTATE_LEFT') functionName = 'matrixRotateLeft';
+    else if (op === 'ROTATE_RIGHT') functionName = 'matrixRotateRight';
+    return [`${functionName}(${matrix})`, javascriptGenerator.ORDER_FUNCTION_CALL];
+};
+
+javascriptGenerator['matrices_is_matrix'] = function(block) {
+    const matrix = javascriptGenerator.valueToCode(block, 'MATRIX', javascriptGenerator.ORDER_COMMA) || 'null';
+    return [`isMatrix(${matrix})`, javascriptGenerator.ORDER_FUNCTION_CALL];
+};
+
 export default javascriptGenerator;

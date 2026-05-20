@@ -295,6 +295,7 @@ class CircuitEngine {
     const i2c = ESP32_BOARD_CONFIG.i2c;
     return {
       gpioNum,
+      avrPin: 'ESP' + gpioNum,
       adcChannel,
       isI2CSDA: gpioNum === i2c.sda,
       isI2CSCL: gpioNum === i2c.scl,
@@ -784,14 +785,145 @@ class CircuitEngine {
     this._pendingLibraryClasses.set('Adafruit_ILI9341', RealAdafruitILI9341);
     console.log(`[TFT BRIDGE] RealAdafruitILI9341 stored in _pendingLibraryClasses`);
 
+    // ── LiquidCrystal_I2C ────────────────────────────────────────────────────────
+    // IMPORTANT: We write directly to the HD44780 emulator's internal fields
+    // (displayMemory, ddramAddress) instead of going through processPulse(),
+    // because processPulse uses 4-bit nibble collection mode which garbles
+    // raw 8-bit character codes sent from the transpiled JS path.
+    const lcdEmulatorsMap = this.lcdEmulators;
+    const RealLiquidCrystal_I2C = class {
+      private _nodeId: string | null = null;
+      private _addr: number = 0x27;
+      private _cols: number = 16;
+
+      constructor(addr?: number, cols?: number, rows?: number) {
+        this._addr = addr || 0x27;
+        this._cols = cols || 16;
+        try {
+          const { nodes } = useForgeStore.getState();
+          for (const n of nodes) {
+            if (n.data?.type === 'lcd1602-i2c' || n.data?.type === 'lcd2004-i2c') {
+              if ((n.data?.i2cAddress || 0x27) === this._addr) {
+                this._nodeId = n.id;
+                // Detect cols from the node type
+                if (n.data?.type === 'lcd2004-i2c') this._cols = 20;
+                break;
+              }
+            }
+          }
+        } catch(e) {}
+      }
+
+      private _getEmulator(): import('./HD44780').HD44780 | undefined {
+        return this._nodeId ? lcdEmulatorsMap.get(this._nodeId) : undefined;
+      }
+
+      private _push() {
+        if (!this._nodeId) return;
+        const emu = this._getEmulator();
+        if (emu) {
+          useForgeStore.getState().updateNodeData(this._nodeId, { lcdState: emu.getState() });
+        }
+      }
+
+      init() { this.begin(); }
+      begin() {
+        const emu = this._getEmulator();
+        if (emu) {
+          emu.displayOn = true;
+          emu.backlight = true;
+          emu.displayMemory.fill(32);
+          (emu as any).ddramAddress = 0;
+          emu.cursorX = 0;
+          emu.cursorY = 0;
+          this._push();
+        }
+      }
+
+      print(str: any) {
+        const emu = this._getEmulator();
+        if (!emu) return;
+        const s = String(str);
+        const cols = this._cols;
+        for (let i = 0; i < s.length; i++) {
+          const addr = (emu as any).ddramAddress as number;
+          // Map DDRAM address → row/col → memory index
+          let row: number, col: number;
+          if (addr < 0x40) {
+            if (addr < cols) { row = 0; col = addr; }
+            else { row = 2; col = addr - cols; }
+          } else {
+            const off = addr - 0x40;
+            if (off < cols) { row = 1; col = off; }
+            else { row = 3; col = off - cols; }
+          }
+          const memIdx = row * cols + col;
+          if (memIdx >= 0 && memIdx < emu.displayMemory.length) {
+            emu.displayMemory[memIdx] = s.charCodeAt(i);
+          }
+          // Auto-increment DDRAM address
+          (emu as any).ddramAddress = addr + 1;
+        }
+        // Update cursor coords
+        const finalAddr = (emu as any).ddramAddress as number;
+        if (finalAddr < 0x40) {
+          emu.cursorX = finalAddr < cols ? finalAddr : finalAddr - cols;
+          emu.cursorY = finalAddr < cols ? 0 : 2;
+        } else {
+          const off = finalAddr - 0x40;
+          emu.cursorX = off < cols ? off : off - cols;
+          emu.cursorY = off < cols ? 1 : 3;
+        }
+        this._push();
+      }
+
+      println(str: any) {
+        this.print(String(str));
+      }
+
+      setCursor(col: number, row: number) {
+        const emu = this._getEmulator();
+        if (!emu) return;
+        const rowOffsets = [0x00, 0x40, 0x14, 0x54];
+        (emu as any).ddramAddress = col + (rowOffsets[row] || 0);
+        emu.cursorX = col;
+        emu.cursorY = row;
+        this._push();
+      }
+
+      clear() {
+        const emu = this._getEmulator();
+        if (!emu) return;
+        emu.displayMemory.fill(32);
+        (emu as any).ddramAddress = 0;
+        emu.cursorX = 0;
+        emu.cursorY = 0;
+        this._push();
+      }
+
+      backlight() {
+        const emu = this._getEmulator();
+        if (emu) { emu.backlight = true; this._push(); }
+      }
+
+      noBacklight() {
+        const emu = this._getEmulator();
+        if (emu) { emu.backlight = false; this._push(); }
+      }
+    };
+
+    this._pendingLibraryClasses.set('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
+    console.log(`[LCD BRIDGE] RealLiquidCrystal_I2C stored in _pendingLibraryClasses`);
+
     // If runtime already exists (re-sync case), inject immediately
     if (esp32Runtime) {
       esp32Runtime.injectLibraryClass('Adafruit_SSD1306', RealAdafruitSSD1306);
       esp32Runtime.injectLibraryClass('Adafruit_ILI9341', RealAdafruitILI9341);
+      esp32Runtime.injectLibraryClass('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
       this._wireI2CBus(esp32Runtime);
-      console.log('[OLED BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + wired I2C bus');
+      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + LCD_I2C + wired I2C bus');
     } else {
-      console.log('[OLED BRIDGE] Runtime not yet created — classes queued for initTranspiled()');
+      console.log('[OLED/LCD BRIDGE] Runtime not yet created — classes queued for initTranspiled()');
     }
   }
 
@@ -1189,11 +1321,27 @@ class CircuitEngine {
 
         // Create a dedicated listener that pushes the HIGH/LOW state across the wire to the target node
         const listener = (state: PinState) => {
-          const isHigh = state === 'HIGH';
+          // ESP32 transpiled path sends numeric states for analog/PWM (0-255) and servo (0-180)
+          const isAnalogState = typeof state === 'number';
+          const analogValue = isAnalogState ? (state as number) : 0;
+          const isHigh = isAnalogState ? analogValue > 0 : state === 'HIGH';
           const currentStateStore = useForgeStore.getState();
 
           // Identify peripheral type once
           const pType = currentStateStore.nodes.find(n => n.id === peripheralId)?.data?.type;
+
+          // ── ESP32 Servo: when Servo.write(angle) fires, state is the angle (0-180)
+          if (isAnalogState && pType === 'servo') {
+            const angle = Math.max(0, Math.min(180, analogValue));
+            const currentAngle = currentStateStore.nodes.find(n => n.id === peripheralId)?.data?.angle ?? 0;
+            if (Math.abs(currentAngle - angle) >= 0.5) {
+              updateNodeData(peripheralId, { angle });
+            }
+            return; // Servo handled — skip normal pin logic
+          }
+
+          // ── ESP32 PWM brightness for LEDs/buzzers: map 0-255 to 0.0-1.0
+          const pwmIntensity = isAnalogState ? Math.min(1.0, analogValue / 255) : (isHigh ? 1.0 : 0.0);
 
           // Log 7-segment related activity
           /* if (pType === '7segment') {
@@ -1236,13 +1384,14 @@ class CircuitEngine {
 
               console.log(`[CIRCUIT LED] Updating ${target.nodeId} pin ${pinKey} to ${isHigh ? 'HIGH' : 'LOW'}`);
 
-              if (currentPinStates[pinKey] !== isHigh) {
+              if (currentPinStates[pinKey] !== isHigh || isAnalogState) {
                 const updates: any = {
                   pinStates: { ...currentPinStates, [pinKey]: isHigh }
                 };
 
                 // Only allow component to work if it has proper GND connection
-                const intensity = (isHigh && hasGround) ? 1.0 : 0.0;
+                // Use pwmIntensity for ESP32 analog/PWM graduated brightness
+                const intensity = (isHigh && hasGround) ? pwmIntensity : 0.0;
 
                 if (target.type === 'led') {
                   updates.brightness = intensity;

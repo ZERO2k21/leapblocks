@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 
 /**
  * ComponentTree - Displays hierarchical tree of components on current screen
- * Inspired by MIT App Inventor's component hierarchy panel
+ * Inspired by Leap App Inventor's component hierarchy panel
  */
 export default function ComponentTree({ appState }) {
     const { currentScreen, selectedComponent, selectComponent, deleteComponent, renameComponent } = appState;
@@ -103,9 +103,8 @@ export default function ComponentTree({ appState }) {
         return (
             <div key={component.id}>
                 <div
-                    className={`flex items-center py-1 px-2 cursor-pointer hover:bg-gray-100 ${isSelected ? 'bg-blue-100 border-l-2 border-blue-500' : ''
-                        }`}
-                    style={{ paddingLeft: `${depth * 16 + 8}px` }}
+                    className={`tree-node-pro ${isSelected ? 'selected' : ''}`}
+                    style={{ marginLeft: `${depth * 12}px` }}
                     onClick={() => selectComponent(component.id)}
                     onContextMenu={(e) => handleContextMenu(e, component)}
                 >
@@ -141,11 +140,11 @@ export default function ComponentTree({ appState }) {
                                 }
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            className="flex-1 px-1 py-0 text-sm border border-blue-500 rounded focus:outline-none"
+                            className="flex-1 px-2 py-0.5 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
                             autoFocus
                         />
                     ) : (
-                        <span className="flex-1 text-sm text-gray-800">{component.id}</span>
+                        <span className="flex-1 text-[13px]">{component.id}</span>
                     )}
                 </div>
 
@@ -160,81 +159,91 @@ export default function ComponentTree({ appState }) {
     };
 
     return (
-        <div className="relative">
-            {/* Screen Node */}
-            <div
-                className="flex items-center py-2 px-2 bg-gray-50 border-b border-gray-200 font-semibold text-sm cursor-pointer hover:bg-gray-100"
-                onClick={() => toggleExpand(currentScreen.id)}
-            >
-                <button className="w-4 h-4 flex items-center justify-center mr-1 text-gray-600">
-                    {expandedNodes.has(currentScreen.id) ? '▼' : '▶'}
-                </button>
-                <span className="mr-2">📱</span>
-                <span>{currentScreen.id}</span>
+        <div className="flex flex-col h-full bg-white overflow-hidden">
+            {/* Standardized Header */}
+            <div className="leap-panel-header-pro">
+                <span>Components</span>
             </div>
 
-            {/* Visible Components */}
-            {expandedNodes.has(currentScreen.id) && (
-                <div>
-                    {currentScreen.components && currentScreen.components.length > 0 ? (
-                        currentScreen.components.map((comp) => renderComponent(comp, 0))
-                    ) : (
-                        <div className="p-4 text-center text-gray-400 text-xs italic">
-                            No components yet
-                        </div>
-                    )}
-
-                    {/* Non-Visible Components Section */}
-                    {currentScreen.nonVisibleComponents && currentScreen.nonVisibleComponents.length > 0 && (
-                        <div className="mt-2 border-t border-gray-200">
-                            <div className="py-1 px-2 bg-gray-50 text-xs text-gray-600 font-semibold">
-                                Non-visible components
-                            </div>
-                            {currentScreen.nonVisibleComponents.map((comp) => renderComponent(comp, 0))}
-                        </div>
-                    )}
+            <div className="flex-1 overflow-y-auto">
+                {/* Screen Node */}
+                <div
+                    className="flex items-center py-3.5 px-5 bg-slate-50/50 border-b border-slate-100 font-bold text-[13px] cursor-pointer hover:bg-slate-100 transition-all sticky top-0 z-10 backdrop-blur-md text-slate-800 uppercase tracking-[0.08em]"
+                    onClick={() => toggleExpand(currentScreen.id)}
+                >
+                    <button className="w-5 h-5 flex items-center justify-center mr-2.5 text-slate-400">
+                        {expandedNodes.has(currentScreen.id) ? '▼' : '▶'}
+                    </button>
+                    <span className="mr-2.5 opacity-70 text-lg">📱</span>
+                    <span className="truncate">{currentScreen.id}</span>
                 </div>
-            )}
 
-            {/* Context Menu */}
-            {contextMenu && (
-                <>
-                    <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setContextMenu(null)}
-                    />
-                    <div
-                        className="fixed z-50 bg-white border border-gray-300 rounded shadow-lg py-1 min-w-[150px]"
-                        style={{ left: contextMenu.x, top: contextMenu.y }}
-                    >
-                        <button
-                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
-                            onClick={() => {
-                                handleRename(contextMenu.component);
-                                setContextMenu(null);
-                            }}
-                        >
-                            <span>✏️</span> Rename
-                        </button>
-                        <button
-                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
-                            onClick={() => {
-                                // Copy functionality
-                                setContextMenu(null);
-                            }}
-                        >
-                            <span>📋</span> Copy
-                        </button>
-                        <div className="border-t border-gray-200 my-1"></div>
-                        <button
-                            className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
-                            onClick={() => handleDelete(contextMenu.component)}
-                        >
-                            <span>🗑️</span> Delete
-                        </button>
+                {/* Visible Components */}
+                {expandedNodes.has(currentScreen.id) && (
+                    <div className="py-2">
+                        {currentScreen.components && currentScreen.components.length > 0 ? (
+                            currentScreen.components.map((comp) => renderComponent(comp, 0))
+                        ) : (
+                            <div className="px-10 py-16 text-center">
+                                <p className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-300">Empty Screen</p>
+                                <p className="text-[11px] text-slate-300 font-medium mt-2">Drag components from palette</p>
+                            </div>
+                        )}
+
+                        {/* Non-Visible Components Section */}
+                        {currentScreen.nonVisibleComponents && currentScreen.nonVisibleComponents.length > 0 && (
+                            <div className="mt-2 border-t border-gray-200">
+                                <div className="py-1 px-2 bg-gray-50 text-xs text-gray-600 font-semibold">
+                                    Non-visible components
+                                </div>
+                                {currentScreen.nonVisibleComponents.map((comp) => renderComponent(comp, 0))}
+                            </div>
+                        )}
                     </div>
-                </>
-            )}
+                )}
+
+                {/* Context Menu */}
+                {contextMenu && (
+                    <>
+                        <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setContextMenu(null)}
+                        />
+                        <div
+                            className="fixed z-50 bg-white border-2 border-slate-200 rounded-xl shadow-2xl py-2 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
+                            style={{ left: contextMenu.x, top: contextMenu.y }}
+                        >
+                            <button
+                                className="w-full px-5 py-2.5 text-left text-[14px] hover:bg-slate-50 text-slate-700 flex items-center gap-3 transition-colors font-semibold"
+                                onClick={() => {
+                                    handleRename(contextMenu.component);
+                                    setContextMenu(null);
+                                }}
+                            >
+                                <span className="text-lg">✏️</span> Rename
+                            </button>
+                            <button
+                                className="w-full px-5 py-2.5 text-left text-[14px] hover:bg-slate-50 text-slate-700 flex items-center gap-3 transition-colors font-semibold"
+                                onClick={() => {
+                                    // Copy functionality
+                                    setContextMenu(null);
+                                }}
+                            >
+                                <span className="text-lg">📋</span> Copy
+                            </button>
+                            <div className="border-t border-slate-100 my-2"></div>
+                            <button
+                                className="w-full px-5 py-2.5 text-left text-[14px] hover:bg-red-50 text-red-600 flex items-center gap-3 transition-colors font-semibold"
+                                onClick={() => handleDelete(contextMenu.component)}
+                            >
+                                <span className="text-lg">🗑️</span> Delete
+                            </button>
+                        </div>
+
+                    </>
+                )}
+            </div>
         </div>
     );
 }
+

@@ -117,7 +117,7 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors flex items-center space-x-2"
               >
                 <FolderOpen className="h-4 w-4" />
-                <span>Open APK Folder</span>
+                <span>Get APK</span>
               </button>
             </>
           )}

@@ -1,5 +1,5 @@
 /**
- * MIT App Inventor Text and List Blocks
+ * Leap App Inventor Text and List Blocks
  */
 import * as Blockly from 'blockly';
 import { MIT_COLORS } from './builtin_blocks';
@@ -538,3 +538,4 @@ Blockly.Blocks['lists_repeat'] = {
         this.setTooltip('Creates a list consisting of the given value repeated the specified number of times.');
     }
 };
+

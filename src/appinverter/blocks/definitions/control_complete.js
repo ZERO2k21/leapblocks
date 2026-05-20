@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * Complete Control Blocks - MIT App Inventor Style
- * Inspired by MIT App Inventor (Apache 2.0) - Original implementation
+ * Complete Control Blocks - Leap App Inventor Style
+ * Inspired by Leap App Inventor (Apache 2.0) - Original implementation
  */
 import * as Blockly from 'blockly/core';
 import { BLOCK_COLORS } from '../utils/blockColors';
@@ -239,3 +239,4 @@ export default {
     'controls_closeApplication': Blockly.Blocks['controls_closeApplication'],
     'controls_break': Blockly.Blocks['controls_break']
 };
+

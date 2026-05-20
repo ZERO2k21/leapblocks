@@ -18,6 +18,7 @@ logStoreTiming('Store module started loading');
 // Lazy-load engines only when needed — prevents blocking app startup
 let simulationRunner: any = null;
 let circuitEngine: any = null;
+let _esp32SerialListener: ((line: string) => void) | null = null;
 
 export async function getSimulationRunner() {
   const start = performance.now();
@@ -195,8 +196,8 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       engine.init();
 
       const isESP32Transpiled = hexString === '__esp32_c3_transpiled__';
-      const isESP32RiscV = hexString === '__esp32_c3_riscv__';
-      const isESP32 = isESP32Transpiled || isESP32RiscV;
+      const isESP32Binary = hexString === '__esp32_c3_binary__' || hexString === '__esp32_c3_riscv__';
+      const isESP32 = isESP32Transpiled || isESP32Binary;
 
       if (!isESP32) {
         runner.setBoard(state.board);
@@ -213,7 +214,11 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
         // Wire ESP32-C3 serial output → store + GPIO pin parser
         const esp32c3Runner = runner.ESP32C3Runner;
         if (esp32c3Runner) {
-          esp32c3Runner.addSerialListener((line: string) => {
+          if (_esp32SerialListener) {
+            esp32c3Runner.removeSerialListener(_esp32SerialListener);
+          }
+          
+          _esp32SerialListener = (line: string) => {
             // Parse __LF_WIFI: prefixed messages and route to WiFi log
             const wifiMatch = line.match(/__LF_WIFI:(.+)/);
             if (wifiMatch) {
@@ -240,7 +245,9 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
               const val = parseInt(pwmMatch[2], 10);
               runner.setPinState(`ESP${pin}`, val > 127 ? 'HIGH' : 'LOW');
             }
-          });
+          };
+          
+          esp32c3Runner.addSerialListener(_esp32SerialListener);
           console.log('[FORGE STORE] ESP32-C3 serial listener wired to store.appendSerial + GPIO parser + WiFi log');
         }
       }
