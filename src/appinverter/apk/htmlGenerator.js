@@ -388,6 +388,347 @@ function generateAppJs(appState) {
     vibrate: function(ms) { NativeBridge.vibrate(ms); }
   };
 
+  // ── Non-Visible Component Shims ────────────────────────────────────────
+  function ClockShim(id, props) {
+    this.id = id;
+    this._timerEnabled = props.TimerEnabled !== undefined ? !!props.TimerEnabled : true;
+    this._timerInterval = props.TimerInterval !== undefined ? Number(props.TimerInterval) : 1000;
+    this._timerId = null;
+    this.updateTimer();
+  }
+  ClockShim.prototype = {
+    get TimerEnabled() { return this._timerEnabled; },
+    set TimerEnabled(v) { this._timerEnabled = !!v; this.updateTimer(); },
+    get TimerInterval() { return this._timerInterval; },
+    set TimerInterval(v) { this._timerInterval = Number(v); this.updateTimer(); },
+    updateTimer: function() {
+      if (this._timerId) clearInterval(this._timerId);
+      if (this._timerEnabled && this._timerInterval > 0) {
+        var self = this;
+        this._timerId = setInterval(function() {
+          if (typeof window[self.id + '_Timer'] === 'function') {
+            window[self.id + '_Timer']();
+          }
+        }, this._timerInterval);
+      }
+    },
+    Now: function() { return new Date(); },
+    SystemTime: function() { return Date.now(); },
+    MakeInstant: function(text) { return new Date(text); },
+    MakeInstantFromMillis: function(m) { return new Date(Number(m)); },
+    GetMillis: function(instant) { return (instant instanceof Date ? instant : new Date(instant)).getTime(); },
+    AddDays: function(instant, days) {
+      var d = new Date(instant);
+      d.setDate(d.getDate() + Number(days));
+      return d;
+    },
+    AddHours: function(instant, hours) {
+      var d = new Date(instant);
+      d.setHours(d.getHours() + Number(hours));
+      return d;
+    },
+    AddMinutes: function(instant, minutes) {
+      var d = new Date(instant);
+      d.setMinutes(d.getMinutes() + Number(minutes));
+      return d;
+    },
+    AddSeconds: function(instant, seconds) {
+      var d = new Date(instant);
+      d.setSeconds(d.getSeconds() + Number(seconds));
+      return d;
+    },
+    AddWeeks: function(instant, weeks) {
+      var d = new Date(instant);
+      d.setDate(d.getDate() + (Number(weeks) * 7));
+      return d;
+    },
+    AddMonths: function(instant, months) {
+      var d = new Date(instant);
+      d.setMonth(d.getMonth() + Number(months));
+      return d;
+    },
+    AddYears: function(instant, years) {
+      var d = new Date(instant);
+      d.setFullYear(d.getFullYear() + Number(years));
+      return d;
+    },
+    Duration: function(start, end) {
+      return Math.abs(new Date(end).getTime() - new Date(start).getTime());
+    },
+    DurationToDays: function(dur) { return dur / (24 * 3600 * 1000); },
+    DurationToHours: function(dur) { return dur / (3600 * 1000); },
+    DurationToMinutes: function(dur) { return dur / (60 * 1000); },
+    DurationToSeconds: function(dur) { return dur / 1000; },
+    DurationToWeeks: function(dur) { return dur / (7 * 24 * 3600 * 1000); },
+    FormatDate: function(inst, pattern) { return (inst instanceof Date ? inst : new Date(inst)).toLocaleDateString(); },
+    FormatDateTime: function(inst, pattern) { return (inst instanceof Date ? inst : new Date(inst)).toLocaleString(); },
+    FormatTime: function(inst) { return (inst instanceof Date ? inst : new Date(inst)).toLocaleTimeString(); }
+  };
+
+  function TinyDBShim(id, props) {
+    this.id = id;
+    this._namespace = props.Namespace || id;
+  }
+  TinyDBShim.prototype = {
+    get Namespace() { return this._namespace; },
+    set Namespace(v) { this._namespace = v; },
+    _getKey: function(tag) { return 'tinydb_' + this._namespace + '_' + tag; },
+    StoreValue: function(tag, val) {
+      try { localStorage.setItem(this._getKey(tag), JSON.stringify(val)); } catch(e) {}
+    },
+    GetValue: function(tag, fallback) {
+      try {
+        var v = localStorage.getItem(this._getKey(tag));
+        return v === null ? fallback : JSON.parse(v);
+      } catch(e) { return fallback; }
+    },
+    ClearTag: function(tag) {
+      try { localStorage.removeItem(this._getKey(tag)); } catch(e) {}
+    },
+    ClearAll: function() {
+      try {
+        var prefix = 'tinydb_' + this._namespace + '_';
+        var keysToRemove = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          if (key.indexOf(prefix) === 0) keysToRemove.push(key);
+        }
+        keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+      } catch(e) {}
+    },
+    GetTags: function() {
+      var tags = [];
+      try {
+        var prefix = 'tinydb_' + this._namespace + '_';
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          if (key.indexOf(prefix) === 0) tags.push(key.substring(prefix.length));
+        }
+      } catch(e) {}
+      return tags;
+    }
+  };
+
+  function NotifierShim(id) {
+    this.id = id;
+  }
+  NotifierShim.prototype = {
+    ShowAlert: function(notice) {
+      NativeBridge.showToast(notice);
+    },
+    ShowMessageDialog: function(message, title, buttonText) {
+      alert((title ? title + "\n\n" : "") + message);
+    },
+    ShowChooseDialog: function(message, title, button1, button2, cancelable) {
+      var res = confirm((title ? title + "\n\n" : "") + message);
+      var choice = res ? button1 : button2;
+      var self = this;
+      setTimeout(function() {
+        if (typeof window[self.id + '_AfterChoosing'] === 'function') {
+          window[self.id + '_AfterChoosing'](choice);
+        }
+      }, 50);
+    },
+    ShowTextDialog: function(message, title, cancelable) {
+      var res = prompt((title ? title + "\n\n" : "") + message);
+      var self = this;
+      if (res !== null) {
+        setTimeout(function() {
+          if (typeof window[self.id + '_AfterTextInput'] === 'function') {
+            window[self.id + '_AfterTextInput'](res);
+          }
+        }, 50);
+      }
+    }
+  };
+
+  function SoundShim(id, props) {
+    this.id = id;
+    this._source = props.Source || props.source || '';
+    this._volume = props.Volume !== undefined ? Number(props.Volume) : 1.0;
+    this._isLooping = !!props.IsLooping;
+    this._audio = null;
+  }
+  SoundShim.prototype = {
+    get Source() { return this._source; },
+    set Source(v) {
+      this._source = v;
+      if (this._audio) this._audio.src = v;
+    },
+    get Volume() { return this._volume; },
+    set Volume(v) {
+      this._volume = Number(v);
+      if (this._audio) this._audio.volume = this._volume;
+    },
+    get IsLooping() { return this._isLooping; },
+    set IsLooping(v) {
+      this._isLooping = !!v;
+      if (this._audio) this._audio.loop = this._isLooping;
+    },
+    _initAudio: function() {
+      if (!this._audio && this._source) {
+        this._audio = new Audio(this._source);
+        this._audio.volume = this._volume;
+        this._audio.loop = this._isLooping;
+        var self = this;
+        this._audio.addEventListener('ended', function() {
+          if (typeof window[self.id + '_Completed'] === 'function') {
+            window[self.id + '_Completed']();
+          }
+        });
+      }
+    },
+    Play: function() {
+      this._initAudio();
+      if (this._audio) this._audio.play().catch(function(e){});
+    },
+    Start: function() { this.Play(); },
+    Pause: function() {
+      if (this._audio) this._audio.pause();
+    },
+    Stop: function() {
+      if (this._audio) {
+        this._audio.pause();
+        this._audio.currentTime = 0;
+      }
+    },
+    Resume: function() { this.Play(); },
+    Vibrate: function(ms) {
+      NativeBridge.vibrate(ms);
+    }
+  };
+
+  function TextToSpeechShim(id) {
+    this.id = id;
+    this._pitch = 1.0;
+    this._speechRate = 1.0;
+  }
+  TextToSpeechShim.prototype = {
+    get Pitch() { return this._pitch; },
+    set Pitch(v) { this._pitch = Number(v); },
+    get SpeechRate() { return this._speechRate; },
+    set SpeechRate(v) { this._speechRate = Number(v); },
+    Speak: function(message) {
+      if (!window.speechSynthesis) return;
+      var self = this;
+      if (typeof window[self.id + '_BeforeSpeaking'] === 'function') {
+        window[self.id + '_BeforeSpeaking']();
+      }
+      var utterance = new SpeechSynthesisUtterance(message);
+      utterance.pitch = this._pitch;
+      utterance.rate = this._speechRate;
+      utterance.onend = function() {
+        if (typeof window[self.id + '_AfterSpeaking'] === 'function') {
+          window[self.id + '_AfterSpeaking'](true);
+        }
+      };
+      utterance.onerror = function() {
+        if (typeof window[self.id + '_AfterSpeaking'] === 'function') {
+          window[self.id + '_AfterSpeaking'](false);
+        }
+      };
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  function LocationSensorShim(id, props) {
+    this.id = id;
+    this._enabled = props.Enabled !== undefined ? !!props.Enabled : true;
+    this._latitude = 0;
+    this._longitude = 0;
+    this._altitude = 0;
+    this._accuracy = 0;
+    this._watchId = null;
+    this.updateWatcher();
+  }
+  LocationSensorShim.prototype = {
+    get Enabled() { return this._enabled; },
+    set Enabled(v) { this._enabled = !!v; this.updateWatcher(); },
+    get Latitude() { return this._latitude; },
+    get Longitude() { return this._longitude; },
+    get Altitude() { return this._altitude; },
+    get Accuracy() { return this._accuracy; },
+    updateWatcher: function() {
+      if (this._watchId) {
+        navigator.geolocation.clearWatch(this._watchId);
+        this._watchId = null;
+      }
+      if (this._enabled && navigator.geolocation) {
+        var self = this;
+        this._watchId = navigator.geolocation.watchPosition(function(pos) {
+          self._latitude = pos.coords.latitude;
+          self._longitude = pos.coords.longitude;
+          self._altitude = pos.coords.altitude || 0;
+          self._accuracy = pos.coords.accuracy || 0;
+          if (typeof window[self.id + '_LocationChanged'] === 'function') {
+            window[self.id + '_LocationChanged'](self._latitude, self._longitude, self._altitude, pos.coords.speed || 0);
+          }
+        }, function(err) {}, { enableHighAccuracy: true });
+      }
+    }
+  };
+
+  function WebShim(id, props) {
+    this.id = id;
+    this._url = props.Url || props.url || '';
+  }
+  WebShim.prototype = {
+    get Url() { return this._url; },
+    set Url(v) { this._url = v; },
+    Get: function() {
+      var self = this;
+      fetch(this._url)
+        .then(function(res) {
+          return res.text().then(function(text) {
+            if (typeof window[self.id + '_GotText'] === 'function') {
+              window[self.id + '_GotText'](self._url, res.status, res.headers.get('content-type') || '', text);
+            }
+          });
+        })
+        .catch(function(err) {
+          if (typeof window[self.id + '_GotText'] === 'function') {
+            window[self.id + '_GotText'](self._url, 0, '', err.message);
+          }
+        });
+    },
+    PostText: function(text) {
+      var self = this;
+      fetch(this._url, {
+        method: 'POST',
+        body: text,
+        headers: { 'Content-Type': 'text/plain' }
+      })
+        .then(function(res) {
+          return res.text().then(function(text) {
+            if (typeof window[self.id + '_GotText'] === 'function') {
+              window[self.id + '_GotText'](self._url, res.status, res.headers.get('content-type') || '', text);
+            }
+          });
+        })
+        .catch(function(err) {
+          if (typeof window[self.id + '_GotText'] === 'function') {
+            window[self.id + '_GotText'](self._url, 0, '', err.message);
+          }
+        });
+    },
+    Delete: function() {
+      var self = this;
+      fetch(this._url, { method: 'DELETE' })
+        .then(function(res) {
+          return res.text().then(function(text) {
+            if (typeof window[self.id + '_GotText'] === 'function') {
+              window[self.id + '_GotText'](self._url, res.status, res.headers.get('content-type') || '', text);
+            }
+          });
+        })
+        .catch(function(err) {
+          if (typeof window[self.id + '_GotText'] === 'function') {
+            window[self.id + '_GotText'](self._url, 0, '', err.message);
+          }
+        });
+    }
+  };
+
   // ── Component Registry ─────────────────────────────────────────────────
   function getComponent(id) {
     return components[id] || document.getElementById('comp-' + id);
@@ -792,6 +1133,43 @@ function generateComponentCreation(comp, parentVar) {
       js += `    ${varName}.className = 'comp-canvas';\n`;
       js += `    ${varName}.width = ${props.width || 300};\n`;
       js += `    ${varName}.height = ${props.height || 300};\n`;
+      js += `    (function(canvas) {\n`;
+      js += `      var isDrawing = false;\n`;
+      js += `      var lastX = 0, lastY = 0;\n`;
+      js += `      var startX = 0, startY = 0;\n`;
+      js += `      function getPos(e) {\n`;
+      js += `        var rect = canvas.getBoundingClientRect();\n`;
+      js += `        var clientX = e.touches ? e.touches[0].clientX : e.clientX;\n`;
+      js += `        var clientY = e.touches ? e.touches[0].clientY : e.clientY;\n`;
+      js += `        return { x: clientX - rect.left, y: clientY - rect.top };\n`;
+      js += `      }\n`;
+      js += `      function handleStart(e) {\n`;
+      js += `        isDrawing = true;\n`;
+      js += `        var pos = getPos(e);\n`;
+      js += `        lastX = pos.x; lastY = pos.y;\n`;
+      js += `        startX = pos.x; startY = pos.y;\n`;
+      js += `        if (typeof window['${id}_TouchDown'] === 'function') window['${id}_TouchDown'](pos.x, pos.y);\n`;
+      js += `      }\n`;
+      js += `      function handleMove(e) {\n`;
+      js += `        if (!isDrawing) return;\n`;
+      js += `        e.preventDefault();\n`;
+      js += `        var pos = getPos(e);\n`;
+      js += `        if (typeof window['${id}_Dragged'] === 'function') window['${id}_Dragged'](startX, startY, lastX, lastY, pos.x, pos.y, false);\n`;
+      js += `        lastX = pos.x; lastY = pos.y;\n`;
+      js += `      }\n`;
+      js += `      function handleEnd(e) {\n`;
+      js += `        if (!isDrawing) return;\n`;
+      js += `        isDrawing = false;\n`;
+      js += `        if (typeof window['${id}_TouchUp'] === 'function') window['${id}_TouchUp'](lastX, lastY);\n`;
+      js += `        if (typeof window['${id}_Touched'] === 'function') window['${id}_Touched'](lastX, lastY, false);\n`;
+      js += `      }\n`;
+      js += `      canvas.addEventListener('mousedown', handleStart);\n`;
+      js += `      canvas.addEventListener('mousemove', handleMove);\n`;
+      js += `      canvas.addEventListener('mouseup', handleEnd);\n`;
+      js += `      canvas.addEventListener('touchstart', handleStart, {passive: false});\n`;
+      js += `      canvas.addEventListener('touchmove', handleMove, {passive: false});\n`;
+      js += `      canvas.addEventListener('touchend', handleEnd);\n`;
+      js += `    })(${varName});\n`;
       break;
 
     // Layout containers
@@ -840,10 +1218,34 @@ function generateComponentCreation(comp, parentVar) {
 
 /**
  * Generate a proxy object for a component so block-generated code
- * like `Button1.Text` or `Button1.BackgroundColor = '#ff0000'` works.
+ * like `Button1.Text` or `Button1.Text = 'Hello' works.
  */
 function generateComponentProxy(comp) {
   const { id, type, props = {} } = comp;
+
+  // Non-visible shims instantiation
+  if (type === 'Clock') {
+    return `  var ${id} = new ClockShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+  if (type === 'TinyDB') {
+    return `  var ${id} = new TinyDBShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+  if (type === 'Notifier') {
+    return `  var ${id} = new NotifierShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+  if (type === 'Sound' || type === 'Player') {
+    return `  var ${id} = new SoundShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+  if (type === 'TextToSpeech') {
+    return `  var ${id} = new TextToSpeechShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+  if (type === 'LocationSensor') {
+    return `  var ${id} = new LocationSensorShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+  if (type === 'Web') {
+    return `  var ${id} = new WebShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+
   const propNames = Object.keys(props);
   if (propNames.length === 0 && type !== 'Button' && type !== 'Label') return '';
 

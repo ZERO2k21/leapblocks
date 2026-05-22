@@ -1,9 +1,16 @@
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
+ * Unauthorized copying, distribution, or modification is strictly prohibited. deploy
  */
 import React, { useState, useEffect } from 'react';
+
+// ── FIX: Neutralize AMD define() before any Blockly imports ─────────────────
+// Monaco Editor's CDN loader sets window.define globally. Blockly's UMD
+// wrapper detects it and crashes. Clean it up at module load time.
+if (typeof window !== 'undefined' && typeof window.define === 'function' && window.define.amd) {
+    window.define = undefined;
+}
 import { useAppState } from './hooks/useAppState';
 import { IgniteTopbar } from '../Electra/Client/Src/components/Layout/Topbar';
 import Palette from './components/Palette_Enhanced';
@@ -13,22 +20,23 @@ import BlocksView from './components/BlocksView';
 import BuildModal from './components/BuildModal';
 import ComponentTree from './components/ComponentTree';
 import MediaManager from './components/MediaManager';
+import './styles/leap-appinventor.css';
+import './styles/enhanced-ui.css';
+import { Zap } from 'lucide-react';
 
 export default function AppInventor({ onBack }) {
   const appState = useAppState();
-  const [activeTab, setActiveTab] = useState('designer'); // 'designer' | 'blocks'
+  const [activeTab, setActiveTab] = useState('designer');
 
-  // Build Modal State
   const [isBuildModalOpen, setIsBuildModalOpen] = useState(false);
-  const [buildState, setBuildState] = useState('idle'); // 'idle' | 'building' | 'success' | 'error'
+  const [buildState, setBuildState] = useState('idle');
   const [buildLogs, setBuildLogs] = useState([]);
   const [apkPath, setApkPath] = useState(null);
 
   useEffect(() => {
-    // Setup log listener if in Electron and the method exists
     if (window.electronAPI && window.electronAPI.onBuildLog) {
       window.electronAPI.onBuildLog((msg) => {
-        setBuildLogs(prev => [...prev, msg]);
+        setBuildLogs((prev) => [...prev, msg]);
       });
       return () => {
         if (window.electronAPI.removeBuildLogListener) {
@@ -39,10 +47,8 @@ export default function AppInventor({ onBack }) {
   }, []);
 
   const handleBuildApk = async () => {
-    if (!window.electronAPI || !window.electronAPI.buildApk) {
-      alert("APK Building is not configured in this environment. Ensure you restart the Electron app with the new main process.");
-      return;
-    }
+    // Web mode fallback if electronAPI is not present
+    const isElectron = window.electronAPI && window.electronAPI.buildApk;
 
     setIsBuildModalOpen(true);
     setBuildState('building');
@@ -51,124 +57,155 @@ export default function AppInventor({ onBack }) {
 
     try {
       const payload = appState.getSerializedState();
-      const result = await window.electronAPI.buildApk(payload);
 
-      if (result.success) {
-        setBuildState('success');
-        setApkPath(result.outputPath);
-        setBuildLogs(prev => [...prev, '✓ Build complete! APK is ready.']);
+      if (payload.blockLogic && payload.blockLogic.trim().startsWith('<')) {
+        try {
+          setBuildLogs((prev) => [...prev, 'Transpiling block logic to JavaScript...']);
+          const Blockly = (await import('blockly')).default || (await import('blockly'));
+          const { javascriptGenerator } = await import('blockly/javascript');
+          await import('./blocks/generators/reactnative').catch(() => { });
+
+          const tempWorkspace = new Blockly.Workspace();
+          try {
+            const xml = Blockly.utils.xml.textToDom(payload.blockLogic);
+            Blockly.Xml.domToWorkspace(xml, tempWorkspace);
+            const generatedJs = javascriptGenerator.workspaceToCode(tempWorkspace);
+            if (generatedJs && generatedJs.trim()) {
+              payload.blockLogic = generatedJs;
+              setBuildLogs((prev) => [...prev, 'Block logic transpiled to JavaScript']);
+            } else {
+              payload.blockLogic = '';
+              setBuildLogs((prev) => [...prev, 'No block logic to transpile']);
+            }
+          } finally {
+            tempWorkspace.dispose();
+          }
+        } catch (transpileErr) {
+          console.warn('Block transpilation failed, building without block logic:', transpileErr);
+          setBuildLogs((prev) => [...prev, `Block transpilation skipped: ${transpileErr.message}`]);
+          payload.blockLogic = '';
+        }
+      }
+
+      if (isElectron) {
+        setBuildLogs((prev) => [...prev, 'Sending build request to main process...']);
+        const result = await window.electronAPI.buildApk(payload);
+
+        if (result.success) {
+          setBuildState('success');
+          setApkPath(result.outputPath);
+          setBuildLogs((prev) => [...prev, 'Build complete! APK is ready.']);
+        } else {
+          setBuildState('error');
+          setBuildLogs((prev) => [...prev, `Build failed: ${result.error}`]);
+        }
       } else {
-        setBuildState('error');
-        setBuildLogs(prev => [...prev, `✗ Build failed: ${result.error}`]);
+        setBuildLogs((prev) => [...prev, 'Sending build request to cloud compiler...']);
+        const { CLOUD_COMPILER_URL } = await import('../config/platform');
+
+        const response = await fetch(`${CLOUD_COMPILER_URL}/build-apk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`Server error: ${response.status} - ${text}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          setBuildState('success');
+          // downloadUrl should be a full or relative URL
+          setApkPath(result.downloadUrl.startsWith('http') ? result.downloadUrl : `${CLOUD_COMPILER_URL}${result.downloadUrl}`);
+          setBuildLogs((prev) => [...prev, 'Build complete! APK is ready to download.']);
+        } else {
+          setBuildState('error');
+          setBuildLogs((prev) => [...prev, `Build failed: ${result.error}`]);
+        }
       }
     } catch (error) {
       setBuildState('error');
-      setBuildLogs(prev => [...prev, `✗ Build failed: ${error.message}`]);
+      setBuildLogs((prev) => [...prev, `Build failed: ${error.message}`]);
     }
   };
 
   const handleOpenFile = () => {
-    if (window.electronAPI && window.electronAPI.showInFolder && apkPath) {
+    if (window.electronAPI && window.electronAPI.showInFolder && apkPath && !apkPath.startsWith('http')) {
       window.electronAPI.showInFolder(apkPath);
+    } else if (apkPath) {
+      // In web mode, download the file
+      window.open(apkPath, '_blank');
     }
   };
 
   return (
-    <div className="flex flex-col h-screen w-full overflow-hidden bg-[#e9edf2] text-gray-900 font-sans">
+    <div className="leap-app-shell">
       <IgniteTopbar
         title={appState.appName}
         onTitleChange={(val) => appState.setAppName(val)}
         onBack={onBack}
-        onSave={() => { }} // Save logic if needed
+        onSave={() => { }}
         brandName="APP INVENTOR"
         rightContent={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <nav style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              {['Designer', 'Blocks'].map(tab => (
+          <div className="flex items-center gap-6">
+            <nav className="flex items-center p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
+              {['Designer', 'Blocks'].map((tab) => (
                 <button
                   key={tab}
                   id={`tab-${tab.toLowerCase()}`}
                   onClick={() => setActiveTab(tab.toLowerCase())}
-                  style={{
-                    padding: '7px 22px',
-                    borderRadius: '4px',
-                    border: '1px solid #9ca8b8',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: 800,
-                    transition: '0.2s',
-                    background: activeTab === tab.toLowerCase() ? '#ffffff' : '#d4dbe5',
-                    color: '#2c3e50',
-                    boxShadow: activeTab === tab.toLowerCase() ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
-                    outline: 'none'
-                  }}
+                  className={`px-8 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${activeTab === tab.toLowerCase()
+                    ? 'bg-white text-indigo-600 shadow-md border border-indigo-100'
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                    }`}
                 >
                   {tab}
                 </button>
               ))}
             </nav>
-            <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.2)', margin: '0 4px' }} />
+            <div className="w-px h-8 bg-slate-200 mx-2" />
             <button
               id="btn-build-apk"
               onClick={handleBuildApk}
-              style={{
-                padding: '7px 16px',
-                borderRadius: '4px',
-                border: '1px solid #b88400',
-                cursor: 'pointer',
-                background: '#f2c94c',
-                color: '#2c3e50',
-                fontSize: '13px',
-                fontWeight: 800,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }}
+              className="btn-build-pro group"
             >
-              <span style={{ fontSize: '16px' }}>📦</span> Build APK
+              <Zap className="h-4 w-4 text-white group-hover:animate-pulse" />
+              BUILD PRODUCTION
             </button>
           </div>
         }
       />
 
-      <div className="flex-1 flex overflow-hidden w-full border-t border-[#c6cfda]">
+      <div className={`leap-main ${activeTab === 'designer' ? 'is-designer' : 'is-blocks'}`}>
         {activeTab === 'designer' ? (
           <>
-            {/* Panel 1: Palette (Component Library) */}
-            <Palette />
+            <div className="leap-panel leap-panel-palette">
+              <Palette />
+            </div>
 
-            {/* Panel 2: Viewer (Phone Screen Preview) */}
-            <PhoneCanvas appState={appState} />
+            <div className="leap-panel leap-panel-viewer">
+              <PhoneCanvas appState={appState} />
+            </div>
 
-            {/* Panel 3: Components Tree + Media (NEW) */}
-            <div className="w-[270px] border-l border-r border-[#c6cfda] bg-white flex flex-col overflow-hidden">
-              {/* Component Tree Section */}
-              <div className="flex-1 overflow-y-auto border-b border-gray-200">
-                <div className="px-3 py-2 bg-[#dfe6ee] border-b border-[#c6cfda] font-semibold text-xs text-[#2c3e50] uppercase tracking-wide">
-                  Components
-                </div>
-                <div className="p-2">
-                  <ComponentTree appState={appState} />
-                </div>
+            <div className="leap-panel leap-panel-components">
+              <div className="leap-panel-section">
+                <ComponentTree appState={appState} />
               </div>
-
-              {/* Media Manager Section */}
-              <div className="h-48 overflow-y-auto">
-                <div className="px-3 py-2 bg-[#dfe6ee] border-b border-[#c6cfda] font-semibold text-xs text-[#2c3e50] uppercase tracking-wide">
-                  Media
-                </div>
-                <div className="p-2">
-                  <MediaManager appState={appState} />
-                </div>
+              <div className="leap-panel-section media">
+                <MediaManager appState={appState} />
               </div>
             </div>
 
-            {/* Panel 4: Properties (Property Editor) */}
-            <PropertiesPanel appState={appState} />
+            <div className="leap-panel leap-panel-properties">
+              <PropertiesPanel appState={appState} />
+            </div>
           </>
         ) : (
-          <BlocksView appState={appState} />
+          <div className="leap-panel leap-panel-blocks">
+            <BlocksView appState={appState} />
+          </div>
         )}
       </div>
 

@@ -5,8 +5,8 @@
   --leap-header: #ffffff;
   --leap-text: #0f172a; /* Slate 900 */
   --leap-text-muted: #64748b; /* Slate 500 */
-  --leap-primary: #3b82f6; /* Blue 500 */
-  --leap-primary-hover: #2563eb; /* Blue 600 */
+  --leap-primary: #ff7a00; /* Ignite Orange */
+  --leap-primary-hover: #e66e00; /* Darker Orange */
   
   height: 100vh;
   width: 100%;
