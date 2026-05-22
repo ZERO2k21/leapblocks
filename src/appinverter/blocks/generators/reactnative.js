@@ -310,4 +310,33 @@ javascriptGenerator['matrices_is_matrix'] = function(block) {
     return [`isMatrix(${matrix})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
+// Color Blocks Generators
+javascriptGenerator['colour_picker'] = function (block) {
+    const colour = block.getFieldValue('COLOUR');
+    return [JSON.stringify(colour), javascriptGenerator.ORDER_ATOMIC];
+};
+
+javascriptGenerator['colour_random'] = function (block) {
+    return ['"#" + Math.floor(Math.random()*16777215).toString(16).padStart(6, "0")', javascriptGenerator.ORDER_FUNCTION_CALL];
+};
+
+javascriptGenerator['colour_rgb'] = function (block) {
+    const r = javascriptGenerator.valueToCode(block, 'RED', javascriptGenerator.ORDER_COMMA) || '0';
+    const g = javascriptGenerator.valueToCode(block, 'GREEN', javascriptGenerator.ORDER_COMMA) || '0';
+    const b = javascriptGenerator.valueToCode(block, 'BLUE', javascriptGenerator.ORDER_COMMA) || '0';
+    return [`"rgb(" + ${r} + "," + ${g} + "," + ${b} + ")"`, javascriptGenerator.ORDER_ADDITION];
+};
+
+javascriptGenerator['colour_split'] = function (block) {
+    const colour = javascriptGenerator.valueToCode(block, 'COLOUR', javascriptGenerator.ORDER_COMMA) || '"#000000"';
+    return [`parseColor(${colour})`, javascriptGenerator.ORDER_FUNCTION_CALL];
+};
+
+javascriptGenerator['colour_blend'] = function (block) {
+    const colour1 = javascriptGenerator.valueToCode(block, 'COLOUR1', javascriptGenerator.ORDER_COMMA) || '"#000000"';
+    const colour2 = javascriptGenerator.valueToCode(block, 'COLOUR2', javascriptGenerator.ORDER_COMMA) || '"#000000"';
+    const ratio = javascriptGenerator.valueToCode(block, 'RATIO', javascriptGenerator.ORDER_COMMA) || '0.5';
+    return [`blendColors(${colour1}, ${colour2}, ${ratio})`, javascriptGenerator.ORDER_FUNCTION_CALL];
+};
+
 export default javascriptGenerator;

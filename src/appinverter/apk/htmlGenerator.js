@@ -30,10 +30,14 @@ function generateIndexHtml(appState) {
   <div id="app-root"></div>
   <script src="app.js"><\/script>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
       LeapApp.init();
-    });
-  <\/script>
+    } else {
+      document.addEventListener('DOMContentLoaded', function() {
+        LeapApp.init();
+      });
+    }
+  </script>
 </body>
 </html>`;
 }
@@ -729,6 +733,40 @@ function generateAppJs(appState) {
     }
   };
 
+  // ── Color Utilities ────────────────────────────────────────────────────
+  function parseColor(color) {
+    try {
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = color;
+      var resolved = ctx.fillStyle;
+      if (resolved.charAt(0) === '#') {
+        return [
+          parseInt(resolved.substring(1, 3), 16),
+          parseInt(resolved.substring(3, 5), 16),
+          parseInt(resolved.substring(5, 7), 16)
+        ];
+      }
+    } catch (e) {}
+    if (typeof color === 'string') {
+      var match = color.match(/^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i);
+      if (match) {
+        return [parseInt(match[1], 16), parseInt(match[2], 16), parseInt(match[3], 16)];
+      }
+    }
+    return [0, 0, 0];
+  }
+
+  function blendColors(color1, color2, ratio) {
+    var c1 = parseColor(color1);
+    var c2 = parseColor(color2);
+    var r = Math.min(1, Math.max(0, Number(ratio)));
+    var red = Math.round(c1[0] * (1 - r) + c2[0] * r);
+    var green = Math.round(c1[1] * (1 - r) + c2[1] * r);
+    var blue = Math.round(c1[2] * (1 - r) + c2[2] * r);
+    return 'rgb(' + red + ',' + green + ',' + blue + ')';
+  }
+
   // ── Component Registry ─────────────────────────────────────────────────
   function getComponent(id) {
     return components[id] || document.getElementById('comp-' + id);
@@ -920,14 +958,35 @@ function generateComponentCss(comp) {
 
   const width = resolveDimension(props.width || props.Width, 'auto');
   const height = resolveDimension(props.height || props.Height, 'auto');
-  const bgColor = props.backgroundColor || props.BackgroundColor || 'transparent';
-  const textColor = props.textColor || props.TextColor;
+
+  // Resolve defaults based on component type
+  let defaultBg = 'transparent';
+  let defaultTextColor = '';
+  
+  if (['Button', 'ListPicker', 'DatePicker', 'TimePicker', 'ImagePicker', 'FilePicker', 'ContactPicker', 'EmailPicker', 'PhoneNumberPicker'].includes(type)) {
+    defaultBg = '#3B82F6';
+    defaultTextColor = '#ffffff';
+  } else if (type === 'ListView') {
+    defaultBg = '#000000';
+    defaultTextColor = '#ffffff';
+  } else if (['Label', 'CheckBox', 'Switch'].includes(type)) {
+    defaultBg = 'transparent';
+    defaultTextColor = '#000000';
+  } else if (['TextBox', 'PasswordTextBox', 'Spinner'].includes(type)) {
+    defaultBg = '#ffffff';
+    defaultTextColor = '#000000';
+  }
+
+  const bgColor = props.backgroundColor || props.BackgroundColor || defaultBg;
+  const textColor = props.textColor || props.TextColor || defaultTextColor;
   const fontSize = props.fontSize || props.FontSize || 14;
   const bold = props.bold || props.FontBold;
   const italic = props.italic || props.FontItalic;
   const padding = props.padding || 8;
   const margin = props.margin || 4;
-  const borderRadius = props.borderRadius || props.Shape === 'rounded' ? 8 : 0;
+  
+  // Fix operator precedence issue
+  const borderRadius = props.borderRadius !== undefined ? props.borderRadius : (props.Shape === 'rounded' ? 8 : 0);
 
   rules += `${selector} {\n`;
   if (width !== 'auto') rules += `  width: ${width};\n`;
@@ -976,7 +1035,7 @@ function generateComponentCreation(comp, parentVar) {
       js += `    ${varName}.className = 'comp-button';\n`;
       js += `    ${varName}.textContent = ${JSON.stringify(props.text || props.Text || 'Button')};\n`;
       js += `    ${varName}.addEventListener('click', function() {\n`;
-      js += `      if (typeof ${id}_Click === 'function') ${id}_Click();\n`;
+      js += `      if (typeof window['${id}_Click'] === 'function') window['${id}_Click']();\n`;
       js += `    });\n`;
       break;
 
@@ -997,7 +1056,7 @@ function generateComponentCreation(comp, parentVar) {
       js += `    ${varName}.placeholder = ${JSON.stringify(props.hint || props.Hint || '')};\n`;
       js += `    ${varName}.value = ${JSON.stringify(props.text || props.Text || '')};\n`;
       js += `    ${varName}.addEventListener('input', function(e) {\n`;
-      js += `      if (typeof ${id}_Changed === 'function') ${id}_Changed(e.target.value);\n`;
+      js += `      if (typeof window['${id}_Changed'] === 'function') window['${id}_Changed'](e.target.value);\n`;
       js += `    });\n`;
       break;
 
@@ -1025,7 +1084,7 @@ function generateComponentCreation(comp, parentVar) {
       js += `    ${varName}_cb.type = 'checkbox';\n`;
       js += `    ${varName}_cb.checked = ${Boolean(props.checked || props.Checked)};\n`;
       js += `    ${varName}_cb.addEventListener('change', function(e) {\n`;
-      js += `      if (typeof ${id}_Changed === 'function') ${id}_Changed(e.target.checked);\n`;
+      js += `      if (typeof window['${id}_Changed'] === 'function') window['${id}_Changed'](e.target.checked);\n`;
       js += `    });\n`;
       js += `    var ${varName}_lbl = document.createElement('span');\n`;
       js += `    ${varName}_lbl.textContent = ${JSON.stringify(props.text || props.Text || 'CheckBox')};\n`;
@@ -1042,7 +1101,7 @@ function generateComponentCreation(comp, parentVar) {
       js += `    ${varName}.max = ${props.maxValue || props.MaxValue || 100};\n`;
       js += `    ${varName}.value = ${props.thumbPosition || props.ThumbPosition || 50};\n`;
       js += `    ${varName}.addEventListener('input', function(e) {\n`;
-      js += `      if (typeof ${id}_Changed === 'function') ${id}_Changed(Number(e.target.value));\n`;
+      js += `      if (typeof window['${id}_Changed'] === 'function') window['${id}_Changed'](Number(e.target.value));\n`;
       js += `    });\n`;
       break;
 
@@ -1054,7 +1113,7 @@ function generateComponentCreation(comp, parentVar) {
       js += `    ${varName}_sw.type = 'checkbox';\n`;
       js += `    ${varName}_sw.checked = ${Boolean(props.on || props.On)};\n`;
       js += `    ${varName}_sw.addEventListener('change', function(e) {\n`;
-      js += `      if (typeof ${id}_Changed === 'function') ${id}_Changed(e.target.checked);\n`;
+      js += `      if (typeof window['${id}_Changed'] === 'function') window['${id}_Changed'](e.target.checked);\n`;
       js += `    });\n`;
       js += `    ${varName}.appendChild(${varName}_sw);\n`;
       break;
@@ -1071,7 +1130,7 @@ function generateComponentCreation(comp, parentVar) {
         js += `      item.className = 'comp-listview-item';\n`;
         js += `      item.textContent = ${JSON.stringify(String(item).trim())};\n`;
         js += `      item.addEventListener('click', function() {\n`;
-        js += `        if (typeof ${id}_AfterPicking === 'function') ${id}_AfterPicking(${idx}, item.textContent);\n`;
+        js += `        if (typeof window['${id}_AfterPicking'] === 'function') window['${id}_AfterPicking'](${idx}, item.textContent);\n`;
         js += `      });\n`;
         js += `      ${varName}.appendChild(item);\n`;
         js += `    })();\n`;
@@ -1090,11 +1149,11 @@ function generateComponentCreation(comp, parentVar) {
       js += `    ${varName}._selectionIndex = 0;\n`;
 
       js += `    ${varName}.addEventListener('click', function() {\n`;
-      js += `      if (typeof ${id}_BeforePicking === 'function') ${id}_BeforePicking();\n`;
+      js += `      if (typeof window['${id}_BeforePicking'] === 'function') window['${id}_BeforePicking']();\n`;
       js += `      NativeBridge.showListPickerModal(${varName}._elements, function(index, item) {\n`;
       js += `        ${varName}._selection = item;\n`;
       js += `        ${varName}._selectionIndex = index + 1;\n`; // 1-based index for App Inventor
-      js += `        if (typeof ${id}_AfterPicking === 'function') ${id}_AfterPicking();\n`;
+      js += `        if (typeof window['${id}_AfterPicking'] === 'function') window['${id}_AfterPicking']();\n`;
       js += `      });\n`;
       js += `    });\n`;
       break;
@@ -1116,7 +1175,7 @@ function generateComponentCreation(comp, parentVar) {
       js += `    ${varName}.addEventListener('change', function(e) {\n`;
       js += `      ${varName}._selection = e.target.value;\n`;
       js += `      ${varName}._selectionIndex = e.target.selectedIndex + 1;\n`;
-      js += `      if (typeof ${id}_AfterSelecting === 'function') ${id}_AfterSelecting(e.target.value);\n`;
+      js += `      if (typeof window['${id}_AfterSelecting'] === 'function') window['${id}_AfterSelecting'](e.target.value);\n`;
       js += `    });\n`;
       break;
 
