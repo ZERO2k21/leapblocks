@@ -7,11 +7,10 @@
     content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: http:; worker-src blob: 'self'; script-src * 'self' 'unsafe-inline' 'unsafe-eval' blob: data:; media-src * 'self' data: blob: https: http:; img-src * 'self' data: blob: https: http:; connect-src * 'self' https: http: wss: ws:; font-src * 'self' data: https:;">
   <title>LeapLab - Hardware Block Programming IDE</title>
   <link rel="icon" href="data:,">
-  <!-- Non-blocking font loading - won't block page render if network is slow -->
+  <!-- Standard font loading with cache buster to prevent ERR_CACHE_READ_FAILURE and layout shift -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <noscript><link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet"></noscript>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap&v=1.0.1" rel="stylesheet">
   <style>
     * {
       margin: 0;

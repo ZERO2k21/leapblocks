@@ -205,7 +205,7 @@ export default function PropertiesPanel({ appState }) {
         <div className="space-y-3">
           <select
             value={currentValue}
-            className="property-input-pro appearance-none"
+            className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5 appearance-none"
             onChange={(e) => {
               const newValue = e.target.value;
               if (newValue === 'custom') {
@@ -229,7 +229,7 @@ export default function PropertiesPanel({ appState }) {
                 min="1"
                 max="9999"
                 value={value}
-                className="property-input-pro flex-1"
+                className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5 flex-1"
                 onChange={(e) => updateProp(id, key, parseInt(e.target.value) || 1)}
               />
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">PX</span>
@@ -249,8 +249,8 @@ export default function PropertiesPanel({ appState }) {
       const isArray = Array.isArray(value) || metaType === 'Array';
 
       return (
-        <div key={key} className="property-row-pro">
-          <label className="property-label-pro">
+        <div key={key} className="relative flex flex-col gap-2.5 py-4 px-5 border-b border-slate-200/60 transition-all duration-250 ease-out hover:bg-slate-50/50 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-orange-500 before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-250 before:ease-[cubic-bezier(0.4,0,0.2,1)]">
+          <label className="text-[11px] font-extrabold text-slate-400 flex items-center gap-2 uppercase tracking-[0.08em] mb-1">
             {key.replace(/([A-Z])/g, ' $1').trim()}
           </label>
 
@@ -258,11 +258,11 @@ export default function PropertiesPanel({ appState }) {
             renderSizeProperty(key, value)
           ) : isBoolean ? (
             <div
-                className={`flex items-center justify-between p-3.5 bg-slate-50 border rounded-2xl cursor-pointer transition-all ${value ? 'border-indigo-500 bg-indigo-50/20' : 'border-slate-200 hover:border-slate-300'}`}
+                className={`flex items-center justify-between p-3.5 bg-slate-50 border rounded-2xl cursor-pointer transition-all ${value ? 'border-orange-500 bg-orange-500/5' : 'border-slate-200 hover:border-slate-300'}`}
                 onClick={() => updateProp(id, key, !value)}
             >
-                <span className={`text-[10px] font-black uppercase tracking-[0.1em] ${value ? 'text-indigo-700' : 'text-slate-500'}`}>{value ? 'ENABLED' : 'DISABLED'}</span>
-                <div className={`w-9 h-5 rounded-full transition-all relative shrink-0 ${value ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]' : 'bg-slate-300'}`}>
+                <span className={`text-[10px] font-black uppercase tracking-[0.1em] ${value ? 'text-orange-600' : 'text-slate-500'}`}>{value ? 'ENABLED' : 'DISABLED'}</span>
+                <div className={`w-9 h-5 rounded-full transition-all relative shrink-0 ${value ? 'bg-orange-500 shadow-md shadow-orange-500/30' : 'bg-slate-300'}`}>
                     <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${value ? 'left-5' : 'left-1'}`} />
                 </div>
             </div>
@@ -279,7 +279,7 @@ export default function PropertiesPanel({ appState }) {
               <input
                 type="text"
                 value={value || ''}
-                className="property-input-pro font-mono text-center tracking-widest"
+                className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5 font-mono text-center tracking-widest"
                 placeholder="#HEXCODE"
                 onChange={(e) => updateProp(id, key, e.target.value)}
               />
@@ -288,7 +288,7 @@ export default function PropertiesPanel({ appState }) {
             <div className="relative">
                 <select
                 value={value}
-                className="property-input-pro appearance-none pr-10"
+                className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5 appearance-none pr-10"
                 onChange={(e) => updateProp(id, key, e.target.value)}
                 >
                 {options.map(option => (
@@ -302,7 +302,7 @@ export default function PropertiesPanel({ appState }) {
               type="text"
               value={Array.isArray(value) ? value.join(', ') : value || ''}
               placeholder="item1, item2, item3"
-              className="property-input-pro font-medium"
+              className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5 font-medium"
               onChange={(e) => {
                 const items = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
                 updateProp(id, key, items);
@@ -312,14 +312,14 @@ export default function PropertiesPanel({ appState }) {
             <input
               type="number"
               value={value}
-              className="property-input-pro"
+              className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5"
               onChange={(e) => updateProp(id, key, parseFloat(e.target.value) || 0)}
             />
           ) : (
             <input
               type="text"
               value={value ?? ''}
-              className="property-input-pro"
+              className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5"
               onChange={(e) => updateProp(id, key, e.target.value)}
             />
           )}
@@ -331,13 +331,13 @@ export default function PropertiesPanel({ appState }) {
       <div className="p-5 min-h-full bg-transparent">
         {/* Pro Header - Clean Flex Layout */}
         <div className="mb-6 bg-white border border-slate-200 rounded-[20px] shadow-sm overflow-hidden flex flex-col">
-            <div className="h-1.5 bg-indigo-500 w-full" />
+            <div className="h-1.5 bg-orange-500 w-full" />
             <div className="p-6 flex items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-1.5">Active Module</div>
                     <h3 className="text-xl font-black text-slate-900 tracking-tight truncate">{id}</h3>
                     <div className="flex items-center gap-2 mt-2.5">
-                        <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-md border border-indigo-100">{type}</span>
+                        <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-widest rounded-md border border-orange-100">{type}</span>
                         <div className="w-1 h-1 rounded-full bg-slate-300" />
                         <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Selected</span>
                     </div>
@@ -359,7 +359,7 @@ export default function PropertiesPanel({ appState }) {
         {/* Categorized Properties */}
         <div className="space-y-4">
           {Object.entries(categorizedProps).map(([category, props]) => (
-            <div key={category} className="border border-[var(--leap-border)] rounded-xl overflow-hidden bg-[var(--leap-panel)] shadow-sm">
+            <div key={category} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
             <button
                 className="w-full flex items-center justify-between px-5 py-4 bg-white text-[11px] font-bold text-slate-800 hover:bg-slate-50 transition-all border-b border-slate-100 uppercase tracking-[0.2em] font-['Inter']"
                 onClick={() => toggleSection(category)}
@@ -368,11 +368,11 @@ export default function PropertiesPanel({ appState }) {
                 {collapsedSections[category] ? (
                   <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
                 ) : (
-                  <ChevronDown className="h-3.5 w-3.5 text-indigo-500" />
+                  <ChevronDown className="h-3.5 w-3.5 text-orange-500" />
                 )}
               </button>
               {!collapsedSections[category] && (
-                <div className="p-4 space-y-5 bg-[var(--leap-bg)]">
+                <div className="p-4 space-y-5 bg-slate-50">
                   {props.map(([key, value]) => renderSingleProp(key, value))}
                 </div>
               )}
@@ -386,8 +386,8 @@ export default function PropertiesPanel({ appState }) {
   return (
     <div className="w-[320px] bg-white border-l border-slate-100 flex flex-col h-full shrink-0 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.02)] z-20">
       {/* Panel Header */}
-      <div className="leap-panel-header-pro">
-        <span>Properties</span>
+      <div className="py-[18px] px-6 bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b-2 border-slate-200 flex items-center justify-between shrink-0 shadow-sm">
+        <span className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Properties</span>
       </div>
 
       {/* Property Editor */}

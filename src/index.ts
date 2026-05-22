@@ -93,6 +93,11 @@ const createWindow = (): void => {
     mainWindow.webContents.openDevTools();
     logTiming('DevTools opened');
 
+    // Clear session cache to prevent ERR_CACHE_READ_FAILURE
+    mainWindow.webContents.session.clearCache()
+      .then(() => log('MAIN', 'Chromium cache cleared in development mode'))
+      .catch((err) => log('MAIN', `Failed to clear Chromium cache: ${err.message}`));
+
     // Suppress harmless DevTools autofill warnings
     mainWindow.webContents.on('console-message', (event, level, message) => {
       if (message.includes('Autofill.enable') || message.includes('Autofill.setAddresses')) {

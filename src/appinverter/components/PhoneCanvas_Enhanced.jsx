@@ -3,7 +3,7 @@
  * Enhanced Phone Canvas - Matches Leap App Inventor Viewer functionality
  */
 import React, { useState, useRef, useEffect } from 'react';
-import { Smartphone, Tablet, Monitor, RotateCw, Plus, Check, X as XIcon, Wifi, Battery, Signal } from 'lucide-react';
+import { Smartphone, Tablet, Monitor, RotateCw, Plus, Check, X as XIcon, Wifi, Battery, Signal, ChevronLeft } from 'lucide-react';
 
 export default function PhoneCanvasEnhanced({ appState }) {
     const { screens, activeScreen, selectedId, addComponent, setSelectedId, setActiveScreen, addScreen } = appState;
@@ -155,7 +155,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
             case 'EmailPicker':
             case 'PhoneNumberPicker':
             case 'ImagePicker':
-            case 'FilePicker':
+            case 'FilePicker': {
                 const shape = comp.props.Shape || 'default';
                 const borderRadius = shape === 'rounded' ? '20px' :
                     shape === 'rectangular' ? '4px' :
@@ -177,7 +177,8 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     >
                         {comp.props.Text || comp.type}
                     </button>
-                )
+                );
+            }
 
             case 'Label':
                 return (
@@ -290,7 +291,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     </select>
                 );
 
-            case 'ListView':
+            case 'ListView': {
                 const items = comp.props.Elements || ['Item 1', 'Item 2', 'Item 3'];
                 return (
                     <div
@@ -306,6 +307,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         ))}
                     </div>
                 );
+            }
 
             case 'WebViewer':
                 return (
@@ -452,14 +454,17 @@ export default function PhoneCanvasEnhanced({ appState }) {
         }
     };
 
+    const phoneHeaderFooter = 48 + 56 + 40; // 48 status + 56 title + 40 nav = 144px
+    const tabletHeaderFooter = 24 + 56 + 48; // 24 status + 56 title + 48 nav = 128px
+    const headerFooterHeight = deviceType === 'phone' ? phoneHeaderFooter : tabletHeaderFooter;
     const frameWidth = displayWidth;
-    const frameHeight = displayHeight + 128; // 24 (status) + 56 (title) + 48 (nav)
+    const frameHeight = displayHeight + headerFooterHeight;
     const scale = containerSize.width > 0 && containerSize.height > 0
         ? Math.min(1, Math.min((containerSize.width - 48) / frameWidth, (containerSize.height - 48) / frameHeight))
         : 0.7; // default fallback scale
 
     return (
-        <div className="phone-canvas-container-pro h-full flex flex-col relative overflow-hidden" onClick={() => setSelectedId(null)}>
+        <div className="flex flex-col h-full w-full relative overflow-hidden" onClick={() => setSelectedId(null)}>
             {/* Professional Top Bar - Fixed at top of canvas pane */}
             <div className="w-full bg-[#f8fafc] border-b border-slate-200 px-6 py-3 flex items-center justify-between z-30 shadow-sm">
                 <div className="flex items-center gap-6">
@@ -563,7 +568,19 @@ export default function PhoneCanvasEnhanced({ appState }) {
             </div>
 
             {/* Scrollable Workspace Content Area */}
-            <div ref={containerRef} className="phone-canvas-workspace-pro flex-1 w-full overflow-auto flex flex-col items-center justify-start gap-8 p-6 min-h-0 relative">
+            <div
+                ref={containerRef}
+                className="flex-1 w-full overflow-auto flex flex-col items-center justify-start gap-8 p-6 min-h-0 relative bg-gradient-to-br from-slate-50 to-slate-100"
+                style={{
+                    backgroundImage: `
+                        radial-gradient(circle at center, rgba(255, 122, 0, 0.04) 0%, transparent 70%),
+                        radial-gradient(#cbd5e1 1.5px, transparent 1.5px),
+                        linear-gradient(rgba(255, 122, 0, 0.01) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '100% 100%, 24px 24px, 96px 96px',
+                    backgroundPosition: 'center, 0 0, 0 0'
+                }}
+            >
                 {/* Scaled Device Container */}
                 <div style={{
                     width: `${frameWidth * scale}px`,
@@ -579,8 +596,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     <div
                         ref={canvasRef}
                         className={`transition-all duration-300 ${
-                            deviceType === 'phone' ? 'ios-device-frame' : 'mit-device-frame'
-                        } ${dragOver ? 'scale-[1.02] shadow-[0_30px_60px_-15px_rgba(255,122,0,0.2)] border-orange-500' : ''}`}
+                            deviceType === 'phone'
+                                ? 'bg-white border-none rounded-[40px] shadow-[0_0_0_12px_#0f172a,0_0_0_13px_rgba(255,255,255,0.1),0_25px_50px_-12px_rgba(15,23,42,0.35)] flex flex-col overflow-hidden relative box-sizing-border-box hover:shadow-[0_0_0_12px_#1e293b,0_0_0_13px_rgba(255,255,255,0.15),0_30px_60px_-15px_rgba(15,23,42,0.45)]'
+                                : 'bg-white border-4 border-slate-600 rounded-2xl shadow-[0_25px_50px_-12px_rgba(15,23,42,0.15),0_0_0_1px_rgba(15,23,42,0.05)] flex flex-col overflow-hidden relative hover:border-slate-700 hover:shadow-[0_30px_60px_-15px_rgba(15,23,42,0.2),0_0_0_1px_rgba(15,23,42,0.08)]'
+                        } ${dragOver ? 'scale-[1.02] border-orange-500 shadow-[0_0_0_4px_rgba(255,122,0,0.15),0_30px_60px_-15px_rgba(255,122,0,0.25)]' : ''}`}
                         style={{
                             width: `${frameWidth}px`,
                             height: `${frameHeight}px`,
@@ -596,42 +615,45 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     >
                         {/* Status Bar */}
                         {deviceType === 'phone' ? (
-                            <div className="ios-status-bar">
-                                <span className="ios-status-time">{currentTime}</span>
-                                <div className="ios-dynamic-island" />
-                                <div className="ios-status-icons">
-                                    <Signal className="h-3.5 w-3.5" />
-                                    <Wifi className="h-3.5 w-3.5" />
-                                    <Battery className="h-3.5 w-3.5" />
+                            <div className="h-12 bg-white text-slate-900 px-6 pt-3 flex items-center justify-between text-[11px] font-semibold font-sans pointer-events-none select-none relative border-b border-black/[0.015]">
+                                <span className="font-bold w-[50px] tracking-[-0.01em]">{currentTime}</span>
+                                <div className="absolute left-1/2 -translate-x-1/2 w-[95px] h-[24px] bg-black rounded-[12px] top-[11px] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[inset_0_0_4px_rgba(255,255,255,0.12)] hover:w-[110px] hover:h-[26px] hover:top-[10px] after:absolute after:right-[18px] after:top-1/2 after:-translate-y-1/2 after:w-[5px] after:h-[5px] after:bg-slate-900 after:rounded-full after:shadow-[inset_0_0_1px_1px_#1e293b] after:opacity-80" />
+                                <div className="flex items-center gap-1.5 w-[50px] justify-end">
+                                    <Signal className="h-3.5 w-3.5 text-slate-900" strokeWidth={2.2} />
+                                    <Wifi className="h-3.5 w-3.5 text-slate-900" strokeWidth={2.2} />
+                                    <Battery className="h-3.5 w-3.5 text-slate-900" strokeWidth={2.2} />
                                 </div>
                             </div>
                         ) : (
-                            <div className="mit-status-bar">
-                                <span className="mit-status-time">{currentTime}</span>
-                                <div className="mit-status-icons">
-                                    <Signal className="h-3.5 w-3.5" />
-                                    <Wifi className="h-3.5 w-3.5" />
-                                    <Battery className="h-3.5 w-3.5" />
+                            <div className="h-6 bg-slate-800 text-slate-400 px-3.5 flex items-center justify-between text-[11px] font-bold tracking-[0.02em] pointer-events-none select-none border-b border-black/10">
+                                <span className="font-mono font-extrabold text-slate-200">{currentTime}</span>
+                                <div className="flex items-center gap-1.5">
+                                    <Signal className="h-3.5 w-3.5 text-slate-400" strokeWidth={2.5} />
+                                    <Wifi className="h-3.5 w-3.5 text-slate-400" strokeWidth={2.5} />
+                                    <Battery className="h-3.5 w-3.5 text-slate-400" strokeWidth={2.5} />
                                 </div>
                             </div>
                         )}
 
                         {/* Title Bar */}
                         {deviceType === 'phone' ? (
-                            <div className="ios-title-bar">
-                                <span className="ios-title-back">⟨ Screen</span>
-                                <span className="ios-title-text">{currentScreen.title || activeScreen}</span>
-                                <button className="ios-title-menu">⋮</button>
+                            <div className="h-14 bg-white text-slate-900 px-6 flex items-center justify-between border-b border-black/5 relative font-sans">
+                                <span className="text-orange-500 text-[13px] font-semibold cursor-pointer flex items-center gap-0.5 transition-opacity duration-200 select-none hover:opacity-70">
+                                    <ChevronLeft className="h-[18px] w-[18px]" strokeWidth={2.5} />
+                                    <span>Screen</span>
+                                </span>
+                                <span className="text-base font-bold absolute left-1/2 -translate-x-1/2 max-w-[180px] truncate tracking-[-0.012em]">{currentScreen.title || activeScreen}</span>
+                                <button className="bg-transparent border-none text-orange-500 text-xl cursor-pointer py-1 px-2 rounded transition-all duration-200 leading-none hover:bg-orange-500/8">⋮</button>
                             </div>
                         ) : (
-                            <div className="mit-title-bar">
-                                <span className="mit-title-text">{currentScreen.title || activeScreen}</span>
-                                <button className="mit-title-menu">⋮</button>
+                            <div className="h-14 bg-slate-700 text-white px-4 flex items-center justify-between border-b border-black/10 shadow-sm">
+                                <span className="text-[15px] font-bold tracking-[-0.01em] truncate">{currentScreen.title || activeScreen}</span>
+                                <button className="bg-transparent border-none text-slate-300 text-xl cursor-pointer py-1 px-2 rounded transition-all duration-200 leading-none hover:text-white hover:bg-white/8">⋮</button>
                             </div>
                         )}
 
                         {/* Screen Content */}
-                        <div className="mit-screen-content flex-1" style={{ height: `${displayHeight}px` }}>
+                        <div className="bg-white overflow-y-auto relative flex flex-col flex-1" style={{ height: `${displayHeight}px` }}>
                             {components.length === 0 ? (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
                                     <div className="text-slate-300 text-[13px] font-medium leading-relaxed">
@@ -647,15 +669,15 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
                         {/* Nav Bar */}
                         {deviceType === 'phone' ? (
-                            <div className="ios-home-indicator-bar">
-                                <div className="ios-home-indicator" />
+                            <div className="h-10 bg-white flex items-center justify-center relative pointer-events-none select-none border-t border-black/[0.015]">
+                                <div className="w-[120px] h-[5px] bg-black rounded-[2.5px] opacity-80" />
                             </div>
                         ) : (
-                            <div className="mit-nav-bar">
-                                <div className="mit-nav-buttons">
-                                    <span className="mit-nav-btn">◁</span>
-                                    <span className="mit-nav-btn mit-nav-btn-circle">○</span>
-                                    <span className="mit-nav-btn">□</span>
+                            <div className="h-12 bg-slate-900 border-t border-white/3 flex items-center justify-center pointer-events-none select-none">
+                                <div className="flex items-center gap-[72px]">
+                                    <span className="text-slate-500 text-[15px] font-medium transition-colors duration-200">◁</span>
+                                    <span className="text-slate-500 text-[18px] font-medium transition-colors duration-200">○</span>
+                                    <span className="text-slate-500 text-[15px] font-medium transition-colors duration-200">□</span>
                                 </div>
                             </div>
                         )}

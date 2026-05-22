@@ -103,7 +103,11 @@ export default function ComponentTree({ appState }) {
         return (
             <div key={component.id}>
                 <div
-                    className={`tree-node-pro ${isSelected ? 'selected' : ''}`}
+                    className={`relative flex items-center py-3 px-4 rounded-xl cursor-pointer transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] mx-3 mb-1 border-2 text-sm font-semibold text-slate-700 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r before:bg-orange-500 before:transition-all before:duration-250 before:ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                        isSelected 
+                            ? 'bg-gradient-to-br from-orange-500/12 to-orange-500/6 border-orange-500/30 text-orange-500 shadow-md shadow-orange-500/20 translate-x-1 before:h-[80%]' 
+                            : 'border-transparent hover:bg-gradient-to-r hover:from-orange-500/3 hover:to-transparent hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
+                    }`}
                     style={{ marginLeft: `${depth * 12}px` }}
                     onClick={() => selectComponent(component.id)}
                     onContextMenu={(e) => handleContextMenu(e, component)}
@@ -161,8 +165,8 @@ export default function ComponentTree({ appState }) {
     return (
         <div className="flex flex-col h-full bg-white overflow-hidden">
             {/* Standardized Header */}
-            <div className="leap-panel-header-pro">
-                <span>Components</span>
+            <div className="py-[18px] px-6 bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b-2 border-slate-200 flex items-center justify-between shrink-0 shadow-sm">
+                <span className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Components</span>
             </div>
 
             <div className="flex-1 overflow-y-auto">

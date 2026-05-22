@@ -125,13 +125,13 @@ export default function MediaManager({ appState }) {
     }, []);
 
     return (
-        <div className="flex flex-col h-full bg-white">
+        <div className="flex flex-col h-full bg-white overflow-hidden">
             {/* Standardized Header */}
-            <div className="leap-panel-header-pro">
-                <span>Media</span>
+            <div className="py-[18px] px-6 bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b-2 border-slate-200 flex items-center justify-between shrink-0 shadow-sm">
+                <span className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Media</span>
                 <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg border border-indigo-100 transition-all active:scale-95"
+                    className="p-2 bg-orange-50 hover:bg-orange-100 text-orange-600 rounded-lg border border-orange-100/50 transition-all active:scale-95 cursor-pointer"
                     title="Upload Media"
                 >
                     <Upload className="h-4 w-4" />
@@ -151,13 +151,13 @@ export default function MediaManager({ appState }) {
             <div className="px-4 py-4 space-y-4 bg-white border-b border-slate-100">
                 {/* Search Bar */}
                 <div className="relative group">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
                     <input
                         type="text"
                         placeholder="Search assets..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-3 py-2.5 text-[13px] border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 bg-slate-50/30 transition-all placeholder:text-slate-400 font-bold tracking-wide"
+                        className="w-full pl-10 pr-3 py-2.5 text-[13px] border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/5 focus:border-orange-400 bg-slate-50/30 transition-all placeholder:text-slate-400 font-bold tracking-wide"
                     />
                 </div>
 
@@ -185,8 +185,8 @@ export default function MediaManager({ appState }) {
                     <div className="flex gap-1 bg-slate-50 p-1 rounded-lg">
                         <button
                             onClick={() => setViewMode('grid')}
-                            className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all duration-200 ${viewMode === 'grid'
-                                ? 'bg-white text-indigo-600 shadow-sm'
+                            className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all duration-200 cursor-pointer ${viewMode === 'grid'
+                                ? 'bg-white text-orange-600 shadow-sm'
                                 : 'text-slate-400 hover:text-slate-600'
                                 }`}
                         >
@@ -194,8 +194,8 @@ export default function MediaManager({ appState }) {
                         </button>
                         <button
                             onClick={() => setViewMode('list')}
-                            className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all duration-200 ${viewMode === 'list'
-                                ? 'bg-white text-indigo-600 shadow-sm'
+                            className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all duration-200 cursor-pointer ${viewMode === 'list'
+                                ? 'bg-white text-orange-600 shadow-sm'
                                 : 'text-slate-400 hover:text-slate-600'
                                 }`}
                         >
@@ -225,7 +225,7 @@ export default function MediaManager({ appState }) {
                                 <div
                                     key={index}
                                     className={`group relative aspect-square rounded-2xl border-2 overflow-hidden cursor-pointer transition-all duration-300 ${selectedFile === item.filename
-                                        ? 'border-indigo-500 ring-4 ring-indigo-500/10 shadow-lg scale-[1.02]'
+                                        ? 'border-orange-500 ring-4 ring-orange-500/10 shadow-lg scale-[1.02]'
                                         : 'border-slate-50 hover:border-slate-200 hover:shadow-md'
                                         }`}
                                     onClick={() => setSelectedFile(item.filename)}
@@ -239,7 +239,7 @@ export default function MediaManager({ appState }) {
                                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                             />
                                         ) : (
-                                            <div className="text-slate-300 group-hover:text-indigo-400 transition-colors">
+                                            <div className="text-slate-300 group-hover:text-orange-500 transition-colors">
                                                 {getFileIcon(item.type, 'h-10 w-10')}
                                             </div>
                                         )}
@@ -254,7 +254,7 @@ export default function MediaManager({ appState }) {
                                                     e.stopPropagation();
                                                     handlePreview(item);
                                                 }}
-                                                className="p-1.5 bg-white/20 backdrop-blur-md hover:bg-white/40 rounded-lg text-white transition-all"
+                                                className="p-1.5 bg-white/20 backdrop-blur-md hover:bg-white/40 rounded-lg text-white transition-all cursor-pointer"
                                             >
                                                 <Eye className="h-3.5 w-3.5" />
                                             </button>
@@ -263,7 +263,7 @@ export default function MediaManager({ appState }) {
                                                     e.stopPropagation();
                                                     handleDownload(item);
                                                 }}
-                                                className="p-1.5 bg-white/20 backdrop-blur-md hover:bg-white/40 rounded-lg text-white transition-all"
+                                                className="p-1.5 bg-white/20 backdrop-blur-md hover:bg-white/40 rounded-lg text-white transition-all cursor-pointer"
                                             >
                                                 <Download className="h-3.5 w-3.5" />
                                             </button>
@@ -272,7 +272,7 @@ export default function MediaManager({ appState }) {
                                                     e.stopPropagation();
                                                     handleDelete(item.filename);
                                                 }}
-                                                className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg text-white transition-all ml-auto"
+                                                className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg text-white transition-all ml-auto cursor-pointer"
                                             >
                                                 <Trash2 className="h-3.5 w-3.5" />
                                             </button>
@@ -287,7 +287,7 @@ export default function MediaManager({ appState }) {
                                 <div
                                     key={index}
                                     className={`flex items-center gap-4 p-3 rounded-xl border transition-all duration-200 cursor-pointer ${selectedFile === item.filename
-                                        ? 'bg-indigo-50/50 border-indigo-200 shadow-sm'
+                                        ? 'bg-orange-50/50 border-orange-200/50 shadow-sm'
                                         : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/30'
                                         }`}
                                     onClick={() => setSelectedFile(item.filename)}
@@ -333,13 +333,13 @@ export default function MediaManager({ appState }) {
             {/* Stats Footer - Standardized Pro Style */}
             <div className="p-4 border-t border-slate-100 bg-slate-50/30">
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="leap-stats-card-pro">
-                        <div className="leap-stats-label-pro">Total Files</div>
-                        <div className="leap-stats-value-pro">{stats.total}</div>
+                    <div className="relative overflow-hidden p-3.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-orange-500 before:to-orange-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total Files</div>
+                        <div className="text-2xl font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent">{stats.total}</div>
                     </div>
-                    <div className="leap-stats-card-pro">
-                        <div className="leap-stats-label-pro">Total Size</div>
-                        <div className="leap-stats-value-pro">{formatFileSize(stats.totalSize)}</div>
+                    <div className="relative overflow-hidden p-3.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-orange-500 before:to-orange-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total Size</div>
+                        <div className="text-2xl font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent">{formatFileSize(stats.totalSize)}</div>
                     </div>
                 </div>
                 {selectedFile && (
@@ -385,7 +385,7 @@ export default function MediaManager({ appState }) {
                             {getFileCategory(previewFile.type) === 'audio' && (
                                 <div className="flex flex-col items-center gap-8 w-full max-w-sm">
                                     <div className={`p-10 rounded-full bg-white shadow-xl transition-transform duration-500 ${isPlaying ? 'scale-110' : 'scale-100'}`}>
-                                        <Music className={`h-16 w-16 ${isPlaying ? 'text-indigo-500' : 'text-slate-300'}`} />
+                                        <Music className={`h-16 w-16 ${isPlaying ? 'text-orange-500' : 'text-slate-300'}`} />
                                     </div>
                                     <audio
                                         ref={audioRef}
@@ -396,7 +396,7 @@ export default function MediaManager({ appState }) {
                                     <div className="flex items-center gap-6">
                                         <button
                                             onClick={toggleAudio}
-                                            className="p-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-xl shadow-indigo-500/30 transition-all active:scale-95"
+                                            className="p-5 bg-orange-600 hover:bg-orange-700 text-white rounded-full shadow-xl shadow-orange-500/30 transition-all active:scale-95"
                                         >
                                             {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
                                         </button>

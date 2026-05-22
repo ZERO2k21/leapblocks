@@ -71,14 +71,14 @@ export default function PaletteEnhanced() {
                     const isCollapsed = collapsedCategories[category];
 
                     return (
-                        <div key={category} className="palette-category mx-3 mt-3 last:mb-3">
+                        <div key={category} className="mx-3 mt-3 last:mb-3 rounded-2xl overflow-hidden border-2 border-slate-200 bg-white transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-sm hover:border-orange-500/30 hover:shadow-md hover:-translate-y-0.5">
                             {/* Category Header */}
                             <button
-                                className={`palette-category-header w-full ${!isCollapsed ? 'active' : ''}`}
+                                className={`flex items-center justify-between w-full px-5 py-4 cursor-pointer font-black text-sm text-slate-800 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative tracking-wide border-b border-transparent hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 hover:text-slate-900 after:absolute after:bottom-0 after:left-0 after:h-[3px] after:bg-gradient-to-r after:from-orange-500 after:to-cyan-500 after:transition-all after:duration-300 after:ease-[cubic-bezier(0.4,0,0.2,1)] ${!isCollapsed ? 'bg-gradient-to-br from-orange-500/5 to-orange-500/0 text-orange-500 border-b-orange-500/15 after:w-full' : 'bg-gradient-to-b from-white to-slate-50 after:w-0'}`}
                                 onClick={() => toggleCategory(category)}
                             >
                                 <span className="flex items-center gap-2">
-                                    <div className="palette-category-icon-wrapper">
+                                    <div className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${!isCollapsed ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md shadow-orange-500/30 scale-[1.08] border-transparent' : 'bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-orange-500/15 text-orange-500'}`}>
                                         {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                                     </div>
                                     <span className="tracking-[0.05em] font-extrabold">{category}</span>
@@ -88,7 +88,7 @@ export default function PaletteEnhanced() {
 
                             {/* Category Items */}
                             {!isCollapsed && (
-                                <div className="palette-item-grid bg-slate-50/20">
+                                <div className="grid grid-cols-2 gap-3 p-4 bg-gradient-to-b from-slate-50/50 to-white">
                                     {filteredItems.map(item => (
                                         <div
                                             key={item.type}
@@ -96,11 +96,11 @@ export default function PaletteEnhanced() {
                                             onDragStart={(e) => handleDragStart(e, item)}
                                             onMouseEnter={() => setHoveredComponent(item)}
                                             onMouseLeave={() => setHoveredComponent(null)}
-                                            className="palette-item-pro relative"
+                                            className="group/item relative flex flex-col items-center gap-2.5 p-4 text-center cursor-grab active:cursor-grabbing border-2 border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-orange-500 before:to-cyan-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 hover:border-orange-500 hover:bg-gradient-to-br hover:from-orange-500/5 hover:to-white hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/10"
                                             title={item.description}
                                         >
-                                            <span className="palette-item-icon-pro">{item.icon}</span>
-                                            <span className="palette-item-label-pro">{item.label}</span>
+                                            <span className="text-3xl text-slate-600 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] grayscale-[20%] group-hover/item:scale-110 group-hover/item:rotate-6 group-hover/item:text-orange-500 group-hover/item:grayscale-0">{item.icon}</span>
+                                            <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider transition-colors duration-300 leading-tight group-hover/item:text-orange-500 group-hover/item:font-black">{item.label}</span>
 
                                             {/* Info icon */}
                                             {item.description && (

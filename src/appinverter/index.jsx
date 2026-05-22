@@ -21,7 +21,6 @@ import BuildModal from './components/BuildModal';
 import ComponentTree from './components/ComponentTree';
 import MediaManager from './components/MediaManager';
 import './styles/leap-appinventor.css';
-import './styles/enhanced-ui.css';
 import { Zap } from 'lucide-react';
 
 function countVisibleComponents(screens = []) {
@@ -183,7 +182,7 @@ export default function AppInventor({ onBack }) {
   };
 
   return (
-    <div className="leap-app-shell">
+    <div className="h-screen w-full overflow-hidden flex flex-col bg-slate-50 text-slate-900 font-sans">
       <IgniteTopbar
         title={appState.appName}
         onTitleChange={(val) => appState.setAppName(val)}
@@ -198,8 +197,8 @@ export default function AppInventor({ onBack }) {
                   key={tab}
                   id={`tab-${tab.toLowerCase()}`}
                   onClick={() => setActiveTab(tab.toLowerCase())}
-                  className={`px-8 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${activeTab === tab.toLowerCase()
-                    ? 'bg-white text-indigo-600 shadow-md border border-indigo-100'
+                  className={`px-8 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer ${activeTab === tab.toLowerCase()
+                    ? 'bg-white text-orange-600 shadow-md border border-orange-100/50'
                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
                     }`}
                 >
@@ -211,7 +210,7 @@ export default function AppInventor({ onBack }) {
             <button
               id="btn-build-apk"
               onClick={handleBuildApk}
-              className="btn-build-pro group"
+              className="relative overflow-hidden flex items-center gap-2.5 px-8 py-3.5 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl text-[13px] font-black uppercase tracking-[0.12em] shadow-[0_12px_24px_-8px_rgba(255,122,0,0.5),0_4px_12px_-4px_rgba(255,122,0,0.3),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_20px_40px_-12px_rgba(255,122,0,0.6),0_8px_16px_-6px_rgba(255,122,0,0.4),inset_0_1px_0_rgba(255,255,255,0.3)] hover:-translate-y-0.5 hover:scale-[1.02] active:-translate-y-px active:scale-100 transition-all duration-300 cursor-pointer before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent hover:before:left-full before:transition-all before:duration-700 group"
             >
               <Zap className="h-4 w-4 text-white group-hover:animate-pulse" />
               BUILD PRODUCTION
@@ -220,32 +219,32 @@ export default function AppInventor({ onBack }) {
         }
       />
 
-      <div className={`leap-main ${activeTab === 'designer' ? 'is-designer' : 'is-blocks'}`}>
+      <div className={`flex-1 overflow-hidden ${activeTab === 'designer' ? 'grid grid-cols-[280px_minmax(400px,1fr)_300px_320px] gap-6 p-6 bg-slate-50' : 'flex p-0'}`}>
         {activeTab === 'designer' ? (
           <>
-            <div className="leap-panel leap-panel-palette">
+            <div className="min-h-0 overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300">
               <Palette />
             </div>
 
-            <div className="leap-panel leap-panel-viewer">
+            <div className="min-h-0 flex flex-col bg-transparent">
               <PhoneCanvas appState={appState} />
             </div>
 
-            <div className="leap-panel leap-panel-components">
-              <div className="leap-panel-section">
+            <div className="min-h-0 overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300">
+              <div className="flex-1 min-h-0 flex flex-col">
                 <ComponentTree appState={appState} />
               </div>
-              <div className="leap-panel-section media">
+              <div className="h-[250px] border-t border-slate-200 flex flex-col">
                 <MediaManager appState={appState} />
               </div>
             </div>
 
-            <div className="leap-panel leap-panel-properties">
+            <div className="min-h-0 overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300">
               <PropertiesPanel appState={appState} />
             </div>
           </>
         ) : (
-          <div className="leap-panel leap-panel-blocks">
+          <div className="w-full h-full flex flex-col">
             <BlocksView appState={appState} />
           </div>
         )}

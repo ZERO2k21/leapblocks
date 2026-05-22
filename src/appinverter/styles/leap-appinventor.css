@@ -1,189 +1,56 @@
-.leap-app-shell {
-  --leap-bg: #f8fafc; /* Slate 50 */
-  --leap-panel: #ffffff;
-  --leap-border: #e2e8f0; /* Slate 200 */
-  --leap-header: #ffffff;
-  --leap-text: #0f172a; /* Slate 900 */
-  --leap-text-muted: #64748b; /* Slate 500 */
-  --leap-primary: #ff7a00; /* Ignite Orange */
-  --leap-primary-hover: #e66e00; /* Darker Orange */
-  
-  height: 100vh;
-  width: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background: var(--leap-bg);
-  color: var(--leap-text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-
-.leap-main {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  background: var(--leap-bg);
-}
-
-.leap-main.is-designer {
-  display: grid;
-  grid-template-columns: 280px minmax(400px, 1fr) 300px 320px;
-  grid-template-rows: 1fr;
-  grid-template-areas: "palette viewer components properties";
-  gap: 24px;
-  padding: 24px;
-}
-
-.leap-main.is-blocks {
-  padding: 0;
-}
-
-/* Base Panel Styling */
-.leap-panel {
-  min-height: 0;
-  overflow: hidden;
-  background: var(--leap-panel);
-  border: 1px solid var(--leap-border);
-  border-radius: 20px;
-  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.06), 0 2px 8px -2px rgba(0, 0, 0, 0.04);
-  display: flex;
-  flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Viewer panel should be transparent/cleaner */
-.leap-panel-viewer { 
-  grid-area: viewer; 
-  background: transparent;
-  box-shadow: none;
-  border: none;
-  border-radius: 0;
-}
-
-.leap-panel-palette { grid-area: palette; }
-.leap-panel-components { grid-area: components; }
-.leap-panel-properties { grid-area: properties; }
-
-.leap-panel-blocks {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  border-radius: 0;
-  border: none;
-  box-shadow: none;
-}
-
-/* Inner Sections of Panels (like Components and Media) */
-.leap-panel-section {
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.leap-panel-section:not(:last-child) {
-  border-bottom: 1px solid var(--leap-border);
-}
-
-.leap-panel-section.media {
-  height: 250px;
-}
-
-.leap-panel-section:not(.media) {
-  flex: 1;
-}
-
-/* Panel Headers */
-.leap-panel-title {
-  height: 44px;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--leap-border);
-  background: #f8fafc;
-  color: var(--leap-text);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.leap-panel-body {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 12px;
-  background: #ffffff;
-}
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ *
+ * AppInverter Library Overrides and Keyframe Animations.
+ */
 
 /* Custom Scrollbars for a premium feel */
-.leap-panel-body::-webkit-scrollbar,
-.leap-blockly-workspace ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-.leap-panel-body::-webkit-scrollbar-track,
-.leap-blockly-workspace ::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 10px;
-}
-.leap-panel-body::-webkit-scrollbar-thumb,
-.leap-blockly-workspace ::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #e2e8f0 0%, #cbd5e1 100%);
-  border-radius: 10px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-.leap-panel-body:hover::-webkit-scrollbar-thumb,
-.leap-blockly-workspace:hover::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #cbd5e1 0%, #94a3b8 100%);
-  background-clip: padding-box;
+.leap-panel-body,
+.leap-blockly-workspace {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, var(--color-slate-200) 0%, var(--color-slate-300) 100%);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  &:hover::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, var(--color-slate-300) 0%, var(--color-slate-400) 100%);
+    background-clip: padding-box;
+  }
 }
 
 /* Blockly Overrides */
-.leap-blockly-workspace .blocklyToolboxDiv {
-  background: #f8fafc !important;
-  border-right: 1px solid #e2e8f0 !important;
-}
-.leap-blockly-workspace .blocklyTreeRow {
-  height: 36px !important;
-  line-height: 36px !important;
-  border-radius: 6px;
-  margin: 2px 8px;
-}
-.leap-blockly-workspace .blocklyTreeLabel {
-  font-family: 'Inter', sans-serif !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: #334155 !important;
-}
-.leap-blockly-workspace .blocklyFlyoutBackground {
-  fill: #ffffff !important;
-  fill-opacity: 0.95 !important;
-}
-.leap-blockly-workspace .blocklyMainBackground {
-  stroke: #cbd5e1 !important;
-}
-
-/* Responsive */
-@media (max-width: 1200px) {
-  .leap-main.is-designer {
-    grid-template-columns: 250px minmax(350px, 1fr) 250px 280px;
+.leap-blockly-workspace {
+  & .blocklyToolboxDiv {
+    background: var(--color-slate-50) !important;
+    border-right: 1px solid var(--color-slate-200) !important;
   }
-}
-
-@media (max-width: 980px) {
-  .leap-main.is-designer {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px;
-    overflow-y: auto;
+  & .blocklyTreeRow {
+    height: 36px !important;
+    line-height: 36px !important;
+    border-radius: 6px;
+    margin: 2px 8px;
   }
-  .leap-panel {
-    min-height: 400px;
+  & .blocklyTreeLabel {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--color-slate-700) !important;
   }
-  .leap-panel-viewer {
-    min-height: 600px;
+  & .blocklyFlyoutBackground {
+    fill: var(--color-white) !important;
+    fill-opacity: 0.95 !important;
+  }
+  & .blocklyMainBackground {
+    stroke: var(--color-slate-300) !important;
   }
 }
