@@ -2662,9 +2662,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 padding: "0 8px",
                 justifyContent: "space-between",
                 color: "#fff",
-                zIndex: 100,
+                zIndex: 1000,
                 flexShrink: 0,
-                overflow: "hidden",
+                overflow: "visible",
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <button
@@ -3150,7 +3150,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     padding: "0 12px",
                     justifyContent: "space-between",
                     borderBottom: "1px solid #313244",
-                    zIndex: 100,
+                    zIndex: 90,
                     flexShrink: 0,
                 }}>
                     {/* Left: File tabs */}
