@@ -301,7 +301,7 @@ Blockly.Blocks['component_method'] = {
             if (this.isGeneric) {
                 header.appendField('any ' + this.typeName);
             } else {
-                header.appendField(' ');
+                // No extra space — MIT style: "call [Web1 ▾].MethodName"
                 // Pre-populate with valid options to avoid "unavailable option" error
                 const initialOptions = getComponentInstances(this.typeName, this.instanceName, this);
                 const instanceDropdown = new Blockly.FieldDropdown(initialOptions, (newValue) => {
@@ -336,19 +336,28 @@ Blockly.Blocks['component_method'] = {
             let hasReturn = false;
             let returnType = null;
 
-            // Hardcoded heuristics based on MIT App Inventor method behaviors
-            const methodName = this.methodName;
-            if (methodName.match(/^(Get|Is|Has|Receive|Read|Calculate|Check|Connect|Accept|BytesAvailable|Format|Split|Replace)/i)) {
+            // 1. Check explicit metadata first (most reliable)
+            if (methodDef && methodDef.returns) {
                 hasReturn = true;
-                if (methodName.match(/^(Is|Has|Check|Connect|Accept)/i)) returnType = 'Boolean';
-                else if (methodName.match(/^(ReceiveSigned|ReceiveUnsigned|BytesAvailable|Get.*Count|Length)/i)) returnType = 'Number';
-                else if (methodName.match(/^(ReceiveText|Format|Replace|Trim)/i)) returnType = 'String';
-                else if (methodName.match(/^(Receive.*Bytes|Split)/i)) returnType = 'List';
-            }
-
-            // Explicitly void methods (even if they match above, these override)
-            if (methodName.match(/^(Send|Disconnect|Show|Hide|Clear|Add|Remove|Delete|Set|Play|Stop|Pause|Vibrate|Save|Write|Move|ConnectWithUUID)/i)) {
+                returnType = methodDef.returns === 'Any' ? null : methodDef.returns;
+            } else if (methodDef && !methodDef.returns) {
+                // Method exists in metadata without returns → explicitly void
                 hasReturn = false;
+            } else {
+                // 2. Fallback: Heuristic based on method name patterns
+                const methodName = this.methodName;
+                if (methodName.match(/^(GetValue|GetTags|GetText|IsConnected|HasAccuracy|ReceiveSigned|ReceiveUnsigned|ReceiveText|BytesAvailable|Calculate|Check|Accept|Format|Split|Replace)/i)) {
+                    hasReturn = true;
+                    if (methodName.match(/^(Is|Has|Check|Accept)/i)) returnType = 'Boolean';
+                    else if (methodName.match(/^(ReceiveSigned|ReceiveUnsigned|BytesAvailable|Length)/i)) returnType = 'Number';
+                    else if (methodName.match(/^(ReceiveText|Format|Replace|Trim|GetText)/i)) returnType = 'String';
+                    else if (methodName.match(/^(GetTags|Split)/i)) returnType = 'List';
+                }
+
+                // Explicitly void methods override
+                if (methodName.match(/^(Send|Disconnect|Show|Hide|Clear|Add|Remove|Delete|Set|Play|Stop|Pause|Vibrate|Save|Write|Move|ConnectWithUUID|Get$|Post|Put|Patch)/i)) {
+                    hasReturn = false;
+                }
             }
 
             if (hasReturn) {

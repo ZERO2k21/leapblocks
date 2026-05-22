@@ -126,6 +126,22 @@ export const PALETTE_ENHANCED = [
         visible: true,
         description: 'Displays web pages within the app'
     },
+    {
+        type: 'CircularProgress',
+        label: 'CircularProgress',
+        icon: '🔄',
+        category: 'User Interface',
+        visible: false,
+        description: 'A circular progress indicator'
+    },
+    {
+        type: 'LinearProgress',
+        label: 'LinearProgress',
+        icon: '📊',
+        category: 'User Interface',
+        visible: false,
+        description: 'A linear progress bar indicator'
+    },
 
     // ==================== LAYOUT ====================
     {

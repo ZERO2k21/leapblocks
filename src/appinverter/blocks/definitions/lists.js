@@ -436,6 +436,178 @@ Blockly.Blocks['lists_lookup_in_pairs'] = {
     }
 };
 
+// ==================== MIT FUNCTIONAL LIST BLOCKS ====================
+
+// Map — make new mapped list (MIT: mapnondest)
+Blockly.Blocks['lists_map'] = {
+    init: function () {
+        this.appendValueInput('LIST')
+            .setCheck('List')
+            .appendField('map over list');
+        this.appendDummyInput()
+            .appendField('using variable')
+            .appendField(new Blockly.FieldVariable('item'), 'VAR');
+        this.appendValueInput('TO')
+            .appendField('to');
+        this.setOutput(true, 'List');
+        this.setColour(BLOCK_COLORS.lists);
+        this.setTooltip('Creates a new list by applying an expression to every item in the input list.');
+    }
+};
+
+// Filter — make new filtered list (MIT: filternondest)
+Blockly.Blocks['lists_filter'] = {
+    init: function () {
+        this.appendValueInput('LIST')
+            .setCheck('List')
+            .appendField('filter list');
+        this.appendDummyInput()
+            .appendField('using variable')
+            .appendField(new Blockly.FieldVariable('item'), 'VAR');
+        this.appendValueInput('TEST')
+            .setCheck('Boolean')
+            .appendField('test');
+        this.setOutput(true, 'List');
+        this.setColour(BLOCK_COLORS.lists);
+        this.setTooltip('Creates a new list containing only items from the input list that satisfy the test.');
+    }
+};
+
+// Reduce — reduce list to a single value
+Blockly.Blocks['lists_reduce'] = {
+    init: function () {
+        this.appendValueInput('LIST')
+            .setCheck('List')
+            .appendField('reduce list');
+        this.appendValueInput('INITANSWER')
+            .appendField('with initialAnswer');
+        this.appendDummyInput()
+            .appendField('using')
+            .appendField(new Blockly.FieldVariable('answerSoFar'), 'VAR1')
+            .appendField(new Blockly.FieldVariable('item'), 'VAR2');
+        this.appendValueInput('COMBINE')
+            .appendField('combine');
+        this.setOutput(true);
+        this.setColour(BLOCK_COLORS.lists);
+        this.setTooltip('Returns an accumulated value by reducing the input list. answerSoFar is initialized to initialAnswer, then the combine block is evaluated for each item.');
+    }
+};
+
+// Sort List in Ascending Order (MIT: generic sort)
+Blockly.Blocks['lists_sort_ascending'] = {
+    init: function () {
+        this.appendValueInput('LIST')
+            .setCheck('List')
+            .appendField('sort list');
+        this.setOutput(true, 'List');
+        this.setColour(BLOCK_COLORS.lists);
+        this.setTooltip('Create a new list from sorting the input list in ascending order. Works on lists of any type.');
+    }
+};
+
+// Sort List with Comparator (MIT: sortwithcomparator)
+Blockly.Blocks['lists_sort_comparator'] = {
+    init: function () {
+        this.appendValueInput('LIST')
+            .setCheck('List')
+            .appendField('sort list with comparator');
+        this.appendDummyInput()
+            .appendField('using')
+            .appendField(new Blockly.FieldVariable('item1'), 'VAR1')
+            .appendField(new Blockly.FieldVariable('item2'), 'VAR2');
+        this.appendValueInput('COMPARE')
+            .setCheck('Boolean')
+            .appendField('test');
+        this.setOutput(true, 'List');
+        this.setColour(BLOCK_COLORS.lists);
+        this.setTooltip('Sorts the list using a custom comparator. The test should return true if item1 should come before item2.');
+    }
+};
+
+// Sort List with Key (MIT: sortwithkey)
+Blockly.Blocks['lists_sort_key'] = {
+    init: function () {
+        this.appendValueInput('LIST')
+            .setCheck('List')
+            .appendField('sort list with key');
+        this.appendDummyInput()
+            .appendField('using variable')
+            .appendField(new Blockly.FieldVariable('item'), 'VAR');
+        this.appendValueInput('KEY')
+            .appendField('key');
+        this.setOutput(true, 'List');
+        this.setColour(BLOCK_COLORS.lists);
+        this.setTooltip('Sort the list using proxy values (keys) generated from each item by the key expression.');
+    }
+};
+
+// Minimum Value in List
+Blockly.Blocks['lists_minimum_value'] = {
+    init: function () {
+        this.appendValueInput('LIST')
+            .setCheck('List')
+            .appendField('minimum value in list');
+        this.setOutput(true, 'Number');
+        this.setColour(BLOCK_COLORS.lists);
+        this.setTooltip('Return the minimum number in the input list.');
+    }
+};
+
+// Maximum Value in List
+Blockly.Blocks['lists_maximum_value'] = {
+    init: function () {
+        this.appendValueInput('LIST')
+            .setCheck('List')
+            .appendField('maximum value in list');
+        this.setOutput(true, 'Number');
+        this.setColour(BLOCK_COLORS.lists);
+        this.setTooltip('Return the maximum number in the input list.');
+    }
+};
+
+// All But First
+Blockly.Blocks['lists_but_first'] = {
+    init: function () {
+        this.appendValueInput('LIST')
+            .setCheck('List')
+            .appendField('all but first');
+        this.setOutput(true, 'List');
+        this.setColour(BLOCK_COLORS.lists);
+        this.setTooltip('Return a list without the first item in the input list.');
+    }
+};
+
+// All But Last
+Blockly.Blocks['lists_but_last'] = {
+    init: function () {
+        this.appendValueInput('LIST')
+            .setCheck('List')
+            .appendField('all but last');
+        this.setOutput(true, 'List');
+        this.setColour(BLOCK_COLORS.lists);
+        this.setTooltip('Return a list without the last item in the input list.');
+    }
+};
+
+// List Slices
+Blockly.Blocks['lists_slice'] = {
+    init: function () {
+        this.appendValueInput('LIST')
+            .setCheck('List')
+            .appendField('list slices');
+        this.appendValueInput('INDEX1')
+            .setCheck('Number')
+            .appendField('list')
+            .appendField('index1');
+        this.appendValueInput('INDEX2')
+            .setCheck('Number')
+            .appendField('index2');
+        this.setOutput(true, 'List');
+        this.setColour(BLOCK_COLORS.lists);
+        this.setTooltip('Return a list from slicing the input list. Contains items from index1 up to but not including index2.');
+    }
+};
+
 export default {
     'lists_create_empty': Blockly.Blocks['lists_create_empty'],
     'lists_create_with': Blockly.Blocks['lists_create_with'],
@@ -460,6 +632,17 @@ export default {
     'lists_lookup_in_pairs': Blockly.Blocks['lists_lookup_in_pairs'],
     'lists_join_with_separator': Blockly.Blocks['lists_join_with_separator'],
     'lists_sort': Blockly.Blocks['lists_sort'],
-    'lists_repeat': Blockly.Blocks['lists_repeat']
+    'lists_repeat': Blockly.Blocks['lists_repeat'],
+    'lists_map': Blockly.Blocks['lists_map'],
+    'lists_filter': Blockly.Blocks['lists_filter'],
+    'lists_reduce': Blockly.Blocks['lists_reduce'],
+    'lists_sort_ascending': Blockly.Blocks['lists_sort_ascending'],
+    'lists_sort_comparator': Blockly.Blocks['lists_sort_comparator'],
+    'lists_sort_key': Blockly.Blocks['lists_sort_key'],
+    'lists_minimum_value': Blockly.Blocks['lists_minimum_value'],
+    'lists_maximum_value': Blockly.Blocks['lists_maximum_value'],
+    'lists_but_first': Blockly.Blocks['lists_but_first'],
+    'lists_but_last': Blockly.Blocks['lists_but_last'],
+    'lists_slice': Blockly.Blocks['lists_slice']
 };
 

@@ -380,13 +380,13 @@ export const COMPONENT_METADATA = {
             ]}
         ],
         methods: [
-            { name: 'BuildRequestData', description: 'Build URL-encoded request body', parameters: [{ name: 'list', type: 'List' }] },
+            { name: 'BuildRequestData', description: 'Build URL-encoded request body', parameters: [{ name: 'list', type: 'List' }], returns: 'String' },
             { name: 'ClearCookies', description: 'Clear request cookies', parameters: [] },
             { name: 'Get', description: 'Perform GET request', parameters: [] },
-            { name: 'HtmlTextDecode', description: 'Decode HTML text', parameters: [{ name: 'htmlText', type: 'String' }] },
-            { name: 'JsonObjectEncode', description: 'Encode object as JSON', parameters: [{ name: 'jsonObject', type: 'Any' }] },
-            { name: 'JsonTextDecode', description: 'Decode JSON text', parameters: [{ name: 'jsonText', type: 'String' }] },
-            { name: 'JsonTextDecodeWithDictionaries', description: 'Decode JSON text (dictionary mode)', parameters: [{ name: 'jsonText', type: 'String' }] },
+            { name: 'HtmlTextDecode', description: 'Decode HTML text', parameters: [{ name: 'htmlText', type: 'String' }], returns: 'String' },
+            { name: 'JsonObjectEncode', description: 'Encode object as JSON', parameters: [{ name: 'jsonObject', type: 'Any' }], returns: 'String' },
+            { name: 'JsonTextDecode', description: 'Decode JSON text', parameters: [{ name: 'jsonText', type: 'String' }], returns: 'Any' },
+            { name: 'JsonTextDecodeWithDictionaries', description: 'Decode JSON text (dictionary mode)', parameters: [{ name: 'jsonText', type: 'String' }], returns: 'Any' },
             { name: 'PatchFile', description: 'Perform PATCH with file', parameters: [{ name: 'path', type: 'String' }] },
             { name: 'PatchText', description: 'Perform PATCH request', parameters: [{ name: 'text', type: 'String' }] },
             { name: 'PatchTextWithEncoding', description: 'Perform PATCH request with encoding', parameters: [{ name: 'text', type: 'String' }, { name: 'encoding', type: 'String' }] },
@@ -397,8 +397,8 @@ export const COMPONENT_METADATA = {
             { name: 'PutText', description: 'Perform PUT request', parameters: [{ name: 'text', type: 'String' }] },
             { name: 'PutTextWithEncoding', description: 'Perform PUT request with encoding', parameters: [{ name: 'text', type: 'String' }, { name: 'encoding', type: 'String' }] },
             { name: 'Delete', description: 'Perform DELETE request', parameters: [] },
-            { name: 'UriDecode', description: 'Decode URI component', parameters: [{ name: 'text', type: 'String' }] },
-            { name: 'UriEncode', description: 'Encode URI component', parameters: [{ name: 'text', type: 'String' }] }
+            { name: 'UriDecode', description: 'Decode URI component', parameters: [{ name: 'text', type: 'String' }], returns: 'String' },
+            { name: 'UriEncode', description: 'Encode URI component', parameters: [{ name: 'text', type: 'String' }], returns: 'String' }
         ],
         properties: [
             { name: 'AllowCookies', type: 'Boolean' },
@@ -577,6 +577,35 @@ export const COMPONENT_METADATA = {
             { name: 'Columns', type: 'Number' },
             { name: 'Rows', type: 'Number' },
             { name: 'Visible', type: 'Boolean' }
+        ]
+    },
+    'CircularProgress': {
+        events: [],
+        methods: [],
+        properties: [
+            { name: 'Color', type: 'Color' },
+            { name: 'Indeterminate', type: 'Boolean' },
+            { name: 'Maximum', type: 'Number' },
+            { name: 'Minimum', type: 'Number' },
+            { name: 'Progress', type: 'Number' },
+            { name: 'Visible', type: 'Boolean' },
+            { name: 'Width', type: 'Number' },
+            { name: 'Height', type: 'Number' }
+        ]
+    },
+    'LinearProgress': {
+        events: [],
+        methods: [],
+        properties: [
+            { name: 'Color', type: 'Color' },
+            { name: 'Indeterminate', type: 'Boolean' },
+            { name: 'IndeterminateColor', type: 'Color' },
+            { name: 'Maximum', type: 'Number' },
+            { name: 'Minimum', type: 'Number' },
+            { name: 'Progress', type: 'Number' },
+            { name: 'Visible', type: 'Boolean' },
+            { name: 'Width', type: 'Number' },
+            { name: 'Height', type: 'Number' }
         ]
     }
 };
