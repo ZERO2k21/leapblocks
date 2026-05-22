@@ -107,6 +107,98 @@ export default function BlocksEditorComplete({ appState }) {
         workspaceRef.current = workspace;
         logSession('WORKSPACE_INJECTED', { id: workspace.id });
 
+        const getMitSkinForType = (type) => {
+            if (!type) return null;
+            if (type === 'component_method' || type === 'any_component_method') {
+                return {
+                    bodyFill: '#8F5DB7',
+                    bodyStroke: '#734A94',
+                    fieldFill: '#CFC7D8',
+                    fieldStroke: '#A79CB5',
+                    bodyText: '#ffffff',
+                    fieldText: '#1f1f1f'
+                };
+            }
+            if (type === 'component_event' || type === 'any_component_event') {
+                return {
+                    bodyFill: '#b49235',
+                    bodyStroke: '#8f7227',
+                    fieldFill: '#d7bb72',
+                    fieldStroke: '#a98b43',
+                    bodyText: '#ffffff',
+                    fieldText: '#1f1f1f'
+                };
+            }
+            if (
+                type === 'component_get_property' ||
+                type === 'component_set_property' ||
+                type === 'any_component_get_property' ||
+                type === 'any_component_set_property'
+            ) {
+                return {
+                    bodyFill: '#3f8d67',
+                    bodyStroke: '#2f6f51',
+                    fieldFill: '#8cc0a3',
+                    fieldStroke: '#5f9a7b',
+                    bodyText: '#ffffff',
+                    fieldText: '#1f1f1f'
+                };
+            }
+            return null;
+        };
+
+        const applyMitSkinToBlock = (block) => {
+            if (!block || !block.svgGroup_ || !block.type) return;
+            const skin = getMitSkinForType(block.type);
+            if (!skin) return;
+
+            const group = block.svgGroup_;
+            group.setAttribute('data-type', block.type);
+
+            const bodyPath = group.querySelector('.blocklyPath');
+            if (bodyPath) {
+                bodyPath.style.fill = skin.bodyFill;
+                bodyPath.style.stroke = skin.bodyStroke;
+                bodyPath.style.strokeWidth = '1.2px';
+            }
+
+            const fieldRects = group.querySelectorAll('.blocklyFieldRect, .blocklyEditableText > rect');
+            fieldRects.forEach((rect) => {
+                rect.style.fill = skin.fieldFill;
+                rect.style.stroke = skin.fieldStroke;
+                rect.style.strokeWidth = '1px';
+                rect.setAttribute('rx', '4');
+                rect.setAttribute('ry', '4');
+            });
+
+            const texts = group.querySelectorAll('.blocklyText');
+            texts.forEach((text) => {
+                text.style.fill = skin.bodyText;
+                text.style.fontWeight = '700';
+                text.style.fontSize = '12px';
+            });
+
+            const fieldTexts = group.querySelectorAll('.blocklyEditableText .blocklyText');
+            fieldTexts.forEach((text) => {
+                text.style.fill = skin.fieldText;
+                text.style.fontWeight = '700';
+            });
+        };
+
+        const tagRenderedBlocks = () => {
+            if (!workspaceRef.current) return;
+            const allBlocks = workspaceRef.current.getAllBlocks(false);
+            allBlocks.forEach((block) => {
+                if (block?.svgGroup_ && block?.type) {
+                    block.svgGroup_.setAttribute('data-type', block.type);
+                }
+                applyMitSkinToBlock(block);
+            });
+        };
+
+        // Tag once after inject so CSS selectors can target specific block types.
+        Promise.resolve().then(tagRenderedBlocks);
+
         const flyout = workspace.getFlyout();
         if (flyout) {
             flyout.autoClose = false;
@@ -117,6 +209,70 @@ export default function BlocksEditorComplete({ appState }) {
         if (workspace.options.readOnly) {
             workspace.options.readOnly = false;
         }
+
+        // Async helpers: yield work to next frame to keep drag/move smooth.
+        const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+        let validationTimer = null;
+        let persistTimer = null;
+
+        const scheduleValidation = () => {
+            if (validationTimer) clearTimeout(validationTimer);
+            validationTimer = setTimeout(async () => {
+                await nextFrame();
+                if (!workspaceRef.current) return;
+                let errors = 0;
+                let warnings = 0;
+                const allBlocks = workspaceRef.current.getAllBlocks(false);
+
+                allBlocks.forEach(block => {
+                    if (block?.svgGroup_ && block?.type) {
+                        block.svgGroup_.setAttribute('data-type', block.type);
+                    }
+                    applyMitSkinToBlock(block);
+                    let blockError = null;
+                    let blockWarning = null;
+
+                    block.inputList.forEach(input => {
+                        if (input.type === Blockly.inputs.inputTypes.VALUE && !input.connection?.targetConnection) {
+                            blockError = "Error: Missing expected input block.";
+                            errors++;
+                        }
+                    });
+
+                    const isRootType = block.type.includes('event') ||
+                        block.type.includes('procedures_def') ||
+                        block.type === 'global_declaration';
+
+                    if (!block.getParent() && !isRootType) {
+                        if (block.outputConnection || block.previousConnection) {
+                            blockWarning = "Warning: This block is not connected to any event or procedure, so it will not run.";
+                            warnings++;
+                        }
+                    }
+
+                    if (blockError) block.setWarningText(blockError);
+                    else if (blockWarning) block.setWarningText(blockWarning);
+                    else block.setWarningText(null);
+                });
+
+                setErrorCount(errors);
+                setWarningCount(warnings);
+            }, 80);
+        };
+
+        const schedulePersistBlockXml = () => {
+            if (persistTimer) clearTimeout(persistTimer);
+            persistTimer = setTimeout(async () => {
+                await nextFrame();
+                if (!workspaceRef.current) return;
+                const xml = Blockly.Xml.workspaceToDom(workspaceRef.current);
+                const xmlText = Blockly.Xml.domToText(xml);
+                window.__LEAP_BLOCK_XML__ = xmlText;
+                if (appState.setBlockLogic) {
+                    appState.setBlockLogic(xmlText);
+                }
+            }, 120);
+        };
 
         // leap app inventor style: Block behavior
         // Blocks should be freely draggable and copyable from flyout
@@ -138,6 +294,10 @@ export default function BlocksEditorComplete({ appState }) {
             if (event.type === Blockly.Events.BLOCK_CREATE) {
                 const block = workspace.getBlockById(event.blockId);
                 if (block) {
+                    if (block.svgGroup_ && block.type) {
+                        block.svgGroup_.setAttribute('data-type', block.type);
+                    }
+                    applyMitSkinToBlock(block);
                     logSession('BLOCK_CREATED', { type: block.type });
                     block.setCollapsed(false);
                     block.setMovable(true);
@@ -164,55 +324,11 @@ export default function BlocksEditorComplete({ appState }) {
                 event.type === Blockly.Events.BLOCK_CHANGE ||
                 event.type === Blockly.Events.BLOCK_MOVE ||
                 event.type === Blockly.Events.BLOCK_DELETE) {
+                scheduleValidation();
+            }
 
-                let errors = 0;
-                let warnings = 0;
-
-                // Use a short timeout to let Blockly finish its internal connection state updates
-                setTimeout(() => {
-                    if (!workspaceRef.current) return;
-                    const allBlocks = workspaceRef.current.getAllBlocks(false);
-
-                    allBlocks.forEach(block => {
-                        let blockError = null;
-                        let blockWarning = null;
-
-                        // 1. Check for empty Value inputs (Errors)
-                        block.inputList.forEach(input => {
-                            if (input.type === Blockly.inputs.inputTypes.VALUE && !input.connection?.targetConnection) {
-                                blockError = "Error: Missing expected input block.";
-                                errors++;
-                            }
-                        });
-
-                        // 2. Check for disconnected (orphan) blocks (Warnings)
-                        // Root blocks are allowed to be unconnected. Non-root blocks should have a parent.
-                        const isRootType = block.type.includes('event') ||
-                            block.type.includes('procedures_def') ||
-                            block.type === 'global_declaration';
-
-                        if (!block.getParent() && !isRootType) {
-                            // Only warn if it's not a top-level block that is meant to be a root
-                            // and if it's an output or statement block
-                            if (block.outputConnection || block.previousConnection) {
-                                blockWarning = "Warning: This block is not connected to any event or procedure, so it will not run.";
-                                warnings++;
-                            }
-                        }
-
-                        // 3. Set the warning text (Blockly only supports one warning text natively)
-                        if (blockError) {
-                            block.setWarningText(blockError);
-                        } else if (blockWarning) {
-                            block.setWarningText(blockWarning);
-                        } else {
-                            block.setWarningText(null);
-                        }
-                    });
-
-                    setErrorCount(errors);
-                    setWarningCount(warnings);
-                }, 100);
+            if (event.type !== Blockly.Events.UI) {
+                schedulePersistBlockXml();
             }
         });
 
@@ -232,17 +348,7 @@ export default function BlocksEditorComplete({ appState }) {
             }
         }
 
-        // Save blocks on change
-        workspace.addChangeListener(() => {
-            const xml = Blockly.Xml.workspaceToDom(workspace);
-            const xmlText = Blockly.Xml.domToText(xml);
-            // Avoid React state timing issues by keeping the latest workspace
-            // XML in a direct runtime cache used by the build action.
-            window.__LEAP_BLOCK_XML__ = xmlText;
-            if (appState.setBlockLogic) {
-                appState.setBlockLogic(xmlText);
-            }
-        });
+        // Save blocks on change is handled via debounced async scheduler above.
 
         // Handle window resize and orientation changes
         const handleResize = () => {
@@ -271,6 +377,8 @@ export default function BlocksEditorComplete({ appState }) {
         return () => {
             logSession('CLEANING_UP_WORKSPACE');
             clearTimeout(resizeTimeout);
+            if (validationTimer) clearTimeout(validationTimer);
+            if (persistTimer) clearTimeout(persistTimer);
             window.removeEventListener('resize', debouncedResize);
             window.removeEventListener('orientationchange', handleResize);
             if (workspaceRef.current) {
@@ -285,15 +393,16 @@ export default function BlocksEditorComplete({ appState }) {
     useEffect(() => {
         if (workspaceRef.current && appState.screens) {
             logSession('COMPONENTS_CHANGED_SYNCING_TOOLBOX');
-            // Use a slight delay to avoid race conditions during flyout updates
-            const timer = setTimeout(() => {
-                if (workspaceRef.current) {
-                    const toolbox = createToolbox(appState);
-                    workspaceRef.current.updateToolbox(toolbox);
-                    logSession('TOOLBOX_UPDATED');
-                }
-            }, 50);
-            return () => clearTimeout(timer);
+            let cancelled = false;
+            const run = async () => {
+                await new Promise((resolve) => requestAnimationFrame(resolve));
+                if (cancelled || !workspaceRef.current) return;
+                const toolbox = createToolbox(appState);
+                workspaceRef.current.updateToolbox(toolbox);
+                logSession('TOOLBOX_UPDATED');
+            };
+            run();
+            return () => { cancelled = true; };
         }
     }, [appState.screens, appState.activeScreen]);
 
@@ -1090,6 +1199,88 @@ export default function BlocksEditorComplete({ appState }) {
                 }
                 .blocklyFlyout .blocklyDraggable {
                     pointer-events: auto !important;
+                }
+
+                /* MIT-like component call styling */
+                .leap-blockly-workspace .blocklyDraggable[data-type="component_method"] .blocklyPath,
+                .leap-blockly-workspace .blocklyDraggable[data-type="any_component_method"] .blocklyPath {
+                    fill: #8F5DB7 !important;
+                    stroke: #734A94 !important;
+                    stroke-width: 1.2px !important;
+                }
+
+                .leap-blockly-workspace .blocklyDraggable[data-type="component_method"] .blocklyFieldRect,
+                .leap-blockly-workspace .blocklyDraggable[data-type="any_component_method"] .blocklyFieldRect {
+                    fill: #CFC7D8 !important;
+                    stroke: #A79CB5 !important;
+                    stroke-width: 1px !important;
+                    rx: 4px !important;
+                    ry: 4px !important;
+                }
+
+                .leap-blockly-workspace .blocklyDraggable[data-type="component_method"] .blocklyText,
+                .leap-blockly-workspace .blocklyDraggable[data-type="any_component_method"] .blocklyText {
+                    fill: #ffffff !important;
+                    font-weight: 700 !important;
+                    font-size: 12px !important;
+                }
+
+                .leap-blockly-workspace .blocklyDraggable[data-type="component_method"] .blocklyEditableText .blocklyText,
+                .leap-blockly-workspace .blocklyDraggable[data-type="any_component_method"] .blocklyEditableText .blocklyText {
+                    fill: #1f1f1f !important;
+                    font-weight: 700 !important;
+                }
+
+                /* MIT-like component event styling (gold) */
+                .leap-blockly-workspace .blocklyDraggable[data-type="component_event"] .blocklyPath,
+                .leap-blockly-workspace .blocklyDraggable[data-type="any_component_event"] .blocklyPath {
+                    fill: #b49235 !important;
+                    stroke: #8f7227 !important;
+                    stroke-width: 1.2px !important;
+                }
+
+                .leap-blockly-workspace .blocklyDraggable[data-type="component_event"] .blocklyFieldRect,
+                .leap-blockly-workspace .blocklyDraggable[data-type="any_component_event"] .blocklyFieldRect {
+                    fill: #d7bb72 !important;
+                    stroke: #a98b43 !important;
+                    stroke-width: 1px !important;
+                    rx: 4px !important;
+                    ry: 4px !important;
+                }
+
+                .leap-blockly-workspace .blocklyDraggable[data-type="component_event"] .blocklyEditableText .blocklyText,
+                .leap-blockly-workspace .blocklyDraggable[data-type="any_component_event"] .blocklyEditableText .blocklyText {
+                    fill: #1f1f1f !important;
+                    font-weight: 700 !important;
+                }
+
+                /* MIT-like getter/setter styling (green) */
+                .leap-blockly-workspace .blocklyDraggable[data-type="component_get_property"] .blocklyPath,
+                .leap-blockly-workspace .blocklyDraggable[data-type="component_set_property"] .blocklyPath,
+                .leap-blockly-workspace .blocklyDraggable[data-type="any_component_get_property"] .blocklyPath,
+                .leap-blockly-workspace .blocklyDraggable[data-type="any_component_set_property"] .blocklyPath {
+                    fill: #3f8d67 !important;
+                    stroke: #2f6f51 !important;
+                    stroke-width: 1.2px !important;
+                }
+
+                .leap-blockly-workspace .blocklyDraggable[data-type="component_get_property"] .blocklyFieldRect,
+                .leap-blockly-workspace .blocklyDraggable[data-type="component_set_property"] .blocklyFieldRect,
+                .leap-blockly-workspace .blocklyDraggable[data-type="any_component_get_property"] .blocklyFieldRect,
+                .leap-blockly-workspace .blocklyDraggable[data-type="any_component_set_property"] .blocklyFieldRect {
+                    fill: #8cc0a3 !important;
+                    stroke: #5f9a7b !important;
+                    stroke-width: 1px !important;
+                    rx: 4px !important;
+                    ry: 4px !important;
+                }
+
+                .leap-blockly-workspace .blocklyDraggable[data-type="component_get_property"] .blocklyEditableText .blocklyText,
+                .leap-blockly-workspace .blocklyDraggable[data-type="component_set_property"] .blocklyEditableText .blocklyText,
+                .leap-blockly-workspace .blocklyDraggable[data-type="any_component_get_property"] .blocklyEditableText .blocklyText,
+                .leap-blockly-workspace .blocklyDraggable[data-type="any_component_set_property"] .blocklyEditableText .blocklyText {
+                    fill: #1f1f1f !important;
+                    font-weight: 700 !important;
                 }
             `}} />
 

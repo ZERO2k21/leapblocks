@@ -759,62 +759,274 @@ function generateAppJs(appState) {
   function WebShim(id, props) {
     this.id = id;
     this._url = props.Url || props.url || '';
+    this._timeout = props.Timeout !== undefined ? Number(props.Timeout) : 0;
+    this._saveResponse = !!props.SaveResponse;
+    this._responseFileName = props.ResponseFileName || '';
+    this._allowCookies = props.AllowCookies !== undefined ? !!props.AllowCookies : true;
+    this._headers = {};
   }
   WebShim.prototype = {
     get Url() { return this._url; },
     set Url(v) { this._url = v; },
-    Get: function() {
+    get Timeout() { return this._timeout; },
+    set Timeout(v) { this._timeout = Number(v) || 0; },
+    get SaveResponse() { return this._saveResponse; },
+    set SaveResponse(v) { this._saveResponse = !!v; },
+    get ResponseFileName() { return this._responseFileName; },
+    set ResponseFileName(v) { this._responseFileName = String(v || ''); },
+    get AllowCookies() { return this._allowCookies; },
+    set AllowCookies(v) { this._allowCookies = !!v; },
+    _emitGotText: function(url, status, responseType, content) {
+      if (typeof window[this.id + '_GotText'] === 'function') {
+        window[this.id + '_GotText'](url, status, responseType || '', content || '');
+      }
+    },
+    _emitTimedOut: function(url) {
+      if (typeof window[this.id + '_TimedOut'] === 'function') {
+        window[this.id + '_TimedOut'](url || this._url);
+      }
+    },
+    _emitGotFile: function(url, status, responseType, fileName) {
+      if (typeof window[this.id + '_GotFile'] === 'function') {
+        window[this.id + '_GotFile'](url, status, responseType || '', fileName || '');
+      }
+    },
+    _request: function(method, body, contentType) {
       var self = this;
-      fetch(this._url)
+      var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var timeoutId = null;
+      if (controller && self._timeout > 0) {
+        timeoutId = setTimeout(function() { controller.abort(); }, self._timeout);
+      }
+      var options = {
+        method: method || 'GET',
+        body: body,
+        headers: {}
+      };
+      if (contentType) options.headers['Content-Type'] = contentType;
+      if (controller) options.signal = controller.signal;
+
+      fetch(this._url, options)
         .then(function(res) {
+          if (timeoutId) clearTimeout(timeoutId);
+          var responseType = res.headers.get('content-type') || '';
+          if (self._saveResponse) {
+            return res.blob().then(function(blob) {
+              var fileName = self._responseFileName || ('response_' + Date.now());
+              // Browser/WebView-safe pseudo-file path signal for blocks.
+              self._emitGotFile(self._url, res.status, responseType, fileName);
+            });
+          }
           return res.text().then(function(text) {
-            if (typeof window[self.id + '_GotText'] === 'function') {
-              window[self.id + '_GotText'](self._url, res.status, res.headers.get('content-type') || '', text);
-            }
+            self._emitGotText(self._url, res.status, responseType, text);
           });
         })
         .catch(function(err) {
-          if (typeof window[self.id + '_GotText'] === 'function') {
-            window[self.id + '_GotText'](self._url, 0, '', err.message);
+          if (timeoutId) clearTimeout(timeoutId);
+          if (err && err.name === 'AbortError') {
+            self._emitTimedOut(self._url);
+          } else {
+            self._emitGotText(self._url, 0, '', err && err.message ? err.message : String(err));
           }
         });
+    },
+    Get: function() {
+      this._request('GET');
     },
     PostText: function(text) {
-      var self = this;
-      fetch(this._url, {
-        method: 'POST',
-        body: text,
-        headers: { 'Content-Type': 'text/plain' }
-      })
-        .then(function(res) {
-          return res.text().then(function(text) {
-            if (typeof window[self.id + '_GotText'] === 'function') {
-              window[self.id + '_GotText'](self._url, res.status, res.headers.get('content-type') || '', text);
-            }
-          });
-        })
-        .catch(function(err) {
-          if (typeof window[self.id + '_GotText'] === 'function') {
-            window[self.id + '_GotText'](self._url, 0, '', err.message);
-          }
-        });
+      this._request('POST', text, 'text/plain');
+    },
+    PostTextWithEncoding: function(text, encoding) {
+      var enc = encoding || 'utf-8';
+      this._request('POST', text, 'text/plain; charset=' + enc);
+    },
+    PostFile: function(path) {
+      this._emitGotText(this._url, 0, '', 'PostFile is not available in this runtime.');
+    },
+    PutText: function(text) {
+      this._request('PUT', text, 'text/plain');
+    },
+    PutTextWithEncoding: function(text, encoding) {
+      var enc = encoding || 'utf-8';
+      this._request('PUT', text, 'text/plain; charset=' + enc);
+    },
+    PutFile: function(path) {
+      this._emitGotText(this._url, 0, '', 'PutFile is not available in this runtime.');
+    },
+    PatchText: function(text) {
+      this._request('PATCH', text, 'text/plain');
+    },
+    PatchTextWithEncoding: function(text, encoding) {
+      var enc = encoding || 'utf-8';
+      this._request('PATCH', text, 'text/plain; charset=' + enc);
+    },
+    PatchFile: function(path) {
+      this._emitGotText(this._url, 0, '', 'PatchFile is not available in this runtime.');
     },
     Delete: function() {
-      var self = this;
-      fetch(this._url, { method: 'DELETE' })
-        .then(function(res) {
-          return res.text().then(function(text) {
-            if (typeof window[self.id + '_GotText'] === 'function') {
-              window[self.id + '_GotText'](self._url, res.status, res.headers.get('content-type') || '', text);
-            }
-          });
-        })
-        .catch(function(err) {
-          if (typeof window[self.id + '_GotText'] === 'function') {
-            window[self.id + '_GotText'](self._url, 0, '', err.message);
-          }
-        });
+      this._request('DELETE');
+    },
+    ClearCookies: function() {
+      // No-op in pure WebView JS runtime; browser controls cookie jar.
+    },
+    BuildRequestData: function(list) {
+      if (!Array.isArray(list)) return '';
+      return list.map(function(pair) {
+        var k = encodeURIComponent(String(pair[0] || ''));
+        var v = encodeURIComponent(String(pair[1] || ''));
+        return k + '=' + v;
+      }).join('&');
+    },
+    JsonTextDecode: function(jsonText) {
+      return JSON.parse(jsonText);
+    },
+    JsonTextDecodeWithDictionaries: function(jsonText) {
+      return JSON.parse(jsonText);
+    },
+    JsonObjectEncode: function(obj) {
+      return JSON.stringify(obj);
+    },
+    HtmlTextDecode: function(htmlText) {
+      var textarea = document.createElement('textarea');
+      textarea.innerHTML = String(htmlText || '');
+      return textarea.value;
+    },
+    UriEncode: function(text) {
+      return encodeURIComponent(String(text || ''));
+    },
+    UriDecode: function(text) {
+      try { return decodeURIComponent(String(text || '')); } catch (e) { return String(text || ''); }
     }
+  };
+
+  function BluetoothConnectionBaseShim(id, props) {
+    this.id = id;
+    this._enabled = props.Enabled !== undefined ? !!props.Enabled : true;
+    this._isConnected = false;
+    this._secure = props.Secure !== undefined ? !!props.Secure : false;
+    this._delimiterByte = props.DelimiterByte !== undefined ? Number(props.DelimiterByte) : 10;
+    this._characterEncoding = props.CharacterEncoding || 'utf-8';
+    this._highByteFirst = props.HighByteFirst !== undefined ? !!props.HighByteFirst : false;
+    this._buffer = [];
+  }
+  BluetoothConnectionBaseShim.prototype = {
+    _emitError: function(functionName, message) {
+      if (typeof window[this.id + '_BluetoothError'] === 'function') {
+        window[this.id + '_BluetoothError'](functionName, message);
+      }
+    },
+    get Enabled() { return this._enabled; },
+    set Enabled(v) { this._enabled = !!v; },
+    get IsConnected() { return this._isConnected; },
+    get Available() { return (typeof navigator !== 'undefined' && !!navigator.bluetooth) || !!window.Android; },
+    get Secure() { return this._secure; },
+    set Secure(v) { this._secure = !!v; },
+    get DelimiterByte() { return this._delimiterByte; },
+    set DelimiterByte(v) { this._delimiterByte = Number(v) || 0; },
+    get CharacterEncoding() { return this._characterEncoding; },
+    set CharacterEncoding(v) { this._characterEncoding = String(v || 'utf-8'); },
+    get HighByteFirst() { return this._highByteFirst; },
+    set HighByteFirst(v) { this._highByteFirst = !!v; },
+    Disconnect: function() { this._isConnected = false; },
+    BytesAvailableToReceive: function() { return this._buffer.length; },
+    ReceiveText: function(numberOfBytes) {
+      var count = Number(numberOfBytes);
+      if (!Number.isFinite(count) || count < 0) count = this._buffer.length;
+      var chunk = this._buffer.splice(0, count);
+      return chunk.join('');
+    },
+    ReceiveSigned1ByteNumber: function() { return 0; },
+    ReceiveSigned2ByteNumber: function() { return 0; },
+    ReceiveSigned4ByteNumber: function() { return 0; },
+    ReceiveUnsigned1ByteNumber: function() { return 0; },
+    ReceiveUnsigned2ByteNumber: function() { return 0; },
+    ReceiveUnsigned4ByteNumber: function() { return 0; },
+    ReceiveSignedBytes: function(numberOfBytes) {
+      var t = this.ReceiveText(numberOfBytes);
+      return t.split('').map(function(c) { return c.charCodeAt(0) | 0; });
+    },
+    ReceiveUnsignedBytes: function(numberOfBytes) {
+      var t = this.ReceiveText(numberOfBytes);
+      return t.split('').map(function(c) { return c.charCodeAt(0) & 255; });
+    },
+    SendText: function(text) {
+      if (!this._isConnected) this._emitError('SendText', 'Not connected');
+    },
+    Send1ByteNumber: function(number) { this.SendText(String(number)); },
+    Send2ByteNumber: function(number) { this.SendText(String(number)); },
+    Send4ByteNumber: function(number) { this.SendText(String(number)); },
+    SendBytes: function(list) { this.SendText(Array.isArray(list) ? list.join(',') : String(list)); }
+  };
+
+  function BluetoothClientShim(id, props) {
+    BluetoothConnectionBaseShim.call(this, id, props || {});
+    this._disconnectOnError = props.DisconnectOnError !== undefined ? !!props.DisconnectOnError : true;
+    this._noLocationNeeded = props.NoLocationNeeded !== undefined ? !!props.NoLocationNeeded : false;
+    this._pollingRate = props.PollingRate !== undefined ? Number(props.PollingRate) : 100;
+    this._addressesAndNames = [];
+  }
+  BluetoothClientShim.prototype = Object.create(BluetoothConnectionBaseShim.prototype);
+  BluetoothClientShim.prototype.constructor = BluetoothClientShim;
+  Object.defineProperty(BluetoothClientShim.prototype, 'AddressesAndNames', { get: function() { return this._addressesAndNames; } });
+  Object.defineProperty(BluetoothClientShim.prototype, 'DisconnectOnError', {
+    get: function() { return this._disconnectOnError; },
+    set: function(v) { this._disconnectOnError = !!v; }
+  });
+  Object.defineProperty(BluetoothClientShim.prototype, 'NoLocationNeeded', {
+    get: function() { return this._noLocationNeeded; },
+    set: function(v) { this._noLocationNeeded = !!v; }
+  });
+  Object.defineProperty(BluetoothClientShim.prototype, 'PollingRate', {
+    get: function() { return this._pollingRate; },
+    set: function(v) { this._pollingRate = Number(v) || 100; }
+  });
+  BluetoothClientShim.prototype.Connect = function(address) {
+    var self = this;
+    if (!this._enabled) { this._emitError('Connect', 'Bluetooth is disabled'); return false; }
+    if (typeof navigator === 'undefined' || !navigator.bluetooth || !navigator.bluetooth.requestDevice) {
+      this._emitError('Connect', 'Bluetooth API not available in this WebView');
+      return false;
+    }
+    navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: [] })
+      .then(function(device) {
+        self._addressesAndNames = [device.name || 'Bluetooth Device'];
+        if (!device.gatt) {
+          self._isConnected = true;
+          return null;
+        }
+        return device.gatt.connect().then(function() { self._isConnected = true; });
+      })
+      .catch(function(err) {
+        self._isConnected = false;
+        self._emitError('Connect', err && err.message ? err.message : String(err));
+      });
+    return true;
+  };
+  BluetoothClientShim.prototype.ConnectWithUUID = function(address, uuid) {
+    return this.Connect(address);
+  };
+  BluetoothClientShim.prototype.IsDevicePaired = function(address) {
+    // Browser Bluetooth API does not expose pair list.
+    return false;
+  };
+
+  function BluetoothServerShim(id, props) {
+    BluetoothConnectionBaseShim.call(this, id, props || {});
+    this._accepting = false;
+  }
+  BluetoothServerShim.prototype = Object.create(BluetoothConnectionBaseShim.prototype);
+  BluetoothServerShim.prototype.constructor = BluetoothServerShim;
+  BluetoothServerShim.prototype.AcceptConnection = function(serviceName) {
+    this._accepting = true;
+    if (typeof window[this.id + '_ConnectionAccepted'] === 'function') {
+      window[this.id + '_ConnectionAccepted']();
+    }
+  };
+  BluetoothServerShim.prototype.AcceptConnectionWithUUID = function(serviceName, uuid) {
+    this.AcceptConnection(serviceName);
+  };
+  BluetoothServerShim.prototype.StopAccepting = function() {
+    this._accepting = false;
   };
 
   // ── Color Utilities ────────────────────────────────────────────────────
@@ -1492,6 +1704,12 @@ function generateComponentProxy(comp) {
   }
   if (type === 'Web') {
     return `  var ${id} = new WebShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+  if (type === 'BluetoothClient') {
+    return `  var ${id} = new BluetoothClientShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+  if (type === 'BluetoothServer') {
+    return `  var ${id} = new BluetoothServerShim('${id}', ${JSON.stringify(props)});\n`;
   }
 
   const propNames = Object.keys(props);

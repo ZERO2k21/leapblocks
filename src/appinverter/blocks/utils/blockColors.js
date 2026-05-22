@@ -13,7 +13,7 @@ export const BLOCK_COLORS = {
     variables: '#D47B42',    // Orange
     procedures: '#7B42D4',   // Violet
     events: '#D0A825',       // Goldenrod
-    methods: '#812CE5',      // Purple
+    methods: '#8F5DB7',      // MIT-like purple
     getters: '#61B265',      // Light Green
     setters: '#2E7D32'       // Dark Green
 };
