@@ -239,16 +239,14 @@ export class SkulptEngine {
             execLimit: 30000,
             inputfun: (promptText) => {
                 if (promptText) {
-                    // Send the prompt message to the output callback so it prints in the terminal logs
                     this.callbacks.onOut(promptText);
                 }
-                
-                const susp = new sk.miscellaneous.Suspension();
+
+                const susp = new sk.misceval.Suspension();
                 susp.resume = () => {
                     if (susp.data.error) throw susp.data.error;
                     return new sk.builtin.str(susp.data.result || "");
                 };
-                
                 susp.data = {
                     type: "Sk.promise",
                     promise: new Promise((resolve) => {
@@ -259,7 +257,6 @@ export class SkulptEngine {
                         }
                     })
                 };
-                
                 return susp;
             }
         });
