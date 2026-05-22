@@ -15,38 +15,32 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const containerRef = useRef(null);
     const [isAddingScreen, setIsAddingScreen] = useState(false);
     const [newScreenName, setNewScreenName] = useState('');
-    const [containerSize, setContainerSize] = useState({ width: 800, height: 600 });
-    const [time, setTime] = useState('');
+    const [currentTime, setCurrentTime] = useState('12:00');
+    const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-    // Real-time Clock effect
     useEffect(() => {
         const updateClock = () => {
             const now = new Date();
-            let hours = now.getHours().toString().padStart(2, '0');
-            let minutes = now.getMinutes().toString().padStart(2, '0');
-            setTime(`${hours}:${minutes}`);
+            const hrs = String(now.getHours()).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            setCurrentTime(`${hrs}:${mins}`);
         };
         updateClock();
-        const interval = setInterval(updateClock, 1000);
+        const interval = setInterval(updateClock, 60000);
         return () => clearInterval(interval);
     }, []);
 
-    // ResizeObserver for dynamic mockup scaling
     useEffect(() => {
         if (!containerRef.current) return;
-        const updateSize = () => {
-            const rect = containerRef.current.getBoundingClientRect();
-            setContainerSize({
-                width: rect.width,
-                height: rect.height
-            });
-        };
-        updateSize();
-        const observer = new ResizeObserver(updateSize);
+        const observer = new ResizeObserver((entries) => {
+            for (let entry of entries) {
+                const { width, height } = entry.contentRect;
+                setContainerSize({ width, height });
+            }
+        });
         observer.observe(containerRef.current);
         return () => observer.disconnect();
     }, []);
-
 
     const currentScreen = screens.find(s => s.id === activeScreen) || screens[0];
     const components = currentScreen?.components || [];
@@ -63,37 +57,6 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const currentDimensions = deviceDimensions[deviceType];
     const displayWidth = orientation === 'portrait' ? currentDimensions.width : currentDimensions.height;
     const displayHeight = orientation === 'portrait' ? currentDimensions.height : currentDimensions.width;
-
-    // Determine dynamic properties based on deviceType
-    let frameClass = 'phone-frame-pro';
-    let screenClass = 'phone-screen-pro';
-    let bezelX = 24; // left + right bezel padding
-    let bezelY = 24; // top + bottom bezel padding
-
-    if (deviceType === 'tablet7' || deviceType === 'tablet10') {
-        frameClass = 'tablet-frame-pro';
-        screenClass = 'tablet-screen-pro';
-        bezelX = 48; // thicker bezel for tablet (e.g. 24px each side)
-        bezelY = 48;
-    } else if (deviceType === 'monitor') {
-        frameClass = 'monitor-frame-pro';
-        screenClass = 'monitor-screen-pro';
-        bezelX = 16; // thin bezel for browser (e.g. 8px each side)
-        bezelY = 44; // 8px bottom + 36px titlebar top
-    }
-
-    const frameWidth = displayWidth + bezelX;
-    const frameHeight = displayHeight + bezelY;
-
-    // Calculate dynamic scaling factor to fit preview inside the available container space
-    const padding = 48; // Spacing around the device frame
-    const availableWidth = containerSize.width - padding;
-    const availableHeight = containerSize.height - padding - 64; 
-    
-    const scaleX = availableWidth / frameWidth;
-    const scaleY = availableHeight / frameHeight;
-    const scale = Math.max(0.2, Math.min(1, Math.min(scaleX, scaleY)));
-
 
     const handleDrop = (e, targetContainerId = null) => {
         e.preventDefault();
@@ -156,7 +119,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const renderComponentPreview = (comp) => {
         const isSelected = comp.id === selectedId;
         const baseClasses = `cursor-pointer transition-all ${isSelected
-            ? 'ring-2 ring-orange-500 ring-offset-2 shadow-lg z-10'
+            ? 'ring-2 ring-blue-500 ring-offset-2 shadow-lg z-10'
             : 'hover:ring-2 hover:ring-gray-300'
             } mb-2 relative`;
 
@@ -289,7 +252,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         style={style}
                         onClick={handleClick}
                     >
-                        <div className={`w-12 h-6 rounded-full transition-colors ${comp.props.On ? 'bg-orange-500' : 'bg-gray-300'}`}>
+                        <div className={`w-12 h-6 rounded-full transition-colors ${comp.props.On ? 'bg-blue-500' : 'bg-gray-300'}`}>
                             <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${comp.props.On ? 'translate-x-6' : 'translate-x-1'} mt-0.5`}></div>
                         </div>
                         <span>{comp.props.Text || 'Switch'}</span>
@@ -364,7 +327,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2 ${dropTarget === comp.id ? 'border-orange-500 bg-orange-50/20' : ''
+                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50' : ''
                             }`}
                         style={{ ...style, display: 'flex', flexDirection: 'row', gap: '8px', minHeight: '60px' }}
                         onClick={handleClick}
@@ -394,7 +357,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2 ${dropTarget === comp.id ? 'border-orange-500 bg-orange-50/20' : ''
+                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50' : ''
                             }`}
                         style={{ ...style, display: 'flex', flexDirection: 'column', gap: '8px', minHeight: '60px' }}
                         onClick={handleClick}
@@ -423,7 +386,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2 ${dropTarget === comp.id ? 'border-orange-500 bg-orange-50/20' : ''
+                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50' : ''
                             }`}
                         style={{ ...style, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', minHeight: '100px' }}
                         onClick={handleClick}
@@ -489,10 +452,16 @@ export default function PhoneCanvasEnhanced({ appState }) {
         }
     };
 
+    const frameWidth = displayWidth;
+    const frameHeight = displayHeight + 128; // 24 (status) + 56 (title) + 48 (nav)
+    const scale = containerSize.width > 0 && containerSize.height > 0
+        ? Math.min(1, Math.min((containerSize.width - 48) / frameWidth, (containerSize.height - 48) / frameHeight))
+        : 0.7; // default fallback scale
+
     return (
-        <div className="phone-canvas-container-pro h-full flex flex-col relative !overflow-hidden" onClick={() => setSelectedId(null)}>
+        <div className="phone-canvas-container-pro h-full flex flex-col relative overflow-hidden" onClick={() => setSelectedId(null)}>
             {/* Professional Top Bar - Fixed at top of canvas pane */}
-            <div className="absolute top-0 left-0 right-0 bg-[#f8fafc] border-b border-slate-200 px-6 py-3 flex items-center justify-between z-30 shadow-sm">
+            <div className="w-full bg-[#f8fafc] border-b border-slate-200 px-6 py-3 flex items-center justify-between z-30 shadow-sm">
                 <div className="flex items-center gap-6">
                     {/* Screen Selector - Tab Style */}
                     <div className="flex items-center gap-2">
@@ -594,115 +563,108 @@ export default function PhoneCanvasEnhanced({ appState }) {
             </div>
 
             {/* Scrollable Workspace Content Area */}
-            <div ref={containerRef} className="flex-1 w-full overflow-auto flex flex-col items-center justify-center p-6 min-h-0 relative">
+            <div ref={containerRef} className="phone-canvas-workspace-pro flex-1 w-full overflow-auto flex flex-col items-center justify-start gap-8 p-6 min-h-0 relative">
                 {/* Scaled Device Container */}
-                <div
-                    style={{
-                        width: `${frameWidth * scale}px`,
-                        height: `${frameHeight * scale}px`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        position: 'relative',
-                        flexShrink: 0,
-                        transition: 'width 0.3s ease, height 0.3s ease'
-                    }}
-                >
-                    {/* Device Frame */}
+                <div style={{
+                    width: `${frameWidth * scale}px`,
+                    height: `${frameHeight * scale}px`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    flexShrink: 0,
+                    transition: 'width 0.3s, height 0.3s',
+                    margin: 'auto 0'
+                }}>
                     <div
                         ref={canvasRef}
-                        className={`${frameClass} transition-all duration-500 ${dragOver ? 'drag-over shadow-[0_60px_120px_-20px_rgba(255,122,0,0.3)]' : ''}`}
+                        className={`transition-all duration-300 ${
+                            deviceType === 'phone' ? 'ios-device-frame' : 'mit-device-frame'
+                        } ${dragOver ? 'scale-[1.02] shadow-[0_30px_60px_-15px_rgba(255,122,0,0.2)] border-orange-500' : ''}`}
                         style={{
                             width: `${frameWidth}px`,
                             height: `${frameHeight}px`,
                             transform: `scale(${scale})`,
                             transformOrigin: 'center center',
                             position: 'absolute',
-                            flexShrink: 0
+                            flexShrink: 0,
+                            boxSizing: 'border-box'
                         }}
                         onDrop={handleDrop}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                     >
-                        {/* Phone-specific Hardware Buttons */}
-                        {deviceType === 'phone' && (
-                            <>
-                                <div className="volume-up" />
-                                <div className="volume-down" />
-                                <div className="power-btn" />
-                            </>
-                        )}
-
-                        {/* Tablet-specific Camera Dot */}
-                        {(deviceType === 'tablet7' || deviceType === 'tablet10') && (
-                            <div className="tablet-camera-dot-pro" />
-                        )}
-
-                        {/* Browser Window Controls for Monitor */}
-                        {deviceType === 'monitor' && (
-                            <div className="monitor-titlebar-pro">
-                                <div className="monitor-window-dots-pro">
-                                    <span className="dot dot-close" />
-                                    <span className="dot dot-minimize" />
-                                    <span className="dot dot-expand" />
+                        {/* Status Bar */}
+                        {deviceType === 'phone' ? (
+                            <div className="ios-status-bar">
+                                <span className="ios-status-time">{currentTime}</span>
+                                <div className="ios-dynamic-island" />
+                                <div className="ios-status-icons">
+                                    <Signal className="h-3.5 w-3.5" />
+                                    <Wifi className="h-3.5 w-3.5" />
+                                    <Battery className="h-3.5 w-3.5" />
                                 </div>
-                                <div className="monitor-url-bar-pro">
-                                    <span>leapblocks.app/appinverter</span>
+                            </div>
+                        ) : (
+                            <div className="mit-status-bar">
+                                <span className="mit-status-time">{currentTime}</span>
+                                <div className="mit-status-icons">
+                                    <Signal className="h-3.5 w-3.5" />
+                                    <Wifi className="h-3.5 w-3.5" />
+                                    <Battery className="h-3.5 w-3.5" />
                                 </div>
-                                <div className="w-16" />
                             </div>
                         )}
 
-                        <div className={`${screenClass} flex flex-col`}>
-                            {/* Status Bar Pro (Phone & Tablet only) */}
-                            {(deviceType === 'phone' || deviceType === 'tablet7' || deviceType === 'tablet10') && (
-                                <div className="status-bar-pro">
-                                    <div className="time">{time || '9:41'}</div>
-                                    {deviceType === 'phone' && <div className="phone-notch-pro" />}
-                                    <div className="right-icons">
-                                        <Signal className="h-3 w-3" />
-                                        <Wifi className="h-3 w-3" />
-                                        <Battery className="h-3 w-3" />
+                        {/* Title Bar */}
+                        {deviceType === 'phone' ? (
+                            <div className="ios-title-bar">
+                                <span className="ios-title-back">⟨ Screen</span>
+                                <span className="ios-title-text">{currentScreen.title || activeScreen}</span>
+                                <button className="ios-title-menu">⋮</button>
+                            </div>
+                        ) : (
+                            <div className="mit-title-bar">
+                                <span className="mit-title-text">{currentScreen.title || activeScreen}</span>
+                                <button className="mit-title-menu">⋮</button>
+                            </div>
+                        )}
+
+                        {/* Screen Content */}
+                        <div className="mit-screen-content flex-1" style={{ height: `${displayHeight}px` }}>
+                            {components.length === 0 ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
+                                    <div className="text-slate-300 text-[13px] font-medium leading-relaxed">
+                                        Drag components from the<br />palette to build your app.
                                     </div>
                                 </div>
-                            )}
-
-                            {/* App Title Bar - Precise Centering */}
-                            <div className="h-16 bg-slate-900 text-white flex items-center justify-center px-10 shrink-0 relative z-10">
-                                <span className="text-[14px] font-black uppercase tracking-[0.15em] opacity-95 text-center w-full truncate">
-                                    {currentScreen.title || activeScreen}
-                                </span>
-                            </div>
-
-                            {/* Screen Content */}
-                            <div className="flex-1 overflow-y-auto p-6 relative bg-white">
-                                {components.length === 0 ? (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-10 border-2 border-dashed border-slate-100 m-6 rounded-[32px] bg-slate-50/30">
-                                        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-5 text-4xl shadow-sm border border-slate-100">📱</div>
-                                        <div className="text-slate-900 font-extrabold uppercase tracking-[0.15em] text-[12px] mb-2">Workspace Empty</div>
-                                        <div className="text-slate-400 text-[12px] font-medium leading-relaxed">Drag components from the<br />palette to begin.</div>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col gap-4">
-                                        {components.map(comp => renderComponentPreview(comp))}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Home Indicator Pro (Phone only) */}
-                            {deviceType === 'phone' && <div className="home-indicator-pro" />}
-
-                            {/* Tablet Home Indicator */}
-                            {(deviceType === 'tablet7' || deviceType === 'tablet10') && (
-                                <div className="tablet-home-indicator-pro" />
+                            ) : (
+                                <div className="flex flex-col gap-2 p-4 min-h-full">
+                                    {components.map(comp => renderComponentPreview(comp))}
+                                </div>
                             )}
                         </div>
+
+                        {/* Nav Bar */}
+                        {deviceType === 'phone' ? (
+                            <div className="ios-home-indicator-bar">
+                                <div className="ios-home-indicator" />
+                            </div>
+                        ) : (
+                            <div className="mit-nav-bar">
+                                <div className="mit-nav-buttons">
+                                    <span className="mit-nav-btn">◁</span>
+                                    <span className="mit-nav-btn mit-nav-btn-circle">○</span>
+                                    <span className="mit-nav-btn">□</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 {/* Non-Visible Components Bar Pro */}
                 {nonVisibleComponents.length > 0 && (
-                    <div className="w-full max-w-[450px] bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl p-4 shadow-md flex flex-col gap-3 z-10 mt-6">
+                    <div className="w-full max-w-[450px] bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl p-4 shadow-md flex flex-col gap-3 z-10 shrink-0">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                             <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-[0.15em] whitespace-nowrap">Non-Visible Components</span>
                             <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">{nonVisibleComponents.length}</span>
@@ -726,7 +688,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 )}
             </div>
         </div>
-    );
+);
 }
 
 

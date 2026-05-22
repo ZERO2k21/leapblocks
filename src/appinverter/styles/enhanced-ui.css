@@ -292,8 +292,8 @@ body {
 
 /* ==================== Enhanced Palette (PRO) ==================== */
 .palette-category {
-    margin-bottom: 8px;
-    border-radius: 10px;
+    margin-bottom: 16px;
+    border-radius: 16px;
     overflow: hidden;
     border: 2px solid var(--panel-border);
     background: white;
@@ -303,19 +303,19 @@ body {
 
 .palette-category:hover {
     border-color: rgba(255, 122, 0, 0.3);
-    box-shadow: 0 6px 18px -4px rgba(255, 122, 0, 0.1);
-    transform: translateY(-1px);
+    box-shadow: 0 8px 24px -4px rgba(255, 122, 0, 0.12);
+    transform: translateY(-2px);
 }
 
 .palette-category-header {
     background: linear-gradient(to bottom, #ffffff 0%, #fafbfc 100%);
-    padding: 10px 12px;
+    padding: 18px 20px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-weight: 800;
-    font-size: 12px;
+    font-weight: 900;
+    font-size: 14px;
     color: #1e293b;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -350,10 +350,10 @@ body {
 }
 
 .palette-category-icon-wrapper {
-    width: 26px;
-    height: 26px;
+    width: 36px;
+    height: 36px;
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    border-radius: 6px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -366,23 +366,23 @@ body {
 .palette-category-header.active .palette-category-icon-wrapper {
     background: linear-gradient(135deg, var(--lp-primary) 0%, var(--lp-primary-hover) 100%);
     color: white;
-    box-shadow: 0 4px 12px -4px rgba(255, 122, 0, 0.4);
-    transform: scale(1.04);
+    box-shadow: 0 6px 16px -4px rgba(255, 122, 0, 0.5);
+    transform: scale(1.08);
     border-color: transparent;
 }
 
 .palette-item-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    padding: 10px;
+    gap: 12px;
+    padding: 16px;
     background: linear-gradient(to bottom, #fafbfc 0%, #ffffff 100%);
 }
 
 .palette-item-pro {
-    padding: 10px 8px;
+    padding: 18px 14px;
     border: 2px solid #e2e8f0;
-    border-radius: 10px;
+    border-radius: 14px;
     text-align: center;
     cursor: grab;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -390,7 +390,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 10px;
     position: relative;
     overflow: hidden;
 }
@@ -410,8 +410,8 @@ body {
 .palette-item-pro:hover {
     border-color: var(--lp-primary);
     background: linear-gradient(135deg, rgba(255, 122, 0, 0.06) 0%, #ffffff 100%);
-    transform: translateY(-2px) scale(1.01);
-    box-shadow: 0 8px 20px -6px rgba(255, 122, 0, 0.25), 0 3px 8px -3px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 32px -8px rgba(255, 122, 0, 0.3), 0 4px 12px -4px rgba(0, 0, 0, 0.15);
 }
 
 .palette-item-pro:hover::before {
@@ -420,25 +420,25 @@ body {
 
 .palette-item-pro:active {
     cursor: grabbing;
-    transform: translateY(-1px) scale(0.99);
-    box-shadow: 0 4px 10px -3px rgba(255, 122, 0, 0.2);
+    transform: translateY(-2px) scale(0.98);
+    box-shadow: 0 6px 16px -4px rgba(255, 122, 0, 0.25);
 }
 
 .palette-item-icon-pro {
-    font-size: 22px;
+    font-size: 32px;
     color: #475569;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     filter: grayscale(0.2);
 }
 
 .palette-item-pro:hover .palette-item-icon-pro {
-    transform: scale(1.15) rotate(5deg);
+    transform: scale(1.2) rotate(5deg);
     color: var(--lp-primary);
     filter: grayscale(0);
 }
 
 .palette-item-label-pro {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 800;
     color: #475569;
     text-transform: uppercase;
@@ -521,333 +521,174 @@ body {
     transform: translateY(-1px);
 }
 
-/* ==================== Phone Canvas Pro ==================== */
+/* ==================== Phone Canvas Pro & MIT Device ==================== */
 .phone-canvas-container-pro {
-    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-    padding: 100px 40px 40px 40px;
     display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.phone-canvas-workspace-pro {
+    flex: 1;
+    width: 100%;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 700px;
-    height: 100%;
     position: relative;
-    overflow: auto;
+    padding: 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     background-image: 
-        radial-gradient(circle at center, rgba(255, 122, 0, 0.03) 0%, transparent 50%),
-        radial-gradient(var(--lp-border) 1px, transparent 1px),
-        linear-gradient(rgba(255, 122, 0, 0.02) 1px, transparent 1px);
-    background-size: 100% 100%, 32px 32px, 128px 128px;
+        radial-gradient(circle at center, rgba(255, 122, 0, 0.04) 0%, transparent 70%),
+        radial-gradient(#cbd5e1 1.5px, transparent 1.5px),
+        linear-gradient(rgba(255, 122, 0, 0.01) 1px, transparent 1px);
+    background-size: 100% 100%, 24px 24px, 96px 96px;
     background-position: center, 0 0, 0 0;
 }
 
-.phone-frame-pro {
-    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
-    border-radius: 64px;
-    padding: 12px;
-    box-shadow: 
-        0 80px 150px -20px rgba(0, 0, 0, 0.5),
-        0 40px 80px -40px rgba(0, 0, 0, 0.6),
-        0 20px 40px -20px rgba(255, 122, 0, 0.1),
-        inset 0 0 2px 1px rgba(255, 255, 255, 0.12);
-    position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    max-width: 100%;
-    max-height: calc(100vh - 200px);
-}
-
-/* Responsive scaling for different device sizes */
-@media (max-height: 900px) {
-    .phone-frame-pro {
-        max-height: calc(100vh - 180px);
-        transform: scale(0.95);
-    }
-}
-
-@media (max-height: 800px) {
-    .phone-frame-pro {
-        max-height: calc(100vh - 160px);
-        transform: scale(0.9);
-    }
-}
-
-@media (max-height: 700px) {
-    .phone-frame-pro {
-        max-height: calc(100vh - 140px);
-        transform: scale(0.85);
-    }
-}
-
-/* Device Reflection */
-.phone-frame-pro::before {
-    content: '';
-    position: absolute;
-    top: 5%;
-    left: 2%;
-    width: 40%;
-    height: 90%;
-    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
-    border-radius: 50px;
-    pointer-events: none;
-    z-index: 5;
-}
-
-/* Hardware Buttons */
-.phone-frame-pro .volume-up {
-    position: absolute;
-    left: -2px;
-    top: 150px;
-    width: 3px;
-    height: 50px;
-    background: #1e293b;
-    border-radius: 2px 0 0 2px;
-}
-
-.phone-frame-pro .volume-down {
-    position: absolute;
-    left: -2px;
-    top: 210px;
-    width: 3px;
-    height: 50px;
-    background: #1e293b;
-    border-radius: 2px 0 0 2px;
-}
-
-.phone-frame-pro .power-btn {
-    position: absolute;
-    right: -2px;
-    top: 160px;
-    width: 3px;
-    height: 80px;
-    background: #1e293b;
-    border-radius: 0 2px 2px 0;
-}
-
-.phone-screen-pro {
-    background: linear-gradient(to bottom, #ffffff 0%, #fafbfc 100%);
-    border-radius: 52px;
-    overflow: hidden;
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    position: relative;
-    box-shadow: 
-        inset 0 0 20px rgba(0,0,0,0.08),
-        inset 0 2px 4px rgba(0,0,0,0.06);
-    display: flex;
-    flex-direction: column;
-}
-
-/* Ensure content stays within screen bounds */
-.phone-screen-pro > * {
-    flex-shrink: 0;
-}
-
-.phone-screen-pro > .flex-1 {
-    flex-shrink: 1;
-    min-height: 0;
-}
-
-/* Dynamic Island */
-.phone-notch-pro {
-    position: absolute;
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 110px;
-    height: 32px;
-    background: #000;
-    border-radius: 20px;
-    z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.phone-notch-pro::after {
-    content: '';
-    width: 8px;
-    height: 8px;
-    background: #0f172a;
-    border-radius: 50%;
-    margin-left: 60px;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-
-/* Status Bar */
-.status-bar-pro {
-    height: 44px;
-    width: 100%;
-    padding: 0 32px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    font-size: 13px;
-    font-weight: 800;
-    color: #000;
-    z-index: 40;
-    padding-bottom: 8px;
-}
-
-.status-bar-pro .right-icons {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-}
-
-/* Home Indicator */
-.home-indicator-pro {
-    position: absolute;
-    bottom: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 120px;
-    height: 5px;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-    z-index: 50;
-}
-
-/* ==================== Tablet Frame Pro ==================== */
-.tablet-frame-pro {
-    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
-    border-radius: 40px;
-    padding: 24px;
-    box-shadow: 
-        0 80px 150px -20px rgba(0, 0, 0, 0.45),
-        0 40px 80px -40px rgba(0, 0, 0, 0.55),
-        inset 0 0 2px 1px rgba(255, 255, 255, 0.12);
-    position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    max-width: 100%;
-}
-
-.tablet-screen-pro {
-    background: linear-gradient(to bottom, #ffffff 0%, #fafbfc 100%);
-    border-radius: 20px;
-    overflow: hidden;
-    width: 100%;
-    height: 100%;
-    position: relative;
-    box-shadow: 
-        inset 0 0 20px rgba(0,0,0,0.08),
-        inset 0 2px 4px rgba(0,0,0,0.06);
-    display: flex;
-    flex-direction: column;
-}
-
-.tablet-camera-dot-pro {
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 8px;
-    height: 8px;
-    background: #090d16;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    z-index: 50;
-}
-
-.tablet-home-indicator-pro {
-    position: absolute;
-    bottom: 6px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 160px;
-    height: 4px;
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 10px;
-    z-index: 50;
-}
-
-/* ==================== Monitor Frame Pro ==================== */
-.monitor-frame-pro {
-    background: #1e293b;
-    border-radius: 12px;
-    padding: 8px 8px 8px 8px;
-    box-shadow: 
-        0 40px 100px -10px rgba(0, 0, 0, 0.4),
-        0 20px 40px -20px rgba(0, 0, 0, 0.5),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.15);
-    position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: stretch;
-    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    max-width: 100%;
-}
-
-.monitor-screen-pro {
+/* Flat rectangular MIT Device Frame */
+.mit-device-frame {
     background: #ffffff;
-    border-radius: 6px;
-    overflow: hidden;
-    width: 100%;
-    height: 100%;
+    border: 4px solid #475569; /* Slate-600 */
+    border-radius: 16px;
+    box-shadow: 
+        0 25px 50px -12px rgba(15, 23, 42, 0.15),
+        0 0 0 1px rgba(15, 23, 42, 0.05);
     display: flex;
     flex-direction: column;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.monitor-titlebar-pro {
-    height: 36px;
-    background: #f1f5f9;
-    border-bottom: 1px solid #e2e8f0;
+.mit-device-frame:hover {
+    border-color: #334155; /* Slightly darker slate on hover */
+    box-shadow: 
+        0 30px 60px -15px rgba(15, 23, 42, 0.2),
+        0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+/* Drag over active state */
+.mit-device-frame.drag-over-active {
+    border-color: #ff7a00; /* Ignite Orange */
+    box-shadow: 
+        0 0 0 4px rgba(255, 122, 0, 0.15),
+        0 30px 60px -15px rgba(255, 122, 0, 0.25);
+}
+
+/* MIT Status Bar */
+.mit-status-bar {
+    height: 24px;
+    background: #1e293b; /* Slate-800 */
+    color: #94a3b8; /* Slate-400 */
+    padding: 0 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    pointer-events: none;
     user-select: none;
-    flex-shrink: 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.monitor-window-dots-pro {
+.mit-status-time {
+    font-family: monospace;
+    font-weight: 800;
+    color: #e2e8f0;
+}
+
+.mit-status-icons {
     display: flex;
+    align-items: center;
     gap: 6px;
 }
 
-.monitor-window-dots-pro .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
+.mit-status-icons svg {
+    stroke-width: 2.5px;
+    color: #94a3b8;
 }
 
-.monitor-window-dots-pro .dot-close {
-    background-color: #ff5f56;
+/* MIT Title Bar (MIT App Inventor Action Bar) */
+.mit-title-bar {
+    height: 56px;
+    background: #334155; /* Slate-700 */
+    color: #ffffff;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.monitor-window-dots-pro .dot-minimize {
-    background-color: #ffbd2e;
-}
-
-.monitor-window-dots-pro .dot-expand {
-    background-color: #27c93f;
-}
-
-.monitor-url-bar-pro {
-    background-color: #e2e8f0;
-    border-radius: 6px;
-    padding: 2px 16px;
-    font-size: 11px;
-    font-family: monospace;
-    color: #64748b;
-    max-width: 300px;
-    width: 100%;
-    text-align: center;
-    white-space: nowrap;
+.mit-title-text {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mit-title-menu {
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.mit-title-menu:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Screen Content Area */
+.mit-screen-content {
+    background: #ffffff;
+    overflow-y: auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navigation Bar (Android bottom bar style) */
+.mit-nav-bar {
+    height: 48px;
+    background: #0f172a; /* Slate-900 */
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    user-select: none;
+}
+
+.mit-nav-buttons {
+    display: flex;
+    align-items: center;
+    gap: 72px; /* Spaced out beautifully */
+}
+
+.mit-nav-btn {
+    color: #475569; /* Slate-500 */
+    font-size: 15px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.mit-nav-btn-circle {
+    font-size: 18px;
 }
 
 /* ==================== Build Button Pro ==================== */
@@ -1147,3 +988,174 @@ textarea:focus-visible {
 .bg-purple-100 { background-color: rgba(0, 180, 216, 0.15) !important; }
 .text-purple-500 { color: #00b4d8 !important; }
 
+/* ==================== iOS themed iPhone Canvas Preview ==================== */
+.ios-device-frame {
+    background: #ffffff;
+    border: none;
+    border-radius: 40px;
+    /* Premium outer bezel overlay + shadow to preserve exact pixel dimensions internally */
+    box-shadow: 
+        0 0 0 12px #0f172a,
+        0 0 0 13px rgba(255, 255, 255, 0.1),
+        0 25px 50px -12px rgba(15, 23, 42, 0.35);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ios-device-frame:hover {
+    box-shadow: 
+        0 0 0 12px #1e293b,
+        0 0 0 13px rgba(255, 255, 255, 0.15),
+        0 30px 60px -15px rgba(15, 23, 42, 0.45);
+}
+
+.ios-status-bar {
+    height: 36px;
+    background: #ffffff;
+    color: #0f172a;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    pointer-events: none;
+    user-select: none;
+    position: relative;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.015);
+}
+
+.ios-status-time {
+    font-weight: 700;
+    width: 50px;
+    letter-spacing: -0.01em;
+}
+
+.ios-dynamic-island {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 22px;
+    background: #000000;
+    border-radius: 11px;
+    top: 7px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.12);
+}
+
+.ios-dynamic-island::after {
+    content: '';
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 5px;
+    height: 5px;
+    background: #111827;
+    border-radius: 50%;
+    box-shadow: inset 0 0 1px 1px #1e293b;
+    opacity: 0.8;
+}
+
+.ios-dynamic-island:hover {
+    width: 105px;
+    height: 24px;
+    top: 6px;
+}
+
+.ios-status-icons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 50px;
+    justify-content: flex-end;
+}
+
+.ios-status-icons svg {
+    stroke-width: 2.2px;
+    color: #0f172a;
+}
+
+.ios-title-bar {
+    height: 56px;
+    background: #ffffff;
+    color: #0f172a;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    position: relative;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.ios-title-back {
+    color: #ff7a00; /* Brand Ignite Orange for iOS accents */
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    transition: opacity 0.2s ease;
+    user-select: none;
+}
+
+.ios-title-back:hover {
+    opacity: 0.7;
+}
+
+.ios-title-text {
+    font-size: 16px;
+    font-weight: 700;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    letter-spacing: -0.012em;
+}
+
+.ios-title-menu {
+    background: transparent;
+    border: none;
+    color: #ff7a00; /* Brand Ignite Orange menu option */
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.ios-title-menu:hover {
+    background: rgba(255, 122, 0, 0.08);
+}
+
+.ios-home-indicator-bar {
+    height: 36px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    pointer-events: none;
+    user-select: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.015);
+}
+
+.ios-home-indicator {
+    width: 120px;
+    height: 5px;
+    background: #000000;
+    border-radius: 2.5px;
+    opacity: 0.8;
+}
