@@ -28,6 +28,16 @@ const getComponentInstances = (typeName, currentValue, block) => {
         }
     }
 
+    // Blockly may apply field XML values before extra state is restored.
+    // Include active screen id as a universal fallback to prevent noisy
+    // "unavailable option" validation errors during domToWorkspace.
+    if (window.LeapLab_ActiveScreen) {
+        const screenId = window.LeapLab_ActiveScreen.id || window.LeapLab_ActiveScreen.name;
+        if (screenId && !instances.some(i => i[1] === screenId)) {
+            instances.push([screenId, screenId]);
+        }
+    }
+
     // Ensure val is in the list to avoid validation errors
     if (val && !instances.some(i => i[1] === val)) {
         instances.push([val, val]);

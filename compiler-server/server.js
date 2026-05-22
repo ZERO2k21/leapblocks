@@ -36,6 +36,13 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 
+const APK_PUBLIC_DIR = path.join(__dirname, 'public', 'apks');
+app.use('/apks', express.static(APK_PUBLIC_DIR));
+
+function sanitizeApkName(name) {
+  return (name || 'MyApp').replace(/[^a-zA-Z0-9]/g, '') || 'MyApp';
+}
+
 // ─── arduino-cli path ─────────────────────────────────────────────────────────
 // Priority: ARDUINO_CLI_PATH env var → bundled binary → system PATH
 function getCliPath() {
@@ -401,6 +408,44 @@ if (typeof __loop  === 'function') { __exports.loop  = __loop;  }
 
   return wrapped;
 }
+
+app.post('/build-apk', async (req, res) => {
+  const project = req.body;
+  if (!project || typeof project !== 'object') {
+    return res.status(400).json({ success: false, error: 'No project data provided' });
+  }
+
+  try {
+    const ApkBuilder = require(path.join(__dirname, '..', 'src', 'appinverter', 'apk', 'buildAPK'));
+    const builder = new ApkBuilder();
+    const logs = [];
+    const outputPath = await builder.build(project, ({ progress, message }) => {
+      if (message) {
+        const prefix = progress !== undefined ? `[${progress}%] ` : '';
+        logs.push(`${prefix}${message}`);
+        console.log(`[APK] ${prefix}${message}`);
+      }
+    });
+
+    fs.mkdirSync(APK_PUBLIC_DIR, { recursive: true });
+    const apkName = `${sanitizeApkName(project.appName)}.apk`;
+    const publicPath = path.join(APK_PUBLIC_DIR, apkName);
+    fs.copyFileSync(outputPath, publicPath);
+
+    return res.json({
+      success: true,
+      downloadUrl: `/apks/${apkName}`,
+      outputPath: publicPath,
+      logs,
+    });
+  } catch (err) {
+    console.error('[APK] build failed:', err);
+    return res.status(500).json({
+      success: false,
+      error: err.message || String(err),
+    });
+  }
+});
 
 // ─── POST /compile ────────────────────────────────────────────────────────────
 app.post('/compile', async (req, res) => {

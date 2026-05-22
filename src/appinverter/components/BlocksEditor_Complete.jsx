@@ -223,6 +223,8 @@ export default function BlocksEditorComplete({ appState }) {
                 logSession('LOADING_SAVED_BLOCKS');
                 const xml = Blockly.utils.xml.textToDom(savedBlocks);
                 Blockly.Xml.domToWorkspace(xml, workspace);
+                // Keep a live snapshot available for immediate APK builds.
+                window.__LEAP_BLOCK_XML__ = savedBlocks;
                 logSession('BLOCKS_LOADED_SUCCESSFULLY');
             } catch (e) {
                 logSession('ERROR_LOADING_BLOCKS', { error: e.message });
@@ -234,6 +236,9 @@ export default function BlocksEditorComplete({ appState }) {
         workspace.addChangeListener(() => {
             const xml = Blockly.Xml.workspaceToDom(workspace);
             const xmlText = Blockly.Xml.domToText(xml);
+            // Avoid React state timing issues by keeping the latest workspace
+            // XML in a direct runtime cache used by the build action.
+            window.__LEAP_BLOCK_XML__ = xmlText;
             if (appState.setBlockLogic) {
                 appState.setBlockLogic(xmlText);
             }

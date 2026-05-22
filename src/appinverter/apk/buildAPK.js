@@ -21,6 +21,26 @@ const os = require('os');
 const TEMPLATE_APK = path.join(__dirname, 'base_template.apk');
 const OUTPUT_DIR = path.join(os.tmpdir(), 'leapblocks_output');
 
+function countVisibleComponents(screens = []) {
+  let count = 0;
+  const walk = (components = []) => {
+    for (const component of components) {
+      count += 1;
+      if (component.children?.length) walk(component.children);
+    }
+  };
+  for (const screen of screens) {
+    walk(screen.components || []);
+  }
+  return count;
+}
+
+function normalizeVersionCode(value) {
+  const parsed = Number.parseInt(`${value ?? ''}`, 10);
+  if (Number.isFinite(parsed) && parsed > 1) return parsed;
+  return Math.floor(Date.now() / 1000);
+}
+
 class ApkBuilder {
   constructor() {
     this.injector = new ApkInjector();
@@ -35,13 +55,30 @@ class ApkBuilder {
    * @returns {string} Path to the signed APK
    */
   async build(appState, onProgress) {
-    const appName = (appState.appName || 'MyApp').replace(/[^a-zA-Z0-9]/g, '');
+    const appName = (appState.appName || 'MyApp').replace(/[^a-zA-Z0-9]/g, '') || 'MyApp';
     const packageName = appState.packageName || `com.leaplab.${appName.toLowerCase()}`;
+    const versionCode = normalizeVersionCode(appState.versionCode);
+    const versionName = String(appState.versionName || '1.0').replace(/'/g, '');
+    const normalizedAppState = { ...appState, versionCode, versionName };
+    const screens = Array.isArray(appState.screens) ? appState.screens : [];
+    const visibleComponentCount = countVisibleComponents(screens);
 
     try {
       // ── Step 1: Generate web app files ─────────────────────────────────
       onProgress?.({ stage: 'generating', progress: 5, message: 'Generating web application...' });
-      const webAppFiles = generateWebApp(appState);
+      onProgress?.({
+        stage: 'snapshot',
+        progress: 6,
+        message: `Project snapshot: ${screens.length || 1} screen(s), ${visibleComponentCount} visible component(s)`,
+      });
+      if (visibleComponentCount === 0) {
+        onProgress?.({
+          stage: 'snapshot_warning',
+          progress: 7,
+          message: 'Warning: no visible components are present in the build payload.',
+        });
+      }
+      const webAppFiles = generateWebApp(normalizedAppState);
       onProgress?.({ stage: 'generated', progress: 10, message: `Generated ${Object.keys(webAppFiles).length} files` });
 
       // ── Step 2: Check for template APK ────────────────────────────────

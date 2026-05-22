@@ -24,6 +24,30 @@ import './styles/leap-appinventor.css';
 import './styles/enhanced-ui.css';
 import { Zap } from 'lucide-react';
 
+function countVisibleComponents(screens = []) {
+  let count = 0;
+  const walk = (components = []) => {
+    components.forEach((component) => {
+      count += 1;
+      if (component.children?.length) walk(component.children);
+    });
+  };
+  screens.forEach((screen) => walk(screen.components || []));
+  return count;
+}
+
+function buildBlocklyContextFromPayload(payload) {
+  const screens = payload?.screens || [];
+  const activeScreenId = payload?.activeScreen || screens[0]?.id;
+  const currentScreen = screens.find((s) => s.id === activeScreenId) || screens[0];
+  const flattenVisible = (list = []) => list.flatMap((item) => [item, ...(item.children ? flattenVisible(item.children) : [])]);
+  const components = [
+    ...flattenVisible(currentScreen?.components || []),
+    ...(currentScreen?.nonVisibleComponents || [])
+  ];
+  return { currentScreen, components };
+}
+
 export default function AppInventor({ onBack }) {
   const appState = useAppState();
   const [activeTab, setActiveTab] = useState('designer');
@@ -57,13 +81,28 @@ export default function AppInventor({ onBack }) {
 
     try {
       const payload = appState.getSerializedState();
+      const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
+      if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
+        payload.blockLogic = liveBlockXml;
+      }
+      const visibleComponentCount = countVisibleComponents(payload.screens || []);
+      setBuildLogs((prev) => [
+        ...prev,
+        `Project snapshot: ${(payload.screens || []).length || 1} screen(s), ${visibleComponentCount} visible component(s)`
+      ]);
 
       if (payload.blockLogic && payload.blockLogic.trim().startsWith('<')) {
         try {
           setBuildLogs((prev) => [...prev, 'Transpiling block logic to JavaScript...']);
+          const { initializeAllBlocks } = await import('./blocks/definitions/index');
           const Blockly = (await import('blockly')).default || (await import('blockly'));
           const { javascriptGenerator } = await import('blockly/javascript');
-          await import('./blocks/generators/reactnative').catch(() => { });
+          await import('./blocks/generators/reactnative');
+          initializeAllBlocks();
+
+          const { currentScreen, components } = buildBlocklyContextFromPayload(payload);
+          window.LeapLab_Components = components;
+          window.LeapLab_ActiveScreen = currentScreen;
 
           const tempWorkspace = new Blockly.Workspace();
           try {
@@ -117,6 +156,9 @@ export default function AppInventor({ onBack }) {
         const result = await response.json();
         if (result.success) {
           setBuildState('success');
+          if (Array.isArray(result.logs) && result.logs.length) {
+            setBuildLogs((prev) => [...prev, ...result.logs]);
+          }
           // downloadUrl should be a full or relative URL
           setApkPath(result.downloadUrl.startsWith('http') ? result.downloadUrl : `${CLOUD_COMPILER_URL}${result.downloadUrl}`);
           setBuildLogs((prev) => [...prev, 'Build complete! APK is ready to download.']);

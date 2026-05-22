@@ -6,8 +6,15 @@
 import { javascriptGenerator } from 'blockly/javascript';
 import { COMPONENT_METADATA } from '../../data/componentMetadata';
 
+function registerGenerator(type, fn) {
+    javascriptGenerator[type] = fn;
+    if (javascriptGenerator.forBlock) {
+        javascriptGenerator.forBlock[type] = fn;
+    }
+}
+
 // Component Event Handler (Fixed)
-javascriptGenerator['component_event'] = function (block) {
+registerGenerator('component_event', function (block) {
     const component = block.getFieldValue('INSTANCE') || block.instanceName || block.getFieldValue('COMPONENT');
     const event = block.eventName || block.getFieldValue('EVENT');
     const typeName = block.typeName;
@@ -20,27 +27,27 @@ javascriptGenerator['component_event'] = function (block) {
     const paramsStr = params.join(', ');
 
     return `window.${component}_${event} = function(${paramsStr}) {\n${statements}};\n`;
-};
+});
 
 // Component Get Property (Fixed)
-javascriptGenerator['component_get_property'] = function (block) {
+registerGenerator('component_get_property', function (block) {
     const component = block.getFieldValue('INSTANCE') || block.instanceName || block.getFieldValue('COMPONENT');
     const property = block.getFieldValue('PROPERTY') || block.propertyName;
 
     return [`${component}.${property}`, javascriptGenerator.ORDER_MEMBER];
-};
+});
 
 // Component Set Property (Fixed)
-javascriptGenerator['component_set_property'] = function (block) {
+registerGenerator('component_set_property', function (block) {
     const component = block.getFieldValue('INSTANCE') || block.instanceName || block.getFieldValue('COMPONENT');
     const property = block.getFieldValue('PROPERTY') || block.propertyName;
     const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_ASSIGNMENT) || '""';
 
     return `${component}.${property} = ${value};\n`;
-};
+});
 
 // Component Method Call (Fixed)
-javascriptGenerator['component_method'] = function (block) {
+registerGenerator('component_method', function (block) {
     const component = block.getFieldValue('INSTANCE') || block.instanceName || block.getFieldValue('COMPONENT');
     const method = block.getFieldValue('METHOD') || block.methodName;
     const typeName = block.typeName;
@@ -63,10 +70,10 @@ javascriptGenerator['component_method'] = function (block) {
     } else {
         return code;
     }
-};
+});
 
 // Generic Component Event Handler (Any Component)
-javascriptGenerator['any_component_event'] = function (block) {
+registerGenerator('any_component_event', function (block) {
     const event = block.eventName || block.getFieldValue('EVENT');
     const typeName = block.typeName;
     const statements = javascriptGenerator.statementToCode(block, 'DO');
@@ -80,10 +87,10 @@ javascriptGenerator['any_component_event'] = function (block) {
     const paramsStr = allParams.join(', ');
 
     return `window.any_${typeName}_${event} = function(${paramsStr}) {\n${statements}};\n`;
-};
+});
 
 // Generic Component Method Call (Any Component)
-javascriptGenerator['any_component_method'] = function (block) {
+registerGenerator('any_component_method', function (block) {
     const component = javascriptGenerator.valueToCode(block, 'COMPONENT', javascriptGenerator.ORDER_MEMBER) || 'null';
     const method = block.getFieldValue('METHOD') || block.methodName;
     const typeName = block.typeName;
@@ -106,126 +113,126 @@ javascriptGenerator['any_component_method'] = function (block) {
     } else {
         return code;
     }
-};
+});
 
 // Generic Component Get Property (Any Component)
-javascriptGenerator['any_component_get_property'] = function (block) {
+registerGenerator('any_component_get_property', function (block) {
     const component = javascriptGenerator.valueToCode(block, 'COMPONENT', javascriptGenerator.ORDER_MEMBER) || 'null';
     const property = block.getFieldValue('PROPERTY') || block.propertyName;
 
     return [`(${component} ? ${component}.${property} : null)`, javascriptGenerator.ORDER_MEMBER];
-};
+});
 
 // Generic Component Set Property (Any Component)
-javascriptGenerator['any_component_set_property'] = function (block) {
+registerGenerator('any_component_set_property', function (block) {
     const component = javascriptGenerator.valueToCode(block, 'COMPONENT', javascriptGenerator.ORDER_MEMBER) || 'null';
     const property = block.getFieldValue('PROPERTY') || block.propertyName;
     const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_ASSIGNMENT) || '""';
 
     return `if (${component}) { ${component}.${property} = ${value}; }\n`;
-};
+});
 
 // Component Choice Block (Dropdown Options)
-javascriptGenerator['component_choice'] = function (block) {
+registerGenerator('component_choice', function (block) {
     const choiceValue = block.getFieldValue('CHOICE') || block.choiceValue;
     return [JSON.stringify(choiceValue), javascriptGenerator.ORDER_ATOMIC];
-};
+});
 
 // Navigate Screen
-javascriptGenerator['navigate_screen'] = function (block) {
+registerGenerator('navigate_screen', function (block) {
     const screen = block.getFieldValue('SCREEN');
     return `navigation.navigate('${screen}');\n`;
-};
+});
 
 // Close Screen
-javascriptGenerator['close_screen'] = function (block) {
+registerGenerator('close_screen', function (block) {
     return `navigation.goBack();\n`;
-};
+});
 
 // Show Notifier
-javascriptGenerator['notifier_show'] = function (block) {
+registerGenerator('notifier_show', function (block) {
     const message = javascriptGenerator.valueToCode(block, 'MESSAGE', javascriptGenerator.ORDER_NONE) || '""';
     return `Alert.alert(${message});\n`;
-};
+});
 
 // Play Sound
-javascriptGenerator['sound_play'] = function (block) {
+registerGenerator('sound_play', function (block) {
     const sound = block.getFieldValue('SOUND');
     return `${sound}.play();\n`;
-};
+});
 
 // Device Vibrate
-javascriptGenerator['device_vibrate'] = function (block) {
+registerGenerator('device_vibrate', function (block) {
     const duration = javascriptGenerator.valueToCode(block, 'DURATION', javascriptGenerator.ORDER_NONE) || '100';
     return `Vibration.vibrate(${duration});\n`;
-};
+});
 
 // Control Blocks
-javascriptGenerator['controls_if'] = function (block) {
+registerGenerator('controls_if', function (block) {
     const condition = javascriptGenerator.valueToCode(block, 'IF0', javascriptGenerator.ORDER_NONE) || 'false';
     const statements = javascriptGenerator.statementToCode(block, 'DO0');
     return `if (${condition}) {\n${statements}}\n`;
-};
+});
 
-javascriptGenerator['controls_if_else'] = function (block) {
+registerGenerator('controls_if_else', function (block) {
     const condition = javascriptGenerator.valueToCode(block, 'IF0', javascriptGenerator.ORDER_NONE) || 'false';
     const thenStatements = javascriptGenerator.statementToCode(block, 'DO0');
     const elseStatements = javascriptGenerator.statementToCode(block, 'ELSE');
     return `if (${condition}) {\n${thenStatements}} else {\n${elseStatements}}\n`;
-};
+});
 
-javascriptGenerator['controls_forEach'] = function (block) {
+registerGenerator('controls_forEach', function (block) {
     const variable = javascriptGenerator.nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE');
     const list = javascriptGenerator.valueToCode(block, 'LIST', javascriptGenerator.ORDER_NONE) || '[]';
     const statements = javascriptGenerator.statementToCode(block, 'DO');
     return `for (const ${variable} of ${list}) {\n${statements}}\n`;
-};
+});
 
-javascriptGenerator['controls_forRange'] = function (block) {
+registerGenerator('controls_forRange', function (block) {
     const variable = javascriptGenerator.nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE');
     const start = javascriptGenerator.valueToCode(block, 'START', javascriptGenerator.ORDER_NONE) || '1';
     const end = javascriptGenerator.valueToCode(block, 'END', javascriptGenerator.ORDER_NONE) || '10';
     const step = javascriptGenerator.valueToCode(block, 'STEP', javascriptGenerator.ORDER_NONE) || '1';
     const statements = javascriptGenerator.statementToCode(block, 'DO');
     return `for (let ${variable} = ${start}; ${variable} <= ${end}; ${variable} += ${step}) {\n${statements}}\n`;
-};
+});
 
-javascriptGenerator['controls_while'] = function (block) {
+registerGenerator('controls_while', function (block) {
     const condition = javascriptGenerator.valueToCode(block, 'TEST', javascriptGenerator.ORDER_NONE) || 'false';
     const statements = javascriptGenerator.statementToCode(block, 'DO');
     return `while (${condition}) {\n${statements}}\n`;
-};
+});
 
-javascriptGenerator['controls_choose'] = function (block) {
+registerGenerator('controls_choose', function (block) {
     const condition = javascriptGenerator.valueToCode(block, 'TEST', javascriptGenerator.ORDER_CONDITIONAL) || 'false';
     const thenValue = javascriptGenerator.valueToCode(block, 'THENRETURN', javascriptGenerator.ORDER_CONDITIONAL) || 'null';
     const elseValue = javascriptGenerator.valueToCode(block, 'ELSERETURN', javascriptGenerator.ORDER_CONDITIONAL) || 'null';
     return [`(${condition} ? ${thenValue} : ${elseValue})`, javascriptGenerator.ORDER_CONDITIONAL];
-};
+});
 
-javascriptGenerator['controls_do_then_return'] = function (block) {
+registerGenerator('controls_do_then_return', function (block) {
     const statements = javascriptGenerator.statementToCode(block, 'STM');
     const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_NONE) || 'null';
     return [`(() => {\n${statements}  return ${value};\n})()`, javascriptGenerator.ORDER_FUNCTION_CALL];
-};
+});
 
-javascriptGenerator['controls_eval_but_ignore'] = function (block) {
+registerGenerator('controls_eval_but_ignore', function (block) {
     const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_NONE) || 'null';
     return `${value};\n`;
-};
+});
 
-javascriptGenerator['controls_openAnotherScreen'] = function (block) {
+registerGenerator('controls_openAnotherScreen', function (block) {
     const screen = javascriptGenerator.valueToCode(block, 'SCREEN', javascriptGenerator.ORDER_NONE) || '""';
     return `navigation.navigate(${screen});\n`;
-};
+});
 
-javascriptGenerator['controls_closeScreen'] = function (block) {
+registerGenerator('controls_closeScreen', function (block) {
     return `navigation.goBack();\n`;
-};
+});
 
-javascriptGenerator['controls_break'] = function (block) {
+registerGenerator('controls_break', function (block) {
     return `break;\n`;
-};
+});
 
 // Math Arithmetic Blocks
 javascriptGenerator['math_add'] = function(block) {
@@ -317,7 +324,8 @@ javascriptGenerator['colour_picker'] = function (block) {
 };
 
 javascriptGenerator['colour_random'] = function (block) {
-    return ['"#" + Math.floor(Math.random()*16777215).toString(16).padStart(6, "0")', javascriptGenerator.ORDER_FUNCTION_CALL];
+    // Avoid String.padStart for better compatibility with older Android WebView runtimes.
+    return ['"#" + ("000000" + Math.floor(Math.random()*16777215).toString(16)).slice(-6)', javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
 javascriptGenerator['colour_rgb'] = function (block) {
@@ -340,3 +348,47 @@ javascriptGenerator['colour_blend'] = function (block) {
 };
 
 export default javascriptGenerator;
+
+// Blockly 10+ prefers `forBlock` lookups. Some generators above may have been
+// assigned with legacy `javascriptGenerator['type']` syntax; mirror them so
+// workspaceToCode can resolve every custom block type reliably.
+if (javascriptGenerator.forBlock) {
+    const customBlockTypes = [
+        'component_event',
+        'component_get_property',
+        'component_set_property',
+        'component_method',
+        'any_component_event',
+        'any_component_method',
+        'any_component_get_property',
+        'any_component_set_property',
+        'component_choice',
+        'navigate_screen',
+        'close_screen',
+        'notifier_show',
+        'sound_play',
+        'device_vibrate',
+        'controls_if',
+        'controls_if_else',
+        'controls_forEach',
+        'controls_forRange',
+        'controls_while',
+        'controls_choose',
+        'controls_do_then_return',
+        'controls_eval_but_ignore',
+        'controls_openAnotherScreen',
+        'controls_closeScreen',
+        'controls_break',
+        'colour_picker',
+        'colour_random',
+        'colour_rgb',
+        'colour_split',
+        'colour_blend',
+    ];
+
+    customBlockTypes.forEach((type) => {
+        if (typeof javascriptGenerator[type] === 'function') {
+            javascriptGenerator.forBlock[type] = javascriptGenerator[type];
+        }
+    });
+}
