@@ -35,6 +35,13 @@ export default function EditorPanel({
     pipFilter,
     setPipFilter,
     handleInstall,
+    isWaitingForInput,
+    inputPromptText,
+    terminalInputValue,
+    setTerminalInputValue,
+    handleTerminalInputSubmit,
+    handleTerminalInputKey,
+    terminalInputRef,
 }) {
     return (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -80,6 +87,13 @@ export default function EditorPanel({
                 pipFilter={pipFilter}
                 setPipFilter={setPipFilter}
                 handleInstall={handleInstall}
+                isWaitingForInput={isWaitingForInput}
+                inputPromptText={inputPromptText}
+                terminalInputValue={terminalInputValue}
+                setTerminalInputValue={setTerminalInputValue}
+                handleTerminalInputSubmit={handleTerminalInputSubmit}
+                handleTerminalInputKey={handleTerminalInputKey}
+                terminalInputRef={terminalInputRef}
             />
         </div>
     );

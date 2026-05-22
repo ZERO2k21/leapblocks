@@ -237,6 +237,31 @@ export class SkulptEngine {
             },
             __future__: sk.python3,
             execLimit: 30000,
+            inputfun: (promptText) => {
+                if (promptText) {
+                    // Send the prompt message to the output callback so it prints in the terminal logs
+                    this.callbacks.onOut(promptText);
+                }
+                
+                const susp = new sk.miscellaneous.Suspension();
+                susp.resume = () => {
+                    if (susp.data.error) throw susp.data.error;
+                    return new sk.builtin.str(susp.data.result || "");
+                };
+                
+                susp.data = {
+                    type: "Sk.promise",
+                    promise: new Promise((resolve) => {
+                        if (this.callbacks.onInputRequested) {
+                            this.callbacks.onInputRequested(promptText, resolve);
+                        } else {
+                            resolve(window.prompt(promptText) || "");
+                        }
+                    })
+                };
+                
+                return susp;
+            }
         });
     }
 
