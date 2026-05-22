@@ -12,6 +12,9 @@ import { ArduinoUploader } from './upload/ArduinoUploader';
 import { PythonManager } from './pythonBackend/PythonManager';
 import { join } from 'path';
 
+// Suppress development security warnings in the console
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL STATE & SERVICES
 // ═══════════════════════════════════════════════════════════════════════════

@@ -67,7 +67,7 @@ export const PALETTE_ENHANCED = [
         label: 'Notifier',
         icon: '🔔',
         category: 'User Interface',
-        visible: true,
+        visible: false,
         description: 'Shows alerts, messages, and dialogs to the user'
     },
     {
@@ -191,7 +191,7 @@ export const PALETTE_ENHANCED = [
         label: 'ImagePicker',
         icon: '📂',
         category: 'Media',
-        visible: false,
+        visible: true,
         description: 'Lets users select an image from the device'
     },
     {
@@ -223,7 +223,7 @@ export const PALETTE_ENHANCED = [
         label: 'SpeechRecognizer',
         icon: '🎤',
         category: 'Media',
-        visible: true,
+        visible: false,
         description: 'Converts speech to text'
     },
     {
@@ -231,7 +231,7 @@ export const PALETTE_ENHANCED = [
         label: 'TextToSpeech',
         icon: '🗣️',
         category: 'Media',
-        visible: true,
+        visible: false,
         description: 'Converts text to spoken words'
     },
     {
@@ -479,7 +479,7 @@ export const PALETTE_ENHANCED = [
         label: 'ContactPicker',
         icon: '👤',
         category: 'Social',
-        visible: false,
+        visible: true,
         description: 'Lets users select a contact'
     },
     {
@@ -487,7 +487,7 @@ export const PALETTE_ENHANCED = [
         label: 'EmailPicker',
         icon: '📧',
         category: 'Social',
-        visible: false,
+        visible: true,
         description: 'Lets users select an email address'
     },
     {
@@ -503,7 +503,7 @@ export const PALETTE_ENHANCED = [
         label: 'PhoneNumberPicker',
         icon: '☎️',
         category: 'Social',
-        visible: false,
+        visible: true,
         description: 'Lets users select a phone number'
     },
     {
@@ -593,7 +593,7 @@ export const PALETTE_ENHANCED = [
         label: 'FilePicker',
         icon: '📎',
         category: 'Storage',
-        visible: false,
+        visible: true,
         description: 'Lets users pick a file from the device'
     },
 
@@ -611,7 +611,7 @@ export const PALETTE_ENHANCED = [
         label: 'BluetoothClient',
         icon: '🦷',
         category: 'Connectivity',
-        visible: true,
+        visible: false,
         description: 'Connects to Bluetooth devices'
     },
     {
@@ -635,7 +635,7 @@ export const PALETTE_ENHANCED = [
         label: 'Web',
         icon: '🌐',
         category: 'Connectivity',
-        visible: true,
+        visible: false,
         description: 'Makes HTTP requests to web services'
     },
 

@@ -31,8 +31,8 @@ export default function PaletteEnhanced() {
 
         // Create drag preview
         const dragPreview = document.createElement('div');
-        dragPreview.className = 'bg-white border-2 border-indigo-500 rounded-2xl p-4 shadow-2xl flex items-center gap-3 scale-90 origin-top-left';
-        dragPreview.innerHTML = `<div class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-2xl text-indigo-600">${component.icon}</div> <span class="text-sm font-extrabold text-slate-900 uppercase tracking-widest">${component.label}</span>`;
+        dragPreview.className = 'bg-white border-2 border-orange-500 rounded-2xl p-4 shadow-2xl flex items-center gap-3 scale-90 origin-top-left';
+        dragPreview.innerHTML = `<div class="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center text-2xl text-orange-600">${component.icon}</div> <span class="text-sm font-extrabold text-slate-900 uppercase tracking-widest">${component.label}</span>`;
         dragPreview.style.position = 'absolute';
         dragPreview.style.top = '-1000px';
         document.body.appendChild(dragPreview);
@@ -43,15 +43,15 @@ export default function PaletteEnhanced() {
     return (
         <div className="flex flex-col h-full w-full bg-white">
             {/* Header */}
-            <div className="p-6 border-b border-slate-200 bg-white sticky top-0 z-10 shadow-sm">
-                <div className="relative w-full">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <Search className="h-5 w-5 text-slate-400" />
+            <div className="pt-4 pb-3 px-4 border-b border-slate-200 bg-white sticky top-0 z-10 shadow-sm">
+                <div className="relative w-full flex items-center">
+                    <div className="absolute left-3 pointer-events-none flex items-center justify-center">
+                        <Search className="h-3.5 w-3.5 text-slate-400" />
                     </div>
                     <input
                         type="text"
                         placeholder="Search modules..."
-                        className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+                        className="w-full h-8 pl-9 pr-3 bg-slate-50 border border-slate-200/80 rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-400/80 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-300 shadow-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -71,19 +71,19 @@ export default function PaletteEnhanced() {
                     const isCollapsed = collapsedCategories[category];
 
                     return (
-                        <div key={category} className="palette-category mx-4 mt-4 last:mb-4">
+                        <div key={category} className="palette-category mx-3 mt-3 last:mb-3">
                             {/* Category Header */}
                             <button
                                 className={`palette-category-header w-full ${!isCollapsed ? 'active' : ''}`}
                                 onClick={() => toggleCategory(category)}
                             >
-                                <span className="flex items-center gap-3">
+                                <span className="flex items-center gap-2">
                                     <div className="palette-category-icon-wrapper">
-                                        {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                        {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                                     </div>
                                     <span className="tracking-[0.05em] font-extrabold">{category}</span>
                                 </span>
-                                <span className="text-[12px] bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg font-black shadow-sm border border-slate-200">{filteredItems.length}</span>
+                                <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded-md font-black shadow-sm border border-slate-200">{filteredItems.length}</span>
                             </button>
 
                             {/* Category Items */}
@@ -110,8 +110,8 @@ export default function PaletteEnhanced() {
                                             {/* Tooltip */}
                                             {hoveredComponent?.type === item.type && item.description && (
                                                 <div className="fixed left-72 top-auto z-50 w-72 bg-slate-900/95 backdrop-blur-md text-white text-xs rounded-2xl p-5 shadow-pro pointer-events-none border border-white/10 animate-fade-in">
-                                                    <div className="font-extrabold mb-2 text-indigo-400 uppercase tracking-[0.2em] text-[10px] flex items-center gap-2">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+                                                    <div className="font-extrabold mb-2 text-orange-400 uppercase tracking-[0.2em] text-[10px] flex items-center gap-2">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(255,122,0,0.8)]" />
                                                         {item.label}
                                                     </div>
                                                     <div className="text-slate-300 leading-relaxed font-medium">{item.description}</div>

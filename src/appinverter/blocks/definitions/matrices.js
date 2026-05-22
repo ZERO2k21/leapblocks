@@ -168,7 +168,9 @@ Blockly.Blocks['matrices_add'] = {
         this.itemCount_ = connections.length;
         this.updateShape_();
         for (let i = 0; i < this.itemCount_; i++) {
-            Blockly.Mutator.reconnect(connections[i], this, 'NUM' + i);
+            if (connections[i]) {
+                connections[i].reconnect(this, 'NUM' + i);
+            }
         }
     },
     saveConnections: function (containerBlock) {

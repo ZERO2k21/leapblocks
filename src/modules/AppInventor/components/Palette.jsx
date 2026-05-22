@@ -37,7 +37,7 @@ export default function Palette() {
           <input
             type="text"
             placeholder="Search components..."
-            className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#6c63ff] focus:border-[#6c63ff]"
+            className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#ff7a00] focus:border-[#ff7a00]"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -71,7 +71,7 @@ export default function Palette() {
                       key={item.type}
                       draggable
                       onDragStart={(e) => handleDragStart(e, item.type)}
-                      className="flex items-center space-x-2 px-2 py-1.5 rounded-md cursor-grab active:cursor-grabbing hover:bg-purple-50 hover:text-[#6c63ff] text-gray-600 text-sm transition-colors"
+                      className="flex items-center space-x-2 px-2 py-1.5 rounded-md cursor-grab active:cursor-grabbing hover:bg-orange-50 hover:text-[#ff7a00] text-gray-600 text-sm transition-colors"
                     >
                       <span className="text-base">{item.icon}</span>
                       <span>{item.label}</span>
