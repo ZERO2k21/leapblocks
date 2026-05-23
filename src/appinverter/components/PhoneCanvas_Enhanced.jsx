@@ -317,7 +317,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         style={{ ...style, minHeight: '200px' }}
                         onClick={handleClick}
                     >
-                        <div className="text-center text-gray-500">
+                        <div className="text-center text-slate-900">
                             <span className="text-4xl block mb-2">🌐</span>
                             <span className="text-sm">WebViewer</span>
                         </div>
@@ -347,7 +347,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         {comp.children && comp.children.length > 0 ? (
                             comp.children.map(child => renderComponentPreview(child))
                         ) : (
-                            <div className="text-gray-400 text-sm italic flex items-center justify-center flex-1">
+                            <div className="text-slate-900 text-sm italic flex items-center justify-center flex-1">
                                 Drop components here (Horizontal)
                             </div>
                         )}
@@ -377,7 +377,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         {comp.children && comp.children.length > 0 ? (
                             comp.children.map(child => renderComponentPreview(child))
                         ) : (
-                            <div className="text-gray-400 text-sm italic flex items-center justify-center flex-1">
+                            <div className="text-slate-900 text-sm italic flex items-center justify-center flex-1">
                                 Drop components here (Vertical)
                             </div>
                         )}
@@ -406,7 +406,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         {comp.children && comp.children.length > 0 ? (
                             comp.children.map(child => renderComponentPreview(child))
                         ) : (
-                            <div className="text-gray-400 text-sm italic col-span-2 flex items-center justify-center">
+                            <div className="text-slate-900 text-sm italic col-span-2 flex items-center justify-center">
                                 Drop components here (Table)
                             </div>
                         )}
@@ -421,7 +421,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         style={{ ...style, width: comp.props.Width || 300, height: comp.props.Height || 300 }}
                         onClick={handleClick}
                     >
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <div className="w-full h-full flex items-center justify-center text-slate-900">
                             <span className="text-4xl">🎨</span>
                         </div>
                     </div>
@@ -447,8 +447,8 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         style={style}
                         onClick={handleClick}
                     >
-                        <div className="text-sm font-medium text-gray-700">{comp.type}</div>
-                        <div className="text-xs text-gray-500 mt-1">{comp.id}</div>
+                        <div className="text-sm font-medium text-slate-900">{comp.type}</div>
+                        <div className="text-xs text-slate-900 mt-1">{comp.id}</div>
                     </div>
                 );
         }
@@ -472,26 +472,26 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 <div className="flex items-center gap-6">
                     {/* Screen Selector - Tab Style */}
                     <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-extrabold text-slate-400 uppercase tracking-[0.05em] mr-2">Screens</span>
+                        <span className="text-[13px] font-extrabold text-slate-900 uppercase tracking-[0.05em] mr-2">Screens</span>
                         <div className="flex bg-slate-200/50 p-1.5 rounded-xl gap-1">
                             {screens.map(screen => (
                                 <button
                                     key={screen.id}
                                     onClick={() => setActiveScreen(screen.id)}
                                     className={`px-5 py-2 rounded-lg text-sm font-extrabold transition-all shadow-sm/50 ${activeScreen === screen.id
-                                        ? 'bg-white text-orange-500 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700 hover:bg-white/40'}`}
+                                        ? 'bg-white text-blue-600 shadow-sm'
+                                        : 'text-slate-900 hover:text-slate-950 hover:bg-white/40'}`}
                                 >
                                     {screen.id}
                                 </button>
                             ))}
                             {isAddingScreen ? (
-                                <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 shadow-sm border border-orange-200">
+                                <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 shadow-sm border border-blue-200">
                                     <input
                                         type="text"
                                         autoFocus
                                         placeholder="Name"
-                                        className="w-20 outline-none text-[13px] font-bold text-slate-700"
+                                        className="w-20 outline-none text-[13px] font-bold text-slate-900"
                                         value={newScreenName}
                                         onChange={(e) => setNewScreenName(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleAddScreen()}
@@ -506,7 +506,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             ) : (
                                 <button
                                     onClick={() => setIsAddingScreen(true)}
-                                    className="px-3.5 py-2 text-slate-400 hover:text-orange-500 hover:bg-white/40 rounded-lg transition-all"
+                                    className="px-3.5 py-2 text-slate-900 hover:text-blue-600 hover:bg-white/40 rounded-lg transition-all"
                                     title="Add Screen"
                                 >
                                     <Plus className="h-[18px] w-[18px]" />
@@ -515,52 +515,52 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         </div>
                     </div>
                 </div>
-
+ 
                 <div className="flex items-center gap-8">
                     {/* Device Dimensions Display */}
                     <div className="flex items-center gap-3 px-4 py-2 bg-slate-100 rounded-lg border border-slate-200">
-                        <Monitor className="h-[18px] w-[18px] text-slate-400" />
-                        <span className="text-[13px] font-mono font-bold text-slate-600">{displayWidth} × {displayHeight}</span>
+                        <Monitor className="h-[18px] w-[18px] text-slate-900" />
+                        <span className="text-[13px] font-mono font-bold text-slate-900">{displayWidth} × {displayHeight}</span>
                     </div>
-
+ 
                     <div className="h-6 w-px bg-slate-300" />
-
+ 
                     {/* Device & Orientation Selectors */}
                     <div className="flex items-center gap-4">
                         <div className="flex bg-slate-200/50 p-1 rounded-lg gap-1">
                             <button
                                 onClick={() => setDeviceType('phone')}
-                                className={`p-2 rounded-md transition-all ${deviceType === 'phone' ? 'bg-white text-orange-500 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`p-2 rounded-md transition-all ${deviceType === 'phone' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-900 hover:text-slate-950'}`}
                                 title="Phone"
                             >
                                 <Smartphone className="h-[18px] w-[18px]" />
                             </button>
                             <button
                                 onClick={() => setDeviceType('tablet7')}
-                                className={`p-2 rounded-md transition-all ${deviceType === 'tablet7' ? 'bg-white text-orange-500 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`p-2 rounded-md transition-all ${deviceType === 'tablet7' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-900 hover:text-slate-950'}`}
                                 title='Tablet 7"'
                             >
                                 <Tablet className="h-[18px] w-[18px]" />
                             </button>
                             <button
                                 onClick={() => setDeviceType('tablet10')}
-                                className={`p-2 rounded-md transition-all ${deviceType === 'tablet10' ? 'bg-white text-orange-500 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`p-2 rounded-md transition-all ${deviceType === 'tablet10' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-900 hover:text-slate-950'}`}
                                 title='Tablet 10"'
                             >
                                 <Tablet className="h-[18px] w-[18px] scale-110" />
                             </button>
                             <button
                                 onClick={() => setDeviceType('monitor')}
-                                className={`p-2 rounded-md transition-all ${deviceType === 'monitor' ? 'bg-white text-orange-500 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`p-2 rounded-md transition-all ${deviceType === 'monitor' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-900 hover:text-slate-950'}`}
                                 title="Monitor"
                             >
                                 <Monitor className="h-[18px] w-[18px]" />
                             </button>
                         </div>
-
+ 
                         <button
                             onClick={toggleOrientation}
-                            className="p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md hover:border-orange-200 text-slate-600 transition-all active:scale-95"
+                            className="p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md hover:border-blue-200 text-slate-900 transition-all active:scale-95"
                             title="Toggle Orientation"
                         >
                             <RotateCw className="h-[18px] w-[18px]" />
@@ -600,7 +600,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         className={`transition-all duration-300 ${deviceType === 'phone'
                             ? 'bg-white border-none rounded-[40px] shadow-[0_0_0_12px_#0f172a,0_0_0_13px_rgba(255,255,255,0.1),0_25px_50px_-12px_rgba(15,23,42,0.35)] flex flex-col overflow-hidden relative box-sizing-border-box hover:shadow-[0_0_0_12px_#1e293b,0_0_0_13px_rgba(255,255,255,0.15),0_30px_60px_-15px_rgba(15,23,42,0.45)]'
                             : 'bg-white border-4 border-slate-600 rounded-2xl shadow-[0_25px_50px_-12px_rgba(15,23,42,0.15),0_0_0_1px_rgba(15,23,42,0.05)] flex flex-col overflow-hidden relative hover:border-slate-700 hover:shadow-[0_30px_60px_-15px_rgba(15,23,42,0.2),0_0_0_1px_rgba(15,23,42,0.08)]'
-                            } ${dragOver ? 'scale-[1.02] border-orange-500 shadow-[0_0_0_4px_rgba(255,122,0,0.15),0_30px_60px_-15px_rgba(255,122,0,0.25)]' : ''}`}
+                            } ${dragOver ? 'scale-[1.02] border-blue-500 shadow-[0_0_0_4px_rgba(37,99,235,0.15),0_30px_60px_-15px_rgba(37,99,235,0.25)]' : ''}`}
                         style={{
                             width: `${frameWidth}px`,
                             height: `${frameHeight}px`,
@@ -626,30 +626,28 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                 </div>
                             </div>
                         ) : (
-                            <div className="h-6 bg-slate-800 text-slate-400 px-3.5 flex items-center justify-between text-[11px] font-bold tracking-[0.02em] pointer-events-none select-none border-b border-black/10">
-                                <span className="font-mono font-extrabold text-slate-200">{currentTime}</span>
+                            <div className="h-6 bg-slate-100 text-slate-900 px-3.5 flex items-center justify-between text-[11px] font-bold tracking-[0.02em] pointer-events-none select-none border-b border-slate-200">
+                                <span className="font-mono font-extrabold text-slate-900">{currentTime}</span>
                                 <div className="flex items-center gap-1.5">
-                                    <Signal className="h-3.5 w-3.5 text-slate-400" strokeWidth={2.5} />
-                                    <Wifi className="h-3.5 w-3.5 text-slate-400" strokeWidth={2.5} />
-                                    <Battery className="h-3.5 w-3.5 text-slate-400" strokeWidth={2.5} />
+                                    <Signal className="h-3.5 w-3.5 text-slate-900" strokeWidth={2.5} />
+                                    <Wifi className="h-3.5 w-3.5 text-slate-900" strokeWidth={2.5} />
+                                    <Battery className="h-3.5 w-3.5 text-slate-900" strokeWidth={2.5} />
                                 </div>
                             </div>
-                        )}
-
-                        {/* Title Bar */}
+                        )}                             {/* Title Bar */}
                         {deviceType === 'phone' ? (
                             <div className="h-14 bg-white text-slate-900 px-6 flex items-center justify-between border-b border-black/5 relative font-sans">
-                                <span className="text-orange-500 text-[15px] font-bold cursor-pointer flex items-center gap-1 transition-opacity duration-200 select-none hover:opacity-70">
+                                <span className="text-blue-600 text-[15px] font-bold cursor-pointer flex items-center gap-1 transition-opacity duration-200 select-none hover:opacity-70">
                                     <ChevronLeft className="h-5 w-5" strokeWidth={3} />
                                     <span>Screen</span>
                                 </span>
                                 <span className="text-[18px] font-extrabold absolute left-1/2 -translate-x-1/2 max-w-[180px] truncate tracking-[-0.015em]">{currentScreen.title || activeScreen}</span>
-                                <button className="bg-transparent border-none text-orange-500 text-2xl cursor-pointer py-1 px-2 rounded transition-all duration-200 leading-none hover:bg-orange-500/8">⋮</button>
+                                <button className="bg-transparent border-none text-blue-600 text-2xl cursor-pointer py-1 px-2 rounded transition-all duration-200 leading-none hover:bg-blue-500/8">⋮</button>
                             </div>
                         ) : (
-                            <div className="h-14 bg-slate-700 text-white px-4 flex items-center justify-between border-b border-black/10 shadow-sm">
+                            <div className="h-14 bg-slate-900 text-slate-900 px-4 flex items-center justify-between border-b border-black/10 shadow-sm">
                                 <span className="text-[18px] font-extrabold tracking-[-0.012em] truncate">{currentScreen.title || activeScreen}</span>
-                                <button className="bg-transparent border-none text-slate-300 text-2xl cursor-pointer py-1 px-2 rounded transition-all duration-200 leading-none hover:text-white hover:bg-white/8">⋮</button>
+                                <button className="bg-transparent border-none text-slate-900 text-2xl cursor-pointer py-1 px-2 rounded transition-all duration-200 leading-none hover:text-black hover:bg-white/8">⋮</button>
                             </div>
                         )}
 
@@ -657,7 +655,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         <div className="bg-white overflow-y-auto relative flex flex-col flex-1" style={{ height: `${displayHeight}px` }}>
                             {components.length === 0 ? (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
-                                    <div className="text-slate-400 text-[15px] font-bold leading-relaxed">
+                                    <div className="text-slate-900 text-[15px] font-bold leading-relaxed">
                                         Drag components from the<br />palette to build your app.
                                     </div>
                                 </div>
@@ -667,8 +665,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                 </div>
                             )}
                         </div>
-
-                        {/* Nav Bar */}
+                                       {/* Nav Bar */}
                         {deviceType === 'phone' ? (
                             <div className="h-10 bg-white flex items-center justify-center relative pointer-events-none select-none border-t border-black/[0.015]">
                                 <div className="w-[120px] h-[5px] bg-black rounded-[2.5px] opacity-80" />
@@ -676,9 +673,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         ) : (
                             <div className="h-12 bg-slate-900 border-t border-white/3 flex items-center justify-center pointer-events-none select-none">
                                 <div className="flex items-center gap-[72px]">
-                                    <span className="text-slate-500 text-[15px] font-medium transition-colors duration-200">◁</span>
-                                    <span className="text-slate-500 text-[18px] font-medium transition-colors duration-200">○</span>
-                                    <span className="text-slate-500 text-[15px] font-medium transition-colors duration-200">□</span>
+                                    <span className="text-slate-900 text-[15px] font-medium transition-colors duration-200">◁</span>
+                                    <span className="text-slate-900 text-[18px] font-medium transition-colors duration-200">○</span>
+                                    <span className="text-slate-900 text-[15px] font-medium transition-colors duration-200">□</span>
                                 </div>
                             </div>
                         )}
@@ -689,14 +686,14 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 {nonVisibleComponents.length > 0 && (
                     <div className="w-full max-w-[450px] bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl p-4 shadow-md flex flex-col gap-3 z-10 shrink-0">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-[0.15em] whitespace-nowrap">Non-Visible Components</span>
-                            <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">{nonVisibleComponents.length}</span>
+                            <span className="text-[11px] font-extrabold text-slate-900 uppercase tracking-[0.15em] whitespace-nowrap">Non-Visible Components</span>
+                            <span className="text-[10px] bg-slate-100 text-slate-900 px-2 py-0.5 rounded-full font-bold">{nonVisibleComponents.length}</span>
                         </div>
                         <div className="flex flex-wrap gap-2 justify-center">
                             {nonVisibleComponents.map(comp => (
                                 <div
                                     key={comp.id}
-                                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-[12px] font-bold cursor-pointer transition-all shadow-sm border ${selectedId === comp.id ? 'bg-white text-orange-500 border-orange-200 shadow-md scale-105' : 'bg-white text-slate-500 border-slate-200 hover:border-orange-200'}`}
+                                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-[12px] font-bold cursor-pointer transition-all shadow-sm border ${selectedId === comp.id ? 'bg-white text-blue-600 border-blue-200 shadow-md scale-105' : 'bg-white text-slate-900 border-slate-200 hover:border-blue-200'}`}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setSelectedId(comp.id);

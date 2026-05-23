@@ -22,15 +22,15 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Building APK</h2>
-            <div className="flex items-center space-x-2 mt-1 text-sm text-gray-500">
-              <span className="font-medium text-gray-700">{appName}</span>
+            <h2 className="text-xl font-bold text-slate-900">Building APK</h2>
+            <div className="flex items-center space-x-2 mt-1 text-sm text-slate-900">
+              <span className="font-medium text-slate-900">{appName}</span>
               <span>•</span>
-              <span className="font-mono text-xs">{packageName}</span>
+              <span className="font-mono text-xs text-slate-900">{packageName}</span>
             </div>
           </div>
           {buildState === 'idle' && (
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <button onClick={onClose} className="text-slate-900 hover:text-slate-950 transition-colors">
               <X className="h-6 w-6" />
             </button>
           )}
@@ -69,26 +69,26 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
           )}
           
           {buildState === 'idle' && (
-            <div className="text-sm text-gray-500 italic">
+            <div className="text-sm text-slate-900 italic">
                Waiting to start...
             </div>
           )}
         </div>
 
         {/* Terminal Logs */}
-        <div className="flex-1 bg-[#1e1e1e] p-4 overflow-y-auto font-mono text-xs leading-relaxed min-h-[300px] max-h-[400px]">
+        <div className="flex-1 bg-slate-50 border-y border-slate-200 p-4 overflow-y-auto font-mono text-xs leading-relaxed min-h-[300px] max-h-[400px]">
           {logs.map((log, i) => {
             const isError = log.toLowerCase().includes('error') || log.toLowerCase().includes('failed');
             const isSuccess = log.includes('✓');
             return (
-              <div key={i} className={`whitespace-pre-wrap ${isError ? 'text-red-400' : isSuccess ? 'text-green-400 font-bold' : 'text-green-500/80 mb-1'}`}>
-                <span className="text-gray-500 mr-2 opacity-50">[{new Date().toLocaleTimeString()}]</span>
+              <div key={i} className={`whitespace-pre-wrap ${isError ? 'text-red-600 font-bold' : isSuccess ? 'text-green-700 font-bold' : 'text-slate-900 mb-1'}`}>
+                <span className="text-slate-900 mr-2 opacity-60">[{new Date().toLocaleTimeString()}]</span>
                 {log}
               </div>
             );
           })}
           {buildState === 'building' && (
-             <div className="text-green-500/50 mt-2 animate-pulse">_</div>
+             <div className="text-slate-900/50 mt-2 animate-pulse">_</div>
           )}
           <div ref={logsEndRef} />
         </div>
@@ -98,7 +98,7 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
           {buildState === 'idle' && (
             <button 
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium transition-colors"
+              className="px-4 py-2 border border-gray-300 text-slate-900 rounded-lg hover:bg-gray-100 font-medium transition-colors"
             >
               Cancel
             </button>
@@ -108,7 +108,7 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
             <>
               <button 
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium transition-colors"
+                className="px-4 py-2 border border-gray-300 text-slate-900 rounded-lg hover:bg-gray-100 font-medium transition-colors"
               >
                 Close
               </button>
@@ -126,7 +126,7 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
             <>
               <button 
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium transition-colors"
+                className="px-4 py-2 border border-gray-300 text-slate-900 rounded-lg hover:bg-gray-100 font-medium transition-colors"
               >
                 Close
               </button>
@@ -143,7 +143,7 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
           {buildState === 'building' && (
              <button 
               disabled
-              className="px-4 py-2 border border-gray-200 text-gray-400 bg-gray-100 rounded-lg font-medium cursor-not-allowed"
+              className="px-4 py-2 border border-gray-200 text-slate-900 bg-gray-100 rounded-lg font-medium cursor-not-allowed"
             >
               Building...
             </button>

@@ -18,7 +18,7 @@ export default function ComponentTree({ appState }) {
 
     if (!currentScreen) {
         return (
-            <div className="p-4 text-center text-gray-500 text-sm">
+            <div className="p-4 text-center text-slate-900 text-sm font-bold">
                 No screen selected
             </div>
         );
@@ -103,9 +103,9 @@ export default function ComponentTree({ appState }) {
         return (
             <div key={component.id}>
                 <div
-                    className={`relative flex items-center py-3 px-4 rounded-xl cursor-pointer transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] mx-3 mb-1 border-2 text-sm font-semibold text-slate-700 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r before:bg-orange-500 before:transition-all before:duration-250 before:ease-[cubic-bezier(0.4,0,0.2,1)] ${isSelected
-                        ? 'bg-gradient-to-br from-orange-500/12 to-orange-500/6 border-orange-500/30 text-orange-500 shadow-md shadow-orange-500/20 translate-x-1 before:h-[80%]'
-                        : 'border-transparent hover:bg-gradient-to-r hover:from-orange-500/3 hover:to-transparent hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
+                    className={`relative flex items-center py-3 px-4 rounded-xl cursor-pointer transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] mx-3 mb-1 border-2 text-sm font-semibold text-slate-900 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r before:bg-blue-500 before:transition-all before:duration-250 before:ease-[cubic-bezier(0.4,0,0.2,1)] ${isSelected
+                        ? 'bg-gradient-to-br from-blue-500/12 to-blue-500/6 border-blue-500/30 text-blue-600 shadow-md shadow-blue-500/20 translate-x-1 before:h-[80%]'
+                        : 'border-transparent hover:bg-gradient-to-r hover:from-blue-500/3 hover:to-transparent hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
                         }`}
                     style={{ marginLeft: `${depth * 12}px` }}
                     onClick={() => selectComponent(component.id)}
@@ -114,7 +114,7 @@ export default function ComponentTree({ appState }) {
                     {/* Expand/Collapse Arrow */}
                     {hasChildren && (
                         <button
-                            className="w-4 h-4 flex items-center justify-center mr-1 text-gray-600 hover:text-gray-900"
+                            className="w-4 h-4 flex items-center justify-center mr-1 text-slate-900 hover:text-black"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 toggleExpand(component.id);
@@ -168,19 +168,19 @@ export default function ComponentTree({ appState }) {
                 style={{ paddingTop: '24px', paddingBottom: '16px', paddingLeft: '32px', paddingRight: '24px' }}
                 className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b-2 border-slate-200 flex items-center justify-between shrink-0 shadow-sm"
             >
-                <span className="text-[19px] font-black uppercase tracking-[0.15em] text-slate-500 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Components</span>
+                <span className="text-[19px] font-black uppercase tracking-[0.15em] text-slate-900 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Components</span>
             </div>
 
             <div className="flex-1 overflow-y-auto">
                 {/* Screen Node */}
                 <div
-                    className="flex items-center py-3.5 px-5 bg-slate-50/50 border-b border-slate-100 font-bold text-[13px] cursor-pointer hover:bg-slate-100 transition-all sticky top-0 z-10 backdrop-blur-md text-slate-800 uppercase tracking-[0.08em]"
+                    className="flex items-center py-3.5 px-5 bg-slate-50/50 border-b border-slate-100 font-bold text-[13px] cursor-pointer hover:bg-slate-100 transition-all sticky top-0 z-10 backdrop-blur-md text-slate-900 uppercase tracking-[0.08em]"
                     onClick={() => toggleExpand(currentScreen.id)}
                 >
-                    <button className="w-5 h-5 flex items-center justify-center mr-2.5 text-slate-400">
+                    <button className="w-5 h-5 flex items-center justify-center mr-2.5 text-slate-900">
                         {expandedNodes.has(currentScreen.id) ? '▼' : '▶'}
                     </button>
-                    <span className="mr-2.5 opacity-70 text-lg">📱</span>
+                    <span className="mr-2.5 opacity-100 text-lg">📱</span>
                     <span className="truncate">{currentScreen.id}</span>
                 </div>
 
@@ -191,15 +191,15 @@ export default function ComponentTree({ appState }) {
                             currentScreen.components.map((comp) => renderComponent(comp, 0))
                         ) : (
                             <div className="px-10 py-16 text-center">
-                                <p className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-300">Empty Screen</p>
-                                <p className="text-[11px] text-slate-300 font-medium mt-2">Drag components from palette</p>
+                                <p className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-900">Empty Screen</p>
+                                <p className="text-[11px] text-slate-900 font-medium mt-2">Drag components from palette</p>
                             </div>
                         )}
 
                         {/* Non-Visible Components Section */}
                         {currentScreen.nonVisibleComponents && currentScreen.nonVisibleComponents.length > 0 && (
                             <div className="mt-2 border-t border-gray-200">
-                                <div className="py-1 px-2 bg-gray-50 text-xs text-slate-600 font-semibold">
+                                <div className="py-1 px-2 bg-gray-50 text-xs text-slate-900 font-semibold">
                                     Non-visible components
                                 </div>
                                 {currentScreen.nonVisibleComponents.map((comp) => renderComponent(comp, 0))}
@@ -220,7 +220,7 @@ export default function ComponentTree({ appState }) {
                             style={{ left: contextMenu.x, top: contextMenu.y }}
                         >
                             <button
-                                className="w-full px-5 py-2.5 text-left text-[14px] hover:bg-slate-50 text-slate-700 flex items-center gap-3 transition-colors font-semibold"
+                                className="w-full px-5 py-2.5 text-left text-[14px] hover:bg-slate-50 text-slate-900 flex items-center gap-3 transition-colors font-semibold"
                                 onClick={() => {
                                     handleRename(contextMenu.component);
                                     setContextMenu(null);
@@ -229,7 +229,7 @@ export default function ComponentTree({ appState }) {
                                 <span className="text-lg">✏️</span> Rename
                             </button>
                             <button
-                                className="w-full px-5 py-2.5 text-left text-[14px] hover:bg-slate-50 text-slate-700 flex items-center gap-3 transition-colors font-semibold"
+                                className="w-full px-5 py-2.5 text-left text-[14px] hover:bg-slate-50 text-slate-900 flex items-center gap-3 transition-colors font-semibold"
                                 onClick={() => {
                                     // Copy functionality
                                     setContextMenu(null);

@@ -1066,7 +1066,7 @@ export default function BlocksEditorComplete({ appState }) {
                 <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                     {/* Search */}
                     <div className="relative flex-1 sm:flex-initial min-w-[200px]">
-                        <Search className="absolute left-2 top-2 h-4 w-4 text-gray-400 pointer-events-none" />
+                        <Search className="absolute left-2 top-2 h-4 w-4 text-slate-900 pointer-events-none" />
                         <input
                             type="text"
                             placeholder="Search blocks..."
@@ -1289,10 +1289,10 @@ export default function BlocksEditorComplete({ appState }) {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-full max-h-[90vh] flex flex-col">
                         <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
-                            <h3 className="text-base sm:text-lg font-semibold text-gray-800">Generated Code</h3>
+                            <h3 className="text-base sm:text-lg font-semibold text-slate-900">Generated Code</h3>
                             <button
                                 onClick={() => setShowCode(false)}
-                                className="text-gray-500 hover:text-gray-700 p-1 rounded hover:bg-gray-200 transition-colors"
+                                className="text-slate-900 hover:text-slate-950 p-1 rounded hover:bg-gray-200 transition-colors"
                                 aria-label="Close"
                             >
                                 <span className="text-xl">✕</span>
@@ -1315,7 +1315,7 @@ export default function BlocksEditorComplete({ appState }) {
                             </button>
                             <button
                                 onClick={() => setShowCode(false)}
-                                className="w-full sm:w-auto px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors active:scale-95 font-medium"
+                                className="w-full sm:w-auto px-4 py-2 bg-gray-200 hover:bg-gray-300 text-slate-900 rounded-lg transition-colors active:scale-95 font-medium"
                             >
                                 Close
                             </button>
@@ -1326,4 +1326,3 @@ export default function BlocksEditorComplete({ appState }) {
         </div>
     );
 }
-

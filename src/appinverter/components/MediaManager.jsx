@@ -131,10 +131,10 @@ export default function MediaManager({ appState }) {
                 style={{ paddingTop: '24px', paddingBottom: '16px', paddingLeft: '32px', paddingRight: '24px' }}
                 className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b-2 border-slate-200 flex items-center justify-between shrink-0 shadow-sm"
             >
-                <span className="text-[19px] font-black uppercase tracking-[0.15em] text-slate-500 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Media</span>
+                <span className="text-[19px] font-black uppercase tracking-[0.15em] text-slate-900 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Media</span>
                 <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2 bg-orange-50 hover:bg-orange-100 text-orange-600 rounded-lg border border-orange-100/50 transition-all active:scale-95 cursor-pointer"
+                    className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg border border-blue-100/50 transition-all active:scale-95 cursor-pointer"
                     title="Upload Media"
                 >
                     <Upload className="h-4 w-4" />
@@ -156,7 +156,7 @@ export default function MediaManager({ appState }) {
                 <div className="relative group">
                     <Search 
                         style={{ width: '18px', height: '18px', left: '14px' }} 
-                        className="absolute top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" 
+                        className="absolute top-1/2 -translate-y-1/2 text-slate-900 group-focus-within:text-blue-600 transition-colors" 
                     />
                     <input
                         type="text"
@@ -164,7 +164,7 @@ export default function MediaManager({ appState }) {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         style={{ paddingLeft: '42px', fontSize: '13px', paddingTop: '10px', paddingBottom: '10px' }}
-                        className="w-full pr-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/5 focus:border-orange-400 bg-slate-50/30 transition-all placeholder:text-slate-400 font-bold tracking-wide"
+                        className="w-full pr-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-400 bg-slate-50/30 transition-all placeholder:text-slate-900 font-bold tracking-wide"
                     />
                 </div>
 
@@ -184,7 +184,7 @@ export default function MediaManager({ appState }) {
                             }}
                             className={`flex-shrink-0 rounded-full uppercase tracking-[0.07em] transition-all duration-200 cursor-pointer ${filterType === type
                                 ? 'bg-slate-900 text-white shadow-md'
-                                : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                                : 'bg-slate-50 text-slate-900 hover:bg-slate-100 hover:text-slate-950'
                                 }`}
                         >
                             {type}
@@ -196,7 +196,7 @@ export default function MediaManager({ appState }) {
                 <div className="flex justify-between items-center pt-2.5 border-t border-slate-100">
                     <div 
                         style={{ fontSize: '11px', fontWeight: '900' }} 
-                        className="text-slate-500 uppercase tracking-[0.1em]"
+                        className="text-slate-900 uppercase tracking-[0.1em]"
                     >
                         {filteredMedia.length} {filteredMedia.length === 1 ? 'Asset' : 'Assets'}
                     </div>
@@ -205,8 +205,8 @@ export default function MediaManager({ appState }) {
                             onClick={() => setViewMode('grid')}
                             style={{ fontSize: '11px', fontWeight: '800', paddingLeft: '12px', paddingRight: '12px', paddingTop: '5px', paddingBottom: '5px' }}
                             className={`rounded-md transition-all duration-200 cursor-pointer ${viewMode === 'grid'
-                                ? 'bg-white text-orange-600 shadow-sm'
-                                : 'text-slate-500 hover:text-slate-700'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-slate-900 hover:text-slate-950'
                                 }`}
                         >
                             Grid
@@ -215,8 +215,8 @@ export default function MediaManager({ appState }) {
                             onClick={() => setViewMode('list')}
                             style={{ fontSize: '11px', fontWeight: '800', paddingLeft: '12px', paddingRight: '12px', paddingTop: '5px', paddingBottom: '5px' }}
                             className={`rounded-md transition-all duration-200 cursor-pointer ${viewMode === 'list'
-                                ? 'bg-white text-orange-600 shadow-sm'
-                                : 'text-slate-500 hover:text-slate-700'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-slate-900 hover:text-slate-950'
                                 }`}
                         >
                             List
@@ -228,13 +228,13 @@ export default function MediaManager({ appState }) {
             {/* Media Grid/List */}
             <div className="flex-1 overflow-y-auto p-5 bg-white">
                 {filteredMedia.length === 0 ? (
-                    <div style={{ minHeight: '300px' }} className="flex flex-col items-center justify-center h-full text-slate-400 py-10">
+                    <div style={{ minHeight: '300px' }} className="flex flex-col items-center justify-center h-full text-slate-900 py-10">
                         <div className="relative mb-6">
                             <div className="absolute inset-0 bg-slate-50 rounded-full blur-2xl scale-150 opacity-50"></div>
-                            <FolderOpen className="h-20 w-20 relative text-slate-200" strokeWidth={1} />
+                            <FolderOpen className="h-20 w-20 relative text-slate-900" strokeWidth={1} />
                         </div>
-                        <p style={{ fontSize: '13px' }} className="font-black uppercase tracking-[0.15em] text-slate-400 mb-2">No Assets</p>
-                        <p style={{ fontSize: '13px' }} className="text-slate-400 font-medium">
+                        <p style={{ fontSize: '13px' }} className="font-black uppercase tracking-[0.15em] text-slate-900 mb-2">No Assets</p>
+                        <p style={{ fontSize: '13px' }} className="text-slate-900 font-medium">
                             {searchTerm ? 'Adjust search terms' : 'Upload files to begin'}
                         </p>
                     </div>
@@ -245,7 +245,7 @@ export default function MediaManager({ appState }) {
                                 <div
                                     key={index}
                                     className={`group relative aspect-square rounded-2xl border-2 overflow-hidden cursor-pointer transition-all duration-300 ${selectedFile === item.filename
-                                        ? 'border-orange-500 ring-4 ring-orange-500/10 shadow-lg scale-[1.02]'
+                                        ? 'border-blue-500 ring-4 ring-blue-500/10 shadow-lg scale-[1.02]'
                                         : 'border-slate-50 hover:border-slate-200 hover:shadow-md'
                                         }`}
                                     onClick={() => setSelectedFile(item.filename)}
@@ -259,7 +259,7 @@ export default function MediaManager({ appState }) {
                                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                             />
                                         ) : (
-                                            <div className="text-slate-300 group-hover:text-orange-500 transition-colors">
+                                            <div className="text-slate-900 group-hover:text-blue-600 transition-colors">
                                                 {getFileIcon(item.type, 'h-10 w-10')}
                                             </div>
                                         )}
@@ -307,7 +307,7 @@ export default function MediaManager({ appState }) {
                                 <div
                                     key={index}
                                     className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 cursor-pointer ${selectedFile === item.filename
-                                        ? 'bg-orange-50/50 border-orange-200/50 shadow-sm'
+                                        ? 'bg-blue-50/50 border-blue-200/50 shadow-sm'
                                         : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/30'
                                         }`}
                                     onClick={() => setSelectedFile(item.filename)}
@@ -315,11 +315,11 @@ export default function MediaManager({ appState }) {
                                     <div className="w-12 h-12 rounded-lg bg-slate-50 flex items-center justify-center flex-shrink-0 border border-slate-100 overflow-hidden">
                                         {getFileCategory(item.type) === 'image' ? (
                                             <img src={item.data} className="w-full h-full object-cover" />
-                                        ) : getFileIcon(item.type, 'h-6 w-6 text-slate-400')}
+                                        ) : getFileIcon(item.type, 'h-6 w-6 text-slate-900')}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div style={{ fontSize: '13px' }} className="font-extrabold text-slate-700 truncate">{item.filename}</div>
-                                        <div style={{ fontSize: '10px' }} className="font-black text-slate-400 uppercase tracking-widest mt-1">
+                                        <div style={{ fontSize: '10px' }} className="font-black text-slate-900 uppercase tracking-widest mt-1">
                                             {formatFileSize(item.size)} • {getFileExtension(item.filename)}
                                         </div>
                                     </div>
@@ -329,7 +329,7 @@ export default function MediaManager({ appState }) {
                                                 e.stopPropagation();
                                                 handlePreview(item);
                                             }}
-                                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors"
+                                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-900 transition-colors"
                                         >
                                             <Eye style={{ width: '18px', height: '18px' }} />
                                         </button>
@@ -353,12 +353,12 @@ export default function MediaManager({ appState }) {
             {/* Stats Footer - Standardized Pro Style */}
             <div className="p-4 border-t border-slate-100 bg-slate-50/30">
                 <div style={{ gap: '12px' }} className="flex">
-                    <div className="flex-1 relative overflow-hidden p-3.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-orange-500 before:to-orange-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300">
-                        <div style={{ fontSize: '10px', fontWeight: '900' }} className="uppercase tracking-wider text-slate-400 mb-1">Total Files</div>
+                    <div className="flex-1 relative overflow-hidden p-3.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-blue-500 before:to-blue-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300">
+                        <div style={{ fontSize: '10px', fontWeight: '900' }} className="uppercase tracking-wider text-slate-900 mb-1">Total Files</div>
                         <div className="text-xl font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent">{stats.total}</div>
                     </div>
-                    <div className="flex-1 relative overflow-hidden p-3.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-orange-500 before:to-orange-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300">
-                        <div style={{ fontSize: '10px', fontWeight: '900' }} className="uppercase tracking-wider text-slate-400 mb-1">Total Size</div>
+                    <div className="flex-1 relative overflow-hidden p-3.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-blue-500 before:to-blue-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300">
+                        <div style={{ fontSize: '10px', fontWeight: '900' }} className="uppercase tracking-wider text-slate-900 mb-1">Total Size</div>
                         <div className="text-xl font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent">{formatFileSize(stats.totalSize)}</div>
                     </div>
                 </div>
@@ -380,12 +380,12 @@ export default function MediaManager({ appState }) {
                     <div className="relative w-full max-w-2xl bg-white rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
                         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-slate-50 rounded-xl text-slate-400">
+                                <div className="p-2 bg-slate-50 rounded-xl text-slate-900">
                                     {getFileIcon(previewFile.type, "h-5 w-5")}
                                 </div>
                                 <div className="text-left">
                                     <div className="text-sm font-bold text-slate-800">{previewFile.filename}</div>
-                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{formatFileSize(previewFile.size)}</div>
+                                    <div className="text-[10px] font-bold text-slate-900 uppercase tracking-wider">{formatFileSize(previewFile.size)}</div>
                                 </div>
                             </div>
                             <button
@@ -395,7 +395,7 @@ export default function MediaManager({ appState }) {
                                 }}
                                 className="p-2.5 hover:bg-slate-100 rounded-full transition-colors"
                             >
-                                <MoreVertical className="h-5 w-5 text-slate-400" />
+                                <MoreVertical className="h-5 w-5 text-slate-900" />
                             </button>
                         </div>
 
@@ -406,7 +406,7 @@ export default function MediaManager({ appState }) {
                             {getFileCategory(previewFile.type) === 'audio' && (
                                 <div className="flex flex-col items-center gap-8 w-full max-w-sm">
                                     <div className={`p-10 rounded-full bg-white shadow-xl transition-transform duration-500 ${isPlaying ? 'scale-110' : 'scale-100'}`}>
-                                        <Music className={`h-16 w-16 ${isPlaying ? 'text-orange-500' : 'text-slate-300'}`} />
+                                        <Music className={`h-16 w-16 ${isPlaying ? 'text-blue-600' : 'text-slate-900'}`} />
                                     </div>
                                     <audio
                                         ref={audioRef}
@@ -417,7 +417,7 @@ export default function MediaManager({ appState }) {
                                     <div className="flex items-center gap-6">
                                         <button
                                             onClick={toggleAudio}
-                                            className="p-5 bg-orange-600 hover:bg-orange-700 text-white rounded-full shadow-xl shadow-orange-500/30 transition-all active:scale-95"
+                                            className="p-5 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl shadow-blue-500/30 transition-all active:scale-95"
                                         >
                                             {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
                                         </button>
@@ -429,8 +429,8 @@ export default function MediaManager({ appState }) {
                             )}
                             {getFileCategory(previewFile.type) === 'other' && (
                                 <div className="text-center">
-                                    <File className="h-20 w-20 text-slate-200 mx-auto mb-4" />
-                                    <p className="text-slate-400 font-medium">No visual preview available</p>
+                                    <File className="h-20 w-20 text-slate-900 mx-auto mb-4" />
+                                    <p className="text-slate-900 font-medium">No visual preview available</p>
                                 </div>
                             )}
                         </div>
@@ -438,7 +438,7 @@ export default function MediaManager({ appState }) {
                         <div className="p-6 bg-slate-50 flex justify-end gap-3">
                             <button
                                 onClick={() => setPreviewFile(null)}
-                                className="px-6 py-2.5 text-slate-500 font-bold text-sm hover:bg-slate-100 rounded-xl transition-all"
+                                className="px-6 py-2.5 text-slate-900 font-bold text-sm hover:bg-slate-100 rounded-xl transition-all"
                             >
                                 Close
                             </button>

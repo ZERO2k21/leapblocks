@@ -43,7 +43,7 @@ export default function AssetPicker({
             case 'image': return <Image className="h-5 w-5 text-blue-500" />;
             case 'audio': return <Music className="h-5 w-5 text-green-500" />;
             case 'video': return <Video className="h-5 w-5 text-purple-500" />;
-            default: return <File className="h-5 w-5 text-gray-500" />;
+            default: return <File className="h-5 w-5 text-slate-900" />;
         }
     };
 
@@ -69,10 +69,10 @@ export default function AssetPicker({
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b">
                     <div>
-                        <h3 className="text-lg font-semibold text-gray-800">
+                        <h3 className="text-lg font-semibold text-slate-900">
                             Select {filterType === 'all' ? 'Asset' : filterType.charAt(0).toUpperCase() + filterType.slice(1)}
                         </h3>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-slate-900 mt-1">
                             Choose from uploaded media files
                         </p>
                     </div>
@@ -80,7 +80,7 @@ export default function AssetPicker({
                         onClick={onClose}
                         className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     >
-                        <X className="h-5 w-5 text-gray-600" />
+                        <X className="h-5 w-5 text-slate-900" />
                     </button>
                 </div>
 
@@ -99,7 +99,7 @@ export default function AssetPicker({
                 {/* Media List */}
                 <div className="flex-1 overflow-y-auto p-4">
                     {filteredMedia.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                        <div className="flex flex-col items-center justify-center h-full text-slate-900">
                             <Upload className="h-16 w-16 mb-3" />
                             <p className="text-sm font-medium">No files found</p>
                             <p className="text-xs mt-1">
@@ -128,7 +128,7 @@ export default function AssetPicker({
                                         ) : (
                                             <div className="flex flex-col items-center gap-2">
                                                 {getFileIcon(item.type)}
-                                                <span className="text-xs font-medium text-gray-500">
+                                                <span className="text-xs font-medium text-slate-900">
                                                     {item.filename.split('.').pop().toUpperCase()}
                                                 </span>
                                             </div>
@@ -137,10 +137,10 @@ export default function AssetPicker({
 
                                     {/* File Info */}
                                     <div className="p-2 bg-white">
-                                        <div className="text-xs font-medium text-gray-800 truncate" title={item.filename}>
+                                        <div className="text-xs font-medium text-slate-900 truncate" title={item.filename}>
                                             {item.filename}
                                         </div>
-                                        <div className="text-xs text-gray-500">
+                                        <div className="text-xs text-slate-900">
                                             {formatFileSize(item.size)}
                                         </div>
                                     </div>
@@ -164,7 +164,7 @@ export default function AssetPicker({
                     {currentValue && (
                         <button
                             onClick={handleClear}
-                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded transition-colors"
+                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-slate-900 rounded transition-colors"
                         >
                             Clear Selection
                         </button>

@@ -128,13 +128,13 @@ export default function PropertiesPanel({ appState }) {
   const renderPropertyEditor = () => {
     if (!selectedComponent) {
       return (
-        <div className="flex flex-col items-center justify-center h-full p-10 text-center text-slate-300">
+        <div className="flex flex-col items-center justify-center h-full p-10 text-center text-slate-900">
            <div className="relative mb-6">
               <div className="absolute inset-0 bg-slate-50 rounded-full blur-2xl scale-150 opacity-50"></div>
-              <Smartphone className="h-16 w-16 relative text-slate-200" strokeWidth={1} />
+              <Smartphone className="h-16 w-16 relative text-slate-900" strokeWidth={1} />
            </div>
-           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">No Selection</p>
-           <p className="text-[10px] text-slate-300 font-medium">Select a component to edit properties</p>
+           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-900 mb-1">No Selection</p>
+           <p className="text-[10px] text-slate-900 font-medium">Select a component to edit properties</p>
         </div>
       );
     }
@@ -202,37 +202,42 @@ export default function PropertiesPanel({ appState }) {
       const currentValue = isCustom ? 'custom' : value;
 
       return (
-        <div className="space-y-3">
-          <select
-            value={currentValue}
-            className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5 appearance-none"
-            onChange={(e) => {
-              const newValue = e.target.value;
-              if (newValue === 'custom') {
-                updateProp(id, key, 100);
-              } else {
-                updateProp(id, key, newValue);
-              }
-            }}
-          >
-            {sizeOptions[key].map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }} className="w-full">
+          <div className="relative">
+            <select
+              value={currentValue}
+              style={{ height: '36px', paddingLeft: '12px', paddingRight: '32px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+              className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all appearance-none cursor-pointer"
+              onChange={(e) => {
+                const newValue = e.target.value;
+                if (newValue === 'custom') {
+                  updateProp(id, key, 100);
+                } else {
+                  updateProp(id, key, newValue);
+                }
+              }}
+            >
+              {sizeOptions[key].map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown style={{ width: '14px', height: '14px', right: '12px', top: '11px' }} className="absolute text-slate-900 pointer-events-none" />
+          </div>
 
           {isCustom && (
-            <div className="flex items-center gap-3">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <input
                 type="number"
                 min="1"
                 max="9999"
                 value={value}
-                className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5 flex-1"
+                style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all flex-1"
                 onChange={(e) => updateProp(id, key, parseInt(e.target.value) || 1)}
               />
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">PX</span>
+              <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', letterSpacing: '0.05em' }}>PX</span>
             </div>
           )}
         </div>
@@ -248,61 +253,91 @@ export default function PropertiesPanel({ appState }) {
       const options = getPropertyOptions(type, key);
       const isArray = Array.isArray(value) || metaType === 'Array';
 
+      if (isBoolean) {
+        return (
+          <div 
+            key={key} 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between', 
+              padding: '14px 20px', 
+              borderBottom: '1px solid #f1f5f9', 
+              backgroundColor: '#ffffff' 
+            }}
+            className="hover:bg-slate-50/50 transition-all duration-200"
+          >
+            <span style={{ fontSize: '12px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {key.replace(/([A-Z])/g, ' $1').trim()}
+            </span>
+            <div
+              className={`w-9 h-5 rounded-full transition-all relative shrink-0 cursor-pointer ${value ? 'bg-blue-600 shadow-md shadow-blue-500/25' : 'bg-slate-200'}`}
+              onClick={() => updateProp(id, key, !value)}
+            >
+              <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${value ? 'left-5' : 'left-1'}`} />
+            </div>
+          </div>
+        );
+      }
+
       return (
-        <div key={key} className="relative flex flex-col gap-2.5 py-4 px-5 border-b border-slate-200/60 transition-all duration-250 ease-out hover:bg-slate-50/50 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-orange-500 before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-250 before:ease-[cubic-bezier(0.4,0,0.2,1)]">
-          <label className="text-[11px] font-extrabold text-slate-400 flex items-center gap-2 uppercase tracking-[0.08em] mb-1">
+        <div 
+          key={key} 
+          style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '8px', 
+            padding: '14px 20px', 
+            borderBottom: '1px solid #f1f5f9', 
+            backgroundColor: '#ffffff' 
+          }}
+          className="hover:bg-slate-50/50 transition-all duration-200"
+        >
+          <label style={{ fontSize: '12px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {key.replace(/([A-Z])/g, ' $1').trim()}
           </label>
 
           {isSizeProperty ? (
             renderSizeProperty(key, value)
-          ) : isBoolean ? (
-            <div
-                className={`flex items-center justify-between p-3.5 bg-slate-50 border rounded-2xl cursor-pointer transition-all ${value ? 'border-orange-500 bg-orange-500/5' : 'border-slate-200 hover:border-slate-300'}`}
-                onClick={() => updateProp(id, key, !value)}
-            >
-                <span className={`text-[10px] font-black uppercase tracking-[0.1em] ${value ? 'text-orange-600' : 'text-slate-500'}`}>{value ? 'ENABLED' : 'DISABLED'}</span>
-                <div className={`w-9 h-5 rounded-full transition-all relative shrink-0 ${value ? 'bg-orange-500 shadow-md shadow-orange-500/30' : 'bg-slate-300'}`}>
-                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${value ? 'left-5' : 'left-1'}`} />
-                </div>
-            </div>
           ) : isColor ? (
-            <div className="flex items-center gap-3">
-              <div className="relative group">
-                <input
-                    type="color"
-                    value={value && value !== 'transparent' ? value : '#000000'}
-                    className="h-12 w-12 rounded-xl cursor-pointer border border-slate-200 p-1.5 bg-white shadow-sm transition-all hover:scale-105 active:scale-95"
-                    onChange={(e) => updateProp(id, key, e.target.value)}
-                />
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input
+                type="color"
+                value={value && value !== 'transparent' ? value : '#000000'}
+                style={{ width: '36px', height: '36px', padding: '0', cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: 'transparent' }}
+                className="shrink-0 shadow-sm hover:scale-105 transition-transform"
+                onChange={(e) => updateProp(id, key, e.target.value)}
+              />
               <input
                 type="text"
                 value={value || ''}
-                className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5 font-mono text-center tracking-widest"
+                style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0', letterSpacing: '0.05em' }}
+                className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all font-mono text-center"
                 placeholder="#HEXCODE"
                 onChange={(e) => updateProp(id, key, e.target.value)}
               />
             </div>
           ) : options ? (
-            <div className="relative">
-                <select
+            <div className="relative w-full">
+              <select
                 value={value}
-                className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5 appearance-none pr-10"
+                style={{ height: '36px', paddingLeft: '12px', paddingRight: '32px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all appearance-none cursor-pointer"
                 onChange={(e) => updateProp(id, key, e.target.value)}
-                >
+              >
                 {options.map(option => (
-                    <option key={option} value={option}>{option}</option>
+                  <option key={option} value={option}>{option}</option>
                 ))}
-                </select>
-                <ChevronDown className="absolute right-4 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+              </select>
+              <ChevronDown style={{ width: '14px', height: '14px', right: '12px', top: '11px' }} className="absolute text-slate-900 pointer-events-none" />
             </div>
           ) : isArray ? (
             <input
               type="text"
               value={Array.isArray(value) ? value.join(', ') : value || ''}
               placeholder="item1, item2, item3"
-              className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5 font-medium"
+              style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+              className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all"
               onChange={(e) => {
                 const items = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
                 updateProp(id, key, items);
@@ -312,14 +347,16 @@ export default function PropertiesPanel({ appState }) {
             <input
               type="number"
               value={value}
-              className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5"
+              style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+              className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all"
               onChange={(e) => updateProp(id, key, parseFloat(e.target.value) || 0)}
             />
           ) : (
             <input
               type="text"
               value={value ?? ''}
-              className="w-full py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-b from-white to-slate-50 text-slate-900 leading-normal hover:border-orange-500/30 hover:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:shadow-md focus:shadow-orange-500/20 focus:bg-white focus:-translate-y-0.5"
+              style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+              className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all"
               onChange={(e) => updateProp(id, key, e.target.value)}
             />
           )}
@@ -328,18 +365,18 @@ export default function PropertiesPanel({ appState }) {
     };
 
     return (
-      <div className="p-5 min-h-full bg-transparent">
+      <div style={{ padding: '20px' }} className="min-h-full bg-transparent">
         {/* Pro Header - Clean Flex Layout */}
-        <div className="mb-6 bg-white border border-slate-200 rounded-[20px] shadow-sm overflow-hidden flex flex-col">
-            <div className="h-1.5 bg-orange-500 w-full" />
-            <div className="p-6 flex items-center justify-between gap-4">
+        <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column' }} className="bg-white border border-slate-200 rounded-[20px] shadow-sm overflow-hidden">
+            <div className="h-1.5 bg-blue-600 w-full" />
+            <div style={{ padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
                 <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-1.5">Active Module</div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight truncate">{id}</h3>
-                    <div className="flex items-center gap-2 mt-2.5">
-                        <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-widest rounded-md border border-orange-100">{type}</span>
-                        <div className="w-1 h-1 rounded-full bg-slate-300" />
-                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Selected</span>
+                    <div style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '6px' }}>Active Module</div>
+                    <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.02em' }} className="truncate">{id}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+                        <span style={{ padding: '3px 8px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em', borderRadius: '6px', border: '1px solid #dbeafe', backgroundColor: '#eff6ff', color: '#2563eb' }}>{type}</span>
+                        <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#cbd5e1' }} />
+                        <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Selected</span>
                     </div>
                 </div>
                 <button
@@ -348,31 +385,33 @@ export default function PropertiesPanel({ appState }) {
                             removeComponent(id);
                         }
                     }}
-                    className="p-3.5 bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 group shrink-0"
+                    style={{ padding: '14px' }}
+                    className="bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 group shrink-0"
                     title="Delete Module"
                 >
-                    <Trash2 className="h-5 w-5 transition-transform group-hover:rotate-12" />
+                    <Trash2 style={{ width: '20px', height: '20px' }} className="transition-transform group-hover:rotate-12" />
                 </button>
             </div>
         </div>
 
         {/* Categorized Properties */}
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {Object.entries(categorizedProps).map(([category, props]) => (
             <div key={category} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
             <button
-                className="w-full flex items-center justify-between px-5 py-4 bg-white text-[11px] font-bold text-slate-800 hover:bg-slate-50 transition-all border-b border-slate-100 uppercase tracking-[0.2em] font-['Inter']"
+                style={{ padding: '16px 20px', fontSize: '11px', fontWeight: '900' }}
+                className="w-full flex items-center justify-between bg-white text-slate-900 hover:bg-slate-50 transition-all border-b border-slate-100 uppercase tracking-[0.2em] font-['Inter']"
                 onClick={() => toggleSection(category)}
               >
                 <span>{category}</span>
                 {collapsedSections[category] ? (
-                  <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                  <ChevronRight style={{ width: '14px', height: '14px' }} className="text-slate-900" />
                 ) : (
-                  <ChevronDown className="h-3.5 w-3.5 text-orange-500" />
+                  <ChevronDown style={{ width: '14px', height: '14px' }} className="text-blue-600" />
                 )}
               </button>
               {!collapsedSections[category] && (
-                <div className="p-4 space-y-5 bg-slate-50">
+                <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: '#ffffff' }}>
                   {props.map(([key, value]) => renderSingleProp(key, value))}
                 </div>
               )}
@@ -390,9 +429,8 @@ export default function PropertiesPanel({ appState }) {
         style={{ paddingTop: '24px', paddingBottom: '16px', paddingLeft: '32px', paddingRight: '24px' }}
         className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b-2 border-slate-200 flex items-center justify-between shrink-0 shadow-sm"
       >
-        <span className="text-[19px] font-black uppercase tracking-[0.15em] text-slate-500 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Properties</span>
+        <span className="text-[19px] font-black uppercase tracking-[0.15em] text-slate-900 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Properties</span>
       </div>
-
       {/* Property Editor */}
       <div className="flex-1 overflow-y-auto">
         {renderPropertyEditor()}

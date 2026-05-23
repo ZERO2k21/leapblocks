@@ -198,8 +198,8 @@ export default function AppInventor({ onBack }) {
                   id={`tab-${tab.toLowerCase()}`}
                   onClick={() => setActiveTab(tab.toLowerCase())}
                   className={`px-8 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer ${activeTab === tab.toLowerCase()
-                    ? 'bg-white text-orange-600 shadow-md border border-orange-100/50'
-                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                    ? 'bg-white text-blue-600 shadow-md border border-blue-100/50'
+                    : 'text-slate-900 hover:text-slate-950 hover:bg-slate-200/50'
                     }`}
                 >
                   {tab}
@@ -210,7 +210,7 @@ export default function AppInventor({ onBack }) {
             <button
               id="btn-build-apk"
               onClick={handleBuildApk}
-              className="relative overflow-hidden flex items-center gap-2.5 px-8 py-3.5 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl text-[13px] font-black uppercase tracking-[0.12em] shadow-[0_12px_24px_-8px_rgba(255,122,0,0.5),0_4px_12px_-4px_rgba(255,122,0,0.3),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_20px_40px_-12px_rgba(255,122,0,0.6),0_8px_16px_-6px_rgba(255,122,0,0.4),inset_0_1px_0_rgba(255,255,255,0.3)] hover:-translate-y-0.5 hover:scale-[1.02] active:-translate-y-px active:scale-100 transition-all duration-300 cursor-pointer before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent hover:before:left-full before:transition-all before:duration-700 group"
+              className="relative overflow-hidden flex items-center gap-2.5 px-8 py-3.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl text-[13px] font-black uppercase tracking-[0.12em] shadow-[0_12px_24px_-8px_rgba(37,99,235,0.5),0_4px_12px_-4px_rgba(37,99,235,0.3),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_20px_40px_-12px_rgba(37,99,235,0.6),0_8px_16px_-6px_rgba(37,99,235,0.4),inset_0_1px_0_rgba(255,255,255,0.3)] hover:-translate-y-0.5 hover:scale-[1.02] active:-translate-y-px active:scale-100 transition-all duration-300 cursor-pointer before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent hover:before:left-full before:transition-all before:duration-700 group"
             >
               <Zap className="h-4 w-4 text-white group-hover:animate-pulse" />
               BUILD PRODUCTION
