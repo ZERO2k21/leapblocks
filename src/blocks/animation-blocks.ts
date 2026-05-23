@@ -2124,10 +2124,36 @@ export const animationToolbox = {
             contents: [
                 // Note: looks_say/think blocks are registered from leapBlocks.ts which uses
                 // field_input (not input_value), so no shadow inputs should be specified here.
-                { kind: 'block', type: 'looks_say_for_secs' },
-                { kind: 'block', type: 'looks_say' },
-                { kind: 'block', type: 'looks_think_for_secs' },
-                { kind: 'block', type: 'looks_think' },
+                {
+                    kind: 'block',
+                    type: 'looks_say_for_secs',
+                    inputs: {
+                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hello!' } } },
+                        SECS: { shadow: { type: 'math_number', fields: { NUM: 2 } } }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'looks_say',
+                    inputs: {
+                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hello!' } } }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'looks_think_for_secs',
+                    inputs: {
+                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hmm...' } } },
+                        SECS: { shadow: { type: 'math_number', fields: { NUM: 2 } } }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'looks_think',
+                    inputs: {
+                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hmm...' } } }
+                    }
+                },
                 { kind: 'label', text: '── Visibility ──' },
                 { kind: 'block', type: 'looks_show' },
                 { kind: 'block', type: 'looks_hide' },
@@ -2179,9 +2205,21 @@ export const animationToolbox = {
             contents: [
                 // Note: Control blocks are registered from leapBlocks.ts which uses field_number
                 // (not input_value), so no shadow inputs should be specified here.
-                { kind: 'block', type: 'control_wait' },
+                {
+                    kind: 'block',
+                    type: 'control_wait',
+                    inputs: {
+                        SECS: { shadow: { type: 'math_number', fields: { NUM: 1 } } }
+                    }
+                },
                 { kind: 'label', text: '── Loops ──' },
-                { kind: 'block', type: 'control_repeat' },
+                {
+                    kind: 'block',
+                    type: 'control_repeat',
+                    inputs: {
+                        TIMES: { shadow: { type: 'math_number', fields: { NUM: 10 } } }
+                    }
+                },
                 { kind: 'block', type: 'control_forever' },
                 { kind: 'block', type: 'control_repeat_until' },
                 { kind: 'label', text: '── Conditions ──' },
