@@ -826,6 +826,13 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     // Run state
     const [isRunning, setIsRunning] = useState(false);
 
+    // Input state for Skulpt interactive prompts
+    const [isWaitingForInput, setIsWaitingForInput] = useState(false);
+    const [inputPromptText, setInputPromptText] = useState("");
+    const [terminalInputValue, setTerminalInputValue] = useState("");
+    const inputResolverRef = useRef(null);
+    const terminalInputRef = useRef(null);
+
     // Debugger state
     const [debugBreakpoints, setDebugBreakpoints] = useState(new Set());
     const [debugVars, setDebugVars] = useState([]);
@@ -855,11 +862,42 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     // Engine ref
     const skulptRef = useRef(null);
     const boardCppMenuRef = useRef(null);
+    const replStartedRef = useRef(false);
+    const replErrorBufferRef = useRef("");
+    const replOutputBufferRef = useRef("");
 
     // ── Helpers ──────────────────────────────────────────────────────────────
     const addLog = useCallback((text, type = "log") => {
         setTerminalOutput(prev => [...prev, { text, type, ts: new Date() }]);
     }, []);
+
+    const isPythonBannerText = useCallback((text) => {
+        const t = text.trim();
+        if (!t) return true;
+        if (/^Python\s+\d+\.\d+/.test(t)) return true;
+        if (t.startsWith('Type "help"')) return true;
+        if (t === ">>>" || t.startsWith(">>> ")) return true;
+        if (t === "..." || t.startsWith("... ")) return true;
+        if (/^help\s*,\s*copyright/.test(t)) return true;
+        return false;
+    }, []);
+
+    const flushReplBuffer = useCallback((bufferRef, type) => {
+        const buf = bufferRef.current;
+        if (!buf) return;
+        const lines = buf.split("\n");
+        lines.forEach((line, i) => {
+            if (i === lines.length - 1 && !buf.endsWith("\n")) {
+                bufferRef.current = line;
+                return;
+            }
+            const trimmed = line.trim();
+            if (trimmed || i < lines.length - 2) {
+                addLog(line.replace(/\r$/, ""), type);
+            }
+        });
+        if (buf.endsWith("\n")) bufferRef.current = "";
+    }, [addLog]);
 
     const selectedBoardConfig = getBoardConfig(selectedBoard);
     const selectedBoardName = getBoardNameById()[selectedBoard] || selectedBoardConfig.runtimeLabel;
@@ -982,6 +1020,14 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         skulptRef.current = new SkulptEngine({
             onOut: (text) => addLog(text.replace(/\n$/, ""), "log"),
             onErr: (text) => addLog(text, "error"),
+            onInputRequested: (promptText, resolve) => {
+                inputResolverRef.current = resolve;
+                setInputPromptText(promptText || "");
+                setIsWaitingForInput(true);
+                setTerminalInputValue("");
+                // Auto-focus the terminal input after a brief delay
+                setTimeout(() => terminalInputRef.current?.focus(), 80);
+            },
             actions: {
                 initSprite: (name) => {
                     setSprites(prev => {
@@ -1193,7 +1239,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             addLog(data.replace(/\n$/, ""), "log");
         });
         window.electronAPI.onPythonError((data) => {
-            addLog(data, "error");
+            const cleaned = data.replace(/\n$/, "");
+            if (isPythonBannerText(cleaned)) return;
+            addLog(cleaned, "error");
         });
         window.electronAPI.onPythonExit((code) => {
             if (code === 0) {
@@ -1204,10 +1252,27 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             setIsRunning(false);
         });
         window.electronAPI.onPythonReplOutput((data) => {
-            addLog(data.replace(/\n$/, ""), "log");
+            replOutputBufferRef.current += data;
+            const lines = replOutputBufferRef.current.split("\n");
+            for (let i = 0; i < lines.length - 1; i++) {
+                const line = lines[i].replace(/\r$/, "");
+                if (line.trim() || i < lines.length - 2) {
+                    addLog(line, "log");
+                }
+            }
+            replOutputBufferRef.current = lines[lines.length - 1];
         });
         window.electronAPI.onPythonReplError((data) => {
-            addLog(data, "error");
+            replErrorBufferRef.current += data;
+            const lines = replErrorBufferRef.current.split("\n");
+            for (let i = 0; i < lines.length - 1; i++) {
+                const line = lines[i].replace(/\r$/, "");
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+                if (isPythonBannerText(line)) continue;
+                addLog(line, "error");
+            }
+            replErrorBufferRef.current = lines[lines.length - 1];
         });
         window.electronAPI.onPythonPipOutput((data) => {
             addLog(data.replace(/\n$/, ""), "log");
@@ -1215,14 +1280,23 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         window.electronAPI.onPythonPipError((data) => {
             addLog(data, "error");
         });
-    }, [addLog]);
+    }, [addLog, isPythonBannerText]);
 
     useEffect(() => {
-        if (activePanel === "repl" && window.electronAPI?.isElectron) {
-            window.electronAPI.pythonReplStart();
-            addLog(`>>> Native Python REPL Connected.`, "success");
-        } else if (activePanel === "repl" && !window.electronAPI?.isElectron) {
-            addLog(`>>> Python REPL Ready (in-browser Skulpt engine).`, "success");
+        if (activePanel === "repl") {
+            if (window.electronAPI?.isElectron) {
+                if (!replStartedRef.current) {
+                    replStartedRef.current = true;
+                    window.electronAPI.pythonReplStart();
+                    addLog(`>>> Native Python REPL Connected.`, "success");
+                }
+            } else {
+                addLog(`>>> Python REPL Ready (in-browser Skulpt engine).`, "success");
+            }
+        } else {
+            replStartedRef.current = false;
+            replOutputBufferRef.current = "";
+            replErrorBufferRef.current = "";
         }
     }, [activePanel, addLog]);
 
@@ -1287,10 +1361,23 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             if (!window.electronAPI?.isElectron) {
                 setIsRunning(false);
             }
+            // Clean up any pending input state when execution finishes
+            setIsWaitingForInput(false);
+            setInputPromptText("");
+            setTerminalInputValue("");
+            inputResolverRef.current = null;
         }
     }
 
     function handleStop() {
+        // Cancel any pending input promise to prevent hanging
+        if (inputResolverRef.current) {
+            inputResolverRef.current("");
+            inputResolverRef.current = null;
+        }
+        setIsWaitingForInput(false);
+        setInputPromptText("");
+        setTerminalInputValue("");
         setIsRunning(false);
         addLog("⏹ Execution stopped by user.", "warning");
         if (window.electronAPI?.isElectron) {
@@ -1299,6 +1386,26 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     }
 
     function handleClear() { setTerminalOutput([]); }
+
+    // ── Terminal Input Submit (for interactive input() prompts) ────────────────
+    function handleTerminalInputSubmit() {
+        const val = terminalInputValue;
+        if (inputResolverRef.current) {
+            addLog(val, "input");
+            inputResolverRef.current(val);
+            inputResolverRef.current = null;
+            setIsWaitingForInput(false);
+            setInputPromptText("");
+            setTerminalInputValue("");
+        }
+    }
+
+    function handleTerminalInputKey(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleTerminalInputSubmit();
+        }
+    }
 
     // ── Syntax Warning Checker ────────────────────────────────────────────────
     const checkSyntaxWarnings = (code) => {
@@ -1381,6 +1488,19 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const handleReplSubmit = async () => {
         const line = replInput.trim();
         if (!line) return;
+
+        // If waiting for input from a running program, route REPL text as the input response
+        if (isWaitingForInput && inputResolverRef.current) {
+            setReplInput("");
+            addLog(line, "input");
+            inputResolverRef.current(line);
+            inputResolverRef.current = null;
+            setIsWaitingForInput(false);
+            setInputPromptText("");
+            setTerminalInputValue("");
+            setActivePanel("terminal");
+            return;
+        }
 
         const newHist = [line, ...replHistory].slice(0, 50);
         setReplHistory(newHist);
@@ -2662,9 +2782,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 padding: "0 8px",
                 justifyContent: "space-between",
                 color: "#fff",
-                zIndex: 100,
+                zIndex: 1000,
                 flexShrink: 0,
-                overflow: "hidden",
+                overflow: "visible",
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <button
@@ -3150,7 +3270,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     padding: "0 12px",
                     justifyContent: "space-between",
                     borderBottom: "1px solid #313244",
-                    zIndex: 100,
+                    zIndex: 90,
                     flexShrink: 0,
                 }}>
                     {/* Left: File tabs */}
@@ -3292,6 +3412,13 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         pipFilter={pipFilter}
                         setPipFilter={setPipFilter}
                         handleInstall={handleInstall}
+                        isWaitingForInput={isWaitingForInput}
+                        inputPromptText={inputPromptText}
+                        terminalInputValue={terminalInputValue}
+                        setTerminalInputValue={setTerminalInputValue}
+                        handleTerminalInputSubmit={handleTerminalInputSubmit}
+                        handleTerminalInputKey={handleTerminalInputKey}
+                        terminalInputRef={terminalInputRef}
                     />
 
                     {/* ── STAGE PANEL ── */}
@@ -3430,6 +3557,13 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                 pipFilter={pipFilter}
                                 setPipFilter={setPipFilter}
                                 handleInstall={handleInstall}
+                                isWaitingForInput={isWaitingForInput}
+                                inputPromptText={inputPromptText}
+                                terminalInputValue={terminalInputValue}
+                                setTerminalInputValue={setTerminalInputValue}
+                                handleTerminalInputSubmit={handleTerminalInputSubmit}
+                                handleTerminalInputKey={handleTerminalInputKey}
+                                terminalInputRef={terminalInputRef}
                             />
                         </div>
                     </div>
