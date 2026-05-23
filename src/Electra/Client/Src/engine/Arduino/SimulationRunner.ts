@@ -45,9 +45,6 @@ class SimulationRunner {
   // binPath is set by setBoard(boardId, binPath) when ForgeStudio receives the
   // compiled .bin from the main process.  It is consumed by start() to launch the simulation.
   private binPath: string | null = null;
-
-  // Transpiled JavaScript code for ArduinoRuntime-based simulation (recommended path)
-  private _transpiledJS: string | null = null;
   private _binBase64: string | null = null;
 
   private selectedBoard: string = 'arduino-uno';
@@ -188,15 +185,6 @@ class SimulationRunner {
   }
 
   /**
-   * Store transpiled JavaScript for ArduinoRuntime-based ESP32-C3 simulation.
-   * Call this instead of (or in addition to) setBoard() when using the transpiled path.
-   */
-  setTranspiledJS(jsCode: string): void {
-    this._transpiledJS = jsCode;
-    console.log(`[SimulationRunner] Transpiled JS stored (${jsCode.length} bytes)`);
-  }
-
-  /**
    * Start the simulation loop
    */
   async start() {
@@ -232,30 +220,7 @@ class SimulationRunner {
         });
       }
 
-      // ── Path A: Transpiled JS (recommended — works on web & Electron) ──
-      if (this._transpiledJS) {
-        console.log('[SimulationRunner] Using transpiled JS path (ArduinoRuntime)');
-        await this.esp32c3Runner.initTranspiled(this._transpiledJS);
-
-        // Reverse bridge: forward external pin changes (PIR, HC-SR04, etc.)
-        // from SimulationRunner into ArduinoRuntime so digitalRead() works.
-        const runtime = this.esp32c3Runner.runtime;
-        if (runtime) {
-          for (let gpio = 0; gpio <= 21; gpio++) {
-            const pinId = `ESP${gpio}`;
-            const g = gpio;
-            this.addListener(pinId, (state) => {
-              runtime.setDigitalInput(g, state === 'HIGH');
-            });
-          }
-        }
-
-        this.esp32c3Runner.run();
-        console.log('[FORGE] ESP32-C3 transpiled simulation started');
-        return;
-      }
-
-      // ── Path B: RISC-V binary (Web + Electron) ──
+      // ── RISC-V binary path (Web + Electron) ──
       if (this.binPath || this._binBase64) {
         console.log('[SimulationRunner] Using RISC-V binary path');
         let firmwareBin: Uint8Array;
@@ -292,8 +257,8 @@ class SimulationRunner {
       }
 
       throw new Error(
-        '[FORGE] ESP32-C3 simulation requires either transpiled JS or a binPath. ' +
-        'Call setTranspiledJS() or setBoard(boardId, binPath) before start().'
+        '[FORGE] ESP32-C3 simulation requires compiled firmware. ' +
+        'Call setBoard(boardId, binPath) or setFirmwareBase64() before start().'
       );
     }
 
@@ -325,7 +290,6 @@ class SimulationRunner {
       this.isRunning = false;
       this.esp32c3Runner?.stop();
       this.binPath = null;
-      this._transpiledJS = null;
       this._binBase64 = null;
       console.log('[FORGE] ESP32-C3 RISC-V runner stopped.');
       return;
@@ -352,7 +316,6 @@ class SimulationRunner {
       this.esp32c3Runner?.stop();
       this.esp32c3Runner = null;
       this.binPath = null;
-      this._transpiledJS = null;
       this._binBase64 = null; // force caller to supply a fresh binPath on next start
     } else {
       this.stop();
@@ -696,8 +659,9 @@ class SimulationRunner {
    */
   public sendSerialInput(data: string): void {
     // ESP32-C3 path
-    if (this.esp32c3Runner?.runtime) {
-      this.esp32c3Runner.runtime.sendSerialInput(data);
+    if (this.esp32c3Runner) {
+      // Serial input is handled by the RISC-V UART peripheral
+      console.log('[SimulationRunner] Serial input to ESP32-C3 RISC-V UART:', data);
       return;
     }
 

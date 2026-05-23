@@ -323,12 +323,13 @@ class CircuitEngine {
   }
 
   /**
-   * Re-applies the I2C bus bridge to ArduinoRuntime after initTranspiled() creates it.
-   * Called by SimulationRunner.start() on the transpiled path.
+   * Prepares library class overrides (Adafruit_SSD1306, Keypad, etc.)
+   * These are used by syncCircuitGraph for display/peripheral emulation.
+   * NOTE: The ArduinoRuntime transpiled path has been removed.
+   * These classes are kept for the I2C bus bridge used by RISC-V peripherals.
    */
   public syncI2CBridge() {
-    const esp32Runtime = simulationRunner.ESP32C3Runner?.runtime;
-    console.log(`[OLED BRIDGE] syncI2CBridge() called. Runtime exists: ${!!esp32Runtime}, ssd1306Slaves: ${this.ssd1306Slaves.size}`);
+    console.log(`[OLED BRIDGE] syncI2CBridge() called. ssd1306Slaves: ${this.ssd1306Slaves.size}`);
 
     // ── Always register the Adafruit_SSD1306 class for injection ─────────────
     // This is stored on CircuitEngine and pulled by initTranspiled() before
@@ -915,48 +916,31 @@ class CircuitEngine {
     this._pendingLibraryClasses.set('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
     console.log(`[LCD BRIDGE] RealLiquidCrystal_I2C stored in _pendingLibraryClasses`);
 
-    // If runtime already exists (re-sync case), inject immediately
-    if (esp32Runtime) {
-      esp32Runtime.injectLibraryClass('Adafruit_SSD1306', RealAdafruitSSD1306);
-      esp32Runtime.injectLibraryClass('Adafruit_ILI9341', RealAdafruitILI9341);
-      esp32Runtime.injectLibraryClass('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
-      this._wireI2CBus(esp32Runtime);
-      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + LCD_I2C + wired I2C bus');
-    } else {
-      console.log('[OLED/LCD BRIDGE] Runtime not yet created — classes queued for initTranspiled()');
-    }
+    // NOTE: Previously this would inject classes directly into ArduinoRuntime
+    // if it existed. That path is removed — classes are only queued now.
+    console.log('[OLED/LCD BRIDGE] Library classes queued in _pendingLibraryClasses');
   }
 
-  /** Called by ESP32C3SimulationRunner.initTranspiled() to get pending library classes */
+  /** Called by syncCircuitGraph to get registered library classes */
   public getPendingLibraryClasses(): Map<string, any> {
     return this._pendingLibraryClasses;
   }
 
-  /** Wire the I2C bus to an ArduinoRuntime instance */
+  // NOTE: _wireI2CBus was used by ArduinoRuntime transpiled path (now removed).
+  // I2C communication in RISC-V mode is handled by the ESP32C3I2C peripheral.
+  /*
   private _wireI2CBus(runtime: import('../esp32c3/ArduinoRuntime').ArduinoRuntime) {
     const bus = this.i2cBusManager;
     let _rxBuf: number[] = [], _rxPos = 0;
-    console.log(`[OLED BRIDGE] _wireI2CBus: wiring I2C bus. Registered slaves: ${[...bus['slaves']?.keys() ?? []].map((a: number) => '0x' + a.toString(16)).join(', ')}`);
+    console.log(`[OLED BRIDGE] _wireI2CBus: wiring I2C bus.`);
     runtime.setI2CBus({
       startTransmission(addr: number) {
-        console.log(`[I2C WIRE] beginTransmission(0x${addr.toString(16)})`);
         bus['activeSlave'] = null;
         const slave = bus['slaves']?.get(addr) ?? null;
-        if (slave) {
-          slave.onStart(false);
-          slave.onConnect(true);
-          bus['activeSlave'] = slave;
-          console.log(`[I2C WIRE] ✓ Connected to slave at 0x${addr.toString(16)}`);
-        } else {
-          console.warn(`[I2C WIRE] ✗ No slave at 0x${addr.toString(16)}`);
-        }
+        if (slave) { slave.onStart(false); slave.onConnect(true); bus['activeSlave'] = slave; }
       },
       write(val: number) { const s = bus['activeSlave']; if (s) s.onWrite(val & 0xFF); },
-      endTransmission() {
-        const s = bus['activeSlave'];
-        if (s) s.onStop();
-        bus['activeSlave'] = null;
-      },
+      endTransmission() { const s = bus['activeSlave']; if (s) s.onStop(); bus['activeSlave'] = null; },
       requestFrom(addr: number, qty: number) {
         _rxBuf = []; _rxPos = 0;
         const slave = bus['slaves']?.get(addr) ?? null;
@@ -965,8 +949,8 @@ class CircuitEngine {
       available() { return _rxBuf.length - _rxPos; },
       read() { return _rxPos < _rxBuf.length ? _rxBuf[_rxPos++] : 0; },
     });
-    console.log('[OLED BRIDGE] ✓ Wire → I2CBusManager connected');
   }
+  */
 
   /**
    * Called whenever wires are drawn/removed. Rebuilds the routing table.
@@ -1254,8 +1238,8 @@ class CircuitEngine {
       simulationRunner.TWI.eventHandler = this.i2cBusManager;
     }
 
-    // 2.3 Wire I2CBusManager into ArduinoRuntime (ESP32 transpiled path)
-    // Applied via syncI2CBridge() called from SimulationRunner.start() after initTranspiled()
+    // 2.3 Prepare I2C library classes for display/peripheral emulation
+    // NOTE: Previously this also wired I2C to ArduinoRuntime (transpiled path removed)
     this.syncI2CBridge();
 
     const tickUnifiedSteppers = () => {

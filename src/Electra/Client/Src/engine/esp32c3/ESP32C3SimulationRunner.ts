@@ -37,7 +37,7 @@ import { ESP32C3I2C } from './peripherals/I2C';
 import { ESP32C3SPI } from './peripherals/SPI';
 import { ESP32C3SysTimer } from './peripherals/SysTimer';
 import { FirmwareLoader } from './compiler/FirmwareLoader';
-import { ArduinoRuntime } from './ArduinoRuntime';
+// ArduinoRuntime import commented out — transpilation path removed, RISC-V only\r\n// import { ArduinoRuntime } from './ArduinoRuntime';
 
 // ---------------------------------------------------------------------------
 // Types shared with the parent SimulationRunner
@@ -145,9 +145,6 @@ export class ESP32C3SimulationRunner {
     private rafHandle: number | null = null;
     private running: boolean = false;
 
-    // ── Arduino Runtime (transpiled JS path — recommended) ──
-    private arduinoRuntime: ArduinoRuntime | null = null;
-    private usingTranspiledPath: boolean = false;
 
     // Listeners registered by CircuitEngine / ForgeStudio
     private pinListeners: Map<string, PinListener[]> = new Map();
@@ -235,104 +232,13 @@ export class ESP32C3SimulationRunner {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // TRANSPILED JS PATH (recommended — uses ArduinoRuntime instead of RV32IMC)
+    // RISC-V Simulation Loop
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Initialize with transpiled JavaScript code (Arduino API-level simulation).
-     * This is the RECOMMENDED path — it bypasses RISC-V emulation entirely.
-     *
-     * @param jsCode  Transpiled JavaScript from the server/client transpiler
-     */
-    async initTranspiled(jsCode: string): Promise<void> {
-        this.stop();
-        this.usingTranspiledPath = true;
-
-        this.arduinoRuntime = new ArduinoRuntime();
-
-        // ── IMPORTANT ORDER OF OPERATIONS ──────────────────────────────────────
-        // 1. Call syncI2CBridge() FIRST — this creates the RealAdafruitSSD1306
-        //    class and stores it in _pendingLibraryClasses.
-        // 2. THEN read getPendingLibraryClasses() and inject into runtime.
-        // 3. THEN loadTranspiledCode() uses the injected classes.
-        //
-        // Previously this was reversed: classes were read before syncI2CBridge
-        // created them, so the OLED class was never injected.
-        try {
-            const { circuitEngine } = await import('../Arduino/CircuitEngine');
-
-            // Step 1: Wire the I2C bus — this creates RealAdafruitSSD1306 and
-            // stores it in _pendingLibraryClasses via syncI2CBridge()
-            console.log(`[ESP32 SIM] Calling syncI2CBridge() to create library classes...`);
-            circuitEngine.syncI2CBridge();
-
-            // Step 2: NOW read the pending classes (including the just-created
-            // RealAdafruitSSD1306) and inject them into the runtime
-            const pending = circuitEngine.getPendingLibraryClasses();
-            console.log(`[ESP32 SIM] initTranspiled: pending library classes = [${[...pending.keys()].join(', ')}]`);
-            for (const [name, cls] of pending) {
-                this.arduinoRuntime.injectLibraryClass(name, cls);
-                console.log(`[ESP32 SIM] ✓ Injected library class: ${name}`);
-            }
-        } catch (e) {
-            console.warn('[ESP32 SIM] Could not inject library classes:', e);
-        }
-
-        // Wire GPIO pin changes to CircuitEngine
-        this.arduinoRuntime.onPinChanged((gpio, value, isAnalog) => {
-            const pin = gpioToPinName(gpio);
-            const state: PinState = isAnalog ? value : (value ? 'HIGH' : 'LOW');
-            this.setPinState(pin, state);
-        });
-
-        // Wire serial output to listeners
-        this.arduinoRuntime.onSerialOutput(line => {
-            this.serialListeners.forEach(cb => cb(line));
-        });
-
-        // Load the transpiled code (injected classes are now in context)
-        try {
-            this.arduinoRuntime.loadTranspiledCode(jsCode);
-            console.log('[ESP32 SIM] ✓ Transpiled Arduino code loaded successfully.');
-        } catch (e: any) {
-            console.error('[ESP32 SIM] ✗ Failed to load transpiled code:', e);
-            throw e;
-        }
-    }
-
-    /**
-     * Start the transpiled Arduino simulation.
-     */
-    async runTranspiled(): Promise<void> {
-        if (!this.arduinoRuntime) {
-            throw new Error('[ESP32-C3] ArduinoRuntime not initialized. Call initTranspiled() first.');
-        }
-        this.running = true;
-        console.log('[ESP32-C3] Starting Arduino API simulation...');
-        await this.arduinoRuntime.start();
-    }
-
-    /** Expose ArduinoRuntime so CircuitEngine can wire the I2C bus bridge */
-    get runtime(): ArduinoRuntime | null {
-        return this.arduinoRuntime;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // RISC-V PATH (experimental — kept for future use)
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Start the simulation loop.
-     * If using transpiled path, delegates to runTranspiled().
-     * Otherwise uses the RISC-V soft-core.
+     * Start the RISC-V simulation loop.
      */
     run(): void {
-        // If using transpiled path, delegate to runTranspiled
-        if (this.usingTranspiledPath) {
-            this.runTranspiled();
-            return;
-        }
-
         if (this.running || !this.platform) return;
         this.running = true;
         this.scheduleFrame();
@@ -340,13 +246,6 @@ export class ESP32C3SimulationRunner {
 
     stop(): void {
         this.running = false;
-
-        // Stop Arduino runtime if active
-        if (this.arduinoRuntime) {
-            this.arduinoRuntime.stop();
-            this.arduinoRuntime = null;
-        }
-        this.usingTranspiledPath = false;
 
         if (this.rafHandle !== null) {
             if (typeof cancelAnimationFrame !== 'undefined') {
@@ -468,18 +367,6 @@ export class ESP32C3SimulationRunner {
     injectInput(pin: string, value: boolean | number, isAnalog: boolean = false): void {
         const gpio = pinNameToGpio(pin);
         if (isNaN(gpio)) return;
-
-        // Route to Arduino API if using the transpiled path
-        if (this.usingTranspiledPath && this.arduinoRuntime) {
-            if (isAnalog) {
-                const v12 = typeof value === 'number' ? value : (value ? 4095 : 0);
-                this.arduinoRuntime.setAnalogInput(gpio, v12);
-            } else {
-                const high = typeof value === 'boolean' ? value : value > 0;
-                this.arduinoRuntime.setDigitalInput(gpio, high);
-            }
-            return;
-        }
 
         if (!this.platform) return;
 

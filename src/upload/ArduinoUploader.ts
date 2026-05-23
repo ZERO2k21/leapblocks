@@ -238,6 +238,10 @@ export class ArduinoUploader {
         const forgePath = this.getForgeLibCachePath();
 
         const configContent = `
+board_manager:
+  additional_urls:
+    - https://dl.espressif.com/dl/package_esp32_index.json
+    - https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 directories:
   data: ${path.join(forgePath, 'data').replace(/\\/g, '/')}
   downloads: ${path.join(forgePath, 'staging').replace(/\\/g, '/')}
@@ -698,7 +702,11 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
             if (listCode !== 0) { send('ERROR: Failed to list installed cores'); return false; }
 
             let cores: any[] = [];
-            try { cores = JSON.parse(stdout || '[]'); } catch (_) { }
+            try {
+                const parsed = JSON.parse(stdout || '[]');
+                // arduino-cli v0.35+ wraps in { platforms: [...] }, older versions return a bare array
+                cores = Array.isArray(parsed) ? parsed : (parsed.platforms || []);
+            } catch (_) { }
             const installed = cores.some((c: any) =>
                 (c.id ?? c.platform?.id ?? '').startsWith('esp32:') ||
                 (c.id ?? c.platform?.id ?? '').startsWith('espressif:')
