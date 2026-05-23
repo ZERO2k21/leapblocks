@@ -6,11 +6,13 @@
   <meta http-equiv="Content-Security-Policy"
     content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: http:; worker-src blob: 'self'; script-src * 'self' 'unsafe-inline' 'unsafe-eval' blob: data:; media-src * 'self' data: blob: https: http:; img-src * 'self' data: blob: https: http:; connect-src * 'self' https: http: wss: ws:; font-src * 'self' data: https:;">
   <title>LeapLab - Hardware Block Programming IDE</title>
+  <title>LeapLab - Hardware Block Programming IDE</title>
   <link rel="icon" href="data:,">
-  <!-- Standard font loading with cache buster to prevent ERR_CACHE_READ_FAILURE and layout shift -->
+  <!-- Non-blocking font loading - won't block page render if network is slow -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap&v=1.0.1" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet"></noscript>
   <style>
     * {
       margin: 0;
@@ -30,17 +32,23 @@
       text-rendering: optimizeLegibility !important;
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-DBs-KaCu.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/blocks-V-nhpfCE.js">
-  <link rel="modulepreload" crossorigin href="/assets/vm-engine-D2vd68iY.js">
-  <link rel="modulepreload" crossorigin href="/assets/ui-components-CY5J24xL.js">
-  <link rel="modulepreload" crossorigin href="/assets/vendor-react-BmZLK5Bc.js">
+  <script type="module" crossorigin src="/assets/index-kUCVsi2b.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/blocks-CqEMqq2q.js">
+  <link rel="modulepreload" crossorigin href="/assets/vm-engine-CxAs0pt2.js">
+  <link rel="modulepreload" crossorigin href="/assets/ui-components-DjNy17qe.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-react-HxuS0OdJ.js">
+  <script type="module" crossorigin src="/assets/index-Bp9-0gmY.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/blocks-CKP5ZqWz.js">
+  <link rel="modulepreload" crossorigin href="/assets/vm-engine-CeWLcvt0.js">
+  <link rel="modulepreload" crossorigin href="/assets/ui-components-CpB_e4cU.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-react-apmrf4iV.js">
   <link rel="stylesheet" crossorigin href="/assets/ui-components-DgLEPe46.css">
-  <link rel="stylesheet" crossorigin href="/assets/index-T9qDk_0R.css">
+  <link rel="stylesheet" crossorigin href="/assets/index-BvAXrFtb.css">
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="root"></div>
+
 </body>
 
 </html>
