@@ -99,3 +99,26 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+/* Sharp Font Rendering Override */
+html,
+body,
+button,
+input,
+select,
+textarea,
+span,
+div,
+p,
+a,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+label {
+  -webkit-font-smoothing: subpixel-antialiased !important;
+  -moz-osx-font-smoothing: auto !important;
+  text-rendering: optimizeLegibility !important;
+}
+

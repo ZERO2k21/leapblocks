@@ -50,11 +50,160 @@ function buildBlocklyContextFromPayload(payload) {
 export default function AppInventor({ onBack }) {
   const appState = useAppState();
   const [activeTab, setActiveTab] = useState('designer');
+  const [projectPath, setProjectPath] = useState(null);
 
   const [isBuildModalOpen, setIsBuildModalOpen] = useState(false);
   const [buildState, setBuildState] = useState('idle');
   const [buildLogs, setBuildLogs] = useState([]);
   const [apkPath, setApkPath] = useState(null);
+
+  const handleNewProject = () => {
+    if (confirm("Create a new project? Unsaved changes will be lost.")) {
+      appState.newProject();
+      setProjectPath(null);
+      if (typeof window !== 'undefined') {
+        window.__LEAP_BLOCK_XML__ = '';
+      }
+    }
+  };
+
+  const handleOpenProject = async () => {
+    if (!window.electronAPI || !window.electronAPI.openProject) {
+      alert("Opening projects is only supported in desktop mode.");
+      return;
+    }
+    try {
+      const result = await window.electronAPI.openProject();
+      if (result && result.success && result.data) {
+        appState.loadProject(result.data);
+        setProjectPath(result.projectPath);
+
+        const pathParts = result.projectPath.split(/[\\/]/);
+        const folderName = pathParts[pathParts.length - 1];
+        if (folderName) {
+          appState.setAppName(folderName);
+        }
+      } else if (result && result.error) {
+        alert(`Failed to open project: ${result.error}`);
+      }
+    } catch (err) {
+      console.error("Failed to open project:", err);
+      alert(`Failed to open project: ${err.message}`);
+    }
+  };
+
+  const handleSaveProject = async () => {
+    if (!window.electronAPI || !window.electronAPI.saveProject) {
+      alert("Saving is only supported in desktop mode.");
+      return;
+    }
+    try {
+      const payload = appState.getSerializedState();
+      const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
+      if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
+        payload.blockLogic = liveBlockXml;
+      }
+
+      const result = await window.electronAPI.saveProject(payload, projectPath || undefined);
+      if (result.success && result.projectPath) {
+        setProjectPath(result.projectPath);
+        const pathParts = result.projectPath.split(/[\\/]/);
+        const folderName = pathParts[pathParts.length - 1];
+        if (folderName) {
+          appState.setAppName(folderName);
+        }
+        alert("Project saved successfully!");
+      } else if (result.error) {
+        alert(`Failed to save project: ${result.error}`);
+      }
+    } catch (err) {
+      console.error("Failed to save project:", err);
+      alert(`Failed to save project: ${err.message}`);
+    }
+  };
+
+  const handleSaveAsProject = async () => {
+    if (!window.electronAPI || !window.electronAPI.saveProject) {
+      alert("Saving is only supported in desktop mode.");
+      return;
+    }
+    try {
+      const payload = appState.getSerializedState();
+      const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
+      if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
+        payload.blockLogic = liveBlockXml;
+      }
+
+      const result = await window.electronAPI.saveProject(payload, undefined);
+      if (result.success && result.projectPath) {
+        setProjectPath(result.projectPath);
+        const pathParts = result.projectPath.split(/[\\/]/);
+        const folderName = pathParts[pathParts.length - 1];
+        if (folderName) {
+          appState.setAppName(folderName);
+        }
+        alert("Project saved successfully!");
+      } else if (result.error) {
+        alert(`Failed to save project: ${result.error}`);
+      }
+    } catch (err) {
+      console.error("Failed to save project as:", err);
+      alert(`Failed to save project: ${err.message}`);
+    }
+  };
+
+  const handleUndo = () => {
+    if (activeTab === 'blocks' && typeof window !== 'undefined' && window.Blockly) {
+      const workspace = window.Blockly.getMainWorkspace();
+      if (workspace) workspace.undo(false);
+    }
+  };
+
+  const handleRedo = () => {
+    if (activeTab === 'blocks' && typeof window !== 'undefined' && window.Blockly) {
+      const workspace = window.Blockly.getMainWorkspace();
+      if (workspace) workspace.undo(true);
+    }
+  };
+
+  // Keyboard Shortcuts (Ctrl+S, Ctrl+N, Ctrl+O, Ctrl+Shift+S, Ctrl+Z, Ctrl+Y)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl+S: Save
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        handleSaveProject();
+      }
+      // Ctrl+Shift+S: Save As
+      else if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        handleSaveAsProject();
+      }
+      // Ctrl+N: New Project
+      else if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        handleNewProject();
+      }
+      // Ctrl+O: Open Project
+      else if (e.ctrlKey && e.key === 'o') {
+        e.preventDefault();
+        handleOpenProject();
+      }
+      // Ctrl+Z: Undo
+      else if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        handleUndo();
+      }
+      // Ctrl+Y: Redo
+      else if (e.ctrlKey && e.key === 'y') {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [projectPath, appState, activeTab]);
 
   useEffect(() => {
     if (window.electronAPI && window.electronAPI.onBuildLog) {
@@ -187,7 +336,14 @@ export default function AppInventor({ onBack }) {
         title={appState.appName}
         onTitleChange={(val) => appState.setAppName(val)}
         onBack={onBack}
-        onSave={() => { }}
+        onSave={handleSaveProject}
+        onSaveAs={handleSaveAsProject}
+        onNew={handleNewProject}
+        onOpen={handleOpenProject}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={activeTab === 'blocks'}
+        canRedo={activeTab === 'blocks'}
         brandName="APP INVENTOR"
         rightContent={
           <div className="flex items-center gap-6 shrink-0">

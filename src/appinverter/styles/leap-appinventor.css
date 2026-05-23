@@ -41,7 +41,7 @@
     margin: 2px 8px;
   }
   & .blocklyTreeLabel {
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
     font-size: 13px !important;
     font-weight: 600 !important;
     color: var(--color-slate-700) !important;
@@ -53,4 +53,21 @@
   & .blocklyMainBackground {
     stroke: var(--color-slate-300) !important;
   }
+}
+
+/* Fix: respect SVG/HTML presentation attributes for display="none" (e.g. Blockly flyout scrollbars hidden state) */
+g[display="none"],
+svg[display="none"],
+rect[display="none"] {
+  display: none !important;
+}
+
+/* Ensure extremely sharp, clear text rendering across App Inventor */
+.leap-panel-body,
+.leap-blockly-workspace,
+.leap-panel-body *,
+.leap-blockly-workspace * {
+  -webkit-font-smoothing: subpixel-antialiased !important;
+  -moz-osx-font-smoothing: auto !important;
+  text-rendering: optimizeLegibility !important;
 }

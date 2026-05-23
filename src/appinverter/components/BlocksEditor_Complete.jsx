@@ -1114,40 +1114,6 @@ export default function BlocksEditorComplete({ appState }) {
                         </div>
                     )}
 
-                    {/* Actions */}
-                    <button
-                        onClick={handleGenerateCode}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-[#4a90e2] hover:bg-[#3f79bf] text-white text-sm font-medium rounded transition-all active:scale-95 shadow-sm hover:shadow-md"
-                        aria-label="Generate Code"
-                    >
-                        <Code className="h-4 w-4" />
-                        <span className="hidden sm:inline">Generate Code</span>
-                        <span className="sm:hidden">Code</span>
-                    </button>
-                    <button
-                        onClick={handleExport}
-                        className="p-1.5 hover:bg-[#e4ebf3] rounded transition-colors active:scale-95"
-                        title="Export Blocks"
-                        aria-label="Export Blocks"
-                    >
-                        <Download className="h-4 w-4" />
-                    </button>
-                    <button
-                        onClick={handleImport}
-                        className="p-1.5 hover:bg-[#e4ebf3] rounded transition-colors active:scale-95"
-                        title="Import Blocks"
-                        aria-label="Import Blocks"
-                    >
-                        <Upload className="h-4 w-4" />
-                    </button>
-                    <button
-                        onClick={handleClear}
-                        className="p-1.5 hover:bg-red-100 text-red-600 rounded transition-colors active:scale-95"
-                        title="Clear All"
-                        aria-label="Clear All Blocks"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </button>
                 </div>
             </div>
 

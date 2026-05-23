@@ -206,12 +206,12 @@ export default function PropertiesPanel({ appState }) {
     if (!selectedComponent) {
       return (
         <div className="flex flex-col items-center justify-center h-full p-10 text-center text-slate-900">
-           <div className="relative mb-6">
-              <div className="absolute inset-0 bg-slate-50 rounded-full blur-2xl scale-150 opacity-50"></div>
-              <Smartphone className="h-16 w-16 relative text-slate-900" strokeWidth={1} />
-           </div>
-           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-900 mb-1">No Selection</p>
-           <p className="text-[10px] text-slate-900 font-medium">Select a component to edit properties</p>
+          <div className="relative mb-6">
+            <div className="absolute inset-0 bg-slate-50 rounded-full blur-2xl scale-150 opacity-50"></div>
+            <Smartphone className="h-16 w-16 relative text-slate-900" strokeWidth={1} />
+          </div>
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-900 mb-1">No Selection</p>
+          <p className="text-[10px] text-slate-900 font-medium">Select a component to edit properties</p>
         </div>
       );
     }
@@ -332,15 +332,15 @@ export default function PropertiesPanel({ appState }) {
 
       if (isBoolean) {
         return (
-          <div 
-            key={key} 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between', 
-              padding: '14px 20px', 
-              borderBottom: '1px solid #f1f5f9', 
-              backgroundColor: '#ffffff' 
+          <div
+            key={key}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 20px',
+              borderBottom: '1px solid #f1f5f9',
+              backgroundColor: '#ffffff'
             }}
             className="hover:bg-slate-50/50 transition-all duration-200"
           >
@@ -358,15 +358,15 @@ export default function PropertiesPanel({ appState }) {
       }
 
       return (
-        <div 
-          key={key} 
-          style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: '8px', 
-            padding: '14px 20px', 
-            borderBottom: '1px solid #f1f5f9', 
-            backgroundColor: '#ffffff' 
+        <div
+          key={key}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            padding: '14px 20px',
+            borderBottom: '1px solid #f1f5f9',
+            backgroundColor: '#ffffff'
           }}
           className="hover:bg-slate-50/50 transition-all duration-200"
         >
@@ -435,39 +435,39 @@ export default function PropertiesPanel({ appState }) {
       <div style={{ padding: '20px' }} className="min-h-full bg-transparent">
         {/* Pro Header - Clean Flex Layout */}
         <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column' }} className="bg-white border border-slate-200 rounded-[20px] shadow-sm overflow-hidden">
-            <div className="h-1.5 bg-blue-600 w-full" />
-            <div style={{ padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
-                <div className="flex-1 min-w-0">
-                    <div style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '6px' }}>Active Module</div>
-                    <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.02em' }} className="truncate">{id}</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
-                        <span style={{ padding: '3px 8px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em', borderRadius: '6px', border: '1px solid #dbeafe', backgroundColor: '#eff6ff', color: '#2563eb' }}>{type}</span>
-                        <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#cbd5e1' }} />
-                        <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Selected</span>
-                    </div>
-                </div>
-                <button
-                    onClick={() => {
-                        if (window.confirm(`Delete ${id}?`)) {
-                            removeComponent(id);
-                        }
-                    }}
-                    style={{ padding: '14px' }}
-                    className="bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 group shrink-0"
-                    title="Delete Module"
-                >
-                    <Trash2 style={{ width: '20px', height: '20px' }} className="transition-transform group-hover:rotate-12" />
-                </button>
+          <div className="h-1.5 bg-blue-600 w-full" />
+          <div style={{ padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+            <div className="flex-1 min-w-0">
+              <div style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '6px' }}>Active Module</div>
+              <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.02em' }} className="truncate">{id}</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+                <span style={{ padding: '3px 8px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em', borderRadius: '6px', border: '1px solid #dbeafe', backgroundColor: '#eff6ff', color: '#2563eb' }}>{type}</span>
+                <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#cbd5e1' }} />
+                <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Selected</span>
+              </div>
             </div>
+            <button
+              onClick={() => {
+                if (window.confirm(`Delete ${id}?`)) {
+                  removeComponent(id);
+                }
+              }}
+              style={{ padding: '14px' }}
+              className="bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 group shrink-0"
+              title="Delete Module"
+            >
+              <Trash2 style={{ width: '20px', height: '20px' }} className="transition-transform group-hover:rotate-12" />
+            </button>
+          </div>
         </div>
 
         {/* Categorized Properties */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {Object.entries(categorizedProps).map(([category, props]) => (
             <div key={category} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
-            <button
+              <button
                 style={{ padding: '16px 20px', fontSize: '11px', fontWeight: '900' }}
-                className="w-full flex items-center justify-between bg-white text-slate-900 hover:bg-slate-50 transition-all border-b border-slate-100 uppercase tracking-[0.2em] font-['Inter']"
+                className="w-full flex items-center justify-between bg-white text-slate-900 hover:bg-slate-50 transition-all border-b border-slate-100 uppercase tracking-[0.2em] font-sans"
                 onClick={() => toggleSection(category)}
               >
                 <span>{category}</span>
@@ -492,7 +492,7 @@ export default function PropertiesPanel({ appState }) {
   return (
     <div className="w-[320px] bg-white border-l border-slate-100 flex flex-col h-full shrink-0 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.02)] z-20">
       {/* Panel Header */}
-      <div 
+      <div
         style={{ paddingTop: '24px', paddingBottom: '16px', paddingLeft: '32px', paddingRight: '24px' }}
         className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b-2 border-slate-200 flex items-center justify-between shrink-0 shadow-sm"
       >

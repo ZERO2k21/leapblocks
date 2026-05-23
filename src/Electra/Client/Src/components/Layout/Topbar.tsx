@@ -437,7 +437,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             background: 'rgba(8, 20, 58, 0.55)',
             borderRadius: '20px',
             paddingLeft: '18px',
-            paddingRight: '5px',
+            paddingRight: '3px',
             border: '1px solid rgba(147, 197, 253, 0.2)',
             gap: '8px',
             transition: '0.2s'
@@ -468,8 +468,8 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                 background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
                 border: 'none',
                 borderRadius: '50%',
-                width: '42px',
-                height: '42px',
+                width: '32px',
+                height: '32px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -483,7 +483,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.08)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'none'; }}
             >
-              <Save size={18} strokeWidth={2.8} />
+              <Save size={15} strokeWidth={2.5} />
             </button>
           </div>
         </div>
