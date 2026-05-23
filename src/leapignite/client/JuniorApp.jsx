@@ -763,7 +763,7 @@ export default function JuniorApp({ onBack }) {
                                         backdropFilter: 'blur(5px)',
                                         borderRadius: '8px',
                                         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                        border: '2px solid #855CD6',
+                                        border: '2px solid #0a015a',
                                         pointerEvents: 'none',
                                         zIndex: 10,
                                         display: 'flex',
@@ -821,7 +821,7 @@ export default function JuniorApp({ onBack }) {
                             style={{
                                 width: "68px",
                                 height: "58px",
-                                background: "#762eadff",
+                                background: "#0a015a",
                                 border: "none",
                                 cursor: "pointer",
                                 display: "flex",
@@ -831,8 +831,8 @@ export default function JuniorApp({ onBack }) {
                                 position: "relative",
                                 flexShrink: 0
                             }}
-                            onMouseEnter={e => { e.currentTarget.style.background = "#793ba8"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = "#662d91"; }}
+                            onMouseEnter={e => { e.currentTarget.style.background = "#0c0175"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "#0a015a"; }}
                         >
                             <svg width="26" height="26" viewBox="0 0 24 24" fill="white" stroke="none" style={{ transform: "rotate(15deg) scale(0.9) translate(1px, -2px)" }}>
                                 <path d="M19 14.5a2.5 2.5 0 1 1-5 0V14h-3v4.5a2.5 2.5 0 1 1-5 0V14H4.5a2.5 2.5 0 1 1 0-5H4V6c0-1.1.9-2 2-2h3V2.5a2.5 2.5 0 1 1 5 0V4h3c1.1 0 2 .9 2 2v3h1.5a2.5 2.5 0 1 1 0 5H19v.5z" />

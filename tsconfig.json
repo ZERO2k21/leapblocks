@@ -23,6 +23,7 @@
     "noEmit": true,
     "incremental": true,
     "paths": {
+      "@/*": ["./src/*"],
       "@blockly-runtime": [
         "./src/blockly/runtime.ts"
       ]
@@ -36,6 +37,9 @@
     "node_modules",
     "dist",
     "**/*.spec.ts",
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "**/*.stories.ts",
+    "src/Electra/server",
+    "src/Electra/Client/utlis/elements/leap-elements/utils/test-utils.ts"
   ]
 }
