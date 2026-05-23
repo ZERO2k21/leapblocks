@@ -3897,19 +3897,46 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         return () => {
 
+            console.log('[IntermediateApp] Cleaning up workspace...');
+
             if (window.electronAPI?.removeAllListeners) {
 
                 window.electronAPI.removeAllListeners();
 
             }
 
-            if (workspaceRef.current) {
+            try {
+                if ((Blockly as any).WidgetDiv) {
+                    (Blockly as any).WidgetDiv.hide();
+                }
+            } catch (_) {}
 
-                workspaceRef.current.dispose();
+            try {
+                if ((Blockly as any).DropDownDiv) {
+                    (Blockly as any).DropDownDiv.hideWithoutAnimation();
+                }
+            } catch (_) {}
+
+            const wsToDispose = workspaceRef.current;
+
+            if (wsToDispose) {
+
+                wsToDispose.dispose();
 
                 workspaceRef.current = null;
 
             }
+
+            try {
+                const allWorkspaces: any[] = (Blockly as any).Workspace?.getAllWorkspaces?.();
+                if (allWorkspaces && allWorkspaces.length > 0) {
+                    allWorkspaces.forEach((ws: any) => {
+                        if (ws && ws !== wsToDispose && ws !== workspaceRef.current && typeof ws.dispose === 'function') {
+                            try { ws.dispose(); } catch (_) {}
+                        }
+                    });
+                }
+            } catch (_) {}
 
         };
 

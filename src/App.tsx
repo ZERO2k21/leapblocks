@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, lazy, Suspense, useCallback } from 'react';
 
 const APP_LOAD_START = performance.now();
 const logAppTiming = (label: string) => {
@@ -118,6 +118,27 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 export default function App() {
     logAppTiming('App component function called');
     const [mode, setMode] = useState<AppMode>('home');
+    const [juniorKey, setJuniorKey] = useState(0);
+
+    const cleanBlocklyStyles = useCallback(() => {
+        document.querySelectorAll('style[data-blockly]').forEach(el => el.remove());
+        document.querySelectorAll('style').forEach(el => {
+            if (el.textContent?.includes('.blockly')) {
+                el.remove();
+            }
+        });
+        document.querySelectorAll('.blocklyToolboxDiv, .blocklyWidgetDiv, .blocklyDropDownDiv, .blocklyContextMenu').forEach(el => {
+            el.remove();
+        });
+    }, []);
+
+    const handleSetMode = useCallback((newMode: AppMode) => {
+        cleanBlocklyStyles();
+        if (newMode === 'junior') {
+            setJuniorKey(k => k + 1);
+        }
+        setMode(newMode);
+    }, [cleanBlocklyStyles]);
 
     // Log when component mounts
     React.useEffect(() => {
@@ -166,7 +187,7 @@ export default function App() {
         if (switchPrompt.to === 'intermediate' && switchPrompt.tab) {
             setIntermediateOpenTab(switchPrompt.tab);
         }
-        setMode(switchPrompt.to);
+        handleSetMode(switchPrompt.to);
         setSwitchPrompt(null);
     };
 
@@ -176,23 +197,23 @@ export default function App() {
         <ErrorBoundary key={mode}>
             <Suspense fallback={<Loader />}>
                 {mode === 'intermediate' && <IntermediateApp
-                    onBack={() => setMode('home')}
+                    onBack={() => handleSetMode('home')}
                     onOpenPython={() => requestSwitch('intermediate', 'python')}
                     openTab={intermediateOpenTab}
                 />}
-                {mode === 'junior' && <JuniorApp onBack={() => setMode('home')} />}
+                {mode === 'junior' && <JuniorApp key={juniorKey} onBack={() => handleSetMode('home')} />}
                 {mode === 'python' && <PythonApp
-                    onBack={() => setMode('home')}
+                    onBack={() => handleSetMode('home')}
                     onSwitchToNotebook={() => requestSwitch('python', 'notebook')}
                     onSwitchToBlocks={() => requestSwitch('python', 'intermediate', 'blocks')}
                     onSwitchToCostumes={() => requestSwitch('python', 'intermediate', 'costumes')}
                 />}
-                {mode === 'notebook' && <PythonNotebook onBack={() => setMode('home')} onSwitchToIDE={() => setMode('python')} />}
-                {mode === 'appinventor' && <AppInventor {...({ onBack: () => setMode('home') } as any)} />}
-                {mode === 'appforge' && <ElectraStudio {...({ onBack: () => setMode('home') } as any)} />}
-                {mode === 'electra' && <ElectraStudio {...({ onBack: () => setMode('home') } as any)} />}
-                {mode === 'neura' && <NeuraApp onBack={() => setMode('home')} />}
-                {mode === 'home' && <LandingPage onSelect={setMode} />}
+                {mode === 'notebook' && <PythonNotebook onBack={() => handleSetMode('home')} onSwitchToIDE={() => handleSetMode('python')} />}
+                {mode === 'appinventor' && <AppInventor {...({ onBack: () => handleSetMode('home') } as any)} />}
+                {mode === 'appforge' && <ElectraStudio {...({ onBack: () => handleSetMode('home') } as any)} />}
+                {mode === 'electra' && <ElectraStudio {...({ onBack: () => handleSetMode('home') } as any)} />}
+                {mode === 'neura' && <NeuraApp onBack={() => handleSetMode('home')} />}
+                {mode === 'home' && <LandingPage onSelect={handleSetMode} />}
             </Suspense>
 
             {switchPrompt && (
