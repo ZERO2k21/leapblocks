@@ -234,7 +234,7 @@ export default function AppInventor({ onBack }) {
               <div className="flex-1 min-h-0 flex flex-col">
                 <ComponentTree appState={appState} />
               </div>
-              <div className="h-[250px] border-t border-slate-200 flex flex-col">
+              <div className="h-[380px] border-t border-slate-200 flex flex-col">
                 <MediaManager appState={appState} />
               </div>
             </div>

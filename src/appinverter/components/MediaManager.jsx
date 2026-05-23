@@ -151,29 +151,40 @@ export default function MediaManager({ appState }) {
             />
 
             {/* Search and Filters Section - Refined Spacing */}
-            <div className="px-4 py-3.5 space-y-3.5 bg-white border-b border-slate-100">
+            <div className="px-4 py-4 space-y-4 bg-white border-b border-slate-100">
                 {/* Search Bar */}
                 <div className="relative group">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
+                    <Search 
+                        style={{ width: '18px', height: '18px', left: '14px' }} 
+                        className="absolute top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" 
+                    />
                     <input
                         type="text"
                         placeholder="Search assets..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ paddingLeft: '38px' }}
-                        className="w-full pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/5 focus:border-orange-400 bg-slate-50/30 transition-all placeholder:text-slate-400 font-bold tracking-wide"
+                        style={{ paddingLeft: '42px', fontSize: '13px', paddingTop: '10px', paddingBottom: '10px' }}
+                        className="w-full pr-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/5 focus:border-orange-400 bg-slate-50/30 transition-all placeholder:text-slate-400 font-bold tracking-wide"
                     />
                 </div>
 
                 {/* Filter Tabs - Precise Pill Style */}
-                <div style={{ gap: '6px' }} className="flex overflow-x-auto pb-0.5 scrollbar-none">
+                <div style={{ gap: '8px' }} className="flex overflow-x-auto pb-0.5 scrollbar-none">
                     {['all', 'image', 'audio', 'video'].map((type) => (
                         <button
                             key={type}
                             onClick={() => setFilterType(type)}
-                            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.05em] transition-all duration-200 ${filterType === type
-                                ? 'bg-slate-900 text-white shadow-lg'
-                                : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+                            style={{
+                                fontSize: '11px',
+                                fontWeight: '900',
+                                paddingLeft: '14px',
+                                paddingRight: '14px',
+                                paddingTop: '8px',
+                                paddingBottom: '8px'
+                            }}
+                            className={`flex-shrink-0 rounded-full uppercase tracking-[0.07em] transition-all duration-200 cursor-pointer ${filterType === type
+                                ? 'bg-slate-900 text-white shadow-md'
+                                : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700'
                                 }`}
                         >
                             {type}
@@ -182,25 +193,30 @@ export default function MediaManager({ appState }) {
                 </div>
 
                 {/* View Mode Toggle */}
-                <div className="flex justify-between items-center pt-2 border-t border-slate-50">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
+                <div className="flex justify-between items-center pt-2.5 border-t border-slate-100">
+                    <div 
+                        style={{ fontSize: '11px', fontWeight: '900' }} 
+                        className="text-slate-500 uppercase tracking-[0.1em]"
+                    >
                         {filteredMedia.length} {filteredMedia.length === 1 ? 'Asset' : 'Assets'}
                     </div>
                     <div className="flex gap-1 bg-slate-50 p-1 rounded-lg">
                         <button
                             onClick={() => setViewMode('grid')}
-                            className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all duration-200 cursor-pointer ${viewMode === 'grid'
+                            style={{ fontSize: '11px', fontWeight: '800', paddingLeft: '12px', paddingRight: '12px', paddingTop: '5px', paddingBottom: '5px' }}
+                            className={`rounded-md transition-all duration-200 cursor-pointer ${viewMode === 'grid'
                                 ? 'bg-white text-orange-600 shadow-sm'
-                                : 'text-slate-400 hover:text-slate-600'
+                                : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
                             Grid
                         </button>
                         <button
                             onClick={() => setViewMode('list')}
-                            className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all duration-200 cursor-pointer ${viewMode === 'list'
+                            style={{ fontSize: '11px', fontWeight: '800', paddingLeft: '12px', paddingRight: '12px', paddingTop: '5px', paddingBottom: '5px' }}
+                            className={`rounded-md transition-all duration-200 cursor-pointer ${viewMode === 'list'
                                 ? 'bg-white text-orange-600 shadow-sm'
-                                : 'text-slate-400 hover:text-slate-600'
+                                : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
                             List
@@ -212,13 +228,13 @@ export default function MediaManager({ appState }) {
             {/* Media Grid/List */}
             <div className="flex-1 overflow-y-auto p-5 bg-white">
                 {filteredMedia.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-300 py-10">
+                    <div style={{ minHeight: '300px' }} className="flex flex-col items-center justify-center h-full text-slate-400 py-10">
                         <div className="relative mb-6">
                             <div className="absolute inset-0 bg-slate-50 rounded-full blur-2xl scale-150 opacity-50"></div>
-                            <FolderOpen className="h-16 w-16 relative text-slate-200" strokeWidth={1} />
+                            <FolderOpen className="h-20 w-20 relative text-slate-200" strokeWidth={1} />
                         </div>
-                        <p className="text-[12px] font-black uppercase tracking-[0.15em] text-slate-400 mb-2">No Assets</p>
-                        <p className="text-[12px] text-slate-300 font-medium">
+                        <p style={{ fontSize: '13px' }} className="font-black uppercase tracking-[0.15em] text-slate-400 mb-2">No Assets</p>
+                        <p style={{ fontSize: '13px' }} className="text-slate-400 font-medium">
                             {searchTerm ? 'Adjust search terms' : 'Upload files to begin'}
                         </p>
                     </div>
@@ -250,35 +266,35 @@ export default function MediaManager({ appState }) {
                                     </div>
 
                                     {/* Item Overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
-                                        <div className="text-[10px] font-bold text-white truncate mb-1">{item.filename}</div>
-                                        <div className="flex gap-1.5">
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3.5">
+                                        <div style={{ fontSize: '12px' }} className="font-extrabold text-white truncate mb-1.5">{item.filename}</div>
+                                        <div className="flex gap-2">
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     handlePreview(item);
                                                 }}
-                                                className="p-1.5 bg-white/20 backdrop-blur-md hover:bg-white/40 rounded-lg text-white transition-all cursor-pointer"
+                                                className="p-2 bg-white/20 backdrop-blur-md hover:bg-white/40 rounded-lg text-white transition-all cursor-pointer"
                                             >
-                                                <Eye className="h-3.5 w-3.5" />
+                                                <Eye style={{ width: '16px', height: '16px' }} />
                                             </button>
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     handleDownload(item);
                                                 }}
-                                                className="p-1.5 bg-white/20 backdrop-blur-md hover:bg-white/40 rounded-lg text-white transition-all cursor-pointer"
+                                                className="p-2 bg-white/20 backdrop-blur-md hover:bg-white/40 rounded-lg text-white transition-all cursor-pointer"
                                             >
-                                                <Download className="h-3.5 w-3.5" />
+                                                <Download style={{ width: '16px', height: '16px' }} />
                                             </button>
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     handleDelete(item.filename);
                                                 }}
-                                                className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg text-white transition-all ml-auto cursor-pointer"
+                                                className="p-2 bg-red-500/80 hover:bg-red-500 rounded-lg text-white transition-all ml-auto cursor-pointer"
                                             >
-                                                <Trash2 className="h-3.5 w-3.5" />
+                                                <Trash2 style={{ width: '16px', height: '16px' }} />
                                             </button>
                                         </div>
                                     </div>
@@ -286,45 +302,45 @@ export default function MediaManager({ appState }) {
                             ))}
                         </div>
                     ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-2.5">
                             {filteredMedia.map((item, index) => (
                                 <div
                                     key={index}
-                                    className={`flex items-center gap-4 p-3 rounded-xl border transition-all duration-200 cursor-pointer ${selectedFile === item.filename
+                                    className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 cursor-pointer ${selectedFile === item.filename
                                         ? 'bg-orange-50/50 border-orange-200/50 shadow-sm'
                                         : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/30'
                                         }`}
                                     onClick={() => setSelectedFile(item.filename)}
                                 >
-                                    <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center flex-shrink-0 border border-slate-100 overflow-hidden">
+                                    <div className="w-12 h-12 rounded-lg bg-slate-50 flex items-center justify-center flex-shrink-0 border border-slate-100 overflow-hidden">
                                         {getFileCategory(item.type) === 'image' ? (
                                             <img src={item.data} className="w-full h-full object-cover" />
-                                        ) : getFileIcon(item.type, 'h-5 w-5 text-slate-400')}
+                                        ) : getFileIcon(item.type, 'h-6 w-6 text-slate-400')}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="text-[11px] font-bold text-slate-700 truncate">{item.filename}</div>
-                                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                        <div style={{ fontSize: '13px' }} className="font-extrabold text-slate-700 truncate">{item.filename}</div>
+                                        <div style={{ fontSize: '10px' }} className="font-black text-slate-400 uppercase tracking-widest mt-1">
                                             {formatFileSize(item.size)} • {getFileExtension(item.filename)}
                                         </div>
                                     </div>
-                                    <div className="flex gap-1">
+                                    <div className="flex gap-1.5">
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handlePreview(item);
                                             }}
-                                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors"
+                                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors"
                                         >
-                                            <Eye className="h-4 w-4" />
+                                            <Eye style={{ width: '18px', height: '18px' }} />
                                         </button>
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleDelete(item.filename);
                                             }}
-                                            className="p-1.5 hover:bg-red-50 rounded-lg text-red-400 transition-colors"
+                                            className="p-2 hover:bg-red-50 rounded-lg text-red-400 transition-colors"
                                         >
-                                            <Trash2 className="h-4 w-4" />
+                                            <Trash2 style={{ width: '18px', height: '18px' }} />
                                         </button>
                                     </div>
                                 </div>
@@ -335,23 +351,24 @@ export default function MediaManager({ appState }) {
             </div>
 
             {/* Stats Footer - Standardized Pro Style */}
-            <div className="p-3 border-t border-slate-100 bg-slate-50/30">
-                <div style={{ gap: '10px' }} className="flex">
-                    <div className="flex-1 relative overflow-hidden p-2.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-orange-500 before:to-orange-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300">
-                        <div className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5">Total Files</div>
-                        <div className="text-lg font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent">{stats.total}</div>
+            <div className="p-4 border-t border-slate-100 bg-slate-50/30">
+                <div style={{ gap: '12px' }} className="flex">
+                    <div className="flex-1 relative overflow-hidden p-3.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-orange-500 before:to-orange-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300">
+                        <div style={{ fontSize: '10px', fontWeight: '900' }} className="uppercase tracking-wider text-slate-400 mb-1">Total Files</div>
+                        <div className="text-xl font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent">{stats.total}</div>
                     </div>
-                    <div className="flex-1 relative overflow-hidden p-2.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-orange-500 before:to-orange-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300">
-                        <div className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5">Total Size</div>
-                        <div className="text-lg font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent">{formatFileSize(stats.totalSize)}</div>
+                    <div className="flex-1 relative overflow-hidden p-3.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-orange-500 before:to-orange-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300">
+                        <div style={{ fontSize: '10px', fontWeight: '900' }} className="uppercase tracking-wider text-slate-400 mb-1">Total Size</div>
+                        <div className="text-xl font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent">{formatFileSize(stats.totalSize)}</div>
                     </div>
                 </div>
                 {selectedFile && (
                     <button
                         onClick={handleDeleteSelected}
-                        className="w-full mt-3 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-200 shadow-lg shadow-red-500/20 active:scale-95 flex items-center justify-center gap-2"
+                        style={{ fontSize: '11px', fontWeight: '900' }}
+                        className="w-full mt-3 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white uppercase tracking-[0.2em] rounded-xl transition-all duration-200 shadow-lg shadow-red-500/20 active:scale-95 flex items-center justify-center gap-2"
                     >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                         Delete Selected
                     </button>
                 )}
