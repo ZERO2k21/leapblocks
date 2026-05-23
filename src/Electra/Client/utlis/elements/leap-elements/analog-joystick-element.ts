@@ -8,6 +8,7 @@ export class AnalogJoystickElement extends LitElement {
   @property({ type: Number }) xValue = 0;
   @property({ type: Number }) yValue = 0;
   @property() pressed = false;
+  private isDragging = false;
 
   @query('#knob') knob!: SVGCircleElement;
 
@@ -166,57 +167,28 @@ export class AnalogJoystickElement extends LitElement {
         </g>
         <g class="controls" stroke-width="0.6" stroke-linejoin="bevel" fill="#aaa">
           <rect
-            class="region"
-            y="8.5"
-            x="1"
-            height="10"
-            width="7"
-            @mousedown=${(e: MouseEvent) => this.mousedown(e, 1, 0)}
-            @mouseup=${() => this.mouseup(true, false)}
+            x="0"
+            y="0"
+            width="27.2"
+            height="27.2"
+            fill="transparent"
+            style="cursor: grab; pointer-events: all;"
+            @pointerdown=${(e: PointerEvent) => this.handlePointerDown(e)}
+            @pointermove=${(e: PointerEvent) => this.handlePointerMove(e)}
+            @pointerup=${(e: PointerEvent) => this.handlePointerUp(e)}
+            @pointercancel=${(e: PointerEvent) => this.handlePointerUp(e)}
           />
-          <path d="m 7.022,11.459 -3.202,2.497 3.202,2.497" />
-
-          <rect
-            class="region"
-            y="1.38"
-            x="7.9"
-            height="7"
-            width="10"
-            @mousedown=${(e: MouseEvent) => this.mousedown(e, 0, 1)}
-            @mouseup=${() => this.mouseup(false, true)}
-          />
-          <path d="m 16.615,7.095 -2.497,-3.202 -2.497,3.202" />
-
-          <rect
-            class="region"
-            y="8.5"
-            x="18"
-            height="10"
-            width="7"
-            @mousedown=${(e: MouseEvent) => this.mousedown(e, -1, 0)}
-            @mouseup=${() => this.mouseup(true, false)}
-          />
-          <path d="m 19.980,16.101 3.202,-2.497 -3.202,-2.497" />
-
-          <rect
-            class="region"
-            y="17"
-            x="7.9"
-            height="7"
-            width="10"
-            @mousedown=${(e: MouseEvent) => this.mousedown(e, 0, -1)}
-            @mouseup=${() => this.mouseup(false, true)}
-          />
-          <path d="m 11.620,20.112 2.497,3.202 2.497,-3.202" />
-
           <circle
             cx="13.6"
             cy="13.6"
             r="3"
             stroke="#aaa"
+            fill="transparent"
             class=${this.pressed ? 'pressed' : ''}
-            @mousedown=${(e: MouseEvent) => this.press(e)}
-            @mouseup=${() => this.release()}
+            style="cursor: pointer; pointer-events: all;"
+            @pointerdown=${(e: PointerEvent) => { e.stopPropagation(); this.press(e as any); }}
+            @pointerup=${(e: PointerEvent) => { e.stopPropagation(); this.release(); }}
+            @pointercancel=${(e: PointerEvent) => { e.stopPropagation(); this.release(); }}
           />
         </g>
         <use xlink:href="#pin" x="0" />
@@ -253,44 +225,57 @@ export class AnalogJoystickElement extends LitElement {
   }
 
   private keyup(e: KeyboardEvent) {
-    switch (e.key) {
-      case 'ArrowUp':
-      case 'ArrowDown':
-        this.yValue = 0;
-        this.valueChanged();
-        break;
-      case 'ArrowLeft':
-      case 'ArrowRight':
-        this.xValue = 0;
-        this.valueChanged();
-        break;
-    }
+    // Deliberately empty so the joystick stays at the set value
     if (SPACE_KEYS.includes(e.key)) {
       this.release();
     }
   }
 
-  private mousedown(e: MouseEvent, dx: number, dy: number) {
-    if (dx) {
-      this.xValue = dx;
-    }
-    if (dy) {
-      this.yValue = dy;
-    }
-    this.valueChanged();
-    this.knob?.focus();
-    e.preventDefault(); // Prevents stealing focus
+  private handlePointerDown(e: PointerEvent) {
+    this.isDragging = true;
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    this.updateFromPointer(e);
+    e.preventDefault(); // prevents scroll / drag selection
   }
 
-  private mouseup(x: boolean, y: boolean) {
-    if (x) {
-      this.xValue = 0;
+  private handlePointerMove(e: PointerEvent) {
+    if (!this.isDragging) return;
+    this.updateFromPointer(e);
+  }
+
+  private handlePointerUp(e: PointerEvent) {
+    if (!this.isDragging) return;
+    this.isDragging = false;
+    (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+    // Removed snap-back so the joystick stays exactly where it was dragged
+  }
+
+  private updateFromPointer(e: PointerEvent) {
+    const svg = this.shadowRoot?.querySelector('svg');
+    if (!svg) return;
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const cursorPt = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+    
+    // SVG center is at 13.6, 13.6
+    let dx = cursorPt.x - 13.6;
+    let dy = cursorPt.y - 13.6;
+
+    // Visual boundary max radius
+    const maxR = 10;
+    let r = Math.sqrt(dx*dx + dy*dy);
+    if (r > maxR) {
+       dx = (dx / r) * maxR;
+       dy = (dy / r) * maxR;
     }
-    if (y) {
-      this.yValue = 0;
-    }
+
+    // Map to -1 to 1.
+    // In original code, dx > 0 (right) -> xValue = -1. So xValue = -dx / maxR.
+    // dy > 0 (down) -> yValue = -1. So yValue = -dy / maxR.
+    this.xValue = -dx / maxR;
+    this.yValue = -dy / maxR;
     this.valueChanged();
-    this.knob?.focus();
   }
 
   private press(e?: MouseEvent) {

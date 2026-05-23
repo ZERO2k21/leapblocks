@@ -19,6 +19,7 @@ import { KeypadEmulator } from './KeypadEmulator';
 import { RotaryDialerEmulator } from './RotaryDialerEmulator';
 import { TiltSwitchEmulator } from './TiltSwitchEmulator';
 import { RotaryEncoderEmulator } from './RotaryEncoderEmulator';
+import { IRReceiverEmulator } from './IRReceiverEmulator';
 import { ESP32_BOARD_CONFIG, ESP32_BOARDS, type ESP32PinInfo } from './ESP32BoardConfig.js';
 
 /** Simplified ECG pulse shape used by the heart-beat sensor emulator. Returns -1..+1 for phase 0..1 */
@@ -91,6 +92,7 @@ class CircuitEngine {
   private rotaryDialerEmulators = new Map<string, RotaryDialerEmulator>();
   private tiltSwitchEmulators = new Map<string, TiltSwitchEmulator>();
   private rotaryEncoderEmulators = new Map<string, RotaryEncoderEmulator>();
+  private irReceiverEmulators = new Map<string, IRReceiverEmulator>();
   private _pendingLibraryClasses = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
   private stepperIdleRaf: number | null = null;
@@ -200,10 +202,10 @@ class CircuitEngine {
           continue;
         }
       }
-      
+
       // Also include the start node itself if it's a target (preserving legacy behavior for simple components)
       if (current.id === startNodeId && targetTypes.includes(nodeType)) {
-         targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
+        targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
       }
 
       // 2. Follow internal/specialized routing
@@ -247,7 +249,7 @@ class CircuitEngine {
         let exitPin = '';
         if (cleanStartPin === '1' || cleanStartPin === 'pin_1' || cleanStartPin === 'IN') exitPin = node.data?.pinOUT ? 'OUT' : '2';
         else exitPin = node.data?.pinIN ? 'IN' : '1';
-        
+
         const outEdges = edges.filter(e =>
           (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === exitPin) ||
           (e.target === current.id && e.targetHandle?.replace(/__target$/, '') === exitPin)
@@ -258,7 +260,7 @@ class CircuitEngine {
           queue.push({ id: nextId, pin: nextPin, resistance: current.resistance + rValue });
         }
       }
-      
+
       // 3. Always follow the wire connected to the CURRENT pin externally
       // This is critical for the start node and for nodes that aren't terminal components.
       const isTerminal = ['led', 'buzzer', 'rgb-led', 'dc-motor', 'battery-12v'].includes(nodeType);
@@ -293,6 +295,7 @@ class CircuitEngine {
     const i2c = ESP32_BOARD_CONFIG.i2c;
     return {
       gpioNum,
+      avrPin: 'ESP' + gpioNum,
       adcChannel,
       isI2CSDA: gpioNum === i2c.sda,
       isI2CSCL: gpioNum === i2c.scl,
@@ -782,14 +785,145 @@ class CircuitEngine {
     this._pendingLibraryClasses.set('Adafruit_ILI9341', RealAdafruitILI9341);
     console.log(`[TFT BRIDGE] RealAdafruitILI9341 stored in _pendingLibraryClasses`);
 
+    // ── LiquidCrystal_I2C ────────────────────────────────────────────────────────
+    // IMPORTANT: We write directly to the HD44780 emulator's internal fields
+    // (displayMemory, ddramAddress) instead of going through processPulse(),
+    // because processPulse uses 4-bit nibble collection mode which garbles
+    // raw 8-bit character codes sent from the transpiled JS path.
+    const lcdEmulatorsMap = this.lcdEmulators;
+    const RealLiquidCrystal_I2C = class {
+      private _nodeId: string | null = null;
+      private _addr: number = 0x27;
+      private _cols: number = 16;
+
+      constructor(addr?: number, cols?: number, rows?: number) {
+        this._addr = addr || 0x27;
+        this._cols = cols || 16;
+        try {
+          const { nodes } = useForgeStore.getState();
+          for (const n of nodes) {
+            if (n.data?.type === 'lcd1602-i2c' || n.data?.type === 'lcd2004-i2c') {
+              if ((n.data?.i2cAddress || 0x27) === this._addr) {
+                this._nodeId = n.id;
+                // Detect cols from the node type
+                if (n.data?.type === 'lcd2004-i2c') this._cols = 20;
+                break;
+              }
+            }
+          }
+        } catch(e) {}
+      }
+
+      private _getEmulator(): import('./HD44780').HD44780 | undefined {
+        return this._nodeId ? lcdEmulatorsMap.get(this._nodeId) : undefined;
+      }
+
+      private _push() {
+        if (!this._nodeId) return;
+        const emu = this._getEmulator();
+        if (emu) {
+          useForgeStore.getState().updateNodeData(this._nodeId, { lcdState: emu.getState() });
+        }
+      }
+
+      init() { this.begin(); }
+      begin() {
+        const emu = this._getEmulator();
+        if (emu) {
+          emu.displayOn = true;
+          emu.backlight = true;
+          emu.displayMemory.fill(32);
+          (emu as any).ddramAddress = 0;
+          emu.cursorX = 0;
+          emu.cursorY = 0;
+          this._push();
+        }
+      }
+
+      print(str: any) {
+        const emu = this._getEmulator();
+        if (!emu) return;
+        const s = String(str);
+        const cols = this._cols;
+        for (let i = 0; i < s.length; i++) {
+          const addr = (emu as any).ddramAddress as number;
+          // Map DDRAM address → row/col → memory index
+          let row: number, col: number;
+          if (addr < 0x40) {
+            if (addr < cols) { row = 0; col = addr; }
+            else { row = 2; col = addr - cols; }
+          } else {
+            const off = addr - 0x40;
+            if (off < cols) { row = 1; col = off; }
+            else { row = 3; col = off - cols; }
+          }
+          const memIdx = row * cols + col;
+          if (memIdx >= 0 && memIdx < emu.displayMemory.length) {
+            emu.displayMemory[memIdx] = s.charCodeAt(i);
+          }
+          // Auto-increment DDRAM address
+          (emu as any).ddramAddress = addr + 1;
+        }
+        // Update cursor coords
+        const finalAddr = (emu as any).ddramAddress as number;
+        if (finalAddr < 0x40) {
+          emu.cursorX = finalAddr < cols ? finalAddr : finalAddr - cols;
+          emu.cursorY = finalAddr < cols ? 0 : 2;
+        } else {
+          const off = finalAddr - 0x40;
+          emu.cursorX = off < cols ? off : off - cols;
+          emu.cursorY = off < cols ? 1 : 3;
+        }
+        this._push();
+      }
+
+      println(str: any) {
+        this.print(String(str));
+      }
+
+      setCursor(col: number, row: number) {
+        const emu = this._getEmulator();
+        if (!emu) return;
+        const rowOffsets = [0x00, 0x40, 0x14, 0x54];
+        (emu as any).ddramAddress = col + (rowOffsets[row] || 0);
+        emu.cursorX = col;
+        emu.cursorY = row;
+        this._push();
+      }
+
+      clear() {
+        const emu = this._getEmulator();
+        if (!emu) return;
+        emu.displayMemory.fill(32);
+        (emu as any).ddramAddress = 0;
+        emu.cursorX = 0;
+        emu.cursorY = 0;
+        this._push();
+      }
+
+      backlight() {
+        const emu = this._getEmulator();
+        if (emu) { emu.backlight = true; this._push(); }
+      }
+
+      noBacklight() {
+        const emu = this._getEmulator();
+        if (emu) { emu.backlight = false; this._push(); }
+      }
+    };
+
+    this._pendingLibraryClasses.set('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
+    console.log(`[LCD BRIDGE] RealLiquidCrystal_I2C stored in _pendingLibraryClasses`);
+
     // If runtime already exists (re-sync case), inject immediately
     if (esp32Runtime) {
       esp32Runtime.injectLibraryClass('Adafruit_SSD1306', RealAdafruitSSD1306);
       esp32Runtime.injectLibraryClass('Adafruit_ILI9341', RealAdafruitILI9341);
+      esp32Runtime.injectLibraryClass('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
       this._wireI2CBus(esp32Runtime);
-      console.log('[OLED BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + wired I2C bus');
+      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + LCD_I2C + wired I2C bus');
     } else {
-      console.log('[OLED BRIDGE] Runtime not yet created — classes queued for initTranspiled()');
+      console.log('[OLED/LCD BRIDGE] Runtime not yet created — classes queued for initTranspiled()');
     }
   }
 
@@ -1187,11 +1321,27 @@ class CircuitEngine {
 
         // Create a dedicated listener that pushes the HIGH/LOW state across the wire to the target node
         const listener = (state: PinState) => {
-          const isHigh = state === 'HIGH';
+          // ESP32 transpiled path sends numeric states for analog/PWM (0-255) and servo (0-180)
+          const isAnalogState = typeof state === 'number';
+          const analogValue = isAnalogState ? (state as number) : 0;
+          const isHigh = isAnalogState ? analogValue > 0 : state === 'HIGH';
           const currentStateStore = useForgeStore.getState();
 
           // Identify peripheral type once
           const pType = currentStateStore.nodes.find(n => n.id === peripheralId)?.data?.type;
+
+          // ── ESP32 Servo: when Servo.write(angle) fires, state is the angle (0-180)
+          if (isAnalogState && pType === 'servo') {
+            const angle = Math.max(0, Math.min(180, analogValue));
+            const currentAngle = currentStateStore.nodes.find(n => n.id === peripheralId)?.data?.angle ?? 0;
+            if (Math.abs(currentAngle - angle) >= 0.5) {
+              updateNodeData(peripheralId, { angle });
+            }
+            return; // Servo handled — skip normal pin logic
+          }
+
+          // ── ESP32 PWM brightness for LEDs/buzzers: map 0-255 to 0.0-1.0
+          const pwmIntensity = isAnalogState ? Math.min(1.0, analogValue / 255) : (isHigh ? 1.0 : 0.0);
 
           // Log 7-segment related activity
           /* if (pType === '7segment') {
@@ -1200,7 +1350,8 @@ class CircuitEngine {
 
           const isComplexPeripheral = ['stepper-motor', 'stepperMotor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
             'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5', 'relay-module',
-            '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer', 'l298n'].includes(pType);
+            '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer', 'l298n',
+            'ir-receiver', 'ir-remote'].includes(pType);
 
           // 1. Trace the electrical network — only for simple output peripherals
           if (!isComplexPeripheral) {
@@ -1233,13 +1384,14 @@ class CircuitEngine {
 
               console.log(`[CIRCUIT LED] Updating ${target.nodeId} pin ${pinKey} to ${isHigh ? 'HIGH' : 'LOW'}`);
 
-              if (currentPinStates[pinKey] !== isHigh) {
+              if (currentPinStates[pinKey] !== isHigh || isAnalogState) {
                 const updates: any = {
                   pinStates: { ...currentPinStates, [pinKey]: isHigh }
                 };
 
                 // Only allow component to work if it has proper GND connection
-                const intensity = (isHigh && hasGround) ? 1.0 : 0.0;
+                // Use pwmIntensity for ESP32 analog/PWM graduated brightness
+                const intensity = (isHigh && hasGround) ? pwmIntensity : 0.0;
 
                 if (target.type === 'led') {
                   updates.brightness = intensity;
@@ -1403,6 +1555,18 @@ class CircuitEngine {
                 }
                 const emulator = this.dhtEmulators.get(peripheralId)!;
                 emulator.processSignal(state);
+              }
+            }
+
+            // --- IR Receiver Emulation ---
+            // IR receiver is a pure INPUT sensor — receives IR signals from remote and outputs to DATA pin
+            if (peripheralNode.data?.type === 'ir-receiver') {
+              if (peripheralPinName === 'DAT' || peripheralPinName === 'DATA' || peripheralPinName === 'OUT') {
+                if (!this.irReceiverEmulators.has(peripheralId)) {
+                  // Create IR receiver emulator for this node
+                  this.irReceiverEmulators.set(peripheralId, new IRReceiverEmulator(avrPin, peripheralId));
+                  console.log(`[IR RECEIVER] Initialized emulator for node ${peripheralId} on pin ${avrPin}`);
+                }
               }
             }
 
@@ -1597,7 +1761,7 @@ class CircuitEngine {
             // --- L298N Motor Driver Emulation ---
             if (pType === 'l298n') {
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
-              
+
               // Only process if the pin state actually changed in the buffer
               if (buf[peripheralPinName] === isHigh && buf['_initialized']) {
                 return;
@@ -1612,12 +1776,12 @@ class CircuitEngine {
                 buf['_has12VPower'] = this.traceNet(peripheralId, '12V').some(t => t.type === 'battery-12v');
                 buf['_lastPowerCheck'] = Date.now();
               }
-              
+
               const has12VPower = !!buf['_has12VPower'];
-              const ena = (buf['ENA'] !== false) && has12VPower; 
+              const ena = (buf['ENA'] !== false) && has12VPower;
               const in1 = !!buf['IN1'];
               const in2 = !!buf['IN2'];
-              const enb = (buf['ENB'] !== false) && has12VPower; 
+              const enb = (buf['ENB'] !== false) && has12VPower;
               const in3 = !!buf['IN3'];
               const in4 = !!buf['IN4'];
 
@@ -1650,7 +1814,7 @@ class CircuitEngine {
                   if (!targetNode) return;
                   const pinKey = `pin_${target.pinName}`;
                   const currentPinStates = targetNode.data?.pinStates || {};
-                  
+
                   // Skip if target pin state is already what we want
                   if (currentPinStates[pinKey] === signal) return;
 
@@ -1662,10 +1826,10 @@ class CircuitEngine {
                     let speed = 0;
                     let direction = 'cw';
                     if (pos && !neg) {
-                      speed = 1.0; 
+                      speed = 1.0;
                       direction = 'cw';
                     } else if (!pos && neg) {
-                      speed = 1.0; 
+                      speed = 1.0;
                       direction = 'ccw';
                     }
                     updateNodeData(target.nodeId, { pinStates: newPinStates, speed, direction });
@@ -2118,6 +2282,54 @@ class CircuitEngine {
       emulator.stepCCW();
     }
     console.log(`[FORGE CIRCUIT] Rotary Encoder (${nodeId}) rotated CCW`);
+  }
+
+  /**
+   * Handle IR remote button press/release events.
+   * Called by LeapNode when it receives 'button-press' / 'button-release' events from IR remote.
+   * @param remoteNodeId The IR remote node ID (source of the signal)
+   * @param irCode The NEC protocol IR code (0x00-0xFF)
+   * @param pressed Whether the button is pressed (true) or released (false)
+   */
+  public pushIRRemoteButton(remoteNodeId: string, irCode: number, pressed: boolean) {
+    const { nodes, edges } = useForgeStore.getState();
+
+    // Find all IR receivers in the circuit
+    const irReceivers = nodes.filter(n => n.data?.type === 'ir-receiver');
+
+    if (irReceivers.length === 0) {
+      console.warn(`[IR REMOTE] No IR receivers found in circuit`);
+      return;
+    }
+
+    // Send the IR signal to all receivers (simulating broadcast nature of IR)
+    irReceivers.forEach(receiverNode => {
+      const emulator = this.irReceiverEmulators.get(receiverNode.id);
+      if (emulator) {
+        if (pressed) {
+          // NEC protocol: address byte is typically 0x00 for generic remotes
+          const address = 0x00;
+          emulator.transmit(address, irCode, false);
+          console.log(`[IR REMOTE] Button pressed: code=0x${irCode.toString(16).padStart(2, '0')} → receiver ${receiverNode.id}`);
+        } else {
+          emulator.release();
+          console.log(`[IR REMOTE] Button released → receiver ${receiverNode.id}`);
+        }
+      }
+    });
+  }
+
+  /**
+   * Send a manual IR signal directly to a specific receiver (simulates Wokwi's popup menu).
+   */
+  public sendIRSignalToReceiver(nodeId: string, address: number, command: number) {
+    const emulator = this.irReceiverEmulators.get(nodeId);
+    if (emulator) {
+      console.log(`[IR RECEIVER] Manual signal injected: addr=0x${address.toString(16)}, cmd=0x${command.toString(16)} to node ${nodeId}`);
+      emulator.transmit(address, command, false);
+    } else {
+      console.warn(`[IR RECEIVER] Cannot send signal: emulator not found for node ${nodeId}`);
+    }
   }
 
   /**

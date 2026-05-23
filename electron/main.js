@@ -360,8 +360,44 @@ ipcMain.handle('forge-lib-list', async () => {
 // ── forge-lib: remove a library ──────────────────────────────────────────
 ipcMain.handle('forge-lib-remove', async (_, libraryName) => {
   console.log(`[FORGE-LIB] Removing: ${libraryName}`);
+  
+  // 1. Try arduino-cli first
   const { code, stderr } = await runCLI(['lib', 'uninstall', libraryName]);
-  return code === 0 ? { success: true } : { success: false, error: stderr };
+  
+  // 2. Manual cleanup fallback
+  let manualRemoved = false;
+  if (fs.existsSync(FORGE_LIB_LIBRARIES)) {
+    try {
+      const entries = fs.readdirSync(FORGE_LIB_LIBRARIES, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const libDir = path.join(FORGE_LIB_LIBRARIES, entry.name);
+        
+        let match = (entry.name === libraryName);
+        if (!match) {
+          const propFile = path.join(libDir, 'library.properties');
+          if (fs.existsSync(propFile)) {
+             const props = fs.readFileSync(propFile, 'utf-8').split('\n').reduce((acc, line) => {
+               const [k, ...v] = line.split('=');
+               if (k && v.length) acc[k.trim()] = v.join('=').trim();
+               return acc;
+             }, {});
+             if (props.name === libraryName) match = true;
+          }
+        }
+        
+        if (match) {
+          console.log(`[FORGE-LIB] Force removing directory: ${libDir}`);
+          fs.rmSync(libDir, { recursive: true, force: true });
+          manualRemoved = true;
+        }
+      }
+    } catch (e) {
+      console.warn('[FORGE-LIB] Manual cleanup error:', e.message);
+    }
+  }
+
+  return (code === 0 || manualRemoved) ? { success: true, manualRemoved } : { success: false, error: stderr };
 });
 
 // ── compile-code: unified handler called by CompilerService (Electron path) ──

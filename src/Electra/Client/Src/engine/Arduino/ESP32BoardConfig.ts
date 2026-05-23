@@ -7,6 +7,7 @@
 
 export interface ESP32PinInfo {
     gpioNum: number;
+    avrPin: string;
     adcChannel?: number;
     isI2CSDA?: boolean;
     isI2CSCL?: boolean;

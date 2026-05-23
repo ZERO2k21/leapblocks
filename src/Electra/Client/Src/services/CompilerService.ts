@@ -21,7 +21,8 @@ export interface CompileRequest {
 export interface CompileResult {
   success: boolean;
   hexContent?: string;
-  binPath?: string;   // returned for esp32:esp32:* FQBNs (QEMU path)
+  binPath?: string;   // returned for esp32:esp32:* FQBNs in Electron (custom RISC-V emulator path)
+  binBase64?: string; // returned for esp32 in Web mode
   error?: string;
 }
 
@@ -57,6 +58,7 @@ export const compileCode = async (req: CompileRequest): Promise<CompileResult> =
     return {
       success: data.success,
       hexContent: data.hex,
+      binBase64: data.binBase64,
       error: Array.isArray(data.errors) ? data.errors.join('\n') : data.errors,
     };
   } catch (err: any) {
@@ -119,7 +121,7 @@ var Adafruit_SSD1306 = (typeof Adafruit_SSD1306 !== 'undefined' && Adafruit_SSD1
   setRotation(){} invertDisplay(){} startscrollright(){} stopscroll(){}
 };
 var Adafruit_GFX = (typeof Adafruit_GFX !== 'undefined' && Adafruit_GFX) || class { constructor(){} };
-var LiquidCrystal_I2C = (typeof LiquidCrystal_I2C !== 'undefined' && LiquidCrystal_I2C) || class { constructor(){} begin(){} print(){} println(){} setCursor(){} clear(){} backlight(){} noBacklight(){} };
+var LiquidCrystal_I2C = (typeof LiquidCrystal_I2C !== 'undefined' && LiquidCrystal_I2C) || class { constructor(){} begin(){} init(){} print(){} println(){} setCursor(){} clear(){} backlight(){} noBacklight(){} };
 var LiquidCrystal = (typeof LiquidCrystal !== 'undefined' && LiquidCrystal) || class { constructor(){} begin(){} print(){} println(){} setCursor(){} clear(){} };
 var Servo = (typeof Servo !== 'undefined' && Servo) || class { constructor(){this._angle=90;} attach(){} write(a){this._angle=a;} read(){return this._angle;} detach(){} };
 var DHT = (typeof DHT !== 'undefined' && DHT) || class { constructor(){} begin(){} readTemperature(){return 25.0;} readHumidity(){return 50.0;} };
@@ -139,7 +141,7 @@ var Adafruit_Sensor = (typeof Adafruit_Sensor !== 'undefined' && Adafruit_Sensor
 var IRrecv = (typeof IRrecv !== 'undefined' && IRrecv) || class { constructor(){} enableIRIn(){} decode(){return false;} resume(){} };
 var decode_results = (typeof decode_results !== 'undefined' && decode_results) || class { constructor(){} };
 var SoftwareSerial = (typeof SoftwareSerial !== 'undefined' && SoftwareSerial) || class { constructor(){} begin(){} print(){} println(){} available(){return 0;} read(){return -1;} };
-var Stepper = (typeof Stepper !== 'undefined' && Stepper) || class { constructor(){} setSpeed(){} step(){} };
+var Stepper = (typeof Stepper !== 'undefined' && Stepper) || class { constructor(){} setSpeed(){} async step(){} };
 var MFRC522 = (typeof MFRC522 !== 'undefined' && MFRC522) || class { constructor(){} PCD_Init(){} PICC_IsNewCardPresent(){return false;} PICC_ReadCardSerial(){return false;} };
 var Keypad = (typeof Keypad !== 'undefined' && Keypad) || class {
   constructor(_keymap, _rowPins, _colPins, _rows, _cols) {
@@ -336,7 +338,7 @@ function clientSideTranspile(code: string): TranspileResult {
     js = js.replace(/^\s*#include\s*[<"].*?[>"]\s*$/gm, '');
     // Strip C++ const / volatile qualifiers (before type processing)
     // Only strip when followed by a known C++ type so #define-generated `const X = Y;` is preserved
-    js = js.replace(/\b(const|volatile)\s+(?=(void|int|long|short|unsigned|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\b)/g, '');
+    js = js.replace(/\b(const|volatile)\s+(?=(void|int|long|short|unsigned|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool|String|string)\b)/g, '');
     // Strip standalone volatile (not followed by type)
     js = js.replace(/\bvolatile\s+/g, '');
     // Strip ESP32/AVR function attributes that appear between return type and function name
@@ -450,6 +452,9 @@ function clientSideTranspile(code: string): TranspileResult {
     // delay → await __delay
     js = js.replace(/\bdelay\s*\(/g, 'await __delay(');
     js = js.replace(/\bdelayMicroseconds\s*\(/g, 'await __delayMicroseconds(');
+    // .step() and .write() → await (needed for Stepper inertia and Servo timing)
+    js = js.replace(/(\w+)\.step\s*\(/g, 'await $1.step(');
+    js = js.replace(/(\w+)\.write\s*\(/g, 'await $1.write(');
     // HTTPClient async methods → await (GET/POST/PUT/DELETE/PATCH return Promise<number>)
     // e.g.  int code = http.GET();  →  let code = await http.GET();
     js = js.replace(/(\w+)\.(GET|POST|PUT|DELETE|PATCH)\s*\(/g, 'await $1.$2(');
