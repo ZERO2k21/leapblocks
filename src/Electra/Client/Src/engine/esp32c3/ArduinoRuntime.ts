@@ -13,6 +13,7 @@
  */
 
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { injectAllLibraries } from './ArduinoLibraries';
 
 export type PinMode = 'INPUT' | 'OUTPUT' | 'INPUT_PULLUP' | 'INPUT_PULLDOWN';
 export type PinValue = 0 | 1;
@@ -239,9 +240,15 @@ export class ArduinoRuntime {
   private buildContext(exports: Record<string, any>): Record<string, any> {
     const self = this;
 
+    // Inject all Arduino libraries (Servo, Stepper, DHT, NeoPixel, LCD, etc.)
+    const libraries = injectAllLibraries(this);
+
     return {
       // ── Export mechanism ────────────────────────────────────
       __exports: exports,
+
+      // ── Arduino Libraries (Servo, Stepper, DHT, NeoPixel, LCD, etc.) ──
+      ...libraries,
 
       // ── Constants ──────────────────────────────────────────
       HIGH, LOW, INPUT, OUTPUT, INPUT_PULLUP, INPUT_PULLDOWN,
