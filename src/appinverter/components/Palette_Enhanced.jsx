@@ -48,13 +48,14 @@ export default function PaletteEnhanced() {
                 className="border-b border-slate-200 bg-white sticky top-0 z-10 shadow-sm"
             >
                 <div className="relative w-full flex items-center">
-                    <div className="absolute left-3 pointer-events-none flex items-center justify-center">
-                        <Search className="h-3.5 w-3.5 text-slate-900" />
+                    <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pointer-events-none">
+                        <Search className="h-4 w-4 text-slate-900" />
                     </div>
                     <input
                         type="text"
                         placeholder="Search modules..."
-                        className="w-full h-8 pl-9 pr-3 bg-slate-50 border border-slate-200/80 rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                        style={{ paddingLeft: '40px', height: '38px', fontSize: '13px', fontWeight: '600' }}
+                        className="w-full bg-slate-50 border border-slate-200/80 rounded-xl text-slate-900 placeholder:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 shadow-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />

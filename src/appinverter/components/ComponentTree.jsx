@@ -103,18 +103,18 @@ export default function ComponentTree({ appState }) {
         return (
             <div key={component.id}>
                 <div
-                    className={`relative flex items-center py-3 px-4 rounded-xl cursor-pointer transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] mx-3 mb-1 border-2 text-sm font-semibold text-slate-900 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r before:bg-blue-500 before:transition-all before:duration-250 before:ease-[cubic-bezier(0.4,0,0.2,1)] ${isSelected
+                    className={`relative flex items-center py-4 px-5 rounded-2xl cursor-pointer transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] mx-3 mb-1.5 border-2 text-[15px] font-bold text-slate-900 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[4px] before:rounded-r before:bg-blue-500 before:transition-all before:duration-250 before:ease-[cubic-bezier(0.4,0,0.2,1)] ${isSelected
                         ? 'bg-gradient-to-br from-blue-500/12 to-blue-500/6 border-blue-500/30 text-blue-600 shadow-md shadow-blue-500/20 translate-x-1 before:h-[80%]'
                         : 'border-transparent hover:bg-gradient-to-r hover:from-blue-500/3 hover:to-transparent hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
                         }`}
-                    style={{ marginLeft: `${depth * 12}px` }}
+                    style={{ marginLeft: `${depth * 14}px` }}
                     onClick={() => selectComponent(component.id)}
                     onContextMenu={(e) => handleContextMenu(e, component)}
                 >
                     {/* Expand/Collapse Arrow */}
                     {hasChildren && (
                         <button
-                            className="w-4 h-4 flex items-center justify-center mr-1 text-slate-900 hover:text-black"
+                            className="w-5 h-5 flex items-center justify-center mr-1.5 text-slate-900 hover:text-black text-xs"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 toggleExpand(component.id);
@@ -123,10 +123,10 @@ export default function ComponentTree({ appState }) {
                             {isExpanded ? '▼' : '▶'}
                         </button>
                     )}
-                    {!hasChildren && <span className="w-4 mr-1"></span>}
+                    {!hasChildren && <span className="w-5 mr-1.5"></span>}
 
                     {/* Component Icon */}
-                    <span className="mr-2 text-sm">{getIcon(component.type)}</span>
+                    <span className="mr-2.5 text-base">{getIcon(component.type)}</span>
 
                     {/* Component Name */}
                     {isRenaming ? (
@@ -147,7 +147,7 @@ export default function ComponentTree({ appState }) {
                             autoFocus
                         />
                     ) : (
-                        <span className="flex-1 text-[13px]">{component.id}</span>
+                        <span className="flex-1 text-[15px]">{component.id}</span>
                     )}
                 </div>
 
@@ -174,13 +174,13 @@ export default function ComponentTree({ appState }) {
             <div className="flex-1 overflow-y-auto">
                 {/* Screen Node */}
                 <div
-                    className="flex items-center py-3.5 px-5 bg-slate-50/50 border-b border-slate-100 font-bold text-[13px] cursor-pointer hover:bg-slate-100 transition-all sticky top-0 z-10 backdrop-blur-md text-slate-900 uppercase tracking-[0.08em]"
+                    className="flex items-center py-4.5 px-6 bg-slate-50/50 border-b border-slate-100 font-extrabold text-[15px] cursor-pointer hover:bg-slate-100 transition-all sticky top-0 z-10 backdrop-blur-md text-slate-900 uppercase tracking-[0.1em]"
                     onClick={() => toggleExpand(currentScreen.id)}
                 >
-                    <button className="w-5 h-5 flex items-center justify-center mr-2.5 text-slate-900">
+                    <button className="w-6 h-6 flex items-center justify-center mr-3 text-slate-900 text-xs">
                         {expandedNodes.has(currentScreen.id) ? '▼' : '▶'}
                     </button>
-                    <span className="mr-2.5 opacity-100 text-lg">📱</span>
+                    <span className="mr-3 opacity-100 text-xl">📱</span>
                     <span className="truncate">{currentScreen.id}</span>
                 </div>
 
@@ -198,8 +198,8 @@ export default function ComponentTree({ appState }) {
 
                         {/* Non-Visible Components Section */}
                         {currentScreen.nonVisibleComponents && currentScreen.nonVisibleComponents.length > 0 && (
-                            <div className="mt-2 border-t border-gray-200">
-                                <div className="py-1 px-2 bg-gray-50 text-xs text-slate-900 font-semibold">
+                            <div className="mt-4 border-t border-slate-200">
+                                <div className="py-2.5 px-5 bg-slate-50/80 text-xs text-slate-900 font-extrabold uppercase tracking-wider border-b border-slate-100">
                                     Non-visible components
                                 </div>
                                 {currentScreen.nonVisibleComponents.map((comp) => renderComponent(comp, 0))}

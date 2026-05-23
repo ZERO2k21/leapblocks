@@ -7,9 +7,86 @@
  * Shows ALL properties defined in COMPONENT_METADATA for the selected
  * component, falling back to the component's own props for values.
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Trash2, Smartphone, Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import { COMPONENT_METADATA } from '../data/componentMetadata';
+
+// Color input with local state and debounced parent updates to prevent lag
+function ColorPickerInput({ id, propKey, value, updateProp }) {
+  const [localValue, setLocalValue] = useState(value || '#000000');
+
+  // Keep local value in sync if the prop changes externally
+  useEffect(() => {
+    setLocalValue(value || '#000000');
+  }, [value]);
+
+  const stateRef = useRef({ id, propKey, updateProp });
+  stateRef.current = { id, propKey, updateProp };
+
+  const timeoutRef = useRef(null);
+
+  const commitValue = useCallback((val) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    const { id, propKey, updateProp } = stateRef.current;
+    updateProp(id, propKey, val);
+  }, []);
+
+  const handleChangeDebounced = useCallback((val) => {
+    setLocalValue(val);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      const { id, propKey, updateProp } = stateRef.current;
+      updateProp(id, propKey, val);
+    }, 100); // 100ms debounce
+  }, []);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleBlur = () => {
+    commitValue(localValue);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      commitValue(localValue);
+      e.target.blur();
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <input
+        type="color"
+        value={localValue && localValue !== 'transparent' ? localValue : '#000000'}
+        style={{ width: '36px', height: '36px', padding: '0', cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: 'transparent' }}
+        className="shrink-0 shadow-sm hover:scale-105 transition-transform"
+        onChange={(e) => handleChangeDebounced(e.target.value)}
+      />
+      <input
+        type="text"
+        value={localValue || ''}
+        style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0', letterSpacing: '0.05em' }}
+        className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all font-mono text-center text-slate-900"
+        placeholder="#HEXCODE"
+        onChange={(e) => setLocalValue(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+      />
+    </div>
+  );
+}
 
 export default function PropertiesPanel({ appState }) {
   const {
@@ -300,23 +377,13 @@ export default function PropertiesPanel({ appState }) {
           {isSizeProperty ? (
             renderSizeProperty(key, value)
           ) : isColor ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <input
-                type="color"
-                value={value && value !== 'transparent' ? value : '#000000'}
-                style={{ width: '36px', height: '36px', padding: '0', cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: 'transparent' }}
-                className="shrink-0 shadow-sm hover:scale-105 transition-transform"
-                onChange={(e) => updateProp(id, key, e.target.value)}
-              />
-              <input
-                type="text"
-                value={value || ''}
-                style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0', letterSpacing: '0.05em' }}
-                className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all font-mono text-center"
-                placeholder="#HEXCODE"
-                onChange={(e) => updateProp(id, key, e.target.value)}
-              />
-            </div>
+            <ColorPickerInput
+              key={`${id}-${key}`}
+              id={id}
+              propKey={key}
+              value={value}
+              updateProp={updateProp}
+            />
           ) : options ? (
             <div className="relative w-full">
               <select

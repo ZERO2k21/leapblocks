@@ -118,10 +118,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
     const renderComponentPreview = (comp) => {
         const isSelected = comp.id === selectedId;
-        const baseClasses = `cursor-pointer transition-all ${isSelected
+        const baseClasses = `cursor-pointer transition-all duration-200 ${isSelected
             ? 'ring-2 ring-blue-500 ring-offset-2 shadow-lg z-10'
-            : 'hover:ring-2 hover:ring-gray-300'
-            } mb-2 relative`;
+            : 'hover:ring-2 hover:ring-slate-200 hover:shadow-sm'
+            } relative rounded-xl`;
 
         // Dynamic styles from props
         const style = {
@@ -157,16 +157,19 @@ export default function PhoneCanvasEnhanced({ appState }) {
             case 'ImagePicker':
             case 'FilePicker': {
                 const shape = comp.props.Shape || 'default';
-                const borderRadius = shape === 'rounded' ? '20px' :
-                    shape === 'rectangular' ? '4px' :
-                        shape === 'oval' ? '50%' : '8px';
+                const borderRadius = shape === 'rounded' ? '9999px' :
+                    shape === 'rectangular' ? '0px' :
+                        shape === 'oval' ? '50%' : '12px';
                 return (
                     <button
                         key={comp.id}
-                        className={`${baseClasses} px-4 py-2 font-medium`}
+                        className={`${baseClasses} px-5 py-3 font-semibold text-sm tracking-wide shadow-sm flex items-center transition-all duration-200 active:scale-[0.98]`}
                         style={{
                             ...style,
-                            backgroundColor: style.backgroundColor || '#3B82F6',
+                            minHeight: style.height === 'auto' ? '46px' : undefined,
+                            justifyContent: style.textAlign === 'center' ? 'center' :
+                                            style.textAlign === 'right' ? 'flex-end' : 'flex-start',
+                            backgroundColor: style.backgroundColor || '#2563eb',
                             color: style.color || '#FFFFFF',
                             borderRadius,
                             border: 'none',
@@ -184,8 +187,12 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={baseClasses}
-                        style={{ ...style, padding: '4px' }}
+                        className={`${baseClasses} text-slate-900`}
+                        style={{ 
+                            ...style, 
+                            padding: '8px 6px',
+                            display: 'block'
+                        }}
                         onClick={handleClick}
                     >
                         {comp.props.Text || 'Label'}
@@ -199,8 +206,12 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         key={comp.id}
                         type={comp.type === 'PasswordTextBox' ? 'password' : 'text'}
                         placeholder={comp.props.Hint || ''}
-                        className={`${baseClasses} px-3 py-2 border border-gray-300 rounded`}
-                        style={{ ...style, backgroundColor: '#FFFFFF' }}
+                        className={`${baseClasses} px-4 py-3 text-sm border border-slate-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20`}
+                        style={{ 
+                            ...style, 
+                            minHeight: style.height === 'auto' ? '46px' : undefined,
+                            backgroundColor: '#FFFFFF' 
+                        }}
                         onClick={handleClick}
                         disabled={comp.props.Enabled === false}
                         readOnly
@@ -211,11 +222,12 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} bg-gray-200 flex items-center justify-center overflow-hidden`}
+                        className={`${baseClasses} bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden shadow-sm`}
                         style={{
                             ...style,
-                            width: comp.props.Width || 100,
-                            height: comp.props.Height || 100
+                            width: comp.props.Width || 120,
+                            height: comp.props.Height || 120,
+                            borderRadius: '12px'
                         }}
                         onClick={handleClick}
                     >
@@ -231,14 +243,14 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <label
                         key={comp.id}
-                        className={`${baseClasses} flex items-center space-x-2 cursor-pointer`}
+                        className={`${baseClasses} flex items-center space-x-3 cursor-pointer py-2 px-1 text-slate-900 font-medium text-sm`}
                         style={style}
                         onClick={handleClick}
                     >
                         <input
                             type="checkbox"
                             checked={comp.props.Checked || false}
-                            className="w-4 h-4"
+                            className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                             readOnly
                         />
                         <span>{comp.props.Text || 'CheckBox'}</span>
@@ -249,12 +261,12 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <label
                         key={comp.id}
-                        className={`${baseClasses} flex items-center space-x-2 cursor-pointer`}
+                        className={`${baseClasses} flex items-center space-x-3 cursor-pointer py-2 px-1 text-slate-900 font-medium text-sm`}
                         style={style}
                         onClick={handleClick}
                     >
-                        <div className={`w-12 h-6 rounded-full transition-colors ${comp.props.On ? 'bg-blue-500' : 'bg-gray-300'}`}>
-                            <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${comp.props.On ? 'translate-x-6' : 'translate-x-1'} mt-0.5`}></div>
+                        <div className={`w-12 h-6 rounded-full transition-colors shrink-0 flex items-center ${comp.props.On ? 'bg-blue-600 shadow-sm shadow-blue-500/25' : 'bg-slate-200'}`}>
+                            <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-200 ${comp.props.On ? 'translate-x-6' : 'translate-x-1'}`}></div>
                         </div>
                         <span>{comp.props.Text || 'Switch'}</span>
                     </label>
@@ -264,7 +276,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} py-2`}
+                        className={`${baseClasses} py-3 px-1`}
                         style={style}
                         onClick={handleClick}
                     >
@@ -273,7 +285,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             min={comp.props.MinValue || 0}
                             max={comp.props.MaxValue || 100}
                             value={comp.props.ThumbPosition || 50}
-                            className="w-full"
+                            className="w-full cursor-pointer accent-blue-600"
                             readOnly
                         />
                     </div>
@@ -283,9 +295,13 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <select
                         key={comp.id}
-                        className={`${baseClasses} px-3 py-2 border border-gray-300 rounded bg-white`}
-                        style={style}
+                        className={`${baseClasses} px-4 py-3 text-sm border border-slate-200 bg-white shadow-sm`}
+                        style={{
+                            ...style,
+                            minHeight: style.height === 'auto' ? '46px' : undefined
+                        }}
                         onClick={handleClick}
+                        disabled={comp.props.Enabled === false}
                     >
                         <option>{comp.props.Text || comp.props.Selection || 'Select...'}</option>
                     </select>
@@ -296,12 +312,12 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border border-gray-300 rounded overflow-hidden`}
-                        style={{ ...style, minHeight: '100px' }}
+                        className={`${baseClasses} border border-slate-200 overflow-hidden shadow-sm`}
+                        style={{ ...style, minHeight: '120px', borderRadius: '12px' }}
                         onClick={handleClick}
                     >
                         {items.map((item, idx) => (
-                            <div key={idx} className="px-3 py-2 border-b border-gray-200 hover:bg-gray-50">
+                            <div key={idx} className="px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 text-sm font-medium text-slate-900">
                                 {item}
                             </div>
                         ))}
@@ -313,13 +329,13 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border border-gray-300 rounded bg-white flex items-center justify-center`}
-                        style={{ ...style, minHeight: '200px' }}
+                        className={`${baseClasses} border border-slate-200 bg-white flex items-center justify-center shadow-sm`}
+                        style={{ ...style, minHeight: '200px', borderRadius: '16px' }}
                         onClick={handleClick}
                     >
                         <div className="text-center text-slate-900">
                             <span className="text-4xl block mb-2">🌐</span>
-                            <span className="text-sm">WebViewer</span>
+                            <span className="text-sm font-semibold">WebViewer</span>
                         </div>
                     </div>
                 );
@@ -329,9 +345,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50' : ''
+                        className={`${baseClasses} border-2 border-dashed border-slate-200 p-4 transition-all duration-200 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50/50' : ''
                             }`}
-                        style={{ ...style, display: 'flex', flexDirection: 'row', gap: '8px', minHeight: '60px' }}
+                        style={{ ...style, display: 'flex', flexDirection: 'row', gap: '12px', minHeight: '76px', borderRadius: '16px' }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
                         onDragOver={(e) => {
@@ -347,7 +363,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         {comp.children && comp.children.length > 0 ? (
                             comp.children.map(child => renderComponentPreview(child))
                         ) : (
-                            <div className="text-slate-900 text-sm italic flex items-center justify-center flex-1">
+                            <div className="text-slate-900 text-sm italic font-medium flex items-center justify-center flex-1">
                                 Drop components here (Horizontal)
                             </div>
                         )}
@@ -359,9 +375,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50' : ''
+                        className={`${baseClasses} border-2 border-dashed border-slate-200 p-4 transition-all duration-200 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50/50' : ''
                             }`}
-                        style={{ ...style, display: 'flex', flexDirection: 'column', gap: '8px', minHeight: '60px' }}
+                        style={{ ...style, display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '76px', borderRadius: '16px' }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
                         onDragOver={(e) => {
@@ -377,7 +393,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         {comp.children && comp.children.length > 0 ? (
                             comp.children.map(child => renderComponentPreview(child))
                         ) : (
-                            <div className="text-slate-900 text-sm italic flex items-center justify-center flex-1">
+                            <div className="text-slate-900 text-sm italic font-medium flex items-center justify-center flex-1">
                                 Drop components here (Vertical)
                             </div>
                         )}
@@ -388,9 +404,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border-2 border-dashed border-gray-300 rounded p-2 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50' : ''
+                        className={`${baseClasses} border-2 border-dashed border-slate-200 p-4 transition-all duration-200 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50/50' : ''
                             }`}
-                        style={{ ...style, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', minHeight: '100px' }}
+                        style={{ ...style, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', minHeight: '120px', borderRadius: '16px' }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
                         onDragOver={(e) => {
@@ -406,7 +422,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         {comp.children && comp.children.length > 0 ? (
                             comp.children.map(child => renderComponentPreview(child))
                         ) : (
-                            <div className="text-slate-900 text-sm italic col-span-2 flex items-center justify-center">
+                            <div className="text-slate-900 text-sm italic font-medium col-span-2 flex items-center justify-center">
                                 Drop components here (Table)
                             </div>
                         )}
@@ -417,8 +433,8 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border border-gray-400 bg-white`}
-                        style={{ ...style, width: comp.props.Width || 300, height: comp.props.Height || 300 }}
+                        className={`${baseClasses} border border-slate-300 bg-white shadow-sm`}
+                        style={{ ...style, width: comp.props.Width || 300, height: comp.props.Height || 300, borderRadius: '16px' }}
                         onClick={handleClick}
                     >
                         <div className="w-full h-full flex items-center justify-center text-slate-900">
@@ -431,8 +447,8 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} bg-black flex items-center justify-center`}
-                        style={{ ...style, width: comp.props.Width || 320, height: comp.props.Height || 240 }}
+                        className={`${baseClasses} bg-black flex items-center justify-center shadow-md`}
+                        style={{ ...style, width: comp.props.Width || 320, height: comp.props.Height || 240, borderRadius: '16px' }}
                         onClick={handleClick}
                     >
                         <span className="text-6xl">▶️</span>
@@ -443,11 +459,11 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} p-3 bg-gray-100 border border-gray-300 rounded text-center`}
+                        className={`${baseClasses} p-4 bg-slate-50 border border-slate-200 shadow-sm text-center`}
                         style={style}
                         onClick={handleClick}
                     >
-                        <div className="text-sm font-medium text-slate-900">{comp.type}</div>
+                        <div className="text-sm font-semibold text-slate-900">{comp.type}</div>
                         <div className="text-xs text-slate-900 mt-1">{comp.id}</div>
                     </div>
                 );
@@ -660,7 +676,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex flex-col gap-2 p-4 min-h-full">
+                                <div className="flex flex-col gap-4 p-5 min-h-full">
                                     {components.map(comp => renderComponentPreview(comp))}
                                 </div>
                             )}
