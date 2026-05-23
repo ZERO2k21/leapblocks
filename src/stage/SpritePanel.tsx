@@ -140,7 +140,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 <button onClick={() => selectedSprite.show?.()} title="Show"
                   className={`w-7 h-7 border-2 rounded-lg flex items-center justify-center transition-colors
                     ${selectedSprite.visible
-                      ? "border-violet-500 bg-violet-50 text-violet-600"
+                      ? "border-[#0a0a1f] bg-[#0a0a1f]/10 text-[#0a0a1f]"
                       : `${borderCol} ${dk ? "bg-[#26262d] text-gray-400" : "bg-white text-gray-400"}`}`}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -150,7 +150,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 <button onClick={() => selectedSprite.hide?.()} title="Hide"
                   className={`w-7 h-7 border-2 rounded-lg flex items-center justify-center transition-colors
                     ${!selectedSprite.visible
-                      ? "border-violet-500 bg-violet-50 text-violet-600"
+                      ? "border-[#0a0a1f] bg-[#0a0a1f]/10 text-[#0a0a1f]"
                       : `${borderCol} ${dk ? "bg-[#26262d] text-gray-400" : "bg-white text-gray-400"}`}`}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
@@ -212,8 +212,8 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   className={`relative group flex flex-col rounded-xl cursor-pointer
                     transition-all duration-150 overflow-visible border-2
                     ${isSelected
-                      ? `border-violet-600 ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-sm`
-                      : `${borderCol} ${dk ? "bg-[#1c1c21]" : "bg-white"} hover:border-violet-300`
+                      ? `border-[#0a0a1f] ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-sm`
+                      : `${borderCol} ${dk ? "bg-[#1c1c21]" : "bg-white"} hover:border-[#0a0a1f]/50`
                     }`}
                   style={{ aspectRatio: '1 / 1.2' }}
                 >
@@ -222,9 +222,9 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                     onClick={(e) => { e.stopPropagation(); onDeleteSprite(sprite.id); }}
                     title="Delete sprite"
                     className={`absolute -top-2 -right-2 w-5 h-5 rounded-full
-                      bg-[#6c3fc5] text-white flex items-center justify-center
+                      bg-[#0a0a1f] text-white flex items-center justify-center
                       shadow-md transition-all duration-150 z-20
-                      hover:bg-violet-700 hover:scale-110 active:scale-95
+                      hover:bg-[#0a0a1f] hover:scale-110 active:scale-95
                       ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
                   >
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none"
@@ -265,7 +265,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   <div className={`text-center text-[10px] font-semibold py-1 px-0.5
                     truncate flex-shrink-0 transition-colors rounded-b-[10px]
                     ${isSelected
-                      ? "bg-violet-600 text-white"
+                      ? "bg-[#0a0a1f] text-white"
                       : `${dk ? "bg-[#26262d] text-gray-300" : "bg-gray-100 text-slate-600"}`
                     }`}>
                     {sprite.name}
@@ -365,14 +365,14 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
               onClick={() => onSelectSprite('stage')}
               className={`mx-2 mt-2 mb-1 rounded-xl cursor-pointer transition-all duration-150 overflow-hidden border-2
                 ${isStageSelected
-                  ? `border-violet-600 ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-sm`
-                  : `${borderCol} ${dk ? "bg-[#1c1c21]" : "bg-white"} hover:border-violet-300`
+                  ? `border-[#0a0a1f] ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-sm`
+                  : `${borderCol} ${dk ? "bg-[#1c1c21]" : "bg-white"} hover:border-[#0a0a1f]/50`
                 }`}
             >
               {/* "Stage" header — violet bg when selected */}
               <div className={`text-center text-[10px] font-bold py-1 transition-colors
                 ${isStageSelected
-                  ? "bg-violet-600 text-white"
+                  ? "bg-[#0a0a1f] text-white"
                   : `${dk ? "bg-[#26262d] text-gray-300" : "bg-gray-100 text-gray-600"}`
                 }`}>
                 Stage
@@ -409,7 +409,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 Backdrops
               </p>
               <p className={`text-base font-bold leading-tight
-                ${dk ? "text-violet-400" : "text-violet-600"}`}>
+                ${dk ? "text-[#0a0a1f]/80" : "text-[#0a0a1f]"}`}>
                 {backdropCount}
               </p>
             </div>
