@@ -1,0 +1,238 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║              AYATI WALKING - Visual Workflow                     ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+
+YOUR 4 IMAGES (PNG with black backgrounds)
+┌─────────────────────────────────────────────────────────────────┐
+│  🖼️ Image 1    🖼️ Image 2    🖼️ Image 3    🖼️ Image 4         │
+│  (Walking 1)  (Walking 2)  (Walking 3)  (Walking 4)            │
+│                                                                 │
+│  ⚠️  BLACK BACKGROUNDS - Need to be removed!                    │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 1: Remove Black Backgrounds                               │
+│  ────────────────────────────────────────────                   │
+│  Tool: Remove.bg or Photoshop                                   │
+│  Result: PNG with transparent backgrounds                       │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+TRANSPARENT PNGs
+┌─────────────────────────────────────────────────────────────────┐
+│  🖼️ ayati-1.png  🖼️ ayati-2.png  🖼️ ayati-3.png  🖼️ ayati-4.png│
+│  (Transparent)  (Transparent)  (Transparent)  (Transparent)    │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 2: Convert PNG to SVG                                     │
+│  ────────────────────────────────────────────                   │
+│  Tool: Adobe Illustrator                                        │
+│  Settings:                                                      │
+│    • Mode: Color                                                │
+│    • Colors: 16-20                                              │
+│    • ✓ Ignore White ← CRITICAL!                                │
+│  Action: File → Place → Image Trace → Expand → Export SVG      │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+SVG FILES (May have black background)
+┌─────────────────────────────────────────────────────────────────┐
+│  📄 ayati_walking_ayati_walking-a.svg                           │
+│  📄 ayati_walking_ayati_walking-b.svg                           │
+│  📄 ayati_walking_ayati_walking-c.svg                           │
+│  📄 ayati_walking_ayati_walking-d.svg                           │
+│                                                                 │
+│  ⚠️  May still have black backgrounds!                          │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 3: Copy to Project                                        │
+│  ────────────────────────────────────────────                   │
+│  Command:                                                       │
+│  Copy-Item "source\*.svg" "public\assets\sprites\leap\"        │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+FILES IN PROJECT
+┌─────────────────────────────────────────────────────────────────┐
+│  📁 public/assets/sprites/leap/                                 │
+│     ├── 📄 ayati_walking_ayati_walking-a.svg                    │
+│     ├── 📄 ayati_walking_ayati_walking-b.svg                    │
+│     ├── 📄 ayati_walking_ayati_walking-c.svg                    │
+│     └── 📄 ayati_walking_ayati_walking-d.svg                    │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 4: Fix Black Backgrounds (Automated!)                    │
+│  ────────────────────────────────────────────                   │
+│  Command:                                                       │
+│  .\scripts\fix-svg-backgrounds.ps1                             │
+│                                                                 │
+│  This script automatically:                                     │
+│  • Finds black background rectangles                            │
+│  • Removes them                                                 │
+│  • Saves clean SVG files                                        │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+CLEAN SVG FILES ✅
+┌─────────────────────────────────────────────────────────────────┐
+│  📄 ayati_walking_ayati_walking-a.svg ✓ Transparent            │
+│  📄 ayati_walking_ayati_walking-b.svg ✓ Transparent            │
+│  📄 ayati_walking_ayati_walking-c.svg ✓ Transparent            │
+│  📄 ayati_walking_ayati_walking-d.svg ✓ Transparent            │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 5: Update Registration                                    │
+│  ────────────────────────────────────────────                   │
+│  File: src/components/generated_leap_sprites.ts                 │
+│  Line: 142                                                      │
+│                                                                 │
+│  Replace "Avery Walking" entry with "Ayati Walking"            │
+│  (Use code from AYATI_CODE_REPLACEMENT.txt)                    │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+REGISTERED IN SYSTEM ✅
+┌─────────────────────────────────────────────────────────────────┐
+│  {                                                              │
+│    "id": "leap_ayati_walking",                                  │
+│    "name": "Ayati Walking",                                     │
+│    "emoji": "👧",                                               │
+│    "image": "assets/sprites/leap/ayati_walking_...-a.svg",     │
+│    "costumes": [ ... 4 files ... ],                            │
+│    "tags": [ "people", "girl", "walking", "stem", ... ]        │
+│  }                                                              │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 6: Delete Old Files                                       │
+│  ────────────────────────────────────────────                   │
+│  Command:                                                       │
+│  Remove-Item "public\assets\sprites\leap\avery_walking_*.svg"  │
+│                                                                 │
+│  Deletes:                                                       │
+│  • avery_walking_avery_walking-a.svg                           │
+│  • avery_walking_avery_walking-b.svg                           │
+│  • avery_walking_avery_walking-c.svg                           │
+│  • avery_walking_avery_walking-d.svg                           │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 7: Test                                                   │
+│  ────────────────────────────────────────────                   │
+│  Command: npm run dev                                           │
+│                                                                 │
+│  Verify:                                                        │
+│  ✓ Sprite appears in library                                   │
+│  ✓ Search "Ayati" works                                        │
+│  ✓ All 4 poses work                                            │
+│  ✓ Transparent background                                      │
+│  ✓ Looks good on any color                                     │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+╔═════════════════════════════════════════════════════════════════╗
+║                                                                 ║
+║                    ✅ SUCCESS! ✅                                ║
+║                                                                 ║
+║         Ayati Walking sprite is ready to use!                   ║
+║                                                                 ║
+╚═════════════════════════════════════════════════════════════════╝
+
+
+═══════════════════════════════════════════════════════════════════
+
+PARALLEL VIEW: BEFORE vs AFTER
+───────────────────────────────
+
+BEFORE (Avery Walking)              AFTER (Ayati Walking)
+┌──────────────────────┐           ┌──────────────────────┐
+│  Generic character   │           │  Girl with ponytail  │
+│  Basic walking       │           │  Purple hoodie       │
+│  4 poses             │           │  Tan cargo pants     │
+│                      │           │  Purple sneakers     │
+│  Files:              │           │  Purple headband     │
+│  • avery_walking-a   │           │                      │
+│  • avery_walking-b   │           │  Files:              │
+│  • avery_walking-c   │           │  • ayati_walking-a   │
+│  • avery_walking-d   │           │  • ayati_walking-b   │
+│                      │           │  • ayati_walking-c   │
+│  Tags: 2             │           │  • ayati_walking-d   │
+│  • people            │           │                      │
+│  • walking           │           │  Tags: 14            │
+│                      │           │  • people, girl      │
+│                      │           │  • walking, active   │
+│                      │           │  • stem, education   │
+│                      │           │  • purple, hoodie    │
+└──────────────────────┘           └──────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════
+
+TIME ESTIMATE
+─────────────
+
+Step 1: Remove backgrounds      → 10-15 minutes
+Step 2: Convert to SVG          → 10-15 minutes
+Step 3: Copy files              → 1 minute
+Step 4: Fix backgrounds         → 1 second (automated!)
+Step 5: Update registration     → 2 minutes
+Step 6: Delete old files        → 1 minute
+Step 7: Test                    → 5 minutes
+                                  ─────────────
+TOTAL:                            30-40 minutes
+
+
+═══════════════════════════════════════════════════════════════════
+
+TOOLS NEEDED
+────────────
+
+✓ Adobe Illustrator (PNG to SVG conversion)
+✓ Remove.bg or Photoshop (background removal)
+✓ Text Editor (VS Code, Notepad++)
+✓ PowerShell (running scripts)
+✓ Web Browser (testing)
+
+
+═══════════════════════════════════════════════════════════════════
+
+DIFFICULTY LEVEL
+────────────────
+
+Overall: ⭐⭐⭐ (Medium)
+
+Step 1: ⭐⭐ (Easy - online tool)
+Step 2: ⭐⭐⭐ (Medium - requires Adobe)
+Step 3: ⭐ (Easy - copy files)
+Step 4: ⭐ (Easy - automated script)
+Step 5: ⭐⭐ (Easy - copy/paste code)
+Step 6: ⭐ (Easy - delete files)
+Step 7: ⭐ (Easy - run command)
+
+
+═══════════════════════════════════════════════════════════════════
+
+READY TO START?
+───────────────
+
+📄 Open: AYATI_REPLACEMENT_ACTION_PLAN.txt
+📋 Follow the checklist
+✅ Complete each step
+🎉 Enjoy your new sprite!
+
+
+═══════════════════════════════════════════════════════════════════

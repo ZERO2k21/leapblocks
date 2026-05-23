@@ -1,0 +1,96 @@
+╔══════════════════════════════════════════════════════════════╗
+║     QUICK STEPS: Replace Ball Sprites                       ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 YOU NEED:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5 ball images (PNG or SVG):
+  🩷 Pink ball
+  💜 Purple ball
+  ❤️ Red ball
+  💙 Blue ball
+  🧡 Orange ball
+
+
+🔧 STEP 1: Prepare Your Files
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+If PNG format:
+  1. Remove backgrounds (use remove.bg or Photoshop)
+  2. Convert to SVG:
+     - Adobe Illustrator: Image Trace → Expand → Export SVG
+     - OR use vectorizer.ai
+  3. Check "Ignore White" when exporting to prevent black backgrounds
+
+If already SVG:
+  → Skip to Step 2
+
+
+🔧 STEP 2: Rename Files
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rename your 5 SVG files to:
+  Pink ball    → ball_ball-a.svg
+  Purple ball  → ball_ball-b.svg
+  Red ball     → ball_ball-c.svg
+  Blue ball    → ball_ball-d.svg
+  Orange ball  → ball_ball-e.svg
+
+
+🔧 STEP 3: Copy to Project
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PowerShell command:
+  Copy-Item "C:\path\to\your\ball_ball-*.svg" "public/assets/sprites/leap/" -Force
+
+OR manually:
+  Copy all 5 files to: public/assets/sprites/leap/
+
+
+🔧 STEP 4: Fix Black Backgrounds
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Run the fix script:
+  ./scripts/fix-ball-backgrounds.ps1
+
+This will:
+  ✓ Remove black/white background rectangles
+  ✓ Preserve all ball colors and designs
+  ✓ Make backgrounds transparent
+
+
+🔧 STEP 5: Test
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Start dev server:
+   npm run dev
+
+2. Open sprite library
+
+3. Find "Ball" sprite ⚽
+
+4. Check all 5 colors:
+   ✓ Pink ball appears
+   ✓ Purple ball appears
+   ✓ Red ball appears
+   ✓ Blue ball appears
+   ✓ Orange ball appears
+   ✓ All have transparent backgrounds
+
+
+✅ DONE!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+No code changes needed - sprite registration is already set up!
+
+
+📝 NEED HELP?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Tell me:
+  1. Where are your ball images saved?
+  2. Are they PNG or SVG?
+  3. What are their filenames?
+
+I can create a custom script to automate everything!
+

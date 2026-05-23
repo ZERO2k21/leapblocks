@@ -1,0 +1,140 @@
+═══════════════════════════════════════════════════════════════════
+  EXACT CODE TO REPLACE IN generated_leap_sprites.ts
+═══════════════════════════════════════════════════════════════════
+
+FILE LOCATION:
+src/components/generated_leap_sprites.ts
+
+LINE NUMBER: Around line 142-157
+
+═══════════════════════════════════════════════════════════════════
+
+DELETE THIS OLD CODE:
+─────────────────────
+
+  {
+    "id": "leap_avery_walking",
+    "name": "Avery Walking",
+    "emoji": "🤖",
+    "image": "assets/sprites/leap/avery_walking_avery_walking-a.svg",
+    "costumes": [
+      "assets/sprites/leap/avery_walking_avery_walking-a.svg",
+      "assets/sprites/leap/avery_walking_avery_walking-b.svg",
+      "assets/sprites/leap/avery_walking_avery_walking-c.svg",
+      "assets/sprites/leap/avery_walking_avery_walking-d.svg"
+    ],
+    "tags": [
+      "people",
+      "walking"
+    ],
+    "category": "leap"
+  },
+
+
+═══════════════════════════════════════════════════════════════════
+
+REPLACE WITH THIS NEW CODE:
+───────────────────────────
+
+  {
+    "id": "leap_ayati_walking",
+    "name": "Ayati Walking",
+    "emoji": "👧",
+    "image": "assets/sprites/leap/ayati_walking_ayati_walking-a.svg",
+    "costumes": [
+      "assets/sprites/leap/ayati_walking_ayati_walking-a.svg",
+      "assets/sprites/leap/ayati_walking_ayati_walking-b.svg",
+      "assets/sprites/leap/ayati_walking_ayati_walking-c.svg",
+      "assets/sprites/leap/ayati_walking_ayati_walking-d.svg"
+    ],
+    "tags": [
+      "people",
+      "person",
+      "girl",
+      "walking",
+      "active",
+      "movement",
+      "student",
+      "education",
+      "stem",
+      "learning",
+      "kid",
+      "purple",
+      "hoodie",
+      "ponytail"
+    ],
+    "category": "leap"
+  },
+
+
+═══════════════════════════════════════════════════════════════════
+
+WHAT CHANGED:
+─────────────
+
+1. ID: leap_avery_walking → leap_ayati_walking
+2. Name: "Avery Walking" → "Ayati Walking"
+3. Emoji: 🤖 → 👧 (robot to girl)
+4. Image path: avery_walking → ayati_walking (all 4 files)
+5. Tags: Added more descriptive tags:
+   • person, girl, active, movement
+   • student, education, stem, learning, kid
+   • purple, hoodie, ponytail
+
+═══════════════════════════════════════════════════════════════════
+
+COPY-PASTE READY CODE:
+──────────────────────
+
+Just copy everything between the lines below:
+
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+  {
+    "id": "leap_ayati_walking",
+    "name": "Ayati Walking",
+    "emoji": "👧",
+    "image": "assets/sprites/leap/ayati_walking_ayati_walking-a.svg",
+    "costumes": [
+      "assets/sprites/leap/ayati_walking_ayati_walking-a.svg",
+      "assets/sprites/leap/ayati_walking_ayati_walking-b.svg",
+      "assets/sprites/leap/ayati_walking_ayati_walking-c.svg",
+      "assets/sprites/leap/ayati_walking_ayati_walking-d.svg"
+    ],
+    "tags": [
+      "people",
+      "person",
+      "girl",
+      "walking",
+      "active",
+      "movement",
+      "student",
+      "education",
+      "stem",
+      "learning",
+      "kid",
+      "purple",
+      "hoodie",
+      "ponytail"
+    ],
+    "category": "leap"
+  },
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════
+
+VERIFICATION:
+─────────────
+
+After making the change, verify:
+
+✓ Comma at the end of the closing brace },
+✓ Proper indentation (2 spaces)
+✓ All 4 costume file paths are correct
+✓ No syntax errors (check for red squiggly lines)
+✓ File saves successfully
+
+
+═══════════════════════════════════════════════════════════════════
