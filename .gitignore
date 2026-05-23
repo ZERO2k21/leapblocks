@@ -124,3 +124,8 @@ test_*.js
 
 # Electra local library cache
 forge-lib/
+
+# Temporary APK build outputs
+temp_decoded_template/
+temp_extracted_apk/
+temp_unsigned.apk

@@ -18,7 +18,7 @@
 
 /* Block text styling */
 .blocklyText {
-    font-family: 'Helvetica Neue', Arial, sans-serif !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
     font-size: 12px !important;
     font-weight: 500 !important;
     line-height: 1.2 !important;
@@ -86,7 +86,7 @@
     border: none !important;
     border-radius: 4px !important;
     padding: 2px 4px !important;
-    font-family: 'Helvetica Neue', Arial, sans-serif !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
     font-size: 12px !important;
 }
 
@@ -1069,4 +1069,11 @@ rect.blocklyCheckbox[fill*="true"],
 /* Adjust checkbox styling to be a bit more robust */
 .blocklyFlyout .blocklyCheckbox {
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)) !important;
+}
+
+/* Fix: respect SVG/HTML presentation attributes for display="none" (e.g. Blockly flyout scrollbars hidden state) */
+g[display="none"],
+svg[display="none"],
+rect[display="none"] {
+  display: none !important;
 }

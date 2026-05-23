@@ -3,4 +3,122 @@
 @theme {
   --color-brand-primary: #100051;
   --color-brand-secondary: #4F46E5;
+
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-slide-up: slide-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --animate-slide-down: slide-down 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --animate-scale-in: scale-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes slide-down {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(255, 122, 0, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 40px rgba(255, 122, 0, 0.6);
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
 }
+
+@utility skeleton-loader {
+  background: linear-gradient(
+    90deg,
+    var(--color-slate-100) 0%,
+    var(--color-slate-200) 50%,
+    var(--color-slate-100) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* Global Selection & Focus-Visible styling */
+::selection {
+  background: rgba(255, 122, 0, 0.2);
+  color: var(--color-slate-900);
+}
+
+::-moz-selection {
+  background: rgba(255, 122, 0, 0.2);
+  color: var(--color-slate-900);
+}
+
+*:focus-visible {
+  outline: 2px solid #ff7a00;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #ff7a00;
+  outline-offset: 2px;
+}
+
+/* Sharp Font Rendering Override */
+html,
+body,
+button,
+input,
+select,
+textarea,
+span,
+div,
+p,
+a,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+label {
+  -webkit-font-smoothing: subpixel-antialiased !important;
+  -moz-osx-font-smoothing: auto !important;
+  text-rendering: optimizeLegibility !important;
+}
+

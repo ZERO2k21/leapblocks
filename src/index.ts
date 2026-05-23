@@ -12,6 +12,9 @@ import { ArduinoUploader } from './upload/ArduinoUploader';
 import { PythonManager } from './pythonBackend/PythonManager';
 import { join } from 'path';
 
+// Suppress development security warnings in the console
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL STATE & SERVICES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -89,6 +92,11 @@ const createWindow = (): void => {
   if (process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools();
     logTiming('DevTools opened');
+
+    // Clear session cache to prevent ERR_CACHE_READ_FAILURE
+    mainWindow.webContents.session.clearCache()
+      .then(() => log('MAIN', 'Chromium cache cleared in development mode'))
+      .catch((err) => log('MAIN', `Failed to clear Chromium cache: ${err.message}`));
 
     // Suppress harmless DevTools autofill warnings
     mainWindow.webContents.on('console-message', (event, level, message) => {
