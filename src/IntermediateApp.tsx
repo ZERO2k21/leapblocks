@@ -614,6 +614,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
     const lastToolboxJsonRef = useRef<string>('');
+    const isRebuildingToolboxRef = useRef(false);
+    const [toolboxUpdateKey, setToolboxUpdateKey] = useState(0);
 
 
 
@@ -1349,8 +1351,57 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         }
 
 
-        // Handle Variable Renaming and Deletion
-        if (event.type === Blockly.Events.VAR_RENAME) {
+        // Handle Variable Creation, Renaming, and Deletion
+        if (event.type === Blockly.Events.VAR_CREATE) {
+            const createEvent = event as any;
+            const varName = createEvent.varName || createEvent.json?.name;
+            const varType = createEvent.json?.type || '';
+
+            if (varName) {
+                if (varType === '' || varType === 'Number' || varType === 'String') {
+                    setVariableMonitors(prev => {
+                        if (prev.find(m => m.name === varName)) return prev;
+                        return [...prev, {
+                            id: `var_${Date.now()}`,
+                            name: varName,
+                            type: 'Number',
+                            scope: 'all_sprites' as const,
+                            visible: false,
+                            value: 0,
+                            x: 10, y: 10 + (prev.length * 30)
+                        }];
+                    });
+                } else if (varType === 'list') {
+                    setListMonitors(prev => {
+                        if (prev.find(m => m.name === varName)) return prev;
+                        return [...prev, {
+                            id: `list_${Date.now()}`,
+                            name: varName,
+                            scope: 'all_sprites' as const,
+                            visible: false,
+                            x: 10, y: 10 + (prev.length * 30),
+                            items: [],
+                            width: 100, height: 200
+                        } as ListMonitorState];
+                    });
+                } else if (varType === 'table') {
+                    setTableMonitors(prev => {
+                        if (prev.find(m => m.name === varName)) return prev;
+                        return [...prev, {
+                            id: `table_${Date.now()}`,
+                            name: varName,
+                            scope: 'all_sprites' as const,
+                            visible: false,
+                            x: 10, y: 10 + (prev.length * 30),
+                            data: [],
+                            rows: 0, cols: 0,
+                            width: 250, height: 200
+                        } as TableMonitorState];
+                    });
+                }
+                setToolboxUpdateKey(k => k + 1);
+            }
+        } else if (event.type === Blockly.Events.VAR_RENAME) {
             const renameEvent = event as any;
             const oldName = renameEvent.oldName;
             const newName = renameEvent.newName;
@@ -1365,6 +1416,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             setVariableMonitors(prev => prev.filter(m => m.name !== deletedName));
             setListMonitors(prev => prev.filter(m => m.name !== deletedName));
             setTableMonitors(prev => prev.filter(m => m.name !== deletedName));
+            setToolboxUpdateKey(k => k + 1);
         }
 
         try {
@@ -1461,7 +1513,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         }
 
-    }, [editorMode, appMode, sprites, selectedSpriteId]);
+    }, [editorMode, appMode, sprites, selectedSpriteId, setToolboxUpdateKey]);
 
 
 
@@ -3869,12 +3921,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-    // Update toolbox and selected category contents when sprite or monitor state changes
+    // Update toolbox and selected category contents when sprite or category structure changes
+    // NOTE: variableMonitors/listMonitors/tableMonitors intentionally excluded from deps — 
+    // checkbox toggles update internally via Blockly's FieldCheckbox; a full rebuild on 
+    // every visibility toggle would cause a cascade through the patched setValue → 
+    // onToggleVisibility → setVariableMonitors → rebuild loop.
+    // Toolbox is rebuilt only when sprite changes, editor mode switches, or 
+    // VAR_CREATE/VAR_DELETE events trigger toolboxUpdateKey.
 
     useEffect(() => {
         if (!workspaceRef.current || appMode !== 'blocks') {
             return;
         }
+        if (isRebuildingToolboxRef.current) return;
+        isRebuildingToolboxRef.current = true;
 
         const nextToolboxConfig = getCurrentToolbox();
         const nextToolboxJson = JSON.stringify(nextToolboxConfig);
@@ -3883,35 +3943,36 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             ? currentToolbox.getSelectedItem().getName()
             : null;
 
-        // Always update the toolbox when the sprite changes so dynamic dropdowns
-        // (e.g. sound, costume) refresh with the new sprite's values.
         if (nextToolboxJson !== lastToolboxJsonRef.current) {
             console.log('[APP] Updating toolbox dynamically (Sprite:', selectedSpriteId, ')');
+
+            workspaceRef.current.updateToolbox(nextToolboxConfig);
             lastToolboxJsonRef.current = nextToolboxJson;
-        }
-        workspaceRef.current.updateToolbox(nextToolboxConfig);
 
-        const refreshedToolbox = workspaceRef.current.getToolbox() as any;
-        const toolboxItems = typeof refreshedToolbox?.getToolboxItems === 'function'
-            ? refreshedToolbox.getToolboxItems().filter((item: any) => typeof item?.getName === 'function')
-            : [];
+            const refreshedToolbox = workspaceRef.current.getToolbox() as any;
+            const toolboxItems = typeof refreshedToolbox?.getToolboxItems === 'function'
+                ? refreshedToolbox.getToolboxItems().filter((item: any) => typeof item?.getName === 'function')
+                : [];
 
-        if (selectedCategoryName) {
-            const matchingItem = toolboxItems.find((item: any) => item.getName() === selectedCategoryName);
-            if (matchingItem && typeof refreshedToolbox?.setSelectedItem === 'function') {
-                refreshedToolbox.setSelectedItem(matchingItem);
+            if (selectedCategoryName) {
+                const matchingItem = toolboxItems.find((item: any) => item.getName() === selectedCategoryName);
+                if (matchingItem && typeof refreshedToolbox?.setSelectedItem === 'function') {
+                    refreshedToolbox.setSelectedItem(matchingItem);
+                }
             }
+
+            if (!refreshedToolbox?.getSelectedItem?.() && typeof refreshedToolbox?.selectItemByPosition === 'function') {
+                refreshedToolbox.selectItemByPosition(0);
+            } else {
+                workspaceRef.current.refreshToolboxSelection();
+            }
+
+            const flyout = workspaceRef.current.getFlyout() as any;
+            if (flyout?.reflowInternal_) flyout.reflowInternal_();
         }
 
-        if (!refreshedToolbox?.getSelectedItem?.() && typeof refreshedToolbox?.selectItemByPosition === 'function') {
-            refreshedToolbox.selectItemByPosition(0);
-        } else {
-            workspaceRef.current.refreshToolboxSelection();
-        }
-
-        const flyout = workspaceRef.current.getFlyout() as any;
-        if (flyout?.reflowInternal_) flyout.reflowInternal_();
-    }, [selectedSpriteId, editorMode, appMode, getCurrentToolbox, variableMonitors, listMonitors, tableMonitors]);
+        setTimeout(() => { isRebuildingToolboxRef.current = false; }, 0);
+    }, [selectedSpriteId, editorMode, appMode, getCurrentToolbox, toolboxUpdateKey]);
 
 
 
