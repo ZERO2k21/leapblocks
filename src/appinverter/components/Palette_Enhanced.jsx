@@ -43,7 +43,10 @@ export default function PaletteEnhanced() {
     return (
         <div className="flex flex-col h-full w-full bg-white">
             {/* Header */}
-            <div className="pt-4 pb-3 px-4 border-b border-slate-200 bg-white sticky top-0 z-10 shadow-sm">
+            <div 
+                style={{ paddingTop: '28px', paddingBottom: '12px', paddingLeft: '24px', paddingRight: '24px' }}
+                className="border-b border-slate-200 bg-white sticky top-0 z-10 shadow-sm"
+            >
                 <div className="relative w-full flex items-center">
                     <div className="absolute left-3 pointer-events-none flex items-center justify-center">
                         <Search className="h-3.5 w-3.5 text-slate-400" />

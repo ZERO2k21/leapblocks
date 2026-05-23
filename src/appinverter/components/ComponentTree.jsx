@@ -1,8 +1,8 @@
 /**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
+* Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+* All rights reserved. Proprietary and confidential.
+* Unauthorized copying, distribution, or modification is strictly prohibited.
+*/
 import React, { useEffect, useState } from 'react';
 
 /**
@@ -103,11 +103,10 @@ export default function ComponentTree({ appState }) {
         return (
             <div key={component.id}>
                 <div
-                    className={`relative flex items-center py-3 px-4 rounded-xl cursor-pointer transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] mx-3 mb-1 border-2 text-sm font-semibold text-slate-700 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r before:bg-orange-500 before:transition-all before:duration-250 before:ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                        isSelected 
-                            ? 'bg-gradient-to-br from-orange-500/12 to-orange-500/6 border-orange-500/30 text-orange-500 shadow-md shadow-orange-500/20 translate-x-1 before:h-[80%]' 
-                            : 'border-transparent hover:bg-gradient-to-r hover:from-orange-500/3 hover:to-transparent hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
-                    }`}
+                    className={`relative flex items-center py-3 px-4 rounded-xl cursor-pointer transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] mx-3 mb-1 border-2 text-sm font-semibold text-slate-700 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r before:bg-orange-500 before:transition-all before:duration-250 before:ease-[cubic-bezier(0.4,0,0.2,1)] ${isSelected
+                        ? 'bg-gradient-to-br from-orange-500/12 to-orange-500/6 border-orange-500/30 text-orange-500 shadow-md shadow-orange-500/20 translate-x-1 before:h-[80%]'
+                        : 'border-transparent hover:bg-gradient-to-r hover:from-orange-500/3 hover:to-transparent hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
+                        }`}
                     style={{ marginLeft: `${depth * 12}px` }}
                     onClick={() => selectComponent(component.id)}
                     onContextMenu={(e) => handleContextMenu(e, component)}
@@ -165,8 +164,11 @@ export default function ComponentTree({ appState }) {
     return (
         <div className="flex flex-col h-full bg-white overflow-hidden">
             {/* Standardized Header */}
-            <div className="py-[18px] px-6 bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b-2 border-slate-200 flex items-center justify-between shrink-0 shadow-sm">
-                <span className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Components</span>
+            <div
+                style={{ paddingTop: '24px', paddingBottom: '16px', paddingLeft: '32px', paddingRight: '24px' }}
+                className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b-2 border-slate-200 flex items-center justify-between shrink-0 shadow-sm"
+            >
+                <span className="text-[19px] font-black uppercase tracking-[0.15em] text-slate-500 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Components</span>
             </div>
 
             <div className="flex-1 overflow-y-auto">
@@ -197,7 +199,7 @@ export default function ComponentTree({ appState }) {
                         {/* Non-Visible Components Section */}
                         {currentScreen.nonVisibleComponents && currentScreen.nonVisibleComponents.length > 0 && (
                             <div className="mt-2 border-t border-gray-200">
-                                <div className="py-1 px-2 bg-gray-50 text-xs text-gray-600 font-semibold">
+                                <div className="py-1 px-2 bg-gray-50 text-xs text-slate-600 font-semibold">
                                     Non-visible components
                                 </div>
                                 {currentScreen.nonVisibleComponents.map((comp) => renderComponent(comp, 0))}
