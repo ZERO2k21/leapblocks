@@ -31,7 +31,9 @@ export const COMPONENT_METADATA = {
             { name: 'AppName', type: 'String' },
             { name: 'BackgroundColor', type: 'Color' },
             { name: 'BackgroundImage', type: 'String' },
-            { name: 'Title', type: 'String' }
+            { name: 'Title', type: 'String' },
+            { name: 'ShowStatusBar', type: 'Boolean' },
+            { name: 'TitleVisible', type: 'Boolean' }
         ]
     },
     'Button': {

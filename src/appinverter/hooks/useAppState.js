@@ -169,6 +169,23 @@ export function useAppState() {
       if (screen.id !== activeScreen) return screen;
       const next = deepClone(screen);
 
+      if (id === screen.id) {
+        // Update Screen property directly
+        if (key === 'AboutScreen') next.aboutScreen = value;
+        else if (key === 'BackgroundColor') next.backgroundColor = value;
+        else if (key === 'AlignHorizontal') next.alignHorizontal = value;
+        else if (key === 'AlignVertical') next.alignVertical = value;
+        else if (key === 'ShowStatusBar') next.showStatusBar = value;
+        else if (key === 'Title') next.title = value;
+        else if (key === 'TitleVisible') next.titleVisible = value;
+        else if (key === 'ScreenOrientation') next.screenOrientation = value;
+        else if (key === 'Theme') next.theme = value;
+        else if (key === 'AppName') {
+          setAppName(value);
+        }
+        return next;
+      }
+
       if (isInTree(next.components, id)) {
         next.components = updateNodeById(next.components, id, comp => ({
           ...comp,
@@ -210,6 +227,19 @@ export function useAppState() {
     setSelectedId(null);
   };
 
+  const deleteScreen = (name) => {
+    const trimmed = name?.trim();
+    if (!trimmed || trimmed === 'Screen1') return;
+    setScreens(prev => {
+      const nextScreens = prev.filter(s => s.id !== trimmed);
+      if (activeScreen === trimmed) {
+        setActiveScreen(nextScreens[0]?.id || 'Screen1');
+      }
+      return nextScreens;
+    });
+    setSelectedId(null);
+  };
+
   const renameComponent = (oldId, newId) => {
     if (!oldId || !newId || oldId === newId) return;
 
@@ -240,14 +270,57 @@ export function useAppState() {
     setMedia(prev => prev.filter(item => item.filename !== filename));
   };
 
+  const loadProject = (projectData) => {
+    if (!projectData) return;
+    if (projectData.screens) setScreens(projectData.screens);
+    if (projectData.screens?.[0]?.id) {
+      setActiveScreen(projectData.screens.find(s => s.id === projectData.activeScreen)?.id || projectData.screens[0].id);
+    } else {
+      setActiveScreen('Screen1');
+    }
+    if (projectData.appName) setAppName(projectData.appName);
+    if (projectData.packageName) setPackageName(projectData.packageName);
+    if (projectData.blockLogic !== undefined) setBlockLogic(projectData.blockLogic);
+    if (projectData.media) setMedia(projectData.media || []);
+    setSelectedId(null);
+  };
+
+  const newProject = () => {
+    setScreens([makeScreen('Screen1')]);
+    setActiveScreen('Screen1');
+    setSelectedId(null);
+    setAppName('MyApp');
+    setPackageName('com.leapblocks.myapp');
+    setBlockLogic('');
+    setMedia([]);
+  };
+
   const currentScreen = useMemo(() => getCurrentScreen(screens), [screens, activeScreen]);
 
   const selectedComponent = useMemo(() => {
     if (!currentScreen || !selectedId) return null;
+    if (selectedId === currentScreen.id) {
+      return {
+        id: currentScreen.id,
+        type: 'Screen',
+        props: {
+          AboutScreen: currentScreen.aboutScreen || '',
+          AlignHorizontal: currentScreen.alignHorizontal || 'Left',
+          AlignVertical: currentScreen.alignVertical || 'Top',
+          ScreenOrientation: currentScreen.screenOrientation || 'Unspecified',
+          AppName: appName,
+          BackgroundColor: currentScreen.backgroundColor || '#ffffff',
+          BackgroundImage: currentScreen.backgroundImage || '',
+          Title: currentScreen.title || currentScreen.id,
+          ShowStatusBar: currentScreen.showStatusBar !== false,
+          TitleVisible: currentScreen.titleVisible !== false
+        }
+      };
+    }
     const visibleComp = findNodeById(currentScreen.components || [], selectedId);
     if (visibleComp) return visibleComp;
     return currentScreen.nonVisibleComponents?.find(c => c.id === selectedId) || null;
-  }, [currentScreen, selectedId]);
+  }, [currentScreen, selectedId, appName]);
 
   const getSerializedState = () => ({
     schemaVersion: 2,
@@ -277,6 +350,7 @@ export function useAppState() {
     updateProp,
     removeComponent,
     addScreen,
+    deleteScreen,
     setActiveScreen,
     setSelectedId,
     setAppName,
@@ -289,6 +363,8 @@ export function useAppState() {
     addMedia,
     deleteMedia,
     getNextComponentName,
+    loadProject,
+    newProject,
     isArrangementType: (type) => ARRANGEMENT_TYPES.has(type),
     getComponentVisibility: (type) => (COMPONENT_META.get(type)?.visible ?? true)
   }), [

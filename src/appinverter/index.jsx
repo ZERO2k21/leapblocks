@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 // Monaco Editor's CDN loader sets window.define globally. Blockly's UMD
 // wrapper detects it and crashes. Clean it up at module load time.
 if (typeof window !== 'undefined' && typeof window.define === 'function' && window.define.amd) {
-    window.define = undefined;
+  window.define = undefined;
 }
 import { useAppState } from './hooks/useAppState';
 import { IgniteTopbar } from '../Electra/Client/Src/components/Layout/Topbar';
@@ -21,7 +21,7 @@ import BuildModal from './components/BuildModal';
 import ComponentTree from './components/ComponentTree';
 import MediaManager from './components/MediaManager';
 import './styles/leap-appinventor.css';
-import { Zap } from 'lucide-react';
+import { Zap, Layout, Puzzle } from 'lucide-react';
 
 function countVisibleComponents(screens = []) {
   let count = 0;
@@ -190,29 +190,98 @@ export default function AppInventor({ onBack }) {
         onSave={() => { }}
         brandName="APP INVENTOR"
         rightContent={
-          <div className="flex items-center gap-6">
-            <nav className="flex items-center p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
-              {['Designer', 'Blocks'].map((tab) => (
-                <button
-                  key={tab}
-                  id={`tab-${tab.toLowerCase()}`}
-                  onClick={() => setActiveTab(tab.toLowerCase())}
-                  className={`px-8 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer ${activeTab === tab.toLowerCase()
-                    ? 'bg-white text-blue-600 shadow-md border border-blue-100/50'
-                    : 'text-slate-900 hover:text-slate-950 hover:bg-slate-200/50'
-                    }`}
-                >
-                  {tab}
-                </button>
-              ))}
+          <div className="flex items-center gap-6 shrink-0">
+            <nav style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '3px',
+              backgroundColor: 'rgba(9, 9, 11, 0.6)',
+              border: '1px solid rgba(148, 163, 184, 0.2)',
+              borderRadius: '8px',
+              flexShrink: 0
+            }}>
+              {['Designer', 'Blocks'].map((tab) => {
+                const isActive = activeTab === tab.toLowerCase();
+                return (
+                  <button
+                    key={tab}
+                    id={`tab-${tab.toLowerCase()}`}
+                    onClick={() => setActiveTab(tab.toLowerCase())}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 16px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      border: '1px solid transparent',
+                      backgroundColor: isActive ? '#2563eb' : 'transparent',
+                      color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.65)',
+                      boxShadow: isActive ? '0 4px 12px rgba(37, 99, 235, 0.3)' : 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.color = '#ffffff';
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.65)';
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}
+                  >
+                    {tab === 'Designer' ? (
+                      <Layout size={13} style={{ transition: 'color 0.2s', color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.45)' }} />
+                    ) : (
+                      <Puzzle size={13} style={{ transition: 'color 0.2s', color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.45)' }} />
+                    )}
+                    <span>{tab}</span>
+                  </button>
+                );
+              })}
             </nav>
-            <div className="w-px h-8 bg-slate-200 mx-2" />
+            <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255, 255, 255, 0.15)', margin: '0 8px', flexShrink: 0 }} />
             <button
               id="btn-build-apk"
               onClick={handleBuildApk}
-              className="relative overflow-hidden flex items-center gap-2.5 px-8 py-3.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl text-[13px] font-black uppercase tracking-[0.12em] shadow-[0_12px_24px_-8px_rgba(37,99,235,0.5),0_4px_12px_-4px_rgba(37,99,235,0.3),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_20px_40px_-12px_rgba(37,99,235,0.6),0_8px_16px_-6px_rgba(37,99,235,0.4),inset_0_1px_0_rgba(255,255,255,0.3)] hover:-translate-y-0.5 hover:scale-[1.02] active:-translate-y-px active:scale-100 transition-all duration-300 cursor-pointer before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent hover:before:left-full before:transition-all before:duration-700 group"
+              style={{
+                position: 'relative',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 20px',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                color: '#ffffff',
+                borderRadius: '8px',
+                fontSize: '11px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flexShrink: 0,
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(37, 99, 235, 0.45)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 14px rgba(37, 99, 235, 0.35)';
+              }}
             >
-              <Zap className="h-4 w-4 text-white group-hover:animate-pulse" />
+              <Zap size={13} style={{ fill: '#ffffff', color: '#ffffff' }} />
               BUILD PRODUCTION
             </button>
           </div>

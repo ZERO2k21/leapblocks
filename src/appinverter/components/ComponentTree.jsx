@@ -174,10 +174,19 @@ export default function ComponentTree({ appState }) {
             <div className="flex-1 overflow-y-auto">
                 {/* Screen Node */}
                 <div
-                    className="flex items-center py-4.5 px-6 bg-slate-50/50 border-b border-slate-100 font-extrabold text-[15px] cursor-pointer hover:bg-slate-100 transition-all sticky top-0 z-10 backdrop-blur-md text-slate-900 uppercase tracking-[0.1em]"
-                    onClick={() => toggleExpand(currentScreen.id)}
+                    className={`flex items-center py-4.5 px-6 border-b border-slate-100 font-extrabold text-[15px] cursor-pointer transition-all sticky top-0 z-10 backdrop-blur-md uppercase tracking-[0.1em] ${selectedComponent?.id === currentScreen.id
+                        ? 'bg-blue-50/70 text-blue-600 border-l-4 border-l-blue-500'
+                        : 'bg-slate-50/50 text-slate-900 hover:bg-slate-100'
+                        }`}
+                    onClick={() => selectComponent(currentScreen.id)}
                 >
-                    <button className="w-6 h-6 flex items-center justify-center mr-3 text-slate-900 text-xs">
+                    <button 
+                        className="w-6 h-6 flex items-center justify-center mr-3 text-slate-900 text-xs"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleExpand(currentScreen.id);
+                        }}
+                    >
                         {expandedNodes.has(currentScreen.id) ? '▼' : '▶'}
                     </button>
                     <span className="mr-3 opacity-100 text-xl">📱</span>
