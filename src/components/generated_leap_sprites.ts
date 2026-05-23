@@ -729,7 +729,7 @@ export const leapSprites: any[] = [
     "image": "assets/sprites/leap/cat_cat_a.svg",
     "costumes": [
       "assets/sprites/leap/cat_cat_a.svg",
-      "assets/sprites/leap/cat_cat-b.svg"
+      "assets/sprites/leap/cat_cat_b.svg"
     ],
     "tags": [
       "animals",
