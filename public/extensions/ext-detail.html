@@ -139,14 +139,25 @@
     height: 20px;
   }
 
-  .added-state {
-    pointer-events: none;
-    opacity: 0.7;
+  .add-btn:disabled {
+    opacity: 0.6; cursor: default; transform: none;
   }
 
-  .added-state .add-btn {
-    background: #6c757d !important;
+  .success-banner {
+    display: none;
+    align-items: center; justify-content: center; gap: 10px;
+    background: #f3e8ff; border: 2px solid #9333ea;
+    color: #6b21a8; border-radius: 12px;
+    padding: 14px 24px; margin: 18px auto 0;
+    max-width: 480px; font-size: 15px; font-weight: 700;
+    animation: slideIn 0.3s ease;
   }
+  .success-banner.visible { display: flex; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .success-icon { font-size: 20px; }
 </style>
 </head>
 <body>
@@ -166,6 +177,10 @@
       </svg>
       Add to Project
     </button>
+    <div class="success-banner" id="successBanner">
+      <span class="success-icon">✅</span>
+      <span id="successText">Extension blocks added to your toolbox!</span>
+    </div>
   </div>
 </div>
 
@@ -217,9 +232,21 @@
       extensionName: extName
     }, '*');
 
-    // Visual feedback
+    // In-page success feedback (no alert needed)
+    var btn = document.getElementById('addBtn');
+    var banner = document.getElementById('successBanner');
+    var successText = document.getElementById('successText');
+    btn.disabled = true;
     btn.innerHTML = '✓ Added!';
-    document.getElementById('card').classList.add('added-state');
+    successText.textContent = extName + ' blocks added to your toolbox!';
+    banner.classList.add('visible');
+
+    // Re-enable after 3s so user can re-add if needed
+    setTimeout(function() {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add to Project';
+      banner.classList.remove('visible');
+    }, 3000);
   }
 </script>
 </body>

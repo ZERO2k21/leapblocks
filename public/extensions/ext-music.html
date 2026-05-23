@@ -40,10 +40,28 @@
             border-radius: 8px;
             cursor: pointer;
             width: 100%;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
             transition: transform 0.2s;
         }
         .add-btn:hover { transform: translateY(-2px); }
+        .add-btn:disabled { opacity: 0.6; cursor: default; transform: none; }
+        
+        .success-banner {
+            display: none;
+            align-items: center; justify-content: center; gap: 10px;
+            background: #ffebee; border: 2px solid #c62828;
+            color: #b71c1c; border-radius: 8px;
+            padding: 14px 24px; margin-bottom: 30px;
+            font-size: 15px; font-weight: 600;
+            animation: slideIn 0.3s ease;
+        }
+        .success-banner.visible { display: flex; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .success-icon { font-size: 20px; }
+        
         .section { margin-bottom: 30px; }
         .section-title {
             font-size: 20px;
@@ -94,7 +112,11 @@
         </div>
         
         <div class="content">
-            <button class="add-btn" onclick="addExtension()">➕ Add Blocks</button>
+            <button class="add-btn" id="addBtn" onclick="addExtension()">➕ Add Blocks</button>
+            <div class="success-banner" id="successBanner">
+                <span class="success-icon">✅</span>
+                Music blocks added to your toolbox!
+            </div>
             
             <div class="section">
                 <div class="section-title">📦 Available Blocks</div>
@@ -147,7 +169,18 @@
                 title: 'Music'
             }, '*');
             
-            alert('✅ Music blocks added successfully!\n\nCheck the toolbox for the new "Music" category.');
+            // Show in-page success feedback (no alert needed)
+            var btn = document.getElementById('addBtn');
+            var banner = document.getElementById('successBanner');
+            btn.disabled = true;
+            btn.textContent = '✓ Added!';
+            banner.classList.add('visible');
+
+            // Re-enable after 3s so user can re-add if needed
+            setTimeout(function() {
+                btn.disabled = false;
+                btn.innerHTML = '➕ Add Blocks';
+            }, 3000);
         }
     </script>
 </body>

@@ -13,7 +13,7 @@
  * definitions for looks_say, looks_think, etc.
  */
 
-import Blockly from '../blockly/runtime';
+import Blockly from '@blockly-runtime';
 
 /**
  * Register ONLY the animation-specific looks blocks that conflict with leapBlocks.
