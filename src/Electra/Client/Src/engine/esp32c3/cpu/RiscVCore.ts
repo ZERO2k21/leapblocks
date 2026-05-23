@@ -340,7 +340,7 @@ export class MMIOBus {
     // RF peripherals: FE2 (0x60005000), FE (0x60006000), NRX (0x6001CC00), BB (0x6001D000)
     // These are RF frontend/baseband — return 0 (idle)
     if ((addr >= 0x60005000 && addr < 0x60007000) ||
-        (addr >= 0x6001C000 && addr < 0x6001F000)) {
+      (addr >= 0x6001C000 && addr < 0x6001F000)) {
       return 0x00000000;
     }
 

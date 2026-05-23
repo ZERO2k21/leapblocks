@@ -117,43 +117,22 @@ let esp32CoreReady = false;
 async function ensureESP32Core() {
   if (esp32CoreReady) return true;
   try {
-    // Check if ESP32 core is already installed
     const { stdout, code } = await runCLI(['core', 'list', '--format', 'json']);
     if (code !== 0) throw new Error('core list failed');
-    const parsed = JSON.parse(stdout || '[]');
-    // arduino-cli v0.35+ wraps in { platforms: [...] }, older versions return a bare array
-    const cores = Array.isArray(parsed) ? parsed : (parsed.platforms || []);
-    const installed = cores.some(c =>
+    const cores = JSON.parse(stdout || '[]');
+    const installed = Array.isArray(cores) && cores.some(c =>
       (c.id && c.id.startsWith('esp32:')) ||
       (c.platform?.id && c.platform.id.startsWith('esp32:'))
     );
     if (installed) { esp32CoreReady = true; return true; }
 
-    // Step 1: Ensure ESP32 URL is in board manager config
-    console.log('[SERVER] ESP32 core not found. Adding board manager URL...');
-    await runCLI([
-      'config', 'add', 'board_manager.additional_urls',
-      'https://dl.espressif.com/dl/package_esp32_index.json',
+    console.log('[SERVER] Installing ESP32 core (first run)...');
+    const { code: ic } = await runCLI([
+      'core', 'install', 'esp32:esp32',
+      '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json',
     ]);
-
-    // Step 2: Update board index
-    console.log('[SERVER] Updating board index...');
-    const updateResult = await runCLI(['core', 'update-index']);
-    if (updateResult.code !== 0) {
-      console.error('[SERVER] Board index update failed:', updateResult.stderr);
-    }
-
-    // Step 3: Install ESP32 core
-    console.log('[SERVER] Installing ESP32 core (this may take several minutes on first run)...');
-    const installResult = await runCLI(['core', 'install', 'esp32:esp32']);
-    if (installResult.code !== 0) {
-      console.error('[SERVER] ESP32 core install failed:', installResult.stderr);
-      console.error('[SERVER] stdout:', installResult.stdout);
-      return false;
-    }
-    esp32CoreReady = true;
-    console.log('[SERVER] ✓ ESP32 core installed successfully');
-    return true;
+    esp32CoreReady = ic === 0;
+    return esp32CoreReady;
   } catch (e) {
     console.error('[SERVER] ensureESP32Core error:', e.message);
     return false;
@@ -212,60 +191,6 @@ function binToIntelHex(buf) {
   hex += ':00000001FF\n';
   return hex;
 }
-
-// ─── Build merged ESP32 flash image (4MB) ─────────────────────────────────────
-function buildMergedFlashImage(tempDir, files, appBinPath, outPath) {
-  const FLASH_SIZE = 4 * 1024 * 1024;
-  const BOOTLOADER_OFFSET = 0x1000;
-  const PARTITIONS_OFFSET = 0x8000;
-  const APP_OFFSET = 0x10000;
-  const image = Buffer.alloc(FLASH_SIZE, 0xff);
-
-  const bootFile = files.find(f => f.includes('bootloader') && f.endsWith('.bin'));
-  if (bootFile) {
-    const bootBin = fs.readFileSync(path.join(tempDir, bootFile));
-    bootBin.copy(image, BOOTLOADER_OFFSET);
-    console.log(`[SERVER] Bootloader @ 0x${BOOTLOADER_OFFSET.toString(16)}: ${bootBin.length} bytes`);
-  }
-  const partFile = files.find(f => (f.includes('partition') || f.includes('partitions')) && f.endsWith('.bin'));
-  if (partFile) {
-    const partBin = fs.readFileSync(path.join(tempDir, partFile));
-    partBin.copy(image, PARTITIONS_OFFSET);
-    console.log(`[SERVER] Partitions @ 0x${PARTITIONS_OFFSET.toString(16)}: ${partBin.length} bytes`);
-  }
-  const appBin = fs.readFileSync(appBinPath);
-  appBin.copy(image, APP_OFFSET);
-  console.log(`[SERVER] App @ 0x${APP_OFFSET.toString(16)}: ${appBin.length} bytes`);
-  fs.writeFileSync(outPath, image);
-  console.log(`[SERVER] Merged flash image: ${outPath} (${(FLASH_SIZE / 1024 / 1024).toFixed(0)} MB)`);
-}
-
-// ─── ESP32 GPIO Monitor Header ────────────────────────────────────────────────
-const GPIO_MONITOR_HEADER = [
-  '// ---- Electra monitor (auto-injected) ----',
-  '#include <Wire.h>',
-  '#include <WiFi.h>',
-  'static void __lf_digitalWrite(uint8_t pin, uint8_t val) {',
-  '  digitalWrite(pin, val);',
-  '  Serial.printf("__LF_GPIO:%d:%d\\n", pin, (int)val);',
-  '}',
-  '#define digitalWrite(p,v) __lf_digitalWrite((p),(v))',
-  'static void __lf_analogWrite(uint8_t pin, uint32_t val) {',
-  '  analogWrite(pin, val);',
-  '  Serial.printf("__LF_PWM:%d:%d\\n", pin, (int)val);',
-  '}',
-  '#define analogWrite(p,v) __lf_analogWrite((p),(v))',
-  'static void __lf_wifi_event(WiFiEvent_t event) {',
-  '  switch (event) {',
-  '    case ARDUINO_EVENT_WIFI_STA_CONNECTED: Serial.printf("__LF_WIFI:connected\\n"); break;',
-  '    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED: Serial.printf("__LF_WIFI:disconnected\\n"); break;',
-  '    case ARDUINO_EVENT_WIFI_STA_GOT_IP: Serial.printf("__LF_WIFI:ip:%s\\n", WiFi.localIP().toString().c_str()); break;',
-  '    default: break;',
-  '  }',
-  '}',
-  'static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }',
-  '// ---- end Electra injection ----',
-].join('\n');
 
 // ─── String-aware comment remover (won't destroy URLs inside quotes) ─────────
 function removeCommentsStringAware(code) {
@@ -491,22 +416,7 @@ app.post('/build-apk', async (req, res) => {
   }
 
   try {
-    // Resolve the APK builder module — the folder was renamed from appinverter → studio.
-    // Use a candidate list for backward compatibility.
-    const builderCandidates = [
-      path.join(__dirname, '..', 'src', 'studio', 'apk', 'buildAPK'),
-      path.join(__dirname, '..', 'src', 'appinverter', 'apk', 'buildAPK'),
-    ];
-    const resolvedPath = builderCandidates.find(p => {
-      try { require.resolve(p); return true; } catch { return false; }
-    });
-    if (!resolvedPath) {
-      return res.status(500).json({
-        success: false,
-        error: `APK builder module not found. Checked:\n${builderCandidates.join('\n')}`,
-      });
-    }
-    const ApkBuilder = require(resolvedPath);
+    const ApkBuilder = require(path.join(__dirname, '..', 'src', 'appinverter', 'apk', 'buildAPK'));
     const builder = new ApkBuilder();
     const logs = [];
     const outputPath = await builder.build(project, ({ progress, message }) => {
@@ -560,17 +470,14 @@ app.post('/compile', async (req, res) => {
       if (!coreOk) {
         return res.json({ success: false, errors: 'ESP32 core not available on this server' });
       }
-      // Inject GPIO/I2C/WiFi monitor header for real-time simulation feedback
-      processedCode = processedCode.replace(/(void\s+setup\s*\(\s*\)\s*\{)/, '$1\n  __lf_setup_wifi();');
-      processedCode = GPIO_MONITOR_HEADER + '\n' + processedCode;
     }
 
     fs.writeFileSync(sketchPath, processedCode);
 
     const cliArgs = ['compile', '--fqbn', board, '--output-dir', tempDir];
 
-    // Add libraries path if available
-    if (FORGE_LIB_LIBRARIES) {
+    // Add libraries path if available and not ESP32 (AVR-only libs conflict)
+    if (!isESP32 && FORGE_LIB_LIBRARIES) {
       cliArgs.push('--libraries', FORGE_LIB_LIBRARIES);
     }
     // Add user-specified libraries
@@ -596,28 +503,13 @@ app.post('/compile', async (req, res) => {
     const files = fs.readdirSync(tempDir);
 
     if (isESP32) {
-      // ── Return base64-encoded merged flash image for RISC-V emulator ──
-      const mergedReady = files.find(f => f === 'sketch.ino.merged.bin');
-      let finalBinPath;
-      if (mergedReady) {
-        finalBinPath = path.join(tempDir, mergedReady);
-      } else {
-        const binFile = files.find(f => f === 'sketch.ino.bin')
-          ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
-        if (!binFile) {
-          return res.json({ success: false, errors: `No .bin found. Files: ${files.join(', ')}` });
-        }
-        const appBinPath = path.join(tempDir, binFile);
-        finalBinPath = path.join(tempDir, 'flash_image.bin');
-        try {
-          buildMergedFlashImage(tempDir, files, appBinPath, finalBinPath);
-        } catch (mergeErr) {
-          return res.json({ success: false, errors: `Flash image merge failed: ${mergeErr.message}` });
-        }
+      const binFile = files.find(f => f === 'sketch.ino.bin')
+        ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
+      if (!binFile) {
+        return res.json({ success: false, errors: `No .bin found. Files: ${files.join(', ')}` });
       }
-      const binBase64 = fs.readFileSync(finalBinPath).toString('base64');
-      console.log(`[SERVER] ESP32 firmware compiled, base64 size: ${binBase64.length} chars`);
-      return res.json({ success: true, binBase64 });
+      const hexContent = binToIntelHex(fs.readFileSync(path.join(tempDir, binFile)));
+      return res.json({ success: true, hex: hexContent });
     } else {
       const hexFile = files.find(f => f.endsWith('.hex'));
       if (!hexFile) {
@@ -633,7 +525,7 @@ app.post('/compile', async (req, res) => {
   }
 });
 
-// ─── POST /transpile (DEPRECATED — use /compile with binBase64) ──────────────
+// ─── POST /transpile ──────────────────────────────────────────────────────────
 app.post('/transpile', async (req, res) => {
   const { code, board = 'esp32:esp32:esp32c3' } = req.body;
   if (!code) return res.status(400).json({ success: false, errors: 'No code provided' });
@@ -706,10 +598,10 @@ app.delete('/libraries/remove', async (req, res) => {
   if (!name) return res.status(400).json({ success: false, error: 'Library name required' });
 
   console.log(`[SERVER] Removing library: ${name}`);
-  
+
   // 1. Try arduino-cli first
   const { code, stderr, stdout } = await runCLI(['lib', 'uninstall', name]);
-  
+
   // 2. Manual cleanup fallback (ensures folder is gone even if CLI is flaky)
   let manualRemoved = false;
   if (FORGE_LIB_LIBRARIES && fs.existsSync(FORGE_LIB_LIBRARIES)) {
@@ -718,22 +610,22 @@ app.delete('/libraries/remove', async (req, res) => {
       for (const entry of entries) {
         if (!entry.isDirectory()) continue;
         const libDir = path.join(FORGE_LIB_LIBRARIES, entry.name);
-        
+
         // Match by folder name OR name in library.properties
         let match = (entry.name === name);
-        
+
         if (!match) {
           const propFile = path.join(libDir, 'library.properties');
           if (fs.existsSync(propFile)) {
-             const props = fs.readFileSync(propFile, 'utf-8').split('\n').reduce((acc, line) => {
-               const [k, ...v] = line.split('=');
-               if (k && v.length) acc[k.trim()] = v.join('=').trim();
-               return acc;
-             }, {});
-             if (props.name === name) match = true;
+            const props = fs.readFileSync(propFile, 'utf-8').split('\n').reduce((acc, line) => {
+              const [k, ...v] = line.split('=');
+              if (k && v.length) acc[k.trim()] = v.join('=').trim();
+              return acc;
+            }, {});
+            if (props.name === name) match = true;
           }
         }
-        
+
         if (match) {
           console.log(`[SERVER] Force removing directory: ${libDir}`);
           fs.rmSync(libDir, { recursive: true, force: true });

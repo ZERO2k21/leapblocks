@@ -323,13 +323,12 @@ class CircuitEngine {
   }
 
   /**
-   * Prepares library class overrides (Adafruit_SSD1306, Keypad, etc.)
-   * These are used by syncCircuitGraph for display/peripheral emulation.
-   * NOTE: The ArduinoRuntime transpiled path has been removed.
-   * These classes are kept for the I2C bus bridge used by RISC-V peripherals.
+   * Re-applies the I2C bus bridge to ArduinoRuntime after initTranspiled() creates it.
+   * Called by SimulationRunner.start() on the transpiled path.
    */
   public syncI2CBridge() {
-    console.log(`[OLED BRIDGE] syncI2CBridge() called. ssd1306Slaves: ${this.ssd1306Slaves.size}`);
+    const esp32Runtime = simulationRunner.ESP32C3Runner?.runtime;
+    console.log(`[OLED BRIDGE] syncI2CBridge() called. Runtime exists: ${!!esp32Runtime}, ssd1306Slaves: ${this.ssd1306Slaves.size}`);
 
     // ── Always register the Adafruit_SSD1306 class for injection ─────────────
     // This is stored on CircuitEngine and pulled by initTranspiled() before
@@ -812,7 +811,7 @@ class CircuitEngine {
               }
             }
           }
-        } catch(e) {}
+        } catch (e) { }
       }
 
       private _getEmulator(): import('./HD44780').HD44780 | undefined {
@@ -916,31 +915,48 @@ class CircuitEngine {
     this._pendingLibraryClasses.set('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
     console.log(`[LCD BRIDGE] RealLiquidCrystal_I2C stored in _pendingLibraryClasses`);
 
-    // NOTE: Previously this would inject classes directly into ArduinoRuntime
-    // if it existed. That path is removed — classes are only queued now.
-    console.log('[OLED/LCD BRIDGE] Library classes queued in _pendingLibraryClasses');
+    // If runtime already exists (re-sync case), inject immediately
+    if (esp32Runtime) {
+      esp32Runtime.injectLibraryClass('Adafruit_SSD1306', RealAdafruitSSD1306);
+      esp32Runtime.injectLibraryClass('Adafruit_ILI9341', RealAdafruitILI9341);
+      esp32Runtime.injectLibraryClass('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
+      this._wireI2CBus(esp32Runtime);
+      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + LCD_I2C + wired I2C bus');
+    } else {
+      console.log('[OLED/LCD BRIDGE] Runtime not yet created — classes queued for initTranspiled()');
+    }
   }
 
-  /** Called by syncCircuitGraph to get registered library classes */
+  /** Called by ESP32C3SimulationRunner.initTranspiled() to get pending library classes */
   public getPendingLibraryClasses(): Map<string, any> {
     return this._pendingLibraryClasses;
   }
 
-  // NOTE: _wireI2CBus was used by ArduinoRuntime transpiled path (now removed).
-  // I2C communication in RISC-V mode is handled by the ESP32C3I2C peripheral.
-  /*
+  /** Wire the I2C bus to an ArduinoRuntime instance */
   private _wireI2CBus(runtime: import('../esp32c3/ArduinoRuntime').ArduinoRuntime) {
     const bus = this.i2cBusManager;
     let _rxBuf: number[] = [], _rxPos = 0;
-    console.log(`[OLED BRIDGE] _wireI2CBus: wiring I2C bus.`);
+    console.log(`[OLED BRIDGE] _wireI2CBus: wiring I2C bus. Registered slaves: ${[...bus['slaves']?.keys() ?? []].map((a: number) => '0x' + a.toString(16)).join(', ')}`);
     runtime.setI2CBus({
       startTransmission(addr: number) {
+        console.log(`[I2C WIRE] beginTransmission(0x${addr.toString(16)})`);
         bus['activeSlave'] = null;
         const slave = bus['slaves']?.get(addr) ?? null;
-        if (slave) { slave.onStart(false); slave.onConnect(true); bus['activeSlave'] = slave; }
+        if (slave) {
+          slave.onStart(false);
+          slave.onConnect(true);
+          bus['activeSlave'] = slave;
+          console.log(`[I2C WIRE] ✓ Connected to slave at 0x${addr.toString(16)}`);
+        } else {
+          console.warn(`[I2C WIRE] ✗ No slave at 0x${addr.toString(16)}`);
+        }
       },
       write(val: number) { const s = bus['activeSlave']; if (s) s.onWrite(val & 0xFF); },
-      endTransmission() { const s = bus['activeSlave']; if (s) s.onStop(); bus['activeSlave'] = null; },
+      endTransmission() {
+        const s = bus['activeSlave'];
+        if (s) s.onStop();
+        bus['activeSlave'] = null;
+      },
       requestFrom(addr: number, qty: number) {
         _rxBuf = []; _rxPos = 0;
         const slave = bus['slaves']?.get(addr) ?? null;
@@ -949,8 +965,8 @@ class CircuitEngine {
       available() { return _rxBuf.length - _rxPos; },
       read() { return _rxPos < _rxBuf.length ? _rxBuf[_rxPos++] : 0; },
     });
+    console.log('[OLED BRIDGE] ✓ Wire → I2CBusManager connected');
   }
-  */
 
   /**
    * Called whenever wires are drawn/removed. Rebuilds the routing table.
@@ -1238,8 +1254,8 @@ class CircuitEngine {
       simulationRunner.TWI.eventHandler = this.i2cBusManager;
     }
 
-    // 2.3 Prepare I2C library classes for display/peripheral emulation
-    // NOTE: Previously this also wired I2C to ArduinoRuntime (transpiled path removed)
+    // 2.3 Wire I2CBusManager into ArduinoRuntime (ESP32 transpiled path)
+    // Applied via syncI2CBridge() called from SimulationRunner.start() after initTranspiled()
     this.syncI2CBridge();
 
     const tickUnifiedSteppers = () => {
@@ -1257,9 +1273,12 @@ class CircuitEngine {
       n.data?.type === 'esp32-c3'
     );
 
+    console.log(`[CIRCUIT ENGINE] Found ${boardNodes.length} board(s) to wire:`, boardNodes.map(b => `${b.id} (${b.data?.type})`));
+
     boardNodes.forEach(board => {
       // Find all wires connected to this Arduino
       const connectedEdges = edges.filter(e => e.source === board.id || e.target === board.id);
+      console.log(`[CIRCUIT ENGINE] Board ${board.id} (${board.data?.type}) has ${connectedEdges.length} connected edges`);
 
       connectedEdges.forEach(edge => {
         // Determine the flow direction (Assuming Board -> Peripheral for now, Phase 3 propagation)
@@ -1281,9 +1300,12 @@ class CircuitEngine {
           // Use the full ESP32 pin map — handles D{n}, VP, VN, RX2, TX2 etc.
           // Power/GND pins return null and are silently skipped.
           const esp32Mapping = simulationRunner.convertESP32Pin(arduinoPinName);
-          if (!esp32Mapping) return;
+          if (!esp32Mapping) {
+            console.warn(`[ESP32 CIRCUIT] ⚠ Failed to map ESP32 pin: "${arduinoPinName}" - skipping wire`);
+            return;
+          }
           pinId = esp32Mapping.avrPin;
-          console.log(`[FORGE CIRCUIT 7SEG] ESP32 Wired: Board[${arduinoPinName}→${pinId}] <==> Peripheral[${peripheralPinName}]`);
+          console.log(`[ESP32 CIRCUIT] ✓ Wired: Board[${arduinoPinName}→${pinId}] <==> Peripheral[${peripheralId}/${peripheralPinName}]`);
         } else {
           const mapping = simulationRunner.convertArduinoPin(arduinoPinName);
           if (!mapping) return;
@@ -1319,6 +1341,7 @@ class CircuitEngine {
             const angle = Math.max(0, Math.min(180, analogValue));
             const currentAngle = currentStateStore.nodes.find(n => n.id === peripheralId)?.data?.angle ?? 0;
             if (Math.abs(currentAngle - angle) >= 0.5) {
+              console.log(`[ESP32 CIRCUIT] Servo ${peripheralId} angle: ${angle}°`);
               updateNodeData(peripheralId, { angle });
             }
             return; // Servo handled — skip normal pin logic
@@ -1326,6 +1349,9 @@ class CircuitEngine {
 
           // ── ESP32 PWM brightness for LEDs/buzzers: map 0-255 to 0.0-1.0
           const pwmIntensity = isAnalogState ? Math.min(1.0, analogValue / 255) : (isHigh ? 1.0 : 0.0);
+          if (isAnalogState && (pType === 'led' || pType === 'buzzer')) {
+            console.log(`[ESP32 CIRCUIT] ${pType} ${peripheralId} PWM: ${analogValue}/255 (intensity: ${pwmIntensity.toFixed(2)})`);
+          }
 
           // Log 7-segment related activity
           /* if (pType === '7segment') {
@@ -2374,15 +2400,21 @@ class CircuitEngine {
 
     // ── ESP32 path ────────────────────────────────────────────────────────
     if (isESP32) {
+      console.log(`[ESP32 CIRCUIT] Processing input signal: node=${nodeId}, pin=${pinName}, value=${isHigh ? 'HIGH' : 'LOW'}`);
+
       const peripheralNode = nodes.find(n => n.id === nodeId);
       const pType = peripheralNode?.data?.type;
       const sv = peripheralNode?.data?.sensorValues;
 
       // Use full ESP32 pin map (handles D{n}, VP, VN, ADC pins etc.)
       const esp32Mapping = simulationRunner.convertESP32Pin(cleanBoardPin);
-      if (!esp32Mapping) return; // power/GND pin — skip
+      if (!esp32Mapping) {
+        console.warn(`[ESP32 CIRCUIT] ⚠ Failed to map pin "${cleanBoardPin}" for ${pType}`);
+        return; // power/GND pin — skip
+      }
 
       const gpioNum = parseInt(esp32Mapping.avrPin.replace('ESP', ''), 10);
+      console.log(`[ESP32 CIRCUIT] Mapped pin "${cleanBoardPin}" → GPIO${gpioNum} (${esp32Mapping.avrPin})`);
 
       // Analog sensors → inject voltage into ESP32 ADC (3.3V reference)
       const analogSensors = [
@@ -2556,6 +2588,77 @@ class CircuitEngine {
         return val > vcc ? (val / 1023) * vcc : val;
       }
     }
+  }
+
+  /**
+   * Diagnostic method to check ESP32 circuit wiring status
+   * Returns detailed information about circuit connections
+   */
+  public getESP32CircuitStatus(): {
+    boardDetected: boolean;
+    boardId: string | null;
+    boardType: string | null;
+    componentsWired: number;
+    sensorsWired: number;
+    wireCount: number;
+    issues: string[];
+  } {
+    const { nodes, edges } = useForgeStore.getState();
+    const issues: string[] = [];
+
+    // Find ESP32 board
+    const esp32Board = nodes.find(n => n.data?.type === 'esp32-c3');
+
+    if (!esp32Board) {
+      issues.push('No ESP32-C3 board found in circuit');
+      return {
+        boardDetected: false,
+        boardId: null,
+        boardType: null,
+        componentsWired: 0,
+        sensorsWired: 0,
+        wireCount: 0,
+        issues
+      };
+    }
+
+    // Count connected components
+    const connectedEdges = edges.filter(e => e.source === esp32Board.id || e.target === esp32Board.id);
+    const connectedNodeIds = new Set<string>();
+
+    connectedEdges.forEach(edge => {
+      const otherId = edge.source === esp32Board.id ? edge.target : edge.source;
+      connectedNodeIds.add(otherId);
+    });
+
+    const connectedNodes = nodes.filter(n => connectedNodeIds.has(n.id));
+
+    // Categorize components
+    const outputComponents = ['led', 'rgb-led', 'buzzer', 'servo', 'dc-motor', 'stepperMotor', 'relay-module', '7segment', 'neopixel'];
+    const inputComponents = ['button', 'potentiometer', 'ldr', 'pir-motion-sensor', 'dht11', 'dht22', 'hc-sr04', 'heart-beat-sensor'];
+
+    const componentsWired = connectedNodes.filter(n => outputComponents.includes(n.data?.type)).length;
+    const sensorsWired = connectedNodes.filter(n => inputComponents.includes(n.data?.type)).length;
+
+    // Check for common issues
+    if (connectedEdges.length === 0) {
+      issues.push('ESP32 board has no wire connections');
+    }
+
+    // Check if simulation runner is initialized
+    if (!simulationRunner.isESP32C3Board) {
+      issues.push('ESP32-C3 simulation runner not initialized');
+    }
+
+    return {
+      boardDetected: true,
+      boardId: esp32Board.id,
+      boardType: esp32Board.data?.type || null,
+      componentsWired,
+      sensorsWired,
+      wireCount: connectedEdges.length,
+      issues
+    };
   }
 }
 

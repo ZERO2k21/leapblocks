@@ -1,0 +1,1080 @@
+Starting trace-esp32.ts...
+Loaded binary: 4194304 bytes
+[FirmwareLoader] Loading firmware: 4194304 bytes
+[FirmwareLoader] First 16 bytes: 0xe9 0x03 0x02 0x2f 0x10 0xbf 0x3c 0x40 0xee 0x00 0x00 0x00 0x05 0x00 0x00 0x00
+[FirmwareLoader] Magic: 0x2f0203e9
+[FirmwareLoader] Detected merged flash image (4194304 bytes) — reading app at offset 0x10000
+[FirmwareLoader] Copying app image header to DROM at 0x3c0c0000
+[FirmwareLoader] DROM segment 0x3c0c0000 (32 bytes)
+[FirmwareLoader] Header: extended (24 bytes), segments=6, entry=0x403807ce
+[FirmwareLoader] DROM segment 0x3c0c0020 (140156 bytes)
+[FirmwareLoader] Segment 0: addr=0x3c0c0020 size=140156 bytes
+[FirmwareLoader] Segment 1: addr=0x3fc90000 size=14244 bytes
+[FirmwareLoader] Segment 2: addr=0x40380000 size=42184 bytes
+[FirmwareLoader] IROM segment 0x42000020 (750696 bytes)
+[FirmwareLoader] Segment 3: addr=0x42000020 size=750696 bytes
+[FirmwareLoader] Segment 4: addr=0x4038a4c8 size=23120 bytes
+[FirmwareLoader] RTC segment at 0x50000000 (32 bytes) — skipped
+[FirmwareLoader] Segment 5: addr=0x50000000 size=32 bytes
+[FirmwareLoader] Flash image loaded: 6 segments, 970432 bytes, entry=0x403807ce
+Loaded firmware: entry=0x403807ce
+[DIAGNOSTIC] Memory at 0x40386b86 BEFORE execution: 0xa0010000
+--- Stuck Loop Disassembly ---
+  0x40386b40: 0x1e1060ef (32-bit)
+  0x40386b44: 0x1141 (16-bit)
+  0x40386b46: 0xc606 (16-bit)
+  0x40386b48: 0x2035 (16-bit)
+  0x40386b4a: 0x1141 (16-bit)
+  0x40386b4c: 0xc422 (16-bit)
+  0x40386b4e: 0x3fc94437 (32-bit)
+  0x40386b52: 0xe4840413 (32-bit)
+  0x40386b56: 0xc226 (16-bit)
+  0x40386b58: 0xc606 (16-bit)
+  0x40386b5a: 0x2040493 (32-bit)
+  0x40386b5e: 0x401c (16-bit)
+  0x40386b60: 0xc391 (16-bit)
+  0x40386b62: 0x9782 (16-bit)
+  0x40386b64: 0x411 (16-bit)
+  0x40386b66: 0xfe941ce3 (32-bit)
+  0x40386b6a: 0x40b2 (16-bit)
+  0x40386b6c: 0x4422 (16-bit)
+  0x40386b6e: 0x4492 (16-bit)
+  0x40386b70: 0x141 (16-bit)
+  0x40386b72: 0x8082 (16-bit)
+  0x40386b74: 0x3fc997b7 (32-bit)
+  0x40386b78: 0x4705 (16-bit)
+  0x40386b7a: 0xa4e78e23 (32-bit)
+  0x40386b7e: 0x3fc997b7 (32-bit)
+  0x40386b82: 0xa4a7ac23 (32-bit)
+  0x40386b86: 0x0 (16-bit)
+  0x40386b88: 0xa001 (16-bit)
+  0x40386b8a: 0x67a1 (16-bit)
+  0x40386b8c: 0x2f56463 (32-bit)
+  0x40386b90: 0x3fc936b7 (32-bit)
+--- Caller Function Disassembly ---
+  0x4038d540: 0xce02 (16-bit)
+  0x4038d542: 0xd002 (16-bit)
+  0x4038d544: 0x2010223 (32-bit)
+  0x4038d548: 0x11423 (32-bit)
+  0x4038d54c: 0xffc73097 (32-bit)
+  0x4038d550: 0xe08080e7 (32-bit)
+  0x4038d554: 0x4641 (16-bit)
+  0x4038d556: 0x85a6 (16-bit)
+  0x4038d558: 0xffd40513 (32-bit)
+  0x4038d55c: 0xffc73097 (32-bit)
+  0x4038d560: 0xeec080e7 (32-bit)
+  0x4038d564: 0x20 (16-bit)
+  0x4038d566: 0x85a2 (16-bit)
+  0x4038d568: 0x4629 (16-bit)
+  0x4038d56a: 0x4501 (16-bit)
+  0x4038d56c: 0xffc73097 (32-bit)
+  0x4038d570: 0xedc080e7 (32-bit)
+  0x4038d574: 0x3fc937b7 (32-bit)
+  0x4038d578: 0xb878793 (32-bit)
+  0x4038d57c: 0xc63e (16-bit)
+  0x4038d57e: 0x3fc937b7 (32-bit)
+  0x4038d582: 0xd478793 (32-bit)
+  0x4038d586: 0xcc22 (16-bit)
+  0x4038d588: 0xc826 (16-bit)
+  0x4038d58a: 0xca3e (16-bit)
+  0x4038d58c: 0x60 (16-bit)
+  0x4038d58e: 0x400c (16-bit)
+  0x4038d590: 0x1028 (16-bit)
+  0x4038d592: 0x411 (16-bit)
+  0x4038d594: 0xffc73097 (32-bit)
+  0x4038d598: 0xe44080e7 (32-bit)
+  0x4038d59c: 0xfe8499e3 (32-bit)
+  0x4038d5a0: 0x1028 (16-bit)
+  0x4038d5a2: 0xda2f90ef (32-bit)
+  0x4038d5a6: 0x7129 (16-bit)
+  0x4038d5a8: 0x3fc997b7 (32-bit)
+  0x4038d5ac: 0x12912a23 (32-bit)
+  0x4038d5b0: 0x864 (16-bit)
+--- MMIO Reader Function Disassembly ---
+  0x40384e80: 0xdc7ff06f (32-bit)
+  0x40384e84: 0x600087b7 (32-bit)
+  0x40384e88: 0x5bb8 (16-bit)
+  0x40384e8a: 0x4515 (16-bit)
+  0x40384e8c: 0x40076713 (32-bit)
+  0x40384e90: 0xdbb8 (16-bit)
+  0x40384e92: 0xffc7b317 (32-bit)
+  0x40384e96: 0x1be30067 (32-bit)
+  0x40384e9a: 0x600087b7 (32-bit)
+  0x40384e9e: 0x5bb8 (16-bit)
+  0x40384ea0: 0x4515 (16-bit)
+  0x40384ea2: 0xbff77713 (32-bit)
+  0x40384ea6: 0xdbb8 (16-bit)
+  0x40384ea8: 0xffc7b317 (32-bit)
+  0x40384eac: 0x1a830067 (32-bit)
+  0x40384eb0: 0x60008737 (32-bit)
+  0x40384eb4: 0x8870713 (32-bit)
+  0x40384eb8: 0x4314 (16-bit)
+  0x40384eba: 0x157793 (32-bit)
+  0x40384ebe: 0x792 (16-bit)
+  0x40384ec0: 0x9abd (16-bit)
+  0x40384ec2: 0x8fd5 (16-bit)
+  0x40384ec4: 0xc31c (16-bit)
+  0x40384ec6: 0x4314 (16-bit)
+  0x40384ec8: 0x155793 (32-bit)
+  0x40384ecc: 0x7641 (16-bit)
+  0x40384ece: 0x167d (16-bit)
+  0x40384ed0: 0x8b85 (16-bit)
+  0x40384ed2: 0x8ef1 (16-bit)
+  0x40384ed4: 0x7c2 (16-bit)
+  0x40384ed6: 0x8fd5 (16-bit)
+  0x40384ed8: 0xc31c (16-bit)
+  0x40384eda: 0x60026737 (32-bit)
+  0x40384ede: 0x9c70713 (32-bit)
+  0x40384ee2: 0x4314 (16-bit)
+  0x40384ee4: 0x655793 (32-bit)
+  0x40384ee8: 0x8b85 (16-bit)
+  0x40384eea: 0x479613 (32-bit)
+  0x40384eee: 0x9abd (16-bit)
+  0x40384ef0: 0x8ed1 (16-bit)
+  0x40384ef2: 0xc314 (16-bit)
+  0x40384ef4: 0x4314 (16-bit)
+  0x40384ef6: 0x279613 (32-bit)
+  0x40384efa: 0x9aed (16-bit)
+  0x40384efc: 0x8ed1 (16-bit)
+  0x40384efe: 0xc314 (16-bit)
+  0x40384f00: 0x4314 (16-bit)
+  0x40384f02: 0x9af9 (16-bit)
+  0x40384f04: 0x8edd (16-bit)
+  0x40384f06: 0xc314 (16-bit)
+  0x40384f08: 0x6001d737 (32-bit)
+  0x40384f0c: 0x4b70 (16-bit)
+  0x40384f0e: 0x455693 (32-bit)
+  0x40384f12: 0x8a85 (16-bit)
+  0x40384f14: 0x369593 (32-bit)
+  0x40384f18: 0x9a5d (16-bit)
+  0x40384f1a: 0x8e4d (16-bit)
+  0x40384f1c: 0xcb70 (16-bit)
+  0x40384f1e: 0x4b70 (16-bit)
+  0x40384f20: 0x686 (16-bit)
+  0x40384f22: 0x9a75 (16-bit)
+  0x40384f24: 0x8ed1 (16-bit)
+  0x40384f26: 0xcb74 (16-bit)
+  0x40384f28: 0x6001d737 (32-bit)
+  0x40384f2c: 0xcd470713 (32-bit)
+  0x40384f30: 0x4310 (16-bit)
+  0x40384f32: 0x555693 (32-bit)
+  0x40384f36: 0x8a85 (16-bit)
+  0x40384f38: 0x569593 (32-bit)
+  0x40384f3c: 0xfdf67613 (32-bit)
+  0x40384f40: 0x8e4d (16-bit)
+  0x40384f42: 0xc310 (16-bit)
+  0x40384f44: 0x4310 (16-bit)
+  0x40384f46: 0x369593 (32-bit)
+  0x40384f4a: 0x686 (16-bit)
+  0x40384f4c: 0x9a5d (16-bit)
+  0x40384f4e: 0x8e4d (16-bit)
+  0x40384f50: 0xc310 (16-bit)
+  0x40384f52: 0x4310 (16-bit)
+  0x40384f54: 0x9a75 (16-bit)
+  0x40384f56: 0x8ed1 (16-bit)
+  0x40384f58: 0xc314 (16-bit)
+  0x40384f5a: 0x600066b7 (32-bit)
+  0x40384f5e: 0x9068693 (32-bit)
+  0x40384f62: 0x4298 (16-bit)
+  0x40384f64: 0x579613 (32-bit)
+  0x40384f68: 0x7aa (16-bit)
+  0x40384f6a: 0xfdf77713 (32-bit)
+  0x40384f6e: 0x8f51 (16-bit)
+  0x40384f70: 0xc298 (16-bit)
+  0x40384f72: 0x600056b7 (32-bit)
+  0x40384f76: 0xf068693 (32-bit)
+  0x40384f7a: 0x4298 (16-bit)
+  0x40384f7c: 0xbff77713 (32-bit)
+  0x40384f80: 0x8fd9 (16-bit)
+  0x40384f82: 0xc29c (16-bit)
+  0x40384f84: 0x600267b7 (32-bit)
+  0x40384f88: 0xac78793 (32-bit)
+  0x40384f8c: 0x4394 (16-bit)
+  0x40384f8e: 0x1051713 (32-bit)
+  0x40384f92: 0x8057513 (32-bit)
+  0x40384f96: 0x8341 (16-bit)
+  0x40384f98: 0xc105 (16-bit)
+  0x40384f9a: 0x3c6e693 (32-bit)
+  0x40384f9e: 0xc394 (16-bit)
+  0x40384fa0: 0x10077713 (32-bit)
+  0x40384fa4: 0x600267b7 (32-bit)
+  0x40384fa8: 0xac78793 (32-bit)
+  0x40384fac: 0xcb09 (16-bit)
+  0x40384fae: 0x4398 (16-bit)
+  0x40384fb0: 0x376713 (32-bit)
+  0x40384fb4: 0xc398 (16-bit)
+  0x40384fb6: 0x8082 (16-bit)
+  0x40384fb8: 0xfc36f693 (32-bit)
+  0x40384fbc: 0xb7cd (16-bit)
+  0x40384fbe: 0x4398 (16-bit)
+  0x40384fc0: 0x9b71 (16-bit)
+------------------------------
+[MMIO READ] 0x600ce098 -> 0x0 at PC=0x4038dcfc
+[ROM CALL] Jumped from 0x40380818 to ROM 0x40000018! ra=0x4038081c
+[ROM CALL] Jumped from 0x4038083e to ROM 0x40000354! ra=0x40380842
+[ROM INTERCEPT] memset dest=0x3fc937b0 val=0x0 len=22128
+[ROM CALL] Jumped from 0x40380866 to ROM 0x40000354! ra=0x4038086a
+[ROM INTERCEPT] memset dest=0x50000000 val=0x0 len=0
+[MMIO READ] 0x600c4040 -> 0x1 at PC=0x4038a048
+[MMIO READ] 0x600c4040 -> 0x1 at PC=0x4038a05a
+[MMIO READ] 0x600c4040 -> 0x1 at PC=0x4038a068
+[MMIO READ] 0x600c4040 -> 0x1 at PC=0x4038a06a
+[ROM CALL] Jumped from 0x4038a094 to ROM 0x40000520! ra=0x4038a098
+[MMIO READ] 0x600c4004 -> 0x1 at PC=0x4038a09c
+[MMIO WRITE] 0x600c4004 <- 0x1 at PC=0x4038a0a0
+[MMIO READ] 0x600c4004 -> 0x1 at PC=0x4038a0a2
+[MMIO WRITE] 0x600c4004 <- 0x1 at PC=0x4038a0a6
+[MMIO READ] 0x600c4004 -> 0x1 at PC=0x4038a0a8
+[MMIO WRITE] 0x600c4004 <- 0x0 at PC=0x4038a0ac
+[MMIO READ] 0x600c4004 -> 0x1 at PC=0x4038a0ae
+[MMIO WRITE] 0x600c4004 <- 0x1 at PC=0x4038a0b0
+[ROM CALL] Jumped from 0x40380894 to ROM 0x40000548! ra=0x40380898
+[ROM CALL] Jumped from 0x4200d750 to ROM 0x40000018! ra=0x4200d754
+[MMIO READ] 0x60008088 -> 0x0 at PC=0x4201007a
+[MMIO WRITE] 0x60008088 <- 0x0 at PC=0x42010090
+[MMIO READ] 0x6000808c -> 0x0 at PC=0x4201009a
+[MMIO WRITE] 0x6000808c <- 0x0 at PC=0x420100a4
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x403847da to ROM 0x40001960! ra=0x403847de
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x403847da to ROM 0x40001960! ra=0x403847de
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x60008034 -> 0x0 at PC=0x420100d8
+[MMIO WRITE] 0x60008034 <- 0x0 at PC=0x420100e2
+[MMIO READ] 0x6000801c -> 0x0 at PC=0x420100e8
+[MMIO WRITE] 0x6000801c <- 0x14000000 at PC=0x420100f6
+[MMIO READ] 0x6000801c -> 0x0 at PC=0x420100f8
+[MMIO WRITE] 0x6000801c <- 0x500 at PC=0x4201010a
+[MMIO READ] 0x6000802c -> 0x0 at PC=0x42010110
+[MMIO WRITE] 0x6000802c <- 0x200 at PC=0x4201011e
+[MMIO READ] 0x60008024 -> 0x0 at PC=0x42010124
+[MMIO WRITE] 0x60008024 <- 0x200 at PC=0x42010134
+[MMIO READ] 0x60008024 -> 0x0 at PC=0x42010136
+[MMIO WRITE] 0x60008024 <- 0x1 at PC=0x42010148
+[MMIO READ] 0x60008024 -> 0x0 at PC=0x4201014a
+[MMIO WRITE] 0x60008024 <- 0x2000000 at PC=0x42010156
+[MMIO READ] 0x60008024 -> 0x0 at PC=0x42010158
+[MMIO WRITE] 0x60008024 <- 0x10000 at PC=0x42010160
+[MMIO READ] 0x60008028 -> 0x0 at PC=0x42010166
+[MMIO WRITE] 0x60008028 <- 0x200 at PC=0x42010170
+[MMIO READ] 0x60008028 -> 0x0 at PC=0x42010172
+[MMIO WRITE] 0x60008028 <- 0x1 at PC=0x4201017c
+[MMIO READ] 0x60008028 -> 0x0 at PC=0x4201017e
+[MMIO WRITE] 0x60008028 <- 0x2000000 at PC=0x42010184
+[MMIO READ] 0x60008028 -> 0x0 at PC=0x42010186
+[MMIO WRITE] 0x60008028 <- 0x10000 at PC=0x4201018c
+[MMIO READ] 0x60008030 -> 0x0 at PC=0x42010192
+[MMIO WRITE] 0x60008030 <- 0x2000000 at PC=0x42010198
+[MMIO READ] 0x60008030 -> 0x0 at PC=0x4201019a
+[MMIO WRITE] 0x60008030 <- 0x10000 at PC=0x420101a0
+[MMIO READ] 0x60008858 -> 0x0 at PC=0x40380a28
+[MMIO READ] 0x60008858 -> 0x0 at PC=0x40380a38
+[MMIO READ] 0x60008850 -> 0x0 at PC=0x40380a3a
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x403847da to ROM 0x40001960! ra=0x403847de
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x403847da to ROM 0x40001960! ra=0x403847de
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600c40ac -> 0x3 at PC=0x42010368
+[MMIO WRITE] 0x600c40ac <- 0x2 at PC=0x4201036c
+[MMIO READ] 0x600c4008 -> 0x3 at PC=0x42010372
+[MMIO WRITE] 0x600c4008 <- 0x2 at PC=0x42010376
+[MMIO READ] 0x600030dc -> 0x0 at PC=0x42010380
+[MMIO WRITE] 0x600030dc <- 0x0 at PC=0x42010384
+[MMIO READ] 0x600020dc -> 0x0 at PC=0x4201038e
+[MMIO WRITE] 0x600020dc <- 0x0 at PC=0x42010392
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x420103a0
+[MMIO WRITE] 0x60008070 <- 0x0 at PC=0x420103aa
+[MMIO READ] 0x60008000 -> 0x0 at PC=0x420103bc
+[MMIO WRITE] 0x60008000 <- 0x0 at PC=0x420103c4
+[MMIO READ] 0x60008034 -> 0x0 at PC=0x420103ca
+[MMIO WRITE] 0x60008034 <- 0x0 at PC=0x420103d4
+[MMIO READ] 0x60008034 -> 0x0 at PC=0x420103d6
+[MMIO WRITE] 0x60008034 <- 0x800000 at PC=0x420103e2
+[MMIO READ] 0x60008034 -> 0x0 at PC=0x420103e4
+[MMIO WRITE] 0x60008034 <- 0x0 at PC=0x420103ee
+[MMIO READ] 0x60008000 -> 0x0 at PC=0x420103f4
+[MMIO WRITE] 0x60008000 <- 0x0 at PC=0x420103fe
+[MMIO READ] 0x60008000 -> 0x0 at PC=0x42010400
+[MMIO WRITE] 0x60008000 <- 0x0 at PC=0x42010406
+[MMIO READ] 0x60008000 -> 0x0 at PC=0x42010408
+[MMIO WRITE] 0x60008000 <- 0x0 at PC=0x4201040e
+[MMIO READ] 0x60008080 -> 0x0 at PC=0x42010418
+[MMIO WRITE] 0x60008080 <- 0x0 at PC=0x42010424
+[MMIO READ] 0x60008080 -> 0x0 at PC=0x42010426
+[MMIO WRITE] 0x60008080 <- 0x0 at PC=0x4201042a
+[MMIO READ] 0x60008080 -> 0x0 at PC=0x42010434
+[MMIO WRITE] 0x60008080 <- 0x10000000 at PC=0x4201043c
+[MMIO READ] 0x600c000c -> 0x1 at PC=0x42010442
+[MMIO WRITE] 0x600c000c <- 0x0 at PC=0x42010448
+[MMIO READ] 0x60008088 -> 0x0 at PC=0x40384eb8
+[MMIO WRITE] 0x60008088 <- 0x0 at PC=0x40384ec4
+[MMIO READ] 0x60008088 -> 0x0 at PC=0x40384ec6
+[MMIO WRITE] 0x60008088 <- 0x0 at PC=0x40384ed8
+[MMIO READ] 0x6002609c -> 0x0 at PC=0x40384ee2
+[MMIO WRITE] 0x6002609c <- 0x0 at PC=0x40384ef2
+[MMIO READ] 0x6002609c -> 0x0 at PC=0x40384ef4
+[MMIO WRITE] 0x6002609c <- 0x0 at PC=0x40384efe
+[MMIO READ] 0x6002609c -> 0x0 at PC=0x40384f00
+[MMIO WRITE] 0x6002609c <- 0x0 at PC=0x40384f06
+[MMIO READ] 0x6001d054 -> 0x0 at PC=0x40384f0c
+[MMIO WRITE] 0x6001d054 <- 0x0 at PC=0x40384f1c
+[MMIO READ] 0x6001d054 -> 0x0 at PC=0x40384f1e
+[MMIO WRITE] 0x6001d054 <- 0x0 at PC=0x40384f26
+[MMIO READ] 0x6001ccd4 -> 0x0 at PC=0x40384f30
+[MMIO WRITE] 0x6001ccd4 <- 0x0 at PC=0x40384f42
+[MMIO READ] 0x6001ccd4 -> 0x0 at PC=0x40384f44
+[MMIO WRITE] 0x6001ccd4 <- 0x0 at PC=0x40384f50
+[MMIO READ] 0x6001ccd4 -> 0x0 at PC=0x40384f52
+[MMIO WRITE] 0x6001ccd4 <- 0x0 at PC=0x40384f58
+[MMIO READ] 0x60006090 -> 0x0 at PC=0x40384f62
+[MMIO WRITE] 0x60006090 <- 0x0 at PC=0x40384f70
+[MMIO READ] 0x600050f0 -> 0x0 at PC=0x40384f7a
+[MMIO WRITE] 0x600050f0 <- 0x0 at PC=0x40384f82
+[MMIO READ] 0x600260ac -> 0x0 at PC=0x40384f8c
+[MMIO WRITE] 0x600260ac <- 0x0 at PC=0x40384f9e
+[MMIO READ] 0x600260ac -> 0x0 at PC=0x40384fbe
+[MMIO WRITE] 0x600260ac <- 0x0 at PC=0x40384fb4
+[MMIO READ] 0x60008088 -> 0x0 at PC=0x4201045a
+[MMIO WRITE] 0x60008088 <- 0x0 at PC=0x42010464
+[MMIO READ] 0x60008088 -> 0x0 at PC=0x42010466
+[MMIO WRITE] 0x60008088 <- 0x0 at PC=0x42010470
+[MMIO READ] 0x60008088 -> 0x0 at PC=0x42010472
+[MMIO WRITE] 0x60008088 <- 0x0 at PC=0x4201047a
+[MMIO READ] 0x60008088 -> 0x0 at PC=0x4201047c
+[MMIO WRITE] 0x60008088 <- 0x0 at PC=0x42010486
+[MMIO READ] 0x60008088 -> 0x0 at PC=0x42010488
+[MMIO WRITE] 0x60008088 <- 0x0 at PC=0x42010490
+[MMIO READ] 0x6000808c -> 0x0 at PC=0x4201049a
+[MMIO WRITE] 0x6000808c <- 0x0 at PC=0x420104a6
+[MMIO READ] 0x6000808c -> 0x0 at PC=0x420104a8
+[MMIO WRITE] 0x6000808c <- 0x0 at PC=0x420104ac
+[MMIO READ] 0x6000808c -> 0x0 at PC=0x420104ae
+[MMIO WRITE] 0x6000808c <- 0x0 at PC=0x420104b8
+[MMIO READ] 0x6000808c -> 0x0 at PC=0x420104ba
+[MMIO WRITE] 0x6000808c <- 0x0 at PC=0x420104c4
+[MMIO READ] 0x6000808c -> 0x0 at PC=0x420104c6
+[MMIO WRITE] 0x6000808c <- 0x0 at PC=0x420104d0
+[MMIO READ] 0x600c0008 -> 0x1 at PC=0x420104e0
+[MMIO WRITE] 0x600c0008 <- 0x1 at PC=0x420104e4
+[MMIO READ] 0x6000808c -> 0x0 at PC=0x420104ee
+[MMIO WRITE] 0x6000808c <- 0x0 at PC=0x420104f6
+[MMIO READ] 0x6000808c -> 0x0 at PC=0x420104f8
+[MMIO WRITE] 0x6000808c <- 0x0 at PC=0x42010500
+[MMIO READ] 0x6000808c -> 0x0 at PC=0x4201050a
+[MMIO WRITE] 0x6000808c <- 0x10000000 at PC=0x42010516
+[MMIO READ] 0x60008088 -> 0x0 at PC=0x42010520
+[MMIO WRITE] 0x60008088 <- 0x20000 at PC=0x4201052a
+[MMIO READ] 0x6000808c -> 0x0 at PC=0x4201052c
+[MMIO WRITE] 0x6000808c <- 0x400000 at PC=0x42010534
+[MMIO READ] 0x60008088 -> 0x0 at PC=0x42010536
+[MMIO WRITE] 0x60008088 <- 0x800 at PC=0x42010540
+[MMIO WRITE] 0x60008040 <- 0x0 at PC=0x42010546
+[MMIO WRITE] 0x6000804c <- 0xffffffff at PC=0x4201054c
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x403847da to ROM 0x40001960! ra=0x403847de
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x6000811c -> 0x0 at PC=0x420106e2
+[MMIO WRITE] 0x6000811c <- 0x0 at PC=0x420106ea
+[MMIO READ] 0x60002008 -> 0xc at PC=0x40380340
+[MMIO READ] 0x60002018 -> 0x0 at PC=0x40380344
+[MMIO READ] 0x6000201c -> 0x1c0 at PC=0x40380348
+[MMIO READ] 0x60002020 -> 0x0 at PC=0x4038034c
+[MMIO WRITE] 0x60002008 <- 0x0 at PC=0x40380350
+[MMIO READ] 0x60002008 -> 0xc at PC=0x40380354
+[MMIO WRITE] 0x60002008 <- 0x20000c at PC=0x40380362
+[MMIO READ] 0x60002018 -> 0x0 at PC=0x40380366
+[MMIO WRITE] 0x60002018 <- 0x80000000 at PC=0x40380376
+[MMIO READ] 0x60002020 -> 0x0 at PC=0x4038037a
+[MMIO WRITE] 0x60002020 <- 0x9f at PC=0x4038039e
+[MMIO READ] 0x60002020 -> 0x0 at PC=0x403803a0
+[MMIO WRITE] 0x60002020 <- 0x70000000 at PC=0x403803b2
+[MMIO READ] 0x6000201c -> 0x1c0 at PC=0x403803b4
+[MMIO WRITE] 0x6000201c <- 0xfc0001c0 at PC=0x403803be
+[MMIO READ] 0x60002018 -> 0x0 at PC=0x403803c0
+[MMIO WRITE] 0x60002018 <- 0x0 at PC=0x403803ce
+[MMIO WRITE] 0x60002004 <- 0x0 at PC=0x403803d0
+[MMIO READ] 0x60002018 -> 0x0 at PC=0x403803e2
+[MMIO WRITE] 0x60002018 <- 0x20000000 at PC=0x403803f4
+[MMIO READ] 0x6000201c -> 0x1c0 at PC=0x403803f8
+[MMIO WRITE] 0x6000201c <- 0x1ff at PC=0x40380406
+[MMIO READ] 0x60002018 -> 0x0 at PC=0x40380408
+[MMIO WRITE] 0x60002018 <- 0x0 at PC=0x4038041a
+[MMIO READ] 0x60002024 -> 0x0 at PC=0x40380428
+[MMIO WRITE] 0x60002024 <- 0x0 at PC=0x40380436
+[MMIO READ] 0x60002018 -> 0x0 at PC=0x40380450
+[MMIO WRITE] 0x60002018 <- 0x10000000 at PC=0x40380462
+[MMIO READ] 0x60002028 -> 0x0 at PC=0x40380470
+[MMIO WRITE] 0x60002028 <- 0x17 at PC=0x40380478
+[MMIO READ] 0x60002000 -> 0x0 at PC=0x4038047a
+[MMIO WRITE] 0x60002000 <- 0x40000 at PC=0x40380482
+[MMIO READ] 0x60002000 -> 0x0 at PC=0x40380484
+[MMIO WRITE] 0x60002008 <- 0xc at PC=0x40380488
+[MMIO WRITE] 0x60002018 <- 0x0 at PC=0x4038048c
+[MMIO WRITE] 0x6000201c <- 0x1c0 at PC=0x40380490
+[MMIO WRITE] 0x60002020 <- 0x0 at PC=0x40380498
+[MMIO READ] 0x60002058 -> 0x1 at PC=0x403804da
+[ROM CALL] Jumped from 0x42054312 to ROM 0x40000354! ra=0x42054316
+[ROM INTERCEPT] memset dest=0x3fcdff78 val=0x0 len=40
+[ROM CALL] Jumped from 0x4200c20a to ROM 0x4000071c! ra=0x4200c20e
+[ROM CALL] Jumped from 0x4200c25e to ROM 0x4000077c! ra=0x4200c262
+[ROM CALL] Jumped from 0x4200c20a to ROM 0x4000071c! ra=0x4200c20e
+[ROM CALL] Jumped from 0x4200c25e to ROM 0x4000077c! ra=0x4200c262
+[ROM CALL] Jumped from 0x4200c20a to ROM 0x4000071c! ra=0x4200c20e
+[ROM CALL] Jumped from 0x4200c25e to ROM 0x4000077c! ra=0x4200c262
+[ROM CALL] Jumped from 0x4200c20a to ROM 0x4000071c! ra=0x4200c20e
+[ROM CALL] Jumped from 0x4200c25e to ROM 0x4000077c! ra=0x4200c262
+[ROM CALL] Jumped from 0x4200c20a to ROM 0x4000071c! ra=0x4200c20e
+[ROM CALL] Jumped from 0x4200c25e to ROM 0x4000077c! ra=0x4200c262
+[ROM CALL] Jumped from 0x4200c1ea to ROM 0x4000072c! ra=0x4200c1ee
+[ROM CALL] Jumped from 0x4200c25e to ROM 0x4000077c! ra=0x4200c262
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600080b8 -> 0x0 at PC=0x403815b0
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x40384962
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x403848ee
+[MMIO WRITE] 0x60008070 <- 0x0 at PC=0x40384900
+[MMIO READ] 0x6000801c -> 0x0 at PC=0x40384906
+[MMIO WRITE] 0x6000801c <- 0x140 at PC=0x40384914
+[ROM CALL] Jumped from 0x4038491e to ROM 0x40000050! ra=0x40384922
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x40384926
+[MMIO WRITE] 0x60008070 <- 0x0 at PC=0x40384936
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x40384a88
+[MMIO WRITE] 0x60008070 <- 0x20000000 at PC=0x40384a7c
+[ROM CALL] Jumped from 0x40384a84 to ROM 0x40000050! ra=0x4200d7ca
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x40384a0e
+[MMIO WRITE] 0x600080a8 <- 0x50d83aa1 at PC=0x4038b9ce
+[MMIO READ] 0x600080a4 -> 0x0 at PC=0x4038ba64
+[MMIO WRITE] 0x600080a4 <- 0x80000000 at PC=0x4038ba6e
+[ROM CALL] Jumped from 0x4200d80a to ROM 0x400008ac! ra=0x4200d80e
+[MMIO READ] 0x60008090 -> 0x0 at PC=0x4038b8ce
+[MMIO WRITE] 0x60008090 <- 0x40000000 at PC=0x4038b8de
+[MMIO READ] 0x60008834 -> 0x0 at PC=0x4038b8ea
+[MMIO WRITE] 0x60008094 <- 0x67c2800 at PC=0x4038b8f6
+[MMIO WRITE] 0x600080a8 <- 0x0 at PC=0x4038b9de
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x40384a0e
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x403849c8
+[MMIO WRITE] 0x60008070 <- 0x0 at PC=0x403849ce
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x403849d4
+[MMIO WRITE] 0x60008070 <- 0x0 at PC=0x403849fa
+[ROM CALL] Jumped from 0x40384a06 to ROM 0x40000050! ra=0x4200d6f2
+[MMIO READ] 0x600080b8 -> 0x0 at PC=0x403815b0
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x40384a0e
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x40384ff2
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x40385010
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x40385014
+[MMIO READ] 0x6001f068 -> 0x8000 at PC=0x40385032
+[MMIO READ] 0x6001f068 -> 0x8000 at PC=0x40385068
+[MMIO WRITE] 0x6001f068 <- 0x8000 at PC=0x4038507a
+[MMIO READ] 0x6001f068 -> 0x8000 at PC=0x4038507c
+[MMIO WRITE] 0x6001f068 <- 0x8000 at PC=0x40385084
+[MMIO READ] 0x6001f068 -> 0x8000 at PC=0x40385086
+[MMIO WRITE] 0x6001f068 <- 0x2408000 at PC=0x4038509c
+[MMIO READ] 0x6001f080 -> 0x80000000 at PC=0x4038517c
+[MMIO WRITE] 0x6001f080 <- 0x4800000 at PC=0x4038518c
+[MMIO READ] 0x6001f068 -> 0x8000 at PC=0x403850c8
+[MMIO WRITE] 0x6001f068 <- 0x8000 at PC=0x403850da
+[MMIO READ] 0x6001f068 -> 0x8000 at PC=0x403850de
+[MMIO WRITE] 0x6001f068 <- 0x80008000 at PC=0x403850ea
+[ROM CALL] Jumped from 0x403850f6 to ROM 0x400008ac! ra=0x403850fa
+[ROM CALL] Jumped from 0x403850fe to ROM 0x40000050! ra=0x40385102
+[MMIO READ] 0x6001f068 -> 0x8000 at PC=0x4038510c
+[MMIO READ] 0x6001f06c -> 0xfff00 at PC=0x40385118
+[MMIO READ] 0x6001f068 -> 0x8000 at PC=0x40385120
+[MMIO WRITE] 0x6001f068 <- 0x8000 at PC=0x40385126
+[ROM CALL] Jumped from 0x403852a8 to ROM 0x400008ac! ra=0x403852ac
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[MMIO READ] 0x60008054 -> 0x0 at PC=0x4200ec92
+[ROM CALL] Jumped from 0x4200ecbc to ROM 0x40000354! ra=0x4200ecc0
+[ROM INTERCEPT] memset dest=0x50001fd8 val=0x0 len=24
+[MMIO READ] 0x6000800c -> 0x0 at PC=0x40385370
+[MMIO WRITE] 0x6000800c <- 0x80000000 at PC=0x40385378
+[MMIO READ] 0x60008010 -> 0x0 at PC=0x4038537e
+[MMIO READ] 0x60008014 -> 0x0 at PC=0x40385380
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO WRITE] 0x60008054 <- 0xfff02cff at PC=0x4200ed64
+[MMIO READ] 0x60008070 -> 0x0 at PC=0x40384a0e
+[MMIO WRITE] 0x600080a8 <- 0x50d83aa1 at PC=0x4038b9ce
+[MMIO READ] 0x600080a4 -> 0x0 at PC=0x4038ba64
+[MMIO WRITE] 0x600080a4 <- 0x80000000 at PC=0x4038ba6e
+[MMIO READ] 0x60008090 -> 0x0 at PC=0x4038b8ce
+[MMIO WRITE] 0x60008090 <- 0x40000000 at PC=0x4038b8de
+[MMIO READ] 0x60008834 -> 0x0 at PC=0x4038b8ea
+[MMIO WRITE] 0x60008094 <- 0x956a0 at PC=0x4038b8f6
+[MMIO WRITE] 0x600080a8 <- 0x0 at PC=0x4038b9de
+[MMIO READ] 0x600c0058 -> 0x1 at PC=0x40384afc
+[MMIO READ] 0x600c0058 -> 0x1 at PC=0x40384b18
+[MMIO READ] 0x600080b8 -> 0x0 at PC=0x403815b0
+[MMIO READ] 0x600080b8 -> 0x0 at PC=0x403815b0
+[ROM CALL] Jumped from 0x4200d8a2 to ROM 0x40000084! ra=0x4200d8a6
+[MMIO READ] 0x600c0058 -> 0x1 at PC=0x40384c4e
+[MMIO READ] 0x60008000 -> 0x0 at PC=0x40384cb6
+[MMIO WRITE] 0x60008000 <- 0x0 at PC=0x40384cbc
+[MMIO READ] 0x600080b8 -> 0x0 at PC=0x403815b0
+[MMIO READ] 0x600c0008 -> 0x1 at PC=0x40384dce
+[MMIO WRITE] 0x600c0008 <- 0x5 at PC=0x40384ce4
+[MMIO READ] 0x6000e040 -> 0x0 at PC=0x40384cea
+[MMIO WRITE] 0x6000e040 <- 0x0 at PC=0x40384cee
+[MMIO READ] 0x6000e040 -> 0x0 at PC=0x40384cf0
+[MMIO WRITE] 0x6000e040 <- 0x8 at PC=0x40384cf6
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x4038479e to ROM 0x4000195c! ra=0x403847a2
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x4038479e to ROM 0x4000195c! ra=0x403847a2
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x4038479e to ROM 0x4000195c! ra=0x403847a2
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x403847da to ROM 0x40001960! ra=0x403847de
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x403847da to ROM 0x40001960! ra=0x403847de
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x4038479e to ROM 0x4000195c! ra=0x403847a2
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x403847da to ROM 0x40001960! ra=0x403847de
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x403847da to ROM 0x40001960! ra=0x403847de
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[ROM CALL] Jumped from 0x403847da to ROM 0x40001960! ra=0x403847de
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600c0008 -> 0x1 at PC=0x40384c3c
+[MMIO WRITE] 0x600c0008 <- 0x1 at PC=0x40384c02
+[MMIO READ] 0x600c0058 -> 0x1 at PC=0x40384c08
+[MMIO WRITE] 0x600c0058 <- 0x0 at PC=0x40384c14
+[MMIO READ] 0x600c0058 -> 0x1 at PC=0x40384c16
+[MMIO WRITE] 0x600c0058 <- 0x401 at PC=0x40384c26
+[MMIO WRITE] 0x600080bc <- 0x4c4b4c4b at PC=0x403815ee
+[ROM CALL] Jumped from 0x40384c38 to ROM 0x40000588! ra=0x4200d8b0
+[ROM INTERCEPT] ets_update_cpu_frequency ticks=160
+[ROM CALL] Jumped from 0x4200d8c8 to ROM 0x400008ac! ra=0x4200d8cc
+[ROM CALL] Jumped from 0x4200d8e2 to ROM 0x40000018! ra=0x4200d8e6
+[MMIO READ] 0x600c0010 -> 0xffffffff at PC=0x4200d936
+[MMIO WRITE] 0x600c0010 <- 0x77926417 at PC=0x4200d944
+[MMIO READ] 0x600c0018 -> 0x0 at PC=0x4200d94a
+[MMIO WRITE] 0x600c0018 <- 0x886d9be8 at PC=0x4200d94e
+[MMIO READ] 0x600c0014 -> 0x600 at PC=0x4200d954
+[MMIO WRITE] 0x600c0014 <- 0x600 at PC=0x4200d958
+[MMIO READ] 0x600c001c -> 0x0 at PC=0x4200d95a
+[MMIO WRITE] 0x600c001c <- 0x0 at PC=0x4200d962
+[MMIO READ] 0x600c0014 -> 0x600 at PC=0x4200d964
+[MMIO WRITE] 0x600c0014 <- 0x600 at PC=0x4200d96c
+[MMIO READ] 0x600c001c -> 0x0 at PC=0x4200d96e
+[MMIO WRITE] 0x600c001c <- 0xe at PC=0x4200d974
+[MMIO READ] 0x60026014 -> 0x0 at PC=0x4200d97a
+[MMIO WRITE] 0x60026014 <- 0x0 at PC=0x4200d986
+[MMIO READ] 0x60026014 -> 0x0 at PC=0x4200d988
+[MMIO WRITE] 0x60026014 <- 0xfb9fcf at PC=0x4200d98c
+[MMIO READ] 0x600c0020 -> 0x0 at PC=0x4200d992
+[MMIO WRITE] 0x600c0020 <- 0x0 at PC=0x4200d998
+[MMIO READ] 0x600c0024 -> 0x0 at PC=0x4200d99e
+[MMIO WRITE] 0x600c0024 <- 0x0 at PC=0x4200d9a8
+[MMIO READ] 0x600c0024 -> 0x0 at PC=0x4200d9aa
+[MMIO WRITE] 0x600c0024 <- 0x1000000 at PC=0x4200d9b6
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[MMIO READ] 0x60026014 -> 0x0 at PC=0x420b5c5e
+[MMIO WRITE] 0x60026014 <- 0x8000 at PC=0x420b5c6e
+[MMIO READ] 0x60026018 -> 0x0 at PC=0x420b5c78
+[MMIO WRITE] 0x60026018 <- 0x0 at PC=0x420b5c92
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[MMIO READ] 0x600c2194 -> 0x0 at PC=0x4038802a
+[MMIO WRITE] 0x600c2194 <- 0x4 at PC=0x4038802e
+[MMIO READ] 0x60008054 -> 0x0 at PC=0x4200ec92
+[ROM CALL] Jumped from 0x4200ecbc to ROM 0x40000354! ra=0x4200ecc0
+[ROM INTERCEPT] memset dest=0x50001fd8 val=0x0 len=24
+[MMIO READ] 0x6000800c -> 0x0 at PC=0x40385370
+[MMIO WRITE] 0x6000800c <- 0x80000000 at PC=0x40385378
+[MMIO READ] 0x60008010 -> 0x0 at PC=0x4038537e
+[MMIO READ] 0x60008014 -> 0x0 at PC=0x40385380
+[MMIO WRITE] 0x600c2194 <- 0x0 at PC=0x4038803a
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=0 intr_num=0
+[MMIO WRITE] 0x600c2000 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=1 intr_num=0
+[MMIO WRITE] 0x600c2004 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=2 intr_num=0
+[MMIO WRITE] 0x600c2008 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=3 intr_num=0
+[MMIO WRITE] 0x600c200c <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=4 intr_num=0
+[MMIO WRITE] 0x600c2010 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=5 intr_num=0
+[MMIO WRITE] 0x600c2014 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=6 intr_num=0
+[MMIO WRITE] 0x600c2018 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=7 intr_num=0
+[MMIO WRITE] 0x600c201c <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=8 intr_num=0
+[MMIO WRITE] 0x600c2020 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=9 intr_num=0
+[MMIO WRITE] 0x600c2024 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=10 intr_num=0
+[MMIO WRITE] 0x600c2028 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=11 intr_num=0
+[MMIO WRITE] 0x600c202c <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=12 intr_num=0
+[MMIO WRITE] 0x600c2030 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=13 intr_num=0
+[MMIO WRITE] 0x600c2034 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=14 intr_num=0
+[MMIO WRITE] 0x600c2038 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=15 intr_num=0
+[MMIO WRITE] 0x600c203c <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=16 intr_num=0
+[MMIO WRITE] 0x600c2040 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=17 intr_num=0
+[MMIO WRITE] 0x600c2044 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=18 intr_num=0
+[MMIO WRITE] 0x600c2048 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=19 intr_num=0
+[MMIO WRITE] 0x600c204c <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=20 intr_num=0
+[MMIO WRITE] 0x600c2050 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=21 intr_num=0
+[MMIO WRITE] 0x600c2054 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=22 intr_num=0
+[MMIO WRITE] 0x600c2058 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=23 intr_num=0
+[MMIO WRITE] 0x600c205c <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=24 intr_num=0
+[MMIO WRITE] 0x600c2060 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=25 intr_num=0
+[MMIO WRITE] 0x600c2064 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=26 intr_num=0
+[MMIO WRITE] 0x600c2068 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=27 intr_num=0
+[MMIO WRITE] 0x600c206c <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=28 intr_num=0
+[MMIO WRITE] 0x600c2070 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=29 intr_num=0
+[MMIO WRITE] 0x600c2074 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=30 intr_num=0
+[MMIO WRITE] 0x600c2078 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=31 intr_num=0
+[MMIO WRITE] 0x600c207c <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=32 intr_num=0
+[MMIO WRITE] 0x600c2080 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=33 intr_num=0
+[MMIO WRITE] 0x600c2084 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=34 intr_num=0
+[MMIO WRITE] 0x600c2088 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=35 intr_num=0
+[MMIO WRITE] 0x600c208c <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=36 intr_num=0
+[MMIO WRITE] 0x600c2090 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=37 intr_num=0
+[MMIO WRITE] 0x600c2094 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=38 intr_num=0
+[MMIO WRITE] 0x600c2098 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=39 intr_num=0
+[MMIO WRITE] 0x600c209c <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=40 intr_num=0
+[MMIO WRITE] 0x600c20a0 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=41 intr_num=0
+[MMIO WRITE] 0x600c20a4 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=42 intr_num=0
+[MMIO WRITE] 0x600c20a8 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=43 intr_num=0
+[MMIO WRITE] 0x600c20ac <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=44 intr_num=0
+[MMIO WRITE] 0x600c20b0 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=45 intr_num=0
+[MMIO WRITE] 0x600c20b4 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=46 intr_num=0
+[MMIO WRITE] 0x600c20b8 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=47 intr_num=0
+[MMIO WRITE] 0x600c20bc <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=48 intr_num=0
+[MMIO WRITE] 0x600c20c0 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=49 intr_num=0
+[MMIO WRITE] 0x600c20c4 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=50 intr_num=0
+[MMIO WRITE] 0x600c20c8 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=51 intr_num=0
+[MMIO WRITE] 0x600c20cc <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=52 intr_num=0
+[MMIO WRITE] 0x600c20d0 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=53 intr_num=0
+[MMIO WRITE] 0x600c20d4 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=54 intr_num=0
+[MMIO WRITE] 0x600c20d8 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=55 intr_num=0
+[MMIO WRITE] 0x600c20dc <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=56 intr_num=0
+[MMIO WRITE] 0x600c20e0 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=57 intr_num=0
+[MMIO WRITE] 0x600c20e4 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=58 intr_num=0
+[MMIO WRITE] 0x600c20e8 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=59 intr_num=0
+[MMIO WRITE] 0x600c20ec <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=60 intr_num=0
+[MMIO WRITE] 0x600c20f0 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200cea6 to ROM 0x400005f4! ra=0x4200ceaa
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=61 intr_num=0
+[MMIO WRITE] 0x600c20f4 <- 0x0 at PC=0x400005f4
+[ROM CALL] Jumped from 0x40380fe2 to ROM 0x40000584! ra=0x40380fe6
+[ROM INTERCEPT] ets_get_cpu_frequency -> 160
+[MMIO READ] 0x600080b8 -> 0x0 at PC=0x403815b0
+[ROM CALL] Jumped from 0x4200cec6 to ROM 0x40000084! ra=0x4200ceca
+[ROM CALL] Jumped from 0x4200cee6 to ROM 0x400008ac! ra=0x4200ceea
+[ROM CALL] Jumped from 0x40381208 to ROM 0x400005ec! ra=0x4038120c
+[ROM INTERCEPT] esprv_intc_int_disable intr_num=33554432
+[ROM CALL] Jumped from 0x4200da7e to ROM 0x400005f4! ra=0x4200da82
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=36 intr_num=25
+[MMIO WRITE] 0x600c2090 <- 0x19 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200da8e to ROM 0x400005f4! ra=0x4200da92
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=61 intr_num=25
+[MMIO WRITE] 0x600c20f4 <- 0x19 at PC=0x400005f4
+[ROM CALL] Jumped from 0x4200da9a to ROM 0x400005f0! ra=0x4200da9e
+[ROM INTERCEPT] esprv_intc_int_set_type intr_num=25 type=0
+[ROM CALL] Jumped from 0x4200daa6 to ROM 0x400005e0! ra=0x4200daaa
+[ROM INTERCEPT] esprv_intc_int_set_priority intr_num=25 priority=4
+[MMIO READ] 0x600c4088 -> 0x0 at PC=0x4200dab2
+[MMIO WRITE] 0x600c4088 <- 0x3f at PC=0x4200dabc
+[MMIO READ] 0x600c4084 -> 0x0 at PC=0x4200dac6
+[MMIO WRITE] 0x600c4084 <- 0x3f at PC=0x4200dacc
+[MMIO READ] 0x600c407c -> 0x0 at PC=0x4200dad2
+[MMIO WRITE] 0x600c407c <- 0x23 at PC=0x4200dad8
+[MMIO READ] 0x600c4078 -> 0x0 at PC=0x4200dade
+[MMIO WRITE] 0x600c4078 <- 0x23 at PC=0x4200dae4
+[ROM CALL] Jumped from 0x40381170 to ROM 0x400005e8! ra=0x40381174
+[ROM INTERCEPT] esprv_intc_int_enable intr_num=33554432
+[MMIO READ] 0x600c1090 -> 0x0 at PC=0x42010b3e
+[MMIO READ] 0x600c1090 -> 0x0 at PC=0x42010b42
+[MMIO READ] 0x600c10a8 -> 0x0 at PC=0x42010b4a
+[MMIO READ] 0x600c10c0 -> 0x0 at PC=0x42010b4e
+[MMIO READ] 0x600c10b4 -> 0x0 at PC=0x42010b54
+[MMIO READ] 0x600c10c8 -> 0x0 at PC=0x42010b5a
+[MMIO READ] 0x600c1130 -> 0x0 at PC=0x42010b68
+[MMIO READ] 0x600ce098 -> 0x0 at PC=0x4038dcfc
+[MMIO READ] 0x600c10b8 -> 0x0 at PC=0x42010db4
+[MMIO WRITE] 0x600c10b8 <- 0x0 at PC=0x42010db8
+[MMIO READ] 0x600c10cc -> 0x0 at PC=0x42010dc6
+[MMIO WRITE] 0x600c10cc <- 0x0 at PC=0x42010dca
+[MMIO READ] 0x600c1134 -> 0x0 at PC=0x42010dd6
+[MMIO WRITE] 0x600c1134 <- 0x0 at PC=0x42010dda
+[ROM CALL] Jumped from 0x40381208 to ROM 0x400005ec! ra=0x4038120c
+[ROM INTERCEPT] esprv_intc_int_disable intr_num=67108864
+[ROM CALL] Jumped from 0x42010dfc to ROM 0x400005f4! ra=0x42010e00
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=56 intr_num=26
+[MMIO WRITE] 0x600c20e0 <- 0x1a at PC=0x400005f4
+[ROM CALL] Jumped from 0x42010e08 to ROM 0x400005f0! ra=0x42010e0c
+[ROM INTERCEPT] esprv_intc_int_set_type intr_num=26 type=0
+[ROM CALL] Jumped from 0x42010e14 to ROM 0x400005e0! ra=0x42010e18
+[ROM INTERCEPT] esprv_intc_int_set_priority intr_num=26 priority=4
+[ROM CALL] Jumped from 0x40381170 to ROM 0x400005e8! ra=0x40381174
+[ROM INTERCEPT] esprv_intc_int_enable intr_num=67108864
+[ROM CALL] Jumped from 0x40381208 to ROM 0x400005ec! ra=0x4038120c
+[ROM INTERCEPT] esprv_intc_int_disable intr_num=67108864
+[ROM CALL] Jumped from 0x42010e3c to ROM 0x400005f4! ra=0x42010e40
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=57 intr_num=26
+[MMIO WRITE] 0x600c20e4 <- 0x1a at PC=0x400005f4
+[ROM CALL] Jumped from 0x42010e48 to ROM 0x400005f0! ra=0x42010e4c
+[ROM INTERCEPT] esprv_intc_int_set_type intr_num=26 type=0
+[ROM CALL] Jumped from 0x42010e54 to ROM 0x400005e0! ra=0x42010e58
+[ROM INTERCEPT] esprv_intc_int_set_priority intr_num=26 priority=4
+[ROM CALL] Jumped from 0x40381170 to ROM 0x400005e8! ra=0x40381174
+[ROM INTERCEPT] esprv_intc_int_enable intr_num=67108864
+[ROM CALL] Jumped from 0x40381208 to ROM 0x400005ec! ra=0x4038120c
+[ROM INTERCEPT] esprv_intc_int_disable intr_num=67108864
+[ROM CALL] Jumped from 0x42010e7a to ROM 0x400005f4! ra=0x42010e7e
+[ROM INTERCEPT] intr_matrix_set cpu_no=0 source=58 intr_num=26
+[MMIO WRITE] 0x600c20e8 <- 0x1a at PC=0x400005f4
+[ROM CALL] Jumped from 0x42010e86 to ROM 0x400005f0! ra=0x42010e8a
+[ROM INTERCEPT] esprv_intc_int_set_type intr_num=26 type=0
+[ROM CALL] Jumped from 0x42010e92 to ROM 0x400005e0! ra=0x42010e96
+[ROM INTERCEPT] esprv_intc_int_set_priority intr_num=26 priority=4
+[ROM CALL] Jumped from 0x40381170 to ROM 0x400005e8! ra=0x40381174
+[ROM INTERCEPT] esprv_intc_int_enable intr_num=67108864
+[MMIO WRITE] 0x600c109c <- 0x20003e at PC=0x42010812
+[MMIO WRITE] 0x600c1098 <- 0x20003e at PC=0x42010812
+[MMIO WRITE] 0x600c1094 <- 0x20003e at PC=0x42010812
+[MMIO WRITE] 0x600c10a0 <- 0x20003e at PC=0x4201086c
+[MMIO WRITE] 0x600c10a4 <- 0x20003e at PC=0x4201086c
+[MMIO READ] 0x600c10b0 -> 0x0 at PC=0x42010f24
+[MMIO WRITE] 0x600c10b0 <- 0x5 at PC=0x42010f32
+[MMIO READ] 0x600c10b0 -> 0x0 at PC=0x42010f34
+[MMIO WRITE] 0x600c10b0 <- 0x28 at PC=0x42010f3e
+[MMIO READ] 0x600c10b0 -> 0x0 at PC=0x42010f40
+[MMIO WRITE] 0x600c10b0 <- 0x140 at PC=0x42010f4a
+[MMIO READ] 0x600c10b0 -> 0x0 at PC=0x42010f4c
+[MMIO WRITE] 0x600c10b0 <- 0x0 at PC=0x42010f50
+[MMIO READ] 0x600c10c4 -> 0x0 at PC=0x42010f5e
+[MMIO WRITE] 0x600c10c4 <- 0x0 at PC=0x42010f62
+[MMIO READ] 0x600c10c4 -> 0x0 at PC=0x42010f64
+[MMIO WRITE] 0x600c10c4 <- 0xc at PC=0x42010f6a
+[MMIO READ] 0x600c10c4 -> 0x0 at PC=0x42010f6c
+[MMIO WRITE] 0x600c10c4 <- 0x30 at PC=0x42010f72
+[MMIO READ] 0x600c10c4 -> 0x0 at PC=0x42010f74
+[MMIO WRITE] 0x600c10c4 <- 0xc0 at PC=0x42010f7a
+[MMIO READ] 0x600c10fc -> 0x0 at PC=0x42010920
+[MMIO WRITE] 0x600c10fc <- 0x0 at PC=0x4201092c
+[MMIO READ] 0x600c10fc -> 0x0 at PC=0x4201092e
+[MMIO WRITE] 0x600c10fc <- 0x0 at PC=0x42010932
+[MMIO READ] 0x600c1100 -> 0x0 at PC=0x42010ade
+[MMIO WRITE] 0x600c1100 <- 0x0 at PC=0x42010ae2
+[MMIO READ] 0x600c1100 -> 0x0 at PC=0x42010ae4
+[MMIO WRITE] 0x600c1100 <- 0x6 at PC=0x42010aa8
+[MMIO READ] 0x600c1100 -> 0x0 at PC=0x420109f2
+[MMIO WRITE] 0x600c1100 <- 0x0 at PC=0x420109fa
+[MMIO READ] 0x600c1100 -> 0x0 at PC=0x420109fc
+[MMIO WRITE] 0x600c1100 <- 0x18 at PC=0x42010aa8
+[MMIO READ] 0x600c10b8 -> 0x0 at PC=0x42010f8a
+[MMIO WRITE] 0x600c10b8 <- 0x1 at PC=0x42010f90
+[MMIO READ] 0x600c10b8 -> 0x0 at PC=0x42010f92
+[MMIO WRITE] 0x600c10b8 <- 0x0 at PC=0x42010f96
+[MMIO READ] 0x600c10b8 -> 0x0 at PC=0x42010f98
+[MMIO WRITE] 0x600c10b8 <- 0x2 at PC=0x42010f9e
+[MMIO READ] 0x600c10cc -> 0x0 at PC=0x42010fac
+[MMIO WRITE] 0x600c10cc <- 0x1 at PC=0x42010fb2
+[MMIO READ] 0x600c10cc -> 0x0 at PC=0x42010fb4
+[MMIO WRITE] 0x600c10cc <- 0x0 at PC=0x42010fb8
+[MMIO READ] 0x600c10cc -> 0x0 at PC=0x42010fba
+[MMIO WRITE] 0x600c10cc <- 0x2 at PC=0x42010fc0
+[MMIO READ] 0x600c1134 -> 0x0 at PC=0x42010fcc
+[MMIO WRITE] 0x600c1134 <- 0x1 at PC=0x42010fd2
+[MMIO READ] 0x600c1134 -> 0x0 at PC=0x42010fd4
+[MMIO WRITE] 0x600c1134 <- 0x0 at PC=0x42010fd8
+[MMIO READ] 0x600c1134 -> 0x0 at PC=0x42010fda
+[MMIO WRITE] 0x600c1134 <- 0x2 at PC=0x42010fe0
+[MMIO WRITE] 0x600c1090 <- 0x1 at PC=0x42010ff4
+[MMIO WRITE] 0x600c10a8 <- 0x1 at PC=0x42010ff8
+[MMIO WRITE] 0x600c10b4 <- 0x1 at PC=0x42010ffc
+[MMIO WRITE] 0x600c1090 <- 0x1 at PC=0x4201100a
+[MMIO WRITE] 0x600c10c0 <- 0x1 at PC=0x4201100e
+[MMIO WRITE] 0x600c10c8 <- 0x1 at PC=0x42011012
+[MMIO WRITE] 0x600c10d8 <- 0x1 at PC=0x42011024
+[MMIO WRITE] 0x600c10d8 <- 0x1 at PC=0x42011026
+[MMIO WRITE] 0x600c1130 <- 0x1 at PC=0x4201102c
+[MMIO READ] 0x6000883c -> 0x0 at PC=0x4200b2c4
+[ROM CALL] Jumped from 0x40380fba to ROM 0x40000584! ra=0x40380fbe
+[ROM INTERCEPT] ets_get_cpu_frequency -> 160
+[ROM CALL] Jumped from 0x4200eaa6 to ROM 0x40000434! ra=0x4200eaaa
+[ROM CALL] Jumped from 0x4038d5f2 to ROM 0x40000448! ra=0x4038d5f6
+[ROM INTERCEPT] itoa value=88 dest=0x3fcdfc6c base=10 -> "88"
+[MMIO READ] 0x600c4000 -> 0x1 at PC=0x4038a128
+[ROM CALL] Jumped from 0x4038d6b4 to ROM 0x40000374! ra=0x4038d6b8
+[ROM INTERCEPT] strlen s=0x3fc930f8 ("assert failed: ") -> 15
+[ROM CALL] Jumped from 0x4038d6b4 to ROM 0x40000374! ra=0x4038d6b8
+[ROM INTERCEPT] strlen s=0x3c0d35fc ("s_prepare_reserved_regions") -> 26
+[ROM CALL] Jumped from 0x4038d6b4 to ROM 0x40000374! ra=0x4038d6b8
+[ROM INTERCEPT] strlen s=0x3fc93658 (" ") -> 1
+[ROM CALL] Jumped from 0x4038d6b4 to ROM 0x40000374! ra=0x4038d6b8
+[ROM INTERCEPT] strlen s=0x3c0c493f ("memory_layout_utils.c") -> 21
+[ROM CALL] Jumped from 0x4038d6b4 to ROM 0x40000374! ra=0x4038d6b8
+[ROM INTERCEPT] strlen s=0x3fc93108 (":") -> 1
+[ROM CALL] Jumped from 0x4038d6b4 to ROM 0x40000374! ra=0x4038d6b8
+[ROM INTERCEPT] strlen s=0x3fcdfc6c ("88") -> 2
+[ROM CALL] Jumped from 0x4038d6b4 to ROM 0x40000374! ra=0x4038d6b8
+[ROM INTERCEPT] strlen s=0x3fc9310c (" (") -> 2
+[ROM CALL] Jumped from 0x4038d6b4 to ROM 0x40000374! ra=0x4038d6b8
+[ROM INTERCEPT] strlen s=0x3c0c4958 ("reserved[i + 1].start > reserved[i].start") -> 41
+[ROM CALL] Jumped from 0x4038d6b4 to ROM 0x40000374! ra=0x4038d6b8
+[ROM INTERCEPT] strlen s=0x3fc93110 (")") -> 1
+[TRACE] Reached abort/panic entry point 0x40386b44!
+Registers: x0=0x0, x1=0x4038d6ee, x2=0x3fcdfc50, x3=0x3fc90800, x4=0x0, x5=0x64657672, x6=0x2b20695b, x7=0x2e5d695b, x8=0x1, x9=0x3fcdfdde, x10=0x3fcdfca4, x11=0x3fc93111, x12=0x1, x13=0x3fcdfd12, x14=0x3fcdfc60, x15=0x17e, x16=0x4, x17=0x64657672, x18=0x59, x19=0x3fcdfc98, x20=0x3fcdfc98, x21=0x3fcdfca4, x22=0x3fcdfe80, x23=0x5, x24=0x4, x25=0x3fcdfda0, x26=0x0, x27=0x0, x28=0x2e5d3120, x29=0x72617473, x30=0x203e2074, x31=0x65736572
+--- Stack Memory Dump (sp = 0x3fcdfc50) ---
+  0x3fcdfc50: 0x00000000 (0)
+  0x3fcdfc54: 0x00000000 (0)
+  0x3fcdfc58: 0x00000000 (0)
+  0x3fcdfc5c: 0x3fc93110 (1070149904)
+  0x3fcdfc60: 0x00000000 (0)
+  0x3fcdfc64: 0x00000000 (0)
+  0x3fcdfc68: 0x00000000 (0)
+  0x3fcdfc6c: 0x00003838 (14392)
+  0x3fcdfc70: 0x00000000 (0)
+  0x3fcdfc74: 0x3fc930f8 (1070149880)
+  0x3fcdfc78: 0x3c0d35fc (1007498748)
+  0x3fcdfc7c: 0x3fc93658 (1070151256)
+  0x3fcdfc80: 0x3c0c493f (1007438143)
+  0x3fcdfc84: 0x3fc93108 (1070149896)
+  0x3fcdfc88: 0x3fcdfc6c (1070464108)
+  0x3fcdfc8c: 0x3fc9310c (1070149900)
+  0x3fcdfc90: 0x3c0c4958 (1007438168)
+  0x3fcdfc94: 0x3fc93110 (1070149904)
+  0x3fcdfc98: 0x00000000 (0)
+  0x3fcdfc9c: 0x00000000 (0)
+  0x3fcdfca0: 0x00000000 (0)
+  0x3fcdfca4: 0x65737361 (1702064993)
+  0x3fcdfca8: 0x66207472 (1713402994)
+  0x3fcdfcac: 0x656c6961 (1701603681)
+  0x3fcdfcb0: 0x73203a64 (1931491940)
+  0x3fcdfcb4: 0x6572705f (1701998687)
+  0x3fcdfcb8: 0x65726170 (1701994864)
+  0x3fcdfcbc: 0x7365725f (1936028255)
+  0x3fcdfcc0: 0x65767265 (1702261349)
+  0x3fcdfcc4: 0x65725f64 (1701994340)
+  0x3fcdfcc8: 0x6e6f6967 (1852795239)
+  0x3fcdfccc: 0x656d2073 (1701650547)
+  0x3fcdfcd0: 0x79726f6d (2037542765)
+  0x3fcdfcd4: 0x79616c5f (2036427871)
+  0x3fcdfcd8: 0x5f74756f (1601467759)
+  0x3fcdfcdc: 0x6c697475 (1818850421)
+  0x3fcdfce0: 0x3a632e73 (979578483)
+  0x3fcdfce4: 0x28203838 (673200184)
+  0x3fcdfce8: 0x65736572 (1702061426)
+  0x3fcdfcec: 0x64657672 (1684371058)
+  0x3fcdfcf0: 0x2b20695b (723544411)
+  0x3fcdfcf4: 0x2e5d3120 (777859360)
+  0x3fcdfcf8: 0x72617473 (1918989427)
+  0x3fcdfcfc: 0x203e2074 (540942452)
+  0x3fcdfd00: 0x65736572 (1702061426)
+  0x3fcdfd04: 0x64657672 (1684371058)
+  0x3fcdfd08: 0x2e5d695b (777873755)
+  0x3fcdfd0c: 0x72617473 (1918989427)
+  0x3fcdfd10: 0x00002974 (10612)
+  0x3fcdfd14: 0x00000000 (0)
+  0x3fcdfd18: 0x00000000 (0)
+  0x3fcdfd1c: 0x00000000 (0)
+  0x3fcdfd20: 0x00000000 (0)
+  0x3fcdfd24: 0x00000000 (0)
+  0x3fcdfd28: 0x00000000 (0)
+  0x3fcdfd2c: 0x00000000 (0)
+  0x3fcdfd30: 0x00000000 (0)
+  0x3fcdfd34: 0x00000000 (0)
+  0x3fcdfd38: 0x00000000 (0)
+  0x3fcdfd3c: 0x00000000 (0)
+  0x3fcdfd40: 0x00000000 (0)
+  0x3fcdfd44: 0x00000000 (0)
+  0x3fcdfd48: 0x00000000 (0)
+  0x3fcdfd4c: 0x00000000 (0)
+--- Instruction History leading to abort ---
+  [-100] PC=0x4038d7b4 insn=0x591
+  [-99] PC=0x4038d7b6 insn=0x791
+  [-98] PC=0x4038d7b8 insn=0xfec7ae23
+  [-97] PC=0x4038d7bc insn=0xfee7ebe3
+  [-96] PC=0x4038d7c0 insn=0x8d7e663
+  [-95] PC=0x4038d84c insn=0x5c703
+  [-94] PC=0x4038d850 insn=0x785
+  [-93] PC=0x4038d852 insn=0x585
+  [-92] PC=0x4038d854 insn=0xfee78fa3
+  [-91] PC=0x4038d858 insn=0xfef69ae3
+  [-90] PC=0x4038d85c insn=0x8082
+  [-89] PC=0x4038d6ce insn=0x94a2
+  [-88] PC=0x4038d6d0 insn=0x90563
+  [-87] PC=0x4038d6d4 insn=0x991
+  [-86] PC=0x4038d6d6 insn=0xfd4999e3
+  [-85] PC=0x4038d6a8 insn=0x9a583
+  [-84] PC=0x4038d6ac insn=0x852e
+  [-83] PC=0x4038d6ae insn=0xc62e
+  [-82] PC=0x4038d6b0 insn=0xffc73097
+  [-81] PC=0x4038d6b4 insn=0xcc4080e7
+  [-80] PC=0x40000374 insn=0x8067
+  [-79] PC=0x4038d6b8 insn=0x45b2
+  [-78] PC=0x4038d6ba insn=0x842a
+  [-77] PC=0x4038d6bc insn=0xa97363
+  [-76] PC=0x4038d6c2 insn=0x9a8533
+  [-75] PC=0x4038d6c6 insn=0x8622
+  [-74] PC=0x4038d6c8 insn=0x40890933
+  [-73] PC=0x4038d6cc insn=0x20c1
+  [-72] PC=0x4038d78c insn=0x478d
+  [-71] PC=0x4038d78e insn=0xc506b3
+  [-70] PC=0x4038d792 insn=0xac7fa63
+  [-69] PC=0x4038d846 insn=0x87aa
+  [-68] PC=0x4038d848 insn=0xf6d57ee3
+  [-67] PC=0x4038d84c insn=0x5c703
+  [-66] PC=0x4038d850 insn=0x785
+  [-65] PC=0x4038d852 insn=0x585
+  [-64] PC=0x4038d854 insn=0xfee78fa3
+  [-63] PC=0x4038d858 insn=0xfef69ae3
+  [-62] PC=0x4038d85c insn=0x8082
+  [-61] PC=0x4038d6ce insn=0x94a2
+  [-60] PC=0x4038d6d0 insn=0x90563
+  [-59] PC=0x4038d6d4 insn=0x991
+  [-58] PC=0x4038d6d6 insn=0xfd4999e3
+  [-57] PC=0x4038d6da insn=0x11048793
+  [-56] PC=0x4038d6de insn=0x818
+  [-55] PC=0x4038d6e0 insn=0xe784b3
+  [-54] PC=0x4038d6e4 insn=0x8556
+  [-53] PC=0x4038d6e6 insn=0xf2048a23
+  [-52] PC=0x4038d6ea insn=0xc5af90ef
+  [-51] PC=0x40386b44 insn=0x1141

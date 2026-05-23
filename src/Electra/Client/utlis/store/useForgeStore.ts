@@ -195,14 +195,19 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     Promise.all([getCircuitEngine(), getSimulationRunner()]).then(([engine, runner]) => {
       engine.init();
 
-      const isESP32 = hexString === '__esp32_c3_binary__' || hexString === '__esp32_c3_riscv__';
+      const isESP32Transpiled = hexString === '__esp32_c3_transpiled__';
+      const isESP32Binary = hexString === '__esp32_c3_binary__' || hexString === '__esp32_c3_riscv__';
+      const isESP32 = isESP32Transpiled || isESP32Binary;
 
       if (!isESP32) {
         runner.setBoard(state.board);
         console.log('[FORGE STORE] Initializing AVR CPU with hex...');
         runner.initCPU(hexString);
+      } else if (isESP32Transpiled) {
+        // Transpiled JS path — ArduinoRuntime handles everything.
+        // Serial & GPIO wiring is done in SimulationRunner.start().
+        console.log('[FORGE STORE] ESP32-C3 transpiled path — runner.start() will init ArduinoRuntime');
       } else {
-        // ESP32-C3 RISC-V path — firmware already loaded via setBoard/setFirmwareBase64
         console.log('[FORGE STORE] ESP32-C3 RISC-V path — initializing ESP32-C3 runner before syncCircuitGraph...');
         runner.initCPU(''); // triggers ESP32-C3 branch in initCPU (board already set via setBoard)
 
@@ -212,7 +217,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
           if (_esp32SerialListener) {
             esp32c3Runner.removeSerialListener(_esp32SerialListener);
           }
-          
+
           _esp32SerialListener = (line: string) => {
             // Parse __LF_WIFI: prefixed messages and route to WiFi log
             const wifiMatch = line.match(/__LF_WIFI:(.+)/);
@@ -241,7 +246,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
               runner.setPinState(`ESP${pin}`, val > 127 ? 'HIGH' : 'LOW');
             }
           };
-          
+
           esp32c3Runner.addSerialListener(_esp32SerialListener);
           console.log('[FORGE STORE] ESP32-C3 serial listener wired to store.appendSerial + GPIO parser + WiFi log');
         }

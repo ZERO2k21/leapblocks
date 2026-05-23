@@ -290,21 +290,11 @@ export default function AppInventor({ onBack }) {
         setBuildLogs((prev) => [...prev, 'Sending build request to cloud compiler...']);
         const { CLOUD_COMPILER_URL } = await import('../config/platform');
 
-        let response;
-        try {
-          response = await fetch(`${CLOUD_COMPILER_URL}/build-apk`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-        } catch (networkErr) {
-          // Network-level failure — compiler server is not running or unreachable
-          const isLocal = CLOUD_COMPILER_URL.includes('localhost') || CLOUD_COMPILER_URL.includes('127.0.0.1');
-          const hint = isLocal
-            ? 'Start the compiler server with: cd compiler-server && node server.js'
-            : `The cloud compiler at ${CLOUD_COMPILER_URL} is unreachable. Check your network or deployment.`;
-          throw new Error(`Cannot reach compiler server (${CLOUD_COMPILER_URL}). ${hint}`);
-        }
+        const response = await fetch(`${CLOUD_COMPILER_URL}/build-apk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
         if (!response.ok) {
           const text = await response.text();
