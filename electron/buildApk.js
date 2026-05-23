@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 
 /**
  * APK Builder — Electron main-process entrypoint
@@ -20,9 +21,16 @@ async function buildApk(appState, appRoot, onLog) {
 
     // Dynamically require ApkBuilder — the module lives inside src/
     // and uses CommonJS (require/module.exports), so direct require works.
-    const ApkBuilder = require(
-      path.join(appRoot, 'src', 'appinverter', 'apk', 'buildAPK')
-    );
+    const candidates = [
+      path.join(appRoot, 'src', 'studio', 'apk', 'buildAPK.js'),
+      path.join(appRoot, 'src', 'appinverter', 'apk', 'buildAPK.js'),
+      path.join(appRoot, 'src', 'modules', 'AppInventor', 'apk', 'buildAPK.js'),
+    ];
+    const resolvedBuilder = candidates.find((p) => fs.existsSync(p));
+    if (!resolvedBuilder) {
+      throw new Error(`APK builder module not found. Checked:\n${candidates.join('\n')}`);
+    }
+    const ApkBuilder = require(resolvedBuilder);
 
     const builder = new ApkBuilder();
 

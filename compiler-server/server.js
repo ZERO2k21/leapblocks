@@ -416,7 +416,22 @@ app.post('/build-apk', async (req, res) => {
   }
 
   try {
-    const ApkBuilder = require(path.join(__dirname, '..', 'src', 'appinverter', 'apk', 'buildAPK'));
+    // Resolve the APK builder module — the folder was renamed from appinverter → studio.
+    // Use a candidate list for backward compatibility.
+    const builderCandidates = [
+      path.join(__dirname, '..', 'src', 'studio', 'apk', 'buildAPK'),
+      path.join(__dirname, '..', 'src', 'appinverter', 'apk', 'buildAPK'),
+    ];
+    const resolvedPath = builderCandidates.find(p => {
+      try { require.resolve(p); return true; } catch { return false; }
+    });
+    if (!resolvedPath) {
+      return res.status(500).json({
+        success: false,
+        error: `APK builder module not found. Checked:\n${builderCandidates.join('\n')}`,
+      });
+    }
+    const ApkBuilder = require(resolvedPath);
     const builder = new ApkBuilder();
     const logs = [];
     const outputPath = await builder.build(project, ({ progress, message }) => {

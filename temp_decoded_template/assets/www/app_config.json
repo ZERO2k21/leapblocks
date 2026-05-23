@@ -1,9 +1,0 @@
-{
-  "appName": "MyApp",
-  "packageName": "com.leapblocks.myapp",
-  "versionCode": 1,
-  "versionName": "1.0",
-  "screens": [
-    "Screen1"
-  ]
-}

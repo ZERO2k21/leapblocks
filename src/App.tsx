@@ -62,7 +62,7 @@ const PythonNotebook = lazy(() => {
 // @ts-ignore
 const AppInventor = lazy(() => {
     logAppTiming('AppInventor lazy load started');
-    return import('./appinverter').then(module => {
+    return import('./studio').then(module => {
         logAppTiming('AppInventor lazy load completed');
         return module;
     });

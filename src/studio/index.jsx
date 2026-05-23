@@ -20,7 +20,7 @@ import BlocksView from './components/BlocksView';
 import BuildModal from './components/BuildModal';
 import ComponentTree from './components/ComponentTree';
 import MediaManager from './components/MediaManager';
-import './styles/leap-appinventor.css';
+import './styles/leap-studio.css';
 import { Zap, Layout, Puzzle } from 'lucide-react';
 
 function countVisibleComponents(screens = []) {
@@ -290,11 +290,21 @@ export default function AppInventor({ onBack }) {
         setBuildLogs((prev) => [...prev, 'Sending build request to cloud compiler...']);
         const { CLOUD_COMPILER_URL } = await import('../config/platform');
 
-        const response = await fetch(`${CLOUD_COMPILER_URL}/build-apk`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        let response;
+        try {
+          response = await fetch(`${CLOUD_COMPILER_URL}/build-apk`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (networkErr) {
+          // Network-level failure — compiler server is not running or unreachable
+          const isLocal = CLOUD_COMPILER_URL.includes('localhost') || CLOUD_COMPILER_URL.includes('127.0.0.1');
+          const hint = isLocal
+            ? 'Start the compiler server with: cd compiler-server && node server.js'
+            : `The cloud compiler at ${CLOUD_COMPILER_URL} is unreachable. Check your network or deployment.`;
+          throw new Error(`Cannot reach compiler server (${CLOUD_COMPILER_URL}). ${hint}`);
+        }
 
         if (!response.ok) {
           const text = await response.text();
@@ -344,7 +354,7 @@ export default function AppInventor({ onBack }) {
         onRedo={handleRedo}
         canUndo={activeTab === 'blocks'}
         canRedo={activeTab === 'blocks'}
-        brandName="APP INVENTOR"
+        brandName="STUDIO"
         rightContent={
           <div className="flex items-center gap-6 shrink-0">
             <nav style={{

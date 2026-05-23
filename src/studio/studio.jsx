@@ -290,11 +290,20 @@ export default function AppInventor({ onBack }) {
         setBuildLogs((prev) => [...prev, 'Sending build request to cloud compiler...']);
         const { CLOUD_COMPILER_URL } = await import('../config/platform');
 
-        const response = await fetch(`${CLOUD_COMPILER_URL}/build-apk`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        let response;
+        try {
+          response = await fetch(`${CLOUD_COMPILER_URL}/build-apk`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (networkErr) {
+          const isLocal = CLOUD_COMPILER_URL.includes('localhost') || CLOUD_COMPILER_URL.includes('127.0.0.1');
+          const hint = isLocal
+            ? 'Start the compiler server with: cd compiler-server && node server.js'
+            : `The cloud compiler at ${CLOUD_COMPILER_URL} is unreachable. Check your network or deployment.`;
+          throw new Error(`Cannot reach compiler server (${CLOUD_COMPILER_URL}). ${hint}`);
+        }
 
         if (!response.ok) {
           const text = await response.text();
@@ -307,7 +316,6 @@ export default function AppInventor({ onBack }) {
           if (Array.isArray(result.logs) && result.logs.length) {
             setBuildLogs((prev) => [...prev, ...result.logs]);
           }
-          // downloadUrl should be a full or relative URL
           setApkPath(result.downloadUrl.startsWith('http') ? result.downloadUrl : `${CLOUD_COMPILER_URL}${result.downloadUrl}`);
           setBuildLogs((prev) => [...prev, 'Build complete! APK is ready to download.']);
         } else {
