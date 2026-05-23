@@ -2134,10 +2134,7 @@ export const animationToolbox = {
                 },
                 {
                     kind: 'block',
-                    type: 'looks_say',
-                    inputs: {
-                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hello!' } } }
-                    }
+                    type: 'looks_say'
                 },
                 {
                     kind: 'block',
@@ -2149,10 +2146,7 @@ export const animationToolbox = {
                 },
                 {
                     kind: 'block',
-                    type: 'looks_think',
-                    inputs: {
-                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hmm...' } } }
-                    }
+                    type: 'looks_think'
                 },
                 { kind: 'label', text: '── Visibility ──' },
                 { kind: 'block', type: 'looks_show' },
