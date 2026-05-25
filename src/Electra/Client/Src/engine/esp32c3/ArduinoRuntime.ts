@@ -67,7 +67,7 @@ export class ArduinoRuntime {
   private _virtualTimeOffset: number = 0;
 
   // ── I2C bus bridge (set by CircuitEngine after syncCircuitGraph) ──────────
-  private _i2cBus: {
+  public _i2cBus: {
     startTransmission(addr: number): void;
     write(val: number): void;
     endTransmission(): void;
@@ -87,6 +87,139 @@ export class ArduinoRuntime {
 
   injectLibraryClass(name: string, cls: any): void {
     this._injectedClasses.set(name, cls);
+  }
+
+  // ─── Public API methods (accessible by stubs/libraries) ───────
+
+  public pinMode(pin: number, mode: number): void {
+    const modeStr: PinMode =
+      mode === OUTPUT ? 'OUTPUT' :
+        mode === INPUT_PULLUP ? 'INPUT_PULLUP' :
+          mode === INPUT_PULLDOWN ? 'INPUT_PULLDOWN' : 'INPUT';
+    this.pinModes.set(pin, modeStr);
+    if (mode === OUTPUT) {
+      this.pinValues.set(pin, LOW);
+    }
+  }
+
+  public digitalWrite(pin: number, value: number): void {
+    const prev = this.pinValues.get(pin) ?? LOW;
+    const curr = value ? HIGH : LOW;
+    this.pinValues.set(pin, curr);
+    if (prev !== curr && this.onPinChange) {
+      this.onPinChange(pin, curr, false);
+    }
+  }
+
+  public digitalRead(pin: number): number {
+    return this.pinValues.get(pin) ?? LOW;
+  }
+
+  public analogWrite(pin: number, value: number): void {
+    const clamped = Math.max(0, Math.min(255, value));
+    this.pinValues.set(pin, clamped);
+    if (this.onPinChange) {
+      this.onPinChange(pin, clamped, true);
+    }
+  }
+
+  public analogRead(pin: number): number {
+    const cached = this.analogInputs.get(pin);
+    if (cached !== undefined) return cached;
+
+    try {
+      const { nodes } = useForgeStore.getState();
+      for (const n of nodes) {
+        const t = n.data?.type;
+        const sv = n.data?.sensorValues;
+        if (!sv) continue;
+
+        if (t === 'ntc-temperature-sensor') {
+          const tempC = sv.value ?? 25;
+          const BETA = 3950;
+          const x = BETA * (1 / (tempC + 273.15) - 1 / 298.15);
+          const ratio = Math.exp(x);
+          return Math.round(1023 * ratio / (1 + ratio));
+        }
+
+        if (t === 'potentiometer' || t === 'mq2' || t === 'resistor') {
+          return Math.round(((sv.value ?? 0) / 100) * 1023);
+        }
+
+        if (t === 'photoresistor-sensor') {
+          const lux = sv.value ?? 500;
+          const R_ldr = 500000 / Math.max(1, lux);
+          const voltage = 5.0 * 10000 / (R_ldr + 10000);
+          return Math.round((voltage / 5.0) * 1023);
+        }
+
+        if (t === 'heart-beat-sensor') {
+          const bpm = sv.bpm ?? 72;
+          const beatIntervalMs = 60000 / bpm;
+          const elapsed = performance.now() % beatIntervalMs;
+          const phase = elapsed / beatIntervalMs;
+          if (phase < 0.1) {
+            const beatPhase = phase / 0.1;
+            return Math.round(512 + 388 * Math.sin(beatPhase * Math.PI));
+          }
+          return Math.round(480 + Math.random() * 40);
+        }
+
+        if (t === 'flame-sensor') {
+          const intensity = sv.value ?? 0;
+          return Math.round((1 - intensity / 100) * 1023);
+        }
+
+        if (t === 'gas-sensor') {
+          return Math.round(((sv.value ?? 0) / 100) * 1023);
+        }
+
+        if (t === 'big-sound-sensor' || t === 'small-sound-sensor') {
+          return Math.round(((sv.value ?? 0) / 100) * 1023);
+        }
+      }
+    } catch (e) { /* store not available */ }
+
+    return 0;
+  }
+
+  public millis(): number {
+    return Math.floor(this.micros() / 1000);
+  }
+
+  public micros(): number {
+    const now = performance.now();
+    if (now === this._lastMicrosCallTime) {
+      this._microsSpinCount++;
+      if (this._microsSpinCount > 50) {
+        this._virtualTimeOffset += 1;
+        this._microsSpinCount = 0;
+      }
+    } else {
+      this._lastMicrosCallTime = now;
+      this._microsSpinCount = 0;
+    }
+    return Math.floor((now + this._virtualTimeOffset - this.startTime) * 1000);
+  }
+
+  public async __delayMicroseconds(us: number): Promise<void> {
+    if (us > 10000) {
+      await new Promise<void>(resolve => setTimeout(resolve, us / 1000));
+    }
+  }
+
+  public pulseIn(pin: number, state: number, timeout?: number): number {
+    try {
+      const { nodes } = useForgeStore.getState();
+      for (const n of nodes) {
+        if (n.data?.type === 'hc-sr04' || n.data?.type === 'ultrasonic') {
+          const distanceCm = n.data?.distance ?? n.data?.sensorValues?.distance ?? 6;
+          const duration_us = distanceCm * 58;
+          return Math.round(duration_us);
+        }
+      }
+    } catch (e) { /* store not available */ }
+    return 1000;
   }
 
   constructor() { }
@@ -389,110 +522,23 @@ export class ArduinoRuntime {
 
       // ── GPIO ───────────────────────────────────────────────
       pinMode(pin: number, mode: number): void {
-        const modeStr: PinMode =
-          mode === OUTPUT ? 'OUTPUT' :
-            mode === INPUT_PULLUP ? 'INPUT_PULLUP' :
-              mode === INPUT_PULLDOWN ? 'INPUT_PULLDOWN' : 'INPUT';
-        self.pinModes.set(pin, modeStr);
-        if (mode === OUTPUT) {
-          self.pinValues.set(pin, LOW);
-        }
+        self.pinMode(pin, mode);
       },
 
       digitalWrite(pin: number, value: number): void {
-        const prev = self.pinValues.get(pin) ?? LOW;
-        const curr = value ? HIGH : LOW;
-        self.pinValues.set(pin, curr);
-        if (prev !== curr && self.onPinChange) {
-          self.onPinChange(pin, curr, false);
-        }
+        self.digitalWrite(pin, value);
       },
 
       digitalRead(pin: number): number {
-        return self.pinValues.get(pin) ?? LOW;
+        return self.digitalRead(pin);
       },
 
       analogRead(pin: number): number {
-        // First check internal map (set by setAnalogInput)
-        const cached = self.analogInputs.get(pin);
-        if (cached !== undefined) return cached;
-
-        // Read live from store — find analog sensors and compute ADC
-        try {
-          const { nodes } = useForgeStore.getState();
-          for (const n of nodes) {
-            const t = n.data?.type;
-            const sv = n.data?.sensorValues;
-            if (!sv) continue;
-
-            // NTC temperature sensor → exact inverse of common sketch formula:
-            //   celsius = 1/(log(1/(1023./adc - 1))/BETA + 1/298.15) - 273.15
-            // Inverse:  adc = 1023 * ratio / (1 + ratio)
-            //   where ratio = exp(BETA * (1/(tempC+273.15) - 1/298.15))
-            if (t === 'ntc-temperature-sensor') {
-              const tempC = sv.value ?? 25;
-              const BETA = 3950;
-              const x = BETA * (1 / (tempC + 273.15) - 1 / 298.15);
-              const ratio = Math.exp(x);
-              return Math.round(1023 * ratio / (1 + ratio));
-            }
-
-            // Potentiometer / generic analog sensor → 0-1023
-            if (t === 'potentiometer' || t === 'mq2' || t === 'resistor') {
-              return Math.round(((sv.value ?? 0) / 100) * 1023);
-            }
-
-            // Photoresistor (LDR)
-            if (t === 'photoresistor-sensor') {
-              const lux = sv.value ?? 500;
-              const R_ldr = 500000 / Math.max(1, lux);
-              const voltage = 5.0 * 10000 / (R_ldr + 10000);
-              return Math.round((voltage / 5.0) * 1023);
-            }
-
-            // Heart rate sensor → simulated pulse waveform based on BPM
-            if (t === 'heart-beat-sensor') {
-              const bpm = sv.bpm ?? 72;
-              const beatIntervalMs = 60000 / bpm;
-              const elapsed = performance.now() % beatIntervalMs;
-              const phase = elapsed / beatIntervalMs;
-              // Simulate a pulse: short spike (10% of cycle), rest is baseline
-              if (phase < 0.1) {
-                // During beat — sinusoidal spike 512→900→512
-                const beatPhase = phase / 0.1; // 0→1
-                return Math.round(512 + 388 * Math.sin(beatPhase * Math.PI));
-              }
-              // Between beats — baseline with slight noise
-              return Math.round(480 + Math.random() * 40);
-            }
-
-            // Flame sensor → inverse intensity (higher flame = lower voltage)
-            if (t === 'flame-sensor') {
-              const intensity = sv.value ?? 0;
-              return Math.round((1 - intensity / 100) * 1023);
-            }
-
-            // Gas sensor (MQ series)
-            if (t === 'gas-sensor') {
-              return Math.round(((sv.value ?? 0) / 100) * 1023);
-            }
-
-            // Sound sensor
-            if (t === 'big-sound-sensor' || t === 'small-sound-sensor') {
-              return Math.round(((sv.value ?? 0) / 100) * 1023);
-            }
-          }
-        } catch (e) { /* store not available */ }
-
-        return 0;
+        return self.analogRead(pin);
       },
 
       analogWrite(pin: number, value: number): void {
-        const clamped = Math.max(0, Math.min(255, value));
-        self.pinValues.set(pin, clamped);
-        if (self.onPinChange) {
-          self.onPinChange(pin, clamped, true);
-        }
+        self.analogWrite(pin, value);
       },
 
       // ESP32-specific
@@ -600,24 +646,10 @@ export class ArduinoRuntime {
 
       // ── Timing ─────────────────────────────────────────────
       millis(): number {
-        return Math.floor(this.micros() / 1000);
+        return self.millis();
       },
       micros(): number {
-        const now = performance.now();
-        // If micros() is called repeatedly in the exact same millisecond (tight spin loop)
-        // artificially advance virtual time to prevent triggering the infinite loop protector
-        if (now === self._lastMicrosCallTime) {
-          self._microsSpinCount++;
-          // After 50 tight iterations, advance time by 1ms to break spin-locks
-          if (self._microsSpinCount > 50) {
-            self._virtualTimeOffset += 1;
-            self._microsSpinCount = 0;
-          }
-        } else {
-          self._lastMicrosCallTime = now;
-          self._microsSpinCount = 0;
-        }
-        return Math.floor((now + self._virtualTimeOffset - self.startTime) * 1000);
+        return self.micros();
       },
       async __delay(ms: number): Promise<void> {
         if (!self.running) throw new Error('__ARDUINO_HALT__');
@@ -634,29 +666,12 @@ export class ArduinoRuntime {
         if (!self.running) throw new Error('__ARDUINO_HALT__');
       },
       async __delayMicroseconds(us: number): Promise<void> {
-        if (us > 10000) {
-          await new Promise<void>(resolve => setTimeout(resolve, us / 1000));
-        }
-        // For short µs delays, just continue (browser can't do sub-ms timing)
+        await self.__delayMicroseconds(us);
       },
 
       // ── pulseIn — measures pulse duration on a pin (used by ultrasonic sensors) ──
-      pulseIn(pin: number, state: number, _timeout?: number): number {
-        // For HC-SR04 ultrasonic sensors: calculate duration from the sensor's distance value
-        // distance_cm = 0.017 * duration_us  →  duration_us = distance_cm / 0.017
-        try {
-          const { nodes } = useForgeStore.getState();
-          for (const n of nodes) {
-            if (n.data?.type === 'hc-sr04' || n.data?.type === 'ultrasonic') {
-              const distanceCm = n.data?.distance ?? n.data?.sensorValues?.distance ?? 6;
-              // Standard HC-SR04: 58 microseconds per cm
-              const duration_us = distanceCm * 58;
-              return Math.round(duration_us);
-            }
-          }
-        } catch (e) { /* store not available */ }
-        // Default: simulate ~17cm distance (1000µs round-trip)
-        return 1000;
+      pulseIn(pin: number, state: number, timeout?: number): number {
+        return self.pulseIn(pin, state, timeout);
       },
 
       // ── Math/Utility helpers ───────────────────────────────

@@ -10,6 +10,17 @@
 
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
 
+/** Helper to match a React Flow edge pin handle to a numeric pin */
+function matchPin(handle: string | null | undefined, pin: number): boolean {
+    if (!handle) return false;
+    const cleanHandle = handle.replace(/__target$/, '').trim().toUpperCase();
+    const pinStr = String(pin);
+    return cleanHandle === pinStr || 
+           cleanHandle === `D${pinStr}` || 
+           cleanHandle === `ESP${pinStr}` || 
+           cleanHandle === `A${pinStr}`;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // SERVO LIBRARY
 // ═══════════════════════════════════════════════════════════════════════════
@@ -204,11 +215,13 @@ export function createDHTClass(runtime: any) {
 
                 // Find DHT sensor connected to this pin
                 for (const edge of edges) {
-                    const pinMatch = edge.sourceHandle === `${this.pin}` || edge.targetHandle === `${this.pin}`;
+                    const pinMatch = matchPin(edge.sourceHandle, this.pin) || matchPin(edge.targetHandle, this.pin);
                     if (!pinMatch) continue;
 
-                    const sensorId = edge.source.includes('dht') ? edge.source : edge.target;
-                    const sensor = nodes.find(n => n.id === sensorId);
+                    let sensor = nodes.find(n => n.id === edge.source);
+                    if (!sensor || !(sensor.data?.type === 'dht11' || sensor.data?.type === 'dht22')) {
+                        sensor = nodes.find(n => n.id === edge.target);
+                    }
 
                     if (sensor && (sensor.data?.type === 'dht11' || sensor.data?.type === 'dht22')) {
                         const sv = sensor.data?.sensorValues || {};
@@ -324,6 +337,15 @@ export function createNeoPixelClass(runtime: any) {
             return this._numPixels;
         }
 
+        // Instance color helpers (mirror C++ static access on instances)
+        Color(r: number, g: number, b: number): number {
+            return Adafruit_NeoPixel.Color(r, g, b);
+        }
+
+        ColorHSV(hue: number, sat: number = 255, val: number = 255): number {
+            return Adafruit_NeoPixel.ColorHSV(hue, sat, val);
+        }
+
         // Static color helper
         static Color(r: number, g: number, b: number): number {
             return ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
@@ -363,13 +385,16 @@ export function createNeoPixelClass(runtime: any) {
 
                 // Find NeoPixel component connected to this pin
                 for (const edge of edges) {
-                    const pinMatch = edge.sourceHandle === `${this.pin}` || edge.targetHandle === `${this.pin}`;
+                    const pinMatch = matchPin(edge.sourceHandle, this.pin) || matchPin(edge.targetHandle, this.pin);
                     if (!pinMatch) continue;
 
-                    const componentId = edge.source.includes('neopixel') ? edge.source : edge.target;
-                    const component = nodes.find(n => n.id === componentId);
+                    let component = nodes.find(n => n.id === edge.source);
+                    if (!component || !(component.data?.type === 'neopixel' || component.data?.type === 'neopixel-matrix' || component.data?.type === 'led-ring')) {
+                        component = nodes.find(n => n.id === edge.target);
+                    }
 
                     if (component && (component.data?.type === 'neopixel' || component.data?.type === 'neopixel-matrix' || component.data?.type === 'led-ring')) {
+                        const componentId = component.id;
                         // Convert pixel data to array of {r, g, b} objects
                         const colors = [];
                         for (let i = 0; i < this._numPixels; i++) {
@@ -383,6 +408,7 @@ export function createNeoPixelClass(runtime: any) {
 
                         // Update component data
                         useForgeStore.getState().updateNodeData(componentId, {
+                            neopixelPixels: colors,
                             pixels: colors,
                             numPixels: this._numPixels
                         });
