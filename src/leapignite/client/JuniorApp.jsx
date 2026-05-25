@@ -791,7 +791,7 @@ export default function JuniorApp({ onBack }) {
                     <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={wp.resetFlyoutScale} style={{ bottom: '210px', right: '14px' }} />
                     <WorkspaceTrash workspaceRef={workspaceRef} />
 
-                    <div style={{
+                    <div className="junior-toolbar" style={{
                         position: "absolute",
                         left: "14px",
                         right: "14px",
@@ -816,6 +816,7 @@ export default function JuniorApp({ onBack }) {
                         </div>
 
                         <button
+                            className="junior-extensions-btn"
                             onClick={() => wp.setIsExtensionLibraryOpen(true)}
                             title="Add More Blocks"
                             style={{
