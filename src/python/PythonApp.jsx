@@ -786,6 +786,22 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         }
     };
 
+    const handleOpenPythonFile = () => {
+        openFilePicker(".py", async (file) => {
+            try {
+                const content = await readTextFile(file);
+                const fileName = getUniqueFileName(file.name, projectFiles);
+                setProjectFiles((prev) => ({ ...prev, [fileName]: content }));
+                setActiveFile(fileName);
+                setSidePanel("files");
+                addLog(`Loaded Python file: ${fileName}`, "success");
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Unable to open Python file.";
+                addLog(message, "error");
+            }
+        });
+    };
+
     const handleShareProject = () => {
         const payload = {
             projectFiles,
@@ -2829,6 +2845,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         items={[
                             { label: 'New Project', icon: File, onClick: handleNewProject, shortcut: 'Ctrl+N' },
                             { label: 'Open from your computer', icon: FolderOpen, onClick: handleOpenProject, shortcut: 'Ctrl+O' },
+                            { label: 'Open Python File', icon: FileCode2, onClick: handleOpenPythonFile },
                             { divider: true },
                             { label: 'Save to your computer', icon: Save, onClick: handleSaveProject, shortcut: 'Ctrl+S' },
                             { divider: true },
