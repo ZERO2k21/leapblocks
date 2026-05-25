@@ -27,11 +27,11 @@ function matchPin(handle: string | null | undefined, pin: number): boolean {
 
 export function createServoClass(runtime: any) {
     return class Servo {
-        private pin: number = -1;
-        private angle: number = 90;
-        private minPulse: number = 544;  // µs
-        private maxPulse: number = 2400; // µs
-        private _attached: boolean = false;
+        private pin = -1;
+        private angle = 90;
+        private minPulse = 544;  // µs
+        private maxPulse = 2400; // µs
+        private _attached = false;
 
         attach(pin: number, min?: number, max?: number): number {
             this.pin = pin;
@@ -86,10 +86,10 @@ export function createStepperClass(runtime: any) {
     return class Stepper {
         private stepsPerRev: number;
         private pins: number[];
-        private currentStep: number = 0;
-        private stepDelay: number = 1000; // µs per step
-        private direction: number = 1;
-        private lastStepTime: number = 0;
+        private currentStep = 0;
+        private stepDelay = 1000; // µs per step
+        private direction = 1;
+        private lastStepTime = 0;
 
         constructor(steps: number, pin1: number, pin2: number, pin3?: number, pin4?: number) {
             this.stepsPerRev = steps;
@@ -163,9 +163,9 @@ export function createDHTClass(runtime: any) {
     return class DHT {
         private pin: number;
         private type: number;
-        private lastReadTime: number = 0;
-        private temperature: number = 25.0;
-        private humidity: number = 60.0;
+        private lastReadTime = 0;
+        private temperature = 25.0;
+        private humidity = 60.0;
 
         constructor(pin: number, type: number) {
             this.pin = pin;
@@ -178,7 +178,7 @@ export function createDHTClass(runtime: any) {
             console.log(`[DHT] Sensor ready`);
         }
 
-        readTemperature(fahrenheit: boolean = false): number {
+        readTemperature(fahrenheit = false): number {
             this.readSensor();
             return fahrenheit ? (this.temperature * 9 / 5) + 32 : this.temperature;
         }
@@ -188,7 +188,7 @@ export function createDHTClass(runtime: any) {
             return this.humidity;
         }
 
-        computeHeatIndex(temperature: number, humidity: number, isFahrenheit: boolean = false): number {
+        computeHeatIndex(temperature: number, humidity: number, isFahrenheit = false): number {
             let t = temperature;
             if (!isFahrenheit) {
                 t = (temperature * 9 / 5) + 32; // Convert to Fahrenheit
@@ -251,15 +251,15 @@ export function createNeoPixelClass(runtime: any) {
         private pin: number;
         private _numPixels: number;
         private pixels: Uint8Array; // RGB data: [R0,G0,B0, R1,G1,B1, ...]
-        private brightness: number = 255;
-        private begun: boolean = false;
+        private brightness = 255;
+        private begun = false;
 
         // Color order constants
         static NEO_RGB = 0x06;
         static NEO_GRB = 0x52; // Default for WS2812B
         static NEO_KHZ800 = 0x0000;
 
-        constructor(numPixels: number, pin: number, type: number = 0x52) {
+        constructor(numPixels: number, pin: number, type = 0x52) {
             this._numPixels = numPixels;
             this.pin = pin;
             this.pixels = new Uint8Array(numPixels * 3);
@@ -312,7 +312,7 @@ export function createNeoPixelClass(runtime: any) {
             this.pixels[offset + 2] = b;
         }
 
-        fill(color: number, first: number = 0, count?: number): void {
+        fill(color: number, first = 0, count?: number): void {
             const end = count === undefined ? this._numPixels : first + count;
             for (let i = first; i < end && i < this._numPixels; i++) {
                 this.setPixelColor(i, color);
@@ -342,7 +342,7 @@ export function createNeoPixelClass(runtime: any) {
             return Adafruit_NeoPixel.Color(r, g, b);
         }
 
-        ColorHSV(hue: number, sat: number = 255, val: number = 255): number {
+        ColorHSV(hue: number, sat = 255, val = 255): number {
             return Adafruit_NeoPixel.ColorHSV(hue, sat, val);
         }
 
@@ -352,7 +352,7 @@ export function createNeoPixelClass(runtime: any) {
         }
 
         // Rainbow color wheel (0-255)
-        static ColorHSV(hue: number, sat: number = 255, val: number = 255): number {
+        static ColorHSV(hue: number, sat = 255, val = 255): number {
             const h = (hue * 6) / 256;
             const s = sat / 255;
             const v = val / 255;
@@ -407,11 +407,22 @@ export function createNeoPixelClass(runtime: any) {
                         }
 
                         // Update component data
-                        useForgeStore.getState().updateNodeData(componentId, {
-                            neopixelPixels: colors,
-                            pixels: colors,
-                            numPixels: this._numPixels
-                        });
+                        if (component.data?.type === 'neopixel') {
+                            useForgeStore.getState().updateNodeData(componentId, {
+                                neopixelR: colors[0] ? colors[0].r / 255 : 0,
+                                neopixelG: colors[0] ? colors[0].g / 255 : 0,
+                                neopixelB: colors[0] ? colors[0].b / 255 : 0,
+                                neopixelPixels: colors,
+                                pixels: colors,
+                                numPixels: this._numPixels
+                            });
+                        } else {
+                            useForgeStore.getState().updateNodeData(componentId, {
+                                neopixelPixels: colors,
+                                pixels: colors,
+                                numPixels: this._numPixels
+                            });
+                        }
                         return;
                     }
                 }
@@ -432,12 +443,12 @@ export function createLiquidCrystalI2CClass(runtime: any) {
         private cols: number;
         private rows: number;
         private buffer: string[][];
-        private cursorCol: number = 0;
-        private cursorRow: number = 0;
-        private displayOn: boolean = true;
-        private cursorOn: boolean = false;
-        private blinkOn: boolean = false;
-        private backlightOn: boolean = true;
+        private cursorCol = 0;
+        private cursorRow = 0;
+        private displayOn = true;
+        private cursorOn = false;
+        private blinkOn = false;
+        private backlightOn = true;
 
         constructor(address: number, cols: number, rows: number) {
             this.address = address;
@@ -604,7 +615,7 @@ export function createUltrasonicClass(runtime: any) {
             console.log(`[Ultrasonic] Initialized: TRIG=${trigPin}, ECHO=${echoPin}`);
         }
 
-        read(unit: string = 'CM'): number {
+        read(unit = 'CM'): number {
             // Send 10µs trigger pulse
             runtime.digitalWrite(this.trigPin, 0);
             runtime.__delayMicroseconds(2);
@@ -624,7 +635,7 @@ export function createUltrasonicClass(runtime: any) {
             return duration;
         }
 
-        distanceRead(unit: string = 'CM'): number {
+        distanceRead(unit = 'CM'): number {
             return this.read(unit);
         }
     };
@@ -640,7 +651,7 @@ export function createNewPingClass(runtime: any) {
         private echoPin: number;
         private maxDistance: number;
 
-        constructor(trigPin: number, echoPin: number, maxDistance: number = 200) {
+        constructor(trigPin: number, echoPin: number, maxDistance = 200) {
             this.trigPin = trigPin;
             this.echoPin = echoPin;
             this.maxDistance = maxDistance;
@@ -668,7 +679,7 @@ export function createNewPingClass(runtime: any) {
             return this.ping() / 148;
         }
 
-        ping_median(iterations: number = 5): number {
+        ping_median(iterations = 5): number {
             const readings: number[] = [];
             for (let i = 0; i < iterations; i++) {
                 readings.push(this.ping());

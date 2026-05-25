@@ -243,4 +243,20 @@ describe('ESP32C3SimulationRunner', () => {
     expect(received[0].pin).toBe('ESP2');
     expect(received[0].state).toBe('HIGH');
   });
+
+  test('addPinListener and setPinState supports numeric states', async () => {
+    const runner = new ESP32C3SimulationRunner();
+    const fw = new Uint8Array(32);
+    fw[0] = 0xE9;
+    await runner.init(fw, RiscVCore.IRAM_BASE);
+
+    const received: Array<{pin: string, state: string | number}> = [];
+    runner.addPinListener('ESP5', (pin, state) => received.push({ pin, state: state as any }));
+    (runner as any).setPinState('ESP5', 90);
+
+    expect(received).toHaveLength(1);
+    expect(received[0].pin).toBe('ESP5');
+    expect(received[0].state).toBe(90);
+  });
 });
+

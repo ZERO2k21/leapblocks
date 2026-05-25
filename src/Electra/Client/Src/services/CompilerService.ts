@@ -82,7 +82,7 @@ export interface TranspileResult {
  * In Web mode: also uses the cloud server's /transpile endpoint.
  * Falls back to client-side transpilation if server is unreachable.
  */
-export const transpileCode = async (code: string, board: string = 'esp32:esp32:esp32c3'): Promise<TranspileResult> => {
+export const transpileCode = async (code: string, board = 'esp32:esp32:esp32c3'): Promise<TranspileResult> => {
   try {
     const res = await fetch(`${CLOUD_COMPILER_URL}/transpile`, {
       method: 'POST',
@@ -334,6 +334,7 @@ function clientSideTranspile(code: string): TranspileResult {
     // Remove comments — protect :// in URLs (e.g. "https://...") from being treated as // comments
     js = js.replace(/:\/\//g, ':\x01\x01');
     js = js.replace(/\/\/.*$/gm, '');
+    // eslint-disable-next-line no-control-regex
     js = js.replace(/:\x01\x01/g, '://');
     js = js.replace(/\/\*[\s\S]*?\*\//g, '');
     // Remove #include

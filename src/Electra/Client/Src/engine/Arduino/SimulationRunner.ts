@@ -15,7 +15,7 @@ import { USARTEmulator } from './USARTEmulator';
 import { BOARDS } from './BoardConfig';
 import { ESP32C3SimulationRunner } from '../esp32c3/ESP32C3SimulationRunner';
 
-export type PinState = 'HIGH' | 'LOW' | 'FLOATING';
+export type PinState = 'HIGH' | 'LOW' | 'FLOATING' | number;
 export type PinListener = (state: PinState) => void;
 export type RawPortListener = (portLetter: string, bit: number, isHigh: boolean, cycles: number) => void;
 
@@ -55,7 +55,7 @@ class SimulationRunner {
   // Track reverse-bridge listener functions for cleanup
   private _esp32ReverseBridgeListeners: Array<{ pinId: string; fn: (state: PinState) => void }> = [];
 
-  private selectedBoard: string = 'arduino-uno';
+  private selectedBoard = 'arduino-uno';
 
   // Custom Event Scheduler for Peripheral Emulation
   private scheduledEvents: { targetCycles: number, callback: () => void }[] = [];
@@ -64,12 +64,11 @@ class SimulationRunner {
   private ports = new Map<string, AVRIOPort>();
 
   // Execution configuration
-  public isRunning: boolean = false;
+  public isRunning = false;
   private tickInterval: number | null = null;
-  private lastTime: number = 0;
+  private lastTime = 0;
   private readonly MHZ = 16e6;
 
-  constructor() { }
 
   /**
    * Initializes the inner AVR CPU with a compiled Hex buffer.
@@ -236,8 +235,7 @@ class SimulationRunner {
         this.esp32c3Runner.addPinListener('*', (pin, state) => {
           // Map ESP pin names to the common format
           const pinNum = pin.replace('ESP', '');
-          const isHigh = state === 'HIGH' || (typeof state === 'number' && state > 0);
-          this.setPinState(`ESP${pinNum}`, isHigh ? 'HIGH' : 'LOW');
+          this.setPinState(`ESP${pinNum}`, state);
         });
         this._esp32ListenersWired = true;
       }
