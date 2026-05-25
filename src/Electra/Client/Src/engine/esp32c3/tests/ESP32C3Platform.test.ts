@@ -167,7 +167,7 @@ describe('I2C peripheral', () => {
     onStart(isRead: boolean): boolean { this.started = true; return true; }
     onWrite(byte: number): void { this.written.push(byte); }
     onRead(): number { return this.readVal; }
-    onStop(): void {}
+    onStop(): void { /* noop */ }
   }
 
   test('Write transaction calls device.onWrite', () => {
