@@ -980,7 +980,7 @@ export const animationBlocks = [
     {
         type: 'sensing_answer',
         message0: 'answer',
-        output: 'String',
+        output: ['String', 'Number'],
         colour: COLORS.sensing,
         tooltip: 'The answer to the last question',
         helpUrl: '',

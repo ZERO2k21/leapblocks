@@ -951,7 +951,7 @@ const leapBlocks = [
     {
         type: 'sensing_answer',
         message0: 'answer',
-        output: 'String',
+        output: ['String', 'Number'],
         colour: '#5CB1D6',
         tooltip: 'The answer to the last asked question.',
         helpUrl: 'https://en.leap-wiki.info/wiki/Answer_%28block%29'

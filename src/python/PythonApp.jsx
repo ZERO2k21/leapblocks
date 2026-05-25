@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
+ * Unauthorized copying, distribution, or modification is strictly prohibited. 
  */
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StageProvider, useStage } from "../context/StageContext";

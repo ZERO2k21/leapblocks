@@ -785,6 +785,7 @@ const blockDefinitions = {
         category: 'sensing',
         color: COLORS.sensing,
         shape: 'reporter',
+        output: ['String', 'Number'],
         message: 'answer',
         inputs: []
     },
