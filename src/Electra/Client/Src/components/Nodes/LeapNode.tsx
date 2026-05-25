@@ -228,7 +228,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       mappedProps.rows = data.rows ?? 8;
       mappedProps.cols = data.cols ?? 8;
     } else {
-      mappedProps.pixels = data.pixels ?? 16;
+      mappedProps.pixels = Array.isArray(data.pixels) ? (data.numPixels ?? data.pixels.length) : (data.pixels ?? 16);
     }
     mappedProps.neopixelPixels = data.neopixelPixels ?? [];
   }

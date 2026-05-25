@@ -425,6 +425,17 @@ function clientSideTranspile(code: string): TranspileResult {
     js = js.replace(/^\s*([A-Z][A-Za-z0-9_]*)\s+(\w+)\s*=/gm, 'let $2 =');
     // #define → const
     js = js.replace(/^\s*#define\s+(\w+)\s+(.+)$/gm, (_m, n, v) => `const ${n} = ${v.trim()};`);
+    // Collect user-defined function names before type conversion changes the syntax
+    const userFunctions: string[] = [];
+    const funcRegex = /\b(?:void|int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s+(\w+)\s*\([^)]*\)\s*\{/g;
+    let funcMatch;
+    while ((funcMatch = funcRegex.exec(js)) !== null) {
+      const name = funcMatch[1];
+      if (name !== 'setup' && name !== 'loop') {
+        userFunctions.push(name);
+      }
+    }
+
     // Type conversions
     js = js.replace(/\b(void|int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s+(\w+)\s*\(([^)]*)\)\s*\{/g,
       (_m, _t, name, params) => {
@@ -465,6 +476,15 @@ function clientSideTranspile(code: string): TranspileResult {
     // HTTPClient async methods → await (GET/POST/PUT/DELETE/PATCH return Promise<number>)
     // e.g.  int code = http.GET();  →  let code = await http.GET();
     js = js.replace(/(\w+)\.(GET|POST|PUT|DELETE|PATCH)\s*\(/g, 'await $1.$2(');
+    // Prepend await to user-defined function calls (excluding declarations)
+    userFunctions.forEach((funcName) => {
+      const callRegex = new RegExp(`\\b(async\\s+)?(function\\s+)?(${funcName})\\s*\\(`, 'g');
+      js = js.replace(callRegex, (match, p1, p2) => {
+        if (p1 || p2) return match;
+        return `await ${match}`;
+      });
+    });
+
     // Fix any double-awaits introduced by chaining
     js = js.replace(/\bawait\s+await\s+/g, 'await ');
     // Arduino utilities

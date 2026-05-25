@@ -21,6 +21,17 @@ export function transpileArduinoToJS(arduinoCode: string): string {
   // ── Step 1: Remove comments ─────────────────────────────────
   code = removeComments(code);
 
+  // Collect user-defined function names before type conversion changes the syntax
+  const userFunctions: string[] = [];
+  const funcRegex = /\b(?:void|int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s+(\w+)\s*\([^)]*\)\s*\{/g;
+  let funcMatch;
+  while ((funcMatch = funcRegex.exec(code)) !== null) {
+    const name = funcMatch[1];
+    if (name !== 'setup' && name !== 'loop') {
+      userFunctions.push(name);
+    }
+  }
+
   // ── Step 2: Process #include (strip them — stubs provide everything) ──
   code = code.replace(/^\s*#include\s*[<"].*?[>"]\s*$/gm, '');
 
@@ -55,7 +66,8 @@ export function transpileArduinoToJS(arduinoCode: string): string {
     /^(\s*)(int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|float|double|char|boolean|bool|byte|size_t)\s+(\w+)\s*\(([^)]*)\)\s*\{/gm,
     (_m, indent, _retType, funcName, params) => {
       const jsParams = convertParams(params);
-      return `${indent}function ${funcName}(${jsParams}) {`;
+      const jsName = funcName === 'setup' ? '__setup' : funcName === 'loop' ? '__loop' : funcName;
+      return `${indent}async function ${jsName}(${jsParams}) {`;
     }
   );
 
@@ -64,7 +76,8 @@ export function transpileArduinoToJS(arduinoCode: string): string {
     /^(\s*)void\s+(\w+)\s*\(([^)]*)\)\s*\{/gm,
     (_m, indent, funcName, params) => {
       const jsParams = convertParams(params);
-      return `${indent}function ${funcName}(${jsParams}) {`;
+      const jsName = funcName === 'setup' ? '__setup' : funcName === 'loop' ? '__loop' : funcName;
+      return `${indent}async function ${jsName}(${jsParams}) {`;
     }
   );
 
@@ -123,6 +136,17 @@ export function transpileArduinoToJS(arduinoCode: string): string {
   // Convert delay() to await __delay()
   code = code.replace(/\bdelay\s*\(/g, 'await __delay(');
   code = code.replace(/\bdelayMicroseconds\s*\(/g, 'await __delayMicroseconds(');
+
+  // Prepend await to user-defined function calls (excluding declarations)
+  userFunctions.forEach((funcName) => {
+    const callRegex = new RegExp(`\\b(async\\s+)?(function\\s+)?(${funcName})\\s*\\(`, 'g');
+    code = code.replace(callRegex, (match, p1, p2) => {
+      if (p1 || p2) return match;
+      return `await ${match}`;
+    });
+  });
+  // Clean up double awaits
+  code = code.replace(/\bawait\s+await\s+/g, 'await ');
 
   // ── Step 10: Wrap in module ─────────────────────────────────
   const wrapped = `
