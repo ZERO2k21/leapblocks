@@ -131,6 +131,21 @@ export class FirmwareLoader {
     const HEADER_SIZE = extendedHeader ? 24 : 8;
     let offset = HEADER_SIZE;
 
+    // ── Load the flash image header to DROM (if Segment 0 is in DROM range) ──
+    // This maps the 32-byte header (extended/basic + segment 0 descriptor)
+    // to 0x3c0c0000 (if Segment 0 is at 0x3c0c0020), so the ESP-IDF startup code
+    // (memory_layout_utils.c) can read the segment descriptors during boot.
+    if (segCount > 0 && offset + 8 <= data.length) {
+      const firstSegAddr = readU32LE(data, offset);
+      const DROM_BASE = RiscVCore.DROM_BASE;
+      const DROM_END = DROM_BASE + RiscVCore.DROM_SIZE;
+      if (firstSegAddr >= DROM_BASE + 0x20 && firstSegAddr < DROM_END) {
+        const headerData = data.subarray(0, 0x20);
+        this.loadSegment(firstSegAddr - 0x20, headerData);
+        console.log(`[FirmwareLoader] Loaded flash image header at 0x${(firstSegAddr - 0x20).toString(16)}`);
+      }
+    }
+
     console.log(`[FirmwareLoader] Header: ${extendedHeader ? 'extended (24 bytes)' : 'basic (8 bytes)'}, segments=${segCount}, entry=0x${entry.toString(16)}`);
 
     let segmentsLoaded = 0;

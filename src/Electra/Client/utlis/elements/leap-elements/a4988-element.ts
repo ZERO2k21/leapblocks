@@ -11,7 +11,7 @@ export class A4988Element extends LitElement {
     @property() reset = true;
     @property() sleep = true;
     @property() step = false;
-    @property() dir = false;
+    @property({ type: Boolean }) override dir: any = false;
 
     get pinInfo(): ElementPin[] {
         return [

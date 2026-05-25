@@ -50,6 +50,11 @@ class SimulationRunner {
   private _transpiledJS: string | null = null;
   private _binBase64: string | null = null;
 
+  // Track whether ESP32 serial/pin listeners have been wired to avoid duplication on restart
+  private _esp32ListenersWired = false;
+  // Track reverse-bridge listener functions for cleanup
+  private _esp32ReverseBridgeListeners: Array<{ pinId: string; fn: (state: PinState) => void }> = [];
+
   private selectedBoard: string = 'arduino-uno';
 
   // Custom Event Scheduler for Peripheral Emulation
@@ -59,7 +64,7 @@ class SimulationRunner {
   private ports = new Map<string, AVRIOPort>();
 
   // Execution configuration
-  private isRunning: boolean = false;
+  public isRunning: boolean = false;
   private tickInterval: number | null = null;
   private lastTime: number = 0;
   private readonly MHZ = 16e6;
@@ -208,6 +213,10 @@ class SimulationRunner {
       this.isRunning = true;
       if (!this.esp32c3Runner) {
         this.esp32c3Runner = new ESP32C3SimulationRunner();
+      }
+
+      // Wire serial/pin listeners ONCE (guard against duplicate registration on restart)
+      if (!this._esp32ListenersWired) {
         // Wire serial output from ESP32 runner to the Zustand store
         this.esp32c3Runner.addSerialListener((text: string) => {
           import('../../../utlis/store/useForgeStore').then(({ useForgeStore }) => {
@@ -230,12 +239,19 @@ class SimulationRunner {
           const isHigh = state === 'HIGH' || (typeof state === 'number' && state > 0);
           this.setPinState(`ESP${pinNum}`, isHigh ? 'HIGH' : 'LOW');
         });
+        this._esp32ListenersWired = true;
       }
 
       // ── Path A: Transpiled JS (recommended — works on web & Electron) ──
       if (this._transpiledJS) {
         console.log('[SimulationRunner] Using transpiled JS path (ArduinoRuntime)');
         await this.esp32c3Runner.initTranspiled(this._transpiledJS);
+
+        // Clean up any previous reverse-bridge listeners before adding new ones
+        for (const { pinId, fn } of this._esp32ReverseBridgeListeners) {
+          this.removeListener(pinId, fn);
+        }
+        this._esp32ReverseBridgeListeners = [];
 
         // Reverse bridge: forward external pin changes (PIR, HC-SR04, etc.)
         // from SimulationRunner into ArduinoRuntime so digitalRead() works.
@@ -244,9 +260,11 @@ class SimulationRunner {
           for (let gpio = 0; gpio <= 21; gpio++) {
             const pinId = `ESP${gpio}`;
             const g = gpio;
-            this.addListener(pinId, (state) => {
+            const fn = (state: PinState) => {
               runtime.setDigitalInput(g, state === 'HIGH');
-            });
+            };
+            this.addListener(pinId, fn);
+            this._esp32ReverseBridgeListeners.push({ pinId, fn });
           }
         }
 
@@ -327,7 +345,18 @@ class SimulationRunner {
       this.binPath = null;
       this._transpiledJS = null;
       this._binBase64 = null;
-      console.log('[FORGE] ESP32-C3 RISC-V runner stopped.');
+
+      // Clean up reverse-bridge listeners to prevent accumulation on restart
+      for (const { pinId, fn } of this._esp32ReverseBridgeListeners) {
+        this.removeListener(pinId, fn);
+      }
+      this._esp32ReverseBridgeListeners = [];
+
+      // Reset the runner so a fresh one is created on next start
+      this.esp32c3Runner = null;
+      this._esp32ListenersWired = false;
+
+      console.log('[FORGE] ESP32-C3 simulation stopped and cleaned up.');
       return;
     }
 

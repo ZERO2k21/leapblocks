@@ -21,6 +21,7 @@ export default defineConfig({
           environment: 'node',
           include: [
             'src/modules/electra/engine/__tests__/**/*.test.ts',
+            'src/Electra/Client/Src/engine/esp32c3/tests/**/*.test.ts',
             'test/**/*.test.ts',
           ],
           globals: true,

@@ -20,11 +20,11 @@ export function createServoClass(runtime: any) {
         private angle: number = 90;
         private minPulse: number = 544;  // µs
         private maxPulse: number = 2400; // µs
-        private attached: boolean = false;
+        private _attached: boolean = false;
 
         attach(pin: number, min?: number, max?: number): number {
             this.pin = pin;
-            this.attached = true;
+            this._attached = true;
             if (min !== undefined) this.minPulse = min;
             if (max !== undefined) this.maxPulse = max;
             runtime.pinMode(pin, 1); // OUTPUT
@@ -33,7 +33,7 @@ export function createServoClass(runtime: any) {
         }
 
         write(angle: number): void {
-            if (!this.attached || this.pin < 0) return;
+            if (!this._attached || this.pin < 0) return;
             this.angle = Math.max(0, Math.min(180, angle));
             // Send angle directly to CircuitEngine (0-180 range)
             runtime.analogWrite(this.pin, this.angle);
@@ -41,7 +41,7 @@ export function createServoClass(runtime: any) {
         }
 
         writeMicroseconds(us: number): void {
-            if (!this.attached || this.pin < 0) return;
+            if (!this._attached || this.pin < 0) return;
             // Convert microseconds to angle: 544µs=0°, 2400µs=180°
             const angle = ((us - this.minPulse) / (this.maxPulse - this.minPulse)) * 180;
             this.write(angle);
@@ -56,11 +56,11 @@ export function createServoClass(runtime: any) {
         }
 
         attached(): boolean {
-            return this.attached;
+            return this._attached;
         }
 
         detach(): void {
-            this.attached = false;
+            this._attached = false;
             this.pin = -1;
             console.log(`[Servo] Detached`);
         }
@@ -236,7 +236,7 @@ export function createDHTClass(runtime: any) {
 export function createNeoPixelClass(runtime: any) {
     return class Adafruit_NeoPixel {
         private pin: number;
-        private numPixels: number;
+        private _numPixels: number;
         private pixels: Uint8Array; // RGB data: [R0,G0,B0, R1,G1,B1, ...]
         private brightness: number = 255;
         private begun: boolean = false;
@@ -247,7 +247,7 @@ export function createNeoPixelClass(runtime: any) {
         static NEO_KHZ800 = 0x0000;
 
         constructor(numPixels: number, pin: number, type: number = 0x52) {
-            this.numPixels = numPixels;
+            this._numPixels = numPixels;
             this.pin = pin;
             this.pixels = new Uint8Array(numPixels * 3);
             console.log(`[NeoPixel] Created: ${numPixels} pixels on pin ${pin}`);
@@ -272,11 +272,11 @@ export function createNeoPixelClass(runtime: any) {
 
             // Send to CircuitEngine
             this.updateCircuitEngine(scaledPixels);
-            console.log(`[NeoPixel] Updated ${this.numPixels} pixels`);
+            console.log(`[NeoPixel] Updated ${this._numPixels} pixels`);
         }
 
         setPixelColor(n: number, ...args: number[]): void {
-            if (n >= this.numPixels) return;
+            if (n >= this._numPixels) return;
 
             let r: number, g: number, b: number;
 
@@ -300,8 +300,8 @@ export function createNeoPixelClass(runtime: any) {
         }
 
         fill(color: number, first: number = 0, count?: number): void {
-            const end = count === undefined ? this.numPixels : first + count;
-            for (let i = first; i < end && i < this.numPixels; i++) {
+            const end = count === undefined ? this._numPixels : first + count;
+            for (let i = first; i < end && i < this._numPixels; i++) {
                 this.setPixelColor(i, color);
             }
         }
@@ -315,13 +315,13 @@ export function createNeoPixelClass(runtime: any) {
         }
 
         getPixelColor(n: number): number {
-            if (n >= this.numPixels) return 0;
+            if (n >= this._numPixels) return 0;
             const offset = n * 3;
             return (this.pixels[offset] << 16) | (this.pixels[offset + 1] << 8) | this.pixels[offset + 2];
         }
 
         numPixels(): number {
-            return this.numPixels;
+            return this._numPixels;
         }
 
         // Static color helper
@@ -372,7 +372,7 @@ export function createNeoPixelClass(runtime: any) {
                     if (component && (component.data?.type === 'neopixel' || component.data?.type === 'neopixel-matrix' || component.data?.type === 'led-ring')) {
                         // Convert pixel data to array of {r, g, b} objects
                         const colors = [];
-                        for (let i = 0; i < this.numPixels; i++) {
+                        for (let i = 0; i < this._numPixels; i++) {
                             const offset = i * 3;
                             colors.push({
                                 r: pixelData[offset],
@@ -384,7 +384,7 @@ export function createNeoPixelClass(runtime: any) {
                         // Update component data
                         useForgeStore.getState().updateNodeData(componentId, {
                             pixels: colors,
-                            numPixels: this.numPixels
+                            numPixels: this._numPixels
                         });
                         return;
                     }

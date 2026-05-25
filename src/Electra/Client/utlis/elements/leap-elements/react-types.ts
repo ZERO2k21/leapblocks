@@ -99,8 +99,8 @@ declare global {
       'leap-tilt-switch': LeapElement<TiltSwitchElement>;
       'leap-flame-sensor': LeapElement<FlameSensorElement>;
       'leap-gas-sensor': LeapElement<GasSensorElement>;
-      'leap-franzininho': LeapElement<FranzininhoElement>;
-      'leap-nano-rp2040-connect': LeapElement<NanoRP2040ConnectElement>;
+      // 'leap-franzininho': LeapElement<FranzininhoElement>;
+      // 'leap-nano-rp2040-connect': LeapElement<NanoRP2040ConnectElement>;
       'leap-small-sound-sensor': LeapElement<SmallSoundSensorElement>;
       'leap-big-sound-sensor': LeapElement<BigSoundSensorElement>;
       'leap-mpu6050': LeapElement<MPU6050Element>;

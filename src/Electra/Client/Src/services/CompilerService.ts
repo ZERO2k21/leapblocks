@@ -48,7 +48,9 @@ export const compileCode = async (req: CompileRequest): Promise<CompileResult> =
 
   // Web: POST to local build server
   try {
-    const res = await fetch(`${CLOUD_COMPILER_URL}/compile`, {
+    const isESP32 = req.board.startsWith('esp32:');
+    const endpoint = isESP32 ? '/compile/esp32' : '/compile';
+    const res = await fetch(`${CLOUD_COMPILER_URL}${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req),
@@ -345,6 +347,8 @@ function clientSideTranspile(code: string): TranspileResult {
     // e.g. void IRAM_ATTR myFunc() → void myFunc()
     // e.g. void ICACHE_RAM_ATTR myFunc() → void myFunc()
     js = js.replace(/\b(IRAM_ATTR|ICACHE_RAM_ATTR|DRAM_ATTR|PROGMEM_ATTR|__attribute__\s*\(\([^)]*\)\))\s+/g, '');
+    // Strip PROGMEM keyword (used to store data in flash on AVR/ESP32)
+    js = js.replace(/\bPROGMEM\b/g, '');
     // Replace Arduino macros that are identity functions on ESP32
     // digitalPinToInterrupt(pin) → pin  (on ESP32, pin == interrupt number)
     js = js.replace(/\bdigitalPinToInterrupt\s*\(/g, '(');
@@ -447,6 +451,9 @@ function clientSideTranspile(code: string): TranspileResult {
       (_m, _t, n) => `let ${n} =`);
     js = js.replace(/\b(int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s*\*?\s+([a-zA-Z0-9_]+)\s*;/g,
       (_m, _t, n) => `let ${n} = 0;`);
+    // String type → let (Arduino String is compatible with JS string)
+    js = js.replace(/\bString\s+(\w+)\s*=/g, 'let $1 =');
+    js = js.replace(/\bString\s+(\w+)\s*;/g, 'let $1 = "";');
     // for loop types
     js = js.replace(/for\s*\(\s*(int|byte|uint8_t|uint16_t|uint32_t|size_t|long|short)\s+/g, 'for (let ');
     // delay → await __delay
@@ -468,8 +475,13 @@ function clientSideTranspile(code: string): TranspileResult {
     js = js.replace(/\bmin\s*\(/g, 'Math.min(');
     js = js.replace(/\bmax\s*\(/g, 'Math.max(');
     js = js.replace(/\bisnan\s*\(/g, 'Number.isNaN(');
+    js = js.replace(/\bisinf\s*\(/g, '(!isFinite)(');
+    // sizeof() → approximate sizes (compile-time operator in C++, best-effort in JS)
+    js = js.replace(/\bsizeof\s*\(([^)]+)\)/g, '(typeof $1 === "string" ? $1.length : 4)');
     // F() macro — in Arduino it stores strings in flash; in JS just return the string
     js = js.replace(/\bF\s*\(\s*"([^"]*)"\s*\)/g, '"$1"');
+    // Remove .c_str() calls — JS strings don't need this
+    js = js.replace(/\.c_str\s*\(\s*\)/g, '');
     // Remove C++ type casts: (uint16_t)val → val
     js = js.replace(/\(\s*(uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|unsigned\s+\w+|int|long|short|float|double|byte|char|size_t)\s*\)/g, '');
     // `unsigned long` variable declarations (not caught by the main type regex)

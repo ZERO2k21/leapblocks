@@ -603,6 +603,168 @@ export class RiscVCore {
   }
 
   // ---------------------------------------------------------------------------
+  // ROM Emulation / Interception
+  // ---------------------------------------------------------------------------
+
+  private handleRomCall(): void {
+    const pc = this.pc;
+    const ra = u32m(this.regRead(1));
+
+    // Jump to the return address
+    this.pc = ra;
+    this.cycles += 3;
+    this.mcycle += 3;
+    this.minstret++;
+    this.regs[0] = 0; // x0 is always 0
+
+    switch (pc) {
+      case 0x40000354: { // memset
+        const s = u32m(this.regRead(10));
+        const c = this.regRead(11) & 0xFF;
+        const n = u32m(this.regRead(12));
+        for (let i = 0; i < n; i++) {
+          this.memWrite8(s + i, c);
+        }
+        this.regWrite(10, s);
+        break;
+      }
+      case 0x40000358: { // memcpy
+        const dest = u32m(this.regRead(10));
+        const src = u32m(this.regRead(11));
+        const n = u32m(this.regRead(12));
+        const temp = new Uint8Array(n);
+        for (let i = 0; i < n; i++) {
+          temp[i] = this.memRead8(src + i);
+        }
+        for (let i = 0; i < n; i++) {
+          this.memWrite8(dest + i, temp[i]);
+        }
+        this.regWrite(10, dest);
+        break;
+      }
+      case 0x4000035c: { // memmove
+        const dest = u32m(this.regRead(10));
+        const src = u32m(this.regRead(11));
+        const n = u32m(this.regRead(12));
+        const temp = new Uint8Array(n);
+        for (let i = 0; i < n; i++) {
+          temp[i] = this.memRead8(src + i);
+        }
+        for (let i = 0; i < n; i++) {
+          this.memWrite8(dest + i, temp[i]);
+        }
+        this.regWrite(10, dest);
+        break;
+      }
+      case 0x40000360: { // memcmp
+        const s1 = u32m(this.regRead(10));
+        const s2 = u32m(this.regRead(11));
+        const n = u32m(this.regRead(12));
+        let res = 0;
+        for (let i = 0; i < n; i++) {
+          const b1 = this.memRead8(s1 + i);
+          const b2 = this.memRead8(s2 + i);
+          if (b1 !== b2) {
+            res = b1 - b2;
+            break;
+          }
+        }
+        this.regWrite(10, res);
+        break;
+      }
+      case 0x40000364: { // strcpy
+        const dest = u32m(this.regRead(10));
+        const src = u32m(this.regRead(11));
+        let i = 0;
+        while (true) {
+          const b = this.memRead8(src + i);
+          this.memWrite8(dest + i, b);
+          if (b === 0) break;
+          i++;
+        }
+        this.regWrite(10, dest);
+        break;
+      }
+      case 0x4000036c: { // strcmp
+        const s1 = u32m(this.regRead(10));
+        const s2 = u32m(this.regRead(11));
+        let i = 0;
+        let res = 0;
+        while (true) {
+          const b1 = this.memRead8(s1 + i);
+          const b2 = this.memRead8(s2 + i);
+          if (b1 !== b2) {
+            res = b1 - b2;
+            break;
+          }
+          if (b1 === 0) break;
+          i++;
+        }
+        this.regWrite(10, res);
+        break;
+      }
+      case 0x40000374: { // strlen
+        const s = u32m(this.regRead(10));
+        let len = 0;
+        while (this.memRead8(s + len) !== 0) {
+          len++;
+        }
+        this.regWrite(10, len);
+        break;
+      }
+      case 0x4000037c: { // bzero
+        const s = u32m(this.regRead(10));
+        const n = u32m(this.regRead(11));
+        for (let i = 0; i < n; i++) {
+          this.memWrite8(s + i, 0);
+        }
+        break;
+      }
+      case 0x400008ac: { // __udivdi3
+        const aVal = (BigInt(u32m(this.regRead(11))) << 32n) | BigInt(u32m(this.regRead(10)));
+        const bVal = (BigInt(u32m(this.regRead(13))) << 32n) | BigInt(u32m(this.regRead(12)));
+        const quotient = bVal === 0n ? ~0n : aVal / bVal;
+        this.regWrite(10, Number(quotient & 0xFFFFFFFFn) | 0);
+        this.regWrite(11, Number((quotient >> 32n) & 0xFFFFFFFFn) | 0);
+        break;
+      }
+      case 0x400008b0: { // __udivmoddi4
+        const aVal = (BigInt(u32m(this.regRead(11))) << 32n) | BigInt(u32m(this.regRead(10)));
+        const bVal = (BigInt(u32m(this.regRead(13))) << 32n) | BigInt(u32m(this.regRead(12)));
+        const cPtr = u32m(this.regRead(14));
+        let quotient = 0n;
+        let remainder = 0n;
+        if (bVal !== 0n) {
+          quotient = aVal / bVal;
+          remainder = aVal % bVal;
+        } else {
+          quotient = ~0n;
+          remainder = aVal;
+        }
+        if (cPtr !== 0) {
+          this.memWrite32(cPtr, Number(remainder & 0xFFFFFFFFn) | 0);
+          this.memWrite32(cPtr + 4, Number((remainder >> 32n) & 0xFFFFFFFFn) | 0);
+        }
+        this.regWrite(10, Number(quotient & 0xFFFFFFFFn) | 0);
+        this.regWrite(11, Number((quotient >> 32n) & 0xFFFFFFFFn) | 0);
+        break;
+      }
+      case 0x400008b4: { // __udivsi3
+        const aVal = u32m(this.regRead(10));
+        const bVal = u32m(this.regRead(11));
+        const result = bVal === 0 ? 0xFFFFFFFF : Math.floor(aVal / bVal);
+        this.regWrite(10, result);
+        break;
+      }
+      default: {
+        // Fallback: set a0 to 0
+        this.regWrite(10, 0);
+        break;
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // MRET instruction
   // ---------------------------------------------------------------------------
 
@@ -846,6 +1008,12 @@ export class RiscVCore {
     if (this.irqCtrl.hasPending()) {
       this.handleInterrupt();
       return 4;
+    }
+
+    // Intercept ROM calls
+    if (this.pc >= RiscVCore.ROM_BASE && this.pc < RiscVCore.ROM_BASE + RiscVCore.ROM_SIZE) {
+      this.handleRomCall();
+      return 3;
     }
 
     // Fetch — determine instruction width from bits [1:0] of the first halfword.

@@ -142,6 +142,7 @@ const CYCLES_PER_FRAME = 266_666;
 
 export class ESP32C3SimulationRunner {
     private platform: ESP32C3Platform | null = null;
+    private worker: Worker | null = null;
     private rafHandle: number | null = null;
     private running: boolean = false;
 
@@ -179,59 +180,74 @@ export class ESP32C3SimulationRunner {
             console.warn('[ESP32-C3] Firmware suspiciously small (<32 bytes). May be invalid.');
         }
 
-        this.platform = new ESP32C3Platform();
-        const loader = new FirmwareLoader(this.platform.core);
+        if (typeof Worker === 'undefined') {
+            console.log('[ESP32-C3] Worker undefined (Node/Vitest environment). Running in fallback in-thread mode.');
+            this.platform = new ESP32C3Platform();
+            const loader = new FirmwareLoader(this.platform.core);
+            const result = loader.load(firmware);
+            this.platform.core.reset(entryPoint ?? result.entryPoint);
+            this.platform.sysTimer.cpuCycles = 0;
 
-        let result;
-        try {
-            result = loader.load(firmware);
-        } catch (e) {
-            console.error('[ESP32-C3] Firmware load failed:', e);
-            throw e;
+            // Wire up callbacks
+            this.platform.gpio.onPinChange((gpioPin: number, value: number, isAnalog: boolean) => {
+                const pin = gpioToPinName(gpioPin);
+                const state: PinState = isAnalog ? value : (value ? 'HIGH' : 'LOW');
+                this.setPinState(pin, state);
+            });
+            this.platform.uart0.onSerialOutput((line: string) => {
+                this.serialListeners.forEach(cb => cb(line));
+            });
+            this.platform.uart1.onSerialOutput((line: string) => {
+                this.serialListeners.forEach(cb => cb(line));
+            });
+
+            console.log(`[ESP32-C3] Initialized firmware in-thread: ${firmware.length} bytes`);
+            return;
         }
 
-        const ep = entryPoint ?? result.entryPoint;
-        console.log(`[ESP32-C3] Entry point: 0x${ep.toString(16)}, segments loaded: ${result.segmentsLoaded}`);
-
-        // ── Diagnostic: Verify memory was actually written ──
-        const testRead = this.platform.core.memRead32(ep);
-        console.log(`[ESP32-C3] First instruction at entry point 0x${ep.toString(16)}: 0x${testRead.toString(16)}`);
-        if (testRead === 0) {
-            console.error('[ESP32-C3] WARNING: Entry point contains 0x0 (illegal instruction)!');
-            console.error('[ESP32-C3] This usually means the firmware was not loaded correctly.');
-            console.error('[ESP32-C3] Check that the .bin file path is correct and the file is not empty.');
-        }
-
-        // ── Diagnostic: Verify IRAM integrity at previously-crashing address ──
-        const KNOWN_CRASH_ADDR = 0x40386b86;
-        if (KNOWN_CRASH_ADDR >= 0x40380000 && KNOWN_CRASH_ADDR < 0x40380000 + 0x60000) {
-            const crashAddrInsn = this.platform.core.memRead32(KNOWN_CRASH_ADDR);
-            console.log(`[ESP32-C3] IRAM integrity check @ 0x${KNOWN_CRASH_ADDR.toString(16)}: insn=0x${crashAddrInsn.toString(16)} (${crashAddrInsn === 0 ? '⚠ STILL ZERO — fix did not help' : '✓ has valid data'})`);
-        }
-
-        this.platform.core.reset(ep);
-        this.platform.sysTimer.cpuCycles = 0;
-
-        // Wire GPIO pin change → SimulationRunner.setPinState
-        this.platform.gpio.onPinChange((gpio, value, isAnalog) => {
-            const pin = gpioToPinName(gpio);
-            const state: PinState = isAnalog ? value : (value ? 'HIGH' : 'LOW');
-            this.setPinState(pin, state);
-        });
-
-        // Wire UART0 serial output → serial listeners
-        this.platform.uart0.onSerialOutput(line => {
-            this.serialListeners.forEach(cb => cb(line));
-        });
-        this.platform.uart1.onSerialOutput(line => {
-            this.serialListeners.forEach(cb => cb(line));
-        });
-
-        console.log(
-            `[ESP32-C3] Initialized: ${result.segmentsLoaded} segments, ` +
-            `entry=0x${ep.toString(16)}, ` +
-            `${result.totalBytes} bytes loaded`
+        // Spawn the worker using native dynamic import URL
+        this.worker = new Worker(
+            new URL('./esp32Worker.ts', import.meta.url),
+            { type: 'module' }
         );
+
+        // Listen for events from background worker thread
+        this.worker.onmessage = (e) => {
+            const msg = e.data;
+            switch (msg.type) {
+                case 'gpioChange': {
+                    const pin = gpioToPinName(msg.pin);
+                    const state: PinState = msg.isAnalog ? msg.value : (msg.value ? 'HIGH' : 'LOW');
+                    this.setPinState(pin, state);
+                    break;
+                }
+                case 'uartTx': {
+                    this.serialListeners.forEach(cb => cb(msg.line));
+                    break;
+                }
+                case 'error': {
+                    console.error('[ESP32 Worker Error]:', msg.message);
+                    break;
+                }
+                case 'halted': {
+                    console.log('[ESP32 Worker] CPU halted');
+                    this.running = false;
+                    break;
+                }
+                case 'initialized': {
+                    console.log(`[ESP32 Worker] Loaded engine ${msg.engine}, entry point 0x${msg.entryPoint.toString(16)}`);
+                    break;
+                }
+            }
+        };
+
+        // Initialize the worker with binary payload
+        this.worker.postMessage({
+            type: 'init',
+            firmware: firmware
+        });
+
+        console.log(`[ESP32-C3] Initialized firmware on Web Worker thread: ${firmware.length} bytes`);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -333,13 +349,27 @@ export class ESP32C3SimulationRunner {
             return;
         }
 
-        if (this.running || !this.platform) return;
+        if (this.running) return;
         this.running = true;
-        this.scheduleFrame();
+
+        if (this.worker) {
+            this.worker.postMessage({ type: 'start' });
+            console.log('[ESP32-C3] Started background worker simulation');
+        } else {
+            if (!this.platform) return;
+            this.scheduleFrame();
+        }
     }
 
     stop(): void {
         this.running = false;
+
+        if (this.worker) {
+            this.worker.postMessage({ type: 'stop' });
+            this.worker.terminate();
+            this.worker = null;
+            console.log('[ESP32-C3] Worker stopped and terminated');
+        }
 
         // Stop Arduino runtime if active
         if (this.arduinoRuntime) {
@@ -359,9 +389,12 @@ export class ESP32C3SimulationRunner {
     }
 
     reset(): void {
-        if (!this.platform) return;
-        this.platform.core.reset();
-        this.platform.sysTimer.cpuCycles = 0;
+        if (this.worker) {
+            this.worker.postMessage({ type: 'reset' });
+        } else if (this.platform) {
+            this.platform.core.reset();
+            this.platform.sysTimer.cpuCycles = 0;
+        }
         this.pinStates.clear();
         console.log('[ESP32-C3] Reset');
     }
@@ -481,6 +514,16 @@ export class ESP32C3SimulationRunner {
             return;
         }
 
+        if (this.worker) {
+            this.worker.postMessage({
+                type: 'gpioWrite',
+                pin: gpio,
+                value,
+                isAnalog
+            });
+            return;
+        }
+
         if (!this.platform) return;
 
         if (isAnalog) {
@@ -537,6 +580,10 @@ export class ESP32C3SimulationRunner {
     // -------------------------------------------------------------------------
 
     injectSerial(uart: 0 | 1, data: string): void {
+        if (this.worker) {
+            this.worker.postMessage({ type: 'uartRx', uart, data });
+            return;
+        }
         if (!this.platform) return;
         (uart === 0 ? this.platform.uart0 : this.platform.uart1).injectRx(data);
     }

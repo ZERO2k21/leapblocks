@@ -28,6 +28,7 @@ const fs = require('fs');
 const os = require('os');
 const { spawn } = require('child_process');
 const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -508,8 +509,9 @@ app.post('/compile', async (req, res) => {
       if (!binFile) {
         return res.json({ success: false, errors: `No .bin found. Files: ${files.join(', ')}` });
       }
-      const hexContent = binToIntelHex(fs.readFileSync(path.join(tempDir, binFile)));
-      return res.json({ success: true, hex: hexContent });
+      const rawBin = fs.readFileSync(path.join(tempDir, binFile));
+      const hexContent = binToIntelHex(rawBin);
+      return res.json({ success: true, hex: hexContent, binBase64: rawBin.toString('base64') });
     } else {
       const hexFile = files.find(f => f.endsWith('.hex'));
       if (!hexFile) {
@@ -642,6 +644,139 @@ app.delete('/libraries/remove', async (req, res) => {
   } else {
     res.status(500).json({ success: false, error: stderr || stdout || 'Removal failed' });
   }
+});
+
+// ─── ESP32 Compile & Cache ───────────────────────────────────────────────────
+const CACHE_DIR = path.join(__dirname, 'cache');
+if (!fs.existsSync(CACHE_DIR)) {
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+}
+
+app.post('/compile/esp32', async (req, res) => {
+  const { code, board = 'esp32:esp32:esp32c3', libraries = '' } = req.body;
+  if (!code) return res.status(400).json({ success: false, errors: 'No code provided' });
+
+  // Generate SHA-256 hash of the request code, board, and libraries to use as cache key
+  const hash = crypto.createHash('sha256')
+    .update(code + board + libraries)
+    .digest('hex');
+
+  const binPath = path.join(CACHE_DIR, `${hash}.bin`);
+  const metaPath = path.join(CACHE_DIR, `${hash}.json`);
+
+  if (fs.existsSync(binPath) && fs.existsSync(metaPath)) {
+    try {
+      const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+      const buffer = fs.readFileSync(binPath);
+      console.log(`[SERVER] Cache HIT for firmware ID: ${hash}`);
+      return res.json({
+        success: true,
+        id: hash,
+        binBase64: buffer.toString('base64'),
+        size: buffer.length,
+        hash: hash,
+        cached: true,
+        metadata: meta
+      });
+    } catch (e) {
+      console.error('[SERVER] Cache read error, rebuilding:', e.message);
+    }
+  }
+
+  console.log(`[SERVER] Cache MISS, compiling for firmware ID: ${hash}`);
+  const tempId = uuidv4();
+  const tempDir = path.join(os.tmpdir(), `electra_${tempId}`);
+  const sketchDir = path.join(tempDir, 'sketch');
+  const sketchPath = path.join(sketchDir, 'sketch.ino');
+
+  try {
+    fs.mkdirSync(sketchDir, { recursive: true });
+
+    // Pre-process ESP32 code
+    let processedCode = code;
+    processedCode = processedCode.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
+    processedCode = migrateESP32LedcAPI(processedCode);
+
+    const coreOk = await ensureESP32Core();
+    if (!coreOk) {
+      return res.json({ success: false, errors: 'ESP32 core not available on this server' });
+    }
+
+    fs.writeFileSync(sketchPath, processedCode);
+
+    const cliArgs = ['compile', '--fqbn', board, '--output-dir', tempDir];
+
+    // Add user-specified libraries
+    if (libraries) {
+      const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map(l => l.trim());
+      for (const lib of libList) {
+        if (!lib) continue;
+        const libPath = path.resolve(lib);
+        if (fs.existsSync(libPath)) {
+          cliArgs.push('--libraries', libPath);
+        }
+      }
+    }
+
+    cliArgs.push(sketchDir);
+
+    const { stdout, stderr, code: exitCode } = await runCLI(cliArgs);
+
+    if (exitCode !== 0) {
+      return res.json({ success: false, errors: stderr || stdout || `Exit code ${exitCode}` });
+    }
+
+    const files = fs.readdirSync(tempDir);
+    const binFile = files.find(f => f === 'sketch.ino.bin')
+      ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
+
+    if (!binFile) {
+      return res.json({ success: false, errors: `No .bin found. Files: ${files.join(', ')}` });
+    }
+
+    const binBuffer = fs.readFileSync(path.join(tempDir, binFile));
+    
+    // Save to cache
+    fs.writeFileSync(binPath, binBuffer);
+    const metadata = {
+      id: hash,
+      board,
+      compiledAt: new Date().toISOString(),
+      size: binBuffer.length,
+      hash: hash
+    };
+    fs.writeFileSync(metaPath, JSON.stringify(metadata, null, 2));
+
+    return res.json({
+      success: true,
+      id: hash,
+      binBase64: binBuffer.toString('base64'),
+      size: binBuffer.length,
+      hash: hash,
+      cached: false,
+      metadata
+    });
+  } catch (err) {
+    return res.json({ success: false, errors: err.message });
+  } finally {
+    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+  }
+});
+
+app.get('/firmware/:id', (req, res) => {
+  const id = req.params.id;
+  // Sanitize ID to prevent path traversal
+  if (!/^[a-f0-9]{64}$/.test(id)) {
+    return res.status(400).json({ error: 'Invalid firmware ID format' });
+  }
+
+  const binPath = path.join(CACHE_DIR, `${id}.bin`);
+  if (!fs.existsSync(binPath)) {
+    return res.status(404).json({ error: 'Firmware not found' });
+  }
+
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.sendFile(binPath);
 });
 
 // ─── GET /health ──────────────────────────────────────────────────────────────

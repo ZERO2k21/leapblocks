@@ -11,6 +11,7 @@
  * RV32I programs that exercise each peripheral.
  */
 
+import { describe, beforeEach, test, expect } from 'vitest';
 import { RiscVCore }              from '../cpu/RiscVCore';
 import { ESP32C3GPIO }            from '../peripherals/GPIO';
 import { ESP32C3UART }            from '../peripherals/UART';
@@ -114,8 +115,9 @@ describe('UART peripheral', () => {
 
   test('STATUS register reports TX ready', () => {
     const uart = new ESP32C3UART(0);
-    const status = uart.read32(0x60000024);
-    expect(status & 0x2).toBeTruthy(); // TX not full
+    const status = uart.read32(0x6000001C); // correct STATUS register offset
+    const txCount = (status >> 16) & 0x3FF;
+    expect(txCount).toBe(0); // TX FIFO is empty (ready)
   });
 });
 

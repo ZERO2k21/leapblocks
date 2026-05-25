@@ -216,21 +216,43 @@ export class ArduinoRuntime {
 
   // ─── Private: Loop runner ────────────────────────────────────
 
+  /** Track whether the current loop() iteration called delay() */
+  private _loopCalledDelay = false;
+  /** Timeout handle for setTimeout-based scheduling */
+  private _loopTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
+  /** Notify the loop runner that delay() was called in this iteration */
+  _notifyDelayCalled(): void { this._loopCalledDelay = true; }
+
   private async runLoop(): Promise<void> {
     if (!this.running || !this.loopFn) return;
 
-    try {
-      await this.loopFn();
-    } catch (e: any) {
-      if (e.message === '__ARDUINO_HALT__') return;
-      console.error('[ArduinoRuntime] loop() error:', e);
-      this.onSerial?.(`[ERROR in loop()]: ${e.message}\n`);
-      this.running = false;
-      return;
+    // Batch loop iterations: run up to N loops per animation frame for speed,
+    // but yield to the browser periodically to keep the UI responsive.
+    // If loop() calls delay(), it awaits a setTimeout internally, which
+    // naturally yields — so we don't need extra rAF in that case.
+    const BATCH_SIZE = 60; // Max iterations before yielding to rAF
+
+    for (let i = 0; i < BATCH_SIZE && this.running; i++) {
+      this._loopCalledDelay = false;
+      try {
+        await this.loopFn();
+      } catch (e: any) {
+        if (e.message === '__ARDUINO_HALT__') return;
+        if (e.name === 'AbortError') return; // Simulation stopped during delay
+        console.error('[ArduinoRuntime] loop() error:', e);
+        this.onSerial?.(`[ERROR in loop()]: ${e.message}\n`);
+        this.running = false;
+        return;
+      }
+
+      // If loop() called delay(), the await already yielded to the browser.
+      // No need to continue batching — the delay handled the timing.
+      if (this._loopCalledDelay) break;
     }
 
     if (this.running) {
-      // Schedule next loop iteration on the next animation frame
+      // Schedule next batch on the next animation frame for UI responsiveness
       this.rafHandle = requestAnimationFrame(() => this.runLoop());
     }
   }
@@ -599,6 +621,7 @@ export class ArduinoRuntime {
       },
       async __delay(ms: number): Promise<void> {
         if (!self.running) throw new Error('__ARDUINO_HALT__');
+        self._notifyDelayCalled(); // Tell the loop runner this iteration has a delay
         const target = performance.now() + ms;
         // Always yield to the event loop to keep the UI responsive, even for short delays.
         // Spin-locking blocks requestAnimationFrame, causing visual teleportation of components.

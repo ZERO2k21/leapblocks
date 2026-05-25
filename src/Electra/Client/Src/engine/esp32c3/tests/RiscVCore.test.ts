@@ -13,6 +13,7 @@
  *   ✓ Interrupts — IRQ dispatch and return
  */
 
+import { describe, test, expect } from 'vitest';
 import { RiscVCore } from '../cpu/RiscVCore';
 
 // ---------------------------------------------------------------------------
@@ -74,7 +75,7 @@ describe('RV32I R-type instructions', () => {
     runProgram(core, BASE, [
       0x0FF00093, // addi x1, x0, 0xFF
       0x0F000113, // addi x2, x0, 0xF0
-      0x002071B3, // and  x3, x1, x2
+      0x0020F1B3, // and  x3, x1, x2
     ]);
     expect(core.regs[3] >>> 0).toBe(0xF0);
   });
@@ -84,7 +85,7 @@ describe('RV32I R-type instructions', () => {
     runProgram(core, BASE, [
       0x00F00093, // addi x1, x0, 0x0F
       0x0F000113, // addi x2, x0, 0xF0
-      0x002061B3, // or   x3, x1, x2
+      0x0020E1B3, // or   x3, x1, x2
     ]);
     expect(core.regs[3] >>> 0).toBe(0xFF);
   });
@@ -94,7 +95,7 @@ describe('RV32I R-type instructions', () => {
     runProgram(core, BASE, [
       0x0FF00093, // addi x1, x0, 0xFF
       0x0F000113, // addi x2, x0, 0xF0
-      0x002041B3, // xor  x3, x1, x2
+      0x0020C1B3, // xor  x3, x1, x2
     ]);
     expect(core.regs[3] >>> 0).toBe(0x0F);
   });
@@ -104,7 +105,7 @@ describe('RV32I R-type instructions', () => {
     runProgram(core, BASE, [
       0x00100093, // addi x1, x0, 1
       0x00400113, // addi x2, x0, 4
-      0x002011B3, // sll  x3, x1, x2
+      0x002091B3, // sll  x3, x1, x2
     ]);
     expect(core.regs[3] >>> 0).toBe(16);
   });
@@ -114,7 +115,7 @@ describe('RV32I R-type instructions', () => {
     runProgram(core, BASE, [
       0x08000093, // addi x1, x0, 128
       0x00300113, // addi x2, x0, 3
-      0x002051B3, // srl  x3, x1, x2
+      0x0020D1B3, // srl  x3, x1, x2
     ]);
     expect(core.regs[3] >>> 0).toBe(16);
   });
@@ -185,7 +186,7 @@ describe('RV32I I-type (immediate) instructions', () => {
     const core = makeCore();
     runProgram(core, BASE, [
       0x08000093, // addi x1, x0, 128
-      0x00205113, // srli x2, x1, 2
+      0x0020D113, // srli x2, x1, 2
     ]);
     expect(core.regs[2]).toBe(32);
   });
@@ -194,7 +195,7 @@ describe('RV32I I-type (immediate) instructions', () => {
     const core = makeCore();
     runProgram(core, BASE, [
       0xFFC00093, // addi x1, x0, -4
-      0x40105113, // srai x2, x1, 1   (-4 >> 1 = -2)
+      0x4010D113, // srai x2, x1, 1   (-4 >> 1 = -2)
     ]);
     expect(core.regs[2] | 0).toBe(-2);
   });
@@ -315,7 +316,7 @@ describe('RV32I Jump instructions', () => {
       0x06300113, // addi x2, x0, 99  ← skipped
       0x04D00193, // addi x3, x0, 77  ← jump target
     ]);
-    expect(core.regs[2]).toBe(0);   // skipped
+    expect(core.regs[2]).not.toBe(99); // skipped (contains initial SP)
     expect(core.regs[3]).toBe(77);  // executed
     expect(core.regs[1] >>> 0).toBe(BASE + 4); // return addr
   });
@@ -332,7 +333,7 @@ describe('RV32I Jump instructions', () => {
       0x06300113, // addi x2, x0, 99   ← skipped
       0x04D00193, // addi x3, x0, 77   ← jump target (BASE+12)
     ]);
-    expect(core.regs[2]).toBe(0);
+    expect(core.regs[2]).not.toBe(99); // skipped (contains initial SP)
     expect(core.regs[3]).toBe(77);
   });
 });
@@ -419,7 +420,7 @@ describe('RV32M Multiply/Divide extension', () => {
     const core = makeCore();
     runProgram(core, BASE, [
       0x00A00093, // addi x1, x0, 10
-      // x2 = 0 (default)
+      0x00000113, // addi x2, x0, 0    (explicitly clear stack pointer from x2)
       0x0220C1B3, // div  x3, x1, x2
     ]);
     expect(core.regs[3] | 0).toBe(-1);
@@ -459,8 +460,8 @@ describe('CSR instructions', () => {
       0x00300093,    // addi x1, x0, 3       (bits to set)
       0x34009073,    // csrrw x0, mscratch, x1
       0x00500113,    // addi x2, x0, 5
-      0x34011173,    // csrrs x2, mscratch, x2   (OR in 5 → 3|5=7)
-      0x34002173,    // csrrs x3, mscratch, x0   (read)
+      0x34012173,    // csrrs x2, mscratch, x2   (OR in 5 → 3|5=7)
+      0x340021F3,    // csrrs x3, mscratch, x0   (read)
     ]);
     expect(core.regs[3] >>> 0).toBe(7);
   });
@@ -563,3 +564,90 @@ describe('x0 register invariant', () => {
     expect(core.regs[0]).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// ROM Emulation Layer Tests
+// ---------------------------------------------------------------------------
+
+describe('ROM Emulation Layer', () => {
+  test('memset fills memory correctly', () => {
+    const core = makeCore();
+    core.reset(BASE);
+    const dest = RiscVCore.DRAM_BASE + 0x100;
+    core.regs[10] = dest; // a0
+    core.regs[11] = 0xAA; // a1
+    core.regs[12] = 10;   // a2
+    core.regs[1] = BASE + 4; // ra
+    core.pc = 0x40000354;
+
+    core.step();
+
+    expect(core.pc).toBe(BASE + 4);
+    expect(core.regs[10]).toBe(dest);
+    for (let i = 0; i < 10; i++) {
+      expect(core.memRead8(dest + i)).toBe(0xAA);
+    }
+  });
+
+  test('memcpy copies memory correctly', () => {
+    const core = makeCore();
+    core.reset(BASE);
+    const dest = RiscVCore.DRAM_BASE + 0x200;
+    const src = RiscVCore.DRAM_BASE + 0x300;
+    for (let i = 0; i < 8; i++) {
+      core.memWrite8(src + i, 0x11 * (i + 1));
+    }
+    core.regs[10] = dest; // a0
+    core.regs[11] = src;  // a1
+    core.regs[12] = 8;    // a2
+    core.regs[1] = BASE + 8; // ra
+    core.pc = 0x40000358;
+
+    core.step();
+
+    expect(core.pc).toBe(BASE + 8);
+    expect(core.regs[10]).toBe(dest);
+    for (let i = 0; i < 8; i++) {
+      expect(core.memRead8(dest + i)).toBe(0x11 * (i + 1));
+    }
+  });
+
+  test('strlen calculates string length correctly', () => {
+    const core = makeCore();
+    core.reset(BASE);
+    const strAddr = RiscVCore.DRAM_BASE + 0x400;
+    core.memWrite8(strAddr, 0x48); // 'H'
+    core.memWrite8(strAddr + 1, 0x65); // 'e'
+    core.memWrite8(strAddr + 2, 0x6c); // 'l'
+    core.memWrite8(strAddr + 3, 0x6c); // 'l'
+    core.memWrite8(strAddr + 4, 0x6f); // 'o'
+    core.memWrite8(strAddr + 5, 0); // null
+    
+    core.regs[10] = strAddr; // a0
+    core.regs[1] = BASE + 12; // ra
+    core.pc = 0x40000374;
+
+    core.step();
+
+    expect(core.pc).toBe(BASE + 12);
+    expect(core.regs[10]).toBe(5);
+  });
+
+  test('__udivdi3 performs 64-bit unsigned division correctly', () => {
+    const core = makeCore();
+    core.reset(BASE);
+    core.regs[10] = 4; // a0
+    core.regs[11] = 2; // a1
+    core.regs[12] = 2; // a2
+    core.regs[13] = 0; // a3
+    core.regs[1] = BASE + 16; // ra
+    core.pc = 0x400008ac;
+
+    core.step();
+
+    expect(core.pc).toBe(BASE + 16);
+    expect(core.regs[10]).toBe(2);
+    expect(core.regs[11]).toBe(1);
+  });
+});
+

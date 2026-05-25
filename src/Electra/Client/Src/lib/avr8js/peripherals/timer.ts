@@ -298,13 +298,13 @@ export class AVRTimer {
   private ocrUpdateMode = OCRUpdateMode.Immediate;
   private tovUpdateMode = TOVUpdateMode.Max;
   private icr: u16 = 0; // only for 16-bit timers
-  private timerMode: TimerMode;
-  private topValue: TimerTopValue;
+  private timerMode: TimerMode = TimerMode.Normal;
+  private topValue: TimerTopValue = 0xff;
   private tcnt: u16 = 0;
   private tcntNext: u16 = 0;
-  private compA: CompBitsValue;
-  private compB: CompBitsValue;
-  private compC: CompBitsValue;
+  private compA: CompBitsValue = 0;
+  private compB: CompBitsValue = 0;
+  private compC: CompBitsValue = 0;
   private tcntUpdated = false;
   private updateDivider = false;
   private countingUp = true;
