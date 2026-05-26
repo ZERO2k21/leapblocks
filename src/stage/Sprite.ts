@@ -806,8 +806,9 @@ export class Sprite {
             case 'ball': this.renderBall(ctx); break;
             case 'arrow': this.renderArrow(ctx); break;
             case 'robot': this.renderRobot(ctx); break;
+            case 'cat': this.renderCat(ctx); break;
             default:
-                this.renderBall(ctx);
+                this.renderPlaceholder(ctx);
                 break;
         }
     }
@@ -829,6 +830,77 @@ export class Sprite {
         ctx.beginPath();
         ctx.ellipse(-15, -15, 15, 10, Math.PI / 4, 0, Math.PI * 2);
         ctx.fill();
+    }
+
+    private renderCat(ctx: CanvasRenderingContext2D): void {
+        // Cute simple cat face for generic / library sprites
+        ctx.fillStyle = '#fbbf24';       // Amber body
+        ctx.beginPath();
+        ctx.arc(0, 5, 35, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ears
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.moveTo(-25, -20); ctx.lineTo(-35, -55); ctx.lineTo(-8, -30);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(25, -20); ctx.lineTo(35, -55); ctx.lineTo(8, -30);
+        ctx.fill();
+
+        // Inner ears
+        ctx.fillStyle = '#fca5a5';
+        ctx.beginPath();
+        ctx.moveTo(-22, -22); ctx.lineTo(-30, -45); ctx.lineTo(-12, -28);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(22, -22); ctx.lineTo(30, -45); ctx.lineTo(12, -28);
+        ctx.fill();
+
+        // Eyes
+        ctx.fillStyle = '#1f2937';
+        ctx.beginPath();
+        ctx.arc(-12, -2, 5, 0, Math.PI * 2);
+        ctx.arc(12, -2, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eye shine
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-10, -4, 2, 0, Math.PI * 2);
+        ctx.arc(14, -4, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Nose
+        ctx.fillStyle = '#fca5a5';
+        ctx.beginPath();
+        ctx.moveTo(-4, 6); ctx.lineTo(4, 6); ctx.lineTo(0, 12);
+        ctx.fill();
+
+        // Whiskers
+        ctx.strokeStyle = '#1f2937';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-5, 8); ctx.lineTo(-28, 3);
+        ctx.moveTo(-5, 10); ctx.lineTo(-28, 12);
+        ctx.moveTo(5, 8); ctx.lineTo(28, 3);
+        ctx.moveTo(5, 10); ctx.lineTo(28, 12);
+        ctx.stroke();
+    }
+
+    private renderPlaceholder(ctx: CanvasRenderingContext2D): void {
+        // Generic gray placeholder for unknown sprite types
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.arc(0, 0, 30, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Question mark
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('?', 0, 1);
     }
 
     private renderArrow(ctx: CanvasRenderingContext2D): void {
