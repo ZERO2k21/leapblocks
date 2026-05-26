@@ -1079,28 +1079,28 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "GND",
-        "x": 9.5,
-        "y": 15
+        "x": 3,
+        "y": 3
       },
       {
         "name": "5V",
-        "x": 9.5,
-        "y": 25
+        "x": 2.5,
+        "y": 5.5
       },
       {
         "name": "SDA",
-        "x": 9.5,
-        "y": 34.5
+        "x": 2.5,
+        "y": 8
       },
       {
         "name": "SCL",
-        "x": 9.5,
-        "y": 44
+        "x": 2.5,
+        "y": 10
       },
       {
         "name": "SQW",
-        "x": 9.5,
-        "y": 54
+        "x": 2.5,
+        "y": 12.5
       }
     ]
   },
@@ -1370,22 +1370,22 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "AOUT",
         "x": 137,
-        "y": 16.5
+        "y": 13
       },
       {
         "name": "DOUT",
         "x": 137,
-        "y": 26.4
+        "y": 21
       },
       {
         "name": "GND",
         "x": 137,
-        "y": 36.5
+        "y": 29
       },
       {
         "name": "VCC",
         "x": 137,
-        "y": 46.2
+        "y": 37
       }
     ]
   },
@@ -1399,23 +1399,23 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "VCC",
-        "x": 0,
-        "y": 1
+        "x": 19,
+        "y": 23
       },
       {
         "name": "TRIG",
-        "x": 81.3,
-        "y": 94.5
+        "x": 21.5,
+        "y": 23
       },
       {
         "name": "ECHO",
-        "x": 91.3,
-        "y": 94.5
+        "x": 24,
+        "y": 23
       },
       {
         "name": "GND",
-        "x": 101.3,
-        "y": 94.5
+        "x": 26.5,
+        "y": 23
       }
     ]
   },
@@ -1430,17 +1430,17 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "GND",
         "x": 87,
-        "y": 17.8
+        "y": 15
       },
       {
         "name": "VCC",
         "x": 87,
-        "y": 27.5
+        "y": 24
       },
       {
         "name": "OUT",
         "x": 87,
-        "y": 37.5
+        "y": 33
       }
     ]
   },
@@ -1509,18 +1509,18 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "GND",
-        "x": 20.977,
-        "y": 87.75
+        "x": 75,
+        "y": 300
       },
       {
         "name": "VCC",
-        "x": 30.578,
-        "y": 87.75
+        "x": 115,
+        "y": 300
       },
       {
         "name": "DAT",
-        "x": 40.18,
-        "y": 87.75
+        "x": 150,
+        "y": 300
       }
     ]
   },
@@ -2019,12 +2019,12 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "Anode",
         "x": 12.9,
-        "y": 20
+        "y": 23
       },
       {
         "name": "Cathode",
         "x": 3.5,
-        "y": 20
+        "y": 23
       }
     ]
   },
@@ -2179,17 +2179,17 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "CD",
         "x": 76.734,
-        "y": 9.3744
+        "y": 6.5
       },
       {
         "name": "DO",
         "x": 76.734,
-        "y": 18.8622
+        "y": 16
       },
       {
         "name": "GND",
         "x": 76.734,
-        "y": 28.4634
+        "y": 26
       },
       {
         "name": "SCK",
@@ -2433,18 +2433,18 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "GND",
-        "x": 135,
-        "y": 26.2
+        "x": 134,
+        "y": 22
       },
       {
         "name": "VCC",
         "x": 135,
-        "y": 35.8
+        "y": 31
       },
       {
         "name": "OUT",
         "x": 135,
-        "y": 45.5
+        "y": 40
       }
     ]
   },
@@ -2459,22 +2459,22 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "VCC",
         "x": 172,
-        "y": 16
+        "y": 13
       },
       {
         "name": "GND",
         "x": 172,
-        "y": 26
+        "y": 22
       },
       {
         "name": "DO",
         "x": 172,
-        "y": 35.8
+        "y": 31
       },
       {
         "name": "AO",
         "x": 172,
-        "y": 45.5
+        "y": 40
       }
     ]
   },
@@ -2489,17 +2489,17 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "VCC",
         "x": 36.178,
-        "y": 92
+        "y": 84
       },
       {
         "name": "OUT",
         "x": 45.9175,
-        "y": 92
+        "y": 84
       },
       {
         "name": "GND",
         "x": 55.6415,
-        "y": 92
+        "y": 84
       }
     ]
   },
@@ -2724,22 +2724,22 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "VCC",
         "x": 18,
-        "y": 126
+        "y": 128
       },
       {
         "name": "SCK",
         "x": 18,
-        "y": 103
+        "y": 106
       },
       {
         "name": "DT",
         "x": 18,
-        "y": 80
+        "y": 83
       },
       {
         "name": "GND",
         "x": 18,
-        "y": 55
+        "y": 58
       }
     ]
   },
