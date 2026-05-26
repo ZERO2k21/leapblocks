@@ -25,6 +25,7 @@ export interface SpriteState {
     direction: number;      // 0 = up, 90 = right, 180 = down, 270 = left
     size: number;           // percentage (100 = normal)
     visible: boolean;
+    mirrored: boolean;      // lateral inversion (flip horizontal)
     costumes: Costume[];
     currentCostumeIndex: number;
     sounds: { name: string; src: string }[];
@@ -76,6 +77,7 @@ export class Sprite {
             direction: 90,  // facing right by default
             size: 100,
             visible: true,
+            mirrored: false,
             costumes: [],
             currentCostumeIndex: 0,
             sounds: [],
@@ -110,6 +112,7 @@ export class Sprite {
     get direction() { return this.state.direction; }
     get size() { return this.state.size; }
     get visible() { return this.state.visible; }
+    get mirrored() { return this.state.mirrored; }
     get sayText() { return this.state.sayText; }
     get thinkText() { return this.state.thinkText; }
     get sayTimer() { return this.state.sayTimer; }
@@ -323,6 +326,7 @@ export class Sprite {
 
     show() { this.state.visible = true; this.onUpdate(); }
     hide() { this.state.visible = false; this.onUpdate(); }
+    toggleMirror() { this.state.mirrored = !this.state.mirrored; this.onUpdate(); }
 
     setEffect(effect: 'color' | 'brightness' | 'ghost' | 'fisheye' | 'whirl' | 'pixelate' | 'mosaic', value: number) {
         this.state.effects[effect] = value;
@@ -719,6 +723,11 @@ export class Sprite {
                 (this.state.direction > 180 || this.state.direction < 0)) {
                 ctx.scale(-1, 1);
             }
+        }
+
+        // Lateral inversion (mirror image)
+        if (this.state.mirrored) {
+            ctx.scale(-1, 1);
         }
 
         const eff = this.state.effects;

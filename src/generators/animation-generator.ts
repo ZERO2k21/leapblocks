@@ -1115,6 +1115,9 @@ export class AnimationCompiler {
                 step = { type: 'go_forward_layers', direction: dir as 'forward' | 'backward', layers: num };
                 break;
             }
+            case 'looks_mirror':
+                step = { type: 'mirror' };
+                break;
 
             // Control & Arduino Control
             case 'control_wait':

@@ -67,6 +67,7 @@ export type ScriptStep = (
     | { type: 'think_for_secs'; message: string | (() => string); secs: number | (() => number) }
     | { type: 'show' }
     | { type: 'hide' }
+    | { type: 'mirror' }
     | { type: 'next_costume' }
     | { type: 'switch_costume'; costume: string }
     | { type: 'switch_backdrop'; backdrop: string }
@@ -1060,6 +1061,10 @@ export class AnimationVM {
 
             case 'hide':
                 costumeEngine.hide(sprite);
+                break;
+
+            case 'mirror':
+                costumeEngine.toggleMirror(sprite);
                 break;
 
             case 'next_costume':

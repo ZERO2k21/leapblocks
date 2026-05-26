@@ -42,6 +42,10 @@ class CostumeEngine {
     hide(sprite: Sprite) {
         sprite.hide();
     }
+
+    toggleMirror(sprite: Sprite) {
+        sprite.toggleMirror();
+    }
 }
 
 let _costumeEngine: CostumeEngine | null = null;
