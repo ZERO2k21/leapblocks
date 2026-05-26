@@ -4038,6 +4038,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     workspaceRef.current = blocksWorkspace;
                     (blocksWorkspace as any)[LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG] = true;
 
+                    // Ensure workspace SVG is sized correctly even if inject ran before layout settled
+                    Blockly.svgResize(blocksWorkspace);
+
                     // 1. BLOCK REPLACEMENT LISTENER
                     // Auto-replace checkbox-reporters from flyout with standard reporters in workspace
                     blocksWorkspace.addChangeListener((event: any) => {

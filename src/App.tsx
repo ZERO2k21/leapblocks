@@ -121,12 +121,10 @@ export default function App() {
     const [juniorKey, setJuniorKey] = useState(0);
 
     const cleanBlocklyStyles = useCallback(() => {
-        document.querySelectorAll('style[data-blockly]').forEach(el => el.remove());
-        document.querySelectorAll('style').forEach(el => {
-            if (el.textContent?.includes('.blockly')) {
-                el.remove();
-            }
-        });
+        // Only remove floating Blockly DOM elements that are appended to document.body
+        // and persist after the component unmounts. Do NOT remove <style> tags —
+        // Blockly caches CSS injection state and will skip re-injecting on the next
+        // mount if the styles are missing, which breaks the UI.
         document.querySelectorAll('.blocklyToolboxDiv, .blocklyWidgetDiv, .blocklyDropDownDiv, .blocklyContextMenu').forEach(el => {
             el.remove();
         });
@@ -193,26 +191,39 @@ export default function App() {
 
     const cancelSwitch = () => setSwitchPrompt(null);
 
+    const [exitPrompt, setExitPrompt] = useState<boolean>(false);
+
+    const requestExit = () => {
+        setExitPrompt(true);
+    };
+
+    const confirmExit = () => {
+        handleSetMode('home');
+        setExitPrompt(false);
+    };
+
+    const cancelExit = () => setExitPrompt(false);
+
     return (
         <ErrorBoundary key={mode}>
             <Suspense fallback={<Loader />}>
                 {mode === 'intermediate' && <IntermediateApp
-                    onBack={() => handleSetMode('home')}
+                    onBack={requestExit}
                     onOpenPython={() => requestSwitch('intermediate', 'python')}
                     openTab={intermediateOpenTab}
                 />}
-                {mode === 'junior' && <JuniorApp key={juniorKey} onBack={() => handleSetMode('home')} />}
+                {mode === 'junior' && <JuniorApp key={juniorKey} onBack={requestExit} />}
                 {mode === 'python' && <PythonApp
-                    onBack={() => handleSetMode('home')}
+                    onBack={requestExit}
                     onSwitchToNotebook={() => requestSwitch('python', 'notebook')}
                     onSwitchToBlocks={() => requestSwitch('python', 'intermediate', 'blocks')}
                     onSwitchToCostumes={() => requestSwitch('python', 'intermediate', 'costumes')}
                 />}
-                {mode === 'notebook' && <PythonNotebook onBack={() => handleSetMode('home')} onSwitchToIDE={() => handleSetMode('python')} />}
-                {mode === 'appinventor' && <AppInventor {...({ onBack: () => handleSetMode('home') } as any)} />}
-                {mode === 'appforge' && <ElectraStudio {...({ onBack: () => handleSetMode('home') } as any)} />}
-                {mode === 'electra' && <ElectraStudio {...({ onBack: () => handleSetMode('home') } as any)} />}
-                {mode === 'neura' && <NeuraApp onBack={() => handleSetMode('home')} />}
+                {mode === 'notebook' && <PythonNotebook onBack={requestExit} onSwitchToIDE={() => handleSetMode('python')} />}
+                {mode === 'appinventor' && <AppInventor {...({ onBack: requestExit } as any)} />}
+                {mode === 'appforge' && <ElectraStudio {...({ onBack: requestExit } as any)} />}
+                {mode === 'electra' && <ElectraStudio {...({ onBack: requestExit } as any)} />}
+                {mode === 'neura' && <NeuraApp onBack={requestExit} />}
                 {mode === 'home' && <LandingPage onSelect={handleSetMode} />}
             </Suspense>
 
@@ -231,6 +242,25 @@ export default function App() {
                             </button>
                             <button onClick={confirmSwitch} style={{ padding: '8px 14px', borderRadius: 6, border: 'none', backgroundColor: '#5A2D82', color: '#fff', cursor: 'pointer' }}>
                                 Go Ahead
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {exitPrompt && (
+                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 360, borderRadius: 12, background: '#fff', padding: 20, boxShadow: '0 12px 30px rgba(0,0,0,0.3)' }}>
+                        <h2 style={{ margin: '0 0 10px', fontSize: 18 }}>Exit to Home?</h2>
+                        <p style={{ margin: '0 0 16px', lineHeight: 1.4 }}>
+                            Are you sure you want to exit? The code in the current editor will stop running.
+                        </p>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                            <button onClick={cancelExit} style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid #ccc', backgroundColor: '#fff', cursor: 'pointer' }}>
+                                No
+                            </button>
+                            <button onClick={confirmExit} style={{ padding: '8px 14px', borderRadius: 6, border: 'none', backgroundColor: '#5A2D82', color: '#fff', cursor: 'pointer' }}>
+                                Yes
                             </button>
                         </div>
                     </div>
