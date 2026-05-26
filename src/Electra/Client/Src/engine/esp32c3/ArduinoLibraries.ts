@@ -99,57 +99,307 @@ export function createStepperClass(runtime: any) {
 
             // Initialize all pins as OUTPUT
             this.pins.forEach(p => runtime.pinMode(p, 1));
+
+            if (this.pins.length === 4) {
+                console.warn(
+                    `[Stepper] ⚠ 4-wire mode (pins: ${this.pins.join(',')}). ` +
+                    `Your circuit has an A4988 driver, but 4-wire mode drives coil pins ` +
+                    `(for ULN2003). With A4988, use: Stepper(200, STEP_PIN, DIR_PIN) ` +
+                    `(2-wire STEP/DIR mode) or AccelStepper(AccelStepper::DRIVER, STEP_PIN, DIR_PIN). ` +
+                    `Alternatively, replace the A4988 with a "Stepper Motor" component.`
+                );
+            }
+
             console.log(`[Stepper] Initialized: ${steps} steps/rev, pins: ${this.pins.join(',')}`);
         }
 
         setSpeed(rpm: number): void {
-            // Calculate delay between steps in microseconds
-            // delay = (60 seconds * 1,000,000 µs) / (steps_per_rev * rpm)
-            this.stepDelay = (60 * 1000000) / (this.stepsPerRev * rpm);
+            this.stepDelay = Math.max(50, (60 * 1000000) / (this.stepsPerRev * rpm));
             console.log(`[Stepper] Speed set to ${rpm} RPM (${this.stepDelay}µs per step)`);
         }
 
-        step(steps: number): void {
+        async step(steps: number): Promise<void> {
             const stepsToMove = Math.abs(steps);
             this.direction = steps > 0 ? 1 : -1;
 
             for (let i = 0; i < stepsToMove; i++) {
-                // Wait for step delay
                 const now = runtime.micros();
                 if (now - this.lastStepTime < this.stepDelay) {
                     const waitTime = this.stepDelay - (now - this.lastStepTime);
-                    runtime.__delayMicroseconds(waitTime);
+                    await runtime.__delayMicroseconds(waitTime);
                 }
 
-                // Perform one step
                 this.currentStep += this.direction;
                 if (this.currentStep >= this.stepsPerRev) this.currentStep = 0;
                 if (this.currentStep < 0) this.currentStep = this.stepsPerRev - 1;
 
-                this.stepMotor(this.currentStep % (this.pins.length === 4 ? 4 : 8));
+                await this.stepMotor();
                 this.lastStepTime = runtime.micros();
             }
         }
 
-        private stepMotor(step: number): void {
+        private async stepMotor(): Promise<void> {
             if (this.pins.length === 4) {
-                // 4-wire bipolar stepper (full step)
+                // 4-wire bipolar stepper (full step) — direct coil drive (ULN2003)
                 const sequence = [
                     [1, 0, 1, 0],
                     [0, 1, 1, 0],
                     [0, 1, 0, 1],
                     [1, 0, 0, 1]
                 ];
-                const pattern = sequence[step % 4];
+                const pattern = sequence[Math.abs(this.currentStep) % 4];
                 this.pins.forEach((pin, i) => {
                     runtime.digitalWrite(pin, pattern[i]);
                 });
             } else if (this.pins.length === 2) {
-                // 2-wire stepper (step + direction)
-                runtime.digitalWrite(this.pins[0], 1); // STEP pulse
+                // 2-wire stepper (STEP + DIR) — used with A4988/DRV8825 driver
+                // Convention: pins[0] = STEP_PIN, pins[1] = DIR_PIN
+                // Set direction BEFORE step pulse (real A4988 needs 200ns setup time)
                 runtime.digitalWrite(this.pins[1], this.direction > 0 ? 1 : 0); // DIR
-                runtime.__delayMicroseconds(10);
-                runtime.digitalWrite(this.pins[0], 0);
+                // Rising edge on STEP pin → one microstep
+                runtime.digitalWrite(this.pins[0], 1); // STEP HIGH
+                await runtime.__delayMicroseconds(5);
+                runtime.digitalWrite(this.pins[0], 0); // STEP LOW
+            }
+        }
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ACCELSTEPPER LIBRARY (commonly used with A4988 / DRV8825)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function createAccelStepperClass(runtime: any) {
+    return class AccelStepper {
+        static DRIVER = 1;
+        static FULL2WIRE = 2;
+        static FULL3WIRE = 3;
+        static FULL4WIRE = 4;
+        static HALF4WIRE = 6;
+
+        private type!: number;
+        private stepPin = -1;
+        private dirPin = -1;
+        private pin1 = -1;
+        private pin2 = -1;
+        private pin3 = -1;
+        private pin4 = -1;
+
+        private _currentPos = 0;
+        private _targetPos = 0;
+        private _speed = 0;
+        private _maxSpeed = 500;
+        private _acceleration = 200;
+        private _stepInterval = 0;
+        private _lastStepTime = 0;
+        private _direction = 1;
+        private _yieldCounter = 0;
+
+        // 4-wire step sequences
+        private static FULL4WIRE_SEQ = [
+            [1, 0, 1, 0],
+            [0, 1, 1, 0],
+            [0, 1, 0, 1],
+            [1, 0, 0, 1]
+        ];
+        private static HALF4WIRE_SEQ = [
+            [1, 0, 0, 0],
+            [1, 1, 0, 0],
+            [0, 1, 0, 0],
+            [0, 1, 1, 0],
+            [0, 0, 1, 0],
+            [0, 0, 1, 1],
+            [0, 0, 0, 1],
+            [1, 0, 0, 1]
+        ];
+
+        constructor(type: number, pin1: number, pin2: number, pin3?: number, pin4?: number) {
+            this.type = type;
+            if (type === 1) { // DRIVER mode (STEP + DIR)
+                this.stepPin = pin1;
+                this.dirPin = pin2;
+                runtime.pinMode(this.stepPin, 1);
+                runtime.pinMode(this.dirPin, 1);
+                console.log(`[AccelStepper] DRIVER mode: STEP=${pin1}, DIR=${pin2}`);
+            } else if (type === 4) { // FULL4WIRE
+                this.pin1 = pin1;
+                this.pin2 = pin2;
+                this.pin3 = pin3!;
+                this.pin4 = pin4!;
+                [pin1, pin2, pin3, pin4].forEach(p => runtime.pinMode(p, 1));
+                console.log(`[AccelStepper] FULL4WIRE mode: pins=${pin1},${pin2},${pin3},${pin4}`);
+            } else if (type === 6) { // HALF4WIRE
+                this.pin1 = pin1;
+                this.pin2 = pin2;
+                this.pin3 = pin3!;
+                this.pin4 = pin4!;
+                [pin1, pin2, pin3, pin4].forEach(p => runtime.pinMode(p, 1));
+                console.log(`[AccelStepper] HALF4WIRE mode: pins=${pin1},${pin2},${pin3},${pin4}`);
+            } else {
+                console.warn(`[AccelStepper] Unsupported type: ${type}`);
+            }
+        }
+
+        setMaxSpeed(speed: number): void {
+            this._maxSpeed = Math.max(1, speed);
+        }
+
+        setAcceleration(accel: number): void {
+            this._acceleration = Math.max(1, accel);
+        }
+
+        moveTo(absolute: number): void {
+            this._targetPos = absolute;
+        }
+
+        move(relative: number): void {
+            this._targetPos = this._currentPos + relative;
+        }
+
+        run(): boolean {
+            if (this._targetPos === this._currentPos) return false;
+
+            const direction = this._targetPos > this._currentPos ? 1 : -1;
+            const distance = Math.abs(this._targetPos - this._currentPos);
+
+            // Speed ramp calculation
+            const currentSpeed = this._speed;
+            let newSpeed: number;
+
+            // Accelerate up to max speed, decelerate near target
+            const decelDistance = (currentSpeed * currentSpeed) / (2 * this._acceleration);
+            if (distance > decelDistance) {
+                // Accelerate or cruise
+                newSpeed = Math.min(this._maxSpeed, currentSpeed + this._acceleration * 0.001);
+            } else {
+                // Decelerate
+                newSpeed = Math.max(1, currentSpeed - this._acceleration * 0.001);
+            }
+
+            this._speed = newSpeed;
+            this._direction = direction;
+
+            // Calculate step interval in microseconds
+            const stepsPerSecond = Math.max(1, newSpeed);
+            this._stepInterval = 1000000 / stepsPerSecond;
+
+            const now = runtime.micros();
+            if (now - this._lastStepTime >= this._stepInterval) {
+                this._lastStepTime = now;
+                this._currentPos += direction;
+
+                // Output the step
+                this.stepMotor(direction);
+
+                // Check if we've arrived
+                if (Math.abs(this._targetPos - this._currentPos) <= 0) {
+                    this._currentPos = this._targetPos;
+                    this._speed = 0;
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        async runToPosition(): Promise<void> {
+            while (this.run()) {
+                this._yieldCounter++;
+                if (this._yieldCounter % 100 === 0) {
+                    // Yield to event loop every 100 attempts to keep UI responsive
+                    await new Promise<void>(resolve => setTimeout(resolve, 0));
+                }
+            }
+        }
+
+        runSpeedToPosition(): boolean {
+            if (this._targetPos === this._currentPos) return false;
+            const direction = this._targetPos > this._currentPos ? 1 : -1;
+            this._direction = direction;
+
+            const now = runtime.micros();
+            if (now - this._lastStepTime >= this._stepInterval) {
+                this._lastStepTime = now;
+                this._currentPos += direction;
+                this.stepMotor(direction);
+            }
+            return this._targetPos !== this._currentPos;
+        }
+
+        runSpeed(): boolean {
+            const now = runtime.micros();
+            if (now - this._lastStepTime >= this._stepInterval) {
+                this._lastStepTime = now;
+                this._currentPos += this._direction;
+                this.stepMotor(this._direction);
+                return true;
+            }
+            return false;
+        }
+
+        setSpeed(speed: number): void {
+            this._speed = speed;
+            this._stepInterval = Math.max(50, 1000000 / Math.max(1, Math.abs(speed)));
+            this._direction = speed >= 0 ? 1 : -1;
+        }
+
+        distanceToGo(): number {
+            return this._targetPos - this._currentPos;
+        }
+
+        currentPosition(): number {
+            return this._currentPos;
+        }
+
+        setCurrentPosition(position: number): void {
+            this._currentPos = position;
+        }
+
+        targetPosition(): number {
+            return this._targetPos;
+        }
+
+        speed(): number {
+            return this._speed;
+        }
+
+        maxSpeed(): number {
+            return this._maxSpeed;
+        }
+
+        acceleration(): number {
+            return this._acceleration;
+        }
+
+        stop(): void {
+            this._targetPos = this._currentPos;
+            this._speed = 0;
+        }
+
+        private stepMotor(direction: number): void {
+            if (this.type === 1) {
+                // DRIVER mode: STEP + DIR for A4988
+                // Set DIR first (A4988 requires 200ns setup time before STEP rising edge)
+                runtime.digitalWrite(this.dirPin, direction > 0 ? 1 : 0);
+                // STEP rising edge → one microstep
+                runtime.digitalWrite(this.stepPin, 1);
+                runtime.digitalWrite(this.stepPin, 0);
+            } else if (this.type === 4) {
+                const seq = AccelStepper.FULL4WIRE_SEQ;
+                const idx = ((this._currentPos % 4) + 4) % 4;
+                const pattern = seq[idx];
+                runtime.digitalWrite(this.pin1, pattern[0]);
+                runtime.digitalWrite(this.pin2, pattern[1]);
+                runtime.digitalWrite(this.pin3, pattern[2]);
+                runtime.digitalWrite(this.pin4, pattern[3]);
+            } else if (this.type === 6) {
+                const seq = AccelStepper.HALF4WIRE_SEQ;
+                const idx = ((this._currentPos % 8) + 8) % 8;
+                const pattern = seq[idx];
+                runtime.digitalWrite(this.pin1, pattern[0]);
+                runtime.digitalWrite(this.pin2, pattern[1]);
+                runtime.digitalWrite(this.pin3, pattern[2]);
+                runtime.digitalWrite(this.pin4, pattern[3]);
             }
         }
     };
@@ -703,6 +953,7 @@ export function injectAllLibraries(runtime: any): Record<string, any> {
     const LiquidCrystal_I2C = createLiquidCrystalI2CClass(runtime);
     const Ultrasonic = createUltrasonicClass(runtime);
     const NewPing = createNewPingClass(runtime);
+    const AccelStepper = createAccelStepperClass(runtime);
 
     return {
         // Servo
@@ -710,6 +961,9 @@ export function injectAllLibraries(runtime: any): Record<string, any> {
 
         // Stepper
         Stepper,
+
+        // AccelStepper (commonly used with A4988/DRV8825)
+        AccelStepper,
 
         // DHT sensors
         DHT,

@@ -465,10 +465,6 @@ class SimulationRunner {
     const currentState = this.pinStates.get(pinId);
     if (currentState === state) return;
 
-    // Log 7-segment related pin changes
-    if (pinId.startsWith('ESP')) {
-      console.log(`[SIM RUNNER 7SEG] setPinState: ${pinId} = ${state} (was ${currentState})`);
-    }
 
     this.pinStates.set(pinId, state);
     this.notifyListeners(pinId, state);
@@ -517,13 +513,7 @@ class SimulationRunner {
   private notifyListeners(pinId: string, state: PinState) {
     const set = this.listeners.get(pinId);
     if (set) {
-      // Log when ESP32 pins have listeners
-      if (pinId.startsWith('ESP')) {
-        console.log(`[SIM RUNNER 7SEG] notifyListeners: ${pinId} = ${state}, ${set.size} listeners`);
-      }
       set.forEach(l => l(state));
-    } else if (pinId.startsWith('ESP')) {
-      console.log(`[SIM RUNNER 7SEG] No listeners for ${pinId} = ${state}`);
     }
   }
 

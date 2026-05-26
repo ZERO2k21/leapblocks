@@ -1861,30 +1861,42 @@ class CircuitEngine {
                 console.log(`[STEPPER] Wiring 4-wire emulator for node ${peripheralId} — pin ${peripheralPinName} ← AVR ${avrPin}`);
                 let pendingUpdate: { angle: number; stepCount: number; energized: boolean; actualAngleUnbounded?: number } | null = null;
                 let rafScheduled = false;
+
+                const gearRatioStr = peripheralNode.data?.gearRatio || '1:1';
+                let stepsPerRev = 200;
+                const parts = gearRatioStr.split(':');
+                if (parts.length === 2) {
+                  const num = parseFloat(parts[0]);
+                  const den = parseFloat(parts[1]);
+                  if (!isNaN(num) && !isNaN(den) && den > 0) {
+                    stepsPerRev = Math.round(200 * (num / den));
+                  }
+                }
+
                 this.stepperEmulators.set(peripheralId, new StepperEmulator((state) => {
                   pendingUpdate = {
                     angle: state.angle,
                     stepCount: state.stepCount,
                     energized: state.energized,
-                    actualAngleUnbounded: state.actualAngleUnbounded
                   };
                   if (!rafScheduled) {
                     rafScheduled = true;
                     requestAnimationFrame(() => {
                       rafScheduled = false;
                       if (pendingUpdate) {
-                        const { angle: a, stepCount: s, energized: e, actualAngleUnbounded: unbounded } = pendingUpdate;
+                        const { angle: a, stepCount: s, energized: e } = pendingUpdate;
                         pendingUpdate = null;
                         updateNodeData(peripheralId, {
-                          angle: unbounded ?? a,  // Use unbounded angle for smooth CSS rotation
+                          angle: a,
+                          stepCount: s,
+                          energized: e,
                           value: `${a.toFixed(1)}°`,
                           units: `${s > 0 ? '+' : ''}${s} steps`,
-                          arrow: e ? 'orange' : '',  // Wokwi-style orange arrow when energized
                         });
                       }
                     });
                   }
-                }, { stepsPerRev: 200, constrainRotation: false }, peripheralId));
+                }, { stepsPerRev, constrainRotation: false }, peripheralId));
               }
               const stepper = this.stepperEmulators.get(peripheralId)!;
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
@@ -1942,6 +1954,18 @@ class CircuitEngine {
                 console.log(`[BIAXIAL] Wiring outer emulator for node ${peripheralId}`);
                 let pending: { angle: number; energized: boolean } | null = null;
                 let rafPending = false;
+
+                const gearRatioStr = peripheralNode.data?.gearRatio || '1:1';
+                let stepsPerRev = 200;
+                const parts = gearRatioStr.split(':');
+                if (parts.length === 2) {
+                  const num = parseFloat(parts[0]);
+                  const den = parseFloat(parts[1]);
+                  if (!isNaN(num) && !isNaN(den) && den > 0) {
+                    stepsPerRev = Math.round(200 * (num / den));
+                  }
+                }
+
                 this.stepperEmulators.set(outerKey, new StepperEmulator(({ angle, energized }) => {
                   pending = { angle, energized };
                   if (!rafPending) {
@@ -1955,7 +1979,7 @@ class CircuitEngine {
                       }
                     });
                   }
-                }, { stepsPerRev: 200 }, `${peripheralId}-outer`));
+                }, { stepsPerRev, constrainRotation: false }, `${peripheralId}-outer`));
               }
 
               // Create inner emulator (motor 2)
@@ -1963,6 +1987,18 @@ class CircuitEngine {
                 console.log(`[BIAXIAL] Wiring inner emulator for node ${peripheralId}`);
                 let pending: { angle: number; energized: boolean } | null = null;
                 let rafPending = false;
+
+                const gearRatioStr = peripheralNode.data?.gearRatio || '1:1';
+                let stepsPerRev = 200;
+                const parts = gearRatioStr.split(':');
+                if (parts.length === 2) {
+                  const num = parseFloat(parts[0]);
+                  const den = parseFloat(parts[1]);
+                  if (!isNaN(num) && !isNaN(den) && den > 0) {
+                    stepsPerRev = Math.round(200 * (num / den));
+                  }
+                }
+
                 this.stepperEmulators.set(innerKey, new StepperEmulator(({ angle, energized }) => {
                   pending = { angle, energized };
                   if (!rafPending) {
@@ -1976,7 +2012,7 @@ class CircuitEngine {
                       }
                     });
                   }
-                }, { stepsPerRev: 200 }, `${peripheralId}-inner`));
+                }, { stepsPerRev, constrainRotation: false }, `${peripheralId}-inner`));
               }
 
               const outerStepper = this.stepperEmulators.get(outerKey)!;
@@ -2008,11 +2044,64 @@ class CircuitEngine {
 
             // --- A4988 Stepper Driver Emulation ---
             // Bridges STEP/DIR from Arduino to the stepper motor connected on 1A/1B/2A/2B
+            // Full A4988 feature set: microstepping (MS1/MS2/MS3), ENABLE, RESET, SLEEP
             if (peripheralNode.data?.type === 'a4988') {
-              if (peripheralPinName === 'STEP' || peripheralPinName === 'DIR') {
-                const buf = this.peripheralPinBuffers.get(peripheralId)!;
-                buf[peripheralPinName] = isHigh;
+              const buf = this.peripheralPinBuffers.get(peripheralId)!;
+              buf[peripheralPinName] = isHigh;
 
+              // A4988 microstep resolution table (MS3, MS2, MS1)
+              // MS3 MS2 MS1 → microstep divisor
+              //  0   0   0  → full step  (1)
+              //  0   0   1  → half step  (2)
+              //  0   1   0  → 1/4 step   (4)
+              //  0   1   1  → 1/8 step   (8)
+              //  1   1   1  → 1/16 step  (16)
+              //
+              // A4988 internal pull resistors (when pin is not connected):
+              // MS1, MS2, MS3 → internal 100kΩ pull-down (default LOW = full step)
+              // ENABLE → internal 100kΩ pull-down (default LOW = enabled)
+              // RESET  → internal 100kΩ pull-UP (default HIGH = normal operation)
+              // SLEEP  → internal 100kΩ pull-UP (default HIGH = normal operation)
+              const ms1 = buf['MS1'] === true;
+              const ms2 = buf['MS2'] === true;
+              const ms3 = buf['MS3'] === true;
+              let microstepDivisor = 1;
+              if (!ms3 && !ms2 && !ms1) microstepDivisor = 1;   // full
+              else if (!ms3 && !ms2 && ms1) microstepDivisor = 2;   // half
+              else if (!ms3 && ms2 && !ms1) microstepDivisor = 4;   // 1/4
+              else if (!ms3 && ms2 && ms1) microstepDivisor = 8;    // 1/8
+              else if (ms3 && ms2 && ms1) microstepDivisor = 16;    // 1/16
+
+              // ENABLE: active LOW. Internal pull-down → enabled by default.
+              const enabled = buf['ENABLE'] !== true;
+              // RESET: active LOW. Internal pull-UP → normal by default.
+              const resetActive = buf['RESET'] === false;
+              // SLEEP: active LOW. Internal pull-UP → normal by default.
+              const sleeping = buf['SLEEP'] === false;
+
+              // RESET and SLEEP only gate the energized state via driverActive → setEnergized().
+              // The internal step counter is NOT reset — the sequencer tracks position even during
+              // sleep/reset, matching Wokwi and real A4988 behavior (output drivers are gated, not position).
+
+              // driverActive gates the energized state (not position tracking)
+              const driverActive = enabled && !sleeping && !resetActive;
+
+              // Update visual state for A4988 element
+              const a4988State = {
+                enable: buf['ENABLE'] === true,
+                ms1, ms2, ms3,
+                reset: !resetActive,
+                sleep: !sleeping,
+                step: buf['STEP'] === true,
+                dir: buf['DIR'] === true,
+                driverActive,
+                microstepDivisor,
+              };
+              updateNodeData(peripheralId, a4988State);
+
+              // Always process STEP/DIR — A4988 internal sequencer tracks position
+              // even during sleep/reset; only the motor coil outputs are gated.
+              if (peripheralPinName === 'STEP' || peripheralPinName === 'DIR') {
                 // Find the stepper motor connected to this A4988's motor pins
                 const motorEdges = currentStateStore.edges.filter(e =>
                   (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.sourceHandle || '')) ||
@@ -2028,7 +2117,6 @@ class CircuitEngine {
                   const isBiaxial = motorNode?.data?.type === 'biaxial-stepper';
 
                   if (isBiaxial) {
-                    // Determine which shaft this A4988 drives by inspecting which biaxial pins are wired
                     const biaxialEdges = currentStateStore.edges.filter(e =>
                       (e.source === peripheralId && motorEdges.some(me => me === e)) ||
                       (e.target === peripheralId && motorEdges.some(me => me === e))
@@ -2044,6 +2132,19 @@ class CircuitEngine {
                       console.log(`[BIAXIAL] Wiring A4988 STEP/DIR emulator for ${shaftLabel} shaft of node ${motorNodeId}`);
                       let pending: { angle: number; energized: boolean } | null = null;
                       let rafPending = false;
+
+                      const motorNode = currentStateStore.nodes.find(n => n.id === motorNodeId);
+                      const gearRatioStr = motorNode?.data?.gearRatio || '1:1';
+                      let stepsPerRev = 200;
+                      const parts = gearRatioStr.split(':');
+                      if (parts.length === 2) {
+                        const num = parseFloat(parts[0]);
+                        const den = parseFloat(parts[1]);
+                        if (!isNaN(num) && !isNaN(den) && den > 0) {
+                          stepsPerRev = Math.round(200 * (num / den));
+                        }
+                      }
+
                       this.stepperEmulators.set(shaftKey, new StepperEmulator(({ angle, energized }) => {
                         pending = { angle, energized };
                         if (!rafPending) {
@@ -2059,20 +2160,40 @@ class CircuitEngine {
                             }
                           });
                         }
-                      }, { stepsPerRev: 200 }, `${motorNodeId}-${shaftLabel}`));
+                      }, { stepsPerRev, constrainRotation: false, microstepDivisor }, `${motorNodeId}-${shaftLabel}`));
                     }
                     const stepper = this.stepperEmulators.get(shaftKey)!;
-                    if (peripheralPinName === 'DIR') {
-                      stepper.setDirection(isHigh);
-                    } else if (peripheralPinName === 'STEP') {
-                      stepper.processStep(isHigh);
-                    }
-                  } else {
-                    // Standard single stepper motor
+                    // Update microstep divisor if changed
+                    stepper.setSteppingMode('micro', microstepDivisor);
+                    // 4-wire phase detection: treat RESET/STEP/SLEEP/DIR as a combined
+                    // phase state.  The direction is derived from the phase sequence
+                    // (forward / backward through FULL_STEP_SEQ), NOT from the DIR pin.
+                    // This matches Wokwi's behavior when the Stepper library's 4-wire
+                    // pattern drives an A4988 (DIR is just a mask bit, not a direction signal).
+                    stepper.processCoils(
+                      buf['RESET'] === true,
+                      buf['STEP'] === true,
+                      buf['SLEEP'] === true,
+                      buf['DIR'] === true,
+                    );
+                    } else {
                     if (!this.stepperEmulators.has(motorNodeId)) {
                       console.log(`[STEPPER] Wiring A4988 STEP/DIR emulator for motor node ${motorNodeId}`);
                       let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
                       let rafScheduled = false;
+
+                      const motorNode = currentStateStore.nodes.find(n => n.id === motorNodeId);
+                      const gearRatioStr = motorNode?.data?.gearRatio || '1:1';
+                      let stepsPerRev = 200;
+                      const parts = gearRatioStr.split(':');
+                      if (parts.length === 2) {
+                        const num = parseFloat(parts[0]);
+                        const den = parseFloat(parts[1]);
+                        if (!isNaN(num) && !isNaN(den) && den > 0) {
+                          stepsPerRev = Math.round(200 * (num / den));
+                        }
+                      }
+
                       this.stepperEmulators.set(motorNodeId, new StepperEmulator(({ angle, stepCount, energized }) => {
                         pendingUpdate = { angle, stepCount, energized };
                         if (!rafScheduled) {
@@ -2082,26 +2203,61 @@ class CircuitEngine {
                             if (pendingUpdate) {
                               const { angle: a, stepCount: s, energized: e } = pendingUpdate;
                               pendingUpdate = null;
+                              const displayAngle = ((a % 360) + 360) % 360;
                               updateNodeData(motorNodeId, {
                                 angle: a,
-                                value: `${a.toFixed(1)}°`,
+                                stepCount: s,
+                                energized: e,
+                                value: `${displayAngle.toFixed(1)}°`,
                                 units: `${s > 0 ? '+' : ''}${s} steps`,
-                                arrow: e ? '#BEF264' : '',
+                                microstepDivisor,
                               });
                             }
                           });
                         }
-                      }, { stepsPerRev: 200 }, motorNodeId));
+                      }, { stepsPerRev, constrainRotation: false, microstepDivisor }, motorNodeId));
                     }
                     const stepper = this.stepperEmulators.get(motorNodeId)!;
-                    if (peripheralPinName === 'DIR') {
-                      stepper.setDirection(isHigh);
-                    } else if (peripheralPinName === 'STEP') {
-                      stepper.processStep(isHigh);
-                    }
+                    stepper.setSteppingMode('micro', microstepDivisor);
+
+                    // 4-wire phase detection: treat RESET/STEP/SLEEP/DIR as a combined
+                    // phase state.  Derive direction from phase sequence, not DIR pin.
+                    stepper.processCoils(
+                      buf['RESET'] === true,
+                      buf['STEP'] === true,
+                      buf['SLEEP'] === true,
+                      buf['DIR'] === true,
+                    );
                   }
                 }
               }
+
+              // For non-STEP/DIR pin changes (ENABLE, RESET, SLEEP, MSx), update
+              // the motor energized state.  Only ENABLE gates the output (RESET and
+              // SLEEP are part of the 4-wire phase pattern and should not de-energize).
+              if (peripheralPinName !== 'STEP' && peripheralPinName !== 'DIR') {
+                const motorEdges = currentStateStore.edges.filter(e =>
+                  (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.sourceHandle || '')) ||
+                  (e.target === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.targetHandle || ''))
+                );
+                const motorNodeId = motorEdges.length > 0
+                  ? (motorEdges[0].source === peripheralId ? motorEdges[0].target : motorEdges[0].source)
+                  : null;
+                if (motorNodeId) {
+                  const motorNode = currentStateStore.nodes.find(n => n.id === motorNodeId);
+                  if (motorNode?.data?.type === 'biaxial-stepper') {
+                    const connectedPins = motorEdges.map(e =>
+                      e.source === motorNodeId ? e.sourceHandle : e.targetHandle
+                    );
+                    const isInner = connectedPins.some(p => p && ['A2+', 'A2-', 'B2+', 'B2-'].includes(p));
+                    const shaftKey = isInner ? `${motorNodeId}__inner` : `${motorNodeId}__outer`;
+                    this.stepperEmulators.get(shaftKey)?.setEnergized(enabled);
+                  } else {
+                    this.stepperEmulators.get(motorNodeId)?.setEnergized(enabled);
+                  }
+                }
+              }
+
             }
 
             // Update the target peripheral's UI state so standard Leap Elements react

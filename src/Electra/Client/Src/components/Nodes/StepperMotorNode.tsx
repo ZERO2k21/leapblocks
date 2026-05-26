@@ -77,8 +77,8 @@ export const StepperMotorNode = memo(({ nodeId, data, selected = false }: Steppe
         <circle cx="110" cy="64" r="34" fill="#1f2937" stroke="#334155" />
         <circle cx="110" cy="64" r="8" fill="#64748b" />
         <g
-          style={{ transformBox: 'fill-box', transformOrigin: 'center', transition: 'transform 50ms linear' }}
-          transform={`rotate(${angle}, 110, 64)`}
+          style={{ transformBox: 'fill-box', transformOrigin: 'center', transition: 'transform 80ms ease-out' }}
+          transform={`rotate(${totalDegrees}, 110, 64)`}
         >
           <line x1="110" y1="64" x2="110" y2="34" stroke="#e63" strokeWidth="3" strokeLinecap="round" />
         </g>

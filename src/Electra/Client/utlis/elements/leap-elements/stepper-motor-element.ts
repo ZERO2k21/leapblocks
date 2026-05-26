@@ -35,11 +35,12 @@ export class StepperMotorElement extends LitElement {
   @property() value = '';
   @property() units = '';
   @property() size: 8 | 11 | 14 | 17 | 23 | 34 = defaultSize;
+  @property() display: 'steps' | 'angle' | 'none' = 'steps';
+  @property() gearRatio = '1:1';
+  @property({ type: Boolean }) energized = false;
+  @property({ type: Number }) stepCount = 0;
 
-  /** Cumulative angle (unbounded) used for CSS transform — avoids wrap-around flips */
-  private _cumulativeAngle = 0;
-  /** Last modulo angle received so we can compute the shortest-arc delta */
-  private _lastModAngle = 0;
+
 
   get pinInfo(): ElementPin[] {
     const spec = this.nemaSpecMap[this.size] ?? this.nemaSpecMap[defaultSize];
@@ -137,26 +138,7 @@ export class StepperMotorElement extends LitElement {
     if (changedProperties.has('size')) {
       this.dispatchEvent(new CustomEvent('pininfo-change'));
     }
-    // Handle angle updates with wrapping detection
-    if (changedProperties.has('angle')) {
-      const oldAngle = changedProperties.get('angle') as number ?? 0;
-      const newAngle = this.angle;
 
-      // Detect wrapping and adjust cumulative angle accordingly
-      const delta = newAngle - oldAngle;
-
-      // If delta is large (> 180°), we wrapped around
-      if (delta > 180) {
-        // Wrapped from 359° to 0° (CCW) - subtract 360° from cumulative
-        this._cumulativeAngle -= 360;
-      } else if (delta < -180) {
-        // Wrapped from 0° to 359° (CW) - add 360° to cumulative
-        this._cumulativeAngle += 360;
-      }
-
-      // Apply the new angle to cumulative
-      this._cumulativeAngle += (newAngle - oldAngle);
-    }
     super.update(changedProperties);
   }
 
@@ -179,14 +161,33 @@ export class StepperMotorElement extends LitElement {
     // shaft radius offset, needed for transform
     const rOff = Math.sqrt(0.75 * Math.pow(shaftRadius, 2));
 
-    const energized = !!this.arrow;
-    const glowColor = energized ? '#BEF264' : 'none';
-    const glowFilter = energized ? 'drop-shadow(0 0 3px #BEF264)' : 'none';
+    const isEnergized = this.energized;
+    const glowColor = isEnergized ? '#BEF264' : 'none';
+    const glowFilter = isEnergized ? 'drop-shadow(0 0 3px #BEF264)' : 'none';
 
     // The shaft center in SVG user-space (mm units, inside the scale group)
     // After translate(1,1) + scale(mmToPix), the shaft center in CSS px is:
     const shaftCenterPx_X = (1 + halfFrame) * mmToPix;
     const shaftCenterPx_Y = (1 + halfFrame) * mmToPix;
+
+    let valStr = this.value;
+    let unitsStr = this.units;
+
+    if (this.display === 'steps') {
+      const s = this.stepCount;
+      valStr = `${s > 0 ? '+' : ''}${s}`;
+      unitsStr = 'steps';
+    } else if (this.display === 'angle') {
+      const deg = ((this.angle % 360) + 360) % 360;
+      valStr = `${deg.toFixed(1)}°`;
+      unitsStr = '';
+    } else if (this.display === 'none') {
+      valStr = '';
+      unitsStr = '';
+    }
+
+    const showArrow = this.arrow !== 'none';
+    const arrowFill = this.arrow || (isEnergized ? 'orange' : 'rgba(255,255,255,0.15)');
 
     return html`
       <svg
@@ -288,7 +289,7 @@ export class StepperMotorElement extends LitElement {
             fill="none"
             stroke="${glowColor}"
             stroke-width="0.8"
-            stroke-opacity="${energized ? '0.6' : '0'}"
+            stroke-opacity="${isEnergized ? '0.6' : '0'}"
             style="transition: stroke-opacity 80ms ease, stroke 80ms ease"
           />
         </g>
@@ -297,16 +298,17 @@ export class StepperMotorElement extends LitElement {
       <!-- Rotator group — shaft rotates in place at its center -->
       <g
         id="rotator"
-        style="transform: rotate(${this._cumulativeAngle}deg); transform-origin: ${shaftCenterPx_X}px ${shaftCenterPx_Y}px; transition: transform 100ms linear;"
+        style="transform: rotate(${this.angle}deg); transform-origin: ${shaftCenterPx_X}px ${shaftCenterPx_Y}px; transition: transform 80ms ease-out;"
       >
         <g transform="translate(1,1)">
           <g transform="scale(${mmToPix})">
             <!-- Direction arrow -->
+            ${showArrow ? html`
             <path
               transform="translate(${halfFrame} ${halfFrame})"
-              fill="${this.arrow || 'rgba(255,255,255,0.15)'}"
+              fill="${arrowFill}"
               d="m 0 0 l -${shaftRadius} 0 l ${shaftRadius} -${halfFrame - 3} l ${shaftRadius} ${halfFrame - 3} z"
-            />
+            />` : ''}
             <!-- D-cut shaft -->
             <path
               transform="translate(${halfFrame}, ${halfFrame})"
@@ -328,14 +330,14 @@ export class StepperMotorElement extends LitElement {
               y="${spec.valueYPosition}"
               font-size="${spec.textSize / mmToPix}px"
             >
-              ${this.value}
+              ${valStr}
             </tspan>
             <tspan
               x="${halfFrame}"
               y="${spec.unitsYPosition}"
               font-size="${(0.7 * spec.textSize) / mmToPix}px"
             >
-              ${this.units}
+              ${unitsStr}
             </tspan>
           </text>
         </g>

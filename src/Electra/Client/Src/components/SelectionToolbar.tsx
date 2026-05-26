@@ -224,6 +224,95 @@ export const SelectionToolbar: React.FC = () => {
     );
   };
 
+  const renderStepperControls = () => {
+    if (nodeType !== 'stepper-motor') return null;
+
+    const currentSize = selectedNode?.data?.size ?? '23';
+    const currentDisplay = selectedNode?.data?.display ?? 'steps';
+    const currentGearRatio = selectedNode?.data?.gearRatio ?? '1:1';
+    const currentArrow = selectedNode?.data?.arrow ?? '';
+
+    const sizes = ['8', '11', '14', '17', '23', '34'];
+    const displays = [
+      { value: 'steps', label: 'Steps' },
+      { value: 'angle', label: 'Angle' },
+      { value: 'none', label: 'None' }
+    ];
+    const gearRatios = ['1:1', '2:1', '2048:200', '64:1', '10:1', '100:1'];
+    const arrowColors = [
+      { value: '', label: 'Dynamic (Orange)' },
+      { value: 'none', label: 'None (Hidden)' },
+      { value: 'orange', label: 'Orange' },
+      { value: 'white', label: 'White' },
+      { value: 'green', label: 'Green' },
+      { value: 'blue', label: 'Blue' },
+      { value: 'yellow', label: 'Yellow' },
+      { value: 'red', label: 'Red' }
+    ];
+
+    return (
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '2px', border: '1px solid var(--lp-border)' }}>
+        {/* Size Selector */}
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)' }}>SIZE</span>
+        <select
+          value={currentSize}
+          onChange={(e) => updateNodeData(selectedNode!.id, { size: parseInt(e.target.value) || 23 })}
+          style={{ background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+        >
+          {sizes.map(s => <option key={s} value={s}>NEMA {s}</option>)}
+        </select>
+
+        {/* Display Selector */}
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', marginLeft: '6px' }}>DISP</span>
+        <select
+          value={currentDisplay}
+          onChange={(e) => updateNodeData(selectedNode!.id, { display: e.target.value })}
+          style={{ background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+        >
+          {displays.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+        </select>
+
+        {/* Gear Ratio Selector */}
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', marginLeft: '6px' }}>GEAR</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+          <select
+            value={gearRatios.includes(currentGearRatio) ? currentGearRatio : 'custom'}
+            onChange={(e) => {
+              if (e.target.value !== 'custom') {
+                updateNodeData(selectedNode!.id, { gearRatio: e.target.value });
+              }
+            }}
+            style={{ background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          >
+            {gearRatios.map(g => <option key={g} value={g}>{g}</option>)}
+            {!gearRatios.includes(currentGearRatio) && <option value={currentGearRatio}>{currentGearRatio} (Custom)</option>}
+            <option value="custom">Custom...</option>
+          </select>
+          
+          {(!gearRatios.includes(currentGearRatio) || currentGearRatio === 'custom') && (
+            <input
+              type="text"
+              placeholder="e.g. 5:1"
+              value={currentGearRatio === 'custom' ? '' : currentGearRatio}
+              onChange={(e) => updateNodeData(selectedNode!.id, { gearRatio: e.target.value })}
+              style={{ width: '50px', background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+            />
+          )}
+        </div>
+
+        {/* Arrow Color Selector */}
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', marginLeft: '6px' }}>ARROW</span>
+        <select
+          value={currentArrow}
+          onChange={(e) => updateNodeData(selectedNode!.id, { arrow: e.target.value })}
+          style={{ background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+        >
+          {arrowColors.map(ac => <option key={ac.value} value={ac.value}>{ac.label}</option>)}
+        </select>
+      </div>
+    );
+  };
+
   return (
     <div 
       onClick={(e) => e.stopPropagation()}
@@ -263,6 +352,7 @@ export const SelectionToolbar: React.FC = () => {
             {renderSlider()}
             {renderLEDColorPalette()}
             {renderIRReceiverInput()}
+            {renderStepperControls()}
           </div>
         </>
       ) : (

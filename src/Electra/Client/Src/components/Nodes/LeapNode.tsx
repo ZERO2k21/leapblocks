@@ -93,9 +93,13 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.direction = data.direction ?? 'cw';
   } else if (data.type === 'stepper-motor') {
     mappedProps.angle = data.angle ?? 0;
-    mappedProps.value = data.value ?? '0.0°';
-    mappedProps.units = data.units ?? '0 steps';
+    mappedProps.value = data.value ?? '';
+    mappedProps.units = data.units ?? '';
     mappedProps.arrow = data.arrow ?? '';
+    mappedProps.display = data.display ?? 'steps';
+    mappedProps.gearRatio = data.gearRatio ?? '1:1';
+    mappedProps.energized = data.energized ?? false;
+    mappedProps.stepCount = data.stepCount ?? 0;
   } else if (data.type === 'ks2e-m-dc5') {
     // Relay: energized when COIL1 is HIGH (COIL2 is typically GND)
     mappedProps.energized = data.relayEnergized ?? false;
@@ -345,7 +349,11 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     const el = elementRef.current;
     el.angle = data.angle ?? 0;
     el.arrow = data.arrow ?? '';
-  }, [data.type, data.angle, data.arrow]);
+    el.display = data.display ?? 'steps';
+    el.gearRatio = data.gearRatio ?? '1:1';
+    el.energized = data.energized ?? false;
+    el.stepCount = data.stepCount ?? 0;
+  }, [data.type, data.angle, data.arrow, data.display, data.gearRatio, data.energized, data.stepCount]);
 
   // Imperatively set biaxial-stepper hand angles as DOM properties.
   useEffect(() => {

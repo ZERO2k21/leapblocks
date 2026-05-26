@@ -203,8 +203,18 @@ export class ArduinoRuntime {
   }
 
   public async __delayMicroseconds(us: number): Promise<void> {
-    if (us > 10000) {
-      await new Promise<void>(resolve => setTimeout(resolve, us / 1000));
+    if (!this.running) throw new DOMException('Simulation stopped', 'AbortError');
+    // Always yield once, even for tiny delays, so the step-based
+    // Stepper loop does not block the main thread for thousands of
+    // iterations without yielding.
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    if (!this.running) throw new DOMException('Simulation stopped', 'AbortError');
+    if (us <= 100) return;
+    const targetMs = us / 1000;
+    // Busy-wait for microsecond precision (setTimeout clamps to ~4ms)
+    const start = performance.now();
+    while (performance.now() - start < targetMs) {
+      if (!this.running) throw new DOMException('Simulation stopped', 'AbortError');
     }
   }
 
@@ -357,36 +367,45 @@ export class ArduinoRuntime {
   /** Notify the loop runner that delay() was called in this iteration */
   _notifyDelayCalled(): void { this._loopCalledDelay = true; }
 
+  /** Guard against re-entrant runLoop calls (rAF can fire while loopFn is awaiting) */
+  private _runLoopRunning = false;
+
   private async runLoop(): Promise<void> {
     if (!this.running || !this.loopFn) return;
+    if (this._runLoopRunning) return; // prevent re-entrant concurrent loop() execution
+    this._runLoopRunning = true;
 
-    // Batch loop iterations: run up to N loops per animation frame for speed,
-    // but yield to the browser periodically to keep the UI responsive.
-    // If loop() calls delay(), it awaits a setTimeout internally, which
-    // naturally yields — so we don't need extra rAF in that case.
-    const BATCH_SIZE = 60; // Max iterations before yielding to rAF
+    try {
+      // Batch loop iterations: run up to N loops per animation frame for speed,
+      // but yield to the browser periodically to keep the UI responsive.
+      // If loop() calls delay(), it awaits a setTimeout internally, which
+      // naturally yields — so we don't need extra rAF in that case.
+      const BATCH_SIZE = 60; // Max iterations before yielding to rAF
 
-    for (let i = 0; i < BATCH_SIZE && this.running; i++) {
-      this._loopCalledDelay = false;
-      try {
-        await this.loopFn();
-      } catch (e: any) {
-        if (e.message === '__ARDUINO_HALT__') return;
-        if (e.name === 'AbortError') return; // Simulation stopped during delay
-        console.error('[ArduinoRuntime] loop() error:', e);
-        this.onSerial?.(`[ERROR in loop()]: ${e.message}\n`);
-        this.running = false;
-        return;
+      for (let i = 0; i < BATCH_SIZE && this.running; i++) {
+        this._loopCalledDelay = false;
+        try {
+          await this.loopFn();
+        } catch (e: any) {
+          if (e.message === '__ARDUINO_HALT__') return;
+          if (e.name === 'AbortError') return; // Simulation stopped during delay
+          console.error('[ArduinoRuntime] loop() error:', e);
+          this.onSerial?.(`[ERROR in loop()]: ${e.message}\n`);
+          this.running = false;
+          return;
+        }
+
+        // If loop() called delay(), the await already yielded to the browser.
+        // No need to continue batching — the delay handled the timing.
+        if (this._loopCalledDelay) break;
       }
 
-      // If loop() called delay(), the await already yielded to the browser.
-      // No need to continue batching — the delay handled the timing.
-      if (this._loopCalledDelay) break;
-    }
-
-    if (this.running) {
-      // Schedule next batch on the next animation frame for UI responsiveness
-      this.rafHandle = requestAnimationFrame(() => this.runLoop());
+      if (this.running) {
+        // Schedule next batch on the next animation frame for UI responsiveness
+        this.rafHandle = requestAnimationFrame(() => this.runLoop());
+      }
+    } finally {
+      this._runLoopRunning = false;
     }
   }
 

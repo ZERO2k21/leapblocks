@@ -100,15 +100,16 @@ export class StepperEmulator {
   private rampTimer: ReturnType<typeof setInterval> | null = null;
 
   // ── Physics Simulation Properties ──────────────────────────────────────────
-  private physicsEnabled = false;
+  private physicsEnabled = true;
   private actualAngle = 0;           // Current physical angle (radians)
   private targetAngle = 0;           // Target angle from step commands (radians)
   private angularVelocity = 0;       // Current rotation speed (rad/s)
   private physicsTimer: ReturnType<typeof setInterval> | null = null;
-  private readonly PHYSICS_HZ = 60;  // Physics update rate
-  private readonly INERTIA = 0.0001; // Moment of inertia (kg⋅m²) - small for responsive feel
-  private readonly DAMPING = 0.002;  // Damping coefficient - controls settling time
-  private readonly SPRING_K = 50;    // Spring constant - controls how strongly motor pulls to target
+  private readonly PHYSICS_HZ = 120; // Physics update rate (120 Hz for smooth motion)
+  private readonly INERTIA = 0.001;    // Moment of inertia (kg⋅m²) - stable with 120Hz physics
+  private readonly DAMPING = 0.07;     // Damping coefficient - ~critical damping (ζ≈1.1)
+  private readonly SPRING_K = 1;       // Spring constant - gentle pull, stable at 120Hz
+  private readonly MAX_VELOCITY = 150; // Max angular velocity (rad/s ~ 1432 RPM)
 
   // ── Rotation Constraints ───────────────────────────────────────────────────
   private readonly ANGLE_MIN = 0;    // Minimum angle in degrees (0°)
@@ -159,9 +160,31 @@ export class StepperEmulator {
     this.dirHigh = isHigh;
   }
 
+  setEnergized(v: boolean) {
+    this.energized = v;
+  }
+
   setConstrainRotation(constrain: boolean) {
     this.constrainRotation = constrain;
     console.log(`${TAG} [${this.nodeId}] Rotation constraints ${constrain ? 'enabled (0-359°)' : 'disabled (unbounded)'}`);
+  }
+
+  setPhysicsEnabled(enabled: boolean) {
+    this.physicsEnabled = enabled;
+    if (enabled && !this.physicsTimer) this.startPhysicsLoop();
+    console.log(`${TAG} [${this.nodeId}] Physics simulation ${enabled ? 'enabled' : 'disabled'}`);
+  }
+
+  setSpringK(k: number) {
+    (this as any).SPRING_K = Math.max(1, k);
+  }
+
+  setDamping(d: number) {
+    (this as any).DAMPING = Math.max(0.001, d);
+  }
+
+  setInertia(j: number) {
+    (this as any).INERTIA = Math.max(0.00001, j);
   }
 
   toggleDirection() {
@@ -378,8 +401,9 @@ export class StepperEmulator {
   private updatePhysics(dt: number) {
     if (!this.physicsEnabled || !this.energized) {
       // When not energized, gradually slow down due to damping
+      const dampingFactor = 1 - this.DAMPING * dt * 10;
       if (Math.abs(this.angularVelocity) > 0.001) {
-        this.angularVelocity *= 0.95; // Exponential decay
+        this.angularVelocity *= Math.max(0, dampingFactor);
 
         // Apply rotation constraints
         if (this.constrainRotation) {
@@ -428,8 +452,7 @@ export class StepperEmulator {
     this.angularVelocity += angularAcceleration * dt;
 
     // Velocity limiting (realistic motor speed limits)
-    const maxVelocity = 100; // rad/s (~955 RPM)
-    this.angularVelocity = Math.max(-maxVelocity, Math.min(maxVelocity, this.angularVelocity));
+    this.angularVelocity = Math.max(-this.MAX_VELOCITY, Math.min(this.MAX_VELOCITY, this.angularVelocity));
 
     // Update angle: θ = θ + ω⋅dt
     const nextAngle = this.actualAngle + this.angularVelocity * dt;
@@ -478,21 +501,15 @@ export class StepperEmulator {
 
   /**
    * Get the smooth interpolated angle for realistic animation.
-   * Returns angle in degrees (0-360).
+   * Returns angle in degrees (0-360). With physics enabled, this
+   * returns the smooth spring-damper interpolated position.
    */
   public getSmoothAngle(): number {
-    if (!this.physicsEnabled) {
-      return this.getAngle();
+    if (this.physicsEnabled) {
+      const degrees = (this.actualAngle * 180 / Math.PI) % 360;
+      return ((degrees % 360) + 360) % 360;
     }
-
-    // For constrained mode, return exact integer angle
-    if (this.constrainRotation) {
-      return this.anglePosition;
-    }
-
-    // Convert from radians to degrees
-    const degrees = (this.actualAngle * 180 / Math.PI) % 360;
-    return ((degrees % 360) + 360) % 360; // Normalize to 0-360
+    return this.getAngle();
   }
 
   /**
@@ -500,36 +517,23 @@ export class StepperEmulator {
    * This maintains cumulative rotation across multiple revolutions.
    */
   public getSmoothAngleUnbounded(): number {
-    // For constrained mode, return exact integer angle (no unbounded rotation)
-    if (this.constrainRotation) {
-      return this.anglePosition;
+    if (this.physicsEnabled) {
+      return this.actualAngle * 180 / Math.PI;
     }
-
-    if (!this.physicsEnabled) {
-      const range = this.subStepRange();
-      const totalSteps = this.stepCount + (this.microSubStep / range);
-      return (totalSteps / this.stepsPerRev) * 360;
-    }
-
-    // Convert from radians to degrees (unbounded)
-    return this.actualAngle * 180 / Math.PI;
+    const range = this.subStepRange();
+    const totalSteps = this.stepCount + (this.microSubStep / range);
+    return (totalSteps / this.stepsPerRev) * 360;
   }
 
   public getAngle(): number {
-    // For constrained mode, return exact integer angle position
-    if (this.constrainRotation) {
-      return this.anglePosition;
-    }
-
-    // Original unbounded calculation
     const range = this.subStepRange();
     const totalSteps = this.stepCount + (this.microSubStep / range);
-    const rawAngle = (totalSteps / this.stepsPerRev) * 360;
-    return ((rawAngle % 360) + 360) % 360; // Double modulo for negative CCW angles
+    return (totalSteps / this.stepsPerRev) * 360;
   }
 
   public getState(): StepperState {
     const range = this.subStepRange();
+    const moving = this.currentSpeed > 0.1 || Math.abs(this.angularVelocity) > 0.05;
     return {
       stepCount: this.stepCount,
       microPosition: range > 1 ? this.microSubStep / range : 0,
@@ -539,9 +543,7 @@ export class StepperEmulator {
       stalled: this.stalled,
       stepsLost: this.stepsLost,
       coilState: [...this.coilState],
-      // If moving, show lastDirection. If stopped, show the DIR pin state.
-      direction: this.currentSpeed > 0.1 ? (this.lastDirection as 1 | -1) : (this.dirHigh ? 1 : -1),
-      // Physics simulation data
+      direction: moving ? (this.lastDirection as 1 | -1) : (this.dirHigh ? 1 : -1),
       actualAngle: this.getSmoothAngle(),
       actualAngleUnbounded: this.getSmoothAngleUnbounded(),
       angularVelocity: this.physicsEnabled ? this.angularVelocity : undefined,

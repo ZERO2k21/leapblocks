@@ -154,6 +154,7 @@ export class BiaxialStepperElement extends LitElement {
             stroke-linejoin: round;
             stroke-width: 0.1px;
             transform-box: fill-box;
+            transition: transform 120ms ease-out;
           }
         </style>
         <linearGradient id="hole-gradient">
