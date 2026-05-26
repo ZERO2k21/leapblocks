@@ -1251,51 +1251,57 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     useEffect(() => {
         if (!window.electronAPI?.isElectron) return;
 
-        window.electronAPI.onPythonOutput((data) => {
-            addLog(data.replace(/\n$/, ""), "log");
-        });
-        window.electronAPI.onPythonError((data) => {
-            const cleaned = data.replace(/\n$/, "");
-            if (isPythonBannerText(cleaned)) return;
-            addLog(cleaned, "error");
-        });
-        window.electronAPI.onPythonExit((code) => {
-            if (code === 0) {
-                addLog(`✓ Program finished successfully`, "success");
-            } else if (code !== null) {
-                addLog(`✗ Program exited with code ${code}`, "warning");
-            }
-            setIsRunning(false);
-        });
-        window.electronAPI.onPythonReplOutput((data) => {
-            replOutputBufferRef.current += data;
-            const lines = replOutputBufferRef.current.split("\n");
-            for (let i = 0; i < lines.length - 1; i++) {
-                const line = lines[i].replace(/\r$/, "");
-                if (line.trim() || i < lines.length - 2) {
-                    addLog(line, "log");
+        const cleanups = [
+            window.electronAPI.onPythonOutput((data) => {
+                addLog(data.replace(/\n$/, ""), "log");
+            }),
+            window.electronAPI.onPythonError((data) => {
+                const cleaned = data.replace(/\n$/, "");
+                if (isPythonBannerText(cleaned)) return;
+                addLog(cleaned, "error");
+            }),
+            window.electronAPI.onPythonExit((code) => {
+                if (code === 0) {
+                    addLog(`✓ Program finished successfully`, "success");
+                } else if (code !== null) {
+                    addLog(`✗ Program exited with code ${code}`, "warning");
                 }
-            }
-            replOutputBufferRef.current = lines[lines.length - 1];
-        });
-        window.electronAPI.onPythonReplError((data) => {
-            replErrorBufferRef.current += data;
-            const lines = replErrorBufferRef.current.split("\n");
-            for (let i = 0; i < lines.length - 1; i++) {
-                const line = lines[i].replace(/\r$/, "");
-                const trimmed = line.trim();
-                if (!trimmed) continue;
-                if (isPythonBannerText(line)) continue;
-                addLog(line, "error");
-            }
-            replErrorBufferRef.current = lines[lines.length - 1];
-        });
-        window.electronAPI.onPythonPipOutput((data) => {
-            addLog(data.replace(/\n$/, ""), "log");
-        });
-        window.electronAPI.onPythonPipError((data) => {
-            addLog(data, "error");
-        });
+                setIsRunning(false);
+            }),
+            window.electronAPI.onPythonReplOutput((data) => {
+                replOutputBufferRef.current += data;
+                const lines = replOutputBufferRef.current.split("\n");
+                for (let i = 0; i < lines.length - 1; i++) {
+                    const line = lines[i].replace(/\r$/, "");
+                    if (line.trim() || i < lines.length - 2) {
+                        addLog(line, "log");
+                    }
+                }
+                replOutputBufferRef.current = lines[lines.length - 1];
+            }),
+            window.electronAPI.onPythonReplError((data) => {
+                replErrorBufferRef.current += data;
+                const lines = replErrorBufferRef.current.split("\n");
+                for (let i = 0; i < lines.length - 1; i++) {
+                    const line = lines[i].replace(/\r$/, "");
+                    const trimmed = line.trim();
+                    if (!trimmed) continue;
+                    if (isPythonBannerText(line)) continue;
+                    addLog(line, "error");
+                }
+                replErrorBufferRef.current = lines[lines.length - 1];
+            }),
+            window.electronAPI.onPythonPipOutput((data) => {
+                addLog(data.replace(/\n$/, ""), "log");
+            }),
+            window.electronAPI.onPythonPipError((data) => {
+                addLog(data, "error");
+            }),
+        ];
+
+        return () => {
+            cleanups.forEach(fn => fn());
+        };
     }, [addLog, isPythonBannerText]);
 
     useEffect(() => {
@@ -1354,6 +1360,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             if (window.electronAPI?.isElectron) {
                 await window.electronAPI.pythonRun(code);
             } else {
+                if (!skulptRef.current) {
+                    throw new Error("Python engine (Skulpt) not initialized. Try refreshing the page.");
+                }
                 await skulptRef.current.runPython(code);
 
                 const endTime = performance.now();
@@ -1372,6 +1381,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             const suggestion = getErrorSuggestion(errorMsg);
             if (suggestion) {
                 addLog(`💡 Tip: ${suggestion}`, "info");
+            }
+
+            // If the IPC call itself failed (process never started), reset state
+            if (window.electronAPI?.isElectron) {
+                setIsRunning(false);
+                try { window.electronAPI.pythonStop(); } catch (_) {}
             }
         } finally {
             if (!window.electronAPI?.isElectron) {

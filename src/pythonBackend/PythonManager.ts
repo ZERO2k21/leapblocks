@@ -85,5 +85,11 @@ export class PythonManager {
         proc.on('close', (code) => {
             this.mainWindow?.webContents.send(exitEvent, code);
         });
+
+        proc.on('error', (err) => {
+            console.error(`[PythonManager] Process error:`, err.message);
+            this.mainWindow?.webContents.send(errEvent, `Failed to start Python: ${err.message}`);
+            this.mainWindow?.webContents.send(exitEvent, null);
+        });
     }
 }

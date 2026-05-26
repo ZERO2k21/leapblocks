@@ -17,11 +17,17 @@ function ensureLoaderConfig() {
     });
 }
 
-// Tell Monaco to not use web workers (avoids CSP blob: errors in Electron/strict CSP environments)
+// Configure Monaco to load workers from CDN (avoids file:// blob CSP issues in Electron)
 if (typeof window !== 'undefined') {
+    const monacoCDN = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs';
     window.MonacoEnvironment = {
-        getWorker: function (_workerId, _label) {
-            return null; // Fall back to main thread (no workers)
+        getWorkerUrl: function (_workerId, label) {
+            if (label === 'json')          return `${monacoCDN}/language/json/json.worker.js`;
+            if (label === 'css')           return `${monacoCDN}/language/css/css.worker.js`;
+            if (label === 'html')          return `${monacoCDN}/language/html/html.worker.js`;
+            if (label === 'typescript' || label === 'javascript')
+                return `${monacoCDN}/language/typescript/typescript.worker.js`;
+            return `${monacoCDN}/editor/editor.worker.js`;
         }
     };
 }

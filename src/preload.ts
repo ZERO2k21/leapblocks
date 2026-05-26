@@ -191,15 +191,51 @@ contextBridge.exposeInMainWorld('electronAPI', {
     pythonStop: () => ipcRenderer.invoke('python-stop'),
     pythonPipInstall: (pkg: string) => ipcRenderer.invoke('python-pip-install', pkg),
 
-    onPythonOutput: (callback: (data: string) => void) => ipcRenderer.on('python-output', (_, msg) => callback(msg)),
-    onPythonError: (callback: (data: string) => void) => ipcRenderer.on('python-error', (_, msg) => callback(msg)),
-    onPythonExit: (callback: (code: number) => void) => ipcRenderer.on('python-exit', (_, code) => callback(code)),
-    onPythonReplOutput: (callback: (data: string) => void) => ipcRenderer.on('python-repl-output', (_, msg) => callback(msg)),
-    onPythonReplError: (callback: (data: string) => void) => ipcRenderer.on('python-repl-error', (_, msg) => callback(msg)),
-    onPythonReplExit: (callback: (code: number) => void) => ipcRenderer.on('python-repl-exit', (_, code) => callback(code)),
-    onPythonPipOutput: (callback: (data: string) => void) => ipcRenderer.on('python-pip-output', (_, msg) => callback(msg)),
-    onPythonPipError: (callback: (data: string) => void) => ipcRenderer.on('python-pip-error', (_, msg) => callback(msg)),
-    onPythonPipExit: (callback: (code: number) => void) => ipcRenderer.on('python-pip-exit', (_, code) => callback(code)),
+    onPythonOutput: (callback: (data: string) => void) => {
+        const handler = (_: any, msg: any) => callback(msg as string);
+        ipcRenderer.on('python-output', handler);
+        return () => ipcRenderer.removeListener('python-output', handler);
+    },
+    onPythonError: (callback: (data: string) => void) => {
+        const handler = (_: any, msg: any) => callback(msg as string);
+        ipcRenderer.on('python-error', handler);
+        return () => ipcRenderer.removeListener('python-error', handler);
+    },
+    onPythonExit: (callback: (code: number) => void) => {
+        const handler = (_: any, code: any) => callback(code as number);
+        ipcRenderer.on('python-exit', handler);
+        return () => ipcRenderer.removeListener('python-exit', handler);
+    },
+    onPythonReplOutput: (callback: (data: string) => void) => {
+        const handler = (_: any, msg: any) => callback(msg as string);
+        ipcRenderer.on('python-repl-output', handler);
+        return () => ipcRenderer.removeListener('python-repl-output', handler);
+    },
+    onPythonReplError: (callback: (data: string) => void) => {
+        const handler = (_: any, msg: any) => callback(msg as string);
+        ipcRenderer.on('python-repl-error', handler);
+        return () => ipcRenderer.removeListener('python-repl-error', handler);
+    },
+    onPythonReplExit: (callback: (code: number) => void) => {
+        const handler = (_: any, code: any) => callback(code as number);
+        ipcRenderer.on('python-repl-exit', handler);
+        return () => ipcRenderer.removeListener('python-repl-exit', handler);
+    },
+    onPythonPipOutput: (callback: (data: string) => void) => {
+        const handler = (_: any, msg: any) => callback(msg as string);
+        ipcRenderer.on('python-pip-output', handler);
+        return () => ipcRenderer.removeListener('python-pip-output', handler);
+    },
+    onPythonPipError: (callback: (data: string) => void) => {
+        const handler = (_: any, msg: any) => callback(msg as string);
+        ipcRenderer.on('python-pip-error', handler);
+        return () => ipcRenderer.removeListener('python-pip-error', handler);
+    },
+    onPythonPipExit: (callback: (code: number) => void) => {
+        const handler = (_: any, code: any) => callback(code as number);
+        ipcRenderer.on('python-pip-exit', handler);
+        return () => ipcRenderer.removeListener('python-pip-exit', handler);
+    },
 
     /**
      * Generic invoke for flexible IPC calls
@@ -257,15 +293,15 @@ declare global {
             pythonStop: () => Promise<void>;
             pythonPipInstall: (pkg: string) => Promise<void>;
 
-            onPythonOutput: (callback: (data: string) => void) => void;
-            onPythonError: (callback: (data: string) => void) => void;
-            onPythonExit: (callback: (code: number) => void) => void;
-            onPythonReplOutput: (callback: (data: string) => void) => void;
-            onPythonReplError: (callback: (data: string) => void) => void;
-            onPythonReplExit: (callback: (code: number) => void) => void;
-            onPythonPipOutput: (callback: (data: string) => void) => void;
-            onPythonPipError: (callback: (data: string) => void) => void;
-            onPythonPipExit: (callback: (code: number) => void) => void;
+            onPythonOutput: (callback: (data: string) => void) => () => void;
+            onPythonError: (callback: (data: string) => void) => () => void;
+            onPythonExit: (callback: (code: number) => void) => () => void;
+            onPythonReplOutput: (callback: (data: string) => void) => () => void;
+            onPythonReplError: (callback: (data: string) => void) => () => void;
+            onPythonReplExit: (callback: (code: number) => void) => () => void;
+            onPythonPipOutput: (callback: (data: string) => void) => () => void;
+            onPythonPipError: (callback: (data: string) => void) => () => void;
+            onPythonPipExit: (callback: (code: number) => void) => () => void;
 
             invoke: (channel: string, ...args: any[]) => Promise<any>;
         };
