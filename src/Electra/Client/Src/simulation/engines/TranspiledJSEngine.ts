@@ -6,7 +6,7 @@
  * Priority 2 — tried SECOND, after VelxioEngine fails.
  */
 
-import type { ESP32C3SimulationRunner } from '@/Electra/Client/Src/engine/esp32c3/ESP32C3SimulationRunner';
+import type { ESP32C3SimulationRunner } from '../../engine/esp32c3/ESP32C3SimulationRunner';
 import type { BoardType, CompiledFirmware, SimulationResult, ISimulationEngine } from '../types';
 import { SimulationEngineError } from '../types';
 

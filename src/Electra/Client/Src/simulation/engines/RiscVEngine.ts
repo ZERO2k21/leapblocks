@@ -6,7 +6,7 @@
  * Priority 3 — tried THIRD (last resort), after Velxio and TranspiledJS.
  */
 
-import type { RiscVCore } from '@/Electra/Client/Src/engine/esp32c3/cpu/RiscVCore';
+import type { RiscVCore } from '../../engine/esp32c3/cpu/RiscVCore';
 import type { BoardType, CompiledFirmware, SimulationResult, ISimulationEngine } from '../types';
 import { SimulationEngineError } from '../types';
 
@@ -50,7 +50,7 @@ export class RiscVEngine implements ISimulationEngine {
       throw new SimulationEngineError(this.name, 'run', 'no binary firmware available');
     }
 
-    const { FirmwareLoader } = await import('@/Electra/Client/Src/engine/esp32c3/compiler/FirmwareLoader');
+    const { FirmwareLoader } = await import('../../engine/esp32c3/compiler/FirmwareLoader');
 
     const bytes = this.decodeBase64(firmware.binary);
 

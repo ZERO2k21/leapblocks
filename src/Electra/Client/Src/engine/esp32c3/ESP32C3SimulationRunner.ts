@@ -38,10 +38,10 @@ import { ESP32C3SPI } from './peripherals/SPI';
 import { ESP32C3SysTimer } from './peripherals/SysTimer';
 import { FirmwareLoader } from './compiler/FirmwareLoader';
 import { ArduinoRuntime } from './ArduinoRuntime';
-import { SimulationOrchestrator } from '@/Electra/Client/Src/simulation/SimulationOrchestrator';
-import { VelxioEngine } from '@/Electra/Client/Src/simulation/engines/VelxioEngine';
-import { TranspiledJSEngine } from '@/Electra/Client/Src/simulation/engines/TranspiledJSEngine';
-import { RiscVEngine } from '@/Electra/Client/Src/simulation/engines/RiscVEngine';
+import { SimulationOrchestrator } from '../../simulation/SimulationOrchestrator';
+import { VelxioEngine } from '../../simulation/engines/VelxioEngine';
+import { TranspiledJSEngine } from '../../simulation/engines/TranspiledJSEngine';
+import { RiscVEngine } from '../../simulation/engines/RiscVEngine';
 
 // ---------------------------------------------------------------------------
 // Types shared with the parent SimulationRunner
