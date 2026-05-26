@@ -38,6 +38,10 @@ import { ESP32C3SPI } from './peripherals/SPI';
 import { ESP32C3SysTimer } from './peripherals/SysTimer';
 import { FirmwareLoader } from './compiler/FirmwareLoader';
 import { ArduinoRuntime } from './ArduinoRuntime';
+import { SimulationOrchestrator } from '@/Electra/Client/Src/simulation/SimulationOrchestrator';
+import { VelxioEngine } from '@/Electra/Client/Src/simulation/engines/VelxioEngine';
+import { TranspiledJSEngine } from '@/Electra/Client/Src/simulation/engines/TranspiledJSEngine';
+import { RiscVEngine } from '@/Electra/Client/Src/simulation/engines/RiscVEngine';
 
 // ---------------------------------------------------------------------------
 // Types shared with the parent SimulationRunner
@@ -149,6 +153,20 @@ export class ESP32C3SimulationRunner {
     // ── Arduino Runtime (transpiled JS path — recommended) ──
     private arduinoRuntime: ArduinoRuntime | null = null;
     private usingTranspiledPath: boolean = false;
+
+    // ── Simulation Orchestrator (priority-ordered engine chain) ──
+    private orchestrator = new SimulationOrchestrator([
+        new VelxioEngine({
+            velxioUrl: this.config?.velxioUrl ?? 'http://localhost:3080',
+            timeoutMs: 5000,
+            retries: 1,
+        }),
+        new TranspiledJSEngine(this),
+        new RiscVEngine(this.platform?.core ?? new RiscVCore()),
+    ]);
+
+    /** Optional Velxio configuration (overrides defaults) */
+    public config?: { velxioUrl?: string };
 
     // Listeners registered by CircuitEngine / ForgeStudio
     private pinListeners: Map<string, PinListener[]> = new Map();
@@ -343,6 +361,11 @@ export class ESP32C3SimulationRunner {
      * Otherwise uses the RISC-V soft-core.
      */
     run(): void {
+        // SimulationOrchestrator handles priority order: Velxio → TranspiledJS → RISC-V.
+        // Call orchestrator.run(code, board) from ForgeStudio to use the full chain.
+        // Fall through to existing paths below if orchestrator is not being used.
+        console.info(`[ESP32-C3] Engine chain: ${this.orchestrator.getEngineStatus().map(e => `${e.name}(p${e.priority})`).join(' → ')}`);
+
         // If using transpiled path, delegate to runTranspiled
         if (this.usingTranspiledPath) {
             this.runTranspiled();
