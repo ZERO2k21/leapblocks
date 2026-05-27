@@ -1,0 +1,26 @@
+{
+  "name": "leapblocks-server",
+  "version": "1.0.0",
+  "description": "Unified LeapBlocks server: Arduino compile, transpile, APK build, and TCP proxy",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "proxy": "node tcp-proxy.js",
+    "start:all": "concurrently \"npm run start\" \"npm run proxy\""
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "ws": "^8.18.0",
+    "uuid": "^9.0.0",
+    "concurrently": "^9.0.0"
+  },
+  "keywords": ["arduino", "esp32", "compiler", "simulator", "electra", "leapblocks"],
+  "license": "UNLICENSED",
+  "private": true
+}

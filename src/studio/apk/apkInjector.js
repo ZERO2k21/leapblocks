@@ -7,7 +7,7 @@
  *
  * Provides decode, inject, rebuild, and sign primitives.
  * Used by both electron/buildApk.js (main build path) and
- * src/appinverter/apk/buildAPK.js (standalone).
+ * src/studio/apk/buildAPK.js (standalone).
  */
 
 const { spawn } = require('child_process');

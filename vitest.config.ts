@@ -22,6 +22,7 @@ export default defineConfig({
           include: [
             'src/modules/electra/engine/__tests__/**/*.test.ts',
             'src/Electra/Client/Src/engine/esp32c3/tests/**/*.test.ts',
+            'src/Electra/Client/Src/simulation/**/*.test.ts',
             'test/**/*.test.ts',
           ],
           globals: true,

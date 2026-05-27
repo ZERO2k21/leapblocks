@@ -62,9 +62,7 @@ export class ArduinoRuntime {
 
   // ── Delay control ────────────────────────────────────────────
   private _abortController: AbortController | null = null;
-  private _lastMicrosCallTime: number = 0;
-  private _microsSpinCount: number = 0;
-  private _virtualTimeOffset: number = 0;
+  private _lastMicrosValue: number = 0;
 
   // ── I2C bus bridge (set by CircuitEngine after syncCircuitGraph) ──────────
   public _i2cBus: {
@@ -188,34 +186,28 @@ export class ArduinoRuntime {
   }
 
   public micros(): number {
-    const now = performance.now();
-    if (now === this._lastMicrosCallTime) {
-      this._microsSpinCount++;
-      if (this._microsSpinCount > 50) {
-        this._virtualTimeOffset += 1;
-        this._microsSpinCount = 0;
-      }
+    // Always return a strictly increasing value. performance.now() can have coarse
+    // resolution (1-100ms in browsers for Spectre protection), so we can't rely on
+    // it to differentiate consecutive calls. Instead we track the last returned value
+    // and ensure each subsequent call returns at least 1µs more.
+    const realNow = Math.floor((performance.now() - this.startTime) * 1000);
+    if (realNow > this._lastMicrosValue) {
+      this._lastMicrosValue = realNow;
     } else {
-      this._lastMicrosCallTime = now;
-      this._microsSpinCount = 0;
+      this._lastMicrosValue++;
     }
-    return Math.floor((now + this._virtualTimeOffset - this.startTime) * 1000);
+    return this._lastMicrosValue;
   }
 
   public async __delayMicroseconds(us: number): Promise<void> {
     if (!this.running) throw new DOMException('Simulation stopped', 'AbortError');
-    // Always yield once, even for tiny delays, so the step-based
-    // Stepper loop does not block the main thread for thousands of
-    // iterations without yielding.
+    if (us <= 100) return;
+    // setTimeout minimum is ~4ms in browsers (clamped). For any µs-scale delay,
+    // yield once via setTimeout — the clamping already exceeds the requested delay.
+    // No busy-wait needed; busy-wait with performance.now() hangs when the timer
+    // has coarse resolution (5-100ms in many browsers for Spectre protection).
     await new Promise<void>(resolve => setTimeout(resolve, 0));
     if (!this.running) throw new DOMException('Simulation stopped', 'AbortError');
-    if (us <= 100) return;
-    const targetMs = us / 1000;
-    // Busy-wait for microsecond precision (setTimeout clamps to ~4ms)
-    const start = performance.now();
-    while (performance.now() - start < targetMs) {
-      if (!this.running) throw new DOMException('Simulation stopped', 'AbortError');
-    }
   }
 
   public pulseIn(pin: number, state: number, timeout?: number): number {
@@ -349,9 +341,7 @@ export class ArduinoRuntime {
     this.serialBaud = 0;
     this.serialBuffer = '';
     this.interruptHandlers.clear();
-    this._virtualTimeOffset = 0;
-    this._microsSpinCount = 0;
-    this._lastMicrosCallTime = 0;
+    this._lastMicrosValue = 0;
     console.log('[ArduinoRuntime] Simulation stopped.');
   }
 
@@ -389,8 +379,13 @@ export class ArduinoRuntime {
         } catch (e: any) {
           if (e.message === '__ARDUINO_HALT__') return;
           if (e.name === 'AbortError') return; // Simulation stopped during delay
+          if (e instanceof ReferenceError || e.message?.includes('is not defined')) {
+            this.onSerial?.(`[ERROR in loop()] Undefined function/variable: ${e.message}\n`);
+            this.onSerial?.('[HINT] The transpiler may not have converted this function. Check that delay(), pinMode(), digitalWrite(), etc. are spelled correctly.\n');
+          } else {
+            this.onSerial?.(`[ERROR in loop()]: ${e.message}\n`);
+          }
           console.error('[ArduinoRuntime] loop() error:', e);
-          this.onSerial?.(`[ERROR in loop()]: ${e.message}\n`);
           this.running = false;
           return;
         }
@@ -686,6 +681,21 @@ export class ArduinoRuntime {
       },
       async __delayMicroseconds(us: number): Promise<void> {
         await self.__delayMicroseconds(us);
+      },
+
+      // ── Fallback delay functions (when server-side transpiler doesn't convert delay → await __delay) ──
+      delay(ms: number): void {
+        console.warn('[ArduinoRuntime] delay() called directly — transpiler should have converted to await __delay()');
+        if (!self.running) return;
+        self._notifyDelayCalled();
+        const target = performance.now() + ms;
+        while (performance.now() < target && self.running) { /* busy-wait */ }
+      },
+      delayMicroseconds(us: number): void {
+        console.warn('[ArduinoRuntime] delayMicroseconds() called directly — transpiler should have converted to await __delayMicroseconds()');
+        if (!self.running || us <= 100) return;
+        const start = performance.now();
+        while (performance.now() - start < us / 1000 && self.running) { /* busy-wait */ }
       },
 
       // ── pulseIn — measures pulse duration on a pin (used by ultrasonic sensors) ──
