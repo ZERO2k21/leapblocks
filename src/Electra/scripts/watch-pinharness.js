@@ -7,14 +7,14 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const jsonPath = path.join(__dirname, '../src/Electra/Client/Src/engine/Arduino/PinHarness.json');
+const jsonPath = path.join(__dirname, '../Client/Src/engine/Arduino/PinHarness.json');
 
 console.log('👀 Watching PinHarness.json for changes...');
 console.log(`   File: ${jsonPath}\n`);
 
 // Initial sync
 try {
-    execSync('node scripts/sync-pinharness.js', { stdio: 'inherit' });
+            execSync('node src/Electra/scripts/sync-pinharness.js', { stdio: 'inherit' });
 } catch (error) {
     console.error('Initial sync failed:', error.message);
 }
@@ -24,7 +24,7 @@ fs.watch(jsonPath, (eventType, filename) => {
     if (eventType === 'change') {
         console.log(`\n📝 Detected change in ${filename}`);
         try {
-            execSync('node scripts/sync-pinharness.js', { stdio: 'inherit' });
+    execSync('node src/Electra/scripts/sync-pinharness.js', { stdio: 'inherit' });
         } catch (error) {
             console.error('Sync failed:', error.message);
         }
