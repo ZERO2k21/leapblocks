@@ -227,11 +227,12 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
         display: 'flex',
         flexDirection: 'column',
         gap: '6px',
-        padding: '6px',
-        background: 'var(--lp-dark-surface)',
-        border: '1px solid var(--lp-border)',
-        borderRadius: '4px',
-        boxShadow: 'var(--lp-shadow)',
+        padding: '8px',
+        background: 'var(--lp-glass)',
+        border: '1px solid var(--lp-border-active)',
+        borderRadius: '12px',
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+        backdropFilter: 'blur(8px)',
         zIndex: 100
       }}>
         {/* Play/Stop Button */}
@@ -272,17 +273,17 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
             width: '48px',
             height: '48px',
             borderRadius: '20px',
-            background: '#ffffff',
-            border: '1px solid rgba(0,0,0,0.06)',
+            background: 'var(--lp-zinc-800)',
+            border: '1px solid var(--lp-border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#64748b',
+            color: 'var(--lp-zinc-400)',
             cursor: 'pointer',
             transition: 'all 0.2s'
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = '#7B4FC4'; e.currentTarget.style.background = 'rgba(123, 79, 196, 0.05)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.background = '#ffffff'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--lp-accent-primary)'; e.currentTarget.style.borderColor = 'var(--lp-accent-primary)'; e.currentTarget.style.background = 'var(--lp-zinc-700)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--lp-zinc-400)'; e.currentTarget.style.borderColor = 'var(--lp-border)'; e.currentTarget.style.background = 'var(--lp-zinc-800)'; }}
         >
           <RotateCcw size={20} />
         </button>

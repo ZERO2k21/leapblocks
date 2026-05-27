@@ -91,7 +91,7 @@ export const SelectionToolbar: React.FC = () => {
     };
 
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '2px', border: '1px solid var(--lp-border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '8px', border: '1px solid var(--lp-border)', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}>
         <Sliders size={12} style={{ color: 'var(--lp-zinc-600)' }} />
         <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', textTransform: 'uppercase', minWidth: '60px' }}>{config.label}</span>
         <input
@@ -130,7 +130,7 @@ export const SelectionToolbar: React.FC = () => {
   const renderLEDColorPalette = () => {
     if (nodeType !== 'led' && nodeType !== 'led-ring' && nodeType !== 'led-bar-graph') return null;
     return (
-      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '2px', border: '1px solid var(--lp-border)' }}>
+      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '8px', border: '1px solid var(--lp-border)', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}>
         <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', textTransform: 'uppercase', marginRight: '4px' }}>LED_COLOR</span>
         {LED_COLORS.map((lc) => (
           <button
@@ -211,7 +211,7 @@ export const SelectionToolbar: React.FC = () => {
             color: 'black',
             border: 'none',
             padding: '2px 8px',
-            borderRadius: '2px',
+                    borderRadius: '8px',
             fontSize: '9px',
             fontWeight: 900,
             cursor: 'pointer',
@@ -327,11 +327,12 @@ export const SelectionToolbar: React.FC = () => {
       display: 'flex',
       alignItems: 'center',
       gap: '12px',
-      background: 'var(--lp-dark-surface)',
-      padding: '4px 12px',
-      borderRadius: '2px',
-      border: '1px solid var(--lp-border)',
-      boxShadow: 'var(--lp-shadow)',
+      background: 'var(--lp-glass)',
+      padding: '6px 16px',
+      borderRadius: '12px',
+      border: '1px solid var(--lp-border-active)',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(34, 211, 238, 0.1)',
+      backdropFilter: 'blur(12px)',
       animation: 'slideUp 0.2s ease-out'
     }}>
       <style>{`
@@ -377,7 +378,7 @@ export const SelectionToolbar: React.FC = () => {
             border: '1px solid var(--lp-rose)',
             color: 'var(--lp-rose)',
             padding: '4px 8px',
-            borderRadius: '2px',
+                    borderRadius: '8px',
             cursor: 'pointer',
             fontSize: '9px',
             fontWeight: 900,

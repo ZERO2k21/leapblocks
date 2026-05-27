@@ -8,7 +8,7 @@
     "start": "npm run dev:full",
     "dev": "electron-vite dev",
     "dev:web": "concurrently \"npm run dev:server\" \"npm run proxy\" \"vite --config vite.web.config.ts\"",
-    "dev:server": "cd compiler-server && node server.js",
+    "dev:server": "cd server && node server.js",
     "dev:full": "npm run dev:web",
     "proxy": "cd src/Electra/server && npm run start:proxy",
     "build:web": "vite build --config vite.web.config.ts",
@@ -22,8 +22,8 @@
     "build-storybook": "storybook build",
     "download-qemu": "node scripts/download-qemu.js",
     "postinstall": "node scripts/download-qemu.js",
-    "sync:pinharness": "node scripts/sync-pinharness.js",
-    "watch:pinharness": "node scripts/watch-pinharness.js"
+    "sync:pinharness": "node src/Electra/scripts/sync-pinharness.js",
+    "watch:pinharness": "node src/Electra/scripts/watch-pinharness.js"
   },
   "keywords": [],
   "author": {

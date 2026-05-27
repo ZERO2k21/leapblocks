@@ -205,7 +205,7 @@ var WiFiClass = (typeof WiFiClass !== 'undefined' && WiFiClass) || class {
   begin(ssid,pass){
     this._ssid = ssid;
     this._status = 0;
-    setTimeout(() => { this._status = 3; }, 500);
+    setTimeout(() => { this._status = 3; }, 1);
   }
   status(){ return this._status; }
   localIP(){ return this._ip; }

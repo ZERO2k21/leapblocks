@@ -181,12 +181,12 @@ export const LibraryManager: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: t.bg, color: t.text, fontFamily: "'Space Mono', monospace", overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: t.bg, color: t.text, fontFamily: "'Space Mono', monospace", overflow: 'hidden', borderRadius: '12px' }}>
 
       {/* Header */}
-      <div style={{ padding: '16px 24px', borderBottom: `1px solid ${t.border}`, background: t.surface }}>
+      <div style={{ padding: '16px 24px', borderBottom: `1px solid ${t.border}`, background: t.surface, boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '2px', background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <LibraryIcon size={18} color="#000" strokeWidth={3} />
           </div>
           <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: t.white, letterSpacing: '1px', textTransform: 'uppercase' }}>LIBRARY_CORE.V1</h1>
@@ -197,7 +197,7 @@ export const LibraryManager: React.FC = () => {
       </div>
 
       {/* Status bar */}
-      <div style={{ margin: '12px 24px', background: t.accentDim, border: `1px solid ${t.accent}`, borderRadius: '2px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: t.accent, fontWeight: 700, textTransform: 'uppercase' }}>
+      <div style={{ margin: '12px 24px', background: t.accentDim, border: `1px solid ${t.accent}`, borderRadius: '8px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: t.accent, fontWeight: 700, textTransform: 'uppercase', boxShadow: '0 2px 8px rgba(34, 211, 238, 0.08)' }}>
         <Info size={14} strokeWidth={3} />
         <span>
           {isLoading
@@ -220,7 +220,9 @@ export const LibraryManager: React.FC = () => {
               placeholder="FILTER_MODULES..."
               value={searchQuery}
               onChange={handleQueryChange}
-              style={{ width: '100%', background: t.surface, border: `1px solid ${t.border}`, borderRadius: '2px', padding: '10px 12px 10px 32px', color: t.white, fontSize: '12px', outline: 'none', boxSizing: 'border-box', fontWeight: 700, fontFamily: 'inherit' }}
+              style={{ width: '100%', background: t.surface, border: `1px solid ${t.border}`, borderRadius: '8px', padding: '10px 12px 10px 32px', color: t.white, fontSize: '12px', outline: 'none', boxSizing: 'border-box', fontWeight: 700, fontFamily: 'inherit', boxShadow: '0 2px 6px rgba(0,0,0,0.15)', transition: 'border-color 0.2s, box-shadow 0.2s' }}
+              onFocus={(e) => { e.target.style.borderColor = t.accent; e.target.style.boxShadow = `0 0 0 3px rgba(34, 211, 238, 0.15)`; }}
+              onBlur={(e) => { e.target.style.borderColor = t.border; e.target.style.boxShadow = '0 2px 6px rgba(0,0,0,0.15)'; }}
             />
           </div>
 
@@ -245,14 +247,18 @@ export const LibraryManager: React.FC = () => {
               </div>
             ) : (
               visibleResults.map(lib => (
-                <div key={lib.name} style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: '2px', padding: '12px', marginBottom: '8px', transition: 'all 0.1s ease' }}
+                <div key={lib.name} style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: '8px', padding: '12px', marginBottom: '8px', transition: 'all 0.15s ease' }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = t.accent;
                     e.currentTarget.style.background = t.surfaceHover;
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = t.border;
                     e.currentTarget.style.background = t.surface;
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
@@ -286,8 +292,8 @@ export const LibraryManager: React.FC = () => {
         </div>
 
         {/* Right — installed */}
-        <div style={{ width: '280px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', padding: '10px 14px', background: t.surface, borderRadius: '2px', border: `1px solid ${t.border}` }}>
+          <div style={{ width: '280px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', padding: '10px 14px', background: t.surface, borderRadius: '8px', border: `1px solid ${t.border}`, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
             <div style={{ width: '24px', height: '24px', borderRadius: '2px', background: t.orange, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Package size={14} color="#000" strokeWidth={3} />
             </div>

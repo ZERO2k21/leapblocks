@@ -52,9 +52,9 @@ const isLocalhost = window.location.hostname === 'localhost' ||
 
 const BUILD_SERVER_URL = (() => {
   if (isLocalhost) return 'localhost:3001';
-  if (window.location.hostname === 'leapblocks.vercel.app') return 'leapblocks.vercel.app';
-  if (window.location.hostname === 'leaplab.creoleap.com') return 'leaplab.creoleap.com';
-  return 'leaplab.creoleap.com';
+  if (window.location.hostname === 'leapblocks.vercel.app') return 'leapblocks.onrender.com';
+  if (window.location.hostname === 'leaplab.creoleap.com') return 'leapblocks.onrender.com';
+  return 'leapblocks.onrender.com';
 })();
 
 export default function App() {
