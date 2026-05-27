@@ -1272,9 +1272,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 addLog(cleaned, "error");
             }),
             window.electronAPI.onPythonExit((code) => {
-                if (code === 0) {
+                if (code === null) {
+                    addLog(`✗ Failed to start Python. Is Python installed and in your PATH?`, "error");
+                    addLog(`💡 Tip: Install Python from python.org and ensure it's in your system PATH.`, "info");
+                } else if (code === 0) {
                     addLog(`✓ Program finished successfully`, "success");
-                } else if (code !== null) {
+                } else {
                     addLog(`✗ Program exited with code ${code}`, "warning");
                 }
                 setIsRunning(false);
@@ -1310,6 +1313,11 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             }),
             window.electronAPI.onPythonPipError((data) => {
                 addLog(data, "error");
+            }),
+            window.electronAPI.onPythonFilesUpdated((files) => {
+                setProjectFiles(prev => ({ ...prev, ...files }));
+                const fileNames = Object.keys(files).join(', ');
+                addLog(`📁 Files updated: ${fileNames}`, "info");
             }),
         ];
 
@@ -1379,18 +1387,37 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
             // Execute the code
             if (window.electronAPI?.isElectron) {
+                // Check if Python is available (if the API exists)
+                if (window.electronAPI.pythonCheck) {
+                    const pythonCheck = await window.electronAPI.pythonCheck();
+                    if (!pythonCheck.available) {
+                        addLog(`✗ Python is not available: ${pythonCheck.error}`, "error");
+                        addLog(`💡 Tip: Install Python from python.org and ensure it's in your system PATH.`, "info");
+                        setIsRunning(false);
+                        return;
+                    }
+                }
+
                 setIsWaitingForInput(true);
                 setInputPromptText("");
                 setTerminalInputValue("");
                 setTimeout(() => terminalInputRef.current?.focus(), 80);
-                await window.electronAPI.pythonRun(code);
+                await window.electronAPI.pythonRun(code, projectFiles);
             } else {
                 if (!skulptRef.current) {
                     throw new Error("Python engine (Skulpt) not initialized. Try refreshing the page.");
                 }
+                skulptRef.current.loadProjectFiles(projectFiles);
                 await skulptRef.current.runPython(code);
                 if (runStopRequestedRef.current) {
                     return;
+                }
+
+                const modifiedFiles = skulptRef.current.getModifiedFiles();
+                if (Object.keys(modifiedFiles).length > 0) {
+                    setProjectFiles(prev => ({ ...prev, ...modifiedFiles }));
+                    const fileNames = Object.keys(modifiedFiles).join(', ');
+                    addLog(`📁 Files updated: ${fileNames}`, "info");
                 }
 
                 const endTime = performance.now();
@@ -1417,7 +1444,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             // If the IPC call itself failed (process never started), reset state
             if (window.electronAPI?.isElectron) {
                 setIsRunning(false);
-                try { window.electronAPI.pythonStop(); } catch (_) {}
+                try { window.electronAPI.pythonStop(); } catch (_) { /* noop */ }
             }
         } finally {
             if (!window.electronAPI?.isElectron) {
