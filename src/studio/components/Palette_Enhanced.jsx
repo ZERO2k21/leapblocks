@@ -43,7 +43,7 @@ export default function PaletteEnhanced() {
     return (
         <div className="flex flex-col h-full w-full bg-white">
             {/* Header */}
-            <div 
+            <div
                 style={{ paddingTop: '28px', paddingBottom: '12px', paddingLeft: '24px', paddingRight: '24px' }}
                 className="border-b border-slate-200 bg-white sticky top-0 z-10 shadow-sm"
             >
@@ -89,7 +89,7 @@ export default function PaletteEnhanced() {
                                 </span>
                                 <span className="text-[10px] bg-slate-100 text-slate-900 px-2 py-1 rounded-md font-black shadow-sm border border-slate-200">{filteredItems.length}</span>
                             </button>
- 
+
                             {/* Category Items */}
                             {!isCollapsed && (
                                 <div className="grid grid-cols-2 gap-3 p-4 bg-gradient-to-b from-slate-50/50 to-white">
@@ -104,16 +104,16 @@ export default function PaletteEnhanced() {
                                             title={item.description}
                                         >
                                             <span className="text-3xl text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] grayscale-[20%] group-hover/item:scale-110 group-hover/item:rotate-6 group-hover/item:text-blue-600 group-hover/item:grayscale-0">{item.icon}</span>
-                                            <span 
-                                                style={{ 
-                                                    fontSize: item.label.length > 20 ? '8px' : item.label.length > 15 ? '9.5px' : '11px', 
-                                                    wordBreak: 'break-all' 
-                                                }} 
+                                            <span
+                                                style={{
+                                                    fontSize: item.label.length > 20 ? '8px' : item.label.length > 15 ? '9.5px' : '11px',
+                                                    wordBreak: 'break-all'
+                                                }}
                                                 className="w-full px-1 font-extrabold text-slate-900 uppercase tracking-wider transition-colors duration-300 leading-tight group-hover/item:text-blue-600 group-hover/item:font-black"
                                             >
                                                 {item.label}
                                             </span>
- 
+
                                             {/* Info icon */}
                                             {item.description && (
                                                 <Info className="h-3.5 w-3.5 text-slate-900 opacity-0 group-hover:opacity-100 transition-opacity" />
