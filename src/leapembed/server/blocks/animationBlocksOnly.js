@@ -27,7 +27,7 @@ export const registerAnimationLooksBlocks = () => {
 
     // Define looks_say with input_value (for animation mode)
     Blockly.Blocks['looks_say'] = {
-        init: function (this: Blockly.Block) {
+        init: function () {
             this.appendValueInput('MESSAGE')
                 .appendField('🗣️ say');
             this.setInputsInline(true);
@@ -41,7 +41,7 @@ export const registerAnimationLooksBlocks = () => {
 
     // Define looks_say_for_secs with input_value
     Blockly.Blocks['looks_say_for_secs'] = {
-        init: function (this: Blockly.Block) {
+        init: function () {
             this.appendValueInput('MESSAGE')
                 .appendField('🗣️ say');
             this.appendValueInput('SECS')
@@ -59,7 +59,7 @@ export const registerAnimationLooksBlocks = () => {
 
     // Define looks_think with input_value
     Blockly.Blocks['looks_think'] = {
-        init: function (this: Blockly.Block) {
+        init: function () {
             this.appendValueInput('MESSAGE')
                 .appendField('💭 think');
             this.setInputsInline(true);
@@ -73,7 +73,7 @@ export const registerAnimationLooksBlocks = () => {
 
     // Define looks_think_for_secs with input_value
     Blockly.Blocks['looks_think_for_secs'] = {
-        init: function (this: Blockly.Block) {
+        init: function () {
             this.appendValueInput('MESSAGE')
                 .appendField('💭 think');
             this.appendValueInput('SECS')
