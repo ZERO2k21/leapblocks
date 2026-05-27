@@ -1,26 +1,10 @@
 const path = require('path');
 const fs = require('fs');
 
-/**
- * APK Builder — Electron main-process entrypoint
- *
- * Delegates to the ApkBuilder (APK injection method) from
- * src/studio/apk/buildAPK.js.
- *
- * Flow:
- *   1. htmlGenerator converts AppInverter state → web app files
- *   2. ApkInjector packages them into a WebView-based APK
- *   3. ApkSigner signs the APK with a debug keystore
- *
- * No React Native template required — everything is self-contained.
- */
-
 async function buildApk(appState, appRoot, onLog) {
   try {
     onLog('Initializing build process...');
 
-    // Dynamically require ApkBuilder — the module lives inside src/
-    // and uses CommonJS (require/module.exports), so direct require works.
     const candidates = [
       path.join(appRoot, 'src', 'studio', 'apk', 'buildAPK.js'),
       path.join(appRoot, 'src', 'studio', 'apk', 'buildAPK.js'),
@@ -40,11 +24,11 @@ async function buildApk(appState, appRoot, onLog) {
       onLog(`[${progress}%] ${message}`);
     });
 
-    onLog(`✓ APK built successfully: ${outputPath}`);
+    onLog(`APK built successfully: ${outputPath}`);
     return outputPath;
 
   } catch (error) {
-    onLog('✗ Build failed: ' + error.message);
+    onLog('Build failed: ' + error.message);
     throw error;
   }
 }

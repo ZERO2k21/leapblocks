@@ -1,14 +1,10 @@
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// AppForge Studio — Job Manager
-// In-memory build job tracking
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const jobs = {};
 
 module.exports = {
   create(jobId) {
     jobs[jobId] = {
       jobId,
-      status: 'queued',    // queued | building | done | error
+      status: 'queued',
       progress: 0,
       logs: [],
       apkPath: null,
@@ -30,7 +26,7 @@ module.exports = {
     const entry = {
       time: new Date().toLocaleTimeString(),
       message,
-      type    // info | success | warning | error
+      type
     };
     jobs[jobId].logs.push(entry);
     console.log(`[${jobId.slice(0, 8)}] ${message}`);

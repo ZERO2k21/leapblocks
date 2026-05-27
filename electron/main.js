@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
-const buildApk = require('./buildApk');
+const buildApk = require(path.join(__dirname, '..', 'src', 'studio', 'apk', 'electron-bridge.js'));
 const { makeESP32Compiler, cleanupESP32Build } = require('./esp32Compiler');
 // qemuManager removed — ESP32-C3 uses custom RISC-V emulator in renderer
 const qemuManager = {
@@ -48,8 +48,8 @@ let buildServerProcess = null;
 
 function startBuildServer() {
   const serverPath = isDev
-    ? path.join(__dirname, '..', 'local-build-server', 'server.js')
-    : path.join(process.resourcesPath, 'local-build-server', 'server.js');
+    ? path.join(__dirname, '..', 'src', 'studio', 'build-server', 'server.js')
+    : path.join(process.resourcesPath, 'src', 'studio', 'build-server', 'server.js');
 
   if (!fs.existsSync(serverPath)) {
     console.log('[BUILD-SERVER] Server file not found at:', serverPath);

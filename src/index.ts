@@ -383,7 +383,7 @@ ipcMain.handle('remove-background', async (event, imagePath: string) => {
 
 ipcMain.handle('build-apk', async (event, appState) => {
   // In Vite/Electron-Vite, we can just use regular require for our external build script
-  const buildApkPath = path.join(app.getAppPath(), 'electron', 'buildApk.js');
+  const buildApkPath = path.join(app.getAppPath(), 'src', 'studio', 'apk', 'electron-bridge.js');
   let buildApk: any;
   try {
     buildApk = require(buildApkPath);

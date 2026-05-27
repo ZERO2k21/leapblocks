@@ -6,7 +6,7 @@
  * APK Injector — Low-level APKTool operations
  *
  * Provides decode, inject, rebuild, and sign primitives.
- * Used by both electron/buildApk.js (main build path) and
+ * Used by both src/studio/apk/electron-bridge.js (main build path) and
  * src/studio/apk/buildAPK.js (standalone).
  */
 
