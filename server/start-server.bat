@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo   Electra Compiler Server
+echo   LeapBlocks Server
 echo ========================================
 echo.
 
@@ -38,7 +38,7 @@ if not exist "%ARDUINO_CLI_PATH%" (
     echo.
 )
 
-echo [INFO] Starting Electra Compiler Server...
+echo [INFO] Starting LeapBlocks Server...
 echo [INFO] Server will run on http://localhost:3001
 echo [INFO] Press Ctrl+C to stop
 echo.

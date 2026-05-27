@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "========================================"
-echo "  Electra Compiler Server"
+echo "  LeapBlocks Server"
 echo "========================================"
 echo ""
 
@@ -36,7 +36,7 @@ if [ ! -f "$ARDUINO_CLI_PATH" ]; then
     echo ""
 fi
 
-echo "[INFO] Starting Electra Compiler Server..."
+echo "[INFO] Starting LeapBlocks Server..."
 echo "[INFO] Server will run on http://localhost:3001"
 echo "[INFO] Press Ctrl+C to stop"
 echo ""

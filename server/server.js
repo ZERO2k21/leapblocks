@@ -6,8 +6,11 @@ import os from 'os';
 import { spawn } from 'child_process';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 import { v4 as uuidv4 } from 'uuid';
 import { transpileArduinoToJS } from './transpiler.js';
+
+const _require = createRequire(import.meta.url);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -235,10 +238,11 @@ app.post('/build-apk', async (req, res) => {
   }
 
   try {
-    const enginePath = path.join(__dirname, '..', 'engine', 'apkInjector.js');
+    const buildPath = path.join(__dirname, '..', 'src', 'studio', 'apk', 'buildAPK.js');
     let builder;
-    if (fs.existsSync(enginePath)) {
-      builder = (await import(`file://${enginePath.replace(/\\/g, '/')}`)).default;
+    if (fs.existsSync(buildPath)) {
+      const ApkBuilder = _require(buildPath);
+      builder = new ApkBuilder();
     }
 
     if (!builder || typeof builder.build !== 'function') {
@@ -259,6 +263,7 @@ app.post('/build-apk', async (req, res) => {
 
     const apkName = `${sanitizeApkName(project.appName)}.apk`;
     const publicPath = path.join(APK_PUBLIC_DIR, apkName);
+    fs.mkdirSync(APK_PUBLIC_DIR, { recursive: true });
 
     if (fs.existsSync(outputPath)) {
       fs.copyFileSync(outputPath, publicPath);

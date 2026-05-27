@@ -1,10 +1,10 @@
 @echo off
-title Electra Compiler Server
+title LeapBlocks Server
 color 0A
 
 echo.
 echo ========================================
-echo   Electra Compiler Server
+echo   LeapBlocks Server
 echo ========================================
 echo.
 echo Starting server on http://localhost:3001
