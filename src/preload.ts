@@ -185,6 +185,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // ═══════════════════════════════════════════════════════════════════════
     // PYTHON NATIVE APIS
     // ═══════════════════════════════════════════════════════════════════════
+    pythonCheck: () => ipcRenderer.invoke('python-check'),
     pythonRun: (code: string) => ipcRenderer.invoke('python-run', code),
     pythonSendInput: (input: string) => ipcRenderer.invoke('python-send-input', input),
     pythonReplStart: () => ipcRenderer.invoke('python-repl-start'),
@@ -288,6 +289,7 @@ declare global {
             getForgeLibPath: () => Promise<string>;
             isElectron: boolean;
 
+            pythonCheck: () => Promise<{ available: boolean; version?: string; error?: string }>;
             pythonRun: (code: string) => Promise<void>;
             pythonSendInput: (input: string) => Promise<void>;
             pythonReplStart: () => Promise<void>;

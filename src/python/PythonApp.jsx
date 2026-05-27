@@ -1272,9 +1272,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 addLog(cleaned, "error");
             }),
             window.electronAPI.onPythonExit((code) => {
-                if (code === 0) {
+                if (code === null) {
+                    addLog(`✗ Failed to start Python. Is Python installed and in your PATH?`, "error");
+                    addLog(`💡 Tip: Install Python from python.org and ensure it's in your system PATH.`, "info");
+                } else if (code === 0) {
                     addLog(`✓ Program finished successfully`, "success");
-                } else if (code !== null) {
+                } else {
                     addLog(`✗ Program exited with code ${code}`, "warning");
                 }
                 setIsRunning(false);
@@ -1379,6 +1382,17 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
             // Execute the code
             if (window.electronAPI?.isElectron) {
+                // Check if Python is available (if the API exists)
+                if (window.electronAPI.pythonCheck) {
+                    const pythonCheck = await window.electronAPI.pythonCheck();
+                    if (!pythonCheck.available) {
+                        addLog(`✗ Python is not available: ${pythonCheck.error}`, "error");
+                        addLog(`💡 Tip: Install Python from python.org and ensure it's in your system PATH.`, "info");
+                        setIsRunning(false);
+                        return;
+                    }
+                }
+
                 setIsWaitingForInput(true);
                 setInputPromptText("");
                 setTerminalInputValue("");

@@ -303,6 +303,9 @@ ipcMain.handle('forge-lib-cache-info', async () => {
 });
 
 // Python Handlers
+ipcMain.handle('python-check', async () => {
+  return await pythonManager.checkPython();
+});
 ipcMain.handle('python-run', async (event, code: string) => {
   await pythonManager.runCode(code);
 });

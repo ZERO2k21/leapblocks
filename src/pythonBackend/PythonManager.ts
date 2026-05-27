@@ -21,6 +21,34 @@ export class PythonManager {
         this.mainWindow = window;
     }
 
+    public async checkPython(): Promise<{ available: boolean; version?: string; error?: string }> {
+        return new Promise((resolve) => {
+            const proc = spawn('python', ['--version']);
+            let output = '';
+            let errorOutput = '';
+
+            proc.stdout.on('data', (data) => {
+                output += data.toString();
+            });
+
+            proc.stderr.on('data', (data) => {
+                errorOutput += data.toString();
+            });
+
+            proc.on('close', (code) => {
+                if (code === 0) {
+                    resolve({ available: true, version: output.trim() || errorOutput.trim() });
+                } else {
+                    resolve({ available: false, error: errorOutput || 'Python exited with code ' + code });
+                }
+            });
+
+            proc.on('error', (err) => {
+                resolve({ available: false, error: err.message });
+            });
+        });
+    }
+
     public async runCode(code: string) {
         this.stopProcess(this.currentProcess);
         
@@ -29,8 +57,13 @@ export class PythonManager {
         fs.writeFileSync(tempPath, code);
 
         // Run with unbuffered output (-u) so print() streams immediately
-        this.currentProcess = spawn('python', ['-u', tempPath]);
-        this.pipeProcess(this.currentProcess, 'python-output', 'python-error', 'python-exit');
+        try {
+            this.currentProcess = spawn('python', ['-u', tempPath]);
+            this.pipeProcess(this.currentProcess, 'python-output', 'python-error', 'python-exit');
+        } catch (err) {
+            this.mainWindow?.webContents.send('python-error', `Failed to start Python: ${(err as Error).message}`);
+            this.mainWindow?.webContents.send('python-exit', null);
+        }
     }
 
     public async startRepl() {
