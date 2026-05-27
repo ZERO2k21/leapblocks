@@ -5,29 +5,30 @@
  */
 import React, { useEffect } from "react";
 import Editor, { loader } from "@monaco-editor/react";
+import * as monaco from "monaco-editor";
+import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
+import cssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker";
+import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 
 // ─── Lazy Monaco loader config to avoid TDZ errors in production builds ───
 let _loaderConfigured = false;
 function ensureLoaderConfig() {
     if (_loaderConfigured) return;
     _loaderConfigured = true;
-    loader.config({
-        paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs" },
-        'vs/nls': { availableLanguages: {} },
-    });
+    loader.config({ monaco });
 }
 
-// Configure Monaco to load workers from CDN (avoids file:// blob CSP issues in Electron)
+// Configure Monaco to load Vite-bundled workers
 if (typeof window !== 'undefined') {
-    const monacoCDN = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs';
     window.MonacoEnvironment = {
-        getWorkerUrl: function (_workerId, label) {
-            if (label === 'json')          return `${monacoCDN}/language/json/json.worker.js`;
-            if (label === 'css')           return `${monacoCDN}/language/css/css.worker.js`;
-            if (label === 'html')          return `${monacoCDN}/language/html/html.worker.js`;
-            if (label === 'typescript' || label === 'javascript')
-                return `${monacoCDN}/language/typescript/typescript.worker.js`;
-            return `${monacoCDN}/editor/editor.worker.js`;
+        getWorker: function (_workerId, label) {
+            if (label === 'json') return new jsonWorker();
+            if (label === 'css' || label === 'scss' || label === 'less') return new cssWorker();
+            if (label === 'html' || label === 'handlebars' || label === 'razor') return new htmlWorker();
+            if (label === 'typescript' || label === 'javascript') return new tsWorker();
+            return new editorWorker();
         }
     };
 }

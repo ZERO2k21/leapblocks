@@ -791,6 +791,7 @@ export default function JuniorApp({ onBack }) {
                     <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={wp.resetFlyoutScale} style={{ bottom: '210px', right: '14px' }} />
                     <WorkspaceTrash workspaceRef={workspaceRef} />
 
+
                     <div className="junior-toolbar" style={{
                         position: "absolute",
                         left: "14px",
