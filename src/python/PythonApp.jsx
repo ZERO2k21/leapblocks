@@ -268,7 +268,16 @@ function getBoardNameById() {
 
 
 // ─── Default Files ─────────────────────────────────────────────────────────────
-const DEFAULT_FILES = {};
+const DEFAULT_ACTIVE_FILE = "main.py";
+const DEFAULT_FILES = {
+    [DEFAULT_ACTIVE_FILE]: "print(\"Hello from LeapBlocks Python!\")\n",
+};
+
+const getFallbackActiveFile = (files, preferred = DEFAULT_ACTIVE_FILE) => {
+    const safeFiles = files || {};
+    if (preferred && Object.prototype.hasOwnProperty.call(safeFiles, preferred)) return preferred;
+    return Object.keys(safeFiles)[0] || DEFAULT_ACTIVE_FILE;
+};
 
 
 const BOARD_UPLOAD_CONFIG = {
@@ -699,7 +708,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     // Editor state
     const [projectName, setProjectName] = useState("My Project");
     const [workflowMode, setWorkflowMode] = useState("ide");
-    const [activeFile, setActiveFile] = useState("");
+    const [activeFile, setActiveFile] = useState(DEFAULT_ACTIVE_FILE);
     const [projectFiles, setProjectFiles] = useState(DEFAULT_FILES);
     const [editorCursor, setEditorCursor] = useState({ line: 1, col: 1 });
     const monacoRef = useRef(null);
@@ -734,7 +743,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         if (!window.confirm("Create a new project? All unsaved work will be lost.")) return;
         setProjectName("My Project");
         setProjectFiles(DEFAULT_FILES);
-        setActiveFile("");
+        setActiveFile(DEFAULT_ACTIVE_FILE);
         resetStage();
     };
 
@@ -767,9 +776,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 return;
             }
 
+            const nextProjectFiles = data.projectFiles && Object.keys(data.projectFiles).length ? data.projectFiles : DEFAULT_FILES;
             setProjectName(data.projectName || "My Project");
-            setProjectFiles(data.projectFiles || DEFAULT_FILES);
-            setActiveFile(data.activeFile || "");
+            setProjectFiles(nextProjectFiles);
+            setActiveFile(getFallbackActiveFile(nextProjectFiles, data.activeFile));
 
             if (data.sprites && Array.isArray(data.sprites) && data.sprites.length > 0) {
                 setSprites(data.sprites);
@@ -881,6 +891,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const replStartedRef = useRef(false);
     const replErrorBufferRef = useRef("");
     const replOutputBufferRef = useRef("");
+    const runStopRequestedRef = useRef(false);
 
     // ── Helpers ──────────────────────────────────────────────────────────────
     const addLog = useCallback((text, type = "log") => {
@@ -1327,11 +1338,19 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     // keyboard-shortcuts useEffect that references them in its deps array.
     async function handleRun() {
         if (isRunning) return;
+        const runFile = Object.prototype.hasOwnProperty.call(projectFiles, activeFile)
+            ? activeFile
+            : getFallbackActiveFile(projectFiles, activeFile);
+        const code = projectFiles[runFile] || "";
+        if (runFile !== activeFile) {
+            setActiveFile(runFile);
+        }
+        runStopRequestedRef.current = false;
         setIsRunning(true);
         setTerminalOutput([]);
 
         const startTime = performance.now();
-        addLog(`▶ Running ${activeFile}...`, "info");
+        addLog(`▶ Running ${runFile}...`, "info");
         addLog(`────────────────────────────────────────`, "info");
 
         // Reset stage
@@ -1343,7 +1362,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
         try {
             // Validate code before execution
-            const code = projectFiles[activeFile];
             if (!code || code.trim() === '') {
                 addLog("⚠ No code to execute. Write some Python code first!", "warning");
                 setIsRunning(false);
@@ -1364,6 +1382,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     throw new Error("Python engine (Skulpt) not initialized. Try refreshing the page.");
                 }
                 await skulptRef.current.runPython(code);
+                if (runStopRequestedRef.current) {
+                    return;
+                }
 
                 const endTime = performance.now();
                 const duration = ((endTime - startTime) / 1000).toFixed(3);
@@ -1372,6 +1393,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             }
 
         } catch (e) {
+            if (runStopRequestedRef.current) {
+                return;
+            }
             const errorMsg = typeof e === 'string' ? e : e?.message || e?.toString?.() || JSON.stringify(e) || "Unknown error";
             addLog(`────────────────────────────────────────`, "error");
             addLog(`✗ Execution Error:`, "error");
@@ -1397,10 +1421,19 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             setInputPromptText("");
             setTerminalInputValue("");
             inputResolverRef.current = null;
+            runStopRequestedRef.current = false;
         }
     }
 
     function handleStop() {
+        const wasRunning = isRunning || Boolean(inputResolverRef.current);
+        if (!wasRunning) return;
+        runStopRequestedRef.current = true;
+        if (window.electronAPI?.isElectron) {
+            window.electronAPI.pythonStop();
+        } else {
+            skulptRef.current?.stop?.();
+        }
         // Cancel any pending input promise to prevent hanging
         if (inputResolverRef.current) {
             inputResolverRef.current("");
@@ -1411,9 +1444,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         setTerminalInputValue("");
         setIsRunning(false);
         addLog("⏹ Execution stopped by user.", "warning");
-        if (window.electronAPI?.isElectron) {
-            window.electronAPI.pythonStop();
-        }
     }
 
     function handleClear() { setTerminalOutput([]); }
@@ -2988,8 +3018,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     alignItems: 'center',
                     flexShrink: 0,
                     filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
+                    pointerEvents: 'none',
                 }}>
-                    <CreoleapLogo height={200} />
+                    <CreoleapLogo height={200} style={{ pointerEvents: 'none' }} />
                 </div>
             </header>
 

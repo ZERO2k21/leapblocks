@@ -142,6 +142,7 @@ export class SkulptEngine {
     constructor(callbacks) {
         this.callbacks = callbacks; // { onOut, onErr, actions }
         this._replReady = false;
+        this._stopRequested = false;
     }
 
     _getSk() {
@@ -175,6 +176,8 @@ export class SkulptEngine {
             const act = toJS(skAction);
             const args = (skArgs?.v ?? []).map(toJS);
             switch (act) {
+                case '__STOP__':
+                    throw new Error('Execution stopped');
                 // Initialization
                 case 'INIT':       bridge.initSprite(n); break;
 
@@ -189,7 +192,7 @@ export class SkulptEngine {
                 case 'SETY':       bridge.update(n, { y: args[0] ?? 0, position: { y: args[0] ?? 0 } }); break;
                 case 'TURN_RIGHT': bridge.update(n, { angle: (old) => (old ?? 0) + (15 * (args[0] ?? 1)), direction: (old) => (old ?? 0) + (15 * (args[0] ?? 1)) }); break;
                 case 'TURN_LEFT':  bridge.update(n, { angle: (old) => (old ?? 0) - (15 * (args[0] ?? 1)), direction: (old) => (old ?? 0) - (15 * (args[0] ?? 1)) }); break;
-                
+
                 // Appearance
                 case 'SAY':     bridge.update(n, { speech: args[0] ?? '' }); break;
                 case 'THINK':   bridge.update(n, { speech: '💭 ' + (args[0] ?? '') }); break;
@@ -199,8 +202,8 @@ export class SkulptEngine {
                 case 'CHANGE_SIZE': bridge.update(n, { size: (old) => (old || 100) + (args[0] ?? 10) }); break;
                 case 'ANGLE':   bridge.update(n, { angle: args[0] ?? 0  }); break;
                 case 'COSTUME': bridge.update(n, { currentCostume: args[0] }); break;
-                case 'NEXT_COSTUME': 
-                    bridge.update(n, { nextCostume: true }); 
+                case 'NEXT_COSTUME':
+                    bridge.update(n, { nextCostume: true });
                     break;
                 default: break;
             }
@@ -209,14 +212,14 @@ export class SkulptEngine {
 
         // Store dispatch function globally for the preamble to use
         this._dispatchFunc = dispatch;
-        
+
         // Create the __leap__ module
         const mod = new sk.builtin.module();
         mod.$d = { _dispatch: new sk.builtin.func(dispatch) };
-        
+
         // Register in sysmodules
         sk.sysmodules.mp$ass_subscript(new sk.builtin.str('__leap__'), mod);
-        
+
         // Also add to builtins for direct access
         if (sk.builtins) {
             sk.builtins.__leap__ = mod;
@@ -228,7 +231,8 @@ export class SkulptEngine {
     _configureSkulpt(sk) {
         // Build the __leap__ module first to set up builtins
         this._buildLeapModule(sk);
-        
+        this._stopRequested = false;
+
         sk.configure({
             output: (text) => this.callbacks.onOut(text),
             read: (x) => {
@@ -237,13 +241,20 @@ export class SkulptEngine {
             },
             __future__: sk.python3,
             execLimit: 30000,
+            yieldLimit: 100,
+            killableWhile: true,
+            killableFor: true,
             inputfun: (promptText) => {
+                if (this._stopRequested) {
+                    throw new Error('Execution stopped');
+                }
                 if (promptText) {
                     this.callbacks.onOut(promptText);
                 }
 
                 const susp = new sk.misceval.Suspension();
                 susp.resume = () => {
+                    if (this._stopRequested) throw new Error('Execution stopped');
                     if (susp.data.error) throw susp.data.error;
                     return new sk.builtin.str(susp.data.result || "");
                 };
@@ -311,6 +322,15 @@ export class SkulptEngine {
             const msg = this._errStr(e);
             this.callbacks.onErr(msg);
             throw new Error(msg);
+        }
+    }
+
+    stop() {
+        this._stopRequested = true;
+        const sk = Sk || ((typeof window !== 'undefined') ? window.Sk : null);
+        if (sk) {
+            sk.execLimit = 1;
+            sk.yieldLimit = 1;
         }
     }
 }

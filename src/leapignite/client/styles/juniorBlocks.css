@@ -505,3 +505,17 @@ text.blocklyText.junior-icon,
     font-weight: 600;
     color: #94a3b8;
 }
+/* Junior toolbar - protect layout from leaked Blockly styles */
+.junior-toolbar {
+    width: calc(100% - 28px) !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+}
+
+.junior-toolbar .junior-extensions-btn {
+    position: relative !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+}
