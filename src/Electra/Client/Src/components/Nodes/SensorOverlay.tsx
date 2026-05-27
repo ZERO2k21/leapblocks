@@ -52,7 +52,7 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
   );
 };
 
-// ── Compact theme-aware Card Wrapper sitting right below the component ──────
+// ── Compact theme-aware Card Wrapper sitting right above the component ──────
 interface CompactCardProps {
   borderColor?: string;
   children: React.ReactNode;
@@ -73,7 +73,7 @@ const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children }) => {
       className="nodrag nopan"
       style={{
         position: 'absolute',
-        top: 'calc(100% + 6px)',
+        bottom: 'calc(100% + 6px)',
         left: '50%',
         transform: 'translateX(-50%)',
         width: '170px',
