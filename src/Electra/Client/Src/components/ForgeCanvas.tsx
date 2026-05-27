@@ -209,20 +209,182 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         .react-flow__handle { z-index: 10 !important; }
         .react-flow__attribution { display: none !important; }
         
-        /* Modern Controls Styling */
+        /* Modern Zoom Controls Styling */
+        .glass-controls {
+          border: 1px solid var(--lp-border) !important;
+          border-radius: 8px !important;
+          background: var(--lp-glass) !important;
+          box-shadow: var(--lp-shadow) !important;
+          padding: 2px !important;
+        }
+        .theme-light .glass-controls {
+          border: 1px solid rgba(15, 23, 42, 0.08) !important;
+          background: rgba(255, 255, 255, 0.7) !important;
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04) !important;
+        }
         .glass-controls button {
           background: transparent !important;
           border: none !important;
-          border-radius: 8px !important;
-          color: #64748b !important;
+          border-radius: 6px !important;
+          color: var(--lp-zinc-400) !important;
           transition: all 0.2s !important;
+          margin: 1px !important;
         }
         .glass-controls button:hover {
-          background: rgba(123, 79, 196, 0.1) !important;
-          color: #7B4FC4 !important;
+          background: var(--lp-zinc-700) !important;
+          color: var(--lp-accent-primary) !important;
+        }
+        .theme-light .glass-controls button {
+          color: #64748b !important;
+        }
+        .theme-light .glass-controls button:hover {
+          background: rgba(0, 0, 0, 0.04) !important;
+          color: var(--lp-accent-primary) !important;
         }
         .react-flow__controls-button svg {
           fill: currentColor !important;
+        }
+
+        /* Modern MiniMap Styling */
+        .glass-minimap {
+          border: 1px solid var(--lp-border) !important;
+          border-radius: 12px !important;
+          background: var(--lp-glass) !important;
+          box-shadow: var(--lp-shadow) !important;
+          overflow: hidden !important;
+        }
+        .theme-light .glass-minimap {
+          border: 1px solid rgba(15, 23, 42, 0.08) !important;
+          background: rgba(255, 255, 255, 0.7) !important;
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04) !important;
+        }
+
+        /* Floating Action Panel */
+        .canvas-action-panel {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 12px;
+          background: var(--lp-glass);
+          border: 1px solid var(--lp-border);
+          border-radius: 24px;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.15);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          z-index: 100;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .theme-light .canvas-action-panel {
+          background: #ffffff !important;
+          border: 1px solid rgba(15, 23, 42, 0.08) !important;
+          box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12), 0 2px 4px rgba(15, 23, 42, 0.04) !important;
+        }
+
+        /* Divider */
+        .canvas-divider {
+          width: 1px;
+          height: 18px;
+          background: rgba(255, 255, 255, 0.12);
+          margin: 0 4px;
+        }
+        .theme-light .canvas-divider {
+          background: rgba(15, 23, 42, 0.08);
+        }
+
+        /* Floating Panel Buttons */
+        .canvas-btn {
+          height: 38px;
+          border-radius: 19px;
+          border: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          font-family: inherit;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        /* Simulation Buttons */
+        .sim-btn {
+          padding: 0 16px;
+          background: var(--lp-emerald);
+          color: #ffffff;
+          gap: 8px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .sim-btn:hover {
+          background: #059669;
+          transform: translateY(-1.5px);
+          box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .sim-btn.simulating {
+          background: var(--lp-rose);
+        }
+        .sim-btn.simulating:hover {
+          background: #e11d48;
+          box-shadow: 0 6px 16px rgba(244, 63, 94, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Secondary Round Buttons */
+        .canvas-btn.secondary {
+          width: 38px;
+          background: var(--lp-zinc-800);
+          border: 1px solid var(--lp-border);
+          color: var(--lp-zinc-400);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        }
+        .canvas-btn.secondary:hover {
+          color: var(--lp-accent-bright);
+          border-color: rgba(96, 165, 250, 0.3);
+          background: var(--lp-zinc-700);
+          transform: translateY(-1.5px);
+          box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+        }
+        .canvas-btn.secondary.active {
+          background: var(--lp-accent-primary);
+          border-color: transparent;
+          color: #ffffff;
+          box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
+        }
+        .canvas-btn.secondary.active:hover {
+          background: var(--lp-accent-bright);
+          transform: translateY(-1.5px);
+          box-shadow: 0 6px 14px rgba(59, 130, 246, 0.35);
+        }
+
+        /* Primary Add Button */
+        .canvas-btn.primary-add {
+          width: 38px;
+          background: var(--lp-accent-primary);
+          color: #ffffff;
+          box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+        }
+        .canvas-btn.primary-add:hover {
+          background: var(--lp-accent-bright);
+          transform: translateY(-1.5px);
+          box-shadow: 0 6px 14px rgba(59, 130, 246, 0.3);
+        }
+        .canvas-btn.primary-add.active {
+          background: var(--lp-accent-bright);
+        }
+
+
+        /* Compiling Spinner */
+        .spinner {
+          width: 14px;
+          height: 14px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top-color: #ffffff;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
         }
 
         @media (max-width: 768px) {
@@ -236,50 +398,15 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
       <SelectionToolbar />
 
       {/* ── FLOATING ACTION PANEL (Tinkercad Style Toolbar) ────────────────── */}
-      <div className="canvas-action-panel" style={{
-        position: 'absolute',
-        top: '16px',
-        right: '16px',
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '6px 12px',
-        background: 'var(--lp-glass)',
-        border: '1px solid var(--lp-border-active)',
-        borderRadius: '24px',
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-        backdropFilter: 'blur(8px)',
-        zIndex: 100
-      }}>
+      <div className="canvas-action-panel">
         {/* Play/Stop Labeled Simulation Button */}
         <button
           onClick={onToggleSimulation || toggleStoreSimulation}
           disabled={isCompiling}
-          className="canvas-btn sim-btn"
-          style={{
-            height: '38px',
-            padding: '0 16px',
-            borderRadius: '19px',
-            background: isSimulating ? 'var(--lp-rose)' : 'var(--lp-emerald)',
-            border: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            color: '#fff',
-            cursor: 'pointer',
-            fontWeight: 700,
-            fontSize: '11px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            boxShadow: isSimulating ? '0 0 10px rgba(244,63,94,0.3)' : '0 0 10px rgba(16,185,129,0.3)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+          className={`canvas-btn sim-btn ${isSimulating ? 'simulating' : ''}`}
         >
           {isCompiling ? (
-            <div className="spinner" style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <div className="spinner" />
           ) : isSimulating ? (
             <>
               <Square size={14} fill="currentColor" />
@@ -297,60 +424,18 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         <button
           onClick={store.resetSimulation}
           className="canvas-btn secondary"
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '19px',
-            background: 'var(--lp-zinc-800)',
-            border: '1px solid var(--lp-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--lp-zinc-400)',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--lp-accent-primary)'; e.currentTarget.style.borderColor = 'var(--lp-accent-primary)'; e.currentTarget.style.background = 'var(--lp-zinc-700)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--lp-zinc-400)'; e.currentTarget.style.borderColor = 'var(--lp-border)'; e.currentTarget.style.background = 'var(--lp-zinc-800)'; }}
           title="Reset Simulation"
         >
           <RotateCcw size={16} />
         </button>
 
-        <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.15)', margin: '0 4px' }} />
+        <div className="canvas-divider" />
 
         {/* Code Panel Toggle Button */}
         {onToggleEditor && (
           <button
             onClick={onToggleEditor}
             className={`canvas-btn secondary ${showEditor ? 'active' : ''}`}
-            style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '19px',
-              background: showEditor ? 'var(--lp-accent-primary)' : 'var(--lp-zinc-800)',
-              border: showEditor ? 'none' : '1px solid var(--lp-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: showEditor ? 'var(--lp-btn-text, #000)' : 'var(--lp-zinc-400)',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              if (!showEditor) {
-                e.currentTarget.style.color = 'var(--lp-accent-primary)';
-                e.currentTarget.style.borderColor = 'var(--lp-accent-primary)';
-                e.currentTarget.style.background = 'var(--lp-zinc-700)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!showEditor) {
-                e.currentTarget.style.color = 'var(--lp-zinc-400)';
-                e.currentTarget.style.borderColor = 'var(--lp-border)';
-                e.currentTarget.style.background = 'var(--lp-zinc-800)';
-              }
-            }}
             title="Toggle Code Panel"
           >
             <Code size={16} />
@@ -361,29 +446,6 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         <button
           onClick={toggleUiTheme}
           className="canvas-btn secondary"
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '19px',
-            background: 'var(--lp-zinc-800)',
-            border: '1px solid var(--lp-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--lp-zinc-400)',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--lp-accent-primary)';
-            e.currentTarget.style.borderColor = 'var(--lp-accent-primary)';
-            e.currentTarget.style.background = 'var(--lp-zinc-700)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--lp-zinc-400)';
-            e.currentTarget.style.borderColor = 'var(--lp-border)';
-            e.currentTarget.style.background = 'var(--lp-zinc-800)';
-          }}
           title={uiTheme === 'light' ? "Switch to Dark Mode" : "Switch to Light Mode"}
         >
           {uiTheme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
@@ -397,21 +459,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
             }
             store.setShowPartPicker(!store.showPartPicker);
           }}
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '19px',
-            background: store.showPartPicker ? 'var(--lp-accent-bright)' : 'var(--lp-accent-primary)',
-            border: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--lp-btn-text, #000)',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--lp-accent-bright)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--lp-accent-primary)'; }}
+          className={`canvas-btn primary-add ${store.showPartPicker ? 'active' : ''}`}
           title="Toggle Components Panel"
         >
           <Plus size={20} />
@@ -423,6 +471,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     </div>
   );
 };
+
 
 const ForgeCanvas: React.FC<ForgeCanvasProps> = (props) => (
   <ReactFlowProvider>

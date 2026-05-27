@@ -81,15 +81,15 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
 
   // Group components based on ID or category
   const isAsset = (id: string, category: string): boolean => {
-    return category === 'displays' || 
-           id === 'led-bar-graph' || 
-           id === 'neopixel-matrix' || 
-           id === '7segment' ||
-           id === 'a4988' ||
-           id === 'l298n' ||
-           id === 'ds1307' ||
-           id === 'microsd-card' ||
-           id === 'hx711';
+    return category === 'displays' ||
+      id === 'led-bar-graph' ||
+      id === 'neopixel-matrix' ||
+      id === '7segment' ||
+      id === 'a4988' ||
+      id === 'l298n' ||
+      id === 'ds1307' ||
+      id === 'microsd-card' ||
+      id === 'hx711';
   };
 
   const libraryComponents = COMPONENTS.filter(c => !isAsset(c.id, c.category));
@@ -143,15 +143,15 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
           justifyContent: 'center',
           transition: 'color 0.2s'
         }}
-        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--lp-accent-primary)'}
-        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--lp-zinc-400)'}
+          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--lp-accent-primary)'}
+          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--lp-zinc-400)'}
         >
           <X size={16} />
         </button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        
+
         {/* Accordion 1: COMPONENT LIBRARY */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <button
@@ -347,7 +347,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
                       }}
                     >
                       <div style={{
-                        transform: 'scale(0.7)',
+                        transform: 'scale(0.2)',
                         transformOrigin: 'center center',
                         width: '100%',
                         height: '100%',

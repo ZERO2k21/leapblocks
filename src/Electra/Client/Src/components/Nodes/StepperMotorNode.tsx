@@ -52,6 +52,8 @@ export const StepperMotorNode = memo(({ nodeId, data, selected = false }: Steppe
         color: '#e2e8f0',
         position: 'relative',
         boxShadow: '0 8px 24px rgba(2,6,23,0.35)',
+        transform: 'scale(0.75)',
+        transformOrigin: 'center',
       }}
     >
       {(['IN1', 'IN2', 'IN3', 'IN4'] as const).map((pin, i) => (
