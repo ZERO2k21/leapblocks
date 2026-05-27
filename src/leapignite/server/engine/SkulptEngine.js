@@ -14,6 +14,7 @@
 // Skulpt's CJS entry does: require('./dist/skulpt.min.js') + require('./dist/skulpt-stdlib.js')
 // Vite's pre-bundler (esbuild) converts this CJS → ESM automatically.
 import * as _SkModule from 'skulpt';
+import { VirtualFileSystem } from './VirtualFileSystem';
 
 // Resolve the actual Sk object — handle both default export and window global
 let Sk = _SkModule?.default || _SkModule || null;
@@ -143,6 +144,15 @@ export class SkulptEngine {
         this.callbacks = callbacks; // { onOut, onErr, actions }
         this._replReady = false;
         this._stopRequested = false;
+        this.vfs = new VirtualFileSystem();
+    }
+
+    loadProjectFiles(projectFiles) {
+        this.vfs.loadFromProjectFiles(projectFiles);
+    }
+
+    getModifiedFiles() {
+        return this.vfs.getModifiedFiles();
     }
 
     _getSk() {
@@ -228,9 +238,87 @@ export class SkulptEngine {
         }
     }
 
+    _registerOsModule(sk) {
+        const vfs = this.vfs;
+
+        const pathModule = new sk.builtin.module();
+        pathModule.$d = {
+            exists: new sk.builtin.func((path) => {
+                const p = sk.ffi.remapToJs(path);
+                return new sk.builtin.bool(vfs.exists(p));
+            }),
+            isfile: new sk.builtin.func((path) => {
+                const p = sk.ffi.remapToJs(path);
+                return new sk.builtin.bool(vfs.isFile(p));
+            }),
+            isdir: new sk.builtin.func((path) => {
+                return new sk.builtin.bool(false);
+            }),
+            basename: new sk.builtin.func((path) => {
+                const p = sk.ffi.remapToJs(path);
+                const parts = p.split('/');
+                return new sk.builtin.str(parts[parts.length - 1] || p);
+            }),
+            dirname: new sk.builtin.func((path) => {
+                const p = sk.ffi.remapToJs(path);
+                const parts = p.split('/');
+                parts.pop();
+                return new sk.builtin.str(parts.join('/') || '.');
+            }),
+            join: new sk.builtin.func((...args) => {
+                const parts = args.map(a => sk.ffi.remapToJs(a));
+                return new sk.builtin.str(parts.join('/'));
+            }),
+            splitext: new sk.builtin.func((path) => {
+                const p = sk.ffi.remapToJs(path);
+                const dotIndex = p.lastIndexOf('.');
+                if (dotIndex === -1) {
+                    return new sk.builtin.tuple([new sk.builtin.str(p), new sk.builtin.str('')]);
+                }
+                return new sk.builtin.tuple([
+                    new sk.builtin.str(p.substring(0, dotIndex)),
+                    new sk.builtin.str(p.substring(dotIndex))
+                ]);
+            }),
+            getsize: new sk.builtin.func((path) => {
+                const p = sk.ffi.remapToJs(path);
+                try {
+                    return new sk.builtin.int_(vfs.getFileSize(p));
+                } catch (e) {
+                    throw new sk.builtin.OSError(e.message);
+                }
+            }),
+        };
+
+        const osModule = new sk.builtin.module();
+        osModule.$d = {
+            path: pathModule,
+            listdir: new sk.builtin.func((path) => {
+                const files = vfs.listFiles();
+                const pyList = files.map(f => new sk.builtin.str(f));
+                return new sk.builtin.list(pyList);
+            }),
+            remove: new sk.builtin.func((path) => {
+                const p = sk.ffi.remapToJs(path);
+                if (!vfs.exists(p)) {
+                    throw new sk.builtin.FileNotFoundError(`[Errno 2] No such file or directory: '${p}'`);
+                }
+                vfs.deleteFile(p);
+                return sk.builtin.none.none$;
+            }),
+            getcwd: new sk.builtin.func(() => {
+                return new sk.builtin.str('/');
+            }),
+        };
+
+        sk.sysmodules.mp$ass_subscript(new sk.builtin.str('os'), osModule);
+        sk.sysmodules.mp$ass_subscript(new sk.builtin.str('os.path'), pathModule);
+    }
+
     _configureSkulpt(sk) {
         // Build the __leap__ module first to set up builtins
         this._buildLeapModule(sk);
+        this._registerOsModule(sk);
         this._stopRequested = false;
 
         sk.configure({
@@ -244,6 +332,14 @@ export class SkulptEngine {
             yieldLimit: 100,
             killableWhile: true,
             killableFor: true,
+            nonreadopen: true,
+            filewrite: (fileObj, str) => {
+                const name = fileObj.name;
+                const content = sk.ffi.remapToJs(str);
+                const mode = sk.ffi.remapToJs(fileObj.mode);
+                const append = mode === 'a' || mode === 'ab';
+                this.vfs.writeFile(name, content, append);
+            },
             inputfun: (promptText) => {
                 if (this._stopRequested) {
                     throw new Error('Execution stopped');
@@ -261,12 +357,78 @@ export class SkulptEngine {
                 });
             }
         });
+
+        this._patchFileConstructor(sk);
+    }
+
+    _patchFileConstructor(sk) {
+        const vfs = this.vfs;
+        const OriginalFile = sk.builtin.file;
+
+        sk.builtin.file = function(name, mode, buffering) {
+            if (!(this instanceof sk.builtin.file)) {
+                return new sk.builtin.file(name, mode, buffering);
+            }
+
+            this.mode = mode;
+            this.name = sk.ffi.remapToJs(name);
+            this.closed = false;
+
+            if (this.name === "/dev/stdout") {
+                this.data$ = sk.builtin.none.none$;
+                this.fileno = 1;
+            } else if (this.name === "/dev/stdin") {
+                this.fileno = 0;
+            } else if (this.name === "/dev/stderr") {
+                this.fileno = 2;
+            } else {
+                this.fileno = 10;
+                const modeStr = mode.v || mode;
+
+                if (modeStr === 'w' || modeStr === 'wb' || modeStr === 'a' || modeStr === 'ab') {
+                    if (modeStr === 'a' || modeStr === 'ab') {
+                        try {
+                            const existing = vfs.readFile(this.name);
+                            this.data$ = existing;
+                        } catch (_) {
+                            this.data$ = "";
+                        }
+                    } else {
+                        this.data$ = "";
+                    }
+                } else {
+                    try {
+                        this.data$ = vfs.readFile(this.name);
+                    } catch (e) {
+                        throw new sk.builtin.IOError(e.message);
+                    }
+                }
+
+                this.lineList = this.data$.split("\n");
+                this.lineList = this.lineList.slice(0, -1);
+
+                for (let i in this.lineList) {
+                    this.lineList[i] = this.lineList[i] + "\n";
+                }
+                this.currentLine = 0;
+            }
+            this.pos$ = 0;
+
+            if (sk.fileopen && this.fileno >= 10) {
+                sk.fileopen(this);
+            }
+
+            return this;
+        };
+
+        sk.builtin.file.prototype = OriginalFile.prototype;
+        sk.builtin.file.prototype.constructor = sk.builtin.file;
     }
 
     _errStr(e) {
         if (!e) return 'Unknown error';
         if (typeof e === 'string') return e;
-        try { if (e.tp$str) return e.tp$str().v; } catch (_) {}
+        try { if (e.tp$str) return e.tp$str().v; } catch (_) { /* noop */ }
         if (e.message && e.message !== '[object Event]') return e.message;
         if (e.toString && !e.toString().includes('[object')) return e.toString();
         try { return JSON.stringify(e); } catch { return 'Unknown error'; }
@@ -305,7 +467,7 @@ export class SkulptEngine {
                 await sk.misceval.asyncToPromise(
                     () => sk.importMainWithBody('<repl-init>', false, SPRITE_PREAMBLE, true)
                 );
-            } catch (_) {}
+            } catch (_) { /* noop */ }
         }
 
         try {

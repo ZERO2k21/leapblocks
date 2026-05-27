@@ -49,17 +49,35 @@ export class PythonManager {
         });
     }
 
-    public async runCode(code: string) {
+    public async runCode(code: string, projectFiles?: Record<string, string>) {
         this.stopProcess(this.currentProcess);
         
-        // Write code to a temp file
-        const tempPath = path.join(app.getPath('temp'), 'leapblocks_temp.py');
+        const workDir = path.join(app.getPath('temp'), 'leapblocks_project');
+        if (!fs.existsSync(workDir)) {
+            fs.mkdirSync(workDir, { recursive: true });
+        }
+
+        const tempPath = path.join(workDir, 'main.py');
         fs.writeFileSync(tempPath, code);
 
-        // Run with unbuffered output (-u) so print() streams immediately
+        if (projectFiles) {
+            for (const [name, content] of Object.entries(projectFiles)) {
+                if (name !== 'main.py') {
+                    const filePath = path.join(workDir, name);
+                    const dir = path.dirname(filePath);
+                    if (!fs.existsSync(dir)) {
+                        fs.mkdirSync(dir, { recursive: true });
+                    }
+                    fs.writeFileSync(filePath, content);
+                }
+            }
+        }
+
+        const filesBefore = this.snapshotDirectory(workDir);
+
         try {
-            this.currentProcess = spawn('python', ['-u', tempPath]);
-            this.pipeProcess(this.currentProcess, 'python-output', 'python-error', 'python-exit');
+            this.currentProcess = spawn('python', ['-u', tempPath], { cwd: workDir });
+            this.pipeProcess(this.currentProcess, 'python-output', 'python-error', 'python-exit', workDir, filesBefore);
         } catch (err) {
             this.mainWindow?.webContents.send('python-error', `Failed to start Python: ${(err as Error).message}`);
             this.mainWindow?.webContents.send('python-exit', null);
@@ -69,8 +87,6 @@ export class PythonManager {
     public async startRepl() {
         this.stopProcess(this.replProcess);
         
-        // Python -i runs interactive REPL
-        // We use -u for unbuffered output to ensure instant streaming
         this.replProcess = spawn('python', ['-i', '-u']);
         this.pipeProcess(this.replProcess, 'python-repl-output', 'python-repl-error', 'python-repl-exit');
     }
@@ -112,7 +128,55 @@ export class PythonManager {
         }
     }
 
-    private pipeProcess(proc: ChildProcessWithoutNullStreams, outEvent: string, errEvent: string, exitEvent: string) {
+    private snapshotDirectory(dir: string): Map<string, { mtime: number; size: number }> {
+        const snapshot = new Map<string, { mtime: number; size: number }>();
+        try {
+            const walk = (d: string, prefix: string) => {
+                const entries = fs.readdirSync(d, { withFileTypes: true });
+                for (const entry of entries) {
+                    const fullPath = path.join(d, entry.name);
+                    const relPath = prefix ? `${prefix}/${entry.name}` : entry.name;
+                    if (entry.isDirectory()) {
+                        walk(fullPath, relPath);
+                    } else if (entry.isFile()) {
+                        const stat = fs.statSync(fullPath);
+                        snapshot.set(relPath, { mtime: stat.mtimeMs, size: stat.size });
+                    }
+                }
+            };
+            walk(dir, '');
+        } catch (_) { /* noop */ }
+        return snapshot;
+    }
+
+    private collectModifiedFiles(dir: string, filesBefore: Map<string, { mtime: number; size: number }>): Record<string, string> {
+        const modified: Record<string, string> = {};
+        try {
+            const walk = (d: string, prefix: string) => {
+                const entries = fs.readdirSync(d, { withFileTypes: true });
+                for (const entry of entries) {
+                    const fullPath = path.join(d, entry.name);
+                    const relPath = prefix ? `${prefix}/${entry.name}` : entry.name;
+                    if (entry.isDirectory()) {
+                        walk(fullPath, relPath);
+                    } else if (entry.isFile()) {
+                        if (relPath === 'main.py') continue;
+                        const stat = fs.statSync(fullPath);
+                        const before = filesBefore.get(relPath);
+                        if (!before || before.mtime !== stat.mtimeMs || before.size !== stat.size) {
+                            try {
+                                modified[relPath] = fs.readFileSync(fullPath, 'utf-8');
+                            } catch (_) { /* noop */ }
+                        }
+                    }
+                }
+            };
+            walk(dir, '');
+        } catch (_) { /* noop */ }
+        return modified;
+    }
+
+    private pipeProcess(proc: ChildProcessWithoutNullStreams, outEvent: string, errEvent: string, exitEvent: string, workDir?: string, filesBefore?: Map<string, { mtime: number; size: number }>) {
         proc.stdout.on('data', (data) => {
             this.mainWindow?.webContents.send(outEvent, data.toString());
         });
@@ -122,6 +186,12 @@ export class PythonManager {
         });
 
         proc.on('close', (code) => {
+            if (workDir && filesBefore && exitEvent === 'python-exit') {
+                const modifiedFiles = this.collectModifiedFiles(workDir, filesBefore);
+                if (Object.keys(modifiedFiles).length > 0) {
+                    this.mainWindow?.webContents.send('python-files-updated', modifiedFiles);
+                }
+            }
             this.mainWindow?.webContents.send(exitEvent, code);
         });
 

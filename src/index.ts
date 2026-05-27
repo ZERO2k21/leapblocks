@@ -306,8 +306,8 @@ ipcMain.handle('forge-lib-cache-info', async () => {
 ipcMain.handle('python-check', async () => {
   return await pythonManager.checkPython();
 });
-ipcMain.handle('python-run', async (event, code: string) => {
-  await pythonManager.runCode(code);
+ipcMain.handle('python-run', async (event, code: string, projectFiles?: Record<string, string>) => {
+  await pythonManager.runCode(code, projectFiles);
 });
 ipcMain.handle('python-send-input', async (event, input: string) => {
   pythonManager.sendInput(input);

@@ -1314,6 +1314,11 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             window.electronAPI.onPythonPipError((data) => {
                 addLog(data, "error");
             }),
+            window.electronAPI.onPythonFilesUpdated((files) => {
+                setProjectFiles(prev => ({ ...prev, ...files }));
+                const fileNames = Object.keys(files).join(', ');
+                addLog(`📁 Files updated: ${fileNames}`, "info");
+            }),
         ];
 
         return () => {
@@ -1397,14 +1402,22 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 setInputPromptText("");
                 setTerminalInputValue("");
                 setTimeout(() => terminalInputRef.current?.focus(), 80);
-                await window.electronAPI.pythonRun(code);
+                await window.electronAPI.pythonRun(code, projectFiles);
             } else {
                 if (!skulptRef.current) {
                     throw new Error("Python engine (Skulpt) not initialized. Try refreshing the page.");
                 }
+                skulptRef.current.loadProjectFiles(projectFiles);
                 await skulptRef.current.runPython(code);
                 if (runStopRequestedRef.current) {
                     return;
+                }
+
+                const modifiedFiles = skulptRef.current.getModifiedFiles();
+                if (Object.keys(modifiedFiles).length > 0) {
+                    setProjectFiles(prev => ({ ...prev, ...modifiedFiles }));
+                    const fileNames = Object.keys(modifiedFiles).join(', ');
+                    addLog(`📁 Files updated: ${fileNames}`, "info");
                 }
 
                 const endTime = performance.now();
@@ -1431,7 +1444,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             // If the IPC call itself failed (process never started), reset state
             if (window.electronAPI?.isElectron) {
                 setIsRunning(false);
-                try { window.electronAPI.pythonStop(); } catch (_) {}
+                try { window.electronAPI.pythonStop(); } catch (_) { /* noop */ }
             }
         } finally {
             if (!window.electronAPI?.isElectron) {

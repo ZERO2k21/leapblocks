@@ -186,12 +186,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // PYTHON NATIVE APIS
     // ═══════════════════════════════════════════════════════════════════════
     pythonCheck: () => ipcRenderer.invoke('python-check'),
-    pythonRun: (code: string) => ipcRenderer.invoke('python-run', code),
+    pythonRun: (code: string, projectFiles?: Record<string, string>) => ipcRenderer.invoke('python-run', code, projectFiles),
     pythonSendInput: (input: string) => ipcRenderer.invoke('python-send-input', input),
     pythonReplStart: () => ipcRenderer.invoke('python-repl-start'),
     pythonReplSend: (input: string) => ipcRenderer.invoke('python-repl-send', input),
     pythonStop: () => ipcRenderer.invoke('python-stop'),
     pythonPipInstall: (pkg: string) => ipcRenderer.invoke('python-pip-install', pkg),
+    onPythonFilesUpdated: (callback: (files: Record<string, string>) => void) => {
+        const handler = (_: any, files: any) => callback(files as Record<string, string>);
+        ipcRenderer.on('python-files-updated', handler);
+        return () => ipcRenderer.removeListener('python-files-updated', handler);
+    },
 
     onPythonOutput: (callback: (data: string) => void) => {
         const handler = (_: any, msg: any) => callback(msg as string);
@@ -290,12 +295,13 @@ declare global {
             isElectron: boolean;
 
             pythonCheck: () => Promise<{ available: boolean; version?: string; error?: string }>;
-            pythonRun: (code: string) => Promise<void>;
+            pythonRun: (code: string, projectFiles?: Record<string, string>) => Promise<void>;
             pythonSendInput: (input: string) => Promise<void>;
             pythonReplStart: () => Promise<void>;
             pythonReplSend: (input: string) => Promise<void>;
             pythonStop: () => Promise<void>;
             pythonPipInstall: (pkg: string) => Promise<void>;
+            onPythonFilesUpdated: (callback: (files: Record<string, string>) => void) => () => void;
 
             onPythonOutput: (callback: (data: string) => void) => () => void;
             onPythonError: (callback: (data: string) => void) => () => void;
