@@ -1272,8 +1272,7 @@ export default function BlocksEditorComplete({ appState }) {
                         <div className="flex flex-col sm:flex-row justify-end gap-2 px-4 py-3 border-t bg-gray-50">
                             <button
                                 onClick={() => {
-                                    navigator.clipboard.writeText(generatedCode);
-                                    alert('Code copied to clipboard!');
+                                    try { navigator.clipboard?.writeText(generatedCode).then(() => alert('Code copied to clipboard!')).catch(() => alert('Failed to copy code. Please select and copy manually.')); } catch (_) { alert('Failed to copy code. Please select and copy manually.'); }
                                 }}
                                 className="w-full sm:w-auto px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors active:scale-95 font-medium"
                             >

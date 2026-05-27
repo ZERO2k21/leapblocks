@@ -1278,6 +1278,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     addLog(`✗ Program exited with code ${code}`, "warning");
                 }
                 setIsRunning(false);
+                setIsWaitingForInput(false);
+                setInputPromptText("");
+                setTerminalInputValue("");
             }),
             window.electronAPI.onPythonReplOutput((data) => {
                 replOutputBufferRef.current += data;
@@ -1376,6 +1379,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
             // Execute the code
             if (window.electronAPI?.isElectron) {
+                setIsWaitingForInput(true);
+                setInputPromptText("");
+                setTerminalInputValue("");
+                setTimeout(() => terminalInputRef.current?.focus(), 80);
                 await window.electronAPI.pythonRun(code);
             } else {
                 if (!skulptRef.current) {
@@ -1415,12 +1422,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         } finally {
             if (!window.electronAPI?.isElectron) {
                 setIsRunning(false);
+                // Clean up any pending input state when execution finishes
+                setIsWaitingForInput(false);
+                setInputPromptText("");
+                setTerminalInputValue("");
+                inputResolverRef.current = null;
             }
-            // Clean up any pending input state when execution finishes
-            setIsWaitingForInput(false);
-            setInputPromptText("");
-            setTerminalInputValue("");
-            inputResolverRef.current = null;
             runStopRequestedRef.current = false;
         }
     }
@@ -1457,6 +1464,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             inputResolverRef.current = null;
             setIsWaitingForInput(false);
             setInputPromptText("");
+            setTerminalInputValue("");
+        } else if (window.electronAPI?.isElectron) {
+            addLog(val, "input");
+            window.electronAPI.pythonSendInput(val);
             setTerminalInputValue("");
         }
     }
@@ -1551,14 +1562,18 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         if (!line) return;
 
         // If waiting for input from a running program, route REPL text as the input response
-        if (isWaitingForInput && inputResolverRef.current) {
+        if (isWaitingForInput) {
             setReplInput("");
             addLog(line, "input");
-            inputResolverRef.current(line);
-            inputResolverRef.current = null;
-            setIsWaitingForInput(false);
-            setInputPromptText("");
-            setTerminalInputValue("");
+            if (window.electronAPI?.isElectron) {
+                window.electronAPI.pythonSendInput(line);
+            } else if (inputResolverRef.current) {
+                inputResolverRef.current(line);
+                inputResolverRef.current = null;
+                setIsWaitingForInput(false);
+                setInputPromptText("");
+                setTerminalInputValue("");
+            }
             setActivePanel("terminal");
             return;
         }
@@ -3071,10 +3086,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <div title="Redo (Ctrl+Y)" onClick={() => editorRef.current?.trigger('keyboard', 'redo', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <Redo size={16} />
                             </div>
-                            <div title="Copy (Ctrl+C)" onClick={() => editorRef.current?.trigger('keyboard', 'editor.action.clipboardCopyAction', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                            <div title="Copy (Ctrl+C)" onClick={() => { try { const ed = editorRef.current; if (ed) { const sel = ed.getModel()?.getValueInRange(ed.getSelection()); if (sel && navigator.clipboard) navigator.clipboard.writeText(sel).catch(() => { /* noop */ }); } } catch (_) { /* noop */ } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <span style={{ fontSize: 14 }}>📋</span>
                             </div>
-                            <div title="Paste (Ctrl+V)" onClick={() => editorRef.current?.trigger('keyboard', 'editor.action.clipboardPasteAction', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                            <div title="Paste (Ctrl+V)" onClick={() => { try { if (navigator.clipboard) { navigator.clipboard.readText().then(text => { const ed = editorRef.current; if (ed && text) { const sel = ed.getSelection(); ed.executeEdits('', [{ range: sel, text, forceMoveMarkers: true }]); } }).catch(() => { /* noop */ }); } } catch (_) { /* noop */ } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <span style={{ fontSize: 14 }}>📄</span>
                             </div>
                             <div title="Delete" onClick={() => { if (window.confirm('Clear active file?')) { const ed = editorRef.current; if (ed) { ed.setValue(''); } } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>

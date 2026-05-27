@@ -42,6 +42,12 @@ export class PythonManager {
         this.pipeProcess(this.replProcess, 'python-repl-output', 'python-repl-error', 'python-repl-exit');
     }
 
+    public sendInput(input: string) {
+        if (this.currentProcess && this.currentProcess.stdin) {
+            this.currentProcess.stdin.write(input + '\n');
+        }
+    }
+
     public sendRepl(input: string) {
         if (this.replProcess && this.replProcess.stdin) {
             this.replProcess.stdin.write(input + '\n');

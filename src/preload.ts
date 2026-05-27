@@ -186,6 +186,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // PYTHON NATIVE APIS
     // ═══════════════════════════════════════════════════════════════════════
     pythonRun: (code: string) => ipcRenderer.invoke('python-run', code),
+    pythonSendInput: (input: string) => ipcRenderer.invoke('python-send-input', input),
     pythonReplStart: () => ipcRenderer.invoke('python-repl-start'),
     pythonReplSend: (input: string) => ipcRenderer.invoke('python-repl-send', input),
     pythonStop: () => ipcRenderer.invoke('python-stop'),
@@ -288,6 +289,7 @@ declare global {
             isElectron: boolean;
 
             pythonRun: (code: string) => Promise<void>;
+            pythonSendInput: (input: string) => Promise<void>;
             pythonReplStart: () => Promise<void>;
             pythonReplSend: (input: string) => Promise<void>;
             pythonStop: () => Promise<void>;

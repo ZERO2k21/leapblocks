@@ -240,7 +240,7 @@ export class SkulptEngine {
                 throw new Error("Module not found: '" + x + "'");
             },
             __future__: sk.python3,
-            execLimit: 30000,
+            execLimit: 600000,
             yieldLimit: 100,
             killableWhile: true,
             killableFor: true,
@@ -292,8 +292,9 @@ export class SkulptEngine {
 
         try {
             const prog = SPRITE_PREAMBLE + '\n' + code;
-            const runner = sk.importMainWithBody('<stdin>', false, prog, true);
-            if (runner?.then) await runner;
+            await sk.misceval.asyncToPromise(
+                () => sk.importMainWithBody('<stdin>', false, prog, true)
+            );
         } catch (e) {
             const msg = this._errStr(e);
             this.callbacks.onErr(msg);
@@ -311,12 +312,16 @@ export class SkulptEngine {
         if (!this._replReady) {
             this._replReady = true;
             try {
-                await sk.importMainWithBody('<repl-init>', false, SPRITE_PREAMBLE, true);
+                await sk.misceval.asyncToPromise(
+                    () => sk.importMainWithBody('<repl-init>', false, SPRITE_PREAMBLE, true)
+                );
             } catch (_) {}
         }
 
         try {
-            const result = await sk.importMainWithBody('<repl>', false, line, true);
+            const result = await sk.misceval.asyncToPromise(
+                () => sk.importMainWithBody('<repl>', false, line, true)
+            );
             return result;
         } catch (e) {
             const msg = this._errStr(e);

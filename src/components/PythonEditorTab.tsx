@@ -81,7 +81,7 @@ export const PythonEditorTab: React.FC<PythonEditorTabProps> = ({ workspace, onO
                         </button>
                     )}
                     <button
-                        onClick={() => navigator.clipboard.writeText(code)}
+                        onClick={() => { try { navigator.clipboard?.writeText(code).catch(() => {}); } catch (_) {} }}
                         style={{
                             padding: '4px 10px',
                             fontSize: '11px',
