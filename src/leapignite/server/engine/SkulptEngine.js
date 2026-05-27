@@ -252,23 +252,13 @@ export class SkulptEngine {
                     this.callbacks.onOut(promptText);
                 }
 
-                const susp = new sk.misceval.Suspension();
-                susp.resume = () => {
-                    if (this._stopRequested) throw new Error('Execution stopped');
-                    if (susp.data.error) throw susp.data.error;
-                    return new sk.builtin.str(susp.data.result || "");
-                };
-                susp.data = {
-                    type: "Sk.promise",
-                    promise: new Promise((resolve) => {
-                        if (this.callbacks.onInputRequested) {
-                            this.callbacks.onInputRequested(promptText, resolve);
-                        } else {
-                            resolve(window.prompt(promptText) || "");
-                        }
-                    })
-                };
-                return susp;
+                return new Promise((resolve) => {
+                    if (this.callbacks.onInputRequested) {
+                        this.callbacks.onInputRequested(promptText, resolve);
+                    } else {
+                        resolve(window.prompt(promptText) || "");
+                    }
+                });
             }
         });
     }
