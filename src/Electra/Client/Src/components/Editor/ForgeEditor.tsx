@@ -1,10 +1,6 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Editor from '@monaco-editor/react';
+import { useForgeStore } from '../../../utlis/store/useForgeStore';
 
 interface ForgeEditorProps {
   code: string;
@@ -13,41 +9,29 @@ interface ForgeEditorProps {
 
 export const ForgeEditor: React.FC<ForgeEditorProps> = ({ code, onChange }) => {
   const MonacoEditor = Editor as any;
+  const { board } = useForgeStore();
 
   return (
     <div className="forge-editor-container" style={{ height: '100%', width: '100%', overflow: 'hidden' }}>
-      <div className="editor-tab-bar" style={{
-        height: '35px',
-        background: '#1a1a1b',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 10px',
-        borderBottom: '1px solid #2d2d2d'
-      }}>
-        <div style={{
-          color: '#e0e0e0',
-          fontSize: '12px',
-          fontWeight: 600,
-          padding: '8px 12px',
-          background: '#2d2d2b',
-          borderRadius: '4px 4px 0 0',
-          cursor: 'pointer'
-        }}>
+      <div className="editor-tab-bar">
+        <div className="editor-tab active">
           sketch.ino
         </div>
       </div>
 
       <MonacoEditor
-        height="calc(100% - 35px)"
+        height="calc(100% - 28px)"
         defaultLanguage="cpp"
         value={code}
         onChange={onChange}
         theme="vs-dark"
         options={{
-          fontSize: 14,
+          fontSize: 13,
           minimap: { enabled: false },
           scrollBeyondLastLine: false,
-          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+          fontFamily: board === 'esp32-c3' 
+            ? "var(--code-font, 'JetBrains Mono', monospace)" 
+            : "var(--code-font, 'Space Mono', monospace)",
           fontLigatures: true,
           cursorStyle: 'line',
           cursorWidth: 2,

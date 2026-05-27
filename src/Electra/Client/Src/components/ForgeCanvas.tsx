@@ -24,7 +24,7 @@ import { PartPicker } from './Library/PartPicker';
 import { SelectionToolbar } from './SelectionToolbar';
 import { WireEdge } from './Edges/WireEdge';
 import { PhysicalConnectionLine } from './Edges/PhysicalConnectionLine';
-import { Plus, Play, Square, RotateCcw } from 'lucide-react';
+import { Plus, Play, Square, RotateCcw, Code } from 'lucide-react';
 
 // Define custom node types outside component to prevent re-renders
 const nodeTypes = {
@@ -38,9 +38,16 @@ const edgeTypes = {
 interface ForgeCanvasProps {
   onToggleSimulation?: () => void;
   isCompiling?: boolean;
+  showEditor?: boolean;
+  onToggleEditor?: () => void;
 }
 
-const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCompiling }) => {
+const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ 
+  onToggleSimulation, 
+  isCompiling,
+  showEditor = true,
+  onToggleEditor
+}) => {
   const store = useForgeStore();
   const {
     isSimulating,
@@ -49,8 +56,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
     edges: storeEdges,
     addNode,
     addEdge: addStoreEdge,
-    updateNodePosition,
-    board
+    updateNodePosition
   } = store;
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -159,7 +165,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
           variant={BackgroundVariant.Dots}
           gap={24}
           size={1}
-          color="rgba(255,255,255,0.05)"
+          color="var(--lp-border-active)"
         />
 
         <Controls
@@ -168,26 +174,26 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
             display: 'flex',
             flexDirection: 'column',
             gap: 4,
-            background: 'rgba(255,255,255,0.7)',
+            background: 'var(--lp-glass)',
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(0,0,0,0.06)',
+            border: '1px solid var(--lp-border)',
             borderRadius: 12,
             padding: 4,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            boxShadow: 'var(--lp-shadow)'
           }}
         />
 
         <MiniMap
           className="glass-minimap"
           style={{
-            background: 'rgba(255, 255, 255, 0.7)',
+            background: 'var(--lp-glass)',
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(0,0,0,0.06)',
+            border: '1px solid var(--lp-border)',
             borderRadius: 16,
             overflow: 'hidden'
           }}
-          nodeColor={(n: any) => n.data?.type === 'boards' ? '#7B4FC4' : '#cbd5e1'}
-          maskColor="rgba(248, 250, 252, 0.6)"
+          nodeColor={(n: any) => n.data?.type === 'boards' ? 'var(--lp-accent-primary)' : '#cbd5e1'}
+          maskColor="rgba(0, 0, 0, 0.6)"
         />
       </ReactFlow>
 
@@ -214,54 +220,72 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
         .react-flow__controls-button svg {
           fill: currentColor !important;
         }
+
+        @media (max-width: 768px) {
+          .glass-minimap {
+            display: none !important;
+          }
+        }
       `}</style>
 
       {/* ── SELECTION TOOLBAR ─────────────────────────── */}
       <SelectionToolbar />
 
-      {/* ── FLOATING ACTION PANEL (Leap Style) ────────────────── */}
+      {/* ── FLOATING ACTION PANEL (Tinkercad Style Toolbar) ────────────────── */}
       <div className="canvas-action-panel" style={{
         position: 'absolute',
         top: '16px',
         right: '16px',
         display: 'flex',
-        flexDirection: 'column',
-        gap: '6px',
-        padding: '8px',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '6px 12px',
         background: 'var(--lp-glass)',
         border: '1px solid var(--lp-border-active)',
-        borderRadius: '12px',
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+        borderRadius: '24px',
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
         backdropFilter: 'blur(8px)',
         zIndex: 100
       }}>
-        {/* Play/Stop Button */}
+        {/* Play/Stop Labeled Simulation Button */}
         <button
           onClick={onToggleSimulation || toggleStoreSimulation}
           disabled={isCompiling}
-          className="canvas-btn"
+          className="canvas-btn sim-btn"
           style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '20px',
+            height: '38px',
+            padding: '0 16px',
+            borderRadius: '19px',
             background: isSimulating ? 'var(--lp-rose)' : 'var(--lp-emerald)',
             border: 'none',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            gap: '8px',
             color: '#fff',
             cursor: 'pointer',
+            fontWeight: 700,
+            fontSize: '11px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            boxShadow: isSimulating ? '0 0 10px rgba(244,63,94,0.3)' : '0 0 10px rgba(16,185,129,0.3)',
             transition: 'all 0.2s ease',
           }}
           onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
           onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
         >
           {isCompiling ? (
-            <div className="spinner" style={{ width: 18, height: 18, border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <div className="spinner" style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           ) : isSimulating ? (
-            <Square size={20} fill="currentColor" />
+            <>
+              <Square size={14} fill="currentColor" />
+              <span>Stop Simulation</span>
+            </>
           ) : (
-            <Play size={20} fill="currentColor" style={{ marginLeft: 3 }} />
+            <>
+              <Play size={14} fill="currentColor" />
+              <span>Start Simulation</span>
+            </>
           )}
         </button>
 
@@ -270,9 +294,9 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
           onClick={store.resetSimulation}
           className="canvas-btn secondary"
           style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '20px',
+            width: '38px',
+            height: '38px',
+            borderRadius: '19px',
             background: 'var(--lp-zinc-800)',
             border: '1px solid var(--lp-border)',
             display: 'flex',
@@ -284,32 +308,77 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ onToggleSimulation, isCo
           }}
           onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--lp-accent-primary)'; e.currentTarget.style.borderColor = 'var(--lp-accent-primary)'; e.currentTarget.style.background = 'var(--lp-zinc-700)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--lp-zinc-400)'; e.currentTarget.style.borderColor = 'var(--lp-border)'; e.currentTarget.style.background = 'var(--lp-zinc-800)'; }}
+          title="Reset Simulation"
         >
-          <RotateCcw size={20} />
+          <RotateCcw size={16} />
         </button>
 
-        <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: '4px 8px' }} />
+        <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.15)', margin: '0 4px' }} />
 
-        {/* Add Component Button */}
+        {/* Code Panel Toggle Button */}
+        {onToggleEditor && (
+          <button
+            onClick={onToggleEditor}
+            className={`canvas-btn secondary ${showEditor ? 'active' : ''}`}
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '19px',
+              background: showEditor ? 'var(--lp-accent-primary)' : 'var(--lp-zinc-800)',
+              border: showEditor ? 'none' : '1px solid var(--lp-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: showEditor ? 'var(--lp-btn-text, #000)' : 'var(--lp-zinc-400)',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              if (!showEditor) {
+                e.currentTarget.style.color = 'var(--lp-accent-primary)';
+                e.currentTarget.style.borderColor = 'var(--lp-accent-primary)';
+                e.currentTarget.style.background = 'var(--lp-zinc-700)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!showEditor) {
+                e.currentTarget.style.color = 'var(--lp-zinc-400)';
+                e.currentTarget.style.borderColor = 'var(--lp-border)';
+                e.currentTarget.style.background = 'var(--lp-zinc-800)';
+              }
+            }}
+            title="Toggle Code Panel"
+          >
+            <Code size={16} />
+          </button>
+        )}
+
+        {/* Add Component (Part Picker) Button */}
         <button
-          onClick={() => store.setShowPartPicker(!store.showPartPicker)}
+          onClick={() => {
+            if (!store.showPartPicker && window.innerWidth <= 1024 && showEditor && onToggleEditor) {
+              onToggleEditor();
+            }
+            store.setShowPartPicker(!store.showPartPicker);
+          }}
           style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '20px',
-            background: 'var(--lp-accent-primary)',
+            width: '38px',
+            height: '38px',
+            borderRadius: '19px',
+            background: store.showPartPicker ? 'var(--lp-accent-bright)' : 'var(--lp-accent-primary)',
             border: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#000',
+            color: 'var(--lp-btn-text, #000)',
             cursor: 'pointer',
             transition: 'all 0.2s',
           }}
           onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--lp-accent-bright)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--lp-accent-primary)'; }}
+          title="Toggle Components Panel"
         >
-          <Plus size={24} />
+          <Plus size={20} />
         </button>
 
       </div>

@@ -147,6 +147,7 @@ void loop() {
   }, [initialBoard]); // Run when initialBoard changes
 
   const [activeTab, setActiveTab] = useState<'code' | 'serial' | 'wifi' | 'libraries'>('code');
+  const [showEditor, setShowEditor] = useState(true);
   const { showPartPicker, setShowPartPicker, importedLibraries, rotateNode } = useForgeStore();
   const [wifiStatus, setWifiStatus] = useState('');
   const [showWebOpenModal, setShowWebOpenModal] = useState(false);
@@ -542,7 +543,7 @@ void loop() {
   };
 
   return (
-    <div className="forge-root">
+    <div className={`forge-root board-${board}`}>
       <IgniteTopbar
         title={projectName}
         onTitleChange={setProjectName}
@@ -561,137 +562,21 @@ void loop() {
       />
 
       <main className="forge-main-split">
-        {/* Left: Interactive Pane (Editor/Serial/WiFi/Libs) */}
-        <div className="editor-pane">
-          {/* Top: Sketch Editor */}
-          <div style={{
-            flex: activeTab === 'libraries' ? 1 : 1.5,
-            display: 'flex',
-            flexDirection: 'column',
-            borderBottom: activeTab === 'libraries' ? 'none' : '1px solid var(--lp-border)',
-            minHeight: 0
-          }}>
-            <div className="forge-tabs-container" style={{ height: 48 }}>
-              {/* Board badge - non-interactive */}
-              <div style={{
-                padding: '4px 12px',
-                background: board === 'esp32-c3'
-                  ? 'rgba(34, 211, 238, 0.1)'
-                  : 'rgba(245, 158, 11, 0.1)',
-                border: board === 'esp32-c3'
-                  ? '1px solid rgba(34, 211, 238, 0.4)'
-                  : '1px solid rgba(245, 158, 11, 0.4)',
-                borderRadius: '8px',
-                color: board === 'esp32-c3' ? 'var(--lp-accent-primary)' : 'var(--lp-amber)',
-                fontSize: '10px',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-              }}>
-                <div style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: board === 'esp32-c3' ? 'var(--lp-accent-primary)' : 'var(--lp-amber)',
-                  boxShadow: board === 'esp32-c3'
-                    ? '0 0 10px var(--lp-accent-primary)'
-                    : '0 0 10px var(--lp-amber)'
-                }} />
-                {board === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}
-              </div>
-
-              <div style={{ width: 1, height: 20, background: 'rgba(0,0,0,0.1)', margin: '0 12px' }} />
-
-              <button
-                className={`forge-tab-btn ${activeTab === 'code' ? 'active' : ''}`}
-                style={{ height: 32, fontSize: 11 }}
-                onClick={() => setActiveTab('code')}
-              >
-                <Code size={14} /> SKETCH
-              </button>
-
-              <button
-                className={`forge-tab-btn ${activeTab === 'libraries' ? 'active' : ''}`}
-                style={{ height: 32, fontSize: 11 }}
-                onClick={() => setActiveTab('libraries')}
-              >
-                <LibraryIcon size={14} /> LIBRARIES
-              </button>
-            </div>
-
-            <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-              {activeTab === 'libraries' ? (
-                <LibraryManager />
-              ) : (
-                <Suspense fallback={<div className="forge-loader"><div className="spinner" />Loading Editor...</div>}>
-                  <ForgeEditor code={code} onChange={(val) => setCode(val || '')} />
-                </Suspense>
-              )}
-            </div>
-          </div>
-
-          {/* Bottom: Terminal (Serial / WiFi) - Hidden when Libraries tab is active */}
-          {activeTab !== 'libraries' && (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--lp-dark-bg)', minHeight: 0 }}>
-              <div className="forge-tabs-container" style={{ height: 40, background: 'var(--lp-zinc-800)' }}>
-                <button
-                  className={`forge-tab-btn ${activeTab === 'serial' || activeTab === 'code' ? 'active' : ''}`}
-                  style={{ height: 28, fontSize: 11, borderRadius: 8 }}
-                  onClick={() => setActiveTab('serial')}
-                >
-                  <Terminal size={14} /> SERIAL OUTPUT
-                  {serialOutput.length > 0 && <span className="status-dot" style={{ marginLeft: 6 }} />}
-                </button>
-
-                {board === 'esp32-c3' && (
-                  <button
-                    className={`forge-tab-btn wifi ${activeTab === 'wifi' ? 'active' : ''}`}
-                    style={{ height: 28, fontSize: 11, borderRadius: 8 }}
-                    onClick={() => setActiveTab('wifi')}
-                  >
-                    <Wifi size={14} /> WiFi LOG
-                    {wifiLog.length > 0 && <span className="status-dot" style={{ background: '#10b981', boxShadow: '0 0 8px #10b981', marginLeft: 6 }} />}
-                  </button>
-                )}
-              </div>
-
-              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                {activeTab === 'wifi' ? (
-                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, padding: 15, overflowY: 'auto', height: '100%', background: 'var(--lp-dark-bg)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <span style={{ color: 'var(--lp-zinc-400)', fontSize: 9, fontWeight: 700, letterSpacing: '0.5px' }}>NETWORK LOG</span>
-                      <button onClick={() => clearWiFiLog()} style={{ background: 'rgba(34, 211, 238, 0.1)', border: '1px solid rgba(34, 211, 238, 0.3)', borderRadius: '8px', color: 'var(--lp-accent-primary)', cursor: 'pointer', fontSize: 10, fontWeight: 700, padding: '4px 10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>CLEAR</button>
-                    </div>
-                    {wifiLog.length === 0 ? (
-                      <div style={{ color: 'var(--lp-zinc-600)', textAlign: 'center', marginTop: 20 }}>No network activity.</div>
-                    ) : wifiLog.map((line, i) => (
-                      <div key={i} style={{ color: line.includes('ERROR') ? '#ef4444' : 'var(--lp-zinc-400)', marginBottom: 2 }}>{line}</div>
-                    ))}
-                  </div>
-                ) : (
-                  <SerialMonitor
-                    output={serialOutput}
-                    onClear={() => clearSerial()}
-                    onSend={async (data) => {
-                      const runner = await getSimulationRunner();
-                      if (runner && isSimulating) runner.sendSerialInput(data);
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right: Simulation Canvas + Sidebar */}
-        <div className="canvas-pane" style={{ display: 'flex', flexDirection: 'row' }}>
+        {/* Left: Simulation Canvas (takes flex: 1) */}
+        <div className="canvas-pane">
           <div style={{ flex: 1, position: 'relative', height: '100%' }}>
             <Suspense fallback={<div className="forge-loader"><div className="spinner" />Initializing Physics...</div>}>
-              <ForgeCanvas onToggleSimulation={handleToggleSimulation} isCompiling={isCompiling} />
+              <ForgeCanvas 
+                onToggleSimulation={handleToggleSimulation} 
+                isCompiling={isCompiling} 
+                showEditor={showEditor}
+                onToggleEditor={() => {
+                  if (!showEditor && window.innerWidth <= 1024 && showPartPicker) {
+                    setShowPartPicker(false);
+                  }
+                  setShowEditor(!showEditor);
+                }}
+              />
             </Suspense>
 
             {/* Floating WiFi Status */}
@@ -704,28 +589,123 @@ void loop() {
               </div>
             )}
           </div>
-
-          {showPartPicker && (
-            <div style={{
-              width: 'var(--sidebar-width)',
-              height: '100%',
-              borderLeft: '1px solid var(--lp-border)',
-              background: 'var(--lp-dark-bg)',
-              zIndex: 50,
-              display: 'flex'
-            }}>
-              <ComponentSidebar
-                onSelect={(type) => {
-                  const state = useForgeStore.getState();
-                  state.addNode(type, { x: 400, y: 300 }, { label: type.toUpperCase() });
-                  // We don't close it automatically anymore as it's a sidebar
-                }}
-                onClose={() => setShowPartPicker(false)}
-                currentBoard={board as any}
-              />
-            </div>
-          )}
         </div>
+
+        {/* Middle/Right: Interactive Programming Pane */}
+        {showEditor && (
+          <div className="editor-pane">
+            {/* Top: Sketch Editor */}
+            <div style={{
+              flex: activeTab === 'libraries' ? 1 : 1.5,
+              display: 'flex',
+              flexDirection: 'column',
+              borderBottom: activeTab === 'libraries' ? 'none' : '1px solid var(--lp-border)',
+              minHeight: 0
+            }}>
+              <div className="forge-tabs-container" style={{ height: 36 }}>
+                {/* Board badge - non-interactive */}
+                <div className="board-badge">
+                  <div className="board-badge-dot" />
+                  {board === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}
+                </div>
+
+                <div style={{ width: 1, height: 20, background: 'rgba(255, 255, 255, 0.08)', margin: '0 12px' }} />
+
+                <button
+                  className={`forge-tab-btn ${activeTab === 'code' ? 'active' : ''}`}
+                  style={{ height: 32, fontSize: 11 }}
+                  onClick={() => setActiveTab('code')}
+                >
+                  <Code size={14} /> SKETCH
+                </button>
+
+                <button
+                  className={`forge-tab-btn ${activeTab === 'libraries' ? 'active' : ''}`}
+                  style={{ height: 32, fontSize: 11 }}
+                  onClick={() => setActiveTab('libraries')}
+                >
+                  <LibraryIcon size={14} /> LIBRARIES
+                </button>
+              </div>
+
+              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                {activeTab === 'libraries' ? (
+                  <LibraryManager />
+                ) : (
+                  <Suspense fallback={<div className="forge-loader"><div className="spinner" />Loading Editor...</div>}>
+                    <ForgeEditor code={code} onChange={(val) => setCode(val || '')} />
+                  </Suspense>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom: Terminal (Serial / WiFi) - Hidden when Libraries tab is active */}
+            {activeTab !== 'libraries' && (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--lp-dark-bg)', minHeight: 0 }}>
+                <div className="forge-tabs-container" style={{ height: 32, background: 'rgba(10, 11, 14, 0.15)', borderTop: '1px solid var(--lp-border)' }}>
+                  <button
+                    className={`forge-tab-btn ${activeTab === 'serial' || activeTab === 'code' ? 'active' : ''}`}
+                    style={{ height: 24, fontSize: 10 }}
+                    onClick={() => setActiveTab('serial')}
+                  >
+                    <Terminal size={14} /> SERIAL OUTPUT
+                    {serialOutput.length > 0 && <span className="status-dot" style={{ marginLeft: 6 }} />}
+                  </button>
+
+                  {board === 'esp32-c3' && (
+                    <button
+                      className={`forge-tab-btn wifi ${activeTab === 'wifi' ? 'active' : ''}`}
+                      style={{ height: 24, fontSize: 10 }}
+                      onClick={() => setActiveTab('wifi')}
+                    >
+                      <Wifi size={14} /> WiFi LOG
+                      {wifiLog.length > 0 && <span className="status-dot" style={{ background: '#10b981', boxShadow: '0 0 8px #10b981', marginLeft: 6 }} />}
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                  {activeTab === 'wifi' ? (
+                    <div style={{ fontFamily: 'var(--code-font, "JetBrains Mono", monospace)', fontSize: 12, padding: 15, overflowY: 'auto', height: '100%', background: 'var(--lp-dark-bg)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <span style={{ color: 'var(--lp-zinc-400)', fontSize: 9, fontWeight: 700, letterSpacing: '0.5px' }}>NETWORK LOG</span>
+                        <button onClick={() => clearWiFiLog()} className="wifi-clear-btn">CLEAR</button>
+                      </div>
+                      {wifiLog.length === 0 ? (
+                        <div style={{ color: 'var(--lp-zinc-600)', textAlign: 'center', marginTop: 20 }}>No network activity.</div>
+                      ) : wifiLog.map((line, i) => (
+                        <div key={i} style={{ color: line.includes('ERROR') ? '#ef4444' : 'var(--lp-zinc-400)', marginBottom: 2 }}>{line}</div>
+                      ))}
+                    </div>
+                  ) : (
+                    <SerialMonitor
+                      output={serialOutput}
+                      onClear={() => clearSerial()}
+                      onSend={async (data) => {
+                        const runner = await getSimulationRunner();
+                        if (runner && isSimulating) runner.sendSerialInput(data);
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Far Right: Component Drawer */}
+        {showPartPicker && (
+          <div className="part-picker-pane">
+            <ComponentSidebar
+              onSelect={(type) => {
+                const state = useForgeStore.getState();
+                state.addNode(type, { x: 400, y: 300 }, { label: type.toUpperCase() });
+              }}
+              onClose={() => setShowPartPicker(false)}
+              currentBoard={board as any}
+            />
+          </div>
+        )}
       </main>
 
       <footer className="forge-footer">

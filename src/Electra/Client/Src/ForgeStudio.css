@@ -1,32 +1,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Space+Mono:wght@400;700&display=swap');
 
 :root {
-  --lp-dark-bg: #09090b;
-  --lp-dark-surface: #18181b;
-  --lp-zinc-800: #27272a;
-  --lp-zinc-700: #3f3f46;
-  --lp-zinc-600: #52525b;
+  --lp-dark-bg: rgba(10, 11, 14, 0.45);
+  --lp-dark-surface: rgba(20, 22, 28, 0.6);
+  --lp-zinc-800: rgba(39, 39, 42, 0.5);
+  --lp-zinc-700: rgba(63, 63, 70, 0.5);
+  --lp-zinc-600: rgba(82, 82, 91, 0.5);
   --lp-zinc-400: #a1a1aa;
 
-  --lp-accent-primary: #22d3ee;
-  --lp-accent-bright: #67e8f9;
+  --lp-accent-primary: #3B82F6;
+  --lp-accent-bright: #60A5FA;
+  --lp-accent-dark: #1D4ED8;
+  --lp-accent-hover: rgba(59, 130, 246, 0.08);
+  --lp-btn-text: #ffffff;
   --lp-emerald: #10b981;
   --lp-amber: #f59e0b;
   --lp-rose: #f43f5e;
 
   --lp-bg: #09090b;
-  --lp-glass: rgba(24, 24, 27, 0.95);
-  --lp-border: #27272a;
-  --lp-border-active: #3f3f46;
-  --lp-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --lp-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
-  --lp-glow: 0 0 20px rgba(34, 211, 238, 0.15);
-  --lp-radius: 12px;
+  --lp-glass: rgba(15, 17, 23, 0.65);
+  --lp-border: rgba(255, 255, 255, 0.08);
+  --lp-border-active: rgba(59, 130, 246, 0.3);
+  --lp-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --lp-shadow-lg: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+  --lp-glow: 0 0 20px rgba(59, 130, 246, 0.2);
+  --lp-save-glow: rgba(59, 130, 246, 0.4) 0px 4px 10px -1px;
+  --lp-radius: 16px;
   --lp-radius-sm: 8px;
 
-  --header-height: 64px;
-  --footer-height: 36px;
-  --sidebar-width: 320px;
+  --header-height: 48px;
+  --footer-height: 30px;
+  --sidebar-width: 260px;
+
+  --lp-bg-gradient: radial-gradient(at 20% 10%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(96, 165, 250, 0.08) 0px, transparent 50%),
+    linear-gradient(180deg, #07080b 0%, #0f1115 100%);
+  --code-font: 'JetBrains Mono', monospace;
+  --lp-text-color: #f8fafc;
 }
 
 .forge-root {
@@ -35,20 +45,18 @@
   height: 100vh;
   width: 100vw;
   background-color: var(--lp-bg);
-  background-image:
-    radial-gradient(at 20% 10%, rgba(34, 211, 238, 0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 20%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
-    linear-gradient(180deg, #09090b 0%, #18181b 100%);
-  color: #f4f4f5;
+  background-image: var(--lp-bg-gradient);
+  color: var(--lp-text-color);
   font-family: 'Outfit', sans-serif;
   overflow: hidden;
+  transition: background-color 0.4s ease, background-image 0.4s ease, color 0.4s ease, border-radius 0.4s ease;
 }
 
 .forge-main-split {
   flex: 1;
   display: flex;
-  gap: 12px;
-  padding: 12px;
+  gap: 8px;
+  padding: 8px;
   background: transparent;
   min-height: 0;
   min-width: 0;
@@ -63,6 +71,9 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: background-color 0.4s ease, border-color 0.4s ease, border-radius 0.4s ease, box-shadow 0.4s ease, backdrop-filter 0.4s ease;
 }
 
 .editor-pane::before, .canvas-pane::before {
@@ -74,6 +85,7 @@
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--lp-accent-primary), transparent);
   opacity: 0.3;
+  transition: background 0.4s ease;
 }
 
 .editor-pane {
@@ -86,44 +98,71 @@
 }
 
 .forge-tabs-container {
-  height: 48px;
-  background: var(--lp-dark-bg);
+  height: 36px;
+  background: rgba(10, 11, 14, 0.25);
   border-bottom: 1px solid var(--lp-border);
   display: flex;
-  padding: 0 16px;
+  padding: 0 12px;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   position: relative;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
 }
 
 .forge-tab-btn {
   background: transparent;
   border: 1px solid transparent;
   color: var(--lp-zinc-400);
-  padding: 6px 14px;
-  height: 32px;
+  padding: 4px 10px;
+  height: 26px;
   cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: var(--lp-radius-sm);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
+  position: relative;
+}
+
+.forge-tab-btn svg {
+  pointer-events: none;
 }
 
 .forge-tab-btn:hover {
-  background: var(--lp-zinc-800);
-  color: var(--lp-accent-bright);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .forge-tab-btn.active {
-  background: var(--lp-zinc-800);
-  color: var(--lp-accent-primary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: var(--lp-accent-bright);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.forge-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 6px;
+  right: 6px;
+  height: 2px;
+  background: var(--lp-accent-primary);
+  box-shadow: 0 0 12px var(--lp-accent-primary);
+  border-radius: 2px;
+  animation: tabGlowEntrance 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tabGlowEntrance {
+  from { transform: scaleX(0); opacity: 0; }
+  to { transform: scaleX(1); opacity: 1; }
 }
 
 .forge-tab-btn.active.wifi {
@@ -245,13 +284,20 @@
   to { transform: rotate(360deg); }
 }
 
+.forge-editor-container {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: transparent !important;
+}
+
 .monaco-editor-container {
   flex: 1;
-  background: #0d1117 !important;
+  background: transparent !important;
 }
 
 .monaco-editor, .monaco-editor .margin, .monaco-editor-background {
-  background-color: #0d1117 !important;
+  background-color: transparent !important;
 }
 
 .leap-node-wrapper {
@@ -387,4 +433,512 @@
   font-size: 10px;
   color: var(--lp-accent-primary);
   opacity: 0.6;
+}
+
+/* ==========================================================================
+   TINKERCAD SIDE PANELS & DRAWER DOCK
+   ========================================================================== */
+.part-picker-pane {
+  width: var(--sidebar-width);
+  height: 100%;
+  border: 1px solid var(--lp-border);
+  background: var(--lp-dark-surface);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: background-color 0.4s ease, border-color 0.4s ease, border-radius 0.4s ease, box-shadow 0.4s ease, backdrop-filter 0.4s ease;
+}
+
+.part-picker-pane::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lp-accent-primary), transparent);
+  opacity: 0.3;
+  transition: background 0.4s ease;
+}
+
+.editor-tab-bar {
+  height: 28px;
+  background: rgba(10, 11, 14, 0.15);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--lp-border);
+  transition: all 0.4s ease;
+}
+
+.editor-tab {
+  color: var(--lp-zinc-400);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: var(--lp-radius-sm) var(--lp-radius-sm) 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editor-tab:hover {
+  color: #fff;
+}
+
+.editor-tab.active {
+  color: var(--lp-accent-primary);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 2px solid var(--lp-accent-primary);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: all 0.4s ease;
+}
+
+/* ==========================================================================
+   BOARD THEME 1: Arduino Uno (Tinkercad Classic Light Workbench)
+   ========================================================================== */
+.forge-root.board-arduino-uno {
+  --lp-accent-primary: #00f2fe;
+  --lp-accent-bright: #4facfe;
+  --lp-accent-dark: #00828a;
+  --lp-accent-hover: rgba(0, 242, 254, 0.08);
+  --lp-btn-text: #05050a;
+  --lp-bg: #0b0c10;
+  --lp-dark-surface: rgba(15, 23, 30, 0.65);
+  --lp-dark-bg: rgba(10, 15, 20, 0.45);
+  --lp-zinc-800: rgba(30, 41, 59, 0.5);
+  --lp-zinc-700: rgba(51, 65, 85, 0.5);
+  --lp-zinc-600: rgba(71, 85, 105, 0.5);
+  --lp-zinc-400: #94a3b8;
+  --lp-border: rgba(255, 255, 255, 0.08);
+  --lp-border-active: rgba(0, 242, 254, 0.35);
+  --lp-radius: 16px;
+  --lp-radius-sm: 8px;
+  --lp-save-glow: rgba(0, 242, 254, 0.3) 0px 4px 12px;
+  --lp-bg-gradient: 
+    radial-gradient(at 20% 10%, rgba(0, 242, 254, 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(79, 172, 254, 0.06) 0px, transparent 50%),
+    linear-gradient(180deg, #07090e 0%, #0d1117 100%);
+  --code-font: 'Space Mono', 'Fira Code', monospace;
+  --lp-badge-bg: rgba(0, 242, 254, 0.08);
+  --lp-badge-border: rgba(0, 242, 254, 0.3);
+  --lp-badge-color: #00f2fe;
+  --lp-wifi-clear-bg: rgba(0, 242, 254, 0.08);
+  --lp-wifi-clear-border: 1px solid rgba(0, 242, 254, 0.2);
+  --lp-grid-dot-color: #00f2fe;
+  --lp-flow-grid-color: rgba(0, 242, 254, 0.03);
+  --lp-glass: rgba(10, 15, 20, 0.7);
+  --lp-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+  --lp-text-color: #f8fafc;
+}
+
+/* Arduino custom library drawer overrides */
+.board-arduino-uno .component-sidebar {
+  background: rgba(10, 15, 20, 0.75) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+  font-family: 'Outfit', sans-serif !important;
+}
+
+.board-arduino-uno .component-sidebar div,
+.board-arduino-uno .component-sidebar span {
+  color: #e2e8f0 !important;
+}
+
+.board-arduino-uno .component-sidebar button {
+  color: #94a3b8 !important;
+}
+
+.board-arduino-uno .component-sidebar input {
+  color: #f8fafc !important;
+}
+
+.board-arduino-uno .component-sidebar .component-card {
+  background: rgba(30, 41, 59, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+  transition: all 0.2s ease !important;
+}
+
+.board-arduino-uno .component-sidebar .component-card:hover {
+  border-color: #00f2fe !important;
+  background: rgba(30, 41, 59, 0.6) !important;
+  box-shadow: 0 4px 12px rgba(0, 242, 254, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ==========================================================================
+   BOARD THEME 2: ESP32-C3 (Cyberpunk Slate & Hot IoT Orange HUD)
+   ========================================================================== */
+.forge-root.board-esp32-c3 {
+  --lp-accent-primary: #f97316;
+  --lp-accent-bright: #fdba74;
+  --lp-accent-dark: #c2410c;
+  --lp-accent-hover: rgba(249, 115, 22, 0.1);
+  --lp-btn-text: #050505;
+  --lp-bg: #09090b;
+  --lp-dark-surface: rgba(24, 20, 20, 0.65);
+  --lp-dark-bg: rgba(14, 10, 10, 0.45);
+  --lp-zinc-800: rgba(59, 41, 30, 0.5);
+  --lp-zinc-700: rgba(85, 65, 51, 0.5);
+  --lp-zinc-600: rgba(105, 85, 71, 0.5);
+  --lp-zinc-400: #cbd5e1;
+  --lp-border: rgba(255, 255, 255, 0.08);
+  --lp-border-active: rgba(249, 115, 22, 0.35);
+  --lp-radius: 16px;
+  --lp-radius-sm: 8px;
+  --lp-save-glow: rgba(249, 115, 22, 0.3) 0px 4px 12px;
+  --lp-bg-gradient: 
+    radial-gradient(at 20% 10%, rgba(249, 115, 22, 0.12) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(239, 68, 68, 0.06) 0px, transparent 50%),
+    linear-gradient(180deg, #090807 0%, #15110f 100%);
+  --code-font: 'JetBrains Mono', 'Fira Code', monospace;
+  --lp-badge-bg: rgba(249, 115, 22, 0.1);
+  --lp-badge-border: rgba(249, 115, 22, 0.4);
+  --lp-badge-color: #f97316;
+  --lp-wifi-clear-bg: rgba(249, 115, 22, 0.15);
+  --lp-wifi-clear-border: 1px solid rgba(249, 115, 22, 0.4);
+  --lp-grid-dot-color: #f97316;
+  --lp-flow-grid-color: rgba(249, 115, 22, 0.03);
+  --lp-glass: rgba(24, 20, 20, 0.7);
+  --lp-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+  --lp-text-color: #f8fafc;
+}
+
+/* ==========================================================================
+   HELPER STYLES FOR THEME DELEGATION
+   ========================================================================== */
+.board-badge {
+  padding: 3px 8px;
+  background: var(--lp-badge-bg, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--lp-badge-border, rgba(255, 255, 255, 0.08));
+  border-radius: 20px;
+  color: var(--lp-badge-color, var(--lp-accent-primary));
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+}
+
+.board-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lp-badge-color, var(--lp-accent-primary));
+  box-shadow: 0 0 10px var(--lp-badge-color, var(--lp-accent-primary));
+  position: relative;
+  transition: all 0.4s ease;
+}
+
+.board-badge-dot::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 50%;
+  border: 1px solid var(--lp-badge-color, var(--lp-accent-primary));
+  opacity: 0.5;
+  animation: badgePulse 2s infinite ease-out;
+}
+
+@keyframes badgePulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.wifi-clear-btn {
+  background: var(--lp-wifi-clear-bg, rgba(34, 211, 238, 0.1));
+  border: 1px solid var(--lp-wifi-clear-border, rgba(34, 211, 238, 0.3));
+  border-radius: var(--lp-radius-sm, 8px);
+  color: var(--lp-accent-primary);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.wifi-clear-btn:hover {
+  background: var(--lp-accent-primary);
+  color: var(--lp-btn-text, #000000);
+}
+
+/* ==========================================================================
+   RESPONSIVE IDE WORKSPACE LAYOUT (TINKERCAD STYLE OVERLAYS)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .forge-main-split {
+    position: relative;
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .canvas-pane {
+    flex: 1 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 10;
+  }
+
+  .editor-pane {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: 420px;
+    z-index: 60;
+    box-shadow: var(--lp-shadow-lg) !important;
+    border-radius: var(--lp-radius) !important;
+  }
+
+  .part-picker-pane {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: 320px;
+    z-index: 70;
+    box-shadow: var(--lp-shadow-lg) !important;
+    border-radius: var(--lp-radius) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .editor-pane {
+    width: calc(100% - 16px);
+    right: 8px;
+    left: 8px;
+  }
+
+  .part-picker-pane {
+    width: calc(100% - 16px);
+    right: 8px;
+    left: 8px;
+  }
+
+  /* Reposition floating toolbar on mobile to bottom center for thumb reachability */
+  .canvas-action-panel {
+    top: auto !important;
+    bottom: 16px !important;
+    right: 50% !important;
+    transform: translateX(50%) !important;
+    border-radius: 20px !important;
+    box-shadow: var(--lp-shadow-lg) !important;
+  }
+}
+
+/* ==========================================================================
+   SERIAL MONITOR & TERMINAL GLASSMORPHISM STYLES
+   ========================================================================== */
+.serial-monitor-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--lp-dark-bg);
+  color: var(--lp-text-color);
+  font-family: var(--code-font), monospace;
+}
+
+.serial-monitor-header {
+  padding: 6px 16px;
+  background: var(--lp-glass);
+  border-bottom: 1px solid var(--lp-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--lp-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.serial-monitor-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--lp-accent-primary);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.serial-monitor-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.serial-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--lp-border);
+  color: var(--lp-accent-bright);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--lp-radius-sm);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.serial-btn:hover {
+  background: var(--lp-accent-primary);
+  color: var(--lp-btn-text, #000);
+  border-color: var(--lp-accent-primary);
+  box-shadow: var(--lp-glow);
+  transform: translateY(-1px);
+}
+
+.serial-btn-clear {
+  background: rgba(244, 63, 94, 0.05);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  color: var(--lp-rose);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--lp-radius-sm);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.serial-btn-clear:hover {
+  background: var(--lp-rose);
+  color: #fff;
+  border-color: var(--lp-rose);
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.3);
+  transform: translateY(-1px);
+}
+
+.serial-monitor-output {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--lp-zinc-400);
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.015) 1px, transparent 0);
+  background-size: 16px 16px;
+  background-color: rgba(5, 5, 8, 0.3);
+}
+
+.serial-monitor-footer {
+  padding: 6px 16px;
+  background: var(--lp-glass);
+  border-top: 1px solid var(--lp-border);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.serial-input-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.serial-input-icon {
+  position: absolute;
+  left: 8px;
+  color: var(--lp-accent-primary);
+  transition: all 0.3s ease;
+}
+
+.serial-input-field {
+  width: 100%;
+  padding: 6px 10px 6px 30px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius-sm);
+  color: var(--lp-text-color);
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+.serial-input-field:focus {
+  border-color: var(--lp-accent-primary);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 14px var(--lp-accent-hover), var(--lp-glow);
+}
+
+.serial-select-ending {
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius-sm);
+  color: var(--lp-zinc-400);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.serial-select-ending:focus {
+  border-color: var(--lp-accent-primary);
+}
+
+.serial-send-btn {
+  padding: 6px 14px;
+  background: var(--lp-accent-primary);
+  border: none;
+  border-radius: var(--lp-radius-sm);
+  color: var(--lp-btn-text, #000);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.serial-send-btn:disabled {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--lp-zinc-600);
+  cursor: not-allowed;
+}
+
+.serial-send-btn:not(:disabled):hover {
+  background: var(--lp-accent-bright);
+  box-shadow: var(--lp-glow);
+  transform: translateY(-1px);
 }
