@@ -1550,7 +1550,16 @@ export class AnimationVM {
             // Object Detection extension steps
             case 'object_detect' as any: {
                 if (typeof window !== 'undefined' && (window as any).runtime?.objectDetection) {
-                    await (window as any).runtime.objectDetection.detectObjects();
+                    (window as any).__setCameraOn?.(true);
+                    const objDet = (window as any).runtime.objectDetection;
+                    
+                    let attempts = 0;
+                    while (!objDet.isVideoReady() && attempts < 20) {
+                        await this.sleep(100, signal);
+                        attempts++;
+                    }
+
+                    await objDet.detectObjects();
                     vmLog.info('Object detection executed');
                 }
                 break;
