@@ -550,7 +550,7 @@
 /* Arduino custom library drawer overrides */
 .board-arduino-uno .component-sidebar {
   background: rgba(10, 15, 20, 0.75) !important;
-  border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
   font-family: 'Outfit', sans-serif !important;
 }
 
@@ -941,4 +941,145 @@
   background: var(--lp-accent-bright);
   box-shadow: var(--lp-glow);
   transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   MINIMALIST LIGHT THEME OVERRIDES (TOPBAR UNCHANGED)
+   ========================================================================== */
+.forge-root.theme-light .forge-main-split,
+.forge-root.theme-light .forge-footer {
+  /* Slate-50 background, clean white surfaces */
+  --lp-bg: #f8fafc;
+  --lp-dark-bg: #ffffff;
+  --lp-dark-surface: #ffffff;
+  --lp-border: #e2e8f0;
+  --lp-border-active: #cbd5e1;
+  --lp-zinc-800: #f1f5f9;
+  --lp-zinc-700: #e2e8f0;
+  --lp-zinc-600: #94a3b8;
+  --lp-zinc-400: #475569;
+  --lp-text-color: #0f172a;
+  --lp-glass: rgba(255, 255, 255, 0.85);
+  --lp-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --lp-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+
+  /* Specific light mode styling overrides */
+  color: #0f172a;
+}
+
+/* Adjust board-specific colors for light-mode text readability */
+.forge-root.theme-light.board-arduino-uno .forge-main-split {
+  --lp-accent-primary: #0284c7; /* darker blue for light mode contrast */
+  --lp-accent-bright: #0ea5e9;
+  --lp-border-active: rgba(2, 132, 199, 0.3);
+}
+
+.forge-root.theme-light.board-esp32-c3 .forge-main-split {
+  --lp-accent-primary: #ea580c; /* darker orange for light mode contrast */
+  --lp-accent-bright: #f97316;
+  --lp-border-active: rgba(234, 88, 12, 0.3);
+}
+
+/* Canvas action panel borders & shadow */
+.theme-light .canvas-action-panel {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: var(--lp-border) !important;
+}
+
+/* Make sure active buttons in the canvas action panel look light mode compatible */
+.theme-light .canvas-btn.secondary.active {
+  background: var(--lp-accent-primary) !important;
+  color: #ffffff !important;
+}
+
+/* Tab button active state overrides */
+.theme-light .forge-tab-btn {
+  color: var(--lp-zinc-400);
+}
+.theme-light .forge-tab-btn:hover {
+  color: var(--lp-text-color);
+  background: rgba(0, 0, 0, 0.03);
+}
+.theme-light .forge-tab-btn.active {
+  color: var(--lp-accent-primary);
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* Controls panel buttons styling inside light mode canvas */
+.theme-light .glass-controls button {
+  color: #64748b !important;
+}
+.theme-light .glass-controls button:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: var(--lp-accent-primary) !important;
+}
+
+/* Serial monitor light styling overrides */
+.theme-light .serial-monitor-output {
+  background-color: #fafafa !important;
+  background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.02) 1px, transparent 0) !important;
+  color: #334155 !important;
+}
+.theme-light .serial-input-field {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+.theme-light .serial-input-field::placeholder {
+  color: #94a3b8 !important;
+}
+.theme-light .serial-select-ending {
+  background: #ffffff !important;
+  color: #475569 !important;
+}
+
+/* Component drawer card styling in light mode */
+.theme-light .component-sidebar {
+  background: #f8fafc !important;
+  border-right: 1px solid var(--lp-border) !important;
+}
+.theme-light .component-sidebar div,
+.theme-light .component-sidebar span {
+  color: #334155 !important;
+}
+.theme-light .component-sidebar button {
+  color: #64748b !important;
+}
+.theme-light .component-sidebar input {
+  color: #0f172a !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+.theme-light .component-sidebar .component-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+}
+.theme-light .component-sidebar .component-card:hover {
+  border-color: var(--lp-accent-primary) !important;
+  background: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Highlight border colors for elements on mouse enter / hover */
+.theme-light .editor-pane::before, 
+.theme-light .canvas-pane::before,
+.theme-light .part-picker-pane::before {
+  background: linear-gradient(90deg, transparent, var(--lp-accent-primary), transparent) !important;
+  opacity: 0.5;
+}
+
+/* Adjust secondary buttons style in light mode */
+.theme-light .canvas-btn.secondary {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #64748b !important;
+}
+.theme-light .canvas-btn.secondary:hover {
+  background: #f1f5f9 !important;
+  color: var(--lp-accent-primary) !important;
+  border-color: var(--lp-accent-primary) !important;
 }

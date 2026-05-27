@@ -24,7 +24,7 @@ import { PartPicker } from './Library/PartPicker';
 import { SelectionToolbar } from './SelectionToolbar';
 import { WireEdge } from './Edges/WireEdge';
 import { PhysicalConnectionLine } from './Edges/PhysicalConnectionLine';
-import { Plus, Play, Square, RotateCcw, Code } from 'lucide-react';
+import { Plus, Play, Square, RotateCcw, Code, Sun, Moon } from 'lucide-react';
 
 // Define custom node types outside component to prevent re-renders
 const nodeTypes = {
@@ -56,7 +56,9 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     edges: storeEdges,
     addNode,
     addEdge: addStoreEdge,
-    updateNodePosition
+    updateNodePosition,
+    uiTheme,
+    toggleUiTheme
   } = store;
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -135,7 +137,9 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         height: '100%',
         background: 'var(--lp-dark-bg)',
         position: 'relative',
-        backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0)',
+        backgroundImage: uiTheme === 'light'
+          ? 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0)'
+          : 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0)',
         backgroundSize: '24px 24px'
       }}
       onDrop={onDrop}
@@ -352,6 +356,38 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
             <Code size={16} />
           </button>
         )}
+
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleUiTheme}
+          className="canvas-btn secondary"
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '19px',
+            background: 'var(--lp-zinc-800)',
+            border: '1px solid var(--lp-border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--lp-zinc-400)',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--lp-accent-primary)';
+            e.currentTarget.style.borderColor = 'var(--lp-accent-primary)';
+            e.currentTarget.style.background = 'var(--lp-zinc-700)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--lp-zinc-400)';
+            e.currentTarget.style.borderColor = 'var(--lp-border)';
+            e.currentTarget.style.background = 'var(--lp-zinc-800)';
+          }}
+          title={uiTheme === 'light' ? "Switch to Dark Mode" : "Switch to Light Mode"}
+        >
+          {uiTheme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+        </button>
 
         {/* Add Component (Part Picker) Button */}
         <button

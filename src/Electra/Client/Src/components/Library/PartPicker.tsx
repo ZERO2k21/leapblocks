@@ -10,16 +10,9 @@ import {
   Gauge,
   MousePointer2,
   X,
-  LayoutGrid
+  LayoutGrid,
+  ChevronDown
 } from 'lucide-react';
-
-const CATEGORIES = [
-  { id: 'all', name: 'ALL', icon: LayoutGrid },
-  { id: 'outputs', name: 'OUT', icon: Lightbulb },
-  { id: 'displays', name: 'DSPL', icon: Smartphone },
-  { id: 'sensors', name: 'SENS', icon: Gauge },
-  { id: 'inputs', name: 'INP', icon: MousePointer2 },
-];
 
 const COMPONENTS = [
   // OUTPUTS
@@ -81,15 +74,34 @@ interface PartPickerProps {
   currentBoard?: 'arduino-uno' | 'esp32-c3';
 }
 
-export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => {
-  const [activeCategory, setActiveCategory] = useState('all');
+export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, currentBoard = 'arduino-uno' }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [libraryOpen, setLibraryOpen] = useState(true);
+  const [assetsOpen, setAssetsOpen] = useState(true);
 
-  const filteredComponents = COMPONENTS.filter(c => {
-    const matchesCategory = activeCategory === 'all' || c.category === activeCategory;
-    const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  // Group components based on ID or category
+  const isAsset = (id: string, category: string): boolean => {
+    return category === 'displays' || 
+           id === 'led-bar-graph' || 
+           id === 'neopixel-matrix' || 
+           id === '7segment' ||
+           id === 'a4988' ||
+           id === 'l298n' ||
+           id === 'ds1307' ||
+           id === 'microsd-card' ||
+           id === 'hx711';
+  };
+
+  const libraryComponents = COMPONENTS.filter(c => !isAsset(c.id, c.category));
+  const assetComponents = COMPONENTS.filter(c => isAsset(c.id, c.category));
+
+  // Filter based on search query
+  const filteredLibrary = libraryComponents.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const filteredAssets = assetComponents.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="component-sidebar" style={{
@@ -98,8 +110,8 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
       background: 'var(--lp-dark-bg)',
       display: 'flex',
       flexDirection: 'column',
-      borderLeft: '1px solid var(--lp-border)',
-      fontFamily: "'Space Mono', monospace"
+      borderRight: '1px solid var(--lp-border)',
+      fontFamily: "'Outfit', sans-serif"
     }}>
       {/* Header */}
       <div style={{
@@ -108,185 +120,282 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: 'var(--lp-dark-surface)',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+        background: 'var(--lp-dark-surface)'
       }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span style={{
             color: 'var(--lp-accent-primary)',
-            fontSize: '12px',
-            fontWeight: 700,
-            letterSpacing: '1px'
-          }}>LIBRARY.BROWSER</span>
-          <span style={{ color: 'var(--lp-zinc-400)', fontSize: '9px' }}>v1.0.4-STABLE</span>
+            fontSize: '13px',
+            fontWeight: 800,
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase'
+          }}>Component Library</span>
+          <span style={{ color: 'var(--lp-zinc-400)', fontSize: '9px', fontWeight: 600 }}>v1.1.0-STABLE</span>
         </div>
         <button onClick={onClose} style={{
           background: 'none',
           border: 'none',
           color: 'var(--lp-zinc-400)',
           cursor: 'pointer',
-          padding: '4px'
-        }}><X size={14} /></button>
-      </div>
-
-      {/* Search Bar */}
-      <div style={{ padding: '12px' }}>
-        <div style={{
-          background: 'var(--lp-zinc-800)',
+          padding: '4px',
           display: 'flex',
           alignItems: 'center',
-          padding: '0 8px',
-          border: '1px solid var(--lp-border)',
-          borderRadius: '8px',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
-        }}>
-          <span style={{ color: 'var(--lp-accent-primary)', fontSize: '12px', marginRight: '4px' }}>&gt;</span>
-          <input
-            type="text"
-            placeholder="FILTER_PARTS..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              padding: '8px 4px',
-              color: 'var(--lp-zinc-400)',
-              fontSize: '11px',
-              outline: 'none',
-              width: '100%',
-              fontFamily: 'inherit'
-            }}
-          />
-          <Search size={12} color="var(--lp-zinc-600)" />
-        </div>
+          justifyContent: 'center',
+          transition: 'color 0.2s'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--lp-accent-primary)'}
+        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--lp-zinc-400)'}
+        >
+          <X size={16} />
+        </button>
       </div>
 
-      {/* Categories & List Container */}
-      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        {/* Vertical Categories */}
-        <div style={{
-          width: '56px',
-          borderRight: '1px solid var(--lp-border)',
-          display: 'flex',
-          flexDirection: 'column',
-          background: 'var(--lp-dark-surface)'
-        }}>
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        
+        {/* Accordion 1: COMPONENT LIBRARY */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <button
+            onClick={() => setLibraryOpen(!libraryOpen)}
+            style={{
+              padding: '14px 16px',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: '1px solid var(--lp-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              color: 'var(--lp-text-color)',
+              fontWeight: 700,
+              fontSize: '11px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.8px',
+              cursor: 'pointer',
+              width: '100%',
+              textAlign: 'left'
+            }}
+          >
+            <span>COMPONENT LIBRARY</span>
+            <ChevronDown
+              size={14}
               style={{
-                width: '100%',
-                height: '56px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px',
-                background: activeCategory === cat.id ? 'var(--lp-zinc-800)' : 'transparent',
-                border: 'none',
-                borderLeft: activeCategory === cat.id ? '2px solid var(--lp-accent-primary)' : '2px solid transparent',
-                color: activeCategory === cat.id ? 'var(--lp-accent-primary)' : 'var(--lp-zinc-400)',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
+                transform: libraryOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
+                transition: 'transform 0.2s'
               }}
-            >
-              <cat.icon size={16} />
-              <span style={{ fontSize: '8px', fontWeight: 700 }}>{cat.name}</span>
-            </button>
-          ))}
-        </div>
+            />
+          </button>
 
-        {/* Component Grid */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '12px',
-          display: 'grid',
-          gridTemplateColumns: '1fr',
-          gap: '8px',
-          alignContent: 'start'
-        }}>
-          {filteredComponents.map(comp => (
-            <div
-              key={comp.id}
-              onClick={() => onSelect(comp.id)}
-              className="component-card"
-              style={{
-                background: 'var(--lp-dark-surface)',
-                border: '1px solid var(--lp-border)',
-                padding: '10px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                borderRadius: '8px',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--lp-accent-primary)';
-                e.currentTarget.style.background = 'var(--lp-zinc-800)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--lp-border)';
-                e.currentTarget.style.background = 'var(--lp-dark-surface)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              <div style={{
-                width: '32px',
-                height: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid var(--lp-border)',
-                flexShrink: 0,
-                overflow: 'hidden',
-                borderRadius: '6px'
-              }}>
+          {libraryOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.02)' }}>
+              {/* Search Bar */}
+              <div style={{ padding: '12px 16px 8px 16px' }}>
                 <div style={{
-                  transform: 'scale(0.3)',
-                  transformOrigin: 'center center',
-                  opacity: 0.8
+                  background: 'var(--lp-zinc-800)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 10px',
+                  border: '1px solid var(--lp-border)',
+                  borderRadius: '8px',
+                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
                 }}>
-                  {React.createElement(`leap-${comp.id}` as any, {
-                    color: comp.id === 'led' ? 'red' : undefined,
-                    value: true
-                  })}
+                  <Search size={14} color="var(--lp-zinc-600)" style={{ marginRight: '6px' }} />
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      padding: '8px 0',
+                      color: 'var(--lp-text-color)',
+                      fontSize: '12px',
+                      outline: 'none',
+                      width: '100%',
+                      fontFamily: 'inherit'
+                    }}
+                  />
                 </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                <span style={{
-                  color: 'var(--lp-zinc-400)',
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>{comp.name}</span>
-                <span style={{ color: 'var(--lp-zinc-600)', fontSize: '8px' }}>{comp.id.toUpperCase()}</span>
+
+              {/* 2-Column Grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '12px',
+                padding: '12px 16px 16px 16px'
+              }}>
+                {filteredLibrary.map(comp => (
+                  <div key={comp.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', minWidth: 0 }}>
+                    <div
+                      onClick={() => onSelect(comp.id)}
+                      className="component-card"
+                      title={comp.name}
+                      style={{
+                        background: 'var(--lp-dark-surface)',
+                        border: '1px solid var(--lp-border)',
+                        width: '100%',
+                        aspectRatio: '1/1',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '16px',
+                        boxShadow: 'var(--lp-shadow)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                      }}
+                    >
+                      <div style={{
+                        transform: 'scale(0.7)',
+                        transformOrigin: 'center center',
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: 0.95
+                      }}>
+                        {React.createElement(`leap-${comp.id}` as any, {
+                          color: comp.id === 'led' ? 'red' : undefined,
+                          value: true
+                        })}
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: '9px',
+                      fontWeight: 700,
+                      color: 'var(--lp-text-color)',
+                      textAlign: 'center',
+                      width: '100%',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      opacity: 0.9
+                    }}>
+                      {comp.name}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+          )}
         </div>
+
+        {/* Accordion 2: ASSETS */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <button
+            onClick={() => setAssetsOpen(!assetsOpen)}
+            style={{
+              padding: '14px 16px',
+              background: 'transparent',
+              border: 'none',
+              borderTop: '1px solid var(--lp-border)',
+              borderBottom: '1px solid var(--lp-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              color: 'var(--lp-text-color)',
+              fontWeight: 700,
+              fontSize: '11px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.8px',
+              cursor: 'pointer',
+              width: '100%',
+              textAlign: 'left'
+            }}
+          >
+            <span>ASSETS</span>
+            <ChevronDown
+              size={14}
+              style={{
+                transform: assetsOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
+                transition: 'transform 0.2s'
+              }}
+            />
+          </button>
+
+          {assetsOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.02)' }}>
+              {/* 2-Column Grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '12px',
+                padding: '16px'
+              }}>
+                {filteredAssets.map(comp => (
+                  <div key={comp.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', minWidth: 0 }}>
+                    <div
+                      onClick={() => onSelect(comp.id)}
+                      className="component-card"
+                      title={comp.name}
+                      style={{
+                        background: 'var(--lp-dark-surface)',
+                        border: '1px solid var(--lp-border)',
+                        width: '100%',
+                        aspectRatio: '1/1',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '16px',
+                        boxShadow: 'var(--lp-shadow)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                      }}
+                    >
+                      <div style={{
+                        transform: 'scale(0.7)',
+                        transformOrigin: 'center center',
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: 0.95
+                      }}>
+                        {React.createElement(`leap-${comp.id}` as any, {
+                          value: true
+                        })}
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: '9px',
+                      fontWeight: 700,
+                      color: 'var(--lp-text-color)',
+                      textAlign: 'center',
+                      width: '100%',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      opacity: 0.9
+                    }}>
+                      {comp.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* Status Bar */}
       <div style={{
-        padding: '6px 12px',
+        padding: '8px 16px',
         borderTop: '1px solid var(--lp-border)',
-        fontSize: '8px',
+        fontSize: '9px',
+        fontWeight: 600,
         color: 'var(--lp-zinc-600)',
         display: 'flex',
         justifyContent: 'space-between',
         background: 'var(--lp-dark-surface)'
       }}>
         <span>READY</span>
-        <span>{filteredComponents.length} ELEMENTS</span>
+        <span>{filteredLibrary.length + filteredAssets.length} ELEMENTS</span>
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ interface ForgeEditorProps {
 
 export const ForgeEditor: React.FC<ForgeEditorProps> = ({ code, onChange }) => {
   const MonacoEditor = Editor as any;
-  const { board } = useForgeStore();
+  const { board, uiTheme } = useForgeStore();
 
   return (
     <div className="forge-editor-container" style={{ height: '100%', width: '100%', overflow: 'hidden' }}>
@@ -24,7 +24,7 @@ export const ForgeEditor: React.FC<ForgeEditorProps> = ({ code, onChange }) => {
         defaultLanguage="cpp"
         value={code}
         onChange={onChange}
-        theme="vs-dark"
+        theme={uiTheme === 'light' ? 'vs' : 'vs-dark'}
         options={{
           fontSize: 13,
           minimap: { enabled: false },

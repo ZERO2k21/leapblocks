@@ -46,6 +46,7 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
     setProjectName,
     board,
     setBoard,
+    uiTheme,
   } = useForgeStore();
 
   // Undo/Redo History Management
@@ -543,7 +544,7 @@ void loop() {
   };
 
   return (
-    <div className={`forge-root board-${board}`}>
+    <div className={`forge-root board-${board} theme-${uiTheme}`}>
       <IgniteTopbar
         title={projectName}
         onTitleChange={setProjectName}
@@ -562,7 +563,21 @@ void loop() {
       />
 
       <main className="forge-main-split">
-        {/* Left: Simulation Canvas (takes flex: 1) */}
+        {/* Far Left: Component Drawer */}
+        {showPartPicker && (
+          <div className="part-picker-pane">
+            <ComponentSidebar
+              onSelect={(type) => {
+                const state = useForgeStore.getState();
+                state.addNode(type, { x: 400, y: 300 }, { label: type.toUpperCase() });
+              }}
+              onClose={() => setShowPartPicker(false)}
+              currentBoard={board as any}
+            />
+          </div>
+        )}
+
+        {/* Middle: Simulation Canvas (takes flex: 1) */}
         <div className="canvas-pane">
           <div style={{ flex: 1, position: 'relative', height: '100%' }}>
             <Suspense fallback={<div className="forge-loader"><div className="spinner" />Initializing Physics...</div>}>
@@ -690,20 +705,6 @@ void loop() {
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Far Right: Component Drawer */}
-        {showPartPicker && (
-          <div className="part-picker-pane">
-            <ComponentSidebar
-              onSelect={(type) => {
-                const state = useForgeStore.getState();
-                state.addNode(type, { x: 400, y: 300 }, { label: type.toUpperCase() });
-              }}
-              onClose={() => setShowPartPicker(false)}
-              currentBoard={board as any}
-            />
           </div>
         )}
       </main>

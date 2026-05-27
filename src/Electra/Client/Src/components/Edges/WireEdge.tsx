@@ -51,6 +51,20 @@ function mid(a: Point, b: Point): Point {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
 
+/** Map wire base colors to their inner highlight colors for 3D tube look */
+const getWireHighlightColor = (color: string): string => {
+  const hex = color.toLowerCase().trim();
+  if (hex === '#22c55e' || hex === '#22c55e') return '#86efac';
+  if (hex === '#3b82f6') return '#93c5fd';
+  if (hex === '#ef4444') return '#fca5a5';
+  if (hex === '#eab308' || hex === '#f59e0b') return '#fde68a';
+  if (hex === '#a855f7') return '#d8b4fe';
+  if (hex === '#db2777' || hex === '#ec4899') return '#fbcfe8';
+  if (hex === '#0d9488' || hex === '#14b8a6') return '#99f6e4';
+  if (hex === '#06b6d4') return '#67e8f9';
+  return '#ffffff';
+};
+
 // ── WireEdge component ────────────────────────────────────────────────────────
 
 export const WireEdge: React.FC<EdgeProps> = ({
@@ -167,7 +181,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
       {/* 1. SELECTION GLOW */}
       {(selected || isHovered) && (
         <path
-          style={{ stroke: wireColor, strokeWidth: 10, opacity: 0.15, fill: 'none', filter: 'blur(4px)' }}
+          style={{ stroke: wireColor, strokeWidth: 8, opacity: 0.25, fill: 'none', filter: 'blur(4px)' }}
           d={edgePath}
         />
       )}
@@ -175,26 +189,34 @@ export const WireEdge: React.FC<EdgeProps> = ({
       {/* 2. DROP SHADOW - Subtle for depth */}
       <path
         style={{
-          stroke: 'rgba(0,0,0,0.3)', strokeWidth: 3.5, fill: 'none',
-          strokeLinecap: 'round', strokeLinejoin: 'round', transform: 'translate(0.5px, 1px)', filter: 'blur(1px)',
+          stroke: 'rgba(0,0,0,0.15)', strokeWidth: 4, fill: 'none',
+          strokeLinecap: 'round', strokeLinejoin: 'round', transform: 'translate(1px, 1.5px)', filter: 'blur(1px)',
         }}
         d={edgePath}
       />
 
-      {/* 3. MAIN WIRE BODY - Thinner wire */}
+      {/* 3. OUTER TUBE BODY */}
       <path
-        style={{ ...style, stroke: wireColor, strokeWidth: 3, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }}
+        style={{ ...style, stroke: wireColor, strokeWidth: 4, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }}
         className="react-flow__edge-path"
         d={edgePath}
       />
 
-      {/* 3b. WIRE HIGHLIGHT - thin bright line for 3D cable look */}
+      {/* 4. INNER GLOWING CORE */}
       <path
-        style={{ stroke: 'rgba(255,255,255,0.15)', strokeWidth: 1, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round', pointerEvents: 'none' }}
+        style={{
+          stroke: getWireHighlightColor(wireColor),
+          strokeWidth: 1.5,
+          fill: 'none',
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+          pointerEvents: 'none',
+          opacity: 0.9
+        }}
         d={edgePath}
       />
 
-      {/* 4. INVISIBLE HIT AREA */}
+      {/* 5. INVISIBLE HIT AREA */}
       <path
         style={{ stroke: 'transparent', strokeWidth: 16, fill: 'none', cursor: 'pointer' }}
         className="react-flow__edge-interaction"
@@ -212,11 +234,11 @@ export const WireEdge: React.FC<EdgeProps> = ({
       {(selected || isHovered) && waypoints.map((wp, i) => (
         <g key={`wp-${i}`} style={{ cursor: 'grab' }}>
           <circle
-            cx={wp.x} cy={wp.y} r={6}
-            fill="#fff" stroke={wireColor} strokeWidth={2}
+            cx={wp.x} cy={wp.y} r={5}
+            fill="#fff" stroke={wireColor} strokeWidth={1.5}
             onMouseDown={(e) => onWaypointMouseDown(e, i)}
             onDoubleClick={(e) => removeWaypoint(e, i)}
-            style={{ cursor: 'grab', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}
+            style={{ cursor: 'grab', filter: 'drop-shadow(0 1.5px 3px rgba(0,0,0,0.2))' }}
           />
         </g>
       ))}
@@ -225,13 +247,13 @@ export const WireEdge: React.FC<EdgeProps> = ({
       {(selected || isHovered) && midHandles.map(({ m, insertAfterIdx }, i) => (
         <g key={`mid-${i}`} style={{ cursor: 'crosshair' }}>
           <circle
-            cx={m.x} cy={m.y} r={4}
+            cx={m.x} cy={m.y} r={3}
             fill={wireColor}
             opacity={0.6}
             onClick={(e) => addWaypoint(e, insertAfterIdx, m)}
             style={{ cursor: 'crosshair', transition: 'all 0.2s' }}
-            onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.r = '6'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.r = '4'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.r = '5'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.r = '3'; }}
           />
         </g>
       ))}
