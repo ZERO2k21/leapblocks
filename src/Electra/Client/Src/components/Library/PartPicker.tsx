@@ -3,6 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  */
 import React, { useState } from 'react';
+import { LEAP_PINS } from '../../engine/Arduino/PinHarness';
 import {
   Search,
   Lightbulb,
@@ -67,6 +68,28 @@ const COMPONENTS = [
   { id: 'battery-12v', name: '12V Battery', category: 'inputs', desc: '12V Lead-acid battery' },
   { id: 'resistor', name: 'Resistor', category: 'inputs', desc: 'Passive resistor' },
 ];
+
+const getComponentScale = (id: string, defaultScale: number): number => {
+  // Custom manual scale overrides for very small components
+  if (id === 'neopixel') return 2.3;
+  if (id === 'led' || id === 'rgb-led') return 1.0;
+  if (id === 'resistor') return 1.3;
+
+  const pinData = LEAP_PINS[id];
+  if (!pinData || !pinData.viewBox) {
+    return defaultScale; // Fallback to default scale
+  }
+  const { width, height } = pinData.viewBox;
+  const maxDim = Math.max(width, height);
+  // Calculate the component size at default scale
+  const currentSize = maxDim * defaultScale;
+  // If it exceeds the target box size (72px), scale it down to fit.
+  // Otherwise, keep the default scale so it doesn't get oversized.
+  if (currentSize > 72) {
+    return 72 / maxDim;
+  }
+  return defaultScale;
+};
 
 interface PartPickerProps {
   onSelect: (type: string) => void;
@@ -247,7 +270,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
                       }}
                     >
                       <div style={{
-                        transform: 'scale(0.7)',
+                        transform: `scale(${getComponentScale(comp.id, 0.7)})`,
                         transformOrigin: 'center center',
                         width: '100%',
                         height: '100%',
@@ -258,6 +281,8 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
                       }}>
                         {React.createElement(`leap-${comp.id}` as any, {
                           color: comp.id === 'led' ? 'red' : undefined,
+                          ...(comp.id === 'rgb-led' ? { ledRed: 0.2, ledGreen: 0.8, ledBlue: 0.8 } : {}),
+                          ...(comp.id === 'neopixel' ? { r: 0.2, g: 0.8, b: 0.8 } : {}),
                           value: true
                         })}
                       </div>
@@ -347,7 +372,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
                       }}
                     >
                       <div style={{
-                        transform: 'scale(0.2)',
+                        transform: `scale(${getComponentScale(comp.id, 0.2)})`,
                         transformOrigin: 'center center',
                         width: '100%',
                         height: '100%',
@@ -357,6 +382,9 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
                         opacity: 0.95
                       }}>
                         {React.createElement(`leap-${comp.id}` as any, {
+                          color: comp.id === 'led' ? 'red' : undefined,
+                          ...(comp.id === 'rgb-led' ? { ledRed: 0.2, ledGreen: 0.8, ledBlue: 0.8 } : {}),
+                          ...(comp.id === 'neopixel' ? { r: 0.2, g: 0.8, b: 0.8 } : {}),
                           value: true
                         })}
                       </div>

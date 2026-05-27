@@ -15,7 +15,8 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   ReactFlowProvider,
-  BackgroundVariant
+  BackgroundVariant,
+  useReactFlow
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useForgeStore } from '../../utlis/store/useForgeStore';
@@ -24,7 +25,7 @@ import { PartPicker } from './Library/PartPicker';
 import { SelectionToolbar } from './SelectionToolbar';
 import { WireEdge } from './Edges/WireEdge';
 import { PhysicalConnectionLine } from './Edges/PhysicalConnectionLine';
-import { Plus, Play, Square, RotateCcw, Code, Sun, Moon } from 'lucide-react';
+import { Plus, Play, Square, RotateCcw, Code, Sun, Moon, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 
 // Define custom node types outside component to prevent re-renders
 const nodeTypes = {
@@ -48,6 +49,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   showEditor = true,
   onToggleEditor
 }) => {
+  const { zoomIn, zoomOut, fitView } = useReactFlow();
   const store = useForgeStore();
   const {
     isSimulating,
@@ -427,6 +429,33 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
           title="Reset Simulation"
         >
           <RotateCcw size={16} />
+        </button>
+
+        {/* Zoom In Button */}
+        <button
+          onClick={() => zoomIn()}
+          className="canvas-btn secondary"
+          title="Zoom In"
+        >
+          <ZoomIn size={16} />
+        </button>
+
+        {/* Zoom Out Button */}
+        <button
+          onClick={() => zoomOut()}
+          className="canvas-btn secondary"
+          title="Zoom Out"
+        >
+          <ZoomOut size={16} />
+        </button>
+
+        {/* Fit View Button */}
+        <button
+          onClick={() => fitView({ duration: 400 })}
+          className="canvas-btn secondary"
+          title="Fit View"
+        >
+          <Maximize size={16} />
         </button>
 
         <div className="canvas-divider" />

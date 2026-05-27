@@ -48,7 +48,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     padding: 0,
     borderRadius: '4px',
     background: 'transparent',
-    border: `1px solid ${isSelected ? '#BEF264' : 'transparent'}`,
+    border: '1px solid transparent',
     transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border 0.2s ease-out',
     transform: `rotate(${data.rotation || 0}deg) scale(0.75)`,
     transformOrigin: 'center',
