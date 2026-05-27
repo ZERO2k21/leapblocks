@@ -741,11 +741,11 @@ export class ArduinoRuntime {
           setTimeout(() => {
             this._status = 3; // WL_CONNECTED
             self.onSerial?.('__LF_WIFI:connected\n');
-          }, 500);
+          }, 1);
 
           setTimeout(() => {
             self.onSerial?.(`__LF_WIFI:ip:${this._ip}\n`);
-          }, 1000);
+          }, 1);
         },
 
         status(): number {

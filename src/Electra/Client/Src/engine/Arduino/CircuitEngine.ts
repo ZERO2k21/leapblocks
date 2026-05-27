@@ -2335,11 +2335,11 @@ class CircuitEngine {
           peripheralPinName === 'OUT'
         ) {
           const initialMotion = peripheralNodeForPIR.data?.sensorValues?.motionDetected ?? false;
-          // Delay 200ms — enough for setup() to run and configure pinMode
-          setTimeout(() => {
+        // Delay 1ms — enough for setup() to run and configure pinMode
+        setTimeout(() => {
             simulationRunner.setVirtualInput(avrPin, initialMotion);
             console.log(`[FORGE CIRCUIT] PIR (${peripheralId}) initial state injected: ${initialMotion ? 'HIGH' : 'LOW'} on ${avrPin}`);
-          }, 200);
+        }, 1);
         }
       });
     });
