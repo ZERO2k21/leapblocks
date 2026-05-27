@@ -165,7 +165,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
           variant={BackgroundVariant.Dots}
           gap={24}
           size={1}
-          color="rgba(255,255,255,0.05)"
+          color="var(--lp-border-active)"
         />
 
         <Controls
@@ -174,26 +174,26 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
             display: 'flex',
             flexDirection: 'column',
             gap: 4,
-            background: 'rgba(255,255,255,0.7)',
+            background: 'var(--lp-glass)',
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(0,0,0,0.06)',
+            border: '1px solid var(--lp-border)',
             borderRadius: 12,
             padding: 4,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            boxShadow: 'var(--lp-shadow)'
           }}
         />
 
         <MiniMap
           className="glass-minimap"
           style={{
-            background: 'rgba(255, 255, 255, 0.7)',
+            background: 'var(--lp-glass)',
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(0,0,0,0.06)',
+            border: '1px solid var(--lp-border)',
             borderRadius: 16,
             overflow: 'hidden'
           }}
-          nodeColor={(n: any) => n.data?.type === 'boards' ? '#7B4FC4' : '#cbd5e1'}
-          maskColor="rgba(248, 250, 252, 0.6)"
+          nodeColor={(n: any) => n.data?.type === 'boards' ? 'var(--lp-accent-primary)' : '#cbd5e1'}
+          maskColor="rgba(0, 0, 0, 0.6)"
         />
       </ReactFlow>
 
@@ -219,6 +219,12 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         }
         .react-flow__controls-button svg {
           fill: currentColor !important;
+        }
+
+        @media (max-width: 768px) {
+          .glass-minimap {
+            display: none !important;
+          }
         }
       `}</style>
 
@@ -349,7 +355,12 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
 
         {/* Add Component (Part Picker) Button */}
         <button
-          onClick={() => store.setShowPartPicker(!store.showPartPicker)}
+          onClick={() => {
+            if (!store.showPartPicker && window.innerWidth <= 1024 && showEditor && onToggleEditor) {
+              onToggleEditor();
+            }
+            store.setShowPartPicker(!store.showPartPicker);
+          }}
           style={{
             width: '38px',
             height: '38px',

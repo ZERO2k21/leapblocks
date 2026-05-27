@@ -570,7 +570,12 @@ void loop() {
                 onToggleSimulation={handleToggleSimulation} 
                 isCompiling={isCompiling} 
                 showEditor={showEditor}
-                onToggleEditor={() => setShowEditor(!showEditor)}
+                onToggleEditor={() => {
+                  if (!showEditor && window.innerWidth <= 1024 && showPartPicker) {
+                    setShowPartPicker(false);
+                  }
+                  setShowEditor(!showEditor);
+                }}
               />
             </Suspense>
 

@@ -1,42 +1,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Space+Mono:wght@400;700&display=swap');
 
 :root {
-  --lp-dark-bg: #09090b;
-  --lp-dark-surface: #18181b;
-  --lp-zinc-800: #27272a;
-  --lp-zinc-700: #3f3f46;
-  --lp-zinc-600: #52525b;
+  --lp-dark-bg: rgba(10, 11, 14, 0.45);
+  --lp-dark-surface: rgba(20, 22, 28, 0.6);
+  --lp-zinc-800: rgba(39, 39, 42, 0.5);
+  --lp-zinc-700: rgba(63, 63, 70, 0.5);
+  --lp-zinc-600: rgba(82, 82, 91, 0.5);
   --lp-zinc-400: #a1a1aa;
 
-  --lp-accent-primary: #22d3ee;
-  --lp-accent-bright: #67e8f9;
-  --lp-accent-dark: #06b6d4;
-  --lp-accent-hover: rgba(34, 211, 238, 0.08);
-  --lp-btn-text: #000;
+  --lp-accent-primary: #3B82F6;
+  --lp-accent-bright: #60A5FA;
+  --lp-accent-dark: #1D4ED8;
+  --lp-accent-hover: rgba(59, 130, 246, 0.08);
+  --lp-btn-text: #ffffff;
   --lp-emerald: #10b981;
   --lp-amber: #f59e0b;
   --lp-rose: #f43f5e;
 
   --lp-bg: #09090b;
-  --lp-glass: rgba(24, 24, 27, 0.95);
-  --lp-border: #27272a;
-  --lp-border-active: #3f3f46;
-  --lp-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --lp-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
-  --lp-glow: 0 0 20px rgba(34, 211, 238, 0.15);
-  --lp-save-glow: rgba(34, 211, 238, 0.4) 0px 4px 10px -1px;
-  --lp-radius: 12px;
+  --lp-glass: rgba(15, 17, 23, 0.65);
+  --lp-border: rgba(255, 255, 255, 0.08);
+  --lp-border-active: rgba(59, 130, 246, 0.3);
+  --lp-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --lp-shadow-lg: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+  --lp-glow: 0 0 20px rgba(59, 130, 246, 0.2);
+  --lp-save-glow: rgba(59, 130, 246, 0.4) 0px 4px 10px -1px;
+  --lp-radius: 16px;
   --lp-radius-sm: 8px;
 
   --header-height: 64px;
   --footer-height: 36px;
   --sidebar-width: 320px;
 
-  --lp-bg-gradient: radial-gradient(at 20% 10%, rgba(34, 211, 238, 0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 20%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
-    linear-gradient(180deg, #09090b 0%, #18181b 100%);
+  --lp-bg-gradient: radial-gradient(at 20% 10%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(96, 165, 250, 0.08) 0px, transparent 50%),
+    linear-gradient(180deg, #07080b 0%, #0f1115 100%);
   --code-font: 'JetBrains Mono', monospace;
-  --lp-text-color: #f4f4f5;
+  --lp-text-color: #f8fafc;
 }
 
 .forge-root {
@@ -71,7 +71,9 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  transition: background-color 0.4s ease, border-color 0.4s ease, border-radius 0.4s ease, box-shadow 0.4s ease;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: background-color 0.4s ease, border-color 0.4s ease, border-radius 0.4s ease, box-shadow 0.4s ease, backdrop-filter 0.4s ease;
 }
 
 .editor-pane::before, .canvas-pane::before {
@@ -104,6 +106,7 @@
   align-items: center;
   gap: 4px;
   position: relative;
+  z-index: 10;
 }
 
 .forge-tab-btn {
@@ -122,6 +125,10 @@
   border-radius: var(--lp-radius-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.forge-tab-btn svg {
+  pointer-events: none;
 }
 
 .forge-tab-btn:hover {
@@ -413,7 +420,9 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  transition: background-color 0.4s ease, border-color 0.4s ease, border-radius 0.4s ease, box-shadow 0.4s ease;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: background-color 0.4s ease, border-color 0.4s ease, border-radius 0.4s ease, box-shadow 0.4s ease, backdrop-filter 0.4s ease;
 }
 
 .part-picker-pane::before {
@@ -456,71 +465,72 @@
    BOARD THEME 1: Arduino Uno (Tinkercad Classic Light Workbench)
    ========================================================================== */
 .forge-root.board-arduino-uno {
-  --lp-accent-primary: #00979C;
-  --lp-accent-bright: #0ea5e9;
-  --lp-accent-dark: #006064;
-  --lp-accent-hover: rgba(0, 151, 156, 0.08);
-  --lp-btn-text: #ffffff;
-  --lp-bg: #e3e3e6;
-  --lp-dark-surface: #f5f5f7;
-  --lp-dark-bg: #ebebeb;
-  --lp-zinc-800: #e5e5ea;
-  --lp-zinc-700: #d1d1d6;
-  --lp-zinc-600: #8e8e93;
-  --lp-zinc-400: #3a3a3c;
-  --lp-border: #cccccc;
-  --lp-border-active: #00979C;
-  --lp-radius: 4px;
-  --lp-radius-sm: 4px;
-  --lp-save-glow: rgba(0, 151, 156, 0.2) 0px 4px 10px -1px;
+  --lp-accent-primary: #00f2fe;
+  --lp-accent-bright: #4facfe;
+  --lp-accent-dark: #00828a;
+  --lp-accent-hover: rgba(0, 242, 254, 0.08);
+  --lp-btn-text: #05050a;
+  --lp-bg: #0b0c10;
+  --lp-dark-surface: rgba(15, 23, 30, 0.65);
+  --lp-dark-bg: rgba(10, 15, 20, 0.45);
+  --lp-zinc-800: rgba(30, 41, 59, 0.5);
+  --lp-zinc-700: rgba(51, 65, 85, 0.5);
+  --lp-zinc-600: rgba(71, 85, 105, 0.5);
+  --lp-zinc-400: #94a3b8;
+  --lp-border: rgba(255, 255, 255, 0.08);
+  --lp-border-active: rgba(0, 242, 254, 0.35);
+  --lp-radius: 16px;
+  --lp-radius-sm: 8px;
+  --lp-save-glow: rgba(0, 242, 254, 0.3) 0px 4px 12px;
   --lp-bg-gradient: 
-    radial-gradient(circle at 15px 15px, #c0c0c5 1px, transparent 1px),
-    linear-gradient(180deg, #e3e3e6 0%, #ebebeb 100%);
+    radial-gradient(at 20% 10%, rgba(0, 242, 254, 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(79, 172, 254, 0.06) 0px, transparent 50%),
+    linear-gradient(180deg, #07090e 0%, #0d1117 100%);
   --code-font: 'Space Mono', 'Fira Code', monospace;
-  --lp-badge-bg: rgba(0, 151, 156, 0.08);
-  --lp-badge-border: rgba(0, 151, 156, 0.3);
-  --lp-badge-color: #00979C;
-  --lp-wifi-clear-bg: rgba(0, 151, 156, 0.08);
-  --lp-wifi-clear-border: 1px solid rgba(0, 151, 156, 0.2);
-  --lp-grid-dot-color: #c0c0c5;
-  --lp-flow-grid-color: rgba(0,0,0,0.06);
-  --lp-glass: rgba(245, 245, 247, 0.95);
-  --lp-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  --lp-text-color: #1c1c1e;
+  --lp-badge-bg: rgba(0, 242, 254, 0.08);
+  --lp-badge-border: rgba(0, 242, 254, 0.3);
+  --lp-badge-color: #00f2fe;
+  --lp-wifi-clear-bg: rgba(0, 242, 254, 0.08);
+  --lp-wifi-clear-border: 1px solid rgba(0, 242, 254, 0.2);
+  --lp-grid-dot-color: #00f2fe;
+  --lp-flow-grid-color: rgba(0, 242, 254, 0.03);
+  --lp-glass: rgba(10, 15, 20, 0.7);
+  --lp-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+  --lp-text-color: #f8fafc;
 }
 
-/* Arduino custom library drawer light-mode overrides */
+/* Arduino custom library drawer overrides */
 .board-arduino-uno .component-sidebar {
-  background: #ebebeb !important;
-  border-left: 1px solid #cccccc !important;
+  background: rgba(10, 15, 20, 0.75) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
   font-family: 'Outfit', sans-serif !important;
 }
 
 .board-arduino-uno .component-sidebar div,
 .board-arduino-uno .component-sidebar span {
-  color: #3a3a3c !important;
+  color: #e2e8f0 !important;
 }
 
 .board-arduino-uno .component-sidebar button {
-  color: #555559 !important;
+  color: #94a3b8 !important;
 }
 
 .board-arduino-uno .component-sidebar input {
-  color: #1c1c1e !important;
+  color: #f8fafc !important;
 }
 
 .board-arduino-uno .component-sidebar .component-card {
-  background: #ffffff !important;
-  border: 1px solid #e5e5ea !important;
-  border-radius: 4px !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+  background: rgba(30, 41, 59, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
   transition: all 0.2s ease !important;
 }
 
 .board-arduino-uno .component-sidebar .component-card:hover {
-  border-color: #00979C !important;
-  background: #ffffff !important;
-  box-shadow: 0 4px 8px rgba(0, 151, 156, 0.1) !important;
+  border-color: #00f2fe !important;
+  background: rgba(30, 41, 59, 0.6) !important;
+  box-shadow: 0 4px 12px rgba(0, 242, 254, 0.15) !important;
   transform: translateY(-1px) !important;
 }
 
@@ -532,34 +542,34 @@
   --lp-accent-bright: #fdba74;
   --lp-accent-dark: #c2410c;
   --lp-accent-hover: rgba(249, 115, 22, 0.1);
-  --lp-btn-text: #000000;
+  --lp-btn-text: #050505;
   --lp-bg: #09090b;
-  --lp-dark-surface: #18181b;
-  --lp-dark-bg: #0c0c0e;
-  --lp-zinc-800: #27272a;
-  --lp-zinc-700: #3f3f46;
-  --lp-zinc-600: #52525b;
-  --lp-zinc-400: #a1a1aa;
-  --lp-border: #27272a;
-  --lp-border-active: #f97316;
-  --lp-radius: 2px;
-  --lp-radius-sm: 0px;
-  --lp-save-glow: rgba(249, 115, 22, 0.4) 0px 4px 10px -1px;
+  --lp-dark-surface: rgba(24, 20, 20, 0.65);
+  --lp-dark-bg: rgba(14, 10, 10, 0.45);
+  --lp-zinc-800: rgba(59, 41, 30, 0.5);
+  --lp-zinc-700: rgba(85, 65, 51, 0.5);
+  --lp-zinc-600: rgba(105, 85, 71, 0.5);
+  --lp-zinc-400: #cbd5e1;
+  --lp-border: rgba(255, 255, 255, 0.08);
+  --lp-border-active: rgba(249, 115, 22, 0.35);
+  --lp-radius: 16px;
+  --lp-radius-sm: 8px;
+  --lp-save-glow: rgba(249, 115, 22, 0.3) 0px 4px 12px;
   --lp-bg-gradient: 
-    radial-gradient(at 20% 10%, rgba(249, 115, 22, 0.15) 0px, transparent 50%),
-    radial-gradient(at 80% 20%, rgba(239, 68, 68, 0.08) 0px, transparent 50%),
-    linear-gradient(180deg, #09090b 0%, #1c1917 100%);
+    radial-gradient(at 20% 10%, rgba(249, 115, 22, 0.12) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(239, 68, 68, 0.06) 0px, transparent 50%),
+    linear-gradient(180deg, #090807 0%, #15110f 100%);
   --code-font: 'JetBrains Mono', 'Fira Code', monospace;
   --lp-badge-bg: rgba(249, 115, 22, 0.1);
   --lp-badge-border: rgba(249, 115, 22, 0.4);
   --lp-badge-color: #f97316;
   --lp-wifi-clear-bg: rgba(249, 115, 22, 0.15);
   --lp-wifi-clear-border: 1px solid rgba(249, 115, 22, 0.4);
-  --lp-grid-dot-color: #33333b;
-  --lp-flow-grid-color: rgba(255,255,255,0.04);
-  --lp-glass: rgba(24, 24, 27, 0.95);
-  --lp-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --lp-text-color: #f4f4f5;
+  --lp-grid-dot-color: #f97316;
+  --lp-flow-grid-color: rgba(249, 115, 22, 0.03);
+  --lp-glass: rgba(24, 20, 20, 0.7);
+  --lp-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+  --lp-text-color: #f8fafc;
 }
 
 /* ==========================================================================
@@ -608,4 +618,256 @@
 .wifi-clear-btn:hover {
   background: var(--lp-accent-primary);
   color: var(--lp-btn-text, #000000);
+}
+
+/* ==========================================================================
+   RESPONSIVE IDE WORKSPACE LAYOUT (TINKERCAD STYLE OVERLAYS)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .forge-main-split {
+    position: relative;
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .canvas-pane {
+    flex: 1 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 10;
+  }
+
+  .editor-pane {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: 420px;
+    z-index: 60;
+    box-shadow: var(--lp-shadow-lg) !important;
+    border-radius: var(--lp-radius) !important;
+  }
+
+  .part-picker-pane {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: 320px;
+    z-index: 70;
+    box-shadow: var(--lp-shadow-lg) !important;
+    border-radius: var(--lp-radius) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .editor-pane {
+    width: calc(100% - 16px);
+    right: 8px;
+    left: 8px;
+  }
+
+  .part-picker-pane {
+    width: calc(100% - 16px);
+    right: 8px;
+    left: 8px;
+  }
+
+  /* Reposition floating toolbar on mobile to bottom center for thumb reachability */
+  .canvas-action-panel {
+    top: auto !important;
+    bottom: 16px !important;
+    right: 50% !important;
+    transform: translateX(50%) !important;
+    border-radius: 20px !important;
+    box-shadow: var(--lp-shadow-lg) !important;
+  }
+}
+
+/* ==========================================================================
+   SERIAL MONITOR & TERMINAL GLASSMORPHISM STYLES
+   ========================================================================== */
+.serial-monitor-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--lp-dark-bg);
+  color: var(--lp-text-color);
+  font-family: var(--code-font), monospace;
+}
+
+.serial-monitor-header {
+  padding: 12px 24px;
+  background: var(--lp-glass);
+  border-bottom: 1px solid var(--lp-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--lp-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.serial-monitor-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--lp-accent-primary);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.serial-monitor-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.serial-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--lp-border);
+  color: var(--lp-accent-bright);
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: var(--lp-radius-sm);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.serial-btn:hover {
+  background: var(--lp-accent-primary);
+  color: var(--lp-btn-text, #000);
+  border-color: var(--lp-accent-primary);
+  box-shadow: var(--lp-glow);
+  transform: translateY(-1px);
+}
+
+.serial-btn-clear {
+  background: rgba(244, 63, 94, 0.05);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  color: var(--lp-rose);
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: var(--lp-radius-sm);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.serial-btn-clear:hover {
+  background: var(--lp-rose);
+  color: #fff;
+  border-color: var(--lp-rose);
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.3);
+  transform: translateY(-1px);
+}
+
+.serial-monitor-output {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--lp-zinc-400);
+  background: transparent;
+}
+
+.serial-monitor-footer {
+  padding: 12px 24px;
+  background: var(--lp-glass);
+  border-top: 1px solid var(--lp-border);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  backdrop-filter: blur(8px);
+}
+
+.serial-input-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.serial-input-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--lp-accent-primary);
+}
+
+.serial-input-field {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius-sm);
+  color: var(--lp-text-color);
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.serial-input-field:focus {
+  border-color: var(--lp-accent-primary);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: var(--lp-glow);
+}
+
+.serial-select-ending {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius-sm);
+  color: var(--lp-zinc-400);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.serial-select-ending:focus {
+  border-color: var(--lp-accent-primary);
+}
+
+.serial-send-btn {
+  padding: 10px 24px;
+  background: var(--lp-accent-primary);
+  border: none;
+  border-radius: var(--lp-radius-sm);
+  color: var(--lp-btn-text, #000);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.serial-send-btn:disabled {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--lp-zinc-600);
+  cursor: not-allowed;
+}
+
+.serial-send-btn:not(:disabled):hover {
+  background: var(--lp-accent-bright);
+  box-shadow: var(--lp-glow);
+  transform: translateY(-1px);
 }

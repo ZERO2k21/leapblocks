@@ -576,12 +576,29 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             display: 'flex',
             alignItems: 'center',
             flexShrink: 0,
+            height: '60px',
+            overflow: 'hidden',
             filter: isElectra ? 'none' : 'drop-shadow(rgba(191, 219, 254, 0.22) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.4) 0px 2px 8px)'
           }}>
             <img
               alt="Leap into the AI Future"
               src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
-              style={{ height: '160px', objectFit: 'contain', filter: 'brightness(1.14) contrast(1.05)' }}
+              style={{
+                width: '120px',
+                height: 'auto',
+                objectFit: 'contain',
+                display: 'block',
+                flexShrink: 0,
+                filter: isElectra
+                  ? 'brightness(1.14) contrast(1.05)'
+                  : [
+                      'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
+                      'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
+                      'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
+                      'brightness(1.14)',
+                      'contrast(1.05)',
+                    ].join(' '),
+              }}
             />
           </div>
         </div>
