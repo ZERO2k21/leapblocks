@@ -88,6 +88,13 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                         </div>
                     </div>
                 </div>
+
+                {/* Footer Action */}
+                <div className="board-modal-footer">
+                    <button className="board-modal-cancel-btn" onClick={onClose}>
+                        Cancel
+                    </button>
+                </div>
             </div>
         </div>
     );

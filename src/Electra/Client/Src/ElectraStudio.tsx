@@ -10,9 +10,10 @@ import { useForgeStore } from '../utlis/store/useForgeStore';
 
 interface ElectraStudioProps {
     onBack: () => void;
+    onHome: () => void;
 }
 
-export default function ElectraStudio({ onBack }: ElectraStudioProps) {
+export default function ElectraStudio({ onBack, onHome }: ElectraStudioProps) {
     const [selectedBoard, setSelectedBoard] = useState<'arduino-uno' | 'esp32-c3' | null>(null);
 
     // Clear workspace when component mounts
@@ -27,12 +28,8 @@ export default function ElectraStudio({ onBack }: ElectraStudioProps) {
         setSelectedBoard(board);
     };
 
-    const handleClose = () => {
-        onBack();
-    };
-
     if (!selectedBoard) {
-        return <BoardSelectionModal onSelect={handleBoardSelect} onClose={handleClose} />;
+        return <BoardSelectionModal onSelect={handleBoardSelect} onClose={onHome} />;
     }
 
     return <ForgeStudio onBack={onBack} initialBoard={selectedBoard} />;

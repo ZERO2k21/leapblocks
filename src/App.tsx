@@ -233,8 +233,8 @@ export default function App() {
                 />}
                 {mode === 'notebook' && <PythonNotebook onBack={requestExit} onSwitchToIDE={() => handleSetMode('python')} />}
                 {mode === 'appinventor' && <AppInventor {...({ onBack: requestExit } as any)} />}
-                {mode === 'appforge' && <ElectraStudio {...({ onBack: requestExit } as any)} />}
-                {mode === 'electra' && <ElectraStudio {...({ onBack: requestExit } as any)} />}
+                {mode === 'appforge' && <ElectraStudio onBack={requestExit} onHome={() => handleSetMode('home')} />}
+                {mode === 'electra' && <ElectraStudio onBack={requestExit} onHome={() => handleSetMode('home')} />}
                 {mode === 'neura' && <NeuraApp onBack={requestExit} />}
                 {mode === 'home' && <LandingPage onSelect={handleSetMode} />}
             </Suspense>
