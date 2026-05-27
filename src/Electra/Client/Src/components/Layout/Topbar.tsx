@@ -39,6 +39,7 @@ interface IgniteTopbarProps {
   centerContent?: React.ReactNode;
   rightContent?: React.ReactNode;
   brandName?: string;
+  variant?: 'default' | 'electra';
   canUndo?: boolean;
   canRedo?: boolean;
 }
@@ -59,6 +60,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
   centerContent,
   rightContent,
   brandName = 'ELECTRA',
+  variant = 'default',
   canUndo = false,
   canRedo = false
 }) => {
@@ -67,7 +69,8 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
   const fileMenuRef = useRef<HTMLDivElement>(null);
   const editMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close menus when clicking outside
+  const isElectra = variant === 'electra';
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (fileMenuRef.current && !fileMenuRef.current.contains(event.target as Node)) {
@@ -93,10 +96,11 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
     border: 'none',
     width: '100%',
     textAlign: 'left',
-    color: '#1e293b',
+    color: isElectra ? '#f4f4f5' : '#1e293b',
     fontSize: '13px',
     fontWeight: 500,
-    fontFamily: '"Segoe UI", Inter, sans-serif'
+    fontFamily: '"Segoe UI", Inter, sans-serif',
+    borderRadius: '8px'
   };
 
   const menuItemDisabledStyle: React.CSSProperties = {
@@ -110,14 +114,40 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
     top: '100%',
     left: 0,
     marginTop: '4px',
-    background: '#ffffff',
+    background: isElectra ? '#18181b' : '#ffffff',
     borderRadius: '12px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08)',
-    border: '1px solid rgba(148, 163, 184, 0.2)',
+    boxShadow: isElectra
+      ? '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(39, 39, 42, 1)'
+      : '0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08)',
+    border: isElectra ? '1px solid #27272a' : '1px solid rgba(148, 163, 184, 0.2)',
     minWidth: '220px',
     padding: '6px',
     zIndex: 1000,
     animation: 'slideDown 0.15s ease-out'
+  };
+
+  const topbarBg = isElectra
+    ? 'linear-gradient(135deg, #09090b 0%, #18181b 100%)'
+    : 'linear-gradient(135deg, #0b1b42 0%, #0f2f7a 55%, #0a204f 100%)';
+
+  const topbarBorder = isElectra
+    ? '1px solid #27272a'
+    : '1px solid rgba(96, 165, 250, 0.28)';
+
+  const topbarShadow = isElectra
+    ? '0 2px 12px rgba(0,0,0,0.4)'
+    : 'rgba(8, 20, 58, 0.45) 0px 4px 20px, rgba(96, 165, 250, 0.12) 0px -1px 0px inset';
+
+  // Electra-specific colors
+  const ec = {
+    text: '#f4f4f5',
+    muted: '#a1a1aa',
+    accent: '#22d3ee',
+    border: 'rgba(39, 39, 42, 0.8)',
+    surface: 'rgba(24, 24, 27, 0.6)',
+    divider: 'rgba(39, 39, 42, 0.6)',
+    icon: 'rgba(161, 161, 170, 0.85)',
+    hover: 'rgba(34, 211, 238, 0.08)',
   };
 
   return (
@@ -141,10 +171,10 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         justifyContent: 'space-between',
         height: '64px',
         padding: '0px 18px',
-        background: 'linear-gradient(135deg, #0b1b42 0%, #0f2f7a 55%, #0a204f 100%)',
-        boxShadow: 'rgba(8, 20, 58, 0.45) 0px 4px 20px, rgba(96, 165, 250, 0.12) 0px -1px 0px inset',
+        background: topbarBg,
+        boxShadow: topbarShadow,
         zIndex: 100,
-        borderBottom: '1px solid rgba(96, 165, 250, 0.28)',
+        borderBottom: topbarBorder,
         userSelect: 'none'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 0%', minWidth: '0px' }}>
@@ -157,28 +187,28 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               justifyContent: 'center',
               width: '40px',
               height: '40px',
-              background: 'rgba(148, 197, 255, 0.18)',
-              border: '1px solid rgba(148, 197, 255, 0.24)',
+              background: isElectra ? 'rgba(39, 39, 42, 0.5)' : 'rgba(148, 197, 255, 0.18)',
+              border: isElectra ? '1px solid #27272a' : '1px solid rgba(148, 197, 255, 0.24)',
               borderRadius: '12px',
-              color: 'rgb(255, 255, 255)',
+              color: isElectra ? ec.text : 'rgb(255, 255, 255)',
               cursor: 'pointer',
               transition: '0.2s',
               flexShrink: 0
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(191, 219, 254, 0.24)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(148, 197, 255, 0.18)')}
+            onMouseEnter={(e) => { if (isElectra) { e.currentTarget.style.background = 'rgba(34, 211, 238, 0.1)'; e.currentTarget.style.borderColor = ec.accent; e.currentTarget.style.color = ec.accent; } else { e.currentTarget.style.background = 'rgba(191, 219, 254, 0.24)'; } }}
+            onMouseLeave={(e) => { if (isElectra) { e.currentTarget.style.background = 'rgba(39, 39, 42, 0.5)'; e.currentTarget.style.borderColor = '#27272a'; e.currentTarget.style.color = ec.text; } else { e.currentTarget.style.background = 'rgba(148, 197, 255, 0.18)'; } }}
           >
             <Home size={20} strokeWidth={2.2} />
           </button>
 
-          <div style={{ height: '32px', width: '1px', background: 'rgba(191, 219, 254, 0.28)', flexShrink: 0 }} />
+          <div style={{ height: '32px', width: '1px', background: isElectra ? ec.divider : 'rgba(191, 219, 254, 0.28)', flexShrink: 0 }} />
 
           <div style={{
             display: 'flex',
             alignItems: 'center',
             marginRight: '14px',
             flexShrink: 0,
-            filter: 'drop-shadow(rgba(56, 189, 248, 0.3) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.3) 0px 2px 6px)'
+            filter: isElectra ? 'none' : 'drop-shadow(rgba(56, 189, 248, 0.3) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.3) 0px 2px 6px)'
           }}>
             <img
               alt="LeapLab"
@@ -186,10 +216,10 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               style={{ height: '52px', objectFit: 'contain' }}
             />
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', marginLeft: '10px', lineHeight: '1.1' }}>
-              <span style={{ color: 'rgb(147, 197, 253)', fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
+              <span style={{ color: isElectra ? ec.muted : 'rgb(147, 197, 253)', fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
                 LEAPLAB
               </span>
-              <span style={{ color: 'rgb(255, 255, 255)', fontSize: '16px', fontWeight: 900, letterSpacing: '0.08em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
+              <span style={{ color: isElectra ? ec.accent : 'rgb(255, 255, 255)', fontSize: '16px', fontWeight: 900, letterSpacing: '0.08em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
                 {brandName}
               </span>
             </div>
@@ -209,17 +239,17 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                   gap: '5px',
                   padding: '6px 12px',
                   border: 'none',
-                  color: 'rgb(255, 255, 255)',
+                  color: isElectra ? ec.text : 'rgb(255, 255, 255)',
                   fontSize: '13px',
                   fontWeight: 600,
                   fontFamily: '"Segoe UI", Inter, sans-serif',
                   cursor: 'pointer',
                   borderRadius: '20px',
                   transition: '0.2s',
-                  background: fileMenuOpen ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                  background: fileMenuOpen ? (isElectra ? 'rgba(34, 211, 238, 0.08)' : 'rgba(255, 255, 255, 0.15)') : 'transparent',
                   letterSpacing: '0.02em'
                 }}
-                onMouseEnter={(e) => !fileMenuOpen && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)')}
+                onMouseEnter={(e) => !fileMenuOpen && (e.currentTarget.style.background = isElectra ? 'rgba(39, 39, 42, 0.6)' : 'rgba(255, 255, 255, 0.08)')}
                 onMouseLeave={(e) => !fileMenuOpen && (e.currentTarget.style.background = 'transparent')}
               >
                 File
@@ -234,7 +264,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                       onNew?.();
                       setFileMenuOpen(false);
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = isElectra ? ec.hover : 'rgba(59, 130, 246, 0.08)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
                     <FilePlus size={16} strokeWidth={2} />
@@ -248,7 +278,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                       onOpen?.();
                       setFileMenuOpen(false);
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = isElectra ? ec.hover : 'rgba(59, 130, 246, 0.08)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
                     <FolderOpen size={16} strokeWidth={2} />
@@ -256,7 +286,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                     <span style={{ marginLeft: 'auto', fontSize: '11px', opacity: 0.5 }}>Ctrl+O</span>
                   </button>
 
-                  <div style={{ height: '1px', background: 'rgba(148, 163, 184, 0.2)', margin: '6px 0' }} />
+                  <div style={{ height: '1px', background: isElectra ? ec.divider : 'rgba(148, 163, 184, 0.2)', margin: '6px 0' }} />
 
                   <button
                     style={menuItemStyle}
@@ -264,7 +294,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                       onSave();
                       setFileMenuOpen(false);
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = isElectra ? ec.hover : 'rgba(59, 130, 246, 0.08)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
                     <Save size={16} strokeWidth={2} />
@@ -278,7 +308,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                       onSaveAs?.();
                       setFileMenuOpen(false);
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = isElectra ? ec.hover : 'rgba(59, 130, 246, 0.08)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
                     <FileText size={16} strokeWidth={2} />
@@ -302,17 +332,17 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                   gap: '5px',
                   padding: '6px 12px',
                   border: 'none',
-                  color: 'rgb(255, 255, 255)',
+                  color: isElectra ? ec.text : 'rgb(255, 255, 255)',
                   fontSize: '13px',
                   fontWeight: 600,
                   fontFamily: '"Segoe UI", Inter, sans-serif',
                   cursor: 'pointer',
                   borderRadius: '20px',
                   transition: '0.2s',
-                  background: editMenuOpen ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                  background: editMenuOpen ? (isElectra ? 'rgba(34, 211, 238, 0.08)' : 'rgba(255, 255, 255, 0.15)') : 'transparent',
                   letterSpacing: '0.02em'
                 }}
-                onMouseEnter={(e) => !editMenuOpen && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)')}
+                onMouseEnter={(e) => !editMenuOpen && (e.currentTarget.style.background = isElectra ? 'rgba(39, 39, 42, 0.6)' : 'rgba(255, 255, 255, 0.08)')}
                 onMouseLeave={(e) => !editMenuOpen && (e.currentTarget.style.background = 'transparent')}
               >
                 Edit
@@ -330,7 +360,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                         setEditMenuOpen(false);
                       }
                     }}
-                    onMouseEnter={(e) => canUndo && (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseEnter={(e) => canUndo && (e.currentTarget.style.background = isElectra ? ec.hover : 'rgba(59, 130, 246, 0.08)')}
                     onMouseLeave={(e) => canUndo && (e.currentTarget.style.background = 'transparent')}
                   >
                     <Undo size={16} strokeWidth={2} />
@@ -347,7 +377,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                         setEditMenuOpen(false);
                       }
                     }}
-                    onMouseEnter={(e) => canRedo && (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseEnter={(e) => canRedo && (e.currentTarget.style.background = isElectra ? ec.hover : 'rgba(59, 130, 246, 0.08)')}
                     onMouseLeave={(e) => canRedo && (e.currentTarget.style.background = 'transparent')}
                   >
                     <Redo size={16} strokeWidth={2} />
@@ -355,7 +385,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                     <span style={{ marginLeft: 'auto', fontSize: '11px', opacity: 0.5 }}>Ctrl+Y</span>
                   </button>
 
-                  <div style={{ height: '1px', background: 'rgba(148, 163, 184, 0.2)', margin: '6px 0' }} />
+                  <div style={{ height: '1px', background: isElectra ? ec.divider : 'rgba(148, 163, 184, 0.2)', margin: '6px 0' }} />
 
                   <button
                     style={menuItemStyle}
@@ -363,7 +393,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                       onCut?.();
                       setEditMenuOpen(false);
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = isElectra ? ec.hover : 'rgba(59, 130, 246, 0.08)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
                     <Scissors size={16} strokeWidth={2} />
@@ -377,7 +407,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                       onCopy?.();
                       setEditMenuOpen(false);
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = isElectra ? ec.hover : 'rgba(59, 130, 246, 0.08)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
                     <Copy size={16} strokeWidth={2} />
@@ -391,7 +421,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                       onPaste?.();
                       setEditMenuOpen(false);
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = isElectra ? ec.hover : 'rgba(59, 130, 246, 0.08)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
                     <Clipboard size={16} strokeWidth={2} />
@@ -409,7 +439,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                 gap: '5px',
                 padding: '6px 12px',
                 border: 'none',
-                color: 'rgb(255, 255, 255)',
+                color: isElectra ? ec.text : 'rgb(255, 255, 255)',
                 fontSize: '13px',
                 fontWeight: 600,
                 fontFamily: '"Segoe UI", Inter, sans-serif',
@@ -419,7 +449,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                 background: 'transparent',
                 letterSpacing: '0.02em'
               }}>
-                <BookOpen size={14} strokeWidth={2.2} style={{ opacity: 0.9 }} />
+                <BookOpen size={14} strokeWidth={2.2} style={{ opacity: isElectra ? 0.7 : 0.9 }} />
                 Tutorials
                 <ChevronDown size={12} strokeWidth={2.5} style={{ opacity: 0.5 }} />
               </button>
@@ -434,15 +464,15 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             display: 'flex',
             alignItems: 'center',
             height: '40px',
-            background: 'rgba(8, 20, 58, 0.55)',
+            background: isElectra ? 'rgba(39, 39, 42, 0.5)' : 'rgba(8, 20, 58, 0.55)',
             borderRadius: '20px',
             paddingLeft: '18px',
             paddingRight: '3px',
-            border: '1px solid rgba(147, 197, 253, 0.2)',
+            border: isElectra ? '1px solid #27272a' : '1px solid rgba(147, 197, 253, 0.2)',
             gap: '8px',
             transition: '0.2s'
           }}>
-            <span style={{ fontSize: '14px', opacity: 0.45 }}>Folder</span>
+            <span style={{ fontSize: '14px', opacity: isElectra ? 0.3 : 0.45, color: isElectra ? ec.muted : undefined }}>Folder</span>
             <input
               placeholder="My Project"
               type="text"
@@ -451,7 +481,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: 'rgb(255, 255, 255)',
+                color: isElectra ? ec.text : 'rgb(255, 255, 255)',
                 fontSize: '14px',
                 fontWeight: 700,
                 fontFamily: '"Segoe UI", Inter, sans-serif',
@@ -465,7 +495,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               title="Save Project"
               onClick={onSave}
               style={{
-                background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
+                background: isElectra ? 'linear-gradient(135deg, #22d3ee, #06b6d4)' : 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
                 border: 'none',
                 borderRadius: '50%',
                 width: '32px',
@@ -474,13 +504,13 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                color: 'rgb(255, 255, 255)',
-                boxShadow: 'rgba(8, 47, 123, 0.45) 0px 4px 10px -1px',
+                color: isElectra ? '#000' : 'rgb(255, 255, 255)',
+                boxShadow: isElectra ? 'rgba(34, 211, 238, 0.4) 0px 4px 10px -1px' : 'rgba(8, 47, 123, 0.45) 0px 4px 10px -1px',
                 transition: 'transform 0.2s',
                 flexShrink: 0,
                 transform: 'scale(1)'
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.08)'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = isElectra ? 'brightness(1.1)' : 'brightness(1.08)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'none'; }}
             >
               <Save size={15} strokeWidth={2.5} />
@@ -494,14 +524,14 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             alignItems: 'center',
             gap: '14px',
             paddingRight: '16px',
-            borderRight: '1px solid rgba(191, 219, 254, 0.22)',
+            borderRight: isElectra ? '1px solid rgba(39, 39, 42, 0.8)' : '1px solid rgba(191, 219, 254, 0.22)',
             height: '32px',
             flexShrink: 0
           }}>
-            <button title="Feedback" style={{ background: 'transparent', border: 'none', color: 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><MessageSquareWarning size={20} strokeWidth={2.2} /></button>
-            <button title="Achievements" style={{ background: 'transparent', border: 'none', color: 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><Trophy size={20} strokeWidth={2.2} /></button>
-            <button title="Settings" style={{ background: 'transparent', border: 'none', color: 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><Settings size={20} strokeWidth={2.2} /></button>
-            <button title="Help" style={{ background: 'transparent', border: 'none', color: 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><CircleHelp size={20} strokeWidth={2.2} /></button>
+            <button title="Feedback" style={{ background: 'transparent', border: 'none', color: isElectra ? ec.icon : 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><MessageSquareWarning size={20} strokeWidth={2.2} /></button>
+            <button title="Achievements" style={{ background: 'transparent', border: 'none', color: isElectra ? ec.icon : 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><Trophy size={20} strokeWidth={2.2} /></button>
+            <button title="Settings" style={{ background: 'transparent', border: 'none', color: isElectra ? ec.icon : 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><Settings size={20} strokeWidth={2.2} /></button>
+            <button title="Help" style={{ background: 'transparent', border: 'none', color: isElectra ? ec.icon : 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><CircleHelp size={20} strokeWidth={2.2} /></button>
           </div>
 
           {rightContent ? rightContent : (
@@ -510,11 +540,11 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               alignItems: 'center',
               height: '38px',
               gap: '10px',
-              background: 'rgba(148, 197, 255, 0.18)',
-              border: '1px solid rgba(191, 219, 254, 0.25)',
+              background: isElectra ? 'rgba(39, 39, 42, 0.5)' : 'rgba(148, 197, 255, 0.18)',
+              border: isElectra ? '1px solid #27272a' : '1px solid rgba(191, 219, 254, 0.25)',
               borderRadius: '20px',
               cursor: 'pointer',
-              color: 'rgb(255, 255, 255)',
+              color: isElectra ? ec.text : 'rgb(255, 255, 255)',
               fontWeight: 700,
               fontSize: '13px',
               fontFamily: '"Segoe UI", Inter, sans-serif',
@@ -527,7 +557,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               <div style={{
                 width: '28px',
                 height: '28px',
-                background: 'linear-gradient(135deg, rgb(96, 165, 250), rgb(29, 78, 216))',
+                background: isElectra ? 'linear-gradient(135deg, #22d3ee, #06b6d4)' : 'linear-gradient(135deg, rgb(96, 165, 250), rgb(29, 78, 216))',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
@@ -535,7 +565,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                 border: '2px solid rgba(255, 255, 255, 0.25)',
                 boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 4px'
               }}>
-                <span style={{ color: 'rgb(224, 242, 254)', fontWeight: 900, fontSize: '11px' }}>LB</span>
+                <span style={{ color: isElectra ? '#09090b' : 'rgb(224, 242, 254)', fontWeight: 900, fontSize: '11px' }}>EL</span>
               </div>
               Sign In
             </button>
@@ -546,7 +576,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             display: 'flex',
             alignItems: 'center',
             flexShrink: 0,
-            filter: 'drop-shadow(rgba(191, 219, 254, 0.22) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.4) 0px 2px 8px)'
+            filter: isElectra ? 'none' : 'drop-shadow(rgba(191, 219, 254, 0.22) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.4) 0px 2px 8px)'
           }}>
             <img
               alt="Leap into the AI Future"

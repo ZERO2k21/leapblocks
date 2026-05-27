@@ -61,7 +61,8 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
         borderBottom: '2px solid rgba(168, 85, 247, 0.3)',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#c084fc', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
           <Terminal size={16} strokeWidth={2.5} />

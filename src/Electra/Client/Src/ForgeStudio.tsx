@@ -581,7 +581,7 @@ void loop() {
                 border: board === 'esp32-c3'
                   ? '1px solid rgba(34, 211, 238, 0.4)'
                   : '1px solid rgba(245, 158, 11, 0.4)',
-                borderRadius: '2px',
+                borderRadius: '8px',
                 color: board === 'esp32-c3' ? 'var(--lp-accent-primary)' : 'var(--lp-amber)',
                 fontSize: '10px',
                 fontWeight: 700,
@@ -589,7 +589,8 @@ void loop() {
                 letterSpacing: '1px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '6px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
               }}>
                 <div style={{
                   width: '6px',
@@ -635,8 +636,8 @@ void loop() {
 
           {/* Bottom: Terminal (Serial / WiFi) - Hidden when Libraries tab is active */}
           {activeTab !== 'libraries' && (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fff', minHeight: 0 }}>
-              <div className="forge-tabs-container" style={{ height: 40, background: 'rgba(0,0,0,0.02)' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--lp-dark-bg)', minHeight: 0 }}>
+              <div className="forge-tabs-container" style={{ height: 40, background: 'var(--lp-zinc-800)' }}>
                 <button
                   className={`forge-tab-btn ${activeTab === 'serial' || activeTab === 'code' ? 'active' : ''}`}
                   style={{ height: 28, fontSize: 11, borderRadius: 8 }}
@@ -660,15 +661,15 @@ void loop() {
 
               <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                 {activeTab === 'wifi' ? (
-                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, padding: 15, overflowY: 'auto', height: '100%', background: '#fdfdfd' }}>
+                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, padding: 15, overflowY: 'auto', height: '100%', background: 'var(--lp-dark-bg)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                       <span style={{ color: 'var(--lp-zinc-400)', fontSize: 9, fontWeight: 700, letterSpacing: '0.5px' }}>NETWORK LOG</span>
-                      <button onClick={() => clearWiFiLog()} style={{ background: 'none', border: 'none', color: 'var(--lp-accent-primary)', cursor: 'pointer', fontSize: 10, fontWeight: 700 }}>CLEAR</button>
+                      <button onClick={() => clearWiFiLog()} style={{ background: 'rgba(34, 211, 238, 0.1)', border: '1px solid rgba(34, 211, 238, 0.3)', borderRadius: '8px', color: 'var(--lp-accent-primary)', cursor: 'pointer', fontSize: 10, fontWeight: 700, padding: '4px 10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>CLEAR</button>
                     </div>
                     {wifiLog.length === 0 ? (
-                      <div style={{ color: '#cbd5e1', textAlign: 'center', marginTop: 20 }}>No network activity.</div>
+                      <div style={{ color: 'var(--lp-zinc-600)', textAlign: 'center', marginTop: 20 }}>No network activity.</div>
                     ) : wifiLog.map((line, i) => (
-                      <div key={i} style={{ color: line.includes('ERROR') ? '#ef4444' : '#64748b', marginBottom: 2 }}>{line}</div>
+                      <div key={i} style={{ color: line.includes('ERROR') ? '#ef4444' : 'var(--lp-zinc-400)', marginBottom: 2 }}>{line}</div>
                     ))}
                   </div>
                 ) : (

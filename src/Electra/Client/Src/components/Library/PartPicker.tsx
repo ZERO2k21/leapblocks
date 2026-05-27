@@ -108,7 +108,8 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: 'var(--lp-dark-surface)'
+        background: 'var(--lp-dark-surface)',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
       }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span style={{
@@ -136,6 +137,8 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
           alignItems: 'center',
           padding: '0 8px',
           border: '1px solid var(--lp-border)',
+          borderRadius: '8px',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
         }}>
           <span style={{ color: 'var(--lp-accent-primary)', fontSize: '12px', marginRight: '4px' }}>&gt;</span>
           <input
@@ -217,15 +220,20 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
-                transition: 'all 0.1s'
+                borderRadius: '8px',
+                transition: 'all 0.15s ease'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = 'var(--lp-accent-primary)';
                 e.currentTarget.style.background = 'var(--lp-zinc-800)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = 'var(--lp-border)';
                 e.currentTarget.style.background = 'var(--lp-dark-surface)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
               <div style={{
@@ -237,7 +245,8 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose }) => 
                 background: 'rgba(255,255,255,0.03)',
                 border: '1px solid var(--lp-border)',
                 flexShrink: 0,
-                overflow: 'hidden'
+                overflow: 'hidden',
+                borderRadius: '6px'
               }}>
                 <div style={{
                   transform: 'scale(0.3)',
