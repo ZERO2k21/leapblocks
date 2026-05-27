@@ -71,6 +71,8 @@
     "@blockly/field-angle": "^6.0.9",
     "@blockly/field-colour": "^6.0.12",
     "@monaco-editor/react": "^4.7.0",
+    "@tensorflow-models/coco-ssd": "^2.2.3",
+    "@tensorflow/tfjs": "^4.22.0",
     "@vladmandic/face-api": "^1.7.15",
     "adm-zip": "^0.5.17",
     "avr8js": "^0.21.0",

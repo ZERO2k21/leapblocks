@@ -664,5 +664,8 @@ export function setFaceVideoElement(video: HTMLVideoElement | null) {
     handPoseRuntime.setVideoElement(video);
     bodyDetectionRuntime.setVideoElement(video);
     mlRuntime.setVideoElement(video);
+    if ((window as any).runtime?.objectDetection) {
+        (window as any).runtime.objectDetection.setVideoElement(video);
+    }
 }
 

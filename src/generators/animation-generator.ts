@@ -843,8 +843,8 @@ export class AnimationCompiler {
                 return () => (window as any).runtime?.objectDetection?.getConfidence(n) ?? 0;
             }
             case 'object_label': {
-                // label is a string — return 0 as number fallback
-                return () => 0;
+                const n = Number(valueBlock.getFieldValue('N') ?? 1);
+                return () => (window as any).runtime?.objectDetection?.getLabel(n) ?? '';
             }
 
             default:
