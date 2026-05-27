@@ -417,7 +417,7 @@ app.post('/build-apk', async (req, res) => {
   }
 
   try {
-    const ApkBuilder = require(path.join(__dirname, '..', 'src', 'appinverter', 'apk', 'buildAPK'));
+    const ApkBuilder = require(path.join(__dirname, '..', 'src', 'studio', 'apk', 'buildAPK'));
     const builder = new ApkBuilder();
     const logs = [];
     const outputPath = await builder.build(project, ({ progress, message }) => {

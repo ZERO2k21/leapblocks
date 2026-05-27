@@ -5,7 +5,7 @@ const fs = require('fs');
  * APK Builder — Electron main-process entrypoint
  *
  * Delegates to the ApkBuilder (APK injection method) from
- * src/appinverter/apk/buildAPK.js.
+ * src/studio/apk/buildAPK.js.
  *
  * Flow:
  *   1. htmlGenerator converts AppInverter state → web app files
@@ -23,7 +23,7 @@ async function buildApk(appState, appRoot, onLog) {
     // and uses CommonJS (require/module.exports), so direct require works.
     const candidates = [
       path.join(appRoot, 'src', 'studio', 'apk', 'buildAPK.js'),
-      path.join(appRoot, 'src', 'appinverter', 'apk', 'buildAPK.js'),
+      path.join(appRoot, 'src', 'studio', 'apk', 'buildAPK.js'),
       path.join(appRoot, 'src', 'modules', 'AppInventor', 'apk', 'buildAPK.js'),
     ];
     const resolvedBuilder = candidates.find((p) => fs.existsSync(p));

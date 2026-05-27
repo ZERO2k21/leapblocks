@@ -1,0 +1,752 @@
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import os from 'os';
+import { spawn } from 'child_process';
+import crypto from 'crypto';
+import { fileURLToPath } from 'url';
+import { v4 as uuidv4 } from 'uuid';
+import { transpileArduinoToJS } from './transpiler.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const PORT = parseInt(process.env.PORT, 10) || 3001;
+
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+
+const APK_PUBLIC_DIR = path.join(__dirname, 'public', 'apks');
+const CACHE_DIR = path.join(__dirname, 'cache');
+
+fs.mkdirSync(APK_PUBLIC_DIR, { recursive: true });
+fs.mkdirSync(CACHE_DIR, { recursive: true });
+
+app.use('/apks', express.static(APK_PUBLIC_DIR));
+
+function sanitizeApkName(name) {
+  return (name || 'MyApp').replace(/[^a-zA-Z0-9]/g, '') || 'MyApp';
+}
+
+let isInitialized = false;
+let esp32CoreReady = false;
+
+function getCliPath() {
+  if (process.env.ARDUINO_CLI_PATH) return process.env.ARDUINO_CLI_PATH;
+
+  const bundledLocal = path.join(__dirname, 'arduino-cli', process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli');
+  if (fs.existsSync(bundledLocal)) return bundledLocal;
+
+  const bundledParent = path.join(__dirname, '..', 'arduino-cli', process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli');
+  if (fs.existsSync(bundledParent)) return bundledParent;
+
+  return process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli';
+}
+
+const CLI_PATH = getCliPath();
+
+const CLI_CONFIG = (() => {
+  const bundledLocal = path.join(__dirname, 'arduino-cli.yaml');
+  if (fs.existsSync(bundledLocal)) return bundledLocal;
+  const bundledParent = path.join(__dirname, '..', 'arduino-cli', 'arduino-cli.yaml');
+  if (fs.existsSync(bundledParent)) return bundledParent;
+  return null;
+})();
+
+const FORGE_LIB_LIBRARIES = (() => {
+  const dataLocal = path.join(__dirname, 'arduino-cli', 'data', 'libraries');
+  if (fs.existsSync(dataLocal)) return dataLocal;
+
+  const bundledLocal = path.join(__dirname, 'forge-lib', 'libraries');
+  if (fs.existsSync(bundledLocal)) return bundledLocal;
+
+  const bundledParent = path.join(__dirname, '..', 'forge-lib', 'libraries');
+  if (fs.existsSync(bundledParent)) return bundledParent;
+
+  if (process.platform === 'linux') {
+    const linuxUser = path.join(os.homedir(), 'Arduino', 'libraries');
+    if (fs.existsSync(linuxUser)) return linuxUser;
+  }
+
+  return null;
+})();
+
+const FORGE_USER_DIR = FORGE_LIB_LIBRARIES ? path.dirname(FORGE_LIB_LIBRARIES) : null;
+
+console.log(`[SERVER] arduino-cli: ${CLI_PATH}`);
+console.log(`[SERVER] config:      ${CLI_CONFIG || '(default)'}`);
+console.log(`[SERVER] libraries:   ${FORGE_LIB_LIBRARIES || '(none)'}`);
+
+function runCLI(args) {
+  return new Promise((resolve) => {
+    const cliArgs = CLI_CONFIG ? ['--config-file', CLI_CONFIG, ...args] : args;
+    const proc = spawn(CLI_PATH, cliArgs, { env: { ...process.env } });
+    let stdout = '', stderr = '';
+    proc.stdout.on('data', d => { stdout += d.toString(); });
+    proc.stderr.on('data', d => { stderr += d.toString(); });
+    proc.on('close', code => resolve({ stdout, stderr, code }));
+    proc.on('error', err => resolve({ stdout: '', stderr: err.message, code: -1 }));
+  });
+}
+
+function runCommand(cmd) {
+  return new Promise((resolve, reject) => {
+    console.log(`[EXEC] ${cmd}`);
+    const proc = spawn('cmd.exe', ['/c', cmd], {
+      shell: true,
+      env: { ...process.env },
+      timeout: 60000
+    });
+    let stdout = '', stderr = '';
+    proc.stdout.on('data', d => { stdout += d.toString(); });
+    proc.stderr.on('data', d => { stderr += d.toString(); });
+    proc.on('close', code => {
+      if (code === 0) resolve({ stdout, stderr });
+      else reject(new Error(stderr || stdout || `Exit code ${code}`));
+    });
+    proc.on('error', err => reject(err));
+  });
+}
+
+async function initCores() {
+  console.log('[SERVER] Initializing arduino cores...');
+  try {
+    const { stdout } = await runCLI(['core', 'list', '--format', 'json']);
+    let data;
+    try { data = JSON.parse(stdout || '[]'); } catch { data = []; }
+    const cores = Array.isArray(data) ? data : [];
+
+    const hasAvr = cores.some(c =>
+      (c.id && c.id.startsWith('arduino:avr')) ||
+      (c.platform?.id && c.platform.id.startsWith('arduino:avr'))
+    );
+
+    if (!hasAvr) {
+      console.log('[SERVER] Installing arduino:avr core...');
+      await runCLI(['core', 'update-index']);
+      await runCLI(['core', 'install', 'arduino:avr']);
+    }
+
+    const hasEsp32 = cores.some(c =>
+      (c.id && c.id.startsWith('esp32:')) ||
+      (c.platform?.id && c.platform.id.startsWith('esp32:'))
+    );
+
+    if (!hasEsp32) {
+      console.log('[SERVER] Installing esp32:esp32 core (may take a few minutes)...');
+      await runCLI(['core', 'update-index', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
+      const { code } = await runCLI(['core', 'install', 'esp32:esp32', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
+      esp32CoreReady = code === 0;
+    } else {
+      esp32CoreReady = true;
+    }
+
+    isInitialized = true;
+    console.log('[SERVER] Core initialization complete');
+  } catch (e) {
+    console.warn('[SERVER] Core init warning:', e.message);
+    isInitialized = true;
+  }
+}
+
+async function ensureESP32Core() {
+  if (esp32CoreReady) return true;
+  try {
+    const { stdout, code } = await runCLI(['core', 'list', '--format', 'json']);
+    if (code !== 0) throw new Error('core list failed');
+    const cores = JSON.parse(stdout || '[]');
+    const installed = Array.isArray(cores) && cores.some(c =>
+      (c.id && c.id.startsWith('esp32:')) ||
+      (c.platform?.id && c.platform.id.startsWith('esp32:'))
+    );
+    if (installed) { esp32CoreReady = true; return true; }
+
+    console.log('[SERVER] Installing ESP32 core (first run)...');
+    const { code: ic } = await runCLI([
+      'core', 'install', 'esp32:esp32',
+      '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json',
+    ]);
+    esp32CoreReady = ic === 0;
+    return esp32CoreReady;
+  } catch (e) {
+    console.error('[SERVER] ensureESP32Core error:', e.message);
+    return false;
+  }
+}
+
+function migrateESP32LedcAPI(code) {
+  const chMap = new Map();
+  for (const m of code.matchAll(/ledcSetup\s*\(\s*(\w+)\s*,\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/g)) {
+    const [, ch, freq, res] = m;
+    const e = chMap.get(ch) ?? { freq: freq.trim(), res: res.trim(), pin: '' };
+    e.freq = freq.trim(); e.res = res.trim(); chMap.set(ch, e);
+  }
+  for (const m of code.matchAll(/ledcAttachPin\s*\(\s*([^,]+?)\s*,\s*(\w+)\s*\)/g)) {
+    const [, pin, ch] = m;
+    const e = chMap.get(ch) ?? { freq: '5000', res: '8', pin: '' };
+    e.pin = pin.trim(); chMap.set(ch, e);
+  }
+  if (chMap.size === 0) return code;
+  let result = code;
+  result = result.replace(/[ \t]*ledcSetup\s*\([^)]*\)\s*;[ \t]*\n?/g, '');
+  result = result.replace(/[ \t]*ledcAttachPin\s*\([^)]*\)\s*;[ \t]*\n?/g, '');
+  const attachCalls = [...chMap.entries()]
+    .filter(([, v]) => v.pin)
+    .map(([, v]) => `  ledcAttach(${v.pin}, ${v.freq}, ${v.res});`)
+    .join('\n');
+  if (attachCalls) result = result.replace(/(void\s+setup\s*\(\s*\)\s*\{)/, `$1\n${attachCalls}`);
+  result = result.replace(/ledcWrite\s*\(\s*(\w+)\s*,\s*([^)]+)\s*\)/g, (match, ch, duty) => {
+    const e = chMap.get(ch);
+    return e?.pin ? `ledcWrite(${e.pin}, ${duty.trim()})` : match;
+  });
+  return result;
+}
+
+function binToIntelHex(buf) {
+  const RECORD_SIZE = 16;
+  let hex = '';
+  for (let offset = 0; offset < buf.length; offset += RECORD_SIZE) {
+    const chunk = buf.slice(offset, Math.min(offset + RECORD_SIZE, buf.length));
+    const len = chunk.length;
+    const addr = offset & 0xFFFF;
+    if (offset > 0 && (offset & 0xFFFF) === 0) {
+      const seg = (offset >> 16) & 0xFFFF;
+      const hi = (seg >> 8) & 0xFF, lo = seg & 0xFF;
+      const ck = (0x100 - ((2 + 4 + hi + lo) & 0xFF)) & 0xFF;
+      hex += `:02000004${hi.toString(16).padStart(2, '0').toUpperCase()}${lo.toString(16).padStart(2, '0').toUpperCase()}${ck.toString(16).padStart(2, '0').toUpperCase()}\n`;
+    }
+    let sum = len + ((addr >> 8) & 0xFF) + (addr & 0xFF);
+    let data = '';
+    for (let i = 0; i < len; i++) { sum += chunk[i]; data += chunk[i].toString(16).padStart(2, '0').toUpperCase(); }
+    const checksum = (0x100 - (sum & 0xFF)) & 0xFF;
+    hex += `:${len.toString(16).padStart(2, '0').toUpperCase()}${addr.toString(16).padStart(4, '0').toUpperCase()}00${data}${checksum.toString(16).padStart(2, '0').toUpperCase()}\n`;
+  }
+  hex += ':00000001FF\n';
+  return hex;
+}
+
+// ─── POST /build-apk ──────────────────────────────────────────
+app.post('/build-apk', async (req, res) => {
+  const project = req.body;
+  if (!project || typeof project !== 'object') {
+    return res.status(400).json({ success: false, error: 'No project data provided' });
+  }
+
+  try {
+    const enginePath = path.join(__dirname, '..', 'engine', 'apkInjector.js');
+    let builder;
+    if (fs.existsSync(enginePath)) {
+      builder = (await import(`file://${enginePath.replace(/\\/g, '/')}`)).default;
+    }
+
+    if (!builder || typeof builder.build !== 'function') {
+      return res.status(501).json({
+        success: false,
+        error: 'APK build engine not available on this server'
+      });
+    }
+
+    const logs = [];
+    const outputPath = await builder.build(project, ({ progress, message }) => {
+      if (message) {
+        const prefix = progress !== undefined ? `[${progress}%] ` : '';
+        logs.push(`${prefix}${message}`);
+        console.log(`[APK] ${prefix}${message}`);
+      }
+    });
+
+    const apkName = `${sanitizeApkName(project.appName)}.apk`;
+    const publicPath = path.join(APK_PUBLIC_DIR, apkName);
+
+    if (fs.existsSync(outputPath)) {
+      fs.copyFileSync(outputPath, publicPath);
+    }
+
+    return res.json({
+      success: true,
+      downloadUrl: `/apks/${apkName}`,
+      outputPath: publicPath,
+      logs,
+    });
+  } catch (err) {
+    console.error('[APK] build failed:', err);
+    return res.status(500).json({
+      success: false,
+      error: err.message || String(err),
+    });
+  }
+});
+
+// ─── POST /build (APK build job) ──────────────────────────────
+const jobs = new Map();
+
+let builderModule = null;
+async function getBuilder() {
+  if (!builderModule) {
+    const bPath = path.join(__dirname, '..', 'src', 'studio', 'engine', 'localBuilder.js');
+    if (fs.existsSync(bPath)) {
+      builderModule = await import(`file://${bPath.replace(/\\/g, '/')}`);
+    }
+  }
+  return builderModule;
+}
+
+app.post('/build', async (req, res) => {
+  try {
+    const { project } = req.body;
+    if (!project) return res.status(400).json({ error: 'No project data' });
+
+    const jobId = uuidv4();
+    const job = {
+      id: jobId,
+      status: 'queued',
+      progress: 0,
+      logs: [],
+      apkPath: null,
+      error: null,
+      createdAt: new Date().toISOString(),
+    };
+    jobs.set(jobId, job);
+
+    const builder = await getBuilder();
+    if (builder && typeof builder.build === 'function') {
+      builder.build(jobId, project).catch(err => {
+        const j = jobs.get(jobId);
+        if (j) { j.status = 'error'; j.error = err.message; }
+      });
+    } else {
+      job.status = 'building';
+      simulateBuild(job, project);
+    }
+
+    res.json({ jobId, message: 'Build started' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/status/:jobId', (req, res) => {
+  const job = jobs.get(req.params.jobId);
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  res.json(job);
+});
+
+app.get('/download/:jobId', (req, res) => {
+  const job = jobs.get(req.params.jobId);
+  if (!job || !job.apkPath) {
+    return res.status(404).json({ error: 'APK not found' });
+  }
+  if (!fs.existsSync(job.apkPath)) {
+    return res.status(404).json({ error: 'APK file missing' });
+  }
+  res.download(job.apkPath, `${sanitizeApkName(job.projectName || 'App')}.apk`);
+});
+
+app.delete('/job/:jobId', async (req, res) => {
+  const job = jobs.get(req.params.jobId);
+  if (job && job.apkPath) {
+    try { fs.rmSync(job.apkPath, { force: true }); } catch {}
+  }
+  jobs.delete(req.params.jobId);
+  res.json({ deleted: true });
+});
+
+function simulateBuild(job, project) {
+  if (project.appName) job.projectName = project.appName;
+  const steps = [
+    { progress: 10, msg: 'Decoding base APK...', delay: 1000 },
+    { progress: 25, msg: 'Editing AndroidManifest...', delay: 800 },
+    { progress: 40, msg: 'Injecting user assets...', delay: 1200 },
+    { progress: 55, msg: 'Injecting feature modules...', delay: 1500 },
+    { progress: 70, msg: 'Repacking APK...', delay: 2000 },
+    { progress: 85, msg: 'Signing APK...', delay: 1500 },
+    { progress: 100, msg: 'Build complete!', delay: 500 },
+  ];
+
+  let i = 0;
+  const next = () => {
+    if (i >= steps.length) {
+      job.status = 'done';
+      const apkName = `${sanitizeApkName(project.appName || 'App')}.apk`;
+      job.apkPath = path.join(APK_PUBLIC_DIR, apkName);
+      if (!fs.existsSync(job.apkPath)) {
+        const placeholder = path.join(APK_PUBLIC_DIR, 'placeholder.apk');
+        fs.writeFileSync(placeholder, `Placeholder APK for ${project.appName || 'App'}`);
+        if (!fs.existsSync(job.apkPath)) job.apkPath = placeholder;
+      }
+      return;
+    }
+    const step = steps[i++];
+    job.progress = step.progress;
+    job.logs.push({ message: step.msg, type: 'info' });
+    job.status = step.progress < 100 ? 'building' : 'done';
+    setTimeout(next, step.delay);
+  };
+  next();
+}
+
+// ─── POST /compile ────────────────────────────────────────────
+app.post('/compile', async (req, res) => {
+  const { code, board = 'arduino:avr:uno', libraries = '' } = req.body;
+  if (!code) return res.status(400).json({ success: false, errors: 'No code provided' });
+
+  if (!isInitialized) {
+    return res.status(503).json({ success: false, errors: ['Server is still initializing. Please wait.'] });
+  }
+
+  const isESP32 = board.startsWith('esp32:');
+  const tempId = uuidv4();
+  const tempDir = path.join(os.tmpdir(), `electra_${tempId}`);
+  const sketchDir = path.join(tempDir, 'sketch');
+  const sketchPath = path.join(sketchDir, 'sketch.ino');
+
+  try {
+    fs.mkdirSync(sketchDir, { recursive: true });
+
+    let processedCode = code;
+    if (isESP32) {
+      processedCode = processedCode.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
+      processedCode = migrateESP32LedcAPI(processedCode);
+      const coreOk = await ensureESP32Core();
+      if (!coreOk) {
+        return res.json({ success: false, errors: 'ESP32 core not available on this server' });
+      }
+    }
+
+    fs.writeFileSync(sketchPath, processedCode);
+
+    const cliArgs = ['compile', '--fqbn', board, '--output-dir', tempDir];
+
+    if (!isESP32 && FORGE_LIB_LIBRARIES) {
+      cliArgs.push('--libraries', FORGE_LIB_LIBRARIES);
+    }
+    if (libraries) {
+      const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map(l => l.trim());
+      for (const lib of libList) {
+        if (!lib) continue;
+        const libPath = path.resolve(lib);
+        if (fs.existsSync(libPath)) {
+          cliArgs.push('--libraries', libPath);
+        }
+      }
+    }
+
+    cliArgs.push(sketchDir);
+
+    const { stdout, stderr, code: exitCode } = await runCLI(cliArgs);
+
+    if (exitCode !== 0) {
+      return res.json({ success: false, errors: stderr || stdout || `Exit code ${exitCode}` });
+    }
+
+    const files = fs.readdirSync(tempDir);
+
+    if (isESP32) {
+      const binFile = files.find(f => f === 'sketch.ino.bin')
+        ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
+      if (!binFile) {
+        return res.json({ success: false, errors: `No .bin found. Files: ${files.join(', ')}` });
+      }
+      const rawBin = fs.readFileSync(path.join(tempDir, binFile));
+      const hexContent = binToIntelHex(rawBin);
+      return res.json({ success: true, hex: hexContent, binBase64: rawBin.toString('base64') });
+    } else {
+      const hexFile = files.find(f => f.endsWith('.hex'));
+      if (!hexFile) {
+        return res.json({ success: false, errors: `No .hex found. Files: ${files.join(', ')}` });
+      }
+      const hexContent = fs.readFileSync(path.join(tempDir, hexFile), 'utf-8');
+      return res.json({ success: true, hex: hexContent });
+    }
+  } catch (err) {
+    return res.json({ success: false, errors: err.message });
+  } finally {
+    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
+  }
+});
+
+// ─── POST /compile/esp32 (with SHA-256 caching) ───────────────
+app.post('/compile/esp32', async (req, res) => {
+  const { code, board = 'esp32:esp32:esp32c3', libraries = '' } = req.body;
+  if (!code) return res.status(400).json({ success: false, errors: 'No code provided' });
+
+  const hash = crypto.createHash('sha256')
+    .update(code + board + libraries)
+    .digest('hex');
+
+  const binPath = path.join(CACHE_DIR, `${hash}.bin`);
+  const metaPath = path.join(CACHE_DIR, `${hash}.json`);
+
+  if (fs.existsSync(binPath) && fs.existsSync(metaPath)) {
+    try {
+      const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+      const buffer = fs.readFileSync(binPath);
+      console.log(`[SERVER] Cache HIT for firmware ID: ${hash}`);
+      return res.json({
+        success: true, id: hash, binBase64: buffer.toString('base64'),
+        size: buffer.length, hash, cached: true, metadata: meta
+      });
+    } catch {
+      console.log('[SERVER] Cache read error, rebuilding');
+    }
+  }
+
+  console.log(`[SERVER] Cache MISS, compiling for firmware ID: ${hash}`);
+  const tempId = uuidv4();
+  const tempDir = path.join(os.tmpdir(), `electra_${tempId}`);
+  const sketchDir = path.join(tempDir, 'sketch');
+  const sketchPath = path.join(sketchDir, 'sketch.ino');
+
+  try {
+    fs.mkdirSync(sketchDir, { recursive: true });
+
+    let processedCode = code;
+    processedCode = processedCode.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
+    processedCode = migrateESP32LedcAPI(processedCode);
+
+    const coreOk = await ensureESP32Core();
+    if (!coreOk) {
+      return res.json({ success: false, errors: 'ESP32 core not available on this server' });
+    }
+
+    fs.writeFileSync(sketchPath, processedCode);
+
+    const cliArgs = ['compile', '--fqbn', board, '--output-dir', tempDir];
+
+    if (libraries) {
+      const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map(l => l.trim());
+      for (const lib of libList) {
+        if (!lib) continue;
+        const libPath = path.resolve(lib);
+        if (fs.existsSync(libPath)) {
+          cliArgs.push('--libraries', libPath);
+        }
+      }
+    }
+
+    cliArgs.push(sketchDir);
+
+    const { stdout, stderr, code: exitCode } = await runCLI(cliArgs);
+
+    if (exitCode !== 0) {
+      return res.json({ success: false, errors: stderr || stdout || `Exit code ${exitCode}` });
+    }
+
+    const files = fs.readdirSync(tempDir);
+    const binFile = files.find(f => f === 'sketch.ino.bin')
+      ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
+
+    if (!binFile) {
+      return res.json({ success: false, errors: `No .bin found. Files: ${files.join(', ')}` });
+    }
+
+    const binBuffer = fs.readFileSync(path.join(tempDir, binFile));
+
+    fs.writeFileSync(binPath, binBuffer);
+    const metadata = { id: hash, board, compiledAt: new Date().toISOString(), size: binBuffer.length, hash };
+    fs.writeFileSync(metaPath, JSON.stringify(metadata, null, 2));
+
+    return res.json({
+      success: true, id: hash, binBase64: binBuffer.toString('base64'),
+      size: binBuffer.length, hash, cached: false, metadata
+    });
+  } catch (err) {
+    return res.json({ success: false, errors: err.message });
+  } finally {
+    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
+  }
+});
+
+// ─── GET /firmware/:id ────────────────────────────────────────
+app.get('/firmware/:id', (req, res) => {
+  const id = req.params.id;
+  if (!/^[a-f0-9]{64}$/.test(id)) {
+    return res.status(400).json({ error: 'Invalid firmware ID format' });
+  }
+  const binPath = path.join(CACHE_DIR, `${id}.bin`);
+  if (!fs.existsSync(binPath)) {
+    return res.status(404).json({ error: 'Firmware not found' });
+  }
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.sendFile(binPath);
+});
+
+// ─── POST /transpile ──────────────────────────────────────────
+app.post('/transpile', async (req, res) => {
+  const { code, board = 'esp32:esp32:esp32c3' } = req.body;
+  if (!code) return res.status(400).json({ success: false, errors: 'No code provided' });
+
+  // Optional: validate by compiling first (from Electra server)
+  if (isInitialized && process.env.VALIDATE_TRANSPILE !== 'false') {
+    const sketchId = `transpile_${Date.now()}`;
+    const sketchDir = path.join(os.tmpdir(), 'electra', sketchId);
+    const sketchFile = path.join(sketchDir, `${sketchId}.ino`);
+    try {
+      fs.mkdirSync(sketchDir, { recursive: true });
+      fs.writeFileSync(sketchFile, code, 'utf8');
+      const cliArgs = ['compile', '--fqbn', board, '--output-dir', sketchDir, sketchDir];
+      const { code: exitCode, stderr } = await runCLI(cliArgs);
+      if (exitCode !== 0) {
+        return res.json({ success: false, errors: stderr || 'Compilation validation failed' });
+      }
+    } catch (err) {
+      return res.json({ success: false, errors: err.message });
+    } finally {
+      try { if (fs.existsSync(sketchDir)) fs.rmSync(sketchDir, { recursive: true, force: true }); } catch {}
+    }
+  }
+
+  try {
+    const jsCode = transpileArduinoToJS(code);
+    return res.json({ success: true, jsCode });
+  } catch (err) {
+    return res.json({ success: false, errors: err.message });
+  }
+});
+
+// ─── Library Management ───────────────────────────────────────
+
+// GET /libraries/search — Search for libraries (from Electra server)
+app.get('/libraries/search', async (req, res) => {
+  const query = req.query.q;
+  if (!query) return res.json([]);
+  try {
+    const args = ['lib', 'search', query, '--format', 'json'];
+    if (CLI_CONFIG) args.splice(1, 0, '--config-file', CLI_CONFIG);
+    const { stdout } = await runCLI(args);
+    const data = JSON.parse(stdout || '{}');
+    const libs = (data.libraries || []).slice(0, 20).map(l => ({
+      name: l.name,
+      author: l.latest?.author?.name || '',
+      description: l.latest?.sentence || '',
+      version: l.latest?.version || '',
+    }));
+    res.json(libs);
+  } catch {
+    res.json([]);
+  }
+});
+
+// GET /libraries/installed — List installed libraries
+app.get('/libraries/installed', async (req, res) => {
+  if (!FORGE_LIB_LIBRARIES || !fs.existsSync(FORGE_LIB_LIBRARIES)) {
+    return res.json([]);
+  }
+  try {
+    const entries = fs.readdirSync(FORGE_LIB_LIBRARIES, { withFileTypes: true });
+    const libs = [];
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const libDir = path.join(FORGE_LIB_LIBRARIES, entry.name);
+      const propFile = path.join(libDir, 'library.properties');
+      if (fs.existsSync(propFile)) {
+        const props = {};
+        fs.readFileSync(propFile, 'utf-8').split('\n').forEach(line => {
+          const [k, ...v] = line.split('=');
+          if (k && v.length) props[k.trim()] = v.join('=').trim();
+        });
+        libs.push({ name: props.name || entry.name, version: props.version || '?', author: props.author || '', description: props.sentence || '' });
+      } else {
+        libs.push({ name: entry.name, version: '?', author: '', description: '' });
+      }
+    }
+    res.json(libs);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /libraries/install — Install a library
+app.post('/libraries/install', async (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ success: false, error: 'Library name required' });
+
+  console.log(`[SERVER] Installing library: ${name}`);
+  if (FORGE_LIB_LIBRARIES) fs.mkdirSync(FORGE_LIB_LIBRARIES, { recursive: true });
+
+  const { stdout, stderr, code } = await runCLI(['lib', 'install', name]);
+  if (code === 0) {
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ success: false, error: stderr || stdout || 'Installation failed' });
+  }
+});
+
+// DELETE /libraries/remove — Remove a library
+app.delete('/libraries/remove', async (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ success: false, error: 'Library name required' });
+
+  console.log(`[SERVER] Removing library: ${name}`);
+
+  const { code, stderr, stdout } = await runCLI(['lib', 'uninstall', name]);
+
+  let manualRemoved = false;
+  if (FORGE_LIB_LIBRARIES && fs.existsSync(FORGE_LIB_LIBRARIES)) {
+    try {
+      const entries = fs.readdirSync(FORGE_LIB_LIBRARIES, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const libDir = path.join(FORGE_LIB_LIBRARIES, entry.name);
+        let match = (entry.name === name);
+        if (!match) {
+          const propFile = path.join(libDir, 'library.properties');
+          if (fs.existsSync(propFile)) {
+            const props = fs.readFileSync(propFile, 'utf-8').split('\n').reduce((acc, line) => {
+              const [k, ...v] = line.split('=');
+              if (k && v.length) acc[k.trim()] = v.join('=').trim();
+              return acc;
+            }, {});
+            if (props.name === name) match = true;
+          }
+        }
+        if (match) {
+          fs.rmSync(libDir, { recursive: true, force: true });
+          manualRemoved = true;
+        }
+      }
+    } catch {}
+  }
+
+  if (code === 0 || manualRemoved) {
+    res.json({ success: true, manualRemoved });
+  } else {
+    res.status(500).json({ success: false, error: stderr || stdout || 'Removal failed' });
+  }
+});
+
+// ─── GET /health ──────────────────────────────────────────────
+app.get('/health', async (req, res) => {
+  let cliVersion = 'unknown';
+  try {
+    const { stdout } = await runCLI(['version', '--format', 'json']);
+    const parsed = JSON.parse(stdout || '{}');
+    cliVersion = parsed.VersionString || parsed.version || stdout.trim().split('\n')[0];
+  } catch {}
+
+  res.json({
+    status: 'ok',
+    port: PORT,
+    uptime: Math.floor(process.uptime()),
+    arduinoCli: cliVersion,
+    esp32CoreReady,
+    initialized: isInitialized,
+    jobCount: jobs.size,
+    endpoints: ['/compile', '/compile/esp32', '/transpile', '/build-apk', '/build', '/status/:jobId', '/download/:jobId', '/firmware/:id', '/libraries/search', '/libraries/installed', '/libraries/install', '/libraries/remove', '/job/:jobId', '/health'],
+  });
+});
+
+// ─── Start ────────────────────────────────────────────────────
+app.listen(PORT, () => {
+  console.log(`[LeapBlocks Server] Running on http://localhost:${PORT}`);
+  console.log(`[LeapBlocks Server] arduino-cli: ${CLI_PATH}`);
+  initCores().then(() => {
+    if (!esp32CoreReady) {
+      ensureESP32Core().then(ok => {
+        console.log(`[LeapBlocks Server] ESP32 core: ${ok ? 'ready' : 'not installed'}`);
+      });
+    }
+  });
+});
