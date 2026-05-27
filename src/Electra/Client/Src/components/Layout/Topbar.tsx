@@ -169,7 +169,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        height: '64px',
+        height: '48px',
         padding: '0px 18px',
         background: topbarBg,
         boxShadow: topbarShadow,
@@ -177,7 +177,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         borderBottom: topbarBorder,
         userSelect: 'none'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 0%', minWidth: '0px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 0%', minWidth: '0px' }}>
           <button
             title="Back to Home"
             onClick={onBack}
@@ -185,11 +185,11 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: '40px',
-              height: '40px',
+              width: '32px',
+              height: '32px',
               background: isElectra ? 'rgba(39, 39, 42, 0.5)' : 'rgba(148, 197, 255, 0.18)',
               border: isElectra ? '1px solid #27272a' : '1px solid rgba(148, 197, 255, 0.24)',
-              borderRadius: '12px',
+              borderRadius: '8px',
               color: isElectra ? ec.text : 'rgb(255, 255, 255)',
               cursor: 'pointer',
               transition: '0.2s',
@@ -198,28 +198,28 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             onMouseEnter={(e) => { if (isElectra) { e.currentTarget.style.background = 'rgba(34, 211, 238, 0.1)'; e.currentTarget.style.borderColor = ec.accent; e.currentTarget.style.color = ec.accent; } else { e.currentTarget.style.background = 'rgba(191, 219, 254, 0.24)'; } }}
             onMouseLeave={(e) => { if (isElectra) { e.currentTarget.style.background = 'rgba(39, 39, 42, 0.5)'; e.currentTarget.style.borderColor = '#27272a'; e.currentTarget.style.color = ec.text; } else { e.currentTarget.style.background = 'rgba(148, 197, 255, 0.18)'; } }}
           >
-            <Home size={20} strokeWidth={2.2} />
+            <Home size={16} strokeWidth={2.2} />
           </button>
 
-          <div style={{ height: '32px', width: '1px', background: isElectra ? ec.divider : 'rgba(191, 219, 254, 0.28)', flexShrink: 0 }} />
+          <div style={{ height: '20px', width: '1px', background: isElectra ? ec.divider : 'rgba(191, 219, 254, 0.28)', flexShrink: 0 }} />
 
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            marginRight: '14px',
+            marginRight: '10px',
             flexShrink: 0,
             filter: isElectra ? 'none' : 'drop-shadow(rgba(56, 189, 248, 0.3) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.3) 0px 2px 6px)'
           }}>
             <img
               alt="LeapLab"
               src="assets/leaplab_logo_transparent.png"
-              style={{ height: '52px', objectFit: 'contain' }}
+              style={{ height: '36px', objectFit: 'contain' }}
             />
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', marginLeft: '10px', lineHeight: '1.1' }}>
-              <span style={{ color: isElectra ? ec.muted : 'rgb(147, 197, 253)', fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', marginLeft: '8px', lineHeight: '1.1' }}>
+              <span style={{ color: isElectra ? ec.muted : 'rgb(147, 197, 253)', fontSize: '7px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
                 LEAPLAB
               </span>
-              <span style={{ color: isElectra ? ec.accent : 'rgb(255, 255, 255)', fontSize: '16px', fontWeight: 900, letterSpacing: '0.08em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
+              <span style={{ color: isElectra ? ec.accent : 'rgb(255, 255, 255)', fontSize: '13px', fontWeight: 900, letterSpacing: '0.08em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
                 {brandName}
               </span>
             </div>
@@ -237,10 +237,10 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '5px',
-                  padding: '6px 12px',
+                  padding: '4px 10px',
                   border: 'none',
                   color: isElectra ? ec.text : 'rgb(255, 255, 255)',
-                  fontSize: '13px',
+                  fontSize: '12px',
                   fontWeight: 600,
                   fontFamily: '"Segoe UI", Inter, sans-serif',
                   cursor: 'pointer',
@@ -330,10 +330,10 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '5px',
-                  padding: '6px 12px',
+                  padding: '4px 10px',
                   border: 'none',
                   color: isElectra ? ec.text : 'rgb(255, 255, 255)',
-                  fontSize: '13px',
+                  fontSize: '12px',
                   fontWeight: 600,
                   fontFamily: '"Segoe UI", Inter, sans-serif',
                   cursor: 'pointer',
@@ -437,10 +437,10 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '5px',
-                padding: '6px 12px',
+                padding: '4px 10px',
                 border: 'none',
                 color: isElectra ? ec.text : 'rgb(255, 255, 255)',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 600,
                 fontFamily: '"Segoe UI", Inter, sans-serif',
                 cursor: 'pointer',
@@ -463,16 +463,16 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            height: '40px',
+            height: '32px',
             background: isElectra ? 'rgba(39, 39, 42, 0.5)' : 'rgba(8, 20, 58, 0.55)',
             borderRadius: '20px',
-            paddingLeft: '18px',
+            paddingLeft: '12px',
             paddingRight: '3px',
             border: isElectra ? '1px solid #27272a' : '1px solid rgba(147, 197, 253, 0.2)',
-            gap: '8px',
+            gap: '6px',
             transition: '0.2s'
           }}>
-            <span style={{ fontSize: '14px', opacity: isElectra ? 0.3 : 0.45, color: isElectra ? ec.muted : undefined }}>Folder</span>
+            <span style={{ fontSize: '12px', opacity: isElectra ? 0.3 : 0.45, color: isElectra ? ec.muted : undefined }}>Folder</span>
             <input
               placeholder="My Project"
               type="text"
@@ -482,10 +482,10 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                 background: 'transparent',
                 border: 'none',
                 color: isElectra ? ec.text : 'rgb(255, 255, 255)',
-                fontSize: '14px',
+                fontSize: '12px',
                 fontWeight: 700,
                 fontFamily: '"Segoe UI", Inter, sans-serif',
-                width: '170px',
+                width: '120px',
                 textAlign: 'center',
                 outline: 'none',
                 letterSpacing: '0.01em'
@@ -498,8 +498,8 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                 background: isElectra ? 'linear-gradient(135deg, #22d3ee, #06b6d4)' : 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
                 border: 'none',
                 borderRadius: '50%',
-                width: '32px',
-                height: '32px',
+                width: '26px',
+                height: '26px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -513,50 +513,50 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = isElectra ? 'brightness(1.1)' : 'brightness(1.08)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'none'; }}
             >
-              <Save size={15} strokeWidth={2.5} />
+              <Save size={12} strokeWidth={2.5} />
             </button>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '20px', flex: '1 1 0%', minWidth: '0px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', flex: '1 1 0%', minWidth: '0px' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '14px',
-            paddingRight: '16px',
+            gap: '10px',
+            paddingRight: '12px',
             borderRight: isElectra ? '1px solid rgba(39, 39, 42, 0.8)' : '1px solid rgba(191, 219, 254, 0.22)',
-            height: '32px',
+            height: '20px',
             flexShrink: 0
           }}>
-            <button title="Feedback" style={{ background: 'transparent', border: 'none', color: isElectra ? ec.icon : 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><MessageSquareWarning size={20} strokeWidth={2.2} /></button>
-            <button title="Achievements" style={{ background: 'transparent', border: 'none', color: isElectra ? ec.icon : 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><Trophy size={20} strokeWidth={2.2} /></button>
-            <button title="Settings" style={{ background: 'transparent', border: 'none', color: isElectra ? ec.icon : 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><Settings size={20} strokeWidth={2.2} /></button>
-            <button title="Help" style={{ background: 'transparent', border: 'none', color: isElectra ? ec.icon : 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><CircleHelp size={20} strokeWidth={2.2} /></button>
+            <button title="Feedback" style={{ background: 'transparent', border: 'none', color: isElectra ? ec.icon : 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><MessageSquareWarning size={16} strokeWidth={2.2} /></button>
+            <button title="Achievements" style={{ background: 'transparent', border: 'none', color: isElectra ? ec.icon : 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><Trophy size={16} strokeWidth={2.2} /></button>
+            <button title="Settings" style={{ background: 'transparent', border: 'none', color: isElectra ? ec.icon : 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><Settings size={16} strokeWidth={2.2} /></button>
+            <button title="Help" style={{ background: 'transparent', border: 'none', color: isElectra ? ec.icon : 'rgba(191, 219, 254, 0.85)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}><CircleHelp size={16} strokeWidth={2.2} /></button>
           </div>
 
           {rightContent ? rightContent : (
             <button style={{
               display: 'flex',
               alignItems: 'center',
-              height: '38px',
-              gap: '10px',
+              height: '30px',
+              gap: '6px',
               background: isElectra ? 'rgba(39, 39, 42, 0.5)' : 'rgba(148, 197, 255, 0.18)',
               border: isElectra ? '1px solid #27272a' : '1px solid rgba(191, 219, 254, 0.25)',
               borderRadius: '20px',
               cursor: 'pointer',
               color: isElectra ? ec.text : 'rgb(255, 255, 255)',
               fontWeight: 700,
-              fontSize: '13px',
+              fontSize: '11px',
               fontFamily: '"Segoe UI", Inter, sans-serif',
-              paddingLeft: '5px',
-              paddingRight: '18px',
+              paddingLeft: '4px',
+              paddingRight: '12px',
               transition: '0.2s',
               boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 8px',
               flexShrink: 0
             }}>
               <div style={{
-                width: '28px',
-                height: '28px',
+                width: '22px',
+                height: '22px',
                 background: isElectra ? 'linear-gradient(135deg, #22d3ee, #06b6d4)' : 'linear-gradient(135deg, rgb(96, 165, 250), rgb(29, 78, 216))',
                 borderRadius: '50%',
                 display: 'flex',
@@ -565,7 +565,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                 border: '2px solid rgba(255, 255, 255, 0.25)',
                 boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 4px'
               }}>
-                <span style={{ color: isElectra ? '#09090b' : 'rgb(224, 242, 254)', fontWeight: 900, fontSize: '11px' }}>EL</span>
+                <span style={{ color: isElectra ? '#09090b' : 'rgb(224, 242, 254)', fontWeight: 900, fontSize: '9px' }}>EL</span>
               </div>
               Sign In
             </button>
@@ -576,7 +576,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             display: 'flex',
             alignItems: 'center',
             flexShrink: 0,
-            height: '60px',
+            height: '44px',
             overflow: 'hidden',
             filter: isElectra ? 'none' : 'drop-shadow(rgba(191, 219, 254, 0.22) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.4) 0px 2px 8px)'
           }}>
@@ -584,7 +584,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               alt="Leap into the AI Future"
               src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
               style={{
-                width: '120px',
+                width: '95px',
                 height: 'auto',
                 objectFit: 'contain',
                 display: 'block',

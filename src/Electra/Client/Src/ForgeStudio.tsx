@@ -602,14 +602,14 @@ void loop() {
               borderBottom: activeTab === 'libraries' ? 'none' : '1px solid var(--lp-border)',
               minHeight: 0
             }}>
-              <div className="forge-tabs-container" style={{ height: 48 }}>
+              <div className="forge-tabs-container" style={{ height: 36 }}>
                 {/* Board badge - non-interactive */}
                 <div className="board-badge">
                   <div className="board-badge-dot" />
                   {board === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}
                 </div>
 
-                <div style={{ width: 1, height: 20, background: 'rgba(0,0,0,0.1)', margin: '0 12px' }} />
+                <div style={{ width: 1, height: 20, background: 'rgba(255, 255, 255, 0.08)', margin: '0 12px' }} />
 
                 <button
                   className={`forge-tab-btn ${activeTab === 'code' ? 'active' : ''}`}
@@ -642,10 +642,10 @@ void loop() {
             {/* Bottom: Terminal (Serial / WiFi) - Hidden when Libraries tab is active */}
             {activeTab !== 'libraries' && (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--lp-dark-bg)', minHeight: 0 }}>
-                <div className="forge-tabs-container" style={{ height: 40, background: 'var(--lp-zinc-800)' }}>
+                <div className="forge-tabs-container" style={{ height: 32, background: 'rgba(10, 11, 14, 0.15)', borderTop: '1px solid var(--lp-border)' }}>
                   <button
                     className={`forge-tab-btn ${activeTab === 'serial' || activeTab === 'code' ? 'active' : ''}`}
-                    style={{ height: 28, fontSize: 11, borderRadius: 8 }}
+                    style={{ height: 24, fontSize: 10 }}
                     onClick={() => setActiveTab('serial')}
                   >
                     <Terminal size={14} /> SERIAL OUTPUT
@@ -655,7 +655,7 @@ void loop() {
                   {board === 'esp32-c3' && (
                     <button
                       className={`forge-tab-btn wifi ${activeTab === 'wifi' ? 'active' : ''}`}
-                      style={{ height: 28, fontSize: 11, borderRadius: 8 }}
+                      style={{ height: 24, fontSize: 10 }}
                       onClick={() => setActiveTab('wifi')}
                     >
                       <Wifi size={14} /> WiFi LOG

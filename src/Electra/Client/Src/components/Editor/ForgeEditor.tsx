@@ -20,13 +20,13 @@ export const ForgeEditor: React.FC<ForgeEditorProps> = ({ code, onChange }) => {
       </div>
 
       <MonacoEditor
-        height="calc(100% - 35px)"
+        height="calc(100% - 28px)"
         defaultLanguage="cpp"
         value={code}
         onChange={onChange}
         theme="vs-dark"
         options={{
-          fontSize: 14,
+          fontSize: 13,
           minimap: { enabled: false },
           scrollBeyondLastLine: false,
           fontFamily: board === 'esp32-c3' 
