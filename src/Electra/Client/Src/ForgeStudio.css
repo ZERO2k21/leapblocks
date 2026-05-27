@@ -10,6 +10,9 @@
 
   --lp-accent-primary: #22d3ee;
   --lp-accent-bright: #67e8f9;
+  --lp-accent-dark: #06b6d4;
+  --lp-accent-hover: rgba(34, 211, 238, 0.08);
+  --lp-btn-text: #000;
   --lp-emerald: #10b981;
   --lp-amber: #f59e0b;
   --lp-rose: #f43f5e;
@@ -21,12 +24,19 @@
   --lp-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   --lp-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
   --lp-glow: 0 0 20px rgba(34, 211, 238, 0.15);
+  --lp-save-glow: rgba(34, 211, 238, 0.4) 0px 4px 10px -1px;
   --lp-radius: 12px;
   --lp-radius-sm: 8px;
 
   --header-height: 64px;
   --footer-height: 36px;
   --sidebar-width: 320px;
+
+  --lp-bg-gradient: radial-gradient(at 20% 10%, rgba(34, 211, 238, 0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+    linear-gradient(180deg, #09090b 0%, #18181b 100%);
+  --code-font: 'JetBrains Mono', monospace;
+  --lp-text-color: #f4f4f5;
 }
 
 .forge-root {
@@ -35,13 +45,11 @@
   height: 100vh;
   width: 100vw;
   background-color: var(--lp-bg);
-  background-image:
-    radial-gradient(at 20% 10%, rgba(34, 211, 238, 0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 20%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
-    linear-gradient(180deg, #09090b 0%, #18181b 100%);
-  color: #f4f4f5;
+  background-image: var(--lp-bg-gradient);
+  color: var(--lp-text-color);
   font-family: 'Outfit', sans-serif;
   overflow: hidden;
+  transition: background-color 0.4s ease, background-image 0.4s ease, color 0.4s ease, border-radius 0.4s ease;
 }
 
 .forge-main-split {
@@ -63,6 +71,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  transition: background-color 0.4s ease, border-color 0.4s ease, border-radius 0.4s ease, box-shadow 0.4s ease;
 }
 
 .editor-pane::before, .canvas-pane::before {
@@ -74,6 +83,7 @@
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--lp-accent-primary), transparent);
   opacity: 0.3;
+  transition: background 0.4s ease;
 }
 
 .editor-pane {
@@ -387,4 +397,215 @@
   font-size: 10px;
   color: var(--lp-accent-primary);
   opacity: 0.6;
+}
+
+/* ==========================================================================
+   TINKERCAD SIDE PANELS & DRAWER DOCK
+   ========================================================================== */
+.part-picker-pane {
+  width: var(--sidebar-width);
+  height: 100%;
+  border: 1px solid var(--lp-border);
+  background: var(--lp-dark-surface);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: background-color 0.4s ease, border-color 0.4s ease, border-radius 0.4s ease, box-shadow 0.4s ease;
+}
+
+.part-picker-pane::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lp-accent-primary), transparent);
+  opacity: 0.3;
+  transition: background 0.4s ease;
+}
+
+.editor-tab-bar {
+  height: 35px;
+  background: var(--lp-dark-bg);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--lp-border);
+  transition: all 0.4s ease;
+}
+
+.editor-tab.active {
+  color: var(--lp-accent-primary);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 16px;
+  background: var(--lp-dark-surface);
+  border-top: 2px solid var(--lp-accent-primary);
+  border-radius: var(--lp-radius-sm) var(--lp-radius-sm) 0 0;
+  cursor: pointer;
+  transition: all 0.4s ease;
+}
+
+/* ==========================================================================
+   BOARD THEME 1: Arduino Uno (Tinkercad Classic Light Workbench)
+   ========================================================================== */
+.forge-root.board-arduino-uno {
+  --lp-accent-primary: #00979C;
+  --lp-accent-bright: #0ea5e9;
+  --lp-accent-dark: #006064;
+  --lp-accent-hover: rgba(0, 151, 156, 0.08);
+  --lp-btn-text: #ffffff;
+  --lp-bg: #e3e3e6;
+  --lp-dark-surface: #f5f5f7;
+  --lp-dark-bg: #ebebeb;
+  --lp-zinc-800: #e5e5ea;
+  --lp-zinc-700: #d1d1d6;
+  --lp-zinc-600: #8e8e93;
+  --lp-zinc-400: #3a3a3c;
+  --lp-border: #cccccc;
+  --lp-border-active: #00979C;
+  --lp-radius: 4px;
+  --lp-radius-sm: 4px;
+  --lp-save-glow: rgba(0, 151, 156, 0.2) 0px 4px 10px -1px;
+  --lp-bg-gradient: 
+    radial-gradient(circle at 15px 15px, #c0c0c5 1px, transparent 1px),
+    linear-gradient(180deg, #e3e3e6 0%, #ebebeb 100%);
+  --code-font: 'Space Mono', 'Fira Code', monospace;
+  --lp-badge-bg: rgba(0, 151, 156, 0.08);
+  --lp-badge-border: rgba(0, 151, 156, 0.3);
+  --lp-badge-color: #00979C;
+  --lp-wifi-clear-bg: rgba(0, 151, 156, 0.08);
+  --lp-wifi-clear-border: 1px solid rgba(0, 151, 156, 0.2);
+  --lp-grid-dot-color: #c0c0c5;
+  --lp-flow-grid-color: rgba(0,0,0,0.06);
+  --lp-glass: rgba(245, 245, 247, 0.95);
+  --lp-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --lp-text-color: #1c1c1e;
+}
+
+/* Arduino custom library drawer light-mode overrides */
+.board-arduino-uno .component-sidebar {
+  background: #ebebeb !important;
+  border-left: 1px solid #cccccc !important;
+  font-family: 'Outfit', sans-serif !important;
+}
+
+.board-arduino-uno .component-sidebar div,
+.board-arduino-uno .component-sidebar span {
+  color: #3a3a3c !important;
+}
+
+.board-arduino-uno .component-sidebar button {
+  color: #555559 !important;
+}
+
+.board-arduino-uno .component-sidebar input {
+  color: #1c1c1e !important;
+}
+
+.board-arduino-uno .component-sidebar .component-card {
+  background: #ffffff !important;
+  border: 1px solid #e5e5ea !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+.board-arduino-uno .component-sidebar .component-card:hover {
+  border-color: #00979C !important;
+  background: #ffffff !important;
+  box-shadow: 0 4px 8px rgba(0, 151, 156, 0.1) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ==========================================================================
+   BOARD THEME 2: ESP32-C3 (Cyberpunk Slate & Hot IoT Orange HUD)
+   ========================================================================== */
+.forge-root.board-esp32-c3 {
+  --lp-accent-primary: #f97316;
+  --lp-accent-bright: #fdba74;
+  --lp-accent-dark: #c2410c;
+  --lp-accent-hover: rgba(249, 115, 22, 0.1);
+  --lp-btn-text: #000000;
+  --lp-bg: #09090b;
+  --lp-dark-surface: #18181b;
+  --lp-dark-bg: #0c0c0e;
+  --lp-zinc-800: #27272a;
+  --lp-zinc-700: #3f3f46;
+  --lp-zinc-600: #52525b;
+  --lp-zinc-400: #a1a1aa;
+  --lp-border: #27272a;
+  --lp-border-active: #f97316;
+  --lp-radius: 2px;
+  --lp-radius-sm: 0px;
+  --lp-save-glow: rgba(249, 115, 22, 0.4) 0px 4px 10px -1px;
+  --lp-bg-gradient: 
+    radial-gradient(at 20% 10%, rgba(249, 115, 22, 0.15) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(239, 68, 68, 0.08) 0px, transparent 50%),
+    linear-gradient(180deg, #09090b 0%, #1c1917 100%);
+  --code-font: 'JetBrains Mono', 'Fira Code', monospace;
+  --lp-badge-bg: rgba(249, 115, 22, 0.1);
+  --lp-badge-border: rgba(249, 115, 22, 0.4);
+  --lp-badge-color: #f97316;
+  --lp-wifi-clear-bg: rgba(249, 115, 22, 0.15);
+  --lp-wifi-clear-border: 1px solid rgba(249, 115, 22, 0.4);
+  --lp-grid-dot-color: #33333b;
+  --lp-flow-grid-color: rgba(255,255,255,0.04);
+  --lp-glass: rgba(24, 24, 27, 0.95);
+  --lp-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --lp-text-color: #f4f4f5;
+}
+
+/* ==========================================================================
+   HELPER STYLES FOR THEME DELEGATION
+   ========================================================================== */
+.board-badge {
+  padding: 4px 12px;
+  background: var(--lp-badge-bg, rgba(34, 211, 238, 0.1));
+  border: 1px solid var(--lp-badge-border, rgba(34, 211, 238, 0.4));
+  border-radius: var(--lp-radius-sm, 8px);
+  color: var(--lp-badge-color, var(--lp-accent-primary));
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.4s ease;
+}
+
+.board-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lp-badge-color, var(--lp-accent-primary));
+  box-shadow: 0 0 10px var(--lp-badge-color, var(--lp-accent-primary));
+  transition: all 0.4s ease;
+}
+
+.wifi-clear-btn {
+  background: var(--lp-wifi-clear-bg, rgba(34, 211, 238, 0.1));
+  border: 1px solid var(--lp-wifi-clear-border, rgba(34, 211, 238, 0.3));
+  border-radius: var(--lp-radius-sm, 8px);
+  color: var(--lp-accent-primary);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.wifi-clear-btn:hover {
+  background: var(--lp-accent-primary);
+  color: var(--lp-btn-text, #000000);
 }
