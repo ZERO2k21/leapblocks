@@ -1,5 +1,7 @@
 // ObjectDetectionExtension.ts - AI Object Detection using TensorFlow.js
 
+import * as tf from '@tensorflow/tfjs';
+import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import Blockly from '@blockly-runtime';
 import type { ExtensionCategory } from './ExtensionManager';
 
@@ -111,16 +113,24 @@ export class ObjectDetectionRuntime {
         height: number;
     }> = [];
 
-    private model: any = null;
+    private model: cocoSsd.ObjectDetection | null = null;
     private isModelLoaded = false;
+    private videoEl: HTMLVideoElement | null = null;
+
+    setVideoElement(video: HTMLVideoElement | null) {
+        this.videoEl = video;
+    }
+
+    isVideoReady(): boolean {
+        return !!(this.videoEl && this.videoEl.readyState >= 2);
+    }
 
     async loadModel() {
-        if (this.isModelLoaded) return;
+        if (this.isModelLoaded || this.model) return;
 
         try {
-            // TODO: Load TensorFlow.js COCO-SSD model
-            // const cocoSsd = await import('@tensorflow-models/coco-ssd');
-            // this.model = await cocoSsd.load();
+            await tf.ready();
+            this.model = await cocoSsd.load();
             this.isModelLoaded = true;
             console.log('🔍 Object Detection model loaded');
         } catch (error) {
@@ -129,30 +139,63 @@ export class ObjectDetectionRuntime {
     }
 
     async detectObjects(videoElement?: HTMLVideoElement) {
+        const video = videoElement || this.videoEl;
         if (!this.isModelLoaded) {
             await this.loadModel();
         }
 
-        // Simulate detection for now
-        this.objects = [
-            { label: 'cat', confidence: 92, x: 180, y: 220, width: 100, height: 100 },
-            { label: 'ball', confidence: 85, x: 420, y: 150, width: 50, height: 50 }
-        ];
+        if (this.model && video && video.readyState >= 2) {
+            try {
+                const predictions = await this.model.detect(video);
+                
+                const videoW = video.videoWidth || 480;
+                const videoH = video.videoHeight || 360;
 
-        console.log(`🔍 Detected ${this.objects.length} objects`);
+                this.objects = predictions.map((pred: any) => {
+                    const rawX = pred.bbox[0];
+                    const rawY = pred.bbox[1];
+                    const rawW = pred.bbox[2];
+                    const rawH = pred.bbox[3];
+                    
+                    const scaledX = (rawX / videoW) * 480;
+                    const scaledY = (rawY / videoH) * 360;
+                    const scaledW = (rawW / videoW) * 480;
+                    const scaledH = (rawH / videoH) * 360;
+                    
+                    const stageX = Math.round(scaledX + scaledW / 2 - 240);
+                    const stageY = Math.round(180 - (scaledY + scaledH / 2));
+                    
+                    let label = pred.class;
+                    
+                    // Map COCO-SSD labels to user-friendly requested synonyms
+                    const labelMap: Record<string, string> = {
+                        'cell phone': 'phone',
+                        'potted plant': 'plant',
+                        'backpack': 'bag',
+                        'handbag': 'bag',
+                        'suitcase': 'bag',
+                        'bicycle': 'bike',
+                        'motorcycle': 'bike',
+                        'laptop': 'computer'
+                    };
+                    
+                    if (labelMap[label]) {
+                        label = labelMap[label];
+                    }
 
-        // TODO: Real detection with TensorFlow.js
-        // if (this.model && videoElement) {
-        //     const predictions = await this.model.detect(videoElement);
-        //     this.objects = predictions.map((pred: any) => ({
-        //         label: pred.class,
-        //         confidence: Math.round(pred.score * 100),
-        //         x: pred.bbox[0],
-        //         y: pred.bbox[1],
-        //         width: pred.bbox[2],
-        //         height: pred.bbox[3]
-        //     }));
-        // }
+                    return {
+                        label: label,
+                        confidence: Math.round(pred.score * 100),
+                        x: stageX,
+                        y: stageY,
+                        width: scaledW,
+                        height: scaledH
+                    };
+                });
+            } catch (err) {
+                console.error("Object detection error:", err);
+            }
+        }
     }
 
     getLabel(n: number): string {
