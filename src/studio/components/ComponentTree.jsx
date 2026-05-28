@@ -103,9 +103,9 @@ export default function ComponentTree({ appState }) {
         return (
             <div key={component.id}>
                 <div
-                    className={`relative flex items-center py-4 px-5 rounded-2xl cursor-pointer transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] mx-3 mb-1.5 border-2 text-[15px] font-bold text-slate-900 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[4px] before:rounded-r before:bg-blue-500 before:transition-all before:duration-250 before:ease-[cubic-bezier(0.4,0,0.2,1)] ${isSelected
-                        ? 'bg-gradient-to-br from-blue-500/12 to-blue-500/6 border-blue-500/30 text-blue-600 shadow-md shadow-blue-500/20 translate-x-1 before:h-[80%]'
-                        : 'border-transparent hover:bg-gradient-to-r hover:from-blue-500/3 hover:to-transparent hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
+                    className={`relative flex items-center py-2 px-2.5 rounded-xl cursor-pointer mx-2 mb-1 border-2 text-[13px] font-bold text-slate-900 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r before:bg-blue-500 ${isSelected
+                        ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 shadow-sm translate-x-0.5 before:h-[80%]'
+                        : 'border-transparent hover:bg-slate-50 hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
                         }`}
                     style={{ marginLeft: `${depth * 14}px` }}
                     onClick={() => selectComponent(component.id)}
@@ -114,7 +114,7 @@ export default function ComponentTree({ appState }) {
                     {/* Expand/Collapse Arrow */}
                     {hasChildren && (
                         <button
-                            className="w-5 h-5 flex items-center justify-center mr-1.5 text-slate-900 hover:text-black text-xs"
+                            className="w-4 h-4 flex items-center justify-center mr-2 text-slate-500 hover:text-slate-900 text-[10px]"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 toggleExpand(component.id);
@@ -123,7 +123,7 @@ export default function ComponentTree({ appState }) {
                             {isExpanded ? '▼' : '▶'}
                         </button>
                     )}
-                    {!hasChildren && <span className="w-5 mr-1.5"></span>}
+                    {!hasChildren && <span className="w-4 mr-2"></span>}
 
                     {/* Component Icon */}
                     <span className="mr-2.5 text-base">{getIcon(component.type)}</span>
@@ -148,8 +148,8 @@ export default function ComponentTree({ appState }) {
                         />
                     ) : (
                         <div className="flex-1 min-w-0">
-                            <span className="text-[15px] block truncate">{component.id}</span>
-                            <span className="text-[11px] text-slate-500 font-medium block truncate mt-0.5">
+                            <span className="text-[13.5px] block truncate">{component.id}</span>
+                            <span className="text-[10px] text-slate-500 font-medium block truncate mt-0.5">
                                 {component.props?.Text || component.props?.Hint || component.type}
                             </span>
                         </div>
@@ -176,17 +176,17 @@ export default function ComponentTree({ appState }) {
                 <span className="text-[19px] font-black uppercase tracking-[0.15em] text-slate-900 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Components</span>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body">
                 {/* Screen Node */}
                 <div
-                    className={`flex items-center py-4.5 px-6 border-b border-slate-100 font-extrabold text-[15px] cursor-pointer transition-all sticky top-0 z-10 backdrop-blur-md uppercase tracking-[0.1em] ${selectedComponent?.id === currentScreen.id
-                        ? 'bg-blue-50/70 text-blue-600 border-l-4 border-l-blue-500'
-                        : 'bg-slate-50/50 text-slate-900 hover:bg-slate-100'
+                    className={`flex items-center py-2.5 px-4 border-b border-slate-200/60 font-extrabold text-[13px] cursor-pointer sticky top-0 z-10 backdrop-blur-md uppercase tracking-[0.12em] ${selectedComponent?.id === currentScreen.id
+                        ? 'bg-blue-50/80 text-blue-600 border-l-4 border-l-blue-500'
+                        : 'bg-slate-50/80 text-slate-700 hover:bg-slate-100/80'
                         }`}
                     onClick={() => selectComponent(currentScreen.id)}
                 >
-                    <button 
-                        className="w-6 h-6 flex items-center justify-center mr-3 text-slate-900 text-xs"
+                    <button
+                        className="w-5 h-5 flex items-center justify-center mr-1.5 text-slate-500 hover:text-slate-900 text-[10px]"
                         onClick={(e) => {
                             e.stopPropagation();
                             toggleExpand(currentScreen.id);
@@ -194,7 +194,7 @@ export default function ComponentTree({ appState }) {
                     >
                         {expandedNodes.has(currentScreen.id) ? '▼' : '▶'}
                     </button>
-                    <span className="mr-3 opacity-100 text-xl">📱</span>
+                    <span className="mr-2.5 text-base">📱</span>
                     <span className="truncate">{currentScreen.id}</span>
                 </div>
 
@@ -205,15 +205,15 @@ export default function ComponentTree({ appState }) {
                             currentScreen.components.map((comp) => renderComponent(comp, 0))
                         ) : (
                             <div className="px-10 py-16 text-center">
-                                <p className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-900">Empty Screen</p>
-                                <p className="text-[11px] text-slate-900 font-medium mt-2">Drag components from palette</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Empty Screen</p>
+                                <p className="text-[11px] text-slate-500 font-medium mt-1">Drag components from palette</p>
                             </div>
                         )}
 
                         {/* Non-Visible Components Section */}
                         {currentScreen.nonVisibleComponents && currentScreen.nonVisibleComponents.length > 0 && (
                             <div className="mt-4 border-t border-slate-200">
-                                <div className="py-2.5 px-5 bg-slate-50/80 text-xs text-slate-900 font-extrabold uppercase tracking-wider border-b border-slate-100">
+                                <div className="py-2 px-4 bg-slate-50/90 text-[10px] text-slate-500 font-extrabold uppercase tracking-[0.15em] border-b border-slate-200/60">
                                     Non-visible components
                                 </div>
                                 {currentScreen.nonVisibleComponents.map((comp) => renderComponent(comp, 0))}

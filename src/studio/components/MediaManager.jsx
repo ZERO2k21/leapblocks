@@ -67,8 +67,14 @@ export default function MediaManager({ appState }) {
         e.target.value = null; // Reset input
     };
 
-    const handleDelete = (filename) => {
-        if (window.confirm(`Are you sure you want to delete ${filename}?`)) {
+    const handleDelete = async (filename) => {
+        const confirmed = await appState.confirm({
+            title: "Delete Asset",
+            message: `Are you sure you want to delete "${filename}"?`,
+            confirmText: "Delete",
+            type: "danger"
+        });
+        if (confirmed) {
             deleteMedia(filename);
             if (selectedFile === filename) setSelectedFile(null);
             if (previewFile?.filename === filename) setPreviewFile(null);
@@ -226,7 +232,7 @@ export default function MediaManager({ appState }) {
             </div>
 
             {/* Media Grid/List */}
-            <div className="flex-1 overflow-y-auto p-5 bg-white">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 bg-white leap-panel-body">
                 {filteredMedia.length === 0 ? (
                     <div style={{ minHeight: '300px' }} className="flex flex-col items-center justify-center h-full text-slate-900 py-10">
                         <div className="relative mb-6">

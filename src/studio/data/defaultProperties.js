@@ -15,6 +15,7 @@ const baseVisible = {
   Width: LENGTH_AUTOMATIC,
   Height: LENGTH_AUTOMATIC,
   Visible: true,
+  Enabled: true,
   HorizontalAlignment: 'Left'
 };
 
@@ -237,6 +238,14 @@ export function defaultPropsFor(type) {
 
     // ─── Layout ───────────────────────────────────────────────────────
 
+    case 'AbsoluteArrangement':
+      return withLegacyAliases({
+        ...baseVisible,
+        BackgroundColor: 'transparent',
+        Image: '',
+        Width: LENGTH_FILL_PARENT
+      });
+
     case 'HorizontalArrangement':
     case 'HorizontalScrollArrangement':
       return withLegacyAliases({
@@ -432,6 +441,62 @@ export function defaultPropsFor(type) {
         Visible: true
       };
 
+    case 'Polygon':
+      return {
+        Description: '',
+        Draggable: false,
+        EnableInfobox: false,
+        FillColor: '#F44336',
+        FillOpacity: 1,
+        HolePointsFromString: '',
+        PointsFromString: '',
+        StrokeColor: '#000000',
+        StrokeOpacity: 1,
+        StrokeWidth: 1,
+        Title: '',
+        Visible: true
+      };
+
+    case 'LineString':
+      return {
+        Description: '',
+        Draggable: false,
+        EnableInfobox: false,
+        PointsFromString: '',
+        StrokeColor: '#000000',
+        StrokeOpacity: 1,
+        StrokeWidth: 1,
+        Title: '',
+        Visible: true
+      };
+
+    case 'Rectangle':
+      return {
+        Description: '',
+        Draggable: false,
+        EastLongitude: 0,
+        EnableInfobox: false,
+        FillColor: '#F44336',
+        FillOpacity: 1,
+        NorthLatitude: 0,
+        SouthLatitude: 0,
+        StrokeColor: '#000000',
+        StrokeOpacity: 1,
+        StrokeWidth: 1,
+        Title: '',
+        Visible: true,
+        WestLongitude: 0
+      };
+
+    case 'FeatureCollection':
+      return {
+        Description: '',
+        FeaturesFromGeoJSON: '',
+        Source: '',
+        Title: '',
+        Visible: true
+      };
+
     // ─── Sensors ──────────────────────────────────────────────────────
 
     case 'AccelerometerSensor':
@@ -476,10 +541,9 @@ export function defaultPropsFor(type) {
 
     case 'Barometer':
     case 'Hygrometer':
-    case 'HygrometrySensor':
     case 'LightSensor':
     case 'MagneticFieldSensor':
-    case 'ThermometerSensor':
+    case 'Thermometer':
       return { Enabled: true, RefreshTime: 1000 };
 
     // ─── Social ───────────────────────────────────────────────────────

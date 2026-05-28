@@ -567,7 +567,7 @@ export default function PropertiesPanel({ appState }) {
         <span className="text-[19px] font-black uppercase tracking-[0.15em] text-slate-900 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Properties</span>
       </div>
       {/* Property Editor */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body">
         {renderPropertyEditor()}
       </div>
     </div>

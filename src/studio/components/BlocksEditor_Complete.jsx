@@ -22,7 +22,30 @@ import 'blockly/blocks';
 import { initializeAllBlocks, createComponentBlocks } from '../blocks/definitions/index';
 import { BLOCK_COLORS } from '../blocks/utils/blockColors';
 import { COMPONENT_METADATA, ANY_COMPONENT_METADATA } from '../data/componentMetadata';
+import { PALETTE_ENHANCED } from '../data/paletteComponents_Enhanced';
 const MIT_COLORS = BLOCK_COLORS;
+
+// Map palette category names to MIT AI block category colors
+const CATEGORY_COLORS = {
+    'User Interface': MIT_COLORS.math,
+    'Layout': MIT_COLORS.lists,
+    'Media': MIT_COLORS.procedures,
+    'Drawing and Animation': MIT_COLORS.text,
+    'Maps': MIT_COLORS.getters,
+    'Sensors': MIT_COLORS.variables,
+    'Social': MIT_COLORS.control,
+    'Storage': MIT_COLORS.logic,
+    'Connectivity': MIT_COLORS.dictionaries,
+    'LEGO MINDSTORMS': MIT_COLORS.colors,
+    'Experimental': MIT_COLORS.setters,
+    'Charts': MIT_COLORS.text,
+    'Data Science': MIT_COLORS.matrices,
+};
+const GET_CATEGORY_COLOR = (() => {
+    const cache = {};
+    PALETTE_ENHANCED.forEach(p => { cache[p.type] = CATEGORY_COLORS[p.category] || MIT_COLORS.variables; });
+    return (type) => cache[type] || MIT_COLORS.variables;
+})();
 
 // Import icons
 import { Search, ZoomIn, ZoomOut, Trash2, Download, Upload, Code, AlertTriangle, XCircle } from 'lucide-react';
@@ -111,35 +134,40 @@ export default function BlocksEditorComplete({ appState }) {
             if (!type) return null;
             if (type === 'component_method' || type === 'any_component_method') {
                 return {
-                    bodyFill: '#8F5DB7',
-                    bodyStroke: '#734A94',
-                    fieldFill: '#CFC7D8',
-                    fieldStroke: '#A79CB5',
+                    bodyFill: MIT_COLORS.methods,
+                    bodyStroke: '#63406B',
+                    fieldFill: '#B7A0BE',
+                    fieldStroke: '#93789D',
                     bodyText: '#ffffff',
                     fieldText: '#1f1f1f'
                 };
             }
             if (type === 'component_event' || type === 'any_component_event') {
                 return {
-                    bodyFill: '#b49235',
-                    bodyStroke: '#8f7227',
-                    fieldFill: '#d7bb72',
-                    fieldStroke: '#a98b43',
+                    bodyFill: MIT_COLORS.events,
+                    bodyStroke: '#8F7227',
+                    fieldFill: '#D7BB72',
+                    fieldStroke: '#A98B43',
                     bodyText: '#ffffff',
                     fieldText: '#1f1f1f'
                 };
             }
-            if (
-                type === 'component_get_property' ||
-                type === 'component_set_property' ||
-                type === 'any_component_get_property' ||
-                type === 'any_component_set_property'
-            ) {
+            if (type === 'component_get_property' || type === 'any_component_get_property') {
                 return {
-                    bodyFill: '#3f8d67',
-                    bodyStroke: '#2f6f51',
-                    fieldFill: '#8cc0a3',
-                    fieldStroke: '#5f9a7b',
+                    bodyFill: MIT_COLORS.getters,
+                    bodyStroke: '#347A59',
+                    fieldFill: '#8CC0A3',
+                    fieldStroke: '#5F9A7B',
+                    bodyText: '#ffffff',
+                    fieldText: '#1f1f1f'
+                };
+            }
+            if (type === 'component_set_property' || type === 'any_component_set_property') {
+                return {
+                    bodyFill: MIT_COLORS.setters,
+                    bodyStroke: '#1B4D31',
+                    fieldFill: '#6B9A7E',
+                    fieldStroke: '#44785F',
                     bodyText: '#ffffff',
                     fieldText: '#1f1f1f'
                 };
@@ -685,7 +713,7 @@ export default function BlocksEditorComplete({ appState }) {
                 {
                     kind: 'category',
                     name: 'Dictionaries',
-                    colour: MIT_COLORS.lists,
+                    colour: MIT_COLORS.dictionaries,
                     contents: [
                         { kind: 'block', type: 'dictionaries_create_with' },
                         { kind: 'block', type: 'dictionaries_pair' },
@@ -830,7 +858,7 @@ export default function BlocksEditorComplete({ appState }) {
             const category = {
                 kind: 'category',
                 name: categoryName,
-                colour: comp.type === 'Screen' ? MIT_COLORS.control : MIT_COLORS.variables,
+                colour: GET_CATEGORY_COLOR(comp.type),
                 contents: []
             };
 
@@ -934,7 +962,7 @@ export default function BlocksEditorComplete({ appState }) {
             const category = {
                 kind: 'category',
                 name: `Any ${type}`,
-                colour: '#3366cc',
+                colour: GET_CATEGORY_COLOR(type),
                 contents: [
                     ...(metadata.events || []).map(event => ({
                         kind: 'block',
@@ -1014,9 +1042,17 @@ export default function BlocksEditorComplete({ appState }) {
     };
 
     // Clear workspace
-    const handleClear = () => {
-        if (workspaceRef.current && window.confirm('Clear all blocks?')) {
-            workspaceRef.current.clear();
+    const handleClear = async () => {
+        if (workspaceRef.current) {
+            const confirmed = await appState.confirm({
+                title: "Clear Workspace",
+                message: "Are you sure you want to clear all blocks from the workspace? This action cannot be undone.",
+                confirmText: "Clear All",
+                type: "danger"
+            });
+            if (confirmed) {
+                workspaceRef.current.clear();
+            }
         }
     };
 

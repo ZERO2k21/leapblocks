@@ -13,9 +13,13 @@ const ARRANGEMENT_TYPES = new Set([
   'HorizontalScrollArrangement',
   'VerticalArrangement',
   'VerticalScrollArrangement',
-  'TableArrangement'
+  'TableArrangement',
+  'AbsoluteArrangement',
+  'Map',
+  'FeatureCollection'
 ]);
 const CANVAS_CHILD_TYPES = new Set(['Ball', 'ImageSprite']);
+const MAP_CHILD_TYPES = new Set(['Marker', 'LineString', 'Polygon', 'Rectangle', 'Circle', 'FeatureCollection']);
 
 const makeScreen = (id) => ({ id, title: id, components: [], nonVisibleComponents: [] });
 
@@ -146,8 +150,9 @@ export function useAppState() {
       const selectedParent = screen.components && isInTree(screen.components, selectedId)
         ? findNodeById(screen.components, selectedId)
         : null;
-      const canNestInArrangement = visible && selectedParent && ARRANGEMENT_TYPES.has(selectedParent.type);
+      const canNestInArrangement = visible && selectedParent && ARRANGEMENT_TYPES.has(selectedParent.type) && selectedParent.type !== 'Map' && selectedParent.type !== 'FeatureCollection';
       const canNestInCanvas = selectedParent?.type === 'Canvas' && CANVAS_CHILD_TYPES.has(type);
+      const canNestInMap = visible && selectedParent && (selectedParent.type === 'Map' || selectedParent.type === 'FeatureCollection') && MAP_CHILD_TYPES.has(type);
 
       const nextScreen = deepClone(screen);
 
@@ -156,6 +161,8 @@ export function useAppState() {
       } else if (canNestInArrangement) {
         nextScreen.components = insertIntoContainer(nextScreen.components, selectedParent.id, newComponent);
       } else if (canNestInCanvas) {
+        nextScreen.components = insertIntoContainer(nextScreen.components, selectedParent.id, newComponent);
+      } else if (canNestInMap) {
         nextScreen.components = insertIntoContainer(nextScreen.components, selectedParent.id, newComponent);
       } else {
         nextScreen.components.push(newComponent);

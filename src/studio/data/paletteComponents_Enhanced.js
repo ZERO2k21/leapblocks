@@ -131,7 +131,7 @@ export const PALETTE_ENHANCED = [
         label: 'CircularProgress',
         icon: '🔄',
         category: 'User Interface',
-        visible: false,
+        visible: true,
         description: 'A circular progress indicator'
     },
     {
@@ -139,7 +139,7 @@ export const PALETTE_ENHANCED = [
         label: 'LinearProgress',
         icon: '📊',
         category: 'User Interface',
-        visible: false,
+        visible: true,
         description: 'A linear progress bar indicator'
     },
 
@@ -183,6 +183,14 @@ export const PALETTE_ENHANCED = [
         category: 'Layout',
         visible: true,
         description: 'Vertical arrangement with scrolling'
+    },
+    {
+        type: 'AbsoluteArrangement',
+        label: 'AbsoluteArrangement',
+        icon: '🔲',
+        category: 'Layout',
+        visible: true,
+        description: 'Arranges components at exact positions using X and Y coordinates'
     },
 
     // ==================== MEDIA ====================
@@ -323,7 +331,7 @@ export const PALETTE_ENHANCED = [
         label: 'Circle',
         icon: '⭕',
         category: 'Maps',
-        visible: false,
+        visible: true,
         description: 'A circular region on a map'
     },
     {
@@ -331,7 +339,7 @@ export const PALETTE_ENHANCED = [
         label: 'FeatureCollection',
         icon: '📍',
         category: 'Maps',
-        visible: false,
+        visible: true,
         description: 'A collection of map features'
     },
     {
@@ -339,7 +347,7 @@ export const PALETTE_ENHANCED = [
         label: 'LineString',
         icon: '📏',
         category: 'Maps',
-        visible: false,
+        visible: true,
         description: 'A line or path on a map'
     },
     {
@@ -347,7 +355,7 @@ export const PALETTE_ENHANCED = [
         label: 'Marker',
         icon: '📌',
         category: 'Maps',
-        visible: false,
+        visible: true,
         description: 'A point marker on a map'
     },
     {
@@ -355,7 +363,7 @@ export const PALETTE_ENHANCED = [
         label: 'Polygon',
         icon: '⬡',
         category: 'Maps',
-        visible: false,
+        visible: true,
         description: 'A polygonal region on a map'
     },
     {
@@ -363,7 +371,7 @@ export const PALETTE_ENHANCED = [
         label: 'Rectangle',
         icon: '▭',
         category: 'Maps',
-        visible: false,
+        visible: true,
         description: 'A rectangular region on a map'
     },
     {
@@ -409,8 +417,8 @@ export const PALETTE_ENHANCED = [
         description: 'Detects device rotation'
     },
     {
-        type: 'HygrometrySensor',
-        label: 'HygrometrySensor',
+        type: 'Hygrometer',
+        label: 'Hygrometer',
         icon: '💧',
         category: 'Sensors',
         visible: false,
@@ -473,8 +481,8 @@ export const PALETTE_ENHANCED = [
         description: 'Detects nearby objects'
     },
     {
-        type: 'ThermometerSensor',
-        label: 'ThermometerSensor',
+        type: 'Thermometer',
+        label: 'Thermometer',
         icon: '🌡️',
         category: 'Sensors',
         visible: false,

@@ -35,7 +35,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
         const observer = new ResizeObserver((entries) => {
             for (let entry of entries) {
                 const { width, height } = entry.contentRect;
-                setContainerSize({ width, height });
+                setContainerSize(prev => {
+                    if (prev.width === width && prev.height === height) return prev;
+                    return { width, height };
+                });
             }
         });
         observer.observe(containerRef.current);
@@ -46,9 +49,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const components = currentScreen?.components || [];
     const nonVisibleComponents = currentScreen?.nonVisibleComponents || [];
 
-    // Device dimensions (width x height in portrait) - Updated for better visibility
+    // Device dimensions (width x height in portrait) - Updated to match MIT AI MockForm
     const deviceDimensions = {
-        phone: { width: 412, height: 685, label: 'Phone' },        // iPhone 14 Pro size
+        phone: { width: 320, height: 505, label: 'Phone' },
         tablet7: { width: 600, height: 960, label: 'Tablet 7"' },
         tablet10: { width: 800, height: 1280, label: 'Tablet 10"' },
         monitor: { width: 800, height: 1280, label: 'Monitor' } // default landscape display will flip this to 1280x800
@@ -57,6 +60,19 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const currentDimensions = deviceDimensions[deviceType];
     const displayWidth = orientation === 'portrait' ? currentDimensions.width : currentDimensions.height;
     const displayHeight = orientation === 'portrait' ? currentDimensions.height : currentDimensions.width;
+
+    const mapFeatureTypes = ['Marker', 'LineString', 'Polygon', 'Rectangle', 'Circle', 'FeatureCollection'];
+
+    const findComponentById = (id, list) => {
+        for (const comp of list) {
+            if (comp.id === id) return comp;
+            if (comp.children) {
+                const found = findComponentById(id, comp.children);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
 
     const handleDrop = (e, targetContainerId = null) => {
         e.preventDefault();
@@ -68,6 +84,22 @@ export default function PhoneCanvasEnhanced({ appState }) {
         const componentData = e.dataTransfer.getData('componentData');
 
         if (!type) return;
+
+        // Validate: Map containers only accept map features
+        if (targetContainerId) {
+            const target = findComponentById(targetContainerId, components);
+            if (target && target.type === 'Map' && !mapFeatureTypes.includes(type)) {
+                return; // Reject non-map features dropped on Map
+            }
+            if (target && target.type !== 'Map' && mapFeatureTypes.includes(type)) {
+                return; // Reject map features dropped on non-Map containers
+            }
+        } else {
+            // Dropping on Screen directly - reject map features if not inside a Map
+            if (mapFeatureTypes.includes(type)) {
+                return; // Map features need a Map container
+            }
+        }
 
         let visible;
         if (componentData) {
@@ -113,10 +145,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
     const renderComponentPreview = (comp) => {
         const isSelected = comp.id === selectedId;
-        const baseClasses = `cursor-pointer transition-all duration-200 ${isSelected
-            ? 'ring-2 ring-blue-500 ring-offset-2 shadow-lg z-10'
-            : 'hover:ring-2 hover:ring-slate-200 hover:shadow-sm'
-            } relative rounded-xl`;
+        const baseClasses = `cursor-pointer ${isSelected
+            ? 'ring-2 ring-blue-500 z-10'
+            : 'hover:ring-2 hover:ring-slate-200'
+            } relative`;
 
         const LENGTH_AUTO = -1;
         const LENGTH_FILL = -2;
@@ -170,17 +202,18 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <button
                         key={comp.id}
-                        className={`${baseClasses} px-5 py-3 font-semibold text-sm tracking-wide shadow-sm flex items-center transition-all duration-200 active:scale-[0.98]`}
+                        className={`${baseClasses} px-3 py-2 text-sm flex items-center`}
                         style={{
                             ...style,
-                            minHeight: style.height === 'auto' ? '46px' : undefined,
+                            minHeight: style.height === 'auto' ? '36px' : undefined,
                             justifyContent: style.textAlign === 'center' ? 'center' :
                                             style.textAlign === 'right' ? 'flex-end' : 'flex-start',
-                            backgroundColor: style.backgroundColor || '#2563eb',
-                            color: style.color || '#FFFFFF',
+                            backgroundColor: style.backgroundColor || '#E0E0E0',
+                            color: style.color || '#000000',
                             borderRadius,
-                            border: 'none',
-                            cursor: 'pointer'
+                            border: '1px solid #BDBDBD',
+                            cursor: 'pointer',
+                            fontFamily: 'sans-serif'
                         }}
                         onClick={handleClick}
                         disabled={comp.props.Enabled === false}
@@ -197,8 +230,8 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         className={`${baseClasses} text-slate-900`}
                         style={{ 
                             ...style, 
-                            padding: '8px 6px',
-                            display: 'block'
+                            padding: '2px 0',
+                            display: 'inline'
                         }}
                         onClick={handleClick}
                     >
@@ -213,10 +246,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         key={comp.id}
                         type={comp.type === 'PasswordTextBox' ? 'password' : 'text'}
                         placeholder={comp.props.Hint || ''}
-                        className={`${baseClasses} px-4 py-3 text-sm border border-slate-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20`}
+                        className={`${baseClasses} px-2 py-1.5 text-sm border border-slate-400`}
                         style={{ 
                             ...style, 
-                            minHeight: style.height === 'auto' ? '46px' : undefined,
+                            minHeight: style.height === 'auto' ? '32px' : undefined,
                             backgroundColor: '#FFFFFF' 
                         }}
                         onClick={handleClick}
@@ -229,19 +262,16 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden shadow-sm`}
+                        className={`${baseClasses} bg-slate-100 border border-slate-300 flex items-center justify-center overflow-hidden`}
                         style={{
-                            ...style,
-                            width: comp.props.Width || 120,
-                            height: comp.props.Height || 120,
-                            borderRadius: '12px'
+                            ...style
                         }}
                         onClick={handleClick}
                     >
                         {comp.props.Picture ? (
                             <img src={comp.props.Picture} alt="" className="w-full h-full object-cover" />
                         ) : (
-                            <span className="text-4xl">🖼️</span>
+                            <span className="text-2xl">🖼️</span>
                         )}
                     </div>
                 );
@@ -250,14 +280,14 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <label
                         key={comp.id}
-                        className={`${baseClasses} flex items-center space-x-3 cursor-pointer py-2 px-1 text-slate-900 font-medium text-sm`}
+                        className={`${baseClasses} flex items-center gap-1.5 cursor-pointer py-1 px-0.5 text-slate-900 text-sm`}
                         style={style}
                         onClick={handleClick}
                     >
                         <input
                             type="checkbox"
                             checked={comp.props.Checked || false}
-                            className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            className="w-4 h-4 border-slate-400"
                             readOnly
                         />
                         <span>{comp.props.Text || 'CheckBox'}</span>
@@ -268,12 +298,12 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <label
                         key={comp.id}
-                        className={`${baseClasses} flex items-center space-x-3 cursor-pointer py-2 px-1 text-slate-900 font-medium text-sm`}
+                        className={`${baseClasses} flex items-center gap-1.5 cursor-pointer py-1 px-0.5 text-slate-900 text-sm`}
                         style={style}
                         onClick={handleClick}
                     >
-                        <div className={`w-12 h-6 rounded-full transition-colors shrink-0 flex items-center ${comp.props.On ? 'bg-blue-600 shadow-sm shadow-blue-500/25' : 'bg-slate-200'}`}>
-                            <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-200 ${comp.props.On ? 'translate-x-6' : 'translate-x-1'}`}></div>
+                        <div className={`w-10 h-5 rounded-full transition-colors shrink-0 flex items-center ${comp.props.On ? 'bg-blue-600' : 'bg-slate-300'}`}>
+                            <div className={`w-4 h-4 bg-white rounded-full transform transition-transform duration-200 ${comp.props.On ? 'translate-x-5' : 'translate-x-0.5'}`}></div>
                         </div>
                         <span>{comp.props.Text || 'Switch'}</span>
                     </label>
@@ -283,7 +313,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} py-3 px-1`}
+                        className={`${baseClasses} py-1.5 px-0.5`}
                         style={style}
                         onClick={handleClick}
                     >
@@ -292,7 +322,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             min={comp.props.MinValue || 0}
                             max={comp.props.MaxValue || 100}
                             value={comp.props.ThumbPosition || 50}
-                            className="w-full cursor-pointer accent-blue-600"
+                            className="w-full cursor-pointer"
                             readOnly
                         />
                     </div>
@@ -302,10 +332,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <select
                         key={comp.id}
-                        className={`${baseClasses} px-4 py-3 text-sm border border-slate-200 bg-white shadow-sm`}
+                        className={`${baseClasses} px-2 py-1.5 text-sm border border-slate-400 bg-white`}
                         style={{
                             ...style,
-                            minHeight: style.height === 'auto' ? '46px' : undefined
+                            minHeight: style.height === 'auto' ? '32px' : undefined
                         }}
                         onClick={handleClick}
                         disabled={comp.props.Enabled === false}
@@ -319,12 +349,12 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border border-slate-200 overflow-hidden shadow-sm`}
-                        style={{ ...style, minHeight: '120px', borderRadius: '12px' }}
+                        className={`${baseClasses} border border-slate-300 overflow-hidden`}
+                        style={{ ...style, minHeight: '100px' }}
                         onClick={handleClick}
                     >
                         {items.map((item, idx) => (
-                            <div key={idx} className="px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 text-sm font-medium text-slate-900">
+                            <div key={idx} className="px-3 py-2 border-b border-slate-200 last:border-b-0 text-sm text-slate-900">
                                 {item}
                             </div>
                         ))}
@@ -336,13 +366,13 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border border-slate-200 bg-white flex items-center justify-center shadow-sm`}
-                        style={{ ...style, minHeight: '200px', borderRadius: '16px' }}
+                        className={`${baseClasses} border border-slate-300 bg-white flex items-center justify-center`}
+                        style={{ ...style, minHeight: '180px' }}
                         onClick={handleClick}
                     >
                         <div className="text-center text-slate-900">
-                            <span className="text-4xl block mb-2">🌐</span>
-                            <span className="text-sm font-semibold">WebViewer</span>
+                            <span className="text-3xl block mb-1">🌐</span>
+                            <span className="text-sm">WebViewer</span>
                         </div>
                     </div>
                 );
@@ -354,7 +384,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         key={comp.id}
                         className={`${baseClasses} border-2 border-dashed border-slate-200 p-4 transition-all duration-200 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50/50' : ''
                             }`}
-                        style={{ ...style, display: 'flex', flexDirection: 'row', gap: '12px', minHeight: '76px', borderRadius: '16px' }}
+                        style={{ ...style, display: 'flex', flexDirection: 'row', gap: '5px', minHeight: '60px' }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
                         onDragOver={(e) => {
@@ -384,7 +414,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         key={comp.id}
                         className={`${baseClasses} border-2 border-dashed border-slate-200 p-4 transition-all duration-200 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50/50' : ''
                             }`}
-                        style={{ ...style, display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '76px', borderRadius: '16px' }}
+                        style={{ ...style, display: 'flex', flexDirection: 'column', gap: '5px', minHeight: '60px' }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
                         onDragOver={(e) => {
@@ -414,7 +444,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         key={comp.id}
                         className={`${baseClasses} border-2 border-dashed border-slate-200 p-4 transition-all duration-200 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50/50' : ''
                             }`}
-                        style={{ ...style, display: 'grid', gridTemplateColumns: `repeat(${numCols}, 1fr)`, gap: '12px', minHeight: '120px', borderRadius: '16px' }}
+                        style={{ ...style, display: 'grid', gridTemplateColumns: `repeat(${numCols}, 1fr)`, gap: '5px', minHeight: '100px' }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
                         onDragOver={(e) => {
@@ -437,22 +467,57 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     </div>
                 );
 
-            case 'Canvas':
-                const cw = typeof comp.props.Width === 'number' && comp.props.Width > 0 ? comp.props.Width : 300;
-                const ch = typeof comp.props.Height === 'number' && comp.props.Height > 0 ? comp.props.Height : 300;
+            case 'AbsoluteArrangement':
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border border-slate-300 bg-white shadow-sm relative overflow-hidden`}
-                        style={{ ...style, width: cw, height: ch, borderRadius: '16px' }}
+                        className={`${baseClasses} border-2 border-dashed border-slate-200 relative transition-all duration-200 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50/50' : ''}`}
+                        style={{ ...style, minHeight: '80px' }}
+                        onClick={handleClick}
+                        onDrop={(e) => handleDrop(e, comp.id)}
+                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDropTarget(comp.id); }}
+                        onDragLeave={() => setDropTarget(null)}
+                    >
+                        {comp.children && comp.children.length > 0 ? (
+                            comp.children.map(child => (
+                                <div key={child.id} className="absolute"
+                                    style={{
+                                        left: child.props.X || 0,
+                                        top: child.props.Y || 0,
+                                        ...(child.type === 'Button' || child.type === 'Label'
+                                            ? { width: child.props.Width ? `${child.props.Width}px` : undefined }
+                                            : {}),
+                                        zIndex: child.props.Z || 1
+                                    }}
+                                    onClick={(e) => { e.stopPropagation(); setSelectedId(child.id); }}
+                                >
+                                    {renderComponentPreview(child)}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-slate-900 text-sm italic font-medium flex items-center justify-center min-h-[100px]">
+                                Drop components here (Absolute)
+                            </div>
+                        )}
+                    </div>
+                );
+
+            case 'Canvas':
+                return (
+                    <div
+                        key={comp.id}
+                        className={`${baseClasses} border border-slate-300 bg-white relative overflow-hidden`}
+                        style={style}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
                         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDropTarget(comp.id); }}
                         onDragLeave={() => setDropTarget(null)}
                     >
                         {(!comp.children || comp.children.length === 0) ? (
-                            <div className="w-full h-full flex items-center justify-center text-slate-900">
-                                <span className="text-4xl">🎨</span>
+                            <div className="w-full h-full flex items-center justify-center text-slate-900" style={{
+                                backgroundImage: 'repeating-linear-gradient(45deg, #f0f0f0 0px, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
+                            }}>
+                                <span className="text-2xl">🎨</span>
                             </div>
                         ) : (
                             comp.children.map(child => {
@@ -477,8 +542,8 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                     );
                                 }
                                 if (isSprite) {
-                                    const sw = child.props.Width === -1 ? 40 : (typeof child.props.Width === 'number' && child.props.Width > 0 ? child.props.Width : 40);
-                                    const sh = child.props.Height === -1 ? 40 : (typeof child.props.Height === 'number' && child.props.Height > 0 ? child.props.Height : 40);
+                                    const sw = child.props.Width === -2 ? '100%' : child.props.Width === -1 ? 40 : (typeof child.props.Width === 'number' && child.props.Width > 0 ? child.props.Width : 40);
+                                    const sh = child.props.Height === -2 ? '100%' : child.props.Height === -1 ? 40 : (typeof child.props.Height === 'number' && child.props.Height > 0 ? child.props.Height : 40);
                                     return (
                                         <div key={child.id} className="absolute cursor-pointer hover:ring-2 hover:ring-blue-500 flex items-center justify-center bg-slate-200 text-xs font-bold text-slate-900 overflow-hidden"
                                             style={{
@@ -501,15 +566,175 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     </div>
                 );
 
+            case 'Map':
+                return (
+                    <div
+                        key={comp.id}
+                        className={`${baseClasses} border-2 border-dashed border-sky-300 transition-all duration-200 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50/50' : 'bg-sky-50/30'}`}
+                        style={{
+                            ...style,
+                            minHeight: '120px',
+                            position: 'relative',
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23bae6fd' fill-opacity='0.3'%3E%3Cpath d='M0 0h40v40H0z'/%3E%3C/g%3E%3C/svg%3E")`,
+                            backgroundSize: '40px 40px'
+                        }}
+                        onClick={handleClick}
+                        onDrop={(e) => handleDrop(e, comp.id)}
+                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDropTarget(comp.id); }}
+                        onDragLeave={() => setDropTarget(null)}
+                    >
+                        {comp.children && comp.children.length > 0 ? (
+                            <div className="flex flex-col gap-1 p-2">
+                                {comp.children.map(child => renderComponentPreview(child))}
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center min-h-[120px] text-sky-700 text-sm font-semibold gap-2">
+                                <span>🗺️</span>
+                                <span>Drop map features here</span>
+                            </div>
+                        )}
+                    </div>
+                );
+
+            case 'Polygon':
+                return (
+                    <div
+                        key={comp.id}
+                        className={`${baseClasses} bg-white border border-slate-200`}
+                        style={{
+                            ...style,
+                            width: '52px',
+                            height: '34px',
+                            padding: '0',
+                            overflow: 'hidden',
+                            borderRadius: '4px'
+                        }}
+                        onClick={handleClick}
+                    >
+                        <svg width="52" height="34" viewBox="0 0 52 34">
+                            <path d="M1 31L26 2L51 31Z" fill="#F44336" stroke="black" strokeWidth="1" />
+                        </svg>
+                    </div>
+                );
+
+            case 'Circle':
+                return (
+                    <div
+                        key={comp.id}
+                        className={`${baseClasses} bg-white border border-slate-200`}
+                        style={{
+                            ...style,
+                            width: '14px',
+                            height: '14px',
+                            padding: '0',
+                            overflow: 'hidden',
+                            borderRadius: '4px'
+                        }}
+                        onClick={handleClick}
+                    >
+                        <svg width="14" height="14" viewBox="0 0 14 14">
+                            <circle cx="7" cy="7" r="5" fill="#F44336" stroke="black" strokeWidth="1" />
+                        </svg>
+                    </div>
+                );
+
+            case 'Marker':
+                return (
+                    <div
+                        key={comp.id}
+                        className={`${baseClasses} bg-white border border-slate-200`}
+                        style={{
+                            ...style,
+                            width: '30px',
+                            height: '50px',
+                            padding: '0',
+                            overflow: 'hidden',
+                            borderRadius: '4px'
+                        }}
+                        onClick={handleClick}
+                    >
+                        <svg width="30" height="50" viewBox="9 0 31 50">
+                            <path d="M25 0c-8.284 0-15 6.656-15 14.866 0 8.211 15 35.135 15 35.135s15-26.924 15-35.135c0-8.21-6.716-14.866-15-14.866zm-.049 19.312c-2.557 0-4.629-2.055-4.629-4.588 0-2.535 2.072-4.589 4.629-4.589 2.559 0 4.631 2.054 4.631 4.589 0 2.533-2.072 4.588-4.631 4.588z" fill="#F44336" stroke="black" strokeWidth="1" />
+                        </svg>
+                    </div>
+                );
+
+            case 'LineString':
+                return (
+                    <div
+                        key={comp.id}
+                        className={`${baseClasses} bg-white border border-slate-200`}
+                        style={{
+                            ...style,
+                            width: '42px',
+                            height: '44px',
+                            padding: '0',
+                            overflow: 'hidden',
+                            borderRadius: '4px'
+                        }}
+                        onClick={handleClick}
+                    >
+                        <svg width="42" height="44" viewBox="0 0 42 44">
+                            <path d="M1 1L41 43" stroke="black" strokeWidth="3" />
+                        </svg>
+                    </div>
+                );
+
+            case 'Rectangle':
+                return (
+                    <div
+                        key={comp.id}
+                        className={`${baseClasses} bg-white border border-slate-200`}
+                        style={{
+                            ...style,
+                            width: '52px',
+                            height: '32px',
+                            padding: '0',
+                            overflow: 'hidden',
+                            borderRadius: '4px'
+                        }}
+                        onClick={handleClick}
+                    >
+                        <svg width="52" height="32" viewBox="0 0 52 32">
+                            <rect x="1" y="1" width="50" height="30" fill="#F44336" stroke="black" strokeWidth="1" />
+                        </svg>
+                    </div>
+                );
+
+            case 'FeatureCollection':
+                return (
+                    <div
+                        key={comp.id}
+                        className={`${baseClasses} bg-amber-50 border border-dashed border-amber-300`}
+                        style={{
+                            ...style,
+                            minHeight: '40px',
+                            borderRadius: '8px',
+                            padding: '4px'
+                        }}
+                        onClick={handleClick}
+                    >
+                        <div className="flex items-center gap-1 text-xs font-semibold text-amber-800">
+                            <span>📑</span>
+                            <span>FC</span>
+                        </div>
+                        {comp.children && comp.children.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                                {comp.children.map(child => renderComponentPreview(child))}
+                            </div>
+                        )}
+                    </div>
+                );
+
             case 'VideoPlayer':
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} bg-black flex items-center justify-center shadow-md`}
-                        style={{ ...style, width: comp.props.Width || 320, height: comp.props.Height || 240, borderRadius: '16px' }}
+                        className={`${baseClasses} bg-black flex items-center justify-center`}
+                        style={style}
                         onClick={handleClick}
                     >
-                        <span className="text-6xl">▶️</span>
+                        <span className="text-4xl">▶️</span>
                     </div>
                 );
 
@@ -517,12 +742,12 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} p-4 bg-slate-50 border border-slate-200 shadow-sm text-center`}
+                        className={`${baseClasses} p-2 bg-slate-50 border border-slate-200 text-center`}
                         style={style}
                         onClick={handleClick}
                     >
                         <div className="text-sm font-semibold text-slate-900">{comp.type}</div>
-                        <div className="text-xs text-slate-900 mt-1">{comp.id}</div>
+                        <div className="text-xs text-slate-900 mt-0.5">{comp.id}</div>
                     </div>
                 );
         }
@@ -781,7 +1006,12 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             className="overflow-y-auto relative flex flex-col flex-1" 
                             style={{ 
                                 height: `${displayHeight}px`,
-                                backgroundColor: currentScreen.backgroundColor || '#ffffff'
+                                backgroundColor: currentScreen.backgroundColor || '#ffffff',
+                                backgroundImage: currentScreen.backgroundImage
+                                    ? `url(${currentScreen.backgroundImage})`
+                                    : undefined,
+                                backgroundSize: '100% 100%',
+                                backgroundPosition: 'center'
                             }}
                         >
                             {components.length === 0 ? (
@@ -792,7 +1022,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                 </div>
                             ) : (
                                 <div 
-                                    className="flex flex-col gap-4 p-5 min-h-full w-full"
+                                    className="flex flex-col gap-[5px] p-2 min-h-full w-full"
                                     style={{
                                         alignItems: currentScreen.alignHorizontal === 'Center' ? 'center' :
                                                     currentScreen.alignHorizontal === 'Right' ? 'flex-end' : 'flex-start',
@@ -823,22 +1053,22 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
                 {/* Non-Visible Components Bar Pro */}
                 {nonVisibleComponents.length > 0 && (
-                    <div className="w-full max-w-[450px] bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl p-4 shadow-md flex flex-col gap-3 z-10 shrink-0">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                            <span className="text-[11px] font-extrabold text-slate-900 uppercase tracking-[0.15em] whitespace-nowrap">Non-Visible Components</span>
-                            <span className="text-[10px] bg-slate-100 text-slate-900 px-2 py-0.5 rounded-full font-bold">{nonVisibleComponents.length}</span>
+                    <div className="w-full max-w-[360px] mx-auto bg-white/90 backdrop-blur-sm border border-slate-200 rounded-xl p-3 shadow-md flex flex-col gap-2 z-10 shrink-0">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                            <span className="text-[10px] font-extrabold text-slate-900 uppercase tracking-[0.15em] whitespace-nowrap mx-auto">Non-Visible Components</span>
+                            <span className="text-[9px] bg-slate-100 text-slate-900 px-1.5 py-0.5 rounded-full font-bold">{nonVisibleComponents.length}</span>
                         </div>
-                        <div className="flex flex-wrap gap-2 justify-center">
+                        <div className="flex flex-wrap gap-1.5 justify-center">
                             {nonVisibleComponents.map(comp => (
                                 <div
                                     key={comp.id}
-                                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-[12px] font-bold cursor-pointer transition-all shadow-sm border ${selectedId === comp.id ? 'bg-white text-blue-600 border-blue-200 shadow-md scale-105' : 'bg-white text-slate-900 border-slate-200 hover:border-blue-200'}`}
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold cursor-pointer transition-all shadow-sm border ${selectedId === comp.id ? 'bg-white text-blue-600 border-blue-200 shadow-md scale-105' : 'bg-white text-slate-900 border-slate-200 hover:border-blue-200'}`}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setSelectedId(comp.id);
                                     }}
                                 >
-                                    <span className="text-lg">{comp.icon || '📦'}</span>
+                                    <span className="text-base">{comp.icon || '📦'}</span>
                                     <span className="uppercase tracking-[0.08em]">{comp.id}</span>
                                 </div>
                             ))}
@@ -848,6 +1078,5 @@ export default function PhoneCanvasEnhanced({ appState }) {
             </div>
         </div>
     );
+
 }
-
-
