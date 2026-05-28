@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "PoseBlocks — Human Pose Detection",
+  "version": "1.0.0",
+  "description": "Real-time human pose detection overlay using MoveNet / BlazePose. 14 modular blocks: skeleton, joints, rep counter, posture alert & more.",
+  "permissions": ["storage"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_title": "PoseBlocks",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["pose-extension.html", "PoseBlocks.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

@@ -442,6 +442,20 @@ export class AnimationCompiler {
             case 'ml_get_prediction':
                 return () => (window as any).runtime?.ml?.getPrediction() ?? '';
 
+            // ── Body Detection string reporters ────────────────────────────
+            case 'bd_body_count':
+                return () => String((window as any).runtime?.bodyDetection?.getBodyCount() ?? 0);
+            case 'bd_get_x': {
+                const bdLm = valueBlock.getFieldValue('PART') || 'nose';
+                const bdN = Number(valueBlock.getFieldValue('BODY') ?? 1);
+                return () => String((window as any).runtime?.bodyDetection?.getX(bdLm, bdN) ?? 0);
+            }
+            case 'bd_get_y': {
+                const bdLm2 = valueBlock.getFieldValue('PART') || 'nose';
+                const bdN2 = Number(valueBlock.getFieldValue('BODY') ?? 1);
+                return () => String((window as any).runtime?.bodyDetection?.getY(bdLm2, bdN2) ?? 0);
+            }
+
             // ── Object Detection string reporters ──────────────────────────
             case 'object_label': {
                 const n = Number(valueBlock.getFieldValue('N') ?? 1);
@@ -808,14 +822,14 @@ export class AnimationCompiler {
             case 'bd_body_count':
                 return () => (window as any).runtime?.bodyDetection?.getBodyCount() ?? 0;
             case 'bd_get_x': {
-                const n = Number(valueBlock.getFieldValue('N') ?? 1);
-                const lm = valueBlock.getFieldValue('LANDMARK') || 'nose';
-                return () => (window as any).runtime?.bodyDetection?.getX(n, lm) ?? 0;
+                const lm = valueBlock.getFieldValue('PART') || 'nose';
+                const n = Number(valueBlock.getFieldValue('BODY') ?? 1);
+                return () => (window as any).runtime?.bodyDetection?.getX(lm, n) ?? 0;
             }
             case 'bd_get_y': {
-                const n = Number(valueBlock.getFieldValue('N') ?? 1);
-                const lm = valueBlock.getFieldValue('LANDMARK') || 'nose';
-                return () => (window as any).runtime?.bodyDetection?.getY(n, lm) ?? 0;
+                const lm = valueBlock.getFieldValue('PART') || 'nose';
+                const n = Number(valueBlock.getFieldValue('BODY') ?? 1);
+                return () => (window as any).runtime?.bodyDetection?.getY(lm, n) ?? 0;
             }
 
             // ── ML Environment reporter blocks ─────────────────────────────
@@ -1341,8 +1355,10 @@ export class AnimationCompiler {
 
             // Body Detection
             case 'bd_camera':
+                step = { type: 'bd_action', action: block.getFieldValue('STATE') || 'analyze' } as any;
+                break;
             case 'bd_analyze':
-                step = { type: 'bd_action', action: block.getFieldValue('ACTION') || 'analyze' } as any;
+                step = { type: 'bd_action', action: 'analyze' } as any;
                 break;
 
             // ML Environment

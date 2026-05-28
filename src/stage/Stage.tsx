@@ -191,7 +191,7 @@ export const Stage: React.FC<StageProps> = ({
     const [dragOffset,       setDragOffset]       = useState({ x: 0, y: 0 });
     const prevPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
 
-    // ── Camera setup (unchanged logic) ────────────────────────────────────
+    // ── Camera setup ──────────────────────────────────────────────────────
     useEffect(() => {
         let stream: MediaStream | null = null;
         if (isCameraOn) {
@@ -201,6 +201,9 @@ export const Stage: React.FC<StageProps> = ({
                     if (videoRef.current) {
                         videoRef.current.srcObject = s;
                         setFaceVideoElement(videoRef.current);
+                        if ((window as any).runtime?.bodyDetection) {
+                            (window as any).runtime.bodyDetection.setCameraOn("on");
+                        }
                     }
                 })
                 .catch((err) => console.error("Error accessing camera:", err));
@@ -210,6 +213,9 @@ export const Stage: React.FC<StageProps> = ({
                 videoRef.current.srcObject = null;
             }
             setFaceVideoElement(null);
+            if ((window as any).runtime?.bodyDetection) {
+                (window as any).runtime.bodyDetection.setCameraOn("off");
+            }
         }
         return () => { stream?.getTracks().forEach(t => t.stop()); };
     }, [isCameraOn]);

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PoseBlocks — Human Pose Detection Extension</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0a0a1a; color: #eee; overflow: hidden; height: 100vh; }
+
+  #app { display: flex; height: 100vh; }
+
+  #sidebar {
+    width: 320px; background: #12122a; border-right: 1px solid #2a2a4a;
+    display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0;
+  }
+  #sidebar h1 { font-size: 18px; padding: 16px 14px 8px; color: #7c7cff; }
+  #sidebar .subtitle { font-size: 11px; color: #888; padding: 0 14px 12px; border-bottom: 1px solid #2a2a4a; }
+
+  .block-toggle { display: flex; align-items: center; gap: 8px; padding: 6px 14px; cursor: pointer; transition: background 0.15s; }
+  .block-toggle:hover { background: #1a1a3a; }
+  .block-toggle input { accent-color: #7c7cff; }
+  .block-toggle label { font-size: 13px; cursor: pointer; flex: 1; }
+  .block-toggle .badge { font-size: 10px; color: #888; }
+
+  .block-options { padding: 0 14px 8px 30px; display: none; }
+  .block-options.open { display: block; }
+  .block-options label { font-size: 11px; color: #aaa; display: block; margin: 4px 0 2px; }
+  .block-options input, .block-options select {
+    width: 100%; padding: 4px 8px; border-radius: 4px; border: 1px solid #333;
+    background: #1a1a2e; color: #eee; font-size: 12px;
+  }
+
+  #main { flex: 1; display: flex; flex-direction: column; position: relative; }
+  #toolbar {
+    display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+    background: #12122a; border-bottom: 1px solid #2a2a4a; flex-shrink: 0;
+  }
+  #toolbar button {
+    padding: 6px 16px; border: none; border-radius: 6px; font-size: 13px;
+    font-weight: 600; cursor: pointer; transition: all 0.15s;
+  }
+  #toolbar button:disabled { opacity: 0.4; cursor: default; }
+  #startBtn { background: #2ecc71; color: #000; }
+  #startBtn:hover:not(:disabled) { background: #27ae60; }
+  #stopBtn { background: #e74c3c; color: #fff; }
+  #stopBtn:hover:not(:disabled) { background: #c0392b; }
+  #detectorSelect { padding: 5px 10px; border-radius: 6px; border: 1px solid #333; background: #1a1a2e; color: #eee; font-size: 12px; }
+  #status { font-size: 12px; color: #888; margin-left: auto; }
+
+  #canvasWrap { flex: 1; display: flex; align-items: center; justify-content: center; background: #0a0a1a; position: relative; }
+  #canvasWrap canvas { max-width: 100%; max-height: 100%; border-radius: 8px; }
+
+  #resultsPanel {
+    position: absolute; bottom: 10px; left: 10px; right: 10px;
+    background: rgba(0,0,0,0.75); border-radius: 8px; padding: 8px 12px;
+    font-family: monospace; font-size: 11px; color: #0f0; max-height: 80px; overflow-y: auto;
+    backdrop-filter: blur(4px);
+  }
+  #resultsPanel .label { color: #7c7cff; }
+
+  .section-title { font-size: 11px; font-weight: 700; color: #7c7cff; padding: 12px 14px 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <h1>🦴 PoseBlocks</h1>
+    <div class="subtitle">14 modular pose detection blocks</div>
+
+    <div class="section-title">Core</div>
+    <div class="block-toggle"><input type="checkbox" id="chk-keypoint" checked><label for="chk-keypoint">Keypoint</label><span class="badge">dots</span></div>
+    <div class="block-toggle"><input type="checkbox" id="chk-skeleton" checked><label for="chk-skeleton">Skeleton</label><span class="badge">lines</span></div>
+    <div class="block-toggle"><input type="checkbox" id="chk-boundingbox"><label for="chk-boundingbox">Bounding Box</label><span class="badge">region</span></div>
+    <div class="block-toggle"><input type="checkbox" id="chk-confidence"><label for="chk-confidence">Confidence</label><span class="badge">scores</span></div>
+
+    <div class="section-title">Analysis</div>
+    <div class="block-toggle"><input type="checkbox" id="chk-angles" checked><label for="chk-angles">Joint Angles</label><span class="badge">arcs</span></div>
+    <div class="block-toggle"><input type="checkbox" id="chk-classifier" checked><label for="chk-classifier">Pose Classifier</label><span class="badge">label</span></div>
+    <div class="block-toggle"><input type="checkbox" id="chk-movement"><label for="chk-movement">Movement Tracker</label><span class="badge">trails</span></div>
+    <div class="block-toggle"><input type="checkbox" id="chk-symmetry"><label for="chk-symmetry">Body Symmetry</label><span class="badge">score</span></div>
+
+    <div class="section-title">Extension</div>
+    <div class="block-toggle"><input type="checkbox" id="chk-depth"><label for="chk-depth">Depth Estimation</label><span class="badge">z</span></div>
+    <div class="block-toggle"><input type="checkbox" id="chk-repcount"><label for="chk-repcount">Rep Counter</label><span class="badge">exercise</span></div>
+    <div class="block-toggle"><input type="checkbox" id="chk-alert"><label for="chk-alert">Posture Alert</label><span class="badge">warn</span></div>
+    <div class="block-toggle"><input type="checkbox" id="chk-smooth" checked><label for="chk-smooth">Smoothing</label><span class="badge">jitter</span></div>
+
+    <div class="section-title">Options</div>
+    <div class="block-options open" style="padding: 4px 14px 10px;">
+      <label>Exercise type</label>
+      <select id="exerciseType">
+        <option value="squat">Squat</option>
+        <option value="pushup">Push-up</option>
+        <option value="bicep_curl">Bicep Curl</option>
+      </select>
+      <label>Slouch threshold (degrees)</label>
+      <input type="number" id="slouchThreshold" value="25" min="5" max="60">
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="toolbar">
+      <button id="startBtn">▶ Start Camera</button>
+      <button id="stopBtn" disabled>■ Stop</button>
+      <label style="font-size:12px;color:#888;">Model:</label>
+      <select id="detectorSelect">
+        <option value="movenet">MoveNet (TF.js)</option>
+        <option value="posenet">PoseNet (TF.js)</option>
+      </select>
+      <span id="status">Idle</span>
+    </div>
+    <div id="canvasWrap">
+      <canvas id="poseCanvas" width="640" height="480"></canvas>
+      <div id="resultsPanel"></div>
+    </div>
+  </div>
+</div>
+
+<video id="video" autoplay playsinline style="display:none"></video>
+
+<script type="module">
+import {
+  PoseDetectionSuite, SmoothingBlock
+} from './PoseBlocks.js';
+
+const canvas = document.getElementById('poseCanvas');
+const video = document.getElementById('video');
+const resultsPanel = document.getElementById('resultsPanel');
+const statusEl = document.getElementById('status');
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+
+let stream = null;
+let detector = null;
+let suite = null;
+let isRunning = false;
+let animId = null;
+let tfReady = false;
+
+async function loadTF() {
+  if (window.tf) return;
+  await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js');
+  await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js');
+  tfReady = true;
+}
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+function getActiveBlocks() {
+  const ids = [];
+  const checks = {
+    keypoint: 'chk-keypoint', skeleton: 'chk-skeleton', boundingbox: 'chk-boundingbox',
+    confidence: 'chk-confidence', angles: 'chk-angles', classifier: 'chk-classifier',
+    movement: 'chk-movement', symmetry: 'chk-symmetry', depth: 'chk-depth',
+    repcount: 'chk-repcount', alert: 'chk-alert',
+  };
+  for (const [id, chkId] of Object.entries(checks)) {
+    if (document.getElementById(chkId).checked) ids.push(id);
+  }
+  return ids;
+}
+
+function buildSuite() {
+  suite = new PoseDetectionSuite(canvas, {
+    blocks: getActiveBlocks(),
+    smooth: document.getElementById('chk-smooth').checked ? 0.45 : undefined,
+    repcount: {
+      exercise: document.getElementById('exerciseType').value,
+      triggerAngle: 100,
+      onRep: (n) => { if (n % 5 === 0) statusEl.textContent = `Rep ${n}!`; },
+    },
+    alert: {
+      slouchThreshold: parseInt(document.getElementById('slouchThreshold').value) || 25,
+      alertCooldown: 3000,
+      onAlert: (type, data) => {
+        statusEl.textContent = `⚠ ${type}`;
+        resultsPanel.innerHTML += `<div><span class="label">ALERT:</span> ${type} ${JSON.stringify(data)}</div>`;
+        if (resultsPanel.children.length > 20) resultsPanel.removeChild(resultsPanel.firstChild);
+      },
+    },
+  });
+}
+
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' } });
+    video.srcObject = stream;
+    await video.play();
+    return true;
+  } catch (e) {
+    statusEl.textContent = '❌ Camera denied';
+    return false;
+  }
+}
+
+async function startDetection() {
+  if (isRunning) return;
+  statusEl.textContent = 'Loading TF.js...';
+  startBtn.disabled = true;
+
+  await loadTF();
+  statusEl.textContent = 'Loading pose model...';
+
+  const modelType = document.getElementById('detectorSelect').value;
+  detector = await window.poseDetection.createDetector(
+    window.poseDetection.SupportedModels[modelType === 'posenet' ? 'PoseNet' : 'MoveNet'],
+    modelType === 'posenet'
+      ? { architecture: 'MobileNetV1', outputStride: 16, inputResolution: { width: 257, height: 257 }, multiplier: 0.75 }
+      : { modelType: window.poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+  );
+
+  if (!stream) {
+    const ok = await startCamera();
+    if (!ok) { startBtn.disabled = false; return; }
+  }
+
+  buildSuite();
+  isRunning = true;
+  stopBtn.disabled = false;
+  statusEl.textContent = 'Running';
+
+  detectLoop();
+}
+
+async function detectLoop() {
+  if (!isRunning) return;
+  try {
+    const poses = await detector.estimatePoses(video);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    if (poses.length > 0) {
+      const result = suite.render(poses[0].keypoints, video.videoWidth, video.videoHeight);
+      displayResults(result);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  animId = requestAnimationFrame(detectLoop);
+}
+
+function displayResults(result) {
+  const lines = [];
+  if (result.perf) {
+    lines.push(`<span class="label">FPS:</span> ${result.perf.fps}  <span class="label">Latency:</span> ${result.perf.latency}ms`);
+  }
+  if (result.results?.angles) {
+    const angles = Object.entries(result.results.angles).slice(0, 4).map(([k, v]) => `${k}: ${v}°`).join(' | ');
+    lines.push(`<span class="label">Angles:</span> ${angles}`);
+  }
+  if (result.results?.classifier) {
+    lines.push(`<span class="label">Pose:</span> ${result.results.classifier}`);
+  }
+  if (result.results?.symmetry !== undefined) {
+    lines.push(`<span class="label">Symmetry:</span> ${(result.results.symmetry * 100).toFixed(0)}%`);
+  }
+  if (result.results?.repcount) {
+    lines.push(`<span class="label">Reps:</span> ${result.results.repcount.count}  <span class="label">Angle:</span> ${result.results.repcount.angle}°`);
+  }
+  resultsPanel.innerHTML = lines.join('  |  ');
+}
+
+function stopDetection() {
+  isRunning = false;
+  if (animId) cancelAnimationFrame(animId);
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  detector = null;
+  stream = null;
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  statusEl.textContent = 'Stopped';
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  resultsPanel.innerHTML = '';
+}
+
+function updateBlocks() {
+  if (isRunning) buildSuite();
+}
+
+startBtn.addEventListener('click', startDetection);
+stopBtn.addEventListener('click', stopDetection);
+
+document.querySelectorAll('#sidebar input').forEach(el => {
+  el.addEventListener('change', updateBlocks);
+});
+document.getElementById('exerciseType').addEventListener('change', updateBlocks);
+document.getElementById('slouchThreshold').addEventListener('change', updateBlocks);
+document.getElementById('detectorSelect').addEventListener('change', () => {
+  if (isRunning) { stopDetection(); startDetection(); }
+});
+</script>
+</body>
+</html>

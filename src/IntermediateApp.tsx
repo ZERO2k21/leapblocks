@@ -530,7 +530,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
             if (event.data && event.data.type === 'ADD_EXTENSION') {
-                const extId = event.data.extension || event.data.extensionId;
+                const extId = event.data.extension || event.data.extensionId || event.data.ext;
                 if (extId) {
                     handleAddExtension(extId);
                     setShowExtensionLibrary(false);
@@ -3080,8 +3080,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         animationVM.stopAll();
         leapRuntime.stopAll();
 
-        // Expose camera toggle so fd_camera blocks can turn camera on/off
-        (window as any).__setCameraOn = (on: boolean) => setIsCameraOn(on);
+        // Expose camera toggle so fd_camera/bd_camera blocks can turn camera on/off
+        (window as any).__setCameraOn = (on: boolean) => {
+            setIsCameraOn(on);
+            if ((window as any).runtime?.bodyDetection) {
+                (window as any).runtime.bodyDetection.setCameraOn(on ? "on" : "off");
+            }
+        };
 
         try {
             const allScripts = syncAllWorkspaces();
