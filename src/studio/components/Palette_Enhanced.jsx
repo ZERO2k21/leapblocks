@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { PALETTE_ENHANCED } from '../data/paletteComponents_Enhanced';
 import { Search, ChevronDown, ChevronRight, Info } from 'lucide-react';
+import ComponentIcon from './ComponentIcon';
 
 export default function PaletteEnhanced() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -103,7 +104,7 @@ export default function PaletteEnhanced() {
                                             className="group/item relative flex flex-col items-center gap-2.5 p-4 text-center cursor-grab active:cursor-grabbing border-2 border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-blue-500 before:to-cyan-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500/5 hover:to-white hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10"
                                             title={item.description}
                                         >
-                                            <span className="text-3xl text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] grayscale-[20%] group-hover/item:scale-110 group-hover/item:rotate-6 group-hover/item:text-blue-600 group-hover/item:grayscale-0">{item.icon}</span>
+                                            <ComponentIcon type={item.type} size={36} className="transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] opacity-80 group-hover/item:scale-110 group-hover/item:rotate-6 group-hover/item:opacity-100" />
                                             <span
                                                 style={{
                                                     fontSize: item.label.length > 20 ? '8px' : item.label.length > 15 ? '9.5px' : '11px',

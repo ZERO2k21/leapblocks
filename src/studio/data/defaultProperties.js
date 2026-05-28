@@ -15,8 +15,7 @@ const baseVisible = {
   Width: LENGTH_AUTOMATIC,
   Height: LENGTH_AUTOMATIC,
   Visible: true,
-  Enabled: true,
-  HorizontalAlignment: 'Left'
+  Enabled: true
 };
 
 const baseButton = {

@@ -190,9 +190,18 @@ class ApkInjector {
       await fs.ensureDir(mediaDir);
 
       for (const item of mediaAssets) {
-        if (item.data) {
-          const buffer = Buffer.from(item.data.split(',').pop(), 'base64');
-          await fs.writeFile(path.join(mediaDir, item.filename), buffer);
+        if (!item.data) continue;
+        const dataStr = String(item.data);
+        const commaIdx = dataStr.indexOf(',');
+        const b64 = commaIdx >= 0 ? dataStr.substring(commaIdx + 1) : dataStr;
+        if (!b64) continue;
+        try {
+          const buffer = Buffer.from(b64, 'base64');
+          if (buffer.length > 0) {
+            await fs.writeFile(path.join(mediaDir, item.filename), buffer);
+          }
+        } catch (_) {
+          onProgress?.({ stage: 'media_skip', message: `Skipped unreadable media: ${item.filename}` });
         }
       }
     }
@@ -389,13 +398,14 @@ class ApkInjector {
       appName = 'LeapApp',
       packageName = 'com.leaplab.myapp',
       mediaAssets = [],
+      permissions = [],
     } = appConfig;
 
     await this.initialize(appName);
 
     const decodedDir = await this.decodeApk(templateApkPath, onProgress);
     await this.injectAssets(decodedDir, webAppFiles, mediaAssets, onProgress);
-    await this.modifyManifest(decodedDir, { appName, packageName }, onProgress);
+    await this.modifyManifest(decodedDir, { appName, packageName, permissions }, onProgress);
     await this.injectWebViewActivity(decodedDir, packageName, onProgress);
 
     const unsignedPath = path.join(this.workingDir, 'unsigned.apk');

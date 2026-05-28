@@ -18,8 +18,54 @@ const path = require('path');
 const fs = require('fs-extra');
 
 const os = require('os');
-const TEMPLATE_APK = path.join(__dirname, 'base_template.apk');
+
+// Template APK path resolution — works in dev and packaged Electron
+function resolveTemplatePath() {
+  const candidates = [
+    path.join(__dirname, 'base_template.apk'),
+    process.resourcesPath && path.join(process.resourcesPath, 'tools', 'base_template.apk'),
+    process.resourcesPath && path.join(process.resourcesPath, 'base_template.apk'),
+    path.join(__dirname, '..', '..', '..', 'tools', 'base_template.apk'),
+  ].filter(Boolean);
+  for (const c of candidates) {
+    if (fs.pathExistsSync(c)) return c;
+  }
+  return candidates[0];
+}
+
+const TEMPLATE_APK = resolveTemplatePath();
 const OUTPUT_DIR = path.join(os.tmpdir(), 'leapblocks_output');
+
+// Permissions required by specific component types
+const COMPONENT_PERMISSIONS = {
+  BluetoothClient:     ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN'],
+  BluetoothServer:     ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN'],
+  LocationSensor:      ['android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION'],
+  Camera:              ['android.permission.CAMERA'],
+  Texting:             ['android.permission.SEND_SMS'],
+  SpeechRecognizer:    ['android.permission.RECORD_AUDIO'],
+  SoundRecorder:       ['android.permission.RECORD_AUDIO'],
+  PhoneCall:           ['android.permission.CALL_PHONE'],
+  ContactPicker:       ['android.permission.READ_CONTACTS'],
+  ImagePicker:         ['android.permission.READ_EXTERNAL_STORAGE'],
+  FilePicker:          ['android.permission.READ_EXTERNAL_STORAGE'],
+};
+
+function collectPermissions(screens = []) {
+  const perms = new Set();
+  const walk = (components = []) => {
+    for (const comp of components) {
+      const mapped = COMPONENT_PERMISSIONS[comp.type];
+      if (mapped) mapped.forEach(p => perms.add(p));
+      if (comp.children?.length) walk(comp.children);
+    }
+  };
+  for (const screen of screens) {
+    walk(screen.components || []);
+    walk(screen.nonVisibleComponents || []);
+  }
+  return [...perms];
+}
 
 function countVisibleComponents(screens = []) {
   let count = 0;
@@ -88,6 +134,8 @@ class ApkBuilder {
         // Full injection pipeline with template
         onProgress?.({ stage: 'template_found', progress: 12, message: 'Using WebView template APK' });
 
+        const permissions = collectPermissions(screens);
+
         const signedPath = await this.injector.fullBuild(
           this.templatePath,
           webAppFiles,
@@ -95,6 +143,7 @@ class ApkBuilder {
             appName,
             packageName,
             mediaAssets: appState.media || [],
+            permissions,
           },
           onProgress
         );
@@ -192,6 +241,19 @@ versionInfo:
   versionCode: ${versionCode}
   versionName: '${versionName}'
 `);
+
+    // Inject permissions
+    const screens = Array.isArray(appState.screens) ? appState.screens : [];
+    const permissions = collectPermissions(screens);
+
+    // Write updated manifest with all required permissions
+    let manifest = await fs.readFile(path.join(decodedDir, 'AndroidManifest.xml'), 'utf8');
+    for (const perm of permissions) {
+      if (!manifest.includes(perm)) {
+        manifest = manifest.replace('</manifest>', `    <uses-permission android:name="${perm}" />\n</manifest>`);
+      }
+    }
+    await fs.writeFile(path.join(decodedDir, 'AndroidManifest.xml'), manifest);
 
     // Inject web assets
     onProgress?.({ stage: 'injecting_assets', progress: 30, message: 'Injecting web assets...' });

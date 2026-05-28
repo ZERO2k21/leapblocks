@@ -172,3 +172,9 @@ rect[display="none"] {
   -moz-osx-font-smoothing: auto !important;
   text-rendering: optimizeLegibility !important;
 }
+
+@keyframes linear-progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(150%); }
+  100% { transform: translateX(350%); }
+}

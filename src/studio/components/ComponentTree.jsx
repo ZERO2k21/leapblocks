@@ -4,6 +4,7 @@
 * Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import React, { useEffect, useState } from 'react';
+import ComponentIcon from './ComponentIcon';
 
 /**
  * ComponentTree - Displays hierarchical tree of components on current screen
@@ -77,29 +78,6 @@ export default function ComponentTree({ appState }) {
         const hasChildren = component.children && component.children.length > 0;
         const isRenaming = renamingId === component.id;
 
-        // Component icon based on type
-        const getIcon = (type) => {
-            const icons = {
-                Button: '🔲',
-                Label: '📝',
-                TextBox: '📄',
-                Image: '🖼️',
-                CheckBox: '☑️',
-                Slider: '🎚️',
-                Switch: '🔘',
-                HorizontalArrangement: '↔️',
-                VerticalArrangement: '↕️',
-                TableArrangement: '📊',
-                Canvas: '🎨',
-                Camera: '📷',
-                Sound: '🔊',
-                TinyDB: '💾',
-                LocationSensor: '📍',
-                Web: '🌐',
-            };
-            return icons[type] || '📦';
-        };
-
         return (
             <div key={component.id}>
                 <div
@@ -126,7 +104,7 @@ export default function ComponentTree({ appState }) {
                     {!hasChildren && <span className="w-4 mr-2"></span>}
 
                     {/* Component Icon */}
-                    <span className="mr-2.5 text-base">{getIcon(component.type)}</span>
+                    <ComponentIcon type={component.type} size={20} className="mr-2.5 shrink-0" />
 
                     {/* Component Name */}
                     {isRenaming ? (
@@ -194,7 +172,7 @@ export default function ComponentTree({ appState }) {
                     >
                         {expandedNodes.has(currentScreen.id) ? '▼' : '▶'}
                     </button>
-                    <span className="mr-2.5 text-base">📱</span>
+                    <ComponentIcon type="Screen" size={20} className="mr-2.5 shrink-0" />
                     <span className="truncate">{currentScreen.id}</span>
                 </div>
 
@@ -212,7 +190,7 @@ export default function ComponentTree({ appState }) {
 
                         {/* Non-Visible Components Section */}
                         {currentScreen.nonVisibleComponents && currentScreen.nonVisibleComponents.length > 0 && (
-                            <div className="mt-4 border-t border-slate-200">
+                            <div className="mt-8 border-t border-slate-200/80 pt-2">
                                 <div className="py-2 px-4 bg-slate-50/90 text-[10px] text-slate-500 font-extrabold uppercase tracking-[0.15em] border-b border-slate-200/60">
                                     Non-visible components
                                 </div>

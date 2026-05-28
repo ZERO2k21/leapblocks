@@ -4,6 +4,7 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { Smartphone, Tablet, Monitor, RotateCw, Plus, Check, X as XIcon, Wifi, Battery, Signal, ChevronLeft } from 'lucide-react';
+import ComponentIcon from './ComponentIcon';
 
 export default function PhoneCanvasEnhanced({ appState }) {
     const { screens, activeScreen, selectedId, addComponent, setSelectedId, setActiveScreen, addScreen, deleteScreen } = appState;
@@ -161,10 +162,6 @@ export default function PhoneCanvasEnhanced({ appState }) {
             return 'auto';
         };
 
-        // Horizontal alignment — CSS align-self overrides the Screen's alignItems per-component
-        const alignMap = { 'Left': 'flex-start', 'Center': 'center', 'Right': 'flex-end' };
-        const alignSelf = alignMap[comp.props.HorizontalAlignment];
-
         // Dynamic styles from props
         const style = {
             backgroundColor: comp.props.BackgroundColor || comp.props.backgroundColor,
@@ -176,7 +173,6 @@ export default function PhoneCanvasEnhanced({ appState }) {
             height: resolveLength(comp.props.Height, comp.props.HeightPercent),
             textAlign: comp.props.TextAlignment || 'left',
             display: comp.props.Visible === false ? 'none' : undefined,
-            alignSelf,
         };
 
         const handleClick = (e) => {
@@ -738,6 +734,70 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     </div>
                 );
 
+            case 'CircularProgress':
+                return (
+                    <div
+                        key={comp.id}
+                        className={`${baseClasses} flex items-center justify-center`}
+                        style={{
+                            ...style,
+                            width: style.width === 'auto' ? '48px' : style.width,
+                            height: style.height === 'auto' ? '48px' : style.height,
+                            minWidth: '36px',
+                            minHeight: '36px'
+                        }}
+                        onClick={handleClick}
+                    >
+                        <svg viewBox="0 0 48 48" style={{ width: '100%', height: '100%', maxWidth: '48px', maxHeight: '48px' }}>
+                            <circle cx="24" cy="24" r="20" fill="none" stroke="#E2E8F0" strokeWidth="4" />
+                            <circle cx="24" cy="24" r="20" fill="none"
+                                stroke={comp.props.Color || '#3B82F6'}
+                                strokeWidth="4"
+                                strokeLinecap="round"
+                                strokeDasharray={`${((comp.props.Progress || 0) / (comp.props.Maximum || 100)) * 125.6} 125.6`}
+                                transform="rotate(-90 24 24)"
+                                style={{ transition: 'stroke-dasharray 0.3s ease' }}
+                            />
+                            <text x="24" y="24" textAnchor="middle" dominantBaseline="central"
+                                fontSize="10" fontWeight="bold" fill="#475569">
+                                {comp.props.Indeterminate ? '' : `${Math.round((comp.props.Progress || 0) / (comp.props.Maximum || 100) * 100)}%`}
+                            </text>
+                            {comp.props.Indeterminate && (
+                                <circle cx="24" cy="4" r="3" fill={comp.props.Color || '#3B82F6'}>
+                                    <animateTransform attributeName="transform" type="rotate"
+                                        from="0 24 24" to="360 24 24" dur="1s" repeatCount="indefinite" />
+                                </circle>
+                            )}
+                        </svg>
+                    </div>
+                );
+
+            case 'LinearProgress':
+                return (
+                    <div
+                        key={comp.id}
+                        className={`${baseClasses}`}
+                        style={{
+                            ...style,
+                            minHeight: '20px',
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}
+                        onClick={handleClick}
+                    >
+                        <div className="w-full bg-slate-200 rounded-full h-4 overflow-hidden" style={{ backgroundColor: '#E2E8F0' }}>
+                            <div
+                                className="h-full rounded-full transition-all duration-300 ease-in-out"
+                                style={{
+                                    width: comp.props.Indeterminate ? '40%' : `${Math.min(100, Math.max(0, ((comp.props.Progress || 0) / (comp.props.Maximum || 100)) * 100))}%`,
+                                    backgroundColor: comp.props.Color || '#3B82F6',
+                                    ...(comp.props.Indeterminate ? { animation: 'linear-progress-indeterminate 1.5s ease-in-out infinite' } : {})
+                                }}
+                            />
+                        </div>
+                    </div>
+                );
+
             default:
                 return (
                     <div
@@ -1003,7 +1063,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
                         {/* Screen Content */}
                         <div 
-                            className="overflow-y-auto relative flex flex-col flex-1" 
+                            className="overflow-y-auto relative flex flex-col flex-1 w-full" 
                             style={{ 
                                 height: `${displayHeight}px`,
                                 backgroundColor: currentScreen.backgroundColor || '#ffffff',
@@ -1068,7 +1128,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                         setSelectedId(comp.id);
                                     }}
                                 >
-                                    <span className="text-base">{comp.icon || '📦'}</span>
+                                    <ComponentIcon type={comp.type} size={18} className="shrink-0" />
                                     <span className="uppercase tracking-[0.08em]">{comp.id}</span>
                                 </div>
                             ))}

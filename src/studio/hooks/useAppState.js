@@ -21,7 +21,7 @@ const ARRANGEMENT_TYPES = new Set([
 const CANVAS_CHILD_TYPES = new Set(['Ball', 'ImageSprite']);
 const MAP_CHILD_TYPES = new Set(['Marker', 'LineString', 'Polygon', 'Rectangle', 'Circle', 'FeatureCollection']);
 
-const makeScreen = (id) => ({ id, title: id, components: [], nonVisibleComponents: [] });
+const makeScreen = (id) => ({ id, title: id, backgroundColor: '#ffffff', backgroundImage: '', alignHorizontal: 'Left', alignVertical: 'Top', components: [], nonVisibleComponents: [] });
 
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
 
@@ -182,6 +182,7 @@ export function useAppState() {
         // Update Screen property directly
         if (key === 'AboutScreen') next.aboutScreen = value;
         else if (key === 'BackgroundColor') next.backgroundColor = value;
+        else if (key === 'BackgroundImage') next.backgroundImage = value;
         else if (key === 'AlignHorizontal') next.alignHorizontal = value;
         else if (key === 'AlignVertical') next.alignVertical = value;
         else if (key === 'ShowStatusBar') next.showStatusBar = value;

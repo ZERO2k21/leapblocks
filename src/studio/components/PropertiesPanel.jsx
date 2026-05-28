@@ -8,8 +8,10 @@
  * component, falling back to the component's own props for values.
  */
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Trash2, Smartphone, Plus, ChevronDown, ChevronRight, Pencil } from 'lucide-react';
+import { Trash2, Smartphone, Plus, ChevronDown, ChevronRight, Pencil, Image, AlertTriangle, X } from 'lucide-react';
 import { COMPONENT_METADATA } from '../data/componentMetadata';
+import AssetPicker from './AssetPicker';
+import ComponentIcon from './ComponentIcon';
 
 // Color input with local state and debounced parent updates to prevent lag
 function ColorPickerInput({ id, propKey, value, updateProp }) {
@@ -91,15 +93,26 @@ function ColorPickerInput({ id, propKey, value, updateProp }) {
 export default function PropertiesPanel({ appState }) {
   const {
     screens, activeScreen, selectedId, selectedComponent,
-    setSelectedId, updateProp, removeComponent, addScreen, renameComponent
+    setSelectedId, updateProp, removeComponent, addScreen, renameComponent,
+    media
   } = appState;
 
   const [newScreenName, setNewScreenName] = useState('');
   const [isAddingScreen, setIsAddingScreen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
+  const [assetPickerOpen, setAssetPickerOpen] = useState(false);
+  const [assetPickerProp, setAssetPickerProp] = useState({ key: '', filter: 'image', currentValue: '' });
+
+  const MEDIA_PROPERTIES = useMemo(() => ({
+    BackgroundImage: 'image',
+    Picture: 'image',
+    Image: 'image',
+    Source: 'all',
+  }), []);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const renameInputRef = useRef(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const currentScreen = screens.find(s => s.id === activeScreen) || screens[0];
   const components = currentScreen?.components || [];
@@ -197,7 +210,7 @@ export default function PropertiesPanel({ appState }) {
         // Infer default based on type
         switch (propDef.type) {
           case 'Boolean':
-            fullProps[name] = false;
+            fullProps[name] = name === 'Enabled' ? true : false;
             break;
           case 'Number':
             fullProps[name] = 0;
@@ -460,6 +473,41 @@ export default function PropertiesPanel({ appState }) {
               className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all"
               onChange={(e) => updateProp(id, key, parseFloat(e.target.value) || 0)}
             />
+          ) : MEDIA_PROPERTIES[key] ? (
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                type="text"
+                value={value ?? ''}
+                readOnly
+                style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f1f5f9', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0', flex: 1, cursor: 'pointer' }}
+                className="w-full"
+                placeholder="None"
+                onClick={() => {
+                  setAssetPickerProp({ key, filter: MEDIA_PROPERTIES[key], currentValue: value || '' });
+                  setAssetPickerOpen(true);
+                }}
+              />
+              <button
+                onClick={() => {
+                  setAssetPickerProp({ key, filter: MEDIA_PROPERTIES[key], currentValue: value || '' });
+                  setAssetPickerOpen(true);
+                }}
+                style={{ padding: '8px 12px', height: '36px', fontSize: '12px', fontWeight: '700', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', color: '#0f172a', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                className="hover:bg-white hover:border-blue-300 transition-all"
+              >
+                Select
+              </button>
+              {value ? (
+                <button
+                  onClick={() => updateProp(id, key, '')}
+                  style={{ padding: '8px', height: '36px', width: '36px', fontSize: '14px', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#fef2f2', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700' }}
+                  className="hover:bg-red-50 hover:border-red-300 transition-all"
+                  title="Clear"
+                >
+                  ×
+                </button>
+              ) : null}
+            </div>
           ) : (
             <input
               type="text"
@@ -514,11 +562,7 @@ export default function PropertiesPanel({ appState }) {
                 </button>
               )}
               <button
-                onClick={() => {
-                  if (window.confirm(`Delete ${id}?`)) {
-                    removeComponent(id);
-                  }
-                }}
+                onClick={() => setDeleteConfirm({ id, type: selectedComponent.type })}
                 style={{ padding: '14px' }}
                 className="bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 group shrink-0"
                 title="Delete Module"
@@ -570,6 +614,76 @@ export default function PropertiesPanel({ appState }) {
       <div className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body">
         {renderPropertyEditor()}
       </div>
+      {assetPickerOpen && (
+        <AssetPicker
+          isOpen={assetPickerOpen}
+          onClose={() => setAssetPickerOpen(false)}
+          onSelect={(filename) => {
+            updateProp(selectedId, assetPickerProp.key, filename);
+            setAssetPickerOpen(false);
+          }}
+          media={media || []}
+          filterType={assetPickerProp.filter}
+          currentValue={assetPickerProp.currentValue}
+        />
+      )}
+      {deleteConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setDeleteConfirm(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-[380px] overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 pt-6 pb-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-rose-600" />
+                </div>
+                <span className="text-[17px] font-black text-slate-900 tracking-tight">Delete Module</span>
+              </div>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-slate-50 to-white border border-slate-200 shadow-sm">
+                <ComponentIcon type={deleteConfirm.type} size={32} />
+                <div>
+                  <div className="text-[15px] font-bold text-slate-900">{deleteConfirm.id}</div>
+                  <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.08em]">{deleteConfirm.type}</div>
+                </div>
+              </div>
+              <p className="mt-4 text-[13px] text-slate-600 font-medium leading-relaxed">
+                Are you sure you want to delete this module? This action cannot be undone. All properties and block references will be permanently removed.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-2 border-t border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="px-5 py-2.5 rounded-xl text-[13px] font-extrabold text-slate-700 bg-white border-2 border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 shadow-sm uppercase tracking-[0.05em]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  removeComponent(deleteConfirm.id);
+                  setDeleteConfirm(null);
+                }}
+                className="px-5 py-2.5 rounded-xl text-[13px] font-extrabold text-white bg-gradient-to-br from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 transition-all active:scale-95 shadow-md shadow-rose-500/25 uppercase tracking-[0.05em] flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

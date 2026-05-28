@@ -292,6 +292,10 @@ html, body {
   display: grid;
 }
 
+.arrangement-absolute {
+  position: relative;
+}
+
 /* Notification / Toast */
 .toast-notification {
   position: fixed;
@@ -322,7 +326,11 @@ html, body {
   // Per-component styles
   screens.forEach(screen => {
     const bgColor = screen.backgroundColor || '#ffffff';
-    css += `\n${cssIdSelector('screen-' + screen.id)} { background-color: ${bgColor}; }\n`;
+    const bgImage = screen.backgroundImage || screen.BackgroundImage || '';
+    let screenCss = `${cssIdSelector('screen-' + screen.id)} { background-color: ${bgColor};`;
+    if (bgImage) screenCss += ` background-image: url(${mediaUrl(bgImage)}); background-size: 100% 100%;`;
+    screenCss += ` }\n`;
+    css += screenCss;
 
     const allComponents = [...(screen.components || []), ...(screen.nonVisibleComponents || [])];
     walkComponentTree(allComponents, comp => {
@@ -632,7 +640,8 @@ function generateAppJs(appState) {
 
   function SoundShim(id, props) {
     this.id = id;
-    this._source = props.Source || props.source || '';
+    var src = props.Source || props.source || '';
+    this._source = (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('file:') && !src.startsWith('blob:')) ? 'media/' + src : src;
     this._volume = props.Volume !== undefined ? Number(props.Volume) : 1.0;
     this._isLooping = !!props.IsLooping;
     this._audio = null;
@@ -1111,12 +1120,9 @@ function generateAppJs(appState) {
       case 'Height': case 'height':
         el.style.height = typeof value === 'number' ? value + 'px' : value;
         break;
-      case 'FontSize': case 'fontSize':
-        el.style.fontSize = value + 'px';
-        break;
       case 'Picture': case 'picture': case 'Image':
-        if (el.tagName === 'IMG') el.src = value;
-        else el.style.backgroundImage = 'url(' + value + ')';
+        if (el.tagName === 'IMG') el.src = mediaUrl(value);
+        else el.style.backgroundImage = 'url(' + mediaUrl(value) + ')';
         break;
       case 'Hint': case 'hint':
         el.placeholder = value;
@@ -1135,6 +1141,30 @@ function generateAppJs(appState) {
         el._selection = value;
         var idx = (el._elements || []).indexOf(value);
         el._selectionIndex = idx >= 0 ? idx + 1 : 0;
+        break;
+      case 'AlignHorizontal': case 'alignHorizontal':
+        // Flex column: alignItems controls cross-axis (horizontal)
+        var ha = { 'Left': 'flex-start', 'Center': 'center', 'Right': 'flex-end', '1': 'flex-start', '2': 'center', '3': 'flex-end' };
+        el.style.alignItems = ha[String(value)] || 'flex-start';
+        break;
+      case 'AlignVertical': case 'alignVertical':
+        // Flex column: justifyContent controls main-axis (vertical)
+        var va = { 'Top': 'flex-start', 'Center': 'center', 'Bottom': 'flex-end', '1': 'flex-start', '2': 'center', '3': 'flex-end' };
+        el.style.justifyContent = va[String(value)] || 'flex-start';
+        break;
+      case 'FontBold': case 'fontBold':
+        el.style.fontWeight = value ? 'bold' : 'normal';
+        break;
+      case 'FontItalic': case 'fontItalic':
+        el.style.fontStyle = value ? 'italic' : 'normal';
+        break;
+      case 'FontTypeface': case 'fontTypeface':
+        // FontTypeface handled via CSS generator; no runtime DOM change needed
+        break;
+      case 'FontSize': case 'fontSize':
+        if (typeof value === 'number' || !isNaN(Number(value))) {
+          el.style.fontSize = Number(value) + 'px';
+        }
         break;
     }
   }
@@ -1167,6 +1197,10 @@ function generateAppJs(appState) {
     switch (prop) {
       case 'BackgroundColor': case 'backgroundColor':
         return el.style.backgroundColor || '';
+      case 'AlignHorizontal': case 'alignHorizontal':
+        return el.style.alignItems || 'flex-start';
+      case 'AlignVertical': case 'alignVertical':
+        return el.style.justifyContent || 'flex-start';
       default:
         return '';
     }
@@ -1181,6 +1215,14 @@ function generateAppJs(appState) {
         break;
       case 'Visible': case 'visible':
         el.style.display = value ? 'flex' : 'none';
+        break;
+      case 'AlignHorizontal': case 'alignHorizontal':
+        var ha = { 'Left': 'flex-start', 'Center': 'center', 'Right': 'flex-end', '1': 'flex-start', '2': 'center', '3': 'flex-end' };
+        el.style.alignItems = ha[String(value)] || 'flex-start';
+        break;
+      case 'AlignVertical': case 'alignVertical':
+        var va = { 'Top': 'flex-start', 'Center': 'center', 'Bottom': 'flex-end', '1': 'flex-start', '2': 'center', '3': 'flex-end' };
+        el.style.justifyContent = va[String(value)] || 'flex-start';
         break;
     }
   }
@@ -1208,6 +1250,10 @@ function generateAppJs(appState) {
     js += `  var ${screenId} = {\n`;
     js += `    get BackgroundColor() { return getScreenProperty('${screenId}', 'BackgroundColor'); },\n`;
     js += `    set BackgroundColor(v) { setScreenProperty('${screenId}', 'BackgroundColor', v); },\n`;
+    js += `    get AlignHorizontal() { return getScreenProperty('${screenId}', 'AlignHorizontal'); },\n`;
+    js += `    set AlignHorizontal(v) { setScreenProperty('${screenId}', 'AlignHorizontal', v); },\n`;
+    js += `    get AlignVertical() { return getScreenProperty('${screenId}', 'AlignVertical'); },\n`;
+    js += `    set AlignVertical(v) { setScreenProperty('${screenId}', 'AlignVertical', v); },\n`;
     js += `    get Visible() { return true; },\n`;
     js += `    set Visible(v) { setScreenProperty('${screenId}', 'Visible', v); }\n`;
     js += `  };\n\n`;
@@ -1326,6 +1372,13 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+function mediaUrl(value) {
+  if (!value) return '';
+  const s = String(value);
+  if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('data:') || s.startsWith('file://') || s.startsWith('blob:')) return s;
+  return 'media/' + s;
+}
+
 function indentMultiline(value, spaces = 2) {
   const pad = ' '.repeat(Math.max(0, spaces));
   if (!value) return '';
@@ -1363,7 +1416,7 @@ function generateComponentCss(comp) {
   let defaultBg = 'transparent';
   let defaultTextColor = '';
   
-  if (['Button', 'ListPicker', 'DatePicker', 'TimePicker', 'ImagePicker', 'FilePicker', 'ContactPicker', 'EmailPicker', 'PhoneNumberPicker'].includes(type)) {
+  if (['Button', 'ListPicker', 'DatePicker', 'TimePicker', 'ImagePicker', 'FilePicker', 'ContactPicker'].includes(type)) {
     defaultBg = '#3B82F6';
     defaultTextColor = '#ffffff';
   } else if (type === 'ListView') {
@@ -1399,6 +1452,8 @@ function generateComponentCss(comp) {
   rules += `  padding: ${padding}px;\n`;
   rules += `  margin: ${margin}px;\n`;
   if (borderRadius) rules += `  border-radius: ${borderRadius}px;\n`;
+  const bgImage = props.picture || props.Picture || props.image || props.Image || '';
+  if (bgImage) rules += `  background-image: url(${mediaUrl(bgImage)}); background-size: 100% 100%;\n`;
   rules += `}\n`;
 
   return rules;
@@ -1413,6 +1468,8 @@ function generateScreenRenderer(screen) {
   js += `    var container = document.createElement('div');\n`;
   js += `    container.id = ${JSON.stringify('screen-' + screenId)};\n`;
   js += `    container.className = 'screen';\n`;
+  js += `    setScreenProperty(${JSON.stringify(screenId)}, 'AlignHorizontal', ${JSON.stringify(screen.alignHorizontal || 'Left')});\n`;
+  js += `    setScreenProperty(${JSON.stringify(screenId)}, 'AlignVertical', ${JSON.stringify(screen.alignVertical || 'Top')});\n`;
 
   components.forEach(comp => {
     js += generateComponentCreation(comp, 'container');
@@ -1473,7 +1530,7 @@ function generateComponentCreation(comp, parentVar) {
       js += `    var ${varName} = document.createElement('img');\n`;
       js += `    ${varName}.id = 'comp-${id}';\n`;
       js += `    ${varName}.className = 'comp-image';\n`;
-      js += `    ${varName}.src = ${JSON.stringify(props.picture || props.Picture || '')};\n`;
+      js += `    ${varName}.src = '${mediaUrl(props.picture || props.Picture || '')}';\n`;
       js += `    ${varName}.alt = ${JSON.stringify(id)};\n`;
       break;
 
@@ -1655,6 +1712,222 @@ function generateComponentCreation(comp, parentVar) {
       js += `    ${varName}.style.gridTemplateColumns = 'repeat(${cols}, 1fr)';\n`;
       break;
 
+    case 'AbsoluteArrangement':
+      js += `    var ${varName} = document.createElement('div');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.style.position = 'relative';\n`;
+      break;
+
+    case 'Map':
+      js += `    var ${varName} = document.createElement('div');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.style.position = 'relative';\n`;
+      js += `    ${varName}.style.minHeight = '200px';\n`;
+      js += `    ${varName}.style.background = '#e8e8e8';\n`;
+      js += `    ${varName}.style.backgroundImage = 'repeating-linear-gradient(45deg, #d0d0d0 0px, #d0d0d0 1px, transparent 1px, transparent 8px)';\n`;
+      break;
+
+    case 'Polygon': {
+      const polyColor = props.paintColor || props.PaintColor || '#FF0000';
+      js += `    var ${varName} = document.createElement('div');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.style.width = '52px';\n`;
+      js += `    ${varName}.style.height = '34px';\n`;
+      js += `    ${varName}.innerHTML = '<svg width=\"52\" height=\"34\" viewBox=\"0 0 52 34\"><polygon points=\"26,2 50,32 2,32\" fill=\"${polyColor}\" stroke=\"#000\" stroke-width=\"1\"/></svg>';\n`;
+      break;
+    }
+
+    case 'Circle': {
+      const circleColor = props.paintColor || props.PaintColor || '#FF0000';
+      js += `    var ${varName} = document.createElement('div');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.style.width = '14px';\n`;
+      js += `    ${varName}.style.height = '14px';\n`;
+      js += `    ${varName}.innerHTML = '<svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\"><circle cx=\"7\" cy=\"7\" r=\"6\" fill=\"${circleColor}\" stroke=\"#000\" stroke-width=\"1\"/></svg>';\n`;
+      break;
+    }
+
+    case 'Marker':
+      js += `    var ${varName} = document.createElement('div');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.style.width = '30px';\n`;
+      js += `    ${varName}.style.height = '50px';\n`;
+      js += `    ${varName}.innerHTML = '<svg width=\"30\" height=\"50\" viewBox=\"0 0 30 50\"><path d=\"M15 0C6.7 0 0 6.7 0 15c0 11 15 35 15 35s15-24 15-35C30 6.7 23.3 0 15 0zm0 22c-3.9 0-7-3.1-7-7s3.1-7 7-7 7 3.1 7 7-3.1 7-7 7z\" fill=\"#FF0000\" stroke=\"#000\" stroke-width=\"1\"/></svg>';\n`;
+      break;
+
+    case 'LineString': {
+      const lineColor = props.paintColor || props.PaintColor || '#FF0000';
+      js += `    var ${varName} = document.createElement('div');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.style.width = '42px';\n`;
+      js += `    ${varName}.style.height = '44px';\n`;
+      js += `    ${varName}.innerHTML = '<svg width=\"42\" height=\"44\" viewBox=\"0 0 42 44\"><polyline points=\"2,42 20,22 40,2\" fill=\"none\" stroke=\"${lineColor}\" stroke-width=\"3\"/></svg>';\n`;
+      break;
+    }
+
+    case 'Rectangle': {
+      const rectColor = props.paintColor || props.PaintColor || '#FF0000';
+      js += `    var ${varName} = document.createElement('div');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.style.width = '52px';\n`;
+      js += `    ${varName}.style.height = '32px';\n`;
+      js += `    ${varName}.innerHTML = '<svg width=\"52\" height=\"32\" viewBox=\"0 0 52 32\"><rect x=\"2\" y=\"2\" width=\"48\" height=\"28\" fill=\"${rectColor}\" stroke=\"#000\" stroke-width=\"1\"/></svg>';\n`;
+      break;
+    }
+
+    case 'FeatureCollection':
+      js += `    var ${varName} = document.createElement('div');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.textContent = ${JSON.stringify('FeatureCollection (' + id + ')')};\n`;
+      break;
+
+    case 'VideoPlayer':
+      js += `    var ${varName} = document.createElement('video');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.controls = true;\n`;
+      js += `    ${varName}.style.width = '100%';\n`;
+      js += `    ${varName}.src = '${mediaUrl(props.source || props.Source || '')}';\n`;
+      break;
+
+    case 'Ball': {
+      const ballColor = props.paintColor || props.PaintColor || '#FF0000';
+      const radius = Math.max(1, Number(props.radius || props.Radius || 10));
+      const diameter = radius * 2;
+      const ballX = Number(props.x || props.X || 0);
+      const ballY = Number(props.y || props.Y || 0);
+      js += `    var ${varName} = document.createElement('div');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.style.position = 'absolute';\n`;
+      js += `    ${varName}.style.width = '${diameter}px';\n`;
+      js += `    ${varName}.style.height = '${diameter}px';\n`;
+      js += `    ${varName}.style.borderRadius = '50%';\n`;
+      js += `    ${varName}.style.backgroundColor = '${ballColor}';\n`;
+      js += `    ${varName}.style.left = '${ballX}px';\n`;
+      js += `    ${varName}.style.top = '${ballY}px';\n`;
+      break;
+    }
+
+    case 'ImageSprite': {
+      const spritePic = props.picture || props.Picture || '';
+      const spriteX = Number(props.x || props.X || 0);
+      const spriteY = Number(props.y || props.Y || 0);
+      js += `    var ${varName} = document.createElement('div');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.style.position = 'absolute';\n`;
+      js += `    ${varName}.style.overflow = 'hidden';\n`;
+      js += `    var ${varName}_img = document.createElement('img');\n`;
+      js += `    ${varName}_img.src = '${mediaUrl(spritePic)}';\n`;
+      js += `    ${varName}_img.style.display = 'block';\n`;
+      const spriteW = props.width || props.Width;
+      const spriteH = props.height || props.Height;
+      if (spriteW > 0) js += `    ${varName}_img.style.width = '${spriteW}px';\n`;
+      if (spriteH > 0) js += `    ${varName}_img.style.height = '${spriteH}px';\n`;
+      js += `    ${varName}.appendChild(${varName}_img);\n`;
+      js += `    ${varName}.style.left = '${spriteX}px';\n`;
+      js += `    ${varName}.style.top = '${spriteY}px';\n`;
+      break;
+    }
+
+    case 'ImagePicker':
+      js += `    var ${varName} = document.createElement('button');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.className = 'comp-button';\n`;
+      js += `    ${varName}.textContent = ${JSON.stringify(props.text || props.Text || 'Pick Image')};\n`;
+      js += `    ${varName}.addEventListener('click', function() {\n`;
+      js += `      var input = document.createElement('input');\n`;
+      js += `      input.type = 'file';\n`;
+      js += `      input.accept = 'image/*';\n`;
+      js += `      input.addEventListener('change', function(e) {\n`;
+      js += `        var file = e.target.files[0];\n`;
+      js += `        if (file && typeof window['${id}_FilePicked'] === 'function') window['${id}_FilePicked'](file.name);\n`;
+      js += `      });\n`;
+      js += `      input.click();\n`;
+      js += `    });\n`;
+      break;
+
+    case 'DatePicker':
+      js += `    var ${varName} = document.createElement('button');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.className = 'comp-button';\n`;
+      js += `    ${varName}.textContent = ${JSON.stringify(props.text || props.Text || 'Pick Date')};\n`;
+      js += `    ${varName}.addEventListener('click', function() {\n`;
+      js += `      var d = new Date();\n`;
+      js += `      var val = prompt('Enter date (YYYY-MM-DD):', d.toISOString().split('T')[0]);\n`;
+      js += `      if (val) {\n`;
+      js += `        ${varName}.textContent = val;\n`;
+      js += `        if (typeof window['${id}_DatePicked'] === 'function') window['${id}_DatePicked'](val);\n`;
+      js += `      }\n`;
+      js += `    });\n`;
+      break;
+
+    case 'TimePicker':
+      js += `    var ${varName} = document.createElement('button');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.className = 'comp-button';\n`;
+      js += `    ${varName}.textContent = ${JSON.stringify(props.text || props.Text || 'Pick Time')};\n`;
+      js += `    ${varName}.addEventListener('click', function() {\n`;
+      js += `      var d = new Date();\n`;
+      js += `      var val = prompt('Enter time (HH:MM):', d.toTimeString().slice(0,5));\n`;
+      js += `      if (val) {\n`;
+      js += `        ${varName}.textContent = val;\n`;
+      js += `        if (typeof window['${id}_TimePicked'] === 'function') window['${id}_TimePicked'](val);\n`;
+      js += `      }\n`;
+      js += `    });\n`;
+      break;
+
+    case 'ContactPicker':
+      js += `    var ${varName} = document.createElement('button');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.className = 'comp-button';\n`;
+      js += `    ${varName}.textContent = ${JSON.stringify(props.text || props.Text || 'Pick Contact')};\n`;
+      js += `    ${varName}.addEventListener('click', function() {\n`;
+      js += `      var contact = prompt('Enter contact name:');\n`;
+      js += `      if (contact) {\n`;
+      js += `        if (typeof window['${id}_ContactPicked'] === 'function') window['${id}_ContactPicked'](contact, '', '');\n`;
+      js += `      }\n`;
+      js += `    });\n`;
+      break;
+
+    case 'EmailPicker':
+      js += `    var ${varName} = document.createElement('input');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.className = 'comp-textbox';\n`;
+      js += `    ${varName}.type = 'email';\n`;
+      js += `    ${varName}.placeholder = ${JSON.stringify(props.hint || props.Hint || 'Email')};\n`;
+      js += `    ${varName}.value = ${JSON.stringify(props.text || props.Text || '')};\n`;
+      js += `    ${varName}.addEventListener('input', function(e) {\n`;
+      js += `      if (typeof window['${id}_Changed'] === 'function') window['${id}_Changed'](e.target.value);\n`;
+      js += `    });\n`;
+      break;
+
+    case 'PhoneNumberPicker':
+      js += `    var ${varName} = document.createElement('input');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.className = 'comp-textbox';\n`;
+      js += `    ${varName}.type = 'tel';\n`;
+      js += `    ${varName}.placeholder = ${JSON.stringify(props.hint || props.Hint || 'Phone')};\n`;
+      js += `    ${varName}.value = ${JSON.stringify(props.text || props.Text || '')};\n`;
+      js += `    ${varName}.addEventListener('input', function(e) {\n`;
+      js += `      if (typeof window['${id}_Changed'] === 'function') window['${id}_Changed'](e.target.value);\n`;
+      js += `    });\n`;
+      break;
+
+    case 'FilePicker':
+      js += `    var ${varName} = document.createElement('button');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.className = 'comp-button';\n`;
+      js += `    ${varName}.textContent = ${JSON.stringify(props.text || props.Text || 'Pick File')};\n`;
+      js += `    ${varName}.addEventListener('click', function() {\n`;
+      js += `      var input = document.createElement('input');\n`;
+      js += `      input.type = 'file';\n`;
+      js += `      input.addEventListener('change', function(e) {\n`;
+      js += `        var file = e.target.files[0];\n`;
+      js += `        if (file && typeof window['${id}_FilePicked'] === 'function') window['${id}_FilePicked'](file.name);\n`;
+      js += `      });\n`;
+      js += `      input.click();\n`;
+      js += `    });\n`;
+      break;
+
     default:
       js += `    var ${varName} = document.createElement('div');\n`;
       js += `    ${varName}.id = 'comp-${id}';\n`;
@@ -1719,6 +1992,8 @@ function generateComponentProxy(comp) {
   const allProps = new Set([
     'Text', 'BackgroundColor', 'TextColor', 'Visible', 'Enabled',
     'Width', 'Height', 'FontSize', 'Hint', 'Picture', 'Checked',
+    'AlignHorizontal', 'AlignVertical', 'FontBold', 'FontItalic', 'FontTypeface',
+    'PaintColor', 'Radius', 'X', 'Y', 'Source', 'Points',
     ...propNames
   ]);
 
