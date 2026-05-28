@@ -147,7 +147,12 @@ export default function ComponentTree({ appState }) {
                             autoFocus
                         />
                     ) : (
-                        <span className="flex-1 text-[15px]">{component.id}</span>
+                        <div className="flex-1 min-w-0">
+                            <span className="text-[15px] block truncate">{component.id}</span>
+                            <span className="text-[11px] text-slate-500 font-medium block truncate mt-0.5">
+                                {component.props?.Text || component.props?.Hint || component.type}
+                            </span>
+                        </div>
                     )}
                 </div>
 

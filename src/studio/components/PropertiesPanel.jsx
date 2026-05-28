@@ -8,7 +8,7 @@
  * component, falling back to the component's own props for values.
  */
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Trash2, Smartphone, Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { Trash2, Smartphone, Plus, ChevronDown, ChevronRight, Pencil } from 'lucide-react';
 import { COMPONENT_METADATA } from '../data/componentMetadata';
 
 // Color input with local state and debounced parent updates to prevent lag
@@ -91,27 +91,33 @@ function ColorPickerInput({ id, propKey, value, updateProp }) {
 export default function PropertiesPanel({ appState }) {
   const {
     screens, activeScreen, selectedId, selectedComponent,
-    setSelectedId, updateProp, removeComponent, addScreen
+    setSelectedId, updateProp, removeComponent, addScreen, renameComponent
   } = appState;
 
   const [newScreenName, setNewScreenName] = useState('');
   const [isAddingScreen, setIsAddingScreen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const renameInputRef = useRef(null);
 
   const currentScreen = screens.find(s => s.id === activeScreen) || screens[0];
   const components = currentScreen?.components || [];
   const nonVisibleComponents = currentScreen?.nonVisibleComponents || [];
 
+  const LENGTH_AUTO = -1;
+  const LENGTH_FILL = -2;
+
   // MIT App Inventor style Width/Height options
   const sizeOptions = {
     Width: [
-      { value: 'Automatic', label: 'Automatic' },
-      { value: 'Fill parent', label: 'Fill parent...' },
+      { value: LENGTH_AUTO, label: 'Automatic' },
+      { value: LENGTH_FILL, label: 'Fill parent...' },
       { value: 'custom', label: 'Custom (pixels)...' }
     ],
     Height: [
-      { value: 'Automatic', label: 'Automatic' },
-      { value: 'Fill parent', label: 'Fill parent...' },
+      { value: LENGTH_AUTO, label: 'Automatic' },
+      { value: LENGTH_FILL, label: 'Fill parent...' },
       { value: 'custom', label: 'Custom (pixels)...' }
     ]
   };
@@ -121,7 +127,8 @@ export default function PropertiesPanel({ appState }) {
     Shape: ['default', 'rounded', 'rectangular', 'oval'],
     AlignHorizontal: ['Left', 'Center', 'Right'],
     AlignVertical: ['Top', 'Center', 'Bottom'],
-    ScreenOrientation: ['Unspecified', 'Portrait', 'Landscape', 'Sensor', 'User']
+    ScreenOrientation: ['Unspecified', 'Portrait', 'Landscape', 'Sensor', 'User'],
+    HorizontalAlignment: ['Left', 'Center', 'Right']
   };
 
   const handleAddScreen = () => {
@@ -129,6 +136,38 @@ export default function PropertiesPanel({ appState }) {
       addScreen(newScreenName.trim());
       setNewScreenName('');
       setIsAddingScreen(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [isRenaming]);
+
+  const handleStartRename = () => {
+    if (!selectedComponent) return;
+    setIsRenaming(true);
+    setRenameValue(selectedComponent.id);
+  };
+
+  const handleRenameSubmit = () => {
+    if (!selectedComponent) return;
+    const oldId = selectedComponent.id;
+    const newId = renameValue?.trim();
+    if (newId && newId !== oldId && renameComponent) {
+      renameComponent(oldId, newId);
+    }
+    setIsRenaming(false);
+    setRenameValue('');
+  };
+
+  const handleRenameKeyDown = (e) => {
+    if (e.key === 'Enter') handleRenameSubmit();
+    if (e.key === 'Escape') {
+      setIsRenaming(false);
+      setRenameValue('');
     }
   };
 
@@ -245,7 +284,8 @@ export default function PropertiesPanel({ appState }) {
       const sizeKeys = new Set([
         'Width', 'Height', 'X', 'Y', 'Z', 'Radius',
         'AlignHorizontal', 'AlignVertical', 'Columns', 'Rows',
-        'Latitude', 'Longitude', 'ZoomLevel'
+        'Latitude', 'Longitude', 'ZoomLevel',
+        'HorizontalAlignment'
       ]);
 
       const dataKeys = new Set([
@@ -275,8 +315,10 @@ export default function PropertiesPanel({ appState }) {
     const categorizedProps = categorizeProps(fullProps);
 
     const renderSizeProperty = (key, value) => {
-      const isCustom = typeof value === 'number';
-      const currentValue = isCustom ? 'custom' : value;
+      const isAuto = value === LENGTH_AUTO;
+      const isFill = value === LENGTH_FILL;
+      const isCustom = typeof value === 'number' && value > 0;
+      const currentValue = isAuto ? LENGTH_AUTO : (isFill ? LENGTH_FILL : 'custom');
 
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }} className="w-full">
@@ -290,7 +332,7 @@ export default function PropertiesPanel({ appState }) {
                 if (newValue === 'custom') {
                   updateProp(id, key, 100);
                 } else {
-                  updateProp(id, key, newValue);
+                  updateProp(id, key, parseInt(newValue, 10));
                 }
               }}
             >
@@ -439,25 +481,51 @@ export default function PropertiesPanel({ appState }) {
           <div style={{ padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
             <div className="flex-1 min-w-0">
               <div style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '6px' }}>Active Module</div>
-              <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.02em' }} className="truncate">{id}</h3>
+              {isRenaming ? (
+                <input
+                  ref={renameInputRef}
+                  type="text"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onBlur={handleRenameSubmit}
+                  onKeyDown={handleRenameKeyDown}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ fontSize: '20px', fontWeight: '900', letterSpacing: '-0.02em', padding: '2px 8px', borderRadius: '6px', border: '2px solid #3b82f6', backgroundColor: '#f8fafc', color: '#0f172a', width: '100%' }}
+                  className="outline-none"
+                />
+              ) : (
+                <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.02em' }} className="truncate">{id}</h3>
+              )}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
                 <span style={{ padding: '3px 8px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em', borderRadius: '6px', border: '1px solid #dbeafe', backgroundColor: '#eff6ff', color: '#2563eb' }}>{type}</span>
                 <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#cbd5e1' }} />
                 <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Selected</span>
               </div>
             </div>
-            <button
-              onClick={() => {
-                if (window.confirm(`Delete ${id}?`)) {
-                  removeComponent(id);
-                }
-              }}
-              style={{ padding: '14px' }}
-              className="bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 group shrink-0"
-              title="Delete Module"
-            >
-              <Trash2 style={{ width: '20px', height: '20px' }} className="transition-transform group-hover:rotate-12" />
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {!isRenaming && (
+                <button
+                  onClick={handleStartRename}
+                  style={{ padding: '14px' }}
+                  className="bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-blue-600 border border-slate-200 rounded-2xl transition-all shadow-sm active:scale-95 group shrink-0"
+                  title="Rename Module"
+                >
+                  <Pencil style={{ width: '20px', height: '20px' }} className="transition-transform group-hover:scale-110" />
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  if (window.confirm(`Delete ${id}?`)) {
+                    removeComponent(id);
+                  }
+                }}
+                style={{ padding: '14px' }}
+                className="bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 group shrink-0"
+                title="Delete Module"
+              >
+                <Trash2 style={{ width: '20px', height: '20px' }} className="transition-transform group-hover:rotate-12" />
+              </button>
+            </div>
           </div>
         </div>
 

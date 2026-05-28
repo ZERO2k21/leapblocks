@@ -8,10 +8,14 @@
  * a default value here so the LeapLab PropertiesPanel can display them.
  */
 
+const LENGTH_AUTOMATIC = -1;
+const LENGTH_FILL_PARENT = -2;
+
 const baseVisible = {
-  Width: 'Automatic',
-  Height: 'Automatic',
-  Visible: true
+  Width: LENGTH_AUTOMATIC,
+  Height: LENGTH_AUTOMATIC,
+  Visible: true,
+  HorizontalAlignment: 'Left'
 };
 
 const baseButton = {
@@ -162,7 +166,7 @@ export function defaultPropsFor(type) {
         MinValue: 10,
         ThumbEnabled: true,
         ThumbPosition: 50,
-        Width: 'Fill parent'
+        Width: LENGTH_FILL_PARENT
       });
 
     case 'Image':
@@ -189,8 +193,8 @@ export function defaultPropsFor(type) {
         SelectionIndex: 0,
         ShowFilterBar: false,
         TextColor: '#ffffff',
-        Height: 'Fill parent',
-        Width: 'Fill parent'
+        Height: LENGTH_FILL_PARENT,
+        Width: LENGTH_FILL_PARENT
       });
 
     case 'DatePicker':
@@ -220,8 +224,8 @@ export function defaultPropsFor(type) {
         PromptForPermission: true,
         UsesLocation: false,
         WebViewString: '',
-        Height: 'Fill parent',
-        Width: 'Fill parent'
+        Height: LENGTH_FILL_PARENT,
+        Width: LENGTH_FILL_PARENT
       });
 
     case 'Notifier':
@@ -241,7 +245,7 @@ export function defaultPropsFor(type) {
         AlignVertical: 'Top',
         BackgroundColor: 'transparent',
         Image: '',
-        Width: 'Fill parent'
+        Width: LENGTH_FILL_PARENT
       });
 
     case 'VerticalArrangement':
@@ -252,7 +256,7 @@ export function defaultPropsFor(type) {
         AlignVertical: 'Top',
         BackgroundColor: 'transparent',
         Image: '',
-        Width: 'Fill parent'
+        Width: LENGTH_FILL_PARENT
       });
 
     case 'TableArrangement':
@@ -260,7 +264,7 @@ export function defaultPropsFor(type) {
         ...baseVisible,
         Columns: 2,
         Rows: 2,
-        Width: 'Fill parent'
+        Width: LENGTH_FILL_PARENT
       });
 
     // ─── Media ────────────────────────────────────────────────────────
@@ -339,13 +343,13 @@ export function defaultPropsFor(type) {
       return {
         Enabled: true,
         Heading: 0,
-        Height: 'Automatic',
+        Height: LENGTH_AUTOMATIC,
         Interval: 100,
         Picture: '',
         Rotates: true,
         Speed: 0,
         Visible: true,
-        Width: 'Automatic',
+        Width: LENGTH_AUTOMATIC,
         X: 0,
         Y: 0,
         Z: 1
@@ -386,8 +390,8 @@ export function defaultPropsFor(type) {
         ShowUser: false,
         ShowZoom: false,
         ZoomLevel: 13,
-        Height: 'Fill parent',
-        Width: 'Fill parent'
+        Height: LENGTH_FILL_PARENT,
+        Width: LENGTH_FILL_PARENT
       });
 
     case 'Marker':
@@ -407,8 +411,8 @@ export function defaultPropsFor(type) {
         StrokeWidth: 1,
         Title: '',
         Visible: true,
-        Width: 'Automatic',
-        Height: 'Automatic'
+        Width: LENGTH_AUTOMATIC,
+        Height: LENGTH_AUTOMATIC
       };
 
     case 'Circle':
@@ -624,7 +628,7 @@ export function defaultPropsFor(type) {
         LegendEnabled: true,
         PieRadius: 100,
         Type: 0,
-        Width: 'Fill parent',
+        Width: LENGTH_FILL_PARENT,
         XFromZero: false,
         YFromZero: false
       });
@@ -682,8 +686,8 @@ export function defaultPropsFor(type) {
       return withLegacyAliases({
         ...baseVisible,
         HomeUrl: '',
-        Height: 'Fill parent',
-        Width: 'Fill parent'
+        Height: LENGTH_FILL_PARENT,
+        Width: LENGTH_FILL_PARENT
       });
 
     // ─── Data Science ─────────────────────────────────────────────────
@@ -712,7 +716,7 @@ export function defaultPropsFor(type) {
         Maximum: 100,
         Minimum: 0,
         Progress: 0,
-        Width: 'Fill parent'
+        Width: LENGTH_FILL_PARENT
       });
 
     // ─── Navigation ───────────────────────────────────────────────────

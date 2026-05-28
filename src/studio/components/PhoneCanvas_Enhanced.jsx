@@ -69,11 +69,6 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
         if (!type) return;
 
-        // Calculate drop position relative to canvas
-        const rect = canvasRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
         let visible;
         if (componentData) {
             try {
@@ -89,7 +84,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
             setSelectedId(targetContainerId);
         }
 
-        addComponent(type, x, y, { visible });
+        addComponent(type, { visible });
     };
 
     const handleDragOver = (e) => {
@@ -123,6 +118,21 @@ export default function PhoneCanvasEnhanced({ appState }) {
             : 'hover:ring-2 hover:ring-slate-200 hover:shadow-sm'
             } relative rounded-xl`;
 
+        const LENGTH_AUTO = -1;
+        const LENGTH_FILL = -2;
+
+        const resolveLength = (propValue, percentProp) => {
+            if (propValue === LENGTH_FILL) return '100%';
+            if (propValue === LENGTH_AUTO) return 'auto';
+            if (typeof propValue === 'number' && propValue > 0) return `${propValue}px`;
+            if (percentProp != null) return `${percentProp}%`;
+            return 'auto';
+        };
+
+        // Horizontal alignment — CSS align-self overrides the Screen's alignItems per-component
+        const alignMap = { 'Left': 'flex-start', 'Center': 'center', 'Right': 'flex-end' };
+        const alignSelf = alignMap[comp.props.HorizontalAlignment];
+
         // Dynamic styles from props
         const style = {
             backgroundColor: comp.props.BackgroundColor || comp.props.backgroundColor,
@@ -130,14 +140,11 @@ export default function PhoneCanvasEnhanced({ appState }) {
             fontSize: comp.props.FontSize ? `${comp.props.FontSize}px` : undefined,
             fontWeight: comp.props.FontBold ? 'bold' : 'normal',
             fontStyle: comp.props.FontItalic ? 'italic' : 'normal',
-            width: comp.props.Width === 'Fill parent' ? '100%' :
-                comp.props.Width === 'Automatic' ? 'auto' :
-                    typeof comp.props.Width === 'number' ? `${comp.props.Width}px` : 'auto',
-            height: comp.props.Height === 'Fill parent' ? '100%' :
-                comp.props.Height === 'Automatic' ? 'auto' :
-                    typeof comp.props.Height === 'number' ? `${comp.props.Height}px` : 'auto',
+            width: resolveLength(comp.props.Width, comp.props.WidthPercent),
+            height: resolveLength(comp.props.Height, comp.props.HeightPercent),
             textAlign: comp.props.TextAlignment || 'left',
             display: comp.props.Visible === false ? 'none' : undefined,
+            alignSelf,
         };
 
         const handleClick = (e) => {
@@ -401,12 +408,13 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 );
 
             case 'TableArrangement':
+                const numCols = comp.props.Columns || 2;
                 return (
                     <div
                         key={comp.id}
                         className={`${baseClasses} border-2 border-dashed border-slate-200 p-4 transition-all duration-200 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50/50' : ''
                             }`}
-                        style={{ ...style, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', minHeight: '120px', borderRadius: '16px' }}
+                        style={{ ...style, display: 'grid', gridTemplateColumns: `repeat(${numCols}, 1fr)`, gap: '12px', minHeight: '120px', borderRadius: '16px' }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
                         onDragOver={(e) => {
@@ -430,16 +438,66 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 );
 
             case 'Canvas':
+                const cw = typeof comp.props.Width === 'number' && comp.props.Width > 0 ? comp.props.Width : 300;
+                const ch = typeof comp.props.Height === 'number' && comp.props.Height > 0 ? comp.props.Height : 300;
                 return (
                     <div
                         key={comp.id}
-                        className={`${baseClasses} border border-slate-300 bg-white shadow-sm`}
-                        style={{ ...style, width: comp.props.Width || 300, height: comp.props.Height || 300, borderRadius: '16px' }}
+                        className={`${baseClasses} border border-slate-300 bg-white shadow-sm relative overflow-hidden`}
+                        style={{ ...style, width: cw, height: ch, borderRadius: '16px' }}
                         onClick={handleClick}
+                        onDrop={(e) => handleDrop(e, comp.id)}
+                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDropTarget(comp.id); }}
+                        onDragLeave={() => setDropTarget(null)}
                     >
-                        <div className="w-full h-full flex items-center justify-center text-slate-900">
-                            <span className="text-4xl">🎨</span>
-                        </div>
+                        {(!comp.children || comp.children.length === 0) ? (
+                            <div className="w-full h-full flex items-center justify-center text-slate-900">
+                                <span className="text-4xl">🎨</span>
+                            </div>
+                        ) : (
+                            comp.children.map(child => {
+                                const isBall = child.type === 'Ball';
+                                const isSprite = child.type === 'ImageSprite';
+                                if (!isBall && !isSprite) return null;
+                                const cx = child.props.X || 0;
+                                const cy = child.props.Y || 0;
+                                const visible = child.props.Visible !== false;
+                                if (!visible) return null;
+                                if (isBall) {
+                                    const r = child.props.Radius || 5;
+                                    return (
+                                        <div key={child.id} className="absolute rounded-full bg-black cursor-pointer hover:ring-2 hover:ring-blue-500"
+                                            style={{
+                                                left: cx, top: cy, width: r * 2, height: r * 2,
+                                                backgroundColor: child.props.PaintColor || '#000000',
+                                                zIndex: child.props.Z || 1
+                                            }}
+                                            onClick={(e) => { e.stopPropagation(); setSelectedId(child.id); }}
+                                        />
+                                    );
+                                }
+                                if (isSprite) {
+                                    const sw = child.props.Width === -1 ? 40 : (typeof child.props.Width === 'number' && child.props.Width > 0 ? child.props.Width : 40);
+                                    const sh = child.props.Height === -1 ? 40 : (typeof child.props.Height === 'number' && child.props.Height > 0 ? child.props.Height : 40);
+                                    return (
+                                        <div key={child.id} className="absolute cursor-pointer hover:ring-2 hover:ring-blue-500 flex items-center justify-center bg-slate-200 text-xs font-bold text-slate-900 overflow-hidden"
+                                            style={{
+                                                left: cx, top: cy, width: sw, height: sh,
+                                                zIndex: child.props.Z || 1,
+                                                backgroundImage: child.props.Picture ? `url(${child.props.Picture})` : undefined,
+                                                backgroundSize: 'contain',
+                                                backgroundRepeat: 'no-repeat',
+                                                backgroundPosition: 'center'
+                                            }}
+                                            onClick={(e) => { e.stopPropagation(); setSelectedId(child.id); }}
+                                        >
+                                            {!child.props.Picture && '👾'}
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })
+                        )}
                     </div>
                 );
 

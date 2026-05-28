@@ -824,9 +824,12 @@ export default function BlocksEditorComplete({ appState }) {
             const metadata = COMPONENT_METADATA[comp.type];
             if (!metadata) return;
 
+            const propPreview = comp.props?.Text || comp.props?.Hint || '';
+            const categoryName = propPreview ? `${comp.id} (${propPreview})` : comp.id;
+
             const category = {
                 kind: 'category',
-                name: comp.id,
+                name: categoryName,
                 colour: comp.type === 'Screen' ? MIT_COLORS.control : MIT_COLORS.variables,
                 contents: []
             };

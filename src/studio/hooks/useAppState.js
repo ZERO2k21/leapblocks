@@ -15,6 +15,7 @@ const ARRANGEMENT_TYPES = new Set([
   'VerticalScrollArrangement',
   'TableArrangement'
 ]);
+const CANVAS_CHILD_TYPES = new Set(['Ball', 'ImageSprite']);
 
 const makeScreen = (id) => ({ id, title: id, components: [], nonVisibleComponents: [] });
 
@@ -122,7 +123,7 @@ export function useAppState() {
     return `${type}${idx}`;
   };
 
-  const addComponent = (type, x = 0, y = 0, options = {}) => {
+  const addComponent = (type, options = {}) => {
     const meta = COMPONENT_META.get(type) || {};
     const visible = options.visible ?? meta.visible ?? true;
     let addedId = null;
@@ -139,21 +140,22 @@ export function useAppState() {
         icon: meta.icon,
         visible,
         children: ARRANGEMENT_TYPES.has(type) ? [] : undefined,
-        props: defaultProps,
-        x,
-        y
+        props: defaultProps
       };
 
       const selectedParent = screen.components && isInTree(screen.components, selectedId)
         ? findNodeById(screen.components, selectedId)
         : null;
-      const canNest = visible && selectedParent && ARRANGEMENT_TYPES.has(selectedParent.type);
+      const canNestInArrangement = visible && selectedParent && ARRANGEMENT_TYPES.has(selectedParent.type);
+      const canNestInCanvas = selectedParent?.type === 'Canvas' && CANVAS_CHILD_TYPES.has(type);
 
       const nextScreen = deepClone(screen);
 
       if (!visible) {
         nextScreen.nonVisibleComponents.push(newComponent);
-      } else if (canNest) {
+      } else if (canNestInArrangement) {
+        nextScreen.components = insertIntoContainer(nextScreen.components, selectedParent.id, newComponent);
+      } else if (canNestInCanvas) {
         nextScreen.components = insertIntoContainer(nextScreen.components, selectedParent.id, newComponent);
       } else {
         nextScreen.components.push(newComponent);
