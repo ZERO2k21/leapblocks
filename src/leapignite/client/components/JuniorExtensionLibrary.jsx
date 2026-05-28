@@ -101,6 +101,9 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
         if (ext.id === 'music') {
             return `/extensions/ext-music.html`;
         }
+        if (ext.id === 'human_body') {
+            return `/extensions/ext-human-body.html`;
+        }
 
         // Generic detail page for other extensions
         const params = new URLSearchParams({

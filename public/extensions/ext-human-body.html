@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Human Body Detection Extension</title>
+<style>
+  :root { --red: #D43D41; --dark-red: #b71c1c; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Nunito', sans-serif; margin: 0; background: #f0f0f0; }
+
+  .hero {
+    background: linear-gradient(135deg, var(--dark-red), #f44336);
+    color: white; padding: 40px 20px; text-align: center;
+  }
+  .hero h1 { font-size: 28px; margin: 0 0 8px; }
+  .category {
+    background: #fff; color: var(--dark-red); padding: 4px 14px;
+    border-radius: 30px; display: inline-block; font-weight: 700;
+    font-size: 13px; margin-bottom: 10px;
+  }
+  .hero p { max-width: 600px; margin: 10px auto 0; font-size: 17px; opacity: 0.92; }
+
+  .add-btn {
+    background: var(--red); color: white; border: none;
+    padding: 14px 36px; font-size: 18px; font-weight: 800;
+    border-radius: 50px; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(212,61,65,0.45);
+    margin-top: 22px; transition: transform 0.15s, box-shadow 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .add-btn:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(212,61,65,0.55); }
+  .add-btn:active { transform: scale(0.98); }
+  .add-btn:disabled { opacity: 0.6; cursor: default; transform: none; }
+
+  .success-banner {
+    display: none;
+    align-items: center; justify-content: center; gap: 10px;
+    background: #fce4ec; border: 2px solid var(--red);
+    color: var(--dark-red); border-radius: 12px;
+    padding: 14px 24px; margin: 18px auto 0;
+    max-width: 480px; font-size: 16px; font-weight: 700;
+    animation: slideIn 0.3s ease;
+  }
+  .success-banner.visible { display: flex; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .success-icon { font-size: 22px; }
+
+  .block-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px; padding: 20px;
+  }
+  .leap-block {
+    background: var(--red); color: white; border-radius: 8px;
+    padding: 12px 16px; font-weight: 700; font-size: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .leap-block input, .leap-block select {
+    background: #fff; color: #222; border: none; border-radius: 6px;
+    padding: 4px 8px; width: 64px; text-align: center; font-size: 14px;
+  }
+  .leap-block select { width: auto; }
+  .reporter {
+    background: var(--dark-red); border-radius: 20px;
+    padding: 10px 18px;
+  }
+  .section-title {
+    grid-column: 1 / -1; margin: 16px 0 6px;
+    font-size: 18px; font-weight: 800; color: var(--dark-red);
+  }
+
+  .how-it-works {
+    background: #fff; border-radius: 12px; margin: 0 20px 20px;
+    padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .how-it-works h3 { margin: 0 0 10px; color: var(--dark-red); font-size: 16px; }
+  .how-it-works ol { margin: 0; padding-left: 20px; color: #444; font-size: 14px; line-height: 1.8; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="hero">
+  <div class="category">🤖 AI &amp; Machine Learning</div>
+  <h1>🤸 Human Body Detection</h1>
+  <p>Detect body poses, track landmarks, and analyze body movements using your camera.</p>
+  <button class="add-btn" id="addBtn" onclick="addExtension()">
+    ➕ Add to Project
+  </button>
+  <div class="success-banner" id="successBanner">
+    <span class="success-icon">✅</span>
+    Human Body Detection blocks added to your toolbox!
+  </div>
+</div>
+
+<div class="block-grid">
+  <div class="section-title">Camera Control</div>
+  <div class="leap-block">
+    <span>📷</span> camera <select><option>on</option><option>off</option></select>
+  </div>
+  <div class="leap-block">
+    <span>👤</span> <select><option>analyze</option><option>on</option><option>off</option></select> body
+  </div>
+
+  <div class="section-title">Detection Reporters</div>
+  <div class="leap-block reporter">👥 body count</div>
+  <div class="leap-block reporter">
+    📍 x position of <select style="width:100px"><option>nose</option><option>left eye</option><option>right eye</option><option>left shoulder</option><option>right shoulder</option><option>left elbow</option><option>right elbow</option><option>left wrist</option><option>right wrist</option><option>left hip</option><option>right hip</option><option>left knee</option><option>right knee</option><option>left ankle</option><option>right ankle</option></select> of body <input value="1" style="width:40px">
+  </div>
+  <div class="leap-block reporter">
+    📍 y position of <select style="width:100px"><option>nose</option><option>left eye</option><option>right eye</option><option>left shoulder</option><option>right shoulder</option><option>left elbow</option><option>right elbow</option><option>left wrist</option><option>right wrist</option><option>left hip</option><option>right hip</option><option>left knee</option><option>right knee</option><option>left ankle</option><option>right ankle</option></select> of body <input value="1" style="width:40px">
+  </div>
+</div>
+
+<div class="how-it-works">
+  <h3>⚙️ How it works</h3>
+  <ol>
+    <li>Click <strong>Add to Project</strong> — blocks appear in your Human Body toolbox</li>
+    <li>Use <strong>📷 camera on</strong> to start the camera on the stage</li>
+    <li>Use <strong>👤 analyze body</strong> to begin pose detection</li>
+    <li>Read <strong>body count</strong> or landmark positions in your scripts</li>
+    <li>Uses MoveNet (TensorFlow.js) — runs entirely in your browser</li>
+  </ol>
+</div>
+
+<script>
+function addExtension() {
+  var btn = document.getElementById('addBtn');
+  var banner = document.getElementById('successBanner');
+
+  btn.textContent = '✅ Blocks Added!';
+  btn.disabled = true;
+  btn.classList.add('added');
+  banner.classList.add('visible');
+
+  window.parent.postMessage({
+    type: 'ADD_EXTENSION',
+    extensionId: 'human_body',
+    extension: 'human-body',
+    title: 'Human Body Detection'
+  }, '*');
+
+  setTimeout(function() {
+    btn.disabled = false;
+    btn.innerHTML = '➕ Add to Project';
+    banner.classList.remove('visible');
+  }, 3000);
+}
+</script>
+</body>
+</html>

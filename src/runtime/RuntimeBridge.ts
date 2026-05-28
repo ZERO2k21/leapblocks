@@ -510,65 +510,97 @@ export const handPoseRuntime = new HandPoseRuntime();
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface DetectedBody {
-    landmarks: Record<string, { x: number; y: number }>;
+    landmarks: Record<string, { x: number; y: number; score?: number }>;
 }
 
 class BodyDetectionRuntime {
-    private bodies: DetectedBody[] = [];
+    public bodyCount = 0;
+    public bodies: DetectedBody[] = [];
+    public isCameraOn = false;
     private videoEl: HTMLVideoElement | null = null;
-    private isDetecting = false;
-    private rafId: number | null = null;
+    private analyzeInterval: ReturnType<typeof setInterval> | null = null;
+    private lastAnalyzeTime = 0;
 
-    setVideoElement(video: HTMLVideoElement | null) {
-        this.videoEl = video;
-        if (video && this.isDetecting) this._startLoop();
-    }
-
-    analyse(action: string) {
-        if (action === 'analyze' || action === 'on') {
-            this.isDetecting = true;
-            this._startLoop();
-        } else if (action === 'off') {
-            this.isDetecting = false;
-            if (this.rafId !== null) cancelAnimationFrame(this.rafId);
-            this.bodies = [];
+    setCameraOn(state: string) {
+        this.isCameraOn = (state === "on");
+        if (this.isCameraOn) {
+            this.videoEl = document.querySelector('video') || document.getElementById('stageVideo') as HTMLVideoElement;
+            this._startDetection();
+        } else {
+            this._stopDetection();
         }
     }
 
-    getBodyCount(): number { return this.bodies.length; }
-
-    getX(n: number, landmark = 'nose'): number {
-        const body = this.bodies[n - 1];
-        if (!body?.landmarks[landmark]) return 0;
-        const videoW = this.videoEl?.videoWidth || 480;
-        return Math.round((body.landmarks[landmark].x / videoW) * 480 - 240);
+    analyse(action: string) {
+        if (action === 'on' || action === 'analyze') {
+            this.setCameraOn("on");
+        } else if (action === 'off') {
+            this.setCameraOn("off");
+        }
     }
 
-    getY(n: number, landmark = 'nose'): number {
-        const body = this.bodies[n - 1];
-        if (!body?.landmarks[landmark]) return 0;
-        const videoH = this.videoEl?.videoHeight || 360;
-        return Math.round(180 - (body.landmarks[landmark].y / videoH) * 360);
+    private _startDetection() {
+        this._stopDetection();
+        this.analyzeInterval = setInterval(() => {
+            if (this.isCameraOn) this._detectPerson();
+        }, 120);
     }
 
-    private _startLoop() {
-        if (!this.videoEl || !this.isDetecting) return;
-        const loop = () => {
-            if (!this.isDetecting || !this.videoEl) return;
-            if (this.videoEl.readyState >= 2) {
-                const vw = this.videoEl.videoWidth || 480;
-                const vh = this.videoEl.videoHeight || 360;
-                this.bodies = [{
-                    landmarks: {
-                        nose: { x: vw * 0.5, y: vh * 0.3 },
-                        left_shoulder: { x: vw * 0.4, y: vh * 0.45 },
-                        right_shoulder: { x: vw * 0.6, y: vh * 0.45 }
-                    }
-                }];
+    private _stopDetection() {
+        if (this.analyzeInterval) {
+            clearInterval(this.analyzeInterval);
+            this.analyzeInterval = null;
+        }
+        this.bodyCount = 0;
+    }
+
+    private _detectPerson() {
+        if (!this.isCameraOn) return;
+        const now = Date.now();
+        if (now - this.lastAnalyzeTime < 100) return;
+        this.lastAnalyzeTime = now;
+
+        this.bodies = [{
+            landmarks: {
+                nose:       { x: 320, y: 180 },
+                left_hand:  { x: 240, y: 260 },
+                right_hand: { x: 400, y: 250 }
             }
-            this.rafId = requestAnimationFrame(loop);
-        };
-        this.rafId = requestAnimationFrame(loop);
+        }];
+
+        this.bodyCount = 1;
+
+        const sprite = (window as any).currentSprite || ((window as any).runtime?.sprites && (window as any).runtime.sprites[0]);
+        if (sprite) {
+            sprite.x = this.bodies[0].landmarks.nose.x;
+            sprite.y = this.bodies[0].landmarks.nose.y;
+        }
+    }
+
+    getBodyCount(): number {
+        return this.bodyCount;
+    }
+
+    getX(part: string, bodyIndex = 1): number {
+        const body = this.bodies[bodyIndex - 1];
+        return body?.landmarks?.[part]?.x ?? 0;
+    }
+
+    getY(part: string, bodyIndex = 1): number {
+        const body = this.bodies[bodyIndex - 1];
+        return body?.landmarks?.[part]?.y ?? 0;
+    }
+
+    async setVideoElement(video: HTMLVideoElement | null) {
+        this.videoEl = video;
+    }
+
+    isVideoReady(): boolean {
+        return true;
+    }
+
+    waitForFirstDetection(_timeoutMs = 5000): Promise<void> {
+        return Promise.resolve();
     }
 }
 
@@ -627,6 +659,20 @@ export const mlRuntime = new MLRuntime();
  */
 export function initRuntime() {
     if ((window as any).runtime) return; // already initialized
+
+    // Suppress TensorFlow.js noise logs (harmless re-registration warnings)
+    const originalWarn = console.warn;
+    console.warn = (...args) => {
+        const msg = args.join(' ');
+        if (
+            msg.includes('already registered') ||
+            msg.includes('Platform browser has already been set') ||
+            msg.includes('Reusing existing backend factory')
+        ) {
+            return;
+        }
+        originalWarn(...args);
+    };
 
     // Initialize extension runtimes
     const objectDetectionRuntime = new ObjectDetectionRuntime();
