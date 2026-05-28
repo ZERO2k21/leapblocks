@@ -475,18 +475,18 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         }
 
     },
-    body_detection: {
-        id: 'body_detection',
-        name: 'Body Detection',
+    human_body: {
+        id: 'human_body',
+        name: 'Human Body Detection',
         color: '#D43D41',
         icon: '🤸',
         registerBlocks: (Blockly: any) => {
             const bdBlockDefs = [
-                { type: 'bd_camera', message0: 'camera %1', args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41' },
-                { type: 'bd_analyze', message0: '%1 body', args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['analyze', 'analyze'], ['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41' },
-                { type: 'bd_body_count', message0: 'body count', output: 'Number', colour: '#b71c1c' },
-                { type: 'bd_get_x', message0: 'x position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'LANDMARK', options: [['nose', 'nose'], ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder']] }, { type: 'field_number', name: 'N', value: 1 }], output: 'Number', colour: '#b71c1c' },
-                { type: 'bd_get_y', message0: 'y position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'LANDMARK', options: [['nose', 'nose'], ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder']] }, { type: 'field_number', name: 'N', value: 1 }], output: 'Number', colour: '#b71c1c' }
+                { type: 'bd_camera', message0: 'camera %1', args0: [{ type: 'field_dropdown', name: 'STATE', options: [['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41' },
+                { type: 'bd_analyze', message0: 'analyze body', previousStatement: null, nextStatement: null, colour: '#D43D41' },
+                { type: 'bd_body_count', message0: 'body count', output: 'Number', colour: '#D43D41' },
+                { type: 'bd_get_x', message0: 'x position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'PART', options: [['nose', 'nose'], ['left hand', 'left_wrist'], ['right hand', 'right_wrist']] }, { type: 'field_number', name: 'BODY', value: 1 }], output: 'Number', colour: '#D43D41' },
+                { type: 'bd_get_y', message0: 'y position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'PART', options: [['nose', 'nose'], ['left hand', 'left_wrist'], ['right hand', 'right_wrist']] }, { type: 'field_number', name: 'BODY', value: 1 }], output: 'Number', colour: '#D43D41' }
             ];
             const newDefs = bdBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
             if (newDefs.length > 0) Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));
@@ -494,11 +494,11 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         registerGenerators: (_Blockly: any) => {
             const jsGen = javascriptGenerator;
             if (!jsGen) return;
-            jsGen.forBlock['bd_camera'] = (b: any) => `if(window.__setCameraOn) window.__setCameraOn(${b.getFieldValue('ACTION') === 'on'});\n`;
-            jsGen.forBlock['bd_analyze'] = (b: any) => `if(window.runtime?.bodyDetection) window.runtime.bodyDetection.analyse('${b.getFieldValue('ACTION')}');\n`;
-            jsGen.forBlock['bd_body_count'] = () => [`window.runtime?.bodyDetection?.getBodyCount()||0`, 0];
-            jsGen.forBlock['bd_get_x'] = (b: any) => [`window.runtime?.bodyDetection?.getX(${b.getFieldValue('N')},'${b.getFieldValue('LANDMARK')}')||0`, 0];
-            jsGen.forBlock['bd_get_y'] = (b: any) => [`window.runtime?.bodyDetection?.getY(${b.getFieldValue('N')},'${b.getFieldValue('LANDMARK')}')||0`, 0];
+            jsGen.forBlock['bd_camera'] = (b: any) => `window.runtime.bodyDetection.setCameraOn("${b.getFieldValue('STATE')}");\n`;
+            jsGen.forBlock['bd_analyze'] = () => `window.runtime.bodyDetection._detectPerson();\n`;
+            jsGen.forBlock['bd_body_count'] = () => [`window.runtime.bodyDetection.getBodyCount()`, 0];
+            jsGen.forBlock['bd_get_x'] = (b: any) => [`window.runtime.bodyDetection.getX('${b.getFieldValue('PART')}', ${b.getFieldValue('BODY') || 1})`, 0];
+            jsGen.forBlock['bd_get_y'] = (b: any) => [`window.runtime.bodyDetection.getY('${b.getFieldValue('PART')}', ${b.getFieldValue('BODY') || 1})`, 0];
         },
         getToolbox: () => [
             { kind: 'block', type: 'bd_camera' },

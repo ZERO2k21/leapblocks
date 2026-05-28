@@ -1526,13 +1526,17 @@ export class AnimationVM {
 
 
 
-            // Body Detection extension steps
+            // Body Detection extension steps (smooth interval-based)
             case 'bd_action' as any: {
                 const bdAction = (step as any).action;
                 if (typeof window !== 'undefined') {
-                    if (bdAction === 'on' || bdAction === 'analyze') (window as any).__setCameraOn?.(true);
-                    else if (bdAction === 'off') (window as any).__setCameraOn?.(false);
-                    if ((window as any).runtime?.bodyDetection) (window as any).runtime.bodyDetection.analyse(bdAction);
+                    if (bdAction === 'on' || bdAction === 'analyze') {
+                        (window as any).__setCameraOn?.(true);
+                        (window as any).runtime?.bodyDetection?.setCameraOn?.("on");
+                    } else if (bdAction === 'off') {
+                        (window as any).__setCameraOn?.(false);
+                        (window as any).runtime?.bodyDetection?.setCameraOn?.("off");
+                    }
                 }
                 break;
             }
