@@ -59,14 +59,14 @@ export const CLOUD_COMPILER_URL: string = (() => {
     return 'http://localhost:3001';
   } else if (typeof window !== 'undefined') {
     if (window.location.hostname === 'leapblocks.vercel.app') {
-      return 'https://leapblocks.onrender.com';
+      return 'https://leapblocks-server.onrender.com';
     } else if (window.location.hostname === 'leaplab.creoleap.com') {
-      return 'https://leapblocks.onrender.com';
+      return 'https://leapblocks-server.onrender.com';
     }
   }
 
   // Default Fallback
-  return 'https://leapblocks.onrender.com';
+  return 'https://leapblocks-server.onrender.com';
 })();
 
 /** Runtime check — use this instead of IS_ELECTRON when calling from async contexts */
