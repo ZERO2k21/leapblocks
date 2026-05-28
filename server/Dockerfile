@@ -1,17 +1,17 @@
-FROM node:20-slim AS base
+FROM node:20-slim
 
 RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates \
     python3 \
     python3-pip \
+    default-jre-headless \
     && rm -rf /var/lib/apt/lists/*
 
 ARG ARDUINO_CLI_VERSION=1.1.1
 RUN curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh \
     | BINDIR=/usr/local/bin sh -s ${ARDUINO_CLI_VERSION}
 
-# Set persistent and consistent directories for arduino-cli
 ENV ARDUINO_DIRECTORIES_DATA=/app/arduino-data
 ENV ARDUINO_DIRECTORIES_DOWNLOADS=/app/arduino-data/staging
 ENV ARDUINO_DIRECTORIES_USER=/app/arduino-data/user
@@ -42,9 +42,14 @@ RUN arduino-cli lib install \
     || true
 
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install --production
-COPY . .
+
+COPY server/package.json server/package-lock.json* /tmp/server/
+RUN cd /tmp/server && npm install --production && \
+    mkdir -p /app && cp -r /tmp/server/node_modules /app/node_modules
+
+COPY server/ ./server/
+COPY src/studio/apk/ ./src/studio/apk/
+COPY tools/ ./tools/
 
 EXPOSE 3001
 EXPOSE 3002
@@ -52,4 +57,4 @@ EXPOSE 3002
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:3001/health || exit 1
 
-CMD ["node", "server.js"]
+CMD ["node", "server/server.js"]
