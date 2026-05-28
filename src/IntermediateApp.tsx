@@ -2903,15 +2903,23 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 setSprites(newSprites);
 
-                const firstId = newSprites.length > 0 ? newSprites[0].id : null;
+                const initialTarget = newSprites.find(s => s.id !== 'stage' && !s.id.includes('_clone_'))
+                    || newSprites.find(s => s.id !== 'stage')
+                    || newSprites[0]
+                    || null;
+                const initialId = initialTarget ? initialTarget.id : null;
 
-                setSelectedSpriteId(firstId);
+                activeSpriteIdRef.current = initialId;
+                setSelectedSpriteId(initialId);
+                if (initialId) {
+                    setActiveSpriteId(initialId);
+                }
 
 
 
                 // 5. Final attempt to load the workspace for the selected sprite
 
-                if (firstId) {
+                if (initialId) {
 
                     let attempts = 0;
 
@@ -2919,7 +2927,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         if (workspaceRef.current) {
 
-                            loadSpriteWorkspace(firstId);
+                            loadSpriteWorkspace(initialId);
                             triggerUpdate();
                             addLog('Project loaded successfully');
                         } else if (attempts < 10) {
