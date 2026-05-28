@@ -52,7 +52,9 @@ const isLocal = typeof window !== 'undefined' &&
 export let CLOUD_COMPILER_URL: string = (() => {
   // 1. Priority: Environment Variable
   if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_COMPILER_URL) {
-    return (import.meta as any).env.VITE_COMPILER_URL as string;
+    const url = (import.meta as any).env.VITE_COMPILER_URL as string;
+    console.log(`[Platform] Using VITE_COMPILER_URL: ${url}`);
+    return url;
   }
 
   // 2. Local dev: default to localhost first
@@ -61,6 +63,7 @@ export let CLOUD_COMPILER_URL: string = (() => {
   }
 
   // 3. Deployed: fall back to cloud
+  console.log('[Platform] No VITE_COMPILER_URL set, defaulting to Render');
   return 'https://leapblocks-server.onrender.com';
 })();
 
@@ -93,6 +96,8 @@ const detectCompilerServer = async () => {
     }
   }
 };
+
+console.log(`[Platform] CLOUD_COMPILER_URL = ${CLOUD_COMPILER_URL}`);
 
 if (typeof window !== 'undefined') {
   detectCompilerServer();

@@ -280,9 +280,18 @@ app.post('/build-apk', async (req, res) => {
     }
 
     if (!builder || typeof builder.build !== 'function') {
-      return res.status(501).json({
+      // Cloud server: simulate build so the frontend doesn't get a 501 error
+      const logs = [
+        '[10%] Cloud APK builder not available on this server.',
+        '[30%] APK builds require the local LeapBlocks server or Electron app.',
+        '[50%] Install the desktop app or start the local server on port 3001.',
+        '[100%] Build simulation complete — no APK was generated.',
+      ];
+      return res.json({
         success: false,
-        error: 'APK build engine not available on this server'
+        error: 'APK building is not available on the cloud server. Use the local LeapBlocks server (port 3001) or the Electron Desktop app.',
+        logs,
+        cloudBuildUnsupported: true,
       });
     }
 

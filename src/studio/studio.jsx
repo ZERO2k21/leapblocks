@@ -303,12 +303,14 @@ export default function AppInventor({ onBack }) {
         }
 
         const result = await response.json();
-        if (result.success) {
+        if (result.logs && result.logs.length) {
+          setBuildLogs((prev) => [...prev, ...result.logs]);
+        }
+        if (result.cloudBuildUnsupported) {
+          setBuildState('error');
+          setBuildLogs((prev) => [...prev, `⚠ ${result.error}`]);
+        } else if (result.success) {
           setBuildState('success');
-          if (Array.isArray(result.logs) && result.logs.length) {
-            setBuildLogs((prev) => [...prev, ...result.logs]);
-          }
-          // downloadUrl should be a full or relative URL
           setApkPath(result.downloadUrl.startsWith('http') ? result.downloadUrl : `${CLOUD_COMPILER_URL}${result.downloadUrl}`);
           setBuildLogs((prev) => [...prev, 'Build complete! APK is ready to download.']);
         } else {
