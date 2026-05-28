@@ -818,7 +818,6 @@ app.get('/health', async (req, res) => {
   const apkBuilderExists = fs.existsSync(buildPath);
   const toolsDir = path.join(__dirname, '..', 'tools');
   const toolsExist = fs.existsSync(toolsDir);
-  const javaCmd = (() => { try { return require('child_process').spawnSync('java', ['-version']).status === 0; } catch { return false; } })();
 
   res.json({
     status: 'ok',
@@ -830,7 +829,6 @@ app.get('/health', async (req, res) => {
     jobCount: jobs.size,
     apkBuilderExists,
     toolsExist,
-    javaAvailable: javaCmd,
     buildPath,
     dirname: __dirname,
     endpoints: ['/compile', '/compile/esp32', '/transpile', '/build-apk', '/build', '/status/:jobId', '/download/:jobId', '/firmware/:id', '/libraries/search', '/libraries/installed', '/libraries/install', '/libraries/remove', '/job/:jobId', '/logs', '/health'],
