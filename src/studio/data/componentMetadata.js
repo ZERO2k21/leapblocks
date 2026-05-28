@@ -683,7 +683,7 @@ const DEFAULT_LAYOUT_PROPERTIES = [
 ];
 
 // ============================================================================
-// MIT App Inventor Inheritance Map
+// Leap Component Inheritance Map
 // Maps child component → parent class(es) in order of resolution priority.
 // The auto-generated metadata doesn't capture Java class hierarchy, so events/
 // methods/properties from parent classes are missing. This map fixes that.

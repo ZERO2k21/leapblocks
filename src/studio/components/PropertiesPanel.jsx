@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  *
- * Properties Panel — MIT App Inventor-style property editor
+ * Properties Panel — Leap-style property editor
  * Shows ALL properties defined in COMPONENT_METADATA for the selected
  * component, falling back to the component's own props for values.
  */
@@ -122,7 +122,7 @@ export default function PropertiesPanel({ appState }) {
   const LENGTH_AUTO = -1;
   const LENGTH_FILL = -2;
 
-  // MIT App Inventor style Width/Height options
+  // Leap Style Width/Height options
   const sizeOptions = {
     Width: [
       { value: LENGTH_AUTO, label: 'Automatic' },

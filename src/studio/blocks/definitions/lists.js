@@ -436,9 +436,9 @@ Blockly.Blocks['lists_lookup_in_pairs'] = {
     }
 };
 
-// ==================== MIT FUNCTIONAL LIST BLOCKS ====================
+// ==================== LEAP FUNCTIONAL LIST BLOCKS ====================
 
-// Map — make new mapped list (MIT: mapnondest)
+// Map — make new mapped list (Leap: mapnondest)
 Blockly.Blocks['lists_map'] = {
     init: function () {
         this.appendValueInput('LIST')
@@ -455,7 +455,7 @@ Blockly.Blocks['lists_map'] = {
     }
 };
 
-// Filter — make new filtered list (MIT: filternondest)
+// Filter — make new filtered list (Leap: filternondest)
 Blockly.Blocks['lists_filter'] = {
     init: function () {
         this.appendValueInput('LIST')
@@ -493,7 +493,7 @@ Blockly.Blocks['lists_reduce'] = {
     }
 };
 
-// Sort List in Ascending Order (MIT: generic sort)
+// Sort List in Ascending Order (Leap: generic sort)
 Blockly.Blocks['lists_sort_ascending'] = {
     init: function () {
         this.appendValueInput('LIST')
@@ -505,7 +505,7 @@ Blockly.Blocks['lists_sort_ascending'] = {
     }
 };
 
-// Sort List with Comparator (MIT: sortwithcomparator)
+// Sort List with Comparator (Leap: sortwithcomparator)
 Blockly.Blocks['lists_sort_comparator'] = {
     init: function () {
         this.appendValueInput('LIST')
@@ -524,7 +524,7 @@ Blockly.Blocks['lists_sort_comparator'] = {
     }
 };
 
-// Sort List with Key (MIT: sortwithkey)
+// Sort List with Key (Leap: sortwithkey)
 Blockly.Blocks['lists_sort_key'] = {
     init: function () {
         this.appendValueInput('LIST')

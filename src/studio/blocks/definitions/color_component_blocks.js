@@ -301,7 +301,7 @@ Blockly.Blocks['component_method'] = {
             if (this.isGeneric) {
                 header.appendField('any ' + this.typeName);
             } else {
-                // No extra space — MIT style: "call [Web1 ▾].MethodName"
+                // No extra space — Leap style: "call [Web1 ▾].MethodName"
                 // Pre-populate with valid options to avoid "unavailable option" error
                 const initialOptions = getComponentInstances(this.typeName, this.instanceName, this);
                 const instanceDropdown = new Blockly.FieldDropdown(initialOptions, (newValue) => {

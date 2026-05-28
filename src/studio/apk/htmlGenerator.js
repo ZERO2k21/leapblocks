@@ -133,7 +133,8 @@ html, body {
   height: 100%;
   display: none;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .screen.active {
@@ -143,10 +144,9 @@ html, body {
 .screen-content {
   display: flex;
   flex-direction: column;
-  flex: 1;
   width: 100%;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  min-height: 100%;
+  flex-shrink: 0;
 }
 
 /* Component base styles */

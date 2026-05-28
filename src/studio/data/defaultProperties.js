@@ -3,8 +3,8 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  *
- * MIT App Inventor-compatible default property values for all palette components.
- * Every property shown in the MIT AI2 designer Properties panel should have
+ * Leap-compatible default property values for all palette components.
+ * Every property shown in the Leap designer Properties panel should have
  * a default value here so the LeapLab PropertiesPanel can display them.
  */
 
@@ -43,7 +43,7 @@ const withLegacyAliases = (props) => ({
 
 /**
  * Returns a complete set of default properties for the given component type.
- * These mirror the MIT App Inventor designer defaults.
+ * These mirror the Leap designer defaults.
  */
 export function defaultPropsFor(type) {
   switch (type) {
@@ -585,7 +585,7 @@ export function defaultPropsFor(type) {
       return { Namespace: 'TinyDB1' };
 
     case 'TinyWebDB':
-      return { ServiceURL: 'http://tinywebdb.appinventor.mit.edu' };
+      return { ServiceURL: 'http://tinywebdb.leapblocks.app' };
 
     case 'CloudDB':
       return {

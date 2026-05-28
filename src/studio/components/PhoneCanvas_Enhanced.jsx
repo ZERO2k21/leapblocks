@@ -57,7 +57,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const components = currentScreen?.components || [];
     const nonVisibleComponents = currentScreen?.nonVisibleComponents || [];
 
-    // Device dimensions (width x height in portrait) - Updated to match MIT AI MockForm
+    // Device dimensions (width x height in portrait) - Updated to match Leap MockForm
     const deviceDimensions = {
         phone: { width: 320, height: 505, label: 'Phone' },
         tablet7: { width: 600, height: 960, label: 'Tablet 7"' },
