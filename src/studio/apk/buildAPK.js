@@ -87,6 +87,18 @@ function normalizeVersionCode(value) {
   return Math.floor(Date.now() / 1000);
 }
 
+function resolveScreenOrientation(screens = [], designViewport = null) {
+  const raw = String(
+    screens[0]?.screenOrientation ||
+    screens[0]?.ScreenOrientation ||
+    designViewport?.orientation ||
+    ''
+  ).toLowerCase();
+  if (raw.includes('portrait')) return 'portrait';
+  if (raw.includes('landscape')) return 'landscape';
+  return null;
+}
+
 class ApkBuilder {
   constructor() {
     this.injector = new ApkInjector();
@@ -135,6 +147,7 @@ class ApkBuilder {
         onProgress?.({ stage: 'template_found', progress: 12, message: 'Using WebView template APK' });
 
         const permissions = collectPermissions(screens);
+        const screenOrientation = resolveScreenOrientation(screens, appState.designViewport);
 
         const signedPath = await this.injector.fullBuild(
           this.templatePath,
@@ -144,6 +157,7 @@ class ApkBuilder {
             packageName,
             mediaAssets: appState.media || [],
             permissions,
+            screenOrientation,
           },
           onProgress
         );
@@ -178,6 +192,7 @@ class ApkBuilder {
 
     const decodedDir = path.join(this.injector.workingDir, 'decoded');
     const pkgPath = packageName.replace(/\./g, '/');
+    const screenOrientation = resolveScreenOrientation(Array.isArray(appState.screens) ? appState.screens : [], appState.designViewport);
 
     // Create minimal APK structure
     onProgress?.({ stage: 'creating_structure', progress: 15, message: 'Creating APK structure...' });
@@ -200,7 +215,8 @@ class ApkBuilder {
         android:hardwareAccelerated="true">
         <activity
             android:name=".MainActivity"
-            android:configChanges="orientation|screenSize|keyboard|keyboardHidden"
+            android:configChanges="orientation|screenSize|keyboard|keyboardHidden"${screenOrientation ? `
+            android:screenOrientation="${screenOrientation}"` : ''}
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

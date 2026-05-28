@@ -1,6 +1,5 @@
 /**
- * Leap App Inventor Style Block Colors
- * Block color definitions for Leap Blocks
+ * Leap Blocks Block Colors
  */
 export const BLOCK_COLORS = {
     control: '#B18E35',     // Leap: CONTROL_CATEGORY_HUE

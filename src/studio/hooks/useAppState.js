@@ -20,6 +20,7 @@ const ARRANGEMENT_TYPES = new Set([
 ]);
 const CANVAS_CHILD_TYPES = new Set(['Ball', 'ImageSprite']);
 const MAP_CHILD_TYPES = new Set(['Marker', 'LineString', 'Polygon', 'Rectangle', 'Circle', 'FeatureCollection']);
+const DEFAULT_DESIGN_VIEWPORT = { width: 320, height: 505, deviceType: 'phone', orientation: 'portrait' };
 
 const makeScreen = (id) => ({ id, title: id, backgroundColor: '#ffffff', backgroundImage: '', alignHorizontal: 'Left', alignVertical: 'Top', components: [], nonVisibleComponents: [] });
 
@@ -112,6 +113,7 @@ export function useAppState() {
   const [packageName, setPackageName] = useState('com.leapblocks.myapp');
   const [blockLogic, setBlockLogic] = useState(''); // XML canonical source
   const [media, setMedia] = useState([]);
+  const [designViewport, setDesignViewport] = useState(DEFAULT_DESIGN_VIEWPORT);
 
   const getCurrentScreen = (stateScreens) =>
     stateScreens.find(s => s.id === activeScreen) || stateScreens[0];
@@ -292,6 +294,7 @@ export function useAppState() {
     if (projectData.packageName) setPackageName(projectData.packageName);
     if (projectData.blockLogic !== undefined) setBlockLogic(projectData.blockLogic);
     if (projectData.media) setMedia(projectData.media || []);
+    setDesignViewport(projectData.designViewport || DEFAULT_DESIGN_VIEWPORT);
     setSelectedId(null);
   };
 
@@ -303,6 +306,7 @@ export function useAppState() {
     setPackageName('com.leapblocks.myapp');
     setBlockLogic('');
     setMedia([]);
+    setDesignViewport(DEFAULT_DESIGN_VIEWPORT);
   };
 
   const currentScreen = useMemo(() => getCurrentScreen(screens), [screens, activeScreen]);
@@ -340,7 +344,8 @@ export function useAppState() {
     versionName: '1.0',
     screens,
     blockLogic,
-    media
+    media,
+    designViewport
   });
 
   const selectComponent = (id) => setSelectedId(id);
@@ -354,6 +359,7 @@ export function useAppState() {
     packageName,
     blockLogic,
     media,
+    designViewport,
     currentScreen,
     selectedComponent,
     addComponent,
@@ -366,6 +372,7 @@ export function useAppState() {
     setAppName,
     setPackageName,
     setBlockLogic,
+    setDesignViewport,
     getSerializedState,
     selectComponent,
     deleteComponent,
@@ -385,6 +392,7 @@ export function useAppState() {
     packageName,
     blockLogic,
     media,
+    designViewport,
     currentScreen,
     selectedComponent
   ]);

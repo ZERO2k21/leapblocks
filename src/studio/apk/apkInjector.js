@@ -213,7 +213,7 @@ class ApkInjector {
   /**
    * Modify AndroidManifest.xml with app-specific values
    */
-  async modifyManifest(decodedDir, { appName, packageName, permissions = [] }, onProgress) {
+  async modifyManifest(decodedDir, { appName, packageName, permissions = [], screenOrientation = null }, onProgress) {
     onProgress?.({ stage: 'manifest', progress: 55, message: 'Patching manifest...' });
 
     const manifestPath = path.join(decodedDir, 'AndroidManifest.xml');
@@ -256,6 +256,13 @@ class ApkInjector {
     }
     if (!manifest.includes('hardwareAccelerated')) {
       manifest = manifest.replace('<application', '<application android:hardwareAccelerated="true"');
+    }
+
+    if (screenOrientation && !manifest.includes('android:screenOrientation=')) {
+      manifest = manifest.replace(
+        /(<activity\b[^>]*android:name="\.MainActivity"[^>]*)(>)/,
+        `$1 android:screenOrientation="${screenOrientation}"$2`
+      );
     }
 
     await fs.writeFile(manifestPath, manifest);
@@ -399,13 +406,14 @@ class ApkInjector {
       packageName = 'com.leaplab.myapp',
       mediaAssets = [],
       permissions = [],
+      screenOrientation = null,
     } = appConfig;
 
     await this.initialize(appName);
 
     const decodedDir = await this.decodeApk(templateApkPath, onProgress);
     await this.injectAssets(decodedDir, webAppFiles, mediaAssets, onProgress);
-    await this.modifyManifest(decodedDir, { appName, packageName, permissions }, onProgress);
+    await this.modifyManifest(decodedDir, { appName, packageName, permissions, screenOrientation }, onProgress);
     await this.injectWebViewActivity(decodedDir, packageName, onProgress);
 
     const unsignedPath = path.join(this.workingDir, 'unsigned.apk');

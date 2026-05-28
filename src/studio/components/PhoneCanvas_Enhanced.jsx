@@ -7,9 +7,9 @@ import { Smartphone, Tablet, Monitor, RotateCw, Plus, Check, X as XIcon, Wifi, B
 import ComponentIcon from './ComponentIcon';
 
 export default function PhoneCanvasEnhanced({ appState }) {
-    const { screens, activeScreen, selectedId, addComponent, setSelectedId, setActiveScreen, addScreen, deleteScreen, media } = appState;
-    const [deviceType, setDeviceType] = useState('phone'); // 'phone', 'tablet7', 'tablet10'
-    const [orientation, setOrientation] = useState('portrait'); // 'portrait', 'landscape'
+    const { screens, activeScreen, selectedId, addComponent, setSelectedId, setActiveScreen, addScreen, deleteScreen, media, designViewport, setDesignViewport } = appState;
+    const [deviceType, setDeviceType] = useState(designViewport?.deviceType || 'phone'); // 'phone', 'tablet7', 'tablet10'
+    const [orientation, setOrientation] = useState(designViewport?.orientation || 'portrait'); // 'portrait', 'landscape'
     const [dragOver, setDragOver] = useState(false);
     const [dropTarget, setDropTarget] = useState(null); // Track which container is being dragged over
     const canvasRef = useRef(null);
@@ -68,6 +68,32 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const currentDimensions = deviceDimensions[deviceType];
     const displayWidth = orientation === 'portrait' ? currentDimensions.width : currentDimensions.height;
     const displayHeight = orientation === 'portrait' ? currentDimensions.height : currentDimensions.width;
+
+    useEffect(() => {
+        if (!designViewport) return;
+        if (designViewport.deviceType && designViewport.deviceType !== deviceType) {
+            setDeviceType(designViewport.deviceType);
+        }
+        if (designViewport.orientation && designViewport.orientation !== orientation) {
+            setOrientation(designViewport.orientation);
+        }
+    }, [designViewport?.deviceType, designViewport?.orientation]);
+
+    useEffect(() => {
+        if (!setDesignViewport) return;
+        setDesignViewport(prev => {
+            const next = { width: displayWidth, height: displayHeight, deviceType, orientation };
+            if (
+                prev?.width === next.width &&
+                prev?.height === next.height &&
+                prev?.deviceType === next.deviceType &&
+                prev?.orientation === next.orientation
+            ) {
+                return prev;
+            }
+            return next;
+        });
+    }, [displayWidth, displayHeight, deviceType, orientation, setDesignViewport]);
 
     const mapFeatureTypes = ['Marker', 'LineString', 'Polygon', 'Rectangle', 'Circle', 'FeatureCollection'];
 
