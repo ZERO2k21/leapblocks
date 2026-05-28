@@ -21,7 +21,7 @@ import 'blockly/blocks';
 // Import our custom blocks
 import { initializeAllBlocks, createComponentBlocks } from '../blocks/definitions/index';
 import { BLOCK_COLORS } from '../blocks/utils/blockColors';
-import { COMPONENT_METADATA, ANY_COMPONENT_METADATA } from '../data/componentMetadata';
+import { COMPONENT_METADATA } from '../data/componentMetadata';
 import { PALETTE_ENHANCED } from '../data/paletteComponents_Enhanced';
 const MIT_COLORS = BLOCK_COLORS;
 
@@ -772,9 +772,7 @@ export default function BlocksEditorComplete({ appState }) {
                 },
                 // Component blocks (Dynamic based on added components)
                 ...generateComponentCategories(components),
-                { kind: 'sep' },
-                // Generic Component blocks (Any Component)
-                ...generateAnyComponentCategories(components)
+
             ]
         };
     };
@@ -947,70 +945,6 @@ export default function BlocksEditorComplete({ appState }) {
         });
 
         return categories;
-    };
-
-    // Generate Any Component categories
-    const generateAnyComponentCategories = (components) => {
-        const types = [...new Set(components.map(c => c.type))];
-        logSession('GENERATING_ANY_COMPONENT_CATEGORIES', { typesCount: types.length });
-        const categories = [];
-
-        types.forEach(type => {
-            const metadata = COMPONENT_METADATA[type];
-            if (!metadata) return;
-
-            const category = {
-                kind: 'category',
-                name: `Any ${type}`,
-                colour: GET_CATEGORY_COLOR(type),
-                contents: [
-                    ...(metadata.events || []).map(event => ({
-                        kind: 'block',
-                        type: 'any_component_event',
-                        extraState: {
-                            component_type: type,
-                            is_generic: true,
-                            event_name: event.name
-                        }
-                    })),
-                    ...(metadata.methods || []).map(method => ({
-                        kind: 'block',
-                        type: 'any_component_method',
-                        extraState: {
-                            component_type: type,
-                            method_name: method.name || method,
-                            is_generic: true
-                        }
-                    })),
-                    ...(metadata.properties || []).flatMap(prop => [
-                        {
-                            kind: 'block',
-                            type: 'any_component_set_property',
-                            extraState: {
-                                component_type: type,
-                                property_name: prop.name || prop,
-                                is_generic: true
-                            }
-                        },
-                        {
-                            kind: 'block',
-                            type: 'any_component_get_property',
-                            extraState: {
-                                component_type: type,
-                                property_name: prop.name || prop,
-                                is_generic: true
-                            }
-                        }
-                    ])
-                ]
-            };
-            categories.push(category);
-        });
-
-        if (categories.length > 0) {
-            return [{ kind: 'category', name: 'Any Component', contents: categories }];
-        }
-        return [];
     };
 
     // Generate code

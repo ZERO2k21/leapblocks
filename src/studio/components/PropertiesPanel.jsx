@@ -8,6 +8,7 @@
  * component, falling back to the component's own props for values.
  */
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Trash2, Smartphone, Plus, ChevronDown, ChevronRight, Pencil, Image, AlertTriangle, X } from 'lucide-react';
 import { COMPONENT_METADATA } from '../data/componentMetadata';
 import AssetPicker from './AssetPicker';
@@ -627,46 +628,74 @@ export default function PropertiesPanel({ appState }) {
           currentValue={assetPickerProp.currentValue}
         />
       )}
-      {deleteConfirm && (
+      {deleteConfirm && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)' }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-fade-in"
+          style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)' }}
           onClick={() => setDeleteConfirm(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-[380px] overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white rounded-[20px] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.15)] w-full max-w-[380px] overflow-hidden border border-slate-100 animate-scale-in flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 pt-6 pb-0">
+            <div className="flex items-center justify-between px-6 pt-6 pb-0 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-rose-600" />
+                <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center border border-rose-100 shadow-sm">
+                  <AlertTriangle className="w-5 h-5 text-rose-500" />
                 </div>
-                <span className="text-[17px] font-black text-slate-900 tracking-tight">Delete Module</span>
+                <span className="text-[17px] font-bold text-slate-900 tracking-tight">Delete Module</span>
               </div>
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all active:scale-90"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="px-6 py-5">
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-slate-50 to-white border border-slate-200 shadow-sm">
-                <ComponentIcon type={deleteConfirm.type} size={32} />
+            <div className="px-6 py-5 flex-1">
+              <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-slate-50/70 border border-slate-100 shadow-inner">
+                <ComponentIcon type={deleteConfirm.type} size={36} />
                 <div>
-                  <div className="text-[15px] font-bold text-slate-900">{deleteConfirm.id}</div>
-                  <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.08em]">{deleteConfirm.type}</div>
+                  <div className="text-[15px] font-bold text-slate-900 leading-snug">{deleteConfirm.id}</div>
+                  <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.1em] mt-0.5">{deleteConfirm.type}</div>
                 </div>
               </div>
-              <p className="mt-4 text-[13px] text-slate-600 font-medium leading-relaxed">
+              <p className="mt-4 text-[13px] text-slate-500 font-medium leading-relaxed">
                 Are you sure you want to delete this module? This action cannot be undone. All properties and block references will be permanently removed.
               </p>
             </div>
-            <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-2 border-t border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
+            <div 
+              style={{
+                padding: '18px 24px 24px 24px',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                alignItems: 'center',
+                backgroundColor: '#f8fafc',
+                borderTop: '1px solid #f1f5f9',
+                flexShrink: 0
+              }}
+            >
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="px-5 py-2.5 rounded-xl text-[13px] font-extrabold text-slate-700 bg-white border-2 border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 shadow-sm uppercase tracking-[0.05em]"
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '12px',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  color: '#475569',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                className="hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
               >
                 Cancel
               </button>
@@ -675,14 +704,33 @@ export default function PropertiesPanel({ appState }) {
                   removeComponent(deleteConfirm.id);
                   setDeleteConfirm(null);
                 }}
-                className="px-5 py-2.5 rounded-xl text-[13px] font-extrabold text-white bg-gradient-to-br from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 transition-all active:scale-95 shadow-md shadow-rose-500/25 uppercase tracking-[0.05em] flex items-center gap-2"
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '12px',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  border: 'none',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+                className="hover:shadow-rose-500/35 hover:brightness-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500"
               >
                 <Trash2 className="w-4 h-4" />
                 Delete
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

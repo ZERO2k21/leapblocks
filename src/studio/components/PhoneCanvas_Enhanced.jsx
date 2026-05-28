@@ -7,13 +7,20 @@ import { Smartphone, Tablet, Monitor, RotateCw, Plus, Check, X as XIcon, Wifi, B
 import ComponentIcon from './ComponentIcon';
 
 export default function PhoneCanvasEnhanced({ appState }) {
-    const { screens, activeScreen, selectedId, addComponent, setSelectedId, setActiveScreen, addScreen, deleteScreen } = appState;
+    const { screens, activeScreen, selectedId, addComponent, setSelectedId, setActiveScreen, addScreen, deleteScreen, media } = appState;
     const [deviceType, setDeviceType] = useState('phone'); // 'phone', 'tablet7', 'tablet10'
     const [orientation, setOrientation] = useState('portrait'); // 'portrait', 'landscape'
     const [dragOver, setDragOver] = useState(false);
     const [dropTarget, setDropTarget] = useState(null); // Track which container is being dragged over
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
+
+    const resolveMediaUrl = (filename) => {
+        if (!filename) return null;
+        if (filename.startsWith('data:') || filename.startsWith('http://') || filename.startsWith('https://')) return filename;
+        const item = (media || []).find(m => m.filename === filename);
+        return item ? item.data : null;
+    };
     const [isAddingScreen, setIsAddingScreen] = useState(false);
     const [newScreenName, setNewScreenName] = useState('');
     const [currentTime, setCurrentTime] = useState('12:00');
@@ -265,7 +272,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         onClick={handleClick}
                     >
                         {comp.props.Picture ? (
-                            <img src={comp.props.Picture} alt="" className="w-full h-full object-cover" />
+                            <img src={resolveMediaUrl(comp.props.Picture)} alt="" className="w-full h-full object-cover" />
                         ) : (
                             <span className="text-2xl">🖼️</span>
                         )}
@@ -545,7 +552,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                             style={{
                                                 left: cx, top: cy, width: sw, height: sh,
                                                 zIndex: child.props.Z || 1,
-                                                backgroundImage: child.props.Picture ? `url(${child.props.Picture})` : undefined,
+                                                backgroundImage: child.props.Picture ? `url(${resolveMediaUrl(child.props.Picture)})` : undefined,
                                                 backgroundSize: 'contain',
                                                 backgroundRepeat: 'no-repeat',
                                                 backgroundPosition: 'center'
@@ -1067,9 +1074,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             style={{ 
                                 height: `${displayHeight}px`,
                                 backgroundColor: currentScreen.backgroundColor || '#ffffff',
-                                backgroundImage: currentScreen.backgroundImage
-                                    ? `url(${currentScreen.backgroundImage})`
-                                    : undefined,
+                                backgroundImage: (() => {
+                                    const url = resolveMediaUrl(currentScreen.backgroundImage);
+                                    return url ? `url(${url})` : undefined;
+                                })(),
                                 backgroundSize: '100% 100%',
                                 backgroundPosition: 'center'
                             }}

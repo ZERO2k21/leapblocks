@@ -133,12 +133,20 @@ html, body {
   height: 100%;
   display: none;
   flex-direction: column;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
 }
 
 .screen.active {
   display: flex;
+}
+
+.screen-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Component base styles */
@@ -1194,13 +1202,14 @@ function generateAppJs(appState) {
   function getScreenProperty(id, prop) {
     var el = getScreenElement(id);
     if (!el) return '';
+    var content = el.querySelector('.screen-content');
     switch (prop) {
       case 'BackgroundColor': case 'backgroundColor':
         return el.style.backgroundColor || '';
       case 'AlignHorizontal': case 'alignHorizontal':
-        return el.style.alignItems || 'flex-start';
+        return content ? (content.style.alignItems || 'flex-start') : 'flex-start';
       case 'AlignVertical': case 'alignVertical':
-        return el.style.justifyContent || 'flex-start';
+        return content ? (content.style.justifyContent || 'flex-start') : 'flex-start';
       default:
         return '';
     }
@@ -1209,6 +1218,7 @@ function generateAppJs(appState) {
   function setScreenProperty(id, prop, value) {
     var el = getScreenElement(id);
     if (!el) return;
+    var content = el.querySelector('.screen-content');
     switch (prop) {
       case 'BackgroundColor': case 'backgroundColor':
         el.style.backgroundColor = value;
@@ -1218,11 +1228,11 @@ function generateAppJs(appState) {
         break;
       case 'AlignHorizontal': case 'alignHorizontal':
         var ha = { 'Left': 'flex-start', 'Center': 'center', 'Right': 'flex-end', '1': 'flex-start', '2': 'center', '3': 'flex-end' };
-        el.style.alignItems = ha[String(value)] || 'flex-start';
+        if (content) content.style.alignItems = ha[String(value)] || 'flex-start';
         break;
       case 'AlignVertical': case 'alignVertical':
         var va = { 'Top': 'flex-start', 'Center': 'center', 'Bottom': 'flex-end', '1': 'flex-start', '2': 'center', '3': 'flex-end' };
-        el.style.justifyContent = va[String(value)] || 'flex-start';
+        if (content) content.style.justifyContent = va[String(value)] || 'flex-start';
         break;
     }
   }
@@ -1465,16 +1475,18 @@ function generateScreenRenderer(screen) {
   const renderName = screenRendererName(screenId);
 
   let js = `  function ${renderName}() {\n`;
-  js += `    var container = document.createElement('div');\n`;
-  js += `    container.id = ${JSON.stringify('screen-' + screenId)};\n`;
-  js += `    container.className = 'screen';\n`;
-  js += `    setScreenProperty(${JSON.stringify(screenId)}, 'AlignHorizontal', ${JSON.stringify(screen.alignHorizontal || 'Left')});\n`;
-  js += `    setScreenProperty(${JSON.stringify(screenId)}, 'AlignVertical', ${JSON.stringify(screen.alignVertical || 'Top')});\n`;
+    js += `    var container = document.createElement('div');\n`;
+    js += `    container.id = ${JSON.stringify('screen-' + screenId)};\n`;
+    js += `    container.className = 'screen';\n`;
+    js += `    var content = document.createElement('div');\n`;
+    js += `    content.className = 'screen-content';\n`;
+    js += `    container.appendChild(content);\n`;
+    js += `    setScreenProperty(${JSON.stringify(screenId)}, 'AlignHorizontal', ${JSON.stringify(screen.alignHorizontal || 'Left')});\n`;
+    js += `    setScreenProperty(${JSON.stringify(screenId)}, 'AlignVertical', ${JSON.stringify(screen.alignVertical || 'Top')});\n`;
 
   components.forEach(comp => {
-    js += generateComponentCreation(comp, 'container');
+    js += generateComponentCreation(comp, 'content');
   });
-
   js += `    document.getElementById('app-root').appendChild(container);\n`;
   js += `  }\n\n`;
 

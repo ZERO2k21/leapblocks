@@ -5,7 +5,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     Upload, Search, File, Image as ImageIcon, Music, Video,
-    Trash2, Eye, Download, FolderOpen, Play, Pause, MoreVertical, Grid, List
+    Trash2, Eye, Download, FolderOpen, Play, Pause, MoreVertical, Grid, List,
+    AlertTriangle, X
 } from 'lucide-react';
 
 export default function MediaManager({ appState }) {
@@ -16,6 +17,7 @@ export default function MediaManager({ appState }) {
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewFile, setPreviewFile] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState(null);
     const fileInputRef = useRef(null);
     const audioRef = useRef(null);
 
@@ -67,18 +69,16 @@ export default function MediaManager({ appState }) {
         e.target.value = null; // Reset input
     };
 
-    const handleDelete = async (filename) => {
-        const confirmed = await appState.confirm({
-            title: "Delete Asset",
-            message: `Are you sure you want to delete "${filename}"?`,
-            confirmText: "Delete",
-            type: "danger"
-        });
-        if (confirmed) {
-            deleteMedia(filename);
-            if (selectedFile === filename) setSelectedFile(null);
-            if (previewFile?.filename === filename) setPreviewFile(null);
-        }
+    const handleDelete = (filename) => {
+        setDeleteTarget(filename);
+    };
+
+    const confirmDelete = () => {
+        if (!deleteTarget) return;
+        deleteMedia(deleteTarget);
+        if (selectedFile === deleteTarget) setSelectedFile(null);
+        if (previewFile?.filename === deleteTarget) setPreviewFile(null);
+        setDeleteTarget(null);
     };
 
     const handleDeleteSelected = () => {
@@ -454,6 +454,68 @@ export default function MediaManager({ appState }) {
                             >
                                 <Download className="h-4 w-4" />
                                 Download File
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {deleteTarget && (
+                <div
+                    className="fixed inset-0 z-[9999] flex items-center justify-center"
+                    style={{ backgroundColor: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)' }}
+                    onClick={() => setDeleteTarget(null)}
+                >
+                    <div
+                        className="bg-white rounded-2xl shadow-2xl w-[380px] overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between px-6 pt-6 pb-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center">
+                                    <AlertTriangle className="w-5 h-5 text-rose-600" />
+                                </div>
+                                <span className="text-[17px] font-black text-slate-900 tracking-tight">Delete Asset</span>
+                            </div>
+                            <button
+                                onClick={() => setDeleteTarget(null)}
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="px-6 py-5">
+                            <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-slate-50 to-white border border-slate-200 shadow-sm">
+                                <div className="w-12 h-12 rounded-lg bg-rose-50 flex items-center justify-center overflow-hidden">
+                                    {(media.find(m => m.filename === deleteTarget)?.type || '').startsWith('image/') ? (
+                                        <img src={media.find(m => m.filename === deleteTarget)?.data} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <File className="w-6 h-6 text-rose-500" />
+                                    )}
+                                </div>
+                                <div>
+                                    <div className="text-[15px] font-bold text-slate-900 truncate max-w-[240px]">{deleteTarget}</div>
+                                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.08em]">
+                                        {media.find(m => m.filename === deleteTarget)?.type || 'Unknown'}
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="mt-4 text-[13px] text-slate-600 font-medium leading-relaxed">
+                                Are you sure you want to delete this asset? This action cannot be undone. All references to this file will break.
+                            </p>
+                        </div>
+                        <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-2 border-t border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
+                            <button
+                                onClick={() => setDeleteTarget(null)}
+                                className="px-5 py-2.5 rounded-xl text-[13px] font-extrabold text-slate-700 bg-white border-2 border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 shadow-sm uppercase tracking-[0.05em]"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="px-5 py-2.5 rounded-xl text-[13px] font-extrabold text-white bg-gradient-to-br from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 transition-all active:scale-95 shadow-md shadow-rose-500/25 uppercase tracking-[0.05em] flex items-center gap-2"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
                             </button>
                         </div>
                     </div>
