@@ -273,10 +273,22 @@ app.post('/build-apk', async (req, res) => {
 
   try {
     const buildPath = path.join(__dirname, '..', 'src', 'studio', 'apk', 'buildAPK.js');
+    console.log(`[APK] buildPath: ${buildPath}`);
+    console.log(`[APK] buildPath exists: ${fs.existsSync(buildPath)}`);
+    console.log(`[APK] __dirname: ${__dirname}`);
+
     let builder;
     if (fs.existsSync(buildPath)) {
       const ApkBuilder = _require(buildPath);
       builder = new ApkBuilder();
+      console.log(`[APK] builder loaded: ${typeof builder.build === 'function'}`);
+    } else {
+      console.log(`[APK] buildAPK.js NOT FOUND at ${buildPath}`);
+      console.log(`[APK] Checking alternatives...`);
+      const alt1 = path.join(__dirname, '..', '..', 'src', 'studio', 'apk', 'buildAPK.js');
+      const alt2 = path.join(__dirname, 'apk', 'buildAPK.js');
+      console.log(`[APK] alt1: ${alt1} exists: ${fs.existsSync(alt1)}`);
+      console.log(`[APK] alt2: ${alt2} exists: ${fs.existsSync(alt2)}`);
     }
 
     if (!builder || typeof builder.build !== 'function') {
@@ -802,6 +814,12 @@ app.get('/health', async (req, res) => {
     cliVersion = parsed.VersionString || parsed.version || stdout.trim().split('\n')[0];
   } catch {}
 
+  const buildPath = path.join(__dirname, '..', 'src', 'studio', 'apk', 'buildAPK.js');
+  const apkBuilderExists = fs.existsSync(buildPath);
+  const toolsDir = path.join(__dirname, '..', 'tools');
+  const toolsExist = fs.existsSync(toolsDir);
+  const javaCmd = (() => { try { return require('child_process').spawnSync('java', ['-version']).status === 0; } catch { return false; } })();
+
   res.json({
     status: 'ok',
     port: PORT,
@@ -810,6 +828,11 @@ app.get('/health', async (req, res) => {
     esp32CoreReady,
     initialized: isInitialized,
     jobCount: jobs.size,
+    apkBuilderExists,
+    toolsExist,
+    javaAvailable: javaCmd,
+    buildPath,
+    dirname: __dirname,
     endpoints: ['/compile', '/compile/esp32', '/transpile', '/build-apk', '/build', '/status/:jobId', '/download/:jobId', '/firmware/:id', '/libraries/search', '/libraries/installed', '/libraries/install', '/libraries/remove', '/job/:jobId', '/logs', '/health'],
   });
 });
