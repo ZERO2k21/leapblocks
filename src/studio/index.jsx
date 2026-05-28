@@ -270,7 +270,8 @@ export default function AppInventor({ onBack }) {
         } catch (transpileErr) {
           console.warn('Block transpilation failed, building without block logic:', transpileErr);
           setBuildLogs((prev) => [...prev, `Block transpilation skipped: ${transpileErr.message}`]);
-          payload.blockLogic = '';
+          // Emit a diagnostic comment so the generated app warns at runtime
+          payload.blockLogic = `console.warn('[LeapApp] Block transpilation failed:', ${JSON.stringify(transpileErr.message)});`;
         }
       }
 

@@ -1351,6 +1351,11 @@ function generateAppJs(appState) {
     console.error('[LeapApp] User block logic error:', __err);
   }
 
+  // Warn if no block logic was found
+  var __eventFuncs = ['Click','TouchDown','TouchUp','GotFocus','LostFocus','Changed','AfterPicking','BeforePicking','Timer'];
+  var __hasBlockHandlers = false;
+  ${indentMultiline(blockCode ? '  __hasBlockHandlers = true;' : '', 2)}
+
   // ── Initialization ─────────────────────────────────────────────────────
   window.LeapApp = {
     init: function() {
@@ -1358,7 +1363,7 @@ function generateAppJs(appState) {
       if (!root) throw new Error('Missing app root element.');
       root.innerHTML = '';
       if (__leapUserCodeError) {
-        root.innerHTML = '<div style="padding:16px;font-family:Arial,sans-serif;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;margin:12px;">App startup failed: ' + String(__leapUserCodeError.message || __leapUserCodeError) + '</div>';
+        root.innerHTML = '<div style="padding:16px;font-family:Arial,sans-serif;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;margin:12px;">App failed: ' + String(__leapUserCodeError.message || __leapUserCodeError) + '</div>';
         throw __leapUserCodeError;
       }
 `;
@@ -1614,7 +1619,12 @@ function generateComponentCreation(comp, parentVar) {
       js += `    ${varName}.className = 'comp-button';\n`;
       js += `    ${varName}.textContent = ${JSON.stringify(props.text || props.Text || 'Button')};\n`;
       js += `    ${varName}.addEventListener('click', function() {\n`;
-      js += `      if (typeof window['${id}_Click'] === 'function') window['${id}_Click']();\n`;
+      js += `      var _fn = window['${id}_Click'];\n`;
+      js += `      if (typeof _fn === 'function') {\n`;
+      js += `        try { _fn(); } catch(_e) { console.error('[LeapApp] Error in ${id}_Click:', _e); }\n`;
+      js += `      } else if (typeof _fn !== 'undefined') {\n`;
+      js += `        console.warn('[LeapApp] ${id}_Click is not a function:', typeof _fn);\n`;
+      js += `      }\n`;
       js += `    });\n`;
       break;
 
@@ -2123,13 +2133,16 @@ function generateComponentProxy(comp) {
   let js = `  // Proxy: ${id} (${type})\n`;
   js += `  var ${id} = {\n`;
 
+  // Event names — skip from data-property getters/setters to avoid conflicts
+  // with the callback stubs added below.
+  var eventNames = ['Click', 'GotFocus', 'LostFocus', 'TouchDown', 'TouchUp', 'LongClick'];
   for (const prop of allProps) {
-    const camelProp = prop.charAt(0).toLowerCase() + prop.slice(1);
+    if (eventNames.indexOf(prop) !== -1) continue;
     js += `    get ${prop}() { return getComponentValue('${id}', '${prop}'); },\n`;
     js += `    set ${prop}(v) { setComponentProperty('${id}', '${prop}', v); },\n`;
   }
 
-  // Add Click handler registration
+  // Add event callback stubs for blocks that reference Component.Click etc.
   if (['Button', 'Label', 'Image', 'ListView', 'CheckBox'].includes(type)) {
     js += `    Click: function() {},\n`;
   }

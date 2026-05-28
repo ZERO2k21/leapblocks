@@ -349,45 +349,15 @@ javascriptGenerator['colour_blend'] = function (block) {
 
 export default javascriptGenerator;
 
-// Blockly 10+ prefers `forBlock` lookups. Some generators above may have been
-// assigned with legacy `javascriptGenerator['type']` syntax; mirror them so
-// workspaceToCode can resolve every custom block type reliably.
+// Blockly 10+ / 12 uses `forBlock` lookups. Some generators above may have
+// been assigned with legacy `javascriptGenerator['type']` syntax; mirror ALL
+// custom generators so workspaceToCode can resolve every block type reliably.
 if (javascriptGenerator.forBlock) {
-    const customBlockTypes = [
-        'component_event',
-        'component_get_property',
-        'component_set_property',
-        'component_method',
-        'any_component_event',
-        'any_component_method',
-        'any_component_get_property',
-        'any_component_set_property',
-        'component_choice',
-        'navigate_screen',
-        'close_screen',
-        'notifier_show',
-        'sound_play',
-        'device_vibrate',
-        'controls_if',
-        'controls_if_else',
-        'controls_forEach',
-        'controls_forRange',
-        'controls_while',
-        'controls_choose',
-        'controls_do_then_return',
-        'controls_eval_but_ignore',
-        'controls_openAnotherScreen',
-        'controls_closeScreen',
-        'controls_break',
-        'colour_picker',
-        'colour_random',
-        'colour_rgb',
-        'colour_split',
-        'colour_blend',
-    ];
-
+    const customBlockTypes = Object.keys(javascriptGenerator).filter(
+        t => typeof javascriptGenerator[t] === 'function'
+    );
     customBlockTypes.forEach((type) => {
-        if (typeof javascriptGenerator[type] === 'function') {
+        if ('forBlock' in javascriptGenerator && type !== 'forBlock') {
             javascriptGenerator.forBlock[type] = javascriptGenerator[type];
         }
     });
