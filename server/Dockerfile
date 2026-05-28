@@ -11,6 +11,11 @@ ARG ARDUINO_CLI_VERSION=1.1.1
 RUN curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh \
     | BINDIR=/usr/local/bin sh -s ${ARDUINO_CLI_VERSION}
 
+# Set persistent and consistent directories for arduino-cli
+ENV ARDUINO_DIRECTORIES_DATA=/app/arduino-data
+ENV ARDUINO_DIRECTORIES_DOWNLOADS=/app/arduino-data/staging
+ENV ARDUINO_DIRECTORIES_USER=/app/arduino-data/user
+
 RUN arduino-cli config init && \
     arduino-cli config set board_manager.additional_urls \
       "https://dl.espressif.com/dl/package_esp32_index.json" && \

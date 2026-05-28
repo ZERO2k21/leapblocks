@@ -287,8 +287,9 @@ export default function AppInventor({ onBack }) {
           setBuildLogs((prev) => [...prev, `Build failed: ${result.error}`]);
         }
       } else {
-        setBuildLogs((prev) => [...prev, 'Sending build request to cloud compiler...']);
         const { CLOUD_COMPILER_URL } = await import('../config/platform');
+        const serverLabel = CLOUD_COMPILER_URL.includes('localhost') ? 'local' : 'cloud';
+        setBuildLogs((prev) => [...prev, `Sending build request to ${serverLabel} compiler (${CLOUD_COMPILER_URL})...`]);
 
         const response = await fetch(`${CLOUD_COMPILER_URL}/build-apk`, {
           method: 'POST',

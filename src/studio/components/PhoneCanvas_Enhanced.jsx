@@ -25,6 +25,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const [newScreenName, setNewScreenName] = useState('');
     const [currentTime, setCurrentTime] = useState('12:00');
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+    const [isEditingDimensions, setIsEditingDimensions] = useState(false);
+    const [editWidth, setEditWidth] = useState('');
+    const [editHeight, setEditHeight] = useState('');
+    const [customPhoneDimensions, setCustomPhoneDimensions] = useState(null); // { width, height } when user sets custom
 
     useEffect(() => {
         const updateClock = () => {
@@ -59,7 +63,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
     // Device dimensions (width x height in portrait) - Updated to match Leap MockForm
     const deviceDimensions = {
-        phone: { width: 320, height: 505, label: 'Phone' },
+        phone: customPhoneDimensions || { width: 412, height: 915, label: 'Phone' },
         tablet7: { width: 600, height: 960, label: 'Tablet 7"' },
         tablet10: { width: 800, height: 1280, label: 'Tablet 10"' },
         monitor: { width: 800, height: 1280, label: 'Monitor' } // default landscape display will flip this to 1280x800
@@ -940,7 +944,76 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         {deviceType === 'phone' && <Smartphone className="h-[16px] w-[16px] text-slate-900" />}
                         {(deviceType === 'tablet7' || deviceType === 'tablet10') && <Tablet className="h-[16px] w-[16px] text-slate-900" />}
                         {deviceType === 'monitor' && <Monitor className="h-[16px] w-[16px] text-slate-900" />}
-                        <span className="text-[14px] font-mono font-bold text-slate-900 tracking-wide">{displayWidth} × {displayHeight}</span>
+                        {isEditingDimensions ? (
+                            <div
+                                className="flex items-center gap-1"
+                                onBlur={(e) => {
+                                    if (!e.currentTarget.contains(e.relatedTarget)) {
+                                        const w = parseInt(editWidth);
+                                        const h = parseInt(editHeight);
+                                        if (w > 0 && h > 0) {
+                                            setDeviceType('phone');
+                                            setCustomPhoneDimensions({ width: w, height: h });
+                                            setDesignViewport?.({ deviceType: 'phone', orientation, width: w, height: h });
+                                        }
+                                        setIsEditingDimensions(false);
+                                    }
+                                }}
+                            >
+                                <input
+                                    type="number"
+                                    value={editWidth}
+                                    onChange={(e) => setEditWidth(e.target.value)}
+                                    className="w-14 text-center text-[14px] font-mono font-bold text-slate-900 bg-white border border-blue-300 rounded outline-none focus:ring-2 focus:ring-blue-200"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            const w = parseInt(editWidth);
+                                            const h = parseInt(editHeight);
+                                            if (w > 0 && h > 0) {
+                                                setDeviceType('phone');
+                                                setCustomPhoneDimensions({ width: w, height: h });
+                                                setDesignViewport?.({ deviceType: 'phone', orientation, width: w, height: h });
+                                            }
+                                            setIsEditingDimensions(false);
+                                        }
+                                        if (e.key === 'Escape') setIsEditingDimensions(false);
+                                    }}
+                                />
+                                <span className="text-[14px] font-mono font-bold text-slate-900">×</span>
+                                <input
+                                    type="number"
+                                    value={editHeight}
+                                    onChange={(e) => setEditHeight(e.target.value)}
+                                    className="w-14 text-center text-[14px] font-mono font-bold text-slate-900 bg-white border border-blue-300 rounded outline-none focus:ring-2 focus:ring-blue-200"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            const w = parseInt(editWidth);
+                                            const h = parseInt(editHeight);
+                                            if (w > 0 && h > 0) {
+                                                setDeviceType('phone');
+                                                setCustomPhoneDimensions({ width: w, height: h });
+                                                setDesignViewport?.({ deviceType: 'phone', orientation, width: w, height: h });
+                                            }
+                                            setIsEditingDimensions(false);
+                                        }
+                                        if (e.key === 'Escape') setIsEditingDimensions(false);
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <span
+                                className="text-[14px] font-mono font-bold text-slate-900 tracking-wide cursor-pointer hover:text-blue-600 transition-colors"
+                                onClick={() => {
+                                    setEditWidth(String(displayWidth));
+                                    setEditHeight(String(displayHeight));
+                                    setIsEditingDimensions(true);
+                                }}
+                                title="Click to edit dimensions"
+                            >
+                                {displayWidth} × {displayHeight}
+                            </span>
+                        )}
                     </div>
  
                     <div className="h-5 w-px bg-slate-200" />

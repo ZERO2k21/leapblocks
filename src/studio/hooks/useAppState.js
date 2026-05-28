@@ -20,7 +20,7 @@ const ARRANGEMENT_TYPES = new Set([
 ]);
 const CANVAS_CHILD_TYPES = new Set(['Ball', 'ImageSprite']);
 const MAP_CHILD_TYPES = new Set(['Marker', 'LineString', 'Polygon', 'Rectangle', 'Circle', 'FeatureCollection']);
-const DEFAULT_DESIGN_VIEWPORT = { width: 320, height: 505, deviceType: 'phone', orientation: 'portrait' };
+const DEFAULT_DESIGN_VIEWPORT = { width: 412, height: 915, deviceType: 'phone', orientation: 'portrait' };
 
 const makeScreen = (id) => ({ id, title: id, backgroundColor: '#ffffff', backgroundImage: '', alignHorizontal: 'Left', alignVertical: 'Top', components: [], nonVisibleComponents: [] });
 

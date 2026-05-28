@@ -23,9 +23,43 @@ app.use(express.json({ limit: '50mb' }));
 
 const APK_PUBLIC_DIR = path.join(__dirname, 'public', 'apks');
 const CACHE_DIR = path.join(__dirname, 'cache');
+const LOGS_DIR = path.join(__dirname, 'logs');
 
 fs.mkdirSync(APK_PUBLIC_DIR, { recursive: true });
 fs.mkdirSync(CACHE_DIR, { recursive: true });
+fs.mkdirSync(LOGS_DIR, { recursive: true });
+
+const logFilePath = path.join(LOGS_DIR, 'access.log');
+
+// Realtime logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  const timestamp = new Date().toISOString();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const logLine = `[${timestamp}] ${req.method} ${req.originalUrl} - Status: ${res.statusCode} - Duration: ${duration}ms\n`;
+    
+    // Output to server console for realtime streaming
+    console.log(logLine.trim());
+    
+    // Write to logs folder in server
+    try {
+      if (fs.existsSync(logFilePath)) {
+        const stats = fs.statSync(logFilePath);
+        if (stats.size > 5 * 1024 * 1024) { // 5MB limit
+          const oldLogPath = path.join(LOGS_DIR, 'access.old.log');
+          fs.renameSync(logFilePath, oldLogPath);
+        }
+      }
+      fs.appendFileSync(logFilePath, logLine);
+    } catch (err) {
+      console.error('[LOGGER ERROR] Failed to write to log file:', err);
+    }
+  });
+  
+  next();
+});
 
 app.use('/apks', express.static(APK_PUBLIC_DIR));
 
@@ -722,6 +756,34 @@ app.delete('/libraries/remove', async (req, res) => {
   }
 });
 
+// ─── GET /logs ────────────────────────────────────────────────
+app.get('/logs', (req, res) => {
+  const logFilePath = path.join(__dirname, 'logs', 'access.log');
+  
+  if (req.query.download === 'true') {
+    if (!fs.existsSync(logFilePath)) {
+      return res.status(404).send('No logs available yet.');
+    }
+    return res.download(logFilePath, 'access.log');
+  }
+  
+  if (!fs.existsSync(logFilePath)) {
+    return res.send('No logs available yet.');
+  }
+
+  try {
+    const logsContent = fs.readFileSync(logFilePath, 'utf8');
+    const lines = logsContent.trim().split('\n');
+    const limit = parseInt(req.query.limit, 10) || 200;
+    const lastLines = lines.slice(-limit).join('\n');
+    
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(lastLines);
+  } catch (err) {
+    res.status(500).send(`Error reading logs: ${err.message}`);
+  }
+});
+
 // ─── GET /health ──────────────────────────────────────────────
 app.get('/health', async (req, res) => {
   let cliVersion = 'unknown';
@@ -739,7 +801,7 @@ app.get('/health', async (req, res) => {
     esp32CoreReady,
     initialized: isInitialized,
     jobCount: jobs.size,
-    endpoints: ['/compile', '/compile/esp32', '/transpile', '/build-apk', '/build', '/status/:jobId', '/download/:jobId', '/firmware/:id', '/libraries/search', '/libraries/installed', '/libraries/install', '/libraries/remove', '/job/:jobId', '/health'],
+    endpoints: ['/compile', '/compile/esp32', '/transpile', '/build-apk', '/build', '/status/:jobId', '/download/:jobId', '/firmware/:id', '/libraries/search', '/libraries/installed', '/libraries/install', '/libraries/remove', '/job/:jobId', '/logs', '/health'],
   });
 });
 

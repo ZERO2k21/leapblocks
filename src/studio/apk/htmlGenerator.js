@@ -75,7 +75,7 @@ function generateIndexHtml(appState) {
 </html>`;
 }
 
-const DEFAULT_DESIGN_VIEWPORT = { width: 320, height: 505 };
+const DEFAULT_DESIGN_VIEWPORT = { width: 412, height: 915 };
 
 function firstDefined(...values) {
   for (const value of values) {
@@ -1607,7 +1607,7 @@ function generateScreenRenderer(screen) {
   return js;
 }
 
-function generateComponentCreation(comp, parentVar) {
+function generateComponentCreation(comp, parentVar, parentType) {
   const { id, type, props = {}, children } = comp;
   const varName = `el_${id.replace(/[^a-zA-Z0-9]/g, '_')}`;
   let js = '';
@@ -2070,10 +2070,21 @@ function generateComponentCreation(comp, parentVar) {
 
   js += `    components['${id}'] = ${varName};\n`;
 
+  // Apply absolute positioning when inside AbsoluteArrangement
+  if (parentType === 'AbsoluteArrangement') {
+    const posX = firstDefined(props.X, props.x) || 0;
+    const posY = firstDefined(props.Y, props.y) || 0;
+    const posZ = firstDefined(props.Z, props.z) || 1;
+    js += `    ${varName}.style.position = 'absolute';\n`;
+    js += `    ${varName}.style.left = '${posX}px';\n`;
+    js += `    ${varName}.style.top = '${posY}px';\n`;
+    js += `    ${varName}.style.zIndex = '${posZ}';\n`;
+  }
+
   // Render children for arrangement containers
   if (children && children.length > 0) {
     children.forEach(child => {
-      js += generateComponentCreation(child, varName);
+      js += generateComponentCreation(child, varName, type);
     });
   }
 
