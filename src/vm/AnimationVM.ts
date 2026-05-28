@@ -1530,9 +1530,22 @@ export class AnimationVM {
             case 'bd_action' as any: {
                 const bdAction = (step as any).action;
                 if (typeof window !== 'undefined') {
-                    if (bdAction === 'on' || bdAction === 'analyze') (window as any).__setCameraOn?.(true);
-                    else if (bdAction === 'off') (window as any).__setCameraOn?.(false);
-                    if ((window as any).runtime?.bodyDetection) (window as any).runtime.bodyDetection.analyse(bdAction);
+                    if (bdAction === 'on' || bdAction === 'analyze') {
+                        (window as any).__setCameraOn?.(true);
+                        // Wait up to 3 seconds for the video element to be ready
+                        const bd = (window as any).runtime?.bodyDetection;
+                        if (bd) {
+                            bd.analyse(bdAction);
+                            let waitAttempts = 0;
+                            while (!bd.isVideoReady?.() && waitAttempts < 30) {
+                                await this.sleep(100, signal);
+                                waitAttempts++;
+                            }
+                        }
+                    } else if (bdAction === 'off') {
+                        (window as any).__setCameraOn?.(false);
+                        (window as any).runtime?.bodyDetection?.analyse('off');
+                    }
                 }
                 break;
             }

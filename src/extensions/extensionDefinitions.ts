@@ -475,9 +475,9 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         }
 
     },
-    body_detection: {
-        id: 'body_detection',
-        name: 'Body Detection',
+    human_body: {
+        id: 'human_body',
+        name: 'Human Body Detection',
         color: '#D43D41',
         icon: '🤸',
         registerBlocks: (Blockly: any) => {
@@ -485,8 +485,8 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 { type: 'bd_camera', message0: 'camera %1', args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41' },
                 { type: 'bd_analyze', message0: '%1 body', args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['analyze', 'analyze'], ['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41' },
                 { type: 'bd_body_count', message0: 'body count', output: 'Number', colour: '#b71c1c' },
-                { type: 'bd_get_x', message0: 'x position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'LANDMARK', options: [['nose', 'nose'], ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder']] }, { type: 'field_number', name: 'N', value: 1 }], output: 'Number', colour: '#b71c1c' },
-                { type: 'bd_get_y', message0: 'y position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'LANDMARK', options: [['nose', 'nose'], ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder']] }, { type: 'field_number', name: 'N', value: 1 }], output: 'Number', colour: '#b71c1c' }
+                { type: 'bd_get_x', message0: 'x position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'LANDMARK', options: [['nose', 'nose'], ['left eye', 'left_eye'], ['right eye', 'right_eye'], ['left ear', 'left_ear'], ['right ear', 'right_ear'], ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder'], ['left elbow', 'left_elbow'], ['right elbow', 'right_elbow'], ['left wrist', 'left_wrist'], ['right wrist', 'right_wrist'], ['left hip', 'left_hip'], ['right hip', 'right_hip'], ['left knee', 'left_knee'], ['right knee', 'right_knee'], ['left ankle', 'left_ankle'], ['right ankle', 'right_ankle']] }, { type: 'field_number', name: 'N', value: 1 }], output: 'Number', colour: '#b71c1c' },
+                { type: 'bd_get_y', message0: 'y position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'LANDMARK', options: [['nose', 'nose'], ['left eye', 'left_eye'], ['right eye', 'right_eye'], ['left ear', 'left_ear'], ['right ear', 'right_ear'], ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder'], ['left elbow', 'left_elbow'], ['right elbow', 'right_elbow'], ['left wrist', 'left_wrist'], ['right wrist', 'right_wrist'], ['left hip', 'left_hip'], ['right hip', 'right_hip'], ['left knee', 'left_knee'], ['right knee', 'right_knee'], ['left ankle', 'left_ankle'], ['right ankle', 'right_ankle']] }, { type: 'field_number', name: 'N', value: 1 }], output: 'Number', colour: '#b71c1c' }
             ];
             const newDefs = bdBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
             if (newDefs.length > 0) Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));

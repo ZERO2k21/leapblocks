@@ -15,6 +15,8 @@
  */
 
 import * as faceapi from '@vladmandic/face-api';
+import * as tf from '@tensorflow/tfjs';
+import * as poseDetection from '@tensorflow-models/pose-detection';
 import { penManager } from '../engine/PenManager';
 import { spriteManager } from '../engine/SpriteManager';
 import { ObjectDetectionRuntime } from '../extensions/ObjectDetectionExtension';
@@ -510,7 +512,7 @@ export const handPoseRuntime = new HandPoseRuntime();
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface DetectedBody {
-    landmarks: Record<string, { x: number; y: number }>;
+    landmarks: Record<string, { x: number; y: number; score: number }>;
 }
 
 class BodyDetectionRuntime {
@@ -518,6 +520,9 @@ class BodyDetectionRuntime {
     private videoEl: HTMLVideoElement | null = null;
     private isDetecting = false;
     private rafId: number | null = null;
+    private detector: poseDetection.PoseDetector | null = null;
+    private modelsLoaded = false;
+    private modelsLoading = false;
 
     setVideoElement(video: HTMLVideoElement | null) {
         this.videoEl = video;
@@ -526,16 +531,31 @@ class BodyDetectionRuntime {
 
     analyse(action: string) {
         if (action === 'analyze' || action === 'on') {
-            this.isDetecting = true;
-            this._startLoop();
+            if (!this.isDetecting) {
+                this.isDetecting = true;
+                this._startLoop();
+            }
         } else if (action === 'off') {
             this.isDetecting = false;
-            if (this.rafId !== null) cancelAnimationFrame(this.rafId);
+            if (this.rafId !== null) {
+                cancelAnimationFrame(this.rafId);
+                this.rafId = null;
+            }
             this.bodies = [];
         }
     }
 
     getBodyCount(): number { return this.bodies.length; }
+
+    /** Returns true when camera stream is live AND the model has finished loading */
+    isVideoReady(): boolean {
+        return !!(
+            this.videoEl &&
+            this.videoEl.readyState >= 2 &&
+            this.modelsLoaded &&
+            this.detector
+        );
+    }
 
     getX(n: number, landmark = 'nose'): number {
         const body = this.bodies[n - 1];
@@ -551,20 +571,53 @@ class BodyDetectionRuntime {
         return Math.round(180 - (body.landmarks[landmark].y / videoH) * 360);
     }
 
+    private async _loadModels() {
+        if (this.modelsLoaded || this.modelsLoading) return;
+        this.modelsLoading = true;
+        try {
+            await tf.ready();
+            const detectorConfig = { modelType: poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING };
+            this.detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, detectorConfig);
+            this.modelsLoaded = true;
+            console.log('[BodyDetectionRuntime] ✅ MoveNet MultiPose model loaded successfully');
+        } catch (err) {
+            console.error('[BodyDetectionRuntime] ❌ Failed to load MoveNet model:', err);
+        } finally {
+            this.modelsLoading = false;
+        }
+    }
+
     private _startLoop() {
         if (!this.videoEl || !this.isDetecting) return;
-        const loop = () => {
-            if (!this.isDetecting || !this.videoEl) return;
-            if (this.videoEl.readyState >= 2) {
-                const vw = this.videoEl.videoWidth || 480;
-                const vh = this.videoEl.videoHeight || 360;
-                this.bodies = [{
-                    landmarks: {
-                        nose: { x: vw * 0.5, y: vh * 0.3 },
-                        left_shoulder: { x: vw * 0.4, y: vh * 0.45 },
-                        right_shoulder: { x: vw * 0.6, y: vh * 0.45 }
-                    }
-                }];
+        if (this.rafId !== null) return; // Already running
+
+        const loop = async () => {
+            if (!this.isDetecting || !this.videoEl) {
+                this.rafId = null;
+                return;
+            }
+
+            if (!this.modelsLoaded) {
+                await this._loadModels();
+                this.rafId = requestAnimationFrame(loop);
+                return;
+            }
+
+            if (this.videoEl.readyState >= 2 && this.detector) {
+                try {
+                    const poses = await this.detector.estimatePoses(this.videoEl);
+                    this.bodies = poses.map(pose => {
+                        const landmarks: Record<string, { x: number; y: number; score: number }> = {};
+                        pose.keypoints.forEach(kp => {
+                            if (kp.name) {
+                                landmarks[kp.name] = { x: kp.x, y: kp.y, score: kp.score || 0 };
+                            }
+                        });
+                        return { landmarks };
+                    });
+                } catch (err) {
+                    // Ignore per-frame errors
+                }
             }
             this.rafId = requestAnimationFrame(loop);
         };
