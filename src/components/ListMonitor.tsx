@@ -4,6 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React from 'react';
+import { animationVM } from '../vm/AnimationVM';
 
 interface ListMonitorProps {
     name: string;
@@ -36,8 +37,30 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
     const [isDragging, setIsDragging] = React.useState(false);
     const dragStartRef = React.useRef({ x: 0, y: 0, startX: 0, startY: 0 });
 
+    // Local editing state
+    const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
+    const [editingValue, setEditingValue] = React.useState('');
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
+    React.useEffect(() => {
+        if (editingIndex !== null && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [editingIndex]);
+
     const handlePointerDown = (e: React.PointerEvent) => {
         onPointerDown?.();
+        // If clicking on control buttons or input fields, do not drag
+        const target = e.target as HTMLElement;
+        if (
+            target.closest('.list-monitor-delete-btn') || 
+            target.closest('.list-monitor-add-btn') || 
+            target.closest('.list-monitor-input')
+        ) {
+            return;
+        }
+
         if (e.button !== 0) return;
         setIsDragging(true);
         dragStartRef.current = { x: e.clientX, y: e.clientY, startX: x, startY: y };
@@ -94,6 +117,38 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
         };
     }, [onResize]);
 
+    const handleSaveEdit = () => {
+        if (editingIndex !== null) {
+            animationVM.replaceItemOfList(name, editingIndex + 1, editingValue);
+            setEditingIndex(null);
+        }
+    };
+
+    const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleSaveEdit();
+        } else if (e.key === 'Escape') {
+            setEditingIndex(null);
+        }
+    };
+
+    const handleAddItem = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        animationVM.addToList(name, '');
+        setEditingIndex(items.length);
+        setEditingValue('');
+    };
+
+    const handleDeleteItem = (e: React.MouseEvent, index: number) => {
+        e.stopPropagation();
+        animationVM.deleteOfList(name, index + 1);
+        if (editingIndex === index) {
+            setEditingIndex(null);
+        } else if (editingIndex !== null && editingIndex > index) {
+            setEditingIndex(editingIndex - 1);
+        }
+    };
+
     if (!visible) return null;
 
     return (
@@ -110,6 +165,73 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
             className="list-monitor"
             onPointerDown={onPointerDown} // still register click for z-index on background
         >
+            {/* Inject dynamic styles for premium hovers and buttons */}
+            <style dangerouslySetInnerHTML={{__html: `
+                .list-monitor-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 4px 6px;
+                    border-radius: 4px;
+                    margin-bottom: 2px;
+                    background-color: rgba(255, 255, 255, 0.1);
+                    position: relative;
+                    transition: all 0.15s ease;
+                }
+                .list-monitor-row:hover {
+                    background-color: rgba(255, 255, 255, 0.2);
+                }
+                .list-monitor-delete-btn {
+                    display: none;
+                    background: none;
+                    border: none;
+                    color: rgba(255, 255, 255, 0.7);
+                    padding: 2px;
+                    cursor: pointer;
+                    border-radius: 3px;
+                    transition: all 0.1s ease;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .list-monitor-row:hover .list-monitor-delete-btn {
+                    display: flex;
+                }
+                .list-monitor-delete-btn:hover {
+                    color: #ef4444;
+                    background-color: rgba(255, 255, 255, 0.15);
+                }
+                .list-monitor-add-btn {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: rgba(255, 255, 255, 0.15);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    color: white;
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    transition: all 0.15s ease;
+                    padding: 0;
+                    margin-right: auto;
+                }
+                .list-monitor-add-btn:hover {
+                    background: rgba(255, 255, 255, 0.3);
+                    transform: scale(1.1);
+                }
+                .list-monitor-input {
+                    flex: 1;
+                    background: rgba(255, 255, 255, 0.25);
+                    border: 1px solid rgba(255, 255, 255, 0.4);
+                    border-radius: 3px;
+                    color: white;
+                    font-family: 'Consolas', 'Monaco', monospace;
+                    font-size: 12px;
+                    padding: 2px 4px;
+                    outline: none;
+                }
+            `}} />
+
             {/* Header */}
             <div 
                 style={{ ...styles.header, cursor: isDragging ? 'grabbing' : 'grab' }}
@@ -127,16 +249,62 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
                     <div style={styles.emptyState}>(empty)</div>
                 ) : (
                     items.map((item, index) => (
-                        <div key={index} style={styles.itemRow}>
+                        <div 
+                            key={index} 
+                            className="list-monitor-row"
+                            onDoubleClick={() => {
+                                setEditingIndex(index);
+                                setEditingValue(String(item));
+                            }}
+                        >
                             <span style={styles.itemIndex}>{index + 1}</span>
-                            <span style={styles.itemValue}>{String(item)}</span>
+                            {editingIndex === index ? (
+                                <input
+                                    ref={inputRef}
+                                    value={editingValue}
+                                    onChange={(e) => setEditingValue(e.target.value)}
+                                    onBlur={handleSaveEdit}
+                                    onKeyDown={handleInputKeyDown}
+                                    className="list-monitor-input"
+                                />
+                            ) : (
+                                <span 
+                                    style={styles.itemValue}
+                                    onClick={() => {
+                                        setEditingIndex(index);
+                                        setEditingValue(String(item));
+                                    }}
+                                >
+                                    {String(item)}
+                                </span>
+                            )}
+                            <button 
+                                onClick={(e) => handleDeleteItem(e, index)}
+                                className="list-monitor-delete-btn"
+                                title="Delete item"
+                            >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
                         </div>
                     ))
                 )}
             </div>
 
-            {/* Footer with length */}
+            {/* Footer with length and add option */}
             <div style={styles.footer}>
+                <button 
+                    onClick={handleAddItem} 
+                    className="list-monitor-add-btn" 
+                    title="Add item"
+                >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
                 <span style={styles.lengthText}>length: {items.length}</span>
             </div>
         </div>

@@ -339,6 +339,31 @@ export const faceRuntime = new FaceRuntime();
 // PEN RUNTIME WRAPPER
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Convert pen color number (0-200) to hex color */
+function penNumberToHex(value: number): string {
+    if (value <= 0) return '#000000';
+    if (value >= 200) return '#FFFFFF';
+    const hue = (value / 200) * 360;
+    const h = hue / 360;
+    const s = 1;
+    const l = 0.5;
+    const hue2rgb = (p: number, q: number, t: number) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    const r = hue2rgb(p, q, h + 1 / 3);
+    const g = hue2rgb(p, q, h);
+    const b = hue2rgb(p, q, h - 1 / 3);
+    const toHex = (x: number) => Math.round(x * 255).toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
 /**
  * Thin wrapper so block generators can call window.runtime.pen.*
  * All heavy lifting is in PenManager; this just exposes a clean API
@@ -359,6 +384,11 @@ class PenRuntime {
 
     setColor(color: string) {
         const s = spriteManager.getSprite((window as any).__activeSpriteId || ''); if (s) s.setPenColor(color);
+    }
+
+    setColorByNumber(value: number) {
+        const hex = penNumberToHex(value);
+        const s = spriteManager.getSprite((window as any).__activeSpriteId || ''); if (s) s.setPenColor(hex);
     }
 
     setSize(size: number) {

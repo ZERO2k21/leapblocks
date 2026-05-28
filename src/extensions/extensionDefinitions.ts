@@ -23,6 +23,7 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 { type: 'pen_penDown', message0: 'pen down', previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
                 { type: 'pen_penUp', message0: 'pen up', previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
                 { type: 'pen_setPenColorToColor', message0: 'set pen color to %1', args0: [{ type: 'field_colour', name: 'COLOR', colour: '#ff0000' }], previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
+                { type: 'pen_setPenColorToNumber', message0: 'set pen color to %1', args0: [{ type: 'field_number', name: 'COLOR', value: 50, min: 0, max: 200 }], previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
                 { type: 'pen_changePenSizeBy', message0: 'change pen size by %1', args0: [{ type: 'field_number', name: 'SIZE', value: 1 }], previousStatement: null, nextStatement: null, colour: '#0FBD8C' },
                 { type: 'pen_setPenSizeTo', message0: 'set pen size to %1', args0: [{ type: 'field_number', name: 'SIZE', value: 1 }], previousStatement: null, nextStatement: null, colour: '#0FBD8C' }
             ];
@@ -43,6 +44,10 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 const color = b.getFieldValue('COLOR') || '#000000';
                 return `if(window.runtime?.pen) window.runtime.pen.setColor('${color}');\n`;
             };
+            jsGen.forBlock['pen_setPenColorToNumber'] = (b: any) => {
+                const value = Number(b.getFieldValue('COLOR')) || 0;
+                return `if(window.runtime?.pen) window.runtime.pen.setColorByNumber(${value});\n`;
+            };
             jsGen.forBlock['pen_changePenSizeBy'] = (b: any) => {
                 const size = b.getFieldValue('SIZE') || 1;
                 return `if(window.runtime?.pen) window.runtime.pen.changeSize(${size});\n`;
@@ -58,6 +63,7 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             { kind: 'block', type: 'pen_penDown' },
             { kind: 'block', type: 'pen_penUp' },
             { kind: 'block', type: 'pen_setPenColorToColor' },
+            { kind: 'block', type: 'pen_setPenColorToNumber' },
             { kind: 'block', type: 'pen_changePenSizeBy' },
             { kind: 'block', type: 'pen_setPenSizeTo' }
         ]
