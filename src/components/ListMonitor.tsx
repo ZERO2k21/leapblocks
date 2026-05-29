@@ -1,10 +1,4 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
 import React from 'react';
-import { animationVM } from '../vm/AnimationVM';
 
 interface ListMonitorProps {
     name: string;
@@ -18,6 +12,9 @@ interface ListMonitorProps {
     onPositionChange?: (x: number, y: number) => void;
     onResize?: (w: number, h: number) => void;
     onPointerDown?: () => void;
+    onItemAdd?: (item: string) => void;
+    onItemEdit?: (index: number, value: string) => void;
+    onItemDelete?: (index: number) => void;
 }
 
 export const ListMonitor: React.FC<ListMonitorProps> = ({
@@ -31,36 +28,26 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
     zIndex = 100,
     onPositionChange,
     onResize,
-    onPointerDown
+    onPointerDown,
+    onItemAdd,
+    onItemEdit,
+    onItemDelete
 }) => {
     const containerRef = React.useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = React.useState(false);
     const dragStartRef = React.useRef({ x: 0, y: 0, startX: 0, startY: 0 });
-
-    // Local editing state
     const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
     const [editingValue, setEditingValue] = React.useState('');
-    const inputRef = React.useRef<HTMLInputElement>(null);
+    const editInputRef = React.useRef<HTMLInputElement>(null);
 
     React.useEffect(() => {
-        if (editingIndex !== null && inputRef.current) {
-            inputRef.current.focus();
-            inputRef.current.select();
+        if (editingIndex !== null && editInputRef.current) {
+            editInputRef.current.focus();
         }
     }, [editingIndex]);
 
     const handlePointerDown = (e: React.PointerEvent) => {
         onPointerDown?.();
-        // If clicking on control buttons or input fields, do not drag
-        const target = e.target as HTMLElement;
-        if (
-            target.closest('.list-monitor-delete-btn') || 
-            target.closest('.list-monitor-add-btn') || 
-            target.closest('.list-monitor-input')
-        ) {
-            return;
-        }
-
         if (e.button !== 0) return;
         setIsDragging(true);
         dragStartRef.current = { x: e.clientX, y: e.clientY, startX: x, startY: y };
@@ -94,16 +81,14 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
         e.currentTarget.releasePointerCapture(e.pointerId);
     };
 
-    // Use ResizeObserver to detect CSS resize changes and report back to parent
     React.useEffect(() => {
         if (!containerRef.current || !onResize) return;
         let animationFrameId: number;
-        
+
         const resizeObserver = new ResizeObserver((entries) => {
             animationFrameId = requestAnimationFrame(() => {
                 for (const entry of entries) {
                     const { width, height } = entry.contentRect;
-                    // Add borders/padding bounds if box-sizing is border-box
                     const el = entry.target as HTMLElement;
                     onResize(el.offsetWidth, el.offsetHeight);
                 }
@@ -117,35 +102,42 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
         };
     }, [onResize]);
 
-    const handleSaveEdit = () => {
+    const handleAdd = () => {
+        const newItem = prompt("Enter new item:") || "";
+        if (newItem !== "") {
+            onItemAdd?.(newItem);
+        }
+    };
+
+    const startEditing = (index: number, currentValue: string) => {
+        setEditingIndex(index);
+        setEditingValue(currentValue);
+    };
+
+    const commitEdit = () => {
         if (editingIndex !== null) {
-            animationVM.replaceItemOfList(name, editingIndex + 1, editingValue);
+            onItemEdit?.(editingIndex, editingValue);
             setEditingIndex(null);
+            setEditingValue('');
         }
     };
 
-    const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            handleSaveEdit();
-        } else if (e.key === 'Escape') {
-            setEditingIndex(null);
-        }
-    };
-
-    const handleAddItem = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        animationVM.addToList(name, '');
-        setEditingIndex(items.length);
+    const cancelEdit = () => {
+        setEditingIndex(null);
         setEditingValue('');
     };
 
-    const handleDeleteItem = (e: React.MouseEvent, index: number) => {
-        e.stopPropagation();
-        animationVM.deleteOfList(name, index + 1);
-        if (editingIndex === index) {
-            setEditingIndex(null);
-        } else if (editingIndex !== null && editingIndex > index) {
-            setEditingIndex(editingIndex - 1);
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            commitEdit();
+        } else if (e.key === 'Escape') {
+            cancelEdit();
+        }
+    };
+
+    const handleDelete = (index: number) => {
+        if (confirm("Delete this item?")) {
+            onItemDelete?.(index);
         }
     };
 
@@ -163,77 +155,9 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
                 zIndex: zIndex,
             }}
             className="list-monitor"
-            onPointerDown={onPointerDown} // still register click for z-index on background
+            onPointerDown={onPointerDown}
         >
-            {/* Inject dynamic styles for premium hovers and buttons */}
-            <style dangerouslySetInnerHTML={{__html: `
-                .list-monitor-row {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    padding: 4px 6px;
-                    border-radius: 4px;
-                    margin-bottom: 2px;
-                    background-color: rgba(255, 255, 255, 0.1);
-                    position: relative;
-                    transition: all 0.15s ease;
-                }
-                .list-monitor-row:hover {
-                    background-color: rgba(255, 255, 255, 0.2);
-                }
-                .list-monitor-delete-btn {
-                    display: none;
-                    background: none;
-                    border: none;
-                    color: rgba(255, 255, 255, 0.7);
-                    padding: 2px;
-                    cursor: pointer;
-                    border-radius: 3px;
-                    transition: all 0.1s ease;
-                    align-items: center;
-                    justify-content: center;
-                }
-                .list-monitor-row:hover .list-monitor-delete-btn {
-                    display: flex;
-                }
-                .list-monitor-delete-btn:hover {
-                    color: #ef4444;
-                    background-color: rgba(255, 255, 255, 0.15);
-                }
-                .list-monitor-add-btn {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: rgba(255, 255, 255, 0.15);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                    color: white;
-                    width: 20px;
-                    height: 20px;
-                    border-radius: 50%;
-                    cursor: pointer;
-                    transition: all 0.15s ease;
-                    padding: 0;
-                    margin-right: auto;
-                }
-                .list-monitor-add-btn:hover {
-                    background: rgba(255, 255, 255, 0.3);
-                    transform: scale(1.1);
-                }
-                .list-monitor-input {
-                    flex: 1;
-                    background: rgba(255, 255, 255, 0.25);
-                    border: 1px solid rgba(255, 255, 255, 0.4);
-                    border-radius: 3px;
-                    color: white;
-                    font-family: 'Consolas', 'Monaco', monospace;
-                    font-size: 12px;
-                    padding: 2px 4px;
-                    outline: none;
-                }
-            `}} />
-
-            {/* Header */}
-            <div 
+            <div
                 style={{ ...styles.header, cursor: isDragging ? 'grabbing' : 'grab' }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
@@ -241,71 +165,45 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
                 onPointerCancel={handlePointerUp}
             >
                 <span style={styles.headerText}>{name}</span>
+                <span style={styles.lengthBadge}>length {items.length}</span>
             </div>
 
-            {/* Items List */}
             <div style={styles.itemsContainer}>
                 {items.length === 0 ? (
                     <div style={styles.emptyState}>(empty)</div>
                 ) : (
                     items.map((item, index) => (
-                        <div 
-                            key={index} 
-                            className="list-monitor-row"
-                            onDoubleClick={() => {
-                                setEditingIndex(index);
-                                setEditingValue(String(item));
-                            }}
-                        >
+                        <div key={index} style={styles.itemRow}>
                             <span style={styles.itemIndex}>{index + 1}</span>
                             {editingIndex === index ? (
                                 <input
-                                    ref={inputRef}
+                                    ref={editInputRef}
+                                    style={styles.editInput}
                                     value={editingValue}
                                     onChange={(e) => setEditingValue(e.target.value)}
-                                    onBlur={handleSaveEdit}
-                                    onKeyDown={handleInputKeyDown}
-                                    className="list-monitor-input"
+                                    onBlur={commitEdit}
+                                    onKeyDown={handleKeyDown}
                                 />
                             ) : (
-                                <span 
-                                    style={styles.itemValue}
-                                    onClick={() => {
-                                        setEditingIndex(index);
-                                        setEditingValue(String(item));
-                                    }}
-                                >
-                                    {String(item)}
-                                </span>
+                                <span style={styles.itemValue}>{String(item)}</span>
                             )}
-                            <button 
-                                onClick={(e) => handleDeleteItem(e, index)}
-                                className="list-monitor-delete-btn"
+                            <button
+                                style={styles.editBtn}
+                                onClick={() => startEditing(index, String(item))}
+                                title="Edit item"
+                            >=</button>
+                            <button
+                                style={styles.deleteBtn}
+                                onClick={() => handleDelete(index)}
                                 title="Delete item"
-                            >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                </svg>
-                            </button>
+                            >×</button>
                         </div>
                     ))
                 )}
             </div>
 
-            {/* Footer with length and add option */}
             <div style={styles.footer}>
-                <button 
-                    onClick={handleAddItem} 
-                    className="list-monitor-add-btn" 
-                    title="Add item"
-                >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                </button>
-                <span style={styles.lengthText}>length: {items.length}</span>
+                <button style={styles.addBtn} onClick={handleAdd} title="Add item">+</button>
             </div>
         </div>
     );
@@ -336,10 +234,17 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderTopLeftRadius: '8px',
         borderTopRightRadius: '8px',
         borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     headerText: {
         fontWeight: 600,
         fontSize: '14px',
+    },
+    lengthBadge: {
+        fontSize: '11px',
+        opacity: 0.8,
     },
     itemsContainer: {
         flex: 1,
@@ -355,7 +260,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     itemRow: {
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '4px',
         padding: '4px 6px',
         borderRadius: '4px',
         marginBottom: '2px',
@@ -382,11 +287,69 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderBottomRightRadius: '8px',
         display: 'flex',
         justifyContent: 'center',
+        alignItems: 'center',
     },
-    lengthText: {
-        fontSize: '11px',
-        fontWeight: 500,
-        opacity: 0.9,
+    addBtn: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        border: 'none',
+        color: 'white',
+        borderRadius: '50%',
+        cursor: 'pointer',
+        fontSize: '18px',
+        fontWeight: 'bold',
+        width: '26px',
+        height: '26px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        lineHeight: '1',
+        padding: 0,
+    },
+    editBtn: {
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        border: 'none',
+        color: 'white',
+        borderRadius: '3px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        width: '22px',
+        height: '22px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        lineHeight: '1',
+        padding: 0,
+        flexShrink: 0,
+    },
+    deleteBtn: {
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        border: 'none',
+        color: 'white',
+        borderRadius: '3px',
+        cursor: 'pointer',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        width: '22px',
+        height: '22px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        lineHeight: '1',
+        padding: 0,
+        flexShrink: 0,
+    },
+    editInput: {
+        flex: 1,
+        fontFamily: "'Consolas', 'Monaco', monospace",
+        fontSize: '12px',
+        border: '1px solid rgba(255,255,255,0.4)',
+        borderRadius: '3px',
+        padding: '1px 4px',
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        color: '#333',
+        outline: 'none',
+        minWidth: 0,
     },
 };
 

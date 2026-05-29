@@ -813,6 +813,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, sliderMin: nextMin, sliderMax: nextMax } : m));
     }, []);
 
+    const handleListAddItem = useCallback((listName: string, item: string) => {
+        animationVM.addToList(listName, item);
+    }, []);
+
+    const handleListEditItem = useCallback((listName: string, index: number, value: string) => {
+        animationVM.replaceItemOfList(listName, index + 1, value);
+    }, []);
+
+    const handleListDeleteItem = useCallback((listName: string, index: number) => {
+        animationVM.deleteOfList(listName, index + 1);
+    }, []);
+
     // Bind AnimationVM execution callbacks to update React state
     useEffect(() => {
         animationVM.onShowVariable = (name) => {
@@ -5787,6 +5799,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                             onVariableValueChange={handleVariableValueChange}
 
                                             onVariableSliderRangeChange={handleVariableSliderRangeChange}
+
+                                            onListAddItem={handleListAddItem}
+
+                                            onListEditItem={handleListEditItem}
+
+                                            onListDeleteItem={handleListDeleteItem}
 
                                         />
 
