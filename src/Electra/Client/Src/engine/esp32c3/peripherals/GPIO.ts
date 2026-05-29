@@ -129,25 +129,25 @@ export class ESP32C3GPIO implements MemoryRegion {
       case GPIO_OUT_REG: {
         const changed = (this.outReg ^ val) & this.enableReg;
         this.outReg = val >>> 0;
-        if (changed) { console.log(`[GPIO] OUT_REG=0x${this.outReg.toString(16)} changed=0x${changed.toString(16)}`); this.notify(changed); }
+        if (changed) this.notify(changed);
         break;
       }
       case GPIO_OUT_W1TS_REG: {
         const next = (this.outReg | val) >>> 0;
         const changed = (this.outReg ^ next) & this.enableReg;
         this.outReg = next;
-        if (changed) { console.log(`[GPIO] W1TS val=0x${val.toString(16)} outReg=0x${this.outReg.toString(16)} enableReg=0x${this.enableReg.toString(16)}`); this.notify(changed); }
+        if (changed) this.notify(changed);
         break;
       }
       case GPIO_OUT_W1TC_REG: {
         const next = (this.outReg & ~val) >>> 0;
         const changed = (this.outReg ^ next) & this.enableReg;
         this.outReg = next;
-        if (changed) { console.log(`[GPIO] W1TC val=0x${val.toString(16)} outReg=0x${this.outReg.toString(16)} enableReg=0x${this.enableReg.toString(16)}`); this.notify(changed); }
+        if (changed) this.notify(changed);
         break;
       }
-      case GPIO_ENABLE_REG: this.enableReg = val >>> 0; console.log(`[GPIO] ENABLE_REG=0x${this.enableReg.toString(16)}`); break;
-      case GPIO_ENABLE_W1TS: this.enableReg = (this.enableReg | val) >>> 0; console.log(`[GPIO] ENABLE_W1TS enableReg=0x${this.enableReg.toString(16)}`); break;
+      case GPIO_ENABLE_REG: this.enableReg = val >>> 0; break;
+      case GPIO_ENABLE_W1TS: this.enableReg = (this.enableReg | val) >>> 0; break;
       case GPIO_ENABLE_W1TC: this.enableReg = (this.enableReg & ~val) >>> 0; break;
       case GPIO_STATUS_W1TC: this.statusReg = (this.statusReg & ~val) >>> 0; break;
       default: {

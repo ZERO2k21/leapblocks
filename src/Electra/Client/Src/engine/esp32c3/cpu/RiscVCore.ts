@@ -80,7 +80,7 @@ const i32s = (v: number): i32 => (v | 0) as i32;
 class RAMRegion implements MemoryRegion {
   base: u32;
   size: u32;
-  protected data: Uint8Array;
+  data: Uint8Array;
   protected view: DataView;
 
   constructor(base: u32, size: u32, sharedBuffer?: ArrayBuffer) {
@@ -108,10 +108,9 @@ class RAMRegion implements MemoryRegion {
   }
 
   private local(addr: u32): number {
-    const off = u32m(addr - this.base);
-    if (off >= this.size) {
-      throw new RangeError(`[RiscVCore RAM] Out-of-bounds access: 0x${addr.toString(16)}`);
-    }
+    const off = (addr - this.base) >>> 0;
+    // Bounds check without exception (avoids exception object allocation on out-of-bounds)
+    if (off >= this.size) return 0;
     return off;
   }
 
@@ -122,6 +121,43 @@ class RAMRegion implements MemoryRegion {
   write8(addr: u32, val: u32): void { this.data[this.local(addr)] = val & 0xFF; }
   write16(addr: u32, val: u32): void { this.view.setUint16(this.local(addr), val & 0xFFFF, true); }
   write32(addr: u32, val: u32): void { this.view.setUint32(this.local(addr), val >>> 0, true); }
+
+  // Bulk memory helpers for ROM emulation (avoids per-byte memRead8/memWrite8 overhead)
+  bulkRead8(destAddr: u32, srcAddr: u32, count: u32): void {
+    const srcOff = (srcAddr - this.base) >>> 0;
+    for (let i = 0; i < count; i++) {
+      this.data[srcOff + i] = 0; // zero-fill (used by bzero)
+    }
+  }
+  bulkWrite8(addr: u32, val: u32, count: u32): void {
+    const off = (addr - this.base) >>> 0;
+    if (off >= this.size) return;
+    const end = Math.min(off + count, this.size);
+    this.data.fill(val & 0xFF, off, end);
+  }
+  bulkCopyFrom(destAddr: u32, srcAddr: u32, count: u32, srcRegion: RAMRegion): void {
+    const destOff = (destAddr - this.base) >>> 0;
+    const srcOff = (srcAddr - srcRegion.base) >>> 0;
+    if (destOff >= this.size || srcOff >= srcRegion.size) return;
+    const len = Math.min(count, this.size - destOff, srcRegion.size - srcOff);
+    this.data.set(srcRegion.data.subarray(srcOff, srcOff + len), destOff);
+  }
+  bulkCompare(addr1: u32, addr2: u32, count: u32): number {
+    const off1 = (addr1 - this.base) >>> 0;
+    const off2 = (addr2 - this.base) >>> 0;
+    for (let i = 0; i < count; i++) {
+      const b1 = this.data[off1 + i];
+      const b2 = this.data[off2 + i];
+      if (b1 !== b2) return b1 - b2;
+    }
+    return 0;
+  }
+  bulkStrlen(addr: u32): number {
+    const off = (addr - this.base) >>> 0;
+    let len = 0;
+    while (len < this.size - off && this.data[off + len] !== 0) len++;
+    return len;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -130,6 +166,8 @@ class RAMRegion implements MemoryRegion {
 
 export class MMIOBus {
   private regions: MemoryRegion[] = [];
+  // O(1) page-based lookup: pageKey = addr >>> 12 (4KB page)
+  private pageMap = new Map<number, MemoryRegion>();
   // Stub map: silently absorbs writes to unregistered MMIO, returns last written value on read.
   // This covers WDT, SYSTEM, INTERRUPT MATRIX, and other init-time registers the firmware
   // touches but the simulator doesn't need to fully implement.
@@ -137,10 +175,16 @@ export class MMIOBus {
 
   register(region: MemoryRegion): void {
     this.regions.push(region);
+    // Populate page map for all 4KB pages in this region
+    const startPage = region.base >>> 12;
+    const endPage = ((region.base + region.size - 1) >>> 12);
+    for (let page = startPage; page <= endPage; page++) {
+      this.pageMap.set(page, region);
+    }
   }
 
   private find(addr: u32): MemoryRegion | undefined {
-    return this.regions.find(r => addr >= r.base && addr < r.base + r.size);
+    return this.pageMap.get(addr >>> 12);
   }
 
   read8(addr: u32): u32 { return (this.find(addr)?.read8(addr) ?? this.stubRead(addr)) & 0xFF; }
@@ -358,7 +402,6 @@ export class MMIOBus {
     // Log first-time reads of unregistered MMIO
     if (!this.stubRegs.has(addr) && addr >= 0x60000000) {
       this.stubRegs.set(addr, val);
-      console.log(`[MMIO] First read @ 0x${addr.toString(16)} → 0x${val.toString(16)}`);
     }
     return val;
   }
@@ -375,14 +418,17 @@ export class InterruptController {
   enabled: u32 = 0xFFFFFFFF;
   /** MIE bit in mstatus */
   globalEnable: boolean = false;
+  /** Fast path: true when any interrupt might be pending (avoids hasPending() on every step) */
+  dirty: boolean = false;
 
-  raise(irq: number): void { this.pending |= (1 << irq); }
+  raise(irq: number): void { this.pending |= (1 << irq); this.dirty = true; }
   clear(irq: number): void { this.pending &= ~(1 << irq); }
   hasPending(): boolean { return this.globalEnable && (this.pending & this.enabled) !== 0; }
   nextPending(): number {
     const masked = this.pending & this.enabled;
-    for (let i = 0; i < 32; i++) if (masked & (1 << i)) return i;
-    return -1;
+    if (masked === 0) return -1;
+    // O(1) bit-scan: find lowest set bit using Math.clz32
+    return 31 - Math.clz32(masked);
   }
 }
 
@@ -407,6 +453,16 @@ export class RiscVCore {
   private mscratch: u32 = 0;
   private minstret: number = 0;
   private mcycle: number = 0;
+
+  // ----- interrupt check throttle -----
+  // Only check interrupts every N instructions to avoid per-instruction overhead.
+  // Peripherals set irqCtrl.dirty when they raise an interrupt, which short-circuits this.
+  private irqCheckCounter: number = 0;
+  private static readonly IRQ_CHECK_INTERVAL = 32;
+
+  // ----- reusable snapshot (avoids allocation every 60 frames) -----
+  private _snapshotRegs = new Uint32Array(32);
+  private _snapshot: CpuState = { pc: 0, regs: this._snapshotRegs, cycles: 0, halted: false };
 
   // ----- memory -----
   // On real ESP32-C3, IRAM (0x40380000) and DRAM (0x3FC80000) are aliases for
@@ -603,6 +659,18 @@ export class RiscVCore {
   }
 
   // ---------------------------------------------------------------------------
+  // Region lookup for bulk ROM operations
+  // ---------------------------------------------------------------------------
+
+  private findRAMRegion(addr: u32): RAMRegion | null {
+    if (addr >= RiscVCore.IRAM_BASE && addr < RiscVCore.IRAM_BASE + RiscVCore.IRAM_SIZE) return this.iram;
+    if (addr >= RiscVCore.DRAM_BASE && addr < RiscVCore.DRAM_BASE + RiscVCore.DRAM_SIZE) return this.dram;
+    if (addr >= RiscVCore.IROM_BASE && addr < RiscVCore.IROM_BASE + RiscVCore.IROM_SIZE) return this.irom;
+    if (addr >= RiscVCore.DROM_BASE && addr < RiscVCore.DROM_BASE + RiscVCore.DROM_SIZE) return this.drom;
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
   // ROM Emulation / Interception
   // ---------------------------------------------------------------------------
 
@@ -622,8 +690,11 @@ export class RiscVCore {
         const s = u32m(this.regRead(10));
         const c = this.regRead(11) & 0xFF;
         const n = u32m(this.regRead(12));
-        for (let i = 0; i < n; i++) {
-          this.memWrite8(s + i, c);
+        const region = this.findRAMRegion(s);
+        if (region) {
+          region.bulkWrite8(s, c, n);
+        } else {
+          for (let i = 0; i < n; i++) this.memWrite8(s + i, c);
         }
         this.regWrite(10, s);
         break;
@@ -632,12 +703,14 @@ export class RiscVCore {
         const dest = u32m(this.regRead(10));
         const src = u32m(this.regRead(11));
         const n = u32m(this.regRead(12));
-        const temp = new Uint8Array(n);
-        for (let i = 0; i < n; i++) {
-          temp[i] = this.memRead8(src + i);
-        }
-        for (let i = 0; i < n; i++) {
-          this.memWrite8(dest + i, temp[i]);
+        const destRegion = this.findRAMRegion(dest);
+        const srcRegion = this.findRAMRegion(src);
+        if (destRegion && srcRegion) {
+          destRegion.bulkCopyFrom(dest, src, n, srcRegion);
+        } else {
+          const temp = new Uint8Array(n);
+          for (let i = 0; i < n; i++) temp[i] = this.memRead8(src + i);
+          for (let i = 0; i < n; i++) this.memWrite8(dest + i, temp[i]);
         }
         this.regWrite(10, dest);
         break;
@@ -646,12 +719,25 @@ export class RiscVCore {
         const dest = u32m(this.regRead(10));
         const src = u32m(this.regRead(11));
         const n = u32m(this.regRead(12));
-        const temp = new Uint8Array(n);
-        for (let i = 0; i < n; i++) {
-          temp[i] = this.memRead8(src + i);
-        }
-        for (let i = 0; i < n; i++) {
-          this.memWrite8(dest + i, temp[i]);
+        const destRegion = this.findRAMRegion(dest);
+        const srcRegion = this.findRAMRegion(src);
+        if (destRegion && srcRegion) {
+          // For overlapping regions, copy through temp buffer
+          const temp = new Uint8Array(n);
+          const srcOff = (src - srcRegion.base) >>> 0;
+          if (srcOff < srcRegion.size) {
+            const len = Math.min(n, srcRegion.size - srcOff);
+            temp.set(srcRegion.data.subarray(srcOff, srcOff + len));
+          }
+          const destOff = (dest - destRegion.base) >>> 0;
+          if (destOff < destRegion.size) {
+            const len = Math.min(n, destRegion.size - destOff);
+            destRegion.data.set(temp.subarray(0, len), destOff);
+          }
+        } else {
+          const temp = new Uint8Array(n);
+          for (let i = 0; i < n; i++) temp[i] = this.memRead8(src + i);
+          for (let i = 0; i < n; i++) this.memWrite8(dest + i, temp[i]);
         }
         this.regWrite(10, dest);
         break;
@@ -660,13 +746,16 @@ export class RiscVCore {
         const s1 = u32m(this.regRead(10));
         const s2 = u32m(this.regRead(11));
         const n = u32m(this.regRead(12));
+        const r1 = this.findRAMRegion(s1);
+        const r2 = this.findRAMRegion(s2);
         let res = 0;
-        for (let i = 0; i < n; i++) {
-          const b1 = this.memRead8(s1 + i);
-          const b2 = this.memRead8(s2 + i);
-          if (b1 !== b2) {
-            res = b1 - b2;
-            break;
+        if (r1 && r2) {
+          res = r1.bulkCompare(s1, s2, n);
+        } else {
+          for (let i = 0; i < n; i++) {
+            const b1 = this.memRead8(s1 + i);
+            const b2 = this.memRead8(s2 + i);
+            if (b1 !== b2) { res = b1 - b2; break; }
           }
         }
         this.regWrite(10, res);
@@ -675,12 +764,28 @@ export class RiscVCore {
       case 0x40000364: { // strcpy
         const dest = u32m(this.regRead(10));
         const src = u32m(this.regRead(11));
-        let i = 0;
-        while (true) {
-          const b = this.memRead8(src + i);
-          this.memWrite8(dest + i, b);
-          if (b === 0) break;
-          i++;
+        const srcRegion = this.findRAMRegion(src);
+        const destRegion = this.findRAMRegion(dest);
+        if (srcRegion && destRegion) {
+          const srcOff = (src - srcRegion.base) >>> 0;
+          const destOff = (dest - destRegion.base) >>> 0;
+          if (srcOff < srcRegion.size && destOff < destRegion.size) {
+            let i = 0;
+            while (srcOff + i < srcRegion.size && destOff + i < destRegion.size) {
+              const b = srcRegion.data[srcOff + i];
+              destRegion.data[destOff + i] = b;
+              if (b === 0) break;
+              i++;
+            }
+          }
+        } else {
+          let i = 0;
+          while (true) {
+            const b = this.memRead8(src + i);
+            this.memWrite8(dest + i, b);
+            if (b === 0) break;
+            i++;
+          }
         }
         this.regWrite(10, dest);
         break;
@@ -688,26 +793,43 @@ export class RiscVCore {
       case 0x4000036c: { // strcmp
         const s1 = u32m(this.regRead(10));
         const s2 = u32m(this.regRead(11));
-        let i = 0;
+        const r1 = this.findRAMRegion(s1);
+        const r2 = this.findRAMRegion(s2);
         let res = 0;
-        while (true) {
-          const b1 = this.memRead8(s1 + i);
-          const b2 = this.memRead8(s2 + i);
-          if (b1 !== b2) {
-            res = b1 - b2;
-            break;
+        if (r1 && r2) {
+          const off1 = (s1 - r1.base) >>> 0;
+          const off2 = (s2 - r2.base) >>> 0;
+          if (off1 < r1.size && off2 < r2.size) {
+            let i = 0;
+            while (off1 + i < r1.size && off2 + i < r2.size) {
+              const b1 = r1.data[off1 + i];
+              const b2 = r2.data[off2 + i];
+              if (b1 !== b2) { res = b1 - b2; break; }
+              if (b1 === 0) break;
+              i++;
+            }
           }
-          if (b1 === 0) break;
-          i++;
+        } else {
+          let i = 0;
+          while (true) {
+            const b1 = this.memRead8(s1 + i);
+            const b2 = this.memRead8(s2 + i);
+            if (b1 !== b2) { res = b1 - b2; break; }
+            if (b1 === 0) break;
+            i++;
+          }
         }
         this.regWrite(10, res);
         break;
       }
       case 0x40000374: { // strlen
         const s = u32m(this.regRead(10));
+        const region = this.findRAMRegion(s);
         let len = 0;
-        while (this.memRead8(s + len) !== 0) {
-          len++;
+        if (region) {
+          len = region.bulkStrlen(s);
+        } else {
+          while (this.memRead8(s + len) !== 0) len++;
         }
         this.regWrite(10, len);
         break;
@@ -715,8 +837,11 @@ export class RiscVCore {
       case 0x4000037c: { // bzero
         const s = u32m(this.regRead(10));
         const n = u32m(this.regRead(11));
-        for (let i = 0; i < n; i++) {
-          this.memWrite8(s + i, 0);
+        const region = this.findRAMRegion(s);
+        if (region) {
+          region.bulkWrite8(s, 0, n);
+        } else {
+          for (let i = 0; i < n; i++) this.memWrite8(s + i, 0);
         }
         break;
       }
@@ -1004,10 +1129,15 @@ export class RiscVCore {
   step(): number {
     if (this.halted) return 0;
 
-    // Check pending interrupts
-    if (this.irqCtrl.hasPending()) {
-      this.handleInterrupt();
-      return 4;
+    // Check pending interrupts (throttled to avoid per-instruction overhead)
+    // Peripherals set irqCtrl.dirty when they raise, which forces an immediate check.
+    if (this.irqCtrl.dirty || --this.irqCheckCounter <= 0) {
+      this.irqCheckCounter = RiscVCore.IRQ_CHECK_INTERVAL;
+      this.irqCtrl.dirty = false;
+      if (this.irqCtrl.hasPending()) {
+        this.handleInterrupt();
+        return 4;
+      }
     }
 
     // Intercept ROM calls
@@ -1264,12 +1394,11 @@ export class RiscVCore {
   // ---------------------------------------------------------------------------
 
   snapshot(): CpuState {
-    return {
-      pc: this.pc,
-      regs: new Uint32Array(this.regs.buffer),
-      cycles: this.cycles,
-      halted: this.halted,
-    };
+    this._snapshot.pc = this.pc;
+    this._snapshotRegs.set(this.regs);
+    this._snapshot.cycles = this.cycles;
+    this._snapshot.halted = this.halted;
+    return this._snapshot;
   }
 
   reset(entryPoint: u32 = RiscVCore.IRAM_BASE): void {
@@ -1289,7 +1418,9 @@ export class RiscVCore {
     this.mtvec = 0;
     this.mcycle = 0;
     this.minstret = 0;
+    this.irqCheckCounter = 0;
     this.irqCtrl.pending = 0;
     this.irqCtrl.globalEnable = false;
+    this.irqCtrl.dirty = false;
   }
 }

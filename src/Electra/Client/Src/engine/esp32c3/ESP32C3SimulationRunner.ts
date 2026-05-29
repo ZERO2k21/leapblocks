@@ -233,6 +233,20 @@ export class ESP32C3SimulationRunner {
         this.worker.onmessage = (e) => {
             const msg = e.data;
             switch (msg.type) {
+                case 'gpioBatch': {
+                    for (const evt of msg.events) {
+                        const pin = gpioToPinName(evt.pin);
+                        const state: PinState = evt.isAnalog ? evt.value : (evt.value ? 'HIGH' : 'LOW');
+                        this.setPinState(pin, state);
+                    }
+                    break;
+                }
+                case 'uartBatch': {
+                    for (const evt of msg.events) {
+                        this.serialListeners.forEach(cb => cb(evt.line));
+                    }
+                    break;
+                }
                 case 'gpioChange': {
                     const pin = gpioToPinName(msg.pin);
                     const state: PinState = msg.isAnalog ? msg.value : (msg.value ? 'HIGH' : 'LOW');

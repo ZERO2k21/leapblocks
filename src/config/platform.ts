@@ -48,52 +48,47 @@ const isLocal = typeof window !== 'undefined' &&
     window.location.hostname === '127.0.0.1' ||
     window.location.hostname === '[::1]');
 
+const getFallbackUrl = (): string => {
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_COMPILER_URL) {
+    return (import.meta as any).env.VITE_COMPILER_URL as string;
+  }
+  return 'https://leapblocks-server.onrender.com';
+};
+
 // 2. Live binding export so it can be updated dynamically
 export let CLOUD_COMPILER_URL: string = (() => {
-  // 1. Priority: Environment Variable
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_COMPILER_URL) {
-    const url = (import.meta as any).env.VITE_COMPILER_URL as string;
-    console.log(`[Platform] Using VITE_COMPILER_URL: ${url}`);
-    return url;
-  }
-
-  // 2. Local dev: default to localhost first
   if (isLocal) {
     return 'http://localhost:3001';
   }
-
-  // 3. Deployed: fall back to cloud
-  console.log('[Platform] No VITE_COMPILER_URL set, defaulting to Render');
-  return 'https://leapblocks-server.onrender.com';
+  return getFallbackUrl();
 })();
 
 const detectCompilerServer = async () => {
-  // If explicitly overridden by environment variable, do not perform auto-detection
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_COMPILER_URL) {
+  if (!isLocal) {
     return;
   }
 
-  if (isLocal) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1200); // 1.2s timeout
+  const fallback = getFallbackUrl();
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1200); // 1.2s timeout
 
-      const res = await fetch('http://localhost:3001/health', {
-        signal: controller.signal,
-        mode: 'cors'
-      });
-      clearTimeout(timeoutId);
+    const res = await fetch('http://localhost:3001/health', {
+      signal: controller.signal,
+      mode: 'cors'
+    });
+    clearTimeout(timeoutId);
 
-      if (!res.ok) {
-        CLOUD_COMPILER_URL = 'https://leapblocks-server.onrender.com';
-        console.log('[Platform] Local server returned error status. Switching to Render.');
-      } else {
-        console.log('[Platform] Local compiler server detected on port 3001. Using localhost.');
-      }
-    } catch {
-      CLOUD_COMPILER_URL = 'https://leapblocks-server.onrender.com';
-      console.log('[Platform] Local compiler server not reachable. Switching to Render.');
+    if (!res.ok) {
+      CLOUD_COMPILER_URL = fallback;
+      console.log(`[Platform] Local server returned error status. Switching to fallback: ${fallback}`);
+    } else {
+      CLOUD_COMPILER_URL = 'http://localhost:3001';
+      console.log('[Platform] Local compiler server detected on port 3001. Using localhost.');
     }
+  } catch {
+    CLOUD_COMPILER_URL = fallback;
+    console.log(`[Platform] Local compiler server not reachable. Switching to fallback: ${fallback}`);
   }
 };
 

@@ -23,6 +23,31 @@ let timerIntervalMs = 16; // Loop tick interval (60 FPS target)
 let wasmInstance: any = null;
 let usingWasm = false;
 
+// ── Batched message buffers (avoids per-event postMessage overhead) ──
+let gpioBatch: { pin: number; value: number; isAnalog: boolean }[] = [];
+let uartBatch: { uart: number; line: string }[] = [];
+let batchTimer: ReturnType<typeof setTimeout> | null = null;
+
+function flushBatches(): void {
+  batchTimer = null;
+  if (gpioBatch.length > 0) {
+    const batch = gpioBatch;
+    gpioBatch = [];
+    ctx.postMessage({ type: 'gpioBatch', events: batch });
+  }
+  if (uartBatch.length > 0) {
+    const batch = uartBatch;
+    uartBatch = [];
+    ctx.postMessage({ type: 'uartBatch', events: batch });
+  }
+}
+
+function scheduleFlush(): void {
+  if (batchTimer === null) {
+    batchTimer = setTimeout(flushBatches, 0);
+  }
+}
+
 function initJSEmulator(firmware: Uint8Array) {
   // Clear any existing state
   cleanup();
@@ -63,22 +88,20 @@ function initJSEmulator(firmware: Uint8Array) {
   core.reset(result.entryPoint);
   sysTimer.cpuCycles = 0;
 
-  // Listen to GPIO output changes to send back to main thread
+  // Listen to GPIO output changes — batch for efficient postMessage
   gpio.onPinChange((gpioPin: number, value: number, isAnalog: boolean) => {
-    ctx.postMessage({
-      type: 'gpioChange',
-      pin: gpioPin,
-      value,
-      isAnalog
-    });
+    gpioBatch.push({ pin: gpioPin, value, isAnalog });
+    scheduleFlush();
   });
 
-  // Listen to UART serial output to forward logs to main thread
+  // Listen to UART serial output — batch for efficient postMessage
   uart0.onSerialOutput((line: string) => {
-    ctx.postMessage({ type: 'uartTx', uart: 0, line });
+    uartBatch.push({ uart: 0, line });
+    scheduleFlush();
   });
   uart1.onSerialOutput((line: string) => {
-    ctx.postMessage({ type: 'uartTx', uart: 1, line });
+    uartBatch.push({ uart: 1, line });
+    scheduleFlush();
   });
 
   ctx.postMessage({
@@ -183,6 +206,9 @@ function stopLoop() {
 
 function cleanup() {
   stopLoop();
+  if (batchTimer) { clearTimeout(batchTimer); batchTimer = null; }
+  gpioBatch = [];
+  uartBatch = [];
   core = null;
   gpio = null;
   uart0 = null;
