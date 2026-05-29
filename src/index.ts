@@ -6,7 +6,7 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { spawn } from 'child_process';
+import { spawn, fork } from 'child_process';
 import { SerialManager } from './serial/SerialManager';
 import { ArduinoUploader } from './upload/ArduinoUploader';
 import { PythonManager } from './pythonBackend/PythonManager';
@@ -141,6 +141,47 @@ const createWindow = (): void => {
   logTiming('Initializing PythonManager');
   pythonManager = new PythonManager(mainWindow);
   logTiming('PythonManager initialized');
+
+  // ── Proactively download Python 3.10 + Arduino CLI in the background ──
+  // On first launch neither tool is available yet.  We start both downloads
+  // immediately so they're ready when the user actually tries to use them.
+  // The renderer listens to 'tool-download-progress' for status updates.
+  const { ensureArduinoCli } = require('./utils/ensureArduinoCli');
+  const { ensurePython } = require('./utils/ensurePython');
+
+  const notifyRenderer = (tool: string, status: string, message: string) => {
+    try {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('tool-download-progress', { tool, status, message });
+      }
+    } catch { /* window may have closed */ }
+  };
+
+  const downloadArduinoCli = async () => {
+    try {
+      notifyRenderer('arduino-cli', 'checking', 'Checking for Arduino CLI...');
+      await ensureArduinoCli((msg: string) => notifyRenderer('arduino-cli', 'downloading', msg));
+      notifyRenderer('arduino-cli', 'ready', 'Arduino CLI ready');
+    } catch (err: any) {
+      console.error('[STARTUP] Arduino CLI download failed:', err.message);
+      notifyRenderer('arduino-cli', 'error', err.message || 'Failed to install Arduino CLI');
+    }
+  };
+
+  const downloadPython = async () => {
+    try {
+      notifyRenderer('python', 'checking', 'Checking for Python 3.10...');
+      await ensurePython((msg: string) => notifyRenderer('python', 'downloading', msg));
+      notifyRenderer('python', 'ready', 'Python 3.10 ready');
+    } catch (err: any) {
+      console.error('[STARTUP] Python download failed:', err.message);
+      notifyRenderer('python', 'error', err.message || 'Failed to install Python 3.10');
+    }
+  };
+
+  // Fire both downloads in parallel — non-blocking, won't delay app startup
+  downloadArduinoCli();
+  downloadPython();
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -386,33 +427,48 @@ ipcMain.handle('remove-background', async (event, imagePath: string) => {
 });
 
 ipcMain.handle('build-apk', async (event, appState) => {
-  // In Vite/Electron-Vite, we can just use regular require for our external build script
-  const buildApkPath = path.join(app.getAppPath(), 'src', 'studio', 'apk', 'electron-bridge.js');
-  let buildApk: any;
-  try {
-    buildApk = require(buildApkPath);
-  } catch (e) {
-    console.error('Could not load buildApk from', buildApkPath, e);
-    return { success: false, error: `Build script not found at ${buildApkPath}` };
-  }
+  // Run the heavy APK build in a forked child process so the main thread
+  // (and therefore the renderer) never freezes or shows "Not Responding".
+  const workerPath = path.join(
+    app.getAppPath(),
+    'src', 'studio', 'apk', 'build-worker.js'
+  );
 
+  return new Promise((resolve) => {
+    const child = fork(workerPath, [], {
+      // Inside ASAR: Electron's fork handles it transparently
+      silent: false,
+      env: { ...process.env },
+    });
 
-  const logCallback = (msg: string) => {
-    try {
-      if (!event.sender.isDestroyed()) {
-        event.sender.send('build-log', msg);
+    child.send({ type: 'build', appState, appRoot: app.getAppPath() });
+
+    child.on('message', (msg: any) => {
+      if (msg.type === 'log') {
+        try {
+          if (!event.sender.isDestroyed()) {
+            event.sender.send('build-log', msg.message);
+          }
+        } catch (_) { /* renderer may have navigated away */ }
+      } else if (msg.type === 'done') {
+        resolve({ success: true, outputPath: msg.outputPath });
+      } else if (msg.type === 'error') {
+        resolve({ success: false, error: msg.message });
       }
-    } catch (err) {
-      console.error("Failed to send log:", err);
-    }
-  };
+    });
 
-  try {
-    const outputPath = await buildApk(appState, app.getAppPath(), logCallback);
-    return { success: true, outputPath };
-  } catch (error: any) {
-    return { success: false, error: error.message || error.toString() };
-  }
+    child.on('error', (err) => {
+      console.error('[build-apk] Worker error:', err);
+      resolve({ success: false, error: err.message || 'Build worker crashed' });
+    });
+
+    child.on('exit', (code) => {
+      // If the worker exited without sending 'done' or 'error', treat as failure
+      if (code !== 0) {
+        resolve({ success: false, error: `Build worker exited with code ${code}` });
+      }
+    });
+  });
 });
 
 ipcMain.handle('show-in-folder', (_, filePath) => {

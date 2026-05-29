@@ -7,22 +7,76 @@ import { BrowserWindow, app } from 'electron';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import { ensurePython, getPythonPathIfAvailable } from '../utils/ensurePython';
 
 export class PythonManager {
     private mainWindow: BrowserWindow | null = null;
     private currentProcess: ChildProcessWithoutNullStreams | null = null;
     private replProcess: ChildProcessWithoutNullStreams | null = null;
+    private resolvedPythonPath: string | null = null;
 
     constructor(mainWindow: BrowserWindow | null) {
         this.mainWindow = mainWindow;
     }
 
-    private getPythonExecutable(): string {
+    /**
+     * Resolve the Python executable. Uses a fast check first (no download),
+     * then falls back to ensurePython() which downloads on demand.
+     * The resolved path is cached so subsequent calls are instant.
+     */
+    private async resolvePython(): Promise<string> {
+        // Fast path: already resolved in this session
+        if (this.resolvedPythonPath && fs.existsSync(this.resolvedPythonPath)) {
+            return this.resolvedPythonPath;
+        }
+
+        // Fast path: check without downloading
+        const available = getPythonPathIfAvailable();
+        if (available) {
+            this.resolvedPythonPath = available;
+            return available;
+        }
+
+        // Slow path: download Python 3.10 on demand
+        this.mainWindow?.webContents.send('python-download-progress', {
+            status: 'downloading',
+            message: 'Python 3.10 not found. Downloading automatically...',
+        });
+
+        try {
+            const pyPath = await ensurePython((msg) => {
+                this.mainWindow?.webContents.send('python-download-progress', {
+                    status: 'downloading',
+                    message: msg,
+                });
+            });
+            this.resolvedPythonPath = pyPath;
+            this.mainWindow?.webContents.send('python-download-progress', {
+                status: 'ready',
+                message: 'Python ready',
+            });
+            return pyPath;
+        } catch (err: any) {
+            this.mainWindow?.webContents.send('python-download-progress', {
+                status: 'error',
+                message: err.message || 'Failed to install Python',
+            });
+            // Last resort: try bare 'python' and hope for the best
+            return 'python';
+        }
+    }
+
+    /**
+     * Synchronous getter — returns the resolved path or falls back to 'python'.
+     * Use only when an async resolvePython() is not practical.
+     */
+    private getPythonExecutableSync(): string {
+        if (this.resolvedPythonPath && fs.existsSync(this.resolvedPythonPath)) {
+            return this.resolvedPythonPath;
+        }
         if (process.resourcesPath) {
             const bundled = path.join(process.resourcesPath, 'python', 'python.exe');
-            if (fs.existsSync(bundled)) {
-                return bundled;
-            }
+            if (fs.existsSync(bundled)) return bundled;
         }
         return 'python';
     }
@@ -32,8 +86,9 @@ export class PythonManager {
     }
 
     public async checkPython(): Promise<{ available: boolean; version?: string; error?: string }> {
+        const pyExe = await this.resolvePython();
         return new Promise((resolve) => {
-            const proc = spawn(this.getPythonExecutable(), ['--version']);
+            const proc = spawn(pyExe, ['--version']);
             let output = '';
             let errorOutput = '';
 
@@ -84,9 +139,10 @@ export class PythonManager {
         }
 
         const filesBefore = this.snapshotDirectory(workDir);
+        const pyExe = await this.resolvePython();
 
         try {
-            this.currentProcess = spawn(this.getPythonExecutable(), ['-u', tempPath], { cwd: workDir });
+            this.currentProcess = spawn(pyExe, ['-u', tempPath], { cwd: workDir });
             this.pipeProcess(this.currentProcess, 'python-output', 'python-error', 'python-exit', workDir, filesBefore);
         } catch (err) {
             this.mainWindow?.webContents.send('python-error', `Failed to start Python: ${(err as Error).message}`);
@@ -96,8 +152,8 @@ export class PythonManager {
 
     public async startRepl() {
         this.stopProcess(this.replProcess);
-
-        this.replProcess = spawn(this.getPythonExecutable(), ['-i', '-u']);
+        const pyExe = await this.resolvePython();
+        this.replProcess = spawn(pyExe, ['-i', '-u']);
         this.pipeProcess(this.replProcess, 'python-repl-output', 'python-repl-error', 'python-repl-exit');
     }
 
@@ -119,7 +175,8 @@ export class PythonManager {
     }
 
     public async installPipPackage(packageName: string) {
-        const p = spawn(this.getPythonExecutable(), ['-m', 'pip', 'install', packageName]);
+        const pyExe = await this.resolvePython();
+        const p = spawn(pyExe, ['-m', 'pip', 'install', packageName]);
         this.pipeProcess(p, 'python-pip-output', 'python-pip-error', 'python-pip-exit');
     }
 

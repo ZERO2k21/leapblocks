@@ -56,7 +56,7 @@ const getForgePaths = () => {
   };
 };
 
-const CLI_BIN = getCLIBinary();
+let CLI_BIN = getCLIBinary();
 const FORGE = getForgePaths();
 let isInitialized = false;
 
@@ -85,6 +85,13 @@ const runCommand = (cmd: string): Promise<{ stdout: string; stderr: string }> =>
  */
 const initCores = async () => {
   try {
+    // Ensure arduino-cli is downloaded — resolves the binary path
+    const resolvedPath = await ensureArduinoCli((msg) => {
+      console.log(`[SERVER] ${msg}`);
+    });
+    CLI_BIN = resolvedPath === 'arduino-cli' ? resolvedPath : `"${resolvedPath}"`;
+    console.log(`[SERVER] Using arduino-cli: ${CLI_BIN}`);
+
     console.log('[SERVER] Checking for arduino:avr core...');
     const result = await runCommand(`${CLI_BIN} core list --format json --config-file "${FORGE.configFile}"`);
 

@@ -82,7 +82,10 @@ export default defineConfig({
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
         input: path.resolve(__dirname, 'index.html'),
-        external: ['@tensorflow/tfjs', '@tensorflow-models/coco-ssd'],
+        // tfjs / coco-ssd MUST be bundled for the renderer — Chromium has no
+        // Node.js module resolver, so bare specifiers like "@tensorflow/tfjs"
+        // cause "Failed to resolve module specifier" at runtime.
+        external: [],
         output: {
           // Manual chunking for better caching
           manualChunks: {

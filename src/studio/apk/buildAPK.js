@@ -19,18 +19,36 @@ const fs = require('fs-extra');
 
 const os = require('os');
 
-// Template APK path resolution — works in dev and packaged Electron
+// Template APK path resolution — works in dev and packaged Electron.
+// In a packaged app, __dirname sits inside app.asar which external tools
+// (apktool) cannot read.  When the best candidate is an ASAR path we copy
+// the file to a real-filesystem temp location so apktool can open it.
 function resolveTemplatePath() {
   const candidates = [
-    path.join(__dirname, 'base_template.apk'),
     process.resourcesPath && path.join(process.resourcesPath, 'tools', 'base_template.apk'),
     process.resourcesPath && path.join(process.resourcesPath, 'base_template.apk'),
+    path.join(__dirname, 'base_template.apk'),
     path.join(__dirname, '..', '..', '..', 'tools', 'base_template.apk'),
   ].filter(Boolean);
+
+  let found = null;
   for (const c of candidates) {
-    if (fs.pathExistsSync(c)) return c;
+    if (fs.pathExistsSync(c)) { found = c; break; }
   }
-  return candidates[0];
+  if (!found) found = candidates[0]; // will fail downstream with a clear error
+
+  // If the path lives inside an ASAR archive, copy it out so that
+  // external processes (java -jar apktool) can read it.
+  if (found && found.includes('.asar' + path.sep)) {
+    const tmpDir = path.join(os.tmpdir(), 'leapblocks_apk');
+    const realPath = path.join(tmpDir, 'base_template.apk');
+    if (!fs.pathExistsSync(realPath)) {
+      fs.ensureDirSync(tmpDir);
+      fs.copySync(found, realPath);
+    }
+    return realPath;
+  }
+  return found;
 }
 
 const TEMPLATE_APK = resolveTemplatePath();
