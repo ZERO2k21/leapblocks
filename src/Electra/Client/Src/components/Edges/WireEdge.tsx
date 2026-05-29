@@ -90,7 +90,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
     { x: targetX, y: targetY },
   ];
 
-  const edgePath = buildPath(allPoints, 8);
+  const edgePath = buildPath(allPoints, 5);
   const wireColor = data?.color || '#22c55e';
 
   // ── Waypoint dragging ─────────────────────────────────────────────────────
@@ -181,7 +181,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
       {/* 1. SELECTION GLOW */}
       {(selected || isHovered) && (
         <path
-          style={{ stroke: wireColor, strokeWidth: 8, opacity: 0.25, fill: 'none', filter: 'blur(4px)' }}
+          style={{ stroke: wireColor, strokeWidth: 5, opacity: 0.25, fill: 'none', filter: 'blur(4px)' }}
           d={edgePath}
         />
       )}
@@ -189,7 +189,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
       {/* 2. DROP SHADOW - Subtle for depth */}
       <path
         style={{
-          stroke: 'rgba(0,0,0,0.15)', strokeWidth: 4, fill: 'none',
+          stroke: 'rgba(0,0,0,0.15)', strokeWidth: 2.5, fill: 'none',
           strokeLinecap: 'round', strokeLinejoin: 'round', transform: 'translate(1px, 1.5px)', filter: 'blur(1px)',
         }}
         d={edgePath}
@@ -197,7 +197,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
 
       {/* 3. OUTER TUBE BODY */}
       <path
-        style={{ ...style, stroke: wireColor, strokeWidth: 4, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }}
+        style={{ ...style, stroke: wireColor, strokeWidth: 2.5, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }}
         className="react-flow__edge-path"
         d={edgePath}
       />
@@ -206,7 +206,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
       <path
         style={{
           stroke: getWireHighlightColor(wireColor),
-          strokeWidth: 1.5,
+          strokeWidth: 1,
           fill: 'none',
           strokeLinecap: 'round',
           strokeLinejoin: 'round',
@@ -218,7 +218,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
 
       {/* 5. INVISIBLE HIT AREA */}
       <path
-        style={{ stroke: 'transparent', strokeWidth: 16, fill: 'none', cursor: 'pointer' }}
+        style={{ stroke: 'transparent', strokeWidth: 10, fill: 'none', cursor: 'pointer' }}
         className="react-flow__edge-interaction"
         d={edgePath}
       />
@@ -234,8 +234,8 @@ export const WireEdge: React.FC<EdgeProps> = ({
       {(selected || isHovered) && waypoints.map((wp, i) => (
         <g key={`wp-${i}`} style={{ cursor: 'grab' }}>
           <circle
-            cx={wp.x} cy={wp.y} r={5}
-            fill="#fff" stroke={wireColor} strokeWidth={1.5}
+            cx={wp.x} cy={wp.y} r={3.5}
+            fill="#fff" stroke={wireColor} strokeWidth={1}
             onMouseDown={(e) => onWaypointMouseDown(e, i)}
             onDoubleClick={(e) => removeWaypoint(e, i)}
             style={{ cursor: 'grab', filter: 'drop-shadow(0 1.5px 3px rgba(0,0,0,0.2))' }}
@@ -247,13 +247,13 @@ export const WireEdge: React.FC<EdgeProps> = ({
       {(selected || isHovered) && midHandles.map(({ m, insertAfterIdx }, i) => (
         <g key={`mid-${i}`} style={{ cursor: 'crosshair' }}>
           <circle
-            cx={m.x} cy={m.y} r={3}
+            cx={m.x} cy={m.y} r={2}
             fill={wireColor}
             opacity={0.6}
             onClick={(e) => addWaypoint(e, insertAfterIdx, m)}
             style={{ cursor: 'crosshair', transition: 'all 0.2s' }}
-            onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.r = '5'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.r = '3'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.r = '3.5'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.r = '2'; }}
           />
         </g>
       ))}
