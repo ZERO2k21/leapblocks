@@ -3,8 +3,8 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  *
- * WireEdge — movable, bendable wire with draggable waypoints.
- * Click the midpoint handle to add a bend; drag any waypoint to reshape.
+ * WireEdge — Clean, minimal wire style inspired by Wokwi/Velxio simulators.
+ * Orthogonal routing with 90-degree turns, thin uniform strokes.
  */
 import React, { useCallback, useRef } from 'react';
 import { EdgeProps, useReactFlow } from 'reactflow';
@@ -14,8 +14,8 @@ import { useForgeStore } from '../../../utlis/store/useForgeStore';
 
 interface Point { x: number; y: number }
 
-/** Build an SVG path string through a list of points with slightly rounded corners */
-function buildPath(points: Point[], radius = 4): string {
+/** Build an orthogonal SVG path (90-degree turns only, like Wokwi) */
+function buildOrthogonalPath(points: Point[]): string {
   if (points.length < 2) return '';
   if (points.length === 2) {
     return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
@@ -27,20 +27,13 @@ function buildPath(points: Point[], radius = 4): string {
     const curr = points[i];
     const next = points[i + 1];
 
-    const d1 = Math.hypot(curr.x - prev.x, curr.y - prev.y);
-    const d2 = Math.hypot(next.x - curr.x, next.y - curr.y);
-    // Use a small sharp radius for electrical wire look
-    const r = Math.min(radius, d1 / 2, d2 / 2);
-
-    const t1 = r / d1;
-    const t2 = r / d2;
-
-    const bx1 = curr.x - (curr.x - prev.x) * t1;
-    const by1 = curr.y - (curr.y - prev.y) * t1;
-    const bx2 = curr.x + (next.x - curr.x) * t2;
-    const by2 = curr.y + (next.y - curr.y) * t2;
-
-    d += ` L ${bx1} ${by1} Q ${curr.x} ${curr.y} ${bx2} ${by2}`;
+    // Manhattan routing: go horizontal first, then vertical
+    const midX = curr.x;
+    const midY = prev.y;
+    
+    // Add L-shaped path through waypoint
+    d += ` L ${midX} ${midY}`;
+    d += ` L ${curr.x} ${curr.y}`;
   }
   d += ` L ${points[points.length - 1].x} ${points[points.length - 1].y}`;
   return d;
@@ -50,20 +43,6 @@ function buildPath(points: Point[], radius = 4): string {
 function mid(a: Point, b: Point): Point {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
-
-/** Map wire base colors to their inner highlight colors for 3D tube look */
-const getWireHighlightColor = (color: string): string => {
-  const hex = color.toLowerCase().trim();
-  if (hex === '#22c55e' || hex === '#22c55e') return '#86efac';
-  if (hex === '#3b82f6') return '#93c5fd';
-  if (hex === '#ef4444') return '#fca5a5';
-  if (hex === '#eab308' || hex === '#f59e0b') return '#fde68a';
-  if (hex === '#a855f7') return '#d8b4fe';
-  if (hex === '#db2777' || hex === '#ec4899') return '#fbcfe8';
-  if (hex === '#0d9488' || hex === '#14b8a6') return '#99f6e4';
-  if (hex === '#06b6d4') return '#67e8f9';
-  return '#ffffff';
-};
 
 // ── WireEdge component ────────────────────────────────────────────────────────
 
@@ -90,7 +69,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
     { x: targetX, y: targetY },
   ];
 
-  const edgePath = buildPath(allPoints, 5);
+  const edgePath = buildOrthogonalPath(allPoints);
   const wireColor = data?.color || '#22c55e';
 
   // ── Waypoint dragging ─────────────────────────────────────────────────────
@@ -170,7 +149,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
       {/* 0. GLOW FILTER for plug terminals */}
       <defs>
         <filter id={`plug-glow-${id}`} x="-100%" y="-100%" width="300%" height="300%">
-          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feGaussianBlur stdDeviation="2" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
@@ -178,82 +157,58 @@ export const WireEdge: React.FC<EdgeProps> = ({
         </filter>
       </defs>
       
-      {/* 1. SELECTION GLOW */}
+      {/* 1. SELECTION HIGHLIGHT */}
       {(selected || isHovered) && (
         <path
-          style={{ stroke: wireColor, strokeWidth: 5, opacity: 0.25, fill: 'none', filter: 'blur(4px)' }}
+          style={{ stroke: wireColor, strokeWidth: 4, opacity: 0.3, fill: 'none', filter: 'blur(3px)' }}
           d={edgePath}
         />
       )}
 
-      {/* 2. DROP SHADOW - Subtle for depth */}
+      {/* 2. MAIN WIRE - Clean thin line like Wokwi */}
       <path
-        style={{
-          stroke: 'rgba(0,0,0,0.15)', strokeWidth: 2.5, fill: 'none',
-          strokeLinecap: 'round', strokeLinejoin: 'round', transform: 'translate(1px, 1.5px)', filter: 'blur(1px)',
-        }}
-        d={edgePath}
-      />
-
-      {/* 3. OUTER TUBE BODY */}
-      <path
-        style={{ ...style, stroke: wireColor, strokeWidth: 2.5, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }}
+        style={{ ...style, stroke: wireColor, strokeWidth: 2, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }}
         className="react-flow__edge-path"
         d={edgePath}
       />
 
-      {/* 4. INNER GLOWING CORE */}
+      {/* 3. INVISIBLE HIT AREA */}
       <path
-        style={{
-          stroke: getWireHighlightColor(wireColor),
-          strokeWidth: 1,
-          fill: 'none',
-          strokeLinecap: 'round',
-          strokeLinejoin: 'round',
-          pointerEvents: 'none',
-          opacity: 0.9
-        }}
-        d={edgePath}
-      />
-
-      {/* 5. INVISIBLE HIT AREA */}
-      <path
-        style={{ stroke: 'transparent', strokeWidth: 10, fill: 'none', cursor: 'pointer' }}
+        style={{ stroke: 'transparent', strokeWidth: 8, fill: 'none', cursor: 'pointer' }}
         className="react-flow__edge-interaction"
         d={edgePath}
       />
 
-      {/* 5. PLUG TERMINALS - Hidden, component pins will show the connection */}
+      {/* 4. PLUG TERMINALS - Hidden */}
       <g style={{ display: 'none' }}>
-        {/* Terminals hidden - component pin handles show the connection points */}
         <circle cx={sourceX} cy={sourceY} r={0} fill="transparent" />
         <circle cx={targetX} cy={targetY} r={0} fill="transparent" />
       </g>
 
-      {/* 6. WAYPOINT HANDLES (drag to bend) — only when selected or hovered */}
+      {/* 5. WAYPOINT HANDLES (drag to bend) — only when selected or hovered */}
       {(selected || isHovered) && waypoints.map((wp, i) => (
         <g key={`wp-${i}`} style={{ cursor: 'grab' }}>
           <circle
-            cx={wp.x} cy={wp.y} r={3.5}
+            cx={wp.x} cy={wp.y} r={3}
             fill="#fff" stroke={wireColor} strokeWidth={1}
             onMouseDown={(e) => onWaypointMouseDown(e, i)}
             onDoubleClick={(e) => removeWaypoint(e, i)}
-            style={{ cursor: 'grab', filter: 'drop-shadow(0 1.5px 3px rgba(0,0,0,0.2))' }}
+            style={{ cursor: 'grab', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.15))' }}
           />
         </g>
       ))}
 
-      {/* 7. MID-SEGMENT ADD HANDLES (click to add bend point) — only when selected or hovered */}
+      {/* 6. MID-SEGMENT ADD HANDLES (click to add bend point) — only when selected or hovered */}
       {(selected || isHovered) && midHandles.map(({ m, insertAfterIdx }, i) => (
         <g key={`mid-${i}`} style={{ cursor: 'crosshair' }}>
           <circle
             cx={m.x} cy={m.y} r={2}
             fill={wireColor}
-            opacity={0.6}
+            opacity={0.5}
             onClick={(e) => addWaypoint(e, insertAfterIdx, m)}
-            style={{ cursor: 'crosshair', transition: 'all 0.2s' }}
-            onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.r = '3.5'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.r = '2'; }}
+            style={{ cursor: 'crosshair', transition: 'all 0.15s' }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.r = '3'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.r = '2'; }}
           />
         </g>
       ))}
