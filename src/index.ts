@@ -231,23 +231,23 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
   const isESP32 = typeof fqbn === 'string' && fqbn.startsWith('esp32:');
   log('IPC', `isESP32: ${isESP32}`);
 
-    if (isESP32) {
-      log('IPC', 'ESP32-C3 detected — passing to ArduinoUploader RISC-V compile path');
-      const result = await arduinoUploader.compileESP32ForSimulation(code, fqbn);
-      
-      // We will perform temp folder cleanup here, assuming ArduinoUploader used its generated tmp path to output final result. 
-      // The old temp dir cleanup handled by lastESP32BinTempDir requires tracking if it was sent back
-      if (result.success && result.binPath) {
-        const binDir = path.dirname(result.binPath);
-        if (lastESP32BinTempDir && lastESP32BinTempDir !== binDir) {
-           getCleanupESP32Build()(lastESP32BinTempDir);
-        }
-        lastESP32BinTempDir = binDir;
+  if (isESP32) {
+    log('IPC', 'ESP32-C3 detected — passing to ArduinoUploader RISC-V compile path');
+    const result = await arduinoUploader.compileESP32ForSimulation(code, fqbn);
+
+    // We will perform temp folder cleanup here, assuming ArduinoUploader used its generated tmp path to output final result. 
+    // The old temp dir cleanup handled by lastESP32BinTempDir requires tracking if it was sent back
+    if (result.success && result.binPath) {
+      const binDir = path.dirname(result.binPath);
+      if (lastESP32BinTempDir && lastESP32BinTempDir !== binDir) {
+        getCleanupESP32Build()(lastESP32BinTempDir);
       }
-      
-      log('IPC', `compile-code ESP32 returning result from Uploader.`);
-      return result;
+      lastESP32BinTempDir = binDir;
     }
+
+    log('IPC', `compile-code ESP32 returning result from Uploader.`);
+    return result;
+  }
 
   // ── AVR path ─────────────────────────────────────────────────────────────
   log('IPC', `compile-code AVR path, FQBN: ${fqbn}`);
@@ -353,9 +353,13 @@ ipcMain.handle('remove-background', async (event, imagePath: string) => {
     ? targetPath
     : path.join(app.getAppPath(), targetPath);
 
+  const scriptPath = path.join(app.getAppPath(), 'remove_bg.py');
+  if (!fs.existsSync(scriptPath)) {
+    return Promise.resolve({ success: false, error: 'Background removal script not available in this build.' });
+  }
+
   return new Promise((resolve) => {
-    // Note: ensure python is in PATH or use a specific path
-    exec(`python "${path.join(app.getAppPath(), 'remove_bg.py')}" "${fullPath}"`, (error: any, stdout: any, stderr: any) => {
+    exec(`python "${scriptPath}" "${fullPath}"`, (error: any, stdout: any, stderr: any) => {
       let resultBase64;
 
       // If we used a temp file, the python script outputs a new file (replace extension with .png)

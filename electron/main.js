@@ -148,12 +148,17 @@ function stopCompileServer() {
 let mainWindow;
 
 function createWindow() {
+  const iconPath = isDev
+    ? path.join(APP_ROOT, 'public', 'assets', 'leapblocks.ico')
+    : path.join(process.resourcesPath, 'public', 'assets', 'leapblocks.ico');
+  const resolvedIcon = fs.existsSync(iconPath) ? iconPath : undefined;
+
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 1024,
     minHeight: 700,
-    icon: path.join(__dirname, '../public/icon.png'),
+    icon: resolvedIcon,
     title: "LeapBlocks",
     // Hide until content is painted — eliminates the white flash on startup
     show: false,
@@ -360,10 +365,10 @@ ipcMain.handle('forge-lib-list', async () => {
 // ── forge-lib: remove a library ──────────────────────────────────────────
 ipcMain.handle('forge-lib-remove', async (_, libraryName) => {
   console.log(`[FORGE-LIB] Removing: ${libraryName}`);
-  
+
   // 1. Try arduino-cli first
   const { code, stderr } = await runCLI(['lib', 'uninstall', libraryName]);
-  
+
   // 2. Manual cleanup fallback
   let manualRemoved = false;
   if (fs.existsSync(FORGE_LIB_LIBRARIES)) {
@@ -372,20 +377,20 @@ ipcMain.handle('forge-lib-remove', async (_, libraryName) => {
       for (const entry of entries) {
         if (!entry.isDirectory()) continue;
         const libDir = path.join(FORGE_LIB_LIBRARIES, entry.name);
-        
+
         let match = (entry.name === libraryName);
         if (!match) {
           const propFile = path.join(libDir, 'library.properties');
           if (fs.existsSync(propFile)) {
-             const props = fs.readFileSync(propFile, 'utf-8').split('\n').reduce((acc, line) => {
-               const [k, ...v] = line.split('=');
-               if (k && v.length) acc[k.trim()] = v.join('=').trim();
-               return acc;
-             }, {});
-             if (props.name === libraryName) match = true;
+            const props = fs.readFileSync(propFile, 'utf-8').split('\n').reduce((acc, line) => {
+              const [k, ...v] = line.split('=');
+              if (k && v.length) acc[k.trim()] = v.join('=').trim();
+              return acc;
+            }, {});
+            if (props.name === libraryName) match = true;
           }
         }
-        
+
         if (match) {
           console.log(`[FORGE-LIB] Force removing directory: ${libDir}`);
           fs.rmSync(libDir, { recursive: true, force: true });

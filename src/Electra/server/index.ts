@@ -11,6 +11,7 @@ import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import { transpileArduinoToJS } from './transpiler.js';
+import { getArduinoCliPathIfAvailable, ensureArduinoCli } from '../../utils/ensureArduinoCli.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,20 +22,18 @@ app.use(express.json({ limit: '10mb' }));
 
 /**
  * Resolve the path to the arduino-cli binary.
+ * Uses download-on-demand: checks cached/system paths, then downloads from GitHub.
+ * No bundled binary needed — avoids GPL v3 distribution in our proprietary installer.
  */
 const getCLIBinary = () => {
-  const isWindows = os.platform() === 'win32';
-  const binaryName = isWindows ? 'arduino-cli.exe' : 'arduino-cli';
-
-  const localBundledPath = path.resolve(__dirname, '..', 'arduino-cli', binaryName);
-
-  if (fs.existsSync(localBundledPath)) {
-    console.log(`[SERVER] Using bundled CLI: ${localBundledPath}`);
-    return `"${localBundledPath}"`;
+  const available = getArduinoCliPathIfAvailable();
+  if (available) {
+    console.log(`[SERVER] Using arduino-cli: ${available}`);
+    return available === 'arduino-cli' ? available : `"${available}"`;
   }
 
-  console.log(`[SERVER] Bundled CLI not found. Falling back to global command.`);
-  return 'arduino-cli';
+  console.log(`[SERVER] arduino-cli not found locally. Will download on first compile.`);
+  return 'arduino-cli'; // fallback; ensureArduinoCli will handle download when compile is called
 };
 
 /**

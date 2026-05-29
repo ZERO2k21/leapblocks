@@ -82,6 +82,7 @@ export default defineConfig({
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
         input: path.resolve(__dirname, 'index.html'),
+        external: ['@tensorflow/tfjs', '@tensorflow-models/coco-ssd'],
         output: {
           // Manual chunking for better caching
           manualChunks: {
