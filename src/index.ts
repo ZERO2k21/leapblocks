@@ -142,47 +142,6 @@ const createWindow = (): void => {
   pythonManager = new PythonManager(mainWindow);
   logTiming('PythonManager initialized');
 
-  // ── Proactively download Python 3.10 + Arduino CLI in the background ──
-  // On first launch neither tool is available yet.  We start both downloads
-  // immediately so they're ready when the user actually tries to use them.
-  // The renderer listens to 'tool-download-progress' for status updates.
-  const { ensureArduinoCli } = require('./utils/ensureArduinoCli');
-  const { ensurePython } = require('./utils/ensurePython');
-
-  const notifyRenderer = (tool: string, status: string, message: string) => {
-    try {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('tool-download-progress', { tool, status, message });
-      }
-    } catch { /* window may have closed */ }
-  };
-
-  const downloadArduinoCli = async () => {
-    try {
-      notifyRenderer('arduino-cli', 'checking', 'Checking for Arduino CLI...');
-      await ensureArduinoCli((msg: string) => notifyRenderer('arduino-cli', 'downloading', msg));
-      notifyRenderer('arduino-cli', 'ready', 'Arduino CLI ready');
-    } catch (err: any) {
-      console.error('[STARTUP] Arduino CLI download failed:', err.message);
-      notifyRenderer('arduino-cli', 'error', err.message || 'Failed to install Arduino CLI');
-    }
-  };
-
-  const downloadPython = async () => {
-    try {
-      notifyRenderer('python', 'checking', 'Checking for Python 3.10...');
-      await ensurePython((msg: string) => notifyRenderer('python', 'downloading', msg));
-      notifyRenderer('python', 'ready', 'Python 3.10 ready');
-    } catch (err: any) {
-      console.error('[STARTUP] Python download failed:', err.message);
-      notifyRenderer('python', 'error', err.message || 'Failed to install Python 3.10');
-    }
-  };
-
-  // Fire both downloads in parallel — non-blocking, won't delay app startup
-  downloadArduinoCli();
-  downloadPython();
-
   mainWindow.on('closed', () => {
     mainWindow = null;
     serialManager.setWindow(null);
