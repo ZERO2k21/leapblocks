@@ -17,13 +17,23 @@ export class PythonManager {
         this.mainWindow = mainWindow;
     }
 
+    private getPythonExecutable(): string {
+        if (process.resourcesPath) {
+            const bundled = path.join(process.resourcesPath, 'python', 'python.exe');
+            if (fs.existsSync(bundled)) {
+                return bundled;
+            }
+        }
+        return 'python';
+    }
+
     public setWindow(window: BrowserWindow | null) {
         this.mainWindow = window;
     }
 
     public async checkPython(): Promise<{ available: boolean; version?: string; error?: string }> {
         return new Promise((resolve) => {
-            const proc = spawn('python', ['--version']);
+            const proc = spawn(this.getPythonExecutable(), ['--version']);
             let output = '';
             let errorOutput = '';
 
@@ -51,7 +61,7 @@ export class PythonManager {
 
     public async runCode(code: string, projectFiles?: Record<string, string>) {
         this.stopProcess(this.currentProcess);
-        
+
         const workDir = path.join(app.getPath('temp'), 'leapblocks_project');
         if (!fs.existsSync(workDir)) {
             fs.mkdirSync(workDir, { recursive: true });
@@ -76,7 +86,7 @@ export class PythonManager {
         const filesBefore = this.snapshotDirectory(workDir);
 
         try {
-            this.currentProcess = spawn('python', ['-u', tempPath], { cwd: workDir });
+            this.currentProcess = spawn(this.getPythonExecutable(), ['-u', tempPath], { cwd: workDir });
             this.pipeProcess(this.currentProcess, 'python-output', 'python-error', 'python-exit', workDir, filesBefore);
         } catch (err) {
             this.mainWindow?.webContents.send('python-error', `Failed to start Python: ${(err as Error).message}`);
@@ -86,8 +96,8 @@ export class PythonManager {
 
     public async startRepl() {
         this.stopProcess(this.replProcess);
-        
-        this.replProcess = spawn('python', ['-i', '-u']);
+
+        this.replProcess = spawn(this.getPythonExecutable(), ['-i', '-u']);
         this.pipeProcess(this.replProcess, 'python-repl-output', 'python-repl-error', 'python-repl-exit');
     }
 
@@ -109,7 +119,7 @@ export class PythonManager {
     }
 
     public async installPipPackage(packageName: string) {
-        const p = spawn('python', ['-m', 'pip', 'install', packageName]);
+        const p = spawn(this.getPythonExecutable(), ['-m', 'pip', 'install', packageName]);
         this.pipeProcess(p, 'python-pip-output', 'python-pip-error', 'python-pip-exit');
     }
 
