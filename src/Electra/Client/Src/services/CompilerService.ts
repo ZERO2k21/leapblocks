@@ -317,6 +317,15 @@ if (typeof ILI9341_WHITE === 'undefined')       ILI9341_WHITE       = 0xFFFF;
 if (typeof ILI9341_ORANGE === 'undefined')      ILI9341_ORANGE      = 0xFD20;
 if (typeof ILI9341_GREENYELLOW === 'undefined') ILI9341_GREENYELLOW = 0xAFE5;
 if (typeof ILI9341_PINK === 'undefined')        ILI9341_PINK        = 0xFC18;
+// ── FreeRTOS constants (provided by runtime) ─────────────────────────────────
+if (typeof pdTRUE === 'undefined')  pdTRUE = 1;
+if (typeof pdFALSE === 'undefined') pdFALSE = 0;
+if (typeof pdPASS === 'undefined')  pdPASS = 1;
+if (typeof pdFAIL === 'undefined')  pdFAIL = 0;
+if (typeof portMAX_DELAY === 'undefined') portMAX_DELAY = 0xFFFFFFFF;
+if (typeof portTICK_PERIOD_MS === 'undefined') portTICK_PERIOD_MS = 1;
+if (typeof tskIDLE_PRIORITY === 'undefined') tskIDLE_PRIORITY = 0;
+if (typeof configMAX_PRIORITIES === 'undefined') configMAX_PRIORITIES = 25;
 `;
 
 const LIBRARY_FOOTER = `

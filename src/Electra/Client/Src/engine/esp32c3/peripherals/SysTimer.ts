@@ -3,7 +3,7 @@
  *
  * The ESP32-C3 uses SYSTIMER for:
  *   - millis() / micros() / delay() in Arduino core
- *   - FreeRTOS tick (not needed for single-task sketches)
+ *   - FreeRTOS tick (simulated via cooperative scheduler in FreeRTOS.ts)
  *
  * SYSTIMER base: 0x6002_3000
  *

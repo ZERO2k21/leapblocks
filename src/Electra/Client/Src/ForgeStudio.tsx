@@ -478,10 +478,10 @@ void loop() {
     try {
       if (board === 'esp32-c3') {
         // ── ESP32-C3 Simulation via Transpilation ──────────────────────────────
-        // ESP32 firmware requires ESP-IDF runtime (FreeRTOS, HAL) which the
-        // RISC-V soft-core cannot emulate. Instead, we transpile Arduino C++
-        // to JavaScript and run it through ArduinoRuntime — this mirrors
-        // how the AVR path works: API-level simulation, not binary emulation.
+        // ESP32 firmware uses FreeRTOS for multitasking. We simulate FreeRTOS
+        // via a cooperative scheduler (FreeRTOS.ts) that runs tasks in the
+        // browser's event loop. Arduino C++ is transpiled to JavaScript and
+        // run through ArduinoRuntime with FreeRTOS API stubs.
         const { appendSerial } = useForgeStore.getState();
         appendSerial('[ESP32-C3] Transpiling sketch for simulation...\n');
 
