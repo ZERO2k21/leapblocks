@@ -65,6 +65,9 @@ export class ArduinoRuntime {
   private _abortController: AbortController | null = null;
   private _lastMicrosValue: number = 0;
 
+  // ── LEDC channel-to-pin mapping ──────────────────────────────
+  public _ledcChannelMap: Map<number, number> | null = null;
+
   // ── FreeRTOS cooperative scheduler ────────────────────────────
   public freertos: FreeRTOS = new FreeRTOS();
 
@@ -141,18 +144,18 @@ export class ArduinoRuntime {
           const BETA = 3950;
           const x = BETA * (1 / (tempC + 273.15) - 1 / 298.15);
           const ratio = Math.exp(x);
-          return Math.round(1023 * ratio / (1 + ratio));
+          return Math.round(4095 * ratio / (1 + ratio));
         }
 
         if (t === 'potentiometer' || t === 'mq2' || t === 'resistor') {
-          return Math.round(((sv.value ?? 0) / 100) * 1023);
+          return Math.round(((sv.value ?? 0) / 100) * 4095);
         }
 
         if (t === 'photoresistor-sensor') {
           const lux = sv.value ?? 500;
           const R_ldr = 500000 / Math.max(1, lux);
           const voltage = 5.0 * 10000 / (R_ldr + 10000);
-          return Math.round((voltage / 5.0) * 1023);
+          return Math.round((voltage / 5.0) * 4095);
         }
 
         if (t === 'heart-beat-sensor') {
@@ -162,22 +165,22 @@ export class ArduinoRuntime {
           const phase = elapsed / beatIntervalMs;
           if (phase < 0.1) {
             const beatPhase = phase / 0.1;
-            return Math.round(512 + 388 * Math.sin(beatPhase * Math.PI));
+            return Math.round(2048 + 1552 * Math.sin(beatPhase * Math.PI));
           }
-          return Math.round(480 + Math.random() * 40);
+          return Math.round(1920 + Math.random() * 160);
         }
 
         if (t === 'flame-sensor') {
           const intensity = sv.value ?? 0;
-          return Math.round((1 - intensity / 100) * 1023);
+          return Math.round((1 - intensity / 100) * 4095);
         }
 
         if (t === 'gas-sensor') {
-          return Math.round(((sv.value ?? 0) / 100) * 1023);
+          return Math.round(((sv.value ?? 0) / 100) * 4095);
         }
 
         if (t === 'big-sound-sensor' || t === 'small-sound-sensor') {
-          return Math.round(((sv.value ?? 0) / 100) * 1023);
+          return Math.round(((sv.value ?? 0) / 100) * 4095);
         }
       }
     } catch (e) { /* store not available */ }
@@ -619,8 +622,8 @@ export class ArduinoRuntime {
       xTaskNotifyGive: (handle: any) => {
         rt.xTaskNotifyGive(handle);
       },
-      ulTaskNotifyTake: (clear: boolean, timeout?: number) => {
-        return rt.ulTaskNotifyTake(clear, timeout ?? 0);
+      ulTaskNotifyTake: async (clear: boolean, timeout?: number) => {
+        return await rt.ulTaskNotifyTake(clear, timeout ?? 0);
       },
       xTaskNotify: (handle: any, value: number, action?: number) => {
         return rt.xTaskNotify(handle, value, action ?? 0);
@@ -709,6 +712,11 @@ export class ArduinoRuntime {
       SSD1306_128_64: 1,
       SSD1306_128_32: 2,
       SSD1306_96_16: 3,
+
+      // ── SSD1306 / GFX color constants ──────────────────────
+      SSD1306_WHITE: 1,
+      SSD1306_BLACK: 0,
+      SSD1306_INVERSE: 2,
 
       // ── Adafruit GFX / color constants ─────────────────────
       BLACK: 0,
@@ -809,12 +817,17 @@ export class ArduinoRuntime {
       ledcSetup(channel: number, _freq: number, _resolution: number): number {
         return channel;
       },
-      ledcAttachPin(_pin: number, _channel: number): void { },
+      ledcAttachPin(pin: number, channel: number): void {
+        // Store channel-to-pin mapping
+        if (!self._ledcChannelMap) self._ledcChannelMap = new Map();
+        self._ledcChannelMap.set(channel, pin);
+      },
       ledcWrite(channel: number, duty: number): void {
-        // Route channel 0 to the attached pin (simplified)
-        self.pinValues.set(channel, duty);
+        // Map channel to the pin attached via ledcAttachPin
+        const pin = self._ledcChannelMap?.get(channel) ?? channel;
+        self.pinValues.set(pin, duty);
         if (self.onPinChange) {
-          self.onPinChange(channel, duty, true);
+          self.onPinChange(pin, duty, true);
         }
       },
       dacWrite(pin: number, value: number): void {
@@ -938,14 +951,20 @@ export class ArduinoRuntime {
         console.warn('[ArduinoRuntime] delay() called directly — transpiler should have converted to await __delay()');
         if (!self.running) return;
         self._notifyDelayCalled();
+        // Use setTimeout to avoid blocking the event loop (non-blocking fallback)
         const target = performance.now() + ms;
-        while (performance.now() < target && self.running) { /* busy-wait */ }
+        const check = () => {
+          if (performance.now() < target && self.running) {
+            setTimeout(check, Math.max(1, Math.min(target - performance.now(), 16)));
+          }
+        };
+        check();
       },
       delayMicroseconds(us: number): void {
         console.warn('[ArduinoRuntime] delayMicroseconds() called directly — transpiler should have converted to await __delayMicroseconds()');
         if (!self.running || us <= 100) return;
-        const start = performance.now();
-        while (performance.now() - start < us / 1000 && self.running) { /* busy-wait */ }
+        // For microsecond delays, yield once to the event loop
+        setTimeout(() => {}, 0);
       },
 
       // ── pulseIn — measures pulse duration on a pin (used by ultrasonic sensors) ──
@@ -1328,13 +1347,21 @@ export class ArduinoRuntime {
       Servo: class {
         _pin = 0;
         _angle = 90;
-        attach(pin: number): void { this._pin = pin; }
+        _attached = false;
+        attach(pin: number): number { this._pin = pin; this._attached = true; return 1; }
         write(angle: number): void {
-          this._angle = angle;
-          self.onPinChange?.(this._pin, angle, true);
+          this._angle = Math.max(0, Math.min(180, angle));
+          self.onPinChange?.(this._pin, this._angle, true);
+        }
+        writeMicroseconds(us: number): void {
+          // Map 500-2400µs to 0-180°
+          this._angle = Math.round(Math.max(0, Math.min(180, (us - 500) * 180 / 1900)));
+          self.onPinChange?.(this._pin, this._angle, true);
         }
         read(): number { return this._angle; }
-        detach(): void { }
+        readMicroseconds(): number { return Math.round(500 + this._angle * 1900 / 180); }
+        attached(): boolean { return this._attached; }
+        detach(): void { this._attached = false; }
       },
 
       // ── Builtin JS APIs (needed by transpiled code) ────────

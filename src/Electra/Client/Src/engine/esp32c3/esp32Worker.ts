@@ -3,6 +3,8 @@ import { ESP32C3GPIO } from './peripherals/GPIO';
 import { ESP32C3UART } from './peripherals/UART';
 import { ESP32C3ADC } from './peripherals/ADC';
 import { ESP32C3SysTimer } from './peripherals/SysTimer';
+import { ESP32C3I2C } from './peripherals/I2C';
+import { ESP32C3SPI } from './peripherals/SPI';
 import { FirmwareLoader } from './compiler/FirmwareLoader';
 
 // Web Worker context
@@ -14,6 +16,10 @@ let uart0: any = null;
 let uart1: any = null;
 let adc: any = null;
 let sysTimer: any = null;
+let i2c0: any = null;
+let i2c1: any = null;
+let spi2: any = null;
+let spi3: any = null;
 let running = false;
 let executionInterval: any = null;
 let cyclesPerBatch = 266666; // Cycles to run in each batch
@@ -66,6 +72,10 @@ function initJSEmulator(firmware: Uint8Array) {
   uart1 = new ESP32C3UART(1);
   adc = new ESP32C3ADC();
   sysTimer = new ESP32C3SysTimer();
+  i2c0 = new ESP32C3I2C(0);
+  i2c1 = new ESP32C3I2C(1);
+  spi2 = new ESP32C3SPI(2);
+  spi3 = new ESP32C3SPI(3);
 
   // Register MMIO peripherals
   core.mmio.register(gpio);
@@ -73,6 +83,10 @@ function initJSEmulator(firmware: Uint8Array) {
   core.mmio.register(uart1);
   core.mmio.register(adc);
   core.mmio.register(sysTimer);
+  core.mmio.register(i2c0);
+  core.mmio.register(i2c1);
+  core.mmio.register(spi2);
+  core.mmio.register(spi3);
 
   // Wire interrupts
   const irqCtrl = core.irqCtrl;
@@ -80,10 +94,18 @@ function initJSEmulator(firmware: Uint8Array) {
   uart0.onInterrupt(raiseIRQ);
   uart1.onInterrupt(raiseIRQ);
   sysTimer.onInterrupt(raiseIRQ);
+  i2c0.onInterrupt(raiseIRQ);
+  i2c1.onInterrupt(raiseIRQ);
 
   // Load firmware
   const loader = new FirmwareLoader(core);
-  const result = loader.load(firmware);
+  let result;
+  try {
+    result = loader.load(firmware);
+  } catch (e: any) {
+    ctx.postMessage({ type: 'error', message: `Firmware load failed: ${e.message}` });
+    return;
+  }
 
   core.reset(result.entryPoint);
   sysTimer.cpuCycles = 0;
@@ -215,6 +237,10 @@ function cleanup() {
   uart1 = null;
   adc = null;
   sysTimer = null;
+  i2c0 = null;
+  i2c1 = null;
+  spi2 = null;
+  spi3 = null;
   wasmInstance = null;
   usingWasm = false;
 }

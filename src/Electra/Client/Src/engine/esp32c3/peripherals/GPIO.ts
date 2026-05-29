@@ -74,10 +74,13 @@ export class ESP32C3GPIO implements MemoryRegion {
 
   // Called by CircuitEngine to inject digital input
   setInput(pin: number, high: boolean): void {
+    const prev = this.inReg;
     if (high) this.inReg |= (1 << pin);
     else this.inReg &= ~(1 << pin);
-    // Mark interrupt status (rising/falling edge detection omitted for brevity)
-    this.statusReg |= (1 << pin);
+    // Only mark interrupt status if value actually changed
+    if (this.inReg !== prev) {
+      this.statusReg |= (1 << pin);
+    }
   }
 
   // Called by CircuitEngine to inject analog ADC value

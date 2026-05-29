@@ -70,8 +70,8 @@ export class ESP32C3ADC implements MemoryRegion {
   // MemoryRegion
   // -----------------------------------------------------------------------
 
-  read8(addr: u32): u32  { return this.read32(addr) & 0xFF; }
-  read16(addr: u32): u32 { return this.read32(addr) & 0xFFFF; }
+  read8(addr: u32): u32  { return this.read32(addr & ~3) >> (((addr & 3) * 8)) & 0xFF; }
+  read16(addr: u32): u32 { return this.read32(addr & ~3) >> (((addr & 2) * 8)) & 0xFFFF; }
 
   read32(addr: u32): u32 {
     const off = (addr - this.base) >>> 0;
@@ -96,8 +96,8 @@ export class ESP32C3ADC implements MemoryRegion {
     }
   }
 
-  write8(addr: u32, val: u32): void  { this.write32(addr, val); }
-  write16(addr: u32, val: u32): void { this.write32(addr, val); }
+  write8(addr: u32, val: u32): void  { this.write32(addr & ~3, val); }
+  write16(addr: u32, val: u32): void { this.write32(addr & ~3, val); }
 
   write32(addr: u32, val: u32): void {
     const off = (addr - this.base) >>> 0;

@@ -750,7 +750,21 @@ export class RiscVCore {
         const r2 = this.findRAMRegion(s2);
         let res = 0;
         if (r1 && r2) {
-          res = r1.bulkCompare(s1, s2, n);
+          // Cross-region compare: use per-byte access through each region's own data
+          if (r1 === r2) {
+            // Same region — use fast bulk compare
+            res = r1.bulkCompare(s1, s2, n);
+          } else {
+            // Different regions — compare byte by byte using each region's data
+            const off1 = (s1 - r1.base) >>> 0;
+            const off2 = (s2 - r2.base) >>> 0;
+            for (let i = 0; i < n; i++) {
+              if (off1 + i >= r1.size || off2 + i >= r2.size) break;
+              const b1 = r1.data[off1 + i];
+              const b2 = r2.data[off2 + i];
+              if (b1 !== b2) { res = b1 - b2; break; }
+            }
+          }
         } else {
           for (let i = 0; i < n; i++) {
             const b1 = this.memRead8(s1 + i);
@@ -1347,8 +1361,8 @@ export class RiscVCore {
           const src = funct3 & 0x4 ? u32m(rs1) : u32m(this.regRead(rs1));
           switch (funct3 & 0x3) {
             case 0x1: this.csrWrite(csrAddr, src); break;           // CSRRW / CSRRWI
-            case 0x2: this.csrWrite(csrAddr, u32m(old | src)); break;  // CSRRS / CSRRSI
-            case 0x3: this.csrWrite(csrAddr, u32m(old & ~src)); break; // CSRRC / CSRRCI
+            case 0x2: if (rs1 !== 0) this.csrWrite(csrAddr, u32m(old | src)); break;  // CSRRS / CSRRSI — skip write if rs1=0
+            case 0x3: if (rs1 !== 0) this.csrWrite(csrAddr, u32m(old & ~src)); break; // CSRRC / CSRRCI — skip write if rs1=0
           }
           this.regWrite(rd, i32s(old));
         }

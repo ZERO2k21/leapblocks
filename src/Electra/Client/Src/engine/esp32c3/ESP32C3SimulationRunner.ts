@@ -155,13 +155,14 @@ export class ESP32C3SimulationRunner {
     private usingTranspiledPath: boolean = false;
 
     // ── Simulation Orchestrator (priority-ordered engine chain) ──
+    // Priority: TranspiledJS (P1) → Velxio (P2) → RISC-V (P3)
     private orchestrator = new SimulationOrchestrator([
+        new TranspiledJSEngine(this),
         new VelxioEngine({
             velxioUrl: this.config?.velxioUrl ?? 'http://localhost:3080',
             timeoutMs: 5000,
             retries: 1,
         }),
-        new TranspiledJSEngine(this),
         new RiscVEngine(this.platform?.core ?? new RiscVCore()),
     ]);
 

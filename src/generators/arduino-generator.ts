@@ -1564,6 +1564,8 @@ arduinoGenerator.forBlock['esp32_pwm_write'] = function (block: any) {
 
     const value = arduinoGenerator.valueToCode(block, 'VALUE', ORDER_ATOMIC) || '0';
 
+    (arduinoGenerator as any).addSetup(`pwm_mode_${pin}`, `pinMode(${pin}, OUTPUT);`);
+
     return `analogWrite(${pin}, ${value});\n`;
 
 };
@@ -1619,6 +1621,7 @@ arduinoGenerator.forBlock['esp32_map'] = function (block: any) {
 arduinoGenerator.forBlock['esp32_tone'] = function (block: any) {
     const pin = block.getFieldValue('PIN');
     const freq = block.getFieldValue('FREQ');
+    (arduinoGenerator as any).addSetup(`tone_mode_${pin}`, `pinMode(${pin}, OUTPUT);`);
     return `tone(${pin}, ${freq});\n`;
 };
 
@@ -1639,12 +1642,14 @@ arduinoGenerator.forBlock['esp32_servo'] = function (block: any) {
 arduinoGenerator.forBlock['esp32_led'] = function (block: any) {
     const pin = block.getFieldValue('PIN');
     const brightness = block.getFieldValue('BRIGHTNESS');
+    (arduinoGenerator as any).addSetup(`led_mode_${pin}`, `pinMode(${pin}, OUTPUT);`);
     return `analogWrite(${pin}, ${brightness});\n`;
 };
 
 arduinoGenerator.forBlock['esp32_relay'] = function (block: any) {
     const pin = block.getFieldValue('PIN');
     const state = block.getFieldValue('STATE');
+    (arduinoGenerator as any).addSetup(`relay_mode_${pin}`, `pinMode(${pin}, OUTPUT);`);
     return `digitalWrite(${pin}, ${state});\n`;
 };
 
@@ -1656,7 +1661,7 @@ arduinoGenerator.forBlock['esp32_ultrasonic'] = function (block: any) {
         `  pinMode(trig, OUTPUT); digitalWrite(trig, LOW); delayMicroseconds(2);\n` +
         `  digitalWrite(trig, HIGH); delayMicroseconds(10); digitalWrite(trig, LOW);\n` +
         `  pinMode(echo, INPUT);\n` +
-        `  return pulseIn(echo, HIGH) / 58.0;\n` +
+        `  return pulseInLong(echo, HIGH) / 58.0;\n` +
         `}`
     );
     return [`_ultrasonicRead(${trig}, ${echo})`, ORDER_ATOMIC];
@@ -1664,9 +1669,10 @@ arduinoGenerator.forBlock['esp32_ultrasonic'] = function (block: any) {
 
 arduinoGenerator.forBlock['esp32_dht_temp'] = function (block: any) {
     const type = block.getFieldValue('TYPE');   // 'temperature' | 'humidity'
+    const sensorType = block.getFieldValue('SENSOR_TYPE') || '22'; // '11' or '22'
     const pin = block.getFieldValue('PIN');
     (arduinoGenerator as any).addDefinition('dht_include', '#include <DHT.h>');
-    (arduinoGenerator as any).addDefinition(`dht_obj_${pin}`, `DHT _dht${pin}(${pin}, DHT22);`);
+    (arduinoGenerator as any).addDefinition(`dht_obj_${pin}`, `DHT _dht${pin}(${pin}, DHT${sensorType});`);
     (arduinoGenerator as any).addSetup(`dht_begin_${pin}`, `_dht${pin}.begin();`);
     const call = type === 'temperature'
         ? `_dht${pin}.readTemperature()`

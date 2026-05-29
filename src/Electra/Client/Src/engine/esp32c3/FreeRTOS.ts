@@ -796,7 +796,7 @@ export class FreeRTOS {
      * ulTaskNotifyTake — Take notification (clear or decrement)
      * clearOnExit: pdTRUE = clear to 0, pdFALSE = decrement
      */
-    ulTaskNotifyTake(clearOnExit: boolean, timeout: number = 0): number {
+    async ulTaskNotifyTake(clearOnExit: boolean, timeout: number = 0): Promise<number> {
         const taskId = this.currentTask;
         if (taskId === null) return 0;
 
@@ -815,9 +815,23 @@ export class FreeRTOS {
 
         if (timeout === 0) return 0;
 
-        // Wait for notification (simplified — just yield and check again)
-        // In a real implementation this would block
-        return 0;
+        // Wait for notification with timeout
+        const startTime = this.nowMs();
+        while (tcb.notifyValue === 0) {
+            if (this._runningFn && !this._runningFn()) return 0;
+            if (timeout !== portMAX_DELAY && this.nowMs() - startTime >= timeout) {
+                return 0;
+            }
+            await this.yield();
+        }
+
+        const val = tcb.notifyValue;
+        if (clearOnExit) {
+            tcb.notifyValue = 0;
+        } else {
+            tcb.notifyValue--;
+        }
+        return val;
     }
 
     /**

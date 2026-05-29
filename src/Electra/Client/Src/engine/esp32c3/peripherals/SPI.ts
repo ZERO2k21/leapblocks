@@ -89,6 +89,12 @@ export class ESP32C3SPI implements MemoryRegion {
     const txBits  = (this.msDlen & 0x3FFFF) + 1; // MOSI data length in bits
     const txBytes = Math.ceil(txBits / 8);
 
+    // Extract SPI mode from USER register (CPOL = bit 11, CPHA = bit 10)
+    const cpol = !!(this.user & (1 << 11));
+    const cpha = !!(this.user & (1 << 10));
+    // Mode 0: CPOL=0,CPHA=0 | Mode 1: CPOL=0,CPHA=1
+    // Mode 2: CPOL=1,CPHA=0 | Mode 3: CPOL=1,CPHA=1
+
     this.device.onSelect();
 
     // Pull bytes from W buffer, MSB-first

@@ -121,7 +121,7 @@ export class ESP32C3I2C implements MemoryRegion {
   private executeCommands(): void {
     let addrWithRW = this.slaveAddr & 0xFF;
     const addr7 = (addrWithRW >> 1) & 0x7F;
-    const device = this.devices.get(addr7);
+    let device = this.devices.get(addr7);
 
     for (let i = 0; i < 8; i++) {
       const cmd = this.cmdBuf[i];
@@ -134,6 +134,8 @@ export class ESP32C3I2C implements MemoryRegion {
           if (this.txFifo.length > 0) {
             addrWithRW = this.txFifo.shift()!;
           }
+          const newAddr7 = (addrWithRW >> 1) & 0x7F;
+          device = this.devices.get(newAddr7);
           const isRead = !!(addrWithRW & 0x1);
           device?.onStart(isRead);
           break;
@@ -141,14 +143,20 @@ export class ESP32C3I2C implements MemoryRegion {
         case I2C_CMD_WRITE: {
           for (let b = 0; b < len; b++) {
             const byte = this.txFifo.shift() ?? 0;
-            device?.onWrite(byte);
+            if (device) {
+              device.onWrite(byte);
+            }
+            // NACK: if no device, silently drop bytes (bus stays idle)
           }
           break;
         }
         case I2C_CMD_READ: {
           for (let b = 0; b < len; b++) {
-            const byte = device?.onRead() ?? 0xFF;
-            this.rxFifo.push(byte);
+            if (device) {
+              this.rxFifo.push(device.onRead());
+            } else {
+              this.rxFifo.push(0xFF); // NACK: return 0xFF (bus pulled high)
+            }
           }
           break;
         }
@@ -157,8 +165,9 @@ export class ESP32C3I2C implements MemoryRegion {
           break;
         }
         case I2C_CMD_END: {
-          // End of command buffer
-          goto_end: break;
+          // End of command buffer — exit loop
+          i = 8; // force loop exit
+          break;
         }
       }
       if (op === I2C_CMD_END) break;
@@ -234,6 +243,3 @@ export class ESP32C3I2C implements MemoryRegion {
     }
   }
 }
-
-// Workaround for TypeScript not having labeled breaks in switch
-function goto_end() {}
