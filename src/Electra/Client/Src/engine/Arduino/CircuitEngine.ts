@@ -1010,6 +1010,13 @@ class CircuitEngine {
         updateNodeData(node.id, { damaged: false, pinStates: {} });
       }
 
+      // Skip emulator registration for peripherals with no wiring
+      // Components must be wired to the ESP32/board to function
+      const boardTypes = ['arduino-uno', 'esp32-c3', 'esp32', 'arduino-nano', 'arduino-mega', 'attiny85'];
+      const isBoard = boardTypes.includes(node.data?.type);
+      const isPowerSource = node.data?.type === 'battery-12v';
+      if (!isBoard && !isPowerSource && !edges.some(e => e.source === node.id || e.target === node.id)) return;
+
       if (node.data?.type === 'lcd1602' || node.data?.type === 'lcd2004' ||
         node.data?.type === 'lcd1602-i2c' || node.data?.type === 'lcd2004-i2c') {
         // Create an emulator for the display
@@ -1371,8 +1378,8 @@ class CircuitEngine {
               const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
               if (!targetNode) return;
 
-              // CRITICAL FIX: Validate GND connection for components that require it
-              const requiresGround = ['led', 'rgb-led', 'buzzer'].includes(target.type);
+              // Validate GND connection — all components require ground to function
+              const requiresGround = true;
               const hasGround = this.hasGroundConnection(target.nodeId);
               const hasPower = this.hasPowerConnection(target.nodeId);
 

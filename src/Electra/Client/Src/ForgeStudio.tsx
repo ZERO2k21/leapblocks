@@ -487,10 +487,11 @@ void loop() {
 
         try {
           const { transpileCode } = await import('./services/CompilerService');
+          appendSerial('[ESP32-C3] Calling transpileCode()...\n');
           const transpileResult = await transpileCode(code, 'esp32:esp32:esp32c3');
 
           if (transpileResult.success && transpileResult.jsCode) {
-            appendSerial('[ESP32-C3] ✓ Transpilation successful!\n');
+            appendSerial(`[ESP32-C3] ✓ Transpilation successful! (${transpileResult.jsCode.length} bytes)\n`);
             appendSerial('[ESP32-C3] Starting Arduino API simulation...\n\n');
 
             const runner = await getSimulationRunner();

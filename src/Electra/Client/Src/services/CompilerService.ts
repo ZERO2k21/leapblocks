@@ -84,11 +84,18 @@ export interface TranspileResult {
  */
 export const transpileCode = async (code: string, board = 'esp32:esp32:esp32c3'): Promise<TranspileResult> => {
   try {
+    console.log(`[Transpiler] Attempting server transpilation at ${CLOUD_COMPILER_URL}/transpile ...`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
+
     const res = await fetch(`${CLOUD_COMPILER_URL}/transpile`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, board }),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
+
     if (!res.ok) {
       // Server error — fall back to client-side transpilation
       console.warn('[Transpiler] Server returned error, falling back to client-side');
@@ -96,15 +103,18 @@ export const transpileCode = async (code: string, board = 'esp32:esp32:esp32c3')
     }
     const data = await res.json();
     if (data.success && data.jsCode) {
+      console.log(`[Transpiler] Server transpilation successful (${data.jsCode.length} bytes)`);
       return { success: true, jsCode: data.jsCode };
     }
+    console.warn('[Transpiler] Server returned no jsCode, falling back to client-side');
     return {
       success: false,
       error: Array.isArray(data.errors) ? data.errors.join('\n') : (data.errors || 'Transpilation failed'),
     };
   } catch (err: any) {
-    // Network error — fall back to client-side transpilation
-    console.warn('[Transpiler] Server unreachable, falling back to client-side:', err.message);
+    // Network error or timeout — fall back to client-side transpilation
+    const reason = err.name === 'AbortError' ? 'timeout (8s)' : err.message;
+    console.warn(`[Transpiler] Server unreachable (${reason}), falling back to client-side transpiler`);
     return clientSideTranspile(code);
   }
 };
@@ -265,6 +275,9 @@ var MPU6050_BAND_10_HZ  = (typeof MPU6050_BAND_10_HZ  !== 'undefined') ? MPU6050
 var MPU6050_BAND_5_HZ   = (typeof MPU6050_BAND_5_HZ   !== 'undefined') ? MPU6050_BAND_5_HZ   : 6;
 var SSD1306_SWITCHCAPVCC = (typeof SSD1306_SWITCHCAPVCC !== 'undefined') ? SSD1306_SWITCHCAPVCC : 0x02;
 var SSD1306_EXTERNALVCC  = (typeof SSD1306_EXTERNALVCC  !== 'undefined') ? SSD1306_EXTERNALVCC  : 0x01;
+var SSD1306_WHITE  = (typeof SSD1306_WHITE  !== 'undefined') ? SSD1306_WHITE  : 1;
+var SSD1306_BLACK  = (typeof SSD1306_BLACK  !== 'undefined') ? SSD1306_BLACK  : 0;
+var SSD1306_INVERSE = (typeof SSD1306_INVERSE !== 'undefined') ? SSD1306_INVERSE : 2;
 var BLACK   = (typeof BLACK   !== 'undefined') ? BLACK   : 0;
 var WHITE   = (typeof WHITE   !== 'undefined') ? WHITE   : 1;
 var INVERSE = (typeof INVERSE !== 'undefined') ? INVERSE : 2;

@@ -3,10 +3,9 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import ReactFlow, {
   Background,
-  Controls,
   MiniMap,
   Connection,
   ConnectionMode,
@@ -16,7 +15,9 @@ import ReactFlow, {
   useEdgesState,
   ReactFlowProvider,
   BackgroundVariant,
-  useReactFlow
+  useReactFlow,
+  useViewport,
+  Panel
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useForgeStore } from '../../utlis/store/useForgeStore';
@@ -49,7 +50,8 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   showEditor = true,
   onToggleEditor
 }) => {
-  const { zoomIn, zoomOut, fitView } = useReactFlow();
+  const { zoomIn, zoomOut, fitView, getNodes, setViewport, getViewport } = useReactFlow();
+  const currentViewport = useViewport();
   const store = useForgeStore();
   const {
     isSimulating,
@@ -60,7 +62,9 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     addEdge: addStoreEdge,
     updateNodePosition,
     uiTheme,
-    toggleUiTheme
+    toggleUiTheme,
+    viewport: savedViewport,
+    setViewportState
   } = store;
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -74,6 +78,54 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   useEffect(() => {
     setEdges(storeEdges);
   }, [storeEdges, setEdges]);
+
+  // ── Keyboard zoom shortcuts (Wokwi-style) ──────────────────────────
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept if user is typing in an input/textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+      const ctrl = e.ctrlKey || e.metaKey;
+
+      if (ctrl && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        zoomIn({ duration: 200 });
+      } else if (ctrl && e.key === '-') {
+        e.preventDefault();
+        zoomOut({ duration: 200 });
+      } else if (ctrl && e.key === '0') {
+        e.preventDefault();
+        const selected = getNodes().filter((n) => n.selected);
+        if (selected.length > 0) {
+          fitView({ nodes: selected, duration: 300, padding: 0.3 });
+        } else {
+          fitView({ duration: 300, padding: 0.2 });
+        }
+      } else if (ctrl && e.key === '1') {
+        e.preventDefault();
+        // Zoom to 100%
+        const vp = getViewport();
+        setViewport({ ...vp, zoom: 1 }, { duration: 200 });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [zoomIn, zoomOut, fitView, setViewport, getViewport, getNodes]);
+
+  // ── Restore viewport from saved state on mount ────────────────────
+  useEffect(() => {
+    if (savedViewport.x !== 0 || savedViewport.y !== 0 || savedViewport.zoom !== 1) {
+      setViewport(savedViewport);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Persist viewport to store on every pan/zoom change ────────────
+  useEffect(() => {
+    setViewportState(currentViewport);
+  }, [currentViewport.x, currentViewport.y, currentViewport.zoom, setViewportState]);
 
   // Handle new connections (wiring)
   const onConnect = useCallback(
@@ -165,6 +217,11 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         snapGrid={[10, 10]}
         connectionLineComponent={PhysicalConnectionLine}
         connectionMode={ConnectionMode.Loose}
+        minZoom={0.1}
+        maxZoom={4}
+        zoomOnScroll
+        zoomOnPinch
+        zoomOnDoubleClick={false}
         style={{ background: 'transparent' }}
       >
         <Background
@@ -174,21 +231,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
           color="var(--lp-border-active)"
         />
 
-        <Controls
-          className="glass-controls"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 4,
-            background: 'var(--lp-glass)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid var(--lp-border)',
-            borderRadius: 12,
-            padding: 4,
-            boxShadow: 'var(--lp-shadow)'
-          }}
-        />
-
+        {/* ── Wokwi-style MiniMap with component labels ── */}
         <MiniMap
           className="glass-minimap"
           style={{
@@ -198,9 +241,30 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
             borderRadius: 16,
             overflow: 'hidden'
           }}
-          nodeColor={(n: any) => n.data?.type === 'boards' ? 'var(--lp-accent-primary)' : '#cbd5e1'}
+          nodeColor={(n: any) => {
+            const t = n.data?.type;
+            if (t === 'boards') return 'var(--lp-accent-primary)';
+            if (t?.includes('oled') || t?.includes('ssd1306')) return '#f59e0b';
+            if (t?.includes('led')) return '#ef4444';
+            if (t?.includes('sensor') || t?.includes('dht') || t?.includes('pir')) return '#10b981';
+            if (t?.includes('motor') || t?.includes('servo') || t?.includes('stepper')) return '#8b5cf6';
+            if (t?.includes('button') || t?.includes('keypad')) return '#6366f1';
+            if (t?.includes('tft') || t?.includes('ili9341')) return '#06b6d4';
+            return '#cbd5e1';
+          }}
+          nodeStrokeWidth={2}
+          nodeBorderRadius={4}
           maskColor="rgba(0, 0, 0, 0.6)"
+          pannable
+          zoomable
         />
+
+        {/* ── Zoom percentage display (Wokwi-style) ── */}
+        <Panel position="bottom-right" style={{ marginBottom: 8, marginRight: 8 }}>
+          <div className="zoom-display">
+            {Math.round(currentViewport.zoom * 100)}%
+          </div>
+        </Panel>
       </ReactFlow>
 
       <style>{`
@@ -212,39 +276,31 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         .react-flow__attribution { display: none !important; }
         
         /* Modern Zoom Controls Styling */
-        .glass-controls {
-          border: 1px solid var(--lp-border) !important;
-          border-radius: 8px !important;
-          background: var(--lp-glass) !important;
-          box-shadow: var(--lp-shadow) !important;
-          padding: 2px !important;
+        .zoom-display {
+          background: var(--lp-glass);
+          backdrop-filter: blur(10px);
+          border: 1px solid var(--lp-border);
+          border-radius: 8px;
+          padding: 4px 10px;
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--lp-text);
+          font-family: 'JetBrains Mono', 'SF Mono', monospace;
+          user-select: none;
+          min-width: 48px;
+          text-align: center;
+          box-shadow: var(--lp-shadow);
         }
-        .theme-light .glass-controls {
-          border: 1px solid rgba(15, 23, 42, 0.08) !important;
-          background: rgba(255, 255, 255, 0.7) !important;
-          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04) !important;
+        .theme-light .zoom-display {
+          border: 1px solid rgba(15, 23, 42, 0.08);
+          background: rgba(255, 255, 255, 0.7);
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
         }
-        .glass-controls button {
-          background: transparent !important;
-          border: none !important;
+        .glass-minimap {
           border-radius: 6px !important;
           color: var(--lp-zinc-400) !important;
           transition: all 0.2s !important;
           margin: 1px !important;
-        }
-        .glass-controls button:hover {
-          background: var(--lp-zinc-700) !important;
-          color: var(--lp-accent-primary) !important;
-        }
-        .theme-light .glass-controls button {
-          color: #64748b !important;
-        }
-        .theme-light .glass-controls button:hover {
-          background: rgba(0, 0, 0, 0.04) !important;
-          color: var(--lp-accent-primary) !important;
-        }
-        .react-flow__controls-button svg {
-          fill: currentColor !important;
         }
 
         /* Modern MiniMap Styling */
@@ -389,6 +445,22 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
           animation: spin 1s linear infinite;
         }
 
+        /* Zoom label in toolbar (Wokwi-style) */
+        .canvas-zoom-label {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--lp-text-secondary, #94a3b8);
+          font-family: 'JetBrains Mono', 'SF Mono', monospace;
+          user-select: none;
+          min-width: 40px;
+          text-align: center;
+          padding: 0 4px;
+          cursor: default;
+        }
+        .canvas-zoom-label:hover {
+          color: var(--lp-text, #e2e8f0);
+        }
+
         @media (max-width: 768px) {
           .glass-minimap {
             display: none !important;
@@ -433,27 +505,32 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
 
         {/* Zoom In Button */}
         <button
-          onClick={() => zoomIn()}
+          onClick={() => zoomIn({ duration: 200 })}
           className="canvas-btn secondary"
-          title="Zoom In"
+          title="Zoom In (Ctrl+=)"
         >
           <ZoomIn size={16} />
         </button>
 
+        {/* Zoom Percentage Display */}
+        <div className="canvas-zoom-label" title="Current zoom level">
+          {Math.round(currentViewport.zoom * 100)}%
+        </div>
+
         {/* Zoom Out Button */}
         <button
-          onClick={() => zoomOut()}
+          onClick={() => zoomOut({ duration: 200 })}
           className="canvas-btn secondary"
-          title="Zoom Out"
+          title="Zoom Out (Ctrl+-)"
         >
           <ZoomOut size={16} />
         </button>
 
         {/* Fit View Button */}
         <button
-          onClick={() => fitView({ duration: 400 })}
+          onClick={() => fitView({ duration: 400, padding: 0.2 })}
           className="canvas-btn secondary"
-          title="Fit View"
+          title="Fit View (Ctrl+0)"
         >
           <Maximize size={16} />
         </button>
