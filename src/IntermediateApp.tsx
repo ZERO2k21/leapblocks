@@ -2743,6 +2743,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         const payload = {
             sprites: spritesData,
             workspaces: workspacesData,
+            backdrops: stageManager.getAllBackdrops().map(b => ({
+                name: b.name,
+                src: b.src
+            })),
+            currentBackdropIndex: stageManager.getCurrentBackdropIndex(),
+            broadcasts: animationVM.getBroadcastMessages(),
             monitors: {
                 variables: variableMonitors,
                 lists: listMonitors,
@@ -2824,6 +2830,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 const newSprites: Sprite[] = [];
                 stageManager.clearSounds();
+                stageManager.clearBackdrops();
 
                 for (const sData of data.sprites) {
 
@@ -2880,7 +2887,26 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                // 3. Restore All Workspaces to the Map FIRST
+                // 3. Restore backdrops from saved data
+
+                if (Array.isArray(data.backdrops)) {
+                    for (const bData of data.backdrops) {
+                        await stageManager.addBackdrop(bData.name, bData.src);
+                    }
+                    if (typeof data.currentBackdropIndex === 'number' && data.currentBackdropIndex >= 0) {
+                        stageManager.setBackdrop(data.currentBackdropIndex);
+                    }
+                }
+
+                // 4. Restore broadcast messages from saved data
+
+                if (Array.isArray(data.broadcasts)) {
+                    for (const msg of data.broadcasts) {
+                        animationVM.registerBroadcast(msg);
+                    }
+                }
+
+                // 5. Restore All Workspaces to the Map FIRST
 
                 Object.keys(data.workspaces).forEach(id => {
 
@@ -2890,7 +2916,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                // 4. Update UI state (triggers re-render)
+                // 6. Update UI state (triggers re-render)
                 if (data.monitors) {
                     setVariableMonitors((data.monitors.variables || []).map((monitor: VariableMonitorState, index: number) => normalizeVariableMonitor(monitor, index)));
                     setListMonitors(data.monitors.lists || []);
@@ -2917,7 +2943,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                // 5. Final attempt to load the workspace for the selected sprite
+                // 7. Final attempt to load the workspace for the selected sprite
 
                 if (initialId) {
 
@@ -3632,13 +3658,62 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         (window as any).spriteManager = spriteManager;
 
         (window as any).createNewBroadcast = (callback: (name: string | null) => void) => {
-            const name = window.prompt('New message name:');
-            if (name) {
-                animationVM.registerBroadcast(name);
-                callback(name);
-            } else {
-                callback(null);
-            }
+            const existing = document.querySelector('body>div[data-broadcast-prompt]');
+            if (existing) return;
+
+            const overlay = document.createElement('div');
+            overlay.setAttribute('data-broadcast-prompt', '');
+            overlay.setAttribute('style', 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);');
+
+            const box = document.createElement('div');
+            box.setAttribute('style', 'background:#fff;border-radius:12px;padding:24px;min-width:320px;box-shadow:0 8px 32px rgba(0,0,0,0.25);font-family:sans-serif;');
+
+            const label = document.createElement('div');
+            label.textContent = 'New message name:';
+            label.setAttribute('style', 'font-size:14px;font-weight:600;margin-bottom:12px;color:#333;');
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.autofocus = true;
+            input.setAttribute('style', 'width:100%;padding:10px 12px;font-size:14px;border:2px solid #ddd;border-radius:8px;outline:none;box-sizing:border-box;');
+            input.addEventListener('focus', () => input.style.borderColor = '#FFBF00');
+            input.addEventListener('blur', () => input.style.borderColor = '#ddd');
+
+            const btnRow = document.createElement('div');
+            btnRow.setAttribute('style', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.setAttribute('style', 'padding:8px 16px;font-size:14px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;');
+
+            const okBtn = document.createElement('button');
+            okBtn.textContent = 'OK';
+            okBtn.setAttribute('style', 'padding:8px 16px;font-size:14px;border:none;border-radius:8px;background:#FFBF00;color:#fff;cursor:pointer;font-weight:600;');
+
+            const cleanup = (result: string | null) => {
+                document.body.removeChild(overlay);
+                if (result) {
+                    animationVM.registerBroadcast(result);
+                }
+                callback(result);
+            };
+
+            cancelBtn.addEventListener('click', () => cleanup(null));
+            okBtn.addEventListener('click', () => cleanup(input.value || null));
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') okBtn.click();
+                if (e.key === 'Escape') cancelBtn.click();
+            });
+
+            btnRow.appendChild(cancelBtn);
+            btnRow.appendChild(okBtn);
+            box.appendChild(label);
+            box.appendChild(input);
+            box.appendChild(btnRow);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+
+            setTimeout(() => input.focus(), 50);
         };
 
         // Expose all sprite names for sensing_touching dropdown
@@ -3860,6 +3935,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         return () => {
 
             console.log('[IntermediateApp] Cleaning up workspace...');
+
+            animationVM.resetState();
+            stageManager.reset();
+            spriteManager.clear();
+            hardwareAdapter.stopAllPolling();
 
             if (window.electronAPI?.removeAllListeners) {
 
