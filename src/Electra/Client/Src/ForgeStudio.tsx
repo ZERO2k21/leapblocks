@@ -511,6 +511,7 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
             runner.setTranspiledJS(transpileResult.jsCode);
             startSimulation('__esp32_c3_transpiled__');
           } else if (transpileResult.error) {
+            const { appendSerial } = useForgeStore.getState();
             appendSerial('❌ ESP32-C3 TRANSPILATION ERROR:\n');
             appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
             appendSerial(transpileResult.error + '\n');
@@ -518,6 +519,7 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
             appendSerial('\nPlease fix the errors and try again.\n');
           }
         } catch (transpileErr: any) {
+          const { appendSerial } = useForgeStore.getState();
           appendSerial('❌ ESP32-C3 TRANSPILATION ERROR:\n');
           appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
           appendSerial((transpileErr.message || String(transpileErr)) + '\n');

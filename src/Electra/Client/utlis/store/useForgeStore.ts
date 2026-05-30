@@ -270,6 +270,16 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       console.log('[FORGE STORE] Firing simulationRunner.start()');
       runner.start().catch((err: any) => {
         console.error('[FORGE STORE] simulationRunner.start() failed:', err);
+        set((state) => ({
+          serialOutput: state.serialOutput +
+            `\n❌ SIMULATION RUNTIME ERROR:\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `${err.message || String(err)}\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `Please check your code for typos or syntax errors.\n`,
+          isSimulating: false
+        }));
+        runner.stop();
       });
     });
   },

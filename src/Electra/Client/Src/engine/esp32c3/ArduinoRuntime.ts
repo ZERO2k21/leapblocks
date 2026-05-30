@@ -822,6 +822,13 @@ export class ArduinoRuntime {
         if (!self._ledcChannelMap) self._ledcChannelMap = new Map();
         self._ledcChannelMap.set(channel, pin);
       },
+      ledcAttach(pin: number, freq: number, resolution: number): number {
+        // Simplified ledcAttach(pin, freq, resolution) — new ESP32 API
+        if (!self._ledcChannelMap) self._ledcChannelMap = new Map();
+        const channel = pin % 8; // ESP32 has 8 LEDC channels
+        self._ledcChannelMap.set(channel, pin);
+        return channel;
+      },
       ledcWrite(channel: number, duty: number): void {
         // Map channel to the pin attached via ledcAttachPin
         const pin = self._ledcChannelMap?.get(channel) ?? channel;

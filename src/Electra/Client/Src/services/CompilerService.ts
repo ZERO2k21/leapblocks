@@ -135,7 +135,7 @@ var Adafruit_SSD1306 = (typeof Adafruit_SSD1306 !== 'undefined' && Adafruit_SSD1
 var Adafruit_GFX = (typeof Adafruit_GFX !== 'undefined' && Adafruit_GFX) || class { constructor(){} };
 var LiquidCrystal_I2C = (typeof LiquidCrystal_I2C !== 'undefined' && LiquidCrystal_I2C) || class { constructor(){} begin(){} init(){} print(){} println(){} setCursor(){} clear(){} backlight(){} noBacklight(){} };
 var LiquidCrystal = (typeof LiquidCrystal !== 'undefined' && LiquidCrystal) || class { constructor(){} begin(){} print(){} println(){} setCursor(){} clear(){} };
-var Servo = (typeof Servo !== 'undefined' && Servo) || class { constructor(){this._angle=90;} attach(){} write(a){this._angle=a;} read(){return this._angle;} detach(){} };
+var Servo = (typeof Servo !== 'undefined' && Servo) || class { constructor(){this._angle=90;} attach(){} write(a){this._angle=a;} read(){return this._angle;} detach(){} setPeriodHertz(){} };
 var DHT = (typeof DHT !== 'undefined' && DHT) || class { constructor(){} begin(){} readTemperature(){return 25.0;} readHumidity(){return 50.0;} };
 var DHTesp = (typeof DHTesp !== 'undefined' && DHTesp) || class { constructor(){} setup(){} getTempAndHumidity(){ return { temperature: 25.0, humidity: 50.0 }; } getStatus(){ return 0; } getStatusString(){ return 'OK'; } };
 var TempAndHumidity = (typeof TempAndHumidity !== 'undefined' && TempAndHumidity) || class { constructor(){ this.temperature = 0; this.humidity = 0; } };

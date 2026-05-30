@@ -2287,6 +2287,17 @@ class CircuitEngine {
         // ── AVR path ──────────────────────────────────────────────────────────
         simulationRunner.addListener(avrPin, listener);
 
+        // ── ESP32 transpiled path ─────────────────────────────────────────────
+        // The ESP32C3 runner fires pin events via setPinState() keyed by the
+        // original board pin name (e.g. "D8"), NOT the avrPin alias ("ESP8").
+        // Without this, CircuitEngine listeners never fire for ESP32 transpiled
+        // simulations and components never react to digitalWrite/analogWrite.
+        let esp32Listener: ((_pin: string, state: PinState) => void) | null = null;
+        if (isESP32Board && simulationRunner.ESP32C3Runner) {
+          esp32Listener = (_pin: string, state: PinState) => listener(state);
+          simulationRunner.ESP32C3Runner.addPinListener(arduinoPinName, esp32Listener);
+        }
+
         // Log 7-segment listener registration
         const pType = nodes.find(n => n.id === peripheralId)?.data?.type;
         if (pType === '7segment') {
@@ -2329,6 +2340,9 @@ class CircuitEngine {
         // Store the unsubscribe thunk to clean up if the wire is deleted
         this.activeSubscriptions.set(edge.id, () => {
           simulationRunner.removeListener(avrPin, listener);
+          if (isESP32Board && simulationRunner.ESP32C3Runner && esp32Listener) {
+            simulationRunner.ESP32C3Runner.removePinListener(arduinoPinName, esp32Listener);
+          }
           if (neoRawListener) simulationRunner.removeRawListener(avrPin, neoRawListener);
         });
 

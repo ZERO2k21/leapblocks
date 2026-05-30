@@ -43,6 +43,10 @@ export function createServoClass(runtime: any) {
             return pin;
         }
 
+        setPeriodHertz(hertz: number): void {
+            console.log(`[Servo] setPeriodHertz to ${hertz}Hz`);
+        }
+
         write(angle: number): void {
             if (!this._attached || this.pin < 0) return;
             this.angle = Math.max(0, Math.min(180, angle));
