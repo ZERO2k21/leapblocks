@@ -501,18 +501,11 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
         // via a cooperative scheduler (FreeRTOS.ts) that runs tasks in the
         // browser's event loop. Arduino C++ is transpiled to JavaScript and
         // run through ArduinoRuntime with FreeRTOS API stubs.
-        const { appendSerial } = useForgeStore.getState();
-        appendSerial('[ESP32-C3] Transpiling sketch for simulation...\n');
-
         try {
           const { transpileCode } = await import('./services/CompilerService');
-          appendSerial('[ESP32-C3] Calling transpileCode()...\n');
           const transpileResult = await transpileCode(code, 'esp32:esp32:esp32c3');
 
           if (transpileResult.success && transpileResult.jsCode) {
-            appendSerial(`[ESP32-C3] ✓ Transpilation successful! (${transpileResult.jsCode.length} bytes)\n`);
-            appendSerial('[ESP32-C3] Starting Arduino API simulation...\n\n');
-
             const runner = await getSimulationRunner();
             runner.setBoard(board);
             runner.setTranspiledJS(transpileResult.jsCode);

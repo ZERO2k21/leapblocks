@@ -179,7 +179,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
         <path
           style={{
             stroke: wireColor,
-            strokeWidth: 4,
+            strokeWidth: 2.5,
             opacity: 0.2,
             fill: 'none',
           }}
@@ -192,7 +192,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
         style={{
           ...style,
           stroke: wireColor,
-          strokeWidth: 2.5,
+          strokeWidth: 1.5,
           fill: 'none',
           strokeLinecap: 'round',
           strokeLinejoin: 'round',
@@ -213,14 +213,13 @@ export const WireEdge: React.FC<EdgeProps> = ({
         d={edgePath}
       />
 
-      {/* 4. SOURCE PIN DOT — small colored circle like Wokwi */}
+      {/* 4. SOURCE PIN DOT — exact pin point */}
       <circle
         cx={sourceX}
         cy={sourceY}
-        r={3}
+        r={1}
         fill={wireColor}
-        stroke="#fff"
-        strokeWidth={0.5}
+        stroke="none"
         style={{ pointerEvents: 'none' }}
       />
 
@@ -228,10 +227,9 @@ export const WireEdge: React.FC<EdgeProps> = ({
       <circle
         cx={targetX}
         cy={targetY}
-        r={3}
+        r={1}
         fill={wireColor}
-        stroke="#fff"
-        strokeWidth={0.5}
+        stroke="none"
         style={{ pointerEvents: 'none' }}
       />
 
