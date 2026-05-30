@@ -22,17 +22,23 @@ app.use(express.json({ limit: '10mb' }));
 
 /**
  * Resolve the path to the arduino-cli binary.
- * Uses download-on-demand: checks cached/system paths, then downloads from GitHub.
- * No bundled binary needed — avoids GPL v3 distribution in our proprietary installer.
+ * Electra ONLY uses the bundled binary or cached download.
+ * NEVER uses system PATH or standard Arduino install paths.
  */
 const getCLIBinary = () => {
   const available = getArduinoCliPathIfAvailable();
   if (available) {
     console.log(`[SERVER] Using arduino-cli: ${available}`);
-    return available === 'arduino-cli' ? available : `"${available}"`;
+    return `"${available}"`;
   }
 
-  console.log(`[SERVER] arduino-cli not found locally. Will download on first compile.`);
+  // Check if ARDUINO_CLI_PATH env var was set by main.js (bundled path)
+  if (process.env.ARDUINO_CLI_PATH && fs.existsSync(process.env.ARDUINO_CLI_PATH)) {
+    console.log(`[SERVER] Using arduino-cli from env: ${process.env.ARDUINO_CLI_PATH}`);
+    return `"${process.env.ARDUINO_CLI_PATH}"`;
+  }
+
+  console.log(`[SERVER] arduino-cli not found. Will download on first compile.`);
   return 'arduino-cli'; // fallback; ensureArduinoCli will handle download when compile is called
 };
 

@@ -45,6 +45,9 @@ extraResources:
     to: tools
     filter:
       - "**/*"
-  # arduino-cli removed from bundled resources.
-  # It is downloaded on-demand at first use to avoid distributing GPL v3
-  # software in our proprietary installer. See src/utils/ensureArduinoCli.ts
+  # arduino-cli bundled directly — Electra ONLY uses this binary,
+  # never system-installed arduino-cli. See src/utils/ensureArduinoCli.ts
+  - from: arduino-cli
+    to: arduino-cli
+    filter:
+      - "**/*"

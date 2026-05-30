@@ -7,14 +7,14 @@ import Blockly from '@blockly-runtime';
 
 let _registered = false;
 
-export function registerPictoBloxCategory(): void {
+export function registerLeapBloxCategory(): void {
     if (_registered) return;
     _registered = true;
 
     /**
 style Category with circular icons and vertical layout
      */
-    class PictoBloxCategory extends Blockly.ToolboxCategory {
+    class LeapBloxCategory extends Blockly.ToolboxCategory {
         private customIconDom_: HTMLElement | null = null;
 
         /**
@@ -28,7 +28,7 @@ style Category with circular icons and vertical layout
                 // Create and insert the icon at the BEGINNING of rowContents
                 this.customIconDom_ = this.createCustomIcon();
                 this.rowContents_.insertBefore(this.customIconDom_, this.rowContents_.firstChild);
-                console.log('[PictoBloxCategory] Custom icon inserted for:', this.getName());
+                console.log('[LeapBloxCategory] Custom icon inserted for:', this.getName());
             }
         }
 
@@ -37,7 +37,7 @@ style Category with circular icons and vertical layout
          */
         private createCustomIcon(): HTMLElement {
             const iconDiv = document.createElement('div');
-            iconDiv.classList.add('pictoblox-icon');
+            iconDiv.classList.add('leapblox-icon');
 
             const name = this.getName().toLowerCase();
             const emoji = this.getEmojiForCategory(name);
@@ -117,13 +117,13 @@ style Category with circular icons and vertical layout
         }
     }
 
-    // Register as 'pictobloxCategory'
+    // Register as 'leapbloxCategory'
     Blockly.registry.register(
         Blockly.registry.Type.TOOLBOX_ITEM,
-        'pictobloxCategory',
-        PictoBloxCategory,
+        'leapbloxCategory',
+        LeapBloxCategory,
         true
     );
 
-    console.log('[CUSTOM-TOOLBOX] PictoBloxCategory registered');
+    console.log('[CUSTOM-TOOLBOX] LeapBloxCategory registered');
 }

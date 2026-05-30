@@ -508,7 +508,7 @@ export const esp32Toolbox = {
     kind: 'categoryToolbox',
     contents: [
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Events',
             colour: COLORS.events,
             contents: [
@@ -516,7 +516,7 @@ export const esp32Toolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Control',
             colour: COLORS.control,
             contents: [
@@ -531,7 +531,7 @@ export const esp32Toolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'ESP32',
             colour: COLORS.esp32,
             contents: [
@@ -563,7 +563,7 @@ export const esp32Toolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Operators',
             colour: COLORS.operators,
             contents: [
@@ -622,14 +622,14 @@ export const esp32Toolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Variables',
             colour: COLORS.variables,
             custom: 'LEAP_VARIABLES',
         },
         { kind: 'sep' },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Communication',
             colour: COLORS.serial,
             contents: [
@@ -654,7 +654,7 @@ export const esp32Toolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Actuators',
             colour: COLORS.actuators,
             contents: [
@@ -665,7 +665,7 @@ export const esp32Toolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Sensors',
             colour: COLORS.sensors,
             contents: [
@@ -680,7 +680,7 @@ export const esp32Toolbox = {
         },
         { kind: 'sep' },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'WiFi',
             colour: '#E53935',
             contents: [
@@ -697,7 +697,7 @@ export const esp32Toolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'HTTP',
             colour: '#1565C0',
             contents: [
@@ -719,7 +719,7 @@ export const esp32Toolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'MQTT',
             colour: '#6A1B9A',
             contents: [
@@ -746,7 +746,7 @@ export const esp32Toolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'WebSocket',
             colour: '#00838F',
             contents: [

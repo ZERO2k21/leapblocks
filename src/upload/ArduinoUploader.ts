@@ -772,32 +772,31 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
 
     /**
      * Resolve the arduino-cli binary path.
-     * Uses download-on-demand: checks system PATH, cached download,
-     * standard install paths, then downloads from GitHub if needed.
-     * This avoids bundling the GPL v3 binary in our proprietary installer.
+     * Electra ONLY uses the bundled binary. Falls back to cached download if bundled is missing.
+     * NEVER uses system PATH or standard Arduino install paths.
      */
     private async getArduinoCliPath(): Promise<string> {
-        // Fast check: already available somewhere?
+        // Fast check: bundled or cached binary available?
         const available = getArduinoCliPathIfAvailable();
         if (available) {
             console.log(`[FORGE UPLOADER] arduino-cli found at: ${available}`);
             return available;
         }
 
-        // Slow path: download from GitHub on first use
-        console.log('[FORGE UPLOADER] arduino-cli not found locally. Starting download-on-demand...');
+        // Slow path: download from GitHub on first use (bundled binary missing — shouldn't happen)
+        console.log('[FORGE UPLOADER] Bundled arduino-cli not found. Downloading as fallback...');
         try {
             const cliPath = await ensureArduinoCli((msg) => {
                 console.log(`[FORGE UPLOADER] ${msg}`);
             });
-            console.log(`[FORGE UPLOADER] arduino-cli downloaded and ready at: ${cliPath}`);
+            console.log(`[FORGE UPLOADER] arduino-cli ready at: ${cliPath}`);
             return cliPath;
         } catch (err: any) {
             console.error('[FORGE UPLOADER] Failed to obtain arduino-cli:', err.message);
             throw new Error(
-                'arduino-cli is required but could not be downloaded.\n' +
-                'Please check your internet connection, or install manually:\n' +
-                'https://github.com/arduino/arduino-cli/releases/latest'
+                'arduino-cli is required but could not be found.\n' +
+                'The bundled binary is missing and download failed.\n' +
+                'Please check your internet connection, or reinstall LeapBlocks.'
             );
         }
     }

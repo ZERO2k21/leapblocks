@@ -2,21 +2,16 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  *
- * Download-on-demand for arduino-cli.
- * Instead of bundling the GPL v3 arduino-cli binary with the installer,
- * we download it from GitHub on first use and cache it in userData.
- *
- * License: arduino-cli is GPL v3. By downloading on-demand, we avoid
- * "conveying" GPL software in our proprietary installer. The binary
- * lives only in the user's local app data after first use.
+ * arduino-cli resolution for Electra.
+ * Electra ONLY uses the arduino-cli binary bundled inside the app.
+ * It never uses system-installed arduino-cli or standard Arduino paths.
+ * If the bundled binary is missing (shouldn't happen), falls back to
+ * download-on-demand cached in userData.
  */
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
-import { spawn, execFile } from 'child_process';
 import { createWriteStream } from 'fs';
-import { pipeline } from 'stream/promises';
-import { createGunzip } from 'zlib';
 import * as https from 'https';
 import * as http from 'http';
 
@@ -25,6 +20,48 @@ const ARDUINO_CLI_VERSION = 'latest'; // pinned or 'latest'
 const DOWNLOAD_BASE_URL = 'https://downloads.arduino.cc/arduino-cli';
 
 const BINARY_NAME = os.platform() === 'win32' ? 'arduino-cli.exe' : 'arduino-cli';
+
+// ── Bundled binary resolution ────────────────────────────────────────────────
+
+/**
+ * Resolve the path to the arduino-cli binary bundled inside the app.
+ *
+ * Production (packaged Electron app):
+ *   process.resourcesPath/arduino-cli/arduino-cli.exe
+ *   (deployed via electron-builder extraResources)
+ *
+ * Development (running from source):
+ *   <project-root>/arduino-cli/arduino-cli.exe
+ *
+ * This function ALWAYS returns a path — it does not check if the file exists.
+ * Callers should verify with fs.existsSync() if needed.
+ */
+export function getBundledArduinoCliPath(): string {
+  const platform = os.platform();
+  const binName = platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli';
+
+  // Production: use process.resourcesPath (Electron extraResources)
+  try {
+    const { app } = require('electron');
+    if (app?.isPackaged) {
+      return path.join((process as any).resourcesPath, 'arduino-cli', binName);
+    }
+  } catch { /* not in Electron context */ }
+
+  // Development: use app.getAppPath() which reliably returns the project root
+  // even after bundling (electron-vite bundles src/ into dist/main/).
+  // __dirname is unreliable in bundled builds — it points to dist/main/
+  // instead of src/utils/.
+  try {
+    const { app } = require('electron');
+    if (app?.getAppPath) {
+      return path.join(app.getAppPath(), 'arduino-cli', binName);
+    }
+  } catch { /* not in Electron context */ }
+
+  // Fallback: walk up from __dirname (works when not bundled, e.g. ts-node)
+  return path.join(__dirname, '..', '..', 'arduino-cli', binName);
+}
 
 /**
  * Get the local cache directory for arduino-cli.
@@ -192,10 +229,12 @@ async function extractTarGz(tarPath: string, destDir: string): Promise<void> {
 /**
  * Ensure arduino-cli is available locally.
  * Checks these locations in order:
- *   1. System PATH (user has it installed globally)
- *   2. Our cached download in userData
- *   3. Standard Arduino install paths
- *   4. Download from GitHub (first-time)
+ *   1. Bundled binary inside the app (extraResources)
+ *   2. Our cached download in userData (fallback)
+ *   3. Download from GitHub (last resort)
+ *
+ * NEVER checks system PATH or standard Arduino install paths.
+ * Electra must use only its own arduino-cli to avoid version conflicts.
  *
  * Returns the absolute path to the arduino-cli binary.
  * Throws if none found and download fails.
@@ -208,44 +247,21 @@ export async function ensureArduinoCli(
     onProgress?.(msg);
   };
 
-  // ── 1. Check system PATH ─────────────────────────────────────────────────
-  try {
-    const pathResult = await new Promise<string>((resolve, reject) => {
-      execFile('arduino-cli', ['version'], { shell: true }, (err, stdout) => {
-        if (!err && stdout.includes('arduino-cli')) {
-          resolve('arduino-cli'); // globally available
-        } else {
-          reject(new Error('Not in PATH'));
-        }
-      });
-    });
-    log('Found arduino-cli in system PATH');
-    return pathResult;
-  } catch { /* not in PATH */ }
+  // ── 1. Bundled binary inside the app ──────────────────────────────────────
+  const bundled = getBundledArduinoCliPath();
+  if (fs.existsSync(bundled)) {
+    log(`Using bundled arduino-cli: ${bundled}`);
+    return bundled;
+  }
 
-  // ── 2. Check our cached download ─────────────────────────────────────────
+  // ── 2. Cached download in userData ────────────────────────────────────────
   const cached = getBinaryPath();
   if (fs.existsSync(cached)) {
     log(`Using cached arduino-cli: ${cached}`);
     return cached;
   }
 
-  // ── 3. Check standard Arduino install paths ──────────────────────────────
-  const standardPaths = [
-    path.join(os.homedir(), 'AppData', 'Local', 'Arduino15', 'arduino-cli.exe'),
-    path.join(os.homedir(), '.arduino15', 'arduino-cli'),
-    'C:\\Program Files\\Arduino CLI\\arduino-cli.exe',
-    'C:\\arduino-cli\\arduino-cli.exe',
-  ];
-
-  for (const p of standardPaths) {
-    if (fs.existsSync(p)) {
-      log(`Found arduino-cli at: ${p}`);
-      return p;
-    }
-  }
-
-  // ── 4. Download from GitHub ──────────────────────────────────────────────
+  // ── 3. Download from GitHub ──────────────────────────────────────────────
   log('arduino-cli not found. Downloading from GitHub...');
 
   const version = ARDUINO_CLI_VERSION === 'latest'
@@ -315,30 +331,19 @@ export async function ensureArduinoCli(
 }
 
 /**
- * Check if arduino-cli is already cached (fast, no download).
+ * Check if arduino-cli is already available (fast, no download).
+ * Only checks the bundled binary and cached download.
+ * NEVER checks system PATH or standard Arduino install paths.
  * Returns the path or null.
  */
 export function getArduinoCliPathIfAvailable(): string | null {
-  // System PATH
-  try {
-    require('child_process').execFileSync('arduino-cli', ['version'], {
-      shell: true, stdio: 'pipe', timeout: 3000
-    });
-    return 'arduino-cli';
-  } catch { /* not in PATH */ }
+  // Bundled binary inside the app
+  const bundled = getBundledArduinoCliPath();
+  if (fs.existsSync(bundled)) return bundled;
 
   // Cached
   const cached = getBinaryPath();
   if (fs.existsSync(cached)) return cached;
-
-  // Standard paths
-  const standardPaths = [
-    path.join(os.homedir(), 'AppData', 'Local', 'Arduino15', 'arduino-cli.exe'),
-    path.join(os.homedir(), '.arduino15', 'arduino-cli'),
-  ];
-  for (const p of standardPaths) {
-    if (fs.existsSync(p)) return p;
-  }
 
   return null;
 }

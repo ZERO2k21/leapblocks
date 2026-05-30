@@ -84,7 +84,7 @@ import { registerLeapRenderer } from './leapignite/server/blocks/LeapRenderer';
 
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
 
-import { registerPictoBloxCategory } from './custom-toolbox';
+import { registerLeapBloxCategory } from './custom-toolbox';
 
 // Import dialog components
 import MakeVariableDialog from './components/MakeVariableDialog';
@@ -188,7 +188,7 @@ function initBlocklyOnce() {
     initPythonGenerator();
 
     // Register custom toolbox category (deferred from module scope)
-    registerPictoBloxCategory();
+    registerLeapBloxCategory();
 
     // Configure Blockly dialogs for Electron (native prompt/alert not supported)
     Blockly.dialog.setPrompt((message, defaultValue, callback) => {
@@ -240,8 +240,8 @@ const MORE_BLOCKS_CATEGORY_NAME = 'More Blocks';
 const MORE_BLOCKS_CATEGORY_COLOUR = '#94A3B8';
 
 const isToolboxCategory = (category: any) =>
-    category?.kind === 'pictobloxCategory' ||
-    category?.kind === 'pictoBloxCategory' ||
+    category?.kind === 'leapbloxCategory' ||
+    category?.kind === 'leapBloxCategory' ||
     category?.kind === 'category';
 
 const normalizeCategoryClassName = (value: string) =>
@@ -280,7 +280,7 @@ const createMonitorReporterPlaceholder = (
 });
 
 const createMoreBlocksCategory = () => ({
-    kind: 'pictobloxCategory',
+    kind: 'leapbloxCategory',
     name: MORE_BLOCKS_CATEGORY_NAME,
     colour: MORE_BLOCKS_CATEGORY_COLOUR,
     custom: 'LEAP_MOREBLOCKS'
@@ -813,6 +813,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, sliderMin: nextMin, sliderMax: nextMax } : m));
     }, []);
 
+    const handleListAddItem = useCallback((listName: string, item: string) => {
+        animationVM.addToList(listName, item);
+    }, []);
+
+    const handleListEditItem = useCallback((listName: string, index: number, value: string) => {
+        animationVM.replaceItemOfList(listName, index + 1, value);
+    }, []);
+
+    const handleListDeleteItem = useCallback((listName: string, index: number) => {
+        animationVM.deleteOfList(listName, index + 1);
+    }, []);
+
     // Bind AnimationVM execution callbacks to update React state
     useEffect(() => {
         animationVM.onShowVariable = (name) => {
@@ -1035,55 +1047,85 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // Dialog handlers
     const handleCreateVariable = (variable: { name: string; type: 'Number' | 'String'; scope: 'all_sprites' | 'this_sprite' }) => {
-        const newMonitor = normalizeVariableMonitor({
-            id: `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            name: variable.name,
-            type: variable.type,
-            scope: variable.scope,
-            spriteId: variable.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined,
-            visible: true,
-            value: variable.type === 'Number' ? 0 : '',
-            x: 10 + (variableMonitors.length * 20),
-            y: 10 + (variableMonitors.length * 30)
-        }, variableMonitors.length);
-        setVariableMonitors(prev => [...prev, newMonitor]);
+        setVariableMonitors(prev => {
+            const existing = prev.find(m => m.name === variable.name);
+            if (existing) {
+                return prev.map(m =>
+                    m.name === variable.name
+                        ? { ...m, type: variable.type, scope: variable.scope, spriteId: variable.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined, visible: true }
+                        : m
+                );
+            }
+            const newMonitor = normalizeVariableMonitor({
+                id: `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                name: variable.name,
+                type: variable.type,
+                scope: variable.scope,
+                spriteId: variable.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined,
+                visible: true,
+                value: variable.type === 'Number' ? 0 : '',
+                x: 10 + (prev.length * 20),
+                y: 10 + (prev.length * 30)
+            }, prev.length);
+            return [...prev, newMonitor];
+        });
         addLog(`Created variable: ${variable.name} (${variable.type})`);
     };
 
     const handleCreateList = (list: { name: string; scope: 'all_sprites' | 'this_sprite' }) => {
-        const newMonitor: ListMonitorState = {
-            id: `list_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            name: list.name,
-            scope: list.scope,
-            spriteId: list.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined,
-            visible: true,
-            items: [],
-            x: 10 + (listMonitors.length * 20),
-            y: 60 + (listMonitors.length * 30),
-            width: 140,
-            height: 180
-        };
-        setListMonitors(prev => [...prev, newMonitor]);
+        setListMonitors(prev => {
+            const existing = prev.find(m => m.name === list.name);
+            if (existing) {
+                return prev.map(m =>
+                    m.name === list.name
+                        ? { ...m, scope: list.scope, spriteId: list.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined, visible: true }
+                        : m
+                );
+            }
+            const newMonitor: ListMonitorState = {
+                id: `list_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                name: list.name,
+                scope: list.scope,
+                spriteId: list.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined,
+                visible: true,
+                items: [],
+                x: 10 + (prev.length * 20),
+                y: 60 + (prev.length * 30),
+                width: 140,
+                height: 180
+            };
+            return [...prev, newMonitor];
+        });
         addLog(`Created list: ${list.name}`);
     };
 
     const handleCreateTable = (table: { name: string; rows: number; cols: number; scope: 'all_sprites' | 'this_sprite' }) => {
         const emptyData = Array(table.rows).fill(null).map(() => Array(table.cols).fill(''));
-        const newMonitor: TableMonitorState = {
-            id: `table_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            name: table.name,
-            rows: table.rows,
-            cols: table.cols,
-            scope: table.scope,
-            spriteId: table.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined,
-            visible: true,
-            data: emptyData,
-            x: 10 + (tableMonitors.length * 20),
-            y: 260 + (tableMonitors.length * 30),
-            width: 200,
-            height: 150
-        };
-        setTableMonitors(prev => [...prev, newMonitor]);
+        setTableMonitors(prev => {
+            const existing = prev.find(m => m.name === table.name);
+            if (existing) {
+                return prev.map(m =>
+                    m.name === table.name
+                        ? { ...m, scope: table.scope, spriteId: table.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined, visible: true }
+                        : m
+                );
+            }
+            const newMonitor: TableMonitorState = {
+                id: `table_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                name: table.name,
+                rows: table.rows,
+                cols: table.cols,
+                scope: table.scope,
+                spriteId: table.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined,
+                visible: true,
+                data: emptyData,
+                x: 10 + (prev.length * 20),
+                y: 260 + (prev.length * 30),
+                width: 200,
+                height: 150
+            };
+            return [...prev, newMonitor];
+        });
         addLog(`Created table: ${table.name} (${table.rows}×${table.cols})`);
     };
 
@@ -1197,7 +1239,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             const definition = EXTENSIONS[id];
             if (definition) {
                 extensionCategories.push({
-                    kind: 'pictobloxCategory',
+                    kind: 'leapbloxCategory',
                     name: definition.name,
                     colour: definition.color,
                     contents: definition.getToolbox(),
@@ -1378,7 +1420,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             id: `list_${Date.now()}`,
                             name: varName,
                             scope: 'all_sprites' as const,
-                            visible: false,
+                            visible: true,
                             x: 10, y: 10 + (prev.length * 30),
                             items: [],
                             width: 100, height: 200
@@ -1391,7 +1433,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             id: `table_${Date.now()}`,
                             name: varName,
                             scope: 'all_sprites' as const,
-                            visible: false,
+                            visible: true,
                             x: 10, y: 10 + (prev.length * 30),
                             data: [],
                             rows: 0, cols: 0,
@@ -2743,6 +2785,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         const payload = {
             sprites: spritesData,
             workspaces: workspacesData,
+            backdrops: stageManager.getAllBackdrops().map(b => ({
+                name: b.name,
+                src: b.src
+            })),
+            currentBackdropIndex: stageManager.getCurrentBackdropIndex(),
+            broadcasts: animationVM.getBroadcastMessages(),
             monitors: {
                 variables: variableMonitors,
                 lists: listMonitors,
@@ -2824,6 +2872,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 const newSprites: Sprite[] = [];
                 stageManager.clearSounds();
+                stageManager.clearBackdrops();
 
                 for (const sData of data.sprites) {
 
@@ -2880,7 +2929,26 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                // 3. Restore All Workspaces to the Map FIRST
+                // 3. Restore backdrops from saved data
+
+                if (Array.isArray(data.backdrops)) {
+                    for (const bData of data.backdrops) {
+                        await stageManager.addBackdrop(bData.name, bData.src);
+                    }
+                    if (typeof data.currentBackdropIndex === 'number' && data.currentBackdropIndex >= 0) {
+                        stageManager.setBackdrop(data.currentBackdropIndex);
+                    }
+                }
+
+                // 4. Restore broadcast messages from saved data
+
+                if (Array.isArray(data.broadcasts)) {
+                    for (const msg of data.broadcasts) {
+                        animationVM.registerBroadcast(msg);
+                    }
+                }
+
+                // 5. Restore All Workspaces to the Map FIRST
 
                 Object.keys(data.workspaces).forEach(id => {
 
@@ -2890,7 +2958,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                // 4. Update UI state (triggers re-render)
+                // 6. Update UI state (triggers re-render)
                 if (data.monitors) {
                     setVariableMonitors((data.monitors.variables || []).map((monitor: VariableMonitorState, index: number) => normalizeVariableMonitor(monitor, index)));
                     setListMonitors(data.monitors.lists || []);
@@ -2917,7 +2985,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                // 5. Final attempt to load the workspace for the selected sprite
+                // 7. Final attempt to load the workspace for the selected sprite
 
                 if (initialId) {
 
@@ -3632,13 +3700,62 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         (window as any).spriteManager = spriteManager;
 
         (window as any).createNewBroadcast = (callback: (name: string | null) => void) => {
-            const name = window.prompt('New message name:');
-            if (name) {
-                animationVM.registerBroadcast(name);
-                callback(name);
-            } else {
-                callback(null);
-            }
+            const existing = document.querySelector('body>div[data-broadcast-prompt]');
+            if (existing) return;
+
+            const overlay = document.createElement('div');
+            overlay.setAttribute('data-broadcast-prompt', '');
+            overlay.setAttribute('style', 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);');
+
+            const box = document.createElement('div');
+            box.setAttribute('style', 'background:#fff;border-radius:12px;padding:24px;min-width:320px;box-shadow:0 8px 32px rgba(0,0,0,0.25);font-family:sans-serif;');
+
+            const label = document.createElement('div');
+            label.textContent = 'New message name:';
+            label.setAttribute('style', 'font-size:14px;font-weight:600;margin-bottom:12px;color:#333;');
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.autofocus = true;
+            input.setAttribute('style', 'width:100%;padding:10px 12px;font-size:14px;border:2px solid #ddd;border-radius:8px;outline:none;box-sizing:border-box;');
+            input.addEventListener('focus', () => input.style.borderColor = '#FFBF00');
+            input.addEventListener('blur', () => input.style.borderColor = '#ddd');
+
+            const btnRow = document.createElement('div');
+            btnRow.setAttribute('style', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.setAttribute('style', 'padding:8px 16px;font-size:14px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;');
+
+            const okBtn = document.createElement('button');
+            okBtn.textContent = 'OK';
+            okBtn.setAttribute('style', 'padding:8px 16px;font-size:14px;border:none;border-radius:8px;background:#FFBF00;color:#fff;cursor:pointer;font-weight:600;');
+
+            const cleanup = (result: string | null) => {
+                document.body.removeChild(overlay);
+                if (result) {
+                    animationVM.registerBroadcast(result);
+                }
+                callback(result);
+            };
+
+            cancelBtn.addEventListener('click', () => cleanup(null));
+            okBtn.addEventListener('click', () => cleanup(input.value || null));
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') okBtn.click();
+                if (e.key === 'Escape') cancelBtn.click();
+            });
+
+            btnRow.appendChild(cancelBtn);
+            btnRow.appendChild(okBtn);
+            box.appendChild(label);
+            box.appendChild(input);
+            box.appendChild(btnRow);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+
+            setTimeout(() => input.focus(), 50);
         };
 
         // Expose all sprite names for sensing_touching dropdown
@@ -3860,6 +3977,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         return () => {
 
             console.log('[IntermediateApp] Cleaning up workspace...');
+
+            animationVM.resetState();
+            stageManager.reset();
+            spriteManager.clear();
+            hardwareAdapter.stopAllPolling();
 
             if (window.electronAPI?.removeAllListeners) {
 
@@ -5795,6 +5917,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                             onVariableValueChange={handleVariableValueChange}
 
                                             onVariableSliderRangeChange={handleVariableSliderRangeChange}
+
+                                            onListAddItem={handleListAddItem}
+
+                                            onListEditItem={handleListEditItem}
+
+                                            onListDeleteItem={handleListDeleteItem}
 
                                         />
 

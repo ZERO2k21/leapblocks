@@ -7,7 +7,7 @@ import React from "react";
 import { Home, Save, Settings, User, HelpCircle, Upload, Scissors, Copy, Clipboard, Undo, Redo, Hash, Wand2, Search } from "lucide-react";
 import Logo, { CreoleapLogo } from "../../components/Logo";
 
-// ─── Theme (PictoBlox Colors) ─────────────────────────────────────────────────
+// ─── Theme (LeapBlox Colors) ─────────────────────────────────────────────────
 const C = {
     PURPLE: "#0a015a",  // Updated header color
     DARK_PURPLE: "#080a25",

@@ -29,7 +29,7 @@ export default function MyProjectsPage({ projects, onBack, onCreateNew, onOpenPr
         <div className="min-h-screen bg-gray-50 font-sans">
             <NeuraHeader onBack={onBack} showProjectInput={false} />
 
-            {/* Sub-header bar — matches PictoBlox purple bar */}
+            {/* Sub-header bar — matches LeapBlox purple bar */}
             <div className="bg-purple-50 border-b border-purple-100 px-8 py-3 flex items-center gap-4">
                 <h1 className="text-xl font-bold text-purple-900 mr-4">My Projects</h1>
                 <div className="relative">
