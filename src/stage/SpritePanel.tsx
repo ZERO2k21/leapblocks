@@ -41,6 +41,7 @@ interface SpritePanelProps {
   stageManager: StageManager;
   backdropVersion?: number;
   isFullscreen?: boolean;
+  onCopyCodeToSprite?: (sourceSpriteId: string, targetSpriteId: string) => void;
 }
 
 export const SpritePanel: React.FC<SpritePanelProps> = ({
@@ -54,6 +55,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   stageManager,
   backdropVersion: _backdropVersion,
   isFullscreen = false,
+  onCopyCodeToSprite,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -208,7 +210,25 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
               return (
                 <div
                   key={sprite.id}
+                  data-sprite-id={sprite.id}
+                  draggable={true}
                   onClick={() => onSelectSprite(sprite.id)}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', sprite.id);
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'copy';
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const sourceId = e.dataTransfer.getData('text/plain');
+                    if (sourceId && sourceId !== sprite.id) {
+                      onCopyCodeToSprite?.(sourceId, sprite.id);
+                    }
+                  }}
                   className={`relative group flex flex-col rounded-xl cursor-pointer
                     transition-all duration-150 overflow-visible border-2
                     ${isSelected
@@ -362,7 +382,20 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
             {/* Stage card — clicking selects the stage, highlights with violet border */}
             <div
+              data-sprite-id="stage"
               onClick={() => onSelectSprite('stage')}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const sourceId = e.dataTransfer.getData('text/plain');
+                if (sourceId && sourceId !== 'stage') {
+                  onCopyCodeToSprite?.(sourceId, 'stage');
+                }
+              }}
               className={`mx-2 mt-2 mb-1 rounded-xl cursor-pointer transition-all duration-150 overflow-hidden border-2
                 ${isStageSelected
                   ? `border-[#7b44c7] ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-sm`
