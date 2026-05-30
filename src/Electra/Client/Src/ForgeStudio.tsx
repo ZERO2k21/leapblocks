@@ -27,6 +27,35 @@ interface ForgeStudioProps {
   initialBoard?: 'arduino-uno' | 'esp32-c3';
 }
 
+const ESP32_DEFAULT_CODE = `// ESP32-C3 Project
+void setup() {
+  Serial.begin(115200);
+  pinMode(8, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(8, HIGH);
+  Serial.println("LED ON");
+  delay(1000);
+  digitalWrite(8, LOW);
+  Serial.println("LED OFF");
+  delay(1000);
+}`;
+
+const ARDUINO_DEFAULT_CODE = `// Electra Project
+void setup() {
+  Serial.begin(9600);
+  pinMode(13, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(13, HIGH);
+  Serial.println("System Active");
+  delay(1000);
+  digitalWrite(13, LOW);
+  delay(1000);
+}`;
+
 export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: ForgeStudioProps) {
   const {
     nodes,
@@ -52,19 +81,7 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
   // Undo/Redo History Management
   const [history, setHistory] = useState<Array<{ nodes: any[]; edges: any[]; code: string }>>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const [code, setCode] = useState(`// Electra Project
-void setup() {
-  Serial.begin(9600);
-  pinMode(13, OUTPUT);
-}
-
-void loop() {
-  digitalWrite(13, HIGH);
-  Serial.println("System Active");
-  delay(1000);
-  digitalWrite(13, LOW);
-  delay(1000);
-}`);
+  const [code, setCode] = useState(initialBoard === 'esp32-c3' ? ESP32_DEFAULT_CODE : ARDUINO_DEFAULT_CODE);
 
   // Save current state to history
   const saveToHistory = () => {
@@ -98,6 +115,15 @@ void loop() {
       setHistoryIndex(historyIndex + 1);
     }
   };
+
+  // Stop simulation when navigating away from ForgeStudio
+  useEffect(() => {
+    return () => {
+      if (useForgeStore.getState().isSimulating) {
+        useForgeStore.getState().stopSimulation();
+      }
+    };
+  }, []);
 
   // Initialize history on mount
   useEffect(() => {
@@ -175,14 +201,7 @@ void loop() {
     if (confirm('Create a new project? Unsaved changes will be lost.')) {
       setNodes([]);
       setEdges([]);
-      setCode(`// New Electra Project
-void setup() {
-  Serial.begin(9600);
-}
-
-void loop() {
-  // Your code here
-}`);
+      setCode(board === 'esp32-c3' ? ESP32_DEFAULT_CODE : ARDUINO_DEFAULT_CODE);
       setProjectName('Untitled Project');
       setProjectPath(null);
       setHistory([]);
@@ -544,12 +563,20 @@ void loop() {
     }
   };
 
+  const handleBack = () => {
+    if (isSimulating) {
+      stopSimulation();
+      setWifiStatus('');
+    }
+    onBack();
+  };
+
   return (
     <div className={`forge-root board-${board} theme-${uiTheme}`}>
       <IgniteTopbar
         title={projectName}
         onTitleChange={setProjectName}
-        onBack={onBack}
+        onBack={handleBack}
         onSave={handleSaveProject}
         onSaveAs={handleSaveAsProject}
         onNew={handleNewProject}
