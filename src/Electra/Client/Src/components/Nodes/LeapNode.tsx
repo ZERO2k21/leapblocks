@@ -17,12 +17,12 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   }
 
   const selectedNodeId = useForgeStore((state) => state.selectedNodeId);
-  const edges = useForgeStore((state) => state.edges);
   const isSimulating = useForgeStore((state) => state.isSimulating);
   const isSelected = selected || selectedNodeId === id;
 
-  // Build a Map of pin names → wire color for connected pins.
-  // This makes the pin colour match the wire colour.
+  // Subscribe only to edge count (number) — cheap comparison, no re-render during drag.
+  // Full edges accessed via getState() inside useMemo.
+  const edgeCount = useForgeStore((state) => state.edges.length);
   const connectedPinColors = useMemo(() => {
     const map = new Map<string, string>();
     const WIRE_COLORS: Record<string, string> = {
@@ -30,7 +30,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       yellow: '#eab308', black: '#1e293b', white: '#f8fafc',
       orange: '#f97316', purple: '#a855f7', pink: '#ec4899', cyan: '#06b6d4',
     };
-    for (const edge of edges) {
+    for (const edge of useForgeStore.getState().edges) {
       let pinName: string | null = null;
       if (edge.source === id && edge.sourceHandle) {
         pinName = edge.sourceHandle.replace(/__target$/, '');
@@ -44,7 +44,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       }
     }
     return map;
-  }, [edges, id]);
+  }, [edgeCount, id]);
 
   // I2C variants map to the same element as their parallel counterpart
   const elementType = data.type === 'lcd1602-i2c' ? 'lcd1602'
@@ -60,10 +60,12 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     background: 'transparent',
     border: '1px solid transparent',
     transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border 0.2s ease-out',
-    transform: `rotate(${data.rotation || 0}deg) scale(0.75)`,
-    transformOrigin: 'center',
+    transform: `rotate(${data.rotation || 0}deg)`,
+    transformOrigin: 'center center',
     position: 'relative',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    contain: 'layout style paint',
+    willChange: 'transform',
   };
 
   // ── Hardware Property Mapper ──
@@ -630,7 +632,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   return (
     <div style={nodeStyle} className="leap-node-wrapper">
       {/* ── COMPONENT & HANDLES CONTAINER ── */}
-      <div style={{ position: 'relative', display: 'inline-block' }}>
+      <div style={{ position: 'relative', display: 'inline-block', transform: 'scale(0.75)', transformOrigin: 'center center' }}>
         {/* Dynamic Leap Element */}
         <Tag
           ref={elementRef}
